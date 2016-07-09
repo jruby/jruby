@@ -1431,11 +1431,12 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         final Ruby runtime = context.runtime;
         if (pattern.numberOfNames() == 0) return runtime.newEmptyArray();
 
-        RubyArray ary = runtime.newArray(pattern.numberOfNames());
+        RubyArray ary = RubyArray.newBlankArray(runtime, pattern.numberOfNames());
+        int index = 0;
         for (Iterator<NameEntry> i = pattern.namedBackrefIterator(); i.hasNext();) {
             NameEntry e = i.next();
             RubyString name = RubyString.newStringShared(runtime, e.name, e.nameP, e.nameEnd - e.nameP, pattern.getEncoding());
-            ary.append(name);
+            ary.store(index++, name);
         }
         return ary;
     }
@@ -1453,10 +1454,11 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         for (Iterator<NameEntry> i = pattern.namedBackrefIterator(); i.hasNext();) {
             NameEntry e = i.next();
             int[] backrefs = e.getBackRefs();
-            RubyArray ary = runtime.newArray(backrefs.length);
+            RubyArray ary = RubyArray.newBlankArray(runtime, backrefs.length);
 
+            int index = 0;
             for (int backref : backrefs) {
-                ary.append(RubyFixnum.newFixnum(runtime, backref));
+                ary.store(index++, RubyFixnum.newFixnum(runtime, backref));
             }
             RubyString name = RubyString.newStringShared(runtime, e.name, e.nameP, e.nameEnd - e.nameP);
             hash.fastASet(name.freeze(context), ary);

@@ -390,25 +390,10 @@ public class RubyStruct extends RubyObject {
 
         final RubyArray member = __member__((RubyClass) recv);
         final int len = member.getLength();
-        RubyArray result = runtime.newArray(len);
+        RubyArray result = RubyArray.newBlankArray(runtime, len);
 
         for ( int i = 0; i < len; i++ ) {
-            // this looks weird, but it's because they're RubySymbol and that's java.lang.String internally
-            result.append( runtime.newString(member.eltInternal(i).asJavaString()) );
-        }
-
-        return result;
-    }
-
-    public static RubyArray members19(IRubyObject recv, Block block) {
-        final Ruby runtime = recv.getRuntime();
-
-        final RubyArray member = __member__((RubyClass) recv);
-        final int len = member.getLength();
-        RubyArray result = runtime.newArray(len);
-
-        for ( int i = 0; i < len; i++ ) {
-            result.append( member.eltInternal(i) );
+            result.store(i, member.eltInternal(i));
         }
 
         return result;
@@ -596,7 +581,7 @@ public class RubyStruct extends RubyObject {
     @JRubyMethod(name = {"to_a", "values"})
     @Override
     public RubyArray to_a() {
-        return getRuntime().newArray(values);
+        return RubyArray.newArrayMayCopy(getRuntime(), values);
     }
 
     @JRubyMethod
@@ -633,7 +618,7 @@ public class RubyStruct extends RubyObject {
         RubyArray member = __member__();
 
         for (int i = 0; i < values.length; i++) {
-            block.yield(context, getRuntime().newArrayNoCopy(new IRubyObject[]{member.eltInternal(i), values[i]}));
+            block.yield(context, RubyArray.newArray(context.runtime, member.eltInternal(i), values[i]));
         }
 
         return this;
@@ -864,5 +849,10 @@ public class RubyStruct extends RubyObject {
         public DynamicMethod dup() {
             return new Accessor((RubyClass) getImplementationClass(), index);
         }
+    }
+
+    @Deprecated
+    public static RubyArray members19(IRubyObject recv, Block block) {
+        return members(recv, block);
     }
 }

@@ -39,6 +39,9 @@ module JRuby
     end
 
     DEFAULT_FILENAME = '-'.dup; private_constant :DEFAULT_FILENAME
+    class org::jruby::Ruby
+      java_alias :parse_bytelist, :parse, [org.jruby.util.ByteList, java.lang.String, org.jruby.runtime.DynamicScope, Java::int, Java::boolean]
+    end
 
     # Parse the given block or the provided content, returning a JRuby AST node.
     def parse(content = nil, filename = DEFAULT_FILENAME, extra_position_info = false, lineno = 0, &block)
@@ -55,8 +58,7 @@ module JRuby
         content = content.to_str
         filename = filename.to_str unless filename.equal?(DEFAULT_FILENAME)
 
-        signature = [org.jruby.util.ByteList, java.lang.String, org.jruby.runtime.DynamicScope, Java::int, Java::boolean]
-        runtime.java_send :parse, signature, reference0(content).byte_list, filename, nil, lineno, extra_position_info
+        runtime.parse_bytelist reference0(content).byte_list, filename, nil, lineno, extra_position_info
       end
     end
     alias ast_for parse

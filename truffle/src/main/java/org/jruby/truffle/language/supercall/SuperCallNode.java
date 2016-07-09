@@ -91,7 +91,7 @@ public class SuperCallNode extends RubyNode {
             CompilerDirectives.transferToInterpreterAndInvalidate();
             callMethodMissingNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf(getContext()));
         }
-        return callMethodMissingNode.call(frame, receiver, "method_missing", block, arguments);
+        return callMethodMissingNode.callWithBlock(frame, receiver, "method_missing", block, arguments);
     }
 
 }

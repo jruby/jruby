@@ -33,7 +33,12 @@ public abstract class JavaInternalBlockBody extends BlockBody {
         this.methodName = methodName;
         this.dummyScope = runtime.getStaticScopeFactory().getDummyScope();
     }
-    
+
+    @Deprecated // needed by jruby-rack until it supports 1.7 along side with 9K
+    public JavaInternalBlockBody(Ruby runtime, Arity arity) {
+        this(runtime, null, null, Signature.from(arity));
+    }
+
     // Make sure we are still on the same thread as originator if we care
     private void threadCheck(ThreadContext yieldingContext) {
         if (originalContext != null && yieldingContext != originalContext) {

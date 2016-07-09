@@ -30,16 +30,14 @@ public abstract class ResolvedSuperInvokeSite extends SelfInvokeSite {
     protected final String superName;
     protected final boolean[] splatMap;
 
-    public ResolvedSuperInvokeSite(MethodType type, String superName, String splatmapString) {
-        super(type, superName, CallType.SUPER);
+    public ResolvedSuperInvokeSite(MethodType type, String superName, String splatmapString, String file, int line) {
+        super(type, superName, CallType.SUPER, file, line);
 
         this.superName = superName;
         this.splatMap = IRRuntimeHelpers.decodeSplatmap(splatmapString);
     }
 
-    public static final Handle BOOTSTRAP = new Handle(Opcodes.H_INVOKESTATIC, p(ResolvedSuperInvokeSite.class), "bootstrap", sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, String.class));
-
-    public static CallSite bootstrap(MethodHandles.Lookup lookup, String name, MethodType type, String splatmapString) {
+    public static CallSite bootstrap(MethodHandles.Lookup lookup, String name, MethodType type, String splatmapString, String file, int line) {
         String[] targetAndMethod = name.split(":");
         String superName = JavaNameMangler.demangleMethodName(targetAndMethod[1]);
 
@@ -47,10 +45,10 @@ public abstract class ResolvedSuperInvokeSite extends SelfInvokeSite {
 
         switch (targetAndMethod[0]) {
             case "invokeInstanceSuper":
-                site = new InstanceSuperInvokeSite(type, superName, splatmapString);
+                site = new InstanceSuperInvokeSite(type, superName, splatmapString, file, line);
                 break;
             case "invokeClassSuper":
-                site = new ClassSuperInvokeSite(type, superName, splatmapString);
+                site = new ClassSuperInvokeSite(type, superName, splatmapString, file, line);
                 break;
             default:
                 throw new RuntimeException("invalid super call: " + name);

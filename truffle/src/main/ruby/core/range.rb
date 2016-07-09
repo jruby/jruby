@@ -203,7 +203,8 @@ class Range
   end
 
   def inspect
-    "#{self.begin.inspect}#{exclude_end? ? "..." : ".."}#{self.end.inspect}"
+    result = "#{self.begin.inspect}#{exclude_end? ? "..." : ".."}#{self.end.inspect}"
+    Rubinius::Type.infect(result, self)
   end
 
   def last(n=undefined)
@@ -278,7 +279,8 @@ class Range
   end
 
   def to_s
-    "#{self.begin}#{exclude_end? ? "..." : ".."}#{self.end}"
+    result = "#{self.begin}#{exclude_end? ? "..." : ".."}#{self.end}"
+    Rubinius::Type.infect(result, self)
   end
 
   def cover?(value)

@@ -9,8 +9,11 @@
 import sys
 import os
 import subprocess
+import pipes
 import shutil
 import json
+import time
+from threading import Thread
 
 import mx
 import mx_benchmark
@@ -22,6 +25,32 @@ def jt(args, suite=None, nonZeroIsFatal=True, out=None, err=None, timeout=None, 
     jt = os.path.join(rubyDir, 'tool', 'jt.rb')
     return mx.run(['ruby', jt] + args, nonZeroIsFatal=nonZeroIsFatal, out=out, err=err, timeout=timeout, env=env, cwd=cwd)
 
+FNULL = open(os.devnull, 'w')
+
+class BackgroundServerTask:
+    def __init__(self, args):
+        self.args = args
+    
+    def __enter__(self):
+        preexec_fn, creationflags = mx._get_new_progress_group_args()
+        if mx._opts.verbose:
+            mx.log(' '.join(['(background)'] + map(pipes.quote, self.args)))
+        self.process = subprocess.Popen(self.args, preexec_fn=preexec_fn, creationflags=creationflags, stdout=FNULL, stderr=FNULL)
+        mx._addSubprocess(self.process, self.args)
+    
+    def __exit__(self, type, value, traceback):
+        self.process.kill()
+        self.process.wait()
+    
+    def is_running(self):
+        return self.process.poll() is None
+
+class BackgroundJT(BackgroundServerTask):
+    def __init__(self, args):
+        rubyDir = _suite.dir
+        jt = os.path.join(rubyDir, 'tool', 'jt.rb')
+        BackgroundServerTask.__init__(self, ['ruby', jt] + args)
+
 class MavenProject(mx.Project):
     def __init__(self, suite, name, deps, workingSets, theLicense, **args):
         mx.Project.__init__(self, suite, name, "", [], deps, workingSets, _suite.dir, theLicense)
@@ -32,7 +61,7 @@ class MavenProject(mx.Project):
     def source_dirs(self):
         return []
 
-    def output_dir(self):
+    def output_dir(self, relative=False):
         dir = os.path.join(_suite.dir, self.prefix)
         return dir.rstrip('/')
 
@@ -100,33 +129,111 @@ class MavenBuildTask(mx.BuildTask):
         truffle_commit = truffle.vc.parent(truffle.dir)
         maven_version_arg = '-Dtruffle.version=' + truffle_commit
         maven_repo_arg = '-Dmaven.repo.local=' + mavenDir
-
-        mx.run_mx(['maven-install', '--repo', mavenDir], suite=truffle)
+        
+        mx.run_mx(['maven-install', '--repo', mavenDir, '--only', 'TRUFFLE_API,TRUFFLE_DEBUG,TRUFFLE_DSL_PROCESSOR,TRUFFLE_TCK'], suite=truffle)
 
         open(os.path.join(rubyDir, 'VERSION'), 'w').write('graal-vm\n')
 
         # Build jruby-truffle
         
-        env = {'JRUBY_BUILD_MORE_QUIET': 'true'}
+        env = os.environ.copy()
+        env['JRUBY_BUILD_MORE_QUIET'] = 'true'
 
-        mx.run_maven(['--version', maven_repo_arg], nonZeroIsFatal=False, cwd=rubyDir, env=env)
+        mx.run_maven(['-q', '--version', maven_repo_arg], nonZeroIsFatal=False, cwd=rubyDir, env=env)
 
         mx.log('Building without tests')
 
-        mx.run_maven(['-DskipTests', maven_version_arg, maven_repo_arg], cwd=rubyDir, env=env)
+        mx.run_maven(['-q', '-DskipTests', maven_version_arg, maven_repo_arg], cwd=rubyDir, env=env)
 
         mx.log('Building complete version')
 
-        mx.run_maven(['-Pcomplete', '-DskipTests', maven_version_arg, maven_repo_arg], cwd=rubyDir, env=env)
+        mx.run_maven(['-q', '-Pcomplete', '-DskipTests', maven_version_arg, maven_repo_arg], cwd=rubyDir, env=env)
         mx.run(['zip', '-d', 'maven/jruby-complete/target/jruby-complete-graal-vm.jar', 'META-INF/jruby.home/lib/*'], cwd=rubyDir)
         mx.run(['bin/jruby', 'bin/gem', 'install', 'bundler', '-v', '1.10.6'], cwd=rubyDir)
+    
         mx.log('...finished build of {}'.format(self.subject))
 
     def clean(self, forBuild=False):
         if forBuild:
             return
         rubyDir = _suite.dir
-        mx.run_maven(['clean'], nonZeroIsFatal=False, cwd=rubyDir)
+        mx.run_maven(['-q', 'clean'], nonZeroIsFatal=False, cwd=rubyDir)
+
+class LicensesProject(mx.Project):
+    def __init__(self, suite, name, deps, workingSets, theLicense, **args):
+        mx.Project.__init__(self, suite, name, "", [], deps, workingSets, _suite.dir, theLicense)
+        self.javaCompliance = "1.7"
+        self.build = hasattr(args, 'build')
+        self.prefix = args['prefix']
+
+    def source_dirs(self):
+        return []
+
+    def output_dir(self, relative=False):
+        dir = os.path.join(_suite.dir, self.prefix)
+        return dir.rstrip('/')
+
+    def source_gen_dir(self):
+        return None
+
+    def getOutput(self, replaceVar=False):
+        return os.path.join(_suite.dir, "target")
+
+    def getResults(self, replaceVar=False):
+        return mx.Project.getResults(self, replaceVar=replaceVar)
+
+    def getBuildTask(self, args):
+        return LicensesBuildTask(self, args, None, None)
+
+    def isJavaProject(self):
+        return True
+
+    def archive_prefix(self):
+        return self.prefix
+
+    def annotation_processors(self):
+        return []
+
+    def find_classes_with_matching_source_line(self, pkgRoot, function, includeInnerClasses=False):
+        return dict()
+
+class LicensesBuildTask(mx.BuildTask):
+    def __init__(self, project, args, vmbuild, vm):
+        mx.BuildTask.__init__(self, project, args, 1)
+        self.vm = vm
+        self.vmbuild = vmbuild
+
+    def __str__(self):
+        return 'Building licences for {}'.format(self.subject)
+
+    def needsBuild(self, newestInput):
+        return (True, 'Let us re-build everytime')
+
+    def newestOutput(self):
+        return None
+
+    def build(self):
+        if not self.subject.build:
+            mx.log("...skip build of {}".format(self.subject))
+            return
+        mx.log('...perform build of {}'.format(self.subject))
+
+        rubyDir = _suite.dir
+        licenses_dir = os.path.join(rubyDir, 'licenses')
+        if not os.path.exists(licenses_dir):
+            os.mkdir(licenses_dir)
+        for f in ['BSDL', 'COPYING', 'LICENSE.RUBY']:
+            shutil.copyfile(os.path.join(rubyDir, f), os.path.join(licenses_dir, f))
+        
+        mx.log('...finished build of {}'.format(self.subject))
+
+    def clean(self, forBuild=False):
+        if forBuild:
+            return
+        rubyDir = _suite.dir
+        licenses_dir = os.path.join(rubyDir, 'licenses')
+        if os.path.exists(licenses_dir):
+            shutil.rmtree(licenses_dir)
 
 class RubyBenchmarkSuite(mx_benchmark.BenchmarkSuite):
     def group(self):
@@ -251,8 +358,8 @@ class AllBenchmarksBenchmarkSuite(RubyBenchmarkSuite):
 
     def runBenchmark(self, benchmark, bmSuiteArgs):
         arguments = ['benchmark']
-        if 'MX_BENCHMARK_OPTS' in os.environ:
-            arguments.extend(os.environ['MX_BENCHMARK_OPTS'].split(' '))
+        if 'MX_NO_GRAAL' in os.environ:
+            arguments.extend(['--no-graal'])
         arguments.extend(['--simple', '--elapsed'])
         arguments.extend(['--time', str(self.time())])
         if ':' in benchmark:
@@ -451,6 +558,62 @@ class MicroBenchmarkSuite(AllBenchmarksBenchmarkSuite):
     def time(self):
         return micro_benchmark_time
 
+server_benchmarks = [
+    'tcp-server',
+    'webrick'
+]
+
+server_benchmark_time = 60 * 4 # Seems unstable otherwise
+
+class ServerBenchmarkSuite(RubyBenchmarkSuite):
+    def benchmarks(self):
+        return server_benchmarks
+    
+    def name(self):
+        return 'server'
+
+    def runBenchmark(self, benchmark, bmSuiteArgs):
+        arguments = ['run', '--exec']
+        if 'MX_NO_GRAAL' not in os.environ:
+            arguments.extend(['--graal', '-J-G:+TruffleCompilationExceptionsAreFatal'])
+        arguments.extend(['all-ruby-benchmarks/servers/' + benchmark + '.rb'])
+        
+        server = BackgroundJT(arguments)
+        
+        with server:
+            time.sleep(10)
+            out = mx.OutputCapture()
+            if mx.run(
+                    ['ruby', 'all-ruby-benchmarks/servers/harness.rb', str(server_benchmark_time)],
+                    out=out,
+                    nonZeroIsFatal=False) == 0 and server.is_running():
+                samples = [float(s) for s in out.data.split('\n')[0:-1]]
+                print samples
+                half_samples = len(samples) / 2
+                used_samples = samples[len(samples)-half_samples-1:]
+                ips = sum(used_samples) / float(len(used_samples))
+                
+                return [{
+                    'benchmark': benchmark,
+                    'metric.name': 'throughput',
+                    'metric.value': ips,
+                    'metric.unit': 'op/s',
+                    'metric.better': 'higher',
+                    'extra.metric.human': str(used_samples)
+                }]
+            else:
+                sys.stderr.write(out.data)
+                
+                # TODO CS 24-Jun-16, how can we fail the wider suite?
+                return [{
+                    'benchmark': benchmark,
+                    'metric.name': 'throughput',
+                    'metric.value': 0,
+                    'metric.unit': 'op/s',
+                    'metric.better': 'higher',
+                    'extra.error': 'failed'
+                }]
+
 mx_benchmark.add_bm_suite(AllocationBenchmarkSuite())
 mx_benchmark.add_bm_suite(MinHeapBenchmarkSuite())
 mx_benchmark.add_bm_suite(TimeBenchmarkSuite())
@@ -459,3 +622,4 @@ mx_benchmark.add_bm_suite(ChunkyBenchmarkSuite())
 mx_benchmark.add_bm_suite(PSDBenchmarkSuite())
 mx_benchmark.add_bm_suite(SyntheticBenchmarkSuite())
 mx_benchmark.add_bm_suite(MicroBenchmarkSuite())
+mx_benchmark.add_bm_suite(ServerBenchmarkSuite())

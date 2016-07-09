@@ -98,6 +98,16 @@ public class CallableSelector {
         return method;
     }
 
+    public static <T extends JavaCallable> T matchingCallableArityZero(Ruby runtime, RubyToJavaInvoker<T> invoker, T[] methods) {
+        final int signatureCode = 0;
+        T method = invoker.getSignature(signatureCode);
+        if (method == null) {
+            method = findMatchingCallableForArgs(runtime, methods);
+            if (method != null) invoker.putSignature(signatureCode, method);
+        }
+        return method;
+    }
+
     public static <T extends JavaCallable> T matchingCallableArityOne(Ruby runtime, RubyToJavaInvoker<T> invoker, T[] methods, IRubyObject arg0) {
         final int signatureCode = argsHashCode(arg0);
         T method = invoker.getSignature(signatureCode);

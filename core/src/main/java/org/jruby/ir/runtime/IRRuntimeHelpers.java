@@ -540,12 +540,12 @@ public class IRRuntimeHelpers {
         return block;
     }
 
-    public static void checkArity(Ruby runtime, StaticScope scope, Object[] args, int required, int opt, boolean rest,
+    public static void checkArity(ThreadContext context, StaticScope scope, Object[] args, int required, int opt, boolean rest,
                                   boolean receivesKwargs, int restKey, Block.Type blockType) {
         int argsLength = args.length;
         RubyHash keywordArgs = extractKwargsHash(args, required, receivesKwargs);
 
-        if (restKey == -1 && keywordArgs != null) checkForExtraUnwantedKeywordArgs(runtime, scope, keywordArgs);
+        if (restKey == -1 && keywordArgs != null) checkForExtraUnwantedKeywordArgs(context, scope, keywordArgs);
 
         // keyword arguments value is not used for arity checking.
         if (keywordArgs != null) argsLength -= 1;
@@ -554,7 +554,7 @@ public class IRRuntimeHelpers {
 //            System.out.println("NUMARGS: " + argsLength + ", REQUIRED: " + required + ", OPT: " + opt + ", AL: " + args.length + ",RKW: " + receivesKwargs );
 //            System.out.println("ARGS[0]: " + args[0]);
 
-            Arity.raiseArgumentError(runtime, argsLength, required, required + opt);
+            Arity.raiseArgumentError(context.runtime, argsLength, required, required + opt);
         }
     }
 
@@ -593,20 +593,22 @@ public class IRRuntimeHelpers {
         return null;
     }
 
-    public static void checkForExtraUnwantedKeywordArgs(final Ruby runtime, final StaticScope scope, RubyHash keywordArgs) {
-        keywordArgs.visitAll(new RubyHash.Visitor() {
-            @Override
-            public void visit(IRubyObject key, IRubyObject value) {
-                String keyAsString = key.asJavaString();
-                int slot = scope.isDefined((keyAsString));
-
-                // Found name in higher variable scope.  Therefore non for this block/method def.
-                if ((slot >> 16) > 0) throw runtime.newArgumentError("unknown keyword: " + keyAsString);
-                // Could not find it anywhere.
-                if (((short) (slot & 0xffff)) < 0) throw runtime.newArgumentError("unknown keyword: " + keyAsString);
-            }
-        });
+    public static void checkForExtraUnwantedKeywordArgs(ThreadContext context, final StaticScope scope, RubyHash keywordArgs) {
+        keywordArgs.visitAll(context, CheckUnwantedKeywordsVisitor, scope);
     }
+
+    private static final RubyHash.VisitorWithState<StaticScope> CheckUnwantedKeywordsVisitor = new RubyHash.VisitorWithState<StaticScope>() {
+        @Override
+        public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, StaticScope scope) {
+            String keyAsString = key.asJavaString();
+            int slot = scope.isDefined((keyAsString));
+
+            // Found name in higher variable scope.  Therefore non for this block/method def.
+            if ((slot >> 16) > 0) throw context.runtime.newArgumentError("unknown keyword: " + keyAsString);
+            // Could not find it anywhere.
+            if (((short) (slot & 0xffff)) < 0) throw context.runtime.newArgumentError("unknown keyword: " + keyAsString);
+        }
+    };
 
     public static IRubyObject match3(ThreadContext context, RubyRegexp regexp, IRubyObject argValue) {
         if (argValue instanceof RubyString) {
@@ -858,10 +860,7 @@ public class IRRuntimeHelpers {
 
         if (remainingArguments <= 0) return context.runtime.newEmptyArray();
 
-        IRubyObject[] restArgs = new IRubyObject[remainingArguments];
-        System.arraycopy(args, argIndex, restArgs, 0, remainingArguments);
-
-        return RubyArray.newArrayNoCopy(context.runtime, restArgs);
+        return RubyArray.newArrayMayCopy(context.runtime, (IRubyObject[]) args, argIndex, remainingArguments);
     }
 
     private static IRubyObject constructRestArg(ThreadContext context, IRubyObject[] args, RubyHash keywordArguments, int required, int argIndex) {
@@ -873,10 +872,7 @@ public class IRRuntimeHelpers {
 
         if (remainingArguments <= 0) return context.runtime.newEmptyArray();
 
-        IRubyObject[] restArgs = new IRubyObject[remainingArguments];
-        System.arraycopy(args, argIndex, restArgs, 0, remainingArguments);
-
-        return RubyArray.newArrayNoCopy(context.runtime, restArgs);
+        return RubyArray.newArrayMayCopy(context.runtime, args, argIndex, remainingArguments);
     }
 
     @JIT
@@ -1900,5 +1896,20 @@ public class IRRuntimeHelpers {
         }
 
         return method;
+    }
+
+    @JIT
+    public static RubyArray newArray(ThreadContext context) {
+        return RubyArray.newEmptyArray(context.runtime);
+    }
+
+    @JIT
+    public static RubyArray newArray(ThreadContext context, IRubyObject obj) {
+        return RubyArray.newArray(context.runtime, obj);
+    }
+
+    @JIT
+    public static RubyArray newArray(ThreadContext context, IRubyObject obj0, IRubyObject obj1) {
+        return RubyArray.newArray(context.runtime, obj0, obj1);
     }
 }

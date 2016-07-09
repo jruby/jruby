@@ -7,7 +7,7 @@
 # GNU Lesser General Public License version 2.1
 
 suite = {
-    "mxversion": "5.6.6",
+    "mxversion": "5.31.4",
     "name": "jrubytruffle",
     "defaultLicense": "EPL",
 
@@ -61,6 +61,16 @@ suite = {
                 "truffle:TRUFFLE_DEBUG",
             ],
         },
+        "jruby-licences": {
+            "subDir": "licenses",
+            "class": "LicensesProject",
+            "build": "true",
+            "prefix": "licenses",
+            "dependencies": [
+                "truffle:TRUFFLE_API",
+                "truffle:TRUFFLE_DEBUG",
+            ],
+        },
     },
     "licenses": {
         "EPL": {
@@ -93,6 +103,7 @@ suite = {
             "dependencies": [
                 "jruby-ruby",
                 "jruby-lib-jni",
+                "jruby-licences",
             ],
             "exclude": [
                 "truffle:JLINE",

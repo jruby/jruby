@@ -561,6 +561,8 @@ module Enumerable
 
     undefined.equal?(min) ? nil : min
   end
+  
+  alias_method :min_internal, :min
 
   def max
     max = undefined
@@ -582,6 +584,8 @@ module Enumerable
 
     undefined.equal?(max) ? nil : max
   end
+  
+  alias_method :max_internal, :max
 
   def max_by
     return to_enum(:max_by) { enumerator_size } unless block_given?

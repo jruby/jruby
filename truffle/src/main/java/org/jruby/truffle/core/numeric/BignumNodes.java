@@ -317,7 +317,7 @@ public abstract class BignumNodes {
                 reverseCallNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
             }
 
-            final Object reversedResult = reverseCallNode.call(frame, b, "==", null, a);
+            final Object reversedResult = reverseCallNode.call(frame, b, "==", a);
 
             return booleanCastNode.executeBoolean(frame, reversedResult);
         }
@@ -439,7 +439,7 @@ public abstract class BignumNodes {
         }
     }
 
-    @CoreMethod(names = "<<", required = 1, lowerFixnumParameters = 0)
+    @CoreMethod(names = "<<", required = 1, lowerFixnum = 1)
     public abstract static class LeftShiftNode extends BignumCoreMethodNode {
 
         public abstract Object executeLeftShift(VirtualFrame frame, DynamicObject a, Object b);
@@ -474,7 +474,7 @@ public abstract class BignumNodes {
 
     }
 
-    @CoreMethod(names = ">>", required = 1, lowerFixnumParameters = 0)
+    @CoreMethod(names = ">>", required = 1, lowerFixnum = 1)
     public abstract static class RightShiftNode extends BignumCoreMethodNode {
 
         public abstract Object executeRightShift(VirtualFrame frame, DynamicObject a, Object b);

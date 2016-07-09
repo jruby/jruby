@@ -195,7 +195,7 @@ class Array
 
     unless block_given?
       return to_enum(:combination, num) do
-        self.combination_size(num)
+        combination_size(num)
       end
     end
 
@@ -367,6 +367,8 @@ class Array
       if two and !undefined.equal?(two)
         begin
           right = Rubinius::Type.coerce_to_collection_length two
+        rescue ArgumentError
+          raise RangeError, "bignum too big to convert into `long"
         rescue TypeError
           raise ArgumentError, "second argument must be a Fixnum"
         end
@@ -381,8 +383,8 @@ class Array
       right = size
     end
 
-    if right.is_a?(Bignum)
-      raise RangeError, "bignum too big to convert into `long'"
+    if left >= Fixnum::MAX || right > Fixnum::MAX
+      raise ArgumentError, "argument too big"
     end
 
     i = left
@@ -458,7 +460,7 @@ class Array
       begin
         objects[id] = true
 
-        each { |x| hash_val = ((hash_val & mask) << 1) ^ x.hash }
+        hash_val = self.hash_internal
       ensure
         objects.delete id
       end
@@ -470,7 +472,7 @@ class Array
         objects[:__detect_outermost_recursion__] = true
         objects[id] = true
 
-        each { |x| hash_val = ((hash_val & mask) << 1) ^ x.hash }
+        hash_val = self.hash_internal
 
         # An inner version will raise to return back here, indicating that
         # the whole structure is recursive. In which case, abondon most of
@@ -513,7 +515,7 @@ class Array
 
     return "[...]" if Thread.detect_recursion self do
       each_with_index do |element, index|
-        temp = element.inspect
+        temp = Rubinius::Type.inspect(element)
         result.force_encoding(temp.encoding) if index == 0
         result << temp << comma
       end
@@ -600,7 +602,7 @@ class Array
   def permutation(num=undefined, &block)
     unless block_given?
       return to_enum(:permutation, num) do
-        Rubinius::Mirror::Array.reflect(self).permutation_size(num)
+        permutation_size(num)
       end
     end
 
@@ -636,6 +638,28 @@ class Array
 
     self
   end
+
+  def permutation_size(num)
+    n = self.size
+    if undefined.equal? num
+      k = self.size
+    else
+      k = Rubinius::Type.coerce_to_collection_index num
+    end
+    descending_factorial(n, k)
+  end
+  private :permutation_size
+
+  def descending_factorial(from, how_many)
+    cnt = how_many >= 0 ? 1 : 0
+    while (how_many) > 0
+      cnt = cnt*(from)
+      from -= 1
+      how_many -= 1
+    end
+    cnt
+  end
+  private :descending_factorial
 
   def __permute__(num, perm, index, used, &block)
     # Recursively compute permutations of r elements of the set [0..n-1].
@@ -695,9 +719,8 @@ class Array
     outer_lambda.call([])
 
     if block_given?
-      block_result = self
-      result.each { |v| block_result << yield(v) }
-      block_result
+      result.each { |v| yield(v) }
+      self
     else
       result
     end
@@ -717,7 +740,7 @@ class Array
     combination_size = combination_size.to_i
     unless block_given?
       return to_enum(:repeated_combination, combination_size) do
-        Rubinius::Mirror::Array.reflect(self).repeated_combination_size(combination_size)
+        repeated_combination_size(combination_size)
       end
     end
 
@@ -749,7 +772,7 @@ class Array
     combination_size = combination_size.to_i
     unless block_given?
       return to_enum(:repeated_permutation, combination_size) do
-        Rubinius::Mirror::Array.reflect(self).repeated_permutation_size(combination_size)
+        repeated_permutation_size(combination_size)
       end
     end
 
@@ -765,6 +788,31 @@ class Array
 
     return self
   end
+
+  def repeated_permutation_size(combination_size)
+    return 0 if combination_size < 0
+    self.size ** combination_size
+  end
+  private :repeated_permutation_size
+
+  def repeated_combination_size(combination_size)
+    return 1 if combination_size == 0
+    return binomial_coefficient(combination_size, self.size + combination_size - 1)
+  end
+  private :repeated_combination_size
+
+  def binomial_coefficient(comb, size)
+    comb = size-comb if (comb > size-comb)
+    return 0 if comb < 0
+    descending_factorial(size, comb) / descending_factorial(comb, comb)
+  end
+  private :binomial_coefficient
+
+  def combination_size(num)
+    binomial_coefficient(num, self.size)
+  end
+  private :combination_size
+
 
   def compile_repeated_permutations(combination_size, place, index, &block)
     length.times do |i|
@@ -1386,10 +1434,8 @@ class Array
     return self unless size > 1
 
     i = 0
-    while i < self.length / 2
-      temp = self[i]
-      self[i] = self[self.length - i - 1]
-      self[self.length - i - 1] = temp
+    while i < size / 2
+      swap i, size-i-1
       i += 1
     end
 
@@ -1439,7 +1485,7 @@ class Array
 
         # Check for shift style.
         if start == 0
-          put 0, nil
+          self[0] = nil
           self.shift
         else
           delete_range(start, 1)
@@ -1472,7 +1518,7 @@ class Array
     reg_length = size - reg_start
     if reg_start <= size
       # copy tail
-      copy_from self, reg_start, reg_length, index
+      self[index, reg_length] = self[reg_start, reg_length]
 
       self.pop(del_length)
     end
@@ -1536,4 +1582,11 @@ class Array
     Truffle::Array.steal_storage(self, sort(&block))
   end
   public :sort!
+
+  def swap(a, b)
+    temp = at(a)
+    self[a] = at(b)
+    self[b] = temp
+  end
+  protected :swap
 end

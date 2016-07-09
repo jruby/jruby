@@ -170,7 +170,7 @@ public abstract class JavaLang {
             for ( int i=0; i < len; i++ ) {
                 backtrace[i] = RubyString.newString(runtime, stackTrace[i].toString());
             }
-            return RubyArray.newArrayNoCopy(runtime, backtrace);
+            return RubyArray.newArrayMayCopy(runtime, backtrace);
         }
 
         @JRubyMethod // can not set backtrace for a java.lang.Throwable

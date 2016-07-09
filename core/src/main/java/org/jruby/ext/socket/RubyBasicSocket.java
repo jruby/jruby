@@ -45,6 +45,7 @@ import jnr.constants.platform.SocketLevel;
 import jnr.constants.platform.SocketOption;
 
 import org.jruby.Ruby;
+import org.jruby.RubyArray;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
@@ -729,21 +730,21 @@ public class RubyBasicSocket extends RubyIO {
 
     protected IRubyObject addrFor(ThreadContext context, InetSocketAddress addr, boolean reverse) {
         final Ruby runtime = context.runtime;
-        IRubyObject[] ret = new IRubyObject[4];
+        IRubyObject ret0, ret1, ret2, ret3;
         if (addr.getAddress() instanceof Inet6Address) {
-            ret[0] = runtime.newString("AF_INET6");
+            ret0 = runtime.newString("AF_INET6");
         } else {
-            ret[0] = runtime.newString("AF_INET");
+            ret0 = runtime.newString("AF_INET");
         }
-        ret[1] = runtime.newFixnum(addr.getPort());
+        ret1 = runtime.newFixnum(addr.getPort());
         String hostAddress = addr.getAddress().getHostAddress();
         if (!reverse || doNotReverseLookup(context)) {
-            ret[2] = runtime.newString(hostAddress);
+            ret2 = runtime.newString(hostAddress);
         } else {
-            ret[2] = runtime.newString(addr.getHostName());
+            ret2 = runtime.newString(addr.getHostName());
         }
-        ret[3] = runtime.newString(hostAddress);
-        return runtime.newArrayNoCopy(ret);
+        ret3 = runtime.newString(hostAddress);
+        return RubyArray.newArray(runtime, ret0, ret1, ret2, ret3);
     }
 
     @Deprecated

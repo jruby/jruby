@@ -80,7 +80,7 @@ public final class InterpolatedStringNode extends RubyNode {
             assert RubyGuards.isRubyString(string);
 
             if (builder == null) {
-                builder = (DynamicObject) dupNode.call(frame, string, "dup", null);
+                builder = (DynamicObject) dupNode.call(frame, string, "dup");
             } else {
                 builder = appendNode.executeStringAppend(builder, (DynamicObject) string);
             }

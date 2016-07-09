@@ -154,7 +154,7 @@ public class JavaProxyReflectionObject extends RubyObject {
     //
 
     final RubyArray toRubyArray(final IRubyObject[] elements) {
-        return RubyArray.newArrayNoCopy(getRuntime(), elements);
+        return RubyArray.newArrayMayCopy(getRuntime(), elements);
     }
 
     final RubyArray toRubyArray(final Class<?>[] classes) {

@@ -488,9 +488,9 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             final int offset, final int length) {
             final RubyClass locationClass = runtime.getLocation();
 
-            RubyArray ary = runtime.newArray(length);
-            for ( int i = offset; i < offset + length; i++ ) {
-                ary.append(new RubyThread.Location(runtime, locationClass, elements[i]));
+            RubyArray ary = RubyArray.newBlankArray(runtime, length);
+            for ( int i = 0; i < length; i++ ) {
+                ary.store(i, new RubyThread.Location(runtime, locationClass, elements[i + offset]));
             }
 
             return ary;
@@ -525,25 +525,27 @@ public class RubyThread extends RubyObject implements ExecutionContext {
      * subclassed, then calling start in that subclass will not invoke the
      * subclass's initialize method.
      */
-    public static RubyThread start(IRubyObject recv, IRubyObject[] args, Block block) {
-        return start19(recv, args, block);
-    }
-
     @JRubyMethod(rest = true, name = "start", meta = true)
-    public static RubyThread start19(IRubyObject recv, IRubyObject[] args, Block block) {
-        Ruby runtime = recv.getRuntime();
+    public static RubyThread start(IRubyObject recv, IRubyObject[] args, Block block) {
         // The error message may appear incongruous here, due to the difference
         // between JRuby's Thread model and MRI's.
         // We mimic MRI's message in the name of compatibility.
-        if (! block.isGiven()) throw runtime.newArgumentError("tried to create Proc object without a block");
+        if (! block.isGiven()) {
+            throw recv.getRuntime().newArgumentError("tried to create Proc object without a block");
+        }
         return startThread(recv, args, false, block);
     }
 
-    public static RubyThread adopt(IRubyObject recv, Thread t) {
-        return adoptThread(recv, t, Block.NULL_BLOCK);
+    @Deprecated
+    public static RubyThread start19(IRubyObject recv, IRubyObject[] args, Block block) {
+        return start(recv, args, block);
     }
 
-    private static RubyThread adoptThread(final IRubyObject recv, Thread t, Block block) {
+    public static RubyThread adopt(IRubyObject recv, Thread t) {
+        return adoptThread(recv, t);
+    }
+
+    private static RubyThread adoptThread(final IRubyObject recv, Thread t) {
         final Ruby runtime = recv.getRuntime();
         final RubyThread rubyThread = new RubyThread(runtime, (RubyClass) recv);
 
@@ -712,20 +714,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
         final RubyHash mask = (RubyHash) TypeConverter.convertToType(_mask, context.runtime.getHash(), "to_hash");
 
-        mask.visitAll(new RubyHash.Visitor() {
-            @Override
-            public void visit(IRubyObject key, IRubyObject value) {
-                if (value instanceof RubySymbol) {
-                    RubySymbol sym = (RubySymbol) value;
-                    switch (sym.toString()) {
-                        case "immediate" : return;
-                        case "on_blocking" : return;
-                        case "never" : return;
-                        default : throw key.getRuntime().newArgumentError("unknown mask signature");
-                    }
-                }
-            }
-        });
+        mask.visitAll(context, HandleInterruptVisitor, null);
 
         RubyThread th = context.getThread();
         th.interruptMaskStack.add(mask);
@@ -743,6 +732,21 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             th.pollThreadEvents(context);
         }
     }
+
+    private static final RubyHash.VisitorWithState HandleInterruptVisitor = new RubyHash.VisitorWithState() {
+        @Override
+        public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, Object state) {
+            if (value instanceof RubySymbol) {
+                RubySymbol sym = (RubySymbol) value;
+                switch (sym.toString()) {
+                    case "immediate" : return;
+                    case "on_blocking" : return;
+                    case "never" : return;
+                    default : throw key.getRuntime().newArgumentError("unknown mask signature");
+                }
+            }
+        }
+    };
 
     @JRubyMethod(name = "pending_interrupt?", meta = true, optional = 1)
     public static IRubyObject pending_interrupt_p(ThreadContext context, IRubyObject self, IRubyObject[] args) {
@@ -857,7 +861,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     public static RubyArray list(IRubyObject recv) {
         RubyThread[] activeThreads = recv.getRuntime().getThreadService().getActiveRubyThreads();
 
-        return recv.getRuntime().newArrayNoCopy(activeThreads);
+        return RubyArray.newArrayMayCopy(recv.getRuntime(), activeThreads);
     }
 
     private void addToCorrectThreadGroup(ThreadContext context) {
@@ -1125,7 +1129,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     public RubyArray keys() {
         IRubyObject[] keys = new IRubyObject[getFiberLocals().size()];
 
-        return RubyArray.newArrayNoCopy(getRuntime(), getFiberLocals().keySet().toArray(keys));
+        return RubyArray.newArrayMayCopy(getRuntime(), getFiberLocals().keySet().toArray(keys));
     }
 
     @JRubyMethod(meta = true)

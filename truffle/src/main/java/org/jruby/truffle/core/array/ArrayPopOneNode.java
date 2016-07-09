@@ -20,6 +20,8 @@ import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 
+import static org.jruby.truffle.core.array.ArrayHelpers.setSize;
+
 @NodeChildren({
         @NodeChild("array")
 })
@@ -46,7 +48,7 @@ public abstract class ArrayPopOneNode extends RubyNode {
             @Cached("of(array)") ArrayStrategy strategy) {
         final int size = Layouts.ARRAY.getSize(array);
         final Object value = strategy.newMirror(array).get(size - 1);
-        Layouts.ARRAY.setSize(array, size - 1);
+        setSize(array, size - 1);
         return value;
     }
 

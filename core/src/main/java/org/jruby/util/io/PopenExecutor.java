@@ -1382,7 +1382,7 @@ public class PopenExecutor {
                     else {
                         softlim = hardlim = val.convertToInteger();
                     }
-                    tmp = runtime.newArray(runtime.newFixnum(rtype), softlim, hardlim);
+                    tmp = RubyArray.newArray(runtime, runtime.newFixnum(rtype), softlim, hardlim);
                     ((RubyArray)ary).push(tmp);
                 }
                 else
@@ -1548,8 +1548,10 @@ public class PopenExecutor {
                     flags = runtime.newFixnum(intFlags);
                     perm = ((RubyArray)val).entry(2);
                     perm = perm.isNil() ? runtime.newFixnum(0644) : perm.convertToInteger();
-                    param = runtime.newArray(((RubyString)path).strDup(runtime).export(context),
-                            flags, perm);
+                    param = RubyArray.newArray(runtime,
+                            ((RubyString)path).strDup(runtime).export(context),
+                            flags,
+                            perm);
                     eargp.fd_open = checkExecRedirect1(runtime, eargp.fd_open, key, param);
                 }
                 break;
@@ -1564,8 +1566,10 @@ public class PopenExecutor {
                 else
                     flags = runtime.newFixnum(OpenFlags.O_RDONLY.intValue());
                 perm = runtime.newFixnum(0644);
-                param = runtime.newArray(((RubyString)path).strDup(runtime).export(context),
-                        flags, perm);
+                param = RubyArray.newArray(runtime,
+                        ((RubyString)path).strDup(runtime).export(context),
+                        flags,
+                        perm);
                 eargp.fd_open = checkExecRedirect1(runtime, eargp.fd_open, key, param);
                 break;
 
@@ -1781,7 +1785,7 @@ public class PopenExecutor {
 
         // restructure command as a single string if chdir and has args
         if (eargp.chdir_given() && argc > 1) {
-            RubyArray array = RubyArray.newArrayNoCopy(runtime, argv);
+            RubyArray array = RubyArray.newArrayMayCopy(runtime, argv);
             prog = (RubyString)array.join(context, RubyString.newString(runtime, " "));
         }
 

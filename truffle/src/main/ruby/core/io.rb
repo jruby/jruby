@@ -1710,8 +1710,7 @@ class IO
   end
 
   def external_encoding
-    return @external if @external
-    return Encoding.default_external if @mode == RDONLY
+    @external
   end
 
   ##
@@ -2026,6 +2025,11 @@ class IO
     end
 
     nil
+  end
+  
+  def printf(fmt, *args)
+    fmt = StringValue(fmt)
+    write sprintf(fmt, *args)
   end
 
   def read(length=nil, buffer=nil)

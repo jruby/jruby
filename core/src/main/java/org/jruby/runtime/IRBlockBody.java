@@ -107,7 +107,7 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
     IRubyObject yieldSpecificMultiArgsCommon(ThreadContext context, Block block, IRubyObject[] args) {
         int blockArity = getSignature().arityValue();
         if (blockArity == 1) {
-            args = new IRubyObject[] { RubyArray.newArrayNoCopy(context.runtime, args) };
+            args = new IRubyObject[] { RubyArray.newArrayMayCopy(context.runtime, args) };
         }
 
         if (canCallDirect()) {

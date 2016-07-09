@@ -105,52 +105,51 @@ public abstract class RequireNode extends RubyNode {
                 }
 
                 final String mimeType = source.getMimeType();
-                switch (mimeType) {
-                    case RubyLanguage.MIME_TYPE: {
-                        final RubyRootNode rootNode = getContext().getCodeLoader().parse(
-                                source,
-                                UTF8Encoding.INSTANCE,
-                                ParserContext.TOP_LEVEL,
-                                null,
-                                true,
-                                this);
 
-                        final CodeLoader.DeferredCall deferredCall = getContext().getCodeLoader().prepareExecute(
-                                ParserContext.TOP_LEVEL,
-                                DeclarationContext.TOP_LEVEL,
-                                rootNode,
-                                null,
-                                coreLibrary().getMainObject());
+                if (RubyLanguage.MIME_TYPE.equals(mimeType)) {
+                    final RubyRootNode rootNode = getContext().getCodeLoader().parse(
+                            source,
+                            UTF8Encoding.INSTANCE,
+                            ParserContext.TOP_LEVEL,
+                            null,
+                            true,
+                            this);
 
-                        deferredCall.call(frame, callNode);
-                        break;
+                    final CodeLoader.DeferredCall deferredCall = getContext().getCodeLoader().prepareExecute(
+                            ParserContext.TOP_LEVEL,
+                            DeclarationContext.TOP_LEVEL,
+                            rootNode,
+                            null,
+                            coreLibrary().getMainObject());
+
+                    deferredCall.call(frame, callNode);
+                } else if (RubyLanguage.CEXT_MIME_TYPE.equals(mimeType)) {
+                    featureLoader.ensureCExtImplementationLoaded(frame, callNode);
+
+                    final CallTarget callTarget = featureLoader.parseSource(source);
+                    callNode.call(frame, callTarget, new Object[] {});
+
+                    final TruffleObject initFunction = getInitFunction(expandedPath);
+
+                    if (!ForeignAccess.sendIsExecutable(isExecutableNode, frame, initFunction)) {
+                        CompilerDirectives.transferToInterpreterAndInvalidate();
+                        throw new UnsupportedOperationException();
                     }
 
-                    case RubyLanguage.CEXT_MIME_TYPE: {
-                        featureLoader.ensureCExtImplementationLoaded(frame, callNode);
-
-                        final CallTarget callTarget = featureLoader.parseSource(source);
-                        callNode.call(frame, callTarget, new Object[] {});
-
-                        final TruffleObject initFunction = getInitFunction(expandedPath);
-
-                        if (!ForeignAccess.sendIsExecutable(isExecutableNode, frame, initFunction)) {
-                            CompilerDirectives.transferToInterpreterAndInvalidate();
-                            throw new UnsupportedOperationException();
-                        }
-
-                        try {
-                            ForeignAccess.sendExecute(executeNode, frame, initFunction);
-                        } catch (InteropException e) {
-                            CompilerDirectives.transferToInterpreterAndInvalidate();
-                            throw new JavaException(e);
-                        }
-                        break;
+                    try {
+                        ForeignAccess.sendExecute(executeNode, frame, initFunction);
+                    } catch (InteropException e) {
+                        CompilerDirectives.transferToInterpreterAndInvalidate();
+                        throw new JavaException(e);
                     }
+                } else {
+                    errorProfile.enter();
 
-                    default:
-                        errorProfile.enter();
+                    if (expandedPath.toLowerCase().endsWith(".su")) {
+                        throw new RaiseException(cextSupportNotAvailable(expandedPath));
+                    } else {
                         throw new RaiseException(unknownLanguage(expandedPath, mimeType));
+                    }
                 }
 
                 addToLoadedFeatures(frame, pathString);
@@ -160,6 +159,13 @@ public abstract class RequireNode extends RubyNode {
                 fileLocks.unlock(expandedPath, lock);
             }
         }
+    }
+
+    @TruffleBoundary
+    private DynamicObject cextSupportNotAvailable(String expandedPath) {
+        return getContext().getCoreExceptions().internalError(
+                "cext support is not available to load " + expandedPath,
+                callNode);
     }
 
     @TruffleBoundary
@@ -201,7 +207,7 @@ public abstract class RequireNode extends RubyNode {
     private void addToLoadedFeatures(VirtualFrame frame, DynamicObject feature) {
         final DynamicObject loadedFeatures = coreLibrary().getLoadedFeatures();
         synchronized (getContext().getFeatureLoader().getLoadedFeaturesLock()) {
-            addToLoadedFeatures.call(frame, loadedFeatures, "<<", null, feature);
+            addToLoadedFeatures.call(frame, loadedFeatures, "<<", feature);
         }
     }
 

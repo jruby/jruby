@@ -563,7 +563,7 @@ public abstract class ModuleNodes {
         }
     }
 
-    @CoreMethod(names = {"class_eval","module_eval"}, optional = 3, lowerFixnumParameters = 2, needsBlock = true)
+    @CoreMethod(names = { "class_eval", "module_eval" }, optional = 3, lowerFixnum = 3, needsBlock = true)
     public abstract static class ClassEvalNode extends CoreMethodArrayArgumentsNode {
 
         @Child private YieldNode yield;
@@ -1719,7 +1719,7 @@ public abstract class ModuleNodes {
 
             if (Layouts.MODULE.getFields(module).getMethod(name) != null) {
                 Layouts.MODULE.getFields(module).removeMethod(name);
-                methodRemovedNode.call(frame, module, "method_removed", null, getSymbol(name));
+                methodRemovedNode.call(frame, module, "method_removed", getSymbol(name));
             } else {
                 errorProfile.enter();
                 throw new RaiseException(coreExceptions().nameErrorMethodNotDefinedIn(module, name, this));
@@ -1766,7 +1766,7 @@ public abstract class ModuleNodes {
             raiseIfFrozenNode.execute(frame);
 
             Layouts.MODULE.getFields(module).undefMethod(getContext(), this, name);
-            methodUndefinedNode.call(frame, module, "method_undefined", null, getSymbol(name));
+            methodUndefinedNode.call(frame, module, "method_undefined", getSymbol(name));
         }
 
     }

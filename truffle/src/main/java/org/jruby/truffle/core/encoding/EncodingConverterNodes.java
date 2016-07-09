@@ -159,27 +159,27 @@ public abstract class EncodingConverterNodes {
 
         @Specialization
         public Object transcodingMap(VirtualFrame frame) {
-            final Object ret = newLookupTableNode.call(frame, coreLibrary().getLookupTableClass(), "new", null);
+            final Object ret = newLookupTableNode.call(frame, coreLibrary().getLookupTableClass(), "new");
 
             for (CaseInsensitiveBytesHash<TranscoderDB.Entry> sourceEntry : TranscoderDB.transcoders) {
                 Object key = null;
-                final Object value = newLookupTableNode.call(frame, coreLibrary().getLookupTableClass(), "new", null);
+                final Object value = newLookupTableNode.call(frame, coreLibrary().getLookupTableClass(), "new");
 
                 for (Hash.HashEntry<TranscoderDB.Entry> destinationEntry : sourceEntry.entryIterator()) {
                     final TranscoderDB.Entry e = destinationEntry.value;
 
                     if (key == null) {
-                        final Object upcased = upcaseNode.call(frame, createString(new ByteList(e.getSource())), "upcase", null);
-                        key = toSymNode.call(frame, upcased, "to_sym", null);
+                        final Object upcased = upcaseNode.call(frame, createString(new ByteList(e.getSource())), "upcase");
+                        key = toSymNode.call(frame, upcased, "to_sym");
                     }
 
-                    final Object upcasedLookupTableKey = upcaseNode.call(frame, createString(new ByteList(e.getDestination())), "upcase", null);
-                    final Object lookupTableKey = toSymNode.call(frame, upcasedLookupTableKey, "to_sym", null);
-                    final Object lookupTableValue = newTranscodingNode.call(frame, coreLibrary().getTranscodingClass(), "create", null, key, lookupTableKey);
-                    lookupTableWriteNode.call(frame, value, "[]=", null, lookupTableKey, lookupTableValue);
+                    final Object upcasedLookupTableKey = upcaseNode.call(frame, createString(new ByteList(e.getDestination())), "upcase");
+                    final Object lookupTableKey = toSymNode.call(frame, upcasedLookupTableKey, "to_sym");
+                    final Object lookupTableValue = newTranscodingNode.call(frame, coreLibrary().getTranscodingClass(), "create", key, lookupTableKey);
+                    lookupTableWriteNode.call(frame, value, "[]=", lookupTableKey, lookupTableValue);
                 }
 
-                lookupTableWriteNode.call(frame, ret, "[]=", null, key, value);
+                lookupTableWriteNode.call(frame, ret, "[]=", key, value);
             }
 
             return ret;
@@ -387,15 +387,17 @@ public abstract class EncodingConverterNodes {
                 return nil();
             }
 
-            Object ret = newLookupTableNode.call(frame, coreLibrary().getLookupTableClass(), "new", null);
+            Object ret = newLookupTableNode.call(frame, coreLibrary().getLookupTableClass(), "new");
 
-            lookupTableWriteNode.call(frame, ret, "[]=", null, getSymbol("result"), eConvResultToSymbol(lastError.getResult()));
-            lookupTableWriteNode.call(frame, ret, "[]=", null, getSymbol("source_encoding_name"), createString(new ByteList(lastError.getSource())));
-            lookupTableWriteNode.call(frame, ret, "[]=", null, getSymbol("destination_encoding_name"), createString(new ByteList(lastError.getDestination())));
-            lookupTableWriteNode.call(frame, ret, "[]=", null, getSymbol("error_bytes"), createString(new ByteList(lastError.getErrorBytes())));
+            lookupTableWriteNode.call(frame, ret, "[]=", getSymbol("result"), eConvResultToSymbol(lastError.getResult()));
+            lookupTableWriteNode.call(frame, ret, "[]=", getSymbol("source_encoding_name"), createString(new ByteList(lastError.getSource())));
+            lookupTableWriteNode.call(frame, ret, "[]=", getSymbol("destination_encoding_name"), createString(new ByteList(lastError.getDestination())));
+            lookupTableWriteNode.call(frame, ret, "[]=", getSymbol("error_bytes"), createString(new ByteList(lastError.getErrorBytes())));
 
             if (lastError.getReadAgainLength() != 0) {
-                lookupTableWriteNode.call(frame, ret, "[]=", null, getSymbol("read_again_bytes"), lastError.getReadAgainLength());
+                lookupTableWriteNode.call(frame, ret, "[]=", getSymbol("read_again_bytes"), createString(new ByteList(lastError.getErrorBytes(),
+                    lastError.getErrorBytesLength() + lastError.getErrorBytesP(),
+                    lastError.getReadAgainLength())));
             }
 
             return ret;

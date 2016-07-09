@@ -2,9 +2,13 @@
 # A JRuby launcher, in Ruby, and using the class files from Eclipse
 # Currently needs the core and stdlib jar, so build them again when they change.
 
+JRUBY = File.expand_path('../..', __FILE__)
+
 M2REPO = "#{Dir.home}/.m2/repository"
 
-TRUFFLE_VERSION = "0.13"
+TRUFFLE_VERSION = File.foreach("#{JRUBY}/truffle/pom.rb") { |line|
+  break $1 if /'truffle\.version' => '(\d+\.\d+|\h+-SNAPSHOT)'/ =~ line
+}
 
 TRUFFLEJARS = %W[
   com/oracle/truffle/truffle-api/#{TRUFFLE_VERSION}/truffle-api-#{TRUFFLE_VERSION}.jar
@@ -16,8 +20,6 @@ ANTLR4JAR = "#{M2REPO}/org/antlr/antlr4-runtime/4.5.1-1/antlr4-runtime-4.5.1-1.j
 JLINE = "#{M2REPO}/jline/jline/2.11/jline-2.11.jar"
 
 GRAAL_OPTIONS_PREFIX = "graal."
-
-JRUBY = File.expand_path('../..', __FILE__)
 
 VERIFY_JRUBY = false
 

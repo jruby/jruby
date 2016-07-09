@@ -102,7 +102,7 @@ public abstract class ToStringNode extends FormatNode {
                     MissingBehavior.RETURN_MISSING));
         }
 
-        final Object value = toSNode.call(frame, array, "to_s", null);
+        final Object value = toSNode.call(frame, array, "to_s");
 
         if (RubyGuards.isRubyString(value)) {
             if (taintedProfile.profile(isTaintedNode.executeIsTainted(value))) {
@@ -123,7 +123,7 @@ public abstract class ToStringNode extends FormatNode {
                     MissingBehavior.RETURN_MISSING));
         }
 
-        final Object value = toStrNode.call(frame, object, conversionMethod, null);
+        final Object value = toStrNode.call(frame, object, conversionMethod);
 
         if (RubyGuards.isRubyString(value)) {
             if (taintedProfile.profile(isTaintedNode.executeIsTainted(value))) {

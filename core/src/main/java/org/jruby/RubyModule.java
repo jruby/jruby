@@ -37,8 +37,11 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import com.headius.invokebinder.Binder;
 import org.jcodings.Encoding;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -83,6 +86,7 @@ import org.jruby.internal.runtime.methods.WrapperMethod;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
+import org.jruby.ir.targets.Bootstrap;
 import org.jruby.javasupport.binding.Initializer;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
@@ -300,7 +304,13 @@ public class RubyModule extends RubyObject {
      */
     protected RubyModule(Ruby runtime, RubyClass metaClass, boolean objectSpace) {
         super(runtime, metaClass, objectSpace);
+
         id = runtime.allocModuleId();
+
+        idTest = Binder.from(boolean.class, ThreadContext.class, IRubyObject.class)
+                .insert(2,id)
+                .invokeStaticQuiet(LOOKUP, Bootstrap.class, "testModuleMatch");
+
         runtime.addModule(this);
         // if (parent == null) parent = runtime.getObject();
         setFlag(NEEDSIMPL_F, !isClass());
@@ -4475,6 +4485,12 @@ public class RubyModule extends RubyObject {
     public final int id;
 
     /**
+     * Pre-built test that takes ThreadContext, IRubyObject and checks that the object is a module with the
+     * same ID as this one.
+     */
+    public final MethodHandle idTest;
+
+    /**
      * The class/module within whose namespace this class/module resides.
      */
     public RubyModule parent;
@@ -4755,4 +4771,6 @@ public class RubyModule extends RubyObject {
 
     /** Whether this class proxies a normal Java class */
     private boolean javaProxy = false;
+
+    private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
 }

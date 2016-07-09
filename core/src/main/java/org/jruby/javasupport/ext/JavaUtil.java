@@ -169,9 +169,9 @@ public abstract class JavaUtil {
         public static RubyArray to_a(final ThreadContext context, final IRubyObject self) {
             final Object[] array = ((java.util.Collection) unwrapJavaObject(self)).toArray();
             if ( IRubyObject.class.isAssignableFrom(array.getClass().getComponentType()) ) {
-                return RubyArray.newArrayNoCopy(context.runtime, (IRubyObject[]) array);
+                return RubyArray.newArrayMayCopy(context.runtime, (IRubyObject[]) array);
             }
-            return RubyArray.newArrayNoCopy(context.runtime, convertJavaArrayToRuby(context.runtime, array));
+            return RubyArray.newArrayMayCopy(context.runtime, convertJavaArrayToRuby(context.runtime, array));
         }
 
         @JRubyMethod(name = "+", required = 1)
@@ -469,7 +469,7 @@ public abstract class JavaUtil {
             int i = 0; for ( Object elem : list ) {
                 array[i++] = convertJavaToUsableRubyObject(runtime, elem);;
             }
-            return RubyArray.newArrayNoCopy(runtime, array);
+            return RubyArray.newArrayMayCopy(runtime, array);
         }
 
         @SuppressWarnings("unchecked")

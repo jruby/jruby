@@ -19,6 +19,7 @@ import org.jcodings.specific.UTF8Encoding;
 import org.joni.NameEntry;
 import org.joni.Regex;
 import org.joni.Syntax;
+import org.jruby.ast.Node;
 import org.jruby.ast.SideEffectFree;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.common.IRubyWarnings;
@@ -48,7 +49,6 @@ import org.jruby.truffle.core.cast.StringToSymbolNodeGen;
 import org.jruby.truffle.core.cast.ToProcNodeGen;
 import org.jruby.truffle.core.cast.ToSNode;
 import org.jruby.truffle.core.cast.ToSNodeGen;
-import org.jruby.truffle.core.encoding.EncodingNodes;
 import org.jruby.truffle.core.hash.ConcatHashLiteralNode;
 import org.jruby.truffle.core.hash.HashLiteralNode;
 import org.jruby.truffle.core.hash.HashNodesFactory;
@@ -165,7 +165,6 @@ import org.jruby.truffle.platform.graal.AssertConstantNodeGen;
 import org.jruby.truffle.platform.graal.AssertNotCompiledNodeGen;
 import org.jruby.util.ByteList;
 import org.jruby.util.KeyValuePair;
-
 import java.io.File;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
@@ -334,7 +333,7 @@ public class BodyTranslator extends Translator {
         final org.jruby.ast.Node valueNode = argChildNodes.remove(argChildNodes.size() - 1);
 
         // Evaluate the value and store it in a local variable
-        writeValue = new WriteLocalVariableNode(context, sourceSection, frameSlot, valueNode.accept(this));
+        writeValue = WriteLocalVariableNode.createWriteLocalVariableNode(context, sourceSection, frameSlot, valueNode.accept(this));
 
         // Recreate the arguments array, reading that local instead of including the RHS for the last argument
         argChildNodes.add(new ReadLocalDummyNode(node.getPosition(), sourceSection, frameSlot));
@@ -566,10 +565,6 @@ public class BodyTranslator extends Translator {
          *
          *   CallPrimitiveNode(FooNode(arg1, arg2, ..., argN))
          *
-         * or
-         *
-         *   (<#Method ModuleDefinedIn#foo>).call(arg1, arg2, ..., argN)
-         *
          * Where the arguments are the same arguments as the method. It looks like this is only exercised with simple
          * arguments so we're not worrying too much about what happens when they're more complicated (rest,
          * keywords etc).
@@ -595,27 +590,27 @@ public class BodyTranslator extends Translator {
          * into
          *
          *   InvokePrimitiveNode(FooNode(arg1, arg2, ..., argN))
-         *
-         * or
-         *
-         *   (<#Method ModuleDefinedIn#foo>).call(arg1, arg2, ..., argN)
          */
 
-        if (node.getArgsNode().childNodes().size() < 1 || !(node.getArgsNode().childNodes().get(0) instanceof org.jruby.ast.SymbolNode)) {
+        final List<Node> args = node.getArgsNode().childNodes();
+
+        if (args.size() < 1 || !(args.get(0) instanceof org.jruby.ast.SymbolNode)) {
             throw new UnsupportedOperationException("Truffle.invoke_primitive must have at least an initial literal symbol argument");
         }
 
-        final String primitiveName = ((org.jruby.ast.SymbolNode) node.getArgsNode().childNodes().get(0)).getName();
+        final String primitiveName = ((org.jruby.ast.SymbolNode) args.get(0)).getName();
 
         final PrimitiveNodeConstructor primitive = context.getPrimitiveManager().getPrimitive(primitiveName);
 
         final List<RubyNode> arguments = new ArrayList<>();
 
         // The first argument was the symbol so we ignore it
-        for (int n = 1; n < node.getArgsNode().childNodes().size(); n++) {
-            RubyNode readArgumentNode = node.getArgsNode().childNodes().get(n).accept(this);
+        for (int n = 1; n < args.size(); n++) {
+            RubyNode readArgumentNode = args.get(n).accept(this);
             arguments.add(readArgumentNode);
         }
+
+        assert arguments.size() == primitive.getPrimitiveArity() : sourceSection.getShortDescription();
 
         return primitive.createInvokePrimitiveNode(context, sourceSection, arguments.toArray(new RubyNode[arguments.size()]));
     }
@@ -868,7 +863,7 @@ public class BodyTranslator extends Translator {
                     if (expressionNode instanceof org.jruby.ast.SplatNode
                             || expressionNode instanceof org.jruby.ast.ArgsCatNode
                             || expressionNode instanceof org.jruby.ast.ArgsPushNode) {
-                        comparisons.add(new RubyCallNode(context, sourceSection, "when_splat", new SelfNode(context, sourceSection), null, false, true, rubyExpression, NodeUtil.cloneNode(readTemp)));
+                        comparisons.add(new RubyCallNode(context, sourceSection, "when_splat", new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getTruffleModule()), null, false, true, rubyExpression, NodeUtil.cloneNode(readTemp)));
                     } else {
                         comparisons.add(new RubyCallNode(context, sourceSection, "===", rubyExpression, null, false, true, NodeUtil.cloneNode(readTemp)));
                     }
@@ -1131,7 +1126,7 @@ public class BodyTranslator extends Translator {
         final String path = source.getPath();
 
         if (path == null) {
-            return source.getShortName();
+            throw new UnsupportedOperationException();
         }
 
         return path;
@@ -1853,10 +1848,6 @@ public class BodyTranslator extends Translator {
             if (name.equals("@source")) {
                 ret = MatchDataNodesFactory.RubiniusSourceNodeGen.create(self);
                 setSourceSection(ret, sourceSection);
-                return addNewlineIfNeeded(node, ret);
-            } else if (name.equals("@full")) {
-                // Delegate to MatchData#full.
-                ret = new RubyCallNode(context, sourceSection, "full", self, null, false);
                 return addNewlineIfNeeded(node, ret);
             } else if (name.equals("@regexp")) {
                 ret = MatchDataNodesFactory.RegexpNodeFactory.create(new RubyNode[]{ self });

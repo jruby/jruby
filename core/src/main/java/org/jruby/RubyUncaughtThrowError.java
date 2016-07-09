@@ -93,7 +93,7 @@ public class RubyUncaughtThrowError extends RubyException {
         if ( tag == null ) return message.asString();
 
         final RubyString str = message.asString();
-        return str.op_format(context, context.runtime.newArrayNoCopy(tag));
+        return str.op_format(context, RubyArray.newArray(context.runtime, tag));
     }
 
     @Override

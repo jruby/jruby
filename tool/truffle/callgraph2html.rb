@@ -31,6 +31,10 @@ module CG
     def lines
       if file == '(unknown)'
         ['(native)']
+      elsif file == '(eval)'
+        ['(eval)']
+      elsif file == '(snippet)'
+        ['(snippet)']
       elsif file.start_with?('truffle:')
         ['(core)']
       else
@@ -64,13 +68,15 @@ module CG
   end
 
   class MethodVersion
-    attr_reader :id, :method, :callsite_versions, :called_from
+    attr_reader :id, :method, :callsite_versions, :called_from, :locals, :eval_code
 
     def initialize(id, method)
       @id = Integer(id)
       @method = method
       @callsite_versions = []
       @called_from = []
+      @locals = {}
+      @eval_code = []
     end
 
     def reachable
@@ -122,6 +128,14 @@ ARGF.each_line do |line|
     method_version = CG::MethodVersion.new(line[2], method)
     objects[method_version.id] = method_version
     method.versions.push method_version
+  when 'local'
+    method_version = objects[Integer(line[1])]
+    method_version.locals[line[2]] ||= []
+    method_version.locals[line[2]].push line[3]
+  when 'eval'
+    method_version = objects[Integer(line[1])]
+    eval_code = line.drop(2).join(' ')
+    method_version.eval_code.push eval_code
   when 'local'
   when 'callsite'
     method = objects[Integer(line[1])]
@@ -231,12 +245,33 @@ puts ERB.new(%{<html>
     <% if reachable_objects.include?(method_version) %>
       <div id='method-version-<%= method_version.id %>' class='method-version'>
         <% unless method_version.called_from.empty? %>
-        <p>Called from:</p> 
-        <ul>
-          <% method_version.called_from.each do |caller| %>
-            <li><a href='#method-version-<%= caller.method_version.id %>'><%= h(caller.method_version.method.name) %></a></li>
-          <% end %>
-        </ul>
+          <p>Called from:</p> 
+          <ul>
+            <% method_version.called_from.each do |caller| %>
+              <li><a href='#method-version-<%= caller.method_version.id %>'><%= h(caller.method_version.method.name) %></a></li>
+            <% end %>
+          </ul>
+        <% end %>
+        <% unless method_version.locals.empty? %>
+          <p>Locals:</p> 
+          <ul>
+            <% method_version.locals.each do |name, types| %>
+              <li><code><%= h(name) %></li>
+              <ul>
+                <% types.each do |type| %>
+                  <li><code><%= h(type) %></li>
+                <% end %>
+              </ul>
+            <% end %>
+          </ul>
+        <% end %>
+        <% unless method_version.eval_code.empty? %>
+          <p>Evals:</p> 
+          <ul>
+            <% method_version.eval_code.each do |eval_code| %>
+              <li><code><%= h(eval_code) %></code></li>
+            <% end %>
+          </ul>
         <% end %>
         <% method.source.lines.each_with_index do |code, offset| %>
           <p class='code'>

@@ -128,7 +128,7 @@ public class JavaClass extends JavaObject {
         for ( int i = classes.length; --i >= 0; ) {
             javaClasses[i] = get(runtime, classes[i]);
         }
-        return RubyArray.newArrayNoCopy(runtime, javaClasses);
+        return RubyArray.newArrayMayCopy(runtime, javaClasses);
     }
 
     public static RubyClass createJavaClassClass(final Ruby runtime, final RubyModule Java) {

@@ -66,7 +66,7 @@ abstract class ForeignWriteStringCachedHelperNode extends RubyNode {
             boolean isIVar,
             Object value,
             @Cached("createWriteMethodName(stringName)") String writeMethodName) {
-        return getCallNode().call(frame, receiver, writeMethodName, null, value);
+        return getCallNode().call(frame, receiver, writeMethodName, value);
     }
 
     // Workaround for DSL bug
@@ -91,7 +91,7 @@ abstract class ForeignWriteStringCachedHelperNode extends RubyNode {
             boolean isIVar,
             Object value,
             @Cached("createWriteMethodName(stringName)") String writeMethodName) {
-        return getCallNode().call(frame, receiver, "[]=", null, name, value);
+        return getCallNode().call(frame, receiver, "[]=", name, value);
     }
 
     protected DoesRespondDispatchHeadNode getDefinedNode() {

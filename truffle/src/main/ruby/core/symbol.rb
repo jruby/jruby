@@ -84,7 +84,7 @@ class Symbol
     when Regexp
       match_data = pattern.search_region(str, 0, str.bytesize, true)
       Regexp.last_match = match_data
-      return match_data.full[0] if match_data
+      return match_data.byte_begin(0) if match_data
     when String
       raise TypeError, "type mismatch: String given"
     else
