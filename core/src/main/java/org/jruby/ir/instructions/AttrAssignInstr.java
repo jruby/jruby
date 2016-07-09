@@ -37,7 +37,10 @@ public class AttrAssignInstr extends NoResultCallInstr {
         // by passing in the frame self explicitly to Helpers.invoke(..)
         // rather than try to get it off context.getFrameSelf()
         super.computeScopeFlags(scope);
-        scope.getFlags().add(REQUIRES_FRAME);
+        if (targetRequiresCallersFrame()) {
+            // This can be narrowed further by filtering out cases with literals other than String and Regexp
+            scope.getFlags().add(REQUIRES_FRAME);
+        }
         return true;
     }
 

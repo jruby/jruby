@@ -16,8 +16,6 @@ import org.jruby.ir.instructions.defined.GetErrorInfoInstr;
 import org.jruby.ir.instructions.defined.RestoreErrorInfoInstr;
 import org.jruby.ir.instructions.specialized.OneFixnumArgNoBlockCallInstr;
 import org.jruby.ir.instructions.specialized.OneFloatArgNoBlockCallInstr;
-import org.jruby.ir.instructions.specialized.OneOperandArgNoBlockCallInstr;
-import org.jruby.ir.instructions.specialized.ZeroOperandArgNoBlockCallInstr;
 import org.jruby.ir.operands.*;
 import org.jruby.ir.operands.Boolean;
 import org.jruby.ir.operands.Float;
@@ -575,7 +573,7 @@ public class JVMVisitor extends IRVisitor {
         jvmMethod().loadSelf();
         visit(arrayderefinstr.getReceiver());
         visit(arrayderefinstr.getKey());
-        jvmMethod().invokeArrayDeref();
+        jvmMethod().invokeArrayDeref(file, lastLine);
         jvmStoreLocal(arrayderefinstr.getResult());
     }
 

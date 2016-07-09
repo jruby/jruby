@@ -48,11 +48,12 @@ public abstract class InvokeSite extends MutableCallSite {
     final int arity;
     protected final String methodName;
     final MethodHandle fallback;
-    private final Set<Integer> seenTypes = new HashSet<Integer>();
-    private int clearCount;
+    private final SiteTracker tracker = new SiteTracker();
     private static final AtomicLong SITE_ID = new AtomicLong(1);
     private final long siteID = SITE_ID.getAndIncrement();
     private final int argOffset;
+    protected final String file;
+    protected final int line;
     private boolean boundOnce;
     CacheEntry cache = CacheEntry.NULL_CACHE;
 
@@ -64,10 +65,12 @@ public abstract class InvokeSite extends MutableCallSite {
 
     public final CallType callType;
 
-    public InvokeSite(MethodType type, String name, CallType callType) {
+    public InvokeSite(MethodType type, String name, CallType callType, String file, int line) {
         super(type);
         this.methodName = name;
         this.callType = callType;
+        this.file = file;
+        this.line = line;
 
         Signature startSig;
 
@@ -206,7 +209,7 @@ public abstract class InvokeSite extends MutableCallSite {
             RubyClass recvClass = (RubyClass) self;
 
             // Bind a second site as a dynamic invoker to guard against changes in new object's type
-            CallSite initSite = SelfInvokeSite.bootstrap(lookup(), "callFunctional:initialize", type());
+            CallSite initSite = SelfInvokeSite.bootstrap(lookup(), "callFunctional:initialize", type(), file, line);
             MethodHandle initHandle = initSite.dynamicInvoker();
 
             MethodHandle allocFilter = Binder.from(IRubyObject.class, IRubyObject.class)
@@ -227,33 +230,41 @@ public abstract class InvokeSite extends MutableCallSite {
 
     /**
      * Update the given call site using the new target, wrapping with appropriate
-     * guard and argument-juggling logic. Return a handle suitable for invoking
+     * bind and argument-juggling logic. Return a handle suitable for invoking
      * with the site's original method type.
      */
     MethodHandle updateInvocationTarget(MethodHandle target, IRubyObject self, RubyModule testClass, DynamicMethod method, SwitchPoint switchPoint) {
         if (target == null ||
-                clearCount > Options.INVOKEDYNAMIC_MAXFAIL.load() ||
-                (!hasSeenType(testClass.id)
-                        && seenTypesCount() + 1 > Options.INVOKEDYNAMIC_MAXPOLY.load())) {
+                tracker.clearCount() > Options.INVOKEDYNAMIC_MAXFAIL.load() ||
+                (!tracker.hasSeenType(testClass.id)
+                        && tracker.seenTypesCount() + 1 > Options.INVOKEDYNAMIC_MAXPOLY.load())) {
+
+            if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
+                if (tracker.clearCount() > Options.INVOKEDYNAMIC_MAXFAIL.load()) {
+                    LOG.info(methodName + "\tat site #" + siteID + " failed more than " + Options.INVOKEDYNAMIC_MAXFAIL.load() + " times; bailing out (" + file + ":" + line + ")");
+                } else if (tracker.seenTypesCount() + 1 > Options.INVOKEDYNAMIC_MAXPOLY.load()) {
+                    LOG.info(methodName + "\tat site #" + siteID + " encountered more than " + Options.INVOKEDYNAMIC_MAXPOLY.load() + " types; bailing out (" + file + ":" + line + ")");
+                }
+            }
             setTarget(target = prepareBinder().invokeVirtualQuiet(lookup(), "fail"));
         } else {
             MethodHandle fallback;
             MethodHandle gwt;
 
             // if we've cached no types, and the site is bound and we haven't seen this new type...
-            if (seenTypesCount() > 0 && getTarget() != null && !hasSeenType(testClass.id)) {
+            if (tracker.seenTypesCount() > 0 && getTarget() != null && !tracker.hasSeenType(testClass.id)) {
                 // stack it up into a PIC
                 if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) LOG.info(methodName + "\tadded to PIC " + logMethod(method));
                 fallback = getTarget();
             } else {
                 // wipe out site with this new type and method
                 String bind = boundOnce ? "rebind" : "bind";
-                if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) LOG.info(methodName + "\ttriggered site #" + siteID + " " + bind);// + " (" + file() + ":" + line() + ")");
+                if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) LOG.info(methodName + "\ttriggered site #" + siteID + " " + bind + " (" + file + ":" + line + ")");
                 fallback = this.fallback;
-                clearTypes();
+                tracker.clearTypes();
             }
 
-            addType(testClass.id);
+            tracker.addType(testClass.id);
 
             SmartHandle test;
             SmartBinder selfTest = SmartBinder
@@ -306,23 +317,6 @@ public abstract class InvokeSite extends MutableCallSite {
 
     public void setInitialTarget(MethodHandle target) {
         super.setTarget(target);
-    }
-
-    public synchronized boolean hasSeenType(int typeCode) {
-        return seenTypes.contains(typeCode);
-    }
-
-    public synchronized void addType(int typeCode) {
-        seenTypes.add(typeCode);
-    }
-
-    public synchronized int seenTypesCount() {
-        return seenTypes.size();
-    }
-
-    public synchronized void clearTypes() {
-        seenTypes.clear();
-        clearCount++;
     }
 
     public abstract boolean methodMissing(CacheEntry entry, IRubyObject caller);

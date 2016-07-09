@@ -54,14 +54,13 @@ public abstract class FiberNodes {
 
     private static DynamicObject createFiber(RubyContext context, DynamicObject thread, DynamicObjectFactory factory, String name, boolean isRootFiber) {
         assert RubyGuards.isRubyThread(thread);
-        final DynamicObjectFactory instanceFactory = Layouts.CLASS.getInstanceFactory(context.getCoreLibrary().getObjectClass());
-        final DynamicObject fiberLocals = Layouts.BASIC_OBJECT.createBasicObject(instanceFactory);
+        final DynamicObject fiberLocals = Layouts.BASIC_OBJECT.createBasicObject(context.getCoreLibrary().getObjectFactory());
         return Layouts.FIBER.createFiber(
                 factory,
                 fiberLocals,
                 isRootFiber,
                 new CountDownLatch(1),
-                new LinkedBlockingQueue<FiberMessage>(2),
+                new LinkedBlockingQueue<>(2),
                 thread,
                 null,
                 true,

@@ -59,6 +59,7 @@ import org.jruby.truffle.core.cast.DurationToMillisecondsNodeGen;
 import org.jruby.truffle.core.cast.NameToJavaStringNode;
 import org.jruby.truffle.core.cast.NameToJavaStringNodeGen;
 import org.jruby.truffle.core.cast.NameToSymbolOrStringNodeGen;
+import org.jruby.truffle.core.cast.TaintResultNode;
 import org.jruby.truffle.core.cast.ToPathNodeGen;
 import org.jruby.truffle.core.cast.ToStrNodeGen;
 import org.jruby.truffle.core.encoding.EncodingOperations;
@@ -1858,12 +1859,14 @@ public abstract class KernelNodes {
 
         @Child private LogicalClassNode classNode;
         @Child private ObjectNodes.ObjectIDPrimitiveNode objectIDNode;
+        @Child private TaintResultNode taintResultNode;
         @Child private ToHexStringNode toHexStringNode;
 
         public ToSNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             classNode = LogicalClassNodeGen.create(context, sourceSection, null);
             objectIDNode = ObjectNodesFactory.ObjectIDPrimitiveNodeFactory.create(null);
+            taintResultNode = new TaintResultNode(context, sourceSection);
             toHexStringNode = KernelNodesFactory.ToHexStringNodeFactory.create(null);
         }
 
@@ -1875,7 +1878,9 @@ public abstract class KernelNodes {
             Object id = objectIDNode.executeObjectID(frame, self);
             String hexID = toHexStringNode.executeToHexString(frame, id);
 
-            return createString(formatToS(className, hexID));
+            final DynamicObject string = createString(formatToS(className, hexID));
+            taintResultNode.maybeTaint(self, string);
+            return string;
         }
 
         @TruffleBoundary

@@ -143,13 +143,13 @@ public class JITCompiler implements JITCompilerMBean {
         return counts.largestCodeSize.get();
     }
 
-    public String[] frameAwareMethods() {
+    public String[] getFrameAwareMethods() {
         String[] frameAwareMethods = MethodIndex.FRAME_AWARE_METHODS.toArray(new String[0]);
         Arrays.sort(frameAwareMethods);
         return frameAwareMethods;
     }
 
-    public String[] scopeAwareMethods() {
+    public String[] getScopeAwareMethods() {
         String[] scopeAwareMethods = MethodIndex.SCOPE_AWARE_METHODS.toArray(new String[0]);
         Arrays.sort(scopeAwareMethods);
         return scopeAwareMethods;
