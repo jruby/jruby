@@ -45,6 +45,7 @@ public class LoadFrameClosureInstr extends NoOperandResultBaseInstr implements F
 
     @Override
     public boolean computeScopeFlags(IRScope scope) {
+        super.computeScopeFlags(scope);
         scope.getFlags().add(REQUIRES_FRAME);
         return true;
     }

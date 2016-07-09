@@ -39,6 +39,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.RubyWarnings;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.ext.bigdecimal.RubyBigDecimal;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
@@ -273,6 +274,14 @@ public class RubyNumeric extends RubyObject {
     private static IRubyObject numericToFloat(Ruby runtime, IRubyObject num) {
         if (!(num instanceof RubyNumeric)) {
             throw runtime.newTypeError("can't convert " + num.getType() + " into Float");
+        }
+
+        if (num instanceof RubyFloat) {
+            return num;
+        }
+
+        if (num instanceof RubyFixnum && !runtime.isFixnumReopened()) {
+            return ((RubyFixnum) num).to_f();
         }
 
         return TypeConverter.convertToType(num, runtime.getFloat(), "to_f");
