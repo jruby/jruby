@@ -280,16 +280,8 @@ public class RubyNumeric extends RubyObject {
             return num;
         }
 
-        if (num instanceof RubyFixnum) {
+        if (num instanceof RubyFixnum && !runtime.isFixnumReopened()) {
             return ((RubyFixnum) num).to_f();
-        }
-
-        if (num instanceof RubyBignum) {
-            return ((RubyBignum) num).to_f();
-        }
-
-        if (num instanceof RubyBigDecimal) {
-            return ((RubyBigDecimal) num).to_f();
         }
 
         return TypeConverter.convertToType(num, runtime.getFloat(), "to_f");
