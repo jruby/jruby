@@ -155,7 +155,7 @@ public class PrintfTreeBuilder extends PrintfParserBaseListener {
                 final String conversionMethodName = type == 's' ? "to_s" : "inspect";
                 final FormatNode conversionNode;
 
-                if (ctx.ANGLE_KEY() == null) {
+                if (ctx.ANGLE_KEY() == null && absoluteArgumentIndex == DEFAULT) {
                     conversionNode = ReadStringNodeGen.create(context, true, conversionMethodName, false, EMPTY_BYTES, new SourceNode());
                 } else {
                     conversionNode = ToStringNodeGen.create(context, true, conversionMethodName, false, EMPTY_BYTES, valueNode);

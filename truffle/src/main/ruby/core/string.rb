@@ -1641,7 +1641,12 @@ class String
     if args.is_a? Hash
       sprintf(self, args)
     else
-      sprintf(self, *args)
+      result = Rubinius::Type.check_convert_type args, Array, :to_ary
+      if result.nil?
+        sprintf(self, *args)
+      else
+        sprintf(self, *result)
+      end
     end
   end
 

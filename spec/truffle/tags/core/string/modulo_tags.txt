@@ -1,20 +1,14 @@
 fails:String#% formats single % characters before a newline or NULL as literal %s
 fails:String#% raises an ArgumentError for unused arguments when $DEBUG is true
-fails:String#% always allows unused arguments when positional argument style is used
 fails:String#% replaces trailing absolute argument specifier without type with percent sign
 fails:String#% raises an ArgumentError when multiple positional argument tokens are given for one format specifier
 fails:String#% raises an ArgumentError when absolute and relative argument numbers are mixed
-fails:String#% allows reuse of the one argument multiple via absolute argument numbers
 fails:String#% allows positional arguments for width star and precision star arguments
 fails:String#% allows negative width to imply '-' flag
 fails:String#% ignores negative precision
 fails:String#% allows a star to take an argument number to use as the width
 fails:String#% calls to_int on width star and precision star tokens
 fails:String#% does not call #to_a to convert the argument
-fails:String#% calls #to_ary to convert the argument
-fails:String#% wraps the object in an Array if #to_ary returns nil
-fails:String#% raises a TypeError if #to_ary does not return an Array
-fails:String#% tries to convert the argument to Array by calling #to_ary
 fails:String#% doesn't return subclass instances when called on a subclass
 fails:String#% always taints the result when the format string is tainted
 fails:String#% supports character formats using %c
@@ -46,7 +40,6 @@ fails:String#% supports hex formats using %x for positive numbers
 fails:String#% supports hex formats using %x for negative numbers
 fails:String#% supports hex formats using %X for positive numbers
 fails:String#% supports hex formats using %X for negative numbers
-fails:String#% tries to convert the passed argument to an Array using #to_ary
 fails:String#% behaves as if calling Kernel#Float for %e arguments, when the passed argument does not respond to #to_ary
 fails:String#% behaves as if calling Kernel#Float for %e arguments, when the passed argument is hexadecimal string
 fails:String#% behaves as if calling Kernel#Float for %E arguments, when the passed argument does not respond to #to_ary
