@@ -71,7 +71,7 @@ module Utilities
       else
         mx_options = ''
       end
-      command_line = `mx -v #{mx_options} -p #{graal_home} vm -version 2>/dev/null`.lines.last
+      command_line = `mx -v #{mx_options} -p #{graal_home} vm -version 2>/dev/null`.lines.to_a.last
       vm_args = command_line.split
       vm_args.pop # Drop "-version"
       javacmd = vm_args.shift
