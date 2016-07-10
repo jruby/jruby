@@ -1,10 +1,8 @@
 fails:String#% formats single % characters before a newline or NULL as literal %s
 fails:String#% raises an ArgumentError for unused arguments when $DEBUG is true
-fails:String#% always allows unused arguments when positional argument style is used
 fails:String#% replaces trailing absolute argument specifier without type with percent sign
 fails:String#% raises an ArgumentError when multiple positional argument tokens are given for one format specifier
 fails:String#% raises an ArgumentError when absolute and relative argument numbers are mixed
-fails:String#% allows reuse of the one argument multiple via absolute argument numbers
 fails:String#% allows positional arguments for width star and precision star arguments
 fails:String#% allows negative width to imply '-' flag
 fails:String#% ignores negative precision
