@@ -317,6 +317,22 @@ module ShellUtils
     sh *command
   end
 
+  def clang(*args)
+    if ENV['USE_SYSTEM_CLANG']
+      sh 'clang', *args
+    else
+      mx SULONG_DIR, 'su-clang', *args
+    end
+  end
+
+  def llvm_opt(*args)
+    if ENV['USE_SYSTEM_CLANG']
+      sh 'opt', *args
+    else
+      mx SULONG_DIR, 'su-opt', *args
+    end
+  end
+
   def mspec(command, *args)
     env_vars = {}
     if command.is_a?(Hash)
@@ -575,17 +591,9 @@ module Commands
     src.each do |src|
       ll = File.join(File.dirname(out), File.basename(src, '.*') + '.ll')
       
-      clang_args = ["-I#{SULONG_DIR}/include", '-Ilib/ruby/truffle/cext', '-S', '-emit-llvm', *config_cflags, *clang_opts, src, '-o', ll]
-      opt_args = ['-S', '-mem2reg', ll, '-o', ll]
-      
-      if ENV['USE_SYSTEM_CLANG']
-        sh 'clang', *clang_args
-        sh 'opt', *opt_args
-      else
-        mx SULONG_DIR, 'su-clang', *clang_args
-        mx SULONG_DIR, 'su-opt', *opt_args
-      end
-      
+      clang "-I#{SULONG_DIR}/include", '-Ilib/ruby/truffle/cext', '-S', '-emit-llvm', *config_cflags, *clang_opts, src, '-o', ll
+      llvm_opt '-S', '-mem2reg', ll, '-o', ll
+
       lls.push ll
     end
 
