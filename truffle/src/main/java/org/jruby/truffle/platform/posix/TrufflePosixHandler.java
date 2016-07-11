@@ -33,7 +33,7 @@ public class TrufflePosixHandler implements POSIXHandler {
     public void error(Errno errno, String methodName) {
         // TODO CS 17-Apr-15 - not specialised, no way to build a good stacktrace, missing content for error messages
 
-        throw new RaiseException(ExceptionOperations.createRubyException(context.getCoreLibrary().getErrnoClass(errno)));
+        throw new RaiseException(ExceptionOperations.createSystemCallError(context.getCoreLibrary().getErrnoClass(errno), null, null, errno.intValue()));
     }
 
     @Override

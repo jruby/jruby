@@ -27,6 +27,7 @@ import org.jruby.truffle.builtins.Primitive;
 import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.NotProvided;
+import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.backtrace.Backtrace;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
@@ -139,7 +140,7 @@ public abstract class ExceptionNodes {
 
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
-            return allocateObjectNode.allocate(rubyClass, null, null);
+            return allocateObjectNode.allocate(rubyClass, null, null, nil());
         }
 
     }
@@ -147,9 +148,16 @@ public abstract class ExceptionNodes {
     @Primitive(name = "exception_errno_error", needsSelf = false)
     public static abstract class ExceptionErrnoErrorPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
+        @TruffleBoundary
         @Specialization
-        public DynamicObject exceptionErrnoError(DynamicObject message, int errno) {
-            return coreExceptions().errnoError(errno, message.toString(), this);
+        public DynamicObject exceptionErrnoError(DynamicObject message, int errno, DynamicObject location) {
+            final String errorMessage;
+            if(RubyGuards.isRubyString(location)){
+                errorMessage = " @ " + location.toString() + " - " + message.toString();
+            } else {
+                errorMessage = " - " + message.toString();
+            }
+            return coreExceptions().errnoError(errno, errorMessage, this);
         }
 
     }
