@@ -342,6 +342,10 @@ module ShellUtils
     end
   end
 
+  def sulong_run(*args)
+    mx SULONG_DIR, 'su-run', *args
+  end
+
   def mspec(command, *args)
     env_vars = {}
     if command.is_a?(Hash)
