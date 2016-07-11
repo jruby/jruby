@@ -1643,7 +1643,7 @@ class String
     else
       result = Rubinius::Type.check_convert_type args, Array, :to_ary
       if result.nil?
-        sprintf(self, *args)
+        sprintf(self, args)
       else
         sprintf(self, *result)
       end
