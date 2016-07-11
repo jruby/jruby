@@ -381,7 +381,11 @@ class AllBenchmarksBenchmarkSuite(RubyBenchmarkSuite):
             elapsed = [d for n, d in enumerate(data) if n % 2 == 0]
             samples = [d for n, d in enumerate(data) if n % 2 == 1]
             
-            warmed_up_samples = [sample for n, sample in enumerate(samples) if n / float(len(samples)) >= 0.5]
+            if len(samples) > 1:
+                warmed_up_samples = [sample for n, sample in enumerate(samples) if n / float(len(samples)) >= 0.5]
+            else:
+                warmed_up_samples = samples
+                
             warmed_up_mean = sum(warmed_up_samples) / float(len(warmed_up_samples))
             
             return [{
