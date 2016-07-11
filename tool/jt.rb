@@ -438,7 +438,8 @@ module Commands
     puts '  USE_SYSTEM_CLANG                             Use the system clang rather than Sulong\'s when compiling C extensions'
     puts '  GRAAL_JS_JAR                                 The location of trufflejs.jar'
     puts '  SL_JAR                                       The location of truffle-sl.jar'
-    puts '  OPENSSL_HOME                                The location of OpenSSL (the directory containing include etc)'
+    puts '  OPENSSL_HOME                                 The location of OpenSSL (the directory containing include etc)'
+    puts '  LIBXML_HOME                                 The location of libxml2 (the directory containing include etc)'
   end
 
   def checkout(branch)
@@ -460,9 +461,11 @@ module Commands
       mvn env, *maven_options, '-pl', 'truffle', 'package'
     when 'cexts'
       cextc "#{JRUBY_DIR}/truffle/src/main/c/cext"
+
+      openssl_home = ENV['OPENSSL_HOME'] || '/usr'
       
       #cextc "#{JRUBY_DIR}/truffle/src/main/c/openssl",
-      #  "-I#{ENV['OPENSSL_HOME']}/include",
+      #  "-I#{openssl_home}/include",
       #  '-DRUBY_EXTCONF_H="extconf.h"',
       #  '-Werror=implicit-function-declaration'
     when nil
@@ -694,6 +697,21 @@ module Commands
   private :test_compiler
 
   def test_cexts(*args)
+    libxml_home = ENV['LIBXML_HOME'] || '/usr'
+    openssl_home = ENV['OPENSSL_HOME'] || '/usr'
+
+    # Test that we can compile and run some basic C code that uses libxml and openssl
+
+    clang '-S', '-emit-llvm', "-I#{libxml_home}/include/libxml2", 'test/truffle/cexts/xml/main.c', '-o', 'test/truffle/cexts/xml/main.ll'
+    out, _ = sulong_run("-l#{libxml_home}/lib/libxml2.dylib", 'test/truffle/cexts/xml/main.ll', {capture: true})
+    raise unless out == "7\n"
+
+    clang '-S', '-emit-llvm', "-I#{openssl_home}/include", 'test/truffle/cexts/openssl/main.c', '-o', 'test/truffle/cexts/openssl/main.ll'
+    out, _ = sulong_run("-l#{openssl_home}/lib/libssl.dylib", 'test/truffle/cexts/openssl/main.ll', {capture: true})
+    raise unless out == "7369676e616c2066756e6374696f6e20\n"
+
+    # Test that we can compile and run some very basic C extensions
+
     begin
       output_file = 'cext-output.txt'
       ['minimum', 'method', 'module'].each do |gem_name|
@@ -708,7 +726,9 @@ module Commands
     ensure
       File.delete output_file rescue nil
     end
-    
+
+    # Test that we can compile and run some real C extensions
+
     [
         ['oily_png', ['chunky_png-1.3.6', 'oily_png-1.2.0'], ['oily_png']],
         ['psd_native', ['chunky_png-1.3.6', 'oily_png-1.2.0', 'bindata-2.3.1', 'hashie-3.4.4', 'psd-enginedata-1.1.1', 'psd-2.1.2', 'psd_native-1.1.3'], ['oily_png', 'psd_native']],
