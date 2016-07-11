@@ -713,7 +713,6 @@ module Commands
       next if gem_name == 'nokogiri' # nokogiri totally excluded
       config = "#{JRUBY_DIR}/test/truffle/cexts/#{gem_name}"
       cextc config, '-Werror=implicit-function-declaration'
-      arguments = []
       run '--graal',
         *dependencies.map { |d| "-I#{ENV['GEM_HOME']}/gems/#{d}/lib" },
         *libs.map { |l| "-I#{JRUBY_DIR}/test/truffle/cexts/#{l}/lib" },
