@@ -17,6 +17,7 @@ require 'fileutils'
 require 'json'
 require 'timeout'
 require 'yaml'
+require 'open3'
 
 GRAALVM_VERSION = '0.12'
 
@@ -233,6 +234,7 @@ module ShellUtils
     continue_on_failure = options.delete :continue_on_failure
     use_exec = options.delete :use_exec
     timeout = options.delete :timeout
+    capture = options.delete :capture
 
     unless options.delete :no_print_cmd
       STDERR.puts "$ #{printable_cmd(args)}"
@@ -242,12 +244,19 @@ module ShellUtils
       result = exec(*args)
     elsif timeout
       result = system_timeout(timeout, *args)
+    elsif capture
+      out, err, status = Open3.capture3(*args)
+      result = status.exitstatus == 0
     else
       result = system(*args)
     end
 
     if result
-      true
+      if out && err
+        [out, err]
+      else
+        true
+      end
     elsif continue_on_failure
       false
     else
