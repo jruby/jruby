@@ -37,6 +37,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB.Entry;
+import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 
@@ -61,6 +62,7 @@ import org.jruby.runtime.Constants;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.encoding.EncodingCapable;
 import org.jruby.util.ByteList;
+import org.jruby.util.RegexpOptions;
 
 /**
  * Unmarshals objects from strings or streams in Ruby's marshal format.
@@ -222,8 +224,8 @@ public class UnmarshalStream extends InputStream {
             case 'f' :
                 rubyObj = RubyFloat.unmarshalFrom(this);
                 break;
-            case '/' :
-                rubyObj = RubyRegexp.unmarshalFrom(this);
+            case '/':
+                rubyObj = unmarshalRegexp(state);
                 break;
             case ':' :
                 rubyObj = RubySymbol.unmarshalFrom(this);
@@ -282,6 +284,73 @@ public class UnmarshalStream extends InputStream {
         return rubyObj;
     }
 
+    private IRubyObject unmarshalRegexp(MarshalState state) throws IOException {
+        IRubyObject rubyObj;ByteList byteList = unmarshalString();
+        byte opts = readSignedByte();
+        RegexpOptions reOpts = RegexpOptions.fromJoniOptions(opts);
+
+        if (state.isIvarWaiting()) {
+            RubyString tmpStr = RubyString.newString(runtime, byteList);
+            registerLinkTarget(tmpStr);
+            defaultVariablesUnmarshal(tmpStr);
+            byteList = tmpStr.getByteList();
+            state.setIvarWaiting(false);
+        }
+        if (byteList.getEncoding() == ASCIIEncoding.INSTANCE) {
+            /* 1.8 compatibility; remove escapes undefined in 1.8 */
+            byte[] ptrBytes = byteList.unsafeBytes();
+            int ptr = byteList.begin();
+            int dst = ptr;
+            int src = ptr;
+            int len = byteList.realSize();
+            long bs = 0;
+            for (; len-- > 0; ptrBytes[dst++] = ptrBytes[src++]) {
+                switch (ptrBytes[src]) {
+                    case '\\':
+                        bs++;
+                        break;
+                    case 'g':
+                    case 'h':
+                    case 'i':
+                    case 'j':
+                    case 'k':
+                    case 'l':
+                    case 'm':
+                    case 'o':
+                    case 'p':
+                    case 'q':
+                    case 'u':
+                    case 'y':
+                    case 'E':
+                    case 'F':
+                    case 'H':
+                    case 'I':
+                    case 'J':
+                    case 'K':
+                    case 'L':
+                    case 'N':
+                    case 'O':
+                    case 'P':
+                    case 'Q':
+                    case 'R':
+                    case 'S':
+                    case 'T':
+                    case 'U':
+                    case 'V':
+                    case 'X':
+                    case 'Y':
+                        if ((bs & 1) != 0) --dst;
+                    default:
+                        bs = 0;
+                        break;
+                }
+            }
+            byteList.setRealSize(dst - ptr);
+        }
+
+        rubyObj = RubyRegexp.newRegexp(runtime, byteList, reOpts);
+        return rubyObj;
+    }
 
     public Ruby getRuntime() {
         return runtime;
