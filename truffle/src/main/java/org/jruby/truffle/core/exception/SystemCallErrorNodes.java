@@ -22,17 +22,11 @@ public abstract class SystemCallErrorNodes {
 
     }
 
-    @Primitive(name = "errno_set")
+    @Primitive(name = "exception_set_errno")
     public abstract static class ErrnoSetNode extends PrimitiveArrayArgumentsNode {
 
         @Specialization
-        public Object setErrno(DynamicObject error, int errno) {
-            Layouts.SYSTEM_CALL_ERROR.setErrno(error, errno);
-            return errno;
-        }
-
-        @Specialization(guards = "isNil(errno)")
-        public Object setErrno(DynamicObject error, DynamicObject errno) {
+        public Object setErrno(DynamicObject error, Object errno) {
             Layouts.SYSTEM_CALL_ERROR.setErrno(error, errno);
             return errno;
         }

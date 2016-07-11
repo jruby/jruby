@@ -373,7 +373,7 @@ class SystemCallError < StandardError
   def initialize(*args)
     kls = self.class
     message, errno, location = args
-    Truffle.invoke_primitive :errno_set, self, errno
+    Truffle.invoke_primitive :exception_set_errno, self, errno
 
     msg = "unknown error"
     msg << " @ #{StringValue(location)}" if location
