@@ -206,6 +206,7 @@ public class CoreLibrary {
     private final DynamicObject systemCallErrorClass;
     private final DynamicObject systemExitClass;
     private final DynamicObject threadClass;
+    private final DynamicObjectFactory threadFactory;
     private final DynamicObject threadBacktraceClass;
     private final DynamicObject threadBacktraceLocationClass;
     private final DynamicObject timeClass;
@@ -564,7 +565,8 @@ public class CoreLibrary {
 
         threadClass = defineClass("Thread");
         threadClass.define("@abort_on_exception", false);
-        Layouts.CLASS.setInstanceFactoryUnsafe(threadClass, Layouts.THREAD.createThreadShape(threadClass, threadClass));
+        threadFactory = Layouts.THREAD.createThreadShape(threadClass, threadClass);
+        Layouts.CLASS.setInstanceFactoryUnsafe(threadClass, threadFactory);
 
         threadBacktraceClass = defineClass(threadClass, objectClass, "Backtrace");
         threadBacktraceLocationClass = defineClass(threadBacktraceClass, objectClass, "Location");
@@ -1304,6 +1306,10 @@ public class CoreLibrary {
 
     public DynamicObject getThreadClass() {
         return threadClass;
+    }
+
+    public DynamicObjectFactory getThreadFactory() {
+        return threadFactory;
     }
 
     public DynamicObject getTypeErrorClass() {
