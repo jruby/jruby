@@ -31,6 +31,9 @@ JDEBUG_TEST = "-Dmaven.surefire.debug=-Xdebug -Xrunjdwp:transport=dt_socket,serv
 JEXCEPTION = "-Xtruffle.exceptions.print_java=true"
 METRICS_REPS = 10
 
+LIBXML_HOME = ENV['LIBXML_HOME'] = ENV['LIBXML_HOME'] || '/usr'
+OPENSSL_HOME = ENV['OPENSSL_HOME'] = ENV['OPENSSL_HOME'] || '/usr'
+
 # wait for sub-processes to handle the interrupt
 trap(:INT) {}
 
@@ -705,34 +708,31 @@ module Commands
   private :test_compiler
 
   def test_cexts(*args)
-    libxml_home = ENV['LIBXML_HOME'] || '/usr'
-    openssl_home = ENV['OPENSSL_HOME'] || '/usr'
-
     # Test that we can compile and run some basic C code that uses libxml and openssl
 
-    clang '-S', '-emit-llvm', "-I#{libxml_home}/include/libxml2", 'test/truffle/cexts/xml/main.c', '-o', 'test/truffle/cexts/xml/main.ll'
-    out, _ = sulong_run("-l#{libxml_home}/lib/libxml2.dylib", 'test/truffle/cexts/xml/main.ll', {capture: true})
+    clang '-S', '-emit-llvm', "-I#{LIBXML_HOME}/include/libxml2", 'test/truffle/cexts/xml/main.c', '-o', 'test/truffle/cexts/xml/main.ll'
+    out, _ = sulong_run("-l#{LIBXML_HOME}/lib/libxml2.dylib", 'test/truffle/cexts/xml/main.ll', {capture: true})
     raise unless out == "7\n"
 
-    clang '-S', '-emit-llvm', "-I#{openssl_home}/include", 'test/truffle/cexts/openssl/main.c', '-o', 'test/truffle/cexts/openssl/main.ll'
-    out, _ = sulong_run("-l#{openssl_home}/lib/libssl.dylib", 'test/truffle/cexts/openssl/main.ll', {capture: true})
-    raise unless out == "7369676e616c2066756e6374696f6e20\n"
+    clang '-S', '-emit-llvm', "-I#{OPENSSL_HOME}/include", 'test/truffle/cexts/xopenssl/main.c', '-o', 'test/truffle/cexts/xopenssl/main.ll'
+    out, _ = sulong_run("-l#{OPENSSL_HOME}/lib/libssl.dylib", 'test/truffle/cexts/xopenssl/main.ll', {capture: true})
+    raise unless out == "5d41402abc4b2a76b9719d911017c592\n"
 
     # Test that we can run those same test when they're build as a .su and we load the code and libraries from that
 
-    sulong_link '-o', 'test/truffle/cexts/xml/main.su', '-l', "#{libxml_home}/lib/libxml2.dylib", 'test/truffle/cexts/xml/main.ll'
+    sulong_link '-o', 'test/truffle/cexts/xml/main.su', '-l', "#{LIBXML_HOME}/lib/libxml2.dylib", 'test/truffle/cexts/xml/main.ll'
     out, _ = sulong_run('test/truffle/cexts/xml/main.su', {capture: true})
     raise unless out == "7\n"
 
-    sulong_link '-o', 'test/truffle/cexts/openssl/main.su', '-l', "#{openssl_home}/lib/libssl.dylib", 'test/truffle/cexts/openssl/main.ll'
-    out, _ = sulong_run('test/truffle/cexts/openssl/main.su', {capture: true})
-    raise unless out == "7369676e616c2066756e6374696f6e20\n"
+    sulong_link '-o', 'test/truffle/cexts/xopenssl/main.su', '-l', "#{OPENSSL_HOME}/lib/libssl.dylib", 'test/truffle/cexts/xopenssl/main.ll'
+    out, _ = sulong_run('test/truffle/cexts/xopenssl/main.su', {capture: true})
+    raise unless out == "5d41402abc4b2a76b9719d911017c592\n"
 
     # Test that we can compile and run some very basic C extensions
 
     begin
       output_file = 'cext-output.txt'
-      ['minimum', 'method', 'module'].each do |gem_name|
+      ['minimum', 'method', 'module', 'xml', 'xopenssl'].each do |gem_name|
         dir = "#{JRUBY_DIR}/test/truffle/cexts/#{gem_name}"
         cextc dir
         name = File.basename(dir)
