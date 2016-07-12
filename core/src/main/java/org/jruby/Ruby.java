@@ -315,6 +315,7 @@ public final class Ruby implements Constantizable {
 
         if (reinitCore) {
             RubyGlobal.initARGV(this);
+            RubyGlobal.initSTDIO(this, globalVariables);
         }
     }
 

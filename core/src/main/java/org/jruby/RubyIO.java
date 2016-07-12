@@ -183,11 +183,6 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
         fptr = io.getOpenFileChecked();
 
-        // Use standard stdio filenos if we're using System.in et al.
-        if (f == System.in) {
-            fptr.fd().realFileno = 0;
-        }
-
         prepStdioEcflags(fptr, fmode);
         fptr.stdio_file = f;
 
@@ -201,13 +196,6 @@ public class RubyIO extends RubyObject implements IOEncodable {
         RubyIO io = prepIO(runtime, c, fmode | OpenFile.PREP | EncodingUtils.DEFAULT_TEXTMODE, klass, path);
 
         fptr = io.getOpenFileChecked();
-
-        // Use standard stdio filenos if we're using System.in et al.
-        if (f == System.out) {
-            fptr.fd().realFileno = 1;
-        } else if (f == System.err) {
-            fptr.fd().realFileno = 2;
-        }
 
         prepStdioEcflags(fptr, fmode);
         fptr.stdio_file = f;
