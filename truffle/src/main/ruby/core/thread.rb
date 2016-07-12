@@ -270,6 +270,13 @@ class Thread
     end
   end
 
+  def keys
+    Rubinius.synchronize(self) do
+      locals = Truffle.invoke_primitive :thread_get_fiber_locals, self
+      locals.instance_variables
+    end
+  end
+
   # Thread-local variables
 
   # TODO (pitr-ch 06-Apr-2016): thread local variables do not have to be synchronized,
