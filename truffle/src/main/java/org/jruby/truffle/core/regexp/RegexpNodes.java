@@ -20,6 +20,7 @@ package org.jruby.truffle.core.regexp;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.dsl.Fallback;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.Frame;
@@ -482,6 +483,10 @@ public abstract class RegexpNodes {
     @CoreMethod(names = { "quote", "escape" }, onSingleton = true, required = 1)
     public abstract static class QuoteNode extends CoreMethodArrayArgumentsNode {
 
+        @Child ToStrNode toStrNode;
+
+        abstract public DynamicObject executeQuote(VirtualFrame frame, Object raw);
+
         @TruffleBoundary
         @Specialization(guards = "isRubyString(raw)")
         public DynamicObject quoteString(DynamicObject raw) {
@@ -493,6 +498,16 @@ public abstract class RegexpNodes {
         @Specialization(guards = "isRubySymbol(raw)")
         public DynamicObject quoteSymbol(DynamicObject raw) {
             return quoteString(createString(StringOperations.encodeRope(Layouts.SYMBOL.getString(raw), UTF8Encoding.INSTANCE)));
+        }
+
+        @Fallback
+        public DynamicObject quote(VirtualFrame frame, Object raw) {
+            if (toStrNode == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                toStrNode = insert(ToStrNodeGen.create(getContext(), getSourceSection(), null));
+            }
+
+            return executeQuote(frame, toStrNode.executeToStr(frame, raw));
         }
 
     }
