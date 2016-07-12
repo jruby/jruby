@@ -617,7 +617,11 @@ module Commands
       lls.push ll
     end
 
-    sulong_link '-o', out, *lls
+    config_libs = config['libs'] || ''
+    config_libs = `echo #{config_libs}`.strip
+    config_libs = config_libs.split(' ')
+
+    sulong_link '-o', out, *((config_libs.map { |l| ['-l', l] }).flatten), *lls
   end
 
   def test(*args)
