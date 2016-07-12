@@ -210,30 +210,30 @@ public class CoreExceptions {
 
     @TruffleBoundary
     public DynamicObject mathDomainError(String method, Node currentNode) {
-        return ExceptionOperations.createRubyException(
+        return ExceptionOperations.createSystemCallError(
                 context.getCoreLibrary().getErrnoClass(Errno.EDOM),
                 StringOperations.createString(context, StringOperations.encodeRope(String.format("Numerical argument is out of domain - \"%s\"", method), UTF8Encoding.INSTANCE)),
-                context.getCallStack().getBacktrace(currentNode));
+                context.getCallStack().getBacktrace(currentNode), Errno.EDOM.intValue());
     }
 
     @TruffleBoundary
     public DynamicObject errnoError(int errno, Node currentNode) {
         Errno errnoObj = Errno.valueOf(errno);
         if (errnoObj == null) {
-            return systemCallError(String.format("Unknown Error (%s)", errno), currentNode);
+            return systemCallError(String.format("Unknown Error (%s)", errno), errno, currentNode);
         }
 
-        return ExceptionOperations.createRubyException(
+        return ExceptionOperations.createSystemCallError(
                 context.getCoreLibrary().getErrnoClass(errnoObj),
                 StringOperations.createString(context, StringOperations.encodeRope(errnoObj.description(), UTF8Encoding.INSTANCE)),
-                context.getCallStack().getBacktrace(currentNode));
+                context.getCallStack().getBacktrace(currentNode), errno);
     }
 
     @TruffleBoundary
     public DynamicObject errnoError(int errno, String message, Node currentNode) {
         Errno errnoObj = Errno.valueOf(errno);
         if (errnoObj == null) {
-            return systemCallError(String.format("Unknown Error (%s) - %s", errno, message), currentNode);
+            return systemCallError(String.format("Unknown Error (%s) - %s", errno, message), errno, currentNode);
         }
 
         DynamicObject errnoClass = context.getCoreLibrary().getErrnoClass(errnoObj);
@@ -242,12 +242,12 @@ public class CoreExceptions {
             message = "Unknown error: " + errno;
         }
 
-        final DynamicObject errorMessage = StringOperations.createString(context, StringOperations.encodeRope(String.format("%s - %s", errnoObj.description(), message), UTF8Encoding.INSTANCE));
+        final DynamicObject errorMessage = StringOperations.createString(context, StringOperations.encodeRope(String.format("%s%s", errnoObj.description(), message), UTF8Encoding.INSTANCE));
 
-        return ExceptionOperations.createRubyException(
+        return ExceptionOperations.createSystemCallError(
             errnoClass,
             errorMessage,
-            context.getCallStack().getBacktrace(currentNode));
+            context.getCallStack().getBacktrace(currentNode), errno);
     }
 
     // IndexError
@@ -759,29 +759,29 @@ public class CoreExceptions {
     // SystemCallError
 
     @TruffleBoundary
-    public DynamicObject systemCallError(String message, Node currentNode) {
-        return ExceptionOperations.createRubyException(
+    public DynamicObject systemCallError(String message, int errno, Node currentNode) {
+        return ExceptionOperations.createSystemCallError(
                 context.getCoreLibrary().getSystemCallErrorClass(),
                 StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)),
-                context.getCallStack().getBacktrace(currentNode));
+                context.getCallStack().getBacktrace(currentNode), errno);
     }
 
     // IO::EAGAINWaitReadable, IO::EAGAINWaitWritable
 
     @TruffleBoundary
     public DynamicObject eAGAINWaitReadable(Node currentNode) {
-        return ExceptionOperations.createRubyException(
+        return ExceptionOperations.createSystemCallError(
                 context.getCoreLibrary().getEagainWaitReadable(),
                 coreStrings().RESOURCE_TEMP_UNAVAIL.createInstance(),
-                context.getCallStack().getBacktrace(currentNode));
+                context.getCallStack().getBacktrace(currentNode), Errno.EAGAIN.intValue());
     }
 
     @TruffleBoundary
     public DynamicObject eAGAINWaitWritable(Node currentNode) {
-        return ExceptionOperations.createRubyException(
+        return ExceptionOperations.createSystemCallError(
                 context.getCoreLibrary().getEagainWaitWritable(),
                 coreStrings().RESOURCE_TEMP_UNAVAIL.createInstance(),
-                context.getCallStack().getBacktrace(currentNode));
+                context.getCallStack().getBacktrace(currentNode), Errno.EAGAIN.intValue());
     }
 
     // SystemExit

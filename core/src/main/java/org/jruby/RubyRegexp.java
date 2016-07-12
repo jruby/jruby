@@ -1725,6 +1725,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return check ? str.convertToString() : str.checkStringType();
     }
 
+    @Deprecated
     public static RubyRegexp unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
         RubyRegexp result = newRegexp(input.getRuntime(), input.unmarshalString(), RegexpOptions.fromJoniOptions(input.readSignedByte()));
         input.registerLinkTarget(result);

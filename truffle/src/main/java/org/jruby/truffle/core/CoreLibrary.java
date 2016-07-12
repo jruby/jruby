@@ -44,6 +44,7 @@ import org.jruby.truffle.core.dir.DirNodesFactory;
 import org.jruby.truffle.core.encoding.EncodingConverterNodesFactory;
 import org.jruby.truffle.core.encoding.EncodingNodesFactory;
 import org.jruby.truffle.core.exception.ExceptionNodesFactory;
+import org.jruby.truffle.core.exception.SystemCallErrorNodesFactory;
 import org.jruby.truffle.core.fiber.FiberNodesFactory;
 import org.jruby.truffle.core.hash.HashNodesFactory;
 import org.jruby.truffle.core.kernel.KernelNodesFactory;
@@ -470,6 +471,7 @@ public class CoreLibrary {
 
         // StandardError > SystemCallError
         systemCallErrorClass = defineClass(standardErrorClass, "SystemCallError");
+        Layouts.CLASS.setInstanceFactoryUnsafe(systemCallErrorClass, Layouts.SYSTEM_CALL_ERROR.createSystemCallErrorShape(systemCallErrorClass, systemCallErrorClass));
 
         errnoModule = defineModule("Errno");
 
@@ -747,6 +749,7 @@ public class CoreLibrary {
             primitiveManager.addPrimitiveNodes(IOPrimitiveNodesFactory.getFactories());
             primitiveManager.addPrimitiveNodes(IOBufferPrimitiveNodesFactory.getFactories());
             primitiveManager.addPrimitiveNodes(ExceptionNodesFactory.getFactories());
+            primitiveManager.addPrimitiveNodes(SystemCallErrorNodesFactory.getFactories());
             return null;
         }, () -> {
             primitiveManager.addPrimitiveNodes(ThreadNodesFactory.getFactories());
@@ -775,6 +778,7 @@ public class CoreLibrary {
             coreMethodNodeManager.addCoreMethodNodes(ClassNodesFactory.getFactories());
             coreMethodNodeManager.addCoreMethodNodes(ConditionVariableNodesFactory.getFactories());
             coreMethodNodeManager.addCoreMethodNodes(ExceptionNodesFactory.getFactories());
+            coreMethodNodeManager.addCoreMethodNodes(SystemCallErrorNodesFactory.getFactories());
             coreMethodNodeManager.addCoreMethodNodes(FalseClassNodesFactory.getFactories());
             return null;
         }, () -> {

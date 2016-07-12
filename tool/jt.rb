@@ -17,6 +17,7 @@ require 'fileutils'
 require 'json'
 require 'timeout'
 require 'yaml'
+require 'open3'
 
 GRAALVM_VERSION = '0.12'
 
@@ -29,6 +30,9 @@ JDEBUG = "-J-agentlib:jdwp=transport=dt_socket,server=y,address=#{JDEBUG_PORT},s
 JDEBUG_TEST = "-Dmaven.surefire.debug=-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=#{JDEBUG_PORT} -Xnoagent -Djava.compiler=NONE"
 JEXCEPTION = "-Xtruffle.exceptions.print_java=true"
 METRICS_REPS = 10
+
+LIBXML_HOME = ENV['LIBXML_HOME'] = ENV['LIBXML_HOME'] || '/usr'
+OPENSSL_HOME = ENV['OPENSSL_HOME'] = ENV['OPENSSL_HOME'] || '/usr'
 
 # wait for sub-processes to handle the interrupt
 trap(:INT) {}
@@ -233,6 +237,7 @@ module ShellUtils
     continue_on_failure = options.delete :continue_on_failure
     use_exec = options.delete :use_exec
     timeout = options.delete :timeout
+    capture = options.delete :capture
 
     unless options.delete :no_print_cmd
       STDERR.puts "$ #{printable_cmd(args)}"
@@ -242,12 +247,19 @@ module ShellUtils
       result = exec(*args)
     elsif timeout
       result = system_timeout(timeout, *args)
+    elsif capture
+      out, err, status = Open3.capture3(*args)
+      result = status.exitstatus == 0
     else
       result = system(*args)
     end
 
     if result
-      true
+      if out && err
+        [out, err]
+      else
+        true
+      end
     elsif continue_on_failure
       false
     else
@@ -315,6 +327,30 @@ module ShellUtils
     command.push *['--java-home', ENV['JVMCI_JAVA_HOME']] if ENV['JVMCI_JAVA_HOME']
     command.push *args
     sh *command
+  end
+
+  def clang(*args)
+    if ENV['USE_SYSTEM_CLANG']
+      sh 'clang', *args
+    else
+      mx SULONG_DIR, 'su-clang', *args
+    end
+  end
+
+  def llvm_opt(*args)
+    if ENV['USE_SYSTEM_CLANG']
+      sh 'opt', *args
+    else
+      mx SULONG_DIR, 'su-opt', *args
+    end
+  end
+
+  def sulong_run(*args)
+    mx SULONG_DIR, 'su-run', *args
+  end
+
+  def sulong_link(*args)
+    mx SULONG_DIR, 'su-link', *args
   end
 
   def mspec(command, *args)
@@ -409,7 +445,8 @@ module Commands
     puts '  USE_SYSTEM_CLANG                             Use the system clang rather than Sulong\'s when compiling C extensions'
     puts '  GRAAL_JS_JAR                                 The location of trufflejs.jar'
     puts '  SL_JAR                                       The location of truffle-sl.jar'
-    puts '  OPENSSL_HOME                                The location of OpenSSL (the directory containing include etc)'
+    puts '  OPENSSL_HOME                                 The location of OpenSSL (the directory containing include etc)'
+    puts '  LIBXML_HOME                                 The location of libxml2 (the directory containing include etc)'
   end
 
   def checkout(branch)
@@ -431,9 +468,11 @@ module Commands
       mvn env, *maven_options, '-pl', 'truffle', 'package'
     when 'cexts'
       cextc "#{JRUBY_DIR}/truffle/src/main/c/cext"
+
+      openssl_home = ENV['OPENSSL_HOME'] || '/usr'
       
       #cextc "#{JRUBY_DIR}/truffle/src/main/c/openssl",
-      #  "-I#{ENV['OPENSSL_HOME']}/include",
+      #  "-I#{openssl_home}/include",
       #  '-DRUBY_EXTCONF_H="extconf.h"',
       #  '-Werror=implicit-function-declaration'
     when nil
@@ -574,21 +613,17 @@ module Commands
     src.each do |src|
       ll = File.join(File.dirname(out), File.basename(src, '.*') + '.ll')
       
-      clang_args = ["-I#{SULONG_DIR}/include", '-Ilib/ruby/truffle/cext', '-S', '-emit-llvm', *config_cflags, *clang_opts, src, '-o', ll]
-      opt_args = ['-S', '-mem2reg', ll, '-o', ll]
-      
-      if ENV['USE_SYSTEM_CLANG']
-        sh 'clang', *clang_args
-        sh 'opt', *opt_args
-      else
-        mx SULONG_DIR, 'su-clang', *clang_args
-        mx SULONG_DIR, 'su-opt', *opt_args
-      end
-      
+      clang "-I#{SULONG_DIR}/include", '-Ilib/ruby/truffle/cext', '-S', '-emit-llvm', *config_cflags, *clang_opts, src, '-o', ll
+      llvm_opt '-S', '-mem2reg', ll, '-o', ll
+
       lls.push ll
     end
 
-    mx SULONG_DIR, 'su-link', '-o', out, *lls
+    config_libs = config['libs'] || ''
+    config_libs = `echo #{config_libs}`.strip
+    config_libs = config_libs.split(' ')
+
+    sulong_link '-o', out, *((config_libs.map { |l| ['-l', l] }).flatten), *lls
   end
 
   def test(*args)
@@ -672,9 +707,31 @@ module Commands
   private :test_compiler
 
   def test_cexts(*args)
+    # Test that we can compile and run some basic C code that uses libxml and openssl
+
+    clang '-S', '-emit-llvm', "-I#{LIBXML_HOME}/include/libxml2", 'test/truffle/cexts/xml/main.c', '-o', 'test/truffle/cexts/xml/main.ll'
+    out, _ = sulong_run("-l#{LIBXML_HOME}/lib/libxml2.dylib", 'test/truffle/cexts/xml/main.ll', {capture: true})
+    raise unless out == "7\n"
+
+    clang '-S', '-emit-llvm', "-I#{OPENSSL_HOME}/include", 'test/truffle/cexts/xopenssl/main.c', '-o', 'test/truffle/cexts/xopenssl/main.ll'
+    out, _ = sulong_run("-l#{OPENSSL_HOME}/lib/libssl.dylib", 'test/truffle/cexts/xopenssl/main.ll', {capture: true})
+    raise unless out == "5d41402abc4b2a76b9719d911017c592\n"
+
+    # Test that we can run those same test when they're build as a .su and we load the code and libraries from that
+
+    sulong_link '-o', 'test/truffle/cexts/xml/main.su', '-l', "#{LIBXML_HOME}/lib/libxml2.dylib", 'test/truffle/cexts/xml/main.ll'
+    out, _ = sulong_run('test/truffle/cexts/xml/main.su', {capture: true})
+    raise unless out == "7\n"
+
+    sulong_link '-o', 'test/truffle/cexts/xopenssl/main.su', '-l', "#{OPENSSL_HOME}/lib/libssl.dylib", 'test/truffle/cexts/xopenssl/main.ll'
+    out, _ = sulong_run('test/truffle/cexts/xopenssl/main.su', {capture: true})
+    raise unless out == "5d41402abc4b2a76b9719d911017c592\n"
+
+    # Test that we can compile and run some very basic C extensions
+
     begin
       output_file = 'cext-output.txt'
-      ['minimum', 'method', 'module'].each do |gem_name|
+      ['minimum', 'method', 'module', 'xml', 'xopenssl'].each do |gem_name|
         dir = "#{JRUBY_DIR}/test/truffle/cexts/#{gem_name}"
         cextc dir
         name = File.basename(dir)
@@ -686,7 +743,9 @@ module Commands
     ensure
       File.delete output_file rescue nil
     end
-    
+
+    # Test that we can compile and run some real C extensions
+
     [
         ['oily_png', ['chunky_png-1.3.6', 'oily_png-1.2.0'], ['oily_png']],
         ['psd_native', ['chunky_png-1.3.6', 'oily_png-1.2.0', 'bindata-2.3.1', 'hashie-3.4.4', 'psd-enginedata-1.1.1', 'psd-2.1.2', 'psd_native-1.1.3'], ['oily_png', 'psd_native']],
@@ -695,7 +754,6 @@ module Commands
       next if gem_name == 'nokogiri' # nokogiri totally excluded
       config = "#{JRUBY_DIR}/test/truffle/cexts/#{gem_name}"
       cextc config, '-Werror=implicit-function-declaration'
-      arguments = []
       run '--graal',
         *dependencies.map { |d| "-I#{ENV['GEM_HOME']}/gems/#{d}/lib" },
         *libs.map { |l| "-I#{JRUBY_DIR}/test/truffle/cexts/#{l}/lib" },

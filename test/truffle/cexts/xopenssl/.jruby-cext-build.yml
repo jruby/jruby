@@ -1,4 +1,4 @@
-src: ./*.c
+src: ext/xopenssl/*.c
 cflags: -I$OPENSSL_HOME/include
 libs: $OPENSSL_HOME/lib/libssl.dylib
-out: ../../../../../lib/ruby/truffle/openssl/openssl.su
+out: lib/xopenssl/xopenssl.su
