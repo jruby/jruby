@@ -346,6 +346,10 @@ module ShellUtils
     mx SULONG_DIR, 'su-run', *args
   end
 
+  def sulong_link(*args)
+    mx SULONG_DIR, 'su-link', *args
+  end
+
   def mspec(command, *args)
     env_vars = {}
     if command.is_a?(Hash)
@@ -613,7 +617,7 @@ module Commands
       lls.push ll
     end
 
-    mx SULONG_DIR, 'su-link', '-o', out, *lls
+    sulong_link '-o', out, *lls
   end
 
   def test(*args)
@@ -708,6 +712,16 @@ module Commands
 
     clang '-S', '-emit-llvm', "-I#{openssl_home}/include", 'test/truffle/cexts/openssl/main.c', '-o', 'test/truffle/cexts/openssl/main.ll'
     out, _ = sulong_run("-l#{openssl_home}/lib/libssl.dylib", 'test/truffle/cexts/openssl/main.ll', {capture: true})
+    raise unless out == "7369676e616c2066756e6374696f6e20\n"
+
+    # Test that we can run those same test when they're build as a .su and we load the code and libraries from that
+
+    sulong_link '-o', 'test/truffle/cexts/xml/main.su', '-l', "#{libxml_home}/lib/libxml2.dylib", 'test/truffle/cexts/xml/main.ll'
+    out, _ = sulong_run('test/truffle/cexts/xml/main.su', {capture: true})
+    raise unless out == "7\n"
+
+    sulong_link '-o', 'test/truffle/cexts/openssl/main.su', '-l', "#{openssl_home}/lib/libssl.dylib", 'test/truffle/cexts/openssl/main.ll'
+    out, _ = sulong_run('test/truffle/cexts/openssl/main.su', {capture: true})
     raise unless out == "7369676e616c2066756e6374696f6e20\n"
 
     # Test that we can compile and run some very basic C extensions
