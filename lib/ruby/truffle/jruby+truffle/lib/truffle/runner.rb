@@ -200,7 +200,7 @@ module Truffle
       apply_pattern = -> (pattern, old, options) do
         Dir.glob(pattern) do |file|
           if options[:exclude_pattern].any? { |p| /#{p}/ =~ file }
-            log "skipped: #{file}" if verbose?
+            puts "skipped: #{file}"
             next
           end
           options[:require] << File.expand_path(file)
