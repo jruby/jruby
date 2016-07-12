@@ -154,7 +154,7 @@ module Utilities
     end
     raise "Can't find the #{name} repo - clone it into the repository directory or its parent"
   end
-  
+
   def self.find_benchmark(benchmark)
     if File.exist?(benchmark)
       benchmark
@@ -168,7 +168,7 @@ module Utilities
       found = Dir.glob("#{dir}/#{name}*").first
       return File.expand_path(found) if found
     end
-    
+
     [JRUBY_DIR, "#{JRUBY_DIR}/.."].each do |dir|
       found = Dir.glob("#{dir}/#{name}").first
       return File.expand_path(found) if found
@@ -191,7 +191,7 @@ module Utilities
   def self.jruby_version
     File.read("#{JRUBY_DIR}/VERSION").strip
   end
-  
+
   def self.human_size(bytes)
     if bytes < 1024
       "#{bytes} B"
@@ -225,7 +225,7 @@ module ShellUtils
     rescue SystemCallError
       return nil
     end
-    
+
     begin
       Timeout.timeout timeout do
         Process.waitpid pid
@@ -320,10 +320,10 @@ module ShellUtils
     else
       options = []
     end
-      
+
     sh *options, './mvnw', *(['-q'] + args)
   end
-  
+
   def maven_options(*options)
     maven_options = []
     offline = options.delete('--offline')
@@ -333,7 +333,7 @@ module ShellUtils
     end
     return [maven_options, options]
   end
-  
+
   def mx(dir, *args)
     command = ['mx', '-p', dir]
     command.push *['--java-home', ENV['JVMCI_JAVA_HOME']] if ENV['JVMCI_JAVA_HOME']
@@ -482,7 +482,7 @@ module Commands
       cextc "#{JRUBY_DIR}/truffle/src/main/c/cext"
 
       openssl_home = ENV['OPENSSL_HOME'] || '/usr'
-      
+
       #cextc "#{JRUBY_DIR}/truffle/src/main/c/openssl",
       #  "-I#{openssl_home}/include",
       #  '-DRUBY_EXTCONF_H="extconf.h"',
@@ -510,13 +510,13 @@ module Commands
 
   def run(*args)
     env_vars = args.first.is_a?(Hash) ? args.shift : {}
-    
+
     jruby_args = [
       '-X+T',
       "-Xtruffle.core.load_path=#{JRUBY_DIR}/truffle/src/main/ruby",
       '-Xtruffle.graal.warn_unless=false'
     ]
-    
+
     if ENV['JRUBY_OPTS'] && ENV['JRUBY_OPTS'].include?('-Xclassic')
       jruby_args.delete '-X+T'
     end
@@ -571,11 +571,11 @@ module Commands
         jruby_args += %w[-J-G:Dump=TrufflePartialEscape]
       end
     end
-    
+
     if args.delete('--no-print-cmd')
       args << { no_print_cmd: true }
     end
-    
+
     if args.delete('--exec')
       args << { use_exec: true }
     end
@@ -595,7 +595,7 @@ module Commands
   def command_p(*args)
     e 'p begin', *args, 'end'
   end
-  
+
   def cextc(cext_dir, *clang_opts)
     config_file = File.join(cext_dir, '.jruby-cext-build.yml')
 
@@ -604,7 +604,7 @@ module Commands
     end
 
     config = YAML.load_file(config_file)
-    
+
     config_src = config['src']
 
     if config_src.start_with?('$GEM_HOME/')
@@ -613,18 +613,18 @@ module Commands
     else
       src = Dir[File.join(cext_dir, config_src)]
     end
-    
+
     config_cflags = config['cflags'] || ''
     config_cflags = `echo #{config_cflags}`.strip
     config_cflags = config_cflags.split(' ')
 
     out = File.expand_path(config['out'], cext_dir)
-    
+
     lls = []
 
     src.each do |src|
       ll = File.join(File.dirname(out), File.basename(src, '.*') + '.ll')
-      
+
       clang "-I#{SULONG_HOME}/include", '-Ilib/ruby/truffle/cext', '-S', '-emit-llvm', *config_cflags, *clang_opts, src, '-o', ll
       llvm_opt '-S', '-mem2reg', ll, '-o', ll
 
@@ -707,7 +707,7 @@ module Commands
     jruby_opts << '-Xtruffle.exceptions.print_java=true'
 
     no_java_cmd = args.delete('--no-java-cmd')
-    
+
     unless no_java_cmd
       javacmd, javacmd_options = Utilities.find_graal_javacmd_and_options
       jruby_opts.push *javacmd_options
@@ -1126,7 +1126,7 @@ module Commands
         a
       end
     end
-    
+
     run_args = []
     run_args.push '--graal' unless args.delete('--no-graal') || args.include?('list')
     run_args.push '-J-G:+TruffleCompilationExceptionsAreFatal'
@@ -1136,7 +1136,7 @@ module Commands
     run_args.push *args
     run *run_args
   end
-  
+
   def where(*args)
     case args.shift
     when 'repos'
