@@ -238,17 +238,25 @@ server-benchmarks: {
   ] ${post-process-and-upload-results}
 }
 
-test-gems: {
-  environment: {
-    GEM_HOME: jruby-truffle-gem-test-pack/gems
-  }
-  
+jruby-truffle-gem-test-pack: {
   setup: ${common-setup} [
-    [mx, sclone, --kind, git, "https://github.com/jruby/jruby-truffle-gem-test-pack.git", jruby-truffle-gem-test-pack]
+    [mx, sclone, --kind, git, "https://github.com/jruby/jruby-truffle-gem-test-pack.git", ../jruby-truffle-gem-test-pack]
   ]
-  
+}
+
+test-gems: ${jruby-truffle-gem-test-pack} {
+  environment: {
+    GEM_HOME: ../jruby-truffle-gem-test-pack/gems
+  }
+
   run: [
     ${jt} [test, gems]
+  ]
+}
+
+test-ecosystem: ${jruby-truffle-gem-test-pack} {
+  run: [
+    ${jt} [test, ecosystem, ecosystem, --offline]
   ]
 }
 
@@ -349,6 +357,7 @@ builds: [
   {name: ruby-test-integration} ${common} ${gate-caps} {run: [${jt} [test, integration]]},
   {name: ruby-test-cexts} ${common} ${gate-caps} ${test-cexts},
   {name: ruby-test-gems} ${common} ${gate-caps} ${test-gems},
+  {name: ruby-test-ecosystem} ${common} ${gate-caps} ${test-ecosystem},
   {name: ruby-test-tarball} ${common} ${gate-caps} {run: [${jt} [tarball]]},
 
   {name: ruby-test-compiler-graal-core} ${common} ${graal-core} ${gate-caps} {run: [${jt} [test, compiler]]},

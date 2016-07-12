@@ -420,7 +420,8 @@ module Commands
     puts 'jt test integration                            runs all integration tests'
     puts 'jt test integration TESTS                      runs the given integration tests'
     puts 'jt test gems                                   tests using gems'
-    puts 'jt test ecosystem                              tests using the wider ecosystem such as bundler, Rails, etc'
+    puts 'jt test ecosystem [--offline]                  tests using the wider ecosystem such as bundler, Rails, etc'
+    puts '                                                   (when --offline it will not use rubygems.org)'
     puts 'jt test cexts                                  run C extension tests'
     puts '                                                   (implies --graal, where Graal needs to include Sulong, set SULONG_HOME to a built checkout of Sulong, and set GEM_HOME)'
     puts 'jt test report :language                       build a report on language specs'
@@ -853,6 +854,7 @@ module Commands
     jruby_opts = []
 
     jruby_opts << '-Xtruffle.graal.warn_unless=false'
+    offline = args.delete('--offline')
 
     env_vars["JRUBY_OPTS"] = jruby_opts.join(' ')
 
@@ -862,7 +864,7 @@ module Commands
     test_names             = single_test ? '{' + args.join(',') + '}' : '*'
 
     Dir["#{tests_path}/#{test_names}.sh"].each do |test_script|
-      sh env_vars, test_script
+      sh *[env_vars, test_script, offline].compact
     end
   end
   private :test_ecosystem
