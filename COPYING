@@ -21,22 +21,24 @@ The Truffle component also distributes:
   
   Antlr4 runtime (Copyright (c) 2015 Terence Parr, Sam Harwell, BSD licence)
   
-  truffle-api and truffle-debug (Copyright Oracle and/or its affiliates,
-    GPL v2, with classpath exception)
+  truffle-api and truffle-debug (Copyright Oracle and/or its affiliates, GPL
+  v2, with classpath exception)
 
-  The Rubinius API implementation in truffle/src/main/ruby/core/rubinius/api
-  is copyright (c) 2011, Evan Phoenix, and released under the 3-clause BSD license.
-
-  The Rubinius core library implementation in truffle/src/main/ruby/core/rubinius
-  is copyright (c) 2007-2015, Evan Phoenix and contributors, and released under
+  Parts of the core library implementation in truffle/src/main/ruby/core
+  are copyright (c) 2011, Evan Phoenix, and released under the 3-clause BSD
+  license.
+  
+  Parts of the core library implementation in truffle/src/main/ruby/core 
+  are copyright (c) 2007-2015, Evan Phoenix and contributors, and released under
   the 3-clause BSD license.
 
   Some parts of the Truffle Java code is derived from Rubinius C++ code which is
   copyright (c) 2007-2015, Evan Phoenix and contributors, and released under the
   3-clause BSD license.
 
-  Some parts of the RubySL implementations of the stdlib in lib/ruby/truffle/rubysl
-  are copyright (c) 2013 Brian Shirai and are licensed under the 3-clause BSD license.
+  Some parts of the RubySL implementations of the stdlib in
+  lib/ruby/truffle/rubysl are copyright (c) 2013 Brian Shirai and are licensed
+  under the 3-clause BSD license.
 
   pr-zlib is copyright Park Heesob and Daniel Berger. "This library is covered
   under the same license as zlib itself. For the text of the zlib license,
