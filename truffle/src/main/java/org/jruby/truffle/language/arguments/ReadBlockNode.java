@@ -9,11 +9,9 @@
  */
 package org.jruby.truffle.language.arguments;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
-import org.jruby.truffle.Layouts;
 import org.jruby.truffle.language.RubyNode;
 
 public class ReadBlockNode extends RubyNode {
@@ -33,11 +31,6 @@ public class ReadBlockNode extends RubyNode {
         if (blockProfile.profile(block == null)) {
             return valueIfAbsent;
         } else {
-            if (!Layouts.PROC.isProc(block)) {
-                CompilerDirectives.transferToInterpreter();
-                throw new UnsupportedOperationException("Block isn't an instance of Proc");
-            }
-
             return block;
         }
     }
