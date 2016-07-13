@@ -91,6 +91,7 @@ graal-enterprise: {
 }
 
 graal-enterprise-no-om: {
+  downloads: ${graal-enterprise.downloads}
   setup: ${graal-enterprise.setup}
   
   environment: {
