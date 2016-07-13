@@ -117,6 +117,15 @@ stubs = {
       end
     RUBY
 
+    kernel_gem: dedent(<<-RUBY),
+      module Kernel
+        def gem(gem_name, *requirements)
+          puts format 'ignoring %s gem activation, already added to $LOAD_PATH by bundler/setup.rb',
+                      gem_name
+        end
+      end
+    RUBY
+
 }.reduce({}) do |h, (k, v)|
   file_name = "stub-#{k}"
   h.update k => { setup: { file: { "#{file_name}.rb" => v } },
@@ -156,6 +165,7 @@ end
 
 rails_common =
     deep_merge replacements.fetch(:bundler),
+               stubs.fetch(:kernel_gem),
                setup: { without: %w(db job) },
                run:   { environment: { 'N' => 1 },
                         require:     %w(rubygems date bigdecimal pathname openssl-stubs) }
