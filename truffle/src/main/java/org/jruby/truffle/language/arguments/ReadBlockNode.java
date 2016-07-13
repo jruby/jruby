@@ -21,6 +21,7 @@ public class ReadBlockNode extends RubyNode {
     private final Object valueIfAbsent;
 
     private final ConditionProfile nullProfile = ConditionProfile.createBinaryProfile();
+    private final ConditionProfile unusualShapeProfile = ConditionProfile.createBinaryProfile();
 
     public ReadBlockNode(Object valueIfAbsent) {
         this.valueIfAbsent = valueIfAbsent;
@@ -33,9 +34,11 @@ public class ReadBlockNode extends RubyNode {
         if (nullProfile.profile(block == null)) {
             return valueIfAbsent;
         } else {
-            if (!Layouts.PROC.isProc(block)) {
-                CompilerDirectives.transferToInterpreter();
-                throw new UnsupportedOperationException("Method passed something that isn't a Proc as a block");
+            if (unusualShapeProfile.profile(block.getShape() != getContext().getCoreLibrary().getProcFactory().getShape())) {
+                if (!Layouts.PROC.isProc(block)) {
+                    CompilerDirectives.transferToInterpreter();
+                    throw new UnsupportedOperationException("Method passed something that isn't a Proc as a block");
+                }
             }
 
             return block;
