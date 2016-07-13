@@ -377,32 +377,61 @@ class AllBenchmarksBenchmarkSuite(RubyBenchmarkSuite):
         out = mx.OutputCapture()
         
         if jt(arguments, out=out, nonZeroIsFatal=False) == 0:
-            data = [float(s) for s in out.data.split('\n')[1:-1]]
-            elapsed = [d for n, d in enumerate(data) if n % 2 == 0]
-            samples = [d for n, d in enumerate(data) if n % 2 == 1]
+            lines = out.data.split('\n')[1:-1]
             
-            if len(samples) > 1:
-                warmed_up_samples = [sample for n, sample in enumerate(samples) if n / float(len(samples)) >= 0.5]
-            else:
-                warmed_up_samples = samples
+            if lines[-1] == 'optimised away':
+                data = [float(s) for s in lines[0:-2]]
+                elapsed = [d for n, d in enumerate(data) if n % 2 == 0]
+                samples = [d for n, d in enumerate(data) if n % 2 == 1]
                 
-            warmed_up_mean = sum(warmed_up_samples) / float(len(warmed_up_samples))
-            
-            return [{
-                'benchmark': benchmark,
-                'metric.name': 'throughput',
-                'metric.value': sample,
-                'metric.unit': 'op/s',
-                'metric.better': 'higher',
-                'metric.iteration': n,
-                'extra.metric.warmedup': 'true' if n / float(len(samples)) >= 0.5 else 'false',
-                'extra.metric.elapsed-num': e,
-                'extra.metric.human': '%d/%d %f op/s' % (n, len(samples), warmed_up_mean)
-            } for n, (e, sample) in enumerate(zip(elapsed, samples))]
+                return [{
+                    'benchmark': benchmark,
+                    'metric.name': 'throughput',
+                    'metric.value': sample,
+                    'metric.unit': 'op/s',
+                    'metric.better': 'higher',
+                    'metric.iteration': n,
+                    'extra.metric.warmedup': 'false',
+                    'extra.metric.elapsed-num': e,
+                    'extra.metric.human': 'optimised away'
+                } for n, (e, sample) in enumerate(zip(elapsed, samples))] + [{
+                    'benchmark': benchmark,
+                    'metric.name': 'throughput',
+                    'metric.value': 2147483647, # arbitrary high value (--simple won't run more than this many ips)
+                    'metric.unit': 'op/s',
+                    'metric.better': 'higher',
+                    'metric.iteration': len(samples),
+                    'extra.metric.warmedup': 'true',
+                    'extra.metric.elapsed-num': elapsed[-1] + 2.0, # just put the data point beyond the last one a bit
+                    'extra.metric.human': 'optimised away',
+                    'extra.error': 'optimised away'
+                }]
+            else:
+                data = [float(s) for s in lines]
+                elapsed = [d for n, d in enumerate(data) if n % 2 == 0]
+                samples = [d for n, d in enumerate(data) if n % 2 == 1]
+                
+                if len(samples) > 1:
+                    warmed_up_samples = [sample for n, sample in enumerate(samples) if n / float(len(samples)) >= 0.5]
+                else:
+                    warmed_up_samples = samples
+                    
+                warmed_up_mean = sum(warmed_up_samples) / float(len(warmed_up_samples))
+                
+                return [{
+                    'benchmark': benchmark,
+                    'metric.name': 'throughput',
+                    'metric.value': sample,
+                    'metric.unit': 'op/s',
+                    'metric.better': 'higher',
+                    'metric.iteration': n,
+                    'extra.metric.warmedup': 'true' if n / float(len(samples)) >= 0.5 else 'false',
+                    'extra.metric.elapsed-num': e,
+                    'extra.metric.human': '%d/%d %f op/s' % (n, len(samples), warmed_up_mean)
+                } for n, (e, sample) in enumerate(zip(elapsed, samples))]
         else:
             sys.stderr.write(out.data)
             
-            # TODO CS 24-Jun-16, how can we fail the wider suite?
             return [{
                 'benchmark': benchmark,
                 'metric.name': 'throughput',
