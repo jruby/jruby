@@ -2706,10 +2706,10 @@ public class IRBuilder {
 
     private InterpreterContext buildIterInner(IterNode iterNode) {
         prepareImplicitState();                                    // recv_self, add frame block, etc)
+        addCurrentScopeAndModule();                                // %current_scope/%current_module
 
         if (iterNode.getVarNode().getNodeType() != null) receiveBlockArgs(iterNode);
 
-        addCurrentScopeAndModule();                                // %current_scope/%current_module
         addInstr(new LabelInstr(((IRClosure) scope).startLabel));  // start label -- used by redo!
 
         // Build closure body and return the result of the closure
