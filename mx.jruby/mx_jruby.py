@@ -397,7 +397,7 @@ class AllBenchmarksBenchmarkSuite(RubyBenchmarkSuite):
                 'metric.iteration': n,
                 'extra.metric.warmedup': 'true' if n / float(len(samples)) >= 0.5 else 'false',
                 'extra.metric.elapsed-num': e,
-                'extra.metric.human': '%d/%d %fs' % (n, len(samples), warmed_up_mean)
+                'extra.metric.human': '%d/%d %f op/s' % (n, len(samples), warmed_up_mean)
             } for n, (e, sample) in enumerate(zip(elapsed, samples))]
         else:
             sys.stderr.write(out.data)
