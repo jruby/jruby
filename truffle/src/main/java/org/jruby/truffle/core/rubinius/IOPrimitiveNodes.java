@@ -184,7 +184,7 @@ public abstract class IOPrimitiveNodes {
 
     }
 
-    @Primitive(name = "io_open", needsSelf = false, lowerFixnumParameters = { 1, 2 }, unsafe = UnsafeGroup.IO)
+    @Primitive(name = "io_open", needsSelf = false, lowerFixnum = { 2, 3 }, unsafe = UnsafeGroup.IO)
     public static abstract class IOOpenPrimitiveNode extends IOPrimitiveArrayArgumentsNode {
 
         @TruffleBoundary(throwsControlFlowException = true)
@@ -257,7 +257,7 @@ public abstract class IOPrimitiveNodes {
 
     }
 
-    @Primitive(name = "io_read_if_available", lowerFixnumParameters = 0, unsafe = UnsafeGroup.IO)
+    @Primitive(name = "io_read_if_available", lowerFixnum = 1, unsafe = UnsafeGroup.IO)
     public static abstract class IOReadIfAvailableNode extends IOPrimitiveArrayArgumentsNode {
 
         @TruffleBoundary(throwsControlFlowException = true)
@@ -328,7 +328,7 @@ public abstract class IOPrimitiveNodes {
 
     }
 
-    @Primitive(name = "io_reopen_path", lowerFixnumParameters = 1, unsafe = UnsafeGroup.IO)
+    @Primitive(name = "io_reopen_path", lowerFixnum = 2, unsafe = UnsafeGroup.IO)
     public static abstract class IOReopenPathPrimitiveNode extends IOPrimitiveArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode resetBufferingNode;
@@ -529,7 +529,7 @@ public abstract class IOPrimitiveNodes {
 
     }
 
-    @Primitive(name = "io_seek", lowerFixnumParameters = { 0, 1 }, unsafe = UnsafeGroup.IO)
+    @Primitive(name = "io_seek", lowerFixnum = { 1, 2 }, unsafe = UnsafeGroup.IO)
     public static abstract class IOSeekPrimitiveNode extends IOPrimitiveArrayArgumentsNode {
 
         @Specialization
@@ -565,7 +565,7 @@ public abstract class IOPrimitiveNodes {
 
     }
 
-    @Primitive(name = "io_sysread", unsafe = UnsafeGroup.IO, lowerFixnumParameters = 0)
+    @Primitive(name = "io_sysread", unsafe = UnsafeGroup.IO, lowerFixnum = 1)
     public static abstract class IOSysReadPrimitiveNode extends IOPrimitiveArrayArgumentsNode {
 
         @TruffleBoundary(throwsControlFlowException = true)
@@ -599,7 +599,7 @@ public abstract class IOPrimitiveNodes {
 
     }
 
-    @Primitive(name = "io_select", needsSelf = false, lowerFixnumParameters = 3, unsafe = UnsafeGroup.IO)
+    @Primitive(name = "io_select", needsSelf = false, lowerFixnum = 4, unsafe = UnsafeGroup.IO)
     public static abstract class IOSelectPrimitiveNode extends IOPrimitiveArrayArgumentsNode {
 
         public abstract Object executeSelect(DynamicObject readables, DynamicObject writables, DynamicObject errorables, Object Timeout);

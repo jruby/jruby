@@ -139,7 +139,7 @@ public abstract class PointerPrimitiveNodes {
 
     }
 
-    @Primitive(name = "pointer_read_string", lowerFixnumParameters = 0, unsafe = UnsafeGroup.MEMORY)
+    @Primitive(name = "pointer_read_string", lowerFixnum = 1, unsafe = UnsafeGroup.MEMORY)
     public static abstract class PointerReadStringPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Specialization
@@ -162,7 +162,7 @@ public abstract class PointerPrimitiveNodes {
 
     }
 
-    @Primitive(name = "pointer_set_at_offset", lowerFixnumParameters = {0, 1}, unsafe = UnsafeGroup.MEMORY)
+    @Primitive(name = "pointer_set_at_offset", lowerFixnum = { 1, 2 }, unsafe = UnsafeGroup.MEMORY)
     @ImportStatic(RubiniusTypes.class)
     public static abstract class PointerSetAtOffsetPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
