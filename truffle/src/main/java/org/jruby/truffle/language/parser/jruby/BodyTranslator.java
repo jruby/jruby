@@ -611,8 +611,6 @@ public class BodyTranslator extends Translator {
             arguments.add(readArgumentNode);
         }
 
-        assert arguments.size() == primitive.getPrimitiveArity() : sourceSection.getShortDescription();
-
         return primitive.createInvokePrimitiveNode(context, sourceSection, arguments.toArray(new RubyNode[arguments.size()]));
     }
 

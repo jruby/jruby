@@ -24,7 +24,11 @@ public @interface Primitive {
 
     boolean needsSelf() default true;
 
-    int[] lowerFixnumParameters() default {};
+    /**
+     * Try to lower argument <code>i</code> (starting at 1) to an int if its value is a long.
+     * Use 0 for <code>self</code>.
+     */
+    int[] lowerFixnum() default {};
 
     UnsafeGroup[] unsafe() default {};
 

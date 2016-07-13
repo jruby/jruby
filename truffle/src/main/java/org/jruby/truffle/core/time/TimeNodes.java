@@ -273,7 +273,7 @@ public abstract class TimeNodes {
 
     }
 
-    @Primitive(name = "time_s_specific", needsSelf = false, lowerFixnumParameters = { 1 })
+    @Primitive(name = "time_s_specific", needsSelf = false, lowerFixnum = 2)
     public static abstract class TimeSSpecificPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Child private GetTimeZoneNode getTimeZoneNode;
@@ -410,7 +410,7 @@ public abstract class TimeNodes {
 
     }
 
-    @Primitive(name = "time_s_from_array", needsSelf = true, lowerFixnumParameters = { 0 /*sec*/, 1 /* min */, 2 /* hour */, 3 /* mday */, 4 /* month */, 5 /* year */, 6 /*nsec*/, 7 /*isdst*/ })
+    @Primitive(name = "time_s_from_array", needsSelf = true, lowerFixnum = { 1 /*sec*/, 2 /* min */, 3 /* hour */, 4 /* mday */, 5 /* month */, 6 /* year */, 7 /*nsec*/, 8 /*isdst*/})
     public static abstract class TimeSFromArrayPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Child GetTimeZoneNode getTimeZoneNode;
@@ -539,7 +539,7 @@ public abstract class TimeNodes {
 
     }
 
-    @Primitive(name = "time_set_nseconds", lowerFixnumParameters = 0)
+    @Primitive(name = "time_set_nseconds", lowerFixnum = 1)
     public static abstract class TimeSetNSecondsPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @TruffleBoundary

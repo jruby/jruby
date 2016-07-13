@@ -47,7 +47,7 @@ public abstract class RegexpPrimitiveNodes {
 
     }
 
-    @Primitive(name = "regexp_initialize", lowerFixnumParameters = 1)
+    @Primitive(name = "regexp_initialize", lowerFixnum = 2)
     @ImportStatic(RegexpGuards.class)
     public static abstract class RegexpInitializePrimitiveNode extends PrimitiveArrayArgumentsNode {
 
@@ -96,7 +96,7 @@ public abstract class RegexpPrimitiveNodes {
 
     }
 
-    @Primitive(name = "regexp_search_region", lowerFixnumParameters = {1, 2})
+    @Primitive(name = "regexp_search_region", lowerFixnum = { 2, 3 })
     @ImportStatic(RegexpGuards.class)
     public static abstract class RegexpSearchRegionPrimitiveNode extends PrimitiveArrayArgumentsNode {
 

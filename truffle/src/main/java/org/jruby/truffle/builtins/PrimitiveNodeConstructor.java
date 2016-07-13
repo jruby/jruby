@@ -46,13 +46,13 @@ public class PrimitiveNodeConstructor {
         List<Class<?>> signature = signatures.get(0);
 
         if (annotation.needsSelf()) {
-            arguments.add(new SelfNode(context, sourceSection));
+            arguments.add(transformArgument(new SelfNode(context, sourceSection), 0));
             argumentsCount--;
         }
 
         for (int n = 0; n < argumentsCount; n++) {
             RubyNode readArgumentNode = new ReadPreArgumentNode(n, MissingArgumentBehavior.UNDEFINED);
-            arguments.add(transformArgument(readArgumentNode, n));
+            arguments.add(transformArgument(readArgumentNode, n + 1));
         }
 
         if (!CoreMethodNodeManager.isSafe(context, annotation.unsafe())) {
@@ -83,12 +83,15 @@ public class PrimitiveNodeConstructor {
     }
 
     public RubyNode createInvokePrimitiveNode(RubyContext context, SourceSection sourceSection, RubyNode[] arguments) {
+        assert arguments.length == getPrimitiveArity() : sourceSection.getShortDescription();
+
         if (!CoreMethodNodeManager.isSafe(context, annotation.unsafe())) {
             return new UnsafeNode(context, sourceSection);
         }
 
-        for (int n = 1; n < arguments.length; n++) {
-            arguments[n] = transformArgument(arguments[n], n);
+        for (int n = 0; n < arguments.length; n++) {
+            int nthArg = annotation.needsSelf() ? n : n + 1;
+            arguments[n] = transformArgument(arguments[n], nthArg);
         }
 
         List<List<Class<?>>> signatures = factory.getNodeSignatures();
@@ -96,17 +99,17 @@ public class PrimitiveNodeConstructor {
         assert signatures.size() == 1;
         List<Class<?>> signature = signatures.get(0);
 
+        final RubyNode primitiveNode;
         if (signature.get(0) == RubyContext.class) {
-            return new InvokePrimitiveNode(context, sourceSection,
-                    factory.createNode(context, sourceSection, arguments));
+            primitiveNode = factory.createNode(context, sourceSection, arguments);
         } else {
-            return new InvokePrimitiveNode(context, sourceSection,
-                    factory.createNode(new Object[]{arguments}));
+            primitiveNode = factory.createNode(new Object[] { arguments });
         }
+        return new InvokePrimitiveNode(context, sourceSection, primitiveNode);
     }
 
     private RubyNode transformArgument(RubyNode argument, int n) {
-        if (ArrayUtils.contains(annotation.lowerFixnumParameters(), n)) {
+        if (ArrayUtils.contains(annotation.lowerFixnum(), n)) {
             return FixnumLowerNodeGen.create(null, null, argument);
         } else {
             return argument;

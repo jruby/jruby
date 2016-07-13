@@ -2847,7 +2847,7 @@ public abstract class StringNodes {
 
     }
 
-    @Primitive(name = "string_chr_at", lowerFixnumParameters = 0)
+    @Primitive(name = "string_chr_at", lowerFixnum = 1)
     @ImportStatic(StringGuards.class)
     public static abstract class StringChrAtPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
@@ -3136,7 +3136,7 @@ public abstract class StringNodes {
 
     }
 
-    @Primitive(name = "string_find_character", lowerFixnumParameters = 0)
+    @Primitive(name = "string_find_character", lowerFixnum = 1)
     @ImportStatic(StringGuards.class)
     public static abstract class StringFindCharacterNode extends PrimitiveArrayArgumentsNode {
 
@@ -3299,7 +3299,7 @@ public abstract class StringNodes {
 
     }
 
-    @Primitive(name = "string_index", lowerFixnumParameters = 1)
+    @Primitive(name = "string_index", lowerFixnum = 2)
     @ImportStatic(StringGuards.class)
     public static abstract class StringIndexPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
@@ -3397,7 +3397,7 @@ public abstract class StringNodes {
         }
     }
 
-    @Primitive(name = "string_character_byte_index", needsSelf = false, lowerFixnumParameters = { 0, 1 })
+    @Primitive(name = "string_character_byte_index", needsSelf = false, lowerFixnum = { 1, 2 })
     @ImportStatic(StringGuards.class)
     public static abstract class CharacterByteIndexNode extends PrimitiveArrayArgumentsNode {
 
@@ -3465,7 +3465,7 @@ public abstract class StringNodes {
         }
     }
 
-    @Primitive(name = "string_character_index", needsSelf = false, lowerFixnumParameters = 2)
+    @Primitive(name = "string_character_index", needsSelf = false, lowerFixnum = 3)
     public static abstract class StringCharacterIndexPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @TruffleBoundary
@@ -3564,7 +3564,7 @@ public abstract class StringNodes {
 
     }
 
-    @Primitive(name = "string_byte_index", needsSelf = false, lowerFixnumParameters = { 0, 1 })
+    @Primitive(name = "string_byte_index", needsSelf = false, lowerFixnum = { 1, 2 })
     @ImportStatic(StringGuards.class)
     public static abstract class StringByteIndexPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
@@ -3739,7 +3739,7 @@ public abstract class StringNodes {
 
     }
 
-    @Primitive(name = "string_copy_from", needsSelf = false, lowerFixnumParameters = { 2, 3, 4 })
+    @Primitive(name = "string_copy_from", needsSelf = false, lowerFixnum = { 3, 4, 5 })
     public static abstract class StringCopyFromPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Specialization(guards = { "isRubyString(other)", "size >= 0", "!offsetTooLarge(start, other)", "!offsetTooLargeRaw(dest, string)" })
@@ -3796,7 +3796,7 @@ public abstract class StringNodes {
 
     }
 
-    @Primitive(name = "string_rindex", lowerFixnumParameters = 1)
+    @Primitive(name = "string_rindex", lowerFixnum = 2)
     public static abstract class StringRindexPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Child private RopeNodes.GetByteNode patternGetByteNode;
@@ -3871,7 +3871,7 @@ public abstract class StringNodes {
 
     }
 
-    @Primitive(name = "string_pattern", lowerFixnumParameters = { 0, 1 })
+    @Primitive(name = "string_pattern", lowerFixnum = { 1, 2 })
     public static abstract class StringPatternPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Child private AllocateObjectNode allocateObjectNode;
@@ -3932,7 +3932,7 @@ public abstract class StringNodes {
 
     }
 
-    @Primitive(name = "string_splice", needsSelf = false, lowerFixnumParameters = {2, 3})
+    @Primitive(name = "string_splice", needsSelf = false, lowerFixnum = { 3, 4 })
     @ImportStatic(StringGuards.class)
     public static abstract class StringSplicePrimitiveNode extends PrimitiveArrayArgumentsNode {
 
@@ -4134,7 +4134,7 @@ public abstract class StringNodes {
 
     }
 
-    @Primitive(name = "string_substring", lowerFixnumParameters = { 0, 1 })
+    @Primitive(name = "string_substring", lowerFixnum = { 1, 2 })
     @ImportStatic(StringGuards.class)
     public static abstract class StringSubstringPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
@@ -4362,7 +4362,7 @@ public abstract class StringNodes {
 
     }
 
-    @Primitive(name = "string_from_bytearray", needsSelf = false, lowerFixnumParameters = { 1, 2 })
+    @Primitive(name = "string_from_bytearray", needsSelf = false, lowerFixnum = { 2, 3 })
     public static abstract class StringFromByteArrayPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Specialization(guards = "isRubiniusByteArray(bytes)")
