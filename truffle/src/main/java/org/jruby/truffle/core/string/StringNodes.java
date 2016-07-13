@@ -3136,7 +3136,7 @@ public abstract class StringNodes {
 
     }
 
-    @Primitive(name = "string_find_character")
+    @Primitive(name = "string_find_character", lowerFixnumParameters = 0)
     @ImportStatic(StringGuards.class)
     public static abstract class StringFindCharacterNode extends PrimitiveArrayArgumentsNode {
 
