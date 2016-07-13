@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.platform;
 
+import com.oracle.truffle.api.TruffleOptions;
 import org.jruby.ext.ffi.Platform;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.platform.darwin.DarwinPlatform;
@@ -18,7 +19,8 @@ import org.jruby.truffle.platform.linux.LinuxPlatform;
 public abstract class NativePlatformFactory {
 
     public static NativePlatform createPlatform(RubyContext context) {
-        if (context.getOptions().PLATFORM_USE_JAVA || (Platform.getPlatform().getOS() == Platform.OS_TYPE.WINDOWS)) {
+        if (!TruffleOptions.AOT &&
+                (context.getOptions().PLATFORM_USE_JAVA || (Platform.getPlatform().getOS() == Platform.OS_TYPE.WINDOWS))) {
             return new JavaPlatform(context);
         }
 
