@@ -178,9 +178,9 @@ Truffle::Runner.add_config :actionpack,
                                rails_common,
                                stubs.fetch(:html_sanitizer),
                                setup: { file: { 'excluded-tests.rb' => format(dedent(<<-RUBY), exclusion_file(:actionpack)),
-                              failures = %s
-                              require 'truffle/exclude_rspec_examples'
-                              Truffle.exclude_rspec_examples failures
+                                                  failures = %s
+                                                  require 'truffle/exclude_rspec_examples'
+                                                  Truffle.exclude_rspec_examples failures
                                                 RUBY
                                } })
 

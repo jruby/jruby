@@ -83,8 +83,6 @@ RescueControllerTest:
 - test_block_rescue_handler_with_argument_as_string
 - test_proc_rescue_handle_with_argument
 - test_proc_rescue_handle_with_argument_as_string
-SendFileTest:
-- test_send_file_with_action_controller_live
 TestCaseTest:
 - test_assert_select_with_body
 - test_assert_select_without_body
