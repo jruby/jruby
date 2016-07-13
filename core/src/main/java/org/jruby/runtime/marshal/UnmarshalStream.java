@@ -285,9 +285,11 @@ public class UnmarshalStream extends InputStream {
     }
 
     private IRubyObject unmarshalRegexp(MarshalState state) throws IOException {
-        IRubyObject rubyObj;ByteList byteList = unmarshalString();
+        ByteList byteList = unmarshalString();
         byte opts = readSignedByte();
         RegexpOptions reOpts = RegexpOptions.fromJoniOptions(opts);
+
+        IRubyObject ivarHolder = null;
 
         if (state.isIvarWaiting()) {
             RubyString tmpStr = RubyString.newString(runtime, byteList);
@@ -295,6 +297,7 @@ public class UnmarshalStream extends InputStream {
             defaultVariablesUnmarshal(tmpStr);
             byteList = tmpStr.getByteList();
             state.setIvarWaiting(false);
+            ivarHolder = tmpStr;
         }
         if (byteList.getEncoding() == ASCIIEncoding.INSTANCE) {
             /* 1.8 compatibility; remove escapes undefined in 1.8 */
@@ -348,8 +351,15 @@ public class UnmarshalStream extends InputStream {
             byteList.setRealSize(dst - ptr);
         }
 
-        rubyObj = RubyRegexp.newRegexp(runtime, byteList, reOpts);
-        return rubyObj;
+        RubyRegexp regexp = RubyRegexp.newRegexp(runtime, byteList, reOpts);
+
+        if (ivarHolder != null) {
+            ivarHolder.getInstanceVariables().copyInstanceVariablesInto(regexp);
+        }
+
+        registerLinkTarget(regexp);
+
+        return regexp;
     }
 
     public Ruby getRuntime() {
