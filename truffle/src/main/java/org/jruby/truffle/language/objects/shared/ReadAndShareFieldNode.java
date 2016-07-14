@@ -19,9 +19,9 @@ public abstract class ReadAndShareFieldNode extends Node {
     private final Property property;
     @Child WriteBarrierNode writeBarrierNode;
 
-    public ReadAndShareFieldNode(Property property) {
+    public ReadAndShareFieldNode(Property property, int depth) {
         this.property = property;
-        this.writeBarrierNode = WriteBarrierNodeGen.create();
+        this.writeBarrierNode = WriteBarrierNodeGen.create(depth);
     }
 
     public abstract void executeReadFieldAndShare(DynamicObject object);

@@ -21,11 +21,18 @@ import org.jruby.truffle.language.objects.ShapeCachingGuards;
 public abstract class WriteBarrierNode extends Node {
 
     protected static final int CACHE_LIMIT = 8;
+    protected static final int MAX_DEPTH = 3;
+
+    protected final int depth;
+
+    public WriteBarrierNode(int depth) {
+        this.depth = depth;
+    }
 
     public abstract void executeWriteBarrier(Object value);
 
     @Specialization(
-            guards = "value.getShape() == cachedShape",
+            guards = { "value.getShape() == cachedShape", "depth < MAX_DEPTH" },
             assumptions = "cachedShape.getValidAssumption()",
             limit = "CACHE_LIMIT")
     protected void writeBarrierCached(DynamicObject value,
@@ -65,7 +72,7 @@ public abstract class WriteBarrierNode extends Node {
 
     protected ShareObjectNode createShareObjectNode(boolean alreadyShared) {
         if (!alreadyShared) {
-            return ShareObjectNodeGen.create();
+            return ShareObjectNodeGen.create(depth + 1);
         } else {
             return null;
         }

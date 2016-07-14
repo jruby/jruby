@@ -29,6 +29,12 @@ public abstract class ShareInternalFieldsNode extends Node {
 
     protected static final int CACHE_LIMIT = 8;
 
+    protected final int depth;
+
+    public ShareInternalFieldsNode(int depth) {
+        this.depth = depth;
+    }
+
     public abstract void executeShare(DynamicObject object);
 
     @Specialization(
@@ -85,8 +91,8 @@ public abstract class ShareInternalFieldsNode extends Node {
         SharedObjects.writeBarrier(object);
     }
 
-    protected static WriteBarrierNode createWriteBarrierNode() {
-        return WriteBarrierNodeGen.create();
+    protected WriteBarrierNode createWriteBarrierNode() {
+        return WriteBarrierNodeGen.create(depth);
     }
 
 }

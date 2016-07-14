@@ -14,7 +14,7 @@ public class PropagateSharingNode extends Node {
 
     public PropagateSharingNode() {
         isSharedNode = IsSharedNodeGen.create();
-        writeBarrierNode = WriteBarrierNodeGen.create();
+        writeBarrierNode = WriteBarrierNodeGen.create(0);
     }
 
     public void propagate(DynamicObject source, Object value) {

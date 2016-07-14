@@ -33,6 +33,12 @@ public abstract class ShareObjectNode extends Node {
 
     protected static final int CACHE_LIMIT = 8;
 
+    protected final int depth;
+
+    public ShareObjectNode(int depth) {
+        this.depth = depth;
+    }
+
     public abstract void executeShare(DynamicObject object);
 
     @Specialization(
@@ -87,14 +93,14 @@ public abstract class ShareObjectNode extends Node {
         return objectProperties;
     }
 
-    protected static ShareInternalFieldsNode createShareInternalFieldsNode() {
-        return ShareInternalFieldsNodeGen.create();
+    protected ShareInternalFieldsNode createShareInternalFieldsNode() {
+        return ShareInternalFieldsNodeGen.create(depth);
     }
 
-    protected static ReadAndShareFieldNode[] createReadAndShareFieldNodes(List<Property> properties) {
+    protected ReadAndShareFieldNode[] createReadAndShareFieldNodes(List<Property> properties) {
         ReadAndShareFieldNode[] nodes = new ReadAndShareFieldNode[properties.size()];
         for (int i = 0; i < nodes.length; i++) {
-            nodes[i] = ReadAndShareFieldNodeGen.create(properties.get(i));
+            nodes[i] = ReadAndShareFieldNodeGen.create(properties.get(i), depth);
         }
         return nodes;
     }
