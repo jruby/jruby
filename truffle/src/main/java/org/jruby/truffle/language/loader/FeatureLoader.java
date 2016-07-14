@@ -132,7 +132,7 @@ public class FeatureLoader {
         final String path = context.getJRubyRuntime().getJRubyHome() + "/lib/ruby/truffle/cext/ruby.su";
         try {
             return parseSource(context.getSourceLoader().load(path));
-        } catch (IOException e) {
+        } catch (Exception e) {
             throw new JavaException(e);
         }
     }
@@ -141,7 +141,7 @@ public class FeatureLoader {
     public CallTarget parseSource(Source source) {
         try {
             return context.getEnv().parse(source);
-        } catch (IOException e) {
+        } catch (Exception e) {
             throw new JavaException(e);
         }
     }
