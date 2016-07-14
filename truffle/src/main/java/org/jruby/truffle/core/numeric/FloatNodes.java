@@ -605,6 +605,26 @@ public abstract class FloatNodes {
 
     }
 
+    @CoreMethod(names = "next_float")
+    public abstract static class NextFloatNode extends CoreMethodArrayArgumentsNode {
+
+        @Specialization
+        public double nextFloat(double value) {
+            return Math.nextAfter(value, Double.POSITIVE_INFINITY);
+        }
+
+    }
+
+    @CoreMethod(names = "prev_float")
+    public abstract static class PrevFloatNode extends CoreMethodArrayArgumentsNode {
+
+        @Specialization
+        public double prevFloat(double value) {
+            return Math.nextAfter(value, Double.NEGATIVE_INFINITY);
+        }
+
+    }
+
     @CoreMethod(names = "round", optional = 1)
     public abstract static class RoundNode extends CoreMethodArrayArgumentsNode {
 
