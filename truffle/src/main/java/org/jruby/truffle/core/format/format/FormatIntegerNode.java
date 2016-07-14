@@ -10,7 +10,6 @@
 package org.jruby.truffle.core.format.format;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
-import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
@@ -18,7 +17,8 @@ import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.FormatNode;
-import org.jruby.truffle.core.format.printf.PrintfTreeBuilder;
+import org.jruby.truffle.core.format.printf.PrintfSimpleTreeBuilder;
+import org.jruby.util.ConvertBytes;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
@@ -26,6 +26,7 @@ import java.util.Locale;
 
 @NodeChildren({
         @NodeChild(value = "width", type = FormatNode.class),
+    @NodeChild(value = "precision", type = FormatNode.class),
         @NodeChild(value = "value", type = FormatNode.class),
 })
 public abstract class FormatIntegerNode extends FormatNode {
@@ -33,40 +34,176 @@ public abstract class FormatIntegerNode extends FormatNode {
     private final char format;
     private final boolean hasSpaceFlag;
     private final boolean hasZeroFlag;
-    private final int precision;
+    private final boolean hasPlusFlag;
+    private final boolean hasMinusFlag;
+    private final boolean hasFSharp;
 
-    public FormatIntegerNode(RubyContext context, char format, boolean hasSpaceFlag, boolean hasZeroFlag, int precision) {
+    public FormatIntegerNode(RubyContext context, char format, boolean hasSpaceFlag, boolean hasZeroFlag, boolean hasPlusFlag, boolean hasMinusFlag, boolean hasFSharp) {
         super(context);
         this.format = format;
         this.hasSpaceFlag = hasSpaceFlag;
         this.hasZeroFlag = hasZeroFlag;
-        this.precision = precision;
+        this.hasPlusFlag = hasPlusFlag;
+        this.hasMinusFlag = hasMinusFlag;
+        this.hasFSharp = hasFSharp;
     }
 
-    @Specialization(
-            guards = {
-                    "!isRubyBignum(value)",
-                    "width == cachedWidth"
-            },
-            limit = "getLimit()"
-    )
-    public byte[] formatCached(int width,
-                               Object value,
-                               @Cached("width") int cachedWidth,
-                               @Cached("makeFormatString(width)") String cachedFormatString) {
-        return doFormat(value, cachedFormatString);
+    @Specialization
+    public byte[] format(int width, int precision, int value) {
+        String formatted;
+        switch (this.format) {
+            case 'X':
+                formatted = Integer.toString(value, 16).toUpperCase();
+                if (hasFSharp && value > 0) {
+                    formatted = "0X" + formatted;
+                }
+                if (value < 0) {
+                    formatted = "..F" + Integer.toString(-value, 16).toUpperCase();
+                }
+                break;
+            case 'x':
+                formatted = Integer.toString(value, 16);
+                if (hasFSharp && value > 0) {
+                    formatted = "0x" + formatted;
+                }
+                if (value < 0) {
+                    formatted = "..f" + Integer.toString(-value, 16);
+                }
+                break;
+            case 'o':
+                formatted = Integer.toString(value, 8);
+                if (hasFSharp && value > 0) {
+                    formatted = "0" + formatted;
+                }
+                if (value < 0) {
+                    formatted = "..7" + new String(elide(ConvertBytes.intToOctalBytes(value), format, precision));
+                    ;
+                }
+                break;
+            case 'd':
+            case 'i':
+            case 'u':
+                if (value < 0) {
+                    formatted = Long.toString(-value);
+                } else {
+                    formatted = Long.toString(value);
+                }
+                break;
+            default:
+                throw new UnsupportedOperationException();
+        }
+
+        return formatStart(width, precision, formatted, value < 0);
     }
 
-    @TruffleBoundary
-    @Specialization(guards = "!isRubyBignum(value)", contains = "formatCached")
-    public byte[] formatUncached(int width,
-                                 Object value) {
-        return doFormat(value, makeFormatString(width));
+    @Specialization
+    public byte[] format(int width, int precision, long value) {
+        String formatted;
+        switch (this.format) {
+            case 'X':
+                formatted = Long.toString(value, 16).toUpperCase();
+                if (hasFSharp && value > 0) {
+                    formatted = "0X" + formatted;
+                }
+                if (value < 0) {
+                    formatted = "..F" + Long.toString(-value, 16).toUpperCase();
+                }
+                break;
+            case 'x':
+                formatted = Long.toString(value, 16);
+                if (hasFSharp && value > 0) {
+                    formatted = "0x" + formatted;
+                }
+                if (value < 0) {
+                    formatted = "..f" + Long.toString(-value, 16);
+                }
+                break;
+            case 'o':
+                formatted = Long.toString(value, 8);
+                if (hasFSharp && value > 0) {
+                    formatted = "0" + formatted;
+                }
+                if (value < 0) {
+                    formatted = "..7" + new String(elide(ConvertBytes.longToOctalBytes(value), format, precision));
+                }
+                break;
+            case 'd':
+            case 'i':
+            case 'u':
+                if (value < 0) {
+                    formatted = Long.toString(-value);
+                } else {
+                    formatted = Long.toString(value);
+                }
+                break;
+            default:
+                throw new UnsupportedOperationException();
+        }
+        return formatStart(width, precision, formatted, value < 0);
+    }
+
+    private static byte[] elide(byte[] bytes, char format, int precision) {
+        return bytes;
+    }
+
+
+    private byte[] formatStart(int width, int precision, String formatted, boolean isNegative) {
+
+        boolean leftJustified = hasMinusFlag;
+        if (width < 0 && width != PrintfSimpleTreeBuilder.DEFAULT) {  // TODO handle default width better
+            width = -width;
+            leftJustified = true;
+        }
+
+        final boolean addNegative = isNegative && (format == 'd' || format == 'i' || format == 'u');
+
+        if ((hasZeroFlag && !hasMinusFlag) || precision != PrintfSimpleTreeBuilder.DEFAULT) {
+            int padZeros;
+            if (precision != PrintfSimpleTreeBuilder.DEFAULT) {
+                padZeros = precision;
+            } else {
+                padZeros = width;
+                if (addNegative) {
+                    padZeros -= 1;
+                }
+            }
+
+            while (formatted.length() < padZeros) {
+                formatted = "0" + formatted;
+            }
+        }
+
+        if (addNegative) {
+            formatted = "-" + formatted;
+        }
+
+        while (formatted.length() < width) {
+            if (leftJustified) {
+                formatted = formatted + " ";
+            } else {
+                formatted = " " + formatted;
+            }
+        }
+
+        if (!isNegative) {
+            if (hasSpaceFlag || hasPlusFlag) {
+                if (!hasMinusFlag) {
+                    if (hasPlusFlag) {
+                        formatted = "+" + formatted;
+                    } else {
+                        formatted = " " + formatted;
+                    }
+                }
+            }
+        }
+
+        return formatted.getBytes(StandardCharsets.US_ASCII);
+
     }
 
     @TruffleBoundary
     @Specialization(guards = "isRubyBignum(value)")
-    public byte[] format(int width, DynamicObject value) {
+    public byte[] format(int width, int precision, DynamicObject value) {
         final BigInteger bigInteger = Layouts.BIGNUM.getValue(value);
 
         String formatted;
@@ -94,7 +231,7 @@ public abstract class FormatIntegerNode extends FormatNode {
                 throw new UnsupportedOperationException();
         }
 
-        while (formatted.length() < this.precision) {
+        while (formatted.length() < precision) {
             formatted = "0" + formatted;
         }
 
@@ -103,40 +240,6 @@ public abstract class FormatIntegerNode extends FormatNode {
         }
 
         return formatted.getBytes(StandardCharsets.US_ASCII);
-    }
-
-    @TruffleBoundary
-    protected byte[] doFormat(Object value, String formatString) {
-        return String.format(formatString, value).getBytes(StandardCharsets.US_ASCII);
-    }
-
-    protected String makeFormatString(int width) {
-        final StringBuilder builder = new StringBuilder();
-
-        builder.append("%");
-
-        final int padZeros = precision != PrintfTreeBuilder.DEFAULT ? precision : width;
-
-        if (this.hasSpaceFlag) {
-            builder.append(" ");
-            builder.append(width);
-
-            if (this.hasZeroFlag || precision != PrintfTreeBuilder.DEFAULT) {
-                builder.append(".");
-                builder.append(padZeros);
-            }
-        } else if (this.hasZeroFlag || precision != PrintfTreeBuilder.DEFAULT) {
-            builder.append("0");
-            builder.append(padZeros);
-        }
-
-        builder.append(format);
-
-        return builder.toString();
-    }
-
-    protected int getLimit() {
-        return getContext().getOptions().PACK_CACHE;
     }
 
 }

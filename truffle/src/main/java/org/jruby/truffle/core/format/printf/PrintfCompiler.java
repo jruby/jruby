@@ -11,14 +11,13 @@ package org.jruby.truffle.core.format.printf;
 
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.Truffle;
-import org.antlr.v4.runtime.ANTLRInputStream;
-import org.antlr.v4.runtime.CommonTokenStream;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.DescriptionTruncater;
 import org.jruby.truffle.core.format.FormatEncoding;
-import org.jruby.truffle.core.format.FormatErrorListener;
 import org.jruby.truffle.core.format.FormatRootNode;
 import org.jruby.truffle.language.RubyNode;
+
+import java.util.List;
 
 public class PrintfCompiler {
 
@@ -31,29 +30,13 @@ public class PrintfCompiler {
     }
 
     public CallTarget compile(String formatString, byte[] format) {
-        final FormatErrorListener errorListener = new FormatErrorListener(context, currentNode);
-
-        final ANTLRInputStream input = new ANTLRInputStream(bytesToChars(format), format.length);
-
-        final PrintfLexer lexer = new PrintfLexer(input);
-        lexer.removeErrorListeners();
-        lexer.addErrorListener(errorListener);
-
-        final CommonTokenStream tokens = new CommonTokenStream(lexer);
-
-        final PrintfParser parser = new PrintfParser(tokens);
-
-        final PrintfTreeBuilder builder = new PrintfTreeBuilder(context, format);
-        parser.addParseListener(builder);
-
-        parser.removeErrorListeners();
-        parser.addErrorListener(errorListener);
-
-        parser.sequence();
+        final PrintfSimpleParser parser = new PrintfSimpleParser(bytesToChars(format));
+        final List<PrintfSimpleParser.SprintfConfig> configs = parser.parse();
+        final PrintfSimpleTreeBuilder builder = new PrintfSimpleTreeBuilder(context, configs);
 
         return Truffle.getRuntime().createCallTarget(
-                new FormatRootNode(DescriptionTruncater.trunate(formatString),
-                        FormatEncoding.DEFAULT, builder.getNode()));
+            new FormatRootNode(DescriptionTruncater.trunate(formatString),
+                FormatEncoding.DEFAULT, builder.getNode()));
     }
 
     private static char[] bytesToChars(byte[] bytes) {

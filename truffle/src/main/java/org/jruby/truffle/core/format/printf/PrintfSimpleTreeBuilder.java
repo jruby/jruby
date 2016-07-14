@@ -1,0 +1,197 @@
+package org.jruby.truffle.core.format.printf;
+
+import com.oracle.truffle.api.object.DynamicObject;
+import org.jcodings.specific.USASCIIEncoding;
+import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.format.FormatNode;
+import org.jruby.truffle.core.format.LiteralFormatNode;
+import org.jruby.truffle.core.format.control.SequenceNode;
+import org.jruby.truffle.core.format.convert.ToDoubleWithCoercionNodeGen;
+import org.jruby.truffle.core.format.convert.ToIntegerNodeGen;
+import org.jruby.truffle.core.format.convert.ToStringNodeGen;
+import org.jruby.truffle.core.format.format.FormatCharacterNodeGen;
+import org.jruby.truffle.core.format.format.FormatFloatHumanReadableNodeGen;
+import org.jruby.truffle.core.format.format.FormatFloatNodeGen;
+import org.jruby.truffle.core.format.format.FormatIntegerBinaryNodeGen;
+import org.jruby.truffle.core.format.format.FormatIntegerNodeGen;
+import org.jruby.truffle.core.format.read.SourceNode;
+import org.jruby.truffle.core.format.read.array.ReadArgumentIndexValueNodeGen;
+import org.jruby.truffle.core.format.read.array.ReadHashValueNodeGen;
+import org.jruby.truffle.core.format.read.array.ReadIntegerNodeGen;
+import org.jruby.truffle.core.format.read.array.ReadStringNodeGen;
+import org.jruby.truffle.core.format.read.array.ReadValueNodeGen;
+import org.jruby.truffle.core.format.write.bytes.WriteBytesNodeGen;
+import org.jruby.truffle.core.format.write.bytes.WritePaddedBytesNodeGen;
+import org.jruby.truffle.core.rope.CodeRange;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class PrintfSimpleTreeBuilder {
+
+
+    private final RubyContext context;
+    private final List<FormatNode> sequence = new ArrayList<>();
+    private final List<PrintfSimpleParser.SprintfConfig> configs;
+
+    public static int DEFAULT = -1;
+
+    private static final byte[] EMPTY_BYTES = new byte[]{};
+
+    public PrintfSimpleTreeBuilder(RubyContext context, List<PrintfSimpleParser.SprintfConfig> configs) {
+        this.context = context;
+        this.configs = configs;
+    }
+
+    private void buildTree() {
+        for (PrintfSimpleParser.SprintfConfig config : configs) {
+            final FormatNode node;
+            if (config.isLiteral()) {
+                node = WriteBytesNodeGen.create(context, new LiteralFormatNode(context, config.getLiteralBytes()));
+            } else {
+                final FormatNode valueNode;
+
+                if (config.getNamesBytes() != null) {
+                    final DynamicObject key = context.getSymbolTable().getSymbol(context.getRopeTable().getRope(config.getNamesBytes(), USASCIIEncoding.INSTANCE, CodeRange.CR_7BIT));
+                    valueNode = ReadHashValueNodeGen.create(context, key, new SourceNode());
+                } else if (config.getAbsoluteArgumentIndex() != null) {
+                    valueNode = ReadArgumentIndexValueNodeGen.create(context, config.getAbsoluteArgumentIndex(), new SourceNode());
+                } else {
+                    valueNode = ReadValueNodeGen.create(context, new SourceNode());
+                }
+
+                final FormatNode widthNode;
+                if (config.isWidthStar()) {
+                    widthNode = ReadIntegerNodeGen.create(context, new SourceNode());
+                } else if (config.isArgWidth()){
+                    widthNode = ReadArgumentIndexValueNodeGen.create(context, config.getWidth(), new SourceNode());
+                } else {
+                    widthNode = new LiteralFormatNode(context, config.getWidth() == null ? -1 : config.getWidth());
+                }
+
+                final FormatNode precisionNode;
+                if(config.isPrecisionStar()){
+                    precisionNode = ReadIntegerNodeGen.create(context, new SourceNode());
+                }  else if(config.isPrecisionArg()){
+                    precisionNode = ReadArgumentIndexValueNodeGen.create(context, config.getPrecision(), new SourceNode());
+                } else {
+                    precisionNode = new LiteralFormatNode(context, config.getPrecision() == null ? -1 : config.getPrecision());
+                }
+
+
+                switch (config.getFormatType()){
+                    case INTEGER:
+                        final char format;
+                        switch (config.getFormat()) {
+                            case 'b':
+                            case 'B':
+                                format = config.getFormat();
+                                break;
+                            case 'd':
+                            case 'i':
+                            case 'u':
+                                format = 'd';
+                                break;
+                            case 'o':
+                                format = 'o';
+                                break;
+                            case 'x':
+                            case 'X':
+                                format = config.getFormat();
+                                break;
+                            default:
+                                throw new UnsupportedOperationException();
+                        }
+
+                        if(config.getFormat() == 'b' || config.getFormat() == 'B'){
+                            node = WriteBytesNodeGen.create(context,
+                                FormatIntegerBinaryNodeGen.create(context, format,
+                                    config.isPlus(), config.isFsharp(),
+                                    config.isMinus(),
+                                    config.isHasSpace(),
+                                    config.isZero(),
+                                    widthNode,
+                                    precisionNode,
+                                    ToIntegerNodeGen.create(context, valueNode)));
+                        } else {
+                            node = WriteBytesNodeGen.create(context,
+                                FormatIntegerNodeGen.create(context, format, config.isHasSpace(), config.isZero(), config.isPlus(), config.isMinus(), config.isFsharp(),
+                                    widthNode,
+                                    precisionNode,
+                                    ToIntegerNodeGen.create(context, valueNode)));
+                        }
+                        break;
+                    case FLOAT:
+                        switch (config.getFormat()){
+                            case 'f':
+                            case 'e':
+                            case 'E':
+                                node = WriteBytesNodeGen.create(context,
+                                    FormatFloatNodeGen.create(context,
+                                        config.getFormat(), config.isHasSpace(), config.isZero(), config.isPlus(), config.isMinus(),
+                                        widthNode,
+                                        precisionNode,
+                                        ToDoubleWithCoercionNodeGen.create(context,
+                                            valueNode)));
+                                break;
+                            case 'g':
+                            case 'G':
+                                node = WriteBytesNodeGen.create(context,
+                                    FormatFloatHumanReadableNodeGen.create(context,
+                                        ToDoubleWithCoercionNodeGen.create(context,
+                                            valueNode)));
+                                break;
+                            default:
+                                throw new UnsupportedOperationException();
+                        }
+                        break;
+                    case OTHER:
+                        switch (config.getFormat()){
+                            case 'c':
+                                node = WriteBytesNodeGen.create(context,
+                                    FormatCharacterNodeGen.create(context, config.isMinus(), widthNode,
+                                        valueNode));
+                                break;
+                            case 's':
+                            case 'p':
+                                final String conversionMethodName = config.getFormat() == 's' ? "to_s" : "inspect";
+                                final FormatNode conversionNode;
+
+                                if(config.getAbsoluteArgumentIndex() == null && config.getNamesBytes() == null) {
+                                    conversionNode = ReadStringNodeGen.create(context, true, conversionMethodName, false, EMPTY_BYTES, new SourceNode());
+                                } else {
+                                    conversionNode = ToStringNodeGen.create(context, true, conversionMethodName, false, EMPTY_BYTES, valueNode);
+                                }
+
+                                if (config.getWidth() != null || config.isWidthStar()) {
+                                    node = WritePaddedBytesNodeGen.create(context, config.isMinus(), widthNode, conversionNode);
+                                } else {
+                                    node = WriteBytesNodeGen.create(context, conversionNode);
+                                }
+                                break;
+                            default:
+                                throw new UnsupportedOperationException();
+                        }
+                        break;
+                    default:
+                        throw new UnsupportedOperationException("unsupported type: " + config.getFormatType().toString());
+
+
+
+                }
+
+            }
+            sequence.add(node);
+        }
+
+
+    }
+
+
+
+    public FormatNode getNode() {
+        buildTree();
+        return new SequenceNode(context, sequence.toArray(new FormatNode[sequence.size()]));
+    }
+
+}
