@@ -1,2 +1,1 @@
 fails:Exception#message calls #to_s on self
-fails:Exception#message when #backtrace is redefined returns the Exception message
