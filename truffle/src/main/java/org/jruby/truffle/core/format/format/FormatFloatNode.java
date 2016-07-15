@@ -46,7 +46,7 @@ public abstract class FormatFloatNode extends FormatNode {
     @Specialization(guards = "isInfinite(value)")
     public byte[] formatInfinite(int width, int precision, double value) {
         final String infinityString = String.format(getInfiniteFormatString(width), value);
-        return mapInifityResult(infinityString).getBytes(StandardCharsets.US_ASCII);
+        return mapInfiniteResult(infinityString).getBytes(StandardCharsets.US_ASCII);
     }
 
     @TruffleBoundary
@@ -60,13 +60,15 @@ public abstract class FormatFloatNode extends FormatNode {
     }
 
     private static String mapFiniteResult(String input){
+        // Map java finite strings to the Ruby style NaN
         if(input.contains("NAN")){
             return input.replaceFirst("NAN", "NaN");
         }
         return input;
     }
 
-    private static String mapInifityResult(String input){
+    private static String mapInfiniteResult(String input){
+        // Map java infinite strings to the Ruby style Inf
         if(input.contains("-Infinity")) {
             return input.replaceFirst("-Infinity", "-Inf");
         } else if(input.contains("-INFINITY")){
@@ -120,31 +122,30 @@ public abstract class FormatFloatNode extends FormatNode {
     }
 
     private String getInfiniteFormatString(final int width){
-        final StringBuilder inifiniteFormatBuilder = new StringBuilder();
-        inifiniteFormatBuilder.append("%");
+        final StringBuilder infiniteFormatBuilder = new StringBuilder();
+        infiniteFormatBuilder.append("%");
         if(hasMinusFlag){
-            inifiniteFormatBuilder.append("-");
+            infiniteFormatBuilder.append("-");
         }
         if(hasPlusFlag){
-            inifiniteFormatBuilder.append("+");
+            infiniteFormatBuilder.append("+");
         }
 
         if (hasSpaceFlag) {
-            inifiniteFormatBuilder.append(" ");
-            inifiniteFormatBuilder.append(width + 5);
+            infiniteFormatBuilder.append(" ");
+            infiniteFormatBuilder.append(width + 5);
         }
         if (hasZeroFlag && width != 0) {
-            inifiniteFormatBuilder.append("0");
-            inifiniteFormatBuilder.append(width + 5);
+            infiniteFormatBuilder.append("0");
+            infiniteFormatBuilder.append(width + 5);
         }
         if(!hasSpaceFlag && !hasZeroFlag){
-            inifiniteFormatBuilder.append(width + 5);
+            infiniteFormatBuilder.append(width + 5);
         }
 
+        infiniteFormatBuilder.append(format);
 
-        inifiniteFormatBuilder.append(format);
-
-        return inifiniteFormatBuilder.toString();
+        return infiniteFormatBuilder.toString();
     }
 
 }

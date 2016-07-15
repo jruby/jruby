@@ -48,6 +48,7 @@ public abstract class FormatIntegerNode extends FormatNode {
         this.hasFSharp = hasFSharp;
     }
 
+    @TruffleBoundary
     @Specialization
     public byte[] format(int width, int precision, int value) {
         String formatted;
@@ -96,6 +97,7 @@ public abstract class FormatIntegerNode extends FormatNode {
         return formatStart(width, precision, formatted, value < 0);
     }
 
+    @TruffleBoundary
     @Specialization
     public byte[] format(int width, int precision, long value) {
         String formatted;
@@ -143,12 +145,11 @@ public abstract class FormatIntegerNode extends FormatNode {
     }
 
     private static byte[] elide(byte[] bytes, char format, int precision) {
+        // TODO BJF need to implement the skipping of bytes per format type when value is negative
         return bytes;
     }
 
-
     private byte[] formatStart(int width, int precision, String formatted, boolean isNegative) {
-
         boolean leftJustified = hasMinusFlag;
         if (width < 0 && width != PrintfSimpleTreeBuilder.DEFAULT) {  // TODO handle default width better
             width = -width;
@@ -198,7 +199,6 @@ public abstract class FormatIntegerNode extends FormatNode {
         }
 
         return formatted.getBytes(StandardCharsets.US_ASCII);
-
     }
 
     @TruffleBoundary
@@ -207,7 +207,6 @@ public abstract class FormatIntegerNode extends FormatNode {
         final BigInteger bigInteger = Layouts.BIGNUM.getValue(value);
 
         String formatted;
-
         switch (format) {
             case 'd':
             case 'i':

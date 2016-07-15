@@ -1,3 +1,12 @@
+/*
+ * Copyright (c) 2016 Oracle and/or its affiliates. All rights reserved. This
+ * code is released under a tri EPL/GPL/LGPL license. You can use it,
+ * redistribute it and/or modify it under the terms of the:
+ *
+ * Eclipse Public License version 1.0
+ * GNU General Public License version 2
+ * GNU Lesser General Public License version 2.1
+ */
 package org.jruby.truffle.core.format.printf;
 
 import com.oracle.truffle.api.object.DynamicObject;
@@ -29,22 +38,21 @@ import java.util.List;
 
 public class PrintfSimpleTreeBuilder {
 
-
     private final RubyContext context;
     private final List<FormatNode> sequence = new ArrayList<>();
-    private final List<PrintfSimpleParser.SprintfConfig> configs;
+    private final List<SprintfConfig> configs;
 
     public static int DEFAULT = -1;
 
     private static final byte[] EMPTY_BYTES = new byte[]{};
 
-    public PrintfSimpleTreeBuilder(RubyContext context, List<PrintfSimpleParser.SprintfConfig> configs) {
+    public PrintfSimpleTreeBuilder(RubyContext context, List<SprintfConfig> configs) {
         this.context = context;
         this.configs = configs;
     }
 
     private void buildTree() {
-        for (PrintfSimpleParser.SprintfConfig config : configs) {
+        for (SprintfConfig config : configs) {
             final FormatNode node;
             if (config.isLiteral()) {
                 node = WriteBytesNodeGen.create(context, new LiteralFormatNode(context, config.getLiteralBytes()));
@@ -175,9 +183,6 @@ public class PrintfSimpleTreeBuilder {
                         break;
                     default:
                         throw new UnsupportedOperationException("unsupported type: " + config.getFormatType().toString());
-
-
-
                 }
 
             }

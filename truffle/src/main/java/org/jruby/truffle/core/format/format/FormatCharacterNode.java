@@ -1,3 +1,12 @@
+/*
+ * Copyright (c) 2016 Oracle and/or its affiliates. All rights reserved. This
+ * code is released under a tri EPL/GPL/LGPL license. You can use it,
+ * redistribute it and/or modify it under the terms of the:
+ *
+ * Eclipse Public License version 1.0
+ * GNU General Public License version 2
+ * GNU Lesser General Public License version 2.1
+ */
 package org.jruby.truffle.core.format.format;
 
 import com.oracle.truffle.api.CompilerDirectives;
@@ -35,7 +44,6 @@ public abstract class FormatCharacterNode extends FormatNode {
         this.hasMinusFlag = hasMinusFlag;
     }
 
-//    @TruffleBoundary
     @Specialization
     protected byte[] format(VirtualFrame frame, int width, Object value) {
         if (toStringNode == null) {
@@ -67,19 +75,22 @@ public abstract class FormatCharacterNode extends FormatNode {
             final String resultString = new String((byte[]) toStrResult);
             final int size = resultString.length();
             if (size > 1) {
-                throw new RaiseException(getContext().getCoreExceptions().argumentError("%c requires a character", this));
+                throw new RaiseException(getContext().getCoreExceptions().argumentErrorCharacterRequired(this));
             }
             charString = resultString;
         }
-
 
         final boolean leftJustified = hasMinusFlag || width < 0;
         if (width < 0) {
             width = -width;
         }
 
-        final String result = String.format("%" + (leftJustified ? "-" : "") + width + "." + width + "s", charString);
-        return result.getBytes(StandardCharsets.US_ASCII);
+        return doFormat(charString, width, leftJustified).getBytes(StandardCharsets.US_ASCII);
+    }
+
+    @TruffleBoundary
+    private String doFormat(final String charString, final int width, final boolean leftJustified) {
+        return String.format("%" + (leftJustified ? "-" : "") + width + "." + width + "s", charString);
     }
 
 }

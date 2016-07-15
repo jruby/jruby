@@ -31,7 +31,7 @@ public class PrintfCompiler {
 
     public CallTarget compile(String formatString, byte[] format) {
         final PrintfSimpleParser parser = new PrintfSimpleParser(bytesToChars(format));
-        final List<PrintfSimpleParser.SprintfConfig> configs = parser.parse();
+        final List<SprintfConfig> configs = parser.parse();
         final PrintfSimpleTreeBuilder builder = new PrintfSimpleTreeBuilder(context, configs);
 
         return Truffle.getRuntime().createCallTarget(
