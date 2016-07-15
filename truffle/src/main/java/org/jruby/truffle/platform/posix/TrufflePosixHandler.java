@@ -22,7 +22,7 @@ import java.io.PrintStream;
 
 public class TrufflePosixHandler implements POSIXHandler {
 
-    private RubyContext context;
+    private final RubyContext context;
 
     public TrufflePosixHandler(RubyContext context) {
         this.context = context;
