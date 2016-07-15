@@ -267,6 +267,9 @@ public class RubyObject extends RubyBasicObject {
             klass.setAllocator(allocator);
             klass.setReifiedClass(reified);
 
+            // invalidate metaclass so new allocator is picked up for specialized .new
+            klass.getMetaClass().invalidateCacheDescendants();
+
             return allocator.allocate(runtime, klass);
         }
     };

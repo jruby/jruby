@@ -148,7 +148,7 @@ public class FeatureLoader {
 
         try {
             return parseSource(context.getSourceLoader().load(path));
-        } catch (IOException e) {
+        } catch (Exception e) {
             throw new JavaException(e);
         }
     }
@@ -157,7 +157,7 @@ public class FeatureLoader {
     public CallTarget parseSource(Source source) {
         try {
             return context.getEnv().parse(source);
-        } catch (IOException e) {
+        } catch (Exception e) {
             throw new JavaException(e);
         }
     }
