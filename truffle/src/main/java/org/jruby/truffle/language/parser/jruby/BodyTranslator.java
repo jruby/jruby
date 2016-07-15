@@ -534,14 +534,6 @@ public class BodyTranslator extends Translator {
                 final RubyNode ret = AssertNotCompiledNodeGen.create(context, sourceSection);
                 return addNewlineIfNeeded(node, ret);
             }
-        } else if (receiver instanceof org.jruby.ast.ConstNode // Truffle.omit
-                && ((org.jruby.ast.ConstNode) receiver).getName().equals("Truffle")) {
-            if (methodName.equals("omit")) {
-                // We're never going to run the omitted code and it's never used as the RHS for anything, so just
-                // replace the call with nil.
-                final RubyNode ret = nilNode(sourceSection);
-                return addNewlineIfNeeded(node, ret);
-            }
         } else if (receiver instanceof org.jruby.ast.VCallNode // undefined.equal?(obj)
                 && ((org.jruby.ast.VCallNode) receiver).getName().equals("undefined")
                 && getSourcePath(sourceSection).startsWith(buildCorePath(""))
