@@ -42,10 +42,6 @@ public abstract class ExceptionOperations {
         return Layouts.ARRAY.createArray(context.getCoreLibrary().getArrayFactory(), array, array.length);
     }
 
-    public static DynamicObject createRubyException(DynamicObject rubyClass) {
-        return Layouts.EXCEPTION.createException(Layouts.CLASS.getInstanceFactory(rubyClass), null, null);
-    }
-
     public static DynamicObject createRubyException(DynamicObject rubyClass, Object message, Backtrace backtrace) {
         return Layouts.EXCEPTION.createException(Layouts.CLASS.getInstanceFactory(rubyClass), message, backtrace);
     }

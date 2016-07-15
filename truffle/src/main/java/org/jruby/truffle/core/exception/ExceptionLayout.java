@@ -25,7 +25,7 @@ public interface ExceptionLayout extends BasicObjectLayout {
 
     DynamicObject createException(
             DynamicObjectFactory factory,
-            @Nullable Object message,
+            Object message,
             @Nullable Backtrace backtrace);
 
     boolean isException(DynamicObject object);

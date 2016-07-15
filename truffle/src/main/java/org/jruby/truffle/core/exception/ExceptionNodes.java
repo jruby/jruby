@@ -117,7 +117,7 @@ public abstract class ExceptionNodes {
                 @Cached("createBinaryProfile()") ConditionProfile messageProfile) {
             final Object message = Layouts.EXCEPTION.getMessage(exception);
 
-            if (messageProfile.profile(message == null || message == nil())) {
+            if (messageProfile.profile(message == nil())) {
                 final String className = Layouts.MODULE.getFields(
                         Layouts.BASIC_OBJECT.getLogicalClass(exception)).getName();
                 return createString(StringOperations.encodeRope(className, UTF8Encoding.INSTANCE));

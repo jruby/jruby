@@ -167,7 +167,7 @@ public abstract class IOBufferPrimitiveNodes {
                         getContext().getSafepointManager().poll(this);
                         continue;
                     } else {
-                        throw new RaiseException(ExceptionOperations.createSystemCallError(coreLibrary().getErrnoClass(Errno.valueOf(errno)), null, null, errno));
+                        throw new RaiseException(ExceptionOperations.createSystemCallError(coreLibrary().getErrnoClass(Errno.valueOf(errno)), nil(), null, errno));
                     }
                 } else {
                     break;
