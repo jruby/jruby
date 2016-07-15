@@ -684,7 +684,7 @@ public class BodyTranslator extends Translator {
         children.addAll(Arrays.asList(argumentsAndBlock.getArguments()));
 
         RubyNode translated = new RubyCallNode(context, enclosing(sourceSection, children.toArray(new RubyNode[children.size()])),
-                node.getName(), receiverTranslated, argumentsAndBlock.getBlock(), argumentsAndBlock.isSplatted(),
+                node.getName(), receiverTranslated, argumentsAndBlock.getBlock(), node.isLazy(), argumentsAndBlock.isSplatted(),
                 privately || ignoreVisibility, isVCall, argumentsAndBlock.getArguments());
 
         if (argumentsAndBlock.getBlock() instanceof BlockDefinitionNode) { // if we have a literal block, break breaks out of this call site

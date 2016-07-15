@@ -14,6 +14,7 @@ import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.Layouts;
@@ -37,6 +38,7 @@ public class RubyCallNode extends RubyNode {
     @Child private ProcOrNullNode block;
     @Children private final RubyNode[] arguments;
 
+    private final boolean isSafeNavigation;
     private final boolean isSplatted;
     private final boolean isVCall;
 
@@ -51,6 +53,8 @@ public class RubyCallNode extends RubyNode {
     @Child private CallDispatchHeadNode respondToMissing;
     @Child private BooleanCastNode respondToMissingCast;
 
+    private final ConditionProfile nilProfile;
+
     private final boolean ignoreVisibility;
 
     public RubyCallNode(RubyContext context, SourceSection section, String methodName, RubyNode receiver, RubyNode block, boolean isSplatted, RubyNode... arguments) {
@@ -62,6 +66,10 @@ public class RubyCallNode extends RubyNode {
     }
 
     public RubyCallNode(RubyContext context, SourceSection section, String methodName, RubyNode receiver, RubyNode block, boolean isSplatted, boolean ignoreVisibility, boolean isVCall, RubyNode... arguments) {
+        this(context, section, methodName, receiver, block, false, isSplatted, ignoreVisibility, isVCall, arguments);
+    }
+
+    public RubyCallNode(RubyContext context, SourceSection section, String methodName, RubyNode receiver, RubyNode block, boolean isSafeNavigation, boolean isSplatted, boolean ignoreVisibility, boolean isVCall, RubyNode... arguments) {
         super(context, section);
 
         this.methodName = methodName;
@@ -74,14 +82,28 @@ public class RubyCallNode extends RubyNode {
             this.block = ProcOrNullNodeGen.create(context, section, block);
         }
 
+        this.isSafeNavigation = isSafeNavigation;
         this.isSplatted = isSplatted;
         this.isVCall = isVCall;
         this.ignoreVisibility = ignoreVisibility;
+
+        if (isSafeNavigation) {
+            nilProfile = ConditionProfile.createCountingProfile();
+        } else {
+            nilProfile = null;
+        }
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
         final Object receiverObject = receiver.execute(frame);
+
+        if (isSafeNavigation) {
+            if (nilProfile.profile(receiverObject == nil())) {
+                return nil();
+            }
+        }
+
         final Object[] argumentsObjects = executeArguments(frame);
         final DynamicObject blockObject = executeBlock(frame);
 
