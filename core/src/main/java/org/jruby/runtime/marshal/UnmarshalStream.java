@@ -289,11 +289,13 @@ public class UnmarshalStream extends InputStream {
         byte opts = readSignedByte();
         RegexpOptions reOpts = RegexpOptions.fromJoniOptions(opts);
 
+        RubyRegexp regexp = (RubyRegexp) runtime.getRegexp().allocate();
+        registerLinkTarget(regexp);
+
         IRubyObject ivarHolder = null;
 
         if (state.isIvarWaiting()) {
             RubyString tmpStr = RubyString.newString(runtime, byteList);
-            registerLinkTarget(tmpStr);
             defaultVariablesUnmarshal(tmpStr);
             byteList = tmpStr.getByteList();
             state.setIvarWaiting(false);
@@ -351,13 +353,11 @@ public class UnmarshalStream extends InputStream {
             byteList.setRealSize(dst - ptr);
         }
 
-        RubyRegexp regexp = RubyRegexp.newRegexp(runtime, byteList, reOpts);
+        regexp.regexpInitialize(byteList, byteList.getEncoding(), reOpts);
 
         if (ivarHolder != null) {
             ivarHolder.getInstanceVariables().copyInstanceVariablesInto(regexp);
         }
-
-        registerLinkTarget(regexp);
 
         return regexp;
     }
