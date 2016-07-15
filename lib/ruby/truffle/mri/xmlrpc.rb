@@ -1,1 +1,1 @@
-require_relative '../stdlib/xmlrpc'
+require_relative '../../stdlib/xmlrpc'

@@ -1,1 +1,1 @@
-require_relative '../../stdlib/cgi/cookie'
+require_relative '../../../stdlib/cgi/cookie'
