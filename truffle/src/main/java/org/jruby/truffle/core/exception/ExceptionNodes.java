@@ -81,7 +81,9 @@ public abstract class ExceptionNodes {
         private ReadObjectFieldNode getReadCustomBacktraceNode() {
             if (readCustomBacktraceNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                readCustomBacktraceNode = insert(ReadObjectFieldNodeGen.create("@custom_backtrace", null));
+                readCustomBacktraceNode = insert(ReadObjectFieldNodeGen.create(
+                        "@custom_backtrace",
+                        null));
             }
 
             return readCustomBacktraceNode;
@@ -101,7 +103,10 @@ public abstract class ExceptionNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject captureBacktrace(DynamicObject exception, int offset) {
-            final Backtrace backtrace = getContext().getCallStack().getBacktrace(this, offset, exception);
+            final Backtrace backtrace = getContext().getCallStack().getBacktrace(
+                    this,
+                    offset,
+                    exception);
             Layouts.EXCEPTION.setBacktrace(exception, backtrace);
             return nil();
         }
@@ -160,9 +165,12 @@ public abstract class ExceptionNodes {
 
         @TruffleBoundary
         @Specialization
-        public DynamicObject exceptionErrnoError(DynamicObject message, int errno, DynamicObject location) {
+        public DynamicObject exceptionErrnoError(
+                DynamicObject message,
+                int errno,
+                DynamicObject location) {
             final String errorMessage;
-            if(RubyGuards.isRubyString(location)){
+            if (RubyGuards.isRubyString(location)) {
                 errorMessage = " @ " + location.toString() + " - " + message.toString();
             } else {
                 errorMessage = " - " + message.toString();
