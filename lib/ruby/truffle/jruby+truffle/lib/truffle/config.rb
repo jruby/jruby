@@ -124,6 +124,22 @@ stubs = {
                   run:   { require: [file_name] } }
 end
 
+additions = {
+    minitest_reporters: dedent(<<-RUBY)
+      require 'rbconfig'
+      # add minitest-reporters to $LOAD_PATH
+      path = File.expand_path('..', __FILE__)
+      $:.unshift "\#{path}/../\#{RUBY_ENGINE}/\#{RbConfig::CONFIG['ruby_version']}/gems/minitest-reporters 1.1.9/lib"
+      # activate
+      require "minitest/reporters"
+      Minitest::Reporters.use! Minitest::Reporters::SpecReporter.new
+    RUBY
+}.reduce({}) do |h, (k, v)|
+  file_name = format '%s.rb', k
+  h.update k => { setup: { file: { file_name => v } },
+                  run:   { require: [file_name] } }
+end
+
 replacements = {
     bundler: dedent(<<-RUBY),
       module Bundler
@@ -158,6 +174,7 @@ end
 rails_common =
     deep_merge replacements.fetch(:bundler),
                stubs.fetch(:kernel_gem),
+               additions.fetch(:minitest_reporters),
                setup: { without: %w(db job) },
                run:   { environment: { 'N' => 1 },
                         require:     %w(rubygems date bigdecimal pathname openssl-stubs) }
