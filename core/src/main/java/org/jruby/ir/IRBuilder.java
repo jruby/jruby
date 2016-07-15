@@ -1528,12 +1528,24 @@ public class IRBuilder {
 
             CodeBlock protectedCode = new CodeBlock() {
                 public Operand run() {
-                    Operand v = colon instanceof Colon2Node ?
-                            build(((Colon2Node)colon).getLeftNode()) : new ObjectClass();
+                    if (!(colon instanceof Colon2Node)) { // colon3 (weird inheritance)
+                        return addResultInstr(new RuntimeHelperCall(createTemporaryVariable(),
+                                IS_DEFINED_CONSTANT_OR_METHOD, new Operand[] {new ObjectClass(), new FrozenString(name)}));
+                    }
 
-                    Variable tmpVar = createTemporaryVariable();
-                    addInstr(new RuntimeHelperCall(tmpVar, IS_DEFINED_CONSTANT_OR_METHOD, new Operand[] {v, new FrozenString(name)}));
-                    return tmpVar;
+                    Label bad = getNewLabel();
+                    Label done = getNewLabel();
+                    Variable result = createTemporaryVariable();
+                    Operand test = buildGetDefinition(((Colon2Node) colon).getLeftNode());
+                    addInstr(BEQInstr.create(test, manager.getNil(), bad));
+                    Operand lhs = build(((Colon2Node) colon).getLeftNode());
+                    addInstr(new RuntimeHelperCall(result, IS_DEFINED_CONSTANT_OR_METHOD, new Operand[] {lhs, new FrozenString(name)}));
+                    addInstr(new JumpInstr(done));
+                    addInstr(new LabelInstr(bad));
+                    addInstr(new CopyInstr(result, manager.getNil()));
+                    addInstr(new LabelInstr(done));
+
+                    return result;
                 }
             };
 
