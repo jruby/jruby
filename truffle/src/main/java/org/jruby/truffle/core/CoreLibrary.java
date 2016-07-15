@@ -962,6 +962,15 @@ public class CoreLibrary {
         // Java interop
         final DynamicObject javaModule = defineModule(truffleModule, "Java");
         Layouts.MODULE.getFields(javaModule).setConstant(context, node, "System", systemObject);
+
+        // Errno constants
+        for (Map.Entry<Errno, DynamicObject> entry : errnoClasses.entrySet()) {
+            final Errno errno = entry.getKey();
+            final DynamicObject errnoClass = entry.getValue();
+            Layouts.CLASS.getFields(errnoClass).setConstant(context, node, "Errno", errno.intValue());
+        }
+
+
     }
 
     private void initializeSignalConstants() {
