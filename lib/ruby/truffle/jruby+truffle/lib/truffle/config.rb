@@ -5,14 +5,6 @@ include Truffle::Runner::ConfigUtils
 include Truffle::Runner::OptionBlocks
 
 stubs = {
-    # TODO (pitr-ch 23-Jun-2016): remove? it's not used any more
-    minitest: dedent(<<-RUBY),
-      require 'minitest'
-      # mock load_plugins as it loads rubygems
-      def Minitest.load_plugins
-      end
-    RUBY
-
     activesupport_isolation: dedent(<<-RUBY),
       require 'active_support/testing/isolation'
 
