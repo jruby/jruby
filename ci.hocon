@@ -80,7 +80,7 @@ graal-enterprise: {
 
 graal-enterprise-no-om: {
   setup: ${graal-enterprise.setup}
-  
+
   environment: {
     GRAALVM_BIN: graal-workspace/jvmci/jdk1.8.0_60/product/bin/java, // temporarily looks like GraalVM - will use GRAAL_HOME after next GraalVM release
     HOST_VM: server,
@@ -256,7 +256,8 @@ test-gems: ${jruby-truffle-gem-test-pack} {
 
 test-ecosystem: ${jruby-truffle-gem-test-pack} {
   run: [
-    ${jt} [test, ecosystem, ecosystem, --offline]
+    [bin/jruby, bin/gem, install, ../jruby-truffle-gem-test-pack/gems/cache/bundler-1.12.5.gem],
+    ${jt} [test, ecosystem, gem-testing, --offline]
   ]
 }
 

@@ -858,6 +858,10 @@ module Commands
 
     env_vars["JRUBY_OPTS"] = jruby_opts.join(' ')
 
+    unless File.exist? "#{JRUBY_DIR}/../jruby-truffle-gem-test-pack/gem-testing"
+      raise 'missing ../jruby-truffle-gem-test-pack/gem-testing directory'
+    end
+
     env_vars["PATH"]       = "#{Utilities.find_jruby_bin_dir}:#{ENV["PATH"]}"
     tests_path             = "#{JRUBY_DIR}/test/truffle/ecosystem"
     single_test            = !args.empty?

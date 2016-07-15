@@ -129,7 +129,7 @@ additions = {
       require 'rbconfig'
       # add minitest-reporters to $LOAD_PATH
       path = File.expand_path('..', __FILE__)
-      $:.unshift "\#{path}/../\#{RUBY_ENGINE}/\#{RbConfig::CONFIG['ruby_version']}/gems/minitest-reporters 1.1.9/lib"
+      $:.unshift "\#{path}/../\#{RUBY_ENGINE}/\#{RbConfig::CONFIG['ruby_version']}/gems/minitest-reporters-1.1.9/lib"
       # activate
       require "minitest/reporters"
       Minitest::Reporters.use! Minitest::Reporters::SpecReporter.new
@@ -236,8 +236,6 @@ class Truffle::Runner::CIEnvironment
   def rails_ci(exclude)
     repository_name 'rails'
 
-    git_clone 'https://github.com/rails/rails.git' unless File.exists? repository_dir
-    git_checkout git_tag('4.2.6')
 
     use_only_https_git_paths!
 
@@ -268,8 +266,6 @@ Truffle::Runner.add_ci_definition :activesupport do
 end
 
 Truffle::Runner.add_ci_definition :algebrick do
-  git_clone 'https://github.com/pitr-ch/algebrick.git' unless File.exists? repository_dir
-  git_checkout git_tag '0.7.3'
 
   has_to_succeed setup
 
