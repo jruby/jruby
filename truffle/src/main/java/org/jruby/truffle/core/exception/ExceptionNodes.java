@@ -128,6 +128,16 @@ public abstract class ExceptionNodes {
 
     }
 
+    @Primitive(name = "exception_message")
+    public abstract static class MessagePrimitiveNode extends CoreMethodArrayArgumentsNode {
+
+        @Specialization
+        public Object message(DynamicObject exception) {
+            return Layouts.EXCEPTION.getMessage(exception);
+        }
+
+    }
+
     @CoreMethod(names = "allocate", constructor = true)
     public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
 
