@@ -1444,30 +1444,7 @@ public class IRBuilder {
         case TRUENODE:
             return new FrozenString("true");
         case DREGEXPNODE: case DSTRNODE: {
-            final Node dNode = node;
-
-            // protected code
-            CodeBlock protectedCode = new CodeBlock() {
-                public Operand run() {
-                    build(dNode);
-                    // always an expression as long as we get through here without an exception!
-                    return new FrozenString("expression");
-                }
-            };
-            // rescue block
-            CodeBlock rescueBlock = new CodeBlock() {
-                public Operand run() { return manager.getNil(); } // Nothing to do if we got an exception
-            };
-
-            // Try verifying definition, and if we get an JumpException exception, process it with the rescue block above
-            Operand v = protectCodeWithRescue(protectedCode, rescueBlock);
-            Label doneLabel = getNewLabel();
-            Variable tmpVar = getValueInTemporaryVariable(v);
-            addInstr(BNEInstr.create(doneLabel, tmpVar, manager.getNil()));
-            addInstr(new CopyInstr(tmpVar, new FrozenString("expression")));
-            addInstr(new LabelInstr(doneLabel));
-
-            return tmpVar;
+            return new FrozenString("expression");
         }
         case ARRAYNODE: { // If all elts of array are defined the array is as well
             ArrayNode array = (ArrayNode) node;
