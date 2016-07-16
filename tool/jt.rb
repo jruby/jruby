@@ -23,7 +23,7 @@ GRAALVM_VERSION = '0.12'
 
 JRUBY_DIR = File.expand_path('../..', __FILE__)
 M2_REPO = File.expand_path('~/.m2/repository')
-SULONG_DIR = ENV['SULONG_DIR']
+SULONG_HOME = ENV['SULONG_HOME']
 
 JDEBUG_PORT = 51819
 JDEBUG = "-J-agentlib:jdwp=transport=dt_socket,server=y,address=#{JDEBUG_PORT},suspend=y"
@@ -333,7 +333,7 @@ module ShellUtils
     if ENV['USE_SYSTEM_CLANG']
       sh 'clang', *args
     else
-      mx SULONG_DIR, 'su-clang', *args
+      mx SULONG_HOME, 'su-clang', *args
     end
   end
 
@@ -341,16 +341,16 @@ module ShellUtils
     if ENV['USE_SYSTEM_CLANG']
       sh 'opt', *args
     else
-      mx SULONG_DIR, 'su-opt', *args
+      mx SULONG_HOME, 'su-opt', *args
     end
   end
 
   def sulong_run(*args)
-    mx SULONG_DIR, 'su-run', *args
+    mx SULONG_HOME, 'su-run', *args
   end
 
   def sulong_link(*args)
-    mx SULONG_DIR, 'su-link', *args
+    mx SULONG_HOME, 'su-link', *args
   end
 
   def mspec(command, *args)
@@ -377,7 +377,7 @@ module Commands
     puts 'jt build [options]                             build'
     puts 'jt rebuild [options]                           clean and build'
     puts '    truffle                                    build only the Truffle part, assumes the rest is up-to-date'
-    puts '    cexts                                      build the cext backend (set SULONG_DIR and mabye USE_SYSTEM_CLANG)'
+    puts '    cexts                                      build the cext backend (set SULONG_HOME and mabye USE_SYSTEM_CLANG)'
     puts '    --offline                                  use the build pack to build offline'
     puts 'jt clean                                       clean'
     puts 'jt irb                                         irb'
@@ -396,7 +396,7 @@ module Commands
     puts 'jt e 14 + 2                                    evaluate an expression'
     puts 'jt puts 14 + 2                                 evaluate and print an expression'
     puts 'jt cextc directory clang-args                  compile the C extension in directory, with optional extra clang arguments'
-    puts 'jt test                                        run all mri tests, specs and integration tests (set SULONG_DIR, and maybe USE_SYSTEM_CLANG)'
+    puts 'jt test                                        run all mri tests, specs and integration tests (set SULONG_HOME, and maybe USE_SYSTEM_CLANG)'
     puts 'jt test tck [--jdebug]                         run the Truffle Compatibility Kit tests'
     puts 'jt test mri                                    run mri tests'
     puts 'jt test specs                                  run all specs'
@@ -410,7 +410,7 @@ module Commands
     puts 'jt test gems                                   tests using gems'
     puts 'jt test ecosystem                              tests using the wider ecosystem such as bundler, Rails, etc'
     puts 'jt test cexts                                  run C extension tests'
-    puts '                                                   (implies --graal, where Graal needs to include Sulong, set SULONG_DIR to a built checkout of Sulong, and set GEM_HOME)'
+    puts '                                                   (implies --graal, where Graal needs to include Sulong, set SULONG_HOME to a built checkout of Sulong, and set GEM_HOME)'
     puts 'jt test report :language                       build a report on language specs'
     puts '               :core                               (results go into test/target/mspec-html-report)'
     puts '               :library'
@@ -441,12 +441,12 @@ module Commands
     puts '  JVMCI_JAVA_HOME                              The Java with JVMCI to use with GRAAL_HOME'
     puts '  GRAALVM_RELEASE_BIN                          Default GraalVM executable when using a released version of Truffle (such as on master)'
     puts '  GRAAL_HOME_TRUFFLE_HEAD                      Default Graal directory when using a snapshot version of Truffle (such as on truffle-head)'
-    puts '  SULONG_DIR                                   The Sulong source repository, if you want to run cextc'
+    puts '  SULONG_HOME                                  The Sulong source repository, if you want to run cextc'
     puts '  USE_SYSTEM_CLANG                             Use the system clang rather than Sulong\'s when compiling C extensions'
     puts '  GRAAL_JS_JAR                                 The location of trufflejs.jar'
     puts '  SL_JAR                                       The location of truffle-sl.jar'
     puts '  OPENSSL_HOME                                 The location of OpenSSL (the directory containing include etc)'
-    puts '  LIBXML_HOME                                 The location of libxml2 (the directory containing include etc)'
+    puts '  LIBXML_HOME                                  The location of libxml2 (the directory containing include etc)'
   end
 
   def checkout(branch)
@@ -614,7 +614,7 @@ module Commands
     src.each do |src|
       ll = File.join(File.dirname(out), File.basename(src, '.*') + '.ll')
       
-      clang "-I#{SULONG_DIR}/include", '-Ilib/ruby/truffle/cext', '-S', '-emit-llvm', *config_cflags, *clang_opts, src, '-o', ll
+      clang "-I#{SULONG_HOME}/include", '-Ilib/ruby/truffle/cext', '-S', '-emit-llvm', *config_cflags, *clang_opts, src, '-o', ll
       llvm_opt '-S', '-mem2reg', ll, '-o', ll
 
       lls.push ll

@@ -282,7 +282,7 @@ test-cexts: {
   environment: {
     GEM_HOME: jruby-truffle-gem-test-pack/gems
     GRAAL_HOME: sulong-workspace/sulong,
-    SULONG_DIR: sulong-workspace/sulong,
+    SULONG_HOME: sulong-workspace/sulong,
     USE_SYSTEM_CLANG: "true",
     HOST_VM: server,
     HOST_VM_CONFIG: graal-core
@@ -330,7 +330,7 @@ sulong-benchmarks: {
   
   environment: {
     GRAAL_HOME: sulong-workspace/sulong,
-    SULONG_DIR: sulong-workspace/sulong,
+    SULONG_HOME: sulong-workspace/sulong,
     USE_SYSTEM_CLANG: "true",
     HOST_VM: server,
     HOST_VM_CONFIG: graal-core,
