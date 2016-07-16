@@ -23,6 +23,9 @@ extern "C" {
 
 #define JRUBY_TRUFFLE 1
 
+#define SIZEOF_INT 32
+#define SIZEOF_LONG 64
+
 #include <truffle.h>
 
 #define RUBY_CEXT truffle_import_cached("ruby_cext")
@@ -82,6 +85,9 @@ VALUE UINT2NUM(unsigned int value);
 
 VALUE LONG2NUM(long value);
 VALUE LONG2FIX(long value);
+
+int rb_fix2int(VALUE value);
+unsigned int rb_fix2uint(VALUE value);
 
 ID SYM2ID(VALUE value);
 VALUE ID2SYM(ID value);
