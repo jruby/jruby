@@ -190,6 +190,14 @@ module Truffle::CExt
   def rb_funcall(object, name, argc, args)
     object.__send__(name, *args)
   end
+
+  def rb_gc_enable
+    GC.enable
+  end
+
+  def rb_gc_disable
+    GC.disable
+  end
 end
 
 Truffle::Interop.export(:ruby_cext, Truffle::CExt)

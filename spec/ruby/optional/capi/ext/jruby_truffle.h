@@ -335,8 +335,6 @@
 
 /* GC */
 #undef HAVE_RB_GC_REGISTER_ADDRESS
-#undef HAVE_RB_GC_ENABLE
-#undef HAVE_RB_GC_DISABLE
 
 /* Marshal */
 #undef HAVE_RB_MARSHAL_DUMP

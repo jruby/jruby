@@ -379,3 +379,13 @@ void rb_undef_method(VALUE module, const char *name) {
 void rb_undef(VALUE module, ID name) {
   truffle_invoke(RUBY_CEXT, "rb_undef", module, name);
 }
+
+// GC
+
+VALUE rb_gc_enable() {
+  return truffle_invoke(RUBY_CEXT, "rb_gc_enable");
+}
+
+VALUE rb_gc_disable() {
+  return truffle_invoke(RUBY_CEXT, "rb_gc_disable");
+}

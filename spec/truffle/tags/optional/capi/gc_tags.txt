@@ -1,5 +1,1 @@
 fails:CApiGCSpecs correctly gets the value from a registered address
-fails:CApiGCSpecs rb_gc_enable enables GC when disabled
-fails:CApiGCSpecs rb_gc_enable GC stays enabled when enabled
-fails:CApiGCSpecs rb_gc_enable disables GC when enabled
-fails:CApiGCSpecs rb_gc_enable GC stays disabled when disabled

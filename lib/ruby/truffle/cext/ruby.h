@@ -198,6 +198,11 @@ void rb_alias(VALUE module, ID new_name, ID old_name);
 void rb_undef_method(VALUE module, const char *name);
 void rb_undef(VALUE module, ID name);
 
+// GC
+
+VALUE rb_gc_enable();
+VALUE rb_gc_disable();
+
 #if defined(__cplusplus)
 }
 #endif
