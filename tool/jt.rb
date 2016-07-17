@@ -732,10 +732,11 @@ module Commands
 
     begin
       output_file = 'cext-output.txt'
-      ['minimum', 'method', 'module', 'xml', 'xopenssl'].each do |gem_name|
+      ['minimum', 'method', 'module', 'globals', 'xml', 'xopenssl'].each do |gem_name|
         dir = "#{JRUBY_DIR}/test/truffle/cexts/#{gem_name}"
         cextc dir
         name = File.basename(dir)
+        next if gem_name == 'globals' # globals is excluded just for running
         run '--graal', "-I#{dir}/lib", "#{dir}/bin/#{name}", :out => output_file
         unless File.read(output_file) == File.read("#{dir}/expected.txt")
           abort "c extension #{dir} didn't work as expected"
@@ -755,10 +756,11 @@ module Commands
       next if gem_name == 'nokogiri' # nokogiri totally excluded
       config = "#{JRUBY_DIR}/test/truffle/cexts/#{gem_name}"
       cextc config, '-Werror=implicit-function-declaration'
+      next if gem_name == 'psd_native' # psd_native is excluded just for running
       run '--graal',
         *dependencies.map { |d| "-I#{ENV['GEM_HOME']}/gems/#{d}/lib" },
         *libs.map { |l| "-I#{JRUBY_DIR}/test/truffle/cexts/#{l}/lib" },
-        "#{JRUBY_DIR}/test/truffle/cexts/#{gem_name}/test.rb" unless gem_name == 'psd_native' # psd_native is excluded just for compilation
+        "#{JRUBY_DIR}/test/truffle/cexts/#{gem_name}/test.rb"
     end
   end
   private :test_cexts
