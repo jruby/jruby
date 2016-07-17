@@ -219,6 +219,18 @@ module Truffle::CExt
     object.__send__(name, *args)
   end
 
+  def rb_Rational(num, den)
+    Rational.new(num, den)
+  end
+
+  def rb_rational_raw(num, den)
+    Rational.new(num, den)
+  end
+
+  def rb_rational_new(num, den)
+    Rational(num, den)
+  end
+
   def rb_mutex_new
     Mutex.new
   end

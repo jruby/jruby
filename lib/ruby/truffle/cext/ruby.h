@@ -216,6 +216,22 @@ VALUE rb_mutex_unlock(VALUE mutex);
 VALUE rb_mutex_sleep(VALUE mutex, VALUE timeout);
 VALUE rb_mutex_synchronize(VALUE mutex, VALUE (*func)(VALUE arg), VALUE arg);
 
+// Rational
+
+VALUE rb_Rational(VALUE num, VALUE den);
+#define rb_Rational1(x) rb_Rational((x), INT2FIX(1))
+#define rb_Rational2(x,y) rb_Rational((x), (y))
+VALUE rb_rational_raw(VALUE num, VALUE den);
+#define rb_rational_raw1(x) rb_rational_raw((x), INT2FIX(1))
+#define rb_rational_raw2(x,y) rb_rational_raw((x), (y))
+VALUE rb_rational_new(VALUE num, VALUE den);
+#define rb_rational_new1(x) rb_rational_new((x), INT2FIX(1))
+#define rb_rational_new2(x,y) rb_rational_new((x), (y))
+VALUE rb_rational_num(VALUE rat);
+VALUE rb_rational_den(VALUE rat);
+VALUE rb_flt_rationalize_with_prec(VALUE value, VALUE precision);
+VALUE rb_flt_rationalize(VALUE value);
+
 // GC
 
 VALUE rb_gc_enable();

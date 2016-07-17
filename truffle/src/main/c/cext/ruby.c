@@ -396,6 +396,36 @@ void rb_undef(VALUE module, ID name) {
   truffle_invoke(RUBY_CEXT, "rb_undef", module, name);
 }
 
+// Rational
+
+VALUE rb_Rational(VALUE num, VALUE den) {
+  return truffle_invoke(RUBY_CEXT, "rb_Rational", num, den);
+}
+
+VALUE rb_rational_raw(VALUE num, VALUE den) {
+  return truffle_invoke(RUBY_CEXT, "rb_rational_raw", num, den);
+}
+
+VALUE rb_rational_new(VALUE num, VALUE den) {
+  return truffle_invoke(RUBY_CEXT, "rb_rational_new", num, den);
+}
+
+VALUE rb_rational_num(VALUE rat) {
+  return truffle_invoke(rat, "numerator");
+}
+
+VALUE rb_rational_den(VALUE rat) {
+  return truffle_invoke(rat, "denominator");
+}
+
+VALUE rb_flt_rationalize_with_prec(VALUE value, VALUE precision) {
+  return truffle_invoke(value, "rationalize", precision);
+}
+
+VALUE rb_flt_rationalize(VALUE value) {
+  return truffle_invoke(value, "rationalize");
+}
+
 // Mutexes
 
 VALUE rb_mutex_new(void) {
