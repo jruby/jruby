@@ -85,6 +85,14 @@ module Truffle::CExt
     value.to_f
   end
 
+  def rb_Float(value)
+    Float(value)
+  end
+
+  def RFLOAT_VALUE(value)
+    value
+  end
+
   def RSTRING_PTR(string)
     Truffle::Interop.to_java_string(string)
   end

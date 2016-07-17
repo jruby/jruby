@@ -101,6 +101,8 @@ int RTEST(VALUE value);
 // Float
 
 VALUE rb_float_new(double value);
+VALUE rb_Float(VALUE value);
+double RFLOAT_VALUE(VALUE value);
 
 // String
 
