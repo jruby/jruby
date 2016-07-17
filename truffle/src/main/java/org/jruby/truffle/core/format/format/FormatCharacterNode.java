@@ -11,6 +11,7 @@ package org.jruby.truffle.core.format.format;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
@@ -44,8 +45,26 @@ public abstract class FormatCharacterNode extends FormatNode {
         this.hasMinusFlag = hasMinusFlag;
     }
 
-    @Specialization
+    @Specialization(
+        guards = {
+            "width == cachedWidth"
+        },
+        limit = "getLimit()"
+    )
+    byte[] formatCached(VirtualFrame frame, int width, Object value,
+                        @Cached("width") int cachedWidth,
+                        @Cached("makeFormatString(width)") String cachedFormatString) {
+        final String charString = getCharString(frame, value);
+        return doFormat(charString, cachedFormatString);
+    }
+
+    @Specialization(contains = "formatCached")
     protected byte[] format(VirtualFrame frame, int width, Object value) {
+        final String charString = getCharString(frame, value);
+        return doFormat(charString, makeFormatString(width));
+    }
+
+    protected String getCharString(VirtualFrame frame, Object value) {
         if (toStringNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
             toStringNode = insert(ToStringNodeGen.create(getContext(),
@@ -79,18 +98,25 @@ public abstract class FormatCharacterNode extends FormatNode {
             }
             charString = resultString;
         }
+        return charString;
+    }
 
+    @TruffleBoundary
+    protected String makeFormatString(int width) {
         final boolean leftJustified = hasMinusFlag || width < 0;
         if (width < 0) {
             width = -width;
         }
-
-        return doFormat(charString, width, leftJustified).getBytes(StandardCharsets.US_ASCII);
+        return "%" + (leftJustified ? "-" : "") + width + "." + width + "s";
     }
 
     @TruffleBoundary
-    private String doFormat(final String charString, final int width, final boolean leftJustified) {
-        return String.format("%" + (leftJustified ? "-" : "") + width + "." + width + "s", charString);
+    private byte[] doFormat(String charString, String formatString) {
+        return String.format(formatString, charString).getBytes(StandardCharsets.US_ASCII);
+    }
+
+    protected int getLimit() {
+        return getContext().getOptions().PACK_CACHE;
     }
 
 }
