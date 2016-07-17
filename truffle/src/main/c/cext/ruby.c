@@ -484,6 +484,9 @@ VALUE rb_mutex_synchronize(VALUE mutex, VALUE (*func)(VALUE arg), VALUE arg) {
 
 // GC
 
+void rb_gc_register_address(VALUE *address) {
+}
+
 VALUE rb_gc_enable() {
   return truffle_invoke(RUBY_CEXT, "rb_gc_enable");
 }

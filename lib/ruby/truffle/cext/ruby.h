@@ -249,6 +249,7 @@ VALUE rb_complex_set_imag(VALUE complex, VALUE imag);
 
 // GC
 
+void rb_gc_register_address(VALUE *address);
 VALUE rb_gc_enable();
 VALUE rb_gc_disable();
 
