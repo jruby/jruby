@@ -215,8 +215,38 @@ module Truffle::CExt
     end
   end
 
-  def rb_funcall(object, name, argc, args)
+  def rb_funcall(object, name, argc, args=[])
     object.__send__(name, *args)
+  end
+
+  def rb_mutex_new
+    Mutex.new
+  end
+
+  def rb_mutex_locked_p(mutex)
+    mutex.locked?
+  end
+
+  def rb_mutex_trylock(mutex)
+    mutex.try_lock
+  end
+
+  def rb_mutex_lock(mutex)
+    mutex.lock
+  end
+
+  def rb_mutex_unlock(mutex)
+    mutex.unlock
+  end
+
+  def rb_mutex_sleep(mutex, timeout)
+    mutex.sleep(timeout)
+  end
+
+  def rb_mutex_synchronize(mutex, func, arg)
+    mutex.synchronize do
+      Truffle::Interop.execute(func, arg)
+    end
   end
 
   def rb_gc_enable

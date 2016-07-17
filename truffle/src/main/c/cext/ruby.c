@@ -396,6 +396,36 @@ void rb_undef(VALUE module, ID name) {
   truffle_invoke(RUBY_CEXT, "rb_undef", module, name);
 }
 
+// Mutexes
+
+VALUE rb_mutex_new(void) {
+  return truffle_invoke(RUBY_CEXT, "rb_mutex_new");
+}
+
+VALUE rb_mutex_locked_p(VALUE mutex) {
+  return truffle_invoke(RUBY_CEXT, "rb_mutex_locked_p", mutex);
+}
+
+VALUE rb_mutex_trylock(VALUE mutex) {
+  return truffle_invoke(RUBY_CEXT, "rb_mutex_trylock", mutex);
+}
+
+VALUE rb_mutex_lock(VALUE mutex) {
+  return truffle_invoke(RUBY_CEXT, "rb_mutex_lock", mutex);
+}
+
+VALUE rb_mutex_unlock(VALUE mutex) {
+  return truffle_invoke(RUBY_CEXT, "rb_mutex_unlock", mutex);
+}
+
+VALUE rb_mutex_sleep(VALUE mutex, VALUE timeout) {
+  return truffle_invoke(RUBY_CEXT, "rb_mutex_sleep", mutex, timeout);
+}
+
+VALUE rb_mutex_synchronize(VALUE mutex, VALUE (*func)(VALUE arg), VALUE arg) {
+  return truffle_invoke(RUBY_CEXT, "rb_mutex_synchronize", mutex, func, arg);
+}
+
 // GC
 
 VALUE rb_gc_enable() {
