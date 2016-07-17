@@ -359,12 +359,6 @@
 #undef HAVE_RB_NUM_COERCE_RELOP
 #undef HAVE_RB_NUM_ZERODIV
 
-/* Fixnum */
-#if SIZEOF_INT < SIZEOF_LONG
-#undef HAVE_RB_FIX2UINT
-#undef HAVE_RB_FIX2INT
-#endif
-
 /* Object */
 #undef HAVE_OBJ_TAINT
 #undef HAVE_OBJ_TAINTED

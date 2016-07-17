@@ -79,15 +79,15 @@ int FIX2INT(VALUE value);
 unsigned int FIX2UINT(VALUE value);
 long FIX2LONG(VALUE value);
 
-VALUE INT2NUM(int value);
-VALUE INT2FIX(int value);
+VALUE INT2NUM(long value);
+VALUE INT2FIX(long value);
 VALUE UINT2NUM(unsigned int value);
 
 VALUE LONG2NUM(long value);
 VALUE LONG2FIX(long value);
 
 int rb_fix2int(VALUE value);
-unsigned int rb_fix2uint(VALUE value);
+unsigned long rb_fix2uint(VALUE value);
 
 ID SYM2ID(VALUE value);
 VALUE ID2SYM(ID value);

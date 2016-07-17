@@ -49,6 +49,26 @@ module Truffle::CExt
     raise 'not implemented'
   end
 
+  def rb_fix2int(value)
+    if value.nil?
+      raise TypeError
+    else
+      int = value.to_int
+      raise RangeError if int >= 2**32
+      int
+    end
+  end
+
+  def rb_fix2uint(value)
+    if value.nil?
+      raise TypeError
+    else
+      int = value.to_int
+      raise RangeError if int >= 2**32
+      int
+    end
+  end
+
   def NIL_P(value)
     nil.equal?(value)
   end

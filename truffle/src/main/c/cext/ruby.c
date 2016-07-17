@@ -83,11 +83,11 @@ long FIX2LONG(VALUE value) {
   return truffle_invoke_l(RUBY_CEXT, "FIX2LONG", value);
 }
 
-VALUE INT2NUM(int value) {
+VALUE INT2NUM(long value) {
   return (VALUE) truffle_invoke(RUBY_CEXT, "INT2NUM", value);
 }
 
-VALUE INT2FIX(int value) {
+VALUE INT2FIX(long value) {
   return (VALUE) truffle_invoke(RUBY_CEXT, "INT2FIX", value);
 }
 
@@ -101,6 +101,14 @@ VALUE LONG2NUM(long value) {
 
 VALUE LONG2FIX(long value) {
   return (VALUE) truffle_invoke(RUBY_CEXT, "LONG2FIX", value);
+}
+
+int rb_fix2int(VALUE value) {
+  return truffle_invoke_i(RUBY_CEXT, "rb_fix2int", value);
+}
+
+unsigned long rb_fix2uint(VALUE value) {
+  return truffle_invoke_l(RUBY_CEXT, "rb_fix2uint", value);
 }
 
 ID SYM2ID(VALUE value) {
