@@ -263,9 +263,11 @@ module ShellUtils
     elsif continue_on_failure
       false
     else
-      $stderr.puts "FAILED (#{$?}): #{printable_cmd(args)}"
-      if $? and $?.exitstatus
-        exit $?.exitstatus
+      status = $? unless capture
+      $stderr.puts "FAILED (#{status}): #{printable_cmd(args)}"
+
+      if status && status.exitstatus
+        exit status.exitstatus
       else
         exit 1
       end
