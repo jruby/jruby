@@ -232,6 +232,21 @@ VALUE rb_rational_den(VALUE rat);
 VALUE rb_flt_rationalize_with_prec(VALUE value, VALUE precision);
 VALUE rb_flt_rationalize(VALUE value);
 
+// Complex
+
+VALUE rb_Complex(VALUE real, VALUE imag);
+#define rb_Complex1(x) rb_Complex((x), INT2FIX(0))
+#define rb_Complex2(x,y) rb_Complex((x), (y))
+VALUE rb_complex_new(VALUE real, VALUE imag);
+#define rb_complex_new1(x) rb_complex_new((x), INT2FIX(0))
+#define rb_complex_new2(x,y) rb_complex_new((x), (y))
+VALUE rb_complex_raw(VALUE real, VALUE imag);
+#define rb_complex_raw1(x) rb_complex_raw((x), INT2FIX(0))
+#define rb_complex_raw2(x,y) rb_complex_raw((x), (y))
+VALUE rb_complex_polar(VALUE r, VALUE theta);
+VALUE rb_complex_set_real(VALUE complex, VALUE real);
+VALUE rb_complex_set_imag(VALUE complex, VALUE imag);
+
 // GC
 
 VALUE rb_gc_enable();

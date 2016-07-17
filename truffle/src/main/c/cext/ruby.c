@@ -426,6 +426,32 @@ VALUE rb_flt_rationalize(VALUE value) {
   return truffle_invoke(value, "rationalize");
 }
 
+// Complex
+
+VALUE rb_Complex(VALUE real, VALUE imag) {
+  return truffle_invoke(RUBY_CEXT, "rb_Complex", real, imag);
+}
+
+VALUE rb_complex_new(VALUE real, VALUE imag) {
+  return truffle_invoke(RUBY_CEXT, "rb_complex_new", real, imag);
+}
+
+VALUE rb_complex_raw(VALUE real, VALUE imag) {
+  return truffle_invoke(RUBY_CEXT, "rb_complex_raw", real, imag);
+}
+
+VALUE rb_complex_polar(VALUE r, VALUE theta) {
+  return truffle_invoke(RUBY_CEXT, "rb_complex_polar", r, theta);
+}
+
+VALUE rb_complex_set_real(VALUE complex, VALUE real) {
+  return truffle_invoke(RUBY_CEXT, "rb_complex_set_real", complex, real);
+}
+
+VALUE rb_complex_set_imag(VALUE complex, VALUE imag) {
+  return truffle_invoke(RUBY_CEXT, "rb_complex_set_imag", complex, imag);
+}
+
 // Mutexes
 
 VALUE rb_mutex_new(void) {

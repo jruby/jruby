@@ -231,6 +231,38 @@ module Truffle::CExt
     Rational(num, den)
   end
 
+  def rb_complex_new(real, imag)
+    Complex.new(real, imag)
+  end
+
+  def rb_Complex(real, imag)
+    Complex.new(real, imag)
+  end
+
+  def rb_complex_raw(real, imag)
+    Complex.new(real, imag)
+  end
+
+  def rb_complex_new(real, imag)
+    Complex(real, imag)
+  end
+
+  def rb_complex_polar(r, theta)
+    Complex.new(r, theta)
+  end
+
+  def rb_complex_set_real(complex, real)
+    Truffle.privately do
+      complex.real = real
+    end
+  end
+
+  def rb_complex_set_imag(complex, imag)
+    Truffle.privately do
+      complex.imag = imag
+    end
+  end
+
   def rb_mutex_new
     Mutex.new
   end
