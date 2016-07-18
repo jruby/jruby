@@ -320,68 +320,12 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitAttrAssignNode(org.jruby.ast.AttrAssignNode node) {
-        final SourceSection sourceSection = translate(node.getPosition());
-
-        // The last argument is the value we assign, and we need to return that as the whole result of this node
-
-        final FrameSlot frameSlot = environment.declareVar(environment.allocateLocalTemp("attrasgn"));
-        final WriteLocalVariableNode writeValue;
-
-        final org.jruby.ast.ArrayNode newArgsNode;
-
-        // Get that last argument out
-        final List<org.jruby.ast.Node> argChildNodes = new ArrayList<>(node.getArgsNode().childNodes());
-        final org.jruby.ast.Node valueNode = argChildNodes.remove(argChildNodes.size() - 1);
-
-        // Evaluate the value and store it in a local variable
-        writeValue = WriteLocalVariableNode.createWriteLocalVariableNode(context, sourceSection, frameSlot, valueNode.accept(this));
-
-        // Recreate the arguments array, reading that local instead of including the RHS for the last argument
-        argChildNodes.add(new ReadLocalDummyNode(node.getPosition(), sourceSection, frameSlot));
-        newArgsNode = new org.jruby.ast.ArrayNode(node.getPosition(), argChildNodes.get(0));
-        argChildNodes.remove(0);
-        for (org.jruby.ast.Node child : argChildNodes) {
-            newArgsNode.add(child);
-        }
-
-        /*
-         * If the original call was of the form:
-         *
-            (AttrAssignNode:[]= 10
-                (LocalVarNode:f 9)
-                (ArgsPushNode 9
-                    (SplatNode 9
-                        (LocalVarNode:x 9)
-                    )
-                    (FixnumNode 9)
-                )
-            )
-         *
-         * Then we will have lost that args push and we will have ended up with (Array (Splat (Local x) (Fixnum))
-         *
-         * Restory the args push.
-         */
-
-        final org.jruby.ast.Node fixedArgsNode;
-
-        if (node.getArgsNode() instanceof org.jruby.ast.ArgsPushNode) {
-            if (newArgsNode.size() != 2) {
-                throw new UnsupportedOperationException();
-            }
-
-            fixedArgsNode = new org.jruby.ast.ArgsPushNode(newArgsNode.getPosition(), newArgsNode.children()[0], newArgsNode.children()[1]);
-        } else {
-            fixedArgsNode = newArgsNode;
-        }
-
-        final org.jruby.ast.CallNode callNode = new org.jruby.ast.CallNode(node.getPosition(), node.getReceiverNode(), node.getName(), fixedArgsNode, null);
+        final org.jruby.ast.CallNode callNode = new org.jruby.ast.CallNode(node.getPosition(), node.getReceiverNode(), node.getName(), node.getArgsNode(), null);
         copyNewline(node, callNode);
         boolean isAccessorOnSelf = (node.getReceiverNode() instanceof org.jruby.ast.SelfNode);
-        final RubyNode actualCall = translateCallNode(callNode, isAccessorOnSelf, false);
+        final RubyNode actualCall = translateCallNode(callNode, isAccessorOnSelf, false, true);
 
-        final RubyNode ret = sequence(context, sourceSection, Arrays.asList(writeValue, actualCall, new ReadLocalVariableNode(context, sourceSection, LocalVariableType.FRAME_LOCAL, frameSlot)));
-
-        return addNewlineIfNeeded(node, ret);
+        return addNewlineIfNeeded(node, actualCall);
     }
 
     @Override
@@ -543,7 +487,7 @@ public class BodyTranslator extends Translator {
             return addNewlineIfNeeded(node, ret);
         }
 
-        return translateCallNode(node, false, false);
+        return translateCallNode(node, false, false, false);
     }
 
     private RubyNode translateRubiniusPrimitive(SourceSection sourceSection, org.jruby.ast.CallNode node) {
@@ -660,7 +604,7 @@ public class BodyTranslator extends Translator {
         return new RaiseIfFrozenNode(new SelfNode(context, sourceSection));
     }
 
-    private RubyNode translateCallNode(org.jruby.ast.CallNode node, boolean ignoreVisibility, boolean isVCall) {
+    private RubyNode translateCallNode(org.jruby.ast.CallNode node, boolean ignoreVisibility, boolean isVCall, boolean isAttrAssign) {
         final SourceSection sourceSection = translate(node.getPosition());
 
         final RubyNode receiverTranslated = node.getReceiverNode().accept(this);
@@ -684,8 +628,8 @@ public class BodyTranslator extends Translator {
         children.addAll(Arrays.asList(argumentsAndBlock.getArguments()));
 
         RubyNode translated = new RubyCallNode(context, enclosing(sourceSection, children.toArray(new RubyNode[children.size()])),
-                node.getName(), receiverTranslated, argumentsAndBlock.getBlock(), node.isLazy(), argumentsAndBlock.isSplatted(),
-                privately || ignoreVisibility, isVCall, argumentsAndBlock.getArguments());
+                node.getName(), receiverTranslated, argumentsAndBlock.getBlock(), argumentsAndBlock.isSplatted(), privately || ignoreVisibility,
+                isVCall, node.isLazy(), isAttrAssign, argumentsAndBlock.getArguments());
 
         if (argumentsAndBlock.getBlock() instanceof BlockDefinitionNode) { // if we have a literal block, break breaks out of this call site
             BlockDefinitionNode blockDef = (BlockDefinitionNode) argumentsAndBlock.getBlock();
@@ -851,13 +795,21 @@ public class BodyTranslator extends Translator {
                 for (org.jruby.ast.Node expressionNode : expressions) {
                     final RubyNode rubyExpression = expressionNode.accept(this);
 
+                    final RubyNode receiver;
+                    final RubyNode[] arguments;
+                    final String method;
                     if (expressionNode instanceof org.jruby.ast.SplatNode
                             || expressionNode instanceof org.jruby.ast.ArgsCatNode
                             || expressionNode instanceof org.jruby.ast.ArgsPushNode) {
-                        comparisons.add(new RubyCallNode(context, sourceSection, "when_splat", new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getTruffleModule()), null, false, true, rubyExpression, NodeUtil.cloneNode(readTemp)));
+                        receiver = new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getTruffleModule());
+                        method = "when_splat";
+                        arguments = new RubyNode[] { rubyExpression, NodeUtil.cloneNode(readTemp) };
                     } else {
-                        comparisons.add(new RubyCallNode(context, sourceSection, "===", rubyExpression, null, false, true, NodeUtil.cloneNode(readTemp)));
+                        receiver = rubyExpression;
+                        method = "===";
+                        arguments = new RubyNode[] { NodeUtil.cloneNode(readTemp) };
                     }
+                    comparisons.add(new RubyCallNode(context, sourceSection, method, receiver, null, false, true, arguments));
                 }
 
                 RubyNode conditionNode = comparisons.get(comparisons.size() - 1);
@@ -1370,7 +1322,7 @@ public class BodyTranslator extends Translator {
         final org.jruby.ast.Node receiver = new org.jruby.ast.SelfNode(node.getPosition());
         final org.jruby.ast.CallNode callNode = new org.jruby.ast.CallNode(node.getPosition(), receiver, node.getName(), node.getArgsNode(), node.getIterNode());
         copyNewline(node, callNode);
-        return translateCallNode(callNode, true, false);
+        return translateCallNode(callNode, true, false, false);
     }
 
     @Override
@@ -2917,7 +2869,7 @@ public class BodyTranslator extends Translator {
         final org.jruby.ast.Node receiver = new org.jruby.ast.SelfNode(node.getPosition());
         final org.jruby.ast.CallNode callNode = new org.jruby.ast.CallNode(node.getPosition(), receiver, node.getName(), null, null);
         copyNewline(node, callNode);
-        final RubyNode ret = translateCallNode(callNode, true, true);
+        final RubyNode ret = translateCallNode(callNode, true, true, false);
         return addNewlineIfNeeded(node, ret);
     }
 
