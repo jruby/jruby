@@ -113,7 +113,7 @@ public abstract class TimeNodes {
             Layouts.TIME.setIsUtc(time, false);
             Layouts.TIME.setRelativeOffset(time, false);
             Layouts.TIME.setZone(time, zone);
-            Layouts.TIME.setDateTime(time, dateTime.withZone(dateTimeZone));
+            Layouts.TIME.setDateTime(time, withZone(dateTime, dateTimeZone));
 
             return time;
         }
@@ -126,7 +126,7 @@ public abstract class TimeNodes {
             Layouts.TIME.setIsUtc(time, false);
             Layouts.TIME.setRelativeOffset(time, true);
             Layouts.TIME.setZone(time, nil());
-            Layouts.TIME.setDateTime(time, dateTime.withZone(zone));
+            Layouts.TIME.setDateTime(time, withZone(dateTime, zone));
 
             return time;
         }
@@ -134,6 +134,11 @@ public abstract class TimeNodes {
         @TruffleBoundary
         public DateTimeZone getDateTimeZone(int offset) {
             return DateTimeZone.forOffsetMillis(offset * 1000);
+        }
+
+        @TruffleBoundary
+        private DateTime withZone(DateTime dateTime, DateTimeZone zone) {
+            return dateTime.withZone(zone);
         }
 
     }
