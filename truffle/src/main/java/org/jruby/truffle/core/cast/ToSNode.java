@@ -50,7 +50,7 @@ public abstract class ToSNode extends RubyNode {
 
     @Specialization(guards = "!isRubyString(object)", rewriteOn = UnexpectedResultException.class)
     public DynamicObject toS(VirtualFrame frame, Object object) throws UnexpectedResultException {
-        final Object value = callToSNode.call(frame, object, "to_s", null);
+        final Object value = callToSNode.call(frame, object, "to_s");
 
         if (RubyGuards.isRubyString(value)) {
             return (DynamicObject) value;
@@ -61,7 +61,7 @@ public abstract class ToSNode extends RubyNode {
 
     @Specialization(guards = "!isRubyString(object)")
     public DynamicObject toSFallback(VirtualFrame frame, Object object) {
-        final Object value = callToSNode.call(frame, object, "to_s", null);
+        final Object value = callToSNode.call(frame, object, "to_s");
 
         if (RubyGuards.isRubyString(value)) {
             return (DynamicObject) value;

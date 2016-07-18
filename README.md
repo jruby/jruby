@@ -40,7 +40,7 @@ For [`rbenv`](https://github.com/sstephenson/rbenv) you will need the
 package manager can provide these. Then you can run:
 
 ```
-$ rbenv install jruby-9.0.5.0
+$ rbenv install jruby-9.1.2.0
 ```
 
 For [`rvm`](https://rvm.io) you can simply do:

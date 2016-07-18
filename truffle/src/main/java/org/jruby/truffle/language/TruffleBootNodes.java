@@ -160,31 +160,7 @@ public abstract class TruffleBootNodes {
         }
 
     }
-
-    @CoreMethod(names = "require_core", isModuleFunction = true, required = 1)
-    public abstract static class RequireCoreNode extends CoreMethodArrayArgumentsNode {
-
-        @Specialization(guards = "isRubyString(feature)")
-        public boolean requireRelative(VirtualFrame frame, DynamicObject feature, @Cached("create()") IndirectCallNode callNode) {
-            final CoreLibrary coreLibrary = getContext().getCoreLibrary();
-            if (!(coreLibrary.isLoadingRubyCore() || getContext().getOptions().PLATFORM_SAFE_LOAD)) {
-                throw new RaiseException(coreExceptions().internalErrorUnsafe(this));
-            }
-
-            final CodeLoader codeLoader = getContext().getCodeLoader();
-            final String path = coreLibrary.getCoreLoadPath() + "/" + feature.toString() + ".rb";
-            try {
-                final RubyRootNode rootNode = codeLoader.parse(getContext().getSourceCache().getSource(path), UTF8Encoding.INSTANCE, ParserContext.TOP_LEVEL, null, true, this);
-                final CodeLoader.DeferredCall deferredCall = codeLoader.prepareExecute(ParserContext.TOP_LEVEL, DeclarationContext.TOP_LEVEL, rootNode, null, coreLibrary.getMainObject());
-                deferredCall.callWithoutCallNode();
-            } catch (IOException e) {
-                throw new JavaException(e);
-            }
-
-            return true;
-        }
-    }
-
+    
     @CoreMethod(names = "source_of_caller", isModuleFunction = true)
     public abstract static class SourceOfCallerNode extends CoreMethodArrayArgumentsNode {
 

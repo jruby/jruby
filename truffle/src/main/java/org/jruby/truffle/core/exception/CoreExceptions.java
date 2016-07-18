@@ -210,38 +210,44 @@ public class CoreExceptions {
 
     @TruffleBoundary
     public DynamicObject mathDomainError(String method, Node currentNode) {
-        return ExceptionOperations.createRubyException(
+        return ExceptionOperations.createSystemCallError(
                 context.getCoreLibrary().getErrnoClass(Errno.EDOM),
                 StringOperations.createString(context, StringOperations.encodeRope(String.format("Numerical argument is out of domain - \"%s\"", method), UTF8Encoding.INSTANCE)),
-                context.getCallStack().getBacktrace(currentNode));
+                context.getCallStack().getBacktrace(currentNode), Errno.EDOM.intValue());
     }
 
     @TruffleBoundary
     public DynamicObject errnoError(int errno, Node currentNode) {
         Errno errnoObj = Errno.valueOf(errno);
         if (errnoObj == null) {
-            return systemCallError(String.format("Unknown Error (%s)", errno), currentNode);
+            return systemCallError(String.format("Unknown Error (%s)", errno), errno, currentNode);
         }
 
-        return ExceptionOperations.createRubyException(
+        return ExceptionOperations.createSystemCallError(
                 context.getCoreLibrary().getErrnoClass(errnoObj),
                 StringOperations.createString(context, StringOperations.encodeRope(errnoObj.description(), UTF8Encoding.INSTANCE)),
-                context.getCallStack().getBacktrace(currentNode));
+                context.getCallStack().getBacktrace(currentNode), errno);
     }
 
     @TruffleBoundary
     public DynamicObject errnoError(int errno, String message, Node currentNode) {
         Errno errnoObj = Errno.valueOf(errno);
         if (errnoObj == null) {
-            return systemCallError(String.format("Unknown Error (%s) - %s", errno, message), currentNode);
+            return systemCallError(String.format("Unknown Error (%s) - %s", errno, message), errno, currentNode);
         }
 
-        final DynamicObject errorMessage = StringOperations.createString(context, StringOperations.encodeRope(String.format("%s - %s", errnoObj.description(), message), UTF8Encoding.INSTANCE));
+        DynamicObject errnoClass = context.getCoreLibrary().getErrnoClass(errnoObj);
+        if(errnoClass == null){
+            errnoClass = context.getCoreLibrary().getSystemCallErrorClass();
+            message = "Unknown error: " + errno;
+        }
 
-        return ExceptionOperations.createRubyException(
-                context.getCoreLibrary().getErrnoClass(errnoObj),
-                errorMessage,
-                context.getCallStack().getBacktrace(currentNode));
+        final DynamicObject errorMessage = StringOperations.createString(context, StringOperations.encodeRope(String.format("%s%s", errnoObj.description(), message), UTF8Encoding.INSTANCE));
+
+        return ExceptionOperations.createSystemCallError(
+            errnoClass,
+            errorMessage,
+            context.getCallStack().getBacktrace(currentNode), errno);
     }
 
     // IndexError
@@ -473,6 +479,11 @@ public class CoreExceptions {
     }
 
     @TruffleBoundary
+    public DynamicObject nameErrorImportNotFound(String name, Node currentNode) {
+        return nameError(String.format("import '%s' not found", name), name, currentNode);
+    }
+
+    @TruffleBoundary
     public DynamicObject nameError(String message, String name, Node currentNode) {
         final DynamicObject nameString = StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE));
         DynamicObject nameError = ExceptionOperations.createRubyException(context.getCoreLibrary().getNameErrorClass(), nameString, context.getCallStack().getBacktrace(currentNode));
@@ -625,11 +636,11 @@ public class CoreExceptions {
 
     @TruffleBoundary
     public DynamicObject rangeError(DynamicObject range, Node currentNode) {
-        assert RubyGuards.isIntegerFixnumRange(range);
+        assert RubyGuards.isIntRange(range);
         return rangeError(String.format("%d..%s%d out of range",
-                Layouts.INTEGER_FIXNUM_RANGE.getBegin(range),
-                Layouts.INTEGER_FIXNUM_RANGE.getExcludedEnd(range) ? "." : "",
-                Layouts.INTEGER_FIXNUM_RANGE.getEnd(range)), currentNode);
+                Layouts.INT_RANGE.getBegin(range),
+                Layouts.INT_RANGE.getExcludedEnd(range) ? "." : "",
+                Layouts.INT_RANGE.getEnd(range)), currentNode);
     }
 
     @TruffleBoundary
@@ -748,29 +759,29 @@ public class CoreExceptions {
     // SystemCallError
 
     @TruffleBoundary
-    public DynamicObject systemCallError(String message, Node currentNode) {
-        return ExceptionOperations.createRubyException(
+    public DynamicObject systemCallError(String message, int errno, Node currentNode) {
+        return ExceptionOperations.createSystemCallError(
                 context.getCoreLibrary().getSystemCallErrorClass(),
                 StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE)),
-                context.getCallStack().getBacktrace(currentNode));
+                context.getCallStack().getBacktrace(currentNode), errno);
     }
 
     // IO::EAGAINWaitReadable, IO::EAGAINWaitWritable
 
     @TruffleBoundary
     public DynamicObject eAGAINWaitReadable(Node currentNode) {
-        return ExceptionOperations.createRubyException(
+        return ExceptionOperations.createSystemCallError(
                 context.getCoreLibrary().getEagainWaitReadable(),
                 coreStrings().RESOURCE_TEMP_UNAVAIL.createInstance(),
-                context.getCallStack().getBacktrace(currentNode));
+                context.getCallStack().getBacktrace(currentNode), Errno.EAGAIN.intValue());
     }
 
     @TruffleBoundary
     public DynamicObject eAGAINWaitWritable(Node currentNode) {
-        return ExceptionOperations.createRubyException(
+        return ExceptionOperations.createSystemCallError(
                 context.getCoreLibrary().getEagainWaitWritable(),
                 coreStrings().RESOURCE_TEMP_UNAVAIL.createInstance(),
-                context.getCallStack().getBacktrace(currentNode));
+                context.getCallStack().getBacktrace(currentNode), Errno.EAGAIN.intValue());
     }
 
     // SystemExit

@@ -1,1 +1,0 @@
-fails(regexp):String#sub! with pattern and block raises a RuntimeError if the string is modified while substituting

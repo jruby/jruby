@@ -20,6 +20,7 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.RubyLanguage;
 import org.jruby.truffle.core.array.ArrayOperations;
 import org.jruby.truffle.language.control.JavaException;
+import org.jruby.truffle.language.control.RaiseException;
 
 public class FeatureLoader {
 
@@ -69,10 +70,20 @@ public class FeatureLoader {
     }
 
     private String findFeatureWithAndWithoutExtension(String path) {
-        final String asCExt = findFeatureWithExactPath(path + RubyLanguage.CEXT_EXTENSION);
+        if (path.endsWith(".so")) {
+            final String base = path.substring(0, path.length() - 3);
 
-        if (asCExt != null) {
-            return asCExt;
+            final String asSO = findFeatureWithExactPath(base + RubyLanguage.CEXT_EXTENSION);
+
+            if (asSO != null) {
+                return asSO;
+            }
+        }
+
+        final String asSU = findFeatureWithExactPath(path + RubyLanguage.CEXT_EXTENSION);
+
+        if (asSU != null) {
+            return asSU;
         }
 
         final String withExtension = findFeatureWithExactPath(path + RubyLanguage.EXTENSION);
@@ -130,9 +141,14 @@ public class FeatureLoader {
     @TruffleBoundary
     private CallTarget getCExtLibRuby() {
         final String path = context.getJRubyRuntime().getJRubyHome() + "/lib/ruby/truffle/cext/ruby.su";
+
+        if (!new File(path).exists()) {
+            throw new RaiseException(context.getCoreExceptions().internalError("This JRuby distribution does not have the C extension implementation file ruby.su", null));
+        }
+
         try {
             return parseSource(context.getSourceLoader().load(path));
-        } catch (IOException e) {
+        } catch (Exception e) {
             throw new JavaException(e);
         }
     }
@@ -141,7 +157,7 @@ public class FeatureLoader {
     public CallTarget parseSource(Source source) {
         try {
             return context.getEnv().parse(source);
-        } catch (IOException e) {
+        } catch (Exception e) {
             throw new JavaException(e);
         }
     }

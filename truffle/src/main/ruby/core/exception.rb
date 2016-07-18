@@ -41,10 +41,11 @@ class Exception
   end
 
   def to_s
-    if @reason_message
-      @reason_message.to_s
-    else
+    msg = message
+    if msg.nil?
       self.class.to_s
+    else
+      msg.to_s
     end
   end
 
@@ -291,7 +292,6 @@ end
 
 class SystemCallError < StandardError
 
-  attr_reader :errno
 
   def self.errno_error(message, errno, location)
     Truffle.primitive :exception_errno_error
@@ -373,7 +373,7 @@ class SystemCallError < StandardError
   def initialize(*args)
     kls = self.class
     message, errno, location = args
-    @errno = errno
+    Truffle.invoke_primitive :exception_set_errno, self, errno
 
     msg = "unknown error"
     msg << " @ #{StringValue(location)}" if location

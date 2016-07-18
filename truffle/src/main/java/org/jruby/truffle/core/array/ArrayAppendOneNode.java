@@ -21,6 +21,8 @@ import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 
+import static org.jruby.truffle.core.array.ArrayHelpers.setSize;
+
 @NodeChildren({
         @NodeChild("array"),
         @NodeChild("value"),
@@ -42,7 +44,7 @@ public abstract class ArrayAppendOneNode extends RubyNode {
         final ArrayMirror storeMirror = strategy.newArray(1);
         storeMirror.set(0, value);
         Layouts.ARRAY.setStore(array, storeMirror.getArray());
-        Layouts.ARRAY.setSize(array, 1);
+        setSize(array, 1);
         return array;
     }
 
@@ -60,10 +62,10 @@ public abstract class ArrayAppendOneNode extends RubyNode {
             final ArrayMirror newStoreMirror = storeMirror.copyArrayAndMirror(ArrayUtils.capacityForOneMore(getContext(), storeMirror.getLength()));
             newStoreMirror.set(oldSize, value);
             Layouts.ARRAY.setStore(array, newStoreMirror.getArray());
-            Layouts.ARRAY.setSize(array, newSize);
+            setSize(array, newSize);
         } else {
             storeMirror.set(oldSize, value);
-            Layouts.ARRAY.setSize(array, newSize);
+            setSize(array, newSize);
         }
         return array;
     }
@@ -85,7 +87,7 @@ public abstract class ArrayAppendOneNode extends RubyNode {
         currentMirror.copyTo(storeMirror, 0, 0, oldSize);
         storeMirror.set(oldSize, value);
         Layouts.ARRAY.setStore(array, storeMirror.getArray());
-        Layouts.ARRAY.setSize(array, newSize);
+        setSize(array, newSize);
         return array;
     }
 

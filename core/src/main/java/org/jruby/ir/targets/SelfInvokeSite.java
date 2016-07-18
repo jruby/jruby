@@ -23,17 +23,17 @@ import static org.jruby.util.CodegenUtils.sig;
 * Created by headius on 10/23/14.
 */
 public class SelfInvokeSite extends InvokeSite {
-    public SelfInvokeSite(MethodType type, String name, CallType callType) {
-        super(type, name, callType);
+    public SelfInvokeSite(MethodType type, String name, CallType callType, String file, int line) {
+        super(type, name, callType, file, line);
     }
 
-    public static Handle BOOTSTRAP = new Handle(Opcodes.H_INVOKESTATIC, p(SelfInvokeSite.class), "bootstrap", sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class));
+    public static Handle BOOTSTRAP = new Handle(Opcodes.H_INVOKESTATIC, p(SelfInvokeSite.class), "bootstrap", sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, String.class, int.class));
 
-    public static CallSite bootstrap(MethodHandles.Lookup lookup, String name, MethodType type) {
+    public static CallSite bootstrap(MethodHandles.Lookup lookup, String name, MethodType type, String file, int line) {
         List<String> nameComponents = StringSupport.split(name, ':');
         String methodName = JavaNameMangler.demangleMethodName(nameComponents.get(1));
         CallType callType = nameComponents.get(0).equals("callFunctional") ? CallType.FUNCTIONAL : CallType.VARIABLE;
-        InvokeSite site = new SelfInvokeSite(type, methodName, callType);
+        InvokeSite site = new SelfInvokeSite(type, methodName, callType, file, line);
 
         return InvokeSite.bootstrap(site, lookup);
     }

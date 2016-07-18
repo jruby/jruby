@@ -75,7 +75,7 @@ public abstract class TrufflePosixNodes {
 
     }
 
-    @CoreMethod(names = "chown", isModuleFunction = true, required = 3, lowerFixnumParameters = {1, 2}, unsafe = UnsafeGroup.IO)
+    @CoreMethod(names = "chown", isModuleFunction = true, required = 3, lowerFixnum = { 1, 2 }, unsafe = UnsafeGroup.IO)
     public abstract static class ChownNode extends CoreMethodArrayArgumentsNode {
 
         @CompilerDirectives.TruffleBoundary
@@ -390,7 +390,7 @@ public abstract class TrufflePosixNodes {
 
     }
 
-    @CoreMethod(names = "getpriority", isModuleFunction = true, required = 2, lowerFixnumParameters = {0, 1}, unsafe = UnsafeGroup.PROCESSES)
+    @CoreMethod(names = "getpriority", isModuleFunction = true, required = 2, lowerFixnum = { 1, 2 }, unsafe = UnsafeGroup.PROCESSES)
     public abstract static class GetPriorityNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
@@ -400,7 +400,7 @@ public abstract class TrufflePosixNodes {
 
     }
 
-    @CoreMethod(names = "setgid", isModuleFunction = true, required = 1, lowerFixnumParameters = 0, unsafe = UnsafeGroup.PROCESSES)
+    @CoreMethod(names = "setgid", isModuleFunction = true, required = 1, lowerFixnum = 1, unsafe = UnsafeGroup.PROCESSES)
     public abstract static class SetgidNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
@@ -410,7 +410,7 @@ public abstract class TrufflePosixNodes {
 
     }
 
-    @CoreMethod(names = "setpriority", isModuleFunction = true, required = 3, lowerFixnumParameters = {0, 1, 2}, unsafe = UnsafeGroup.PROCESSES)
+    @CoreMethod(names = "setpriority", isModuleFunction = true, required = 3, lowerFixnum = { 1, 2, 3 }, unsafe = UnsafeGroup.PROCESSES)
     public abstract static class SetPriorityNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
@@ -420,7 +420,7 @@ public abstract class TrufflePosixNodes {
 
     }
 
-    @CoreMethod(names = "setresuid", isModuleFunction = true, required = 3, lowerFixnumParameters = {0, 1, 2}, unsafe = UnsafeGroup.PROCESSES)
+    @CoreMethod(names = "setresuid", isModuleFunction = true, required = 3, lowerFixnum = { 1, 2, 3 }, unsafe = UnsafeGroup.PROCESSES)
     public abstract static class SetResuidNode extends CoreMethodArrayArgumentsNode {
 
         @CompilerDirectives.TruffleBoundary
@@ -431,7 +431,7 @@ public abstract class TrufflePosixNodes {
 
     }
 
-    @CoreMethod(names = "seteuid", isModuleFunction = true, required = 1, lowerFixnumParameters = 0, unsafe = UnsafeGroup.PROCESSES)
+    @CoreMethod(names = "seteuid", isModuleFunction = true, required = 1, lowerFixnum = 1, unsafe = UnsafeGroup.PROCESSES)
     public abstract static class SetEuidNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
@@ -441,7 +441,7 @@ public abstract class TrufflePosixNodes {
 
     }
 
-    @CoreMethod(names = "setreuid", isModuleFunction = true, required = 2, lowerFixnumParameters = {0, 1}, unsafe = UnsafeGroup.PROCESSES)
+    @CoreMethod(names = "setreuid", isModuleFunction = true, required = 2, lowerFixnum = { 1, 2 }, unsafe = UnsafeGroup.PROCESSES)
     public abstract static class SetReuidNode extends CoreMethodArrayArgumentsNode {
 
         @CompilerDirectives.TruffleBoundary
@@ -470,7 +470,7 @@ public abstract class TrufflePosixNodes {
 
     }
 
-    @CoreMethod(names = "setruid", isModuleFunction = true, required = 1, lowerFixnumParameters = 0, unsafe = UnsafeGroup.PROCESSES)
+    @CoreMethod(names = "setruid", isModuleFunction = true, required = 1, lowerFixnum = 1, unsafe = UnsafeGroup.PROCESSES)
     public abstract static class SetRuidNode extends CoreMethodArrayArgumentsNode {
 
         @CompilerDirectives.TruffleBoundary
@@ -481,7 +481,7 @@ public abstract class TrufflePosixNodes {
 
     }
 
-    @CoreMethod(names = "setuid", isModuleFunction = true, required = 1, lowerFixnumParameters = 0, unsafe = UnsafeGroup.PROCESSES)
+    @CoreMethod(names = "setuid", isModuleFunction = true, required = 1, lowerFixnum = 1, unsafe = UnsafeGroup.PROCESSES)
     public abstract static class SetUidNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
@@ -501,7 +501,7 @@ public abstract class TrufflePosixNodes {
 
     }
 
-    @CoreMethod(names = "flock", isModuleFunction = true, required = 2, lowerFixnumParameters = {0, 1}, unsafe = UnsafeGroup.IO)
+    @CoreMethod(names = "flock", isModuleFunction = true, required = 2, lowerFixnum = { 1, 2 }, unsafe = UnsafeGroup.IO)
     public abstract static class FlockNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
@@ -511,7 +511,7 @@ public abstract class TrufflePosixNodes {
 
     }
 
-    @CoreMethod(names = "major", isModuleFunction = true, required = 1, lowerFixnumParameters = 0, unsafe = UnsafeGroup.IO)
+    @CoreMethod(names = "major", isModuleFunction = true, required = 1, lowerFixnum = 1, unsafe = UnsafeGroup.IO)
     public abstract static class MajorNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
@@ -521,7 +521,7 @@ public abstract class TrufflePosixNodes {
 
     }
 
-    @CoreMethod(names = "minor", isModuleFunction = true, required = 1, lowerFixnumParameters = 0, unsafe = UnsafeGroup.IO)
+    @CoreMethod(names = "minor", isModuleFunction = true, required = 1, lowerFixnum = 1, unsafe = UnsafeGroup.IO)
     public abstract static class MinorNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
@@ -695,7 +695,7 @@ public abstract class TrufflePosixNodes {
 
     }
 
-    @CoreMethod(names = "_connect", isModuleFunction = true, required = 3, lowerFixnumParameters = {0, 2}, unsafe = UnsafeGroup.IO)
+    @CoreMethod(names = "_connect", isModuleFunction = true, required = 3, lowerFixnum = { 1, 3 }, unsafe = UnsafeGroup.IO)
     public abstract static class ConnectNode extends CoreMethodArrayArgumentsNode {
 
         @CompilerDirectives.TruffleBoundary
@@ -793,7 +793,7 @@ public abstract class TrufflePosixNodes {
 
     }
 
-    @CoreMethod(names = "setsockopt", isModuleFunction = true, required = 5, lowerFixnumParameters = {0, 1, 2, 4}, unsafe = UnsafeGroup.IO)
+    @CoreMethod(names = "setsockopt", isModuleFunction = true, required = 5, lowerFixnum = { 1, 2, 3, 5 }, unsafe = UnsafeGroup.IO)
     public abstract static class SetSockOptNode extends CoreMethodArrayArgumentsNode {
 
         @CompilerDirectives.TruffleBoundary

@@ -1,1 +1,1 @@
-require_relative '../stdlib/open3'
+require_relative '../../stdlib/open3'

@@ -61,6 +61,16 @@ suite = {
                 "truffle:TRUFFLE_DEBUG",
             ],
         },
+        "jruby-licences": {
+            "subDir": "licenses",
+            "class": "LicensesProject",
+            "build": "true",
+            "prefix": "licenses",
+            "dependencies": [
+                "truffle:TRUFFLE_API",
+                "truffle:TRUFFLE_DEBUG",
+            ],
+        },
     },
     "licenses": {
         "EPL": {
@@ -93,6 +103,7 @@ suite = {
             "dependencies": [
                 "jruby-ruby",
                 "jruby-lib-jni",
+                "jruby-licences",
             ],
             "exclude": [
                 "truffle:JLINE",

@@ -187,7 +187,7 @@ public abstract class PsychParserNodes {
 
             try {
                 if (isNil(path) && respondToPathNode.doesRespondTo(frame, "path", yaml)) {
-                    path = (DynamicObject) callPathNode.call(frame, yaml, "path", null);
+                    path = (DynamicObject) callPathNode.call(frame, yaml, "path");
                 }
 
                 final Object handler = readHandlerNode.execute(parserObject);
@@ -196,7 +196,7 @@ public abstract class PsychParserNodes {
                     Event event = parser.getEvent();
 
                     if (event.is(Event.ID.StreamStart)) {
-                        callStartStreamNode.call(frame, handler, "start_stream", null, YAMLEncoding.YAML_ANY_ENCODING.ordinal());
+                        callStartStreamNode.call(frame, handler, "start_stream", YAMLEncoding.YAML_ANY_ENCODING.ordinal());
                     } else if (event.is(Event.ID.DocumentStart)) {
                         final DocumentStartEvent startEvent = (DocumentStartEvent) event;
 
@@ -229,15 +229,15 @@ public abstract class PsychParserNodes {
                         }
 
                         Object notExplicit = !startEvent.getExplicit();
-                        callStartDocumentNode.call(frame, handler, "start_document", null, versionArray, tags, notExplicit);
+                        callStartDocumentNode.call(frame, handler, "start_document", versionArray, tags, notExplicit);
                     } else if (event.is(Event.ID.DocumentEnd)) {
                         final DocumentEndEvent endEvent = (DocumentEndEvent) event;
                         Object notExplicit = !endEvent.getExplicit();
-                        callEndDocumentNode.call(frame, handler, "end_document", null, notExplicit);
+                        callEndDocumentNode.call(frame, handler, "end_document", notExplicit);
                     } else if (event.is(Event.ID.Alias)) {
                         final AliasEvent aliasEvent = (AliasEvent) event;
                         Object alias = stringOrNilFor(aliasEvent.getAnchor(), tainted, taintNode);
-                        callAliasNode.call(frame, handler, "alias", null, alias);
+                        callAliasNode.call(frame, handler, "alias", alias);
                     } else if (event.is(Event.ID.Scalar)) {
                         final ScalarEvent scalarEvent = (ScalarEvent) event;
 
@@ -248,8 +248,8 @@ public abstract class PsychParserNodes {
                         Object style = translateStyle(scalarEvent.getStyle());
                         Object val = stringFor(scalarEvent.getValue(), tainted, taintNode);
 
-                        callScalarNode.call(frame, handler, "scalar", null, val, anchor, tag, plain_implicit,
-                                quoted_implicit, style);
+                        callScalarNode.call(frame, handler, "scalar", val, anchor, tag, plain_implicit, quoted_implicit,
+                                style);
                     } else if (event.is(Event.ID.SequenceStart)) {
                         final SequenceStartEvent sequenceStartEvent = (SequenceStartEvent) event;
 
@@ -258,9 +258,9 @@ public abstract class PsychParserNodes {
                         Object implicit = sequenceStartEvent.getImplicit();
                         Object style = translateFlowStyle(sequenceStartEvent.getFlowStyle());
 
-                        callStartSequenceNode.call(frame, handler, "start_sequence", null, anchor, tag, implicit, style);
+                        callStartSequenceNode.call(frame, handler, "start_sequence", anchor, tag, implicit, style);
                     } else if (event.is(Event.ID.SequenceEnd)) {
-                        callEndSequenceNode.call(frame, handler, "end_sequence", null);
+                        callEndSequenceNode.call(frame, handler, "end_sequence");
                     } else if (event.is(Event.ID.MappingStart)) {
                         final MappingStartEvent mappingStartEvent = (MappingStartEvent) event;
 
@@ -269,11 +269,11 @@ public abstract class PsychParserNodes {
                         Object implicit = mappingStartEvent.getImplicit();
                         Object style = translateFlowStyle(mappingStartEvent.getFlowStyle());
 
-                        callStartMappingNode.call(frame, handler, "start_mapping", null, anchor, tag, implicit, style);
+                        callStartMappingNode.call(frame, handler, "start_mapping", anchor, tag, implicit, style);
                     } else if (event.is(Event.ID.MappingEnd)) {
-                        callEndMappingNode.call(frame, handler, "end_mapping", null);
+                        callEndMappingNode.call(frame, handler, "end_mapping");
                     } else if (event.is(Event.ID.StreamEnd)) {
-                        callEndStreamNode.call(frame, handler, "end_stream", null);
+                        callEndStreamNode.call(frame, handler, "end_stream");
                         break;
                     }
                 }

@@ -211,7 +211,7 @@ public class Bootstrap {
     }
 
     public static IRubyObject array(ThreadContext context, IRubyObject[] elts) {
-        return RubyArray.newArrayNoCopy(context.runtime, elts);
+        return RubyArray.newArrayMayCopy(context.runtime, elts);
     }
 
     public static Handle contextValue() {
@@ -816,7 +816,7 @@ public class Bootstrap {
         return value;
     }
 
-    public static boolean testArg0ModuleMatch(IRubyObject arg0, int id) {
+    public static boolean testModuleMatch(ThreadContext context, IRubyObject arg0, int id) {
         return arg0 instanceof RubyModule && ((RubyModule)arg0).id == id;
     }
 

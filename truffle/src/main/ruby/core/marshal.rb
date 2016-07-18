@@ -109,7 +109,7 @@ class Exception
     out << ms.serialize_fixnum(2)
 
     out << ms.serialize(:mesg)
-    out << ms.serialize(self.message)
+    out << ms.serialize(Truffle.invoke_primitive(:exception_message, self))
     out << ms.serialize(:bt)
     out << ms.serialize(self.backtrace)
 

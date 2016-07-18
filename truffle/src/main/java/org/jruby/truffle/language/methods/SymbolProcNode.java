@@ -42,7 +42,7 @@ public class SymbolProcNode extends RubyNode {
                 1,
                 RubyArguments.getArgumentsCount(frame));
 
-        return getCallNode().call(frame, receiver, symbol, block, arguments);
+        return getCallNode().callWithBlock(frame, receiver, symbol, block, arguments);
     }
 
     private CallDispatchHeadNode getCallNode() {

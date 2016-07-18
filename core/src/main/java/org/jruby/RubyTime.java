@@ -755,7 +755,7 @@ public class RubyTime extends RubyObject {
     @JRubyMethod
     @Override
     public RubyArray to_a() {
-        return getRuntime().newArrayNoCopy(new IRubyObject[]{sec(), min(), hour(), mday(), month(),
+        return RubyArray.newArrayMayCopy(getRuntime(), new IRubyObject[]{sec(), min(), hour(), mday(), month(),
                 year(), wday(), yday(), isdst(), zone()});
     }
 

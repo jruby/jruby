@@ -41,6 +41,10 @@ public abstract class AllocateObjectNode extends RubyNode {
 
     private final boolean useCallerFrameForTracing;
 
+    public AllocateObjectNode() {
+        this(null, null);
+    }
+
     public AllocateObjectNode(RubyContext context, SourceSection sourceSection) {
         this(context, sourceSection, true);
     }

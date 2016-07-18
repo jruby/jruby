@@ -26,6 +26,8 @@ import org.jruby.truffle.core.encoding.EncodingLayout;
 import org.jruby.truffle.core.encoding.EncodingLayoutImpl;
 import org.jruby.truffle.core.exception.ExceptionLayout;
 import org.jruby.truffle.core.exception.ExceptionLayoutImpl;
+import org.jruby.truffle.core.exception.SystemCallErrorLayout;
+import org.jruby.truffle.core.exception.SystemCallErrorLayoutImpl;
 import org.jruby.truffle.core.fiber.FiberLayout;
 import org.jruby.truffle.core.fiber.FiberLayoutImpl;
 import org.jruby.truffle.core.hash.HashLayout;
@@ -50,10 +52,10 @@ import org.jruby.truffle.core.queue.QueueLayout;
 import org.jruby.truffle.core.queue.QueueLayoutImpl;
 import org.jruby.truffle.core.queue.SizedQueueLayout;
 import org.jruby.truffle.core.queue.SizedQueueLayoutImpl;
-import org.jruby.truffle.core.range.IntegerFixnumRangeLayout;
-import org.jruby.truffle.core.range.IntegerFixnumRangeLayoutImpl;
-import org.jruby.truffle.core.range.LongFixnumRangeLayout;
-import org.jruby.truffle.core.range.LongFixnumRangeLayoutImpl;
+import org.jruby.truffle.core.range.IntRangeLayout;
+import org.jruby.truffle.core.range.IntRangeLayoutImpl;
+import org.jruby.truffle.core.range.LongRangeLayout;
+import org.jruby.truffle.core.range.LongRangeLayoutImpl;
 import org.jruby.truffle.core.range.ObjectRangeLayout;
 import org.jruby.truffle.core.range.ObjectRangeLayoutImpl;
 import org.jruby.truffle.core.regexp.MatchDataLayout;
@@ -111,10 +113,10 @@ public abstract class Layouts {
     public static final ExceptionLayout EXCEPTION = ExceptionLayoutImpl.INSTANCE;
     public static final FiberLayout FIBER = FiberLayoutImpl.INSTANCE;
     public static final HashLayout HASH = HashLayoutImpl.INSTANCE;
-    public static final IntegerFixnumRangeLayout INTEGER_FIXNUM_RANGE = IntegerFixnumRangeLayoutImpl.INSTANCE;
+    public static final IntRangeLayout INT_RANGE = IntRangeLayoutImpl.INSTANCE;
     public static final IOBufferLayout IO_BUFFER = IOBufferLayoutImpl.INSTANCE;
     public static final IOLayout IO = IOLayoutImpl.INSTANCE;
-    public static final LongFixnumRangeLayout LONG_FIXNUM_RANGE = LongFixnumRangeLayoutImpl.INSTANCE;
+    public static final LongRangeLayout LONG_RANGE = LongRangeLayoutImpl.INSTANCE;
     public static final MatchDataLayout MATCH_DATA = MatchDataLayoutImpl.INSTANCE;
     public static final MethodLayout METHOD = MethodLayoutImpl.INSTANCE;
     public static final ModuleLayout MODULE = ModuleLayoutImpl.INSTANCE;
@@ -138,6 +140,7 @@ public abstract class Layouts {
     public static final TracePointLayout TRACE_POINT = TracePointLayoutImpl.INSTANCE;
     public static final DigestLayout DIGEST = DigestLayoutImpl.INSTANCE;
     public static final StatLayout STAT = StatLayoutImpl.INSTANCE;
+    public static final SystemCallErrorLayout SYSTEM_CALL_ERROR = SystemCallErrorLayoutImpl.INSTANCE;
 
     // Other standard identifiers
 

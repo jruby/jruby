@@ -28,6 +28,7 @@ public class InvokePrimitiveNode extends RubyNode {
 
     @Override
     public void executeVoid(VirtualFrame frame) {
+        primitive.execute(frame);
     }
 
     @Override
@@ -35,14 +36,10 @@ public class InvokePrimitiveNode extends RubyNode {
         final Object value = primitive.execute(frame);
 
         if (primitiveSucceededCondition.profile(value != null)) {
-            // If the primitive didn't fail its value is produced
-
             return value;
+        } else {
+            return nil();
         }
-
-        // Primitives may return null to indicate that they have failed, in which case we continue with the fallback
-
-        return nil();
     }
 
 }

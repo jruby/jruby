@@ -1,1 +1,1 @@
-require_relative '../../stdlib/drb/eq'
+require_relative '../../../stdlib/drb/eq'

@@ -235,7 +235,7 @@ public class RubyKernel {
         Ruby runtime = context.runtime;
 
         if (lastCallType != CallType.VARIABLE) {
-            throw runtime.newNoMethodError(getMethodMissingFormat(lastVis, lastCallType), recv, name, RubyArray.newArrayNoCopy(runtime, args, dropFirst ? 1 : 0));
+            throw runtime.newNoMethodError(getMethodMissingFormat(lastVis, lastCallType), recv, name, RubyArray.newArrayMayCopy(runtime, args, dropFirst ? 1 : 0));
         } else {
             throw runtime.newNameError(getMethodMissingFormat(lastVis, lastCallType), recv, name);
         }
@@ -786,7 +786,7 @@ public class RubyKernel {
         if (args.length == 2 && args[1] instanceof RubyHash) {
             arg = args[1];
         } else {
-            RubyArray newArgs = context.runtime.newArrayNoCopy(args);
+            RubyArray newArgs = RubyArray.newArrayMayCopy(context.runtime, args);
             newArgs.shift(context);
             arg = newArgs;
         }
@@ -1129,6 +1129,8 @@ public class RubyKernel {
         return rbThrowInternal(context, tag, value);
     }
 
+    private static final byte[] uncaught_throw_p = { 'u','n','c','a','u','g','h','t',' ','t','h','r','o','w',' ','%','p' };
+
     private static IRubyObject rbThrowInternal(ThreadContext context, IRubyObject tag, IRubyObject arg) {
         final Ruby runtime = context.runtime;
         runtime.getGlobalVariables().set("$!", context.nil);
@@ -1142,13 +1144,7 @@ public class RubyKernel {
 
         // No catch active for this throw
         IRubyObject value = arg == null ? context.nil : arg;
-        String message = "uncaught throw %p";
-
-        final RubyThread currentThread = context.getThread();
-        if (currentThread != runtime.getThreadService().getMainThread()) {
-            message += " in thread 0x" + Integer.toHexString(RubyInteger.fix2int(currentThread.id()));
-        }
-        throw uncaughtThrow(runtime, tag, value, runtime.newString(message));
+        throw uncaughtThrow(runtime, tag, value, RubyString.newStringShared(runtime, uncaught_throw_p));
     }
 
     private static RaiseException uncaughtThrow(Ruby runtime, IRubyObject tag, IRubyObject value, RubyString message) {
@@ -1478,9 +1474,7 @@ public class RubyKernel {
             length = newPos;
         }
         ByteList buf = new ByteList(out, 0, length, runtime.getDefaultExternalEncoding(), false);
-        RubyString newString = RubyString.newString(runtime, buf);
-
-        return newString;
+        return RubyString.newString(runtime, buf);
     }
 
     @JRubyMethod(module = true, visibility = PRIVATE)

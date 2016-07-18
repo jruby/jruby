@@ -172,7 +172,7 @@ class StringScanner
   end
 
   def pre_match
-    @string.byteslice(0, match.full.at(0)) if @match
+    @string.byteslice(0, match.byte_begin(0)) if @match
   end
 
   def reset_state
@@ -296,7 +296,7 @@ class StringScanner
 
     return nil unless @match
 
-    fin = @match.full.at(1)
+    fin = @match.byte_end(0)
 
     @prev_pos = @pos
 

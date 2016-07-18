@@ -75,7 +75,7 @@ public class InterpolatedRegexpNode extends RubyNode {
         DynamicObject[] values = new DynamicObject[children.length];
         for (int i = 0; i < children.length; i++) {
             final Object value = children[i].execute(frame);
-            values[i] = (DynamicObject) toS.call(frame, value, "to_s", null);
+            values[i] = (DynamicObject) toS.call(frame, value, "to_s");
         }
         return values;
     }

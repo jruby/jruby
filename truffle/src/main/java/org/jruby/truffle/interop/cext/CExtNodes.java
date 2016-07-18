@@ -9,17 +9,17 @@
  */
 package org.jruby.truffle.interop.cext;
 
-import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.CreateCast;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.Frame;
 import com.oracle.truffle.api.frame.FrameInstance;
+import com.oracle.truffle.api.frame.FrameInstance.FrameAccess;
 import com.oracle.truffle.api.frame.FrameInstanceVisitor;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.frame.FrameInstance.FrameAccess;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
@@ -35,7 +35,7 @@ import org.jruby.truffle.language.constants.LookupConstantNode;
 @CoreClass("Truffle::CExt")
 public class CExtNodes {
 
-    @CoreMethod(names = "NUM2INT", isModuleFunction = true, needsSelf = false, required = 1)
+    @CoreMethod(names = "NUM2INT", isModuleFunction = true, required = 1)
     public abstract static class NUM2INTNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
@@ -45,7 +45,7 @@ public class CExtNodes {
 
     }
 
-    @CoreMethod(names = "NUM2UINT", isModuleFunction = true, needsSelf = false, required = 1)
+    @CoreMethod(names = "NUM2UINT", isModuleFunction = true, required = 1)
     public abstract static class NUM2UINTNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
@@ -56,7 +56,7 @@ public class CExtNodes {
 
     }
 
-    @CoreMethod(names = "NUM2LONG", isModuleFunction = true, needsSelf = false, required = 1)
+    @CoreMethod(names = "NUM2LONG", isModuleFunction = true, required = 1)
     public abstract static class NUM2LONGNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
@@ -66,7 +66,7 @@ public class CExtNodes {
 
     }
 
-    @CoreMethod(names = "FIX2INT", isModuleFunction = true, needsSelf = false, required = 1)
+    @CoreMethod(names = "FIX2INT", isModuleFunction = true, required = 1)
     public abstract static class FIX2INTNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
@@ -76,7 +76,7 @@ public class CExtNodes {
 
     }
 
-    @CoreMethod(names = "FIX2UINT", isModuleFunction = true, needsSelf = false, required = 1)
+    @CoreMethod(names = "FIX2UINT", isModuleFunction = true, required = 1)
     public abstract static class FIX2UINTNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
@@ -85,9 +85,15 @@ public class CExtNodes {
             return num;
         }
 
+        @Specialization
+        public long fix2uint(long num) {
+            // TODO CS 2-May-16 what to do about the fact it's unsigned?
+            return num;
+        }
+
     }
 
-    @CoreMethod(names = "FIX2LONG", isModuleFunction = true, needsSelf = false, required = 1)
+    @CoreMethod(names = "FIX2LONG", isModuleFunction = true, required = 1)
     public abstract static class FIX2LONGNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
@@ -97,7 +103,7 @@ public class CExtNodes {
 
     }
 
-    @CoreMethod(names = "INT2NUM", isModuleFunction = true, needsSelf = false, required = 1)
+    @CoreMethod(names = "INT2NUM", isModuleFunction = true, required = 1)
     public abstract static class INT2NUMNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
@@ -105,9 +111,14 @@ public class CExtNodes {
             return num;
         }
 
+        @Specialization
+        public long int2num(long num) {
+            return num;
+        }
+
     }
 
-    @CoreMethod(names = "INT2FIX", isModuleFunction = true, needsSelf = false, required = 1)
+    @CoreMethod(names = "INT2FIX", isModuleFunction = true, required = 1)
     public abstract static class INT2FIXNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
@@ -115,9 +126,14 @@ public class CExtNodes {
             return num;
         }
 
+        @Specialization
+        public long int2fix(long num) {
+            return num;
+        }
+
     }
 
-    @CoreMethod(names = "UINT2NUM", isModuleFunction = true, needsSelf = false, required = 1)
+    @CoreMethod(names = "UINT2NUM", isModuleFunction = true, required = 1)
     public abstract static class UINT2NUMNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
@@ -128,7 +144,7 @@ public class CExtNodes {
 
     }
 
-    @CoreMethod(names = "LONG2NUM", isModuleFunction = true, needsSelf = false, required = 1)
+    @CoreMethod(names = "LONG2NUM", isModuleFunction = true, required = 1)
     public abstract static class LONG2NUMNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
@@ -138,7 +154,7 @@ public class CExtNodes {
 
     }
 
-    @CoreMethod(names = "LONG2FIX", isModuleFunction = true, needsSelf = false, required = 1)
+    @CoreMethod(names = "LONG2FIX", isModuleFunction = true, required = 1)
     public abstract static class LONG2FIXNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization

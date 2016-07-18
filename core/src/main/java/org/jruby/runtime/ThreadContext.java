@@ -682,7 +682,7 @@ public final class ThreadContext {
             traceArray[i] = new RubyString(runtime, stringClass, fullTrace[i + level].mriStyleString());
         }
 
-        RubyArray backTrace = RubyArray.newArrayNoCopy(runtime, traceArray);
+        RubyArray backTrace = RubyArray.newArrayMayCopy(runtime, traceArray);
         if (RubyInstanceConfig.LOG_CALLERS) TraceType.logCaller(backTrace);
         return backTrace;
     }

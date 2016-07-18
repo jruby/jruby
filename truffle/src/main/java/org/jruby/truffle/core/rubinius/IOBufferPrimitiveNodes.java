@@ -84,7 +84,7 @@ public abstract class IOBufferPrimitiveNodes {
 
     }
 
-    @Primitive(name = "iobuffer_unshift", lowerFixnumParameters = 1, unsafe = UnsafeGroup.IO)
+    @Primitive(name = "iobuffer_unshift", lowerFixnum = 2, unsafe = UnsafeGroup.IO)
     public static abstract class IOBufferUnshiftPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Specialization(guards = "isRubyString(string)")
@@ -167,7 +167,7 @@ public abstract class IOBufferPrimitiveNodes {
                         getContext().getSafepointManager().poll(this);
                         continue;
                     } else {
-                        throw new RaiseException(ExceptionOperations.createRubyException(coreLibrary().getErrnoClass(Errno.valueOf(errno))));
+                        throw new RaiseException(ExceptionOperations.createSystemCallError(coreLibrary().getErrnoClass(Errno.valueOf(errno)), nil(), null, errno));
                     }
                 } else {
                     break;

@@ -1,0 +1,4 @@
+src: ext/xml/*.c
+cflags: -I$LIBXML_HOME/include/libxml2
+libs: $LIBXML_HOME/lib/libxml2.dylib
+out: lib/xml/xml.su

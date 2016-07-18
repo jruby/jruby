@@ -20,6 +20,7 @@ package org.jruby.truffle.core.regexp;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.dsl.Fallback;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.Frame;
@@ -108,7 +109,7 @@ public abstract class RegexpNodes {
             RegexpSetLastMatchPrimitiveNode.setLastMatch(context, nil);
 
             if (setNamedCaptures && Layouts.REGEXP.getRegex(regexp).numberOfNames() > 0) {
-                final Frame frame = context.getCallStack().getCallerFrameIgnoringSend().getFrame(FrameAccess.READ_WRITE, true);
+                final Frame frame = context.getCallStack().getCallerFrameIgnoringSend().getFrame(FrameAccess.READ_WRITE, false);
                 for (Iterator<NameEntry> i = Layouts.REGEXP.getRegex(regexp).namedBackrefIterator(); i.hasNext();) {
                     final NameEntry e = i.next();
                     final String name = new String(e.name, e.nameP, e.nameEnd - e.nameP, StandardCharsets.UTF_8).intern();
@@ -150,7 +151,7 @@ public abstract class RegexpNodes {
         final DynamicObject global = createSubstring(makeSubstringNode, source, region.beg[0], region.end[0] - region.beg[0]);
 
         final DynamicObject matchObject = Layouts.MATCH_DATA.createMatchData(Layouts.CLASS.getInstanceFactory(context.getCoreLibrary().getMatchDataClass()),
-                source, regexp, region, values, pre, post, global, matcher.getBegin(), matcher.getEnd(), null, null);
+                source, regexp, region, values, pre, post, global, null);
 
         if (operator) {
             if (values.length > 0) {
@@ -165,7 +166,7 @@ public abstract class RegexpNodes {
         RegexpSetLastMatchPrimitiveNode.setLastMatch(context, matchObject);
 
         if (setNamedCaptures && Layouts.REGEXP.getRegex(regexp).numberOfNames() > 0) {
-            final Frame frame = context.getCallStack().getCallerFrameIgnoringSend().getFrame(FrameAccess.READ_WRITE, true);
+            final Frame frame = context.getCallStack().getCallerFrameIgnoringSend().getFrame(FrameAccess.READ_WRITE, false);
             for (Iterator<NameEntry> i = Layouts.REGEXP.getRegex(regexp).namedBackrefIterator(); i.hasNext();) {
                 final NameEntry e = i.next();
                 final String name = new String(e.name, e.nameP, e.nameEnd - e.nameP, StandardCharsets.UTF_8).intern();
@@ -426,7 +427,7 @@ public abstract class RegexpNodes {
                 toSNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
             }
 
-            return match(regexp, (DynamicObject) toSNode.call(frame, symbol, "to_s", null));
+            return match(regexp, (DynamicObject) toSNode.call(frame, symbol, "to_s"));
         }
 
         @Specialization(guards = "isNil(nil)")
@@ -479,8 +480,12 @@ public abstract class RegexpNodes {
         }
     }
 
-    @CoreMethod(names = { "quote", "escape" }, needsSelf = false, onSingleton = true, required = 1)
+    @CoreMethod(names = { "quote", "escape" }, onSingleton = true, required = 1)
     public abstract static class QuoteNode extends CoreMethodArrayArgumentsNode {
+
+        @Child ToStrNode toStrNode;
+
+        abstract public DynamicObject executeQuote(VirtualFrame frame, Object raw);
 
         @TruffleBoundary
         @Specialization(guards = "isRubyString(raw)")
@@ -493,6 +498,16 @@ public abstract class RegexpNodes {
         @Specialization(guards = "isRubySymbol(raw)")
         public DynamicObject quoteSymbol(DynamicObject raw) {
             return quoteString(createString(StringOperations.encodeRope(Layouts.SYMBOL.getString(raw), UTF8Encoding.INSTANCE)));
+        }
+
+        @Fallback
+        public DynamicObject quote(VirtualFrame frame, Object raw) {
+            if (toStrNode == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                toStrNode = insert(ToStrNodeGen.create(getContext(), getSourceSection(), null));
+            }
+
+            return executeQuote(frame, toStrNode.executeToStr(frame, raw));
         }
 
     }
@@ -563,7 +578,7 @@ public abstract class RegexpNodes {
                 lookupTableWriteNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
             }
 
-            final Object namesLookupTable = newLookupTableNode.call(frame, coreLibrary().getLookupTableClass(), "new", null);
+            final Object namesLookupTable = newLookupTableNode.call(frame, coreLibrary().getLookupTableClass(), "new");
 
             for (final Iterator<NameEntry> i = Layouts.REGEXP.getRegex(regexp).namedBackrefIterator(); i.hasNext();) {
                 final NameEntry e = i.next();
@@ -572,7 +587,7 @@ public abstract class RegexpNodes {
                 final int[] backrefs = e.getBackRefs();
                 final DynamicObject backrefsRubyArray = Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), backrefs, backrefs.length);
 
-                lookupTableWriteNode.call(frame, namesLookupTable, "[]=", null, name, backrefsRubyArray);
+                lookupTableWriteNode.call(frame, namesLookupTable, "[]=", name, backrefsRubyArray);
             }
 
             setCachedNames(regexp, namesLookupTable);

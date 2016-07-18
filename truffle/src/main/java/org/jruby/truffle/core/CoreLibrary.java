@@ -44,6 +44,7 @@ import org.jruby.truffle.core.dir.DirNodesFactory;
 import org.jruby.truffle.core.encoding.EncodingConverterNodesFactory;
 import org.jruby.truffle.core.encoding.EncodingNodesFactory;
 import org.jruby.truffle.core.exception.ExceptionNodesFactory;
+import org.jruby.truffle.core.exception.SystemCallErrorNodesFactory;
 import org.jruby.truffle.core.fiber.FiberNodesFactory;
 import org.jruby.truffle.core.hash.HashNodesFactory;
 import org.jruby.truffle.core.kernel.KernelNodesFactory;
@@ -182,10 +183,13 @@ public class CoreLibrary {
     private final DynamicObject notImplementedErrorClass;
     private final DynamicObject numericClass;
     private final DynamicObject objectClass;
+    private final DynamicObjectFactory objectFactory;
     private final DynamicObject procClass;
     private final DynamicObjectFactory procFactory;
     private final DynamicObject processModule;
     private final DynamicObject rangeClass;
+    private final DynamicObjectFactory intRangeFactory;
+    private final DynamicObjectFactory longRangeFactory;
     private final DynamicObject rangeErrorClass;
     private final DynamicObject rationalClass;
     private final DynamicObject regexpClass;
@@ -202,13 +206,13 @@ public class CoreLibrary {
     private final DynamicObject systemCallErrorClass;
     private final DynamicObject systemExitClass;
     private final DynamicObject threadClass;
+    private final DynamicObjectFactory threadFactory;
     private final DynamicObject threadBacktraceClass;
     private final DynamicObject threadBacktraceLocationClass;
     private final DynamicObject timeClass;
     private final DynamicObjectFactory timeFactory;
     private final DynamicObject transcodingClass;
     private final DynamicObject trueClass;
-    private final DynamicObject tupleClass;
     private final DynamicObject typeErrorClass;
     private final DynamicObject zeroDivisionErrorClass;
     private final DynamicObject enumerableModule;
@@ -357,6 +361,10 @@ public class CoreLibrary {
         return eagainWaitWritable;
     }
 
+    public DynamicObject getTruffleModule() {
+        return truffleModule;
+    }
+
     private enum State {
         INITIALIZING,
         LOADING_RUBY_CORE,
@@ -364,9 +372,6 @@ public class CoreLibrary {
     }
 
     private State state = State.INITIALIZING;
-
-    private final DynamicObjectFactory integerFixnumRangeFactory;
-    private final DynamicObjectFactory longFixnumRangeFactory;
 
     private static class CoreLibraryNode extends RubyNode {
 
@@ -408,7 +413,8 @@ public class CoreLibrary {
         Layouts.CLASS.setInstanceFactoryUnsafe(basicObjectClass, Layouts.BASIC_OBJECT.createBasicObjectShape(basicObjectClass, basicObjectClass));
 
         objectClass = ClassNodes.createBootClass(context, classClass, basicObjectClass, "Object");
-        Layouts.CLASS.setInstanceFactoryUnsafe(objectClass, Layouts.BASIC_OBJECT.createBasicObjectShape(objectClass, objectClass));
+        objectFactory = Layouts.BASIC_OBJECT.createBasicObjectShape(objectClass, objectClass);
+        Layouts.CLASS.setInstanceFactoryUnsafe(objectClass, objectFactory);
 
         moduleClass = ClassNodes.createBootClass(context, classClass, objectClass, "Module");
         Layouts.CLASS.setInstanceFactoryUnsafe(moduleClass, Layouts.MODULE.createModuleShape(moduleClass, moduleClass));
@@ -466,6 +472,7 @@ public class CoreLibrary {
 
         // StandardError > SystemCallError
         systemCallErrorClass = defineClass(standardErrorClass, "SystemCallError");
+        Layouts.CLASS.setInstanceFactoryUnsafe(systemCallErrorClass, Layouts.SYSTEM_CALL_ERROR.createSystemCallErrorShape(systemCallErrorClass, systemCallErrorClass));
 
         errnoModule = defineModule("Errno");
 
@@ -546,8 +553,8 @@ public class CoreLibrary {
         Layouts.CLASS.setInstanceFactoryUnsafe(sizedQueueClass, Layouts.SIZED_QUEUE.createSizedQueueShape(sizedQueueClass, sizedQueueClass));
         rangeClass = defineClass("Range");
         Layouts.CLASS.setInstanceFactoryUnsafe(rangeClass, Layouts.OBJECT_RANGE.createObjectRangeShape(rangeClass, rangeClass));
-        integerFixnumRangeFactory = Layouts.INTEGER_FIXNUM_RANGE.createIntegerFixnumRangeShape(rangeClass, rangeClass);
-        longFixnumRangeFactory = Layouts.LONG_FIXNUM_RANGE.createLongFixnumRangeShape(rangeClass, rangeClass);
+        intRangeFactory = Layouts.INT_RANGE.createIntRangeShape(rangeClass, rangeClass);
+        longRangeFactory = Layouts.LONG_RANGE.createLongRangeShape(rangeClass, rangeClass);
         regexpClass = defineClass("Regexp");
         Layouts.CLASS.setInstanceFactoryUnsafe(regexpClass, Layouts.REGEXP.createRegexpShape(regexpClass, regexpClass));
         stringClass = defineClass("String");
@@ -558,7 +565,8 @@ public class CoreLibrary {
 
         threadClass = defineClass("Thread");
         threadClass.define("@abort_on_exception", false);
-        Layouts.CLASS.setInstanceFactoryUnsafe(threadClass, Layouts.THREAD.createThreadShape(threadClass, threadClass));
+        threadFactory = Layouts.THREAD.createThreadShape(threadClass, threadClass);
+        Layouts.CLASS.setInstanceFactoryUnsafe(threadClass, threadFactory);
 
         threadBacktraceClass = defineClass(threadClass, objectClass, "Backtrace");
         threadBacktraceLocationClass = defineClass(threadBacktraceClass, objectClass, "Location");
@@ -658,7 +666,6 @@ public class CoreLibrary {
         lookupTableClass = defineClass(rubiniusModule, hashClass, "LookupTable");
         defineClass(rubiniusModule, objectClass, "StringData");
         transcodingClass = defineClass(encodingClass, objectClass, "Transcoding");
-        tupleClass = defineClass(rubiniusModule, arrayClass, "Tuple");
         randomizerClass = defineClass(rubiniusModule, objectClass, "Randomizer");
         atomicReferenceClass = defineClass(rubiniusModule, objectClass, "AtomicReference");
         Layouts.CLASS.setInstanceFactoryUnsafe(atomicReferenceClass,
@@ -744,6 +751,7 @@ public class CoreLibrary {
             primitiveManager.addPrimitiveNodes(IOPrimitiveNodesFactory.getFactories());
             primitiveManager.addPrimitiveNodes(IOBufferPrimitiveNodesFactory.getFactories());
             primitiveManager.addPrimitiveNodes(ExceptionNodesFactory.getFactories());
+            primitiveManager.addPrimitiveNodes(SystemCallErrorNodesFactory.getFactories());
             return null;
         }, () -> {
             primitiveManager.addPrimitiveNodes(ThreadNodesFactory.getFactories());
@@ -772,6 +780,7 @@ public class CoreLibrary {
             coreMethodNodeManager.addCoreMethodNodes(ClassNodesFactory.getFactories());
             coreMethodNodeManager.addCoreMethodNodes(ConditionVariableNodesFactory.getFactories());
             coreMethodNodeManager.addCoreMethodNodes(ExceptionNodesFactory.getFactories());
+            coreMethodNodeManager.addCoreMethodNodes(SystemCallErrorNodesFactory.getFactories());
             coreMethodNodeManager.addCoreMethodNodes(FalseClassNodesFactory.getFactories());
             return null;
         }, () -> {
@@ -953,6 +962,15 @@ public class CoreLibrary {
         // Java interop
         final DynamicObject javaModule = defineModule(truffleModule, "Java");
         Layouts.MODULE.getFields(javaModule).setConstant(context, node, "System", systemObject);
+
+        // Errno constants
+        for (Map.Entry<Errno, DynamicObject> entry : errnoClasses.entrySet()) {
+            final Errno errno = entry.getKey();
+            final DynamicObject errnoClass = entry.getValue();
+            Layouts.CLASS.getFields(errnoClass).setConstant(context, node, "Errno", errno.intValue());
+        }
+
+
     }
 
     private void initializeSignalConstants() {
@@ -1267,6 +1285,10 @@ public class CoreLibrary {
         return objectClass;
     }
 
+    public DynamicObjectFactory getObjectFactory() {
+        return objectFactory;
+    }
+
     public DynamicObject getProcClass() {
         return procClass;
     }
@@ -1293,6 +1315,10 @@ public class CoreLibrary {
 
     public DynamicObject getThreadClass() {
         return threadClass;
+    }
+
+    public DynamicObjectFactory getThreadFactory() {
+        return threadFactory;
     }
 
     public DynamicObject getTypeErrorClass() {
@@ -1375,10 +1401,6 @@ public class CoreLibrary {
         return transcodingClass;
     }
 
-    public DynamicObject getTupleClass() {
-        return tupleClass;
-    }
-
     public DynamicObject getRubiniusChannelClass() {
         return rubiniusChannelClass;
     }
@@ -1423,12 +1445,12 @@ public class CoreLibrary {
         return method.getCallTarget() == basicObjectSendMethod.getCallTarget();
     }
 
-    public DynamicObjectFactory getIntegerFixnumRangeFactory() {
-        return integerFixnumRangeFactory;
+    public DynamicObjectFactory getIntRangeFactory() {
+        return intRangeFactory;
     }
 
-    public DynamicObjectFactory getLongFixnumRangeFactory() {
-        return longFixnumRangeFactory;
+    public DynamicObjectFactory getLongRangeFactory() {
+        return longRangeFactory;
     }
 
     public DynamicObject getDigestClass() {
@@ -1481,7 +1503,6 @@ public class CoreLibrary {
 
     private static final String[] coreFiles = {
             "/core/pre.rb",
-            "/core/tuple.rb",
             "/core/lookuptable.rb",
             "/core/basic_object.rb",
             "/core/mirror.rb",
@@ -1504,6 +1525,7 @@ public class CoreLibrary {
             "/core/truffle/ffi/pointer.rb",
             "/core/truffle/ffi/ffi_file.rb",
             "/core/truffle/ffi/ffi_struct.rb",
+            "/core/truffle/support.rb",
             "/core/io.rb",
             "/core/immediate.rb",
             "/core/string_mirror.rb",
@@ -1558,7 +1580,6 @@ public class CoreLibrary {
             "/core/math.rb",
             "/core/method.rb",
             "/core/unbound_method.rb",
-            "/core/shims.rb",
             "/core/truffle/attachments.rb",
             "/core/truffle/debug.rb",
             "/core/truffle/cext.rb",

@@ -38,7 +38,7 @@ public class ReadLastBacktraceNode extends RubyNode {
             return nil();
         }
 
-        return getGetBacktraceNode().call(frame, lastException, "backtrace", null);
+        return getGetBacktraceNode().call(frame, lastException, "backtrace");
     }
 
     @Override

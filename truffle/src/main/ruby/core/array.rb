@@ -367,6 +367,8 @@ class Array
       if two and !undefined.equal?(two)
         begin
           right = Rubinius::Type.coerce_to_collection_length two
+        rescue ArgumentError
+          raise RangeError, "bignum too big to convert into `long"
         rescue TypeError
           raise ArgumentError, "second argument must be a Fixnum"
         end
@@ -381,8 +383,8 @@ class Array
       right = size
     end
 
-    if right.is_a?(Bignum)
-      raise RangeError, "bignum too big to convert into `long'"
+    if left >= Fixnum::MAX || right > Fixnum::MAX
+      raise ArgumentError, "argument too big"
     end
 
     i = left
@@ -458,7 +460,7 @@ class Array
       begin
         objects[id] = true
 
-        each { |x| hash_val = ((hash_val & mask) << 1) ^ x.hash }
+        hash_val = self.hash_internal
       ensure
         objects.delete id
       end
@@ -470,7 +472,7 @@ class Array
         objects[:__detect_outermost_recursion__] = true
         objects[id] = true
 
-        each { |x| hash_val = ((hash_val & mask) << 1) ^ x.hash }
+        hash_val = self.hash_internal
 
         # An inner version will raise to return back here, indicating that
         # the whole structure is recursive. In which case, abondon most of
@@ -513,7 +515,7 @@ class Array
 
     return "[...]" if Thread.detect_recursion self do
       each_with_index do |element, index|
-        temp = element.inspect
+        temp = Rubinius::Type.inspect(element)
         result.force_encoding(temp.encoding) if index == 0
         result << temp << comma
       end
@@ -717,9 +719,8 @@ class Array
     outer_lambda.call([])
 
     if block_given?
-      block_result = self
-      result.each { |v| block_result << yield(v) }
-      block_result
+      result.each { |v| yield(v) }
+      self
     else
       result
     end
@@ -1433,10 +1434,8 @@ class Array
     return self unless size > 1
 
     i = 0
-    while i < self.length / 2
-      temp = self[i]
-      self[i] = self[self.length - i - 1]
-      self[self.length - i - 1] = temp
+    while i < size / 2
+      swap i, size-i-1
       i += 1
     end
 
@@ -1486,7 +1485,7 @@ class Array
 
         # Check for shift style.
         if start == 0
-          put 0, nil
+          self[0] = nil
           self.shift
         else
           delete_range(start, 1)
@@ -1519,7 +1518,7 @@ class Array
     reg_length = size - reg_start
     if reg_start <= size
       # copy tail
-      copy_from self, reg_start, reg_length, index
+      self[index, reg_length] = self[reg_start, reg_length]
 
       self.pop(del_length)
     end
@@ -1583,4 +1582,11 @@ class Array
     Truffle::Array.steal_storage(self, sort(&block))
   end
   public :sort!
+
+  def swap(a, b)
+    temp = at(a)
+    self[a] = at(b)
+    self[b] = temp
+  end
+  protected :swap
 end

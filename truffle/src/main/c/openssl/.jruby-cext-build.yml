@@ -1,0 +1,4 @@
+src: ./*.c
+cflags: -I$OPENSSL_HOME/include
+libs: $OPENSSL_HOME/lib/libssl.dylib
+out: ../../../../../lib/ruby/truffle/openssl/openssl.su

@@ -62,7 +62,7 @@ public abstract class BigDecimalCoreMethodNode extends CoreMethodNode {
     protected RoundingMode getRoundMode(VirtualFrame frame) {
         return toRoundingMode(getRoundModeIntegerCast().executeCastInt(
                 // TODO (pitr 21-Jun-2015): read the actual constant
-                getRoundModeCall().call(frame, getBigDecimalClass(), "mode", null, 256)));
+                getRoundModeCall().call(frame, getBigDecimalClass(), "mode", 256)));
     }
 
     protected DynamicObject getBigDecimalClass() {
@@ -104,7 +104,7 @@ public abstract class BigDecimalCoreMethodNode extends CoreMethodNode {
     }
 
     protected int getLimit(VirtualFrame frame) {
-        return getLimitIntegerCast().executeCastInt(getLimitCall().call(frame, getBigDecimalClass(), "limit", null));
+        return getLimitIntegerCast().executeCastInt(getLimitCall().call(frame, getBigDecimalClass(), "limit"));
     }
 
     private CreateBigDecimalNode getCreateBigDecimal() {

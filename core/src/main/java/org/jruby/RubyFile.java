@@ -1957,7 +1957,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         final Ruby runtime = context.runtime;
         final String separator = runtime.getClass("File").getConstant("SEPARATOR").toString();
 
-        final RubyArray argsAry = RubyArray.newArrayNoCopyLight(runtime, args);
+        final RubyArray argsAry = RubyArray.newArrayMayCopy(runtime, args);
 
         final StringBuilder buffer = new StringBuilder(24);
         boolean isTainted = joinImpl(buffer, separator, context, recv, argsAry);

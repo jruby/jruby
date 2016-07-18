@@ -27,6 +27,7 @@ import org.jruby.truffle.builtins.Primitive;
 import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.NotProvided;
+import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.backtrace.Backtrace;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
@@ -80,7 +81,9 @@ public abstract class ExceptionNodes {
         private ReadObjectFieldNode getReadCustomBacktraceNode() {
             if (readCustomBacktraceNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                readCustomBacktraceNode = insert(ReadObjectFieldNodeGen.create("@custom_backtrace", null));
+                readCustomBacktraceNode = insert(ReadObjectFieldNodeGen.create(
+                        "@custom_backtrace",
+                        null));
             }
 
             return readCustomBacktraceNode;
@@ -100,7 +103,10 @@ public abstract class ExceptionNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject captureBacktrace(DynamicObject exception, int offset) {
-            final Backtrace backtrace = getContext().getCallStack().getBacktrace(this, offset, exception);
+            final Backtrace backtrace = getContext().getCallStack().getBacktrace(
+                    this,
+                    offset,
+                    exception);
             Layouts.EXCEPTION.setBacktrace(exception, backtrace);
             return nil();
         }
@@ -116,13 +122,23 @@ public abstract class ExceptionNodes {
                 @Cached("createBinaryProfile()") ConditionProfile messageProfile) {
             final Object message = Layouts.EXCEPTION.getMessage(exception);
 
-            if (messageProfile.profile(message == null)) {
+            if (messageProfile.profile(message == nil())) {
                 final String className = Layouts.MODULE.getFields(
                         Layouts.BASIC_OBJECT.getLogicalClass(exception)).getName();
                 return createString(StringOperations.encodeRope(className, UTF8Encoding.INSTANCE));
             } else {
                 return message;
             }
+        }
+
+    }
+
+    @Primitive(name = "exception_message")
+    public abstract static class MessagePrimitiveNode extends CoreMethodArrayArgumentsNode {
+
+        @Specialization
+        public Object message(DynamicObject exception) {
+            return Layouts.EXCEPTION.getMessage(exception);
         }
 
     }
@@ -139,7 +155,7 @@ public abstract class ExceptionNodes {
 
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
-            return allocateObjectNode.allocate(rubyClass, null, null);
+            return allocateObjectNode.allocate(rubyClass, null, null, nil());
         }
 
     }
@@ -147,9 +163,19 @@ public abstract class ExceptionNodes {
     @Primitive(name = "exception_errno_error", needsSelf = false)
     public static abstract class ExceptionErrnoErrorPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
+        @TruffleBoundary
         @Specialization
-        public DynamicObject exceptionErrnoError(DynamicObject message, int errno) {
-            return coreExceptions().errnoError(errno, message.toString(), this);
+        public DynamicObject exceptionErrnoError(
+                DynamicObject message,
+                int errno,
+                DynamicObject location) {
+            final String errorMessage;
+            if (RubyGuards.isRubyString(location)) {
+                errorMessage = " @ " + location.toString() + " - " + message.toString();
+            } else {
+                errorMessage = " - " + message.toString();
+            }
+            return coreExceptions().errnoError(errno, errorMessage, this);
         }
 
     }

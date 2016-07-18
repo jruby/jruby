@@ -84,7 +84,7 @@ public abstract class ToFNode extends RubyNode {
 
         final Object coerced;
         try {
-            coerced = toFNode.call(frame, object, "to_f", null);
+            coerced = toFNode.call(frame, object, "to_f");
         } catch (RaiseException e) {
             if (Layouts.BASIC_OBJECT.getLogicalClass(e.getException()) == coreLibrary().getNoMethodErrorClass()) {
                 errorProfile.enter();

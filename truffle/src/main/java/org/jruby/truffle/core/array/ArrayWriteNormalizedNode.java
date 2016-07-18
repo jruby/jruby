@@ -21,6 +21,7 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 
 import static org.jruby.truffle.core.array.ArrayHelpers.getSize;
+import static org.jruby.truffle.core.array.ArrayHelpers.setSize;
 import static org.jruby.truffle.core.array.ArrayHelpers.setStoreAndSize;
 
 @NodeChildren({
@@ -132,7 +133,7 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
             objectStore[n] = nil();
         }
         objectStore[index] = value;
-        Layouts.ARRAY.setSize(array, index + 1);
+        setSize(array, index + 1);
         return value;
     }
 

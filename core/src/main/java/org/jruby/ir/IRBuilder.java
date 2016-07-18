@@ -1442,30 +1442,7 @@ public class IRBuilder {
         case TRUENODE:
             return new FrozenString("true");
         case DREGEXPNODE: case DSTRNODE: {
-            final Node dNode = node;
-
-            // protected code
-            CodeBlock protectedCode = new CodeBlock() {
-                public Operand run() {
-                    build(dNode);
-                    // always an expression as long as we get through here without an exception!
-                    return new FrozenString("expression");
-                }
-            };
-            // rescue block
-            CodeBlock rescueBlock = new CodeBlock() {
-                public Operand run() { return manager.getNil(); } // Nothing to do if we got an exception
-            };
-
-            // Try verifying definition, and if we get an JumpException exception, process it with the rescue block above
-            Operand v = protectCodeWithRescue(protectedCode, rescueBlock);
-            Label doneLabel = getNewLabel();
-            Variable tmpVar = getValueInTemporaryVariable(v);
-            addInstr(BNEInstr.create(doneLabel, tmpVar, manager.getNil()));
-            addInstr(new CopyInstr(tmpVar, new FrozenString("expression")));
-            addInstr(new LabelInstr(doneLabel));
-
-            return tmpVar;
+            return new FrozenString("expression");
         }
         case ARRAYNODE: { // If all elts of array are defined the array is as well
             ArrayNode array = (ArrayNode) node;
@@ -1549,12 +1526,24 @@ public class IRBuilder {
 
             CodeBlock protectedCode = new CodeBlock() {
                 public Operand run() {
-                    Operand v = colon instanceof Colon2Node ?
-                            build(((Colon2Node)colon).getLeftNode()) : new ObjectClass();
+                    if (!(colon instanceof Colon2Node)) { // colon3 (weird inheritance)
+                        return addResultInstr(new RuntimeHelperCall(createTemporaryVariable(),
+                                IS_DEFINED_CONSTANT_OR_METHOD, new Operand[] {new ObjectClass(), new FrozenString(name)}));
+                    }
 
-                    Variable tmpVar = createTemporaryVariable();
-                    addInstr(new RuntimeHelperCall(tmpVar, IS_DEFINED_CONSTANT_OR_METHOD, new Operand[] {v, new FrozenString(name)}));
-                    return tmpVar;
+                    Label bad = getNewLabel();
+                    Label done = getNewLabel();
+                    Variable result = createTemporaryVariable();
+                    Operand test = buildGetDefinition(((Colon2Node) colon).getLeftNode());
+                    addInstr(BEQInstr.create(test, manager.getNil(), bad));
+                    Operand lhs = build(((Colon2Node) colon).getLeftNode());
+                    addInstr(new RuntimeHelperCall(result, IS_DEFINED_CONSTANT_OR_METHOD, new Operand[] {lhs, new FrozenString(name)}));
+                    addInstr(new JumpInstr(done));
+                    addInstr(new LabelInstr(bad));
+                    addInstr(new CopyInstr(result, manager.getNil()));
+                    addInstr(new LabelInstr(done));
+
+                    return result;
                 }
             };
 
@@ -2707,10 +2696,10 @@ public class IRBuilder {
 
     private InterpreterContext buildIterInner(IterNode iterNode) {
         prepareImplicitState();                                    // recv_self, add frame block, etc)
+        addCurrentScopeAndModule();                                // %current_scope/%current_module
 
         if (iterNode.getVarNode().getNodeType() != null) receiveBlockArgs(iterNode);
 
-        addCurrentScopeAndModule();                                // %current_scope/%current_module
         addInstr(new LabelInstr(((IRClosure) scope).startLabel));  // start label -- used by redo!
 
         // Build closure body and return the result of the closure

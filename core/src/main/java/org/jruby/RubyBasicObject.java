@@ -1119,6 +1119,14 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return context.runtime.newBoolean(!this.isTrue());
     }
 
+    /**
+     * The != method implemented for BasicObject. Note that this version is currently
+     * replaced by a Ruby version in basicobject.rb for better caching characteristics.
+     *
+     * @param context thread context
+     * @param other other object
+     * @return false if this == other, true otherwise
+     */
     @JRubyMethod(name = "!=", required = 1)
     public IRubyObject op_not_equal(ThreadContext context, IRubyObject other) {
         return context.runtime.newBoolean(!invokedynamic(context, this, OP_EQUAL, other).isTrue());
@@ -1668,7 +1676,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
                 IRubyObject valueInYield = args[0];
                 return setupBlock(block, evalType).yieldNonArray(context, valueInYield, this); // context.getRubyClass());
             } else {
-                IRubyObject valueInYield = RubyArray.newArrayNoCopy(context.runtime, args);
+                IRubyObject valueInYield = RubyArray.newArrayMayCopy(context.runtime, args);
                 return setupBlock(block, evalType).yieldArray(context, valueInYield, this);  // context.getRubyClass());
             }
         } finally {
@@ -2781,11 +2789,13 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     public RubyArray instance_variables(ThreadContext context) {
         Ruby runtime = context.runtime;
         List<String> nameList = getInstanceVariableNameList();
+        int size = nameList.size();
 
         RubyArray array = runtime.newArray(nameList.size());
 
-        for (String name : nameList) {
-            array.append(runtime.newString(name));
+        for (int i = 0; i < size; i++) {
+            String name = nameList.get(i);
+            array.store(i, runtime.newString(name));
         }
 
         return array;
@@ -2795,11 +2805,13 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     public RubyArray instance_variables19(ThreadContext context) {
         Ruby runtime = context.runtime;
         List<String> nameList = getInstanceVariableNameList();
+        int size = nameList.size();
 
-        RubyArray array = runtime.newArray(nameList.size());
+        RubyArray array = RubyArray.newBlankArray(runtime, nameList.size());
 
-        for (String name : nameList) {
-            array.append(runtime.newSymbol(name));
+        for (int i = 0; i < size; i++) {
+            String name = nameList.get(i);
+            array.store(i, runtime.newSymbol(name));
         }
 
         return array;

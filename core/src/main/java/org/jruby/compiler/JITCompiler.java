@@ -43,6 +43,7 @@ import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.targets.JVMVisitor;
 import org.jruby.ir.targets.JVMVisitorMethodContext;
 import org.jruby.runtime.CompiledIRBlockBody;
+import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.MixedModeIRBlockBody;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -60,6 +61,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -140,6 +142,18 @@ public class JITCompiler implements JITCompilerMBean {
 
     public long getLargestCodeSize() {
         return counts.largestCodeSize.get();
+    }
+
+    public String[] getFrameAwareMethods() {
+        String[] frameAwareMethods = MethodIndex.FRAME_AWARE_METHODS.toArray(new String[0]);
+        Arrays.sort(frameAwareMethods);
+        return frameAwareMethods;
+    }
+
+    public String[] getScopeAwareMethods() {
+        String[] scopeAwareMethods = MethodIndex.SCOPE_AWARE_METHODS.toArray(new String[0]);
+        Arrays.sort(scopeAwareMethods);
+        return scopeAwareMethods;
     }
 
     public void tearDown() {

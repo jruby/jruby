@@ -1,1 +1,1 @@
-require_relative '../stdlib/prime'
+require_relative '../../stdlib/prime'

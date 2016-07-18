@@ -119,6 +119,7 @@ public abstract class VMPrimitiveNodes {
     @Primitive(name = "vm_gc_start", needsSelf = false)
     public static abstract class VMGCStartPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
+        @TruffleBoundary
         @Specialization
         public DynamicObject vmGCStart() {
             System.gc();
@@ -160,10 +161,10 @@ public abstract class VMPrimitiveNodes {
             final DynamicObject metaClass = coreLibrary().getMetaClass(object);
 
             if (Layouts.CLASS.getIsSingleton(metaClass)) {
-                final Object ret = newArrayNode.call(frame, coreLibrary().getArrayClass(), "new", null);
+                final Object ret = newArrayNode.call(frame, coreLibrary().getArrayClass(), "new");
 
                 for (DynamicObject included : Layouts.MODULE.getFields(metaClass).prependedAndIncludedModules()) {
-                    arrayAppendNode.call(frame, ret, "<<", null, included);
+                    arrayAppendNode.call(frame, ret, "<<", included);
                 }
 
                 return ret;

@@ -49,6 +49,26 @@ module Truffle::CExt
     raise 'not implemented'
   end
 
+  def rb_fix2int(value)
+    if value.nil?
+      raise TypeError
+    else
+      int = value.to_int
+      raise RangeError if int >= 2**32
+      int
+    end
+  end
+
+  def rb_fix2uint(value)
+    if value.nil?
+      raise TypeError
+    else
+      int = value.to_int
+      raise RangeError if int >= 2**32
+      int
+    end
+  end
+
   def NIL_P(value)
     nil.equal?(value)
   end
@@ -63,6 +83,14 @@ module Truffle::CExt
 
   def rb_float_new(value)
     value.to_f
+  end
+
+  def rb_Float(value)
+    Float(value)
+  end
+
+  def RFLOAT_VALUE(value)
+    value
   end
 
   def RSTRING_PTR(string)
@@ -185,6 +213,92 @@ module Truffle::CExt
     if mod.frozen? or mod.method_defined?(name)
       mod.send(:undef_method, name)
     end
+  end
+
+  def rb_funcall(object, name, argc, args=[])
+    object.__send__(name, *args)
+  end
+
+  def rb_Rational(num, den)
+    Rational.new(num, den)
+  end
+
+  def rb_rational_raw(num, den)
+    Rational.new(num, den)
+  end
+
+  def rb_rational_new(num, den)
+    Rational(num, den)
+  end
+
+  def rb_complex_new(real, imag)
+    Complex.new(real, imag)
+  end
+
+  def rb_Complex(real, imag)
+    Complex.new(real, imag)
+  end
+
+  def rb_complex_raw(real, imag)
+    Complex.new(real, imag)
+  end
+
+  def rb_complex_new(real, imag)
+    Complex(real, imag)
+  end
+
+  def rb_complex_polar(r, theta)
+    Complex.new(r, theta)
+  end
+
+  def rb_complex_set_real(complex, real)
+    Truffle.privately do
+      complex.real = real
+    end
+  end
+
+  def rb_complex_set_imag(complex, imag)
+    Truffle.privately do
+      complex.imag = imag
+    end
+  end
+
+  def rb_mutex_new
+    Mutex.new
+  end
+
+  def rb_mutex_locked_p(mutex)
+    mutex.locked?
+  end
+
+  def rb_mutex_trylock(mutex)
+    mutex.try_lock
+  end
+
+  def rb_mutex_lock(mutex)
+    mutex.lock
+  end
+
+  def rb_mutex_unlock(mutex)
+    mutex.unlock
+  end
+
+  def rb_mutex_sleep(mutex, timeout)
+    mutex.sleep(timeout)
+  end
+
+  def rb_mutex_synchronize(mutex, func, arg)
+    mutex.synchronize do
+      Truffle::Interop.execute(func, arg)
+    end
+  end
+
+  def rb_gc_enable
+    GC.enable
+  end
+
+  def rb_gc_disable
+    GC.disable
   end
 end
 

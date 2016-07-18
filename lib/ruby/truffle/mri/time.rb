@@ -1,1 +1,1 @@
-require_relative '../stdlib/time'
+require_relative '../../stdlib/time'
