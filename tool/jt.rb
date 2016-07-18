@@ -34,6 +34,8 @@ METRICS_REPS = 10
 LIBXML_HOME = ENV['LIBXML_HOME'] = ENV['LIBXML_HOME'] || '/usr'
 OPENSSL_HOME = ENV['OPENSSL_HOME'] = ENV['OPENSSL_HOME'] || '/usr'
 
+MAC = `uname -a`.include?('Darwin')
+
 # wait for sub-processes to handle the interrupt
 trap(:INT) {}
 
@@ -624,6 +626,12 @@ module Commands
     config_libs = config['libs'] || ''
     config_libs = `echo #{config_libs}`.strip
     config_libs = config_libs.split(' ')
+    
+    if MAC
+      config_libs.each do |lib|
+        lib['.so'] = '.dylib'
+      end
+    end
 
     sulong_link '-o', out, *((config_libs.map { |l| ['-l', l] }).flatten), *lls
   end
