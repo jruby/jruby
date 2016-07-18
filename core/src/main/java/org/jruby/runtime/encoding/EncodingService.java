@@ -495,8 +495,6 @@ public final class EncodingService {
      * @return the charset
      */
     public Charset charsetForEncoding(Encoding encoding) {
-        Charset charset = encoding.getCharset();
-
         if (encoding.toString().equals("ASCII-8BIT")) {
             return Charset.forName("ISO-8859-1");
         }
