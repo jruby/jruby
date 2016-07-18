@@ -127,9 +127,11 @@ end
 additions = {
     minitest_reporters: dedent(<<-RUBY)
       require 'rbconfig'
-      # add minitest-reporters to $LOAD_PATH
+      # add minitest-reporters and its dependencies to $LOAD_PATH
       path = File.expand_path('..', __FILE__)
-      $:.unshift "\#{path}/../\#{RUBY_ENGINE}/\#{RbConfig::CONFIG['ruby_version']}/gems/minitest-reporters-1.1.9/lib"
+      %w[ansi-1.5.0 ruby-progressbar-1.8.0 minitest-reporters-1.1.9].each do |gem_dir|
+        $:.unshift "\#{path}/../\#{RUBY_ENGINE}/\#{RbConfig::CONFIG['ruby_version']}/gems/\#{gem_dir}/lib"
+      end
       # activate
       require "minitest/reporters"
       Minitest::Reporters.use! Minitest::Reporters::SpecReporter.new
