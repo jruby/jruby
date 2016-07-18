@@ -261,7 +261,6 @@ public class CoreLibrary {
     @CompilationFinal private ArrayNodes.MinBlock arrayMinBlock;
     @CompilationFinal private ArrayNodes.MaxBlock arrayMaxBlock;
 
-    private final DynamicObject rubyInternalMethod;
     private final Map<Errno, DynamicObject> errnoClasses = new HashMap<>();
 
     @CompilationFinal private InternalMethod basicObjectSendMethod;
@@ -596,10 +595,6 @@ public class CoreLibrary {
                 Layouts.ATOMIC_REFERENCE.createAtomicReferenceShape(atomicReferenceClass, atomicReferenceClass));
         randomizerFactory = Layouts.RANDOMIZER.createRandomizerShape(randomizerClass, randomizerClass);
         Layouts.CLASS.setInstanceFactoryUnsafe(randomizerClass, randomizerFactory);
-
-        // Interop
-
-        rubyInternalMethod = null;
 
         // Include the core modules
 
