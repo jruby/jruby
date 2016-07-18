@@ -1,4 +1,5 @@
 require File.expand_path('../../spec_helper', __FILE__)
+require File.expand_path('../fixtures/rescue', __FILE__)
 
 class SpecificExampleException < StandardError
 end
@@ -84,6 +85,46 @@ describe "The rescue keyword" do
     ScratchPad.recorded.should == [:one, :two]
   end
 
+  it "will execute an else block with ensure only if no exceptions were raised" do
+    result = begin
+      ScratchPad << :one
+    rescue
+      ScratchPad << :does_not_run
+    else
+      ScratchPad << :two
+      :val
+    ensure
+      ScratchPad << :ensure
+      :ensure_val
+    end
+    result.should == :val
+    ScratchPad.recorded.should == [:one, :two, :ensure]
+  end
+
+  it "will execute an else block only if no exceptions were raised in a method" do
+    result = RescueSpecs.begin_else(false)
+    result.should == :val
+    ScratchPad.recorded.should == [:one, :else_ran]
+  end
+
+  it "will execute an else block with ensure only if no exceptions were raised in a method" do
+    result = RescueSpecs.begin_else_ensure(false)
+    result.should == :val
+    ScratchPad.recorded.should == [:one, :else_ran, :ensure_ran]
+  end
+
+  it "will execute an else block but use the outer scope return value in a method" do
+    result = RescueSpecs.begin_else_return(false)
+    result.should == :return_val
+    ScratchPad.recorded.should == [:one, :else_ran, :outside_begin]
+  end
+
+  it "will execute an else block with ensure but use the outer scope return value in a method" do
+    result = RescueSpecs.begin_else_return_ensure(false)
+    result.should == :return_val
+    ScratchPad.recorded.should == [:one, :else_ran, :ensure_ran, :outside_begin]
+  end
+
   it "will not execute an else block if an exception was raised" do
     result = begin
       ScratchPad << :one
@@ -96,6 +137,47 @@ describe "The rescue keyword" do
     end
     result.should == :val
     ScratchPad.recorded.should == [:one, :two]
+  end
+
+  it "will not execute an else block with ensure if an exception was raised" do
+    result = begin
+      ScratchPad << :one
+      raise "an error occurred"
+    rescue
+      ScratchPad << :two
+      :val
+    else
+      ScratchPad << :does_not_run
+    ensure
+      ScratchPad << :ensure
+      :ensure_val
+    end
+    result.should == :val
+    ScratchPad.recorded.should == [:one, :two, :ensure]
+  end
+
+  it "will not execute an else block if an exception was raised in a method" do
+    result = RescueSpecs.begin_else(true)
+    result.should == :rescue_val
+    ScratchPad.recorded.should == [:one, :rescue_ran]
+  end
+
+  it "will not execute an else block with ensure if an exception was raised in a method" do
+    result = RescueSpecs.begin_else_ensure(true)
+    result.should == :rescue_val
+    ScratchPad.recorded.should == [:one, :rescue_ran, :ensure_ran]
+  end
+
+  it "will not execute an else block but use the outer scope return value in a method" do
+    result = RescueSpecs.begin_else_return(true)
+    result.should == :return_val
+    ScratchPad.recorded.should == [:one, :rescue_ran, :outside_begin]
+  end
+
+  it "will not execute an else block with ensure but use the outer scope return value in a method" do
+    result = RescueSpecs.begin_else_return_ensure(true)
+    result.should == :return_val
+    ScratchPad.recorded.should == [:one, :rescue_ran, :ensure_ran, :outside_begin]
   end
 
   it "will not rescue errors raised in an else block in the rescue block above it" do

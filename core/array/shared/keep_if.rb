@@ -11,6 +11,15 @@ describe :keep_if, shared: true do
     [1, 2, 3].send(@method).should be_an_instance_of(enumerator_class)
   end
 
+  it "updates the receiver after all blocks" do
+    a = [1, 2, 3]
+    a.send(@method) do |e|
+      a.length.should == 3
+      false
+    end
+    a.length.should == 0
+  end
+
   before :all do
     @object = [1,2,3]
   end
