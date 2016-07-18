@@ -270,7 +270,9 @@ public class CoreLibrary {
 
     private static final Object systemObject = TruffleOptions.AOT ? null : JavaInterop.asTruffleObject(System.class);
 
-    public String getCoreLoadPath() {
+    private final String coreLoadPath;
+
+    private String buildCoreLoadPath() {
         String path = context.getOptions().CORE_LOAD_PATH;
 
         while (path.endsWith("/")) {
@@ -323,6 +325,7 @@ public class CoreLibrary {
 
     public CoreLibrary(RubyContext context) {
         this.context = context;
+        this.coreLoadPath = buildCoreLoadPath();
         this.node = new CoreLibraryNode(context);
 
         // Nothing in this constructor can use RubyContext.getCoreLibrary() as we are building it!
@@ -1134,6 +1137,10 @@ public class CoreLibrary {
 
     public RubyContext getContext() {
         return context;
+    }
+
+    public String getCoreLoadPath() {
+        return coreLoadPath;
     }
 
     public DynamicObject getArrayClass() {
