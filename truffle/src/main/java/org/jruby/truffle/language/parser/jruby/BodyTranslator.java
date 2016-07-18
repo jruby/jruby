@@ -607,7 +607,7 @@ public class BodyTranslator extends Translator {
     private RubyNode translateCallNode(org.jruby.ast.CallNode node, boolean ignoreVisibility, boolean isVCall, boolean isAttrAssign) {
         final SourceSection sourceSection = translate(node.getPosition());
 
-        final RubyNode receiverTranslated = node.getReceiverNode().accept(this);
+        final RubyNode receiver = node.getReceiverNode().accept(this);
 
         org.jruby.ast.Node args = node.getArgsNode();
         org.jruby.ast.Node block = node.getIterNode();
@@ -617,7 +617,8 @@ public class BodyTranslator extends Translator {
             args = null;
         }
 
-        final ArgumentsAndBlockTranslation argumentsAndBlock = translateArgumentsAndBlock(sourceSection, block, args, node.getName());
+        final String methodName = node.getName();
+        final ArgumentsAndBlockTranslation argumentsAndBlock = translateArgumentsAndBlock(sourceSection, block, args, methodName);
 
         final List<RubyNode> children = new ArrayList<>();
 
@@ -627,9 +628,10 @@ public class BodyTranslator extends Translator {
 
         children.addAll(Arrays.asList(argumentsAndBlock.getArguments()));
 
-        RubyNode translated = new RubyCallNode(context, enclosing(sourceSection, children.toArray(new RubyNode[children.size()])),
-                node.getName(), receiverTranslated, argumentsAndBlock.getBlock(), argumentsAndBlock.isSplatted(), privately || ignoreVisibility,
-                isVCall, node.isLazy(), isAttrAssign, argumentsAndBlock.getArguments());
+        final SourceSection enclosingSourceSection = enclosing(sourceSection, children.toArray(new RubyNode[children.size()]));
+        RubyNode translated = new RubyCallNode(context, enclosingSourceSection,
+                receiver, methodName, argumentsAndBlock.getBlock(), argumentsAndBlock.getArguments(), argumentsAndBlock.isSplatted(),
+                privately || ignoreVisibility, isVCall, node.isLazy(), isAttrAssign);
 
         if (argumentsAndBlock.getBlock() instanceof BlockDefinitionNode) { // if we have a literal block, break breaks out of this call site
             BlockDefinitionNode blockDef = (BlockDefinitionNode) argumentsAndBlock.getBlock();
@@ -809,7 +811,7 @@ public class BodyTranslator extends Translator {
                         method = "===";
                         arguments = new RubyNode[] { NodeUtil.cloneNode(readTemp) };
                     }
-                    comparisons.add(new RubyCallNode(context, sourceSection, method, receiver, null, false, true, arguments));
+                    comparisons.add(new RubyCallNode(context, sourceSection, receiver, method, null, arguments, false, true));
                 }
 
                 RubyNode conditionNode = comparisons.get(comparisons.size() - 1);
@@ -2576,9 +2578,12 @@ public class BodyTranslator extends Translator {
 
         final RubyNode moduleNode = new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getObjectClass());
         return new RubyCallNode(
-                context, sourceSection, "convert",
+                context, sourceSection,
                 new ReadConstantNode(context, sourceSection, moduleNode, name),
-                null, false, true, new RubyNode[]{ a, b });
+                "convert",
+                null,
+                new RubyNode[] { a, b },
+                false, true);
     }
 
     @Override

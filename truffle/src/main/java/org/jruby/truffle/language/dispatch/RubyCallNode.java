@@ -57,13 +57,13 @@ public class RubyCallNode extends RubyNode {
 
     private final ConditionProfile nilProfile;
 
-    public RubyCallNode(RubyContext context, SourceSection section, String methodName, RubyNode receiver, RubyNode block,
-            boolean isSplatted, boolean ignoreVisibility, RubyNode[] arguments) {
-        this(context, section, methodName, receiver, block, isSplatted, ignoreVisibility, false, false, false, arguments);
+    public RubyCallNode(RubyContext context, SourceSection section, RubyNode receiver, String methodName, RubyNode block, RubyNode[] arguments,
+            boolean isSplatted, boolean ignoreVisibility) {
+        this(context, section, receiver, methodName, block, arguments, isSplatted, ignoreVisibility, false, false, false);
     }
 
-    public RubyCallNode(RubyContext context, SourceSection section, String methodName, RubyNode receiver, RubyNode block,
-            boolean isSplatted, boolean ignoreVisibility, boolean isVCall, boolean isSafeNavigation, boolean isAttrAssign, RubyNode[] arguments) {
+    public RubyCallNode(RubyContext context, SourceSection section, RubyNode receiver, String methodName, RubyNode block, RubyNode[] arguments,
+            boolean isSplatted, boolean ignoreVisibility, boolean isVCall, boolean isSafeNavigation, boolean isAttrAssign) {
         super(context, section);
 
         this.methodName = methodName;
