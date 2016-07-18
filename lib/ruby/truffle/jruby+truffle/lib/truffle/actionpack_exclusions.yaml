@@ -87,3 +87,5 @@ ActionController::LiveStreamTest:
 ApplicationIntegrationTest:
 - test_missing_route_helper_after_controller_access
 - test_missing_route_helper_before_controller_access
+HttpDigestAuthenticationTest:
+- authentication_request_with_invalid_realm # hangs

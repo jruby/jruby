@@ -193,7 +193,6 @@ Truffle::Runner.add_config :activemodel,
                                stubs.fetch(:activesupport_isolation),
                                stubs.fetch(:bcrypt))
 
-# TODO (pitr-ch 23-Jun-2016): investigate, fails intermittently
 Truffle::Runner.add_config :actionpack,
                            deep_merge(
                                rails_common,
