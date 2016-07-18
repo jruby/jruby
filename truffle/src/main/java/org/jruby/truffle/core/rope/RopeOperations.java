@@ -403,14 +403,15 @@ public class RopeOperations {
                     }
                 } else {
                     final int bytesToCopy = substringLengths.peek();
-                    int loopCount = bytesToCopy / repeatingRope.getChild().byteLength();
+                    final int patternLength = repeatingRope.getChild().byteLength();
+                    int loopCount = (bytesToCopy + patternLength - 1) / patternLength;
 
                     // Fix the offset to be appropriate for a given child. The offset is reset the first time it is
                     // consumed, so there's no need to worry about adversely affecting anything by adjusting it here.
                     offset %= repeatingRope.getChild().byteLength();
 
-                    // Adjust the loop count in case we're straddling a boundary.
-                    if (offset != 0) {
+                    // Adjust the loop count in case we're straddling two boundaries.
+                    if (offset > 0 && ((bytesToCopy - (patternLength - offset)) % patternLength) > 0) {
                         loopCount++;
                     }
 
@@ -476,12 +477,13 @@ public class RopeOperations {
             final Rope child = repeatingRope.getChild();
 
             int remainingLength = length;
-            int loopCount = length / child.byteLength();
+            final int patternLength = child.byteLength();
+            int loopCount = (length + patternLength - 1) / patternLength;
 
             offset %= child.byteLength();
 
-            // Adjust the loop count in case we're straddling a boundary.
-            if (offset != 0) {
+            // Adjust the loop count in case we're straddling two boundaries.
+            if (offset > 0 && ((length - (patternLength - offset)) % patternLength) > 0) {
                 loopCount++;
             }
 
