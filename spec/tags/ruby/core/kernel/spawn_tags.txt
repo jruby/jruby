@@ -144,3 +144,7 @@ windows:Kernel.spawn when passed close_others: true does not close STDERR
 windows:Kernel.spawn when passed close_others: false does not close STDIN
 windows:Kernel.spawn when passed close_others: false does not close STDOUT
 windows:Kernel.spawn when passed close_others: false does not close STDERR
+fails:Kernel#spawn unsets other environment variables when given a true :unsetenv_others option
+fails:Kernel#spawn unsets other environment variables when given a non-false :unsetenv_others option
+fails:Kernel.spawn unsets other environment variables when given a true :unsetenv_others option
+fails:Kernel.spawn unsets other environment variables when given a non-false :unsetenv_others option
