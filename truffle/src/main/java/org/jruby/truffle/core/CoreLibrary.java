@@ -289,82 +289,6 @@ public class CoreLibrary {
         }
     }
 
-    public DynamicObject getRuntimeErrorClass() {
-        return runtimeErrorClass;
-    }
-
-    public DynamicObject getSystemStackErrorClass() {
-        return systemStackErrorClass;
-    }
-
-    public DynamicObject getArgumentErrorClass() {
-        return argumentErrorClass;
-    }
-
-    public DynamicObject getIndexErrorClass() {
-        return indexErrorClass;
-    }
-
-    public DynamicObject getLocalJumpErrorClass() {
-        return localJumpErrorClass;
-    }
-
-    public DynamicObject getNotImplementedErrorClass() {
-        return notImplementedErrorClass;
-    }
-
-    public DynamicObject getSyntaxErrorClass() {
-        return syntaxErrorClass;
-    }
-
-    public DynamicObject getFloatDomainErrorClass() {
-        return floatDomainErrorClass;
-    }
-
-    public DynamicObject getIOErrorClass() {
-        return ioErrorClass;
-    }
-
-    public DynamicObject getRangeErrorClass() {
-        return rangeErrorClass;
-    }
-
-    public DynamicObject getRegexpErrorClass() {
-        return regexpErrorClass;
-    }
-
-    public DynamicObject getEncodingCompatibilityErrorClass() {
-        return encodingCompatibilityErrorClass;
-    }
-
-    public DynamicObject getFiberErrorClass() {
-        return fiberErrorClass;
-    }
-
-    public DynamicObject getThreadErrorClass() {
-        return threadErrorClass;
-    }
-
-    public DynamicObject getSecurityErrorClass() {
-        return securityErrorClass;
-    }
-
-    public DynamicObject getSystemCallErrorClass() {
-        return systemCallErrorClass;
-    }
-
-    public DynamicObject getEagainWaitReadable() {
-        return eagainWaitReadable;
-    }
-
-    public DynamicObject getEagainWaitWritable() {
-        return eagainWaitWritable;
-    }
-
-    public DynamicObject getTruffleModule() {
-        return truffleModule;
-    }
-
     private enum State {
         INITIALIZING,
         LOADING_RUBY_CORE,
@@ -1499,6 +1423,82 @@ public class CoreLibrary {
 
     public DynamicObjectFactory getHandleFactory() {
         return handleFactory;
+    }
+
+    public DynamicObject getRuntimeErrorClass() {
+        return runtimeErrorClass;
+    }
+
+    public DynamicObject getSystemStackErrorClass() {
+        return systemStackErrorClass;
+    }
+
+    public DynamicObject getArgumentErrorClass() {
+        return argumentErrorClass;
+    }
+
+    public DynamicObject getIndexErrorClass() {
+        return indexErrorClass;
+    }
+
+    public DynamicObject getLocalJumpErrorClass() {
+        return localJumpErrorClass;
+    }
+
+    public DynamicObject getNotImplementedErrorClass() {
+        return notImplementedErrorClass;
+    }
+
+    public DynamicObject getSyntaxErrorClass() {
+        return syntaxErrorClass;
+    }
+
+    public DynamicObject getFloatDomainErrorClass() {
+        return floatDomainErrorClass;
+    }
+
+    public DynamicObject getIOErrorClass() {
+        return ioErrorClass;
+    }
+
+    public DynamicObject getRangeErrorClass() {
+        return rangeErrorClass;
+    }
+
+    public DynamicObject getRegexpErrorClass() {
+        return regexpErrorClass;
+    }
+
+    public DynamicObject getEncodingCompatibilityErrorClass() {
+        return encodingCompatibilityErrorClass;
+    }
+
+    public DynamicObject getFiberErrorClass() {
+        return fiberErrorClass;
+    }
+
+    public DynamicObject getThreadErrorClass() {
+        return threadErrorClass;
+    }
+
+    public DynamicObject getSecurityErrorClass() {
+        return securityErrorClass;
+    }
+
+    public DynamicObject getSystemCallErrorClass() {
+        return systemCallErrorClass;
+    }
+
+    public DynamicObject getEagainWaitReadable() {
+        return eagainWaitReadable;
+    }
+
+    public DynamicObject getEagainWaitWritable() {
+        return eagainWaitWritable;
+    }
+
+    public DynamicObject getTruffleModule() {
+        return truffleModule;
     }
 
     private static final String[] coreFiles = {
