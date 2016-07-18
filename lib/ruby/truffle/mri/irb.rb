@@ -1,1 +1,1 @@
-require_relative '../stdlib/irb'
+require_relative '../../stdlib/irb'

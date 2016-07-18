@@ -19,14 +19,14 @@ import org.jruby.truffle.language.backtrace.Backtrace;
 public interface SystemCallErrorLayout extends ExceptionLayout {
 
     DynamicObjectFactory createSystemCallErrorShape(
-        DynamicObject logicalClass,
-        DynamicObject metaClass);
+            DynamicObject logicalClass,
+            DynamicObject metaClass);
 
     DynamicObject createSystemCallError(
-        DynamicObjectFactory factory,
-        @Nullable Object message,
-        @Nullable Backtrace backtrace,
-                  Object errno);
+            DynamicObjectFactory factory,
+            Object message,
+            @Nullable Backtrace backtrace,
+            Object errno);
 
     Object getErrno(DynamicObject object);
     void setErrno(DynamicObject object, Object value);

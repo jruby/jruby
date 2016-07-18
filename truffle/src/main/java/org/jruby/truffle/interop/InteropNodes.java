@@ -51,6 +51,24 @@ import java.io.IOException;
 @CoreClass("Truffle::Interop")
 public abstract class InteropNodes {
 
+    @CoreMethod(names = "import_file", isModuleFunction = true, required = 1)
+    public abstract static class ImportFileNode extends CoreMethodArrayArgumentsNode {
+
+        @TruffleBoundary
+        @Specialization(guards = "isRubyString(fileName)")
+        public Object importFile(DynamicObject fileName) {
+            try {
+                final Source sourceObject = Source.fromFileName(fileName.toString());
+                getContext().getEnv().parse(sourceObject).call();
+            } catch (IOException e) {
+                throw new JavaException(e);
+            }
+
+            return nil();
+        }
+
+    }
+
     @CoreMethod(names = "executable?", isModuleFunction = true, required = 1)
     public abstract static class IsExecutableNode extends CoreMethodArrayArgumentsNode {
 

@@ -1,1 +1,1 @@
-require_relative '../stdlib/rubygems'
+require_relative '../../stdlib/rubygems'

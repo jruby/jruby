@@ -523,7 +523,7 @@ public class BodyTranslator extends Translator {
                 final RubyNode ret = translateCheckFrozen(sourceSection);
                 return addNewlineIfNeeded(node, ret);
             }
-        } else if (receiver instanceof org.jruby.ast.Colon2ConstNode // Truffle.<method>
+        } else if (receiver instanceof org.jruby.ast.Colon2ConstNode // Truffle::Graal.<method>
                 && ((org.jruby.ast.Colon2ConstNode) receiver).getLeftNode() instanceof org.jruby.ast.ConstNode
                 && ((org.jruby.ast.ConstNode) ((org.jruby.ast.Colon2ConstNode) receiver).getLeftNode()).getName().equals("Truffle")
                 && ((org.jruby.ast.Colon2ConstNode) receiver).getName().equals("Graal")) {
@@ -532,14 +532,6 @@ public class BodyTranslator extends Translator {
                 return addNewlineIfNeeded(node, ret);
             } else if (methodName.equals("assert_not_compiled")) {
                 final RubyNode ret = AssertNotCompiledNodeGen.create(context, sourceSection);
-                return addNewlineIfNeeded(node, ret);
-            }
-        } else if (receiver instanceof org.jruby.ast.ConstNode // Truffle.omit
-                && ((org.jruby.ast.ConstNode) receiver).getName().equals("Truffle")) {
-            if (methodName.equals("omit")) {
-                // We're never going to run the omitted code and it's never used as the RHS for anything, so just
-                // replace the call with nil.
-                final RubyNode ret = nilNode(sourceSection);
                 return addNewlineIfNeeded(node, ret);
             }
         } else if (receiver instanceof org.jruby.ast.VCallNode // undefined.equal?(obj)
@@ -692,7 +684,7 @@ public class BodyTranslator extends Translator {
         children.addAll(Arrays.asList(argumentsAndBlock.getArguments()));
 
         RubyNode translated = new RubyCallNode(context, enclosing(sourceSection, children.toArray(new RubyNode[children.size()])),
-                node.getName(), receiverTranslated, argumentsAndBlock.getBlock(), argumentsAndBlock.isSplatted(),
+                node.getName(), receiverTranslated, argumentsAndBlock.getBlock(), node.isLazy(), argumentsAndBlock.isSplatted(),
                 privately || ignoreVisibility, isVCall, argumentsAndBlock.getArguments());
 
         if (argumentsAndBlock.getBlock() instanceof BlockDefinitionNode) { // if we have a literal block, break breaks out of this call site

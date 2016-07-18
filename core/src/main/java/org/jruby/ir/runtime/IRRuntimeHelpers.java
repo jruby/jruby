@@ -821,7 +821,14 @@ public class IRRuntimeHelpers {
                             case MODULE_BODY:
                             case CLASS_BODY:
                             case METACLASS_BODY:
-                                return (RubyModule) self;
+                                // This is a similar scenario as the FIXME above that was added
+                                // in b65a5842ecf56ca32edc2a17800968f021b6a064. At that time,
+                                // I was wondering if it would affect this site here and looks
+                                // like it does.
+                                //
+                                // Verify that the test in GH issue 4014 runs when ripping out
+                                // this special instanceof check below.
+                                return self instanceof RubyModule ? (RubyModule) self : self.getMetaClass();
 
                             case INSTANCE_METHOD:
                             case SCRIPT_BODY:

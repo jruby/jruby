@@ -610,7 +610,7 @@ public abstract class FloatNodes {
 
         @Specialization
         public double nextFloat(double value) {
-            return Math.nextAfter(value, Double.POSITIVE_INFINITY);
+            return Math.nextUp(value);
         }
 
     }
@@ -620,7 +620,7 @@ public abstract class FloatNodes {
 
         @Specialization
         public double prevFloat(double value) {
-            return Math.nextAfter(value, Double.NEGATIVE_INFINITY);
+            return Math.nextDown(value);
         }
 
     }

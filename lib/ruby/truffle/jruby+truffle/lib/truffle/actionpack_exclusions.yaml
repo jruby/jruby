@@ -38,11 +38,6 @@ RequestForgeryProtectionControllerUsingExceptionTest:
 FreeCookieControllerTest:
 - test_should_not_render_button_to_with_token_tag
 - test_should_not_render_form_with_token_tag
-RescueControllerTest:
-- test_block_rescue_handler_with_argument
-- test_block_rescue_handler_with_argument_as_string
-- test_proc_rescue_handle_with_argument
-- test_proc_rescue_handle_with_argument_as_string
 TestCaseTest:
 - test_assert_select_with_body
 - test_assert_select_without_body

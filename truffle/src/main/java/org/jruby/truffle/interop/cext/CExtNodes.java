@@ -85,6 +85,12 @@ public class CExtNodes {
             return num;
         }
 
+        @Specialization
+        public long fix2uint(long num) {
+            // TODO CS 2-May-16 what to do about the fact it's unsigned?
+            return num;
+        }
+
     }
 
     @CoreMethod(names = "FIX2LONG", isModuleFunction = true, required = 1)
@@ -105,6 +111,11 @@ public class CExtNodes {
             return num;
         }
 
+        @Specialization
+        public long int2num(long num) {
+            return num;
+        }
+
     }
 
     @CoreMethod(names = "INT2FIX", isModuleFunction = true, required = 1)
@@ -112,6 +123,11 @@ public class CExtNodes {
 
         @Specialization
         public int int2fix(int num) {
+            return num;
+        }
+
+        @Specialization
+        public long int2fix(long num) {
             return num;
         }
 

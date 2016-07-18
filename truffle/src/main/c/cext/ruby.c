@@ -83,11 +83,11 @@ long FIX2LONG(VALUE value) {
   return truffle_invoke_l(RUBY_CEXT, "FIX2LONG", value);
 }
 
-VALUE INT2NUM(int value) {
+VALUE INT2NUM(long value) {
   return (VALUE) truffle_invoke(RUBY_CEXT, "INT2NUM", value);
 }
 
-VALUE INT2FIX(int value) {
+VALUE INT2FIX(long value) {
   return (VALUE) truffle_invoke(RUBY_CEXT, "INT2FIX", value);
 }
 
@@ -101,6 +101,14 @@ VALUE LONG2NUM(long value) {
 
 VALUE LONG2FIX(long value) {
   return (VALUE) truffle_invoke(RUBY_CEXT, "LONG2FIX", value);
+}
+
+int rb_fix2int(VALUE value) {
+  return truffle_invoke_i(RUBY_CEXT, "rb_fix2int", value);
+}
+
+unsigned long rb_fix2uint(VALUE value) {
+  return truffle_invoke_l(RUBY_CEXT, "rb_fix2uint", value);
 }
 
 ID SYM2ID(VALUE value) {
@@ -129,6 +137,14 @@ int RTEST(VALUE value) {
 
 VALUE rb_float_new(double value) {
   return (VALUE) truffle_invoke(RUBY_CEXT, "rb_float_new", value);
+}
+
+VALUE rb_Float(VALUE value) {
+  return (VALUE) truffle_invoke(RUBY_CEXT, "rb_Float", value);
+}
+
+double RFLOAT_VALUE(VALUE value){
+  return truffle_invoke_d(RUBY_CEXT, "RFLOAT_VALUE", value);
 }
 
 // String
@@ -202,6 +218,14 @@ VALUE rb_ary_new_from_args(long n, ...) {
   VALUE array = rb_ary_new_capa(n);
   for (int i = 0; i < n; i++) {
     rb_ary_store(array, i, (VALUE) truffle_get_arg(1+i));
+  }
+  return array;
+}
+
+VALUE rb_ary_new4(long n, const VALUE *values) {
+  VALUE array = rb_ary_new_capa(n);
+  for (int i = 0; i < n; i++) {
+    rb_ary_store(array, i, values[i]);
   }
   return array;
 }
@@ -378,4 +402,103 @@ void rb_undef_method(VALUE module, const char *name) {
 
 void rb_undef(VALUE module, ID name) {
   truffle_invoke(RUBY_CEXT, "rb_undef", module, name);
+}
+
+// Rational
+
+VALUE rb_Rational(VALUE num, VALUE den) {
+  return truffle_invoke(RUBY_CEXT, "rb_Rational", num, den);
+}
+
+VALUE rb_rational_raw(VALUE num, VALUE den) {
+  return truffle_invoke(RUBY_CEXT, "rb_rational_raw", num, den);
+}
+
+VALUE rb_rational_new(VALUE num, VALUE den) {
+  return truffle_invoke(RUBY_CEXT, "rb_rational_new", num, den);
+}
+
+VALUE rb_rational_num(VALUE rat) {
+  return truffle_invoke(rat, "numerator");
+}
+
+VALUE rb_rational_den(VALUE rat) {
+  return truffle_invoke(rat, "denominator");
+}
+
+VALUE rb_flt_rationalize_with_prec(VALUE value, VALUE precision) {
+  return truffle_invoke(value, "rationalize", precision);
+}
+
+VALUE rb_flt_rationalize(VALUE value) {
+  return truffle_invoke(value, "rationalize");
+}
+
+// Complex
+
+VALUE rb_Complex(VALUE real, VALUE imag) {
+  return truffle_invoke(RUBY_CEXT, "rb_Complex", real, imag);
+}
+
+VALUE rb_complex_new(VALUE real, VALUE imag) {
+  return truffle_invoke(RUBY_CEXT, "rb_complex_new", real, imag);
+}
+
+VALUE rb_complex_raw(VALUE real, VALUE imag) {
+  return truffle_invoke(RUBY_CEXT, "rb_complex_raw", real, imag);
+}
+
+VALUE rb_complex_polar(VALUE r, VALUE theta) {
+  return truffle_invoke(RUBY_CEXT, "rb_complex_polar", r, theta);
+}
+
+VALUE rb_complex_set_real(VALUE complex, VALUE real) {
+  return truffle_invoke(RUBY_CEXT, "rb_complex_set_real", complex, real);
+}
+
+VALUE rb_complex_set_imag(VALUE complex, VALUE imag) {
+  return truffle_invoke(RUBY_CEXT, "rb_complex_set_imag", complex, imag);
+}
+
+// Mutexes
+
+VALUE rb_mutex_new(void) {
+  return truffle_invoke(RUBY_CEXT, "rb_mutex_new");
+}
+
+VALUE rb_mutex_locked_p(VALUE mutex) {
+  return truffle_invoke(RUBY_CEXT, "rb_mutex_locked_p", mutex);
+}
+
+VALUE rb_mutex_trylock(VALUE mutex) {
+  return truffle_invoke(RUBY_CEXT, "rb_mutex_trylock", mutex);
+}
+
+VALUE rb_mutex_lock(VALUE mutex) {
+  return truffle_invoke(RUBY_CEXT, "rb_mutex_lock", mutex);
+}
+
+VALUE rb_mutex_unlock(VALUE mutex) {
+  return truffle_invoke(RUBY_CEXT, "rb_mutex_unlock", mutex);
+}
+
+VALUE rb_mutex_sleep(VALUE mutex, VALUE timeout) {
+  return truffle_invoke(RUBY_CEXT, "rb_mutex_sleep", mutex, timeout);
+}
+
+VALUE rb_mutex_synchronize(VALUE mutex, VALUE (*func)(VALUE arg), VALUE arg) {
+  return truffle_invoke(RUBY_CEXT, "rb_mutex_synchronize", mutex, func, arg);
+}
+
+// GC
+
+void rb_gc_register_address(VALUE *address) {
+}
+
+VALUE rb_gc_enable() {
+  return truffle_invoke(RUBY_CEXT, "rb_gc_enable");
+}
+
+VALUE rb_gc_disable() {
+  return truffle_invoke(RUBY_CEXT, "rb_gc_disable");
 }

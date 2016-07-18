@@ -1,0 +1,2 @@
+src: ext/globals/*.c
+out: lib/globals/globals.su

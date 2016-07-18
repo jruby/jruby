@@ -23,6 +23,9 @@ extern "C" {
 
 #define JRUBY_TRUFFLE 1
 
+#define SIZEOF_INT 32
+#define SIZEOF_LONG 64
+
 #include <truffle.h>
 
 #define RUBY_CEXT truffle_import_cached("ruby_cext")
@@ -76,12 +79,15 @@ int FIX2INT(VALUE value);
 unsigned int FIX2UINT(VALUE value);
 long FIX2LONG(VALUE value);
 
-VALUE INT2NUM(int value);
-VALUE INT2FIX(int value);
+VALUE INT2NUM(long value);
+VALUE INT2FIX(long value);
 VALUE UINT2NUM(unsigned int value);
 
 VALUE LONG2NUM(long value);
 VALUE LONG2FIX(long value);
+
+int rb_fix2int(VALUE value);
+unsigned long rb_fix2uint(VALUE value);
 
 ID SYM2ID(VALUE value);
 VALUE ID2SYM(ID value);
@@ -95,6 +101,8 @@ int RTEST(VALUE value);
 // Float
 
 VALUE rb_float_new(double value);
+VALUE rb_Float(VALUE value);
+double RFLOAT_VALUE(VALUE value);
 
 // String
 
@@ -125,6 +133,7 @@ VALUE rb_ary_new_capa(long capacity);
 #define rb_ary_new2 rb_ary_new_capa
 VALUE rb_ary_new_from_args(long n, ...);
 #define rb_ary_new3 rb_ary_new_from_args
+VALUE rb_ary_new4(long n, const VALUE *values);
 VALUE rb_ary_push(VALUE array, VALUE value);
 VALUE rb_ary_pop(VALUE array);
 void rb_ary_store(VALUE array, long index, VALUE value);
@@ -197,6 +206,53 @@ void rb_alias(VALUE module, ID new_name, ID old_name);
 
 void rb_undef_method(VALUE module, const char *name);
 void rb_undef(VALUE module, ID name);
+
+// Mutexes
+
+VALUE rb_mutex_new(void);
+VALUE rb_mutex_locked_p(VALUE mutex);
+VALUE rb_mutex_trylock(VALUE mutex);
+VALUE rb_mutex_lock(VALUE mutex);
+VALUE rb_mutex_unlock(VALUE mutex);
+VALUE rb_mutex_sleep(VALUE mutex, VALUE timeout);
+VALUE rb_mutex_synchronize(VALUE mutex, VALUE (*func)(VALUE arg), VALUE arg);
+
+// Rational
+
+VALUE rb_Rational(VALUE num, VALUE den);
+#define rb_Rational1(x) rb_Rational((x), INT2FIX(1))
+#define rb_Rational2(x,y) rb_Rational((x), (y))
+VALUE rb_rational_raw(VALUE num, VALUE den);
+#define rb_rational_raw1(x) rb_rational_raw((x), INT2FIX(1))
+#define rb_rational_raw2(x,y) rb_rational_raw((x), (y))
+VALUE rb_rational_new(VALUE num, VALUE den);
+#define rb_rational_new1(x) rb_rational_new((x), INT2FIX(1))
+#define rb_rational_new2(x,y) rb_rational_new((x), (y))
+VALUE rb_rational_num(VALUE rat);
+VALUE rb_rational_den(VALUE rat);
+VALUE rb_flt_rationalize_with_prec(VALUE value, VALUE precision);
+VALUE rb_flt_rationalize(VALUE value);
+
+// Complex
+
+VALUE rb_Complex(VALUE real, VALUE imag);
+#define rb_Complex1(x) rb_Complex((x), INT2FIX(0))
+#define rb_Complex2(x,y) rb_Complex((x), (y))
+VALUE rb_complex_new(VALUE real, VALUE imag);
+#define rb_complex_new1(x) rb_complex_new((x), INT2FIX(0))
+#define rb_complex_new2(x,y) rb_complex_new((x), (y))
+VALUE rb_complex_raw(VALUE real, VALUE imag);
+#define rb_complex_raw1(x) rb_complex_raw((x), INT2FIX(0))
+#define rb_complex_raw2(x,y) rb_complex_raw((x), (y))
+VALUE rb_complex_polar(VALUE r, VALUE theta);
+VALUE rb_complex_set_real(VALUE complex, VALUE real);
+VALUE rb_complex_set_imag(VALUE complex, VALUE imag);
+
+// GC
+
+void rb_gc_register_address(VALUE *address);
+VALUE rb_gc_enable();
+VALUE rb_gc_disable();
 
 #if defined(__cplusplus)
 }
