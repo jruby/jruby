@@ -4,6 +4,7 @@ import org.jruby.RubyBoolean;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyModule;
+import org.jruby.compiler.Compilable;
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.BreakInstr;
@@ -23,7 +24,6 @@ import org.jruby.ir.instructions.ReceivePreReqdArgInstr;
 import org.jruby.ir.instructions.RestoreBindingVisibilityInstr;
 import org.jruby.ir.instructions.ResultInstr;
 import org.jruby.ir.instructions.ReturnBase;
-import org.jruby.ir.instructions.ReturnOrRethrowSavedExcInstr;
 import org.jruby.ir.instructions.RuntimeHelperCall;
 import org.jruby.ir.instructions.SaveBindingVisibilityInstr;
 import org.jruby.ir.instructions.SearchConstInstr;
@@ -73,38 +73,37 @@ import org.jruby.runtime.opto.ConstantCache;
  */
 public class InterpreterEngine {
 
-    public IRubyObject interpret(ThreadContext context, Block block, IRubyObject self,
-                                 InterpreterContext interpreterContext, RubyModule implClass,
-                                 String name, Block blockArg) {
-        return interpret(context, block, self, interpreterContext, implClass, name, IRubyObject.NULL_ARRAY, blockArg);
+    public IRubyObject interpret(ThreadContext context, Compilable method, Block block, IRubyObject self,
+                                 InterpreterContext interpreterContext, String name, Block blockArg) {
+        return interpret(context, method, block, self, interpreterContext, name, IRubyObject.NULL_ARRAY, blockArg);
     }
 
-    public IRubyObject interpret(ThreadContext context, Block block, IRubyObject self,
-                                 InterpreterContext interpreterContext, RubyModule implClass,
+    public IRubyObject interpret(ThreadContext context, Compilable method, Block block, IRubyObject self,
+                                 InterpreterContext interpreterContext,
                                  String name, IRubyObject arg1, Block blockArg) {
-        return interpret(context, block, self, interpreterContext, implClass, name, new IRubyObject[] {arg1}, blockArg);
+        return interpret(context, method, block, self, interpreterContext, name, new IRubyObject[] {arg1}, blockArg);
     }
 
-    public IRubyObject interpret(ThreadContext context, Block block, IRubyObject self,
-                                 InterpreterContext interpreterContext, RubyModule implClass,
+    public IRubyObject interpret(ThreadContext context, Compilable method, Block block, IRubyObject self,
+                                 InterpreterContext interpreterContext,
                                  String name, IRubyObject arg1, IRubyObject arg2, Block blockArg) {
-        return interpret(context, block, self, interpreterContext, implClass, name, new IRubyObject[] {arg1, arg2}, blockArg);
+        return interpret(context, method, block, self, interpreterContext, name, new IRubyObject[] {arg1, arg2}, blockArg);
     }
 
-    public IRubyObject interpret(ThreadContext context, Block block, IRubyObject self,
-                                 InterpreterContext interpreterContext, RubyModule implClass,
+    public IRubyObject interpret(ThreadContext context, Compilable method, Block block, IRubyObject self,
+                                 InterpreterContext interpreterContext,
                                  String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block blockArg) {
-        return interpret(context, block, self, interpreterContext, implClass, name, new IRubyObject[] {arg1, arg2, arg3}, blockArg);
+        return interpret(context, method, block, self, interpreterContext, name, new IRubyObject[] {arg1, arg2, arg3}, blockArg);
     }
 
-    public IRubyObject interpret(ThreadContext context, Block block, IRubyObject self,
-                                 InterpreterContext interpreterContext, RubyModule implClass,
+    public IRubyObject interpret(ThreadContext context, Compilable method, Block block, IRubyObject self,
+                                 InterpreterContext interpreterContext,
                                  String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, Block blockArg) {
-        return interpret(context, block, self, interpreterContext, implClass, name, new IRubyObject[] {arg1, arg2, arg3, arg4}, blockArg);
+        return interpret(context, method, block, self, interpreterContext, name, new IRubyObject[] {arg1, arg2, arg3, arg4}, blockArg);
     }
 
-    public IRubyObject interpret(ThreadContext context, Block block, IRubyObject self,
-                                         InterpreterContext interpreterContext, RubyModule implClass,
+    public IRubyObject interpret(ThreadContext context, Compilable compilable, Block block, IRubyObject self,
+                                         InterpreterContext interpreterContext,
                                          String name, IRubyObject[] args, Block blockArg) {
         Instr[]   instrs    = interpreterContext.getInstructions();
         Object[]  temp      = interpreterContext.allocateTemporaryVariables();
@@ -188,7 +187,7 @@ public class InterpreterEngine {
                             args = IRRuntimeHelpers.prepareBlockArgs(context, block, args, acceptsKeywordArgument);
                             break;
                         default:
-                            processBookKeepingOp(interpreterContext, context, block, instr, operation, name, args, self, blockArg, implClass, currDynScope, temp, currScope);
+                            processBookKeepingOp(interpreterContext, compilable, context, block, instr, operation, name, args, self, blockArg, currDynScope, temp, currScope);
                             break;
                         }
                         break;
@@ -357,8 +356,8 @@ public class InterpreterEngine {
         }
     }
 
-    protected static void processBookKeepingOp(InterpreterContext ic, ThreadContext context, Block block, Instr instr, Operation operation,
-                                             String name, IRubyObject[] args, IRubyObject self, Block blockArg, RubyModule implClass,
+    protected static void processBookKeepingOp(InterpreterContext ic, Compilable compilable, ThreadContext context, Block block, Instr instr, Operation operation,
+                                             String name, IRubyObject[] args, IRubyObject self, Block blockArg,
                                              DynamicScope currDynScope, Object[] temp, StaticScope currScope) {
         switch(operation) {
             case LABEL:
@@ -376,7 +375,7 @@ public class InterpreterEngine {
                 context.postYieldNoScope((Frame) retrieveOp(((PopBlockFrameInstr)instr).getFrame(), context, self, currDynScope, currScope, temp));
                 break;
             case PUSH_METHOD_FRAME:
-                context.preMethodFrameOnly(implClass, name, self, blockArg);
+                context.preMethodFrameOnly(compilable.getImplementationClass().getMethodLocation(), name, self, blockArg);
                 // Only the top-level script scope has PRIVATE visibility.
                 // This is already handled as part of Interpreter.execute above.
                 // Everything else is PUBLIC by default.

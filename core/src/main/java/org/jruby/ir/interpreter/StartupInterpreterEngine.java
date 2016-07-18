@@ -1,22 +1,17 @@
 package org.jruby.ir.interpreter;
 
 import java.util.Stack;
-import org.jruby.RubyModule;
 import org.jruby.common.IRubyWarnings;
+import org.jruby.compiler.Compilable;
 import org.jruby.ir.Operation;
-import org.jruby.ir.instructions.BreakInstr;
-import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.CheckForLJEInstr;
 import org.jruby.ir.instructions.CopyInstr;
 import org.jruby.ir.instructions.ExceptionRegionStartMarkerInstr;
 import org.jruby.ir.instructions.GetFieldInstr;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.JumpInstr;
-import org.jruby.ir.instructions.NonlocalReturnInstr;
 import org.jruby.ir.instructions.RuntimeHelperCall;
 import org.jruby.ir.instructions.SearchConstInstr;
-import org.jruby.ir.runtime.IRBreakJump;
-import org.jruby.ir.runtime.IRReturnJump;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
@@ -31,8 +26,8 @@ import org.jruby.runtime.opto.ConstantCache;
  * This interpreter is meant to interpret the instructions generated directly from IRBuild.
  */
 public class StartupInterpreterEngine extends InterpreterEngine {
-    public IRubyObject interpret(ThreadContext context, Block block, IRubyObject self,
-                                 InterpreterContext interpreterContext, RubyModule implClass,
+    public IRubyObject interpret(ThreadContext context, Compilable compilable, Block block, IRubyObject self,
+                                 InterpreterContext interpreterContext,
                                  String name, IRubyObject[] args, Block blockArg) {
         Instr[]   instrs    = interpreterContext.getInstructions();
         Object[]  temp      = interpreterContext.allocateTemporaryVariables();
@@ -101,7 +96,7 @@ public class StartupInterpreterEngine extends InterpreterEngine {
                                 rescuePCs.pop();
                                 break;
                             default:
-                                processBookKeepingOp(interpreterContext, context, block, instr, operation, name, args, self, blockArg, implClass, currDynScope, temp, currScope);
+                                processBookKeepingOp(interpreterContext, compilable, context, block, instr, operation, name, args, self, blockArg, currDynScope, temp, currScope);
                         }
                         break;
                     case MOD_OP:

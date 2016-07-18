@@ -8,6 +8,7 @@ import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.ast.RootNode;
+import org.jruby.compiler.Uncompilable;
 import org.jruby.ir.IRBuilder;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IREvalScript;
@@ -107,9 +108,10 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
 
     public static IRubyObject INTERPRET_ROOT(ThreadContext context, IRubyObject self,
            InterpreterContext ic, RubyModule clazz, String name) {
+        Uncompilable compilable = new Uncompilable(clazz);
         try {
             ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
-            return ic.getEngine().interpret(context, null, self, ic, clazz, name, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
+            return ic.getEngine().interpret(context, compilable, null, self, ic, name, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
         } finally {
             ThreadContext.popBacktrace(context);
         }
@@ -117,9 +119,10 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
 
     public static IRubyObject INTERPRET_EVAL(ThreadContext context, IRubyObject self,
            InterpreterContext ic, RubyModule clazz, IRubyObject[] args, String name, Block blockArg) {
+        Uncompilable compilable = new Uncompilable(clazz);
         try {
             ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
-            return ic.getEngine().interpret(context, null, self, ic, clazz, name, args, blockArg);
+            return ic.getEngine().interpret(context, compilable, null, self, ic, name, args, blockArg);
         } finally {
             ThreadContext.popBacktrace(context);
         }
@@ -128,8 +131,9 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
     public static IRubyObject INTERPRET_BLOCK(ThreadContext context, Block block, IRubyObject self,
             InterpreterContext ic, IRubyObject[] args, String name, Block blockArg) {
         try {
+            Uncompilable compilable = new Uncompilable(null); // FIXME: we can pass real compilable through
             ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
-            return ic.getEngine().interpret(context, block, self, ic, null, name, args, blockArg);
+            return ic.getEngine().interpret(context, compilable, block, self, ic, name, args, blockArg);
         } finally {
             ThreadContext.popBacktrace(context);
         }

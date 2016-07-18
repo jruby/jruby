@@ -2,6 +2,7 @@ package org.jruby.ir.interpreter;
 
 import org.jruby.RubyModule;
 import org.jruby.common.IRubyWarnings;
+import org.jruby.compiler.Compilable;
 import org.jruby.ir.OpClass;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.CopyInstr;
@@ -35,7 +36,7 @@ import org.jruby.runtime.opto.ConstantCache;
  */
 public class BodyInterpreterEngine extends InterpreterEngine {
     @Override
-    public IRubyObject interpret(ThreadContext context, Block block, IRubyObject self, InterpreterContext interpreterContext, RubyModule implClass, String name, Block blockArg) {
+    public IRubyObject interpret(ThreadContext context, Compilable compilable, Block block, IRubyObject self, InterpreterContext interpreterContext, String name, Block blockArg) {
         Instr[] instrs = interpreterContext.getInstructions();
         Object[] temp = interpreterContext.allocateTemporaryVariables();
         int n = instrs.length;
@@ -91,7 +92,7 @@ public class BodyInterpreterEngine extends InterpreterEngine {
                         context.postYieldNoScope(f);
                         break;
                     case PUSH_METHOD_FRAME:
-                        context.preMethodFrameOnly(implClass, name, self, blockArg);
+                        context.preMethodFrameOnly(compilable.getImplementationClass().getMethodLocation(), name, self, blockArg);
                         // Only the top-level script scope has PRIVATE visibility.
                         // This is already handled as part of Interpreter.execute above.
                         // Everything else is PUBLIC by default.
@@ -226,7 +227,7 @@ public class BodyInterpreterEngine extends InterpreterEngine {
     }
 
     @Override
-    public IRubyObject interpret(ThreadContext context, Block block, IRubyObject self, InterpreterContext interpreterContext, RubyModule implClass, String name, IRubyObject[] args, Block blockArg) {
-        return interpret(context, block, self, interpreterContext, implClass, name, blockArg);
+    public IRubyObject interpret(ThreadContext context, Compilable compilable, Block block, IRubyObject self, InterpreterContext interpreterContext, String name, IRubyObject[] args, Block blockArg) {
+        return interpret(context, compilable, block, self, interpreterContext, name, blockArg);
     }
 }

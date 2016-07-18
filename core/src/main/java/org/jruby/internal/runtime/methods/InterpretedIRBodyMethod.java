@@ -1,6 +1,8 @@
 package org.jruby.internal.runtime.methods;
 
 import org.jruby.RubyModule;
+import org.jruby.compiler.Compilable;
+import org.jruby.compiler.Uncompilable;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
@@ -40,13 +42,15 @@ public class InterpretedIRBodyMethod extends InterpretedIRMethod {
     protected IRubyObject callInternal(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
         InterpreterContext ic = ensureInstrsReady();
 
-        if (!ic.hasExplicitCallProtocol()) this.pre(ic, context, self, name, block, getImplementationClass());
+        if (!ic.hasExplicitCallProtocol()) this.pre(ic, context, self, name, block);
 
         try {
+            Compilable uncompilable = new Uncompilable(clazz);  // FIXME: This can get compiled in theory but we might not want to for interpreted
+
             switch (method.getScopeType()) {
-                case MODULE_BODY: return INTERPRET_MODULE(ic, context, self, clazz, method.getName(), block);
-                case CLASS_BODY: return INTERPRET_CLASS(ic, context, self, clazz, method.getName(), block);
-                case METACLASS_BODY: return INTERPRET_METACLASS(ic, context, self, clazz, "singleton class", block);
+                case MODULE_BODY: return INTERPRET_MODULE(ic, uncompilable, context, self, method.getName(), block);
+                case CLASS_BODY: return INTERPRET_CLASS(ic, uncompilable, context, self, method.getName(), block);
+                case METACLASS_BODY: return INTERPRET_METACLASS(ic, uncompilable, context, self, "singleton class", block);
                 default: throw new RuntimeException("invalid body method type: " + method);
             }
         } finally {
@@ -54,22 +58,22 @@ public class InterpretedIRBodyMethod extends InterpretedIRMethod {
         }
     }
 
-    private IRubyObject INTERPRET_METACLASS(InterpreterContext ic, ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
-        return interpretWithBacktrace(ic, context, self, name, block);
+    private IRubyObject INTERPRET_METACLASS(InterpreterContext ic, Compilable compilable, ThreadContext context, IRubyObject self, String name, Block block) {
+        return interpretWithBacktrace(ic, compilable, context, self, name, block);
     }
 
-    private IRubyObject INTERPRET_MODULE(InterpreterContext ic, ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
-        return interpretWithBacktrace(ic, context, self, name, block);
+    private IRubyObject INTERPRET_MODULE(InterpreterContext ic, Compilable compilable, ThreadContext context, IRubyObject self, String name, Block block) {
+        return interpretWithBacktrace(ic, compilable, context, self, name, block);
     }
 
-    private IRubyObject INTERPRET_CLASS(InterpreterContext ic, ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
-        return interpretWithBacktrace(ic, context, self, name, block);
+    private IRubyObject INTERPRET_CLASS(InterpreterContext ic, Compilable compilable, ThreadContext context, IRubyObject self, String name, Block block) {
+        return interpretWithBacktrace(ic, compilable, context, self, name, block);
     }
 
-    private IRubyObject interpretWithBacktrace(InterpreterContext ic, ThreadContext context, IRubyObject self, String name, Block block) {
+    private IRubyObject interpretWithBacktrace(InterpreterContext ic, Compilable compilable, ThreadContext context, IRubyObject self, String name, Block block) {
         try {
             ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
-            return ic.getEngine().interpret(context, null, self, ic, getImplementationClass().getMethodLocation(), name, block);
+            return ic.getEngine().interpret(context, compilable, null, self, ic, name, block);
         } finally {
             ThreadContext.popBacktrace(context);
         }

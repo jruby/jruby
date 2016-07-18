@@ -55,9 +55,9 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
         }
     }
 
-    protected void pre(InterpreterContext ic, ThreadContext context, IRubyObject self, String name, Block block, RubyModule implClass) {
+    protected void pre(InterpreterContext ic, ThreadContext context, IRubyObject self, String name, Block block) {
         // update call stacks (push: frame, class, scope, etc.)
-        context.preMethodFrameOnly(implClass, name, self, block);
+        context.preMethodFrameOnly(getImplementationClass(), name, self, block);
         if (ic.pushNewDynScope()) {
             context.pushScope(DynamicScope.newDynamicScope(ic.getStaticScope()));
         }
@@ -92,20 +92,20 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
         if (IRRuntimeHelpers.isDebug()) doDebug();
 
         if (callCount >= 0) promoteToFullBuild(context);
-        return INTERPRET_METHOD(context, ensureInstrsReady(), getImplementationClass(), self, name, args, block);
+        return INTERPRET_METHOD(context, ensureInstrsReady(), self, name, args, block);
     }
 
-    private IRubyObject INTERPRET_METHOD(ThreadContext context, InterpreterContext ic, RubyModule implClass,
+    private IRubyObject INTERPRET_METHOD(ThreadContext context, InterpreterContext ic,
                                          IRubyObject self, String name, IRubyObject[] args, Block block) {
         try {
             ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
 
             if (ic.hasExplicitCallProtocol()) {
-                return ic.getEngine().interpret(context, null, self, ic, implClass, name, args, block);
+                return ic.getEngine().interpret(context, this, null, self, ic, name, args, block);
             } else {
                 try {
-                    pre(ic, context, self, name, block, implClass);
-                    return ic.getEngine().interpret(context, null, self, ic, implClass, name, args, block);
+                    pre(ic, context, self, name, block);
+                    return ic.getEngine().interpret(context, this, null, self, ic, name, args, block);
                 } finally {
                     post(ic, context);
                 }
@@ -121,20 +121,20 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
 
         if (callCount >= 0) promoteToFullBuild(context);
 
-        return INTERPRET_METHOD(context, ensureInstrsReady(), getImplementationClass(), self, name, block);
+        return INTERPRET_METHOD(context, ensureInstrsReady(), self, name, block);
     }
 
-    private IRubyObject INTERPRET_METHOD(ThreadContext context, InterpreterContext ic, RubyModule implClass,
+    private IRubyObject INTERPRET_METHOD(ThreadContext context, InterpreterContext ic,
                                          IRubyObject self, String name, Block block) {
         try {
             ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
 
             if (ic.hasExplicitCallProtocol()) {
-                return ic.getEngine().interpret(context, null, self, ic, implClass, name, block);
+                return ic.getEngine().interpret(context, this, null, self, ic, name, block);
             } else {
                 try {
-                    pre(ic, context, self, name, block, implClass);
-                    return ic.getEngine().interpret(context, null, self, ic, implClass, name, block);
+                    pre(ic, context, self, name, block);
+                    return ic.getEngine().interpret(context, this, null, self, ic, name, block);
                 } finally {
                     post(ic, context);
                 }
@@ -149,20 +149,20 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
         if (IRRuntimeHelpers.isDebug()) doDebug();
 
         if (callCount >= 0) promoteToFullBuild(context);
-        return INTERPRET_METHOD(context, ensureInstrsReady(), getImplementationClass(), self, name, arg0, block);
+        return INTERPRET_METHOD(context, ensureInstrsReady(), self, name, arg0, block);
     }
 
-    private IRubyObject INTERPRET_METHOD(ThreadContext context, InterpreterContext ic, RubyModule implClass,
+    private IRubyObject INTERPRET_METHOD(ThreadContext context, InterpreterContext ic,
                                          IRubyObject self, String name, IRubyObject arg1, Block block) {
         try {
             ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
 
             if (ic.hasExplicitCallProtocol()) {
-                return ic.getEngine().interpret(context, null, self, ic, implClass, name, arg1, block);
+                return ic.getEngine().interpret(context, this, null, self, ic, name, arg1, block);
             } else {
                 try {
-                    pre(ic, context, self, name, block, implClass);
-                    return ic.getEngine().interpret(context, null, self, ic, implClass, name, arg1, block);
+                    pre(ic, context, self, name, block);
+                    return ic.getEngine().interpret(context, this, null, self, ic, name, arg1, block);
                 } finally {
                     post(ic, context);
                 }
@@ -177,20 +177,20 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
         if (IRRuntimeHelpers.isDebug()) doDebug();
 
         if (callCount >= 0) promoteToFullBuild(context);
-        return INTERPRET_METHOD(context, ensureInstrsReady(), getImplementationClass(), self, name, arg0, arg1, block);
+        return INTERPRET_METHOD(context, ensureInstrsReady(), self, name, arg0, arg1, block);
     }
 
-    private IRubyObject INTERPRET_METHOD(ThreadContext context, InterpreterContext ic, RubyModule implClass,
+    private IRubyObject INTERPRET_METHOD(ThreadContext context, InterpreterContext ic,
                                          IRubyObject self, String name, IRubyObject arg1, IRubyObject arg2,  Block block) {
         try {
             ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
 
             if (ic.hasExplicitCallProtocol()) {
-                return ic.getEngine().interpret(context, null, self, ic, implClass, name, arg1, arg2, block);
+                return ic.getEngine().interpret(context, this, null, self, ic, name, arg1, arg2, block);
             } else {
                 try {
-                    pre(ic, context, self, name, block, implClass);
-                    return ic.getEngine().interpret(context, null, self, ic, implClass, name, arg1, arg2, block);
+                    pre(ic, context, self, name, block);
+                    return ic.getEngine().interpret(context, this, null, self, ic, name, arg1, arg2, block);
                 } finally {
                     post(ic, context);
                 }
@@ -205,20 +205,20 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
         if (IRRuntimeHelpers.isDebug()) doDebug();
 
         if (callCount >= 0) promoteToFullBuild(context);
-        return INTERPRET_METHOD(context, ensureInstrsReady(), getImplementationClass(), self, name, arg0, arg1, arg2, block);
+        return INTERPRET_METHOD(context, ensureInstrsReady(), self, name, arg0, arg1, arg2, block);
     }
 
-    private IRubyObject INTERPRET_METHOD(ThreadContext context, InterpreterContext ic, RubyModule implClass,
+    private IRubyObject INTERPRET_METHOD(ThreadContext context, InterpreterContext ic,
                                          IRubyObject self, String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block) {
         try {
             ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
 
             if (ic.hasExplicitCallProtocol()) {
-                return ic.getEngine().interpret(context, null, self, ic, implClass, name, arg1, arg2, arg3, block);
+                return ic.getEngine().interpret(context, this, null, self, ic, name, arg1, arg2, arg3, block);
             } else {
                 try {
-                    pre(ic, context, self, name, block, implClass);
-                    return ic.getEngine().interpret(context, null, self, ic, implClass, name, arg1, arg2, arg3, block);
+                    pre(ic, context, self, name, block);
+                    return ic.getEngine().interpret(context, this, null, self, ic, name, arg1, arg2, arg3, block);
                 } finally {
                     post(ic, context);
                 }

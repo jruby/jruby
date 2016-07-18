@@ -24,9 +24,9 @@ public class InterpretedIRMetaClassBody extends InterpretedIRBodyMethod {
     }
 
     @Override
-    protected void pre(InterpreterContext ic, ThreadContext context, IRubyObject self, String name, Block block, RubyModule implClass) {
+    protected void pre(InterpreterContext ic, ThreadContext context, IRubyObject self, String name, Block block) {
         // update call stacks (push: frame, class, scope, etc.)
-        context.preMethodFrameOnly(getImplementationClass(), name, self, block);
+        context.preMethodFrameOnly(getImplementationClass().getMethodLocation(), name, self, block);
         if (ic.pushNewDynScope()) {
             // Add a parent-link to current dynscope to support non-local returns cheaply
             // This doesn't affect variable scoping since local variables will all have

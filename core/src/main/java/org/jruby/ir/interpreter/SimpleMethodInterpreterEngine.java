@@ -3,6 +3,7 @@ package org.jruby.ir.interpreter;
 import java.util.HashMap;
 import java.util.Map;
 import org.jruby.RubyModule;
+import org.jruby.compiler.Compilable;
 import org.jruby.ir.OpClass;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.CopyInstr;
@@ -63,13 +64,15 @@ public class SimpleMethodInterpreterEngine extends InterpreterEngine {
         put(Operation.CONST_MISSING, true);
     }};
     @Override
-    public IRubyObject interpret(ThreadContext context, Block block, IRubyObject self, InterpreterContext interpreterContext, RubyModule implClass, String name, Block blockArg) {
+    public IRubyObject interpret(ThreadContext context, Compilable compilable, Block block, IRubyObject self,
+                                 InterpreterContext interpreterContext, String name, Block blockArg) {
         // Just use any interp since it will contain no recvs
-        return interpret(context, block, self, interpreterContext, implClass, name, (IRubyObject) null, blockArg);
+        return interpret(context, compilable, block, self, interpreterContext, name, (IRubyObject) null, blockArg);
     }
 
     @Override
-    public IRubyObject interpret(ThreadContext context, Block block, IRubyObject self, InterpreterContext interpreterContext, RubyModule implClass, String name, IRubyObject arg1, Block blockArg) {
+    public IRubyObject interpret(ThreadContext context, Compilable compilable, Block block, IRubyObject self,
+                                 InterpreterContext interpreterContext, String name, IRubyObject arg1, Block blockArg) {
         Instr[] instrs = interpreterContext.getInstructions();
         Object[] temp = interpreterContext.allocateTemporaryVariables();
         int n = instrs.length;
@@ -116,7 +119,7 @@ public class SimpleMethodInterpreterEngine extends InterpreterEngine {
                         instr.interpret(context, currScope, currDynScope, self, temp);
                         break;
                     case PUSH_METHOD_FRAME:
-                        context.preMethodFrameOnly(implClass, name, self, blockArg);
+                        context.preMethodFrameOnly(compilable.getImplementationClass().getMethodLocation(), name, self, blockArg);
                         // Only the top-level script scope has PRIVATE visibility.
                         // This is already handled as part of Interpreter.execute above.
                         // Everything else is PUBLIC by default.
@@ -237,7 +240,8 @@ public class SimpleMethodInterpreterEngine extends InterpreterEngine {
     }
 
     @Override
-    public IRubyObject interpret(ThreadContext context, Block block, IRubyObject self, InterpreterContext interpreterContext, RubyModule implClass, String name, IRubyObject arg1, IRubyObject arg2, Block blockArg) {
+    public IRubyObject interpret(ThreadContext context, Compilable compilable, Block block, IRubyObject self,
+                                 InterpreterContext interpreterContext, String name, IRubyObject arg1, IRubyObject arg2, Block blockArg) {
         Instr[] instrs = interpreterContext.getInstructions();
         Object[] temp = interpreterContext.allocateTemporaryVariables();
         int n = instrs.length;
@@ -291,7 +295,7 @@ public class SimpleMethodInterpreterEngine extends InterpreterEngine {
                         instr.interpret(context, currScope, currDynScope, self, temp);
                         break;
                     case PUSH_METHOD_FRAME:
-                        context.preMethodFrameOnly(implClass, name, self, blockArg);
+                        context.preMethodFrameOnly(compilable.getImplementationClass().getMethodLocation(), name, self, blockArg);
                         // Only the top-level script scope has PRIVATE visibility.
                         // This is already handled as part of Interpreter.execute above.
                         // Everything else is PUBLIC by default.
@@ -412,7 +416,8 @@ public class SimpleMethodInterpreterEngine extends InterpreterEngine {
     }
 
     @Override
-    public IRubyObject interpret(ThreadContext context, Block block, IRubyObject self, InterpreterContext interpreterContext, RubyModule implClass, String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block blockArg) {
+    public IRubyObject interpret(ThreadContext context, Compilable compilable, Block block, IRubyObject self,
+                                 InterpreterContext interpreterContext, String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block blockArg) {
         Instr[] instrs = interpreterContext.getInstructions();
         Object[] temp = interpreterContext.allocateTemporaryVariables();
         int n = instrs.length;
@@ -467,7 +472,7 @@ public class SimpleMethodInterpreterEngine extends InterpreterEngine {
                         instr.interpret(context, currScope, currDynScope, self, temp);
                         break;
                     case PUSH_METHOD_FRAME:
-                        context.preMethodFrameOnly(implClass, name, self, blockArg);
+                        context.preMethodFrameOnly(compilable.getImplementationClass().getMethodLocation(), name, self, blockArg);
                         // Only the top-level script scope has PRIVATE visibility.
                         // This is already handled as part of Interpreter.execute above.
                         // Everything else is PUBLIC by default.
@@ -588,7 +593,8 @@ public class SimpleMethodInterpreterEngine extends InterpreterEngine {
     }
 
     @Override
-    public IRubyObject interpret(ThreadContext context, Block block, IRubyObject self, InterpreterContext interpreterContext, RubyModule implClass, String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, Block blockArg) {
+    public IRubyObject interpret(ThreadContext context, Compilable compilable, Block block, IRubyObject self,
+                                 InterpreterContext interpreterContext, String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, Block blockArg) {
         Instr[] instrs = interpreterContext.getInstructions();
         Object[] temp = interpreterContext.allocateTemporaryVariables();
         int n = instrs.length;
@@ -644,7 +650,7 @@ public class SimpleMethodInterpreterEngine extends InterpreterEngine {
                         instr.interpret(context, currScope, currDynScope, self, temp);
                         break;
                     case PUSH_METHOD_FRAME:
-                        context.preMethodFrameOnly(implClass, name, self, blockArg);
+                        context.preMethodFrameOnly(compilable.getImplementationClass().getMethodLocation(), name, self, blockArg);
                         // Only the top-level script scope has PRIVATE visibility.
                         // This is already handled as part of Interpreter.execute above.
                         // Everything else is PUBLIC by default.
@@ -765,7 +771,8 @@ public class SimpleMethodInterpreterEngine extends InterpreterEngine {
     }
 
     @Override
-    public IRubyObject interpret(ThreadContext context, Block block, IRubyObject self, InterpreterContext interpreterContext, RubyModule implClass, String name, IRubyObject[] args, Block blockArg) {
+    public IRubyObject interpret(ThreadContext context, Compilable compilable, Block block, IRubyObject self,
+                                 InterpreterContext interpreterContext, String name, IRubyObject[] args, Block blockArg) {
         Instr[] instrs = interpreterContext.getInstructions();
         Object[] temp = interpreterContext.allocateTemporaryVariables();
         int n = instrs.length;
@@ -813,7 +820,7 @@ public class SimpleMethodInterpreterEngine extends InterpreterEngine {
                         instr.interpret(context, currScope, currDynScope, self, temp);
                         break;
                     case PUSH_METHOD_FRAME:
-                        context.preMethodFrameOnly(implClass, name, self, blockArg);
+                        context.preMethodFrameOnly(compilable.getImplementationClass().getMethodLocation(), name, self, blockArg);
                         // Only the top-level script scope has PRIVATE visibility.
                         // This is already handled as part of Interpreter.execute above.
                         // Everything else is PUBLIC by default.
