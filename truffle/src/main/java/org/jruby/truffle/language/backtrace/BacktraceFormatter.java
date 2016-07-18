@@ -20,7 +20,6 @@ import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.loader.SourceLoader;
-
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -234,6 +233,20 @@ public class BacktraceFormatter {
         }
 
         return true;
+    }
+
+    /** For debug purposes. */
+    public static boolean isUserSourceSection(RubyContext context, SourceSection sourceSection) {
+        if (!BacktraceFormatter.isCore(sourceSection)) {
+            return false;
+        }
+
+        final String path = sourceSection.getSource().getPath();
+        if (path.startsWith(context.getCoreLibrary().getCoreLoadPath())) {
+            return false;
+        }
+
+        return path.indexOf("/lib/ruby/stdlib/rubygems") == -1;
     }
 
     private String formatForeign(Node callNode) {
