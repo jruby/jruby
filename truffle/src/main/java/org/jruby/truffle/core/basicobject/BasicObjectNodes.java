@@ -174,7 +174,7 @@ public abstract class BasicObjectNodes {
             final Rope code = StringOperations.rope(string);
 
             // TODO (pitr 15-Oct-2015): fix this ugly hack, required for AS, copy-paste
-            final String space = new String(new char[Math.max(line - 1, 0)]).replace("\0", "\n");
+            final String space = getSpace(line);
             final Source source = getContext().getSourceLoader().loadFragment(space + code.toString(), StringOperations.rope(fileName).toString());
 
             final RubyRootNode rootNode = getContext().getCodeLoader().parse(source, code.getEncoding(), ParserContext.EVAL, null, true, this);
@@ -196,6 +196,11 @@ public abstract class BasicObjectNodes {
         @Specialization
         public Object instanceEval(VirtualFrame frame, Object receiver, NotProvided string, NotProvided fileName, NotProvided line, DynamicObject block) {
             return yield.dispatchWithModifiedSelf(frame, block, receiver, receiver);
+        }
+
+        @TruffleBoundary
+        private String getSpace(int line) {
+            return new String(new char[Math.max(line - 1, 0)]).replace("\0", "\n");
         }
 
     }

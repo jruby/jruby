@@ -71,6 +71,10 @@ public class CoreExceptions {
         return argumentError(coreStrings().NEGATIVE_ARRAY_SIZE.getRope(), currentNode, null);
     }
 
+    public DynamicObject argumentErrorCharacterRequired(Node currentNode) {
+        return argumentError("%c requires a character", currentNode);
+    }
+
     public DynamicObject argumentErrorCantOmitPrecision(Node currentNode) {
         return argumentError("can't omit precision for a Float.", currentNode);
     }

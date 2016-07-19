@@ -1,2 +1,0 @@
-fails:Errno::EAGAIN is the same class as Errno::EWOULDBLOCK if they represent the same errno value
-fails:Errno::EINVAL.new can be called with no arguments

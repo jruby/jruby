@@ -113,26 +113,6 @@ public abstract class ExceptionNodes {
 
     }
 
-    @CoreMethod(names = "message")
-    public abstract static class MessageNode extends CoreMethodArrayArgumentsNode {
-
-        @Specialization
-        public Object message(
-                DynamicObject exception,
-                @Cached("createBinaryProfile()") ConditionProfile messageProfile) {
-            final Object message = Layouts.EXCEPTION.getMessage(exception);
-
-            if (messageProfile.profile(message == nil())) {
-                final String className = Layouts.MODULE.getFields(
-                        Layouts.BASIC_OBJECT.getLogicalClass(exception)).getName();
-                return createString(StringOperations.encodeRope(className, UTF8Encoding.INSTANCE));
-            } else {
-                return message;
-            }
-        }
-
-    }
-
     @Primitive(name = "exception_message")
     public abstract static class MessagePrimitiveNode extends CoreMethodArrayArgumentsNode {
 
@@ -170,10 +150,14 @@ public abstract class ExceptionNodes {
                 int errno,
                 DynamicObject location) {
             final String errorMessage;
-            if (RubyGuards.isRubyString(location)) {
-                errorMessage = " @ " + location.toString() + " - " + message.toString();
+            if (message != nil()) {
+                if (RubyGuards.isRubyString(location)) {
+                    errorMessage = " @ " + location.toString() + " - " + message.toString();
+                } else {
+                    errorMessage = " - " + message.toString();
+                }
             } else {
-                errorMessage = " - " + message.toString();
+                errorMessage = "";
             }
             return coreExceptions().errnoError(errno, errorMessage, this);
         }

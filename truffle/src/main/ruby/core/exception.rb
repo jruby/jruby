@@ -40,8 +40,12 @@ class Exception
       backtrace == other.backtrace
   end
 
+  def message
+    self.to_s
+  end
+
   def to_s
-    msg = message
+    msg = Truffle.invoke_primitive :exception_message, self
     if msg.nil?
       self.class.to_s
     else

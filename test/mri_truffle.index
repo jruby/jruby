@@ -10,7 +10,7 @@ ruby/test_basicinstructions.rb
 ruby/test_beginendblock.rb
 ruby/test_bignum.rb
 ruby/test_call.rb
-ruby/test_case.rb
+# ruby/test_case.rb # uses refinements
 ruby/test_class.rb
 ruby/test_clone.rb
 ruby/test_comparable.rb
@@ -189,11 +189,11 @@ fileutils/test_verbose.rb
 # io/nonblock/test_flush.rb
 io/console/test_io_console.rb
 
-json/test_json.rb
+# json/test_json.rb # Needs review for inclusion in test suite
 json/test_json_addition.rb
 json/test_json_encoding.rb
 json/test_json_fixtures.rb
-json/test_json_generate.rb
+# json/test_json_generate.rb # Needs review for inclusion in test suite
 json/test_json_generic_object.rb
 
 # json/test_json_rails.rb

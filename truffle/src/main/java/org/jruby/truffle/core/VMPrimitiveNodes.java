@@ -119,6 +119,7 @@ public abstract class VMPrimitiveNodes {
     @Primitive(name = "vm_gc_start", needsSelf = false)
     public static abstract class VMGCStartPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
+        @TruffleBoundary
         @Specialization
         public DynamicObject vmGCStart() {
             System.gc();

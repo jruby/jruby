@@ -1,0 +1,1 @@
+fails:Safe navigator allows attribute assignment

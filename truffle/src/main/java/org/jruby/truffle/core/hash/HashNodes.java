@@ -460,8 +460,9 @@ public abstract class HashNodes {
     public abstract static class DefaultProcNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
-        public Object defaultProc(DynamicObject hash) {
-            if (Layouts.HASH.getDefaultBlock(hash) == null) {
+        public Object defaultProc(DynamicObject hash,
+                                  @Cached("createBinaryProfile()") ConditionProfile defaultBlockNullProfile) {
+            if (defaultBlockNullProfile.profile(Layouts.HASH.getDefaultBlock(hash) == null)) {
                 return nil();
             } else {
                 return Layouts.HASH.getDefaultBlock(hash);
@@ -1417,7 +1418,7 @@ public abstract class HashNodes {
 
         @Specialization
         public Object internalDefaultValue(DynamicObject hash) {
-            return defaultValueNode.defaultValue(hash);
+            return defaultValueNode.executeDefaultValue(hash);
         }
 
     }
@@ -1426,11 +1427,14 @@ public abstract class HashNodes {
     @NodeChild(type = RubyNode.class, value = "self")
     public abstract static class DefaultValueNode extends CoreMethodNode {
 
+        public abstract Object executeDefaultValue(DynamicObject hash);
+
         @Specialization
-        public Object defaultValue(DynamicObject hash) {
+        public Object defaultValue(DynamicObject hash,
+                                   @Cached("createBinaryProfile()") ConditionProfile nullValueProfile) {
             final Object value = Layouts.HASH.getDefaultValue(hash);
             
-            if (value == null) {
+            if (nullValueProfile.profile(value == null)) {
                 return nil();
             } else {
                 return value;

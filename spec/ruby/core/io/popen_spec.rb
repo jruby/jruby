@@ -39,6 +39,13 @@ describe "IO.popen" do
     rm_r @fname
   end
 
+  it "sees an infinitely looping subprocess exit when read pipe is closed" do
+    io = IO.popen "#{RUBY_EXE} -e 'r = loop{puts \"y\"; 0} rescue 1; exit r'", 'r'
+    io.close
+
+    $?.exitstatus.should_not == 0
+  end
+
   it "writes to a write-only pipe" do
     @io = IO.popen("#{RUBY_EXE} -e 'IO.copy_stream(STDIN,STDOUT)' > #{@fname}", "w")
     @io.write("bar")

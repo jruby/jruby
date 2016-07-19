@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.tools.simpleshell;
 
+import com.oracle.truffle.api.TruffleOptions;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
@@ -40,7 +41,7 @@ public class SimpleShell {
     public SimpleShell(RubyContext context) {
         this.context = context;
 
-        if (System.console() == null) {
+        if (!TruffleOptions.AOT && System.console() == null) {
             shellInterface = new StandardShellInterface();
         } else {
             shellInterface = new ConsoleShellInterface();
