@@ -1,4 +1,5 @@
-actionpack
+# TODO (pitr-ch 19-Jul-2016): reenable after tests stop randomly hanging
+# actionpack
 activesupport
 activemodel
 algebrick
