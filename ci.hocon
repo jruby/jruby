@@ -257,7 +257,7 @@ test-gems: ${jruby-truffle-gem-test-pack} {
 test-ecosystem: ${jruby-truffle-gem-test-pack} {
   run: [
     [bin/jruby, bin/gem, install, ../jruby-truffle-gem-test-pack/gems/cache/bundler-1.12.5.gem],
-    ${jt} [test, ecosystem, --offline]
+    ${jt} [test, ecosystem]
   ]
 }
 

@@ -854,7 +854,6 @@ module Commands
     jruby_opts = []
 
     jruby_opts << '-Xtruffle.graal.warn_unless=false'
-    offline = args.delete('--offline')
 
     env_vars["JRUBY_OPTS"] = jruby_opts.join(' ')
 
@@ -868,7 +867,7 @@ module Commands
     test_names             = single_test ? '{' + args.join(',') + '}' : '*'
 
     Dir["#{tests_path}/#{test_names}.sh"].each do |test_script|
-      sh *[env_vars, test_script, offline].compact
+      sh env_vars, test_script
     end
   end
   private :test_ecosystem
