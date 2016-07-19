@@ -1,4 +1,4 @@
 src: ./*.c
 cflags: -I$OPENSSL_HOME/include
-libs: $OPENSS_LIBL_HOME/libssl.so
+libs: $OPENSSL_LIB_HOME/libssl.so
 out: ../../../../../lib/ruby/truffle/openssl/openssl.su
