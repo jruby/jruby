@@ -399,11 +399,9 @@ public class RubyRange extends RubyObject {
         final Ruby runtime = context.runtime;
 
         if (begin instanceof RubyFixnum && end instanceof RubyFixnum) {
-            long lim = ((RubyFixnum) end).getLongValue();
-            if (!isExclusive) lim++;
-
             long base = ((RubyFixnum) begin).getLongValue();
-            long size = lim - base;
+            long size = ((RubyFixnum) end).getLongValue() - base;
+            if (!isExclusive) size++;
             if (size > Integer.MAX_VALUE) {
                 throw runtime.newRangeError("Range size too large for to_a");
             }
@@ -413,9 +411,8 @@ public class RubyRange extends RubyObject {
                 array[i] = RubyFixnum.newFixnum(runtime, base + i);
             }
             return RubyArray.newArrayNoCopy(runtime, array);
-        } else {
-            return RubyEnumerable.to_a(context, this);
         }
+        return RubyEnumerable.to_a(context, this);
     }
 
     @JRubyMethod(compat = RUBY1_8)
