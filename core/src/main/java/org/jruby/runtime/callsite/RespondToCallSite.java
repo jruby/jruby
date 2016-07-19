@@ -1,6 +1,7 @@
 package org.jruby.runtime.callsite;
 
 import org.jruby.Ruby;
+import org.jruby.RubySymbol;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.RubyClass;
@@ -9,6 +10,8 @@ import org.jruby.runtime.Visibility;
 
 public class RespondToCallSite extends NormalCachingCallSite {
     private volatile RespondToTuple respondToTuple = RespondToTuple.NULL_CACHE;
+    private final String respondToName;
+    private RubySymbol respondToNameSym;
 
     private static class RespondToTuple {
         static final RespondToTuple NULL_CACHE = new RespondToTuple("", true, CacheEntry.NULL_CACHE, CacheEntry.NULL_CACHE, null);
@@ -33,6 +36,12 @@ public class RespondToCallSite extends NormalCachingCallSite {
 
     public RespondToCallSite() {
         super("respond_to?");
+        respondToName = null;
+    }
+
+    public RespondToCallSite(String name) {
+        super("respond_to?");
+        respondToName = name;
     }
 
     @Override
@@ -57,6 +66,25 @@ public class RespondToCallSite extends NormalCachingCallSite {
         }
         // go through normal call logic, which will hit overridden cacheAndCall
         return super.call(context, caller, self, name, bool);
+    }
+
+    public boolean respondsTo(ThreadContext context, IRubyObject caller, IRubyObject self) {
+        RubyClass klass = self.getMetaClass();
+        RespondToTuple tuple = respondToTuple;
+        if (tuple.cacheOk(klass)) {
+            String strName = respondToName;
+            if (strName.equals(tuple.name) && tuple.checkVisibility) return tuple.respondsTo.isTrue();
+        }
+        // go through normal call logic, which will hit overridden cacheAndCall
+        return super.call(context, caller, self, getRespondToNameSym(context)).isTrue();
+    }
+
+    private RubySymbol getRespondToNameSym(ThreadContext context) {
+        RubySymbol sym = respondToNameSym;
+        if (sym == null) {
+            respondToNameSym = sym = context.runtime.newSymbol(respondToName);
+        }
+        return sym;
     }
 
     @Override

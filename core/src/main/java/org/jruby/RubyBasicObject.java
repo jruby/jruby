@@ -30,6 +30,7 @@ package org.jruby;
 import org.jcodings.Encoding;
 import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.runtime.Constants;
+import org.jruby.runtime.JavaCallSites;
 import org.jruby.runtime.ivars.VariableAccessor;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -579,7 +580,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
         // respond_to? or respond_to_missing? is not defined, so we must dispatch to trigger method_missing
         if ( respondToUndefined ) {
-            return callMethod(context, "respond_to?", mname).isTrue();
+            return runtime.sites.BO_respond_to.call(context, this, this, mname).isTrue();
         }
 
         // respond_to? is defined, invoke already-retrieved method object
@@ -728,7 +729,10 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     @Override
     public RubyString convertToString() {
-        return (RubyString) TypeConverter.convertToType(this, getRuntime().getString(), "to_str");
+        Ruby runtime = getRuntime();
+        ThreadContext context = runtime.getCurrentContext();
+        JavaCallSites sites = context.sites;
+        return (RubyString) TypeConverter.convertToType(context, this, getRuntime().getString(), sites.STR_respond_to_to_str, sites.STR_to_str);
     }
 
     /**
@@ -828,7 +832,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         IRubyObject dup = getMetaClass().getRealClass().allocate();
         if (isTaint()) dup.setTaint(true);
 
-        initCopy(dup, this, "initialize_dup");
+        initCopy(runtime.getCurrentContext(), dup, this, false);
 
         return dup;
     }
@@ -838,7 +842,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * Initializes a copy with variable and special instance variable
      * information, and then call the initialize_copy Ruby method.
      */
-    private static void initCopy(IRubyObject clone, IRubyObject original, String method) {
+    private static IRubyObject initCopy(ThreadContext context, IRubyObject clone, IRubyObject original, boolean doClone) {
         assert !clone.isFrozen() : "frozen object (" + clone.getMetaClass().getName() + ") allocated";
 
         original.copySpecialInstanceVariables(clone);
@@ -851,7 +855,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         }
 
         /* FIXME: finalizer should be dupped here */
-        clone.callMethod(clone.getRuntime().getCurrentContext(), method, original);
+        return doClone ?
+                context.sites.BO_initialize_dup.call(context, clone, clone, original) :
+                context.sites.BO_initialize_clone.call(context, clone, clone, original);
     }
 
     protected static boolean OBJ_INIT_COPY(IRubyObject obj, IRubyObject orig) {
@@ -902,7 +908,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         clone.setMetaClass(getSingletonClassClone());
         if (isTaint()) clone.setTaint(true);
 
-        initCopy(clone, this, "initialize_clone");
+        initCopy(runtime.getCurrentContext(), clone, this, true);
 
         if (isFrozen()) clone.setFrozen(true);
         return clone;

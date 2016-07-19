@@ -693,7 +693,7 @@ public class RubyTime extends RubyObject {
             return context.runtime.newFixnum(cmp((RubyTime) other));
         }
 
-        return invcmp(context, this, other);
+        return invcmp(context, context.sites.TIME_recursive_cmp, this, other);
     }
 
     @JRubyMethod(name = "eql?", required = 1)

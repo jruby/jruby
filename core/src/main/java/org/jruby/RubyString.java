@@ -59,6 +59,7 @@ import org.jruby.ast.util.ArgsUtil;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
+import org.jruby.runtime.JavaCallSites;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -67,7 +68,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.encoding.EncodingCapable;
 import org.jruby.runtime.encoding.MarshalEncoding;
 import org.jruby.runtime.marshal.UnmarshalStream;
-import org.jruby.specialized.RubyArrayTwoObject;
 import org.jruby.util.*;
 import org.jruby.util.io.EncodingUtils;
 
@@ -81,7 +81,6 @@ import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.anno.FrameField.BACKREF;
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.Visibility.PRIVATE;
-import static org.jruby.runtime.invokedynamic.MethodNames.OP_EQUAL;
 import static org.jruby.util.StringSupport.CR_7BIT;
 import static org.jruby.util.StringSupport.CR_BROKEN;
 import static org.jruby.util.StringSupport.CR_MASK;
@@ -1094,12 +1093,13 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         if (other instanceof RubyString) {
             return runtime.newFixnum(op_cmp((RubyString)other));
         }
-        if (other.respondsTo("to_str")) {
-            IRubyObject tmp = other.callMethod(context, "to_str");
+        JavaCallSites sites = runtime.sites;
+        if (sites.STR_respond_to_to_str.respondsTo(context, this, other)) {
+            IRubyObject tmp = TypeConverter.checkStringType(context, sites.STR_respond_to_to_str, sites.STR_to_str, other);
             if (tmp instanceof RubyString)
               return runtime.newFixnum(op_cmp((RubyString)tmp));
         } else {
-            return invcmp(context, this, other);
+            return invcmp(context, sites.STR_recursive_cmp, this, other);
         }
         return runtime.getNil();
     }
@@ -1125,8 +1125,8 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     private IRubyObject op_equalCommon(ThreadContext context, IRubyObject other) {
         Ruby runtime = context.runtime;
-        if (!other.respondsTo("to_str")) return runtime.getFalse();
-        return invokedynamic(context, other, OP_EQUAL, this).isTrue() ? runtime.getTrue() : runtime.getFalse();
+        if (!runtime.sites.STR_respond_to_to_str.respondsTo(context, this, other)) return runtime.getFalse();
+        return runtime.sites.STR_equals.call(context, this, other, this).isTrue() ? runtime.getTrue() : runtime.getFalse();
     }
 
     @JRubyMethod(name = "-@") // -'foo' returns frozen string
@@ -1723,7 +1723,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     @JRubyMethod(name = "<")
     public IRubyObject op_lt19(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyString) return context.runtime.newBoolean(op_cmp((RubyString) other) < 0);
-        return RubyComparable.op_lt(context, this, other);
+        return RubyComparable.op_lt(context, context.sites.STR_cmp, this, other);
     }
 
     public IRubyObject str_eql_p(ThreadContext context, IRubyObject other) {

@@ -1,6 +1,5 @@
 package org.jruby.runtime;
 
-import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Array;
 import java.nio.channels.ClosedChannelException;
 import java.nio.charset.Charset;
@@ -2735,13 +2734,8 @@ public class Helpers {
 
     // MRI: rb_hash
     public static RubyFixnum safeHash(final ThreadContext context, IRubyObject obj) {
-        final Ruby runtime = context.runtime;
-        IRubyObject hval = runtime.safeRecurse(new Ruby.RecursiveFunction() {
-            public IRubyObject call(IRubyObject obj, boolean recur) {
-                if (recur) return RubyFixnum.zero(runtime);
-                return invokedynamic(context, obj, HASH);
-            }
-        }, obj, "hash", true);
+        Ruby runtime = context.runtime;
+        IRubyObject hval = runtime.safeRecurse(RECURSIVE_HASH, context, runtime, obj, "hash", true);
 
         while (!(hval instanceof RubyFixnum)) {
             if (hval instanceof RubyBignum) {
@@ -2753,6 +2747,13 @@ public class Helpers {
 
         return (RubyFixnum) hval;
     }
+
+    private static final Ruby.RecursiveFunctionEx<Ruby> RECURSIVE_HASH = new Ruby.RecursiveFunctionEx<Ruby>() {
+        public IRubyObject call(ThreadContext context, Ruby runtime, IRubyObject obj, boolean recur) {
+            if (recur) return RubyFixnum.zero(runtime);
+            return context.sites.STR_hash.call(context, obj, obj);
+        }
+    };
 
     public static long murmurCombine(long h, long i)
     {

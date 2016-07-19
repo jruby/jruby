@@ -64,7 +64,6 @@ import org.jruby.util.log.LoggerFactory;
 
 import java.lang.ref.WeakReference;
 import java.security.SecureRandom;
-import java.util.Arrays;
 import java.util.Locale;
 import java.util.Set;
 
@@ -142,6 +141,8 @@ public final class ThreadContext {
 
     private static boolean trySHA1PRNG = true;
 
+    public final JavaCallSites sites;
+
     @SuppressWarnings("deprecated")
     public SecureRandom getSecureRandom() {
         SecureRandom secureRandom = this.secureRandom;
@@ -177,6 +178,7 @@ public final class ThreadContext {
         }
 
         this.runtimeCache = runtime.getRuntimeCache();
+        this.sites = runtime.sites;
 
         // TOPLEVEL self and a few others want a top-level scope.  We create this one right
         // away and then pass it into top-level parse so it ends up being the top level.

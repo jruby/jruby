@@ -1885,19 +1885,20 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
 
     private void recursiveJoin(final ThreadContext context, final IRubyObject outValue,
             final RubyString sep, final RubyString result, final IRubyObject ary) {
-        final Ruby runtime = context.runtime;
+
+        Ruby runtime = context.runtime;
 
         if (ary == this) throw runtime.newArgumentError("recursive array join");
 
-        runtime.safeRecurse(new Ruby.RecursiveFunction() {
-            public IRubyObject call(IRubyObject obj, boolean recur) {
+        runtime.safeRecurse(new Ruby.RecursiveFunctionEx<Ruby>() {
+            public IRubyObject call(ThreadContext context, Ruby runtime, IRubyObject obj, boolean recur) {
                 if (recur) throw runtime.newArgumentError("recursive array join");
 
                 RubyArray recAry = ((RubyArray) ary);
                 recAry.joinAny(context, outValue, sep, 0, result);
 
                 return runtime.getNil();
-            }}, outValue, "join", true);
+            }}, context, runtime, outValue, "join", true);
     }
 
     /** rb_ary_join
