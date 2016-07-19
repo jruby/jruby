@@ -81,5 +81,21 @@ ruby_version_is "2.3" do
       obj = nil
       eval("obj&.m += 3").should == nil
     end
+
+    it "does not call the operator method lazily with an assignment operator" do
+      klass = Class.new do
+        attr_writer :foo
+        def foo
+          nil
+        end
+      end
+      obj = klass.new
+
+      lambda {
+        eval("obj&.foo += 3")
+      }.should raise_error(NoMethodError) { |e|
+        e.name.should == :+
+      }
+    end
   end
 end
