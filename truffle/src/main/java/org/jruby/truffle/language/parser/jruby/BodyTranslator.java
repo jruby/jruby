@@ -2457,6 +2457,13 @@ public class BodyTranslator extends Translator {
         RubyNode body = writeMethod.accept(this);
 
         final SourceSection sourceSection = body.getSourceSection();
+
+        if (node.isLazy()) {
+            ReadLocalNode readLocal = environment.findLocalVarNode(temp, sourceSection);
+            body = new IfNode(context, sourceSection,
+                    new NotNode(new IsNilNode(context, sourceSection, readLocal)),
+                    body);
+        }
         final RubyNode ret = sequence(context, sourceSection, Arrays.asList(writeTemp, body));
 
         return addNewlineIfNeeded(node, ret);
