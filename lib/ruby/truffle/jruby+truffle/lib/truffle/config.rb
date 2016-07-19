@@ -143,7 +143,7 @@ additions = {
 end
 
 replacements = {
-    bundler: dedent(<<-RUBY),
+    :bundler => dedent(<<-RUBY),
       module Bundler
         BundlerError = Class.new(Exception)
         def self.setup
@@ -151,11 +151,11 @@ replacements = {
       end
     RUBY
     :'bundler/gem_tasks'    => nil,
-    java:                   nil,
-    bcrypt_ext:             nil,
-    method_source:          nil,
+    :java                   => nil,
+    :bcrypt_ext             => nil,
+    :method_source          => nil,
     :'rails-html-sanitizer' => nil,
-    nokogiri:               nil
+    :nokogiri               => nil
 }.reduce({}) do |h, (k, v)|
   h.update k => { setup: { file: { "#{k}.rb" => v || %[puts "loaded '#{k}.rb' an empty replacement"] } } }
 end
