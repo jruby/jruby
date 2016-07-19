@@ -624,6 +624,11 @@ public abstract class IOPrimitiveNodes {
             return selectOneSet(writables, timeoutMicros, 2);
         }
 
+        @Specialization(guards = { "isNilOrEmpty(readables)", "isNilOrEmpty(writables)", "isRubyArray(errorables)" })
+        public Object selectErrorables(DynamicObject readables, DynamicObject writables, DynamicObject errorables, int timeoutMicros) {
+            return selectOneSet(errorables, timeoutMicros, 3);
+        }
+
         @TruffleBoundary(throwsControlFlowException = true)
         private Object selectOneSet(DynamicObject setToSelect, int timeoutMicros, int setNb) {
             assert setNb >= 1 && setNb <= 3;
