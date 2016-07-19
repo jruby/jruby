@@ -270,6 +270,11 @@ module ShellUtils
     else
       status = $? unless capture
       $stderr.puts "FAILED (#{status}): #{printable_cmd(args)}"
+      
+      if capture
+        $stderr.puts out
+        $stderr.puts err
+      end
 
       if status && status.exitstatus
         exit status.exitstatus
