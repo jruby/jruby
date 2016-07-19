@@ -1,4 +1,4 @@
 src: ext/xml/*.c
 cflags: -I$LIBXML_HOME/include/libxml2
-libs: $LIBXML_HOME/lib/libxml2.so
+libs: $LIBXML_LIB_HOME/libxml2.so
 out: lib/xml/xml.su
