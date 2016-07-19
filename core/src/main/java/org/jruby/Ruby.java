@@ -59,7 +59,7 @@ import org.jruby.javasupport.JavaSupport;
 import org.jruby.javasupport.JavaSupportImpl;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
-import org.jruby.runtime.JavaCallSites;
+import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.invokedynamic.InvokeDynamicSupport;
 import org.jruby.util.ClassDefiningClassLoader;
 import org.objectweb.asm.util.TraceClassVisitor;
@@ -5434,5 +5434,5 @@ public final class Ruby implements Constantizable {
         }
     };
 
-    public final JavaCallSites sites = new JavaCallSites();
+    public final JavaSites sites = new JavaSites();
 }

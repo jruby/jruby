@@ -596,8 +596,8 @@ public class RubyRange extends RubyObject {
         } else if (begin instanceof RubyFloat || end instanceof RubyFloat || step instanceof RubyFloat) {
             RubyNumeric.floatStep19(context, runtime, begin, end, step, isExclusive, block);
         } else if (begin instanceof RubyNumeric
-                || !TypeConverter.checkIntegerType(runtime, begin, "to_int").isNil()
-                || !TypeConverter.checkIntegerType(runtime, end, "to_int").isNil()) {
+                || !TypeConverter.checkIntegerType(context, begin).isNil()
+                || !TypeConverter.checkIntegerType(context, end).isNil()) {
             numericStep19(context, runtime, step, block);
         } else {
             IRubyObject tmp = begin.checkStringType();

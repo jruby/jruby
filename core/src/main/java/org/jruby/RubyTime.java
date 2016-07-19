@@ -275,7 +275,8 @@ public class RubyTime extends RubyObject {
                 break;
 
             default:
-                if ((tmp = v.getMetaClass().finvokeChecked(runtime.getCurrentContext(), v, "to_r")) != null) {
+                ThreadContext context = runtime.getCurrentContext();
+                if ((tmp = v.getMetaClass().finvokeChecked(context, v, "to_r")) != null) {
                     /* test to_int method availability to reject non-Numeric
                      * objects such as String, Time, etc which have to_r method. */
                     if (!v.respondsTo("to_int")) {
@@ -285,7 +286,7 @@ public class RubyTime extends RubyObject {
                     v = tmp;
                     break;
                 }
-                if (!(tmp = TypeConverter.checkIntegerType(runtime, v, "to_int")).isNil()) {
+                if (!(tmp = TypeConverter.checkIntegerType(context, v)).isNil()) {
                     v = tmp;
                     break;
                 }

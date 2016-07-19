@@ -30,6 +30,8 @@ import org.jruby.parser.StaticScope;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.backtrace.BacktraceData;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callsite.CachingCallSite;
+import org.jruby.runtime.callsite.RespondToCallSite;
 import org.jruby.runtime.invokedynamic.MethodNames;
 import org.jruby.util.ByteList;
 import org.jruby.util.DefinedMessage;
@@ -452,8 +454,18 @@ public class Helpers {
     }
 
     // MRI: rb_check_funcall
+    public static IRubyObject invokeChecked(ThreadContext context, IRubyObject self, JavaSites.CheckedSites sites) {
+        return self.getMetaClass().finvokeChecked(context, self, sites);
+    }
+
+    // MRI: rb_check_funcall
     public static IRubyObject invokeChecked(ThreadContext context, IRubyObject self, String name, IRubyObject... args) {
         return self.getMetaClass().finvokeChecked(context, self, name, args);
+    }
+
+    // MRI: rb_check_funcall
+    public static IRubyObject invokeChecked(ThreadContext context, IRubyObject self, JavaSites.CheckedSites sites, IRubyObject... args) {
+        return self.getMetaClass().finvokeChecked(context, self, sites, args);
     }
 
     /**
@@ -542,13 +554,6 @@ public class Helpers {
 
     public static RubyArray ensureRubyArray(Ruby runtime, IRubyObject value) {
         return value instanceof RubyArray ? (RubyArray)value : RubyArray.newArray(runtime, value);
-    }
-
-    public static RubyArray ensureMultipleAssignableRubyArray(IRubyObject value, Ruby runtime, boolean masgnHasHead) {
-        if (!(value instanceof RubyArray)) {
-            value = ArgsUtil.convertToRubyArray19(runtime, value, masgnHasHead);
-        }
-        return (RubyArray) value;
     }
 
     public static IRubyObject nullToNil(IRubyObject value, ThreadContext context) {
@@ -2172,18 +2177,6 @@ public class Helpers {
             list.add(toker.nextToken().intern());
         }
         return (String[])list.toArray(new String[list.size()]);
-    }
-
-    public static IRubyObject[] arraySlice1N(IRubyObject arrayish) {
-        arrayish = aryToAry(arrayish);
-        RubyArray arrayish2 = ensureMultipleAssignableRubyArray(arrayish, arrayish.getRuntime(), true);
-        return new IRubyObject[] {arrayEntryOrNilZero(arrayish2), subarrayOrEmpty(arrayish2, arrayish2.getRuntime(), 1)};
-    }
-
-    public static IRubyObject arraySlice1(IRubyObject arrayish) {
-        arrayish = aryToAry(arrayish);
-        RubyArray arrayish2 = ensureMultipleAssignableRubyArray(arrayish, arrayish.getRuntime(), true);
-        return arrayEntryOrNilZero(arrayish2);
     }
 
     public static RubyClass metaclass(IRubyObject object) {

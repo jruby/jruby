@@ -141,7 +141,7 @@ public final class ThreadContext {
 
     private static boolean trySHA1PRNG = true;
 
-    public final JavaCallSites sites;
+    public final JavaSites sites;
 
     @SuppressWarnings("deprecated")
     public SecureRandom getSecureRandom() {

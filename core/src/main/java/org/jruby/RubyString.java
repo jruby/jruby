@@ -59,7 +59,7 @@ import org.jruby.ast.util.ArgsUtil;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
-import org.jruby.runtime.JavaCallSites;
+import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -1093,13 +1093,13 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         if (other instanceof RubyString) {
             return runtime.newFixnum(op_cmp((RubyString)other));
         }
-        JavaCallSites sites = runtime.sites;
-        if (sites.STR_respond_to_to_str.respondsTo(context, this, other)) {
-            IRubyObject tmp = TypeConverter.checkStringType(context, sites.STR_respond_to_to_str, sites.STR_to_str, other);
+        JavaSites.CheckedSites sites = runtime.sites.STR_to_str_checked;
+        if (sites.respond_to_X.respondsTo(context, this, other)) {
+            IRubyObject tmp = TypeConverter.checkStringType(context, sites, other);
             if (tmp instanceof RubyString)
               return runtime.newFixnum(op_cmp((RubyString)tmp));
         } else {
-            return invcmp(context, sites.STR_recursive_cmp, this, other);
+            return invcmp(context, runtime.sites.STR_recursive_cmp, this, other);
         }
         return runtime.getNil();
     }

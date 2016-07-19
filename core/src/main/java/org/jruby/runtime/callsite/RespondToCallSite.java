@@ -14,12 +14,13 @@ public class RespondToCallSite extends NormalCachingCallSite {
     private RubySymbol respondToNameSym;
 
     private static class RespondToTuple {
-        static final RespondToTuple NULL_CACHE = new RespondToTuple("", true, CacheEntry.NULL_CACHE, CacheEntry.NULL_CACHE, null);
+        static final RespondToTuple NULL_CACHE = new RespondToTuple("", true, CacheEntry.NULL_CACHE, CacheEntry.NULL_CACHE);
         public final String name;
         public final boolean checkVisibility;
         public final CacheEntry respondToMethod;
         public final CacheEntry entry;
         public final IRubyObject respondsTo;
+        public final boolean respondsToBoolean;
         
         public RespondToTuple(String name, boolean checkVisibility, CacheEntry respondToMethod, CacheEntry entry, IRubyObject respondsTo) {
             this.name = name;
@@ -27,6 +28,16 @@ public class RespondToCallSite extends NormalCachingCallSite {
             this.respondToMethod = respondToMethod;
             this.entry = entry;
             this.respondsTo = respondsTo;
+            this.respondsToBoolean = respondsTo.isTrue();
+        }
+
+        public RespondToTuple(String name, boolean checkVisibility, CacheEntry respondToMethod, CacheEntry entry) {
+            this.name = name;
+            this.checkVisibility = checkVisibility;
+            this.respondToMethod = respondToMethod;
+            this.entry = entry;
+            this.respondsTo = null;
+            this.respondsToBoolean = false;
         }
 
         public boolean cacheOk(RubyClass klass) {
@@ -73,10 +84,21 @@ public class RespondToCallSite extends NormalCachingCallSite {
         RespondToTuple tuple = respondToTuple;
         if (tuple.cacheOk(klass)) {
             String strName = respondToName;
-            if (strName.equals(tuple.name) && tuple.checkVisibility) return tuple.respondsTo.isTrue();
+            if (strName.equals(tuple.name) && tuple.checkVisibility) return tuple.respondsToBoolean;
         }
         // go through normal call logic, which will hit overridden cacheAndCall
         return super.call(context, caller, self, getRespondToNameSym(context)).isTrue();
+    }
+
+    public boolean respondsTo(ThreadContext context, IRubyObject caller, IRubyObject self, boolean includePrivate) {
+        RubyClass klass = self.getMetaClass();
+        RespondToTuple tuple = respondToTuple;
+        if (tuple.cacheOk(klass)) {
+            String strName = respondToName;
+            if (strName.equals(tuple.name) && !includePrivate == tuple.checkVisibility) return tuple.respondsToBoolean;
+        }
+        // go through normal call logic, which will hit overridden cacheAndCall
+        return super.call(context, caller, self, getRespondToNameSym(context), context.runtime.newBoolean(includePrivate)).isTrue();
     }
 
     private RubySymbol getRespondToNameSym(ThreadContext context) {
@@ -96,7 +118,7 @@ public class RespondToCallSite extends NormalCachingCallSite {
         }
 
         // alternate logic to cache the result of respond_to if it's the standard one
-        if (entry.method.equals(context.runtime.getRespondToMethod())) {
+        if (entry.method.isBuiltin()) {
             String name = arg.asJavaString();
             RespondToTuple tuple = recacheRespondsTo(entry, name, selfType, true, context);
 

@@ -1864,7 +1864,7 @@ public class RubyEnumerable {
         return new SizeFn() {
             @Override
             public IRubyObject size(IRubyObject[] args) {
-                return self.checkCallMethod(context, "size");
+                return self.checkCallMethod(context, context.sites.ENUMBL_size_checked);
             }
         };
     }

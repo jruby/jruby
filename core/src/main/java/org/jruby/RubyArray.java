@@ -45,8 +45,10 @@ import org.jruby.java.util.ArrayUtils;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
+import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
@@ -3652,7 +3654,9 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         int counters[] = new int[n];
 
         arrays[0] = this;
-        for (int i = 1; i < n; i++) arrays[i] = TypeConverter.to_ary(context, args[i - 1]);
+        RubyClass array = runtime.getArray();
+        JavaSites.CheckedSites sites = context.sites.ARY_to_ary_checked;
+        for (int i = 1; i < n; i++) arrays[i] = (RubyArray) TypeConverter.convertToType19(context, args[i - 1], array, sites);
 
         int resultLen = 1;
         for (int i = 0; i < n; i++) {

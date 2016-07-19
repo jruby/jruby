@@ -57,6 +57,7 @@ import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.Helpers;
+import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.DynamicScope;
@@ -392,7 +393,9 @@ public class RubyKernel {
         } else if(object.isNil()){
             throw runtime.newTypeError("can't convert nil into Float");
         } else {
-            return (RubyFloat)TypeConverter.convertToType19(object, runtime.getFloat(), "to_f");
+            ThreadContext context = runtime.getCurrentContext();
+            JavaSites sites = context.sites;
+            return (RubyFloat)TypeConverter.convertToType19(context, object, runtime.getFloat(), sites.K_to_f_checked);
         }
     }
 
@@ -436,10 +439,11 @@ public class RubyKernel {
     @JRubyMethod(name = "String", required = 1, module = true, visibility = PRIVATE)
     public static IRubyObject new_string19(ThreadContext context, IRubyObject recv, IRubyObject object) {
         Ruby runtime = context.runtime;
+        JavaSites sites = context.sites;
 
-        IRubyObject tmp = TypeConverter.checkStringType(runtime, object);
+        IRubyObject tmp = TypeConverter.checkStringType(context, sites.K_to_str_checked, object, runtime.getString());
         if (tmp.isNil()) {
-            tmp = TypeConverter.convertToType19(object, context.runtime.getString(), "to_s");
+            tmp = TypeConverter.convertToType19(context, object, runtime.getString(), context.sites.K_to_s_checked);
         }
         return tmp;
     }
