@@ -717,23 +717,29 @@ module Commands
   private :test_compiler
 
   def test_cexts(*args)
+    if MAC
+      so = 'dylib'
+    else
+      so = 'so'
+    end
+    
     # Test that we can compile and run some basic C code that uses libxml and openssl
 
     clang '-S', '-emit-llvm', "-I#{LIBXML_HOME}/include/libxml2", 'test/truffle/cexts/xml/main.c', '-o', 'test/truffle/cexts/xml/main.ll'
-    out, _ = sulong_run("-l#{LIBXML_HOME}/lib/libxml2.dylib", 'test/truffle/cexts/xml/main.ll', {capture: true})
+    out, _ = sulong_run("-l#{LIBXML_HOME}/lib/libxml2.#{so}", 'test/truffle/cexts/xml/main.ll', {capture: true})
     raise unless out == "7\n"
 
     clang '-S', '-emit-llvm', "-I#{OPENSSL_HOME}/include", 'test/truffle/cexts/xopenssl/main.c', '-o', 'test/truffle/cexts/xopenssl/main.ll'
-    out, _ = sulong_run("-l#{OPENSSL_HOME}/lib/libssl.dylib", 'test/truffle/cexts/xopenssl/main.ll', {capture: true})
+    out, _ = sulong_run("-l#{OPENSSL_HOME}/lib/libssl.#{so}", 'test/truffle/cexts/xopenssl/main.ll', {capture: true})
     raise unless out == "5d41402abc4b2a76b9719d911017c592\n"
 
     # Test that we can run those same test when they're build as a .su and we load the code and libraries from that
 
-    sulong_link '-o', 'test/truffle/cexts/xml/main.su', '-l', "#{LIBXML_HOME}/lib/libxml2.dylib", 'test/truffle/cexts/xml/main.ll'
+    sulong_link '-o', 'test/truffle/cexts/xml/main.su', '-l', "#{LIBXML_HOME}/lib/libxml2.#{so}", 'test/truffle/cexts/xml/main.ll'
     out, _ = sulong_run('test/truffle/cexts/xml/main.su', {capture: true})
     raise unless out == "7\n"
 
-    sulong_link '-o', 'test/truffle/cexts/xopenssl/main.su', '-l', "#{OPENSSL_HOME}/lib/libssl.dylib", 'test/truffle/cexts/xopenssl/main.ll'
+    sulong_link '-o', 'test/truffle/cexts/xopenssl/main.su', '-l', "#{OPENSSL_HOME}/lib/libssl.#{so}", 'test/truffle/cexts/xopenssl/main.ll'
     out, _ = sulong_run('test/truffle/cexts/xopenssl/main.su', {capture: true})
     raise unless out == "5d41402abc4b2a76b9719d911017c592\n"
 
