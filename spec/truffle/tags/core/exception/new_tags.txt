@@ -1,1 +1,0 @@
-fails:Exception.new returns 'Exception' for message when no message given
