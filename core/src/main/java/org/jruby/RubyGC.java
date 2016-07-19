@@ -36,9 +36,10 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.runtime.ThreadContext;
-import static org.jruby.runtime.Visibility.*;
-import static org.jruby.CompatVersion.*;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import static org.jruby.CompatVersion.*;
+import static org.jruby.runtime.Visibility.*;
 
 /**
  * GC (Garbage Collection) Module
@@ -120,7 +121,6 @@ public class RubyGC {
     }
 
     private static void emptyImplementationWarning(Ruby runtime, ID id, String name) {
-        runtime.getWarnings().warnOnce(id,
-                name + " does nothing on JRuby");
+        runtime.getWarnings().warnOnce(id, name + " does nothing on JRuby");
     }
 }
