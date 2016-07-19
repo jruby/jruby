@@ -900,7 +900,7 @@ module Truffle
       end
 
       def success?
-        !@result.nil?
+        @result
       end
 
       def use_only_https_git_paths!
