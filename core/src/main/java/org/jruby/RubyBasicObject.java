@@ -903,8 +903,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
         /* FIXME: finalizer should be dupped here */
         return doClone ?
-                context.sites.BO_initialize_dup.call(context, clone, clone, original) :
-                context.sites.BO_initialize_clone.call(context, clone, clone, original);
+                context.sites.BO_initialize_clone.call(context, clone, clone, original) :
+                context.sites.BO_initialize_dup.call(context, clone, clone, original);
     }
 
     protected static boolean OBJ_INIT_COPY(IRubyObject obj, IRubyObject orig) {
