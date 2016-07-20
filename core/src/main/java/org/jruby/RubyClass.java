@@ -1038,7 +1038,7 @@ public class RubyClass extends RubyModule {
     @Override
     public final void becomeSynchronized() {
         // make this class and all subclasses sync
-        synchronized (getRuntime().getHierarchyLock()) {
+        synchronized (runtime.getHierarchyLock()) {
             super.becomeSynchronized();
             Set<RubyClass> mySubclasses = subclasses;
             if (mySubclasses != null) for (RubyClass subclass : mySubclasses) {
