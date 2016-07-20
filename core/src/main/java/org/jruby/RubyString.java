@@ -1093,13 +1093,13 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         if (other instanceof RubyString) {
             return runtime.newFixnum(op_cmp((RubyString)other));
         }
-        JavaSites.CheckedSites sites = runtime.sites.STR_to_str_checked;
+        JavaSites.CheckedSites sites = sites(context).to_str_checked;
         if (sites.respond_to_X.respondsTo(context, this, other)) {
             IRubyObject tmp = TypeConverter.checkStringType(context, sites, other);
             if (tmp instanceof RubyString)
               return runtime.newFixnum(op_cmp((RubyString)tmp));
         } else {
-            return invcmp(context, runtime.sites.STR_recursive_cmp, this, other);
+            return invcmp(context, sites(context).recursive_cmp, this, other);
         }
         return runtime.getNil();
     }
@@ -1125,8 +1125,8 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     private IRubyObject op_equalCommon(ThreadContext context, IRubyObject other) {
         Ruby runtime = context.runtime;
-        if (!runtime.sites.STR_respond_to_to_str.respondsTo(context, this, other)) return runtime.getFalse();
-        return runtime.sites.STR_equals.call(context, this, other, this).isTrue() ? runtime.getTrue() : runtime.getFalse();
+        if (!sites(context).respond_to_to_str.respondsTo(context, this, other)) return runtime.getFalse();
+        return sites(context).equals.call(context, this, other, this).isTrue() ? runtime.getTrue() : runtime.getFalse();
     }
 
     @JRubyMethod(name = "-@") // -'foo' returns frozen string
@@ -1723,7 +1723,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     @JRubyMethod(name = "<")
     public IRubyObject op_lt19(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyString) return context.runtime.newBoolean(op_cmp((RubyString) other) < 0);
-        return RubyComparable.op_lt(context, context.sites.STR_cmp, this, other);
+        return RubyComparable.op_lt(context, sites(context).cmp, this, other);
     }
 
     public IRubyObject str_eql_p(ThreadContext context, IRubyObject other) {
@@ -5773,6 +5773,10 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         int pp = nth(value.getEncoding(), value.unsafeBytes(), p, e, nth, singlebyte);
         if (pp == -1) return size;
         return pp - p;
+    }
+
+    private static JavaSites.StringSites sites(ThreadContext context) {
+        return context.sites.String;
     }
 
     @Deprecated

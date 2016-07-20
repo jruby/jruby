@@ -44,6 +44,7 @@ import org.jcodings.transcode.EConvFlags;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites;
+import org.jruby.runtime.JavaSites.IOSites;
 import org.jruby.util.StringSupport;
 import org.jruby.util.io.ChannelFD;
 import org.jruby.util.io.EncodingUtils;
@@ -1960,12 +1961,12 @@ public class RubyIO extends RubyObject implements IOEncodable {
     // io_close
     protected static IRubyObject ioClose(Ruby runtime, IRubyObject io) {
         ThreadContext context = runtime.getCurrentContext();
-        JavaSites sites = context.sites;
-        IRubyObject closed = io.checkCallMethod(context, sites.IO_closed_checked);
+        IOSites sites = sites(context);
+        IRubyObject closed = io.checkCallMethod(context, sites.closed_checked);
         if (closed != null && closed.isTrue()) return io;
         IRubyObject oldExc = runtime.getGlobalVariables().get("$!"); // Save $!
         try {
-            return io.checkCallMethod(context, sites.IO_close_checked);
+            return io.checkCallMethod(context, sites.close_checked);
         } catch (RaiseException re) {
             if (re.getMessage().contains(CLOSED_STREAM_MSG)) {
                 // ignore
@@ -4060,7 +4061,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
             }
         }
 
-        JavaSites sites = context.sites;
+        IOSites sites = sites(context);
 
         boolean close1 = false;
         boolean close2 = false;
@@ -4070,8 +4071,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
                 close1 = true;
             } else if (arg1 instanceof RubyIO) {
                 io1 = (RubyIO) arg1;
-            } else if (sites.IO_to_path_checked1.respond_to_X.respondsTo(context, arg1, arg1)) {
-                RubyString path = (RubyString) TypeConverter.convertToType19(context, arg1, runtime.getString(), sites.IO_to_path_checked1);
+            } else if (sites.to_path_checked1.respond_to_X.respondsTo(context, arg1, arg1)) {
+                RubyString path = (RubyString) TypeConverter.convertToType19(context, arg1, runtime.getString(), sites.to_path_checked1);
                 io1 = (RubyIO) RubyFile.open(context, runtime.getFile(), new IRubyObject[]{path}, Block.NULL_BLOCK);
                 close1 = true;
             } else if (arg1.respondsTo("read")) {
@@ -4089,8 +4090,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
                 close2 = true;
             } else if (arg2 instanceof RubyIO) {
                 io2 = (RubyIO) arg2;
-            } else if (sites.IO_to_path_checked2.respond_to_X.respondsTo(context, arg2, arg2)) {
-                RubyString path = (RubyString) TypeConverter.convertToType19(context, arg2, runtime.getString(), sites.IO_to_path_checked2);
+            } else if (sites.to_path_checked2.respond_to_X.respondsTo(context, arg2, arg2)) {
+                RubyString path = (RubyString) TypeConverter.convertToType19(context, arg2, runtime.getString(), sites.to_path_checked2);
                 io2 = (RubyIO) RubyFile.open(context, runtime.getFile(), new IRubyObject[]{path, runtime.newString("w")}, Block.NULL_BLOCK);
                 close2 = true;
             } else if (arg2.respondsTo("write")) {
@@ -4665,6 +4666,10 @@ public class RubyIO extends RubyObject implements IOEncodable {
     }
 
     private static final byte[] NEWLINE_BYTES = { (byte) '\n' };
+
+    private static IOSites sites(ThreadContext context) {
+        return context.sites.IO;
+    }
 
     @Deprecated
     public IRubyObject getline(Ruby runtime, ByteList separator) {

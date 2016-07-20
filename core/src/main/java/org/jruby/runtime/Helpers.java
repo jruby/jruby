@@ -15,7 +15,6 @@ import org.jruby.ast.Node;
 import org.jruby.ast.OptArgNode;
 import org.jruby.ast.UnnamedRestArgNode;
 import org.jruby.ast.types.INameNode;
-import org.jruby.ast.util.ArgsUtil;
 import org.jruby.ast.RequiredKeywordArgumentValueNode;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
@@ -28,10 +27,9 @@ import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.parser.StaticScope;
 import org.jruby.platform.Platform;
+import org.jruby.runtime.JavaSites.HelpersSites;
 import org.jruby.runtime.backtrace.BacktraceData;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.callsite.CachingCallSite;
-import org.jruby.runtime.callsite.RespondToCallSite;
 import org.jruby.runtime.invokedynamic.MethodNames;
 import org.jruby.util.ByteList;
 import org.jruby.util.DefinedMessage;
@@ -52,7 +50,6 @@ import org.jcodings.unicode.UnicodeEncoding;
 
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.invokedynamic.MethodNames.EQL;
-import static org.jruby.runtime.invokedynamic.MethodNames.HASH;
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_EQUAL;
 import static org.jruby.util.CodegenUtils.sig;
 import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
@@ -2728,7 +2725,7 @@ public class Helpers {
     // MRI: rb_hash
     public static RubyFixnum safeHash(final ThreadContext context, IRubyObject obj) {
         Ruby runtime = context.runtime;
-        IRubyObject hval = runtime.safeRecurse(RECURSIVE_HASH, context, runtime, obj, "hash", true);
+        IRubyObject hval = runtime.safeRecurse(sites(context).recursive_hash, context, runtime, obj, "hash", true);
 
         while (!(hval instanceof RubyFixnum)) {
             if (hval instanceof RubyBignum) {
@@ -2740,13 +2737,6 @@ public class Helpers {
 
         return (RubyFixnum) hval;
     }
-
-    private static final Ruby.RecursiveFunctionEx<Ruby> RECURSIVE_HASH = new Ruby.RecursiveFunctionEx<Ruby>() {
-        public IRubyObject call(ThreadContext context, Ruby runtime, IRubyObject obj, boolean recur) {
-            if (recur) return RubyFixnum.zero(runtime);
-            return context.sites.STR_hash.call(context, obj, obj);
-        }
-    };
 
     public static long murmurCombine(long h, long i)
     {
@@ -2779,6 +2769,10 @@ public class Helpers {
 
     public static long murmur1(long h) {
         return murmur_step(h, 16);
+    }
+
+    private static HelpersSites sites(ThreadContext context) {
+        return context.sites.Helpers;
     }
 
     @Deprecated

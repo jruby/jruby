@@ -50,6 +50,8 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
+import org.jruby.runtime.JavaSites;
+import org.jruby.runtime.JavaSites.TimeSites;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -694,7 +696,7 @@ public class RubyTime extends RubyObject {
             return context.runtime.newFixnum(cmp((RubyTime) other));
         }
 
-        return invcmp(context, context.sites.TIME_recursive_cmp, this, other);
+        return invcmp(context, sites(context).recursive_cmp, this, other);
     }
 
     @JRubyMethod(name = "eql?", required = 1)
@@ -1524,5 +1526,9 @@ public class RubyTime extends RubyObject {
         time.callInit(IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
         time.setIsTzRelative(setTzRelative);
         return time;
+    }
+
+    private static TimeSites sites(ThreadContext context) {
+        return context.sites.Time;
     }
 }

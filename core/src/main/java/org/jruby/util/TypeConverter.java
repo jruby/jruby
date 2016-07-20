@@ -43,13 +43,12 @@ import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.RubyNil;
 import org.jruby.runtime.JavaSites;
+import org.jruby.runtime.JavaSites.TypeConverterSites;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.callsite.RespondToCallSite;
 
 public class TypeConverter {
 
@@ -319,9 +318,9 @@ public class TypeConverter {
     public static IRubyObject checkIntegerType(ThreadContext context, IRubyObject obj) {
         if (obj instanceof RubyFixnum) return obj;
 
-        JavaSites sites = context.sites;
+        TypeConverterSites sites = sites(context);
 
-        IRubyObject conv = TypeConverter.convertToTypeWithCheck(context, obj, context.runtime.getInteger(), sites.BO_to_int_checked);
+        IRubyObject conv = TypeConverter.convertToTypeWithCheck(context, obj, context.runtime.getInteger(), sites.to_int_checked);
 
         return conv instanceof RubyInteger ? conv : context.nil;
     }
@@ -333,9 +332,9 @@ public class TypeConverter {
         if (method.equals("to_int")) return checkIntegerType(runtime.getCurrentContext(), obj);
         if (method.equals("to_i")) {
             ThreadContext context = runtime.getCurrentContext();
-            JavaSites sites = context.sites;
+            TypeConverterSites sites = sites(context);
 
-            IRubyObject conv = TypeConverter.convertToTypeWithCheck(context, obj, context.runtime.getInteger(), sites.BO_to_i_checked);
+            IRubyObject conv = TypeConverter.convertToTypeWithCheck(context, obj, context.runtime.getInteger(), sites.to_i_checked);
             return conv instanceof RubyInteger ? conv : runtime.getNil();
         }
 
@@ -349,9 +348,9 @@ public class TypeConverter {
         if (!(obj instanceof RubyNumeric)) return runtime.getNil();
 
         ThreadContext context = runtime.getCurrentContext();
-        JavaSites sites = context.sites;
+        TypeConverterSites sites = sites(context);
 
-        return TypeConverter.convertToTypeWithCheck(context, obj, runtime.getFloat(), sites.BO_to_f_checked);
+        return TypeConverter.convertToTypeWithCheck(context, obj, runtime.getFloat(), sites.to_f_checked);
     }
 
     // rb_check_hash_type
@@ -411,7 +410,7 @@ public class TypeConverter {
     public static IRubyObject checkArrayType(IRubyObject self) {
         Ruby runtime = self.getRuntime();
         ThreadContext context = runtime.getCurrentContext();
-        return TypeConverter.convertToTypeWithCheck19(context, self, runtime.getArray(), context.sites.TCONV_to_ary_checked);
+        return TypeConverter.convertToTypeWithCheck19(context, self, runtime.getArray(), sites(context).to_ary_checked);
     }
 
     public static IRubyObject handleUncoercibleObject(boolean raise, IRubyObject obj, RubyClass target) throws RaiseException {
@@ -492,8 +491,8 @@ public class TypeConverter {
         IRubyObject tmp = checkArrayType(val); // to_ary
 
         if (tmp.isNil()) {
-            JavaSites sites = context.sites;
-            tmp = convertToTypeWithCheck19(context, val, context.runtime.getArray(), sites.TCONV_to_a_checked);
+            TypeConverterSites sites = sites(context);
+            tmp = convertToTypeWithCheck19(context, val, context.runtime.getArray(), sites.to_a_checked);
             if (tmp.isNil()) {
                 return context.runtime.newArray(val);
             }
@@ -503,11 +502,15 @@ public class TypeConverter {
 
     // MRI: to_ary
     public static RubyArray to_ary(ThreadContext context, IRubyObject ary) {
-        return (RubyArray) convertToType19(context, ary, context.runtime.getArray(), context.sites.TCONV_to_ary_checked);
+        return (RubyArray) convertToType19(context, ary, context.runtime.getArray(), sites(context).to_ary_checked);
     }
 
     private static void raiseIntegerBaseError(ThreadContext context) {
         throw context.runtime.newArgumentError("base specified for non string value");
+    }
+
+    private static TypeConverterSites sites(ThreadContext context) {
+        return context.sites.TypeConverter;
     }
 
     @Deprecated

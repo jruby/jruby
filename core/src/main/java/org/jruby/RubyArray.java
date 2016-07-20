@@ -49,6 +49,7 @@ import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites;
+import org.jruby.runtime.JavaSites.ArraySites;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
@@ -3655,7 +3656,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
 
         arrays[0] = this;
         RubyClass array = runtime.getArray();
-        JavaSites.CheckedSites sites = context.sites.ARY_to_ary_checked;
+        JavaSites.CheckedSites sites = sites(context).to_ary_checked;
         for (int i = 1; i < n; i++) arrays[i] = (RubyArray) TypeConverter.convertToType19(context, args[i - 1], array, sites);
 
         int resultLen = 1;
@@ -4861,6 +4862,10 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
             concurrentModification(runtime, ex);
         }
         // not reached
+    }
+
+    private static ArraySites sites(ThreadContext context) {
+        return context.sites.Array;
     }
 
     @Deprecated

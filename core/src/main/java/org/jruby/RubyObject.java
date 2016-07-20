@@ -49,6 +49,7 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.JavaSites;
+import org.jruby.runtime.JavaSites.ObjectSites;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -329,7 +330,7 @@ public class RubyObject extends RubyBasicObject {
     @Override
     public String toString() {
         ThreadContext context = getRuntime().getCurrentContext();
-        RubyString rubyString = context.sites.O_to_s.call(context, this, this).convertToString();
+        RubyString rubyString = sites(context).to_s.call(context, this, this).convertToString();
         return rubyString.getUnicodeValue();
     }
 
@@ -528,38 +529,38 @@ public class RubyObject extends RubyBasicObject {
         if ( obj.isNil() ) return context.nil;
 
         Ruby runtime = context.runtime;
-        JavaSites sites = context.sites;
+        ObjectSites sites = sites(context);
 
         if ( obj instanceof RubyArray ) {
-            if (sites.O_dig_array.retrieveCache(obj.getMetaClass()).method.isBuiltin()) {
+            if (sites.dig_array.retrieveCache(obj.getMetaClass()).method.isBuiltin()) {
                 return ((RubyArray) obj).dig(context, args, idx);
             }
         }
         if ( obj instanceof RubyHash ) {
             // TODO: cache somewhere
-            if (sites.O_dig_hash.retrieveCache(obj.getMetaClass()).method.isBuiltin()) {
+            if (sites.dig_hash.retrieveCache(obj.getMetaClass()).method.isBuiltin()) {
                 return ((RubyHash) obj).dig(context, args, idx);
             }
         }
         if ( obj instanceof RubyStruct ) {
             // TODO: cache somewhere
-            if (sites.O_dig_struct.retrieveCache(obj.getMetaClass()).method.isBuiltin()) {
+            if (sites.dig_struct.retrieveCache(obj.getMetaClass()).method.isBuiltin()) {
                 return ((RubyStruct) obj).dig(context, args, idx);
             }
         }
-        if (sites.O_respond_to_dig.respondsTo(context, obj, obj, true) ) {
+        if (sites.respond_to_dig.respondsTo(context, obj, obj, true) ) {
             final int len = args.length - idx;
             switch ( len ) {
                 case 1:
-                    return sites.O_dig_misc.call(context, obj, obj, args[idx]);
+                    return sites.dig_misc.call(context, obj, obj, args[idx]);
                 case 2:
-                    return sites.O_dig_misc.call(context, obj, obj, args[idx], args[idx+1]);
+                    return sites.dig_misc.call(context, obj, obj, args[idx], args[idx+1]);
                 case 3:
-                    return sites.O_dig_misc.call(context, obj, obj, args[idx], args[idx+1], args[idx+2]);
+                    return sites.dig_misc.call(context, obj, obj, args[idx], args[idx+1], args[idx+2]);
                 default:
                     IRubyObject[] rest = new IRubyObject[len];
                     System.arraycopy(args, idx, rest, 0, len);
-                    return sites.O_dig_misc.call(context, obj, obj, rest);
+                    return sites.dig_misc.call(context, obj, obj, rest);
             }
         }
         throw context.runtime.newTypeError(obj.getMetaClass().getName() + " does not have #dig method");
@@ -594,6 +595,10 @@ public class RubyObject extends RubyBasicObject {
         for (int i = 0; i < ivarCount; i++) {
             setInstanceVariable((String)in.readObject(), (IRubyObject)in.readObject());
         }
+    }
+
+    private static ObjectSites sites(ThreadContext context) {
+        return context.sites.Object;
     }
 
 }

@@ -31,6 +31,7 @@ import org.jcodings.Encoding;
 import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.JavaSites;
+import org.jruby.runtime.JavaSites.BasicObjectSites;
 import org.jruby.runtime.ivars.VariableAccessor;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -589,7 +590,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
         // respond_to? or respond_to_missing? is not defined, so we must dispatch to trigger method_missing
         if ( respondToUndefined ) {
-            return runtime.sites.BO_respond_to.call(context, this, this, mname).isTrue();
+            return sites(context).respond_to.call(context, this, this, mname).isTrue();
         }
 
         // respond_to? is defined, invoke already-retrieved method object
@@ -680,15 +681,15 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     public RubyString asString() {
         Ruby runtime = getRuntime();
         ThreadContext context = runtime.getCurrentContext();
-        JavaSites sites = context.sites;
-        IRubyObject str = sites.BO_to_s.call(context, this, this);
+        BasicObjectSites sites = sites(context);
+        IRubyObject str = sites.to_s.call(context, this, this);
 
         if (!(str instanceof RubyString)) return (RubyString)anyToString();
         if (isTaint()) str.setTaint(true);
         return (RubyString) str;
     }
 
- /**
+    /**
      * Tries to convert this object to a Ruby Array using the "to_ary"
      * method.
      */
@@ -696,8 +697,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     public RubyArray convertToArray() {
         Ruby runtime = getRuntime();
         ThreadContext context = runtime.getCurrentContext();
-        JavaSites sites = context.sites;
-        return (RubyArray) TypeConverter.convertToType(context, this, runtime.getArray(), sites.BO_to_ary_checked);
+        BasicObjectSites sites = sites(context);
+        return (RubyArray) TypeConverter.convertToType(context, this, runtime.getArray(), sites.to_ary_checked);
     }
 
     /**
@@ -708,8 +709,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     public RubyHash convertToHash() {
         Ruby runtime = getRuntime();
         ThreadContext context = runtime.getCurrentContext();
-        JavaSites sites = context.sites;
-        return (RubyHash) TypeConverter.convertToType(context, this, runtime.getHash(), sites.BO_to_hash_checked);
+        BasicObjectSites sites = sites(context);
+        return (RubyHash) TypeConverter.convertToType(context, this, runtime.getHash(), sites.to_hash_checked);
     }
 
     /**
@@ -720,8 +721,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     public RubyFloat convertToFloat() {
         Ruby runtime = getRuntime();
         ThreadContext context = runtime.getCurrentContext();
-        JavaSites sites = context.sites;
-        return (RubyFloat) TypeConverter.convertToType(context, this, runtime.getFloat(), sites.BO_to_f_checked);
+        BasicObjectSites sites = sites(context);
+        return (RubyFloat) TypeConverter.convertToType(context, this, runtime.getFloat(), sites.to_f_checked);
     }
 
     /**
@@ -732,9 +733,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     public RubyInteger convertToInteger() {
         Ruby runtime = getRuntime();
         ThreadContext context = runtime.getCurrentContext();
-        JavaSites sites = context.sites;
+        BasicObjectSites sites = sites(context);
 
-        IRubyObject result = TypeConverter.convertToType(context, this, runtime.getInteger(), sites.BO_to_int_checked, true);
+        IRubyObject result = TypeConverter.convertToType(context, this, runtime.getInteger(), sites.to_int_checked, true);
 
         if (!(result instanceof RubyInteger)) throw getRuntime().newTypeError(getMetaClass().getName() + "#to_int should return Integer");
 
@@ -753,8 +754,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         if (convertMethod.equals("to_i")) {
             Ruby runtime = getRuntime();
             ThreadContext context = runtime.getCurrentContext();
-            JavaSites sites = context.sites;
-            result = TypeConverter.convertToType(context, this, runtime.getInteger(), sites.BO_to_i_checked, true);
+            BasicObjectSites sites = sites(context);
+            result = TypeConverter.convertToType(context, this, runtime.getInteger(), sites.to_i_checked, true);
         } else {
             result = TypeConverter.convertToType(this, getRuntime().getInteger(), convertMethod, true);
         }
@@ -772,8 +773,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     public RubyString convertToString() {
         Ruby runtime = getRuntime();
         ThreadContext context = runtime.getCurrentContext();
-        JavaSites sites = context.sites;
-        return (RubyString) TypeConverter.convertToType(context, this, getRuntime().getString(), sites.BO_to_str_checked);
+        BasicObjectSites sites = sites(context);
+        return (RubyString) TypeConverter.convertToType(context, this, getRuntime().getString(), sites.to_str_checked);
     }
 
     /**
@@ -804,8 +805,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     public IRubyObject checkStringType() {
         Ruby runtime = getRuntime();
         ThreadContext context = runtime.getCurrentContext();
-        JavaSites sites = context.sites;
-        return TypeConverter.checkStringType(context, sites.BO_to_str_checked, this);
+        BasicObjectSites sites = sites(context);
+        return TypeConverter.checkStringType(context, sites.to_str_checked, this);
     }
 
     /** rb_check_string_type
@@ -829,8 +830,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     public IRubyObject checkArrayType() {
         Ruby runtime = getRuntime();
         ThreadContext context = runtime.getCurrentContext();
-        JavaSites sites = context.sites;
-        return TypeConverter.checkArrayType(context, sites.BO_to_ary_checked, this);
+        BasicObjectSites sites = sites(context);
+        return TypeConverter.checkArrayType(context, sites.to_ary_checked, this);
     }
 
     /**
@@ -903,8 +904,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
         /* FIXME: finalizer should be dupped here */
         return doClone ?
-                context.sites.BO_initialize_clone.call(context, clone, clone, original) :
-                context.sites.BO_initialize_dup.call(context, clone, clone, original);
+                sites(context).initialize_clone.call(context, clone, clone, original) :
+                sites(context).initialize_dup.call(context, clone, clone, original);
     }
 
     protected static boolean OBJ_INIT_COPY(IRubyObject obj, IRubyObject orig) {
@@ -1117,7 +1118,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     // MRI: rb_inspect, which does dispatch
     public static IRubyObject rbInspect(ThreadContext context, IRubyObject obj) {
         Ruby runtime = context.runtime;
-        RubyString str = context.sites.BO_inspect.call(context, obj, obj).asString();
+        RubyString str = sites(context).inspect.call(context, obj, obj).asString();
         Encoding enc = runtime.getDefaultInternalEncoding();
         if (enc == null) enc = runtime.getDefaultExternalEncoding();
         if (!enc.isAsciiCompatible()) {
@@ -1944,7 +1945,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
         private void callFinalizer(IRubyObject finalizer) {
             ThreadContext context = finalizer.getRuntime().getCurrentContext();
-            context.sites.BO_call.call(context, finalizer, finalizer, id);
+            sites(context).call.call(context, finalizer, finalizer, id);
         }
     }
 
@@ -2053,7 +2054,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         // MRI (1.9) always passes down a symbol when calling respond_to_missing?
         if ( ! (mname instanceof RubySymbol) ) mname = runtime.newSymbol(name);
         ThreadContext context = runtime.getCurrentContext();
-        IRubyObject respond = context.sites.BO_respond_to_missing.call(context, this, this, mname, runtime.newBoolean(includePrivate));
+        IRubyObject respond = sites(context).respond_to_missing.call(context, this, this, mname, runtime.newBoolean(includePrivate));
         return runtime.newBoolean( respond.isTrue() );
     }
 
@@ -2713,7 +2714,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * @return
      */
     public IRubyObject op_not_match(ThreadContext context, IRubyObject arg) {
-        return context.runtime.newBoolean(!context.sites.BO_match.call(context, this, this, arg).isTrue());
+        return context.runtime.newBoolean(!sites(context).match.call(context, this, this, arg).isTrue());
     }
 
 
@@ -2890,8 +2891,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         if (other instanceof IRubyObject) {
             Ruby runtime = getRuntime();
             ThreadContext context = runtime.getCurrentContext();
-            JavaSites sites = context.sites;
-            IRubyObject equals = invokeChecked(context, this, sites.BO_equals_checked, (IRubyObject)other);
+            BasicObjectSites sites = sites(context);
+            IRubyObject equals = invokeChecked(context, this, sites.equals_checked, (IRubyObject)other);
             if (equals == null) return false;
             return equals.isTrue();
         }
@@ -2908,7 +2909,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     @Override
     public int hashCode() {
         ThreadContext context = getRuntime().getCurrentContext();
-        IRubyObject hashValue = invokeChecked(context, this, context.sites.BO_hash_checked);
+        IRubyObject hashValue = invokeChecked(context, this, sites(context).hash_checked);
         if (hashValue == null) return super.hashCode();
         if (hashValue instanceof RubyFixnum) return (int) RubyNumeric.fix2long(hashValue);
         return nonFixnumHashCode(hashValue);
@@ -2990,6 +2991,15 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         metaClass = (RubyClass)ruby.getClassFromPath(ois.readUTF());
 
         metaClass.getVariableTableManager().deserializeVariables(this, ois);
+    }
+
+    /**
+     * Retrieve the call sites for this class.
+     *
+     * It is expected that all Java-based core classes that do call site caching will have a similar method.
+     */
+    private static BasicObjectSites sites(ThreadContext context) {
+        return context.sites.BasicObject;
     }
 
     // Deprecated methods below this line
