@@ -27,7 +27,7 @@ public class JavaSites {
     public final CheckedSites BO_hash_checked = new CheckedSites("hash");
     public final CallSite BO_inspect = new FunctionalCachingCallSite("inspect");
     public final CallSite BO_match = new FunctionalCachingCallSite("=~");
-    public final CallSite BO_call = new FunctionalCachingCallSite("=~");
+    public final CallSite BO_call = new FunctionalCachingCallSite("call");
 
     public final CheckedSites K_to_f_checked = new CheckedSites("to_f");
     public final CheckedSites K_to_s_checked = new CheckedSites("to_s");
