@@ -925,7 +925,7 @@ public class RubyNumeric extends RubyObject {
                                          ((RubyFixnum)step).getLongValue(),
                                           block);
         } else if (this instanceof RubyFloat || to instanceof RubyFloat || step instanceof RubyFloat) {
-            floatStep19(context, runtime, this, to, step, false, block);
+            floatStep(context, runtime, this, to, step, false, block);
         } else {
             duckStep(context, runtime, this, to, step, block);
         }
@@ -957,23 +957,7 @@ public class RubyNumeric extends RubyObject {
         }
     }
 
-    protected static void floatStep(ThreadContext context, Ruby runtime, IRubyObject from, IRubyObject to, IRubyObject step, Block block) {
-        double beg = num2dbl(from);
-        double end = num2dbl(to);
-        double unit = num2dbl(step);
-
-        double n = (end - beg)/unit;
-        double err = (Math.abs(beg) + Math.abs(end) + Math.abs(end - beg)) / Math.abs(unit) * DBL_EPSILON;
-
-        if (err > 0.5) err = 0.5;
-        n = Math.floor(n + err) + 1;
-
-        for (long i = 0; i < n; i++) {
-            block.yield(context, RubyFloat.newFloat(runtime, i * unit + beg));
-        }
-    }
-
-    static void floatStep19(ThreadContext context, Ruby runtime, IRubyObject from, IRubyObject to, IRubyObject step, boolean excl, Block block) {
+    static void floatStep(ThreadContext context, Ruby runtime, IRubyObject from, IRubyObject to, IRubyObject step, boolean excl, Block block) {
         double beg = num2dbl(from);
         double end = num2dbl(to);
         double unit = num2dbl(step);

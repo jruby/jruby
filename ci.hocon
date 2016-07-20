@@ -3,8 +3,8 @@ jt: [ruby, tool/jt.rb]
 common-setup: [
   [mx, sclone, --kind, git, "https://github.com/jruby/jruby-build-pack.git", jruby-build-pack],
   [cp, bin/jruby.bash, bin/jruby],
-  [chmod, +x, bin/jruby],
-  ${jt} [build]
+  [chmod, "+x", bin/jruby],
+  ${jt} [build, --offline]
 ]
 
 common: {
@@ -15,12 +15,12 @@ common: {
     ruby:       ">=2.1.0"
     "java/jdk": "==1.8.0/60"
   }
-  
+
   environment: {
     CI: "true",
     JAVA_OPTS: -Xmx2G
   }
-  
+
   setup: ${common-setup}
 
   timelimit: "00:30:00"
@@ -54,7 +54,7 @@ graal-core: {
     [cd, ../..],
     [mv, temp_mx, mx.jruby]
   ]
-  
+
   environment: {
     GRAAL_HOME: graal-workspace/graal-core,
     HOST_VM: server,
@@ -82,7 +82,7 @@ graal-enterprise: {
     [cd, ../..],
     [mv, temp_mx, mx.jruby]
   ]
-  
+
   environment: {
     GRAAL_HOME: graal-workspace/graal-enterprise,
     HOST_VM: server,
@@ -93,7 +93,7 @@ graal-enterprise: {
 graal-enterprise-no-om: {
   downloads: ${graal-enterprise.downloads}
   setup: ${graal-enterprise.setup}
-  
+
   environment: {
     GRAAL_HOME: graal-workspace/graal-enterprise,
     HOST_VM: server,
@@ -110,7 +110,7 @@ graal-vm: {
       platformspecific: true
     }
   }
-  
+
   environment: {
     GRAALVM_BIN: "$GRAALVM_DIR/bin/java"
     HOST_VM: server,
@@ -245,23 +245,32 @@ server-benchmarks: {
   packages: {
     "apache/ab": ">=2.3"
   }
-  
+
   run: ${setup-benchmarks} [
     [mx, benchmark, server]
   ] ${post-process-and-upload-results}
 }
 
-test-gems: {
-  environment: {
-    GEM_HOME: jruby-truffle-gem-test-pack/gems
-  }
-  
+jruby-truffle-gem-test-pack: {
   setup: ${common-setup} [
-    [mx, sclone, --kind, git, "https://github.com/jruby/jruby-truffle-gem-test-pack.git", jruby-truffle-gem-test-pack]
+    [mx, sclone, --kind, git, "https://github.com/jruby/jruby-truffle-gem-test-pack.git", ../jruby-truffle-gem-test-pack]
   ]
-  
+}
+
+test-gems: ${jruby-truffle-gem-test-pack} {
+  environment: {
+    GEM_HOME: ../jruby-truffle-gem-test-pack/gems
+  }
+
   run: [
     ${jt} [test, gems]
+  ]
+}
+
+test-ecosystem: ${jruby-truffle-gem-test-pack} {
+  run: [
+    [bin/jruby, bin/gem, install, ../jruby-truffle-gem-test-pack/gems/cache/bundler-1.12.5.gem],
+    ${jt} [test, ecosystem]
   ]
 }
 
@@ -269,7 +278,7 @@ test-cexts: {
   packages: {
     llvm: "==3.3"
   }
-  
+
   downloads: {
     JVMCI_JAVA_HOME: {
       name: labsjdk,
@@ -277,7 +286,7 @@ test-cexts: {
       platformspecific: true
     }
   }
-  
+
   setup: ${common-setup} [
     [mv, mx.jruby, temp_mx],
     [mkdir, sulong-workspace],
@@ -291,7 +300,7 @@ test-cexts: {
     [mx, sclone, --kind, git, "https://github.com/jruby/jruby-truffle-gem-test-pack.git", jruby-truffle-gem-test-pack],
     ${jt} [build, cexts]
   ]
-  
+
   environment: {
     GEM_HOME: jruby-truffle-gem-test-pack/gems
     GRAAL_HOME: sulong-workspace/sulong,
@@ -300,7 +309,7 @@ test-cexts: {
     HOST_VM: server,
     HOST_VM_CONFIG: graal-core
   }
-  
+
   run: [
     ${jt} [test, specs, --graal, ":capi"],
     ${jt} [test, cexts]
@@ -317,7 +326,7 @@ sulong-benchmarks: {
   packages: {
     llvm: "==3.3"
   }
-  
+
   downloads: {
     JVMCI_JAVA_HOME: {
       name: labsjdk,
@@ -325,7 +334,7 @@ sulong-benchmarks: {
       platformspecific: true
     }
   }
-  
+
   setup: ${common-setup} [
     [mv, mx.jruby, temp_mx],
     [mkdir, sulong-workspace],
@@ -340,7 +349,7 @@ sulong-benchmarks: {
   ] ${setup-benchmarks} [
     ${jt} [cextc, all-ruby-benchmarks/chunky_png/oily_png]
   ]
-  
+
   environment: {
     GRAAL_HOME: sulong-workspace/sulong,
     SULONG_HOME: sulong-workspace/sulong,
@@ -362,8 +371,9 @@ builds: [
   {name: ruby-test-integration} ${common} ${gate-caps} {run: [${jt} [test, integration]]},
   {name: ruby-test-cexts} ${common} ${gate-caps} ${test-cexts},
   {name: ruby-test-gems} ${common} ${gate-caps} ${test-gems},
+  {name: ruby-test-ecosystem} ${common} ${gate-caps} ${test-ecosystem},
   {name: ruby-test-tarball} ${common} ${gate-caps} {run: [${jt} [tarball]]},
-  
+
   {name: ruby-test-compiler-graal-core} ${common} ${graal-core} ${gate-caps} {run: [${jt} [test, compiler]]},
   {name: ruby-test-compiler-graal-enterprise} ${common} ${graal-enterprise} ${gate-caps} {run: [${jt} [test, compiler]]},
   {name: ruby-test-compiler-graal-vm} ${common} ${graal-vm} ${gate-caps} {run: [${jt} [test, compiler]]},

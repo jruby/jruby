@@ -50,6 +50,7 @@ matrix:
     - env:
       - JAVA_OPTS="$JAVA_OPTS -Xmx512m"
       - HAS_REDIS=true
+      - COMMAND=test/truffle/ecosystem-travis-install.sh
       - JT='test ecosystem'
       jdk: oraclejdk8
     - env: JT='test tck'

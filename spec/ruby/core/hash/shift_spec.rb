@@ -27,7 +27,7 @@ describe "Hash#shift" do
   end
 
   it "preserves Hash invariants when removing the last item" do
-    h = new_hash(:a => 1, :b => 2)
+    h = { :a => 1, :b => 2 }
     h.shift.should == [:a, 1]
     h.shift.should == [:b, 2]
     h[:c] = 3

@@ -1887,20 +1887,20 @@ public class IRBuilder {
         if (opt > 0) {
             int optIndex = argsNode.getOptArgIndex();
             for (int j = 0; j < opt; j++, argIndex++) {
-                // Jump to 'l' if this arg is not null.  If null, fall through and build the default value!
-                Label l = getNewLabel();
-                OptArgNode n = (OptArgNode)args[optIndex + j];
-                String argName = n.getName();
-                Variable av = getNewLocalVariable(argName, 0);
+                // We fall through or jump to variableAssigned once we know we have a valid value in place.
+                Label variableAssigned = getNewLabel();
+                OptArgNode optArg = (OptArgNode)args[optIndex + j];
+                String argName = optArg.getName();
+                Variable argVar = getNewLocalVariable(argName, 0);
                 if (scope instanceof IRMethod) addArgumentDescription(ArgumentType.opt, argName);
-                Variable temp = createTemporaryVariable();
                 // You need at least required+j+1 incoming args for this opt arg to get an arg at all
-                addInstr(new ReceiveOptArgInstr(av, signature.required(), signature.pre(), j));
-                addInstr(BNEInstr.create(l, av, UndefinedValue.UNDEFINED)); // if 'av' is not undefined, go to default
-                addInstr(new CopyInstr(av, buildNil())); // wipe out undefined value with nil
-                Operand defaultResult = build(n.getValue());
-                addInstr(new CopyInstr(av, defaultResult));
-                addInstr(new LabelInstr(l));
+                addInstr(new ReceiveOptArgInstr(argVar, signature.required(), signature.pre(), j));
+                addInstr(BNEInstr.create(variableAssigned, argVar, UndefinedValue.UNDEFINED));
+                // We add this extra nil copy because we do not know if we have a circular defininition of
+                // argVar: proc { |a=a| } or proc { |a = foo(bar(a))| }.
+                addInstr(new CopyInstr(argVar, manager.getNil()));
+                build(optArg.getValue());
+                addInstr(new LabelInstr(variableAssigned));
             }
         }
 

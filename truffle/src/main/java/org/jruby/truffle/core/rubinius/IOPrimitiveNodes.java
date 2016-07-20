@@ -624,8 +624,13 @@ public abstract class IOPrimitiveNodes {
             return selectOneSet(writables, timeoutMicros, 2);
         }
 
+        @Specialization(guards = { "isNilOrEmpty(readables)", "isNilOrEmpty(writables)", "isRubyArray(errorables)" })
+        public Object selectErrorables(DynamicObject readables, DynamicObject writables, DynamicObject errorables, int timeoutMicros) {
+            return selectOneSet(errorables, timeoutMicros, 3);
+        }
+
         @TruffleBoundary(throwsControlFlowException = true)
-        private Object selectOneSet(DynamicObject setToSelect, int timeoutMicros, int setNb) {
+        private Object selectOneSet(DynamicObject setToSelect, final int timeoutMicros, int setNb) {
             assert setNb >= 1 && setNb <= 3;
             final Object[] readableObjects = ArrayOperations.toObjectArray(setToSelect);
             final int[] fds = getFileDescriptors(setToSelect);
@@ -642,11 +647,14 @@ public abstract class IOPrimitiveNodes {
                     }
                     final int result = callSelect(nfds, fdSet, timeoutToUse);
 
-                    if (result == 0) {
+                    if (result == 0 && timeoutMicros != 0) {
+                        // interrupted, try again
                         return null;
+                    } else {
+                        // result == 0: nothing was ready
+                        // result >  0: some were ready
+                        return result;
                     }
-
-                    return result;
                 }
 
                 private int callSelect(int nfds, FDSet fdSet, Timeval timeoutToUse) {

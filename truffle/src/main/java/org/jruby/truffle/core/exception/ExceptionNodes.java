@@ -135,7 +135,7 @@ public abstract class ExceptionNodes {
 
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
-            return allocateObjectNode.allocate(rubyClass, null, null, nil());
+            return allocateObjectNode.allocate(rubyClass, nil(), null);
         }
 
     }
