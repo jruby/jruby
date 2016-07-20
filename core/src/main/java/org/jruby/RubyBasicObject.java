@@ -1117,7 +1117,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     // MRI: rb_inspect, which does dispatch
     public static IRubyObject rbInspect(ThreadContext context, IRubyObject obj) {
         Ruby runtime = context.runtime;
-        RubyString str = obj.callMethod(context, "inspect").asString();
+        RubyString str = context.sites.BO_inspect.call(context, obj, obj).asString();
         Encoding enc = runtime.getDefaultInternalEncoding();
         if (enc == null) enc = runtime.getDefaultExternalEncoding();
         if (!enc.isAsciiCompatible()) {
@@ -1943,9 +1943,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         }
 
         private void callFinalizer(IRubyObject finalizer) {
-            Helpers.invoke(
-                    finalizer.getRuntime().getCurrentContext(),
-                    finalizer, "call", id);
+            ThreadContext context = finalizer.getRuntime().getCurrentContext();
+            context.sites.BO_call.call(context, finalizer, finalizer, id);
         }
     }
 
@@ -2053,7 +2052,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         if ( getMetaClass().isMethodBound(name, !includePrivate, true) ) return runtime.getTrue();
         // MRI (1.9) always passes down a symbol when calling respond_to_missing?
         if ( ! (mname instanceof RubySymbol) ) mname = runtime.newSymbol(name);
-        IRubyObject respond = Helpers.invoke(runtime.getCurrentContext(), this, "respond_to_missing?", mname, runtime.newBoolean(includePrivate));
+        ThreadContext context = runtime.getCurrentContext();
+        IRubyObject respond = context.sites.BO_respond_to_missing.call(context, this, this, mname, runtime.newBoolean(includePrivate));
         return runtime.newBoolean( respond.isTrue() );
     }
 
@@ -2704,8 +2704,16 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return context.runtime.getNil();
     }
 
+    /**
+     * Invert the match operator. Note that this version is currently
+     * replaced by a Ruby version in basicobject.rb for better caching characteristics.
+     *
+     * @param context
+     * @param arg
+     * @return
+     */
     public IRubyObject op_not_match(ThreadContext context, IRubyObject arg) {
-        return context.runtime.newBoolean(!callMethod(context, "=~", arg).isTrue());
+        return context.runtime.newBoolean(!context.sites.BO_match.call(context, this, this, arg).isTrue());
     }
 
 

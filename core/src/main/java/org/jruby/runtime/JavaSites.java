@@ -13,6 +13,7 @@ import static org.jruby.runtime.invokedynamic.MethodNames.OP_CMP;
  */
 public class JavaSites {
     public final CallSite BO_respond_to = new FunctionalCachingCallSite("respond_to?");
+    public final CallSite BO_respond_to_missing = new FunctionalCachingCallSite("respond_to_missing?");
     public final CallSite BO_initialize_dup = new FunctionalCachingCallSite("initialize_dup");
     public final CallSite BO_initialize_clone = new FunctionalCachingCallSite("initialize_clone");
     public final CallSite BO_to_s = new FunctionalCachingCallSite("to_s");
@@ -24,6 +25,9 @@ public class JavaSites {
     public final CheckedSites BO_to_str_checked = new CheckedSites("to_str");
     public final CheckedSites BO_equals_checked = new CheckedSites("==");
     public final CheckedSites BO_hash_checked = new CheckedSites("hash");
+    public final CallSite BO_inspect = new FunctionalCachingCallSite("inspect");
+    public final CallSite BO_match = new FunctionalCachingCallSite("=~");
+    public final CallSite BO_call = new FunctionalCachingCallSite("=~");
 
     public final CheckedSites K_to_f_checked = new CheckedSites("to_f");
     public final CheckedSites K_to_s_checked = new CheckedSites("to_s");
