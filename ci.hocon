@@ -3,8 +3,8 @@ jt: [ruby, tool/jt.rb]
 common-setup: [
   [mx, sclone, --kind, git, "https://github.com/jruby/jruby-build-pack.git", jruby-build-pack],
   [cp, bin/jruby.bash, bin/jruby],
-  [chmod, "+x", bin/jruby],
-  ${jt} [build, --offline]
+  [chmod, +x, bin/jruby],
+  ${jt} [build]
 ]
 
 common: {
