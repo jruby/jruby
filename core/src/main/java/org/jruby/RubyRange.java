@@ -399,7 +399,7 @@ public class RubyRange extends RubyObject {
         }
     }
 
-    private IRubyObject rangeLt(ThreadContext context, IRubyObject a, IRubyObject b) {
+    private static IRubyObject rangeLt(ThreadContext context, IRubyObject a, IRubyObject b) {
         IRubyObject result = invokedynamic(context, a, MethodNames.OP_CMP, b);
         if (result.isNil()) {
             return null;
@@ -407,7 +407,7 @@ public class RubyRange extends RubyObject {
         return RubyComparable.cmpint(context, result, a, b) < 0 ? context.runtime.getTrue() : null;
     }
 
-    private IRubyObject rangeLe(ThreadContext context, IRubyObject a, IRubyObject b) {
+    private static IRubyObject rangeLe(ThreadContext context, IRubyObject a, IRubyObject b) {
         IRubyObject result = invokedynamic(context, a, MethodNames.OP_CMP, b);
         if (result.isNil()) {
             return null;
@@ -461,8 +461,41 @@ public class RubyRange extends RubyObject {
         return RubyEnumerable.to_a(context, this);
     }
 
-    public IRubyObject each(ThreadContext context, final Block block) {
-        return each19(context, block);
+    @Deprecated
+    public IRubyObject each19(ThreadContext context, final Block block) {
+        return each(context, block);
+    }
+
+    @JRubyMethod(name = "each")
+    public IRubyObject each(final ThreadContext context, final Block block) {
+        if (!block.isGiven()) {
+            return enumeratorizeWithSize(context, this, "each", enumSizeFn(context));
+        }
+        final Ruby runtime = context.runtime;
+        if (begin instanceof RubyTime) {
+            throw runtime.newTypeError("can't iterate from Time");
+        } else if (begin instanceof RubyFixnum && end instanceof RubyFixnum) {
+            fixnumEach(context, runtime, block);
+        } else if (begin instanceof RubySymbol) {
+            begin.asString().uptoCommon(context, end.asString(), isExclusive, block, true);
+        } else {
+            IRubyObject tmp = begin.checkStringType();
+            if (!tmp.isNil()) {
+                ((RubyString) tmp).uptoCommon(context, end, isExclusive, block);
+            } else {
+                if (!begin.respondsTo("succ")) {
+                    throw runtime.newTypeError("can't iterate from "
+                            + begin.getMetaClass().getName());
+                }
+                rangeEach(context, new RangeCallBack() {
+                    @Override
+                    void call(ThreadContext context, IRubyObject arg) {
+                        block.yield(context, arg);
+                    }
+                });
+            }
+        }
+        return this;
     }
 
     private void fixnumEach(ThreadContext context, Ruby runtime, Block block) {
@@ -495,45 +528,66 @@ public class RubyRange extends RubyObject {
         }
     }
 
-    @JRubyMethod(name = "each")
-    public IRubyObject each19(final ThreadContext context, final Block block) {
+    @Deprecated
+    public IRubyObject step19(ThreadContext context, IRubyObject step, Block block) {
+        return step(context, step, block);
+    }
+
+    @Deprecated
+    public IRubyObject step19(ThreadContext context, Block block) {
+        return step(context, block);
+    }
+
+    @JRubyMethod(name = "step")
+    public IRubyObject step(final ThreadContext context, final Block block) {
+        return block.isGiven() ? stepCommon(context, RubyFixnum.one(context.runtime), block) : enumeratorizeWithSize(context, this, "step", stepSizeFn(context));
+    }
+
+    @JRubyMethod(name = "step")
+    public IRubyObject step(final ThreadContext context, IRubyObject step, final Block block) {
         Ruby runtime = context.runtime;
         if (!block.isGiven()) {
-            return enumeratorizeWithSize(context, this, "each", enumSizeFn(context));
+            return enumeratorizeWithSize(context, this, "step", new IRubyObject[]{step}, stepSizeFn(context));
         }
 
-        if (begin instanceof RubyTime) {
-            throw runtime.newTypeError("can't iterate from Time");
-        } else if (begin instanceof RubyFixnum && end instanceof RubyFixnum) {
-            fixnumEach(context, runtime, block);
-        } else if (begin instanceof RubySymbol) {
-            begin.asString().uptoCommon19(context, end.asString(), isExclusive, block, true);
+        if (!(step instanceof RubyNumeric)) {
+            step = step.convertToInteger("to_int");
+        }
+        IRubyObject zero = RubyFixnum.zero(runtime);
+        if (step.callMethod(context, "<", zero).isTrue()) {
+            throw runtime.newArgumentError("step can't be negative");
+        }
+        if (!step.callMethod(context, ">", zero).isTrue()) {
+            throw runtime.newArgumentError("step can't be 0");
+        }
+        return stepCommon(context, step, block);
+    }
+
+    private IRubyObject stepCommon(ThreadContext context, IRubyObject step, Block block) {
+        Ruby runtime = context.runtime;
+        if (begin instanceof RubyFixnum && end instanceof RubyFixnum && step instanceof RubyFixnum) {
+            fixnumStep(context, runtime, ((RubyFixnum) step).getLongValue(), block);
+        } else if (begin instanceof RubyFloat || end instanceof RubyFloat || step instanceof RubyFloat) {
+            RubyNumeric.floatStep(context, runtime, begin, end, step, isExclusive, block);
+        } else if (begin instanceof RubyNumeric
+                || !TypeConverter.checkIntegerType(runtime, begin, "to_int").isNil()
+                || !TypeConverter.checkIntegerType(runtime, end, "to_int").isNil()) {
+            numericStep(context, runtime, step, block);
         } else {
             IRubyObject tmp = begin.checkStringType();
             if (!tmp.isNil()) {
-                ((RubyString) tmp).uptoCommon19(context, end, isExclusive, block);
+                StepBlockCallBack callback = new StepBlockCallBack(block, RubyFixnum.one(runtime), step);
+                Block blockCallback = CallBlock.newCallClosure(this, runtime.getRange(), Signature.ONE_ARGUMENT, callback, context);
+                ((RubyString) tmp).uptoCommon(context, end, isExclusive, blockCallback);
             } else {
                 if (!begin.respondsTo("succ")) {
-                    throw runtime.newTypeError("can't iterate from "
-                            + begin.getMetaClass().getName());
+                    throw runtime.newTypeError("can't iterate from " + begin.getMetaClass().getName());
                 }
-                rangeEach(context, new RangeCallBack() {
-                    @Override
-                    void call(ThreadContext context, IRubyObject arg) {
-                        block.yield(context, arg);
-                    }
-                });
+                // range_each_func(range, step_i, b, e, args);
+                rangeEach(context, new StepBlockCallBack(block, RubyFixnum.one(runtime), step));
             }
         }
         return this;
-    }
-
-    public IRubyObject step(ThreadContext context, IRubyObject step, Block block) {
-        return step19(context, step, block);
-    }
-
-    public IRubyObject step(ThreadContext context, Block block) {
-        return step19(context, block);
     }
 
     private void fixnumStep(ThreadContext context, Ruby runtime, long step, Block block) {
@@ -559,59 +613,7 @@ public class RubyRange extends RubyObject {
         }
     }
 
-    @JRubyMethod(name = "step")
-    public IRubyObject step19(final ThreadContext context, final Block block) {
-        return block.isGiven() ? stepCommon19(context, RubyFixnum.one(context.runtime), block) : enumeratorizeWithSize(context, this, "step", stepSizeFn(context));
-    }
-
-    @JRubyMethod(name = "step")
-    public IRubyObject step19(final ThreadContext context, IRubyObject step, final Block block) {
-        Ruby runtime = context.runtime;
-        if (!block.isGiven()) {
-            return enumeratorizeWithSize(context, this, "step", new IRubyObject[]{step}, stepSizeFn(context));
-        }
-
-        if (!(step instanceof RubyNumeric)) {
-            step = step.convertToInteger("to_int");
-        }
-        IRubyObject zero = RubyFixnum.zero(runtime);
-        if (step.callMethod(context, "<", zero).isTrue()) {
-            throw runtime.newArgumentError("step can't be negative");
-        }
-        if (!step.callMethod(context, ">", zero).isTrue()) {
-            throw runtime.newArgumentError("step can't be 0");
-        }
-        return stepCommon19(context, step, block);
-    }
-
-    private IRubyObject stepCommon19(ThreadContext context, IRubyObject step, Block block) {
-        Ruby runtime = context.runtime;
-        if (begin instanceof RubyFixnum && end instanceof RubyFixnum && step instanceof RubyFixnum) {
-            fixnumStep(context, runtime, ((RubyFixnum) step).getLongValue(), block);
-        } else if (begin instanceof RubyFloat || end instanceof RubyFloat || step instanceof RubyFloat) {
-            RubyNumeric.floatStep19(context, runtime, begin, end, step, isExclusive, block);
-        } else if (begin instanceof RubyNumeric
-                || !TypeConverter.checkIntegerType(runtime, begin, "to_int").isNil()
-                || !TypeConverter.checkIntegerType(runtime, end, "to_int").isNil()) {
-            numericStep19(context, runtime, step, block);
-        } else {
-            IRubyObject tmp = begin.checkStringType();
-            if (!tmp.isNil()) {
-                StepBlockCallBack callback = new StepBlockCallBack(block, RubyFixnum.one(runtime), step);
-                Block blockCallback = CallBlock.newCallClosure(this, runtime.getRange(), Signature.ONE_ARGUMENT, callback, context);
-                ((RubyString) tmp).uptoCommon19(context, end, isExclusive, blockCallback);
-            } else {
-                if (!begin.respondsTo("succ")) {
-                    throw runtime.newTypeError("can't iterate from " + begin.getMetaClass().getName());
-                }
-                // range_each_func(range, step_i, b, e, args);
-                rangeEach(context, new StepBlockCallBack(block, RubyFixnum.one(runtime), step));
-            }
-        }
-        return this;
-    }
-
-    private void numericStep19(ThreadContext context, Ruby runtime, IRubyObject step, Block block) {
+    private void numericStep(ThreadContext context, Ruby runtime, IRubyObject step, Block block) {
         final String method = isExclusive ? "<" : "<=";
         IRubyObject beg = begin;
         long i = 0;
@@ -666,34 +668,32 @@ public class RubyRange extends RubyObject {
         };
     }
 
-    public RubyBoolean include_p(ThreadContext context, IRubyObject obj) {
-        return (RubyBoolean) include_p19(context, obj);
+    @Deprecated
+    public IRubyObject include_p19(ThreadContext context, IRubyObject obj) {
+        return include_p(context, obj);
     }
 
     // framed for invokeSuper
     @JRubyMethod(name = {"include?", "member?"}, frame = true)
-    public IRubyObject include_p19(ThreadContext context, IRubyObject obj) {
-        Ruby runtime = context.runtime;
-        if (begin instanceof RubyNumeric || end instanceof RubyNumeric
-                || !TypeConverter.convertToTypeWithCheck(begin, runtime.getInteger(), "to_int").isNil()
-                || !TypeConverter.convertToTypeWithCheck(end, runtime.getInteger(), "to_int").isNil()) {
+    public IRubyObject include_p(ThreadContext context, final IRubyObject obj) {
+        final Ruby runtime = context.runtime;
+        if ( begin instanceof RubyNumeric || end instanceof RubyNumeric
+            || ! TypeConverter.convertToTypeWithCheck(begin, runtime.getInteger(), "to_int").isNil()
+            || ! TypeConverter.convertToTypeWithCheck(end, runtime.getInteger(), "to_int").isNil() ) {
             return cover_p(context, obj);
-        } else if (begin instanceof RubyString && end instanceof RubyString
-                && ((RubyString) begin).getByteList().getRealSize() == 1
-                && ((RubyString) end).getByteList().getRealSize() == 1) {
-            if (obj.isNil()) {
-                return runtime.getFalse();
-            }
+        }
+        if ( begin instanceof RubyString && end instanceof RubyString
+            && ((RubyString) begin).getByteList().getRealSize() == 1
+            && ((RubyString) end).getByteList().getRealSize() == 1 ) {
+            if (obj.isNil()) return runtime.getFalse();
             if (obj instanceof RubyString) {
-                ByteList Vbytes = ((RubyString) obj).getByteList();
-                if (Vbytes.getRealSize() != 1) {
-                    return runtime.getFalse();
-                }
-                int v = Vbytes.getUnsafeBytes()[Vbytes.getBegin()] & 0xff;
-                ByteList Bbytes = ((RubyString) begin).getByteList();
-                int b = Bbytes.getUnsafeBytes()[Bbytes.getBegin()] & 0xff;
-                ByteList Ebytes = ((RubyString) end).getByteList();
-                int e = Ebytes.getUnsafeBytes()[Ebytes.getBegin()] & 0xff;
+                ByteList objBytes = ((RubyString) obj).getByteList();
+                if (objBytes.getRealSize() != 1) return runtime.getFalse();
+                int v = objBytes.getUnsafeBytes()[objBytes.getBegin()] & 0xff;
+                ByteList begBytes = ((RubyString) begin).getByteList();
+                int b = begBytes.getUnsafeBytes()[begBytes.getBegin()] & 0xff;
+                ByteList endBytes = ((RubyString) end).getByteList();
+                int e = endBytes.getUnsafeBytes()[endBytes.getBegin()] & 0xff;
                 if (Encoding.isAscii(v) && Encoding.isAscii(b) && Encoding.isAscii(e)) {
                     if ((b <= v && v < e) || (!isExclusive && v == e)) {
                         return runtime.getTrue();
@@ -706,12 +706,12 @@ public class RubyRange extends RubyObject {
     }
 
     @JRubyMethod(name = "===")
-    public IRubyObject eqq_p19(ThreadContext context, IRubyObject obj) {
+    public IRubyObject eqq_p(ThreadContext context, IRubyObject obj) {
         return callMethod(context, "include?", obj);
     }
 
     @JRubyMethod(name = "cover?")
-    public IRubyObject cover_p(ThreadContext context, IRubyObject obj) {
+    public RubyBoolean cover_p(ThreadContext context, IRubyObject obj) {
         if (rangeLe(context, begin, obj) == null) {
             return context.runtime.getFalse(); // obj < start...end
         }
