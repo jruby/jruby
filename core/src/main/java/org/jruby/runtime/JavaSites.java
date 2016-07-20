@@ -29,6 +29,13 @@ public class JavaSites {
     public final CallSite BO_match = new FunctionalCachingCallSite("=~");
     public final CallSite BO_call = new FunctionalCachingCallSite("call");
 
+    public final CachingCallSite O_dig_array = new FunctionalCachingCallSite("dig");
+    public final CachingCallSite O_dig_hash = new FunctionalCachingCallSite("dig");
+    public final CachingCallSite O_dig_struct = new FunctionalCachingCallSite("dig");
+    public final RespondToCallSite O_respond_to_dig = new RespondToCallSite("dig");
+    public final CachingCallSite O_dig_misc = new FunctionalCachingCallSite("dig");
+    public final CachingCallSite O_to_s = new FunctionalCachingCallSite("to_s");
+
     public final CheckedSites K_to_f_checked = new CheckedSites("to_f");
     public final CheckedSites K_to_s_checked = new CheckedSites("to_s");
     public final CheckedSites K_to_str_checked = new CheckedSites("to_str");
