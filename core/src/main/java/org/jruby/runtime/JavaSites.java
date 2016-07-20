@@ -36,10 +36,20 @@ public class JavaSites {
     public final CachingCallSite O_dig_misc = new FunctionalCachingCallSite("dig");
     public final CachingCallSite O_to_s = new FunctionalCachingCallSite("to_s");
 
+
     public final CheckedSites K_to_f_checked = new CheckedSites("to_f");
     public final CheckedSites K_to_s_checked = new CheckedSites("to_s");
     public final CheckedSites K_to_str_checked = new CheckedSites("to_str");
     public final CallSite K_to_str = new FunctionalCachingCallSite("to_str");
+    public final CallSite K_getc = new FunctionalCachingCallSite("getc");
+    public final CallSite K_gets = new FunctionalCachingCallSite("gets");
+    public final CallSite K_putc = new FunctionalCachingCallSite("putc");
+    public final CallSite K_puts = new FunctionalCachingCallSite("puts");
+    public final CallSite K_initialize_copy = new FunctionalCachingCallSite("initialize_copy");
+    public final CallSite K_convert_complex = new FunctionalCachingCallSite("convert");
+    public final CallSite K_convert_rational = new FunctionalCachingCallSite("convert");
+    public final CheckedSites K_to_hash_checked = new CheckedSites("to_hash");
+    public final CallSite K_write = new FunctionalCachingCallSite("write");
 
     public final CheckedSites ARY_to_ary_checked = new CheckedSites("to_ary");
 

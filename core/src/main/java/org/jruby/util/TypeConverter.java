@@ -360,6 +360,12 @@ public class TypeConverter {
         return TypeConverter.convertToTypeWithCheck(obj, runtime.getHash(), "to_hash");
     }
 
+    // rb_check_hash_type
+    public static IRubyObject checkHashType(ThreadContext context, JavaSites.CheckedSites sites, IRubyObject obj) {
+        if (obj instanceof RubyHash) return obj;
+        return TypeConverter.convertToTypeWithCheck(context, obj, context.runtime.getHash(), sites);
+    }
+
     // rb_check_string_type
     public static IRubyObject checkStringType(Ruby runtime, IRubyObject obj) {
         if (obj instanceof RubyString) return obj;
