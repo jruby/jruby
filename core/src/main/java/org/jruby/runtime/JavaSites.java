@@ -112,6 +112,7 @@ public class JavaSites {
         public final CheckedSites close_checked = new CheckedSites("close");
         public final CheckedSites to_path_checked1 = new CheckedSites("to_path");
         public final CheckedSites to_path_checked2 = new CheckedSites("to_path");
+        public final CallSite write = new FunctionalCachingCallSite("write");
     }
 
     public static class TypeConverterSites {

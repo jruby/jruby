@@ -2539,15 +2539,15 @@ public class RubyIO extends RubyObject implements IOEncodable {
     }
 
     protected IRubyObject write(ThreadContext context, ByteList byteList) {
-        return callMethod(context, "write", RubyString.newStringShared(context.runtime, byteList));
+        return sites(context).write.call(context, this, this, RubyString.newStringShared(context.runtime, byteList));
     }
 
     protected static IRubyObject write(ThreadContext context, IRubyObject maybeIO, ByteList byteList) {
-        return maybeIO.callMethod(context, "write", RubyString.newStringShared(context.runtime, byteList));
+        return sites(context).write.call(context, maybeIO, maybeIO, RubyString.newStringShared(context.runtime, byteList));
     }
 
     public static IRubyObject write(ThreadContext context, IRubyObject maybeIO, IRubyObject str) {
-        return maybeIO.callMethod(context, "write", str);
+        return sites(context).write.call(context, maybeIO, maybeIO, str);
     }
 
     @Override
