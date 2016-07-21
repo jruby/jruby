@@ -337,6 +337,7 @@ module ShellUtils
   def mx(dir, *args)
     command = ['mx', '-p', dir]
     command.push *['--java-home', ENV['JVMCI_JAVA_HOME']] if ENV['JVMCI_JAVA_HOME']
+    command.push '-v'
     command.push *args
     sh *command
   end
