@@ -78,6 +78,9 @@ class MSpecScript
   set :capi, [
     "spec/ruby/optional/capi",
 
+    # Global variables
+    "^spec/ruby/optional/capi/gc_spec.rb",
+
     # Fixnum boundaries do not match
     "^spec/ruby/optional/capi/bignum_spec.rb",
 

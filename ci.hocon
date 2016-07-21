@@ -3,7 +3,7 @@ jt: [ruby, tool/jt.rb]
 common-setup: [
   [mx, sclone, --kind, git, "https://github.com/jruby/jruby-build-pack.git", jruby-build-pack],
   [cp, bin/jruby.bash, bin/jruby],
-  [chmod, +x, bin/jruby],
+  [chmod, "+x", bin/jruby],
   ${jt} [build, --offline]
 ]
 
@@ -15,12 +15,12 @@ common: {
     ruby:       ">=2.1.0"
     "java/jdk": "==1.8.0/60"
   }
-  
+
   environment: {
     CI: "true",
     JAVA_OPTS: -Xmx2G
   }
-  
+
   setup: ${common-setup}
 
   timelimit: "00:30:00"
@@ -47,7 +47,7 @@ graal-core: {
     [cd, ../..],
     [mv, temp_mx, mx.jruby]
   ]
-  
+
   environment: {
     GRAALVM_BIN: graal-workspace/jvmci/jdk1.8.0_60/product/bin/java, // temporarily looks like GraalVM - will use GRAAL_HOME after next GraalVM release
     HOST_VM: server,
@@ -70,7 +70,7 @@ graal-enterprise: {
     [cd, ../..],
     [mv, temp_mx, mx.jruby]
   ]
-  
+
   environment: {
     GRAALVM_BIN: graal-workspace/jvmci/jdk1.8.0_60/product/bin/java, // temporarily looks like GraalVM - will use GRAAL_HOME after next GraalVM release
     HOST_VM: server,
@@ -80,7 +80,7 @@ graal-enterprise: {
 
 graal-enterprise-no-om: {
   setup: ${graal-enterprise.setup}
-  
+
   environment: {
     GRAALVM_BIN: graal-workspace/jvmci/jdk1.8.0_60/product/bin/java, // temporarily looks like GraalVM - will use GRAAL_HOME after next GraalVM release
     HOST_VM: server,
@@ -97,7 +97,7 @@ graal-vm: {
       platformspecific: true
     }
   }
-  
+
   environment: {
     GRAALVM_BIN: "$GRAALVM_DIR/bin/java"
     HOST_VM: server,
@@ -232,23 +232,32 @@ server-benchmarks: {
   packages: {
     "apache/ab": ">=2.3"
   }
-  
+
   run: ${setup-benchmarks} [
     [mx, benchmark, server]
   ] ${post-process-and-upload-results}
 }
 
-test-gems: {
-  environment: {
-    GEM_HOME: jruby-truffle-gem-test-pack/gems
-  }
-  
+jruby-truffle-gem-test-pack: {
   setup: ${common-setup} [
-    [mx, sclone, --kind, git, "https://github.com/jruby/jruby-truffle-gem-test-pack.git", jruby-truffle-gem-test-pack]
+    [mx, sclone, --kind, git, "https://github.com/jruby/jruby-truffle-gem-test-pack.git", ../jruby-truffle-gem-test-pack]
   ]
-  
+}
+
+test-gems: ${jruby-truffle-gem-test-pack} {
+  environment: {
+    GEM_HOME: ../jruby-truffle-gem-test-pack/gems
+  }
+
   run: [
     ${jt} [test, gems]
+  ]
+}
+
+test-ecosystem: ${jruby-truffle-gem-test-pack} {
+  run: [
+    [bin/jruby, bin/gem, install, ../jruby-truffle-gem-test-pack/gems/cache/bundler-1.12.5.gem],
+    ${jt} [test, ecosystem]
   ]
 }
 
@@ -256,7 +265,7 @@ test-cexts: {
   packages: {
     llvm: "==3.3"
   }
-  
+
   downloads: {
     JVMCI_JAVA_HOME: {
       name: labsjdk,
@@ -264,7 +273,7 @@ test-cexts: {
       platformspecific: true
     }
   }
-  
+
   setup: ${common-setup} [
     [mv, mx.jruby, temp_mx],
     [mkdir, sulong-workspace],
@@ -278,7 +287,7 @@ test-cexts: {
     [mx, sclone, --kind, git, "https://github.com/jruby/jruby-truffle-gem-test-pack.git", jruby-truffle-gem-test-pack],
     ${jt} [build, cexts]
   ]
-  
+
   environment: {
     GEM_HOME: jruby-truffle-gem-test-pack/gems
     GRAAL_HOME: sulong-workspace/sulong,
@@ -287,7 +296,7 @@ test-cexts: {
     HOST_VM: server,
     HOST_VM_CONFIG: graal-core
   }
-  
+
   run: [
     ${jt} [test, specs, --graal, ":capi"],
     ${jt} [test, cexts]
@@ -304,7 +313,7 @@ sulong-benchmarks: {
   packages: {
     llvm: "==3.3"
   }
-  
+
   downloads: {
     JVMCI_JAVA_HOME: {
       name: labsjdk,
@@ -312,7 +321,7 @@ sulong-benchmarks: {
       platformspecific: true
     }
   }
-  
+
   setup: ${common-setup} [
     [mv, mx.jruby, temp_mx],
     [mkdir, sulong-workspace],
@@ -327,7 +336,7 @@ sulong-benchmarks: {
   ] ${setup-benchmarks} [
     ${jt} [cextc, all-ruby-benchmarks/chunky_png/oily_png]
   ]
-  
+
   environment: {
     GRAAL_HOME: sulong-workspace/sulong,
     SULONG_HOME: sulong-workspace/sulong,
@@ -349,12 +358,13 @@ builds: [
   {name: ruby-test-integration} ${common} ${gate-caps} {run: [${jt} [test, integration]]},
   {name: ruby-test-cexts} ${common} ${gate-caps} ${test-cexts},
   {name: ruby-test-gems} ${common} ${gate-caps} ${test-gems},
+  {name: ruby-test-ecosystem} ${common} ${gate-caps} ${test-ecosystem},
   {name: ruby-test-tarball} ${common} ${gate-caps} {run: [${jt} [tarball]]},
-  
+
   {name: ruby-test-compiler-graal-core} ${common} ${graal-core} ${gate-caps} {run: [${jt} [test, compiler]]},
   {name: ruby-test-compiler-graal-enterprise} ${common} ${graal-enterprise} ${gate-caps} {run: [${jt} [test, compiler]]},
   {name: ruby-test-compiler-graal-vm} ${common} ${graal-vm} ${gate-caps} {run: [${jt} [test, compiler]]},
-  
+
   {name: ruby-metrics-noindy} ${common} ${no-graal} ${daily-bench-caps} ${jruby-noindy-metrics} ${metrics},
   {name: ruby-metrics-indy} ${common} ${no-graal} ${daily-bench-caps} ${jruby-indy-metrics} ${metrics},
   {name: ruby-metrics-truffle} ${common} ${no-graal} ${bench-caps} ${jruby-truffle} ${metrics},
@@ -362,7 +372,7 @@ builds: [
   {name: ruby-metrics-compiler-graal-enterprise} ${common} ${graal-enterprise} ${bench-caps} ${jruby-truffle} ${compiler-metrics},
   {name: ruby-metrics-compiler-graal-enterprise-no-om} ${common} ${graal-enterprise-no-om} ${bench-caps} ${jruby-truffle} ${compiler-metrics},
   {name: ruby-metrics-compiler-graal-vm} ${common} ${graal-vm} ${daily-bench-caps} ${jruby-truffle} ${compiler-metrics},
-  
+
   {name: ruby-benchmarks-classic-noindy} ${common} ${no-graal} ${daily-bench-caps} ${jruby-noindy-benchmark} ${classic-benchmarks},
   {name: ruby-benchmarks-classic-indy} ${common} ${no-graal} ${daily-bench-caps} ${jruby-indy-benchmark} ${classic-benchmarks},
   {name: ruby-benchmarks-classic-no-graal} ${common} ${no-graal} ${weekly-bench-caps} ${jruby-truffle} ${classic-benchmarks},
@@ -370,7 +380,7 @@ builds: [
   {name: ruby-benchmarks-classic-graal-enterprise} ${common} ${graal-enterprise} ${bench-caps} ${jruby-truffle} ${classic-benchmarks},
   {name: ruby-benchmarks-classic-graal-enterprise-no-om} ${common} ${graal-enterprise-no-om} ${bench-caps} ${jruby-truffle} ${classic-benchmarks},
   {name: ruby-benchmarks-classic-graal-vm} ${common} ${graal-vm} ${daily-bench-caps} ${jruby-truffle} ${classic-benchmarks},
-  
+
   {name: ruby-benchmarks-chunky-noindy} ${common} ${no-graal} ${daily-bench-caps} ${jruby-noindy-benchmark} ${chunky-benchmarks},
   {name: ruby-benchmarks-chunky-indy} ${common} ${no-graal} ${daily-bench-caps} ${jruby-indy-benchmark} ${chunky-benchmarks},
   {name: ruby-benchmarks-chunky-no-graal} ${common} ${no-graal} ${weekly-bench-caps} ${jruby-truffle} ${chunky-benchmarks},
@@ -379,7 +389,7 @@ builds: [
   {name: ruby-benchmarks-chunky-graal-enterprise-no-om} ${common} ${graal-enterprise-no-om} ${bench-caps} ${jruby-truffle} ${chunky-benchmarks},
   {name: ruby-benchmarks-chunky-graal-vm} ${common} ${graal-vm} ${daily-bench-caps} ${jruby-truffle} ${chunky-benchmarks},
   //{name: ruby-benchmarks-chunky-sulong} ${common} ${sulong-benchmarks} ${gate-caps} ${jruby-truffle} ${chunky-benchmarks-x},
-  
+
   {name: ruby-benchmarks-psd-noindy} ${common} ${no-graal} ${daily-bench-caps} ${jruby-noindy-benchmark} ${psd-benchmarks},
   {name: ruby-benchmarks-psd-indy} ${common} ${no-graal} ${daily-bench-caps} ${jruby-indy-benchmark} ${psd-benchmarks},
   {name: ruby-benchmarks-psd-no-graal} ${common} ${no-graal} ${weekly-bench-caps} ${jruby-truffle} ${psd-benchmarks},
@@ -387,7 +397,7 @@ builds: [
   {name: ruby-benchmarks-psd-graal-enterprise} ${common} ${graal-enterprise} ${bench-caps} ${jruby-truffle} ${psd-benchmarks},
   {name: ruby-benchmarks-psd-graal-enterprise-no-om} ${common} ${graal-enterprise-no-om} ${bench-caps} ${jruby-truffle} ${psd-benchmarks},
   {name: ruby-benchmarks-psd-graal-vm} ${common} ${graal-vm} ${daily-bench-caps} ${jruby-truffle} ${psd-benchmarks},
-  
+
   {name: ruby-benchmarks-synthetic-noindy} ${common} ${no-graal} ${daily-bench-caps} ${jruby-noindy-benchmark} ${synthetic-benchmarks},
   {name: ruby-benchmarks-synthetic-indy} ${common} ${no-graal} ${daily-bench-caps} ${jruby-indy-benchmark} ${synthetic-benchmarks},
   {name: ruby-benchmarks-synthetic-no-graal} ${common} ${no-graal} ${weekly-bench-caps} ${jruby-truffle} ${synthetic-benchmarks},
@@ -395,7 +405,7 @@ builds: [
   {name: ruby-benchmarks-synthetic-graal-enterprise} ${common} ${graal-enterprise} ${bench-caps} ${jruby-truffle} ${synthetic-benchmarks},
   {name: ruby-benchmarks-synthetic-graal-enterprise-no-om} ${common} ${graal-enterprise-no-om} ${bench-caps} ${jruby-truffle} ${synthetic-benchmarks},
   {name: ruby-benchmarks-synthetic-graal-vm} ${common} ${graal-vm} ${daily-bench-caps} ${jruby-truffle} ${synthetic-benchmarks},
-  
+
   {name: ruby-benchmarks-micro-noindy} ${common} ${no-graal} ${daily-bench-caps} ${jruby-noindy-benchmark} ${micro-benchmarks},
   {name: ruby-benchmarks-micro-indy} ${common} ${no-graal} ${daily-bench-caps} ${jruby-indy-benchmark} ${micro-benchmarks},
   {name: ruby-benchmarks-micro-no-graal} ${common} ${no-graal} ${weekly-bench-caps} ${jruby-truffle} ${micro-benchmarks},
@@ -403,7 +413,7 @@ builds: [
   {name: ruby-benchmarks-micro-graal-enterprise} ${common} ${graal-enterprise} ${bench-caps} ${jruby-truffle} ${micro-benchmarks},
   {name: ruby-benchmarks-micro-graal-enterprise-no-om} ${common} ${graal-enterprise-no-om} ${bench-caps} ${jruby-truffle} ${micro-benchmarks},
   {name: ruby-benchmarks-micro-graal-vm} ${common} ${graal-vm} ${daily-bench-caps} ${jruby-truffle} ${micro-benchmarks},
-  
+
   {name: ruby-benchmarks-server-noindy} ${common} ${no-graal} ${daily-bench-caps} ${jruby-noindy-benchmark} ${server-benchmarks},
   {name: ruby-benchmarks-server-indy} ${common} ${no-graal} ${daily-bench-caps} ${jruby-indy-benchmark} ${server-benchmarks},
   {name: ruby-benchmarks-server-no-graal} ${common} ${no-graal} ${weekly-bench-caps} ${jruby-truffle} ${server-benchmarks},

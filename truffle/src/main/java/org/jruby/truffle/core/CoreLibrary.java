@@ -404,6 +404,9 @@ public class CoreLibrary {
 
         for (Errno errno : Errno.values()) {
             if (errno.name().startsWith("E")) {
+                if(errno.equals(Errno.EWOULDBLOCK) && Errno.EWOULDBLOCK.intValue() == Errno.EAGAIN.intValue()){
+                    continue; // Don't define it as a class, define it as constant later.
+                }
                 errnoClasses.put(errno, defineClass(errnoModule, systemCallErrorClass, errno.name()));
             }
         }
@@ -892,6 +895,9 @@ public class CoreLibrary {
             Layouts.CLASS.getFields(errnoClass).setConstant(context, node, "Errno", errno.intValue());
         }
 
+        if (Errno.EWOULDBLOCK.intValue() == Errno.EAGAIN.intValue()) {
+            Layouts.MODULE.getFields(errnoModule).setConstant(context, node, Errno.EWOULDBLOCK.name(), errnoClasses.get(Errno.EAGAIN));
+        }
 
     }
 

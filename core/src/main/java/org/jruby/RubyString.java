@@ -3135,19 +3135,21 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return arg2;
     }
 
+    @Deprecated
+    public IRubyObject slice_bang19(ThreadContext context, IRubyObject arg0) {
+        return slice_bang(context, arg0);
+    }
+
+    @Deprecated
+    public IRubyObject slice_bang19(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
+        return slice_bang(context, arg0, arg1);
+    }
+
     /** rb_str_slice_bang
      *
      */
-    public IRubyObject slice_bang(ThreadContext context, IRubyObject arg0) {
-        return slice_bang19(context, arg0);
-    }
-
-    public IRubyObject slice_bang(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
-        return slice_bang19(context, arg0, arg1);
-    }
-
     @JRubyMethod(name = "slice!", reads = BACKREF, writes = BACKREF)
-    public IRubyObject slice_bang19(ThreadContext context, IRubyObject arg0) {
+    public IRubyObject slice_bang(ThreadContext context, IRubyObject arg0) {
         IRubyObject result = op_aref19(context, arg0);
         if (result.isNil()) {
             modifyCheck(); // keep cr ?
@@ -3158,7 +3160,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     }
 
     @JRubyMethod(name = "slice!", reads = BACKREF, writes = BACKREF)
-    public IRubyObject slice_bang19(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
+    public IRubyObject slice_bang(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
         IRubyObject result = op_aref19(context, arg0, arg1);
         if (result.isNil()) {
             modifyCheck(); // keep cr ?
@@ -3168,16 +3170,18 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return result;
     }
 
-    public IRubyObject succ(ThreadContext context) {
-        return succ19(context);
+    @Deprecated
+    public IRubyObject succ19(ThreadContext context) {
+        return succ(context);
     }
 
-    public IRubyObject succ_bang() {
-        return succ_bang19();
+    @Deprecated
+    public IRubyObject succ_bang19() {
+        return succ_bang();
     }
 
     @JRubyMethod(name = {"succ", "next"})
-    public IRubyObject succ19(ThreadContext context) {
+    public IRubyObject succ(ThreadContext context) {
         Ruby runtime = context.runtime;
         final RubyString str;
         if (value.getRealSize() > 0) {
@@ -3190,7 +3194,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     }
 
     @JRubyMethod(name = {"succ!", "next!"})
-    public IRubyObject succ_bang19() {
+    public IRubyObject succ_bang() {
         modifyCheck();
         if (value.getRealSize() > 0) {
             value = StringSupport.succCommon(getRuntime(), value);
@@ -3200,26 +3204,36 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return this;
     }
 
+    @Deprecated
+    public final IRubyObject upto19(ThreadContext context, IRubyObject end, Block block) {
+        return upto(context, end, block);
+    }
+
+    @Deprecated
+    public final IRubyObject upto19(ThreadContext context, IRubyObject end, IRubyObject excl, Block block) {
+        return upto(context, end, excl, block);
+    }
+
     /** rb_str_upto_m
      *
      */
     @JRubyMethod(name = "upto")
-    public IRubyObject upto19(ThreadContext context, IRubyObject end, Block block) {
+    public final IRubyObject upto(ThreadContext context, IRubyObject end, Block block) {
         Ruby runtime = context.runtime;
-        return block.isGiven() ? uptoCommon19(context, end, false, block) : enumeratorize(runtime, this, "upto", end);
+        return block.isGiven() ? uptoCommon(context, end, false, block) : enumeratorize(runtime, this, "upto", end);
     }
 
     @JRubyMethod(name = "upto")
-    public IRubyObject upto19(ThreadContext context, IRubyObject end, IRubyObject excl, Block block) {
-        return block.isGiven() ? uptoCommon19(context, end, excl.isTrue(), block) :
+    public final IRubyObject upto(ThreadContext context, IRubyObject end, IRubyObject excl, Block block) {
+        return block.isGiven() ? uptoCommon(context, end, excl.isTrue(), block) :
             enumeratorize(context.runtime, this, "upto", new IRubyObject[]{end, excl});
     }
 
-    final IRubyObject uptoCommon19(ThreadContext context, IRubyObject arg, boolean excl, Block block) {
-        return uptoCommon19(context, arg, excl, block, false);
+    final IRubyObject uptoCommon(ThreadContext context, IRubyObject arg, boolean excl, Block block) {
+        return uptoCommon(context, arg, excl, block, false);
     }
 
-    final IRubyObject uptoCommon19(ThreadContext context, IRubyObject arg, boolean excl, Block block, boolean asSymbol) {
+    final IRubyObject uptoCommon(ThreadContext context, IRubyObject arg, boolean excl, Block block, boolean asSymbol) {
         Ruby runtime = context.runtime;
         if (arg instanceof RubySymbol) throw runtime.newTypeError("can't convert Symbol into String");
 
@@ -3247,7 +3261,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             byte[]bytes = value.getUnsafeBytes();
 
             while (s < send) {
-                if (!ASCII.isDigit(bytes[s] & 0xff)) return uptoCommon19NoDigits(context, end, excl, block, asSymbol);
+                if (!ASCII.isDigit(bytes[s] & 0xff)) return uptoCommonNoDigits(context, end, excl, block, asSymbol);
                 s++;
             }
             s = end.value.getBegin();
@@ -3255,7 +3269,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             bytes = end.value.getUnsafeBytes();
 
             while (s < send) {
-                if (!ASCII.isDigit(bytes[s] & 0xff)) return uptoCommon19NoDigits(context, end, excl, block, asSymbol);
+                if (!ASCII.isDigit(bytes[s] & 0xff)) return uptoCommonNoDigits(context, end, excl, block, asSymbol);
                 s++;
             }
 
@@ -3265,8 +3279,8 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             RubyArray argsArr = RubyArray.newArray(runtime, RubyFixnum.newFixnum(runtime, value.length()), context.nil);
 
             if (b instanceof RubyFixnum && e instanceof RubyFixnum) {
-                int bi = RubyNumeric.fix2int(b);
-                int ei = RubyNumeric.fix2int(e);
+                long bi = RubyNumeric.fix2long(b);
+                long ei = RubyNumeric.fix2long(e);
 
                 while (bi <= ei) {
                     if (excl && bi == ei) break;
@@ -3292,10 +3306,10 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             return this;
         }
 
-        return uptoCommon19NoDigits(context, end, excl, block, asSymbol);
+        return uptoCommonNoDigits(context, end, excl, block, asSymbol);
     }
 
-    private IRubyObject uptoCommon19NoDigits(ThreadContext context, RubyString end, boolean excl, Block block, boolean asSymbol) {
+    private IRubyObject uptoCommonNoDigits(ThreadContext context, RubyString end, boolean excl, Block block, boolean asSymbol) {
         Ruby runtime = context.runtime;
         int n = op_cmp(end);
         if (n > 0 || (excl && n == 0)) return this;
@@ -3314,15 +3328,16 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return this;
     }
 
+    @Deprecated
+    public final RubyBoolean include_p19(ThreadContext context, IRubyObject obj) {
+        return include_p(context, obj);
+    }
+
     /** rb_str_include
      *
      */
-    public RubyBoolean include_p(ThreadContext context, IRubyObject obj) {
-        return include_p19(context, obj);
-    }
-
     @JRubyMethod(name = "include?")
-    public RubyBoolean include_p19(ThreadContext context, IRubyObject obj) {
+    public RubyBoolean include_p(ThreadContext context, IRubyObject obj) {
         Ruby runtime = context.runtime;
         RubyString coerced = obj.convertToString();
         return StringSupport.index(this, coerced, 0, this.checkEncoding(coerced)) == -1 ? runtime.getFalse() : runtime.getTrue();

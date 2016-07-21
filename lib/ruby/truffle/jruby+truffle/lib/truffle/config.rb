@@ -5,14 +5,6 @@ include Truffle::Runner::ConfigUtils
 include Truffle::Runner::OptionBlocks
 
 stubs = {
-    # TODO (pitr-ch 23-Jun-2016): remove? it's not used any more
-    minitest: dedent(<<-RUBY),
-      require 'minitest'
-      # mock load_plugins as it loads rubygems
-      def Minitest.load_plugins
-      end
-    RUBY
-
     activesupport_isolation: dedent(<<-RUBY),
       require 'active_support/testing/isolation'
 
@@ -132,8 +124,26 @@ stubs = {
                   run:   { require: [file_name] } }
 end
 
+additions = {
+    minitest_reporters: dedent(<<-RUBY)
+      require 'rbconfig'
+      # add minitest-reporters and its dependencies to $LOAD_PATH
+      path = File.expand_path('..', __FILE__)
+      %w[ansi-1.5.0 ruby-progressbar-1.8.0 minitest-reporters-1.1.9].each do |gem_dir|
+        $:.unshift "\#{path}/../\#{RUBY_ENGINE}/\#{RbConfig::CONFIG['ruby_version']}/gems/\#{gem_dir}/lib"
+      end
+      # activate
+      require "minitest/reporters"
+      Minitest::Reporters.use! Minitest::Reporters::SpecReporter.new
+    RUBY
+}.reduce({}) do |h, (k, v)|
+  file_name = format '%s.rb', k
+  h.update k => { setup: { file: { file_name => v } },
+                  run:   { require: [file_name] } }
+end
+
 replacements = {
-    bundler: dedent(<<-RUBY),
+    :bundler => dedent(<<-RUBY),
       module Bundler
         BundlerError = Class.new(Exception)
         def self.setup
@@ -141,11 +151,11 @@ replacements = {
       end
     RUBY
     :'bundler/gem_tasks'    => nil,
-    java:                   nil,
-    bcrypt_ext:             nil,
-    method_source:          nil,
+    :java                   => nil,
+    :bcrypt_ext             => nil,
+    :method_source          => nil,
     :'rails-html-sanitizer' => nil,
-    nokogiri:               nil
+    :nokogiri               => nil
 }.reduce({}) do |h, (k, v)|
   h.update k => { setup: { file: { "#{k}.rb" => v || %[puts "loaded '#{k}.rb' an empty replacement"] } } }
 end
@@ -166,6 +176,7 @@ end
 rails_common =
     deep_merge replacements.fetch(:bundler),
                stubs.fetch(:kernel_gem),
+               additions.fetch(:minitest_reporters),
                setup: { without: %w(db job) },
                run:   { environment: { 'N' => 1 },
                         require:     %w(rubygems date bigdecimal pathname openssl-stubs) }
@@ -182,7 +193,6 @@ Truffle::Runner.add_config :activemodel,
                                stubs.fetch(:activesupport_isolation),
                                stubs.fetch(:bcrypt))
 
-# TODO (pitr-ch 23-Jun-2016): investigate, fails intermittently
 Truffle::Runner.add_config :actionpack,
                            deep_merge(
                                rails_common,
@@ -227,8 +237,6 @@ class Truffle::Runner::CIEnvironment
   def rails_ci(exclude)
     repository_name 'rails'
 
-    git_clone 'https://github.com/rails/rails.git' unless File.exists? repository_dir
-    git_checkout git_tag('4.2.6')
 
     use_only_https_git_paths!
 
@@ -259,8 +267,6 @@ Truffle::Runner.add_ci_definition :activesupport do
 end
 
 Truffle::Runner.add_ci_definition :algebrick do
-  git_clone 'https://github.com/pitr-ch/algebrick.git' unless File.exists? repository_dir
-  git_checkout git_tag '0.7.3'
 
   has_to_succeed setup
 

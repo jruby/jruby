@@ -14,6 +14,7 @@ import org.jruby.ir.passes.CompilerPass;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
 import org.jruby.ir.representations.CFGLinearizer;
+import org.jruby.ir.representations.IGVCFGVisitor;
 
 /**
  * Created by enebo on 2/27/15.

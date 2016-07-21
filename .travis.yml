@@ -91,6 +91,7 @@ matrix:
     - env:
       - JAVA_OPTS="$JAVA_OPTS -Xmx512m"
       - HAS_REDIS=true
+      - COMMAND=test/truffle/ecosystem-travis-install.sh
       - JT='test ecosystem'
       jdk: oraclejdk8
     - env: JT='test tck'
@@ -103,10 +104,15 @@ matrix:
       - USE_BUILD_PACK=yes
       - JT='test fast'
       jdk: oraclejdk8
+    - env: JT='test mri'
+      jdk: oraclejdk8
   allow_failures:
     - env: PHASE='-Prake -Dtask=test:mri:fullint'
     - env: JT='test mri'
       jdk: oraclejdk8
+    - env: JT='test gems' JAVA_OPTS="$JAVA_OPTS -Xmx512m" HAS_REDIS=true
+    - env: PHASE='-Pj2ee'
+      jdk: oraclejdk7
     # NOTE: build seems to never start (waited for any to finish for more than a day) - probably a travis-ci bug
     #- env: PHASE='-Pmain'
     #  sudo: required

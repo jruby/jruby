@@ -83,7 +83,11 @@ TestGenerationPrefix::WithMountedEngine:
 - test_[ENGINE]_relative_path_redirect_uses_SCRIPT_NAME_from_request
 ActionController::LiveStreamTest:
 - test_exception_callback_when_committed
-- test_abort_with_full_buffer # hangs
+- test_abort_with_full_buffer # hangs sometimes
+- test_async_stream # intermittent on travis
+- test_stale_without_etag # hangs sometimes
 ApplicationIntegrationTest:
 - test_missing_route_helper_after_controller_access
 - test_missing_route_helper_before_controller_access
+HttpDigestAuthenticationTest:
+- authentication_request_with_invalid_realm # hangs sometimes

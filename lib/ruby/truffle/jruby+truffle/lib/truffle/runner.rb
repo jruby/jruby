@@ -678,24 +678,24 @@ module Truffle
 
     def subcommand_ci(rest)
       if (path = options[:ci][:batch])
-        batch = if path =~ /^in|stdin$/
-                  $stdin.read
-                else
-                  path = Pathname(path)
-                  if path.absolute?
-                    File.read(path)
-                  else
-                    File.read(Pathname(@called_from_dir).join(path))
-                  end
-                end
+        batch_content = if path =~ /^in|stdin$/
+                          $stdin.read
+                        else
+                          path = Pathname(path)
+                          if path.absolute?
+                            File.read(path)
+                          else
+                            File.read(Pathname(@called_from_dir).join(path))
+                          end
+                        end
+        cis_to_run     = YAML.load(batch_content)
 
-        results = batch.each_line.map do |line|
-          # commented lines result in true
-          next true if line =~ /^#/ || line.strip.empty?
+        results = cis_to_run.map do |ci|
+          # ci is just a name or a array of name and options
 
           options       = {}
           option_parser = build_option_parser OPTION_DEFINITIONS[:ci], options
-          rest          = option_parser.order line.split
+          rest          = option_parser.order Array(ci)
 
           gem_name = rest.first
           CIEnvironment.new(@options[:global][:dir], gem_name, self, rest[1..-1]).success?
@@ -900,7 +900,7 @@ module Truffle
       end
 
       def success?
-        !@result.nil?
+        @result
       end
 
       def use_only_https_git_paths!

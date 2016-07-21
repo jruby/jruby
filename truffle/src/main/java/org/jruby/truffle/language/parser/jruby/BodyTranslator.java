@@ -23,6 +23,7 @@ import org.jruby.ast.Node;
 import org.jruby.ast.SideEffectFree;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.common.IRubyWarnings;
+import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.InvalidSourcePosition;
 import org.jruby.parser.ParserSupport;
 import org.jruby.runtime.ArgumentDescriptor;
@@ -32,6 +33,7 @@ import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.PrimitiveNodeConstructor;
 import org.jruby.truffle.core.CoreLibrary;
+import org.jruby.truffle.core.IsNilNode;
 import org.jruby.truffle.core.IsRubiniusUndefinedNode;
 import org.jruby.truffle.core.RaiseIfFrozenNode;
 import org.jruby.truffle.core.array.ArrayAppendOneNodeGen;
@@ -2406,18 +2408,20 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitOpAsgnNode(org.jruby.ast.OpAsgnNode node) {
+        final ISourcePosition pos = node.getPosition();
+
         if (node.getOperatorName().equals("||")) {
             // Why does this ||= come through as a visitOpAsgnNode and not a visitOpAsgnOrNode?
 
             final String temp = environment.allocateLocalTemp("opassign");
-            final org.jruby.ast.Node writeReceiverToTemp = new org.jruby.ast.LocalAsgnNode(node.getPosition(), temp, 0, node.getReceiverNode());
-            final org.jruby.ast.Node readReceiverFromTemp = new org.jruby.ast.LocalVarNode(node.getPosition(), 0, temp);
+            final org.jruby.ast.Node writeReceiverToTemp = new org.jruby.ast.LocalAsgnNode(pos, temp, 0, node.getReceiverNode());
+            final org.jruby.ast.Node readReceiverFromTemp = new org.jruby.ast.LocalVarNode(pos, 0, temp);
 
-            final org.jruby.ast.Node readMethod = new org.jruby.ast.CallNode(node.getPosition(), readReceiverFromTemp, node.getVariableName(), null, null);
-            final org.jruby.ast.Node writeMethod = new org.jruby.ast.CallNode(node.getPosition(), readReceiverFromTemp, node.getVariableName() + "=", buildArrayNode(node.getPosition(),
+            final org.jruby.ast.Node readMethod = new org.jruby.ast.CallNode(pos, readReceiverFromTemp, node.getVariableName(), null, null);
+            final org.jruby.ast.Node writeMethod = new org.jruby.ast.CallNode(pos, readReceiverFromTemp, node.getVariableName() + "=", buildArrayNode(pos,
                     node.getValueNode()), null);
 
-            final SourceSection sourceSection = translate(node.getPosition());
+            final SourceSection sourceSection = translate(pos);
 
             RubyNode lhs = readMethod.accept(this);
             RubyNode rhs = writeMethod.accept(this);
@@ -2436,19 +2440,32 @@ public class BodyTranslator extends Translator {
          */
 
         final String temp = environment.allocateLocalTemp("opassign");
-        final org.jruby.ast.Node writeReceiverToTemp = new org.jruby.ast.LocalAsgnNode(node.getPosition(), temp, 0, node.getReceiverNode());
-        final org.jruby.ast.Node readReceiverFromTemp = new org.jruby.ast.LocalVarNode(node.getPosition(), 0, temp);
+        final org.jruby.ast.Node writeReceiverToTemp = new org.jruby.ast.LocalAsgnNode(pos, temp, 0, node.getReceiverNode());
 
-        final org.jruby.ast.Node readMethod = new org.jruby.ast.CallNode(node.getPosition(), readReceiverFromTemp, node.getVariableName(), null, null);
-        final org.jruby.ast.Node operation = new org.jruby.ast.CallNode(node.getPosition(), readMethod, node.getOperatorName(), buildArrayNode(node.getPosition(), node.getValueNode()), null);
-        final org.jruby.ast.Node writeMethod = new org.jruby.ast.CallNode(node.getPosition(), readReceiverFromTemp, node.getVariableName() + "=", buildArrayNode(node.getPosition(),
-                        operation), null);
+        final org.jruby.ast.Node readReceiverFromTemp = new org.jruby.ast.LocalVarNode(pos, 0, temp);
 
-        final org.jruby.ast.BlockNode block = new org.jruby.ast.BlockNode(node.getPosition());
+        final org.jruby.ast.Node readMethod = new org.jruby.ast.CallNode(pos, readReceiverFromTemp, node.getVariableName(), null, null);
+        final org.jruby.ast.Node operation = new org.jruby.ast.CallNode(pos, readMethod, node.getOperatorName(),
+                buildArrayNode(pos, node.getValueNode()), null);
+        final org.jruby.ast.Node writeMethod = new org.jruby.ast.CallNode(pos, readReceiverFromTemp, node.getVariableName() + "=",
+                buildArrayNode(pos, operation), null);
+
+        final org.jruby.ast.BlockNode block = new org.jruby.ast.BlockNode(pos);
         block.add(writeReceiverToTemp);
-        block.add(writeMethod);
 
-        final RubyNode ret = block.accept(this);
+        final RubyNode writeTemp = writeReceiverToTemp.accept(this);
+        RubyNode body = writeMethod.accept(this);
+
+        final SourceSection sourceSection = body.getSourceSection();
+
+        if (node.isLazy()) {
+            ReadLocalNode readLocal = environment.findLocalVarNode(temp, sourceSection);
+            body = new IfNode(context, sourceSection,
+                    new NotNode(new IsNilNode(context, sourceSection, readLocal)),
+                    body);
+        }
+        final RubyNode ret = sequence(context, sourceSection, Arrays.asList(writeTemp, body));
+
         return addNewlineIfNeeded(node, ret);
     }
 
@@ -2891,7 +2908,7 @@ public class BodyTranslator extends Translator {
 
         RubyNode condition = node.getConditionNode().accept(this);
         if (conditionInversed) {
-            condition = new NotNode(context, sourceSection, condition);
+            condition = new NotNode(condition);
         }
 
         RubyNode body;
