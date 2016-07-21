@@ -121,6 +121,11 @@ public class CoreExceptions {
     }
 
     @TruffleBoundary
+    public DynamicObject argumentErrorNoReceiver(Node currentNode) {
+        return argumentError("no receiver is available", currentNode);
+    }
+
+    @TruffleBoundary
     public DynamicObject argumentError(String message, Node currentNode, Throwable javaThrowable) {
         return argumentError(StringOperations.encodeRope(message, UTF8Encoding.INSTANCE), currentNode, javaThrowable);
     }
@@ -406,7 +411,7 @@ public class CoreExceptions {
 
     @TruffleBoundary
     public DynamicObject nameErrorConstantNotDefined(DynamicObject module, String name, Node currentNode) {
-        return nameError(String.format("constant %s::%s not defined", Layouts.MODULE.getFields(module).getName(), name), name, currentNode);
+        return nameError(String.format("constant %s::%s not defined", Layouts.MODULE.getFields(module).getName(), name), name, null, currentNode);
     }
 
     @TruffleBoundary
@@ -418,103 +423,103 @@ public class CoreExceptions {
         } else {
             message = String.format("uninitialized constant %s::%s", Layouts.MODULE.getFields(module).getName(), name);
         }
-        return nameError(message, name, currentNode);
+        return nameError(message, name, module, currentNode);
     }
 
     @TruffleBoundary
     public DynamicObject nameErrorUninitializedClassVariable(DynamicObject module, String name, Node currentNode) {
         assert RubyGuards.isRubyModule(module);
-        return nameError(String.format("uninitialized class variable %s in %s", name, Layouts.MODULE.getFields(module).getName()), name, currentNode);
+        return nameError(String.format("uninitialized class variable %s in %s", name, Layouts.MODULE.getFields(module).getName()), name, module, currentNode);
     }
 
     @TruffleBoundary
     public DynamicObject nameErrorPrivateConstant(DynamicObject module, String name, Node currentNode) {
-        return nameError(String.format("private constant %s::%s referenced", Layouts.MODULE.getFields(module).getName(), name), name, currentNode);
+        return nameError(String.format("private constant %s::%s referenced", Layouts.MODULE.getFields(module).getName(), name), name, module, currentNode);
     }
 
     @TruffleBoundary
-    public DynamicObject nameErrorInstanceNameNotAllowable(String name, Node currentNode) {
-        return nameError(String.format("`%s' is not allowable as an instance variable name", name), name, currentNode);
+    public DynamicObject nameErrorInstanceNameNotAllowable(String name, Object receiver, Node currentNode) {
+        return nameError(String.format("`%s' is not allowable as an instance variable name", name), name, receiver, currentNode);
     }
 
     @TruffleBoundary
-    public DynamicObject nameErrorInstanceVariableNotDefined(String name, Node currentNode) {
-        return nameError(String.format("instance variable %s not defined", name), name, currentNode);
+    public DynamicObject nameErrorInstanceVariableNotDefined(String name, Object receiver, Node currentNode) {
+        return nameError(String.format("instance variable %s not defined", name), name, receiver, currentNode);
     }
 
     @TruffleBoundary
     public DynamicObject nameErrorReadOnly(String name, Node currentNode) {
-        return nameError(String.format("%s is a read-only variable", name), name, currentNode);
+        return nameError(String.format("%s is a read-only variable", name), name, null, currentNode);
     }
 
     @TruffleBoundary
     public DynamicObject nameErrorUndefinedLocalVariableOrMethod(String name, Object receiver, Node currentNode) {
         // TODO: should not be just the class, but rather sth like name_err_mesg_to_str() in MRI error.c
         String className = Layouts.MODULE.getFields(context.getCoreLibrary().getLogicalClass(receiver)).getName();
-        return nameError(String.format("undefined local variable or method `%s' for %s", name, className), name, currentNode);
+        return nameError(String.format("undefined local variable or method `%s' for %s", name, className), name, receiver, currentNode);
     }
 
     @TruffleBoundary
     public DynamicObject nameErrorUndefinedMethod(String name, DynamicObject module, Node currentNode) {
         assert RubyGuards.isRubyModule(module);
-        return nameError(String.format("undefined method `%s' for %s", name, Layouts.MODULE.getFields(module).getName()), name, currentNode);
+        return nameError(String.format("undefined method `%s' for %s", name, Layouts.MODULE.getFields(module).getName()), name, module, currentNode);
     }
 
     @TruffleBoundary
     public DynamicObject nameErrorMethodNotDefinedIn(DynamicObject module, String name, Node currentNode) {
-        return nameError(String.format("method `%s' not defined in %s", name, Layouts.MODULE.getFields(module).getName()), name, currentNode);
+        return nameError(String.format("method `%s' not defined in %s", name, Layouts.MODULE.getFields(module).getName()), name, module, currentNode);
     }
 
     @TruffleBoundary
     public DynamicObject nameErrorPrivateMethod(String name, DynamicObject module, Node currentNode) {
-        return nameError(String.format("method `%s' for %s is private", name, Layouts.MODULE.getFields(module).getName()), name, currentNode);
+        return nameError(String.format("method `%s' for %s is private", name, Layouts.MODULE.getFields(module).getName()), name, module, currentNode);
     }
 
     @TruffleBoundary
     public DynamicObject nameErrorLocalVariableNotDefined(String name, DynamicObject binding, Node currentNode) {
         assert RubyGuards.isRubyBinding(binding);
-        return nameError(String.format("local variable `%s' not defined for %s", name, binding.toString()), name, currentNode);
+        return nameError(String.format("local variable `%s' not defined for %s", name, binding.toString()), name, binding, currentNode);
     }
 
     @TruffleBoundary
     public DynamicObject nameErrorClassVariableNotDefined(String name, DynamicObject module, Node currentNode) {
         assert RubyGuards.isRubyModule(module);
-        return nameError(String.format("class variable `%s' not defined for %s", name, Layouts.MODULE.getFields(module).getName()), name, currentNode);
+        return nameError(String.format("class variable `%s' not defined for %s", name, Layouts.MODULE.getFields(module).getName()), name, module, currentNode);
     }
 
     @TruffleBoundary
     public DynamicObject nameErrorImportNotFound(String name, Node currentNode) {
-        return nameError(String.format("import '%s' not found", name), name, currentNode);
+        return nameError(String.format("import '%s' not found", name), name, null, currentNode);
     }
 
     @TruffleBoundary
-    public DynamicObject nameError(String message, String name, Node currentNode) {
+    public DynamicObject nameError(String message, String name, Object receiver, Node currentNode) {
         final DynamicObject nameString = StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE));
-        DynamicObject nameError = ExceptionOperations.createRubyException(context.getCoreLibrary().getNameErrorClass(), nameString, context.getCallStack().getBacktrace(currentNode));
-        nameError.define("@name", context.getSymbolTable().getSymbol(name), 0);
+        DynamicObject nameError = ExceptionOperations.createNameError(context.getCoreLibrary().getNameErrorClass(), nameString, context.getCallStack().getBacktrace(currentNode), context.getSymbolTable().getSymbol(name), receiver);
         return nameError;
     }
 
     // NoMethodError
 
     @TruffleBoundary
-    public DynamicObject noMethodError(String message, String name, Node currentNode) {
+    public DynamicObject noMethodError(String message, String name, Object receiver, Node currentNode) {
         final DynamicObject messageString = StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE));
-        DynamicObject noMethodError = ExceptionOperations.createRubyException(context.getCoreLibrary().getNoMethodErrorClass(), messageString, context.getCallStack().getBacktrace(currentNode));
-        noMethodError.define("@name", context.getSymbolTable().getSymbol(name), 0);
+        DynamicObject noMethodError = ExceptionOperations.createNameError(context.getCoreLibrary().getNoMethodErrorClass(), messageString, context.getCallStack().getBacktrace(currentNode), context.getSymbolTable().getSymbol(name), receiver);
         return noMethodError;
     }
 
     @TruffleBoundary
     public DynamicObject noSuperMethodOutsideMethodError(Node currentNode) {
-        DynamicObject noMethodError = noMethodError("super called outside of method", "<unknown>", currentNode);
-        noMethodError.define("@name", context.getCoreLibrary().getNilObject(), 0); // FIXME: the name of the method is not known in this case currently
+        final DynamicObject messageString = StringOperations.createString(context, StringOperations.encodeRope("super called outside of method", UTF8Encoding.INSTANCE));
+        // TODO BJF Jul 21, 2016 Review to add receiver
+        DynamicObject noMethodError = ExceptionOperations.createNameError(context.getCoreLibrary().getNoMethodErrorClass(), messageString, context.getCallStack().getBacktrace(currentNode), context.getSymbolTable().getSymbol("<unknown>"), null);
+        // FIXME: the name of the method is not known in this case currently
         return noMethodError;
     }
 
     @TruffleBoundary
-    public DynamicObject noSuperMethodError(String name, Node currentNode) {
-        return noMethodError(String.format("super: no superclass method `%s'", name), name, currentNode);
+    public DynamicObject noSuperMethodError(String name, Object self, Node currentNode) {
+        return noMethodError(String.format("super: no superclass method `%s'", name), name, self, currentNode);
     }
 
     @TruffleBoundary
@@ -526,13 +531,13 @@ public class CoreExceptions {
         final boolean hasInspect = ModuleOperations.lookupMethod(logicalClass, "inspect", Visibility.PUBLIC) != null;
         final Object stringRepresentation = hasInspect ? context.send(receiver, "inspect", null) : context.getCoreLibrary().getNilObject();
 
-        return noMethodError(String.format("undefined method `%s' for %s:%s", name, stringRepresentation, moduleName), name, currentNode);
+        return noMethodError(String.format("undefined method `%s' for %s:%s", name, stringRepresentation, moduleName), name, receiver, currentNode);
     }
 
     @TruffleBoundary
     public DynamicObject privateMethodError(String name, Object self, Node currentNode) {
         String className = Layouts.MODULE.getFields(context.getCoreLibrary().getLogicalClass(self)).getName();
-        return noMethodError(String.format("private method `%s' called for %s", name, className), name, currentNode);
+        return noMethodError(String.format("private method `%s' called for %s", name, className), name, self, currentNode);
     }
 
     // LoadError

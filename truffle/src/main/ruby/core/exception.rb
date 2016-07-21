@@ -181,16 +181,14 @@ class LocalJumpError < StandardError
 end
 
 class NameError < StandardError
-  attr_reader :name
 
   def initialize(*args)
     super(args.shift)
-    @name = args.shift
+    Truffle.invoke_primitive :exception_set_name, self, args.shift
   end
 end
 
 class NoMethodError < NameError
-  attr_reader :name
   attr_reader :args
 
   def initialize(*arguments)
