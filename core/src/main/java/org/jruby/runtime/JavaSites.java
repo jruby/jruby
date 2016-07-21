@@ -71,6 +71,9 @@ public class JavaSites {
     }
     public static class ArraySites {
         public final CheckedSites to_ary_checked = new CheckedSites("to_ary");
+        public final RespondToCallSite respond_to_to_ary = new RespondToCallSite("to_ary");
+        public final CallSite to_ary = new FunctionalCachingCallSite("to_ary");
+        public final CallSite cmp = new FunctionalCachingCallSite("<=>");
     }
 
     public static class StringSites {

@@ -2852,10 +2852,10 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         IRubyObject ary2 = runtime.getNil();
         boolean isAnArray = (obj instanceof RubyArray) || obj.getMetaClass().getSuperClass() == runtime.getArray();
 
-        if (!isAnArray && !obj.respondsTo("to_ary")) {
+        if (!isAnArray && !sites(context).respond_to_to_ary.respondsTo(context, obj, obj, true)) {
             return ary2;
         } else if (!isAnArray) {
-            ary2 = obj.callMethod(context, "to_ary");
+            ary2 = sites(context).to_ary.call(context, obj, obj);
         } else {
             ary2 = obj.convertToArray();
         }
@@ -2872,8 +2872,10 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
             int len = realLength;
             if (len > ary2.realLength) len = ary2.realLength;
 
+            CallSite cmp = sites(context).cmp;
             for (int i = 0; i < len; i++) {
-                IRubyObject v = invokedynamic(context, elt(i), OP_CMP, ary2.elt(i));
+                IRubyObject elt = elt(i);
+                IRubyObject v = cmp.call(context, elt, elt, ary2.elt(i));
                 if (!(v instanceof RubyFixnum) || ((RubyFixnum) v).getLongValue() != 0) return v;
             }
         } finally {
