@@ -234,36 +234,37 @@ Truffle::Runner.add_config :psd,
 
 
 class Truffle::Runner::CIEnvironment
-  def rails_ci(exclude)
-    repository_name 'rails'
+  def rails_ci
+    declare_options debug:   ['--[no-]debug', 'Run tests with remote debugging enabled.',
+                              STORE_NEW_VALUE, false],
+                    exclude: ['--[no-]exclude', 'Exclude known failing tests',
+                              STORE_NEW_VALUE, true]
 
+    repository_name 'rails'
 
     use_only_https_git_paths!
 
     has_to_succeed setup
-    set_result run([%w[--require-pattern test/**/*_test.rb],
-                    (exclude ? %w[-r excluded-tests] : []),
-                    %w[-- -I test -e nil]].flatten(1))
+    set_result run([*%w[--require-pattern test/**/*_test.rb],
+                    *(%w[-r excluded-tests] if option(:exclude)),
+                    *(%w[--debug] if option(:debug)),
+                    *%w[-- -I test -e nil]])
   end
 end
 
 Truffle::Runner.add_ci_definition :actionpack do
-  declare_options exclude: ['--[no-]exclude',
-                            'Exclude known failing tests',
-                            STORE_NEW_VALUE,
-                            true]
   subdir 'actionpack'
-  rails_ci option(:exclude)
+  rails_ci
 end
 
 Truffle::Runner.add_ci_definition :activemodel do
   subdir 'activemodel'
-  rails_ci false
+  rails_ci
 end
 
 Truffle::Runner.add_ci_definition :activesupport do
   subdir 'activesupport'
-  rails_ci false
+  rails_ci
 end
 
 Truffle::Runner.add_ci_definition :algebrick do
