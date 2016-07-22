@@ -80,30 +80,40 @@ public abstract class ConditionVariableNodes {
         }
 
         @TruffleBoundary
-        private void doWait(final long durationInMillis, ReentrantLock lock, DynamicObject thread, Object condition) {
+        private void doWait(
+                final long durationInMillis,
+                ReentrantLock lock,
+                DynamicObject thread,
+                Object condition) {
+
             final long start = System.currentTimeMillis();
 
-            // First lock the condition so we only release the Mutex when we are in wait() and ready to be notified
-            synchronized (condition) {
-                MutexOperations.unlock(lock, thread, this);
-                try {
-                    getContext().getThreadManager().runUntilResult(this, new BlockingAction<Boolean>() {
-                        @Override
-                        public Boolean block() throws InterruptedException {
-                            long now = System.currentTimeMillis();
-                            long slept = now - start;
+            try {
+                // First lock the condition so we only release the Mutex when we are in wait()
+                // and ready to be notified
+                synchronized (condition) {
+                    MutexOperations.unlock(lock, thread, this);
+                    getContext().getThreadManager().
+                            runUntilResult(this, new BlockingAction<Boolean>() {
+                                @Override
+                                public Boolean block() throws InterruptedException {
+                                    long now = System.currentTimeMillis();
+                                    long slept = now - start;
 
-                            if (slept >= durationInMillis) {
-                                return SUCCESS;
-                            }
+                                    if (slept >= durationInMillis) {
+                                        return SUCCESS;
+                                    }
 
-                            condition.wait(durationInMillis - slept);
-                            return SUCCESS;
-                        }
-                    });
-                } finally {
-                    MutexOperations.lock(lock, thread, this);
+                                    condition.wait(durationInMillis - slept);
+                                    return SUCCESS;
+                                }
+                            });
                 }
+            } finally {
+                // Has to lock again *after* condition lock is released, otherwise it would be
+                // locked in reverse order condition > mutex opposed to normal locking order
+                // mutex > condition, which would lead to deadlock.
+                MutexOperations.lock(lock, thread, this);
             }
         }
     }
