@@ -459,8 +459,8 @@ module Commands
     puts '  USE_SYSTEM_CLANG                             Use the system clang rather than Sulong\'s when compiling C extensions'
     puts '  GRAAL_JS_JAR                                 The location of trufflejs.jar'
     puts '  SL_JAR                                       The location of truffle-sl.jar'
-    puts '  OPENSSL_HOME                                 The location of OpenSSL (the directory containing include etc)'
-    puts '  LIBXML_HOME                                  The location of libxml2 (the directory containing include etc)'
+    puts '  LIBXML_HOME, LIBXML_INCLUDE, LIBXML_LIB      The location of libxml2 (the directory containing include etc), and the direct include directory and library file'
+    puts '  OPENSSL_HOME, OPENSSL_INCLUDE, OPENSSL_LIB               ... OpenSSL ...'
   end
 
   def checkout(branch)
