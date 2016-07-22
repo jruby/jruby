@@ -302,7 +302,7 @@ test-cexts: {
 
   run: [
     ${jt} [test, specs, --graal, ":capi"],
-    ${jt} [test, cexts]
+    ${jt} [test, cexts, --no-libxml, --no-openssl]
   ]
 }
 
