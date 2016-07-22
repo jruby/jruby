@@ -295,6 +295,7 @@ test-cexts: {
     SULONG_HOME: sulong-workspace/sulong,
     SULONG_NO_LIBRARY: "true",
     USE_SYSTEM_CLANG: "true",
+    LIBXML_LIB: "$HOME/libxml2.so",
     HOST_VM: server,
     HOST_VM_CONFIG: graal-core
   }
