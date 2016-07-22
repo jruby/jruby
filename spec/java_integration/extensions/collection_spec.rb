@@ -154,6 +154,41 @@ describe "Collection Ruby extensions" do
     expect( set.to_a ).to eql ['0']
   end
 
+  it '#include?' do
+    set = java.util.LinkedHashSet.new [1, 2, 3]
+    expect( set.include? 1 ).to be true
+    expect( set.member? 2 ).to be true
+    expect( set.contains 3 ).to be true
+    set.add 4; set.add 5.to_java
+    expect( set.include? 4 ).to be true
+    expect( set.include? 5 ).to be true
+    expect( set.contains 4 ).to be true
+    expect( set.contains 5 ).to be true
+    expect( set.contains 4.to_java ).to be true
+    expect( set.contains 5.to_java ).to be true
+    expect( set.contains 5.to_java(:byte) ).to be false
+    expect( set.contains 5.to_java(:short) ).to be false
+    expect( set.contains 6 ).to be false
+    expect( set.include? 6 ).to be false
+    expect( set.include? 4.to_java(:byte) ).to be false
+    expect( set.include? 4.to_java(:short) ).to be false
+    expect( set.include? 2.to_java ).to be true
+    expect( set.include? 2.to_java(:short) ).to be false
+  end
+
+  it '#include? (specific)' do
+    pending 'due Java numeric conversion can not add to_java(:xxx) to collection'
+
+    set = java.util.LinkedHashSet.new [2]
+    set << 1.to_java(:short)
+    expect( set.include? 1.to_java ).to be true
+    expect( set.include? 1.to_java(:short) ).to be true
+
+    set.add 3.to_java(:short)
+    expect( set.contains 3.to_java ).to be true
+    expect( set.contains 3.to_java(:short) ).to be true
+  end
+
   it "should respect to_ary objects defined on iteration" do
     class Pair
       def initialize(a, b)
