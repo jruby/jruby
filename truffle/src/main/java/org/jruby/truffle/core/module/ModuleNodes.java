@@ -522,7 +522,7 @@ public abstract class ModuleNodes {
         @Specialization(guards = "isRubyString(filename)")
         public DynamicObject autoload(DynamicObject module, String name, DynamicObject filename) {
             if (!IdUtil.isValidConstantName19(name)) {
-                throw new RaiseException(coreExceptions().nameError(String.format("autoload must be constant name: %s", name), name, module, this));
+                throw new RaiseException(coreExceptions().nameError(String.format("autoload must be constant name: %s", name), module, name, this));
             }
 
             if (isEmptyNode.executeIsEmpty(filename)) {
@@ -964,7 +964,7 @@ public abstract class ModuleNodes {
         @Specialization
         public Object setConstant(DynamicObject module, String name, Object value) {
             if (!IdUtil.isValidConstantName19(name)) {
-                throw new RaiseException(coreExceptions().nameError(String.format("wrong constant name %s", name), name, module, this));
+                throw new RaiseException(coreExceptions().nameError(String.format("wrong constant name %s", name), module, name, this));
             }
 
             Layouts.MODULE.getFields(module).setConstant(getContext(), this, name, value);

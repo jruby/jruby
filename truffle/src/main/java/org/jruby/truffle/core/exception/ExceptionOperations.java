@@ -50,8 +50,8 @@ public abstract class ExceptionOperations {
         return Layouts.SYSTEM_CALL_ERROR.createSystemCallError(Layouts.CLASS.getInstanceFactory(rubyClass), message, backtrace, errno);
     }
 
-    public static DynamicObject createNameError(DynamicObject rubyClass, Object message, Backtrace backtrace, Object name, Object receiver) {
-        return Layouts.NAME_ERROR_LAYOUT.createNameError(Layouts.CLASS.getInstanceFactory(rubyClass), message, backtrace, name, receiver);
+    public static DynamicObject createNameError(DynamicObject rubyClass, Object message, Backtrace backtrace, Object receiver, Object name) {
+        return Layouts.NAME_ERROR.createNameError(Layouts.CLASS.getInstanceFactory(rubyClass), message, backtrace, receiver, name);
     }
 
 }

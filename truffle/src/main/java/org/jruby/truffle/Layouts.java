@@ -123,7 +123,7 @@ public abstract class Layouts {
     public static final MethodLayout METHOD = MethodLayoutImpl.INSTANCE;
     public static final ModuleLayout MODULE = ModuleLayoutImpl.INSTANCE;
     public static final MutexLayout MUTEX = MutexLayoutImpl.INSTANCE;
-    public static final NameErrorLayout NAME_ERROR_LAYOUT = NameErrorLayoutImpl.INSTANCE;
+    public static final NameErrorLayout NAME_ERROR = NameErrorLayoutImpl.INSTANCE;
     public static final ObjectRangeLayout OBJECT_RANGE = ObjectRangeLayoutImpl.INSTANCE;
     public static final PointerLayout POINTER = PointerLayoutImpl.INSTANCE;
     public static final ProcLayout PROC = ProcLayoutImpl.INSTANCE;

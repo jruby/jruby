@@ -27,7 +27,7 @@ public abstract class NameErrorNodes {
 
         @Specialization
         public Object name(DynamicObject self) {
-            return Layouts.NAME_ERROR_LAYOUT.getName(self);
+            return Layouts.NAME_ERROR.getName(self);
         }
 
     }
@@ -37,7 +37,7 @@ public abstract class NameErrorNodes {
 
         @Specialization
         public Object receiver(DynamicObject self) {
-            final Object receiver = Layouts.NAME_ERROR_LAYOUT.getReceiver(self);
+            final Object receiver = Layouts.NAME_ERROR.getReceiver(self);
 
             // TODO BJF July 21, 2016 Implement name error in message field
 
@@ -54,7 +54,7 @@ public abstract class NameErrorNodes {
 
         @Specialization
         public Object setName(DynamicObject error, Object name) {
-            Layouts.NAME_ERROR_LAYOUT.setName(error, name);
+            Layouts.NAME_ERROR.setName(error, name);
             return name;
         }
 

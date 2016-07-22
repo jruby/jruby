@@ -133,9 +133,23 @@ public abstract class ExceptionNodes {
             allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
         }
 
-        @Specialization
+        @Specialization(guards = "!isNameError(rubyClass)")
         public DynamicObject allocate(DynamicObject rubyClass) {
-            return allocateObjectNode.allocate(rubyClass, nil(), null, nil(), null);
+            return allocateObjectNode.allocate(rubyClass, nil(), null, nil());
+        }
+
+        @Specialization(guards = "isNameError(rubyClass)")
+        public DynamicObject allocateNameError(DynamicObject rubyClass) {
+            return allocateObjectNode.allocate(rubyClass, nil(), null, null, nil());
+        }
+
+        public static boolean isNameError(DynamicObject rubyClass){
+           for(DynamicObject ancestor : Layouts.MODULE.getFields(rubyClass).ancestors()){
+                  if(Layouts.MODULE.getFields(ancestor).getName().equals("NameError")){
+                      return true;
+                  }
+            }
+            return false;
         }
 
     }

@@ -395,7 +395,7 @@ public class CoreLibrary {
 
         // StandardError > NameError
         nameErrorClass = defineClass(standardErrorClass, "NameError");
-        Layouts.CLASS.setInstanceFactoryUnsafe(nameErrorClass, Layouts.NAME_ERROR_LAYOUT.createNameErrorShape(nameErrorClass, nameErrorClass));
+        Layouts.CLASS.setInstanceFactoryUnsafe(nameErrorClass, Layouts.NAME_ERROR.createNameErrorShape(nameErrorClass, nameErrorClass));
         noMethodErrorClass = defineClass(nameErrorClass, "NoMethodError");
 
         // StandardError > SystemCallError

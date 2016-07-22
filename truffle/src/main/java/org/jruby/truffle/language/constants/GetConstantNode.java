@@ -94,7 +94,7 @@ public abstract class GetConstantNode extends RubyNode {
             boolean isValidConstantName,
             DynamicObject symbolName) {
         if (!isValidConstantName) {
-            throw new RaiseException(coreExceptions().nameError(formatError(name), name, module, this));
+            throw new RaiseException(coreExceptions().nameError(formatError(name), module, name, this));
         }
 
         if (constMissingNode == null) {

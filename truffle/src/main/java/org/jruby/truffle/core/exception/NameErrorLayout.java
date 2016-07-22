@@ -26,8 +26,8 @@ public interface NameErrorLayout extends ExceptionLayout {
         DynamicObjectFactory factory,
         Object message,
         @Nullable Backtrace backtrace,
-        Object name,
-        @Nullable Object receiver);
+        @Nullable Object receiver,
+        Object name);
 
     Object getName(DynamicObject object);
     void setName(DynamicObject object, Object value);
