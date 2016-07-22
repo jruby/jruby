@@ -20,220 +20,195 @@ import mx_benchmark
 
 _suite = mx.suite('jruby')
 
-def jt(args, suite=None, nonZeroIsFatal=True, out=None, err=None, timeout=None, env=None, cwd=None):
-    rubyDir = _suite.dir
-    jt = os.path.join(rubyDir, 'tool', 'jt.rb')
-    return mx.run(['ruby', jt] + args, nonZeroIsFatal=nonZeroIsFatal, out=out, err=err, timeout=timeout, env=env, cwd=cwd)
+TimeStampFile = mx.TimeStampFile
+join = os.path.join
 
-FNULL = open(os.devnull, 'w')
+# Project and BuildTask classes
 
-class BackgroundServerTask:
-    def __init__(self, args):
-        self.args = args
-    
-    def __enter__(self):
-        preexec_fn, creationflags = mx._get_new_progress_group_args()
-        if mx._opts.verbose:
-            mx.log(' '.join(['(background)'] + map(pipes.quote, self.args)))
-        self.process = subprocess.Popen(self.args, preexec_fn=preexec_fn, creationflags=creationflags, stdout=FNULL, stderr=FNULL)
-        mx._addSubprocess(self.process, self.args)
-    
-    def __exit__(self, type, value, traceback):
-        self.process.kill()
-        self.process.wait()
-    
-    def is_running(self):
-        return self.process.poll() is None
+class ArchiveProject(mx.Project):
+    def __init__(self, suite, name, deps, workingSets, theLicense, **args):
+        mx.Project.__init__(self, suite, name, "", [], deps, workingSets, _suite.dir, theLicense)
+        assert 'prefix' in args
 
-class BackgroundJT(BackgroundServerTask):
-    def __init__(self, args):
-        rubyDir = _suite.dir
-        jt = os.path.join(rubyDir, 'tool', 'jt.rb')
-        BackgroundServerTask.__init__(self, ['ruby', jt] + args)
+    def getBuildTask(self, args):
+        return ArchiveBuildTask(self, args)
+
+    def isNativeProject(self):
+        return True # for archiving purposes
+
+    def getOutput(self):
+        return '.'
+
+    def getResults(self):
+        result = []
+        output_dir = join(_suite.dir, self.prefix)
+        for root, _, files in os.walk(output_dir):
+            for name in files:
+                path = join(root, name)
+                result.append(path)
+        return result
+
+class ArchiveBuildTask(mx.BuildTask):
+    def __init__(self, project, args):
+        mx.BuildTask.__init__(self, project, args, 1)
+
+    def __str__(self):
+        return 'Archive {}'.format(self.subject)
+
+    def needsBuild(self, newestInput):
+        return (False, 'Files are already on disk')
+
+    def newestOutput(self):
+        return TimeStampFile.newest(self.subject.getResults())
+
+    def build(self):
+        pass
+
+    def clean(self, forBuild=False):
+        pass
+
+class LicensesProject(ArchiveProject):
+    license_files = ['BSDL', 'COPYING', 'LICENSE.RUBY']
+
+    def getResults(self):
+        return [join(_suite.dir, f) for f in self.license_files]
+
+# Call to Maven to build everything
 
 class MavenProject(mx.Project):
     def __init__(self, suite, name, deps, workingSets, theLicense, **args):
         mx.Project.__init__(self, suite, name, "", [], deps, workingSets, _suite.dir, theLicense)
-        self.javaCompliance = "1.7"
-        self.build = hasattr(args, 'build')
-        self.prefix = args['prefix']
+        self.javaCompliance = "1.8"
 
-    def source_dirs(self):
-        return []
-
-    def output_dir(self, relative=False):
-        dir = os.path.join(_suite.dir, self.prefix)
-        return dir.rstrip('/')
-
-    def source_gen_dir(self):
-        return None
-
-    def getOutput(self, replaceVar=False):
-        return os.path.join(_suite.dir, "target")
-
-    def getResults(self, replaceVar=False):
-        return mx.Project.getResults(self, replaceVar=replaceVar)
+    def isArchiveProject(self):
+        return False
 
     def getBuildTask(self, args):
-        return MavenBuildTask(self, args, None, None)
+        return MavenBuildTask(self, args)
 
-    def isJavaProject(self):
-        return True
-
-    def archive_prefix(self):
-        return self.prefix
-
-    def annotation_processors(self):
-        return []
-
-    def find_classes_with_matching_source_line(self, pkgRoot, function, includeInnerClasses=False):
-        return dict()
-
-class MavenBuildTask(mx.BuildTask):
-    def __init__(self, project, args, vmbuild, vm):
-        mx.BuildTask.__init__(self, project, args, 1)
-        self.vm = vm
-        self.vmbuild = vmbuild
-
+class MavenBuildTask(ArchiveBuildTask):
     def __str__(self):
         return 'Building Maven for {}'.format(self.subject)
 
     def needsBuild(self, newestInput):
-        return (True, 'Let us re-build everytime')
+        sup = mx.BuildTask.needsBuild(self, newestInput)
+        if sup[0]:
+            return sup
+
+        jar = self.newestOutput()
+
+        if not jar.exists():
+            return (True, 'no jar yet')
+
+        jni_libs = join(_suite.dir, 'lib', 'jni')
+        if not os.path.exists(jni_libs) or not os.listdir(jni_libs):
+            return (True, jni_libs)
+
+        for directory in self.subject.watch:
+            for root, _, files in os.walk(directory):
+                for name in files:
+                    #if name.endswith('.java'):
+                    source = join(root, name)
+                    if TimeStampFile(source).isNewerThan(jar):
+                        return (True, source)
+
+        return (False, 'all files are up to date')
 
     def newestOutput(self):
-        return None
+        return TimeStampFile(self.subject.jar)
 
     def build(self):
-        if not self.subject.build:
-            mx.log("...skip build of {}".format(self.subject))
-            return
         mx.log('...perform build of {}'.format(self.subject))
 
-        rubyDir = _suite.dir
-        mavenDir = os.path.join(rubyDir, 'mxbuild', 'mvn')
+        cwd = _suite.dir
+        mavenDir = join(cwd, 'mxbuild', 'mvn')
 
         # HACK: since the maven executable plugin does not configure the
         # java executable that is used we unfortunately need to append it to the PATH
         javaHome = os.getenv('JAVA_HOME')
         if javaHome:
             os.environ["PATH"] = os.environ["JAVA_HOME"] + '/bin' + os.pathsep + os.environ["PATH"]
+            mx.logv('Setting PATH to {}'.format(os.environ["PATH"]))
 
-        mx.logv('Setting PATH to {}'.format(os.environ["PATH"]))
-        mx.logv('Calling java -version')
         mx.run(['java', '-version'])
 
         # Truffle version
-
         truffle = mx.suite('truffle')
         truffle_commit = truffle.vc.parent(truffle.dir)
         maven_version_arg = '-Dtruffle.version=' + truffle_commit
         maven_repo_arg = '-Dmaven.repo.local=' + mavenDir
-        
-        mx.run_mx(['maven-install', '--repo', mavenDir, '--only', 'TRUFFLE_API,TRUFFLE_DEBUG,TRUFFLE_DSL_PROCESSOR,TRUFFLE_TCK'], suite=truffle)
 
-        open(os.path.join(rubyDir, 'VERSION'), 'w').write('graal-vm\n')
+        for name in ['truffle-api', 'truffle-debug', 'truffle-dsl-processor', 'truffle-tck']:
+            jar_path = join(mavenDir, 'com', 'oracle', 'truffle', name, truffle_commit, "%s-%s.jar" % (name, truffle_commit))
+            if not os.path.exists(jar_path):
+                mx.run_mx(['maven-install', '--repo', mavenDir, '--only', 'TRUFFLE_API,TRUFFLE_DEBUG,TRUFFLE_DSL_PROCESSOR,TRUFFLE_TCK'], suite=truffle)
+
+        with open(join(cwd, 'VERSION'), 'w') as f:
+            f.write('graal-vm\n')
 
         # Build jruby-truffle
-        
         env = os.environ.copy()
         env['JRUBY_BUILD_MORE_QUIET'] = 'true'
 
-        mx.run_maven(['-q', '--version', maven_repo_arg], nonZeroIsFatal=False, cwd=rubyDir, env=env)
+        mx.run_maven(['--version', maven_repo_arg], nonZeroIsFatal=False, cwd=cwd, env=env)
 
         mx.log('Building without tests')
-
-        mx.run_maven(['-q', '-DskipTests', maven_version_arg, maven_repo_arg], cwd=rubyDir, env=env)
+        mx.run_maven(['-q', '-DskipTests', maven_version_arg, maven_repo_arg], cwd=cwd, env=env)
 
         mx.log('Building complete version')
+        mx.run_maven(['-q', '-Pcomplete', '-DskipTests', maven_version_arg, maven_repo_arg], cwd=cwd, env=env)
 
-        mx.run_maven(['-q', '-Pcomplete', '-DskipTests', maven_version_arg, maven_repo_arg], cwd=rubyDir, env=env)
-        mx.run(['zip', '-d', 'maven/jruby-complete/target/jruby-complete-graal-vm.jar', 'META-INF/jruby.home/lib/*'], cwd=rubyDir)
-        mx.run(['bin/jruby', 'bin/gem', 'install', 'bundler', '-v', '1.10.6'], cwd=rubyDir)
+        mx.logv('Removing extra files from jar')
+        mx.run(['zip', '-q', '-d', 'maven/jruby-complete/target/jruby-complete-graal-vm.jar', 'META-INF/jruby.home/lib/*'], cwd=cwd)
+
+        mx.run(['bin/jruby', 'bin/gem', 'install', 'bundler', '-v', '1.10.6'], cwd=cwd)
     
         mx.log('...finished build of {}'.format(self.subject))
 
     def clean(self, forBuild=False):
         if forBuild:
             return
+        mx.run_maven(['-q', 'clean'], nonZeroIsFatal=False, cwd=_suite.dir)
+        jar = self.newestOutput()
+        if jar.exists():
+            os.remove(jar.path)
+
+# Utilities
+
+def jt(args, suite=None, nonZeroIsFatal=True, out=None, err=None, timeout=None, env=None, cwd=None):
+    rubyDir = _suite.dir
+    jt = join(rubyDir, 'tool', 'jt.rb')
+    return mx.run(['ruby', jt] + args, nonZeroIsFatal=nonZeroIsFatal, out=out, err=err, timeout=timeout, env=env, cwd=cwd)
+
+class BackgroundServerTask:
+    FNULL = open(os.devnull, 'w')
+
+    def __init__(self, args):
+        self.args = args
+
+    def __enter__(self):
+        preexec_fn, creationflags = mx._get_new_progress_group_args()
+        if mx._opts.verbose:
+            mx.log(' '.join(['(background)'] + map(pipes.quote, self.args)))
+        self.process = subprocess.Popen(self.args, preexec_fn=preexec_fn, creationflags=creationflags, stdout=FNULL, stderr=FNULL)
+        mx._addSubprocess(self.process, self.args)
+
+    def __exit__(self, type, value, traceback):
+        self.process.kill()
+        self.process.wait()
+
+    def is_running(self):
+        return self.process.poll() is None
+
+class BackgroundJT(BackgroundServerTask):
+    def __init__(self, args):
         rubyDir = _suite.dir
-        mx.run_maven(['-q', 'clean'], nonZeroIsFatal=False, cwd=rubyDir)
+        jt = join(rubyDir, 'tool', 'jt.rb')
+        BackgroundServerTask.__init__(self, ['ruby', jt] + args)
 
-class LicensesProject(mx.Project):
-    def __init__(self, suite, name, deps, workingSets, theLicense, **args):
-        mx.Project.__init__(self, suite, name, "", [], deps, workingSets, _suite.dir, theLicense)
-        self.javaCompliance = "1.7"
-        self.build = hasattr(args, 'build')
-        self.prefix = args['prefix']
-
-    def source_dirs(self):
-        return []
-
-    def output_dir(self, relative=False):
-        dir = os.path.join(_suite.dir, self.prefix)
-        return dir.rstrip('/')
-
-    def source_gen_dir(self):
-        return None
-
-    def getOutput(self, replaceVar=False):
-        return os.path.join(_suite.dir, "target")
-
-    def getResults(self, replaceVar=False):
-        return mx.Project.getResults(self, replaceVar=replaceVar)
-
-    def getBuildTask(self, args):
-        return LicensesBuildTask(self, args, None, None)
-
-    def isJavaProject(self):
-        return True
-
-    def archive_prefix(self):
-        return self.prefix
-
-    def annotation_processors(self):
-        return []
-
-    def find_classes_with_matching_source_line(self, pkgRoot, function, includeInnerClasses=False):
-        return dict()
-
-class LicensesBuildTask(mx.BuildTask):
-    def __init__(self, project, args, vmbuild, vm):
-        mx.BuildTask.__init__(self, project, args, 1)
-        self.vm = vm
-        self.vmbuild = vmbuild
-
-    def __str__(self):
-        return 'Building licences for {}'.format(self.subject)
-
-    def needsBuild(self, newestInput):
-        return (True, 'Let us re-build everytime')
-
-    def newestOutput(self):
-        return None
-
-    def build(self):
-        if not self.subject.build:
-            mx.log("...skip build of {}".format(self.subject))
-            return
-        mx.log('...perform build of {}'.format(self.subject))
-
-        rubyDir = _suite.dir
-        licenses_dir = os.path.join(rubyDir, 'licenses')
-        if not os.path.exists(licenses_dir):
-            os.mkdir(licenses_dir)
-        for f in ['BSDL', 'COPYING', 'LICENSE.RUBY']:
-            shutil.copyfile(os.path.join(rubyDir, f), os.path.join(licenses_dir, f))
-        
-        mx.log('...finished build of {}'.format(self.subject))
-
-    def clean(self, forBuild=False):
-        if forBuild:
-            return
-        rubyDir = _suite.dir
-        licenses_dir = os.path.join(rubyDir, 'licenses')
-        if os.path.exists(licenses_dir):
-            shutil.rmtree(licenses_dir)
+##############
+# BENCHMARKS #
+##############
 
 class RubyBenchmarkSuite(mx_benchmark.BenchmarkSuite):
     def group(self):
@@ -602,10 +577,10 @@ class MicroBenchmarkSuite(AllBenchmarksBenchmarkSuite):
         jt(['where', 'repos', 'all-ruby-benchmarks'], out=out)
         all_ruby_benchmarks = out.data.strip()
         benchmarks = []
-        for root, dirs, files in os.walk(os.path.join(all_ruby_benchmarks, 'micro')):
+        for root, dirs, files in os.walk(join(all_ruby_benchmarks, 'micro')):
             for name in files:
                 if name.endswith('.rb'):
-                    benchmark_file = os.path.join(root, name)[len(all_ruby_benchmarks)+1:]
+                    benchmark_file = join(root, name)[len(all_ruby_benchmarks)+1:]
                     out = mx.OutputCapture()
                     jt(['benchmark', 'list', benchmark_file], out=out)
                     benchmarks.extend([benchmark_file + ':' + b.strip() for b in out.data.split('\n') if len(b.strip()) > 0])

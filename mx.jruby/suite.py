@@ -17,20 +17,31 @@ suite = {
                 "name": "truffle",
                 "version": "47033f56665100fd5f7cbafd96d6c3112329f517",
                 "urls": [
-                    {"url": "https://github.com/graalvm/truffle.git",
-                        "kind": "git"},
+                    {"url": "https://github.com/graalvm/truffle.git", "kind": "git"},
                     {"url": "https://curio.ssw.jku.at/nexus/content/repositories/snapshots", "kind": "binary"},
                 ]
             },
         ],
     },
+
+    "licenses": {
+        "EPL": {
+            "name": "EPL",
+            "url": "https://opensource.org/licenses/EPL-1.0",
+        },
+    },
+
     "libraries": {
+
+        # ------------- Libraries -------------
+
         "RUBY_COMPLETE": {
             "path": "maven/jruby-complete/target/jruby-complete-graal-vm.jar",
             "sha1": "NOCHECK",
             "optional":"true",
             "license": "EPL"
         },
+
         "RUBY_TRUFFLE": {
             "path": "lib/jruby-truffle.jar",
             "sha1": "NOCHECK",
@@ -38,46 +49,38 @@ suite = {
             "license": "EPL"
         },
     },
+
     "projects": {
 
         # ------------- Projects -------------
 
-        "jruby-ruby": {
-            "subDir": "lib/ruby",
+        "jruby-maven": {
             "class": "MavenProject",
-            "build": "true",
-            "prefix": "lib/ruby/",
+            "watch": ["core/src", "truffle/src"],
+            "jar": "maven/jruby-complete/target/jruby-complete-graal-vm.jar",
             "dependencies": [
                 "truffle:TRUFFLE_API",
                 "truffle:TRUFFLE_DEBUG",
             ],
         },
+
+        # Depends on jruby-maven extracting jni libs in lib/jni
         "jruby-lib-jni": {
-            "subDir": "lib/jni",
-            "class": "MavenProject",
-            "prefix": "lib/jni/",
-            "dependencies": [
-                "truffle:TRUFFLE_API",
-                "truffle:TRUFFLE_DEBUG",
-            ],
+            "class": "ArchiveProject",
+            "prefix": "lib/jni",
         },
+
+        "jruby-lib-ruby": {
+            "class": "ArchiveProject",
+            "prefix": "lib/ruby",
+        },
+
         "jruby-licences": {
-            "subDir": "licenses",
             "class": "LicensesProject",
-            "build": "true",
-            "prefix": "licenses",
-            "dependencies": [
-                "truffle:TRUFFLE_API",
-                "truffle:TRUFFLE_DEBUG",
-            ],
+            "prefix": ".",
         },
     },
-    "licenses": {
-        "EPL": {
-            "name": "EPL",
-            "url": "https://opensource.org/licenses/EPL-1.0",
-        },
-    },
+
     "distributions": {
 
         # ------------- Distributions -------------
@@ -85,8 +88,9 @@ suite = {
         "RUBY": {
             "mainClass": "org.jruby.Main",
             "dependencies": [
+                # "jruby-maven",
                 "RUBY_COMPLETE",
-                "RUBY_TRUFFLE"
+                "RUBY_TRUFFLE",
             ],
             "exclude": [
                 "truffle:JLINE",
@@ -99,22 +103,18 @@ suite = {
             "description": "JRuby+Truffle",
             "license": "EPL"
         },
+
+        # Set of extra files to extract to run Ruby
         "RUBY-ZIP": {
+            "native": True, # Not Java
+            "relpath": True,
             "dependencies": [
-                "jruby-ruby",
                 "jruby-lib-jni",
+                "jruby-lib-ruby",
                 "jruby-licences",
-            ],
-            "exclude": [
-                "truffle:JLINE",
-            ],
-            "distDependencies": [
-                "truffle:TRUFFLE_API",
-                "truffle:TRUFFLE_DEBUG",
             ],
             "description": "JRuby+Truffle Native Libs",
             "license": "EPL"
         },
-
     },
 }
