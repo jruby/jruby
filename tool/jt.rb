@@ -399,7 +399,7 @@ module Commands
     puts 'jt build [options]                             build'
     puts 'jt rebuild [options]                           clean and build'
     puts '    truffle                                    build only the Truffle part, assumes the rest is up-to-date'
-    puts '    cexts                                      build the cext backend (set SULONG_HOME and maybe USE_SYSTEM_CLANG)'
+    puts '    cexts [--no-openssl]                       build the cext backend (set SULONG_HOME and maybe USE_SYSTEM_CLANG)'
     puts '    --offline                                  use the build pack to build offline'
     puts 'jt clean                                       clean'
     puts 'jt irb                                         irb'
@@ -432,7 +432,7 @@ module Commands
     puts 'jt test gems                                   tests using gems'
     puts 'jt test ecosystem [--offline]                  tests using the wider ecosystem such as bundler, Rails, etc'
     puts '                                                   (when --offline it will not use rubygems.org)'
-    puts 'jt test cexts [--no-libxml, --no-openssl]      run C extension tests'
+    puts 'jt test cexts [--no-libxml --no-openssl]       run C extension tests'
     puts '                                                   (implies --graal, where Graal needs to include Sulong, set SULONG_HOME to a built checkout of Sulong, and set GEM_HOME)'
     puts 'jt test report :language                       build a report on language specs'
     puts '               :core                               (results go into test/target/mspec-html-report)'
@@ -490,14 +490,17 @@ module Commands
     when 'truffle'
       mvn env, *maven_options, '-pl', 'truffle', 'package'
     when 'cexts'
+      no_openssl = options.delete('--no-openssl')
+      
       cextc "#{JRUBY_DIR}/truffle/src/main/c/cext"
 
       openssl_home = ENV['OPENSSL_HOME'] || '/usr'
 
-      #cextc "#{JRUBY_DIR}/truffle/src/main/c/openssl",
-      #  "-I#{openssl_home}/include",
-      #  '-DRUBY_EXTCONF_H="extconf.h"',
-      #  '-Werror=implicit-function-declaration'
+      unless no_openssl
+        #cextc "#{JRUBY_DIR}/truffle/src/main/c/openssl",
+        #  '-DRUBY_EXTCONF_H="extconf.h"',
+        #  '-Werror=implicit-function-declaration'
+      end
     when nil
       mvn env, *maven_options, 'package'
     else
