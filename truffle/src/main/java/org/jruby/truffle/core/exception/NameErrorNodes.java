@@ -49,7 +49,7 @@ public abstract class NameErrorNodes {
 
     }
 
-    @Primitive(name = "exception_set_name")
+    @Primitive(name = "name_error_set_name")
     public abstract static class NameSetNode extends PrimitiveArrayArgumentsNode {
 
         @Specialization

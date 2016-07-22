@@ -184,7 +184,7 @@ class NameError < StandardError
 
   def initialize(*args)
     super(args.shift)
-    Truffle.invoke_primitive :exception_set_name, self, args.shift
+    Truffle.invoke_primitive :name_error_set_name, self, args.shift
   end
 end
 
