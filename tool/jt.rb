@@ -1211,7 +1211,7 @@ class JT
       send(args.shift)
     when "build"
       command = [args.shift]
-      while ['truffle', 'cexts', '--offline'].include?(args.first)
+      while ['truffle', 'cexts', '--offline', '--no-openssl'].include?(args.first)
         command << args.shift
       end
       send(*command)
