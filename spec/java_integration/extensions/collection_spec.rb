@@ -79,6 +79,9 @@ describe "Collection Ruby extensions" do
     coll = java.util.ArrayDeque.new(@data)
     expect(coll.to_a).to eq(@data.to_a)
 
+    coll = java.util.LinkedHashSet.new(@data)
+    expect(coll.entries).to eq(@data.to_a)
+
     coll = java.util.HashSet.new
     expect(coll.to_a).to eq([])
   end
