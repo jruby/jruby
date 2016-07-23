@@ -203,6 +203,21 @@ void rb_str_cat(VALUE string, const char *to_concat, long length) {
   truffle_invoke(RUBY_CEXT, "rb_str_cat", string, rb_str_new_cstr(to_concat), length);
 }
 
+VALUE rb_str_to_str(VALUE string) {
+  return (VALUE) truffle_invoke(string, "to_str");
+}
+
+VALUE rb_string_value(VALUE *value_pointer) {
+  VALUE value = *value_pointer;
+  
+  if (!RB_TYPE_P(value, T_STRING)) {
+    value = rb_str_to_str(value);
+    *value_pointer = value;
+  }
+  
+  return value;
+}
+
 VALUE rb_str_buf_new(long capacity) {
   return rb_str_new_cstr("");
 }
