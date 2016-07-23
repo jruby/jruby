@@ -23,7 +23,7 @@ common: {
 
   setup: ${common-setup}
 
-  timelimit: "00:30:00"
+  timelimit: "00:60:00"
 }
 
 no-graal: {
