@@ -6,6 +6,10 @@
  * Eclipse Public License version 1.0
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
+ *
+ * This file contains code that is based on the Ruby API headers,
+ * copyright (C) Yukihiro Matsumoto, licensed under the 2-clause BSD licence
+ * as described in the file BSDL included with JRuby+Truffle.
  */
 
 #include <truffle.h>
