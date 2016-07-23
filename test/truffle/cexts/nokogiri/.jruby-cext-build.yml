@@ -1,4 +1,4 @@
 src: $GEM_HOME/gems/nokogiri-1.6.8/ext/nokogiri/*.c
-cflags: -I$GEM_HOME/gems/nokogiri-1.6.8/ext/nokogiri -I$LIBXML_HOME/include/libxml2
-libs: $LIBXML_HOME/lib/libxml2.dylib
+cflags: -I$GEM_HOME/gems/nokogiri-1.6.8/ext/nokogiri -I$LIBXML_INCLUDE
+libs: $LIBXML_LIB
 out: lib/nokogiri/nokogiri.su

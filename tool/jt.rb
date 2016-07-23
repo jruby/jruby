@@ -31,13 +31,23 @@ JDEBUG_TEST = "-Dmaven.surefire.debug=-Xdebug -Xrunjdwp:transport=dt_socket,serv
 JEXCEPTION = "-Xtruffle.exceptions.print_java=true"
 METRICS_REPS = 10
 
+MAC = `uname -a`.include?('Darwin')
+
+if MAC
+  SO = 'dylib'
+else
+  SO = 'so'
+end
+
 LIBXML_HOME = ENV['LIBXML_HOME'] = ENV['LIBXML_HOME'] || '/usr'
 LIBXML_LIB_HOME = ENV['LIBXML_LIB_HOME'] = ENV['LIBXML_LIB_HOME'] || "#{LIBXML_HOME}/lib"
+LIBXML_INCLUDE = ENV['LIBXML_INCLUDE'] = ENV['LIBXML_INCLUDE'] || "#{LIBXML_HOME}/include/libxml2"
+LIBXML_LIB = ENV['LIBXML_LIB'] = ENV['LIBXML_LIB'] || "#{LIBXML_LIB_HOME}/libxml2.#{SO}"
 
 OPENSSL_HOME = ENV['OPENSSL_HOME'] = ENV['OPENSSL_HOME'] || '/usr'
 OPENSSL_LIB_HOME = ENV['OPENSSL_LIB_HOME'] = ENV['OPENSSL_LIB_HOME'] || "#{OPENSSL_HOME}/lib"
-
-MAC = `uname -a`.include?('Darwin')
+OPENSSL_INCLUDE = ENV['OPENSSL_INCLUDE'] = ENV['OPENSSL_INCLUDE'] || "#{OPENSSL_HOME}/include"
+OPENSSL_LIB = ENV['OPENSSL_LIB'] = ENV['OPENSSL_LIB'] || "#{OPENSSL_LIB_HOME}/libssl.#{SO}"
 
 # wait for sub-processes to handle the interrupt
 trap(:INT) {}
@@ -389,7 +399,7 @@ module Commands
     puts 'jt build [options]                             build'
     puts 'jt rebuild [options]                           clean and build'
     puts '    truffle                                    build only the Truffle part, assumes the rest is up-to-date'
-    puts '    cexts                                      build the cext backend (set SULONG_HOME and mabye USE_SYSTEM_CLANG)'
+    puts '    cexts [--no-openssl]                       build the cext backend (set SULONG_HOME and maybe USE_SYSTEM_CLANG)'
     puts '    --offline                                  use the build pack to build offline'
     puts 'jt clean                                       clean'
     puts 'jt irb                                         irb'
@@ -422,7 +432,7 @@ module Commands
     puts 'jt test gems                                   tests using gems'
     puts 'jt test ecosystem [--offline]                  tests using the wider ecosystem such as bundler, Rails, etc'
     puts '                                                   (when --offline it will not use rubygems.org)'
-    puts 'jt test cexts                                  run C extension tests'
+    puts 'jt test cexts [--no-libxml --no-openssl]       run C extension tests'
     puts '                                                   (implies --graal, where Graal needs to include Sulong, set SULONG_HOME to a built checkout of Sulong, and set GEM_HOME)'
     puts 'jt test report :language                       build a report on language specs'
     puts '               :core                               (results go into test/target/mspec-html-report)'
@@ -458,8 +468,8 @@ module Commands
     puts '  USE_SYSTEM_CLANG                             Use the system clang rather than Sulong\'s when compiling C extensions'
     puts '  GRAAL_JS_JAR                                 The location of trufflejs.jar'
     puts '  SL_JAR                                       The location of truffle-sl.jar'
-    puts '  OPENSSL_HOME                                 The location of OpenSSL (the directory containing include etc)'
-    puts '  LIBXML_HOME                                  The location of libxml2 (the directory containing include etc)'
+    puts '  LIBXML_HOME, LIBXML_INCLUDE, LIBXML_LIB      The location of libxml2 (the directory containing include etc), and the direct include directory and library file'
+    puts '  OPENSSL_HOME, OPENSSL_INCLUDE, OPENSSL_LIB               ... OpenSSL ...'
   end
 
   def checkout(branch)
@@ -480,14 +490,17 @@ module Commands
     when 'truffle'
       mvn env, *maven_options, '-pl', 'truffle', 'package'
     when 'cexts'
+      no_openssl = options.delete('--no-openssl')
+      
       cextc "#{JRUBY_DIR}/truffle/src/main/c/cext"
 
       openssl_home = ENV['OPENSSL_HOME'] || '/usr'
 
-      #cextc "#{JRUBY_DIR}/truffle/src/main/c/openssl",
-      #  "-I#{openssl_home}/include",
-      #  '-DRUBY_EXTCONF_H="extconf.h"',
-      #  '-Werror=implicit-function-declaration'
+      unless no_openssl
+        #cextc "#{JRUBY_DIR}/truffle/src/main/c/openssl",
+        #  '-DRUBY_EXTCONF_H="extconf.h"',
+        #  '-Werror=implicit-function-declaration'
+      end
     when nil
       mvn env, *maven_options, 'package'
     else
@@ -638,7 +651,9 @@ module Commands
     
     if MAC
       config_libs.each do |lib|
-        lib['.so'] = '.dylib'
+        if lib.include?('.so')
+          lib['.so'] = '.dylib'
+        end
       end
     end
 
@@ -726,37 +741,44 @@ module Commands
   private :test_compiler
 
   def test_cexts(*args)
-    if MAC
-      so = 'dylib'
-    else
-      so = 'so'
-    end
+    no_libxml = args.delete('--no-libxml')
+    no_openssl = args.delete('--no-openssl')
     
     # Test that we can compile and run some basic C code that uses libxml and openssl
 
-    clang '-S', '-emit-llvm', "-I#{LIBXML_HOME}/include/libxml2", 'test/truffle/cexts/xml/main.c', '-o', 'test/truffle/cexts/xml/main.ll'
-    out, _ = sulong_run("-l#{LIBXML_LIB_HOME}/libxml2.#{so}", 'test/truffle/cexts/xml/main.ll', {capture: true})
-    raise unless out == "7\n"
+    unless no_libxml
+      clang '-S', '-emit-llvm', "-I#{LIBXML_INCLUDE}", 'test/truffle/cexts/xml/main.c', '-o', 'test/truffle/cexts/xml/main.ll'
+      out, _ = sulong_run("-l#{LIBXML_LIB}", 'test/truffle/cexts/xml/main.ll', {capture: true})
+      raise unless out == "7\n"
+    end
 
-    clang '-S', '-emit-llvm', "-I#{OPENSSL_HOME}/include", 'test/truffle/cexts/xopenssl/main.c', '-o', 'test/truffle/cexts/xopenssl/main.ll'
-    out, _ = sulong_run("-l#{OPENSSL_LIB_HOME}/libssl.#{so}", 'test/truffle/cexts/xopenssl/main.ll', {capture: true})
-    raise unless out == "5d41402abc4b2a76b9719d911017c592\n"
+    unless no_openssl
+      clang '-S', '-emit-llvm', "-I#{OPENSSL_INCLUDE}", 'test/truffle/cexts/xopenssl/main.c', '-o', 'test/truffle/cexts/xopenssl/main.ll'
+      out, _ = sulong_run("-l#{OPENSSL_LIB}", 'test/truffle/cexts/xopenssl/main.ll', {capture: true})
+      raise unless out == "5d41402abc4b2a76b9719d911017c592\n"
+    end
 
     # Test that we can run those same test when they're build as a .su and we load the code and libraries from that
 
-    sulong_link '-o', 'test/truffle/cexts/xml/main.su', '-l', "#{LIBXML_LIB_HOME}/libxml2.#{so}", 'test/truffle/cexts/xml/main.ll'
-    out, _ = sulong_run('test/truffle/cexts/xml/main.su', {capture: true})
-    raise unless out == "7\n"
+    unless no_libxml
+      sulong_link '-o', 'test/truffle/cexts/xml/main.su', '-l', "#{LIBXML_LIB}", 'test/truffle/cexts/xml/main.ll'
+      out, _ = sulong_run('test/truffle/cexts/xml/main.su', {capture: true})
+      raise unless out == "7\n"
+    end
 
-    sulong_link '-o', 'test/truffle/cexts/xopenssl/main.su', '-l', "#{OPENSSL_LIB_HOME}/libssl.#{so}", 'test/truffle/cexts/xopenssl/main.ll'
-    out, _ = sulong_run('test/truffle/cexts/xopenssl/main.su', {capture: true})
-    raise unless out == "5d41402abc4b2a76b9719d911017c592\n"
+    unless no_openssl
+      sulong_link '-o', 'test/truffle/cexts/xopenssl/main.su', '-l', "#{OPENSSL_LIB}", 'test/truffle/cexts/xopenssl/main.ll'
+      out, _ = sulong_run('test/truffle/cexts/xopenssl/main.su', {capture: true})
+      raise unless out == "5d41402abc4b2a76b9719d911017c592\n"
+    end
 
     # Test that we can compile and run some very basic C extensions
 
     begin
       output_file = 'cext-output.txt'
       ['minimum', 'method', 'module', 'globals', 'xml', 'xopenssl'].each do |gem_name|
+        next if gem_name == 'xml' && no_libxml
+        next if gem_name == 'xopenssl' && no_openssl
         dir = "#{JRUBY_DIR}/test/truffle/cexts/#{gem_name}"
         cextc dir
         name = File.basename(dir)
@@ -778,6 +800,7 @@ module Commands
         ['nokogiri', [], ['nokogiri']]
     ].each do |gem_name, dependencies, libs|
       next if gem_name == 'nokogiri' # nokogiri totally excluded
+      next if gem_name == 'nokogiri' && no_libxml
       config = "#{JRUBY_DIR}/test/truffle/cexts/#{gem_name}"
       cextc config, '-Werror=implicit-function-declaration'
       next if gem_name == 'psd_native' # psd_native is excluded just for running
@@ -1188,7 +1211,7 @@ class JT
       send(args.shift)
     when "build"
       command = [args.shift]
-      while ['truffle', 'cexts', '--offline'].include?(args.first)
+      while ['truffle', 'cexts', '--offline', '--no-openssl'].include?(args.first)
         command << args.shift
       end
       send(*command)

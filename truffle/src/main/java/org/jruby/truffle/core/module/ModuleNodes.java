@@ -522,7 +522,7 @@ public abstract class ModuleNodes {
         @Specialization(guards = "isRubyString(filename)")
         public DynamicObject autoload(DynamicObject module, String name, DynamicObject filename) {
             if (!IdUtil.isValidConstantName19(name)) {
-                throw new RaiseException(coreExceptions().nameError(String.format("autoload must be constant name: %s", name), name, this));
+                throw new RaiseException(coreExceptions().nameError(String.format("autoload must be constant name: %s", name), module, name, this));
             }
 
             if (isEmptyNode.executeIsEmpty(filename)) {
@@ -686,7 +686,7 @@ public abstract class ModuleNodes {
         @TruffleBoundary(throwsControlFlowException = true)
         @Specialization
         public boolean isClassVariableDefinedString(DynamicObject module, String name) {
-            SymbolTable.checkClassVariableName(getContext(), name, this);
+            SymbolTable.checkClassVariableName(getContext(), name, module, this);
 
             final Object value = ModuleOperations.lookupClassVariable(module, name);
 
@@ -710,7 +710,7 @@ public abstract class ModuleNodes {
         @Specialization
         @TruffleBoundary(throwsControlFlowException = true)
         public Object getClassVariable(DynamicObject module, String name) {
-            SymbolTable.checkClassVariableName(getContext(), name, this);
+            SymbolTable.checkClassVariableName(getContext(), name, module, this);
 
             final Object value = ModuleOperations.lookupClassVariable(module, name);
 
@@ -739,7 +739,7 @@ public abstract class ModuleNodes {
         @Specialization
         @TruffleBoundary(throwsControlFlowException = true)
         public Object setClassVariable(DynamicObject module, String name, Object value) {
-            SymbolTable.checkClassVariableName(getContext(), name, this);
+            SymbolTable.checkClassVariableName(getContext(), name, module, this);
 
             ModuleOperations.setClassVariable(getContext(), module, name, value, this);
 
@@ -964,7 +964,7 @@ public abstract class ModuleNodes {
         @Specialization
         public Object setConstant(DynamicObject module, String name, Object value) {
             if (!IdUtil.isValidConstantName19(name)) {
-                throw new RaiseException(coreExceptions().nameError(String.format("wrong constant name %s", name), name, this));
+                throw new RaiseException(coreExceptions().nameError(String.format("wrong constant name %s", name), module, name, this));
             }
 
             Layouts.MODULE.getFields(module).setConstant(getContext(), this, name, value);
@@ -1655,7 +1655,7 @@ public abstract class ModuleNodes {
         @TruffleBoundary(throwsControlFlowException = true)
         @Specialization
         public Object removeClassVariableString(DynamicObject module, String name) {
-            SymbolTable.checkClassVariableName(getContext(), name, this);
+            SymbolTable.checkClassVariableName(getContext(), name, module, this);
             return ModuleOperations.removeClassVariable(Layouts.MODULE.getFields(module), getContext(), this, name);
         }
 

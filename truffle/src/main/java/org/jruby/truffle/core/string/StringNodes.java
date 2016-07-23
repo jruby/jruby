@@ -2343,28 +2343,6 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(names = "upcase", taintFrom = 0)
-    public abstract static class UpcaseNode extends CoreMethodArrayArgumentsNode {
-
-        @Child CallDispatchHeadNode dupNode;
-        @Child CallDispatchHeadNode upcaseBangNode;
-
-        public UpcaseNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            dupNode = DispatchHeadNodeFactory.createMethodCall(context);
-            upcaseBangNode = DispatchHeadNodeFactory.createMethodCall(context);
-        }
-
-        @Specialization
-        public Object upcase(VirtualFrame frame, DynamicObject string) {
-            final Object duped = dupNode.call(frame, string, "dup");
-            upcaseBangNode.call(frame, duped, "upcase!");
-
-            return duped;
-        }
-
-    }
-
     @CoreMethod(names = "upcase!", raiseIfFrozenSelf = true)
     @ImportStatic(StringGuards.class)
     public abstract static class UpcaseBangNode extends CoreMethodArrayArgumentsNode {

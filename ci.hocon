@@ -298,13 +298,14 @@ test-cexts: {
     [cd, ../..],
     [mv, temp_mx, mx.jruby]
     [mx, sclone, --kind, git, "https://github.com/jruby/jruby-truffle-gem-test-pack.git", jruby-truffle-gem-test-pack],
-    ${jt} [build, cexts]
+    ${jt} [build, cexts, --no-openssl]
   ]
 
   environment: {
     GEM_HOME: jruby-truffle-gem-test-pack/gems
     GRAAL_HOME: sulong-workspace/sulong,
     SULONG_HOME: sulong-workspace/sulong,
+    SULONG_NO_LIBRARY: "true",
     USE_SYSTEM_CLANG: "true",
     HOST_VM: server,
     HOST_VM_CONFIG: graal-core
@@ -312,7 +313,7 @@ test-cexts: {
 
   run: [
     ${jt} [test, specs, --graal, ":capi"],
-    ${jt} [test, cexts]
+    ${jt} [test, cexts, --no-libxml, --no-openssl]
   ]
 }
 

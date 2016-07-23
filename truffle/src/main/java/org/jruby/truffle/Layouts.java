@@ -26,6 +26,8 @@ import org.jruby.truffle.core.encoding.EncodingLayout;
 import org.jruby.truffle.core.encoding.EncodingLayoutImpl;
 import org.jruby.truffle.core.exception.ExceptionLayout;
 import org.jruby.truffle.core.exception.ExceptionLayoutImpl;
+import org.jruby.truffle.core.exception.NameErrorLayout;
+import org.jruby.truffle.core.exception.NameErrorLayoutImpl;
 import org.jruby.truffle.core.exception.SystemCallErrorLayout;
 import org.jruby.truffle.core.exception.SystemCallErrorLayoutImpl;
 import org.jruby.truffle.core.fiber.FiberLayout;
@@ -121,6 +123,7 @@ public abstract class Layouts {
     public static final MethodLayout METHOD = MethodLayoutImpl.INSTANCE;
     public static final ModuleLayout MODULE = ModuleLayoutImpl.INSTANCE;
     public static final MutexLayout MUTEX = MutexLayoutImpl.INSTANCE;
+    public static final NameErrorLayout NAME_ERROR = NameErrorLayoutImpl.INSTANCE;
     public static final ObjectRangeLayout OBJECT_RANGE = ObjectRangeLayoutImpl.INSTANCE;
     public static final PointerLayout POINTER = PointerLayoutImpl.INSTANCE;
     public static final ProcLayout PROC = ProcLayoutImpl.INSTANCE;
