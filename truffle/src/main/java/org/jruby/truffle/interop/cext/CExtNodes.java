@@ -11,6 +11,7 @@ package org.jruby.truffle.interop.cext;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.CreateCast;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
@@ -19,13 +20,16 @@ import com.oracle.truffle.api.frame.Frame;
 import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.FrameInstance.FrameAccess;
 import com.oracle.truffle.api.frame.FrameInstanceVisitor;
+import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.profiles.ConditionProfile;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.builtins.CoreMethodNode;
 import org.jruby.truffle.core.cast.NameToJavaStringNodeGen;
+import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyConstant;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
@@ -185,6 +189,23 @@ public class CExtNodes {
         @Specialization(guards = "isRubyString(string)")
         public DynamicObject toRubyString(DynamicObject string) {
             return string;
+        }
+
+    }
+
+    @CoreMethod(names = "rb_block_given_p", isModuleFunction = true, needsCallerFrame = true)
+    public abstract static class BlockGivenNode extends CoreMethodArrayArgumentsNode {
+
+        @Specialization
+        public boolean blockGiven(MaterializedFrame callerFrame,
+                                  @Cached("createBinaryProfile()") ConditionProfile blockProfile) {
+            return blockProfile.profile(RubyArguments.getBlock(callerFrame) != null);
+        }
+
+        @TruffleBoundary
+        @Specialization
+        public boolean blockGiven(NotProvided noCallerFrame) {
+            return RubyArguments.getBlock(Truffle.getRuntime().getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_ONLY, false)) != null;
         }
 
     }
