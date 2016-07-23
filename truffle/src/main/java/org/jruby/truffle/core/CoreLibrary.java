@@ -45,6 +45,7 @@ import org.jruby.truffle.core.encoding.EncodingConverterNodesFactory;
 import org.jruby.truffle.core.encoding.EncodingNodesFactory;
 import org.jruby.truffle.core.exception.ExceptionNodesFactory;
 import org.jruby.truffle.core.exception.NameErrorNodesFactory;
+import org.jruby.truffle.core.exception.NoMethodErrorNodesFactory;
 import org.jruby.truffle.core.exception.SystemCallErrorNodesFactory;
 import org.jruby.truffle.core.fiber.FiberNodesFactory;
 import org.jruby.truffle.core.hash.HashNodesFactory;
@@ -397,6 +398,7 @@ public class CoreLibrary {
         nameErrorClass = defineClass(standardErrorClass, "NameError");
         Layouts.CLASS.setInstanceFactoryUnsafe(nameErrorClass, Layouts.NAME_ERROR.createNameErrorShape(nameErrorClass, nameErrorClass));
         noMethodErrorClass = defineClass(nameErrorClass, "NoMethodError");
+        Layouts.CLASS.setInstanceFactoryUnsafe(noMethodErrorClass, Layouts.NO_METHOD_ERROR.createNoMethodErrorShape(noMethodErrorClass, noMethodErrorClass));
 
         // StandardError > SystemCallError
         systemCallErrorClass = defineClass(standardErrorClass, "SystemCallError");
@@ -679,6 +681,7 @@ public class CoreLibrary {
             primitiveManager.addPrimitiveNodes(IOBufferPrimitiveNodesFactory.getFactories());
             primitiveManager.addPrimitiveNodes(ExceptionNodesFactory.getFactories());
             primitiveManager.addPrimitiveNodes(NameErrorNodesFactory.getFactories());
+            primitiveManager.addPrimitiveNodes(NoMethodErrorNodesFactory.getFactories());
             primitiveManager.addPrimitiveNodes(SystemCallErrorNodesFactory.getFactories());
             return null;
         }, () -> {
@@ -709,6 +712,7 @@ public class CoreLibrary {
             coreMethodNodeManager.addCoreMethodNodes(ConditionVariableNodesFactory.getFactories());
             coreMethodNodeManager.addCoreMethodNodes(ExceptionNodesFactory.getFactories());
             coreMethodNodeManager.addCoreMethodNodes(NameErrorNodesFactory.getFactories());
+            coreMethodNodeManager.addCoreMethodNodes(NoMethodErrorNodesFactory.getFactories());
             coreMethodNodeManager.addCoreMethodNodes(SystemCallErrorNodesFactory.getFactories());
             coreMethodNodeManager.addCoreMethodNodes(FalseClassNodesFactory.getFactories());
             return null;

@@ -189,12 +189,11 @@ class NameError < StandardError
 end
 
 class NoMethodError < NameError
-  attr_reader :args
 
   def initialize(*arguments)
     super(arguments.shift)
     @name = arguments.shift
-    @args = arguments.shift
+    Truffle.invoke_primitive :no_method_error_set_args, self, arguments.shift
   end
 end
 
