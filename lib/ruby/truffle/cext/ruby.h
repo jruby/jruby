@@ -21,6 +21,7 @@ extern "C" {
 
 #include <stdlib.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
@@ -126,6 +127,7 @@ struct rb_data_type_struct {
 
 int rb_type(VALUE value);
 #define TYPE(value) rb_type((VALUE) (value))
+bool RB_TYPE_P(VALUE value, int type);
 
 void rb_check_type(VALUE value, int type);
 #define Check_Type(v,t) rb_check_type((VALUE)(v), (t))

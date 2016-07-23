@@ -24,6 +24,10 @@ int rb_type(VALUE value) {
   return truffle_invoke_i(RUBY_CEXT, "rb_type", value);
 }
 
+bool RB_TYPE_P(VALUE value, int type) {
+  return truffle_invoke_i(RUBY_CEXT, "RB_TYPE_P", value, type);
+}
+
 void rb_check_type(VALUE value, int type) {
   truffle_invoke(RUBY_CEXT, "rb_check_type", value);
 }

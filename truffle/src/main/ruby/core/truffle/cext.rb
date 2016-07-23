@@ -95,6 +95,15 @@ module Truffle::CExt
     end
   end
 
+  def RB_TYPE_P(value, type)
+    case type
+      when T_STRING
+        value.is_a?(String)
+      else
+        raise 'unknown type'
+    end
+  end
+
   def rb_check_type(value, type)
     # TODO CS 23-Jul-16 there's more to this method than this...
     if rb_type(value) != type
