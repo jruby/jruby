@@ -351,11 +351,16 @@ module ShellUtils
     sh *command
   end
 
+  def mx_sulong(*args)
+    abort "You need to set SULONG_HOME" unless SULONG_HOME
+    mx SULONG_HOME, *args
+  end
+
   def clang(*args)
     if ENV['USE_SYSTEM_CLANG']
       sh 'clang', *args
     else
-      mx SULONG_HOME, 'su-clang', *args
+      mx_sulong 'su-clang', *args
     end
   end
 
@@ -363,16 +368,16 @@ module ShellUtils
     if ENV['USE_SYSTEM_CLANG']
       sh 'opt', *args
     else
-      mx SULONG_HOME, 'su-opt', *args
+      mx_sulong 'su-opt', *args
     end
   end
 
   def sulong_run(*args)
-    mx SULONG_HOME, 'su-run', *args
+    mx_sulong 'su-run', *args
   end
 
   def sulong_link(*args)
-    mx SULONG_HOME, 'su-link', *args
+    mx_sulong 'su-link', *args
   end
 
   def mspec(command, *args)
@@ -611,6 +616,8 @@ module Commands
   end
 
   def cextc(cext_dir, *clang_opts)
+    abort "You need to set SULONG_HOME" unless SULONG_HOME
+
     config_file = File.join(cext_dir, '.jruby-cext-build.yml')
 
     unless File.exist?(config_file)
@@ -657,7 +664,9 @@ module Commands
       end
     end
 
-    sulong_link '-o', out, *((config_libs.map { |l| ['-l', l] }).flatten), *lls
+    config_libs = config_libs.flat_map { |l| ['-l', l] }
+
+    sulong_link '-o', out, *config_libs, *lls
   end
 
   def test(*args)
