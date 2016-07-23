@@ -11,6 +11,9 @@
  * copyright (C) Yukihiro Matsumoto, licensed under the 2-clause BSD licence
  * as described in the file BSDL included with JRuby+Truffle.
  */
+ 
+#include <stdarg.h>
+#include <stdio.h>
 
 #include <truffle.h>
 
@@ -324,6 +327,24 @@ VALUE rb_proc_new(void *function, VALUE value) {
 }
 
 // Utilities
+
+void rb_warn(const char *format, ...) {
+  if (!truffle_invoke_b(truffle_invoke(RUBY_CEXT, "verbose"), "nil?")) {
+    va_list args;
+    va_start(args, format);
+    vfprintf(stderr, format, args);
+    va_end(args);
+  }
+}
+
+void rb_warning(const char *format, ...) {
+  if (truffle_invoke(RUBY_CEXT, "verbose") == Qtrue) {
+    va_list args;
+    va_start(args, format);
+    vfprintf(stderr, format, args);
+    va_end(args);
+  }
+}
 
 int rb_scan_args(int argc, VALUE *argv, const char *format, ...) {
   return truffle_invoke_i(RUBY_CEXT, "rb_scan_args", argc, argv, format /*, where to get args? */);

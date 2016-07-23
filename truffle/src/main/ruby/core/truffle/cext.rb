@@ -241,6 +241,10 @@ module Truffle::CExt
     }
   end
 
+  def verbose
+    $VERBOSE
+  end
+
   def rb_scan_args
     raise 'not implemented'
   end
@@ -402,6 +406,7 @@ module Truffle::CExt
   def rb_gc_disable
     GC.disable
   end
+
 end
 
 Truffle::Interop.export(:ruby_cext, Truffle::CExt)

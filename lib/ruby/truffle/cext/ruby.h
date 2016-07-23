@@ -257,6 +257,9 @@ VALUE rb_proc_new(void *function, VALUE value);
 
 // Utilities
 
+void rb_warn(const char *fmt, ...);
+void rb_warning(const char *fmt, ...);
+
 int rb_scan_args(int argc, VALUE *argv, const char *format, ...);
 
 // Calls
