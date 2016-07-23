@@ -280,7 +280,6 @@ test-cexts: {
     [cd, sulong-workspace],
     [mx, sclone, --kind, git, "https://github.com/graalvm/sulong.git", sulong],
     [cd, sulong],
-    [git, checkout, no-library],
     [mx, sforceimports],
     [mx, --java-home, "$JVMCI_JAVA_HOME", build],
     [cd, ../..],
