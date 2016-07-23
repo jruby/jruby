@@ -502,9 +502,9 @@ module Commands
       openssl_home = ENV['OPENSSL_HOME'] || '/usr'
 
       unless no_openssl
-        #cextc "#{JRUBY_DIR}/truffle/src/main/c/openssl",
-        #  '-DRUBY_EXTCONF_H="extconf.h"',
-        #  '-Werror=implicit-function-declaration'
+        cextc "#{JRUBY_DIR}/truffle/src/main/c/openssl",
+          '-DRUBY_EXTCONF_H="extconf.h"',
+          '-Werror=implicit-function-declaration'
       end
     when nil
       mvn env, *maven_options, 'package'
