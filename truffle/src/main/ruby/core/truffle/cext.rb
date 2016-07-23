@@ -101,6 +101,10 @@ module Truffle::CExt
     str.intern
   end
 
+  def rb_str_new(cext_str, length)
+    to_ruby_string(cext_str)[0, length].b
+  end
+
   def rb_str_new_cstr(java_string)
     String.new(java_string)
   end
