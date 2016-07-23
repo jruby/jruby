@@ -276,9 +276,12 @@ VALUE rb_const_set(VALUE module, ID name, VALUE value);
 VALUE rb_define_const(VALUE module, const char *name, VALUE value);
 void rb_define_global_const(const char *name, VALUE value);
 
-// Raising exceptions
+// Exceptions
 
 NORETURN(void rb_raise(VALUE exception, const char *format, ...));
+
+VALUE rb_protect(VALUE (*function)(VALUE), VALUE data, int *status);
+void rb_jump_tag(int status);
 
 // Defining classes, modules and methods
 

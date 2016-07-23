@@ -368,6 +368,18 @@ void rb_raise(VALUE exception, const char *format, ...) {
   exit(1); // To make the compiler happy
 }
 
+VALUE rb_protect(VALUE (*function)(VALUE), VALUE data, int *status) {
+  // TODO CS 23-Jul-16
+  return function(data);
+}
+
+void rb_jump_tag(int status) {
+  if (status) {
+    // TODO CS 23-Jul-16
+    abort();
+  }
+}
+
 // Defining classes, modules and methods
 
 VALUE rb_define_class(const char *name, VALUE superclass) {
