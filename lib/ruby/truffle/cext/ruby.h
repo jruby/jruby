@@ -107,6 +107,23 @@ enum ruby_value_type {
 #define T_ZOMBIE    RUBY_T_ZOMBIE
 #define T_MASK      RUBY_T_MASK
 
+typedef struct rb_data_type_struct rb_data_type_t;
+
+struct rb_data_type_struct {
+  const char *wrap_struct_name;
+  
+  struct {
+    void (*dmark)(void *);
+    void (*dfree)(void *);
+    size_t (*dsize)(const void *);
+    void *reserved[2];
+  } function;
+  
+  const rb_data_type_t *parent;
+  void *data;
+  VALUE flags;
+};
+
 // Constants
 
 VALUE get_Qfalse(void);
