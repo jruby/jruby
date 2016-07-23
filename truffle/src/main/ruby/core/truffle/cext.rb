@@ -144,7 +144,15 @@ module Truffle::CExt
   end
 
   def rb_eRuntimeError
-    raise 'not implemented'
+    RuntimeError
+  end
+
+  def rb_eStandardError
+    StandardError
+  end
+
+  def rb_eNoMemError
+    NoMemError
   end
 
   def rb_fix2int(value)

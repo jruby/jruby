@@ -159,8 +159,12 @@ VALUE get_rb_mKernel(void);
 #define rb_mKernel get_rb_mKernel()
 
 VALUE get_rb_eRuntimeError(void);
+VALUE get_rb_eStandardError(void);
+VALUE get_rb_eNoMemError(void);
 
 #define rb_eRuntimeError get_rb_eRuntimeError()
+#define rb_eStandardError get_rb_eStandardError()
+#define rb_eNoMemError get_rb_eNoMemError()
 
 // Conversions
 

@@ -79,6 +79,14 @@ VALUE get_rb_eRuntimeError() {
   return (VALUE) truffle_read(RUBY_CEXT, "rb_eRuntimeError");
 }
 
+VALUE get_rb_eStandardError(void) {
+  return (VALUE) truffle_read(RUBY_CEXT, "rb_eStandardError");
+}
+
+VALUE get_rb_eNoMemError(void) {
+  return (VALUE) truffle_read(RUBY_CEXT, "rb_eNoMemError");
+}
+
 // Conversions
 
 VALUE CHR2FIX(char ch) {
