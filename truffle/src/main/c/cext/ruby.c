@@ -158,7 +158,11 @@ int RSTRING_LEN(VALUE string) {
 }
 
 VALUE rb_str_new(const char *string, long length) {
-  return (VALUE) truffle_invoke(RUBY_CEXT, "rb_str_new_cstr", truffle_read_n_string(string, length));
+  if (truffle_is_truffle_object((VALUE) string)) {
+    return truffle_invoke(RUBY_CEXT, "rb_str_new", string, length);
+  } else {
+    return (VALUE) truffle_invoke(RUBY_CEXT, "rb_str_new_cstr", truffle_read_n_string(string, length));
+  }
 }
 
 VALUE rb_str_new_cstr(const char *string) {
