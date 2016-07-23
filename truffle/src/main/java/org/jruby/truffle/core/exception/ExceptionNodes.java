@@ -16,7 +16,6 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreClass;
@@ -25,7 +24,6 @@ import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.builtins.NonStandard;
 import org.jruby.truffle.builtins.Primitive;
 import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
-import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.backtrace.Backtrace;
@@ -36,6 +34,23 @@ import org.jruby.truffle.language.objects.ReadObjectFieldNodeGen;
 
 @CoreClass("Exception")
 public abstract class ExceptionNodes {
+
+    @CoreMethod(names = "allocate", constructor = true)
+    public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
+
+        @Child private AllocateObjectNode allocateObjectNode;
+
+        public AllocateNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
+        }
+
+        @Specialization
+        public DynamicObject allocateNameError(DynamicObject rubyClass) {
+            return allocateObjectNode.allocate(rubyClass, nil(), null);
+        }
+
+    }
 
     @CoreMethod(names = "initialize", optional = 1)
     public abstract static class InitializeNode extends CoreMethodArrayArgumentsNode {
@@ -81,9 +96,7 @@ public abstract class ExceptionNodes {
         private ReadObjectFieldNode getReadCustomBacktraceNode() {
             if (readCustomBacktraceNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                readCustomBacktraceNode = insert(ReadObjectFieldNodeGen.create(
-                        "@custom_backtrace",
-                        null));
+                readCustomBacktraceNode = insert(ReadObjectFieldNodeGen.create("@custom_backtrace", null));
             }
 
             return readCustomBacktraceNode;
@@ -119,23 +132,6 @@ public abstract class ExceptionNodes {
         @Specialization
         public Object message(DynamicObject exception) {
             return Layouts.EXCEPTION.getMessage(exception);
-        }
-
-    }
-
-    @CoreMethod(names = "allocate", constructor = true)
-    public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
-
-        @Child private AllocateObjectNode allocateObjectNode;
-
-        public AllocateNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
-        }
-
-        @Specialization
-        public DynamicObject allocateNameError(DynamicObject rubyClass) {
-            return allocateObjectNode.allocate(rubyClass, nil(), null, null, nil());
         }
 
     }
