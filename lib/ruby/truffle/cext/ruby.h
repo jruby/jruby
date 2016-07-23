@@ -124,6 +124,12 @@ struct rb_data_type_struct {
   VALUE flags;
 };
 
+int rb_type(VALUE value);
+#define TYPE(value) rb_type((VALUE) (value))
+
+void rb_check_type(VALUE value, int type);
+#define Check_Type(v,t) rb_check_type((VALUE)(v), (t))
+
 // Constants
 
 VALUE get_Qfalse(void);

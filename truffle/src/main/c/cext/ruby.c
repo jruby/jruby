@@ -18,6 +18,16 @@
 
 #define RUBY_CEXT truffle_import_cached("ruby_cext")
 
+// Types
+
+int rb_type(VALUE value) {
+  return truffle_invoke_i(RUBY_CEXT, "rb_type", value);
+}
+
+void rb_check_type(VALUE value, int type) {
+  truffle_invoke(RUBY_CEXT, "rb_check_type", value);
+}
+
 // Constants
 
 VALUE get_Qfalse() {
