@@ -261,6 +261,8 @@ int rb_scan_args(int argc, VALUE *argv, const char *format, ...);
 
 // Calls
 
+int rb_respond_to(VALUE object, ID name);
+
 #define rb_funcall(object, name, ...) truffle_invoke(RUBY_CEXT, "rb_funcall", object, name, __VA_ARGS__)
 
 VALUE rb_yield(VALUE value);

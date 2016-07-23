@@ -331,6 +331,10 @@ int rb_scan_args(int argc, VALUE *argv, const char *format, ...) {
 
 // Calls
 
+int rb_respond_to(VALUE object, ID name) {
+  return truffle_invoke_b(object, "respond_to?", name);
+}
+
 VALUE rb_yield(VALUE value) {
   return truffle_invoke(RUBY_CEXT, "rb_yield", value);
 }
