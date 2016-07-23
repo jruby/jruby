@@ -280,7 +280,7 @@ public abstract class BasicObjectNodes {
             final String name = nameObject.toString();
 
             if (lastCallWasSuper()) {
-                return coreExceptions().noSuperMethodError(name, this);
+                return coreExceptions().noSuperMethodError(name, self, this);
             } else if (lastCallWasCallingPrivateMethod(self, name)) {
                 return coreExceptions().privateMethodError(name, self, this);
             } else if (lastCallWasVCall()) {

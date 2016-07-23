@@ -181,6 +181,7 @@ public class SymbolTable {
     public static String checkInstanceVariableName(
             RubyContext context,
             String name,
+            Object receiver,
             Node currentNode) {
         // if (!IdUtil.isValidInstanceVariableName(name)) {
 
@@ -188,6 +189,7 @@ public class SymbolTable {
         if (!(name.startsWith("@") && name.length() > 1 && IdUtil.isInitialCharacter(name.charAt(1)))) {
             throw new RaiseException(context.getCoreExceptions().nameErrorInstanceNameNotAllowable(
                     name,
+                    receiver,
                     currentNode));
         }
         return name;
@@ -197,10 +199,12 @@ public class SymbolTable {
     public static String checkClassVariableName(
             RubyContext context,
             String name,
+            Object receiver,
             Node currentNode) {
         if (!IdUtil.isValidClassVariableName(name)) {
             throw new RaiseException(context.getCoreExceptions().nameErrorInstanceNameNotAllowable(
                     name,
+                    receiver,
                     currentNode));
         }
         return name;
