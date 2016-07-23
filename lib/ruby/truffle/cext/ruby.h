@@ -202,7 +202,9 @@ double RFLOAT_VALUE(VALUE value);
 // String
 
 char *RSTRING_PTR(VALUE string);
-int RSTRING_LEN(VALUE string);
+int rb_str_len(VALUE string);
+#define RSTRING_LEN(str) rb_str_len(str)
+#define RSTRING_LENINT(str) rb_str_len(str)
 VALUE rb_intern_str(VALUE string);
 VALUE rb_str_new(const char *string, long length);
 VALUE rb_str_new_cstr(const char *string);

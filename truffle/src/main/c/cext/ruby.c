@@ -175,7 +175,7 @@ char *RSTRING_PTR(VALUE string) {
   return truffle_invoke(RUBY_CEXT, "CExtString", string);
 }
 
-int RSTRING_LEN(VALUE string) {
+int rb_str_len(VALUE string) {
   return truffle_invoke_i(string, "bytesize");
 }
 
