@@ -39,8 +39,8 @@ extern "C" {
 #define xfree free
 #define ALLOC_N(type, n) malloc(sizeof(type) * n)
 
-typedef void* ID;
-typedef void* VALUE;
+typedef void *ID;
+typedef void *VALUE;
 
 #define NORETURN(X) __attribute__((__noreturn__)) X
 
@@ -363,6 +363,17 @@ VALUE rb_complex_set_imag(VALUE complex, VALUE imag);
 void rb_gc_register_address(VALUE *address);
 VALUE rb_gc_enable();
 VALUE rb_gc_disable();
+
+// Threads
+
+typedef void *rb_nativethread_id_t;
+typedef void *rb_nativethread_lock_t;
+
+rb_nativethread_id_t rb_nativethread_self();
+int rb_nativethread_lock_initialize(rb_nativethread_lock_t *lock);
+int rb_nativethread_lock_destroy(rb_nativethread_lock_t *lock);
+int rb_nativethread_lock_lock(rb_nativethread_lock_t *lock);
+int rb_nativethread_lock_unlock(rb_nativethread_lock_t *lock);
 
 #if defined(__cplusplus)
 }

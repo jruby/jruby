@@ -11,7 +11,8 @@
  * copyright (C) Yukihiro Matsumoto, licensed under the 2-clause BSD licence
  * as described in the file BSDL included with JRuby+Truffle.
  */
- 
+
+#include <stdlib.h>
 #include <stdarg.h>
 #include <stdio.h>
 
@@ -583,4 +584,30 @@ VALUE rb_gc_enable() {
 
 VALUE rb_gc_disable() {
   return truffle_invoke(RUBY_CEXT, "rb_gc_disable");
+}
+
+// Threads
+
+rb_nativethread_id_t rb_nativethread_self() {
+  return truffle_invoke(RUBY_CEXT, "rb_nativethread_self");
+}
+
+int rb_nativethread_lock_initialize(rb_nativethread_lock_t *lock) {
+  *lock = truffle_invoke(RUBY_CEXT, "rb_nativethread_lock_initialize");
+  return 0;
+}
+
+int rb_nativethread_lock_destroy(rb_nativethread_lock_t *lock) {
+  *lock = NULL;
+  return 0;
+}
+
+int rb_nativethread_lock_lock(rb_nativethread_lock_t *lock) {
+  truffle_invoke(lock, "lock");
+  return 0;
+}
+
+int rb_nativethread_lock_unlock(rb_nativethread_lock_t *lock) {
+  truffle_invoke(lock, "unlock");
+  return 0;
 }

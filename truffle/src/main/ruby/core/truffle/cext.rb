@@ -407,6 +407,14 @@ module Truffle::CExt
     GC.disable
   end
 
+  def rb_nativethread_self
+    Thread.current
+  end
+
+  def rb_nativethread_lock_initialize
+    Mutex.new
+  end
+
 end
 
 Truffle::Interop.export(:ruby_cext, Truffle::CExt)
