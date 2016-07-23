@@ -28,6 +28,10 @@ void rb_check_type(VALUE value, int type) {
   truffle_invoke(RUBY_CEXT, "rb_check_type", value);
 }
 
+VALUE rb_obj_is_kind_of(VALUE object, VALUE ruby_class) {
+  return truffle_invoke(object, "kind_of?", ruby_class);
+}
+
 // Constants
 
 VALUE get_Qfalse() {

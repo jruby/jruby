@@ -130,6 +130,8 @@ int rb_type(VALUE value);
 void rb_check_type(VALUE value, int type);
 #define Check_Type(v,t) rb_check_type((VALUE)(v), (t))
 
+VALUE rb_obj_is_kind_of(VALUE object, VALUE ruby_class);
+
 // Constants
 
 VALUE get_Qfalse(void);
