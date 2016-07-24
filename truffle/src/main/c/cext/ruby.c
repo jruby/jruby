@@ -359,6 +359,10 @@ const char* rb_class2name(VALUE module) {
   return RSTRING_PTR(truffle_invoke(module, "name"));
 }
 
+VALUE rb_class_of(VALUE object) {
+  return truffle_invoke(object, "class");
+}
+
 // Proc
 
 VALUE rb_proc_new(void *function, VALUE value) {

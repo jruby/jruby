@@ -262,6 +262,9 @@ VALUE rb_hash_aset(VALUE hash, VALUE key, VALUE value);
 
 const char* rb_class2name(VALUE module);
 
+VALUE rb_class_of(VALUE object);
+#define CLASS_OF(object) rb_class_of((VALUE) (object))
+
 // Proc
 
 VALUE rb_proc_new(void *function, VALUE value);
