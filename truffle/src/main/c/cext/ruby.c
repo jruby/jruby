@@ -367,6 +367,11 @@ VALUE rb_String(VALUE value) {
   return truffle_invoke(RUBY_CEXT, "rb_String", value);
 }
 
+VALUE rb_str_resize(VALUE string, long length) {
+  fprintf(stderr, "rb_str_resize not implemented\n");
+  abort();
+}
+
 // Symbol
 
 ID rb_intern(const char *string) {

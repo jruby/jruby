@@ -297,6 +297,7 @@ void rb_str_set_len(VALUE string, long length);
 VALUE rb_str_new_frozen(VALUE value);
 #define rb_str_new4(value) rb_str_new_frozen(value)
 VALUE rb_String(VALUE value);
+VALUE rb_str_resize(VALUE string, long length);
 
 // Symbol
 
