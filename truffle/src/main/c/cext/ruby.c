@@ -232,6 +232,11 @@ VALUE rb_integer_unpack(const void *words, size_t numwords, size_t wordsize, siz
   abort();
 }
 
+size_t rb_absint_size(VALUE value, int *nlz_bits_ret) {
+  fprintf(stderr, "rb_absint_size not implemented\n");
+  abort();
+}
+
 // Float
 
 VALUE rb_float_new(double value) {
