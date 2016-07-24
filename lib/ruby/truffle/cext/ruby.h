@@ -474,6 +474,8 @@ int rb_nativethread_lock_unlock(rb_nativethread_lock_t *lock);
 typedef struct rb_io_t {
 } rb_io_t;
 
+#define rb_update_max_fd(fd) {}
+
 #if defined(__cplusplus)
 }
 #endif
