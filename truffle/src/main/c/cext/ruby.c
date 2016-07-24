@@ -517,6 +517,11 @@ VALUE rb_class_path(VALUE ruby_class) {
   abort();
 }
 
+VALUE rb_path2class(const char *string) {
+  fprintf(stderr, "rb_path2class not implemented\n");
+  abort();
+}
+
 // Proc
 
 VALUE rb_proc_new(void *function, VALUE value) {
