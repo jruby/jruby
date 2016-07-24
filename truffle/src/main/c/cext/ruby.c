@@ -215,12 +215,12 @@ VALUE ID2SYM(ID value) {
 
 // Type checks
 
-int NIL_P(VALUE value) {
-  return truffle_invoke_b(RUBY_CEXT, "NIL_P", value);
+int RB_NIL_P(VALUE value) {
+  return truffle_invoke_b(RUBY_CEXT, "RB_NIL_P", value);
 }
 
-int FIXNUM_P(VALUE value) {
-  return truffle_invoke_b(RUBY_CEXT, "FIXNUM_P", value);
+int RB_FIXNUM_P(VALUE value) {
+  return truffle_invoke_b(RUBY_CEXT, "RB_FIXNUM_P", value);
 }
 
 int RTEST(VALUE value) {

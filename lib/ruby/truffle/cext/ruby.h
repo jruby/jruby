@@ -225,8 +225,12 @@ VALUE ID2SYM(ID value);
 
 // Type checks
 
-int NIL_P(VALUE value);
-int FIXNUM_P(VALUE value);
+int RB_NIL_P(VALUE value);
+int RB_FIXNUM_P(VALUE value);
+
+#define NIL_P RB_NIL_P
+#define FIXNUM_P RB_FIXNUM_P
+
 int RTEST(VALUE value);
 
 // Kernel

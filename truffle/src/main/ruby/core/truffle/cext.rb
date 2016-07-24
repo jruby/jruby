@@ -206,11 +206,11 @@ module Truffle::CExt
     end
   end
 
-  def NIL_P(value)
+  def RB_NIL_P(value)
     nil.equal?(value)
   end
 
-  def FIXNUM_P(value)
+  def RB_FIXNUM_P(value)
     value.is_a?(Fixnum)
   end
 
