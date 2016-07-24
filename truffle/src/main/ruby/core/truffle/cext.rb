@@ -230,6 +230,15 @@ module Truffle::CExt
     Truffle::Interop.to_java_string(string)
   end
 
+  def rb_str_new_frozen(value)
+    if value.frozen?
+      value
+    else
+      # There's more to rb_str_new_frozen than this
+      String(value).freeze
+    end
+  end
+
   def rb_intern(str)
     str.intern
   end

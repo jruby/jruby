@@ -302,6 +302,10 @@ void rb_str_set_len(VALUE string, long length) {
   abort();
 }
 
+VALUE rb_str_new_frozen(VALUE value) {
+  return truffle_invoke(RUBY_CEXT, "rb_str_new_frozen", value);
+}
+
 // Symbol
 
 ID rb_intern(const char *string) {
