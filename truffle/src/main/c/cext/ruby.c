@@ -106,6 +106,10 @@ VALUE rb_jt_get_eTypeError(void) {
   return (VALUE) truffle_read(RUBY_CEXT, "rb_eTypeError");
 }
 
+VALUE rb_jt_get_eArgError(void) {
+  return (VALUE) truffle_read(RUBY_CEXT, "rb_eArgError");
+}
+
 // Conversions
 
 VALUE CHR2FIX(char ch) {
