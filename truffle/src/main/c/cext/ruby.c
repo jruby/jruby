@@ -591,6 +591,16 @@ void rb_set_errinfo(VALUE error) {
   abort();
 }
 
+void rb_syserr_fail(int errno, const char *message) {
+  fprintf(stderr, "rb_syserr_fail: %d %s\n", errno, message);
+  abort();
+}
+
+void rb_sys_fail(const char *message) {
+  fprintf(stderr, "rb_sys_fail: %s\n", message);
+  abort();
+}
+
 // Defining classes, modules and methods
 
 VALUE rb_define_class(const char *name, VALUE superclass) {

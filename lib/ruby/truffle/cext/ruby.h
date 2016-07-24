@@ -383,6 +383,9 @@ void rb_jump_tag(int status);
 
 void rb_set_errinfo(VALUE error);
 
+void rb_syserr_fail(int errno, const char *message);
+void rb_sys_fail(const char *message);
+
 // Defining classes, modules and methods
 
 VALUE rb_define_class(const char *name, VALUE superclass);
