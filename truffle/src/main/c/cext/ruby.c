@@ -422,6 +422,10 @@ void rb_define_global_const(const char *name, VALUE value) {
 
 // Raising exceptions
 
+VALUE rb_exc_new3(VALUE exception_class, VALUE message) {
+  return truffle_invoke(exception_class, "new", message);
+}
+
 void rb_exc_raise(VALUE exception) {
   truffle_invoke(RUBY_CEXT, "rb_exc_raise", exception);
   abort();
