@@ -138,6 +138,8 @@ struct rb_data_type_struct {
   VALUE flags;
 };
 
+#define RUBY_TYPED_FREE_IMMEDIATELY 1
+
 int rb_type(VALUE value);
 #define TYPE(value) rb_type((VALUE) (value))
 bool RB_TYPE_P(VALUE value, int type);
