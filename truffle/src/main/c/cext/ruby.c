@@ -707,6 +707,11 @@ void rb_attr(VALUE ruby_class, ID name, int read, int write, int ex) {
   abort();
 }
 
+void rb_define_alloc_func(VALUE ruby_class, rb_alloc_func_t alloc_function) {
+  fprintf(stderr, "rb_define_alloc_func not implemented\n");
+  abort();
+}
+
 // Rational
 
 VALUE rb_Rational(VALUE num, VALUE den) {
