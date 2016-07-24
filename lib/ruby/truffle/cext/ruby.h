@@ -26,14 +26,26 @@ extern "C" {
 #include <string.h>
 #include <math.h>
 
+#include <truffle.h>
+
+// Support
+
+#define RUBY_CEXT truffle_import_cached("ruby_cext")
+
+// Configuration
+
 #define JRUBY_TRUFFLE 1
 
 #define SIZEOF_INT 32
 #define SIZEOF_LONG 64
 
-#include <truffle.h>
+#define HAVE_SYS_TIME_H
 
-#define RUBY_CEXT truffle_import_cached("ruby_cext")
+// Macros
+
+#define NORETURN(X) __attribute__((__noreturn__)) X
+
+// Basics
 
 #define xmalloc malloc
 #define xfree free
@@ -41,8 +53,6 @@ extern "C" {
 
 typedef void *ID;
 typedef void *VALUE;
-
-#define NORETURN(X) __attribute__((__noreturn__)) X
 
 // Types
 
