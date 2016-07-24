@@ -47,6 +47,7 @@ extern "C" {
 // Macros
 
 #define NORETURN(X) __attribute__((__noreturn__)) X
+#define UNREACHABLE ((void)0)
 
 // Basic types
 
