@@ -152,6 +152,7 @@ VALUE rb_obj_is_instance_of(VALUE object, VALUE ruby_class);
 VALUE rb_obj_is_kind_of(VALUE object, VALUE ruby_class);
 
 void rb_check_frozen(VALUE object);
+void rb_check_safe_obj(VALUE object);
 
 bool SYMBOL_P(VALUE value);
 

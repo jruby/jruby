@@ -73,6 +73,11 @@ void rb_check_frozen(VALUE object) {
   abort();
 }
 
+void rb_check_safe_obj(VALUE object) {
+  fprintf(stderr, "rb_check_safe_obj not implemented\n");
+  abort();
+}
+
 bool SYMBOL_P(VALUE value) {
   return truffle_invoke_b(RUBY_CEXT, "SYMBOL_P", value);
 }
