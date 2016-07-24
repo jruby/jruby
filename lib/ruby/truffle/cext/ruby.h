@@ -342,15 +342,13 @@ st_index_t rb_memhash(const void *data, long length);
 // Class
 
 const char* rb_class2name(VALUE module);
-
 VALUE rb_class_real(VALUE ruby_class);
 VALUE rb_class_superclass(VALUE ruby_class);
-
 VALUE rb_class_of(VALUE object);
 VALUE rb_obj_class(VALUE object);
 #define CLASS_OF(object) rb_class_of((VALUE) (object))
-
 VALUE rb_obj_alloc(VALUE ruby_class);
+VALUE rb_class_path(VALUE ruby_class);
 
 // Proc
 

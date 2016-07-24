@@ -512,6 +512,11 @@ VALUE rb_obj_alloc(VALUE ruby_class) {
   return truffle_invoke(ruby_class, "allocate");
 }
 
+VALUE rb_class_path(VALUE ruby_class) {
+  fprintf(stderr, "rb_class_path not implemented\n");
+  abort();
+}
+
 // Proc
 
 VALUE rb_proc_new(void *function, VALUE value) {
