@@ -383,7 +383,7 @@ decode_int(unsigned char* der, long length)
     p = der;
     if(!(ai = d2i_ASN1_INTEGER(NULL, &p, length)))
 	ossl_raise(eASN1Error, NULL);
-    ret = rb_protect((VALUE(*)_((VALUE)))asn1integer_to_num,
+    ret = rb_protect((VALUE(*)((VALUE)))asn1integer_to_num,
 		     (VALUE)ai, &status);
     ASN1_INTEGER_free(ai);
     if(status) rb_jump_tag(status);
@@ -423,7 +423,7 @@ decode_enum(unsigned char* der, long length)
     p = der;
     if(!(ai = d2i_ASN1_ENUMERATED(NULL, &p, length)))
 	ossl_raise(eASN1Error, NULL);
-    ret = rb_protect((VALUE(*)_((VALUE)))asn1integer_to_num,
+    ret = rb_protect((VALUE(*)((VALUE)))asn1integer_to_num,
 		     (VALUE)ai, &status);
     ASN1_ENUMERATED_free(ai);
     if(status) rb_jump_tag(status);
@@ -485,7 +485,7 @@ decode_time(unsigned char* der, long length)
     p = der;
     if(!(time = d2i_ASN1_TIME(NULL, &p, length)))
 	ossl_raise(eASN1Error, NULL);
-    ret = rb_protect((VALUE(*)_((VALUE)))asn1time_to_time,
+    ret = rb_protect((VALUE(*)((VALUE)))asn1time_to_time,
 		     (VALUE)time, &status);
     ASN1_TIME_free(time);
     if(status) rb_jump_tag(status);
