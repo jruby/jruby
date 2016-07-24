@@ -22,8 +22,6 @@ import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
 
-import static org.jruby.truffle.core.array.ArrayHelpers.createArray;
-
 @CoreClass("NoMethodError")
 public abstract class NoMethodErrorNodes {
 
@@ -39,7 +37,7 @@ public abstract class NoMethodErrorNodes {
 
         @Specialization
         public DynamicObject allocateNoMethodError(DynamicObject rubyClass) {
-            return allocateObjectNode.allocate(rubyClass, nil(), null, null, nil(), createArray(getContext(), null, 0));
+            return allocateObjectNode.allocate(rubyClass, nil(), null, null, nil(), nil());
         }
 
     }
@@ -58,7 +56,7 @@ public abstract class NoMethodErrorNodes {
     public abstract static class ArgsSetNode extends PrimitiveArrayArgumentsNode {
 
         @Specialization
-        public Object setArgs(DynamicObject error, DynamicObject args) {
+        public Object setArgs(DynamicObject error, Object args) {
             Layouts.NO_METHOD_ERROR.setArgs(error, args);
             return args;
         }

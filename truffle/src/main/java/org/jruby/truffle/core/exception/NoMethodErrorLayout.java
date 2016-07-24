@@ -28,9 +28,9 @@ public interface NoMethodErrorLayout extends NameErrorLayout {
         @Nullable Backtrace backtrace,
         @Nullable Object receiver,
         Object name,
-        DynamicObject args);
+        Object args);
 
-    DynamicObject getArgs(DynamicObject object);
-    void setArgs(DynamicObject object, DynamicObject value);
+    Object getArgs(DynamicObject object);
+    void setArgs(DynamicObject object, Object value);
 
 }

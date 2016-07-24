@@ -183,17 +183,18 @@ end
 class NameError < StandardError
 
   def initialize(*args)
-    super(args.shift)
-    Truffle.invoke_primitive :name_error_set_name, self, args.shift
+    name = args.size > 1 ? args.pop : nil
+    super(*args)
+    Truffle.invoke_primitive :name_error_set_name, self, name
   end
 end
 
 class NoMethodError < NameError
 
   def initialize(*arguments)
-    super(arguments.shift)
-    @name = arguments.shift
-    Truffle.invoke_primitive :no_method_error_set_args, self, arguments.shift
+    args = arguments.size > 2 ? arguments.pop : nil
+    super(*arguments) # TODO BJF Jul 24, 2016 Need to handle NoMethodError.new(1,2,3,4)
+    Truffle.invoke_primitive :no_method_error_set_args, self, args
   end
 end
 
