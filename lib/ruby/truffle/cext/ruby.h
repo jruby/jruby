@@ -148,6 +148,7 @@ bool RB_TYPE_P(VALUE value, int type);
 void rb_check_type(VALUE value, int type);
 #define Check_Type(v,t) rb_check_type((VALUE)(v), (t))
 
+VALUE rb_obj_is_instance_of(VALUE object, VALUE ruby_class);
 VALUE rb_obj_is_kind_of(VALUE object, VALUE ruby_class);
 
 void rb_check_frozen(VALUE object);

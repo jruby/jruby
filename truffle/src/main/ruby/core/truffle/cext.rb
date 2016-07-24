@@ -114,6 +114,10 @@ module Truffle::CExt
     end
   end
 
+  def rb_obj_is_instance_of(object, ruby_class)
+    object.class == ruby_class
+  end
+
   def SYMBOL_P(value)
     value.is_a?(Symbol)
   end
