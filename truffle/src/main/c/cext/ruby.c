@@ -466,6 +466,11 @@ VALUE rb_funcallv_public(VALUE object, ID name, int args_count, const VALUE *arg
   abort();
 }
 
+VALUE rb_block_call(VALUE object, ID name, int args_count, const VALUE *args, rb_block_call_func_t block_call_func, VALUE data) {
+  fprintf(stderr, "rb_block_call not implemented\n");
+  abort();
+}
+
 VALUE rb_yield(VALUE value) {
   return truffle_invoke(RUBY_CEXT, "rb_yield", value);
 }
