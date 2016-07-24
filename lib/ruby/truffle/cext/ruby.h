@@ -209,6 +209,17 @@ double RFLOAT_VALUE(VALUE value);
 
 // String
 
+#define PRI_VALUE_PREFIX "l"
+#define PRI_LONG_PREFIX "l"
+#define PRI_64_PREFIX PRI_LONG_PREFIX
+#define RUBY_PRI_VALUE_MARK "\v"
+#define PRIdVALUE PRI_VALUE_PREFIX"d"
+#define PRIoVALUE PRI_VALUE_PREFIX"o"
+#define PRIuVALUE PRI_VALUE_PREFIX"u"
+#define PRIxVALUE PRI_VALUE_PREFIX"x"
+#define PRIXVALUE PRI_VALUE_PREFIX"X"
+#define PRIsVALUE PRI_VALUE_PREFIX"i" RUBY_PRI_VALUE_MARK
+
 char *RSTRING_PTR(VALUE string);
 int rb_str_len(VALUE string);
 #define RSTRING_LEN(str) rb_str_len(str)
