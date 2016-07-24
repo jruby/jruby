@@ -220,6 +220,8 @@ VALUE rb_str_to_str(VALUE string);
 #define SafeStringValue StringValue
 VALUE rb_string_value(VALUE *value_pointer);
 VALUE rb_str_buf_new(long capacity);
+VALUE rb_sprintf(const char *format, ...);
+VALUE rb_vsprintf(const char *format, va_list args);
 
 // Symbol
 

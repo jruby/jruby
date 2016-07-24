@@ -240,6 +240,19 @@ VALUE rb_str_buf_new(long capacity) {
   return rb_str_new_cstr("");
 }
 
+VALUE rb_sprintf(const char *format, ...) {
+  va_list args;
+  va_start(args, format);
+  VALUE *string = rb_vsprintf(format, args);
+  va_end(args);
+  return string;
+}
+
+VALUE rb_vsprintf(const char *format, va_list args) {
+  fprintf(stderr, "rb_vsprintf not implemented\n");
+  abort();
+}
+
 // Symbol
 
 ID rb_intern(const char *string) {
