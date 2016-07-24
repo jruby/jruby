@@ -225,6 +225,21 @@ int RTEST(VALUE value);
 
 VALUE rb_Integer(VALUE value);
 
+#define INTEGER_PACK_MSWORD_FIRST                   0x01
+#define INTEGER_PACK_LSWORD_FIRST                   0x02
+#define INTEGER_PACK_MSBYTE_FIRST                   0x10
+#define INTEGER_PACK_LSBYTE_FIRST                   0x20
+#define INTEGER_PACK_NATIVE_BYTE_ORDER              0x40
+#define INTEGER_PACK_2COMP                          0x80
+#define INTEGER_PACK_FORCE_GENERIC_IMPLEMENTATION   0x400
+#define INTEGER_PACK_FORCE_BIGNUM                   0x100
+#define INTEGER_PACK_NEGATIVE                       0x200
+#define INTEGER_PACK_LITTLE_ENDIAN                  (INTEGER_PACK_LSWORD_FIRST | INTEGER_PACK_LSBYTE_FIRST)
+#define INTEGER_PACK_BIG_ENDIAN                     (INTEGER_PACK_MSWORD_FIRST | INTEGER_PACK_MSBYTE_FIRST)
+
+int rb_integer_pack(VALUE value, void *words, size_t numwords, size_t wordsize, size_t nails, int flags);
+VALUE rb_integer_unpack(const void *words, size_t numwords, size_t wordsize, size_t nails, int flags);
+
 // Float
 
 VALUE rb_float_new(double value);

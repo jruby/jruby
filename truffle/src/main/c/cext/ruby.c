@@ -196,6 +196,16 @@ VALUE rb_Integer(VALUE value) {
   return (VALUE) truffle_invoke(RUBY_CEXT, "rb_Integer", value);
 }
 
+int rb_integer_pack(VALUE value, void *words, size_t numwords, size_t wordsize, size_t nails, int flags) {
+  fprintf(stderr, "rb_integer_pack not implemented\n");
+  abort();
+}
+
+VALUE rb_integer_unpack(const void *words, size_t numwords, size_t wordsize, size_t nails, int flags) {
+  fprintf(stderr, "rb_integer_unpack not implemented\n");
+  abort();
+}
+
 // Float
 
 VALUE rb_float_new(double value) {
