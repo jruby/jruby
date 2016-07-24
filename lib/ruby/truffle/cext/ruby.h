@@ -258,6 +258,7 @@ char *rb_string_value_cstr(volatile VALUE* value_pointer);
 VALUE rb_str_buf_new(long capacity);
 VALUE rb_sprintf(const char *format, ...);
 VALUE rb_vsprintf(const char *format, va_list args);
+VALUE rb_str_append(VALUE string, VALUE to_append);
 
 // Symbol
 

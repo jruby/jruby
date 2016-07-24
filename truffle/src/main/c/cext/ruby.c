@@ -284,6 +284,11 @@ VALUE rb_vsprintf(const char *format, va_list args) {
   abort();
 }
 
+VALUE rb_str_append(VALUE string, VALUE to_append) {
+  fprintf(stderr, "rb_str_append not implemented\n");
+  abort();
+}
+
 // Symbol
 
 ID rb_intern(const char *string) {
