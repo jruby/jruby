@@ -22,6 +22,23 @@
 
 #define RUBY_CEXT truffle_import_cached("ruby_cext")
 
+// Memory
+
+void *rb_alloc_tmp_buffer(volatile VALUE *buffer_pointer, long length) {
+  fprintf(stderr, "rb_alloc_tmp_buffer not implemented\n");
+  abort();
+}
+
+void *rb_alloc_tmp_buffer2(volatile VALUE *buffer_pointer, long count, size_t size) {
+  fprintf(stderr, "rb_alloc_tmp_buffer2 not implemented\n");
+  abort();
+}
+
+void rb_free_tmp_buffer(volatile VALUE *buffer_pointer) {
+  fprintf(stderr, "rb_free_tmp_buffer not implemented\n");
+  abort();
+}
+
 // Types
 
 int rb_type(VALUE value) {

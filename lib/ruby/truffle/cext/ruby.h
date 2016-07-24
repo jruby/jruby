@@ -48,14 +48,29 @@ extern "C" {
 
 #define NORETURN(X) __attribute__((__noreturn__)) X
 
-// Basics
-
-#define xmalloc malloc
-#define xfree free
-#define ALLOC_N(type, n) malloc(sizeof(type) * n)
+// Basic types
 
 typedef void *ID;
 typedef void *VALUE;
+
+// Memory
+
+#define xmalloc malloc
+#define xfree free
+
+#define ALLOC_N(type, n)            malloc(sizeof(type) * n)
+
+void *rb_alloc_tmp_buffer(volatile VALUE *buffer_pointer, long length);
+void *rb_alloc_tmp_buffer2(volatile VALUE *buffer_pointer, long count, size_t size);
+void rb_free_tmp_buffer(volatile VALUE *buffer_pointer);
+
+#define RB_ALLOCV(v, n)             rb_alloc_tmp_buffer(&(v), (n))
+#define RB_ALLOCV_N(type, v, n)     rb_alloc_tmp_buffer2(&(v), (n), sizeof(type))
+#define RB_ALLOCV_END(v)            rb_free_tmp_buffer(&(v))
+
+#define ALLOCV(v, n)                RB_ALLOCV(v, n)
+#define ALLOCV_N(type, v, n)        RB_ALLOCV_N(type, v, n)
+#define ALLOCV_END(v)               RB_ALLOCV_END(v)
 
 // Types
 
