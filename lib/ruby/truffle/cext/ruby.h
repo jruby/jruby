@@ -300,6 +300,8 @@ NORETURN(void rb_raise(VALUE exception, const char *format, ...));
 VALUE rb_protect(VALUE (*function)(VALUE), VALUE data, int *status);
 void rb_jump_tag(int status);
 
+void rb_set_errinfo(VALUE error);
+
 // Defining classes, modules and methods
 
 VALUE rb_define_class(const char *name, VALUE superclass);

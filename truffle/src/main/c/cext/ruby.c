@@ -417,6 +417,7 @@ void rb_define_global_const(const char *name, VALUE value) {
 // Raising exceptions
 
 void rb_raise(VALUE exception, const char *format, ...) {
+  fprintf(stderr, "rb_raise not implemented\n");
   truffle_invoke(RUBY_CEXT, "rb_raise", format /*, where to get args? */);
   exit(1); // To make the compiler happy
 }
@@ -429,8 +430,15 @@ VALUE rb_protect(VALUE (*function)(VALUE), VALUE data, int *status) {
 void rb_jump_tag(int status) {
   if (status) {
     // TODO CS 23-Jul-16
+    fprintf(stderr, "rb_jump_tag not implemented\n");
     abort();
   }
+}
+
+void rb_set_errinfo(VALUE error) {
+  // TODO CS 23-Jul-16
+  fprintf(stderr, "rb_set_errinfo not implemented\n");
+  abort();
 }
 
 // Defining classes, modules and methods
