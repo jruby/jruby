@@ -934,6 +934,11 @@ int rb_cloexec_dup(int oldfd) {
   abort();
 }
 
+void rb_fd_fix_cloexec(int fd) {
+  fprintf(stderr, "rb_fd_fix_cloexec not implemented\n");
+  abort();
+}
+
 int rb_jt_io_handle(VALUE io) {
   return (VALUE) truffle_invoke(RUBY_CEXT, "rb_jt_io_handle", io);
 }

@@ -537,6 +537,7 @@ void rb_io_check_writable(rb_io_t *io);
 void rb_io_check_readable(rb_io_t *io);
 
 int rb_cloexec_dup(int oldfd);
+void rb_fd_fix_cloexec(int fd);
 
 int rb_jt_io_handle(VALUE file);
 
