@@ -391,6 +391,10 @@ VALUE rb_class_real(VALUE ruby_class) {
   return (VALUE) truffle_invoke(RUBY_CEXT, "rb_class_real", ruby_class);
 }
 
+VALUE rb_class_superclass(VALUE ruby_class) {
+  return truffle_invoke(ruby_class, "superclass");
+}
+
 VALUE rb_obj_class(VALUE object) {
   return rb_class_real(rb_class_of(object));
 }

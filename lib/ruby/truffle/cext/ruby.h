@@ -297,6 +297,7 @@ VALUE rb_hash_lookup2(VALUE hash, VALUE key, VALUE default_value);
 const char* rb_class2name(VALUE module);
 
 VALUE rb_class_real(VALUE ruby_class);
+VALUE rb_class_superclass(VALUE ruby_class);
 
 VALUE rb_class_of(VALUE object);
 VALUE rb_obj_class(VALUE object);
