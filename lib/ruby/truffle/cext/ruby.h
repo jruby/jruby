@@ -53,6 +53,10 @@ extern "C" {
 typedef void *ID;
 typedef void *VALUE;
 
+// Helpers
+
+NORETURN(VALUE rb_f_notimplement(int args_count, const VALUE *args, VALUE object));
+
 // Memory
 
 #define xmalloc malloc

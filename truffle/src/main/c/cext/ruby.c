@@ -22,6 +22,13 @@
 
 #define RUBY_CEXT truffle_import_cached("ruby_cext")
 
+// Helpers
+
+VALUE rb_f_notimplement(int args_count, const VALUE *args, VALUE object) {
+  fprintf(stderr, "rb_f_notimplement\n");
+  abort();
+}
+
 // Memory
 
 void *rb_alloc_tmp_buffer(volatile VALUE *buffer_pointer, long length) {
