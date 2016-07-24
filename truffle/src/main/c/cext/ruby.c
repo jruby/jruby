@@ -20,7 +20,7 @@
 
 #include <ruby.h>
 
-#define RUBY_CEXT truffle_import_cached("ruby_cext")
+#define RUBY_CEXT (void *)truffle_import_cached("ruby_cext")
 
 // Helpers
 
@@ -61,11 +61,11 @@ void rb_check_type(VALUE value, int type) {
 }
 
 VALUE rb_obj_is_instance_of(VALUE object, VALUE ruby_class) {
-  truffle_invoke(RUBY_CEXT, "rb_obj_is_instance_of", value, ruby_class);
+  truffle_invoke(RUBY_CEXT, "rb_obj_is_instance_of", object, ruby_class);
 }
 
 VALUE rb_obj_is_kind_of(VALUE object, VALUE ruby_class) {
-  return truffle_invoke(object, "kind_of?", ruby_class);
+  return truffle_invoke((void *)object, "kind_of?", ruby_class);
 }
 
 void rb_check_frozen(VALUE object) {
@@ -285,16 +285,16 @@ double RFLOAT_VALUE(VALUE value){
 // String
 
 char *RSTRING_PTR(VALUE string) {
-  return truffle_invoke(RUBY_CEXT, "CExtString", string);
+  return (char *)truffle_invoke(RUBY_CEXT, "CExtString", string);
 }
 
 int rb_str_len(VALUE string) {
-  return truffle_invoke_i(string, "bytesize");
+  return truffle_invoke_i((void *)string, "bytesize");
 }
 
 VALUE rb_str_new(const char *string, long length) {
   if (truffle_is_truffle_object((VALUE) string)) {
-    return truffle_invoke(RUBY_CEXT, "rb_str_new", string, length);
+    return (VALUE) truffle_invoke(RUBY_CEXT, "rb_str_new", string, length);
   } else {
     return (VALUE) truffle_invoke(RUBY_CEXT, "rb_str_new_cstr", truffle_read_n_string(string, length));
   }
@@ -302,7 +302,7 @@ VALUE rb_str_new(const char *string, long length) {
 
 VALUE rb_str_new_cstr(const char *string) {
   if (truffle_is_truffle_object((VALUE) string)) {
-    return truffle_invoke(RUBY_CEXT, "to_ruby_string", string);
+    return (VALUE) truffle_invoke(RUBY_CEXT, "to_ruby_string", string);
   } else {
     return (VALUE) truffle_invoke(RUBY_CEXT, "rb_str_new_cstr", truffle_read_string(string));
   }
@@ -318,12 +318,12 @@ VALUE rb_str_cat(VALUE string, const char *to_concat, long length) {
 }
 
 VALUE rb_str_cat2(VALUE string, const char *to_concat) {
-  truffle_invoke(string, "concat", rb_str_new_cstr(to_concat));
+  truffle_invoke((void *)string, "concat", rb_str_new_cstr(to_concat));
   return string;
 }
 
 VALUE rb_str_to_str(VALUE string) {
-  return (VALUE) truffle_invoke(string, "to_str");
+  return (VALUE) truffle_invoke((void *)string, "to_str");
 }
 
 VALUE rb_string_value(volatile VALUE *value_pointer) {
@@ -375,11 +375,11 @@ void rb_str_set_len(VALUE string, long length) {
 }
 
 VALUE rb_str_new_frozen(VALUE value) {
-  return truffle_invoke(RUBY_CEXT, "rb_str_new_frozen", value);
+  return (VALUE) truffle_invoke(RUBY_CEXT, "rb_str_new_frozen", value);
 }
 
 VALUE rb_String(VALUE value) {
-  return truffle_invoke(RUBY_CEXT, "rb_String", value);
+  return (VALUE) truffle_invoke(RUBY_CEXT, "rb_String", value);
 }
 
 VALUE rb_str_resize(VALUE string, long length) {
@@ -394,7 +394,7 @@ ID rb_intern(const char *string) {
 }
 
 VALUE rb_sym2str(VALUE string) {
-  return truffle_invoke(string, "to_str");
+  return (VALUE) truffle_invoke((void *)string, "to_str");
 }
 
 // Array
@@ -417,7 +417,7 @@ VALUE RARRAY_AREF(VALUE array, long index) {
 }
 
 VALUE rb_Array(VALUE array) {
-  return truffle_invoke(RUBY_CEXT, "rb_Array", array);
+  return (VALUE) truffle_invoke(RUBY_CEXT, "rb_Array", array);
 }
 
 VALUE rb_ary_new() {
@@ -445,12 +445,12 @@ VALUE rb_ary_new4(long n, const VALUE *values) {
 }
 
 VALUE rb_ary_push(VALUE array, VALUE value) {
-  truffle_invoke(array, "push", value);
+  truffle_invoke((void *)array, "push", value);
   return array;
 }
 
 VALUE rb_ary_pop(VALUE array) {
-  return truffle_invoke(array, "pop");
+  return (VALUE) truffle_invoke((void *)array, "pop");
 }
 
 void rb_ary_store(VALUE array, long index, VALUE value) {
@@ -462,7 +462,7 @@ VALUE rb_ary_entry(VALUE array, long index) {
 }
 
 VALUE rb_ary_dup(VALUE array) {
-  return (VALUE) truffle_invoke(array, "dup");
+  return (VALUE) truffle_invoke((void *)array, "dup");
 }
 
 VALUE rb_ary_each(VALUE array) {
@@ -495,7 +495,7 @@ VALUE rb_hash_lookup(VALUE hash, VALUE key) {
 }
 
 VALUE rb_hash_lookup2(VALUE hash, VALUE key, VALUE default_value) {
-  return (VALUE) truffle_invoke(hash, "fetch", key, default_value);
+  return (VALUE) truffle_invoke((void *)hash, "fetch", key, default_value);
 }
 
 st_index_t rb_memhash(const void *data, long length) {
@@ -513,7 +513,7 @@ st_index_t rb_memhash(const void *data, long length) {
 // Class
 
 const char* rb_class2name(VALUE module) {
-  return RSTRING_PTR(truffle_invoke(module, "name"));
+  return RSTRING_PTR(truffle_invoke((void *)module, "name"));
 }
 
 VALUE rb_class_real(VALUE ruby_class) {
@@ -521,7 +521,7 @@ VALUE rb_class_real(VALUE ruby_class) {
 }
 
 VALUE rb_class_superclass(VALUE ruby_class) {
-  return truffle_invoke(ruby_class, "superclass");
+  return (VALUE) truffle_invoke((void *)ruby_class, "superclass");
 }
 
 VALUE rb_obj_class(VALUE object) {
@@ -529,11 +529,11 @@ VALUE rb_obj_class(VALUE object) {
 }
 
 VALUE rb_class_of(VALUE object) {
-  return truffle_invoke(object, "class");
+  return (VALUE) truffle_invoke((void *)object, "class");
 }
 
 VALUE rb_obj_alloc(VALUE ruby_class) {
-  return truffle_invoke(ruby_class, "allocate");
+  return (VALUE) truffle_invoke((void *)ruby_class, "allocate");
 }
 
 VALUE rb_class_path(VALUE ruby_class) {
@@ -549,7 +549,7 @@ VALUE rb_path2class(const char *string) {
 // Proc
 
 VALUE rb_proc_new(void *function, VALUE value) {
-  return truffle_invoke(RUBY_CEXT, "rb_proc_new", truffle_address_to_function(function), value);
+  return (VALUE) truffle_invoke(RUBY_CEXT, "rb_proc_new", truffle_address_to_function(function), value);
 }
 
 // Utilities
@@ -579,7 +579,7 @@ int rb_scan_args(int argc, VALUE *argv, const char *format, ...) {
 // Calls
 
 int rb_respond_to(VALUE object, ID name) {
-  return truffle_invoke_b(object, "respond_to?", name);
+  return truffle_invoke_b((void *)object, "respond_to?", name);
 }
 
 VALUE rb_funcallv(VALUE object, ID name, int args_count, const VALUE *args) {
@@ -598,11 +598,11 @@ VALUE rb_block_call(VALUE object, ID name, int args_count, const VALUE *args, rb
 }
 
 int rb_block_given_p() {
-  return truffle_invoke(RUBY_CEXT, "rb_block_given_p");
+  return truffle_invoke_i(RUBY_CEXT, "rb_block_given_p");
 }
 
 VALUE rb_yield(VALUE value) {
-  return truffle_invoke(RUBY_CEXT, "rb_yield", value);
+  return (VALUE) truffle_invoke(RUBY_CEXT, "rb_yield", value);
 }
 
 // Instance variables
@@ -626,37 +626,37 @@ VALUE rb_ivar_set(VALUE object, ID name, VALUE value) {
 }
 
 VALUE rb_ivar_lookup(VALUE object, const char *name, VALUE default_value) {
-  return truffle_invoke(RUBY_CEXT, "rb_ivar_lookup", name, default_value);
+  return (VALUE) truffle_invoke(RUBY_CEXT, "rb_ivar_lookup", name, default_value);
 }
 
 VALUE rb_attr_get(VALUE object, const char *name) {
-  return rb_ivar_lookup(object, name, Qnil);
+  return rb_ivar_lookup((void *)object, name, Qnil);
 }
 
 // Accessing constants
 
 int rb_const_defined(VALUE module, ID name) {
-  return truffle_invoke_b(module, "const_defined?", name);
+  return truffle_invoke_b((void *)module, "const_defined?", name);
 }
 
 int rb_const_defined_at(VALUE module, ID name) {
-  return truffle_invoke_b(module, "const_defined?", name, Qfalse);
+  return truffle_invoke_b((void *)module, "const_defined?", name, Qfalse);
 }
 
 VALUE rb_const_get(VALUE module, ID name) {
-  return truffle_invoke(module, "const_get", name);
+  return (VALUE) truffle_invoke((void *)module, "const_get", name);
 }
 
 VALUE rb_const_get_at(VALUE module, ID name) {
-  return truffle_invoke(module, "const_get", name, Qfalse);
+  return (VALUE) truffle_invoke((void *)module, "const_get", name, Qfalse);
 }
 
 VALUE rb_const_get_from(VALUE module, ID name) {
-  return truffle_invoke(RUBY_CEXT, "rb_const_get_from", module, name);
+  return (VALUE) truffle_invoke(RUBY_CEXT, "rb_const_get_from", module, name);
 }
 
 VALUE rb_const_set(VALUE module, ID name, VALUE value) {
-  return truffle_invoke(module, "const_set", name, value);
+  return (VALUE) truffle_invoke((void *)module, "const_set", name, value);
 }
 
 VALUE rb_define_const(VALUE module, const char *name, VALUE value) {
@@ -670,7 +670,7 @@ void rb_define_global_const(const char *name, VALUE value) {
 // Raising exceptions
 
 VALUE rb_exc_new3(VALUE exception_class, VALUE message) {
-  return truffle_invoke(exception_class, "new", message);
+  return (VALUE) truffle_invoke((void *)exception_class, "new", message);
 }
 
 void rb_exc_raise(VALUE exception) {
@@ -724,7 +724,7 @@ VALUE rb_define_class_under(VALUE module, const char *name, VALUE superclass) {
 }
 
 VALUE rb_define_class_id_under(VALUE module, ID name, VALUE superclass) {
-  return truffle_invoke(RUBY_CEXT, "rb_define_class_under", module, name, superclass);
+  return (VALUE) truffle_invoke(RUBY_CEXT, "rb_define_class_under", module, name, superclass);
 }
 
 VALUE rb_define_module(const char *name) {
@@ -732,11 +732,11 @@ VALUE rb_define_module(const char *name) {
 }
 
 VALUE rb_define_module_under(VALUE module, const char *name) {
-  return truffle_invoke(RUBY_CEXT, "rb_define_module_under", module, rb_str_new_cstr(name));
+  return (VALUE) truffle_invoke(RUBY_CEXT, "rb_define_module_under", module, rb_str_new_cstr(name));
 }
 
 void rb_include_module(VALUE module, VALUE to_include) {
-  truffle_invoke(module, "include", to_include);
+  truffle_invoke((void *)module, "include", to_include);
 }
 
 void rb_define_method(VALUE module, const char *name, void *function, int argc) {
@@ -792,87 +792,87 @@ void rb_define_alloc_func(VALUE ruby_class, rb_alloc_func_t alloc_function) {
 // Rational
 
 VALUE rb_Rational(VALUE num, VALUE den) {
-  return truffle_invoke(RUBY_CEXT, "rb_Rational", num, den);
+  return (VALUE) truffle_invoke(RUBY_CEXT, "rb_Rational", num, den);
 }
 
 VALUE rb_rational_raw(VALUE num, VALUE den) {
-  return truffle_invoke(RUBY_CEXT, "rb_rational_raw", num, den);
+  return (VALUE) truffle_invoke(RUBY_CEXT, "rb_rational_raw", num, den);
 }
 
 VALUE rb_rational_new(VALUE num, VALUE den) {
-  return truffle_invoke(RUBY_CEXT, "rb_rational_new", num, den);
+  return (VALUE) truffle_invoke(RUBY_CEXT, "rb_rational_new", num, den);
 }
 
 VALUE rb_rational_num(VALUE rat) {
-  return truffle_invoke(rat, "numerator");
+  return (VALUE) truffle_invoke((void *)rat, "numerator");
 }
 
 VALUE rb_rational_den(VALUE rat) {
-  return truffle_invoke(rat, "denominator");
+  return (VALUE) truffle_invoke((void *)rat, "denominator");
 }
 
 VALUE rb_flt_rationalize_with_prec(VALUE value, VALUE precision) {
-  return truffle_invoke(value, "rationalize", precision);
+  return (VALUE) truffle_invoke((void *)value, "rationalize", precision);
 }
 
 VALUE rb_flt_rationalize(VALUE value) {
-  return truffle_invoke(value, "rationalize");
+  return (VALUE) truffle_invoke((void *)value, "rationalize");
 }
 
 // Complex
 
 VALUE rb_Complex(VALUE real, VALUE imag) {
-  return truffle_invoke(RUBY_CEXT, "rb_Complex", real, imag);
+  return (VALUE) truffle_invoke(RUBY_CEXT, "rb_Complex", real, imag);
 }
 
 VALUE rb_complex_new(VALUE real, VALUE imag) {
-  return truffle_invoke(RUBY_CEXT, "rb_complex_new", real, imag);
+  return (VALUE) truffle_invoke(RUBY_CEXT, "rb_complex_new", real, imag);
 }
 
 VALUE rb_complex_raw(VALUE real, VALUE imag) {
-  return truffle_invoke(RUBY_CEXT, "rb_complex_raw", real, imag);
+  return (VALUE) truffle_invoke(RUBY_CEXT, "rb_complex_raw", real, imag);
 }
 
 VALUE rb_complex_polar(VALUE r, VALUE theta) {
-  return truffle_invoke(RUBY_CEXT, "rb_complex_polar", r, theta);
+  return (VALUE) truffle_invoke(RUBY_CEXT, "rb_complex_polar", r, theta);
 }
 
 VALUE rb_complex_set_real(VALUE complex, VALUE real) {
-  return truffle_invoke(RUBY_CEXT, "rb_complex_set_real", complex, real);
+  return (VALUE) truffle_invoke(RUBY_CEXT, "rb_complex_set_real", complex, real);
 }
 
 VALUE rb_complex_set_imag(VALUE complex, VALUE imag) {
-  return truffle_invoke(RUBY_CEXT, "rb_complex_set_imag", complex, imag);
+  return (VALUE) truffle_invoke(RUBY_CEXT, "rb_complex_set_imag", complex, imag);
 }
 
 // Mutexes
 
 VALUE rb_mutex_new(void) {
-  return truffle_invoke(RUBY_CEXT, "rb_mutex_new");
+  return (VALUE) truffle_invoke(RUBY_CEXT, "rb_mutex_new");
 }
 
 VALUE rb_mutex_locked_p(VALUE mutex) {
-  return truffle_invoke(RUBY_CEXT, "rb_mutex_locked_p", mutex);
+  return (VALUE) truffle_invoke(RUBY_CEXT, "rb_mutex_locked_p", mutex);
 }
 
 VALUE rb_mutex_trylock(VALUE mutex) {
-  return truffle_invoke(RUBY_CEXT, "rb_mutex_trylock", mutex);
+  return (VALUE) truffle_invoke(RUBY_CEXT, "rb_mutex_trylock", mutex);
 }
 
 VALUE rb_mutex_lock(VALUE mutex) {
-  return truffle_invoke(RUBY_CEXT, "rb_mutex_lock", mutex);
+  return (VALUE) truffle_invoke(RUBY_CEXT, "rb_mutex_lock", mutex);
 }
 
 VALUE rb_mutex_unlock(VALUE mutex) {
-  return truffle_invoke(RUBY_CEXT, "rb_mutex_unlock", mutex);
+  return (VALUE) truffle_invoke(RUBY_CEXT, "rb_mutex_unlock", mutex);
 }
 
 VALUE rb_mutex_sleep(VALUE mutex, VALUE timeout) {
-  return truffle_invoke(RUBY_CEXT, "rb_mutex_sleep", mutex, timeout);
+  return (VALUE) truffle_invoke(RUBY_CEXT, "rb_mutex_sleep", mutex, timeout);
 }
 
 VALUE rb_mutex_synchronize(VALUE mutex, VALUE (*func)(VALUE arg), VALUE arg) {
-  return truffle_invoke(RUBY_CEXT, "rb_mutex_synchronize", mutex, func, arg);
+  return (VALUE) truffle_invoke(RUBY_CEXT, "rb_mutex_synchronize", mutex, func, arg);
 }
 
 // GC
@@ -881,17 +881,17 @@ void rb_gc_register_address(VALUE *address) {
 }
 
 VALUE rb_gc_enable() {
-  return truffle_invoke(RUBY_CEXT, "rb_gc_enable");
+  return (VALUE) truffle_invoke(RUBY_CEXT, "rb_gc_enable");
 }
 
 VALUE rb_gc_disable() {
-  return truffle_invoke(RUBY_CEXT, "rb_gc_disable");
+  return (VALUE) truffle_invoke(RUBY_CEXT, "rb_gc_disable");
 }
 
 // Threads
 
 rb_nativethread_id_t rb_nativethread_self() {
-  return truffle_invoke(RUBY_CEXT, "rb_nativethread_self");
+  return (VALUE) truffle_invoke(RUBY_CEXT, "rb_nativethread_self");
 }
 
 int rb_nativethread_lock_initialize(rb_nativethread_lock_t *lock) {
@@ -905,12 +905,12 @@ int rb_nativethread_lock_destroy(rb_nativethread_lock_t *lock) {
 }
 
 int rb_nativethread_lock_lock(rb_nativethread_lock_t *lock) {
-  truffle_invoke(lock, "lock");
+  truffle_invoke((void *)lock, "lock");
   return 0;
 }
 
 int rb_nativethread_lock_unlock(rb_nativethread_lock_t *lock) {
-  truffle_invoke(lock, "unlock");
+  truffle_invoke((void *)lock, "unlock");
   return 0;
 }
 
@@ -930,7 +930,7 @@ int rb_cloexec_dup(int oldfd) {
 }
 
 int rb_jt_io_handle(VALUE io) {
-  return truffle_invoke(RUBY_CEXT, "rb_jt_io_handle", io);
+  return (VALUE) truffle_invoke(RUBY_CEXT, "rb_jt_io_handle", io);
 }
 
 // Data
