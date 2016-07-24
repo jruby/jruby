@@ -274,6 +274,15 @@ module Truffle::CExt
     block.call(value)
   end
 
+  def rb_ivar_lookup(object, name, default_value)
+    # TODO CS 24-Jul-16 races - needs a new primitive or be defined in Java?
+    if object.instance_variable_defined?(name)
+      object.instance_variable_get(name)
+    else
+      default_value
+    end
+  end
+
   def rb_exc_raise(exception)
     raise exception
   end

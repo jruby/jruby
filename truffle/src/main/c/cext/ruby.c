@@ -420,6 +420,14 @@ VALUE rb_iv_set(VALUE object, const char *name, VALUE value) {
   return value;
 }
 
+VALUE rb_ivar_lookup(VALUE object, const char *name, VALUE default_value) {
+  return truffle_invoke(RUBY_CEXT, "rb_ivar_lookup", name, default_value);
+}
+
+VALUE rb_attr_get(VALUE object, const char *name) {
+  return rb_ivar_lookup(object, name, Qnil);
+}
+
 // Accessing constants
 
 int rb_const_defined(VALUE module, ID name) {
