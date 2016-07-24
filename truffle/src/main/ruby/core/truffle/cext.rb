@@ -182,6 +182,10 @@ module Truffle::CExt
     ArgError
   end
 
+  def rb_eRangeError
+    RangeError
+  end
+
   def rb_fix2int(value)
     if value.nil?
       raise TypeError
