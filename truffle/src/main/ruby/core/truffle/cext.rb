@@ -203,6 +203,10 @@ module Truffle::CExt
     value.to_f
   end
 
+  def rb_Integer(value)
+    Integer(value)
+  end
+
   def rb_Float(value)
     Float(value)
   end

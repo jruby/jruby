@@ -212,6 +212,10 @@ int NIL_P(VALUE value);
 int FIXNUM_P(VALUE value);
 int RTEST(VALUE value);
 
+// Integer
+
+VALUE rb_Integer(VALUE value);
+
 // Float
 
 VALUE rb_float_new(double value);

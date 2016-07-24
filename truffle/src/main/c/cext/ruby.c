@@ -182,6 +182,12 @@ int RTEST(VALUE value) {
   return truffle_invoke_b(RUBY_CEXT, "RTEST", value);
 }
 
+// Integer
+
+VALUE rb_Integer(VALUE value) {
+  return (VALUE) truffle_invoke(RUBY_CEXT, "rb_Integer", value);
+}
+
 // Float
 
 VALUE rb_float_new(double value) {
