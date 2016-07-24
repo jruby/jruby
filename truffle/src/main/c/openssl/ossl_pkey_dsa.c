@@ -387,14 +387,14 @@ static VALUE
 ossl_dsa_to_der(VALUE self)
 {
     DSA *dsa;
-    int (*i2d_func)_((DSA*, unsigned char**));
+    int (*i2d_func)((DSA*, unsigned char**));
     unsigned char *p;
     long len;
     VALUE str;
 
     GetDSA(self, dsa);
     if(DSA_HAS_PRIVATE(dsa))
-	i2d_func = (int(*)_((DSA*,unsigned char**)))i2d_DSAPrivateKey;
+	i2d_func = (int(*)((DSA*,unsigned char**)))i2d_DSAPrivateKey;
     else
 	i2d_func = i2d_DSA_PUBKEY;
     if((len = i2d_func(dsa, NULL)) <= 0)
