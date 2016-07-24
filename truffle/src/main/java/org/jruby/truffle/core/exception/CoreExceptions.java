@@ -656,6 +656,21 @@ public class CoreExceptions {
     }
 
     @TruffleBoundary
+    public DynamicObject rangeErrorConvertToInt(long value, Node currentNode) {
+        final String direction;
+
+        if (value < Integer.MIN_VALUE) {
+            direction = "small";
+        } else if (value > Integer.MAX_VALUE) {
+            direction = "big";
+        } else {
+            throw new IllegalArgumentException();
+        }
+
+        return rangeError(String.format("integer %d too %s to convert to `int'", value, direction), currentNode);
+    }
+
+    @TruffleBoundary
     public DynamicObject rangeError(String message, Node currentNode) {
         return ExceptionOperations.createRubyException(
                 context.getCoreLibrary().getRangeErrorClass(),

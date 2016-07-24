@@ -191,6 +191,7 @@ VALUE LONG2FIX(long value);
 
 int rb_fix2int(VALUE value);
 unsigned long rb_fix2uint(VALUE value);
+int rb_long2int(long value);
 
 ID SYM2ID(VALUE value);
 VALUE ID2SYM(ID value);

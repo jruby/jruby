@@ -28,6 +28,7 @@ import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.builtins.CoreMethodNode;
+import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.truffle.core.cast.NameToJavaStringNodeGen;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyConstant;
@@ -35,6 +36,7 @@ import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.constants.GetConstantNode;
 import org.jruby.truffle.language.constants.LookupConstantNode;
+import org.jruby.truffle.language.control.RaiseException;
 
 @CoreClass("Truffle::CExt")
 public class CExtNodes {
@@ -164,6 +166,30 @@ public class CExtNodes {
         @Specialization
         public int long2fix(int num) {
             return num;
+        }
+
+    }
+
+    @CoreMethod(names = "rb_long2int", isModuleFunction = true, required = 1)
+    public abstract static class Long2Int extends CoreMethodArrayArgumentsNode {
+
+        @Specialization
+        public int long2fix(int num) {
+            return num;
+        }
+
+        @Specialization(guards = "fitsIntoInteger(num)")
+        public int long2fixInRange(long num) {
+            return (int) num;
+        }
+
+        @Specialization(guards = "!fitsIntoInteger(num)")
+        public int long2fixOutOfRange(long num) {
+            throw new RaiseException(coreExceptions().rangeErrorConvertToInt(num, this));
+        }
+
+        protected boolean fitsIntoInteger(long num) {
+            return CoreLibrary.fitsIntoInteger(num);
         }
 
     }

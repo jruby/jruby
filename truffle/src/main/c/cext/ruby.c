@@ -156,6 +156,10 @@ unsigned long rb_fix2uint(VALUE value) {
   return truffle_invoke_l(RUBY_CEXT, "rb_fix2uint", value);
 }
 
+int rb_long2int(long value) {
+  return truffle_invoke_l(RUBY_CEXT, "rb_long2int", value);
+}
+
 ID SYM2ID(VALUE value) {
   return (ID) value;
 }
