@@ -268,6 +268,8 @@ VALUE rb_ary_dup(VALUE array);
 VALUE rb_hash_new(void);
 VALUE rb_hash_aref(VALUE hash, VALUE key);
 VALUE rb_hash_aset(VALUE hash, VALUE key, VALUE value);
+VALUE rb_hash_lookup(VALUE hash, VALUE key);
+VALUE rb_hash_lookup2(VALUE hash, VALUE key, VALUE default_value);
 
 // Class
 

@@ -353,6 +353,14 @@ VALUE rb_hash_aset(VALUE hash, VALUE key, VALUE value) {
   return value;
 }
 
+VALUE rb_hash_lookup(VALUE hash, VALUE key) {
+  return truffle_read(hash, key);
+}
+
+VALUE rb_hash_lookup2(VALUE hash, VALUE key, VALUE default_value) {
+  return (VALUE) truffle_invoke(hash, "fetch", key, default_value);
+}
+
 // Class
 
 const char* rb_class2name(VALUE module) {
