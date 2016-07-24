@@ -277,7 +277,7 @@ public class CExtNodes {
 
     }
 
-    @CoreMethod(names = "rb_io_handle", isModuleFunction = true)
+    @CoreMethod(names = "rb_jt_io_handle", isModuleFunction = true)
     public abstract static class IOHandleNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization(guards = "isRubyIO(io)")

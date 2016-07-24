@@ -46,63 +46,63 @@ bool SYMBOL_P(VALUE value) {
 
 // Constants
 
-VALUE get_Qfalse(void) {
+VALUE rb_jt_get_Qfalse(void) {
   return (VALUE) truffle_read(RUBY_CEXT, "Qfalse");
 }
 
-VALUE get_Qtrue(void) {
+VALUE rb_jt_get_Qtrue(void) {
   return (VALUE) truffle_read(RUBY_CEXT, "Qtrue");
 }
 
-VALUE get_Qnil(void) {
+VALUE rb_jt_get_Qnil(void) {
   return (VALUE) truffle_read(RUBY_CEXT, "Qnil");
 }
 
-VALUE get_rb_cObject(void) {
+VALUE rb_jt_get_cObject(void) {
   return (VALUE) truffle_read(RUBY_CEXT, "rb_cObject");
 }
 
-VALUE get_rb_cArray(void) {
+VALUE rb_jt_get_cArray(void) {
   return (VALUE) truffle_read(RUBY_CEXT, "rb_cArray");
 }
 
-VALUE get_rb_cHash(void) {
+VALUE rb_jt_get_cHash(void) {
   return (VALUE) truffle_read(RUBY_CEXT, "rb_cHash");
 }
 
-VALUE get_rb_cProc(void) {
+VALUE rb_jt_get_cProc(void) {
   return (VALUE) truffle_read(RUBY_CEXT, "rb_cProc");
 }
 
-VALUE get_rb_cTime(void) {
+VALUE rb_jt_get_cTime(void) {
   return (VALUE) truffle_read(RUBY_CEXT, "rb_cTime");
 }
 
-VALUE get_rb_mKernel(void) {
+VALUE rb_jt_get_mKernel(void) {
   return (VALUE) truffle_read(RUBY_CEXT, "rb_mKernel");
 }
 
-VALUE get_rb_mEnumerable(void) {
+VALUE rb_jt_get_mEnumerable(void) {
   return (VALUE) truffle_read(RUBY_CEXT, "rb_mEnumerable");
 }
 
-VALUE get_rb_eException(void) {
+VALUE rb_jt_get_eException(void) {
   return (VALUE) truffle_read(RUBY_CEXT, "rb_eException");
 }
 
-VALUE get_rb_eRuntimeError(void) {
+VALUE rb_jt_get_eRuntimeError(void) {
   return (VALUE) truffle_read(RUBY_CEXT, "rb_eRuntimeError");
 }
 
-VALUE get_rb_eStandardError(void) {
+VALUE rb_jt_get_eStandardError(void) {
   return (VALUE) truffle_read(RUBY_CEXT, "rb_eStandardError");
 }
 
-VALUE get_rb_eNoMemError(void) {
+VALUE rb_jt_get_eNoMemError(void) {
   return (VALUE) truffle_read(RUBY_CEXT, "rb_eNoMemError");
 }
 
-VALUE get_rb_eTypeError(void) {
+VALUE rb_jt_get_eTypeError(void) {
   return (VALUE) truffle_read(RUBY_CEXT, "rb_eTypeError");
 }
 
@@ -812,6 +812,6 @@ int rb_cloexec_dup(int oldfd) {
   abort();
 }
 
-int rb_io_handle(VALUE io) {
-  return truffle_invoke(RUBY_CEXT, "rb_io_handle", io);
+int rb_jt_io_handle(VALUE io) {
+  return truffle_invoke(RUBY_CEXT, "rb_jt_io_handle", io);
 }

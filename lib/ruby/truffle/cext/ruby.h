@@ -151,41 +151,41 @@ bool SYMBOL_P(VALUE value);
 
 // Constants
 
-VALUE get_Qfalse(void);
-VALUE get_Qtrue(void);
-VALUE get_Qnil(void);
+VALUE rb_jt_Qfalse(void);
+VALUE rb_jt_Qtrue(void);
+VALUE rb_jt_Qnil(void);
 
-#define Qfalse get_Qfalse()
-#define Qtrue get_Qtrue()
-#define Qnil get_Qnil()
+#define Qfalse rb_jt_Qfalse()
+#define Qtrue rb_jt_Qtrue()
+#define Qnil rb_jt_Qnil()
 
-VALUE get_rb_cObject(void);
-VALUE get_rb_cArray(void);
-VALUE get_rb_cHash(void);
-VALUE get_rb_mKernel(void);
-VALUE get_rb_cProc(void);
-VALUE get_rb_cTime(void);
-VALUE get_rb_mEnumerable(void);
+VALUE rb_jt_get_cObject(void);
+VALUE rb_jt_get_cArray(void);
+VALUE rb_jt_get_cHash(void);
+VALUE rb_jt_get_mKernel(void);
+VALUE rb_jt_get_cProc(void);
+VALUE rb_jt_get_cTime(void);
+VALUE rb_jt_get_mEnumerable(void);
 
-#define rb_cObject get_rb_cObject()
-#define rb_cArray get_rb_cArray()
-#define rb_cHash get_rb_cHash()
-#define rb_mKernel get_rb_mKernel()
-#define rb_cProc get_rb_cProc()
-#define rb_cTime get_rb_cTime()
-#define rb_mEnumerable get_rb_mEnumerable()
+#define rb_cObject rb_jt_get_cObject()
+#define rb_cArray rb_jt_get_cArray()
+#define rb_cHash rb_jt_get_cHash()
+#define rb_mKernel rb_jt_get_mKernel()
+#define rb_cProc rb_jt_get_cProc()
+#define rb_cTime rb_jt_get_cTime()
+#define rb_mEnumerable rb_jt_get_mEnumerable()
 
-VALUE get_rb_eException(void);
-VALUE get_rb_eRuntimeError(void);
-VALUE get_rb_eStandardError(void);
-VALUE get_rb_eNoMemError(void);
-VALUE get_rb_eTypeError(void);
+VALUE rb_jt_get_eException(void);
+VALUE rb_jt_get_eRuntimeError(void);
+VALUE rb_jt_get_eStandardError(void);
+VALUE rb_jt_get_eNoMemError(void);
+VALUE rb_jt_get_eTypeError(void);
 
-#define rb_eException get_rb_eException()
-#define rb_eRuntimeError get_rb_eRuntimeError()
-#define rb_eStandardError get_rb_eStandardError()
-#define rb_eNoMemError get_rb_eNoMemError()
-#define rb_eTypeError get_rb_eTypeError()
+#define rb_eException rb_jt_get_eException()
+#define rb_eRuntimeError rb_jt_get_eRuntimeError()
+#define rb_eStandardError rb_jt_get_eStandardError()
+#define rb_eNoMemError rb_jt_get_eNoMemError()
+#define rb_eTypeError rb_jt_get_eTypeError()
 
 // Conversions
 
@@ -364,8 +364,8 @@ int rb_const_defined(VALUE module, ID name);
 int rb_const_defined_at(VALUE module, ID name);
 
 VALUE rb_const_get(VALUE module, ID name);
-VALUE rb_const_get_at(VALUE module, ID name);
-VALUE rb_const_get_from(VALUE module, ID name);
+VALUE rb_const_at(VALUE module, ID name);
+VALUE rb_const_from(VALUE module, ID name);
 
 VALUE rb_const_set(VALUE module, ID name, VALUE value);
 VALUE rb_define_const(VALUE module, const char *name, VALUE value);
@@ -485,9 +485,9 @@ void rb_io_check_readable(rb_io_t *io);
 
 int rb_cloexec_dup(int oldfd);
 
-int rb_io_handle(VALUE file); // Non-standard
+int rb_jt_io_handle(VALUE file);
 
-#define GetOpenFile(file, pointer) ((pointer)->fd = rb_io_handle(file))
+#define GetOpenFile(file, pointer) ((pointer)->fd = rb_jt_io_handle(file))
 
 #if defined(__cplusplus)
 }
