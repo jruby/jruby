@@ -363,6 +363,10 @@ VALUE rb_class_of(VALUE object) {
   return truffle_invoke(object, "class");
 }
 
+VALUE rb_obj_alloc(VALUE ruby_class) {
+  return truffle_invoke(ruby_class, "allocate");
+}
+
 // Proc
 
 VALUE rb_proc_new(void *function, VALUE value) {
