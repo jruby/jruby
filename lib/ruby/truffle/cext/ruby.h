@@ -42,6 +42,8 @@ extern "C" {
 
 #define HAVE_SYS_TIME_H
 
+#define HAVE_RB_IO_T
+
 // Macros
 
 #define NORETURN(X) __attribute__((__noreturn__)) X
@@ -466,6 +468,11 @@ int rb_nativethread_lock_initialize(rb_nativethread_lock_t *lock);
 int rb_nativethread_lock_destroy(rb_nativethread_lock_t *lock);
 int rb_nativethread_lock_lock(rb_nativethread_lock_t *lock);
 int rb_nativethread_lock_unlock(rb_nativethread_lock_t *lock);
+
+// IO
+
+typedef struct rb_io_t {
+} rb_io_t;
 
 #if defined(__cplusplus)
 }
