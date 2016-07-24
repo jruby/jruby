@@ -408,7 +408,8 @@ VALUE rb_complex_set_imag(VALUE complex, VALUE imag);
 
 // GC
 
-#define RB_GC_GUARD(value) value
+#define RB_GC_GUARD(v) \
+    (*__extension__ ({volatile VALUE *rb_gc_guarded_ptr = &(v); rb_gc_guarded_ptr;}))
 
 void rb_gc_register_address(VALUE *address);
 #define rb_global_variable(address) ;
