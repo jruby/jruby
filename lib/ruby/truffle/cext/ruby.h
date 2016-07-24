@@ -320,6 +320,11 @@ VALUE rb_hash_aset(VALUE hash, VALUE key, VALUE value);
 VALUE rb_hash_lookup(VALUE hash, VALUE key);
 VALUE rb_hash_lookup2(VALUE hash, VALUE key, VALUE default_value);
 
+typedef unsigned long st_data_t;
+typedef st_data_t st_index_t;
+
+st_index_t rb_memhash(const void *data, long length);
+
 // Class
 
 const char* rb_class2name(VALUE module);

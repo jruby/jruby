@@ -443,6 +443,18 @@ VALUE rb_hash_lookup2(VALUE hash, VALUE key, VALUE default_value) {
   return (VALUE) truffle_invoke(hash, "fetch", key, default_value);
 }
 
+st_index_t rb_memhash(const void *data, long length) {
+  // Not a proper hash - just something that produces a stable result for now
+
+  long hash = 0;
+
+  for (long n = 0; n < length; n++) {
+    hash = (hash << 1) ^ ((uint8_t*) data)[n];
+  }
+
+  return (st_index_t) hash;
+}
+
 // Class
 
 const char* rb_class2name(VALUE module) {
