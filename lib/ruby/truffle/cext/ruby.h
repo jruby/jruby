@@ -333,6 +333,7 @@ VALUE rb_ary_entry(VALUE array, long index);
 VALUE rb_ary_dup(VALUE array);
 VALUE rb_ary_each(VALUE array);
 #define rb_assoc_new(a, b) rb_ary_new3(2, a, b)
+VALUE rb_check_array_type(VALUE array);
 
 // Hash
 

@@ -458,6 +458,11 @@ VALUE rb_ary_each(VALUE array) {
   abort();
 }
 
+VALUE rb_check_array_type(VALUE array) {
+  fprintf(stderr, "rb_check_array_type not implemented\n");
+  abort();
+}
+
 // Hash
 
 VALUE rb_hash_new() {
