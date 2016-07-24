@@ -312,6 +312,7 @@ VALUE rb_str_resize(VALUE string, long length);
 ID rb_intern(const char *string);
 ID rb_intern2(const char *string, long length);
 #define rb_intern_const(str) rb_intern2((str), strlen(str))
+VALUE rb_sym2str(VALUE string);
 
 // Array
 

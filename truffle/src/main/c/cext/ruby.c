@@ -385,6 +385,10 @@ ID rb_intern(const char *string) {
   return (ID) truffle_invoke(RUBY_CEXT, "rb_intern", rb_str_new_cstr(string));
 }
 
+VALUE rb_sym2str(VALUE string) {
+  return truffle_invoke(string, "to_str");
+}
+
 // Array
 
 int RARRAY_LEN(VALUE array) {
