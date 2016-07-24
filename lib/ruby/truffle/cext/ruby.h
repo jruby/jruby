@@ -136,25 +136,6 @@ enum ruby_value_type {
 #define T_ZOMBIE    RUBY_T_ZOMBIE
 #define T_MASK      RUBY_T_MASK
 
-typedef struct rb_data_type_struct rb_data_type_t;
-
-struct rb_data_type_struct {
-  const char *wrap_struct_name;
-  
-  struct {
-    void (*dmark)(void *);
-    void (*dfree)(void *);
-    size_t (*dsize)(const void *);
-    void *reserved[2];
-  } function;
-  
-  const rb_data_type_t *parent;
-  void *data;
-  VALUE flags;
-};
-
-#define RUBY_TYPED_FREE_IMMEDIATELY 1
-
 int rb_type(VALUE value);
 #define TYPE(value) rb_type((VALUE) (value))
 bool RB_TYPE_P(VALUE value, int type);
@@ -523,6 +504,35 @@ int rb_cloexec_dup(int oldfd);
 int rb_jt_io_handle(VALUE file);
 
 #define GetOpenFile(file, pointer) ((pointer)->fd = rb_jt_io_handle(file))
+
+// Typed data
+
+typedef struct rb_data_type_struct rb_data_type_t;
+
+struct rb_data_type_struct {
+  const char *wrap_struct_name;
+  struct {
+    void (*dmark)(void *data);
+    void (*dfree)(void *data);
+    size_t (*dsize)(const void *data);
+    void *reserved[2];
+  } function;
+  const rb_data_type_t *parent;
+  void *data;
+  int flags;
+};
+
+#define RUBY_TYPED_FREE_IMMEDIATELY 1
+
+VALUE rb_data_typed_object_wrap(VALUE ruby_class, void *data, const rb_data_type_t *data_type);
+
+#define TypedData_Wrap_Struct(ruby_class, data_type, data) rb_data_typed_object_wrap((ruby_class), (data), (data_type))
+
+void *rb_check_typeddata(VALUE value, const rb_data_type_t *data_type);
+
+#define TypedData_Get_Struct(value, type, data_type, variable) ((variable) = (type *)rb_check_typeddata((value), (data_type)))
+
+#define RTYPEDDATA_DATA(value) *((volatile int*) 0)
 
 #if defined(__cplusplus)
 }

@@ -484,6 +484,10 @@ module Truffle::CExt
     Mutex.new
   end
 
+  def rb_data_typed_object_wrap(ruby_class, data, data_type)
+    raise 'not implemented'
+  end
+
 end
 
 Truffle::Interop.export(:ruby_cext, Truffle::CExt)

@@ -850,3 +850,14 @@ int rb_cloexec_dup(int oldfd) {
 int rb_jt_io_handle(VALUE io) {
   return truffle_invoke(RUBY_CEXT, "rb_jt_io_handle", io);
 }
+
+// Typed data
+
+VALUE rb_data_typed_object_wrap(VALUE ruby_class, void *data, const rb_data_type_t *data_type) {
+  return (VALUE) truffle_invoke(RUBY_CEXT, "rb_data_typed_object_wrap", ruby_class, data, data_type);
+}
+
+void *rb_check_typeddata(VALUE value, const rb_data_type_t *data_type) {
+  fprintf(stderr, "rb_check_typeddata not implemented\n");
+  abort();
+}
