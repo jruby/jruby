@@ -40,6 +40,10 @@ VALUE rb_obj_is_kind_of(VALUE object, VALUE ruby_class) {
   return truffle_invoke(object, "kind_of?", ruby_class);
 }
 
+bool SYMBOL_P(VALUE value) {
+  return truffle_invoke_b(RUBY_CEXT, "SYMBOL_P", value);
+}
+
 // Constants
 
 VALUE get_Qfalse(void) {

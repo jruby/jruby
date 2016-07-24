@@ -96,6 +96,9 @@ module Truffle::CExt
   end
 
   def RB_TYPE_P(value, type)
+    # TODO CS 23-Jul-16 we could do with making this a kind of specialising case
+    # that puts never seen cases behind a transfer
+    
     case type
       when T_STRING
         value.is_a?(String)
@@ -109,6 +112,10 @@ module Truffle::CExt
     if rb_type(value) != type
       raise 'unexpected type'
     end
+  end
+
+  def SYMBOL_P(value)
+    value.is_a?(Symbol)
   end
 
   def Qfalse
