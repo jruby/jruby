@@ -50,8 +50,8 @@ extern "C" {
 
 // Basic types
 
-typedef void *ID;
-typedef void *VALUE;
+typedef uint64_t VALUE;
+typedef VALUE ID;
 
 // Helpers
 
@@ -553,7 +553,7 @@ struct rb_data_type_struct {
   } function;
   const rb_data_type_t *parent;
   void *data;
-  int flags;
+  VALUE flags;
 };
 
 #define RUBY_TYPED_FREE_IMMEDIATELY 1
