@@ -613,6 +613,10 @@ VALUE rb_define_module_under(VALUE module, const char *name) {
   return truffle_invoke(RUBY_CEXT, "rb_define_module_under", module, rb_str_new_cstr(name));
 }
 
+void rb_include_module(VALUE module, VALUE to_include) {
+  truffle_invoke(module, "include", to_include);
+}
+
 void rb_define_method(VALUE module, const char *name, void *function, int argc) {
   truffle_invoke(RUBY_CEXT, "rb_define_method", module, rb_str_new_cstr(name), truffle_address_to_function(function), argc);
 }

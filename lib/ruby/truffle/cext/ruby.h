@@ -387,6 +387,7 @@ VALUE rb_define_class_under(VALUE module, const char *name, VALUE superclass);
 VALUE rb_define_class_id_under(VALUE module, ID name, VALUE superclass);
 VALUE rb_define_module(const char *name);
 VALUE rb_define_module_under(VALUE module, const char *name);
+void rb_include_module(VALUE module, VALUE to_include);
 
 void rb_define_method(VALUE module, const char *name, void *function, int argc);
 void rb_define_private_method(VALUE module, const char *name, void *function, int argc);
