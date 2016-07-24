@@ -297,6 +297,11 @@ VALUE rb_str_append(VALUE string, VALUE to_append) {
   abort();
 }
 
+void rb_str_set_len(VALUE string, long length) {
+  fprintf(stderr, "rb_str_set_len not implemented\n");
+  abort();
+}
+
 // Symbol
 
 ID rb_intern(const char *string) {
