@@ -211,8 +211,14 @@ VALUE rb_intern_str(VALUE string) {
   return (VALUE) truffle_invoke(RUBY_CEXT, "rb_intern_str", string);
 }
 
-void rb_str_cat(VALUE string, const char *to_concat, long length) {
+VALUE rb_str_cat(VALUE string, const char *to_concat, long length) {
   truffle_invoke(RUBY_CEXT, "rb_str_cat", string, rb_str_new_cstr(to_concat), length);
+  return string;
+}
+
+VALUE rb_str_cat2(VALUE string, const char *to_concat) {
+  truffle_invoke(string, "concat", rb_str_new_cstr(to_concat));
+  return string;
 }
 
 VALUE rb_str_to_str(VALUE string) {
