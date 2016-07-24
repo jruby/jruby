@@ -359,6 +359,14 @@ const char* rb_class2name(VALUE module) {
   return RSTRING_PTR(truffle_invoke(module, "name"));
 }
 
+VALUE rb_class_real(VALUE ruby_class) {
+  return (VALUE) truffle_invoke(RUBY_CEXT, "rb_class_real", ruby_class);
+}
+
+VALUE rb_obj_class(VALUE object) {
+  return rb_class_real(rb_class_of(object));
+}
+
 VALUE rb_class_of(VALUE object) {
   return truffle_invoke(object, "class");
 }

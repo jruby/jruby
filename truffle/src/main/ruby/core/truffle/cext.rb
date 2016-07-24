@@ -255,6 +255,10 @@ module Truffle::CExt
     {}
   end
 
+  def rb_class_real(ruby_class)
+    raise 'not implemented'
+  end
+
   def rb_proc_new(function, value)
     proc { |*args|
       Truffle::Interop.execute(function, *args)
