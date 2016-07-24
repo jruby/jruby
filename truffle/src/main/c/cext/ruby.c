@@ -653,6 +653,11 @@ void rb_undef(VALUE module, ID name) {
   truffle_invoke(RUBY_CEXT, "rb_undef", module, name);
 }
 
+void rb_attr(VALUE ruby_class, ID name, int read, int write, int ex) {
+  fprintf(stderr, "rb_attr not implemented\n");
+  abort();
+}
+
 // Rational
 
 VALUE rb_Rational(VALUE num, VALUE den) {

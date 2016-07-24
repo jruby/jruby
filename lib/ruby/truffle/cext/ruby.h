@@ -401,6 +401,8 @@ void rb_alias(VALUE module, ID new_name, ID old_name);
 void rb_undef_method(VALUE module, const char *name);
 void rb_undef(VALUE module, ID name);
 
+void rb_attr(VALUE ruby_class, ID name, int read, int write, int ex);
+
 // Mutexes
 
 VALUE rb_mutex_new(void);
