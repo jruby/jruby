@@ -471,6 +471,10 @@ VALUE rb_block_call(VALUE object, ID name, int args_count, const VALUE *args, rb
   abort();
 }
 
+int rb_block_given_p() {
+  return truffle_invoke(RUBY_CEXT, "rb_block_given_p");
+}
+
 VALUE rb_yield(VALUE value) {
   return truffle_invoke(RUBY_CEXT, "rb_yield", value);
 }

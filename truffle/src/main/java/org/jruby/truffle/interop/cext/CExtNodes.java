@@ -223,15 +223,15 @@ public class CExtNodes {
     public abstract static class BlockGivenNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
-        public boolean blockGiven(MaterializedFrame callerFrame,
+        public int blockGiven(MaterializedFrame callerFrame,
                                   @Cached("createBinaryProfile()") ConditionProfile blockProfile) {
-            return blockProfile.profile(RubyArguments.getBlock(callerFrame) != null);
+            return blockProfile.profile(RubyArguments.getBlock(callerFrame) != null) ? 1 : 0;
         }
 
         @TruffleBoundary
         @Specialization
-        public boolean blockGiven(NotProvided noCallerFrame) {
-            return RubyArguments.getBlock(Truffle.getRuntime().getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_ONLY, false)) != null;
+        public int blockGiven(NotProvided noCallerFrame) {
+            return RubyArguments.getBlock(Truffle.getRuntime().getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_ONLY, false)) != null ? 1 : 0;
         }
 
     }
