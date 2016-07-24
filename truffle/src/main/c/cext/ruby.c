@@ -246,7 +246,7 @@ VALUE rb_str_to_str(VALUE string) {
   return (VALUE) truffle_invoke(string, "to_str");
 }
 
-VALUE rb_string_value(VALUE *value_pointer) {
+VALUE rb_string_value(volatile VALUE *value_pointer) {
   VALUE value = *value_pointer;
   
   if (!RB_TYPE_P(value, T_STRING)) {
@@ -255,6 +255,16 @@ VALUE rb_string_value(VALUE *value_pointer) {
   }
   
   return value;
+}
+
+char *rb_string_value_ptr(volatile VALUE* value_pointer) {
+  VALUE string = rb_string_value(value_pointer);
+  return RSTRING_PTR(string);
+}
+
+char *rb_string_value_cstr(volatile VALUE* value_pointer) {
+  fprintf(stderr, "rb_string_value_cstr not implemented\n");
+  abort();
 }
 
 VALUE rb_str_buf_new(long capacity) {

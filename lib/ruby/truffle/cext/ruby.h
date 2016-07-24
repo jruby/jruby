@@ -246,9 +246,13 @@ VALUE rb_str_new_cstr(const char *string);
 VALUE rb_str_cat(VALUE string, const char *to_concat, long length);
 VALUE rb_str_cat2(VALUE string, const char *to_concat);
 VALUE rb_str_to_str(VALUE string);
+VALUE rb_string_value(volatile VALUE *value_pointer);
 #define StringValue(value) rb_string_value(&(value))
 #define SafeStringValue StringValue
-VALUE rb_string_value(VALUE *value_pointer);
+char *rb_string_value_ptr(volatile VALUE* value_pointer);
+char *rb_string_value_cstr(volatile VALUE* value_pointer);
+#define StringValuePtr(string) rb_string_value_ptr(&(string))
+#define StringValueCStr(string) rb_string_value_cstr(&(string))
 VALUE rb_str_buf_new(long capacity);
 VALUE rb_sprintf(const char *format, ...);
 VALUE rb_vsprintf(const char *format, va_list args);
