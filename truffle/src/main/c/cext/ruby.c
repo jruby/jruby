@@ -237,6 +237,11 @@ size_t rb_absint_size(VALUE value, int *nlz_bits_ret) {
   abort();
 }
 
+VALUE rb_cstr_to_inum(const char* string, int base, int raise) {
+  fprintf(stderr, "rb_cstr_to_inum not implemented\n");
+  abort();
+}
+
 // Float
 
 VALUE rb_float_new(double value) {
