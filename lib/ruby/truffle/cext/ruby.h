@@ -145,6 +145,8 @@ void rb_check_type(VALUE value, int type);
 
 VALUE rb_obj_is_kind_of(VALUE object, VALUE ruby_class);
 
+void rb_check_frozen(VALUE object);
+
 bool SYMBOL_P(VALUE value);
 
 // Constants

@@ -57,6 +57,11 @@ VALUE rb_obj_is_kind_of(VALUE object, VALUE ruby_class) {
   return truffle_invoke(object, "kind_of?", ruby_class);
 }
 
+void rb_check_frozen(VALUE object) {
+  fprintf(stderr, "rb_check_frozen not implemented\n");
+  abort();
+}
+
 bool SYMBOL_P(VALUE value) {
   return truffle_invoke_b(RUBY_CEXT, "SYMBOL_P", value);
 }
