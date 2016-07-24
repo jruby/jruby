@@ -206,6 +206,8 @@ int rb_long2int(long value);
 ID SYM2ID(VALUE value);
 VALUE ID2SYM(ID value);
 
+#define NUM2TIMET(value) NUM2LONG(value)
+
 // Type checks
 
 int NIL_P(VALUE value);
@@ -334,6 +336,9 @@ VALUE rb_yield(VALUE value);
 
 VALUE rb_iv_get(VALUE object, const char *name);
 VALUE rb_iv_set(VALUE object, const char *name, VALUE value);
+
+VALUE rb_ivar_get(VALUE object, ID name);
+VALUE rb_ivar_set(VALUE object, ID name, VALUE value);
 
 VALUE rb_ivar_lookup(VALUE object, const char *name, VALUE default_value);
 VALUE rb_attr_get(VALUE object, const char *name);

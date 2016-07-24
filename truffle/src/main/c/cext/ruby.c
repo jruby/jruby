@@ -464,6 +464,15 @@ VALUE rb_iv_set(VALUE object, const char *name, VALUE value) {
   return value;
 }
 
+VALUE rb_ivar_get(VALUE object, ID name) {
+  return truffle_read(object, name);
+}
+
+VALUE rb_ivar_set(VALUE object, ID name, VALUE value) {
+  truffle_write(object, name, value);
+  return value;
+}
+
 VALUE rb_ivar_lookup(VALUE object, const char *name, VALUE default_value) {
   return truffle_invoke(RUBY_CEXT, "rb_ivar_lookup", name, default_value);
 }
