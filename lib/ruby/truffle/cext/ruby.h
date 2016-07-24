@@ -482,6 +482,8 @@ typedef struct rb_io_t {
 void rb_io_check_writable(rb_io_t *io);
 void rb_io_check_readable(rb_io_t *io);
 
+int rb_cloexec_dup(int oldfd);
+
 #if defined(__cplusplus)
 }
 #endif

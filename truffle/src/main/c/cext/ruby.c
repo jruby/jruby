@@ -806,3 +806,8 @@ void rb_io_check_writable(rb_io_t *io) {
 void rb_io_check_readable(rb_io_t *io) {
   // TODO
 }
+
+int rb_cloexec_dup(int oldfd) {
+  fprintf(stderr, "rb_cloexec_dup not implemented\n");
+  abort();
+}
