@@ -485,6 +485,10 @@ void rb_io_check_readable(rb_io_t *io);
 
 int rb_cloexec_dup(int oldfd);
 
+int rb_io_handle(VALUE file); // Non-standard
+
+#define GetOpenFile(file, pointer) ((pointer)->fd = rb_io_handle(file))
+
 #if defined(__cplusplus)
 }
 #endif

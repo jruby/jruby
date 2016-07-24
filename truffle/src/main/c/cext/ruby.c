@@ -811,3 +811,7 @@ int rb_cloexec_dup(int oldfd) {
   fprintf(stderr, "rb_cloexec_dup not implemented\n");
   abort();
 }
+
+int rb_io_handle(VALUE io) {
+  return truffle_invoke(RUBY_CEXT, "rb_io_handle", io);
+}

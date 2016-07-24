@@ -24,6 +24,7 @@ import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
@@ -272,6 +273,16 @@ public class CExtNodes {
         public Object constGetFrom(VirtualFrame frame, DynamicObject module, String name) {
             final RubyConstant constant = lookupConstantNode.lookupConstant(frame, module, name);
             return getConstantNode.executeGetConstant(frame, module, name, constant, lookupConstantNode);
+        }
+
+    }
+
+    @CoreMethod(names = "rb_io_handle", isModuleFunction = true)
+    public abstract static class IOHandleNode extends CoreMethodArrayArgumentsNode {
+
+        @Specialization(guards = "isRubyIO(io)")
+        public int ioHandle(DynamicObject io) {
+            return Layouts.IO.getDescriptor(io);
         }
 
     }
