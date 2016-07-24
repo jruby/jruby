@@ -74,15 +74,19 @@ VALUE get_rb_cTime(void) {
   return (VALUE) truffle_read(RUBY_CEXT, "rb_cTime");
 }
 
-VALUE get_rb_mKernel() {
+VALUE get_rb_mKernel(void) {
   return (VALUE) truffle_read(RUBY_CEXT, "rb_mKernel");
 }
 
-VALUE get_rb_eException() {
+VALUE get_rb_mEnumerable(void) {
+  return (VALUE) truffle_read(RUBY_CEXT, "rb_mEnumerable");
+}
+
+VALUE get_rb_eException(void) {
   return (VALUE) truffle_read(RUBY_CEXT, "rb_eException");
 }
 
-VALUE get_rb_eRuntimeError() {
+VALUE get_rb_eRuntimeError(void) {
   return (VALUE) truffle_read(RUBY_CEXT, "rb_eRuntimeError");
 }
 

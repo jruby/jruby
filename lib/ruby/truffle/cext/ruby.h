@@ -160,6 +160,7 @@ VALUE get_rb_cHash(void);
 VALUE get_rb_mKernel(void);
 VALUE get_rb_cProc(void);
 VALUE get_rb_cTime(void);
+VALUE get_rb_mEnumerable(void);
 
 #define rb_cObject get_rb_cObject()
 #define rb_cArray get_rb_cArray()
@@ -167,6 +168,7 @@ VALUE get_rb_cTime(void);
 #define rb_mKernel get_rb_mKernel()
 #define rb_cProc get_rb_cProc()
 #define rb_cTime get_rb_cTime()
+#define rb_mEnumerable get_rb_mEnumerable()
 
 VALUE get_rb_eException(void);
 VALUE get_rb_eRuntimeError(void);

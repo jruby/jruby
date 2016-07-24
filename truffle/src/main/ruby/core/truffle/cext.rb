@@ -147,6 +147,10 @@ module Truffle::CExt
     Kernel
   end
 
+  def rb_mEnumerable
+    Enumerable
+  end
+
   def rb_eException
     Exception
   end
