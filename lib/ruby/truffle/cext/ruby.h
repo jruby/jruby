@@ -21,6 +21,7 @@ extern "C" {
 
 #include <stdlib.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
@@ -38,8 +39,8 @@ extern "C" {
 #define xfree free
 #define ALLOC_N(type, n) malloc(sizeof(type) * n)
 
-typedef void* ID;
-typedef void* VALUE;
+typedef void *ID;
+typedef void *VALUE;
 
 #define NORETURN(X) __attribute__((__noreturn__)) X
 
@@ -124,6 +125,15 @@ struct rb_data_type_struct {
   VALUE flags;
 };
 
+int rb_type(VALUE value);
+#define TYPE(value) rb_type((VALUE) (value))
+bool RB_TYPE_P(VALUE value, int type);
+
+void rb_check_type(VALUE value, int type);
+#define Check_Type(v,t) rb_check_type((VALUE)(v), (t))
+
+VALUE rb_obj_is_kind_of(VALUE object, VALUE ruby_class);
+
 // Constants
 
 VALUE get_Qfalse(void);
@@ -149,8 +159,12 @@ VALUE get_rb_mKernel(void);
 #define rb_mKernel get_rb_mKernel()
 
 VALUE get_rb_eRuntimeError(void);
+VALUE get_rb_eStandardError(void);
+VALUE get_rb_eNoMemError(void);
 
 #define rb_eRuntimeError get_rb_eRuntimeError()
+#define rb_eStandardError get_rb_eStandardError()
+#define rb_eNoMemError get_rb_eNoMemError()
 
 // Conversions
 
@@ -192,14 +206,22 @@ double RFLOAT_VALUE(VALUE value);
 // String
 
 char *RSTRING_PTR(VALUE string);
-int RSTRING_LEN(VALUE string);
+int rb_str_len(VALUE string);
+#define RSTRING_LEN(str) rb_str_len(str)
+#define RSTRING_LENINT(str) rb_str_len(str)
 VALUE rb_intern_str(VALUE string);
 VALUE rb_str_new(const char *string, long length);
 VALUE rb_str_new_cstr(const char *string);
 #define rb_str_new2 rb_str_new_cstr
-void rb_str_cat(VALUE string, const char *to_concat, long length);
-
+VALUE rb_str_cat(VALUE string, const char *to_concat, long length);
+VALUE rb_str_cat2(VALUE string, const char *to_concat);
+VALUE rb_str_to_str(VALUE string);
+#define StringValue(value) rb_string_value(&(value))
+#define SafeStringValue StringValue
+VALUE rb_string_value(VALUE *value_pointer);
 VALUE rb_str_buf_new(long capacity);
+VALUE rb_sprintf(const char *format, ...);
+VALUE rb_vsprintf(const char *format, va_list args);
 
 // Symbol
 
@@ -242,12 +264,18 @@ VALUE rb_proc_new(void *function, VALUE value);
 
 // Utilities
 
+void rb_warn(const char *fmt, ...);
+void rb_warning(const char *fmt, ...);
+
 int rb_scan_args(int argc, VALUE *argv, const char *format, ...);
 
 // Calls
 
+int rb_respond_to(VALUE object, ID name);
+
 #define rb_funcall(object, name, ...) truffle_invoke(RUBY_CEXT, "rb_funcall", object, name, __VA_ARGS__)
 
+int rb_block_given_p();
 VALUE rb_yield(VALUE value);
 
 // Instance variables
@@ -268,9 +296,17 @@ VALUE rb_const_set(VALUE module, ID name, VALUE value);
 VALUE rb_define_const(VALUE module, const char *name, VALUE value);
 void rb_define_global_const(const char *name, VALUE value);
 
-// Raising exceptions
+// Exceptions
 
+VALUE rb_exc_new3(VALUE exception_class, VALUE message);
+
+NORETURN(void rb_exc_raise(VALUE exception));
 NORETURN(void rb_raise(VALUE exception, const char *format, ...));
+
+VALUE rb_protect(VALUE (*function)(VALUE), VALUE data, int *status);
+void rb_jump_tag(int status);
+
+void rb_set_errinfo(VALUE error);
 
 // Defining classes, modules and methods
 
@@ -337,8 +373,20 @@ VALUE rb_complex_set_imag(VALUE complex, VALUE imag);
 // GC
 
 void rb_gc_register_address(VALUE *address);
+#define rb_global_variable(address) ;
 VALUE rb_gc_enable();
 VALUE rb_gc_disable();
+
+// Threads
+
+typedef void *rb_nativethread_id_t;
+typedef void *rb_nativethread_lock_t;
+
+rb_nativethread_id_t rb_nativethread_self();
+int rb_nativethread_lock_initialize(rb_nativethread_lock_t *lock);
+int rb_nativethread_lock_destroy(rb_nativethread_lock_t *lock);
+int rb_nativethread_lock_lock(rb_nativethread_lock_t *lock);
+int rb_nativethread_lock_unlock(rb_nativethread_lock_t *lock);
 
 #if defined(__cplusplus)
 }

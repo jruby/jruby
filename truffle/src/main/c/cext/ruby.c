@@ -12,11 +12,33 @@
  * as described in the file BSDL included with JRuby+Truffle.
  */
 
+#include <stdlib.h>
+#include <stdarg.h>
+#include <stdio.h>
+
 #include <truffle.h>
 
 #include <ruby.h>
 
 #define RUBY_CEXT truffle_import_cached("ruby_cext")
+
+// Types
+
+int rb_type(VALUE value) {
+  return truffle_invoke_i(RUBY_CEXT, "rb_type", value);
+}
+
+bool RB_TYPE_P(VALUE value, int type) {
+  return truffle_invoke_i(RUBY_CEXT, "RB_TYPE_P", value, type);
+}
+
+void rb_check_type(VALUE value, int type) {
+  truffle_invoke(RUBY_CEXT, "rb_check_type", value);
+}
+
+VALUE rb_obj_is_kind_of(VALUE object, VALUE ruby_class) {
+  return truffle_invoke(object, "kind_of?", ruby_class);
+}
 
 // Constants
 
@@ -55,6 +77,14 @@ VALUE get_rb_mKernel() {
 
 VALUE get_rb_eRuntimeError() {
   return (VALUE) truffle_read(RUBY_CEXT, "rb_eRuntimeError");
+}
+
+VALUE get_rb_eStandardError(void) {
+  return (VALUE) truffle_read(RUBY_CEXT, "rb_eStandardError");
+}
+
+VALUE get_rb_eNoMemError(void) {
+  return (VALUE) truffle_read(RUBY_CEXT, "rb_eNoMemError");
 }
 
 // Conversions
@@ -157,7 +187,7 @@ char *RSTRING_PTR(VALUE string) {
   return truffle_invoke(RUBY_CEXT, "CExtString", string);
 }
 
-int RSTRING_LEN(VALUE string) {
+int rb_str_len(VALUE string) {
   return truffle_invoke_i(string, "bytesize");
 }
 
@@ -181,12 +211,46 @@ VALUE rb_intern_str(VALUE string) {
   return (VALUE) truffle_invoke(RUBY_CEXT, "rb_intern_str", string);
 }
 
-void rb_str_cat(VALUE string, const char *to_concat, long length) {
+VALUE rb_str_cat(VALUE string, const char *to_concat, long length) {
   truffle_invoke(RUBY_CEXT, "rb_str_cat", string, rb_str_new_cstr(to_concat), length);
+  return string;
+}
+
+VALUE rb_str_cat2(VALUE string, const char *to_concat) {
+  truffle_invoke(string, "concat", rb_str_new_cstr(to_concat));
+  return string;
+}
+
+VALUE rb_str_to_str(VALUE string) {
+  return (VALUE) truffle_invoke(string, "to_str");
+}
+
+VALUE rb_string_value(VALUE *value_pointer) {
+  VALUE value = *value_pointer;
+  
+  if (!RB_TYPE_P(value, T_STRING)) {
+    value = rb_str_to_str(value);
+    *value_pointer = value;
+  }
+  
+  return value;
 }
 
 VALUE rb_str_buf_new(long capacity) {
   return rb_str_new_cstr("");
+}
+
+VALUE rb_sprintf(const char *format, ...) {
+  va_list args;
+  va_start(args, format);
+  VALUE *string = rb_vsprintf(format, args);
+  va_end(args);
+  return string;
+}
+
+VALUE rb_vsprintf(const char *format, va_list args) {
+  fprintf(stderr, "rb_vsprintf not implemented\n");
+  abort();
 }
 
 // Symbol
@@ -292,11 +356,33 @@ VALUE rb_proc_new(void *function, VALUE value) {
 
 // Utilities
 
+void rb_warn(const char *format, ...) {
+  if (!truffle_invoke_b(truffle_invoke(RUBY_CEXT, "verbose"), "nil?")) {
+    va_list args;
+    va_start(args, format);
+    vfprintf(stderr, format, args);
+    va_end(args);
+  }
+}
+
+void rb_warning(const char *format, ...) {
+  if (truffle_invoke(RUBY_CEXT, "verbose") == Qtrue) {
+    va_list args;
+    va_start(args, format);
+    vfprintf(stderr, format, args);
+    va_end(args);
+  }
+}
+
 int rb_scan_args(int argc, VALUE *argv, const char *format, ...) {
   return truffle_invoke_i(RUBY_CEXT, "rb_scan_args", argc, argv, format /*, where to get args? */);
 }
 
 // Calls
+
+int rb_respond_to(VALUE object, ID name) {
+  return truffle_invoke_b(object, "respond_to?", name);
+}
 
 VALUE rb_yield(VALUE value) {
   return truffle_invoke(RUBY_CEXT, "rb_yield", value);
@@ -349,9 +435,38 @@ void rb_define_global_const(const char *name, VALUE value) {
 
 // Raising exceptions
 
+VALUE rb_exc_new3(VALUE exception_class, VALUE message) {
+  return truffle_invoke(exception_class, "new", message);
+}
+
+void rb_exc_raise(VALUE exception) {
+  truffle_invoke(RUBY_CEXT, "rb_exc_raise", exception);
+  abort();
+}
+
 void rb_raise(VALUE exception, const char *format, ...) {
+  fprintf(stderr, "rb_raise not implemented\n");
   truffle_invoke(RUBY_CEXT, "rb_raise", format /*, where to get args? */);
-  exit(1); // To make the compiler happy
+  abort();
+}
+
+VALUE rb_protect(VALUE (*function)(VALUE), VALUE data, int *status) {
+  // TODO CS 23-Jul-16
+  return function(data);
+}
+
+void rb_jump_tag(int status) {
+  if (status) {
+    // TODO CS 23-Jul-16
+    fprintf(stderr, "rb_jump_tag not implemented\n");
+    abort();
+  }
+}
+
+void rb_set_errinfo(VALUE error) {
+  // TODO CS 23-Jul-16
+  fprintf(stderr, "rb_set_errinfo not implemented\n");
+  abort();
 }
 
 // Defining classes, modules and methods
@@ -513,4 +628,30 @@ VALUE rb_gc_enable() {
 
 VALUE rb_gc_disable() {
   return truffle_invoke(RUBY_CEXT, "rb_gc_disable");
+}
+
+// Threads
+
+rb_nativethread_id_t rb_nativethread_self() {
+  return truffle_invoke(RUBY_CEXT, "rb_nativethread_self");
+}
+
+int rb_nativethread_lock_initialize(rb_nativethread_lock_t *lock) {
+  *lock = truffle_invoke(RUBY_CEXT, "rb_nativethread_lock_initialize");
+  return 0;
+}
+
+int rb_nativethread_lock_destroy(rb_nativethread_lock_t *lock) {
+  *lock = NULL;
+  return 0;
+}
+
+int rb_nativethread_lock_lock(rb_nativethread_lock_t *lock) {
+  truffle_invoke(lock, "lock");
+  return 0;
+}
+
+int rb_nativethread_lock_unlock(rb_nativethread_lock_t *lock) {
+  truffle_invoke(lock, "unlock");
+  return 0;
 }

@@ -7,10 +7,108 @@
 # GNU Lesser General Public License version 2.1
 
 module Truffle::CExt
+
+  T_NONE     = 0x00
+
+  T_OBJECT   = 0x01
+  T_CLASS    = 0x02
+  T_MODULE   = 0x03
+  T_FLOAT    = 0x04
+  T_STRING   = 0x05
+  T_REGEXP   = 0x06
+  T_ARRAY    = 0x07
+  T_HASH     = 0x08
+  T_STRUCT   = 0x09
+  T_BIGNUM   = 0x0a
+  T_FILE     = 0x0b
+  T_DATA     = 0x0c
+  T_MATCH    = 0x0d
+  T_COMPLEX  = 0x0e
+  T_RATIONAL = 0x0f
+
+  T_NIL      = 0x11
+  T_TRUE     = 0x12
+  T_FALSE    = 0x13
+  T_SYMBOL   = 0x14
+  T_FIXNUM   = 0x15
+  T_UNDEF    = 0x16
+
+  T_IMEMO    = 0x1a
+  T_NODE     = 0x1b
+  T_ICLASS   = 0x1c
+  T_ZOMBIE   = 0x1d
+
+  T_MASK     = 0x1f
+
   module_function
 
   def supported?
     Interop.mime_type_supported?('application/x-sulong-library')
+  end
+
+  def rb_type(value)
+    # TODO CS 23-Jul-16 we could do with making this a kind of specialising case
+    # that puts never seen cases behind a transfer
+
+    case value
+      when Module
+        T_MODULE
+      when Class
+        T_CLASS
+      when Float
+        T_FLOAT
+      when String
+        T_STRING
+      when Regexp
+        T_REGEXP
+      when Array
+        T_ARRAY
+      when Hash
+        T_HASH
+      when Struct
+        T_STRUCT
+      when Bignum
+        T_BIGNUM
+      when File
+        T_FILE
+      when Complex
+        T_COMPLEX
+      when Rational
+        T_RATIONAL
+
+      when NilClass
+        T_NIL
+      when TrueClass
+        T_TRUE
+      when FalseClass
+        T_FALSE
+      when Symbol
+        T_SYMBOL
+      when Fixnum
+        T_FIXNUM
+
+      when Object
+        T_OBJECT
+
+      else
+        raise 'unknown type'
+    end
+  end
+
+  def RB_TYPE_P(value, type)
+    case type
+      when T_STRING
+        value.is_a?(String)
+      else
+        raise 'unknown type'
+    end
+  end
+
+  def rb_check_type(value, type)
+    # TODO CS 23-Jul-16 there's more to this method than this...
+    if rb_type(value) != type
+      raise 'unexpected type'
+    end
   end
 
   def Qfalse
@@ -46,7 +144,15 @@ module Truffle::CExt
   end
 
   def rb_eRuntimeError
-    raise 'not implemented'
+    RuntimeError
+  end
+
+  def rb_eStandardError
+    StandardError
+  end
+
+  def rb_eNoMemError
+    NoMemError
   end
 
   def rb_fix2int(value)
@@ -143,6 +249,10 @@ module Truffle::CExt
     }
   end
 
+  def verbose
+    $VERBOSE
+  end
+
   def rb_scan_args
     raise 'not implemented'
   end
@@ -150,6 +260,10 @@ module Truffle::CExt
   def rb_yield(value)
     block = get_block
     block.call(value)
+  end
+
+  def rb_exc_raise(exception)
+    raise exception
   end
 
   def rb_raise(object, name)
@@ -304,6 +418,15 @@ module Truffle::CExt
   def rb_gc_disable
     GC.disable
   end
+
+  def rb_nativethread_self
+    Thread.current
+  end
+
+  def rb_nativethread_lock_initialize
+    Mutex.new
+  end
+
 end
 
 Truffle::Interop.export(:ruby_cext, Truffle::CExt)
