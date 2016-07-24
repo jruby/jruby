@@ -139,32 +139,36 @@ VALUE rb_obj_is_kind_of(VALUE object, VALUE ruby_class);
 VALUE get_Qfalse(void);
 VALUE get_Qtrue(void);
 VALUE get_Qnil(void);
-VALUE get_rb_cProc(void);
-VALUE get_rb_eException(void);
 
 #define Qfalse get_Qfalse()
 #define Qtrue get_Qtrue()
 #define Qnil get_Qnil()
-#define rb_cProc get_rb_cProc()
-#define rb_eException get_rb_eException()
 
 VALUE get_rb_cObject(void);
 VALUE get_rb_cArray(void);
 VALUE get_rb_cHash(void);
 VALUE get_rb_mKernel(void);
+VALUE get_rb_cProc(void);
+VALUE get_rb_cTime(void);
 
 #define rb_cObject get_rb_cObject()
 #define rb_cArray get_rb_cArray()
 #define rb_cHash get_rb_cHash()
 #define rb_mKernel get_rb_mKernel()
+#define rb_cProc get_rb_cProc()
+#define rb_cTime get_rb_cTime()
 
+VALUE get_rb_eException(void);
 VALUE get_rb_eRuntimeError(void);
 VALUE get_rb_eStandardError(void);
 VALUE get_rb_eNoMemError(void);
+VALUE get_rb_eTypeError(void);
 
+#define rb_eException get_rb_eException()
 #define rb_eRuntimeError get_rb_eRuntimeError()
 #define rb_eStandardError get_rb_eStandardError()
 #define rb_eNoMemError get_rb_eNoMemError()
+#define rb_eTypeError get_rb_eTypeError()
 
 // Conversions
 

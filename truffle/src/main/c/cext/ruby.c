@@ -42,37 +42,44 @@ VALUE rb_obj_is_kind_of(VALUE object, VALUE ruby_class) {
 
 // Constants
 
-VALUE get_Qfalse() {
+VALUE get_Qfalse(void) {
   return (VALUE) truffle_read(RUBY_CEXT, "Qfalse");
 }
 
-VALUE get_Qtrue() {
+VALUE get_Qtrue(void) {
   return (VALUE) truffle_read(RUBY_CEXT, "Qtrue");
 }
 
-VALUE get_Qnil() {
+VALUE get_Qnil(void) {
   return (VALUE) truffle_read(RUBY_CEXT, "Qnil");
 }
 
-VALUE get_rb_cObject() {
+VALUE get_rb_cObject(void) {
   return (VALUE) truffle_read(RUBY_CEXT, "rb_cObject");
 }
 
-VALUE get_rb_cArray() {
+VALUE get_rb_cArray(void) {
   return (VALUE) truffle_read(RUBY_CEXT, "rb_cArray");
 }
 
-VALUE get_rb_cHash() {
+VALUE get_rb_cHash(void) {
   return (VALUE) truffle_read(RUBY_CEXT, "rb_cHash");
 }
 
-VALUE get_rb_cProc() {
+VALUE get_rb_cProc(void) {
   return (VALUE) truffle_read(RUBY_CEXT, "rb_cProc");
 }
 
+VALUE get_rb_cTime(void) {
+  return (VALUE) truffle_read(RUBY_CEXT, "rb_cTime");
+}
 
 VALUE get_rb_mKernel() {
   return (VALUE) truffle_read(RUBY_CEXT, "rb_mKernel");
+}
+
+VALUE get_rb_eException() {
+  return (VALUE) truffle_read(RUBY_CEXT, "rb_eException");
 }
 
 VALUE get_rb_eRuntimeError() {
@@ -85,6 +92,10 @@ VALUE get_rb_eStandardError(void) {
 
 VALUE get_rb_eNoMemError(void) {
   return (VALUE) truffle_read(RUBY_CEXT, "rb_eNoMemError");
+}
+
+VALUE get_rb_eTypeError(void) {
+  return (VALUE) truffle_read(RUBY_CEXT, "rb_eTypeError");
 }
 
 // Conversions

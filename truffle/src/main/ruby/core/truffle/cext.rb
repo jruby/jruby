@@ -139,8 +139,16 @@ module Truffle::CExt
     Proc
   end
 
+  def rb_cTime
+    Time
+  end
+
   def rb_mKernel
     Kernel
+  end
+
+  def rb_eException
+    Exception
   end
 
   def rb_eRuntimeError
@@ -153,6 +161,10 @@ module Truffle::CExt
 
   def rb_eNoMemError
     NoMemError
+  end
+
+  def rb_eTypeError
+    TypeError
   end
 
   def rb_fix2int(value)
