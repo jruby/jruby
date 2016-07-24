@@ -187,6 +187,7 @@ VALUE rb_jt_get_eNoMemError(void);
 VALUE rb_jt_get_eTypeError(void);
 VALUE rb_jt_get_eArgError(void);
 VALUE rb_jt_get_eRangeError(void);
+VALUE rb_jt_get_eNotImpError(void);
 
 #define rb_eException rb_jt_get_eException()
 #define rb_eRuntimeError rb_jt_get_eRuntimeError()
@@ -195,6 +196,7 @@ VALUE rb_jt_get_eRangeError(void);
 #define rb_eTypeError rb_jt_get_eTypeError()
 #define rb_eArgError rb_jt_get_eArgError()
 #define rb_eRangeError rb_jt_get_eRangeError()
+#define rb_eNotImpError rb_jt_get_eNotImpError()
 
 // Conversions
 

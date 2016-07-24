@@ -143,6 +143,10 @@ VALUE rb_jt_get_eRangeError(void) {
   return (VALUE) truffle_read(RUBY_CEXT, "rb_eRangeError");
 }
 
+VALUE rb_jt_get_eNotImpError(void) {
+  return (VALUE) truffle_read(RUBY_CEXT, "rb_eNotImpError");
+}
+
 // Conversions
 
 VALUE CHR2FIX(char ch) {
