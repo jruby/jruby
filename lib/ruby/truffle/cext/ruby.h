@@ -278,6 +278,10 @@ int rb_scan_args(int argc, VALUE *argv, const char *format, ...);
 int rb_respond_to(VALUE object, ID name);
 
 #define rb_funcall(object, name, ...) truffle_invoke(RUBY_CEXT, "rb_funcall", object, name, __VA_ARGS__)
+VALUE rb_funcallv(VALUE object, ID name, int args_count, const VALUE *args);
+VALUE rb_funcallv_public(VALUE object, ID name, int args_count, const VALUE *args);
+#define rb_funcall2 rb_funcallv
+#define rb_funcall3 rb_funcallv_public
 
 int rb_block_given_p();
 VALUE rb_yield(VALUE value);

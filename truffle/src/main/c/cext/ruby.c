@@ -395,6 +395,16 @@ int rb_respond_to(VALUE object, ID name) {
   return truffle_invoke_b(object, "respond_to?", name);
 }
 
+VALUE rb_funcallv(VALUE object, ID name, int args_count, const VALUE *args) {
+  fprintf(stderr, "rb_funcallv not implemented\n");
+  abort();
+}
+
+VALUE rb_funcallv_public(VALUE object, ID name, int args_count, const VALUE *args) {
+  fprintf(stderr, "rb_funcallv_public not implemented\n");
+  abort();
+}
+
 VALUE rb_yield(VALUE value) {
   return truffle_invoke(RUBY_CEXT, "rb_yield", value);
 }
