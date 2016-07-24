@@ -796,3 +796,13 @@ int rb_nativethread_lock_unlock(rb_nativethread_lock_t *lock) {
   truffle_invoke(lock, "unlock");
   return 0;
 }
+
+// IO
+
+void rb_io_check_writable(rb_io_t *io) {
+  // TODO
+}
+
+void rb_io_check_readable(rb_io_t *io) {
+  // TODO
+}

@@ -479,6 +479,9 @@ typedef struct rb_io_t {
 
 #define rb_update_max_fd(fd) {}
 
+void rb_io_check_writable(rb_io_t *io);
+void rb_io_check_readable(rb_io_t *io);
+
 #if defined(__cplusplus)
 }
 #endif
