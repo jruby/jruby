@@ -376,6 +376,11 @@ VALUE rb_ary_dup(VALUE array) {
   return (VALUE) truffle_invoke(array, "dup");
 }
 
+VALUE rb_ary_each(VALUE array) {
+  fprintf(stderr, "rb_ary_each not implemented\n");
+  abort();
+}
+
 // Hash
 
 VALUE rb_hash_new() {

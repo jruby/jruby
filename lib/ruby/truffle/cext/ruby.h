@@ -289,6 +289,7 @@ VALUE rb_ary_pop(VALUE array);
 void rb_ary_store(VALUE array, long index, VALUE value);
 VALUE rb_ary_entry(VALUE array, long index);
 VALUE rb_ary_dup(VALUE array);
+VALUE rb_ary_each(VALUE array);
 
 // Hash
 
