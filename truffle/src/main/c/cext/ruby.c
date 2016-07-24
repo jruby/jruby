@@ -422,10 +422,15 @@ void rb_define_global_const(const char *name, VALUE value) {
 
 // Raising exceptions
 
+void rb_exc_raise(VALUE exception) {
+  truffle_invoke(RUBY_CEXT, "rb_exc_raise", exception);
+  abort();
+}
+
 void rb_raise(VALUE exception, const char *format, ...) {
   fprintf(stderr, "rb_raise not implemented\n");
   truffle_invoke(RUBY_CEXT, "rb_raise", format /*, where to get args? */);
-  exit(1); // To make the compiler happy
+  abort();
 }
 
 VALUE rb_protect(VALUE (*function)(VALUE), VALUE data, int *status) {

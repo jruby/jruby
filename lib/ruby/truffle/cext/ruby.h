@@ -296,6 +296,7 @@ void rb_define_global_const(const char *name, VALUE value);
 
 // Exceptions
 
+NORETURN(void rb_exc_raise(VALUE exception));
 NORETURN(void rb_raise(VALUE exception, const char *format, ...));
 
 VALUE rb_protect(VALUE (*function)(VALUE), VALUE data, int *status);

@@ -262,6 +262,10 @@ module Truffle::CExt
     block.call(value)
   end
 
+  def rb_exc_raise(exception)
+    raise exception
+  end
+
   def rb_raise(object, name)
     raise 'not implemented'
   end
