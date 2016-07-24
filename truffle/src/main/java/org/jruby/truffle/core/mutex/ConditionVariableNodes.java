@@ -87,12 +87,16 @@ public abstract class ConditionVariableNodes {
                 Object condition) {
 
             final long start = System.currentTimeMillis();
+            boolean doLock = false;
 
             try {
-                // First lock the condition so we only release the Mutex when we are in wait()
-                // and ready to be notified
+                // First acquire the condition monitor, so we only release the Mutex
+                // when we own the condition monitor blocking notify/notifyAll calls until
+                // we are in wait(), ready to be notified.
                 synchronized (condition) {
                     MutexOperations.unlock(lock, thread, this);
+                    // successfully unlocked, do lock later
+                    doLock = true;
                     getContext().getThreadManager().
                             runUntilResult(this, new BlockingAction<Boolean>() {
                                 @Override
@@ -112,8 +116,10 @@ public abstract class ConditionVariableNodes {
             } finally {
                 // Has to lock again *after* condition lock is released, otherwise it would be
                 // locked in reverse order condition > mutex opposed to normal locking order
-                // mutex > condition, which would lead to deadlock.
-                MutexOperations.lock(lock, thread, this);
+                // mutex > condition (as in signal, broadcast), which would lead to deadlock.
+                if (doLock) {
+                    MutexOperations.lock(lock, thread, this);
+                }
             }
         }
     }
