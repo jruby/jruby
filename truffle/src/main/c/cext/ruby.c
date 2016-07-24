@@ -227,6 +227,13 @@ int RTEST(VALUE value) {
   return truffle_invoke_b(RUBY_CEXT, "RTEST", value);
 }
 
+// Kernel
+
+VALUE rb_require(const char *feature) {
+  fprintf(stderr, "rb_require not implemented\n");
+  abort();
+}
+
 // Integer
 
 VALUE rb_Integer(VALUE value) {

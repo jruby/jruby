@@ -229,6 +229,10 @@ int NIL_P(VALUE value);
 int FIXNUM_P(VALUE value);
 int RTEST(VALUE value);
 
+// Kernel
+
+VALUE rb_require(const char *feature);
+
 // Integer
 
 VALUE rb_Integer(VALUE value);
