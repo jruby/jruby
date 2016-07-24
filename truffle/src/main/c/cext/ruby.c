@@ -916,6 +916,13 @@ int rb_jt_io_handle(VALUE io) {
   return truffle_invoke(RUBY_CEXT, "rb_jt_io_handle", io);
 }
 
+// Data
+
+void* DATA_PTR(VALUE value) {
+  fprintf(stderr, "DATA_PTR not implemented\n");
+  abort();
+}
+
 // Typed data
 
 VALUE rb_data_typed_object_wrap(VALUE ruby_class, void *data, const rb_data_type_t *data_type) {

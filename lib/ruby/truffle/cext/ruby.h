@@ -530,6 +530,10 @@ int rb_jt_io_handle(VALUE file);
 
 #define GetOpenFile(file, pointer) ((pointer)->fd = rb_jt_io_handle(file))
 
+// Data
+
+void* DATA_PTR(VALUE value);
+
 // Typed data
 
 typedef struct rb_data_type_struct rb_data_type_t;
