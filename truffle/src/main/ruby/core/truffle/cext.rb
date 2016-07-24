@@ -263,6 +263,10 @@ module Truffle::CExt
     raise 'not implemented'
   end
 
+  def rb_String(value)
+    String(value)
+  end
+
   def RARRAY_PTR(array)
     array
   end

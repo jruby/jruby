@@ -320,6 +320,10 @@ VALUE rb_str_new_frozen(VALUE value) {
   return truffle_invoke(RUBY_CEXT, "rb_str_new_frozen", value);
 }
 
+VALUE rb_String(VALUE value) {
+  return truffle_invoke(RUBY_CEXT, "rb_String", value);
+}
+
 // Symbol
 
 ID rb_intern(const char *string) {
