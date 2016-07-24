@@ -516,6 +516,13 @@ VALUE rb_gc_disable();
 
 // Threads
 
+typedef void *(*gvl_call)(void *);
+typedef void rb_unblock_function_t(void *);
+
+void *rb_thread_call_with_gvl(gvl_call function, void *data1);
+void *rb_thread_call_without_gvl(gvl_call function, void *data1, rb_unblock_function_t *unblock_function, void *data2);
+void *rb_thread_call_without_gvl2(gvl_call function, void *data1, rb_unblock_function_t *unblock_function, void *data2);
+
 typedef void *rb_nativethread_id_t;
 typedef void *rb_nativethread_lock_t;
 

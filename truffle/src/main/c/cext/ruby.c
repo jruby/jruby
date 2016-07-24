@@ -895,6 +895,20 @@ VALUE rb_gc_disable() {
 
 // Threads
 
+void *rb_thread_call_with_gvl(gvl_call function, void *data1) {
+  return function(data1);
+}
+
+void *rb_thread_call_without_gvl(gvl_call function, void *data1, rb_unblock_function_t *unblock_function, void *data2) {
+  // TODO do we need to do anyhting with the unblock_function?
+  return function(data1);
+}
+
+void *rb_thread_call_without_gvl2(gvl_call function, void *data1, rb_unblock_function_t *unblock_function, void *data2) {
+  // TODO do we need to do anyhting with the unblock_function?
+  return function(data1);
+}
+
 rb_nativethread_id_t rb_nativethread_self() {
   return (VALUE) truffle_invoke(RUBY_CEXT, "rb_nativethread_self");
 }
