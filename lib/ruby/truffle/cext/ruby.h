@@ -402,6 +402,8 @@ VALUE rb_complex_set_imag(VALUE complex, VALUE imag);
 
 // GC
 
+#define RB_GC_GUARD(value) value
+
 void rb_gc_register_address(VALUE *address);
 #define rb_global_variable(address) ;
 VALUE rb_gc_enable();
