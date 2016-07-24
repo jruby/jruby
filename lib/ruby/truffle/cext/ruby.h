@@ -537,7 +537,7 @@ int rb_jt_io_handle(VALUE file);
 
 // Data
 
-void* DATA_PTR(VALUE value);
+#define DATA_PTR(value) *((volatile int*) 0)
 
 // Typed data
 
