@@ -124,6 +124,14 @@ VALUE rb_jt_get_mEnumerable(void) {
   return (VALUE) truffle_read(RUBY_CEXT, "rb_mEnumerable");
 }
 
+VALUE rb_jt_get_mWaitReadable(void) {
+  return (VALUE) truffle_read(RUBY_CEXT, "rb_mWaitReadable");
+}
+
+VALUE rb_jt_get_mWaitWritable(void) {
+  return (VALUE) truffle_read(RUBY_CEXT, "rb_mWaitWritable");
+}
+
 VALUE rb_jt_get_eException(void) {
   return (VALUE) truffle_read(RUBY_CEXT, "rb_eException");
 }

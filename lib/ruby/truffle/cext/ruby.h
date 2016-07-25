@@ -176,6 +176,8 @@ VALUE rb_jt_get_mKernel(void);
 VALUE rb_jt_get_cProc(void);
 VALUE rb_jt_get_cTime(void);
 VALUE rb_jt_get_mEnumerable(void);
+VALUE rb_jt_get_mWaitReadable(void);
+VALUE rb_jt_get_mWaitWritable(void);
 
 #define rb_cObject rb_jt_get_cObject()
 #define rb_cArray rb_jt_get_cArray()
@@ -184,6 +186,8 @@ VALUE rb_jt_get_mEnumerable(void);
 #define rb_cProc rb_jt_get_cProc()
 #define rb_cTime rb_jt_get_cTime()
 #define rb_mEnumerable rb_jt_get_mEnumerable()
+#define rb_mWaitReadable rb_jt_get_mWaitReadable()
+#define rb_mWaitWritable rb_jt_get_mWaitWritable()
 
 VALUE rb_jt_get_eException(void);
 VALUE rb_jt_get_eRuntimeError(void);

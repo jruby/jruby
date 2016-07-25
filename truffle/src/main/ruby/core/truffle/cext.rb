@@ -162,6 +162,14 @@ module Truffle::CExt
     Enumerable
   end
 
+  def rb_mWaitReadable
+    WaitReadable
+  end
+
+  def rb_mWaitWritable
+    WaitWritable
+  end
+
   def rb_eException
     Exception
   end
