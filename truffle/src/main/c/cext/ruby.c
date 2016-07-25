@@ -84,7 +84,7 @@ bool SYMBOL_P(VALUE value) {
 
 // Constants
 
-VALUE rb_jt_Qundef(void) {
+VALUE rb_jt_get_Qundef(void) {
   return (VALUE) truffle_read(RUBY_CEXT, "Qundef");
 }
 

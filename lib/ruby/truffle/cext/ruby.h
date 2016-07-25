@@ -161,15 +161,15 @@ bool SYMBOL_P(VALUE value);
 
 // Constants
 
-VALUE rb_jt_Qundef(void);
-VALUE rb_jt_Qfalse(void);
-VALUE rb_jt_Qtrue(void);
-VALUE rb_jt_Qnil(void);
+VALUE rb_jt_get_Qundef(void);
+VALUE rb_jt_get_Qfalse(void);
+VALUE rb_jt_get_Qtrue(void);
+VALUE rb_jt_get_Qnil(void);
 
 #define Qundef rb_jt_get_Qundef()
-#define Qfalse rb_jt_Qfalse()
-#define Qtrue rb_jt_Qtrue()
-#define Qnil rb_jt_Qnil()
+#define Qfalse rb_jt_get_Qfalse()
+#define Qtrue rb_jt_get_Qtrue()
+#define Qnil rb_jt_get_Qnil()
 
 VALUE rb_jt_get_cObject(void);
 VALUE rb_jt_get_cArray(void);
