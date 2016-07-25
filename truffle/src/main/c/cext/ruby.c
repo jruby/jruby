@@ -264,6 +264,10 @@ VALUE rb_obj_dup(VALUE object) {
   return (VALUE) truffle_invoke((void *)object, "dup");
 }
 
+VALUE rb_obj_freeze(VALUE object) {
+  return (VALUE) truffle_invoke((void *)object, "dup");
+}
+
 // Integer
 
 VALUE rb_Integer(VALUE value) {

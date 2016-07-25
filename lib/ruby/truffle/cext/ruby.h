@@ -251,6 +251,7 @@ VALUE rb_require(const char *feature);
 // Object
 
 VALUE rb_obj_dup(VALUE object);
+VALUE rb_obj_freeze(VALUE object);
 
 // Integer
 
