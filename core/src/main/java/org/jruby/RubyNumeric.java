@@ -1058,7 +1058,7 @@ public class RubyNumeric extends RubyObject {
         IRubyObject i = from;
 
         CallSite cmpSite = sites(context).op_gt.call(context, step, step, RubyFixnum.newFixnum(context.runtime, 0)).isTrue() ? sites(context).op_gt : sites(context).op_lt;
-        if(step.callMethod(context, "==", RubyFixnum.newFixnum(context.runtime, 0)).isTrue()) {
+        if(sites(context).op_equals.call(context, step, step, RubyFixnum.newFixnum(context.runtime, 0)).isTrue()) {
             cmpSite = sites(context).op_equals;
         }
 
