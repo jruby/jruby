@@ -14,6 +14,7 @@ import shutil
 import json
 import time
 from threading import Thread
+from os.path import join, exists
 
 import mx
 import mx_benchmark
@@ -21,7 +22,6 @@ import mx_benchmark
 _suite = mx.suite('jruby')
 
 TimeStampFile = mx.TimeStampFile
-join = os.path.join
 
 # Project and BuildTask classes
 
@@ -73,22 +73,75 @@ class LicensesProject(ArchiveProject):
     def getResults(self):
         return [join(_suite.dir, f) for f in self.license_files]
 
-# Call to Maven to build everything
-
-class MavenProject(mx.Project):
+class AntlrProject(mx.Project):
     def __init__(self, suite, name, deps, workingSets, theLicense, **args):
         mx.Project.__init__(self, suite, name, "", [], deps, workingSets, _suite.dir, theLicense)
-        self.javaCompliance = "1.8"
+        assert 'outputDir' in args
+        assert 'sourceDir' in args
+        assert 'grammars' in args
+        self.doNotArchive = True
 
-    def isArchiveProject(self):
-        return False
+    def getBuildTask(self, args):
+        return AntlrBuildTask(self, args)
 
+class AntlrBuildTask(mx.BuildTask):
+    def __init__(self, project, args):
+        mx.BuildTask.__init__(self, project, args, 1)
+
+    def __str__(self):
+        return 'Generate Antlr grammar for {}'.format(self.subject)
+
+    def needsBuild(self, newestInput):
+        sup = mx.BuildTask.needsBuild(self, newestInput)
+        if sup[0]:
+            return sup
+        newestOutput = self.newestOutput()
+        if not newestOutput:
+            return (True, "no class files yet")
+        src = join(_suite.dir, self.subject.sourceDir)
+        for root, _, files in os.walk(src):
+            for name in files:
+                file = TimeStampFile(join(root, name))
+                if file.isNewerThan(newestOutput):
+                    return (True, file)
+        return (False, 'all files are up to date')
+
+    def newestOutput(self):
+        out = join(_suite.dir, self.subject.outputDir)
+        newest = None
+        for root, _, files in os.walk(out):
+            for name in files:
+                file = TimeStampFile(join(root, name))
+                if not newest or file.isNewerThan(newest):
+                    newest = file
+        return newest
+
+    def build(self):
+        antlr4 = None
+        for lib in _suite.libs:
+            if lib.name == "ANTLR4_MAIN":
+                antlr4 = lib
+        assert antlr4
+
+        antlr4jar = antlr4.classpath_repr()
+        out = join(_suite.dir, self.subject.outputDir)
+        src = join(_suite.dir, self.subject.sourceDir)
+        for grammar in self.subject.grammars:
+            pkg = os.path.dirname(grammar).replace('/', '.')
+            mx.run_java(['-jar', antlr4jar, '-o', out, '-package', pkg, grammar], cwd=src)
+
+    def clean(self, forBuild=False):
+        pass
+
+# Call to Maven to build everything
+
+class JRubyCoreMavenProject(mx.MavenProject):
     def getBuildTask(self, args):
         return MavenBuildTask(self, args)
 
 class MavenBuildTask(ArchiveBuildTask):
     def __str__(self):
-        return 'Building Maven for {}'.format(self.subject)
+        return 'Building {} with Maven'.format(self.subject)
 
     def needsBuild(self, newestInput):
         sup = mx.BuildTask.needsBuild(self, newestInput)
@@ -101,16 +154,20 @@ class MavenBuildTask(ArchiveBuildTask):
             return (True, 'no jar yet')
 
         jni_libs = join(_suite.dir, 'lib', 'jni')
-        if not os.path.exists(jni_libs) or not os.listdir(jni_libs):
+        if not exists(jni_libs) or not os.listdir(jni_libs):
             return (True, jni_libs)
 
-        for directory in self.subject.watch:
-            for root, _, files in os.walk(directory):
-                for name in files:
-                    #if name.endswith('.java'):
-                    source = join(root, name)
-                    if TimeStampFile(source).isNewerThan(jar):
-                        return (True, source)
+        for watched in self.subject.watch:
+            if not exists(watched):
+                return (True, watched)
+            elif os.path.isfile(watched) and TimeStampFile(watched).isNewerThan(jar):
+                return (True, watched)
+            else:
+                for root, _, files in os.walk(watched):
+                    for name in files:
+                        source = join(root, name)
+                        if TimeStampFile(source).isNewerThan(jar):
+                            return (True, source)
 
         return (False, 'all files are up to date')
 
@@ -140,28 +197,17 @@ class MavenBuildTask(ArchiveBuildTask):
 
         for name in ['truffle-api', 'truffle-debug', 'truffle-dsl-processor', 'truffle-tck']:
             jar_path = join(mavenDir, 'com', 'oracle', 'truffle', name, truffle_commit, "%s-%s.jar" % (name, truffle_commit))
-            if not os.path.exists(jar_path):
+            if not exists(jar_path):
                 mx.run_mx(['maven-install', '--repo', mavenDir, '--only', 'TRUFFLE_API,TRUFFLE_DEBUG,TRUFFLE_DSL_PROCESSOR,TRUFFLE_TCK'], suite=truffle)
-
-        with open(join(cwd, 'VERSION'), 'w') as f:
-            f.write('graal-vm\n')
 
         # Build jruby-truffle
         env = os.environ.copy()
         env['JRUBY_BUILD_MORE_QUIET'] = 'true'
 
-        mx.run_maven(['--version', maven_repo_arg], nonZeroIsFatal=False, cwd=cwd, env=env)
+        mx.log("Building jruby-core with Maven")
+        mx.run_maven(['-q', '-DskipTests', maven_version_arg, maven_repo_arg, '-pl', 'core'], cwd=cwd, env=env)
 
-        mx.log('Building without tests')
-        mx.run_maven(['-q', '-DskipTests', maven_version_arg, maven_repo_arg], cwd=cwd, env=env)
-
-        mx.log('Building complete version')
-        mx.run_maven(['-q', '-Pcomplete', '-DskipTests', maven_version_arg, maven_repo_arg], cwd=cwd, env=env)
-
-        mx.logv('Removing extra files from jar')
-        mx.run(['zip', '-q', '-d', 'maven/jruby-complete/target/jruby-complete-graal-vm.jar', 'META-INF/jruby.home/lib/*'], cwd=cwd)
-
-        mx.run(['bin/jruby', 'bin/gem', 'install', 'bundler', '-v', '1.10.6'], cwd=cwd)
+        # mx.run(['bin/jruby', 'bin/gem', 'install', 'bundler', '-v', '1.10.6'], cwd=cwd)
     
         mx.log('...finished build of {}'.format(self.subject))
 
