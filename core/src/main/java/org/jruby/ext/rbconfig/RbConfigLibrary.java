@@ -258,6 +258,10 @@ public class RbConfigLibrary implements Library {
         setConfig(configHash, "host_vendor", System.getProperty("java.vendor"));
         setConfig(configHash, "host_cpu", getArchitecture());
 
+        String host = String.format("%s-%s-%s", getOSName(), System.getProperty("java.vendor"), getArchitecture());
+        setConfig(configHash, "host", host);
+        setConfig(configHash, "host_alias", host);
+
         setConfig(configHash, "target_os", getOSName());
 
         setConfig(configHash, "target_cpu", getArchitecture());
@@ -282,7 +286,7 @@ public class RbConfigLibrary implements Library {
 
 
         String shareDir = newFile(normalizedHome, "share").getPath();
-        String includeDir = newFile(normalizedHome, "lib/native/" + getOSName()).getPath();
+        String includeDir = newFile(normalizedHome, "lib/ruby/include").getPath();
 
         String vendorDirGeneral = getVendorDirGeneral(runtime);
         String siteDirGeneral = getSiteDirGeneral(runtime);
@@ -313,6 +317,7 @@ public class RbConfigLibrary implements Library {
         setConfig(configHash, "archdir",   archDir);
         setConfig(configHash, "topdir",   archDir);
         setConfig(configHash, "includedir",   includeDir);
+        setConfig(configHash, "rubyhdrdir",   includeDir);
         setConfig(configHash, "configure_args", "");
         setConfig(configHash, "datadir", shareDir);
         setConfig(configHash, "mandir", newFile(normalizedHome, "man").getPath());
@@ -401,20 +406,22 @@ public class RbConfigLibrary implements Library {
         // A few platform specific values
         if (Platform.IS_WINDOWS) {
             ldflags += " -L" + newFile(normalizedHome, "lib/native/" + (Platform.IS_64_BIT ? "x86_64" : "i386") + "-Windows").getPath();
-            ldflags += " -ljruby-cext";
             ldsharedflags += " $(if $(filter-out -g -g0,$(debugflags)),,-s)";
             dldflags = "-Wl,--enable-auto-image-base,--enable-auto-import $(DEFFILE)";
             archflags += " -march=native -mtune=native";
             setConfig(mkmfHash, "DLEXT", "dll");
+            setConfig(mkmfHash, "EXEEXT", ".exe");
         } else if (Platform.IS_MAC) {
             ldsharedflags = " -dynamic -bundle -undefined dynamic_lookup ";
             cflags = " -fPIC -DTARGET_RT_MAC_CFM=0 " + cflags;
             archflags = " -arch " + Platform.ARCH;
             cppflags = " -D_XOPEN_SOURCE -D_DARWIN_C_SOURCE " + cppflags;
             setConfig(mkmfHash, "DLEXT", "bundle");
+	    setConfig(mkmfHash, "EXEEXT", "");
         } else {
             cflags = " -fPIC " + cflags;
             setConfig(mkmfHash, "DLEXT", "so");
+	    setConfig(mkmfHash, "EXEEXT", "");
         }
 
         String libext = "a";
@@ -443,6 +450,7 @@ public class RbConfigLibrary implements Library {
         setConfig(mkmfHash, "LDSHARED", cc + ldsharedflags);
         setConfig(mkmfHash, "LDSHAREDXX", cxx + ldsharedflags);
         setConfig(mkmfHash, "RUBY_PLATFORM", getOSName());
+        setConfig(mkmfHash, "RUBY_SO_NAME", "jruby");
         setConfig(mkmfHash, "CC", cc);
         setConfig(mkmfHash, "CPP", cpp);
         setConfig(mkmfHash, "CXX", cxx);
