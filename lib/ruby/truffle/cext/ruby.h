@@ -48,6 +48,7 @@ extern "C" {
 
 #define NORETURN(X) __attribute__((__noreturn__)) X
 #define UNREACHABLE ((void)0)
+#define _(x) x
 
 // Basic types
 

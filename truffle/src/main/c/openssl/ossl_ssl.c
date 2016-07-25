@@ -464,7 +464,7 @@ ossl_sslctx_session_remove_cb(SSL_CTX *ctx, SSL_SESSION *sess)
     rb_ary_push(ary, sslctx_obj);
     rb_ary_push(ary, sess_obj);
 
-    rb_protect((VALUE(*)((VALUE)))ossl_call_session_remove_cb, ary, &state);
+    rb_protect((VALUE(*)_((VALUE)))ossl_call_session_remove_cb, ary, &state);
     if (state) {
 /*
   the SSL_CTX is frozen, nowhere to save state.
@@ -540,7 +540,7 @@ ssl_servername_cb(SSL *ssl, int *ad, void *arg)
     rb_ary_push(ary, ssl_obj);
     rb_ary_push(ary, rb_str_new2(servername));
 
-    rb_protect((VALUE(*)((VALUE)))ossl_call_servername_cb, ary, &state);
+    rb_protect((VALUE(*)_((VALUE)))ossl_call_servername_cb, ary, &state);
     if (state) {
         rb_ivar_set(ssl_obj, ID_callback_state, INT2NUM(state));
         return SSL_TLSEXT_ERR_ALERT_FATAL;
