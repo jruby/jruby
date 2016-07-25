@@ -184,7 +184,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>org.jruby.jcodings</groupId>
       <artifactId>jcodings</artifactId>
-      <version>1.0.17</version>
+      <version>1.0.18-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>org.jruby</groupId>
