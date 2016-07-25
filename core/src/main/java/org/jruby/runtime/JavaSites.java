@@ -114,12 +114,33 @@ public class JavaSites {
         public final CallSite op_lt = new FunctionalCachingCallSite("<");
         public final CallSite op_gt = new FunctionalCachingCallSite(">");
         public final CallSite op_uminus = new FunctionalCachingCallSite("-@");
-        public final CallSite to_i = new FunctionalCachingCallSite("to_i");
         public final CallSite zero = new FunctionalCachingCallSite("zero?");
         public final CallSite op_equals = new FunctionalCachingCallSite("==");
         public final CallSite op_plus = new FunctionalCachingCallSite("+");
         public final CallSite numerator = new FunctionalCachingCallSite("numerator");
         public final CallSite denominator = new FunctionalCachingCallSite("denominator");
+        public final CallSite op_xor = new FunctionalCachingCallSite("^");
+        public final CallSite abs = new FunctionalCachingCallSite("abs");
+        public final CallSite abs2 = new FunctionalCachingCallSite("abs2");
+        public final CallSite arg = new FunctionalCachingCallSite("arg");
+        public final CallSite conjugate = new FunctionalCachingCallSite("conjugate");
+        public final CallSite exact = new FunctionalCachingCallSite("exact?");
+        public final CallSite polar = new FunctionalCachingCallSite("polar");
+        public final CallSite real = new FunctionalCachingCallSite("real?");
+        public final CallSite integer = new FunctionalCachingCallSite("integer?");
+        public final CallSite divmod = new FunctionalCachingCallSite("divmod");
+        public final CallSite inspect = new FunctionalCachingCallSite("inspect");
+        public final CallSite to_f = new FunctionalCachingCallSite("to_f");
+        public final CallSite to_i = new FunctionalCachingCallSite("to_i");
+        public final CallSite to_r = new FunctionalCachingCallSite("to_r");
+        public final CallSite to_s = new FunctionalCachingCallSite("to_s");
+        public final CallSite truncate = new FunctionalCachingCallSite("truncate");
+        public final CallSite op_exp = new FunctionalCachingCallSite("**");
+        public final CallSite quo = new FunctionalCachingCallSite("quo");
+        public final CallSite op_lshift = new FunctionalCachingCallSite("<<");
+        public final CallSite op_rshift = new FunctionalCachingCallSite(">>");
+        public final CallSite size = new FunctionalCachingCallSite("size");
+        public final CallSite ceil = new FunctionalCachingCallSite("ceil");
     }
 
     public static class IntegerSites {

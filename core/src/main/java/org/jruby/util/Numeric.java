@@ -36,6 +36,7 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyInteger;
 import org.jruby.RubyNumeric;
+import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -51,7 +52,7 @@ public class Numeric {
     public static IRubyObject f_add(ThreadContext context, IRubyObject x, IRubyObject y) {
         if (y instanceof RubyFixnum && ((RubyFixnum)y).getLongValue() == 0) return x;
         if (x instanceof RubyFixnum && ((RubyFixnum)x).getLongValue() == 0) return y;
-        return x.callMethod(context, "+", y);
+        return sites(context).op_plus.call(context, x, x, y);
     }
 
     /** f_cmp
@@ -67,7 +68,7 @@ public class Numeric {
             }
             return RubyFixnum.zero(context.runtime);
         }
-        return invokedynamic(context, x, OP_CMP, y);
+        return sites(context).op_cmp.call(context, x, x, y);
     }
 
     /** f_div
@@ -75,7 +76,7 @@ public class Numeric {
      */
     public static IRubyObject f_div(ThreadContext context, IRubyObject x, IRubyObject y) {
         if (y instanceof RubyFixnum && ((RubyFixnum)y).getLongValue() == 1) return x;
-        return x.callMethod(context, "/", y);
+        return sites(context).op_quo.call(context, x, x, y);
     }
 
     /** f_gt_p 
@@ -85,7 +86,7 @@ public class Numeric {
         if (x instanceof RubyFixnum && y instanceof RubyFixnum) {
             return ((RubyFixnum)x).getLongValue() > ((RubyFixnum)y).getLongValue() ? context.runtime.getTrue() : context.runtime.getFalse();
         }
-        return x.callMethod(context, ">", y);
+        return sites(context).op_gt.call(context, x, x, y);
     }
 
     /** f_lt_p 
@@ -95,14 +96,14 @@ public class Numeric {
         if (x instanceof RubyFixnum && y instanceof RubyFixnum) {
             return ((RubyFixnum)x).getLongValue() < ((RubyFixnum)y).getLongValue() ? context.runtime.getTrue() : context.runtime.getFalse();
         }
-        return x.callMethod(context, "<", y);
+        return sites(context).op_lt.call(context, x, x, y);
     }
     
     /** f_mod
      * 
      */
     public static IRubyObject f_mod(ThreadContext context, IRubyObject x, IRubyObject y) {
-        return x.callMethod(context, "%", y);
+        return sites(context).op_mod.call(context, x, x, y);
     }
     
     /** f_mul
@@ -125,7 +126,7 @@ public class Numeric {
                 return y;
             }
         }
-        return x.callMethod(context, "*", y);
+        return sites(context).op_times.call(context, x, x, y);
     }
 
     // MRI: safe_mul
@@ -146,147 +147,147 @@ public class Numeric {
      */
     public static IRubyObject f_sub(ThreadContext context, IRubyObject x, IRubyObject y) {
         if (y instanceof RubyFixnum && ((RubyFixnum)y).getLongValue() == 0) return x;
-        return x.callMethod(context, "-", y);
+        return sites(context).op_minus.call(context, x, x, y);
     }
 
     /** f_xor
      * 
      */
     public  static IRubyObject f_xor(ThreadContext context, IRubyObject x, IRubyObject y) {
-        return x.callMethod(context, "^", y);
+        return sites(context).op_xor.call(context, x, x, y);
     }
 
     /** f_abs
      * 
      */
     public static IRubyObject f_abs(ThreadContext context, IRubyObject x) {
-        return x.callMethod(context, "abs");
+        return sites(context).abs.call(context, x, x);
     }
 
     /** f_abs2
      * 
      */
     public static IRubyObject f_abs2(ThreadContext context, IRubyObject x) {
-        return x.callMethod(context, "abs2");
+        return sites(context).abs2.call(context, x, x);
     }
 
     /** f_arg
      * 
      */
     public static IRubyObject f_arg(ThreadContext context, IRubyObject x) {
-        return x.callMethod(context, "arg");
+        return sites(context).arg.call(context, x, x);
     }
     
     /** f_conjugate
      * 
      */
     public static IRubyObject f_conjugate(ThreadContext context, IRubyObject x) {
-        return x.callMethod(context, "conjugate");
+        return sites(context).conjugate.call(context, x, x);
     }
 
     /** f_denominator
      * 
      */
     public static IRubyObject f_denominator(ThreadContext context, IRubyObject x) {
-        return x.callMethod(context, "denominator");
+        return sites(context).denominator.call(context, x, x);
     }
 
     /** f_exact_p
      * 
      */
     public static IRubyObject f_exact_p(ThreadContext context, IRubyObject x) {
-        return x.callMethod(context, "exact?");
+        return sites(context).exact.call(context, x, x);
     }
 
     /** f_numerator
      * 
      */
     public static IRubyObject f_numerator(ThreadContext context, IRubyObject x) {
-        return x.callMethod(context, "numerator");
+        return sites(context).numerator.call(context, x, x);
     }
 
     /** f_polar
      * 
      */
     public static IRubyObject f_polar(ThreadContext context, IRubyObject x) {
-        return x.callMethod(context, "polar");
+        return sites(context).polar.call(context, x, x);
     }
 
     /** f_real_p
      * 
      */
     public static IRubyObject f_real_p(ThreadContext context, IRubyObject x) {
-        return x.callMethod(context, "real?");
+        return sites(context).real.call(context, x, x);
     }
 
     /** f_integer_p
      * 
      */
     public static IRubyObject f_integer_p(ThreadContext context, IRubyObject x) {
-        return x.callMethod(context, "integer?");
+        return sites(context).integer.call(context, x, x);
     }
 
     /** f_divmod
      * 
      */
     public static IRubyObject f_divmod(ThreadContext context, IRubyObject x, IRubyObject y) {
-        return x.callMethod(context, "divmod", y);
+        return sites(context).divmod.call(context, x, x, y);
     }
 
     /** f_floor
      * 
      */
     public static IRubyObject f_floor(ThreadContext context, IRubyObject x) {
-        return x.callMethod(context, "floor");
+        return sites(context).floor.call(context, x, x);
     }
 
     /** f_inspect
      * 
      */
     public static IRubyObject f_inspect(ThreadContext context, IRubyObject x) {
-        return x.callMethod(context, "inspect");
+        return sites(context).inspect.call(context, x, x);
     }
 
     /** f_negate
      * 
      */
     public static IRubyObject f_negate(ThreadContext context, IRubyObject x) {
-        return x.callMethod(context, "-@");
+        return sites(context).op_uminus.call(context, x, x);
     }
     
     /** f_to_f
      * 
      */
     public static IRubyObject f_to_f(ThreadContext context, IRubyObject x) {
-        return x.callMethod(context, "to_f");
+        return sites(context).to_f.call(context, x, x);
     }
     
     /** f_to_i
      * 
      */
     public static IRubyObject f_to_i(ThreadContext context, IRubyObject x) {
-        return x.callMethod(context, "to_i");
+        return sites(context).to_i.call(context, x, x);
     }
     
     /** f_to_r
      * 
      */
     public static IRubyObject f_to_r(ThreadContext context, IRubyObject x) {
-        return x.callMethod(context, "to_r");
+        return sites(context).to_r.call(context, x, x);
     }
     
     /** f_to_s
      * 
      */
     public static IRubyObject f_to_s(ThreadContext context, IRubyObject x) {
-        return x.callMethod(context, "to_s");
+        return sites(context).to_s.call(context, x, x);
     }
     
     /** f_truncate
      * 
      */
     public static IRubyObject f_truncate(ThreadContext context, IRubyObject x) {
-        return x.callMethod(context, "truncate");
+        return sites(context).truncate.call(context, x, x);
     }
     
     /** f_equal
@@ -300,42 +301,42 @@ public class Numeric {
             return context.runtime.newBoolean(((RubyFixnum) x).getLongValue() == ((RubyFixnum) y).getLongValue());
         }
 
-        return x.callMethod(context, "==", y);
+        return sites(context).op_equals.call(context, x, x, y);
     }
 
     /** f_expt
      * 
      */
     public static IRubyObject f_expt(ThreadContext context, IRubyObject x, IRubyObject y) {
-        return x.callMethod(context, "**", y);
+        return sites(context).op_exp.call(context, x, x, y);
     }
     
     /** f_idiv
      * 
      */
     public static IRubyObject f_idiv(ThreadContext context, IRubyObject x, IRubyObject y) {
-        return x.callMethod(context, "div", y);
+        return sites(context).div.call(context, x, x, y);
     }
     
     /** f_quo
      * 
      */
     public static IRubyObject f_quo(ThreadContext context, IRubyObject x, IRubyObject y) {
-        return x.callMethod(context, "quo", y);
+        return sites(context).quo.call(context, x, x, y);
     }
 
     /** f_rshift
      * 
      */
     public static IRubyObject f_rshift(ThreadContext context, IRubyObject x, IRubyObject y) {
-        return x.callMethod(context, ">>", y);
+        return sites(context).op_rshift.call(context, x, x, y);
     }
 
     /** f_lshift
      * 
      */
     public static IRubyObject f_lshift(ThreadContext context, IRubyObject x, IRubyObject y) {
-        return x.callMethod(context, "<<", y);
+        return sites(context).op_lshift.call(context, x, x, y);
     }
 
     /** f_negative_p
@@ -343,7 +344,7 @@ public class Numeric {
      */
     public static boolean f_negative_p(ThreadContext context, IRubyObject x) {
         if (x instanceof RubyFixnum) return ((RubyFixnum)x).getLongValue() < 0;
-        return x.callMethod(context, "<", RubyFixnum.zero(context.runtime)).isTrue();
+        return sites(context).op_lt.call(context, x, x, RubyFixnum.zero(context.runtime)).isTrue();
     }
     
     /** f_zero_p
@@ -351,7 +352,7 @@ public class Numeric {
      */
     public static boolean f_zero_p(ThreadContext context, IRubyObject x) {
         if (x instanceof RubyFixnum) return ((RubyFixnum)x).getLongValue() == 0;
-        return x.callMethod(context, "==", RubyFixnum.zero(context.runtime)).isTrue();
+        return sites(context).op_equals.call(context, x, x, RubyFixnum.zero(context.runtime)).isTrue();
     }
     
     /** f_one_p
@@ -359,7 +360,7 @@ public class Numeric {
      */
     public static boolean f_one_p(ThreadContext context, IRubyObject x) {
         if (x instanceof RubyFixnum) return ((RubyFixnum)x).getLongValue() == 1;
-        return x.callMethod(context, "==", RubyFixnum.one(context.runtime)).isTrue();
+        return sites(context).op_equals.call(context, x, x, RubyFixnum.one(context.runtime)).isTrue();
     }
 
    /** f_minus_one_p
@@ -367,7 +368,7 @@ public class Numeric {
     */
     public static boolean f_minus_one_p(ThreadContext context, IRubyObject x) {
         if (x instanceof RubyFixnum) return ((RubyFixnum)x).getLongValue() == -1;
-        return x.callMethod(context, "==", RubyFixnum.minus_one(context.runtime)).isTrue();
+        return sites(context).op_equals.call(context, x, x, RubyFixnum.minus_one(context.runtime)).isTrue();
     }
 
    /** f_odd_p
@@ -375,7 +376,7 @@ public class Numeric {
     */
     public static boolean f_odd_p(ThreadContext context, IRubyObject integer) {
         Ruby runtime = context.runtime;
-        return (((RubyFixnum) integer.callMethod(context, "%", RubyFixnum.two(runtime))).getLongValue() != 0);
+        return (((RubyFixnum) sites(context).op_mod.call(context, integer, integer, RubyFixnum.two(runtime))).getLongValue() != 0);
     }
 
     /** i_gcd
@@ -435,7 +436,7 @@ public class Numeric {
     }
     
     public static long i_ilog2(ThreadContext context, IRubyObject x) {
-        long q = (x.callMethod(context, "size").convertToInteger().getLongValue() - 8) * 8 + 1;
+        long q = (sites(context).size.call(context, x, x).convertToInteger().getLongValue() - 8) * 8 + 1;
 
         if (q > 0) {
             x = f_rshift(context, x, RubyFixnum.newFixnum(context.runtime, q));
@@ -646,7 +647,7 @@ public class Numeric {
         p1 = q0 = one;
 
         while (true) {
-            c = a.callMethod(context, "ceil");
+            c = sites(context).ceil.call(context, a, a);
             if (f_lt_p(context, c, b).isTrue()) {
                 break;
             }
@@ -673,5 +674,9 @@ public class Numeric {
         if (!(obj instanceof RubyInteger)) {
             throw context.runtime.newTypeError("not an integer");
         }
+    }
+
+    private static JavaSites.NumericSites sites(ThreadContext context) {
+        return context.sites.Numeric;
     }
 }
