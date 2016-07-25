@@ -84,6 +84,16 @@ public class CExtNodes {
 
     }
 
+    @CoreMethod(names = "NUM2DBL", isModuleFunction = true, required = 1)
+    public abstract static class NUM2DBLNode extends CoreMethodArrayArgumentsNode {
+
+        @Specialization
+        public double num2dbl(int num) {
+            return num;
+        }
+
+    }
+
     @CoreMethod(names = "FIX2INT", isModuleFunction = true, required = 1)
     public abstract static class FIX2INTNode extends CoreMethodArrayArgumentsNode {
 

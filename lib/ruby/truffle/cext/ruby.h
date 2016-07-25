@@ -211,6 +211,7 @@ int NUM2INT(VALUE value);
 unsigned int NUM2UINT(VALUE value);
 long NUM2LONG(VALUE value);
 unsigned long NUM2ULONG(VALUE value);
+double NUM2DBL(VALUE value);
 
 int FIX2INT(VALUE value);
 unsigned int FIX2UINT(VALUE value);

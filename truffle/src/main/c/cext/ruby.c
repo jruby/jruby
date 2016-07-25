@@ -179,6 +179,10 @@ unsigned long NUM2ULONG(VALUE value) {
   return truffle_invoke_l(RUBY_CEXT, "NUM2ULONG", value);
 }
 
+double NUM2DBL(VALUE value) {
+  return truffle_invoke_d(RUBY_CEXT, "NUM2DBL", value);
+}
+
 int FIX2INT(VALUE value) {
   return truffle_invoke_i(RUBY_CEXT, "FIX2INT", value);
 }
