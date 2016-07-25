@@ -295,12 +295,14 @@ test-cexts: {
     SULONG_NO_LIBRARY: "true",
     USE_SYSTEM_CLANG: "true",
     HOST_VM: server,
-    HOST_VM_CONFIG: graal-core
+    HOST_VM_CONFIG: graal-core,
+    LIBXML_LIB: "/usr/lib64/libxml2.so.2",
+    OPENSSL_LIB: "/usr/lib64/libssl.so.10"
   }
 
   run: [
     ${jt} [test, specs, --graal, ":capi"],
-    ${jt} [test, cexts, --no-libxml, --no-openssl]
+    ${jt} [test, cexts]
   ]
 }
 
