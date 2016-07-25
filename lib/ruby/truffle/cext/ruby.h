@@ -61,10 +61,12 @@ NORETURN(VALUE rb_f_notimplement(int args_count, const VALUE *args, VALUE object
 
 // Memory
 
-#define xmalloc malloc
-#define xfree free
+#define xmalloc     malloc
+#define xfree       free
+#define ruby_xfree  free
 
-#define ALLOC_N(type, n)            malloc(sizeof(type) * n)
+#define ALLOC_N(type, n)            ((type *)malloc(sizeof(type) * (n)))
+#define ALLOCA_N(type, n)           ((type *)alloca(sizeof(type) * (n)))
 
 void *rb_alloc_tmp_buffer(volatile VALUE *buffer_pointer, long length);
 void *rb_alloc_tmp_buffer2(volatile VALUE *buffer_pointer, long count, size_t size);
