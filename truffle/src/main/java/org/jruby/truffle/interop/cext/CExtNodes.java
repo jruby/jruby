@@ -73,6 +73,17 @@ public class CExtNodes {
 
     }
 
+    @CoreMethod(names = "NUM2ULONG", isModuleFunction = true, required = 1)
+    public abstract static class NUM2ULONGNode extends CoreMethodArrayArgumentsNode {
+
+        @Specialization
+        public long num2ulong(int num) {
+            // TODO CS 2-May-16 what to do about the fact it's unsigned?
+            return num;
+        }
+
+    }
+
     @CoreMethod(names = "FIX2INT", isModuleFunction = true, required = 1)
     public abstract static class FIX2INTNode extends CoreMethodArrayArgumentsNode {
 

@@ -174,6 +174,11 @@ long NUM2LONG(VALUE value) {
   return truffle_invoke_l(RUBY_CEXT, "NUM2LONG", value);
 }
 
+unsigned long NUM2ULONG(VALUE value) {
+  // TODO CS 24-Jul-16 _invoke_l but what about the unsigned part?
+  return truffle_invoke_l(RUBY_CEXT, "NUM2ULONG", value);
+}
+
 int FIX2INT(VALUE value) {
   return truffle_invoke_i(RUBY_CEXT, "FIX2INT", value);
 }
