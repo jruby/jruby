@@ -161,10 +161,12 @@ bool SYMBOL_P(VALUE value);
 
 // Constants
 
+VALUE rb_jt_Qundef(void);
 VALUE rb_jt_Qfalse(void);
 VALUE rb_jt_Qtrue(void);
 VALUE rb_jt_Qnil(void);
 
+#define Qundef rb_jt_get_Qundef()
 #define Qfalse rb_jt_Qfalse()
 #define Qtrue rb_jt_Qtrue()
 #define Qnil rb_jt_Qnil()

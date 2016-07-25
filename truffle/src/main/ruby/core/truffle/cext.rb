@@ -122,6 +122,10 @@ module Truffle::CExt
     value.is_a?(Symbol)
   end
 
+  def Qundef
+    Rubinius::UNDEFINED
+  end
+
   def Qfalse
     false
   end
