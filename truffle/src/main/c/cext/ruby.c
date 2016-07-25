@@ -973,6 +973,17 @@ VALUE rb_data_typed_object_wrap(VALUE ruby_class, void *data, const rb_data_type
   return (VALUE) truffle_invoke(RUBY_CEXT, "rb_data_typed_object_wrap", ruby_class, data, data_type);
 }
 
+VALUE rb_data_typed_object_zalloc(VALUE ruby_class, size_t size, const rb_data_type_t *data_type) {
+  VALUE obj = rb_data_typed_object_wrap(ruby_class, 0, data_type);
+  DATA_PTR(obj) = calloc(1, size);
+  return obj;
+}
+
+VALUE rb_data_typed_object_make(VALUE ruby_class, const rb_data_type_t *type, void **data_pointer, size_t size) {
+  TypedData_Make_Struct0(result, ruby_class, void, size, type, *data_pointer);
+  return result;
+}
+
 void *rb_check_typeddata(VALUE value, const rb_data_type_t *data_type) {
   fprintf(stderr, "rb_check_typeddata not implemented\n");
   abort();

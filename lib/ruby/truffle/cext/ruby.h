@@ -585,6 +585,16 @@ VALUE rb_data_typed_object_wrap(VALUE ruby_class, void *data, const rb_data_type
 
 #define TypedData_Wrap_Struct(ruby_class, data_type, data) rb_data_typed_object_wrap((ruby_class), (data), (data_type))
 
+VALUE rb_data_typed_object_zalloc(VALUE ruby_class, size_t size, const rb_data_type_t *data_type);
+
+#define TypedData_Make_Struct0(result, ruby_class, type, size, data_type, sval) \
+    VALUE result = rb_data_typed_object_zalloc(ruby_class, size, data_type); \
+    (void)((sval) = (type *)DATA_PTR(result));
+
+VALUE rb_data_typed_object_make(VALUE ruby_class, const rb_data_type_t *type, void **data_pointer, size_t size);
+
+#define TypedData_Make_Struct(ruby_class, type, data_type, sval) rb_data_typed_object_make((ruby_class), (data_type), (void **)&(sval), sizeof(type))
+
 void *rb_check_typeddata(VALUE value, const rb_data_type_t *data_type);
 
 #define TypedData_Get_Struct(value, type, data_type, variable) ((variable) = (type *)rb_check_typeddata((value), (data_type)))
