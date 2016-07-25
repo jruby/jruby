@@ -425,6 +425,10 @@ VALUE rb_str_resize(VALUE string, long length) {
   abort();
 }
 
+VALUE rb_str_split(VALUE string, const char *split) {
+  return (VALUE) truffle_invoke(string, "split", rb_str_new_cstr(split));
+}
+
 // Symbol
 
 ID rb_intern(const char *string) {
