@@ -42,8 +42,10 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.ext.bigdecimal.RubyBigDecimal;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
+import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -423,7 +425,7 @@ public class RubyNumeric extends RubyObject {
         final IRubyObject $ex = context.getErrorInfo();
         final IRubyObject result;
         try {
-            result = other.callMethod(context, "coerce", this);
+            result = sites(context).coerce.call(context, this, this);
         }
         catch (RaiseException e) { // e.g. NoMethodError: undefined method `coerce'
             context.setErrorInfo($ex); // restore $!
@@ -454,20 +456,38 @@ public class RubyNumeric extends RubyObject {
         return args[0].callMethod(context, method, args[1]);
     }
 
+    protected IRubyObject callCoerced(ThreadContext context, CallSite site, IRubyObject other, boolean err) {
+        IRubyObject[] args = getCoerced(context, other, err);
+        if (args == null) {
+            return context.nil;
+        }
+        IRubyObject car = args[0];
+        return site.call(context, car, car, args[1]);
+    }
+
+    public IRubyObject callCoerced(ThreadContext context, CallSite site, IRubyObject other) {
+        IRubyObject[] args = getCoerced(context, other, false);
+        if (args == null) {
+            return context.nil;
+        }
+        IRubyObject car = args[0];
+        return site.call(context, car, car, args[1]);
+    }
+
     // beneath are rewritten coercions that reflect MRI logic, the aboves are used only by RubyBigDecimal
 
     /** coerce_body
      *
      */
     protected final IRubyObject coerceBody(ThreadContext context, IRubyObject other) {
-        return other.callMethod(context, "coerce", this);
+        return sites(context).coerce.call(context, other, other, this);
     }
 
     /** do_coerce
      *
      */
     protected final RubyArray doCoerce(ThreadContext context, IRubyObject other, boolean err) {
-        if (!other.respondsTo("coerce")) {
+        if (!sites(context).respond_to_coerce.respondsTo(context, other, other)) {
             if (err) {
                 coerceRescue(context, other);
             }
@@ -534,6 +554,12 @@ public class RubyNumeric extends RubyObject {
         return (ary.eltInternal(0)).callMethod(context, method, ary.eltInternal(1));
     }
 
+    protected final IRubyObject coerceBin(ThreadContext context, CallSite site, IRubyObject other) {
+        RubyArray ary = doCoerce(context, other, true);
+        IRubyObject car = ary.eltInternal(0);
+        return site.call(context, car, car, ary.eltInternal(1));
+    }
+
     /** rb_num_coerce_bit
      *  coercion taking two arguments
      */
@@ -552,6 +578,21 @@ public class RubyNumeric extends RubyObject {
         return callMethod(context, method, other);
     }
 
+    protected final IRubyObject coerceBit(ThreadContext context, CallSite site, IRubyObject other) {
+        if (!(other instanceof RubyFixnum) && !(other instanceof RubyBignum)) {
+            RubyArray ary = doCoerce(context, other, true);
+            IRubyObject x = ary.eltInternal(0);
+            IRubyObject y = ary.eltInternal(1);
+
+            if (!(x instanceof RubyFixnum) && !(x instanceof RubyBignum)
+                    && !(y instanceof RubyFixnum) && !(y instanceof RubyBignum)) {
+                coerceFailed(context, other);
+            }
+            return site.call(context, x, x, y);
+        }
+        return site.call(context, this, this, other);
+    }
+
     /** rb_num_coerce_cmp
      *  coercion used for comparisons
      */
@@ -561,6 +602,15 @@ public class RubyNumeric extends RubyObject {
             return context.nil; // MRI does it!
         }
         return (ary.eltInternal(0)).callMethod(context, method, ary.eltInternal(1));
+    }
+
+    protected final IRubyObject coerceCmp(ThreadContext context, CallSite site, IRubyObject other) {
+        RubyArray ary = doCoerce(context, other, false);
+        if (ary == null) {
+            return context.nil; // MRI does it!
+        }
+        IRubyObject car = ary.eltInternal(0);
+        return site.call(context, car, car, ary.eltInternal(1));
     }
 
     /** rb_num_coerce_relop
@@ -575,8 +625,26 @@ public class RubyNumeric extends RubyObject {
         return unwrapCoerced(context, method, other, ary);
     }
 
+    protected final IRubyObject coerceRelOp(ThreadContext context, CallSite site, IRubyObject other) {
+        RubyArray ary = doCoerce(context, other, false);
+        if (ary == null) {
+            return RubyComparable.cmperr(this, other);
+        }
+
+        return unwrapCoerced(context, site, other, ary);
+    }
+
     private IRubyObject unwrapCoerced(ThreadContext context, String method, IRubyObject other, RubyArray ary) {
         IRubyObject result = (ary.eltInternal(0)).callMethod(context, method, ary.eltInternal(1));
+        if (result.isNil()) {
+            return RubyComparable.cmperr(this, other);
+        }
+        return result;
+    }
+
+    private IRubyObject unwrapCoerced(ThreadContext context, CallSite site, IRubyObject other, RubyArray ary) {
+        IRubyObject car = ary.eltInternal(0);
+        IRubyObject result = site.call(context, car, car, ary.eltInternal(1));
         if (result.isNil()) {
             return RubyComparable.cmperr(this, other);
         }
@@ -644,7 +712,8 @@ public class RubyNumeric extends RubyObject {
     @JRubyMethod(name = "-@")
     public IRubyObject op_uminus(ThreadContext context) {
         RubyArray ary = RubyFixnum.zero(context.runtime).doCoerce(context, this, true);
-        return ary.eltInternal(0).callMethod(context, "-", ary.eltInternal(1));
+        IRubyObject car = ary.eltInternal(0);
+        return sites(context).op_minus.call(context, car, car, ary.eltInternal(1));
     }
 
     /** num_cmp
@@ -671,7 +740,7 @@ public class RubyNumeric extends RubyObject {
      * quo and fdiv in 1.8 just invokes "/"
      */
     public IRubyObject quo(ThreadContext context, IRubyObject other) {
-        return callMethod(context, "/", other);
+        return sites(context).op_quo.call(context, this, this, other);
     }
 
     /** num_quo (1.9)
@@ -700,7 +769,8 @@ public class RubyNumeric extends RubyObject {
                 throw context.runtime.newZeroDivisionError();
             }
         }
-        return callMethod(context, "/", other).callMethod(context, "floor");
+        IRubyObject quotient = sites(context).op_quo.call(context, this, this, other);
+        return sites(context).floor.call(context, quotient, quotient);
     }
 
     /** num_divmod
@@ -721,7 +791,8 @@ public class RubyNumeric extends RubyObject {
     /** num_fdiv (1.9) */
     @JRubyMethod(name = "fdiv")
     public IRubyObject fdiv(ThreadContext context, IRubyObject other) {
-        return Helpers.invoke(context, this.convertToFloat(), "/", other);
+        RubyFloat flote = this.convertToFloat();
+        return sites(context).op_quo.call(context, flote, flote, other);
     }
 
     /** num_modulo
@@ -736,7 +807,9 @@ public class RubyNumeric extends RubyObject {
      */
     @JRubyMethod(name = "modulo")
     public IRubyObject modulo19(ThreadContext context, IRubyObject other) {
-        return callMethod(context, "-", other.callMethod(context, "*", callMethod(context, "div", other)));
+        IRubyObject div = sites(context).div.call(context, this, this, other);
+        IRubyObject product = sites(context).op_times.call(context, other, other, div);
+        return sites(context).op_minus.call(context, this, this, product);
     }
 
     /** num_remainder
@@ -744,16 +817,16 @@ public class RubyNumeric extends RubyObject {
      */
     @JRubyMethod(name = "remainder")
     public IRubyObject remainder(ThreadContext context, IRubyObject dividend) {
-        IRubyObject z = callMethod(context, "%", dividend);
+        IRubyObject z = sites(context).op_mod.call(context, this, this, dividend);
         IRubyObject x = this;
         RubyFixnum zero = RubyFixnum.zero(getRuntime());
 
         if (!equalInternal(context, z, zero) &&
-                ((x.callMethod(context, "<", zero).isTrue() &&
-                dividend.callMethod(context, ">", zero).isTrue()) ||
-                (x.callMethod(context, ">", zero).isTrue() &&
-                dividend.callMethod(context, "<", zero).isTrue()))) {
-            return z.callMethod(context, "-", dividend);
+                ((sites(context).op_lt.call(context, x, x, zero).isTrue() &&
+                        sites(context).op_gt.call(context, dividend, dividend, zero).isTrue()) ||
+                (sites(context).op_gt.call(context, x, x, zero).isTrue() &&
+                        sites(context).op_lt.call(context, dividend, dividend, zero).isTrue()))) {
+            return sites(context).op_minus.call(context, z, z, dividend);
         } else {
             return z;
         }
@@ -764,8 +837,8 @@ public class RubyNumeric extends RubyObject {
      */
     @JRubyMethod(name = "abs")
     public IRubyObject abs(ThreadContext context) {
-        if (callMethod(context, "<", RubyFixnum.zero(getRuntime())).isTrue()) {
-            return callMethod(context, "-@");
+        if (sites(context).op_lt.call(context, this, this, RubyFixnum.zero(getRuntime())).isTrue()) {
+            return sites(context).op_uminus.call(context, this, this);
         }
         return this;
     }
@@ -783,7 +856,7 @@ public class RubyNumeric extends RubyObject {
      */
     @JRubyMethod(name = "to_int")
     public IRubyObject to_int(ThreadContext context) {
-        return Helpers.invoke(context, this, "to_i");
+        return sites(context).to_i.call(context, this, this);
     }
 
     /** num_real_p
@@ -815,7 +888,7 @@ public class RubyNumeric extends RubyObject {
      */
     @JRubyMethod(name = "nonzero?")
     public IRubyObject nonzero_p(ThreadContext context) {
-        if (callMethod(context, "zero?").isTrue()) {
+        if (sites(context).zero.call(context, this, this).isTrue()) {
             return getRuntime().getNil();
         }
         return this;
@@ -984,14 +1057,15 @@ public class RubyNumeric extends RubyObject {
     private static void duckStep(ThreadContext context, Ruby runtime, IRubyObject from, IRubyObject to, IRubyObject step, Block block) {
         IRubyObject i = from;
 
-        String cmpString = step.callMethod(context, ">", RubyFixnum.newFixnum(context.runtime, 0)).isTrue() ? ">" : "<";
-        if(step.callMethod(context, "==", RubyFixnum.newFixnum(context.runtime, 0)).isTrue())
-            cmpString = "==";
+        CallSite cmpSite = sites(context).op_gt.call(context, step, step, RubyFixnum.newFixnum(context.runtime, 0)).isTrue() ? sites(context).op_gt : sites(context).op_lt;
+        if(step.callMethod(context, "==", RubyFixnum.newFixnum(context.runtime, 0)).isTrue()) {
+            cmpSite = sites(context).op_equals;
+        }
 
         while (true) {
-            if (i.callMethod(context, cmpString, to).isTrue()) break;
+            if (cmpSite.call(context, i, i, to).isTrue()) break;
             block.yield(context, i);
-            i = i.callMethod(context, "+", step);
+            i = sites(context).op_plus.call(context, i, i, step);
         }
     }
 
@@ -1027,26 +1101,28 @@ public class RubyNumeric extends RubyObject {
                 return runtime.newFloat(n).convertToInteger();
             }
         } else {
-            String cmpString = ">";
+            JavaSites.NumericSites sites = sites(context);
+            CallSite cmpSite = sites.op_gt;
             RubyFixnum zero = RubyFixnum.zero(runtime);
-            IRubyObject comparison = zero.coerceCmp(context, "<=>", step);
+            IRubyObject comparison = zero.coerceCmp(context, sites.op_cmp, step);
 
             switch (RubyComparable.cmpint(context, comparison, step, zero)) {
                 case 0:
                     return RubyFloat.newFloat(runtime, Float.POSITIVE_INFINITY);
                 case 1:
-                    cmpString = "<";
+                    cmpSite = sites.op_lt;
                     break;
             }
 
-            if (from.callMethod(context, cmpString, to).isTrue()) {
+            if (cmpSite.call(context, from, from, to).isTrue()) {
                 return RubyFixnum.zero(runtime);
             }
 
-            IRubyObject diff = to.callMethod(context, "-", from);
-            IRubyObject result = diff.callMethod(context, "div", step);
-            if (!excludeLast || from.callMethod(context, "+", result.callMethod(context, "*", step)).callMethod(context, cmpString, to).isTrue()) {
-                result = result.callMethod(context, "+", RubyFixnum.newFixnum(runtime, 1));
+            IRubyObject diff = sites.op_minus.call(context, to, to, from);
+            IRubyObject result = sites.div.call(context, diff, diff, step);
+            IRubyObject timesPlus = sites.op_plus.call(context, from, from, sites.op_times.call(context, result, result, step));
+            if (!excludeLast || cmpSite.call(context, timesPlus, timesPlus, to).isTrue()) {
+                result = sites.op_plus.call(context, result, result, RubyFixnum.newFixnum(runtime, 1));
             }
             return (RubyNumeric) result;
         }
@@ -1109,7 +1185,7 @@ public class RubyNumeric extends RubyObject {
         // it won't hurt fixnums
         if (this == other)  return getRuntime().getTrue();
 
-        return invokedynamic(context, other, MethodNames.OP_EQUAL, this);
+        return sites(context).op_equals.call(context, other, other, this);
     }
 
     /** num_numerator
@@ -1117,7 +1193,8 @@ public class RubyNumeric extends RubyObject {
      */
     @JRubyMethod(name = "numerator")
     public IRubyObject numerator(ThreadContext context) {
-        return RubyRational.newRationalConvert(context, this).callMethod(context, "numerator");
+        IRubyObject rational = RubyRational.newRationalConvert(context, this);
+        return sites(context).numerator.call(context, rational, rational);
     }
 
     /** num_denominator
@@ -1125,7 +1202,8 @@ public class RubyNumeric extends RubyObject {
      */
     @JRubyMethod(name = "denominator")
     public IRubyObject denominator(ThreadContext context) {
-        return RubyRational.newRationalConvert(context, this).callMethod(context, "denominator");
+        IRubyObject rational = RubyRational.newRationalConvert(context, this);
+        return sites(context).denominator.call(context, rational, rational);
     }
 
     /** numeric_to_c
@@ -1234,18 +1312,13 @@ public class RubyNumeric extends RubyObject {
         }
     }
 
-    @Deprecated
-    public static RubyFloat str2fnum19(Ruby runtime, RubyString arg, boolean strict) {
-        return str2fnum(runtime, arg, strict);
-    }
-
     /** num_negative_p
      *
      */
     @JRubyMethod(name = "negative?")
     public IRubyObject isNegative(ThreadContext context) {
         IRubyObject zero = convertToNum(0, context.runtime);
-        return callMethod(context, "<", zero);
+        return sites(context).op_lt.call(context, this, this, zero);
 
     }
     /** num_positive_p
@@ -1254,6 +1327,15 @@ public class RubyNumeric extends RubyObject {
     @JRubyMethod(name = "positive?")
     public IRubyObject isPositive(ThreadContext context) {
         IRubyObject zero = convertToNum(0, context.runtime);
-        return callMethod(context, ">", zero);
+        return sites(context).op_gt.call(context, this, this, zero);
+    }
+
+    private static JavaSites.NumericSites sites(ThreadContext context) {
+        return context.sites.Numeric;
+    }
+
+    @Deprecated
+    public static RubyFloat str2fnum19(Ruby runtime, RubyString arg, boolean strict) {
+        return str2fnum(runtime, arg, strict);
     }
 }

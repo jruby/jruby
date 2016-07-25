@@ -46,6 +46,7 @@ import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ClassIndex;
+import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -276,7 +277,7 @@ public class RubyFloat extends RubyNumeric {
         case FLOAT:
             return RubyFloat.newFloat(getRuntime(), value + ((RubyNumeric) other).getDoubleValue());
         default:
-            return coerceBin(context, "+", other);
+            return coerceBin(context, sites(context).op_plus, other);
         }
     }
 
@@ -295,7 +296,7 @@ public class RubyFloat extends RubyNumeric {
         case FLOAT:
             return RubyFloat.newFloat(getRuntime(), value - ((RubyNumeric) other).getDoubleValue());
         default:
-            return coerceBin(context, "-", other);
+            return coerceBin(context, sites(context).op_minus, other);
         }
     }
 
@@ -315,7 +316,7 @@ public class RubyFloat extends RubyNumeric {
             return RubyFloat.newFloat(
                     getRuntime(), value * ((RubyNumeric) other).getDoubleValue());
         default:
-            return coerceBin(context, "*", other);
+            return coerceBin(context, sites(context).op_times, other);
         }
     }
 
@@ -335,7 +336,7 @@ public class RubyFloat extends RubyNumeric {
         case FLOAT:
             return RubyFloat.newFloat(getRuntime(), value / ((RubyNumeric) other).getDoubleValue());
         default:
-            return coerceBin(context, "/", other);
+            return coerceBin(context, sites(context).op_quo, other);
         }
     }
 
@@ -362,7 +363,7 @@ public class RubyFloat extends RubyNumeric {
             double y = ((RubyNumeric) other).getDoubleValue();
             return op_mod(context, y);
         default:
-            return coerceBin(context, "%", other);
+            return coerceBin(context, sites(context).op_mod, other);
         }
     }
 
@@ -417,7 +418,7 @@ public class RubyFloat extends RubyNumeric {
             RubyFloat cdr = RubyFloat.newFloat(runtime, mod);
             return RubyArray.newArray(runtime, car, cdr);
         default:
-            return coerceBin(context, "divmod", other);
+            return coerceBin(context, sites(context).divmod, other);
         }
     }
 
@@ -444,7 +445,7 @@ public class RubyFloat extends RubyNumeric {
             return RubyFloat.newFloat(context.runtime, Math.pow(value, ((RubyNumeric) other)
                     .getDoubleValue()));
         default:
-            return coerceBin(context, "**", other);
+            return coerceBin(context, sites(context).op_exp, other);
         }
     }
 
@@ -465,7 +466,7 @@ public class RubyFloat extends RubyNumeric {
                     return op_pow(context, other);
                 }
             default:
-                return coerceBin(context, "**", other);
+                return coerceBin(context, sites(context).op_exp, other);
         }
     }
 
@@ -511,7 +512,8 @@ public class RubyFloat extends RubyNumeric {
         case FLOAT:
             return Double.compare(value, ((RubyNumeric) other).getDoubleValue());
         default:
-            return (int) coerceCmp(getRuntime().getCurrentContext(), "<=>", other).convertToInteger().getLongValue();
+            ThreadContext context = getRuntime().getCurrentContext();
+            return (int) coerceCmp(context, sites(context).op_cmp, other).convertToInteger().getLongValue();
         }
     }
 
@@ -544,7 +546,7 @@ public class RubyFloat extends RubyNumeric {
                     return value < 0.0 ? RubyFixnum.zero(runtime) : RubyFixnum.one(runtime);
                 }
             }
-            return coerceCmp(context, "<=>", other);
+            return coerceCmp(context, sites(context).op_cmp, other);
         }
     }
 
@@ -564,7 +566,7 @@ public class RubyFloat extends RubyNumeric {
             double b = ((RubyNumeric) other).getDoubleValue();
             return RubyBoolean.newBoolean(context.runtime, !Double.isNaN(b) && value > b);
         default:
-            return coerceRelOp(context, ">", other);
+            return coerceRelOp(context, sites(context).op_gt, other);
         }
     }
 
@@ -584,7 +586,7 @@ public class RubyFloat extends RubyNumeric {
             double b = ((RubyNumeric) other).getDoubleValue();
             return RubyBoolean.newBoolean(context.runtime, !Double.isNaN(b) && value >= b);
         default:
-            return coerceRelOp(context, ">=", other);
+            return coerceRelOp(context, sites(context).op_ge, other);
         }
     }
 
@@ -604,7 +606,7 @@ public class RubyFloat extends RubyNumeric {
             double b = ((RubyNumeric) other).getDoubleValue();
             return RubyBoolean.newBoolean(context.runtime, !Double.isNaN(b) && value < b);
         default:
-            return coerceRelOp(context, "<", other);
+            return coerceRelOp(context, sites(context).op_lt, other);
 		}
     }
 
@@ -624,7 +626,7 @@ public class RubyFloat extends RubyNumeric {
             double b = ((RubyNumeric) other).getDoubleValue();
             return RubyBoolean.newBoolean(context.runtime, !Double.isNaN(b) && value <= b);
         default:
-            return coerceRelOp(context, "<=", other);
+            return coerceRelOp(context, sites(context).op_le, other);
 		}
 	}
 
@@ -992,5 +994,9 @@ public class RubyFloat extends RubyNumeric {
     @JRubyMethod(name = "prev_float")
     public IRubyObject prev_float() {
         return RubyFloat.newFloat(getRuntime(), Math.nextAfter(value, Double.NEGATIVE_INFINITY));
+    }
+
+    private static JavaSites.FloatSites sites(ThreadContext context) {
+        return context.sites.Float;
     }
 }
