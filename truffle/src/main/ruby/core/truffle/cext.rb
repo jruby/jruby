@@ -96,6 +96,9 @@ module Truffle::CExt
   end
 
   def RB_TYPE_P(value, type)
+    # TODO CS 23-Jul-16 we could do with making this a kind of specialising case
+    # that puts never seen cases behind a transfer
+    
     case type
       when T_STRING
         value.is_a?(String)
@@ -109,6 +112,18 @@ module Truffle::CExt
     if rb_type(value) != type
       raise 'unexpected type'
     end
+  end
+
+  def rb_obj_is_instance_of(object, ruby_class)
+    object.class == ruby_class
+  end
+
+  def SYMBOL_P(value)
+    value.is_a?(Symbol)
+  end
+
+  def Qundef
+    Rubinius::UNDEFINED
   end
 
   def Qfalse
@@ -139,8 +154,28 @@ module Truffle::CExt
     Proc
   end
 
+  def rb_cTime
+    Time
+  end
+
   def rb_mKernel
     Kernel
+  end
+
+  def rb_mEnumerable
+    Enumerable
+  end
+
+  def rb_mWaitReadable
+    WaitReadable
+  end
+
+  def rb_mWaitWritable
+    WaitWritable
+  end
+
+  def rb_eException
+    Exception
   end
 
   def rb_eRuntimeError
@@ -153,6 +188,22 @@ module Truffle::CExt
 
   def rb_eNoMemError
     NoMemError
+  end
+
+  def rb_eTypeError
+    TypeError
+  end
+
+  def rb_eArgError
+    ArgError
+  end
+
+  def rb_eRangeError
+    RangeError
+  end
+
+  def rb_eNotImpError
+    NotImplementedError
   end
 
   def rb_fix2int(value)
@@ -175,11 +226,11 @@ module Truffle::CExt
     end
   end
 
-  def NIL_P(value)
+  def RB_NIL_P(value)
     nil.equal?(value)
   end
 
-  def FIXNUM_P(value)
+  def RB_FIXNUM_P(value)
     value.is_a?(Fixnum)
   end
 
@@ -189,6 +240,10 @@ module Truffle::CExt
 
   def rb_float_new(value)
     value.to_f
+  end
+
+  def rb_Integer(value)
+    Integer(value)
   end
 
   def rb_Float(value)
@@ -201,6 +256,15 @@ module Truffle::CExt
 
   def RSTRING_PTR(string)
     Truffle::Interop.to_java_string(string)
+  end
+
+  def rb_str_new_frozen(value)
+    if value.frozen?
+      value
+    else
+      # There's more to rb_str_new_frozen than this
+      String(value).freeze
+    end
   end
 
   def rb_intern(str)
@@ -223,6 +287,10 @@ module Truffle::CExt
     raise 'not implemented'
   end
 
+  def rb_String(value)
+    String(value)
+  end
+
   def RARRAY_PTR(array)
     array
   end
@@ -243,6 +311,10 @@ module Truffle::CExt
     {}
   end
 
+  def rb_class_real(ruby_class)
+    raise 'not implemented'
+  end
+
   def rb_proc_new(function, value)
     proc { |*args|
       Truffle::Interop.execute(function, *args)
@@ -260,6 +332,15 @@ module Truffle::CExt
   def rb_yield(value)
     block = get_block
     block.call(value)
+  end
+
+  def rb_ivar_lookup(object, name, default_value)
+    # TODO CS 24-Jul-16 races - needs a new primitive or be defined in Java?
+    if object.instance_variable_defined?(name)
+      object.instance_variable_get(name)
+    else
+      default_value
+    end
   end
 
   def rb_exc_raise(exception)
@@ -425,6 +506,10 @@ module Truffle::CExt
 
   def rb_nativethread_lock_initialize
     Mutex.new
+  end
+
+  def rb_data_typed_object_wrap(ruby_class, data, data_type)
+    raise 'not implemented'
   end
 
 end

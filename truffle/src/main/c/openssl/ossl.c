@@ -77,7 +77,7 @@ STACK_OF(type) *						\
 ossl_protect_##name##_ary2sk(VALUE ary, int *status)		\
 {								\
     return (STACK_OF(type)*)rb_protect(				\
-	    (VALUE(*)((VALUE)))ossl_##name##_ary2sk0,		\
+	    (VALUE(*)_((VALUE)))ossl_##name##_ary2sk0,		\
 	    ary,						\
 	    status);						\
 }								\
@@ -136,7 +136,7 @@ ossl_buf2str(char *buf, int len)
     VALUE str;
     int status = 0;
 
-    str = rb_protect((VALUE(*)((VALUE)))ossl_str_new, len, &status);
+    str = rb_protect((VALUE(*)_((VALUE)))ossl_str_new, len, &status);
     if(!NIL_P(str)) memcpy(RSTRING_PTR(str), buf, len);
     OPENSSL_free(buf);
     if(status) rb_jump_tag(status);

@@ -31,6 +31,8 @@ public interface IOLayout extends BasicObjectLayout {
                            int descriptor,
                            int mode);
 
+    boolean isIO(DynamicObject object);
+
     DynamicObject getIBuffer(DynamicObject object);
 
     int getLineNo(DynamicObject object);

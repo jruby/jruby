@@ -54,4 +54,8 @@ public abstract class ExceptionOperations {
         return Layouts.NAME_ERROR.createNameError(Layouts.CLASS.getInstanceFactory(rubyClass), message, backtrace, receiver, name);
     }
 
+    public static DynamicObject createNoMethodError(DynamicObject rubyClass, Object message, Backtrace backtrace, Object receiver, Object name, DynamicObject args) {
+        return Layouts.NO_METHOD_ERROR.createNoMethodError(Layouts.CLASS.getInstanceFactory(rubyClass), message, backtrace, receiver, name, args);
+    }
+
 }

@@ -25,6 +25,8 @@ import org.jruby.truffle.core.string.CoreStrings;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyGuards;
 
+import static org.jruby.truffle.core.array.ArrayHelpers.createArray;
+
 public class CoreExceptions {
 
     private final RubyContext context;
@@ -502,9 +504,10 @@ public class CoreExceptions {
     // NoMethodError
 
     @TruffleBoundary
-    public DynamicObject noMethodError(String message, Object receiver, String name, Node currentNode) {
+    public DynamicObject noMethodError(String message, Object receiver, String name, Object[] args, Node currentNode) {
         final DynamicObject messageString = StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE));
-        DynamicObject noMethodError = ExceptionOperations.createNameError(context.getCoreLibrary().getNoMethodErrorClass(), messageString, context.getCallStack().getBacktrace(currentNode), receiver, context.getSymbolTable().getSymbol(name));
+        final DynamicObject argsArray =  createArray(context, args, args.length);
+        final DynamicObject noMethodError = ExceptionOperations.createNoMethodError(context.getCoreLibrary().getNoMethodErrorClass(), messageString, context.getCallStack().getBacktrace(currentNode), receiver, context.getSymbolTable().getSymbol(name), argsArray);
         return noMethodError;
     }
 
@@ -518,12 +521,12 @@ public class CoreExceptions {
     }
 
     @TruffleBoundary
-    public DynamicObject noSuperMethodError(String name, Object self, Node currentNode) {
-        return noMethodError(String.format("super: no superclass method `%s'", name), self, name, currentNode);
+    public DynamicObject noSuperMethodError(String name, Object self, Object[] args,  Node currentNode) {
+        return noMethodError(String.format("super: no superclass method `%s'", name), self, name, args, currentNode);
     }
 
     @TruffleBoundary
-    public DynamicObject noMethodErrorOnReceiver(String name, Object receiver, Node currentNode) {
+    public DynamicObject noMethodErrorOnReceiver(String name, Object receiver, Object[] args, Node currentNode) {
         final DynamicObject logicalClass = context.getCoreLibrary().getLogicalClass(receiver);
         final String moduleName = Layouts.MODULE.getFields(logicalClass).getName();
 
@@ -531,13 +534,13 @@ public class CoreExceptions {
         final boolean hasInspect = ModuleOperations.lookupMethod(logicalClass, "inspect", Visibility.PUBLIC) != null;
         final Object stringRepresentation = hasInspect ? context.send(receiver, "inspect", null) : context.getCoreLibrary().getNilObject();
 
-        return noMethodError(String.format("undefined method `%s' for %s:%s", name, stringRepresentation, moduleName), receiver, name, currentNode);
+        return noMethodError(String.format("undefined method `%s' for %s:%s", name, stringRepresentation, moduleName), receiver, name, args, currentNode);
     }
 
     @TruffleBoundary
-    public DynamicObject privateMethodError(String name, Object self, Node currentNode) {
+    public DynamicObject privateMethodError(String name, Object self, Object[] args, Node currentNode) {
         String className = Layouts.MODULE.getFields(context.getCoreLibrary().getLogicalClass(self)).getName();
-        return noMethodError(String.format("private method `%s' called for %s", name, className), self, name, currentNode);
+        return noMethodError(String.format("private method `%s' called for %s", name, className), self, name, args, currentNode);
     }
 
     // LoadError
@@ -650,6 +653,21 @@ public class CoreExceptions {
                 Layouts.INT_RANGE.getBegin(range),
                 Layouts.INT_RANGE.getExcludedEnd(range) ? "." : "",
                 Layouts.INT_RANGE.getEnd(range)), currentNode);
+    }
+
+    @TruffleBoundary
+    public DynamicObject rangeErrorConvertToInt(long value, Node currentNode) {
+        final String direction;
+
+        if (value < Integer.MIN_VALUE) {
+            direction = "small";
+        } else if (value > Integer.MAX_VALUE) {
+            direction = "big";
+        } else {
+            throw new IllegalArgumentException();
+        }
+
+        return rangeError(String.format("integer %d too %s to convert to `int'", value, direction), currentNode);
     }
 
     @TruffleBoundary
