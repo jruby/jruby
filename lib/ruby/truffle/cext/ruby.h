@@ -246,6 +246,10 @@ int RTEST(VALUE value);
 
 VALUE rb_require(const char *feature);
 
+// Object
+
+VALUE rb_obj_dup(VALUE object);
+
 // Integer
 
 VALUE rb_Integer(VALUE value);
