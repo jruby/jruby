@@ -42,7 +42,9 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockBody;
+import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
+import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
@@ -167,11 +169,11 @@ public abstract class RubyInteger extends RubyNumeric {
         IRubyObject i = from;
         RubyFixnum one = RubyFixnum.one(runtime);
         while (true) {
-            if (i.callMethod(context, ">", to).isTrue()) {
+            if (sites(context).op_gt.call(context, i, i, to).isTrue()) {
                 break;
             }
             block.yield(context, i);
-            i = i.callMethod(context, "+", one);
+            i = sites(context).op_plus.call(context, i, i, one);
         }
     }
 
@@ -230,11 +232,11 @@ public abstract class RubyInteger extends RubyNumeric {
         IRubyObject i = from;
         RubyFixnum one = RubyFixnum.one(runtime);
         while (true) {
-            if (i.callMethod(context, "<", to).isTrue()) {
+            if (sites(context).op_lt.call(context, i, i, to).isTrue()) {
                 break;
             }
             block.yield(context, i);
-            i = i.callMethod(context, "-", one);
+            i = sites(context).op_minus.call(context, i, i, one);
         }
     }
 
@@ -254,11 +256,11 @@ public abstract class RubyInteger extends RubyNumeric {
             IRubyObject i = RubyFixnum.zero(runtime);
             RubyFixnum one = RubyFixnum.one(runtime);
             while (true) {
-                if (!i.callMethod(context, "<", this).isTrue()) {
+                if (!sites(context).op_lt.call(context, i, i, this).isTrue()) {
                     break;
                 }
                 block.yield(context, i);
-                i = i.callMethod(context, "+", one);
+                i = sites(context).op_plus.call(context, i, i, one);
             }
             return this;
         } else {
@@ -272,8 +274,9 @@ public abstract class RubyInteger extends RubyNumeric {
             @Override
             public IRubyObject size(IRubyObject[] args) {
                 RubyFixnum zero = RubyFixnum.zero(runtime);
+                ThreadContext context = runtime.getCurrentContext();
                 if ((self instanceof RubyFixnum && getLongValue() < 0)
-                        || self.callMethod("<", zero).isTrue()) {
+                        || sites(context).op_lt.call(context, self, self, zero).isTrue()) {
                     return zero;
                 }
 
@@ -290,7 +293,7 @@ public abstract class RubyInteger extends RubyNumeric {
         if (this instanceof RubyFixnum) {
             return ((RubyFixnum) this).op_plus_one(context);
         } else {
-            return callMethod(context, "+", RubyFixnum.one(context.runtime));
+            return sites(context).op_plus.call(context, this, this, RubyFixnum.one(context.runtime));
         }
     }
 
@@ -433,11 +436,13 @@ public abstract class RubyInteger extends RubyNumeric {
         } else if (f instanceof RubyFloat) {
             return RubyFixnum.zero(runtime);
         } else {
-            IRubyObject h = f.callMethod(context, "/", RubyFixnum.two(runtime));
-            IRubyObject r = callMethod(context, "%", f);
-            IRubyObject n = callMethod(context, "-", r);
-            String op = callMethod(context, "<", RubyFixnum.zero(runtime)).isTrue() ? "<=" : "<";
-            if (!r.callMethod(context, op, h).isTrue()) n = n.callMethod(context, "+", f);
+            IRubyObject h = sites(context).op_quo.call(context, f, f, RubyFixnum.two(runtime));
+            IRubyObject r = sites(context).op_mod.call(context, this, this, f);
+            IRubyObject n = sites(context).op_minus.call(context, this, this, r);
+            CallSite op = sites(context).op_lt.call(context, this, this, RubyFixnum.zero(runtime)).isTrue()
+                    ? sites(context).op_le
+                    : sites(context).op_lt;
+            if (!op.call(context, r, r, h).isTrue()) n = sites(context).op_plus.call(context, n, n, f);
             return n;
         }
     }
@@ -462,7 +467,7 @@ public abstract class RubyInteger extends RubyNumeric {
     @JRubyMethod(name = "odd?")
     public RubyBoolean odd_p(ThreadContext context) {
         Ruby runtime = context.runtime;
-        if (callMethod(context, "%", RubyFixnum.two(runtime)) != RubyFixnum.zero(runtime)) {
+        if (sites(context).op_mod.call(context, this, this, RubyFixnum.two(runtime)) != RubyFixnum.zero(runtime)) {
             return runtime.getTrue();
         }
         return runtime.getFalse();
@@ -471,7 +476,7 @@ public abstract class RubyInteger extends RubyNumeric {
     @JRubyMethod(name = "even?")
     public RubyBoolean even_p(ThreadContext context) {
         Ruby runtime = context.runtime;
-        if (callMethod(context, "%", RubyFixnum.two(runtime)) == RubyFixnum.zero(runtime)) {
+        if (sites(context).op_mod.call(context, this, this, RubyFixnum.two(runtime)) == RubyFixnum.zero(runtime)) {
             return runtime.getTrue();
         }
         return runtime.getFalse();
@@ -479,7 +484,7 @@ public abstract class RubyInteger extends RubyNumeric {
 
     @JRubyMethod(name = "pred")
     public IRubyObject pred(ThreadContext context) {
-        return callMethod(context, "-", RubyFixnum.one(context.runtime));
+        return sites(context).op_minus.call(context, this, this, RubyFixnum.one(context.runtime));
     }
 
     /** rb_gcd
@@ -522,10 +527,9 @@ public abstract class RubyInteger extends RubyNumeric {
         return RubyFixnum.one(context.runtime);
     }
 
-    /*  ================
-     *  Singleton Methods
-     *  ================
-     */
+    private static JavaSites.IntegerSites sites(ThreadContext context) {
+        return context.sites.Integer;
+    }
 
     /** rb_int_induced_from
      *

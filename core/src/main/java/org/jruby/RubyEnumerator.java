@@ -536,6 +536,8 @@ public class RubyEnumerator extends RubyObject {
      * "Function" type for java-created enumerators with size.  Should be implemented so that calls to
      * SizeFn#size are kept in sync with the size of the created enum (i.e. if the object underlying an enumerator
      * changes, calls to SizeFn#size should reflect that change).
+     *
+     * TODO (CON): fix this to receive context and state to we're not reallocating it all the time
      */
     public interface SizeFn {
         IRubyObject size(IRubyObject[] args);

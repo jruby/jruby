@@ -20,6 +20,7 @@ public class JavaSites {
     public final ArraySites Array = new ArraySites();
     public final StringSites String = new StringSites();
     public final NumericSites Numeric = new NumericSites();
+    public final IntegerSites Integer = new IntegerSites();
     public final FixnumSites Fixnum = new FixnumSites();
     public final FloatSites Float = new FloatSites();
     public final BignumSites Bignum = new BignumSites();
@@ -119,6 +120,16 @@ public class JavaSites {
         public final CallSite op_plus = new FunctionalCachingCallSite("+");
         public final CallSite numerator = new FunctionalCachingCallSite("numerator");
         public final CallSite denominator = new FunctionalCachingCallSite("denominator");
+    }
+
+    public static class IntegerSites {
+        public final CallSite op_gt = new FunctionalCachingCallSite(">");
+        public final CallSite op_lt = new FunctionalCachingCallSite("<");
+        public final CallSite op_le = new FunctionalCachingCallSite("<=");
+        public final CallSite op_plus = new FunctionalCachingCallSite("+");
+        public final CallSite op_minus = new FunctionalCachingCallSite("-");
+        public final CallSite op_quo = new FunctionalCachingCallSite("/");
+        public final CallSite op_mod = new FunctionalCachingCallSite("%");
     }
 
     public static class FixnumSites {
