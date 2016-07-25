@@ -1,0 +1,7 @@
+fails:CApiModule rb_const_get_from returns a constant defined in the module
+fails:CApiModule rb_const_get_from returns a constant defined in a superclass
+fails:CApiModule rb_const_get_from calls #const_missing if the constant is not defined in the class or ancestors
+fails:CApiModule rb_const_get_from resolves autoload constants
+fails:CApiModule rb_const_get_at returns a constant defined in the module
+fails:CApiModule rb_const_get_at resolves autoload constants
+fails:CApiModule rb_const_get_at calls #const_missing if the constant is not defined in the module
