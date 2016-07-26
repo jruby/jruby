@@ -59,10 +59,6 @@ matrix:
       - JT=check_ambiguous_arguments
       - SKIP_BUILD=true
       jdk: oraclejdk8
-    - env:
-      - USE_BUILD_PACK=yes
-      - JT='test fast'
-      jdk: oraclejdk8
     - env: JT='test mri'
       jdk: oraclejdk8
   allow_failures:
