@@ -1735,7 +1735,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     }
 
     private boolean cmpIsBuiltin(ThreadContext context) {
-        return sites(context).cmp.retrieveCache(metaClass).method.isBuiltin();
+        return sites(context).cmp.isBuiltin(metaClass);
     }
 
     public IRubyObject str_eql_p(ThreadContext context, IRubyObject other) {

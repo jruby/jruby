@@ -532,19 +532,17 @@ public class RubyObject extends RubyBasicObject {
         ObjectSites sites = sites(context);
 
         if ( obj instanceof RubyArray ) {
-            if (sites.dig_array.retrieveCache(obj.getMetaClass()).method.isBuiltin()) {
+            if (sites.dig_array.isBuiltin(obj.getMetaClass())) {
                 return ((RubyArray) obj).dig(context, args, idx);
             }
         }
         if ( obj instanceof RubyHash ) {
-            // TODO: cache somewhere
-            if (sites.dig_hash.retrieveCache(obj.getMetaClass()).method.isBuiltin()) {
+            if (sites.dig_hash.isBuiltin(obj.getMetaClass())) {
                 return ((RubyHash) obj).dig(context, args, idx);
             }
         }
         if ( obj instanceof RubyStruct ) {
-            // TODO: cache somewhere
-            if (sites.dig_struct.retrieveCache(obj.getMetaClass()).method.isBuiltin()) {
+            if (sites.dig_struct.isBuiltin(obj.getMetaClass())) {
                 return ((RubyStruct) obj).dig(context, args, idx);
             }
         }
