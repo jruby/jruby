@@ -54,6 +54,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.runtime.encoding.EncodingCapable;
 import org.jruby.runtime.invokedynamic.MethodNames;
@@ -4432,10 +4433,12 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         CallSite op_gt = sites.op_gt_minmax;
         CallSite op_lt = sites.op_lt_minmax;
 
+        int generation = getArg0Generation(op_cmp);
+
         for (int i = 0; i < realLength; i++) {
             IRubyObject v = eltOk(i);
 
-            if (result == UNDEF || optimizedCmp(context, v, result, op_cmp, op_gt, op_lt) > 0) {
+            if (result == UNDEF || optimizedCmp(context, v, result, generation, op_cmp, op_gt, op_lt) > 0) {
                 result = v;
             }
         }
@@ -4475,21 +4478,43 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     public IRubyObject min(ThreadContext context, Block block) {
         if (block.isGiven()) return minWithBlock(context, block);
 
+        if (realLength == 0) {
+            return context.nil;
+        }
+
+        if (realLength == 1) {
+            return eltInternal(0);
+        }
+
         IRubyObject result = UNDEF;
         ArraySites sites = sites(context);
         CachingCallSite op_cmp = sites.op_cmp_minmax;
         CallSite op_gt = sites.op_gt_minmax;
         CallSite op_lt = sites.op_lt_minmax;
 
+        int generation = getArg0Generation(op_cmp);
+
         for (int i = 0; i < realLength; i++) {
             IRubyObject v = eltOk(i);
 
-            if (result == UNDEF || optimizedCmp(context, v, result, op_cmp, op_gt, op_lt) < 0) {
+            if (result == UNDEF || optimizedCmp(context, v, result, generation, op_cmp, op_gt, op_lt) < 0) {
                 result = v;
             }
         }
 
         return result == UNDEF ? context.nil : result;
+    }
+
+    private int getArg0Generation(CachingCallSite op_cmp) {
+        IRubyObject arg0 = eltInternal(0);
+        RubyClass metaclass = arg0.getMetaClass();
+        CacheEntry entry = op_cmp.retrieveCache(metaclass);
+        int generation = -1;
+
+        if (entry.method.isBuiltin()) {
+            generation = entry.token;
+        }
+        return generation;
     }
 
     @JRubyMethod(name = "min")
@@ -4501,8 +4526,8 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         return min(context, block);
     }
 
-    private static final int optimizedCmp(ThreadContext context, IRubyObject a, IRubyObject b, CachingCallSite op_cmp, CallSite op_gt, CallSite op_lt) {
-        if (op_cmp.retrieveCache(a.getMetaClass()).method.isBuiltin()) {
+    private static final int optimizedCmp(ThreadContext context, IRubyObject a, IRubyObject b, int token, CachingCallSite op_cmp, CallSite op_gt, CallSite op_lt) {
+        if (token == ((RubyBasicObject) a).getMetaClass().generation) {
             if (a instanceof RubyFixnum && b instanceof RubyFixnum) {
                 long aLong = ((RubyFixnum) a).getLongValue();
                 long bLong = ((RubyFixnum) b).getLongValue();
