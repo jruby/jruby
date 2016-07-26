@@ -83,6 +83,9 @@ public class JavaSites {
         public final RespondToCallSite respond_to_to_ary = new RespondToCallSite("to_ary");
         public final CallSite to_ary = new FunctionalCachingCallSite("to_ary");
         public final CallSite cmp = new FunctionalCachingCallSite("<=>");
+        public final CachingCallSite op_cmp_minmax = new FunctionalCachingCallSite("<=>");
+        public final CallSite op_gt_minmax = new FunctionalCachingCallSite(">");
+        public final CallSite op_lt_minmax = new FunctionalCachingCallSite("<");
     }
 
     public static class StringSites {

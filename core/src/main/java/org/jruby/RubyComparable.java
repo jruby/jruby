@@ -67,7 +67,7 @@ public class RubyComparable {
     /** rb_cmpint
      *
      */
-    public static int cmpint(ThreadContext context, IRubyObject val, IRubyObject a, IRubyObject b) {
+    public static int cmpint(ThreadContext context, CallSite op_gt, CallSite op_lt, IRubyObject val, IRubyObject a, IRubyObject b) {
         if (val == context.nil) cmperr(a, b);
         if (val instanceof RubyFixnum) {
             final int asInt = RubyNumeric.fix2int((RubyFixnum) val);
@@ -87,10 +87,15 @@ public class RubyComparable {
         RubyFixnum zero = RubyFixnum.zero(context.runtime);
 
         ComparableSites sites = sites(context);
-        if (sites.op_gt.call(context, val, val, zero).isTrue()) return 1;
-        if (sites.op_lt.call(context, val, val, zero).isTrue()) return -1;
+        if (op_gt.call(context, val, val, zero).isTrue()) return 1;
+        if (op_lt.call(context, val, val, zero).isTrue()) return -1;
 
         return 0;
+    }
+
+    public static int cmpint(ThreadContext context, IRubyObject val, IRubyObject a, IRubyObject b) {
+        ComparableSites sites = sites(context);
+        return cmpint(context, sites.op_gt, sites.op_lt, val, a, b);
     }
 
     /** rb_cmperr

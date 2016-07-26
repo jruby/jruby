@@ -54,6 +54,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.runtime.encoding.EncodingCapable;
 import org.jruby.runtime.invokedynamic.MethodNames;
 import org.jruby.runtime.marshal.MarshalStream;
@@ -4404,11 +4405,16 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
 
     private IRubyObject maxWithBlock(ThreadContext context, Block block) {
         IRubyObject result = UNDEF;
+
         Ruby runtime = context.runtime;
+        ArraySites sites = sites(context);
+        CallSite op_gt = sites.op_gt_minmax;
+        CallSite op_lt = sites.op_lt_minmax;
+
         for (int i = 0; i < realLength; i++) {
             IRubyObject v = eltOk(i);
 
-            if (result == UNDEF || RubyComparable.cmpint(context, block.yieldArray(context, runtime.newArray(v, result), null), v, result) > 0) {
+            if (result == UNDEF || RubyComparable.cmpint(context, op_gt, op_lt, block.yieldArray(context, runtime.newArray(v, result), null), v, result) > 0) {
                 result = v;
             }
         }
@@ -4421,13 +4427,15 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         if (block.isGiven()) return maxWithBlock(context, block);
 
         IRubyObject result = UNDEF;
-        Invalidator invalidator = getTypeIdForCMP();
-        Object typeId = invalidator != null ? invalidator.getData() : null;
+        ArraySites sites = sites(context);
+        CachingCallSite op_cmp = sites.op_cmp_minmax;
+        CallSite op_gt = sites.op_gt_minmax;
+        CallSite op_lt = sites.op_lt_minmax;
 
         for (int i = 0; i < realLength; i++) {
             IRubyObject v = eltOk(i);
 
-            if (result == UNDEF || optimizedCmp(context, v, result, typeId, invalidator) > 0) {
+            if (result == UNDEF || optimizedCmp(context, v, result, op_cmp, op_gt, op_lt) > 0) {
                 result = v;
             }
         }
@@ -4448,10 +4456,14 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         IRubyObject result = UNDEF;
 
         Ruby runtime = context.runtime;
+        ArraySites sites = sites(context);
+        CallSite op_gt = sites.op_gt_minmax;
+        CallSite op_lt = sites.op_lt_minmax;
+
         for (int i = 0; i < realLength; i++) {
             IRubyObject v = eltOk(i);
 
-            if (result == UNDEF || RubyComparable.cmpint(context, block.yieldArray(context, runtime.newArray(v, result), null), v, result) < 0) {
+            if (result == UNDEF || RubyComparable.cmpint(context, op_gt, op_lt, block.yieldArray(context, runtime.newArray(v, result), null), v, result) < 0) {
                 result = v;
             }
         }
@@ -4464,26 +4476,20 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         if (block.isGiven()) return minWithBlock(context, block);
 
         IRubyObject result = UNDEF;
-        Invalidator invalidator = getTypeIdForCMP();
-        Object typeId = invalidator != null ? invalidator.getData() : null;
+        ArraySites sites = sites(context);
+        CachingCallSite op_cmp = sites.op_cmp_minmax;
+        CallSite op_gt = sites.op_gt_minmax;
+        CallSite op_lt = sites.op_lt_minmax;
 
         for (int i = 0; i < realLength; i++) {
             IRubyObject v = eltOk(i);
 
-            if (result == UNDEF || optimizedCmp(context, v, result, typeId, invalidator) < 0) {
+            if (result == UNDEF || optimizedCmp(context, v, result, op_cmp, op_gt, op_lt) < 0) {
                 result = v;
             }
         }
 
         return result == UNDEF ? context.nil : result;
-    }
-
-    private Invalidator getTypeIdForCMP() {
-        if (realLength <= 0) return null;
-
-        RubyModule meta = eltOk(0).getMetaClass();
-
-        return meta.isBuiltin(OP_CMP.realName()) ? meta.getInvalidator() : null;
     }
 
     @JRubyMethod(name = "min")
@@ -4495,16 +4501,18 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         return min(context, block);
     }
 
-    private static final int optimizedCmp(ThreadContext context, IRubyObject a, IRubyObject b, Object typeId, Invalidator invalidator) {
-        if (a instanceof RubyFixnum && b instanceof RubyFixnum && typeId == invalidator.getData()) {
-            long aLong = ((RubyFixnum)a).getLongValue();
-            long bLong = ((RubyFixnum)b).getLongValue();
-            return aLong > bLong ? 1 : aLong < bLong ? -1 : 0;
-        } else if (a instanceof RubyString && b instanceof RubyString && typeId == invalidator.getData()) {
-            return ((RubyString)a).op_cmp((RubyString)b);
+    private static final int optimizedCmp(ThreadContext context, IRubyObject a, IRubyObject b, CachingCallSite op_cmp, CallSite op_gt, CallSite op_lt) {
+        if (op_cmp.retrieveCache(a.getMetaClass()).method.isBuiltin()) {
+            if (a instanceof RubyFixnum && b instanceof RubyFixnum) {
+                long aLong = ((RubyFixnum) a).getLongValue();
+                long bLong = ((RubyFixnum) b).getLongValue();
+                return Long.compare(aLong, bLong);
+            } else if (a instanceof RubyString && b instanceof RubyString) {
+                return ((RubyString) a).op_cmp((RubyString) b);
+            }
         }
 
-        return RubyComparable.cmpint(context, invokedynamic(context, a, OP_CMP, b), a, b);
+        return RubyComparable.cmpint(context, op_gt, op_lt, op_cmp.call(context, a, a, b), a, b);
     }
 
     @Override
