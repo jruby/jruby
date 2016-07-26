@@ -143,8 +143,8 @@ public class JavaSupportImpl extends JavaSupport {
     }
 
     public Class loadJavaClass(String className) throws ClassNotFoundException {
-        Class primitiveClass;
-        if ((primitiveClass = JavaUtil.PRIMITIVE_CLASSES.get(className)) == null) {
+        Class<?> primitiveClass;
+        if ((primitiveClass = JavaUtil.getPrimitiveClass(className)) == null) {
             if (!Ruby.isSecurityRestricted()) {
                 for(Loader loader : runtime.getInstanceConfig().getExtraLoaders()) {
                     try {
