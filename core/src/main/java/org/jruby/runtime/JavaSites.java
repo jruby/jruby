@@ -92,6 +92,21 @@ public class JavaSites {
         public final CallSite equals = new FunctionalCachingCallSite("==");
         public final CachingCallSite cmp = new FunctionalCachingCallSite("<=>");
         public final CallSite hash = new FunctionalCachingCallSite("hash");
+        public final CallSite to_s = new FunctionalCachingCallSite("to_s");
+        public final CallSite op_match = new FunctionalCachingCallSite("=~");
+        public final CallSite match = new FunctionalCachingCallSite("match");
+        public final RespondToCallSite respond_to_begin = new RespondToCallSite("begin");
+        public final RespondToCallSite respond_to_end = new RespondToCallSite("end");
+        public final CallSite begin = new FunctionalCachingCallSite("begin");
+        public final CallSite end = new FunctionalCachingCallSite("end");
+        public final CallSite exclude_end = new FunctionalCachingCallSite("exclude_end?");
+        public final CallSite op_lt = new FunctionalCachingCallSite("<");
+        public final CallSite op_le = new FunctionalCachingCallSite("<=");
+        public final CallSite succ = new FunctionalCachingCallSite("succ");
+        public final CallSite op_plus = new FunctionalCachingCallSite("+");
+        public final CallSite op_minus = new FunctionalCachingCallSite("-");
+        public final CallSite op_lshift = new FunctionalCachingCallSite("<<");
+        public final CallSite op_and = new FunctionalCachingCallSite("&");
 
         public final Ruby.RecursiveFunctionEx recursive_cmp = new Ruby.RecursiveFunctionEx<IRubyObject>() {
             @Override

@@ -58,9 +58,11 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.Helpers;
+import org.jruby.runtime.JavaSites.StringSites;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -79,7 +81,6 @@ import static org.jruby.RubyComparable.invcmp;
 import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.anno.FrameField.BACKREF;
-import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.util.StringSupport.CR_7BIT;
 import static org.jruby.util.StringSupport.CR_BROKEN;
@@ -98,8 +99,6 @@ import static org.jruby.util.StringSupport.isSingleByteOptimizable;
 import static org.jruby.util.StringSupport.nth;
 import static org.jruby.util.StringSupport.offset;
 import static org.jruby.util.StringSupport.memsearch;
-import static org.jruby.util.StringSupport.searchNonAscii;
-import static org.jruby.util.StringSupport.strLengthWithCodeRange;
 import static org.jruby.util.StringSupport.toLower;
 import static org.jruby.util.StringSupport.toUpper;
 import static org.jruby.RubyEnumerator.SizeFn;
@@ -1278,7 +1277,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
      */
     public static RubyString objAsString(ThreadContext context, IRubyObject obj) {
         if (obj instanceof RubyString) return (RubyString) obj;
-        IRubyObject str = obj.callMethod(context, "to_s");
+        IRubyObject str = sites(context).to_s.call(context, obj, obj);
         if (!(str instanceof RubyString)) return (RubyString) obj.anyToString();
         // taint string if it is not untainted and not frozen
         // TODO: MRI sets an fstring flag on fstrings and uses that flag here
@@ -1605,7 +1604,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     public IRubyObject op_match19(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyRegexp) return ((RubyRegexp) other).op_match19(context, this);
         if (other instanceof RubyString) throw context.runtime.newTypeError("type mismatch: String given");
-        return other.callMethod(context, "=~", this);
+        return sites(context).op_match.call(context, other, other, this);
     }
     /**
      * String#match(pattern)
@@ -1620,7 +1619,8 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     @JRubyMethod(name = "match", reads = BACKREF)
     public IRubyObject match19(ThreadContext context, IRubyObject pattern, Block block) {
-        IRubyObject result = getPattern(pattern).callMethod(context, "match", this);
+        RubyRegexp coercedPattern = getPattern(pattern);
+        IRubyObject result = sites(context).match.call(context, coercedPattern, coercedPattern, this);
         return block.isGiven() && !result.isNil() ? block.yield(context, result) : result;
     }
 
@@ -1628,7 +1628,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     public IRubyObject match19(ThreadContext context, IRubyObject[] args, Block block) {
         RubyRegexp pattern = getPattern(args[0]);
         args[0] = this;
-        IRubyObject result = pattern.callMethod(context, "match", args);
+        IRubyObject result = sites(context).match.call(context, pattern, pattern, args);
         return block.isGiven() && !result.isNil() ? block.yield(context, result) : result;
     }
 
@@ -2864,17 +2864,21 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             return begLen == null ? runtime.getNil() : byteSubstr(runtime, begLen[0], begLen[1]);
         } else if (idx instanceof RubyFixnum) {
             index = RubyNumeric.fix2int((RubyFixnum)idx);
-        } else if (idx.respondsTo("begin") && idx.respondsTo("end")) {
-            ThreadContext context = runtime.getCurrentContext();
-            IRubyObject begin = idx.callMethod(context, "begin");
-            IRubyObject end   = idx.callMethod(context, "end");
-            IRubyObject excl  = idx.callMethod(context, "exclude_end?");
-            RubyRange range = RubyRange.newRange(context, begin, end, excl.isTrue());
-
-            int[] begLen = range.begLenInt(getByteList().length(), 0);
-            return begLen == null ? runtime.getNil() : byteSubstr(runtime, begLen[0], begLen[1]);
         } else {
-            index = RubyNumeric.num2int(idx);
+            ThreadContext context = runtime.getCurrentContext();
+            StringSites sites = sites(context);
+            if (sites.respond_to_begin.respondsTo(context, idx, idx) &&
+                    sites.respond_to_end.respondsTo(context, idx, idx)) {
+                IRubyObject begin = sites.begin.call(context, idx, idx);
+                IRubyObject end   = sites.end.call(context, idx, idx);
+                IRubyObject excl  = sites.exclude_end.call(context, idx, idx);
+                RubyRange range = RubyRange.newRange(context, begin, end, excl.isTrue());
+
+                int[] begLen = range.begLenInt(getByteList().length(), 0);
+                return begLen == null ? runtime.getNil() : byteSubstr(runtime, begLen[0], begLen[1]);
+            } else {
+                index = RubyNumeric.num2int(idx);
+            }
         }
 
         IRubyObject obj = byteSubstr(runtime, index, 1);
@@ -2996,15 +3000,19 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             int len = strLength();
             int[] begLen = ((RubyRange) arg).begLenInt(len, 0);
             return begLen == null ? runtime.getNil() : substr19(runtime, begLen[0], begLen[1]);
-        } else if (arg.respondsTo("begin") && arg.respondsTo("end")) {
-            int len = strLength();
-            IRubyObject begin = arg.callMethod(context, "begin");
-            IRubyObject end   = arg.callMethod(context, "end");
-            IRubyObject excl  = arg.callMethod(context, "exclude_end?");
-            RubyRange range = RubyRange.newRange(context, begin, end, excl.isTrue());
+        } else {
+            StringSites sites = sites(context);
+            if (sites.respond_to_begin.respondsTo(context, arg, arg) &&
+                    sites.respond_to_end.respondsTo(context, arg, arg)) {
+                int len = strLength();
+                IRubyObject begin = sites.begin.call(context, arg, arg);
+                IRubyObject end   = sites.end.call(context, arg, arg);
+                IRubyObject excl  = sites.exclude_end.call(context, arg, arg);
+                RubyRange range = RubyRange.newRange(context, begin, end, excl.isTrue());
 
-            int[] begLen = range.begLenInt(len, 0);
-            return begLen == null ? runtime.getNil() : substr19(runtime, begLen[0], begLen[1]);
+                int[] begLen = range.begLenInt(len, 0);
+                return begLen == null ? runtime.getNil() : substr19(runtime, begLen[0], begLen[1]);
+            }
         }
         return op_aref19(runtime, RubyNumeric.num2int(arg));
     }
@@ -3114,16 +3122,20 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             int[] begLen = ((RubyRange) arg0).begLenInt(strLength(), 2);
             replaceInternal19(begLen[0], begLen[1], arg1.convertToString());
             return arg1;
-        } else if (arg0.respondsTo("begin") && arg0.respondsTo("end")) {
-            IRubyObject begin = arg0.callMethod(context, "begin");
-            IRubyObject end   = arg0.callMethod(context, "end");
-            IRubyObject excl  = arg0.callMethod(context, "exclude_end?");
-            RubyRange rng = RubyRange.newRange(context, begin, end, excl.isTrue());
+        } else {
+            StringSites sites = sites(context);
+            if (sites.respond_to_begin.respondsTo(context, arg0, arg0) &&
+                    sites.respond_to_end.respondsTo(context, arg0, arg0)) {
+                IRubyObject begin = sites.begin.call(context, arg0, arg0);
+                IRubyObject end   = sites.end.call(context, arg0, arg0);
+                IRubyObject excl  = sites.exclude_end.call(context, arg0, arg0);
+                RubyRange rng = RubyRange.newRange(context, begin, end, excl.isTrue());
 
-            int[] begLen = rng.begLenInt(strLength(), 2);
-            replaceInternal19(begLen[0], begLen[1], arg1.convertToString());
+                int[] begLen = rng.begLenInt(strLength(), 2);
+                replaceInternal19(begLen[0], begLen[1], arg1.convertToString());
 
-            return arg1;
+                return arg1;
+            }
         }
         return op_aset19(context, RubyNumeric.num2int(arg0), arg1);
     }
@@ -3304,15 +3316,16 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
                     bi++;
                 }
             } else {
-                String op = excl ? "<" : "<=";
+                StringSites sites = sites(context);
+                CallSite op = excl ? sites.op_lt : sites.op_le;
 
-                while (b.callMethod(context, op, e).isTrue()) {
+                while (op.call(context, b, b, e).isTrue()) {
                     argsArr.eltSetOk(1, b);
                     ByteList to = new ByteList(value.length() + 5);
                     Sprintf.sprintf(to, "%.*d", argsArr);
                     RubyString str = RubyString.newStringNoCopy(runtime, to, USASCIIEncoding.INSTANCE, CR_7BIT);
                     block.yield(context, asSymbol ? runtime.newSymbol(str.toString()) : str);
-                    b = b.callMethod(context, "succ");
+                    b = sites.succ.call(context, b, b);
                 }
             }
             return this;
@@ -3325,12 +3338,14 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         Ruby runtime = context.runtime;
         int n = op_cmp(end);
         if (n > 0 || (excl && n == 0)) return this;
-        IRubyObject afterEnd = end.callMethod(context, "succ");
+        StringSites sites = sites(context);
+        CallSite succ = sites.succ;
+        IRubyObject afterEnd = succ.call(context, end, end);
         RubyString current = strDup(context.runtime);
 
         while (!current.op_equal19(context, afterEnd).isTrue()) {
             IRubyObject next = null;
-            if (excl || !current.op_equal19(context, end).isTrue()) next = current.callMethod(context, "succ");
+            if (excl || !current.op_equal19(context, end).isTrue()) next = succ.call(context, current, current);
             block.yield(context, asSymbol ? runtime.newSymbol(current.toString()) : current);
             if (next == null) break;
             current = next.convertToString();
@@ -5263,13 +5278,15 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         if (bits >= 8 * 8) { // long size * bits in byte
             IRubyObject one = RubyFixnum.one(runtime);
             IRubyObject sum = RubyFixnum.zero(runtime);
+            StringSites sites = sites(context);
+            CallSite op_plus = sites.op_plus;
             while (p < end) {
                 modifyCheck(bytes, len);
-                sum = sum.callMethod(context, "+", RubyFixnum.newFixnum(runtime, bytes[p++] & 0xff));
+                sum = op_plus.call(context, sum, sum, RubyFixnum.newFixnum(runtime, bytes[p++] & 0xff));
             }
             if (bits != 0) {
-                IRubyObject mod = one.callMethod(context, "<<", RubyFixnum.newFixnum(runtime, bits));
-                sum = sum.callMethod(context, "&", mod.callMethod(context, "-", one));
+                IRubyObject mod = sites.op_lshift.call(context, one, one, RubyFixnum.newFixnum(runtime, bits));
+                sum = sites.op_and.call(context, sum, sum, sites.op_minus.call(context, mod, mod, one));
             }
             return sum;
         } else {
@@ -5802,7 +5819,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return pp - p;
     }
 
-    private static JavaSites.StringSites sites(ThreadContext context) {
+    private static StringSites sites(ThreadContext context) {
         return context.sites.String;
     }
 
