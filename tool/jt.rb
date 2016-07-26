@@ -393,6 +393,11 @@ module ShellUtils
 
     sh env_vars, Utilities.find_ruby, 'spec/mspec/bin/mspec', command, '--config', 'spec/truffle/truffle.mspec', *args
   end
+
+  def newer?(input, output)
+    return true unless File.exist? output
+    File.mtime(input) > File.mtime(output)
+  end
 end
 
 module Commands
@@ -618,6 +623,16 @@ module Commands
   def cextc(cext_dir, *clang_opts)
     abort "You need to set SULONG_HOME" unless SULONG_HOME
 
+    # Ensure ruby.su is up-to-date
+    ruby_cext_api = "#{JRUBY_DIR}/truffle/src/main/c/cext"
+    ruby_c = "#{JRUBY_DIR}/truffle/src/main/c/cext/ruby.c"
+    ruby_h = "#{JRUBY_DIR}/lib/ruby/truffle/cext/ruby.h"
+    ruby_su = "#{JRUBY_DIR}/lib/ruby/truffle/cext/ruby.su"
+    if cext_dir != ruby_cext_api and (newer?(ruby_h, ruby_su) or newer?(ruby_c, ruby_su))
+      puts "Compiling outdated ruby.su"
+      cextc ruby_cext_api
+    end
+
     config_file = File.join(cext_dir, '.jruby-cext-build.yml')
 
     unless File.exist?(config_file)
@@ -625,7 +640,6 @@ module Commands
     end
 
     config = YAML.load_file(config_file)
-
     config_src = config['src']
 
     if config_src.start_with?('$GEM_HOME/')
