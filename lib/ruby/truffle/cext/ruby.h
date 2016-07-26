@@ -31,7 +31,7 @@ extern "C" {
 
 // Support
 
-#define RUBY_CEXT truffle_import_cached("ruby_cext")
+#define RUBY_CEXT (void *)truffle_import_cached("ruby_cext")
 
 // Configuration
 
@@ -571,7 +571,7 @@ int rb_jt_io_handle(VALUE file);
 
 // Data
 
-#define DATA_PTR(value) *((volatile int*) 0)
+#define DATA_PTR(value) *((volatile intptr_t*) 0)
 
 // Typed data
 
