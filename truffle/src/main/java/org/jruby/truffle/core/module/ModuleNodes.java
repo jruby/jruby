@@ -1150,6 +1150,8 @@ public abstract class ModuleNodes {
     @CoreMethod(names = "initialize_copy", required = 1)
     public abstract static class InitializeCopyNode extends CoreMethodArrayArgumentsNode {
 
+        @Child private SingletonClassNode singletonClassNode;
+
         @Specialization(guards = { "!isRubyClass(self)", "isRubyModule(from)", "!isRubyClass(from)" })
         public Object initializeCopyModule(DynamicObject self, DynamicObject from) {
             Layouts.MODULE.getFields(self).initCopy(from);
@@ -1157,7 +1159,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization(guards = {"isRubyClass(self)", "isRubyClass(from)"})
-        public Object initializeCopy(DynamicObject self, DynamicObject from,
+        public Object initializeCopyClass(DynamicObject self, DynamicObject from,
                 @Cached("create()") BranchProfile errorProfile) {
             if (from == coreLibrary().getBasicObjectClass()) {
                 errorProfile.enter();
@@ -1168,7 +1170,26 @@ public abstract class ModuleNodes {
             }
 
             Layouts.MODULE.getFields(self).initCopy(from);
+
+            final DynamicObject selfMetaClass = getSingletonClass(self);
+            final DynamicObject fromMetaClass = Layouts.BASIC_OBJECT.getMetaClass(from);
+
+            assert Layouts.CLASS.getIsSingleton(fromMetaClass);
+            assert Layouts.CLASS.getIsSingleton(Layouts.BASIC_OBJECT.getMetaClass(self));
+
+            Layouts.MODULE.getFields(selfMetaClass).initCopy(fromMetaClass); // copy class methods
+            Layouts.CLASS.setSuperclass(self, Layouts.CLASS.getSuperclass(from));
+
             return nil();
+        }
+
+        protected DynamicObject getSingletonClass(DynamicObject object) {
+            if (singletonClassNode == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                singletonClassNode = insert(SingletonClassNodeGen.create(getContext(), getSourceSection(), null));
+            }
+
+            return singletonClassNode.executeSingletonClass(object);
         }
 
     }
