@@ -21,14 +21,11 @@ public class ArrayUtils {
 
     private ArrayUtils() { /* no instances */ }
 
-    public static IRubyObject arefDirect(Ruby runtime, Object array, JavaUtil.JavaConverter javaConverter, int intIndex) {
+    public static IRubyObject arefDirect(Ruby runtime, Object array, JavaUtil.JavaConverter javaConverter, int index) {
         try {
-            return JavaUtil.convertJavaArrayElementToRuby(runtime, javaConverter, array, intIndex);
-        } catch (IndexOutOfBoundsException e) {
-            throw runtime.newArgumentError(
-                    "index out of bounds for java array (" + intIndex +
-                            " for length " + Array.getLength(array) + ')');
+            return JavaUtil.convertJavaArrayElementToRuby(runtime, javaConverter, array, index);
         }
+        catch (IndexOutOfBoundsException e) { throw mapIndexOutOfBoundsException(runtime, array, index); }
     }
 
     public static IRubyObject concatArraysDirect(ThreadContext context, Object original, Object additional) {
@@ -55,25 +52,22 @@ public class ArrayUtils {
     }
 
     public static IRubyObject emptyJavaArrayDirect(ThreadContext context, Class componentType) {
-        Ruby runtime = context.runtime;
-        return newProxiedArray(runtime, componentType, 0);
+        return newProxiedArray(context.runtime, componentType, 0);
     }
 
     public static IRubyObject javaArraySubarrayDirect(ThreadContext context, Object fromArray, int index, int size) {
         int actualLength = Array.getLength(fromArray);
-        if (index >= actualLength) {
-            return context.runtime.getNil();
-        } else {
-            if (index + size > actualLength) {
-                size = actualLength - index;
-            }
+        if (index >= actualLength) return context.nil;
 
-            ArrayJavaProxy proxy = ArrayUtils.newProxiedArray(context.runtime, fromArray.getClass().getComponentType(), size);
-            Object newArray = proxy.getObject();
-            System.arraycopy(fromArray, index, newArray, 0, size);
-
-            return proxy;
+        if (index + size > actualLength) {
+            size = actualLength - index;
         }
+
+        ArrayJavaProxy proxy = ArrayUtils.newProxiedArray(context.runtime, fromArray.getClass().getComponentType(), size);
+        Object newArray = proxy.getObject();
+        System.arraycopy(fromArray, index, newArray, 0, size);
+
+        return proxy;
     }
 
     public static IRubyObject concatArraysDirect(ThreadContext context, Object original, IRubyObject additional) {
