@@ -1692,7 +1692,9 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     @JRubyMethod(name = ">=")
     public IRubyObject op_ge19(ThreadContext context, IRubyObject other) {
-        if (other instanceof RubyString) return context.runtime.newBoolean(op_cmp((RubyString) other) >= 0);
+        if (other instanceof RubyString && cmpIsBuiltin(context)) {
+            return context.runtime.newBoolean(op_cmp((RubyString) other) >= 0);
+        }
         return RubyComparable.op_ge(context, this, other);
     }
 
@@ -1702,7 +1704,9 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     @JRubyMethod(name = ">")
     public IRubyObject op_gt19(ThreadContext context, IRubyObject other) {
-        if (other instanceof RubyString) return context.runtime.newBoolean(op_cmp((RubyString) other) > 0);
+        if (other instanceof RubyString && cmpIsBuiltin(context)) {
+            return context.runtime.newBoolean(op_cmp((RubyString) other) > 0);
+        }
         return RubyComparable.op_gt(context, this, other);
     }
 
@@ -1712,7 +1716,9 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     @JRubyMethod(name = "<=")
     public IRubyObject op_le19(ThreadContext context, IRubyObject other) {
-        if (other instanceof RubyString) return context.runtime.newBoolean(op_cmp((RubyString) other) <= 0);
+        if (other instanceof RubyString && cmpIsBuiltin(context)) {
+            return context.runtime.newBoolean(op_cmp((RubyString) other) <= 0);
+        }
         return RubyComparable.op_le(context, this, other);
     }
 
@@ -1722,8 +1728,14 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     @JRubyMethod(name = "<")
     public IRubyObject op_lt19(ThreadContext context, IRubyObject other) {
-        if (other instanceof RubyString) return context.runtime.newBoolean(op_cmp((RubyString) other) < 0);
+        if (other instanceof RubyString && cmpIsBuiltin(context)) {
+            return context.runtime.newBoolean(op_cmp((RubyString) other) < 0);
+        }
         return RubyComparable.op_lt(context, sites(context).cmp, this, other);
+    }
+
+    private boolean cmpIsBuiltin(ThreadContext context) {
+        return sites(context).cmp.retrieveCache(metaClass).method.isBuiltin();
     }
 
     public IRubyObject str_eql_p(ThreadContext context, IRubyObject other) {
