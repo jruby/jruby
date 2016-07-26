@@ -168,6 +168,9 @@ public class JavaSites {
         public final CallSite op_le = new FunctionalCachingCallSite("<=");
         public final CallSite op_gt = new FunctionalCachingCallSite(">");
         public final CallSite op_lt = new FunctionalCachingCallSite("<");
+        public final CallSite op_exp_complex = new FunctionalCachingCallSite("**");
+        public final CallSite op_lt_bignum = new FunctionalCachingCallSite("<");
+        public final CallSite op_exp_rational = new FunctionalCachingCallSite("**");
     }
 
     public static class BignumSites {

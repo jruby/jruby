@@ -761,7 +761,8 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
         if (other instanceof RubyNumeric) {
             double d_other = ((RubyNumeric) other).getDoubleValue();
             if (value < 0 && (d_other != Math.round(d_other))) {
-                return RubyComplex.newComplexRaw(context.runtime, this).callMethod(context, "**", other);
+                RubyComplex complex = RubyComplex.newComplexRaw(context.runtime, this);
+                return sites(context).op_exp_complex.call(context, complex, complex, other);
             }
             if (other instanceof RubyFixnum) {
                 return powerFixnum19(context, other);
@@ -774,8 +775,9 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
         Ruby runtime = context.runtime;
         long a = value;
         if (other instanceof RubyBignum) {
-            if (other.callMethod(context, "<", RubyFixnum.zero(runtime)).isTrue()) {
-                return RubyRational.newRationalRaw(runtime, this).callMethod(context, "**", other);
+            if (sites(context).op_lt_bignum.call(context, other, other, RubyFixnum.zero(runtime)).isTrue()) {
+                RubyRational rational = RubyRational.newRationalRaw(runtime, this);
+                return sites(context).op_exp_rational.call(context, rational, rational, other);
             }
             if (a == 0) return RubyFixnum.zero(runtime);
             if (a == 1) return RubyFixnum.one(runtime);
@@ -797,7 +799,8 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
         long a = value;
         long b = ((RubyFixnum) other).value;
         if (b < 0) {
-            return RubyRational.newRationalRaw(runtime, this).callMethod(context, "**", other);
+            RubyRational rational = RubyRational.newRationalRaw(runtime, this);
+            return sites(context).op_exp_rational.call(context, rational, rational, other);
         }
         if (b == 0) {
             return RubyFixnum.one(runtime);
