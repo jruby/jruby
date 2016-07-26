@@ -19,9 +19,6 @@
 #include <truffle.h>
 
 #include <ruby.h>
-
-#define RUBY_CEXT (void *)truffle_import_cached("ruby_cext")
-
 // Helpers
 
 VALUE rb_f_notimplement(int args_count, const VALUE *args, VALUE object) {
@@ -61,7 +58,7 @@ void rb_check_type(VALUE value, int type) {
 }
 
 VALUE rb_obj_is_instance_of(VALUE object, VALUE ruby_class) {
-  truffle_invoke(RUBY_CEXT, "rb_obj_is_instance_of", object, ruby_class);
+  return truffle_invoke(RUBY_CEXT, "rb_obj_is_instance_of", object, ruby_class);
 }
 
 VALUE rb_obj_is_kind_of(VALUE object, VALUE ruby_class) {
@@ -991,7 +988,7 @@ void rb_fd_fix_cloexec(int fd) {
 }
 
 int rb_jt_io_handle(VALUE io) {
-  return (VALUE) truffle_invoke(RUBY_CEXT, "rb_jt_io_handle", io);
+  return truffle_invoke_i(RUBY_CEXT, "rb_jt_io_handle", io);
 }
 
 // Data
@@ -1004,7 +1001,7 @@ VALUE rb_data_typed_object_wrap(VALUE ruby_class, void *data, const rb_data_type
 
 VALUE rb_data_typed_object_zalloc(VALUE ruby_class, size_t size, const rb_data_type_t *data_type) {
   VALUE obj = rb_data_typed_object_wrap(ruby_class, 0, data_type);
-  DATA_PTR(obj) = calloc(1, size);
+  DATA_PTR(obj) = (intptr_t) calloc(1, size);
   return obj;
 }
 
