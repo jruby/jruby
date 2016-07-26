@@ -425,7 +425,7 @@ public class RubyNumeric extends RubyObject {
         final IRubyObject $ex = context.getErrorInfo();
         final IRubyObject result;
         try {
-            result = sites(context).coerce.call(context, this, this);
+            result = sites(context).coerce.call(context, other, other, this);
         }
         catch (RaiseException e) { // e.g. NoMethodError: undefined method `coerce'
             context.setErrorInfo($ex); // restore $!
