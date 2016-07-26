@@ -21,6 +21,7 @@ package org.jruby.truffle.language.literal;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.language.RubyNode;
@@ -31,17 +32,14 @@ public class StringLiteralNode extends RubyNode {
 
     private final Rope rope;
 
-    @Child private AllocateObjectNode allocateObjectNode;
-
     public StringLiteralNode(RubyContext context, SourceSection sourceSection, Rope rope) {
         super(context, sourceSection);
         this.rope = rope;
-        allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, false, null, null);
     }
 
     @Override
     public DynamicObject execute(VirtualFrame frame) {
-        return allocateObjectNode.allocate(coreLibrary().getStringClass(), rope, null);
+        return Layouts.STRING.createString(coreLibrary().getStringFactory(), rope);
     }
 
 }
