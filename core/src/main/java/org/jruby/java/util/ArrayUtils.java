@@ -5,6 +5,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.java.proxies.ArrayJavaProxy;
 import org.jruby.javasupport.JavaArray;
 import org.jruby.javasupport.JavaClass;
@@ -93,53 +94,118 @@ public class ArrayUtils {
         return proxy;
     }
 
-    public static IRubyObject asetDirect(Ruby runtime, Object array, JavaUtil.JavaConverter javaConverter, int intIndex, IRubyObject value) {
+    public static IRubyObject asetDirect(Ruby runtime, Object array, JavaUtil.JavaConverter javaConverter, int index, IRubyObject value) {
         try {
-            javaConverter.set(runtime, array, intIndex, value);
-        } catch (IndexOutOfBoundsException e) {
-            throw runtime.newArgumentError(
-                    "index out of bounds for java array (" + intIndex +
-                            " for length " + Array.getLength(array) + ')');
-        } catch (ArrayStoreException e) {
-            throw runtime.newTypeError(
-                    "wrong element type " + value.getClass() + "(array contains " +
-                            array.getClass().getComponentType().getName() + ')');
-        } catch (IllegalArgumentException iae) {
-            throw runtime.newArgumentError(
-                    "wrong element type " + value.getClass() + "(array contains " +
-                            array.getClass().getComponentType().getName() + ')');
+            javaConverter.set(runtime, array, index, value);
         }
+        catch (IndexOutOfBoundsException e) { throw mapIndexOutOfBoundsException(runtime, array, index); }
+        catch (ArrayStoreException e) { throw mapArrayStoreException(runtime, array, value.getClass()); }
+        catch (IllegalArgumentException e) { throw mapIllegalArgumentException(runtime, array, value.getClass()); }
         return value;
     }
 
-    public static void setWithExceptionHandlingDirect(Ruby runtime, Object ary, int intIndex, Object javaObject) {
+    public static void setWithExceptionHandlingDirect(Ruby runtime, Object array, int index, Object javaValue) {
         try {
-            Array.set(ary, intIndex, javaObject);
-        } catch (IndexOutOfBoundsException e) {
-            throw runtime.newArgumentError(
-                                    "index out of bounds for java array (" + intIndex +
-                                    " for length " + Array.getLength(ary) + ')');
-        } catch (ArrayStoreException e) {
-            throw runtime.newTypeError(
-                                    "wrong element type " + javaObject.getClass() + "(array contains " +
-                                    ary.getClass().getComponentType().getName() + ')');
-        } catch (IllegalArgumentException iae) {
-            throw runtime.newArgumentError(
-                                    "wrong element type " + javaObject.getClass() + "(array contains " +
-                                    ary.getClass().getComponentType().getName() + ')');
+            Array.set(array, index, javaValue);
+        }
+        catch (IndexOutOfBoundsException e) { throw mapIndexOutOfBoundsException(runtime, array, index); }
+        catch (ArrayStoreException e) { throw mapArrayStoreException(runtime, array, javaValue.getClass()); }
+        catch (IllegalArgumentException e) { throw mapIllegalArgumentException(runtime, array, javaValue.getClass()); }
+    }
+
+    private static RaiseException mapIndexOutOfBoundsException(final Ruby runtime, final Object array, int index) {
+        return runtime.newArgumentError("index out of bounds for java array (" +
+                index + " for length " + Array.getLength(array) + ')');
+    }
+
+    private static RaiseException mapArrayStoreException(final Ruby runtime, final Object array, final Class<?> type) {
+        return runtime.newTypeError("wrong element type " + type.getName() + " (array contains " +
+                array.getClass().getComponentType().getName() + ')');
+    }
+
+    private static RaiseException mapIllegalArgumentException(final Ruby runtime, final Object array, final Class<?> type) {
+        return runtime.newArgumentError("wrong element type " + type.getName() + " (array contains " +
+                array.getClass().getComponentType().getName() + ')');
+    }
+
+    public static void copyDataToJavaArrayDirect(ThreadContext context,
+        final RubyArray rubyArray, final Object javaArray) {
+        Class targetType = javaArray.getClass().getComponentType();
+
+        // 'premature' optimizations as reflected Array.set is (still) noticeably slower
+        if ( ! targetType.isPrimitive() ) {
+            copyDataToJavaArrayDirect(targetType, rubyArray, (Object[]) javaArray); return;
+        }
+        else if ( Integer.TYPE == targetType ) {
+            copyDataToJavaArrayDirect(targetType, rubyArray, (int[]) javaArray); return;
+        }
+        else if ( Long.TYPE == targetType ) {
+            copyDataToJavaArrayDirect(targetType, rubyArray, (long[]) javaArray); return;
+        }
+        else if ( Byte.TYPE == targetType ) {
+            copyDataToJavaArrayDirect(targetType, rubyArray, (byte[]) javaArray); return;
+        }
+
+        int length = rubyArray.getLength();
+
+        final int javaLength = Array.getLength(javaArray);
+        if ( javaLength < length ) length = javaLength;
+
+        for ( int i = 0; i < length; i++ ) {
+            Array.set(javaArray, i, rubyArray.eltInternal(i).toJava(targetType));
         }
     }
 
-    public static void copyDataToJavaArrayDirect(
-            ThreadContext context, RubyArray rubyArray, Object javaArray) {
-        int javaLength = Array.getLength(javaArray);
-        Class targetType = javaArray.getClass().getComponentType();
+    //public static void copyDataToJavaArrayDirect(ThreadContext context,
+    //    final RubyArray rubyArray, final Object[] javaArray) {
+    //    copyDataToJavaArrayDirect(javaArray.getClass().getComponentType(), rubyArray, javaArray)
+    //}
 
-        int rubyLength = rubyArray.getLength();
+    private static void copyDataToJavaArrayDirect(final Class<?> targetType,
+        final RubyArray rubyArray, final Object[] javaArray) {
+        int length = rubyArray.getLength();
 
-        int i = 0;
-        for (; i < rubyLength && i < javaLength; i++) {
-            Array.set(javaArray, i, rubyArray.entry(i).toJava(targetType));
+        final int javaLength = javaArray.length;
+        if ( javaLength < length ) length = javaLength;
+
+        for ( int i = 0; i < length; i++ ) {
+            javaArray[i] = rubyArray.eltInternal(i).toJava(targetType);
+        }
+    }
+
+    private static void copyDataToJavaArrayDirect(final Class<?> targetType,
+        final RubyArray rubyArray, final int[] javaArray) {
+        int length = rubyArray.getLength();
+
+        final int javaLength = javaArray.length;
+        if ( javaLength < length ) length = javaLength;
+
+        for ( int i = 0; i < length; i++ ) {
+            javaArray[i] = (Integer) rubyArray.eltInternal(i).toJava(targetType);
+        }
+    }
+
+    private static void copyDataToJavaArrayDirect(final Class<?> targetType,
+        final RubyArray rubyArray, final long[] javaArray) {
+        int length = rubyArray.getLength();
+
+        final int javaLength = javaArray.length;
+        if ( javaLength < length ) length = javaLength;
+
+        for ( int i = 0; i < length; i++ ) {
+            javaArray[i] = (Long) rubyArray.eltInternal(i).toJava(targetType);
+        }
+    }
+
+    private static void copyDataToJavaArrayDirect(final Class<?> targetType,
+        final RubyArray rubyArray, final byte[] javaArray) {
+        int length = rubyArray.getLength();
+
+        final int javaLength = javaArray.length;
+        if ( javaLength < length ) length = javaLength;
+
+        for ( int i = 0; i < length; i++ ) {
+            javaArray[i] = (Byte) rubyArray.eltInternal(i).toJava(targetType);
         }
     }
 
