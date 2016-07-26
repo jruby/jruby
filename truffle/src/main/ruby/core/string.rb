@@ -1662,6 +1662,12 @@ class String
     s
   end
 
+  def upcase
+    s = dup
+    s.upcase!
+    s
+  end
+
   def +@
     frozen? ? dup : self
   end

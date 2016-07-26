@@ -1,1 +1,0 @@
-fails:SystemExit#initialize accepts a status

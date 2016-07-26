@@ -117,6 +117,19 @@ public abstract class JavaLang {
             return context.nil;
         }
 
+        @JRubyMethod(name = { "to_a", "entries" })
+        public static IRubyObject to_a(final ThreadContext context, final IRubyObject self, final Block block) {
+            final Ruby runtime = context.runtime;
+            final RubyArray ary = runtime.newArray();
+            java.lang.Iterable iterable = unwrapJavaObject(self);
+            java.util.Iterator iterator = iterable.iterator();
+            while ( iterator.hasNext() ) {
+                final Object value = iterator.next();
+                ary.append( convertJavaToUsableRubyObject(runtime, value) );
+            }
+            return ary;
+        }
+
     }
 
     @JRubyClass(name = "Java::JavaLang::Comparable", include = "Comparable")

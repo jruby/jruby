@@ -136,7 +136,6 @@ ARGF.each_line do |line|
     method_version = objects[Integer(line[1])]
     eval_code = line.drop(2).join(' ')
     method_version.eval_code.push eval_code
-  when 'local'
   when 'callsite'
     method = objects[Integer(line[1])]
     callsite = CG::CallSite.new(line[2], method, line[3])
@@ -245,7 +244,7 @@ puts ERB.new(%{<html>
     <% if reachable_objects.include?(method_version) %>
       <div id='method-version-<%= method_version.id %>' class='method-version'>
         <% unless method_version.called_from.empty? %>
-          <p>Called from:</p> 
+          <p>Called from:</p>
           <ul>
             <% method_version.called_from.each do |caller| %>
               <li><a href='#method-version-<%= caller.method_version.id %>'><%= h(caller.method_version.method.name) %></a></li>
@@ -253,7 +252,7 @@ puts ERB.new(%{<html>
           </ul>
         <% end %>
         <% unless method_version.locals.empty? %>
-          <p>Locals:</p> 
+          <p>Locals:</p>
           <ul>
             <% method_version.locals.each do |name, types| %>
               <li><code><%= h(name) %></li>
@@ -266,7 +265,7 @@ puts ERB.new(%{<html>
           </ul>
         <% end %>
         <% unless method_version.eval_code.empty? %>
-          <p>Evals:</p> 
+          <p>Evals:</p>
           <ul>
             <% method_version.eval_code.each do |eval_code| %>
               <li><code><%= h(eval_code) %></code></li>

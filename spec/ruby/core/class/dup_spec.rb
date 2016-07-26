@@ -1,6 +1,7 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
 
+# NOTE: This is actually implemented by Module#initialize_copy
 describe "Class#dup" do
   it "duplicates both the class and the singleton class" do
     klass = Class.new do

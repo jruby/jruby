@@ -1,3 +1,12 @@
+/*
+ * Copyright (c) 2016 Oracle and/or its affiliates. All rights reserved. This
+ * code is released under a tri EPL/GPL/LGPL license. You can use it,
+ * redistribute it and/or modify it under the terms of the:
+ *
+ * Eclipse Public License version 1.0
+ * GNU General Public License version 2
+ * GNU Lesser General Public License version 2.1
+ */
 package org.jruby.truffle.core.exception;
 
 import com.oracle.truffle.api.dsl.Specialization;
@@ -13,8 +22,8 @@ import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
 
-@CoreClass("SystemCallError")
-public abstract class SystemCallErrorNodes {
+@CoreClass("NoMethodError")
+public abstract class NoMethodErrorNodes {
 
     @CoreMethod(names = "allocate", constructor = true)
     public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
@@ -27,31 +36,32 @@ public abstract class SystemCallErrorNodes {
         }
 
         @Specialization
-        public DynamicObject allocateNameError(DynamicObject rubyClass) {
-            return allocateObjectNode.allocate(rubyClass, nil(), null, nil());
+        public DynamicObject allocateNoMethodError(DynamicObject rubyClass) {
+            return allocateObjectNode.allocate(rubyClass, nil(), null, null, nil(), nil());
         }
 
     }
 
-    @CoreMethod(names = "errno")
-    public abstract static class ErrnoNode extends CoreMethodArrayArgumentsNode {
+    @CoreMethod(names = "args")
+    public abstract static class ArgsNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
-        public Object errno(DynamicObject self) {
-            return Layouts.SYSTEM_CALL_ERROR.getErrno(self);
+        public Object args(DynamicObject self) {
+            return Layouts.NO_METHOD_ERROR.getArgs(self);
         }
 
     }
 
-    @Primitive(name = "exception_set_errno")
-    public abstract static class ErrnoSetNode extends PrimitiveArrayArgumentsNode {
+    @Primitive(name = "no_method_error_set_args")
+    public abstract static class ArgsSetNode extends PrimitiveArrayArgumentsNode {
 
         @Specialization
-        public Object setErrno(DynamicObject error, Object errno) {
-            Layouts.SYSTEM_CALL_ERROR.setErrno(error, errno);
-            return errno;
+        public Object setArgs(DynamicObject error, Object args) {
+            Layouts.NO_METHOD_ERROR.setArgs(error, args);
+            return args;
         }
 
     }
+
 
 }

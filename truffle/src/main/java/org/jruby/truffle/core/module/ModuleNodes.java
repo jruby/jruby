@@ -522,7 +522,7 @@ public abstract class ModuleNodes {
         @Specialization(guards = "isRubyString(filename)")
         public DynamicObject autoload(DynamicObject module, String name, DynamicObject filename) {
             if (!IdUtil.isValidConstantName19(name)) {
-                throw new RaiseException(coreExceptions().nameError(String.format("autoload must be constant name: %s", name), name, this));
+                throw new RaiseException(coreExceptions().nameError(String.format("autoload must be constant name: %s", name), module, name, this));
             }
 
             if (isEmptyNode.executeIsEmpty(filename)) {
@@ -686,7 +686,7 @@ public abstract class ModuleNodes {
         @TruffleBoundary(throwsControlFlowException = true)
         @Specialization
         public boolean isClassVariableDefinedString(DynamicObject module, String name) {
-            SymbolTable.checkClassVariableName(getContext(), name, this);
+            SymbolTable.checkClassVariableName(getContext(), name, module, this);
 
             final Object value = ModuleOperations.lookupClassVariable(module, name);
 
@@ -710,7 +710,7 @@ public abstract class ModuleNodes {
         @Specialization
         @TruffleBoundary(throwsControlFlowException = true)
         public Object getClassVariable(DynamicObject module, String name) {
-            SymbolTable.checkClassVariableName(getContext(), name, this);
+            SymbolTable.checkClassVariableName(getContext(), name, module, this);
 
             final Object value = ModuleOperations.lookupClassVariable(module, name);
 
@@ -739,7 +739,7 @@ public abstract class ModuleNodes {
         @Specialization
         @TruffleBoundary(throwsControlFlowException = true)
         public Object setClassVariable(DynamicObject module, String name, Object value) {
-            SymbolTable.checkClassVariableName(getContext(), name, this);
+            SymbolTable.checkClassVariableName(getContext(), name, module, this);
 
             ModuleOperations.setClassVariable(getContext(), module, name, value, this);
 
@@ -964,7 +964,7 @@ public abstract class ModuleNodes {
         @Specialization
         public Object setConstant(DynamicObject module, String name, Object value) {
             if (!IdUtil.isValidConstantName19(name)) {
-                throw new RaiseException(coreExceptions().nameError(String.format("wrong constant name %s", name), name, this));
+                throw new RaiseException(coreExceptions().nameError(String.format("wrong constant name %s", name), module, name, this));
             }
 
             Layouts.MODULE.getFields(module).setConstant(getContext(), this, name, value);
@@ -1150,6 +1150,8 @@ public abstract class ModuleNodes {
     @CoreMethod(names = "initialize_copy", required = 1)
     public abstract static class InitializeCopyNode extends CoreMethodArrayArgumentsNode {
 
+        @Child private SingletonClassNode singletonClassNode;
+
         @Specialization(guards = { "!isRubyClass(self)", "isRubyModule(from)", "!isRubyClass(from)" })
         public Object initializeCopyModule(DynamicObject self, DynamicObject from) {
             Layouts.MODULE.getFields(self).initCopy(from);
@@ -1157,7 +1159,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization(guards = {"isRubyClass(self)", "isRubyClass(from)"})
-        public Object initializeCopy(DynamicObject self, DynamicObject from,
+        public Object initializeCopyClass(DynamicObject self, DynamicObject from,
                 @Cached("create()") BranchProfile errorProfile) {
             if (from == coreLibrary().getBasicObjectClass()) {
                 errorProfile.enter();
@@ -1168,7 +1170,26 @@ public abstract class ModuleNodes {
             }
 
             Layouts.MODULE.getFields(self).initCopy(from);
+
+            final DynamicObject selfMetaClass = getSingletonClass(self);
+            final DynamicObject fromMetaClass = Layouts.BASIC_OBJECT.getMetaClass(from);
+
+            assert Layouts.CLASS.getIsSingleton(fromMetaClass);
+            assert Layouts.CLASS.getIsSingleton(Layouts.BASIC_OBJECT.getMetaClass(self));
+
+            Layouts.MODULE.getFields(selfMetaClass).initCopy(fromMetaClass); // copy class methods
+            Layouts.CLASS.setSuperclass(self, Layouts.CLASS.getSuperclass(from));
+
             return nil();
+        }
+
+        protected DynamicObject getSingletonClass(DynamicObject object) {
+            if (singletonClassNode == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                singletonClassNode = insert(SingletonClassNodeGen.create(getContext(), getSourceSection(), null));
+            }
+
+            return singletonClassNode.executeSingletonClass(object);
         }
 
     }
@@ -1655,7 +1676,7 @@ public abstract class ModuleNodes {
         @TruffleBoundary(throwsControlFlowException = true)
         @Specialization
         public Object removeClassVariableString(DynamicObject module, String name) {
-            SymbolTable.checkClassVariableName(getContext(), name, this);
+            SymbolTable.checkClassVariableName(getContext(), name, module, this);
             return ModuleOperations.removeClassVariable(Layouts.MODULE.getFields(module), getContext(), this, name);
         }
 

@@ -1899,6 +1899,8 @@ public class IRBuilder {
                 // We add this extra nil copy because we do not know if we have a circular defininition of
                 // argVar: proc { |a=a| } or proc { |a = foo(bar(a))| }.
                 addInstr(new CopyInstr(argVar, manager.getNil()));
+                // This bare build looks weird but OptArgNode is just a marker and value is either a LAsgnNode
+                // or a DAsgnNode.  So building the value will end up having a copy(var, assignment).
                 build(optArg.getValue());
                 addInstr(new LabelInstr(variableAssigned));
             }

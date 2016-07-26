@@ -47,4 +47,19 @@ describe 'java.lang.Iterable' do
     expect( paths.last ).to eq 'ITERABLE_SPEC.RB'
   end
 
+  it 'converts #to_a' do
+    file_system = java.nio.file.FileSystems.getDefault
+    path = file_system.getPath(__FILE__)
+    expect( path.to_a ).to_not be_empty
+    expect( path.to_a ).to eql iterate_path(path)
+  end
+
+  private
+
+  def iterate_path(path)
+    res = [] ; it = path.iterator
+    while it.hasNext ; res << it.next  end
+    res
+  end
+
 end

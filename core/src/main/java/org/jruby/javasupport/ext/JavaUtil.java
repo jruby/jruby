@@ -137,6 +137,12 @@ public abstract class JavaUtil {
             return JavaLang.Iterable.each_with_index(context, self, block);
         }
 
+        @JRubyMethod(name = { "include?", "member?" }) // @override Enumerable#include?
+        public static RubyBoolean include_p(final ThreadContext context, final IRubyObject self, final IRubyObject obj) {
+            final java.util.Collection coll = unwrapJavaObject(self);
+            return context.runtime.newBoolean( coll.contains( obj.toJava(java.lang.Object.class) ) );
+        }
+
         // NOTE: first might conflict with some Java types (e.g. java.util.Deque) thus providing a ruby_ alias
         @JRubyMethod(name = { "first", "ruby_first" }) // re-def Enumerable#first
         public static IRubyObject first(final ThreadContext context, final IRubyObject self) {
@@ -165,13 +171,13 @@ public abstract class JavaUtil {
             return self;
         }
 
-        @JRubyMethod
+        @JRubyMethod(name = { "to_a", "entries" })
         public static RubyArray to_a(final ThreadContext context, final IRubyObject self) {
             final Object[] array = ((java.util.Collection) unwrapJavaObject(self)).toArray();
             if ( IRubyObject.class.isAssignableFrom(array.getClass().getComponentType()) ) {
                 return RubyArray.newArrayMayCopy(context.runtime, (IRubyObject[]) array);
             }
-            return RubyArray.newArrayMayCopy(context.runtime, convertJavaArrayToRuby(context.runtime, array));
+            return RubyArray.newArrayNoCopy(context.runtime, convertJavaArrayToRuby(context.runtime, array));
         }
 
         @JRubyMethod(name = "+", required = 1)

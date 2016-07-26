@@ -241,6 +241,10 @@ public abstract class RubyGuards {
         return Layouts.TRACE_POINT.isTracePoint(object);
     }
 
+    public static boolean isRubyIO(DynamicObject object) {
+        return Layouts.IO.isIO(object);
+    }
+
     public static boolean isNullPointer(DynamicObject pointer) {
         return Layouts.POINTER.getPointer(pointer) == PointerPrimitiveNodes.NULL_POINTER;
     }

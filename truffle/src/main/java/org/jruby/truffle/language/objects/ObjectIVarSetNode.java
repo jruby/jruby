@@ -32,7 +32,7 @@ public abstract class ObjectIVarSetNode extends RubyNode {
     @Specialization(guards = "name == cachedName", limit = "getCacheLimit()")
     public Object ivarSetCached(DynamicObject object, String name, Object value,
             @Cached("name") String cachedName,
-            @Cached("createWriteFieldNode(checkName(cachedName))") WriteObjectFieldNode writeObjectFieldNode) {
+            @Cached("createWriteFieldNode(checkName(cachedName, object))") WriteObjectFieldNode writeObjectFieldNode) {
         writeObjectFieldNode.execute(object, value);
         return value;
     }
@@ -40,12 +40,12 @@ public abstract class ObjectIVarSetNode extends RubyNode {
     @TruffleBoundary
     @Specialization(contains = "ivarSetCached")
     public Object ivarSetUncached(DynamicObject object, String name, Object value) {
-        object.define(checkName(name), value, 0);
+        object.define(checkName(name, object), value, 0);
         return value;
     }
 
-    protected String checkName(String name) {
-        return checkName ? SymbolTable.checkInstanceVariableName(getContext(), name, this) : name;
+    protected String checkName(String name, DynamicObject object) {
+        return checkName ? SymbolTable.checkInstanceVariableName(getContext(), name, object, this) : name;
     }
 
     protected WriteObjectFieldNode createWriteFieldNode(String name) {

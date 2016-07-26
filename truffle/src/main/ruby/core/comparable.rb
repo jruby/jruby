@@ -29,15 +29,11 @@ module Comparable
     return true if equal?(other)
 
     return false if Thread.detect_recursion(self, other) do
-      begin
         unless comp = (self <=> other)
           return false
         end
 
         return Comparable.compare_int(comp) == 0
-      rescue StandardError
-        return false
-      end
     end
   end
 

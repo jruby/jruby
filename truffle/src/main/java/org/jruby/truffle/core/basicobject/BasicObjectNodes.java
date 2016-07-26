@@ -280,13 +280,13 @@ public abstract class BasicObjectNodes {
             final String name = nameObject.toString();
 
             if (lastCallWasSuper()) {
-                return coreExceptions().noSuperMethodError(name, this);
+                return coreExceptions().noSuperMethodError(name, self, args, this);
             } else if (lastCallWasCallingPrivateMethod(self, name)) {
-                return coreExceptions().privateMethodError(name, self, this);
+                return coreExceptions().privateMethodError(name, self, args, this);
             } else if (lastCallWasVCall()) {
                 return coreExceptions().nameErrorUndefinedLocalVariableOrMethod(name, self, this);
             } else {
-                return coreExceptions().noMethodErrorOnReceiver(name, self, this);
+                return coreExceptions().noMethodErrorOnReceiver(name, self, args, this);
             }
         }
 

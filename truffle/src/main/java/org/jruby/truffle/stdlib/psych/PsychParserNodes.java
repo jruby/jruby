@@ -64,8 +64,6 @@ import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.SnippetNode;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DoesRespondDispatchHeadNode;
-import org.jruby.truffle.language.objects.AllocateObjectNode;
-import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.language.objects.ReadObjectFieldNode;
 import org.jruby.truffle.language.objects.ReadObjectFieldNodeGen;
 import org.jruby.truffle.language.objects.TaintNode;
@@ -96,23 +94,6 @@ import java.util.Map;
 
 @CoreClass("Psych::Parser")
 public abstract class PsychParserNodes {
-
-    @CoreMethod(names = "allocate", constructor = true)
-    public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
-
-        @Child private AllocateObjectNode allocateNode;
-
-        public AllocateNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            allocateNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
-        }
-
-        @Specialization
-        public DynamicObject allocate(DynamicObject rubyClass) {
-            return allocateNode.allocate(rubyClass, null, null);
-        }
-
-    }
 
     @CoreMethod(names = "parse", required = 1, optional = 1)
     public abstract static class ParseNode extends CoreMethodArrayArgumentsNode {

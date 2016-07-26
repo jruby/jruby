@@ -41,7 +41,7 @@ public class SimpleShell {
     public SimpleShell(RubyContext context) {
         this.context = context;
 
-        if (!TruffleOptions.AOT && System.console() == null) {
+        if (TruffleOptions.AOT || System.console() == null) {
             shellInterface = new StandardShellInterface();
         } else {
             shellInterface = new ConsoleShellInterface();

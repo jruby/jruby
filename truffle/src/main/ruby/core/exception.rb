@@ -181,22 +181,20 @@ class LocalJumpError < StandardError
 end
 
 class NameError < StandardError
-  attr_reader :name
 
   def initialize(*args)
-    super(args.shift)
-    @name = args.shift
+    name = args.size > 1 ? args.pop : nil
+    super(*args)
+    Truffle.invoke_primitive :name_error_set_name, self, name
   end
 end
 
 class NoMethodError < NameError
-  attr_reader :name
-  attr_reader :args
 
   def initialize(*arguments)
-    super(arguments.shift)
-    @name = arguments.shift
-    @args = arguments.shift
+    args = arguments.size > 2 ? arguments.pop : nil
+    super(*arguments) # TODO BJF Jul 24, 2016 Need to handle NoMethodError.new(1,2,3,4)
+    Truffle.invoke_primitive :no_method_error_set_args, self, args
   end
 end
 

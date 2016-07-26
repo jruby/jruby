@@ -392,7 +392,8 @@ public abstract class EncodingConverterNodes {
             lookupTableWriteNode.call(frame, ret, "[]=", getSymbol("result"), eConvResultToSymbol(lastError.getResult()));
             lookupTableWriteNode.call(frame, ret, "[]=", getSymbol("source_encoding_name"), createString(new ByteList(lastError.getSource())));
             lookupTableWriteNode.call(frame, ret, "[]=", getSymbol("destination_encoding_name"), createString(new ByteList(lastError.getDestination())));
-            lookupTableWriteNode.call(frame, ret, "[]=", getSymbol("error_bytes"), createString(new ByteList(lastError.getErrorBytes())));
+            lookupTableWriteNode.call(frame, ret, "[]=", getSymbol("error_bytes"), createString(new ByteList(lastError.getErrorBytes(),
+                lastError.getErrorBytesP(), lastError.getErrorBytesP() + lastError.getErrorBytesLength())));
 
             if (lastError.getReadAgainLength() != 0) {
                 lookupTableWriteNode.call(frame, ret, "[]=", getSymbol("read_again_bytes"), createString(new ByteList(lastError.getErrorBytes(),

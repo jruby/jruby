@@ -468,7 +468,6 @@ public abstract class KernelNodes {
 
         @Child private CopyNode copyNode;
         @Child private CallDispatchHeadNode initializeDupNode;
-        @Child private SingletonClassNode singletonClassNode;
 
         public DupNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -477,32 +476,11 @@ public abstract class KernelNodes {
             initializeDupNode = DispatchHeadNodeFactory.createMethodCallOnSelf(context);
         }
 
-        @Specialization(guards = "!isRubyClass(self)")
+        @Specialization
         public DynamicObject dup(VirtualFrame frame, DynamicObject self) {
             final DynamicObject newObject = copyNode.executeCopy(frame, self);
 
             initializeDupNode.call(frame, newObject, "initialize_dup", self);
-
-            return newObject;
-        }
-
-        @Specialization(guards = "isRubyClass(self)")
-        public DynamicObject dupClass(VirtualFrame frame, DynamicObject self) {
-            if (singletonClassNode == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                singletonClassNode = insert(SingletonClassNodeGen.create(getContext(), getSourceSection(), null));
-            }
-
-            final DynamicObject newObject = copyNode.executeCopy(frame, self);
-            final DynamicObject newObjectMetaClass = singletonClassNode.executeSingletonClass(newObject);
-            final DynamicObject selfMetaClass = Layouts.BASIC_OBJECT.getMetaClass(self);
-
-            assert Layouts.CLASS.getIsSingleton(selfMetaClass);
-            assert Layouts.CLASS.getIsSingleton(Layouts.BASIC_OBJECT.getMetaClass(newObject));
-
-            Layouts.MODULE.getFields(newObjectMetaClass).initCopy(selfMetaClass); // copies class methods
-            initializeDupNode.call(frame, newObject, "initialize_dup", self);
-            Layouts.CLASS.setSuperclass(newObject, Layouts.CLASS.getSuperclass(self));
 
             return newObject;
         }
@@ -975,7 +953,7 @@ public abstract class KernelNodes {
         @TruffleBoundary
         @Specialization
         public boolean isInstanceVariableDefined(DynamicObject object, String name) {
-            final String ivar = SymbolTable.checkInstanceVariableName(getContext(), name, this);
+            final String ivar = SymbolTable.checkInstanceVariableName(getContext(), name, object, this);
             return object.getShape().hasProperty(ivar);
         }
 
@@ -1045,10 +1023,10 @@ public abstract class KernelNodes {
         @TruffleBoundary
         @Specialization
         public Object removeInstanceVariable(DynamicObject object, String name) {
-            final String ivar = SymbolTable.checkInstanceVariableName(getContext(), name, this);
+            final String ivar = SymbolTable.checkInstanceVariableName(getContext(), name, object, this);
             final Object value = object.get(ivar, nil());
             if (!object.delete(name)) {
-                throw new RaiseException(coreExceptions().nameErrorInstanceVariableNotDefined(name, this));
+                throw new RaiseException(coreExceptions().nameErrorInstanceVariableNotDefined(name, object, this));
             }
             return value;
         }
