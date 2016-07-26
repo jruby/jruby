@@ -26,6 +26,7 @@ public class JavaSites {
     public final BignumSites Bignum = new BignumSites();
     public final TimeSites Time = new TimeSites();
     public final EnumerableSites Enumerable = new EnumerableSites();
+    public final ComparableSites Comparable = new ComparableSites();
     public final IOSites IO = new IOSites();
     public final TypeConverterSites TypeConverter = new TypeConverterSites();
     public final HelpersSites Helpers = new HelpersSites();
@@ -89,7 +90,7 @@ public class JavaSites {
         public final RespondToCallSite respond_to_cmp = new RespondToCallSite("<=>");
         public final RespondToCallSite respond_to_to_str = new RespondToCallSite("to_str");
         public final CallSite equals = new FunctionalCachingCallSite("==");
-        public final CallSite cmp = new FunctionalCachingCallSite("<=>");
+        public final CachingCallSite cmp = new FunctionalCachingCallSite("<=>");
         public final CallSite hash = new FunctionalCachingCallSite("hash");
 
         public final Ruby.RecursiveFunctionEx recursive_cmp = new Ruby.RecursiveFunctionEx<IRubyObject>() {
@@ -220,6 +221,13 @@ public class JavaSites {
 
     public static class EnumerableSites {
         public final CheckedSites size_checked = new CheckedSites("size");
+    }
+
+    public static class ComparableSites {
+        public final RespondToCallSite respond_to_op_cmp = new RespondToCallSite("<=>");
+        public final CallSite op_cmp = new FunctionalCachingCallSite("<=>");
+        public final CallSite op_lt = new FunctionalCachingCallSite("<");
+        public final CallSite op_gt = new FunctionalCachingCallSite(">");
     }
 
     public static class IOSites {
