@@ -491,8 +491,9 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
     }
 
     public void newVersion(Set<DynamicObject> alreadyInvalidated, boolean considerLexicalDependents) {
-        if (alreadyInvalidated.contains(rubyModuleObject))
+        if (alreadyInvalidated.contains(rubyModuleObject)) {
             return;
+        }
 
         unmodifiedAssumption.invalidate();
         alreadyInvalidated.add(rubyModuleObject);
@@ -516,8 +517,9 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
 
     public void addLexicalDependent(DynamicObject lexicalChild) {
         assert RubyGuards.isRubyModule(lexicalChild);
-        if (lexicalChild != rubyModuleObject)
+        if (lexicalChild != rubyModuleObject) {
             lexicalDependents.add(lexicalChild);
+        }
     }
 
     public Assumption getUnmodifiedAssumption() {
