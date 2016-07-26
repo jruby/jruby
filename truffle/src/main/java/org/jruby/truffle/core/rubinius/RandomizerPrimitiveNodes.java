@@ -12,10 +12,13 @@ package org.jruby.truffle.core.rubinius;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
+import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.RubyRandom;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.builtins.Primitive;
 import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
+import org.jruby.truffle.core.rope.CodeRange;
+import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.util.ByteList;
 import org.jruby.util.Random;
 
@@ -130,7 +133,7 @@ public abstract class RandomizerPrimitiveNodes {
                     r >>>= 8;
                 }
             }
-            return createString(new ByteList(bytes));
+            return createString(RopeOperations.create(bytes, ASCIIEncoding.INSTANCE, CodeRange.CR_UNKNOWN));
         }
     }
 
