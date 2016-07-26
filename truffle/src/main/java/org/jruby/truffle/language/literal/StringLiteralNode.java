@@ -25,8 +25,6 @@ import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.objects.AllocateObjectNode;
-import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
 
 public class StringLiteralNode extends RubyNode {
 
