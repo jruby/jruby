@@ -414,12 +414,14 @@ public class Java implements Library {
         return getProxyClass(runtime, javaClass.javaClass());
     }
 
+    @SuppressWarnings("deprecation")
     public static RubyModule getProxyClass(final Ruby runtime, final Class<?> clazz) {
         RubyModule proxy = runtime.getJavaSupport().getUnfinishedProxy(clazz);
         if (proxy != null) return proxy;
         return runtime.getJavaSupport().getProxyClassFromCache(clazz);
     }
 
+    @SuppressWarnings("deprecation")
     // Only used by proxy ClassValue calculator in JavaSupport
     static RubyModule createProxyClassForClass(final Ruby runtime, final Class<?> clazz) {
         final JavaSupport javaSupport = runtime.getJavaSupport();
@@ -1105,7 +1107,7 @@ public class Java implements Library {
         // it's fine to not add the "cached" method here - when users sticking to
         // constant access won't pay the "penalty" for adding dynamic methods ...
         final RubyModule packageOrClass = getTopLevelProxyOrPackage(runtime, constName, false);
-        if ( packageOrClass == null ) return context.nil; // TODO compatibility (with packages)
+        if ( packageOrClass == null ) return context.nil; // compatibility (with packages)
         return cacheConstant((RubyModule) self, constName, packageOrClass, false);
     }
 
@@ -1130,7 +1132,7 @@ public class Java implements Library {
         // NOTE: getTopLevelProxyOrPackage will bind the (cached) method for us :
         final RubyModule result = getTopLevelProxyOrPackage(context.runtime, name.asJavaString(), true);
         if ( result != null ) return result;
-        return context.nil; // TODO compatibility - should be throwing instead, right !?
+        return context.nil;
     }
 
     @JRubyMethod(name = "method_missing", meta = true, rest = true)
