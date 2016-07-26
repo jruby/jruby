@@ -267,9 +267,25 @@ public abstract class CachingCallSite extends CallSite {
         return cacheAndGet(selfType, methodName);
     }
 
+    public boolean isBuiltin(RubyClass selfType) {
+        // This must be retrieved *once* to avoid racing with other threads.
+        CacheEntry cache = this.cache;
+        if (CacheEntry.typeOk(cache, selfType)) {
+            return cache.method.isBuiltin();
+        }
+        return cacheAndGetBuiltin(selfType, methodName);
+    }
+
     private CacheEntry cacheAndGet(RubyClass selfType, String methodName) {
         CacheEntry entry = selfType.searchWithCache(methodName);
-        return cache = entry;
+        if (!entry.method.isUndefined()) cache = entry;
+        return entry;
+    }
+
+    private boolean cacheAndGetBuiltin(RubyClass selfType, String methodName) {
+        CacheEntry entry = selfType.searchWithCache(methodName);
+        if (!entry.method.isUndefined()) return false;
+        return entry.method.isBuiltin();
     }
     
     protected IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, Block block, IRubyObject[] args, ThreadContext context, IRubyObject self) {
