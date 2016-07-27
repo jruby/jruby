@@ -13,9 +13,9 @@ import java.util.Map;
 /**
 * Created by headius on 2/26/15.
 */
-public class InterfaceInitializer extends Initializer {
+final class InterfaceInitializer extends Initializer {
 
-    public InterfaceInitializer(Ruby runtime, Class<?> javaClass) {
+    InterfaceInitializer(Ruby runtime, Class<?> javaClass) {
         super(runtime, javaClass);
     }
 
