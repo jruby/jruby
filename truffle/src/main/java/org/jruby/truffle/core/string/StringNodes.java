@@ -4146,10 +4146,10 @@ public abstract class StringNodes {
 
                 return makeRope(string, rope, index, length);
             } else {
-                final Rope searched = searchForSingleByteOptimizableDescendant(rope, index, length);
+                final SearchResult searchResult = searchForSingleByteOptimizableDescendant(rope, index, length);
 
-                if (foundSingleByteOptimizableDescendentProfile.profile(searched.isSingleByteOptimizable())) {
-                    return makeRope(string, searched, index, length);
+                if (foundSingleByteOptimizableDescendentProfile.profile(searchResult.rope.isSingleByteOptimizable())) {
+                    return makeRope(string, searchResult.rope, searchResult.index, length);
                 }
 
                 return stringSubstringMultitByte(string, index, length);
@@ -4157,15 +4157,15 @@ public abstract class StringNodes {
         }
 
         @TruffleBoundary
-        private Rope searchForSingleByteOptimizableDescendant(Rope base, int index, int length) {
+        private SearchResult searchForSingleByteOptimizableDescendant(Rope base, int index, int length) {
             // If we've found something that's single-byte optimizable, we can halt the search. Taking a substring of
             // a single byte optimizable rope is a fast operation.
             if (base.isSingleByteOptimizable()) {
-                return base;
+                return new SearchResult(index, base);
             }
 
             if (base instanceof LeafRope) {
-                return base;
+                return new SearchResult(index, base);
             } else if (base instanceof SubstringRope) {
                 final SubstringRope substringRope = (SubstringRope) base;
                 return searchForSingleByteOptimizableDescendant(substringRope.getChild(), index + substringRope.getOffset(), length);
@@ -4179,7 +4179,7 @@ public abstract class StringNodes {
                 } else if (index >= left.byteLength()) {
                     return searchForSingleByteOptimizableDescendant(right, index - left.byteLength(), length);
                 } else {
-                    return concatRope;
+                    return new SearchResult(index, concatRope);
                 }
             } else if (base instanceof RepeatingRope) {
                 final RepeatingRope repeatingRope = (RepeatingRope) base;
@@ -4187,7 +4187,7 @@ public abstract class StringNodes {
                 if (index + length < repeatingRope.getChild().byteLength()) {
                     return searchForSingleByteOptimizableDescendant(repeatingRope.getChild(), index, length);
                 } else {
-                    return repeatingRope;
+                    return new SearchResult(index, repeatingRope);
                 }
             } else {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
@@ -4327,6 +4327,16 @@ public abstract class StringNodes {
             taintResultNode.maybeTaint(string, ret);
 
             return ret;
+        }
+
+        private final class SearchResult {
+            public final int index;
+            public final Rope rope;
+
+            public SearchResult(final int index, final Rope rope) {
+                this.index = index;
+                this.rope = rope;
+            }
         }
 
     }
