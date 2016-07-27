@@ -72,13 +72,12 @@ public class ArrayUtils {
 
     public static IRubyObject concatArraysDirect(ThreadContext context, Object original, IRubyObject additional) {
         final Ruby runtime = context.runtime;
-        int oldLength = Array.getLength(original);
-        int addLength = (int)((RubyFixnum) Helpers.invoke(context, additional, "length")).getLongValue();
+        final int oldLength = Array.getLength(original);
+        final int addLength = RubyFixnum.fix2int(Helpers.invoke(context, additional, "length"));
 
         ArrayJavaProxy proxy = ArrayUtils.newProxiedArray(runtime, original.getClass().getComponentType(), oldLength + addLength);
-        Object newArray = proxy.getObject();
 
-        System.arraycopy(original, 0, newArray, 0, oldLength);
+        System.arraycopy(original, 0, proxy.getObject(), 0, oldLength);
 
         for (int i = 0; i < addLength; i++) {
             IRubyObject val = Helpers.invoke(context, additional, "[]", runtime.newFixnum(i));
