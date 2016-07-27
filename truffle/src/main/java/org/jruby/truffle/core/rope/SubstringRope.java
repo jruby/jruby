@@ -20,12 +20,17 @@ public class SubstringRope extends Rope {
 
     public SubstringRope(Rope child, int offset, int byteLength, int characterLength, CodeRange codeRange) {
         // TODO (nirvdrum 07-Jan-16) Verify that this rope is only used for character substrings and not arbitrary byte slices. The former should always have the child's code range while the latter may not.
-        this(child, child.getEncoding(), offset, byteLength, characterLength, codeRange);
+        this(child, child.getEncoding(), child.isSingleByteOptimizable(), offset, byteLength, characterLength, codeRange);
     }
 
-    private SubstringRope(Rope child, Encoding encoding, int offset, int byteLength, int characterLength, CodeRange codeRange) {
+    public SubstringRope(Rope child, boolean singleByteOptimizable, int offset, int byteLength, int characterLength, CodeRange codeRange) {
         // TODO (nirvdrum 07-Jan-16) Verify that this rope is only used for character substrings and not arbitrary byte slices. The former should always have the child's code range while the latter may not.
-        super(encoding, codeRange, child.isSingleByteOptimizable(), byteLength, characterLength, child.depth() + 1, null);
+        this(child, child.getEncoding(), singleByteOptimizable, offset, byteLength, characterLength, codeRange);
+    }
+
+    private SubstringRope(Rope child, Encoding encoding, boolean singleByteOptimizable, int offset, int byteLength, int characterLength, CodeRange codeRange) {
+        // TODO (nirvdrum 07-Jan-16) Verify that this rope is only used for character substrings and not arbitrary byte slices. The former should always have the child's code range while the latter may not.
+        super(encoding, codeRange, singleByteOptimizable, byteLength, characterLength, child.depth() + 1, null);
         this.child = child;
         this.offset = offset;
     }
@@ -37,7 +42,7 @@ public class SubstringRope extends Rope {
             throw new UnsupportedOperationException("Cannot fast-path updating encoding with different code range.");
         }
 
-        return new SubstringRope(getChild(), newEncoding, getOffset(), byteLength(), characterLength(), newCodeRange);
+        return new SubstringRope(getChild(), newEncoding, getChild().isSingleByteOptimizable(), getOffset(), byteLength(), characterLength(), newCodeRange);
     }
 
     @Override

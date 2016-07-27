@@ -198,6 +198,7 @@ public abstract class RopeNodes {
             final long packedLengthAndCodeRange = RopeOperations.calculateCodeRangeAndLength(base.getEncoding(), base.getBytes(), offset, offset + byteLength);
             final CodeRange codeRange = CodeRange.fromInt(StringSupport.unpackArg(packedLengthAndCodeRange));
             final int characterLength = StringSupport.unpackResult(packedLengthAndCodeRange);
+            final boolean singleByteOptimizable = base.isSingleByteOptimizable() || (codeRange == CR_7BIT);
 
             /*
             if (base.depth() >= 10) {
@@ -206,7 +207,7 @@ public abstract class RopeNodes {
             */
 
             if (getContext().getOptions().ROPE_LAZY_SUBSTRINGS) {
-                return new SubstringRope(base, offset, byteLength, characterLength, codeRange);
+                return new SubstringRope(base, singleByteOptimizable, offset, byteLength, characterLength, codeRange);
             } else {
                 if (makeLeafRopeNode == null) {
                     CompilerDirectives.transferToInterpreterAndInvalidate();
