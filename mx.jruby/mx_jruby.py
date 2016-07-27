@@ -225,7 +225,8 @@ class MavenBuildTask(ArchiveBuildTask):
         env['JRUBY_BUILD_MORE_QUIET'] = 'true'
 
         mx.log("Building jruby-core with Maven")
-        mx.run_maven(['-q', '-DskipTests', maven_repo_arg, '-pl', 'core'], cwd=cwd, env=env)
+        # Also build lib for the gems which end in stdlib (like psych)
+        mx.run_maven(['-q', '-DskipTests', maven_repo_arg, '-pl', 'core,lib'], cwd=cwd, env=env)
 
         # mx.run(['bin/jruby', 'bin/gem', 'install', 'bundler', '-v', '1.10.6'], cwd=cwd)
     
