@@ -81,22 +81,32 @@ public abstract class Initializer {
         this.javaClass = javaClass;
     }
 
-    public static RubyModule setupProxyClass(Ruby runtime, final Class<?> javaClass, final RubyClass proxy) {
+    public static RubyModule setupProxyClass(Ruby runtime, final Class<?> javaClass, RubyClass proxy) {
         setJavaClassFor(javaClass, proxy);
 
         proxy.setReifiedClass((Class) javaClass);
 
-        if ( javaClass.isArray() || javaClass.isPrimitive() ) return proxy;
+        if ( javaClass.isArray() || javaClass.isPrimitive() ) {
+            flagAsJavaProxy(proxy); return proxy;
+        }
 
-        return new ClassInitializer(runtime, javaClass).initialize(proxy);
+        proxy = new ClassInitializer(runtime, javaClass).initialize(proxy);
+        flagAsJavaProxy(proxy); return proxy;
     }
 
-    public static RubyModule setupProxyModule(Ruby runtime, final Class<?> javaClass, final RubyModule proxy) {
+    public static RubyModule setupProxyModule(Ruby runtime, final Class<?> javaClass, RubyModule proxy) {
         setJavaClassFor(javaClass, proxy);
 
         assert javaClass.isInterface();
 
-        return new InterfaceInitializer(runtime, javaClass).initialize(proxy);
+        proxy = new InterfaceInitializer(runtime, javaClass).initialize(proxy);
+        flagAsJavaProxy(proxy); return proxy;
+    }
+
+    private static void flagAsJavaProxy(final RubyModule proxy) {
+        // flag the class as a Java class proxy.
+        proxy.setJavaProxy(true);
+        proxy.getSingletonClass().setJavaProxy(true);
     }
 
     protected static void addField(

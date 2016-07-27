@@ -55,10 +55,6 @@ final class InterfaceInitializer extends Initializer {
         runtime.getJavaSupport().getStaticAssignedNames().get(javaClass).putAll(state.staticNames);
         runtime.getJavaSupport().getInstanceAssignedNames().get(javaClass).clear();
 
-        // flag the class as a Java class proxy.
-        proxy.setJavaProxy(true);
-        proxy.getSingletonClass().setJavaProxy(true);
-
         installClassFields(proxy, state);
         installClassStaticMethods(proxy, state);
         installClassClasses(javaClass, proxy);

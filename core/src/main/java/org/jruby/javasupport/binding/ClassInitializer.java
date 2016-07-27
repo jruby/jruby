@@ -23,7 +23,7 @@ final class ClassInitializer extends Initializer {
     }
 
     @Override
-    public RubyModule initialize(RubyModule proxy) {
+    public RubyClass initialize(final RubyModule proxy) {
         final RubyClass proxyClass = (RubyClass) proxy;
         final State state = new State(runtime, javaClass.getSuperclass());
 
@@ -77,9 +77,9 @@ final class ClassInitializer extends Initializer {
         installClassConstructors(proxyClass, state);
         installClassClasses(javaClass, proxyClass);
 
-        proxy.getName(); // trigger calculateName()
+        proxyClass.getName(); // trigger calculateName()
 
-        return proxy;
+        return proxyClass;
     }
 
     private static void installClassInstanceMethods(final RubyClass proxy, final Initializer.State state) {
