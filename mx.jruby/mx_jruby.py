@@ -209,6 +209,7 @@ class MavenBuildTask(ArchiveBuildTask):
         mx.log('...perform build of {}'.format(self.subject))
         cwd = _suite.dir
         mavenDir = join(cwd, 'mxbuild', 'mvn')
+        maven_repo_arg = '-Dmaven.repo.local=' + mavenDir
 
         # HACK: since the maven executable plugin does not configure the
         # java executable that is used we unfortunately need to append it to the PATH
@@ -218,16 +219,6 @@ class MavenBuildTask(ArchiveBuildTask):
             mx.logv('Setting PATH to {}'.format(os.environ["PATH"]))
 
         mx.run(['java', '-version'])
-
-        # Truffle version
-        truffle = mx.suite('truffle')
-        truffle_commit = truffle.version()
-        maven_repo_arg = '-Dmaven.repo.local=' + mavenDir
-
-        for name in ['truffle-api', 'truffle-debug', 'truffle-dsl-processor', 'truffle-tck']:
-            jar_path = join(mavenDir, 'com', 'oracle', 'truffle', name, truffle_commit, "%s-%s.jar" % (name, truffle_commit))
-            if not exists(jar_path):
-                mx.run_mx(['maven-install', '--repo', mavenDir, '--only', 'TRUFFLE_API,TRUFFLE_DEBUG,TRUFFLE_DSL_PROCESSOR,TRUFFLE_TCK'], suite=truffle)
 
         # Build jruby-truffle
         env = os.environ.copy()
