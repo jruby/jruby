@@ -454,17 +454,36 @@ class TestHigherJavasupport < Test::Unit::TestCase
     assert_equal [ 2, 1 ], [ [], [ 0 ] ].dimensions
   end
 
-  def test_void
-    assert Java::void
-    assert Java::Void
+  def test_primitives
+    assert_equal 'short', Java::short.java_class.name
+    assert_equal 'double', Java::double.java_class.name
+    assert_equal 'float', Java::float.java_class.name
+    assert Java::float.is_a?(Class)
+    assert Java::byte.is_a?(Class)
+    assert_false Java::org.is_a?(Class)
     begin
-      Java::void[1].new
-      fail "expected to raise"
-    rescue ArgumentError => e
-      assert_equal "Java package 'void' does not have a method `[]' with 1 argument", e.message
+      Class.new(Java::long); fail 'extended a primitive type!'
+    rescue TypeError => e
+      assert /can not extend .* long/.match(e.message)
     end
-    assert Java::Void == Java::void
-    assert Java::void.equal? Java::Void
+  end
+
+  def test_void
+    assert Java::void.is_a?(Class)
+    assert_equal 'void', Java::void.java_class.name
+
+    begin
+      Class.new(Java::void); fail 'extended void type!'
+    rescue TypeError => e
+      assert /can not extend .* void/.match(e.message)
+    end
+
+    # NOTE: Java::Void is simply a package stub -
+    # has nothing to do with java.lang.Void.class just like Java::Float
+    assert Java::Void
+
+    assert Java::Void != Java::void
+    assert_false Java::void.equal? Java::Void
     quiet do
       p Java
       p Java::void
