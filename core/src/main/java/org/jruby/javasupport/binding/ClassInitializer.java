@@ -26,13 +26,13 @@ public class ClassInitializer extends Initializer {
         RubyClass proxyClass = (RubyClass)proxy;
         Class<?> superclass = javaClass.getSuperclass();
 
-        final State state = new State(runtime, superclass);
-
         proxyClass.setReifiedClass(javaClass);
 
         if ( javaClass.isArray() || javaClass.isPrimitive() ) {
             return proxy;
         }
+
+        final State state = new State(runtime, superclass);
 
         setupClassFields(javaClass, state);
         setupClassMethods(javaClass, state);
