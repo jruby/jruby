@@ -13,6 +13,8 @@ import pipes
 import shutil
 import json
 import time
+import tarfile
+import zipfile
 from threading import Thread
 from os.path import join, exists
 
@@ -25,28 +27,56 @@ TimeStampFile = mx.TimeStampFile
 
 # Project and BuildTask classes
 
-class ArchiveProject(mx.Project):
+class ArchiveBaseProject(mx.Project):
     def __init__(self, suite, name, deps, workingSets, theLicense, **args):
         mx.Project.__init__(self, suite, name, "", [], deps, workingSets, _suite.dir, theLicense)
         assert 'prefix' in args
+        assert 'outputDir' in args
 
     def getBuildTask(self, args):
         return ArchiveBuildTask(self, args)
 
+    def getResults(self):
+        results = []
+        outputDir = join(_suite.dir, self.outputDir)
+        for root, _, files in os.walk(outputDir):
+            for name in files:
+                path = join(root, name)
+                results.append(path)
+        return results
+
+class JavaArchiveProject(ArchiveBaseProject):
+    def __init__(self, suite, name, deps, workingSets, theLicense, **args):
+        ArchiveBaseProject.__init__(self, suite, name, deps, workingSets, theLicense, **args)
+        self.javaCompliance = "1.8"
+
+    def isJavaProject(self):
+        return True
+
+    def archive_prefix(self):
+        return self.prefix
+
+    def output_dir(self, relative=False):
+        return join(_suite.dir, self.outputDir)
+
+    def source_gen_dir(self, relative=False):
+        return None
+
+    def source_dirs(self):
+        return []
+
+    def annotation_processors(self):
+        return []
+
+class ArchiveProject(ArchiveBaseProject):
     def isNativeProject(self):
         return True # for archiving purposes
 
     def getOutput(self):
-        return '.'
-
-    def getResults(self):
-        result = []
-        output_dir = join(_suite.dir, self.prefix)
-        for root, _, files in os.walk(output_dir):
-            for name in files:
-                path = join(root, name)
-                result.append(path)
-        return result
+        # Paths in the tarball will be relative to output,
+        # so we need prefix to be the same as outputDir.
+        assert self.prefix == self.outputDir
+        return _suite.dir
 
 class ArchiveBuildTask(mx.BuildTask):
     def __init__(self, project, args):
@@ -158,25 +188,25 @@ class MavenBuildTask(ArchiveBuildTask):
             return (True, jni_libs)
 
         for watched in self.subject.watch:
+            watched = join(_suite.dir, watched)
             if not exists(watched):
-                return (True, watched)
+                return (True, watched + ' does not exist')
             elif os.path.isfile(watched) and TimeStampFile(watched).isNewerThan(jar):
-                return (True, watched)
+                return (True, watched + ' is newer than the jar')
             else:
                 for root, _, files in os.walk(watched):
                     for name in files:
                         source = join(root, name)
                         if TimeStampFile(source).isNewerThan(jar):
-                            return (True, source)
+                            return (True, source + ' is newer than the jar')
 
         return (False, 'all files are up to date')
 
     def newestOutput(self):
-        return TimeStampFile(self.subject.jar)
+        return TimeStampFile(join(_suite.dir, self.subject.jar))
 
     def build(self):
         mx.log('...perform build of {}'.format(self.subject))
-
         cwd = _suite.dir
         mavenDir = join(cwd, 'mxbuild', 'mvn')
 
@@ -191,7 +221,7 @@ class MavenBuildTask(ArchiveBuildTask):
 
         # Truffle version
         truffle = mx.suite('truffle')
-        truffle_commit = truffle.vc.parent(truffle.dir)
+        truffle_commit = truffle.version()
         maven_version_arg = '-Dtruffle.version=' + truffle_commit
         maven_repo_arg = '-Dmaven.repo.local=' + mavenDir
 
@@ -218,6 +248,55 @@ class MavenBuildTask(ArchiveBuildTask):
         jar = self.newestOutput()
         if jar.exists():
             os.remove(jar.path)
+
+# Commands
+
+def extractArguments(args):
+    vmArgs = []
+    rubyArgs = []
+    for i in range(len(args)):
+        arg = args[i]
+        if arg.startswith('-J-'):
+            vmArgs.append(arg[2:])
+        elif arg.startswith('-X'):
+            vmArgs.append('-Djruby.' + arg[2:])
+        else:
+            rubyArgs.append(arg)
+    return vmArgs, rubyArgs
+
+def extractTarball(file, target_dir):
+    if file.endswith('tar'):
+        with tarfile.open(file, 'r:') as tf:
+            tf.extractall(target_dir)
+    elif file.endswith('jar') or file.endswith('zip'):
+        with zipfile.ZipFile(file, "r") as zf:
+            zf.extractall(target_dir)
+    else:
+        mx.abort('Unsupported compressed file ' + file)
+
+def setup_jruby_home():
+    rubyZip = mx.distribution('RUBY-ZIP').path
+    assert exists(rubyZip)
+    extractPath = join(_suite.dir, 'mxbuild', 'ruby-zip-extracted')
+    if TimeStampFile(extractPath).isOlderThan(rubyZip):
+        if exists(extractPath):
+            shutil.rmtree(extractPath)
+        extractTarball(rubyZip, extractPath)
+    env = os.environ.copy()
+    env['JRUBY_HOME'] = extractPath
+    return env
+
+def ruby_command(args):
+    """runs Ruby"""
+    vmArgs, rubyArgs = extractArguments(args)
+    vmArgs += ['-cp', mx.classpath(['TRUFFLE_API', 'RUBY'])]
+    vmArgs += ['org.jruby.Main', '-X+T']
+    env = setup_jruby_home()
+    mx.run_java(vmArgs + rubyArgs, env=env)
+
+mx.update_commands(_suite, {
+    'ruby' : [ruby_command, '[ruby args|@VM options]'],
+})
 
 # Utilities
 

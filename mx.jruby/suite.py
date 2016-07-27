@@ -101,20 +101,29 @@ suite = {
             "workingSets": "JRubyTruffle",
         },
 
+        "jruby-truffle-ruby": {
+            "class": "JavaArchiveProject",
+            "outputDir": "truffle/src/main/ruby",
+            "prefix": "jruby-truffle",
+        },
+
         # Depends on jruby-maven extracting jni libs in lib/jni
         "jruby-lib-jni": {
             "class": "ArchiveProject",
+            "outputDir": "lib/jni",
             "prefix": "lib/jni",
             "dependencies": [ "jruby-core" ],
         },
 
         "jruby-lib-ruby": {
             "class": "ArchiveProject",
+            "outputDir": "lib/ruby",
             "prefix": "lib/ruby",
         },
 
         "jruby-licences": {
             "class": "LicensesProject",
+            "outputDir": ".",
             "prefix": ".",
         },
     },
@@ -128,6 +137,7 @@ suite = {
             "dependencies": [
                 "jruby-core",
                 "jruby-truffle",
+                "jruby-truffle-ruby",
             ],
             "exclude": [
                 "truffle:JLINE",
