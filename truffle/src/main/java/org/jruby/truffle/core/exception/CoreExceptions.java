@@ -643,6 +643,12 @@ public class CoreExceptions {
     }
 
     @TruffleBoundary
+    public DynamicObject rangeError(long code, DynamicObject encoding, Node currentNode) {
+        assert RubyGuards.isRubyEncoding(encoding);
+        return rangeError(StringUtils.format("invalid codepoint %x in %s", code, EncodingOperations.getEncoding(encoding)), currentNode);
+    }
+
+    @TruffleBoundary
     public DynamicObject rangeError(String type, String value, String range, Node currentNode) {
         return rangeError(StringUtils.format("%s %s out of range of %s", type, value, range), currentNode);
     }

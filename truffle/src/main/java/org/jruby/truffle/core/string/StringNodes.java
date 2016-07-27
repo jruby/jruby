@@ -3192,7 +3192,7 @@ public abstract class StringNodes {
 
     }
 
-    @Primitive(name = "string_from_codepoint", needsSelf = false)
+    @Primitive(name = "string_from_codepoint", needsSelf = false, lowerFixnum = 1)
     public static abstract class StringFromCodepointPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Specialization(guards = {"isRubyEncoding(encoding)", "isSimple(code, encoding)"})
@@ -3217,45 +3217,37 @@ public abstract class StringNodes {
         }
 
         @TruffleBoundary(throwsControlFlowException = true)
-        @Specialization(guards = {"isRubyEncoding(encoding)", "!isSimple(code, encoding)"})
-        public DynamicObject stringFromCodepoint(int code, DynamicObject encoding) {
+        @Specialization(guards = {"isRubyEncoding(rubyEncoding)", "!isSimple(code, rubyEncoding)"})
+        public DynamicObject stringFromCodepoint(long code, DynamicObject rubyEncoding) {
+            final Encoding encoding = EncodingOperations.getEncoding(rubyEncoding);
             final int length;
 
             try {
-                length = EncodingOperations.getEncoding(encoding).codeToMbcLength(code);
+                length = encoding.codeToMbcLength((int) code);
             } catch (EncodingException e) {
-                throw new RaiseException(coreExceptions().rangeError(code, encoding, this));
+                throw new RaiseException(coreExceptions().rangeError(code, rubyEncoding, this));
             }
 
             if (length <= 0) {
-                throw new RaiseException(coreExceptions().rangeError(code, encoding, this));
+                throw new RaiseException(coreExceptions().rangeError(code, rubyEncoding, this));
             }
 
             final byte[] bytes = new byte[length];
 
             try {
-                EncodingOperations.getEncoding(encoding).codeToMbc(code, bytes, 0);
+                encoding.codeToMbc((int) code, bytes, 0);
             } catch (EncodingException e) {
-                throw new RaiseException(coreExceptions().rangeError(code, encoding, this));
+                throw new RaiseException(coreExceptions().rangeError(code, rubyEncoding, this));
             }
 
-            return createString(new ByteList(bytes, EncodingOperations.getEncoding(encoding)));
-        }
-
-        @Specialization(guards = "isRubyEncoding(encoding)")
-        public DynamicObject stringFromCodepointSimple(long code, DynamicObject encoding,
-                                                       @Cached("createBinaryProfile()") ConditionProfile isUTF8Profile,
-                                                       @Cached("createBinaryProfile()") ConditionProfile isUSAsciiProfile,
-                                                       @Cached("createBinaryProfile()") ConditionProfile isAscii8BitProfile) {
-            if (code < Integer.MIN_VALUE || code > Integer.MAX_VALUE) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                throw new UnsupportedOperationException();
+            if (StringSupport.preciseLength(encoding, bytes, 0, length) != length) {
+                throw new RaiseException(coreExceptions().rangeError(code, rubyEncoding, this));
             }
 
-            return stringFromCodepointSimple((int) code, encoding, isUTF8Profile, isUSAsciiProfile, isAscii8BitProfile);
+            return createString(RopeOperations.create(bytes, encoding, CodeRange.CR_VALID));
         }
 
-        protected boolean isSimple(int code, DynamicObject encoding) {
+        protected boolean isSimple(long code, DynamicObject encoding) {
             final Encoding enc = EncodingOperations.getEncoding(encoding);
 
             return (enc.isAsciiCompatible() && code >= 0x00 && code < 0x80) || (enc == ASCIIEncoding.INSTANCE && code >= 0x00 && code <= 0xFF);
