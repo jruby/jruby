@@ -39,6 +39,7 @@ import org.jruby.truffle.language.SnippetNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
+import org.jruby.truffle.util.StringUtils;
 import org.jruby.util.RubyDateFormatter;
 
 import java.util.Locale;
@@ -313,7 +314,7 @@ public abstract class TimeNodes {
             try {
                 return ExactMath.addExact(ExactMath.multiplyExact(seconds, 1000L), (nanoseconds / 1_000_000));
             } catch (ArithmeticException e) {
-                String message = String.format("UNIX epoch + %d seconds out of range for Time (Joda-Time limitation)", seconds);
+                String message = StringUtils.format("UNIX epoch + %d seconds out of range for Time (Joda-Time limitation)", seconds);
                 throw new RaiseException(coreExceptions().rangeError(message, this));
             }
         }
@@ -505,7 +506,7 @@ public abstract class TimeNodes {
                 relativeOffset = true;
                 zoneToStore = nil();
             } else {
-                throw new UnsupportedOperationException(String.format("%s %s %s %s", isdst, fromutc, utcoffset, utcoffset.getClass()));
+                throw new UnsupportedOperationException(StringUtils.format("%s %s %s %s", isdst, fromutc, utcoffset, utcoffset.getClass()));
             }
 
             dt = dt.withZoneRetainFields(zone);

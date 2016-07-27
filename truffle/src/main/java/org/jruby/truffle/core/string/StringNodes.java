@@ -143,6 +143,7 @@ import org.jruby.truffle.language.objects.IsFrozenNodeGen;
 import org.jruby.truffle.language.objects.TaintNode;
 import org.jruby.truffle.language.objects.TaintNodeGen;
 import org.jruby.truffle.platform.posix.TrufflePosix;
+import org.jruby.truffle.util.StringUtils;
 import org.jruby.util.ByteList;
 import org.jruby.util.CodeRangeable;
 import org.jruby.util.ConvertDouble;
@@ -985,7 +986,7 @@ public abstract class StringNodes {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
                 throw new RaiseException(
                         coreExceptions().encodingCompatibilityError(
-                                String.format("incompatible encoding with this operation: %s", encoding), this));
+                                StringUtils.format("incompatible encoding with this operation: %s", encoding), this));
             }
 
             if (emptyStringProfile.profile(rope.isEmpty())) {
@@ -1663,7 +1664,7 @@ public abstract class StringNodes {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
                 throw new RaiseException(
                         coreExceptions().encodingCompatibilityError(
-                                String.format("incompatible encoding with this operation: %s", enc), this));
+                                StringUtils.format("incompatible encoding with this operation: %s", enc), this));
             }
 
             if (emptyStringProfile.profile(rope.isEmpty())) {
@@ -2386,7 +2387,7 @@ public abstract class StringNodes {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
                 throw new RaiseException(
                         coreExceptions().encodingCompatibilityError(
-                                String.format("incompatible encoding with this operation: %s", encoding), this));
+                                StringUtils.format("incompatible encoding with this operation: %s", encoding), this));
             }
 
             if (rope.isEmpty()) {
@@ -2458,7 +2459,7 @@ public abstract class StringNodes {
 
             if (enc.isDummy()) {
                 throw new RaiseException(coreExceptions().encodingCompatibilityError(
-                                String.format("incompatible encoding with this operation: %s", enc), this));
+                                StringUtils.format("incompatible encoding with this operation: %s", enc), this));
             }
 
             if (rope.isEmpty()) {
@@ -2522,14 +2523,14 @@ public abstract class StringNodes {
             if (index > length) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
                 throw new RaiseException(
-                        node.getContext().getCoreExceptions().indexError(String.format("index %d out of string", index), node));
+                        node.getContext().getCoreExceptions().indexError(StringUtils.format("index %d out of string", index), node));
             }
 
             if (index < 0) {
                 if (-index > length) {
                     CompilerDirectives.transferToInterpreterAndInvalidate();
                     throw new RaiseException(
-                            node.getContext().getCoreExceptions().indexError(String.format("index %d out of string", index), node));
+                            node.getContext().getCoreExceptions().indexError(StringUtils.format("index %d out of string", index), node));
                 }
 
                 index += length;
@@ -2546,14 +2547,14 @@ public abstract class StringNodes {
             if (index >= length) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
                 throw new RaiseException(
-                        node.getContext().getCoreExceptions().indexError(String.format("index %d out of string", index), node));
+                        node.getContext().getCoreExceptions().indexError(StringUtils.format("index %d out of string", index), node));
             }
 
             if (index < 0) {
                 if (-index > length) {
                     CompilerDirectives.transferToInterpreterAndInvalidate();
                     throw new RaiseException(
-                            node.getContext().getCoreExceptions().indexError(String.format("index %d out of string", index), node));
+                            node.getContext().getCoreExceptions().indexError(StringUtils.format("index %d out of string", index), node));
                 }
 
                 index += length;
@@ -2915,7 +2916,7 @@ public abstract class StringNodes {
 
         @TruffleBoundary
         private String formatError(int start) {
-            return String.format("index %d out of string", start);
+            return StringUtils.format("index %d out of string", start);
         }
 
     }

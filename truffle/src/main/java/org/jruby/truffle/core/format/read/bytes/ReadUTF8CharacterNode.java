@@ -22,6 +22,7 @@ import org.jruby.truffle.core.format.FormatNode;
 import org.jruby.truffle.core.format.MissingValue;
 import org.jruby.truffle.core.format.exceptions.InvalidFormatException;
 import org.jruby.truffle.core.format.read.SourceNode;
+import org.jruby.truffle.util.StringUtils;
 
 @NodeChildren({
         @NodeChild(value = "source", type = SourceNode.class),
@@ -95,7 +96,7 @@ public abstract class ReadUTF8CharacterNode extends FormatNode {
 
     @TruffleBoundary
     private String formatError(final int index, final int sourceLength, final int length) {
-        return String.format("malformed UTF-8 character (expected %d bytes, given %d bytes)", length, sourceLength - index);
+        return StringUtils.format("malformed UTF-8 character (expected %d bytes, given %d bytes)", length, sourceLength - index);
     }
 
 }

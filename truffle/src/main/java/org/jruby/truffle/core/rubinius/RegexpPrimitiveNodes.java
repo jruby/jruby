@@ -28,6 +28,7 @@ import org.jruby.truffle.core.rope.RopeNodes;
 import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.control.RaiseException;
+import org.jruby.truffle.util.StringUtils;
 import org.jruby.util.ByteList;
 import org.jruby.util.RegexpSupport;
 
@@ -112,7 +113,7 @@ public abstract class RegexpPrimitiveNodes {
 
         @TruffleBoundary
         private String formatError(DynamicObject string) {
-            return String.format("invalid byte sequence in %s", Layouts.STRING.getRope(string).getEncoding());
+            return StringUtils.format("invalid byte sequence in %s", Layouts.STRING.getRope(string).getEncoding());
         }
 
         @TruffleBoundary

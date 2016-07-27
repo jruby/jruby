@@ -41,6 +41,7 @@ import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
+import org.jruby.truffle.util.StringUtils;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
 
@@ -207,7 +208,7 @@ public abstract class MatchDataNodes {
                 return getIndex(matchData, i, NotProvided.INSTANCE, indexOutOfBoundsProfile);
             } catch (final ValueException e) {
                 throw new RaiseException(
-                        coreExceptions().indexError(String.format("undefined group name reference: %s", Layouts.SYMBOL.getString(index)), this));
+                        coreExceptions().indexError(StringUtils.format("undefined group name reference: %s", Layouts.SYMBOL.getString(index)), this));
             }
         }
 
@@ -223,7 +224,7 @@ public abstract class MatchDataNodes {
             }
             catch (final ValueException e) {
                 throw new RaiseException(
-                        coreExceptions().indexError(String.format("undefined group name reference: %s", index.toString()), this));
+                        coreExceptions().indexError(StringUtils.format("undefined group name reference: %s", index.toString()), this));
             }
         }
 
@@ -264,7 +265,7 @@ public abstract class MatchDataNodes {
         @TruffleBoundary
         @Specialization(guards = "!inBounds(matchData, index)")
         public Object beginError(DynamicObject matchData, int index) {
-            throw new RaiseException(coreExceptions().indexError(String.format("index %d out of matches", index), this));
+            throw new RaiseException(coreExceptions().indexError(StringUtils.format("index %d out of matches", index), this));
         }
 
         protected boolean inBounds(DynamicObject matchData, int index) {
@@ -295,7 +296,7 @@ public abstract class MatchDataNodes {
         @TruffleBoundary
         @Specialization(guards = "!inBounds(matchData, index)")
         public Object endError(DynamicObject matchData, int index) {
-            throw new RaiseException(coreExceptions().indexError(String.format("index %d out of matches", index), this));
+            throw new RaiseException(coreExceptions().indexError(StringUtils.format("index %d out of matches", index), this));
         }
 
         protected boolean inBounds(DynamicObject matchData, int index) {

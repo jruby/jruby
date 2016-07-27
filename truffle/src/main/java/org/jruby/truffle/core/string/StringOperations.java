@@ -46,6 +46,7 @@ import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.language.RubyGuards;
+import org.jruby.truffle.util.StringUtils;
 import org.jruby.util.ByteList;
 
 import java.nio.charset.Charset;
@@ -115,7 +116,7 @@ public abstract class StringOperations {
 
         if (existingCodeRange != codeRange) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            throw new RuntimeException(String.format("Tried changing the code range value for a rope from %d to %d", existingCodeRange, codeRange));
+            throw new RuntimeException(StringUtils.format("Tried changing the code range value for a rope from %d to %d", existingCodeRange, codeRange));
         }
     }
 

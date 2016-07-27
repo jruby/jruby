@@ -26,6 +26,7 @@ import org.jruby.truffle.core.format.convert.ToStringNodeGen;
 import org.jruby.truffle.core.format.exceptions.NoImplicitConversionException;
 import org.jruby.truffle.core.format.write.bytes.WriteByteNodeGen;
 import org.jruby.truffle.language.control.RaiseException;
+import org.jruby.truffle.util.StringUtils;
 
 import java.nio.charset.StandardCharsets;
 
@@ -112,7 +113,7 @@ public abstract class FormatCharacterNode extends FormatNode {
 
     @TruffleBoundary
     private byte[] doFormat(String charString, String formatString) {
-        return String.format(formatString, charString).getBytes(StandardCharsets.US_ASCII);
+        return StringUtils.format(formatString, charString).getBytes(StandardCharsets.US_ASCII);
     }
 
     protected int getLimit() {

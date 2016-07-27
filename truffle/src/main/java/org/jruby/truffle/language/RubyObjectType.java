@@ -17,6 +17,7 @@ import org.jruby.truffle.Layouts;
 import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.interop.RubyMessageResolutionAccessor;
+import org.jruby.truffle.util.StringUtils;
 
 public class RubyObjectType extends ObjectType {
 
@@ -33,7 +34,7 @@ public class RubyObjectType extends ObjectType {
         } else if (RubyGuards.isRubyModule(object)) {
             return Layouts.MODULE.getFields(object).toString();
         } else {
-            return String.format("DynamicObject@%x<logicalClass=%s>", System.identityHashCode(object),
+            return StringUtils.format("DynamicObject@%x<logicalClass=%s>", System.identityHashCode(object),
                     Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(object)).getName());
         }
     }

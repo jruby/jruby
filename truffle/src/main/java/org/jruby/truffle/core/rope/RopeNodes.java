@@ -33,6 +33,7 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
+import org.jruby.truffle.util.StringUtils;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
 
@@ -575,7 +576,7 @@ public abstract class RopeNodes {
             // Converting a rope to a java.lang.String may populate the byte[], so we need to query for the array status beforehand.
             final boolean bytesAreNull = rope.getRawBytes() == null;
 
-            System.err.println(String.format("%s (%s; BN: %b; BL: %d; CL: %d; CR: %s; D: %d)",
+            System.err.println(StringUtils.format("%s (%s; BN: %b; BL: %d; CL: %d; CR: %s; D: %d)",
                     printString ? rope.toString() : "<skipped>",
                     rope.getClass().getSimpleName(),
                     bytesAreNull,
@@ -595,7 +596,7 @@ public abstract class RopeNodes {
             // Converting a rope to a java.lang.String may populate the byte[], so we need to query for the array status beforehand.
             final boolean bytesAreNull = rope.getRawBytes() == null;
 
-            System.err.println(String.format("%s (%s; BN: %b; BL: %d; CL: %d; CR: %s; O: %d; D: %d)",
+            System.err.println(StringUtils.format("%s (%s; BN: %b; BL: %d; CL: %d; CR: %s; O: %d; D: %d)",
                     printString ? rope.toString() : "<skipped>",
                     rope.getClass().getSimpleName(),
                     bytesAreNull,
@@ -618,7 +619,7 @@ public abstract class RopeNodes {
             // Converting a rope to a java.lang.String may populate the byte[], so we need to query for the array status beforehand.
             final boolean bytesAreNull = rope.getRawBytes() == null;
 
-            System.err.println(String.format("%s (%s; BN: %b; BL: %d; CL: %d; CR: %s; D: %d; LD: %d; RD: %d)",
+            System.err.println(StringUtils.format("%s (%s; BN: %b; BL: %d; CL: %d; CR: %s; D: %d; LD: %d; RD: %d)",
                     printString ? rope.toString() : "<skipped>",
                     rope.getClass().getSimpleName(),
                     bytesAreNull,
@@ -643,7 +644,7 @@ public abstract class RopeNodes {
             // Converting a rope to a java.lang.String may populate the byte[], so we need to query for the array status beforehand.
             final boolean bytesAreNull = rope.getRawBytes() == null;
 
-            System.err.println(String.format("%s (%s; BN: %b; BL: %d; CL: %d; CR: %s; T: %d; D: %d)",
+            System.err.println(StringUtils.format("%s (%s; BN: %b; BL: %d; CL: %d; CR: %s; T: %d; D: %d)",
                     printString ? rope.toString() : "<skipped>",
                     rope.getClass().getSimpleName(),
                     bytesAreNull,
@@ -666,7 +667,7 @@ public abstract class RopeNodes {
             // Converting a rope to a java.lang.String may populate the byte[], so we need to query for the array status beforehand.
             final boolean bytesAreNull = rope.getRawBytes() == null;
 
-            System.err.println(String.format("%s (%s; BN: %b; BL: %d; CL: %d; CR: %s; V: %d, D: %d)",
+            System.err.println(StringUtils.format("%s (%s; BN: %b; BL: %d; CL: %d; CR: %s; V: %d, D: %d)",
                     printString ? rope.toString() : "<skipped>",
                     rope.getClass().getSimpleName(),
                     bytesAreNull,

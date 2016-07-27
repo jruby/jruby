@@ -33,6 +33,7 @@ import org.jruby.truffle.language.SnippetNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
+import org.jruby.truffle.util.StringUtils;
 
 import java.util.Locale;
 
@@ -773,7 +774,7 @@ public abstract class FloatNodes {
                 return create7BitString(Double.toString(value), USASCIIEncoding.INSTANCE);
             }
 
-            String str = String.format(Locale.ENGLISH, "%.15g", value);
+            String str = StringUtils.format(Locale.ENGLISH, "%.15g", value);
 
             // If no dot, add one to show it's a floating point number
             if (str.indexOf('.') == -1) {
@@ -809,7 +810,7 @@ public abstract class FloatNodes {
         @Specialization
         public DynamicObject dToA(double value) {
             // Large enough to print all digits of Float::MIN.
-            String string = String.format(Locale.ENGLISH, "%.1022f", value);
+            String string = StringUtils.format(Locale.ENGLISH, "%.1022f", value);
 
             if (string.toLowerCase(Locale.ENGLISH).contains("e")) {
                 throw new UnsupportedOperationException();

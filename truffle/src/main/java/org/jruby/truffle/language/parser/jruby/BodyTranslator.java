@@ -166,6 +166,7 @@ import org.jruby.truffle.language.threadlocal.WrapInThreadLocalNodeGen;
 import org.jruby.truffle.language.yield.YieldExpressionNode;
 import org.jruby.truffle.platform.graal.AssertConstantNodeGen;
 import org.jruby.truffle.platform.graal.AssertNotCompiledNodeGen;
+import org.jruby.truffle.util.StringUtils;
 import org.jruby.util.ByteList;
 import org.jruby.util.KeyValuePair;
 import java.io.File;
@@ -3053,9 +3054,9 @@ public class BodyTranslator extends Translator {
             }
 
             if (environment.getBlockDepth() > 1) {
-                return String.format("block (%d levels) in %s", environment.getBlockDepth(), methodParent.getNamedMethodName());
+                return StringUtils.format("block (%d levels) in %s", environment.getBlockDepth(), methodParent.getNamedMethodName());
             } else {
-                return String.format("block in %s", methodParent.getNamedMethodName());
+                return StringUtils.format("block in %s", methodParent.getNamedMethodName());
             }
         } else {
             return environment.getNamedMethodName();
