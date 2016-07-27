@@ -471,6 +471,14 @@ class TestHigherJavasupport < Test::Unit::TestCase
       Java::double.new; fail "expected to raise"
     rescue NoMethodError
     end
+    begin
+      Java::short.synchronized {}; fail "expected to raise"
+    rescue NoMethodError
+    end
+    begin
+      Java::float.java_object; fail "expected to raise"
+    rescue NoMethodError
+    end
 
     assert Java::byte.hash != Java::float.hash
     assert_false Java::byte == Java::float
@@ -516,6 +524,10 @@ class TestHigherJavasupport < Test::Unit::TestCase
     end
     begin
       Java::void.new_array; fail "expected to raise"
+    rescue NoMethodError
+    end
+    begin
+      Java::void.synchronized; fail "expected to raise"
     rescue NoMethodError
     end
   end
