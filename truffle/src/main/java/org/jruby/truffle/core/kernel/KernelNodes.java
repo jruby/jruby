@@ -133,6 +133,8 @@ import org.jruby.truffle.language.parser.ParserContext;
 import org.jruby.truffle.language.parser.jruby.TranslatorDriver;
 import org.jruby.truffle.language.threadlocal.ThreadLocalObject;
 import org.jruby.truffle.platform.UnsafeGroup;
+import org.jruby.truffle.util.StringUtils;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -651,7 +653,8 @@ public abstract class KernelNodes {
             final Rope code = StringOperations.rope(rubySource);
 
             // TODO (pitr 15-Oct-2015): fix this ugly hack, required for AS, copy-paste
-            final String space = new String(new char[Math.max(line - 1, 0)]).replace("\0", "\n");
+            final String s = new String(new char[Math.max(line - 1, 0)]);
+            final String space = StringUtils.replace(s, "\0", "\n");
             // TODO CS 14-Apr-15 concat space + code as a rope, otherwise the string will be copied after the rope is converted
             final Source source = getContext().getSourceLoader().loadFragment(space + RopeOperations.decodeRope(code), filename);
 

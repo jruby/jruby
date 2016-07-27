@@ -65,6 +65,7 @@ import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
+import org.jruby.truffle.util.StringUtils;
 import org.jruby.util.ByteList;
 import org.jruby.util.RegexpOptions;
 import org.jruby.util.RegexpSupport;
@@ -235,7 +236,7 @@ public abstract class RegexpNodes {
 
             switch (modifier) {
                 case 'u': {
-                    bytesString = bytesString.replace("\\w", "[[:alpha:]]");
+                    bytesString = StringUtils.replace(bytesString, "\\w", "[[:alpha:]]");
                 } break;
 
                 case 'd': {
@@ -243,7 +244,7 @@ public abstract class RegexpNodes {
                 } break;
 
                 case 'a': {
-                    bytesString = bytesString.replace("[[:alpha:]]", "[a-zA-Z]");
+                    bytesString = StringUtils.replace(bytesString, "[[:alpha:]]", "[a-zA-Z]");
                 } break;
 
                 default:

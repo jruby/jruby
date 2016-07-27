@@ -25,4 +25,14 @@ public final class StringUtils {
         return String.format(format, args);
     }
 
+    @TruffleBoundary
+    public static String replace(String string, char oldChar, char newChar) {
+        return string.replace(oldChar, newChar);
+    }
+
+    @TruffleBoundary
+    public static String replace(String string, CharSequence target, CharSequence replacement) {
+        return string.replace(target, replacement);
+    }
+
 }

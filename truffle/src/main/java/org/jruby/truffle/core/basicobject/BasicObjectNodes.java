@@ -51,6 +51,8 @@ import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.language.parser.ParserContext;
 import org.jruby.truffle.language.supercall.SuperCallNode;
 import org.jruby.truffle.language.yield.YieldNode;
+import org.jruby.truffle.util.StringUtils;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -200,7 +202,8 @@ public abstract class BasicObjectNodes {
 
         @TruffleBoundary
         private String getSpace(int line) {
-            return new String(new char[Math.max(line - 1, 0)]).replace("\0", "\n");
+            final String s = new String(new char[Math.max(line - 1, 0)]);
+            return StringUtils.replace(s, "\0", "\n");
         }
 
     }

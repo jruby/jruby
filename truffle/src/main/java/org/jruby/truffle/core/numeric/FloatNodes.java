@@ -816,7 +816,7 @@ public abstract class FloatNodes {
                 throw new UnsupportedOperationException();
             }
 
-            string = string.replace("-", "");
+            string = StringUtils.replace(string, "-", "");
             while (string.charAt(string.length() - 1) == '0') {
                 string = string.substring(0, string.length() - 1);
             }
@@ -824,7 +824,7 @@ public abstract class FloatNodes {
             int decimal;
 
             if (string.startsWith("0.")) {
-                string = string.replace("0.", "");
+                string = StringUtils.replace(string, "0.", "");
                 decimal = 0;
 
                 while (string.charAt(0) == '0') {
@@ -838,7 +838,7 @@ public abstract class FloatNodes {
                     throw new UnsupportedOperationException();
                 }
 
-                string = string.replace(".", "");
+                string = StringUtils.replace(string, ".", "");
             }
 
             final int sign = value < 0 ? 1 : 0;
