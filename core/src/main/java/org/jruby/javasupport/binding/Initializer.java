@@ -86,7 +86,18 @@ public abstract class Initializer {
 
         proxy.setReifiedClass((Class) javaClass);
 
-        if ( javaClass.isArray() || javaClass.isPrimitive() ) {
+        if ( javaClass.isArray() ) {
+            flagAsJavaProxy(proxy); return proxy;
+        }
+
+        if ( javaClass.isPrimitive() ) {
+            final RubyClass proxySingleton = proxy.getSingletonClass();
+            proxySingleton.undefineMethod("new"); // remove ConcreteJavaProxy class method 'new'
+            if ( javaClass == Void.TYPE ) {
+                // special treatment ... while Java::int[4] is OK Java::void[2] is NOT!
+                proxySingleton.undefineMethod("[]"); // from JavaProxy
+                proxySingleton.undefineMethod("new_array"); // from JavaProxy
+            }
             flagAsJavaProxy(proxy); return proxy;
         }
 

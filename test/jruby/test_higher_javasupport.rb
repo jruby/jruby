@@ -466,6 +466,19 @@ class TestHigherJavasupport < Test::Unit::TestCase
     rescue TypeError => e
       assert /can not extend .* long/.match(e.message)
     end
+
+    begin
+      Java::double.new; fail "expected to raise"
+    rescue NoMethodError
+    end
+
+    assert Java::byte.hash != Java::float.hash
+    assert_false Java::byte == Java::float
+    assert_true Java::byte == Java::byte
+    assert_true Java::long.eql? Java::long
+    assert_false Java::int.eql? Java::long
+
+    assert_equal 2, Java::short.new_array(2).length
   end
 
   def test_void
@@ -487,6 +500,23 @@ class TestHigherJavasupport < Test::Unit::TestCase
     quiet do
       p Java
       p Java::void
+    end
+
+    begin
+      Java::void.new; fail "expected to raise"
+    rescue NoMethodError
+    end
+    begin
+      Java::void[1].new; fail "expected to raise"
+    rescue NoMethodError
+    end
+    begin
+      Java::void[].new; fail "expected to raise"
+    rescue NoMethodError
+    end
+    begin
+      Java::void.new_array; fail "expected to raise"
+    rescue NoMethodError
     end
   end
 

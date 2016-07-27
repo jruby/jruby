@@ -435,6 +435,7 @@ public class Java implements Library {
                 superClass = javaSupport.getArrayProxyClass();
             } else if (clazz.isPrimitive()) {
                 superClass = javaSupport.getConcreteProxyClass();
+                // NOTE: but the class methods such as 'new' will be removed (Initializer.setupProxyClass)
             } else if (clazz == Object.class) {
                 superClass = javaSupport.getConcreteProxyClass();
             } else {
@@ -450,7 +451,7 @@ public class Java implements Library {
             if (clazz.isInterface()) {
                 generateInterfaceProxy(runtime, clazz, proxy);
             } else {
-                generateClassProxy(runtime, clazz, (RubyClass) proxy, superClass, javaSupport);
+                generateClassProxy(runtime, clazz, (RubyClass) proxy, superClass);
             }
         } finally {
             javaSupport.endProxy(clazz);
@@ -460,7 +461,7 @@ public class Java implements Library {
     }
 
     private static void generateInterfaceProxy(final Ruby runtime, final Class javaClass, final RubyModule proxy) {
-        assert javaClass.isInterface() : "not an interface: " + javaClass;
+        assert javaClass.isInterface();
 
         // include any interfaces we extend
         final Class<?>[] extended = javaClass.getInterfaces();
@@ -472,20 +473,20 @@ public class Java implements Library {
         addToJavaPackageModule(proxy);
     }
 
-    private static void generateClassProxy(Ruby runtime, Class<?> clazz, RubyClass proxy, RubyClass superClass, JavaSupport javaSupport) {
-        if (clazz.isArray()) {
-            createProxyClass(runtime, proxy, clazz, true);
+    private static void generateClassProxy(Ruby runtime, Class<?> clazz, RubyClass proxy, RubyClass superClass) {
+        if ( clazz.isArray() ) {
+            createProxyClass(runtime, proxy, clazz, superClass, true);
 
             if ( clazz.getComponentType() == byte.class ) {
                 proxy.defineAnnotatedMethods( ByteArrayProxyMethods.class ); // to_s
             }
         }
         else if ( clazz.isPrimitive() ) {
-            createProxyClass(runtime, proxy, clazz, true);
+            createProxyClass(runtime, proxy, clazz, superClass, true);
         }
         else if ( clazz == Object.class ) {
             // java.lang.Object is added at root of java proxy classes
-            createProxyClass(runtime, proxy, clazz, true);
+            createProxyClass(runtime, proxy, clazz, superClass, true);
             if (NEW_STYLE_EXTENSION) {
                 proxy.getMetaClass().defineAnnotatedMethods(NewStyleExtensionInherited.class);
             } else {
@@ -494,7 +495,7 @@ public class Java implements Library {
             addToJavaPackageModule(proxy);
         }
         else {
-            createProxyClass(runtime, proxy, clazz, false);
+            createProxyClass(runtime, proxy, clazz, superClass, false);
             // include interface modules into the proxy class
             final Class<?>[] interfaces = clazz.getInterfaces();
             for ( int i = interfaces.length; --i >= 0; ) {
@@ -519,9 +520,8 @@ public class Java implements Library {
     }
 
     private static RubyClass createProxyClass(final Ruby runtime,
-        final RubyClass proxyClass, final Class<?> javaClass, boolean invokeInherited) {
-
-        final RubyClass superClass = proxyClass.getSuperClass();
+        final RubyClass proxyClass, final Class<?> javaClass,
+        final RubyClass superClass, boolean invokeInherited) {
 
         proxyClass.makeMetaClass( superClass.getMetaClass() );
 
