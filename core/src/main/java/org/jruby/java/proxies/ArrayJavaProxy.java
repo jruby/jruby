@@ -99,6 +99,10 @@ public final class ArrayJavaProxy extends JavaProxy {
         Array.set(getObject(), index, value);
     }
 
+    public IRubyObject setValue(final Ruby runtime, final int index, final IRubyObject value) {
+        return ArrayUtils.asetDirect(runtime, getObject(), converter, index, value);
+    }
+
     @JRubyMethod(name = "[]", required = 1, rest = true)
     public final IRubyObject op_aref(ThreadContext context, IRubyObject[] args) {
         if ( args.length == 1 ) return op_aref(context, args[0]);
@@ -107,8 +111,7 @@ public final class ArrayJavaProxy extends JavaProxy {
 
     @JRubyMethod(name = "[]=")
     public final IRubyObject op_aset(ThreadContext context, IRubyObject index, IRubyObject value) {
-        final int i = convertArrayIndex(index);
-        return ArrayUtils.asetDirect(context.runtime, getObject(), converter, i, value);
+        return setValue(context.runtime, convertArrayIndex(index), value);
     }
 
     @JRubyMethod(name = "dig", required = 1, rest = true)

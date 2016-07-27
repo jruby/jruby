@@ -71,7 +71,7 @@ public class ArrayUtils {
     }
 
     public static IRubyObject concatArraysDirect(ThreadContext context, Object original, IRubyObject additional) {
-        Ruby runtime = context.runtime;
+        final Ruby runtime = context.runtime;
         int oldLength = Array.getLength(original);
         int addLength = (int)((RubyFixnum) Helpers.invoke(context, additional, "length")).getLongValue();
 
@@ -81,8 +81,8 @@ public class ArrayUtils {
         System.arraycopy(original, 0, newArray, 0, oldLength);
 
         for (int i = 0; i < addLength; i++) {
-            Helpers.invoke(context, proxy, "[]=", runtime.newFixnum(oldLength + i),
-                    Helpers.invoke(context, additional, "[]", runtime.newFixnum(i)));
+            IRubyObject val = Helpers.invoke(context, additional, "[]", runtime.newFixnum(i));
+            proxy.setValue(runtime, oldLength + i, val); // [ oldLen + i ] = val
         }
 
         return proxy;
