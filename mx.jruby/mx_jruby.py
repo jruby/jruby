@@ -228,7 +228,11 @@ class MavenBuildTask(ArchiveBuildTask):
         # Also build lib for the gems which end in stdlib (like psych)
         mx.run_maven(['-q', '-DskipTests', maven_repo_arg, '-pl', 'core,lib'], cwd=cwd, env=env)
 
-        # mx.run(['bin/jruby', 'bin/gem', 'install', 'bundler', '-v', '1.10.6'], cwd=cwd)
+        env = os.environ.copy()
+        gem_home = join(_suite.dir, 'lib', 'ruby', 'gems', 'shared')
+        env['GEM_HOME'] = gem_home
+        env['GEM_PATH'] = gem_home
+        mx.run(['bin/jruby', 'bin/gem', 'install', 'bundler', '-v', '1.10.6'], cwd=cwd, env=env)
     
         mx.log('...finished build of {}'.format(self.subject))
 
