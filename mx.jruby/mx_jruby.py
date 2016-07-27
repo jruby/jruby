@@ -222,7 +222,6 @@ class MavenBuildTask(ArchiveBuildTask):
         # Truffle version
         truffle = mx.suite('truffle')
         truffle_commit = truffle.version()
-        maven_version_arg = '-Dtruffle.version=' + truffle_commit
         maven_repo_arg = '-Dmaven.repo.local=' + mavenDir
 
         for name in ['truffle-api', 'truffle-debug', 'truffle-dsl-processor', 'truffle-tck']:
@@ -235,7 +234,7 @@ class MavenBuildTask(ArchiveBuildTask):
         env['JRUBY_BUILD_MORE_QUIET'] = 'true'
 
         mx.log("Building jruby-core with Maven")
-        mx.run_maven(['-q', '-DskipTests', maven_version_arg, maven_repo_arg, '-pl', 'core'], cwd=cwd, env=env)
+        mx.run_maven(['-q', '-DskipTests', maven_repo_arg, '-pl', 'core'], cwd=cwd, env=env)
 
         # mx.run(['bin/jruby', 'bin/gem', 'install', 'bundler', '-v', '1.10.6'], cwd=cwd)
     
