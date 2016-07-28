@@ -456,6 +456,7 @@ VALUE rb_block_call(VALUE object, ID name, int args_count, const VALUE *args, rb
 VALUE rb_call_super(int args_count, const VALUE *args);
 
 int rb_block_given_p();
+VALUE rb_block_proc(void);
 VALUE rb_yield(VALUE value);
 
 // Instance variables

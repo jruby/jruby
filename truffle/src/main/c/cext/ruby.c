@@ -681,6 +681,11 @@ int rb_block_given_p() {
   return truffle_invoke_i(RUBY_CEXT, "rb_block_given_p");
 }
 
+VALUE rb_block_proc(void) {
+  fprintf(stderr, "rb_block_proc not implemented\n");
+  abort();
+}
+
 VALUE rb_yield(VALUE value) {
   return (VALUE) truffle_invoke(RUBY_CEXT, "rb_yield", value);
 }
