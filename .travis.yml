@@ -99,6 +99,7 @@ matrix:
     - env:
       - JT=check_ambiguous_arguments
       - SKIP_BUILD=true
+      - V=1
       jdk: oraclejdk8
     - env:
       - USE_BUILD_PACK=yes
