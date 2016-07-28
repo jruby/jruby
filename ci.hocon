@@ -216,6 +216,12 @@ psd-benchmarks: {
   ] ${post-process-and-upload-results}
 }
 
+asciidoctor-benchmarks: {
+  run: ${setup-benchmarks} [
+    [mx, benchmark, asciidoctor]
+  ] ${post-process-and-upload-results}
+}
+
 synthetic-benchmarks: {
   run: ${setup-benchmarks} [
     [mx, benchmark, synthetic]
@@ -400,6 +406,14 @@ builds: [
   {name: ruby-benchmarks-psd-graal-enterprise} ${common} ${graal-enterprise} ${bench-caps} ${jruby-truffle} ${psd-benchmarks},
   {name: ruby-benchmarks-psd-graal-enterprise-no-om} ${common} ${graal-enterprise-no-om} ${bench-caps} ${jruby-truffle} ${psd-benchmarks},
   {name: ruby-benchmarks-psd-graal-vm} ${common} ${graal-vm} ${daily-bench-caps} ${jruby-truffle} ${psd-benchmarks},
+
+  {name: ruby-benchmarks-asciidoctor-noindy} ${common} ${no-graal} ${daily-bench-caps} ${jruby-noindy-benchmark} ${asciidoctor-benchmarks},
+  {name: ruby-benchmarks-asciidoctor-indy} ${common} ${no-graal} ${daily-bench-caps} ${jruby-indy-benchmark} ${asciidoctor-benchmarks},
+  {name: ruby-benchmarks-asciidoctor-no-graal} ${common} ${no-graal} ${weekly-bench-caps} ${jruby-truffle} ${asciidoctor-benchmarks},
+  {name: ruby-benchmarks-asciidoctor-graal-core} ${common} ${graal-core} ${bench-caps} ${jruby-truffle} ${asciidoctor-benchmarks},
+  {name: ruby-benchmarks-asciidoctor-graal-enterprise} ${common} ${graal-enterprise} ${bench-caps} ${jruby-truffle} ${asciidoctor-benchmarks},
+  {name: ruby-benchmarks-asciidoctor-graal-enterprise-no-om} ${common} ${graal-enterprise-no-om} ${bench-caps} ${jruby-truffle} ${asciidoctor-benchmarks},
+  {name: ruby-benchmarks-asciidoctor-graal-vm} ${common} ${graal-vm} ${daily-bench-caps} ${jruby-truffle} ${asciidoctor-benchmarks},
 
   {name: ruby-benchmarks-synthetic-noindy} ${common} ${no-graal} ${daily-bench-caps} ${jruby-noindy-benchmark} ${synthetic-benchmarks},
   {name: ruby-benchmarks-synthetic-indy} ${common} ${no-graal} ${daily-bench-caps} ${jruby-indy-benchmark} ${synthetic-benchmarks},
