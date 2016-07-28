@@ -52,8 +52,12 @@ extern "C" {
 
 // Basic types
 
-//typedef uint64_t VALUE;
-typedef void *VALUE;
+#ifdef JT_INT_VALUE
+  typedef uintptr_t VALUE;
+#else
+  typedef void *VALUE;
+#endif
+
 typedef VALUE ID;
 
 // Helpers
