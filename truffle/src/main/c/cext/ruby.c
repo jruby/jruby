@@ -269,12 +269,30 @@ VALUE rb_require(const char *feature) {
   abort();
 }
 
+// Object
+
 VALUE rb_obj_dup(VALUE object) {
   return (VALUE) truffle_invoke((void *)object, "dup");
 }
 
+VALUE rb_jt_obj_taint(VALUE object) {
+  return (VALUE) truffle_invoke((void *)object, "taint");
+}
+
+bool rb_jt_obj_taintable_p(VALUE object) {
+  return truffle_invoke_b(RUBY_CEXT, "RB_OBJ_TAINTED", object);
+}
+
+bool rb_jt_obj_tainted_p(VALUE object) {
+  return truffle_invoke_b((void *)object, "tainted?");
+}
+
 VALUE rb_obj_freeze(VALUE object) {
   return (VALUE) truffle_invoke((void *)object, "freeze");
+}
+
+bool rb_jt_obj_frozen_p(VALUE object) {
+  return truffle_invoke_b((void *)object, "frozen?");
 }
 
 // Integer

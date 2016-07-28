@@ -262,7 +262,36 @@ VALUE rb_require(const char *feature);
 // Object
 
 VALUE rb_obj_dup(VALUE object);
+
+VALUE rb_jt_obj_taint(VALUE object);
+bool rb_jt_obj_taintable_p(VALUE object);
+bool rb_jt_obj_tainted_p(VALUE object);
+#define RB_OBJ_TAINTABLE(object)        rb_jt_obj_taintable_p(object)
+#define RB_OBJ_TAINTED_RAW(object)      rb_jt_obj_tainted_p(object)
+#define RB_OBJ_TAINTED(object)          rb_jt_obj_tainted_p(object)
+#define RB_OBJ_TAINT_RAW(object)        rb_jt_obj_taint(object)
+#define RB_OBJ_TAINT(object)            rb_jt_obj_taint(object)
+#define RB_OBJ_UNTRUSTED(object)        rb_jt_obj_tainted_p(object)
+#define RB_OBJ_UNTRUST(object)          rb_jt_obj_taint(object)
+#define OBJ_TAINTABLE(object)           rb_jt_obj_taintable_p(object)
+#define OBJ_TAINTED_RAW(object)         rb_jt_obj_tainted_p(object)
+#define OBJ_TAINTED(object)             rb_jt_obj_tainted_p(object)
+#define OBJ_TAINT_RAW(object)           rb_jt_obj_taint(object)
+#define OBJ_TAINT(object)               rb_jt_obj_taint(object)
+#define OBJ_UNTRUSTED(object)           rb_jt_obj_tainted_p(object)
+#define OBJ_UNTRUST(object)             rb_jt_obj_tainted_p(object)
+
 VALUE rb_obj_freeze(VALUE object);
+bool rb_jt_obj_frozen_p(VALUE object);
+#define rb_obj_freeze_inline(object)    rb_obj_freeze(object)
+#define RB_OBJ_FROZEN_RAW(x)            rb_jt_obj_frozen_p(object)
+#define RB_OBJ_FROZEN(x)                rb_jt_obj_frozen_p(object)
+#define RB_OBJ_FREEZE_RAW(object)       rb_obj_freeze(object)
+#define RB_OBJ_FREEZE(x)                rb_obj_freeze((VALUE)x)
+#define OBJ_FROZEN_RAW(object)          rb_jt_obj_frozen_p(object)
+#define OBJ_FROZEN(object)              rb_jt_obj_frozen_p(object)
+#define OBJ_FREEZE_RAW(object)          rb_obj_freeze(object)
+#define OBJ_FREEZE(object)              rb_obj_freeze(object)
 
 // Integer
 
