@@ -244,6 +244,7 @@ ID SYM2ID(VALUE value);
 VALUE ID2SYM(ID value);
 
 #define NUM2TIMET(value) NUM2LONG(value)
+#define TIMET2NUM(value) LONG2NUM(value)
 
 // Type checks
 
