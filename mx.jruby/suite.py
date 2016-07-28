@@ -22,7 +22,7 @@ def mavenLib(mavenDep, sha1):
     }
 
 suite = {
-    "mxversion": "5.35.0",
+    "mxversion": "5.35.3",
     "name": "jrubytruffle",
     "defaultLicense": "EPL",
 
