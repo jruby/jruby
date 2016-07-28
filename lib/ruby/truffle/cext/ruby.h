@@ -364,6 +364,7 @@ VALUE rb_String(VALUE value);
 VALUE rb_str_resize(VALUE string, long length);
 #define RSTRING_GETMEM(string, data_pointer, length_pointer) ((data_pointer) = RSTRING_PTR(string), (length_pointer) = rb_str_len(string))
 VALUE rb_str_split(VALUE string, const char *split);
+void rb_str_modify(VALUE string);
 
 // Symbol
 
@@ -439,12 +440,15 @@ VALUE rb_funcallv(VALUE object, ID name, int args_count, const VALUE *args);
 VALUE rb_funcallv_public(VALUE object, ID name, int args_count, const VALUE *args);
 #define rb_funcall2 rb_funcallv
 #define rb_funcall3 rb_funcallv_public
+VALUE rb_apply(VALUE object, ID name, VALUE args);
 
 #define RUBY_BLOCK_CALL_FUNC_TAKES_BLOCKARG 1
 #define RB_BLOCK_CALL_FUNC_ARGLIST(yielded_arg, callback_arg) VALUE yielded_arg, VALUE callback_arg, int args_count, const VALUE *args, VALUE block_arg
 typedef VALUE rb_block_call_func(RB_BLOCK_CALL_FUNC_ARGLIST(yielded_arg, callback_arg));
 typedef rb_block_call_func *rb_block_call_func_t;
 VALUE rb_block_call(VALUE object, ID name, int args_count, const VALUE *args, rb_block_call_func_t block_call_func, VALUE data);
+
+VALUE rb_call_super(int args_count, const VALUE *args);
 
 int rb_block_given_p();
 VALUE rb_yield(VALUE value);

@@ -444,6 +444,10 @@ VALUE rb_str_split(VALUE string, const char *split) {
   return (VALUE) truffle_invoke(string, "split", rb_str_new_cstr(split));
 }
 
+void rb_str_modify(VALUE string) {
+  // Does nothing because writing to the string pointer will cause necessary invalidations anyway
+}
+
 // Symbol
 
 ID rb_intern(const char *string) {
@@ -649,8 +653,18 @@ VALUE rb_funcallv_public(VALUE object, ID name, int args_count, const VALUE *arg
   abort();
 }
 
+VALUE rb_apply(VALUE object, ID name, VALUE args) {
+  fprintf(stderr, "rb_apply not implemented\n");
+  abort();
+}
+
 VALUE rb_block_call(VALUE object, ID name, int args_count, const VALUE *args, rb_block_call_func_t block_call_func, VALUE data) {
   fprintf(stderr, "rb_block_call not implemented\n");
+  abort();
+}
+
+VALUE rb_call_super(int args_count, const VALUE *args) {
+  fprintf(stderr, "rb_call_super not implemented\n");
   abort();
 }
 
