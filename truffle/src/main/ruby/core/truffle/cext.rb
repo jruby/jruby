@@ -512,6 +512,14 @@ module Truffle::CExt
     raise 'not implemented'
   end
 
+  def rb_ruby_verbose_ptr
+    $VERBOSE
+  end
+
+  def rb_ruby_debug_ptr
+    $DEBUG
+  end
+
 end
 
 Truffle::Interop.export(:ruby_cext, Truffle::CExt)

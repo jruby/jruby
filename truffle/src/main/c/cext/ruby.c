@@ -1014,3 +1014,19 @@ void *rb_check_typeddata(VALUE value, const rb_data_type_t *data_type) {
   fprintf(stderr, "rb_check_typeddata not implemented\n");
   abort();
 }
+
+// VM
+
+VALUE rb_jt_ruby_verbose_ptr;
+
+VALUE *rb_ruby_verbose_ptr(void) {
+  rb_jt_ruby_verbose_ptr = truffle_invoke(RUBY_CEXT, "rb_ruby_verbose_ptr");
+  return &rb_jt_ruby_verbose_ptr;
+}
+
+VALUE rb_jt_ruby_debug_ptr;
+
+VALUE *rb_ruby_debug_ptr(void) {
+  rb_jt_ruby_debug_ptr = truffle_invoke(RUBY_CEXT, "rb_ruby_debug_ptr");
+  return &rb_jt_ruby_debug_ptr;
+}

@@ -616,6 +616,14 @@ void *rb_check_typeddata(VALUE value, const rb_data_type_t *data_type);
 
 #define RTYPEDDATA_DATA(value) *((volatile int*) 0)
 
+// VM
+
+VALUE *rb_ruby_verbose_ptr(void);
+#define ruby_verbose (*rb_ruby_verbose_ptr())
+
+VALUE *rb_ruby_debug_ptr(void);
+#define ruby_debug (*rb_ruby_debug_ptr())
+
 #if defined(__cplusplus)
 }
 #endif
