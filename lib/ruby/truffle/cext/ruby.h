@@ -405,6 +405,8 @@ VALUE rb_hash_aref(VALUE hash, VALUE key);
 VALUE rb_hash_aset(VALUE hash, VALUE key, VALUE value);
 VALUE rb_hash_lookup(VALUE hash, VALUE key);
 VALUE rb_hash_lookup2(VALUE hash, VALUE key, VALUE default_value);
+VALUE rb_hash_set_ifnone(VALUE hash, VALUE if_none);
+#define RHASH_SET_IFNONE(hash, if_none) rb_hash_set_ifnone((VALUE) hash, if_none)
 
 typedef unsigned long st_data_t;
 typedef st_data_t st_index_t;

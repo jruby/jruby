@@ -563,6 +563,11 @@ VALUE rb_hash_lookup2(VALUE hash, VALUE key, VALUE default_value) {
   return (VALUE) truffle_invoke((void *)hash, "fetch", key, default_value);
 }
 
+VALUE rb_hash_set_ifnone(VALUE hash, VALUE if_none) {
+  fprintf(stderr, "rb_hash_set_ifnone not implemented\n");
+  abort();
+}
+
 st_index_t rb_memhash(const void *data, long length) {
   // Not a proper hash - just something that produces a stable result for now
 
