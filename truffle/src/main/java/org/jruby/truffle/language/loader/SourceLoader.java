@@ -13,6 +13,8 @@ import com.oracle.truffle.api.source.Source;
 import org.jruby.Ruby;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.RubyLanguage;
+import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.util.StringUtils;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -79,7 +81,7 @@ public class SourceLoader {
         }
 
         final Path normalizedPath = relativePath.normalize();
-        final InputStream stream = relativeClass.getResourceAsStream(normalizedPath.toString().replace('\\', '/'));
+        final InputStream stream = relativeClass.getResourceAsStream(StringUtils.replace(normalizedPath.toString(), '\\', '/'));
 
         if (stream == null) {
             throw new FileNotFoundException(path);

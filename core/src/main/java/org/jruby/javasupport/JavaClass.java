@@ -175,7 +175,7 @@ public class JavaClass extends JavaObject {
     }
 
     static boolean isPrimitiveName(final String name) {
-        return JavaUtil.PRIMITIVE_CLASSES.containsKey(name);
+        return JavaUtil.getPrimitiveClass(name) != null;
     }
 
     public static JavaClass forNameVerbose(Ruby runtime, String className) {

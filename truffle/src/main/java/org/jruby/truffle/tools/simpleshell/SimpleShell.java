@@ -24,6 +24,7 @@ import org.jruby.truffle.language.backtrace.BacktraceFormatter;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.loader.CodeLoader;
 import org.jruby.truffle.language.parser.ParserContext;
+import org.jruby.truffle.util.StringUtils;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -124,7 +125,7 @@ public class SimpleShell {
                         try {
                             inspected = context.send(result, "inspect", null).toString();
                         } catch (Exception e) {
-                            inspected = String.format("(error inspecting %s@%x %s)",
+                            inspected = StringUtils.format("(error inspecting %s@%x %s)",
                                     result.getClass().getSimpleName(),
                                     result.hashCode(),
                                     e.toString());

@@ -20,6 +20,8 @@ import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.loader.SourceLoader;
+import org.jruby.truffle.util.StringUtils;
+
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -99,7 +101,7 @@ public class BacktraceFormatter {
                     e.printStackTrace();
                 }
 
-                lines.add(String.format("(exception %s %s", e.getMessage(), e.getStackTrace()[0].toString()));
+                lines.add(StringUtils.format("(exception %s %s", e.getMessage(), e.getStackTrace()[0].toString()));
             }
         }
 

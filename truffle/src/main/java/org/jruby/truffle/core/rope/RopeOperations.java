@@ -34,6 +34,7 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.encoding.EncodingManager;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyGuards;
+import org.jruby.truffle.util.StringUtils;
 import org.jruby.util.ByteList;
 import org.jruby.util.Memo;
 import org.jruby.util.StringSupport;
@@ -88,7 +89,7 @@ public class RopeOperations {
             case CR_BROKEN: return new InvalidLeafRope(bytes, encoding);
             default: {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                throw new RuntimeException(String.format("Unknown code range type: %d", codeRange));
+                throw new RuntimeException(StringUtils.format("Unknown code range type: %d", codeRange));
             }
         }
     }

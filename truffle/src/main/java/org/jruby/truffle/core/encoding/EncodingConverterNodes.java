@@ -47,6 +47,7 @@ import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
+import org.jruby.truffle.util.StringUtils;
 import org.jruby.util.ByteList;
 import org.jruby.util.io.EncodingUtils;
 
@@ -415,7 +416,7 @@ public abstract class EncodingConverterNodes {
                 case IncompleteInput: return getSymbol("incomplete_input");
             }
 
-            throw new UnsupportedOperationException(String.format("Unknown EConv result: %s", result));
+            throw new UnsupportedOperationException(StringUtils.format("Unknown EConv result: %s", result));
         }
 
     }

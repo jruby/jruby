@@ -22,6 +22,7 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.klass.ClassNodes;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
+import org.jruby.truffle.util.StringUtils;
 
 @NodeChild(value = "value", type = RubyNode.class)
 public abstract class SingletonClassNode extends RubyNode {
@@ -144,7 +145,7 @@ public abstract class SingletonClassNode extends RubyNode {
 
         final DynamicObject logicalClass = Layouts.BASIC_OBJECT.getLogicalClass(object);
 
-        final String name = String.format("#<Class:#<%s:0x%x>>", Layouts.MODULE.getFields(logicalClass).getName(),
+        final String name = StringUtils.format("#<Class:#<%s:0x%x>>", Layouts.MODULE.getFields(logicalClass).getName(),
                 ObjectIDOperations.verySlowGetObjectID(getContext(), object));
 
         final DynamicObject singletonClass = ClassNodes.createSingletonClassOfObject(

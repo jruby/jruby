@@ -14,6 +14,7 @@ import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyGuards;
+import org.jruby.truffle.util.StringUtils;
 
 import java.util.Collections;
 import java.util.Iterator;
@@ -82,7 +83,7 @@ public abstract class HashOperations {
                 assert entry != firstInSequence;
             }
 
-            assert foundSizeSequence == size : String.format("%d %d", foundSizeSequence, size);
+            assert foundSizeSequence == size : StringUtils.format("%d %d", foundSizeSequence, size);
         } else if (store.getClass() == Object[].class) {
             assert ((Object[]) store).length == context.getOptions().HASH_PACKED_ARRAY_MAX * PackedArrayStrategy.ELEMENTS_PER_ENTRY : ((Object[]) store).length;
 

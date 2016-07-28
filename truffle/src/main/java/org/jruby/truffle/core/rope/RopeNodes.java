@@ -33,6 +33,7 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
+import org.jruby.truffle.util.StringUtils;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
 
@@ -197,6 +198,7 @@ public abstract class RopeNodes {
             final long packedLengthAndCodeRange = RopeOperations.calculateCodeRangeAndLength(base.getEncoding(), base.getBytes(), offset, offset + byteLength);
             final CodeRange codeRange = CodeRange.fromInt(StringSupport.unpackArg(packedLengthAndCodeRange));
             final int characterLength = StringSupport.unpackResult(packedLengthAndCodeRange);
+            final boolean singleByteOptimizable = base.isSingleByteOptimizable() || (codeRange == CR_7BIT);
 
             /*
             if (base.depth() >= 10) {
@@ -205,7 +207,7 @@ public abstract class RopeNodes {
             */
 
             if (getContext().getOptions().ROPE_LAZY_SUBSTRINGS) {
-                return new SubstringRope(base, offset, byteLength, characterLength, codeRange);
+                return new SubstringRope(base, singleByteOptimizable, offset, byteLength, characterLength, codeRange);
             } else {
                 if (makeLeafRopeNode == null) {
                     CompilerDirectives.transferToInterpreterAndInvalidate();
@@ -575,7 +577,7 @@ public abstract class RopeNodes {
             // Converting a rope to a java.lang.String may populate the byte[], so we need to query for the array status beforehand.
             final boolean bytesAreNull = rope.getRawBytes() == null;
 
-            System.err.println(String.format("%s (%s; BN: %b; BL: %d; CL: %d; CR: %s; D: %d)",
+            System.err.println(StringUtils.format("%s (%s; BN: %b; BL: %d; CL: %d; CR: %s; D: %d)",
                     printString ? rope.toString() : "<skipped>",
                     rope.getClass().getSimpleName(),
                     bytesAreNull,
@@ -595,7 +597,7 @@ public abstract class RopeNodes {
             // Converting a rope to a java.lang.String may populate the byte[], so we need to query for the array status beforehand.
             final boolean bytesAreNull = rope.getRawBytes() == null;
 
-            System.err.println(String.format("%s (%s; BN: %b; BL: %d; CL: %d; CR: %s; O: %d; D: %d)",
+            System.err.println(StringUtils.format("%s (%s; BN: %b; BL: %d; CL: %d; CR: %s; O: %d; D: %d)",
                     printString ? rope.toString() : "<skipped>",
                     rope.getClass().getSimpleName(),
                     bytesAreNull,
@@ -618,7 +620,7 @@ public abstract class RopeNodes {
             // Converting a rope to a java.lang.String may populate the byte[], so we need to query for the array status beforehand.
             final boolean bytesAreNull = rope.getRawBytes() == null;
 
-            System.err.println(String.format("%s (%s; BN: %b; BL: %d; CL: %d; CR: %s; D: %d; LD: %d; RD: %d)",
+            System.err.println(StringUtils.format("%s (%s; BN: %b; BL: %d; CL: %d; CR: %s; D: %d; LD: %d; RD: %d)",
                     printString ? rope.toString() : "<skipped>",
                     rope.getClass().getSimpleName(),
                     bytesAreNull,
@@ -643,7 +645,7 @@ public abstract class RopeNodes {
             // Converting a rope to a java.lang.String may populate the byte[], so we need to query for the array status beforehand.
             final boolean bytesAreNull = rope.getRawBytes() == null;
 
-            System.err.println(String.format("%s (%s; BN: %b; BL: %d; CL: %d; CR: %s; T: %d; D: %d)",
+            System.err.println(StringUtils.format("%s (%s; BN: %b; BL: %d; CL: %d; CR: %s; T: %d; D: %d)",
                     printString ? rope.toString() : "<skipped>",
                     rope.getClass().getSimpleName(),
                     bytesAreNull,
@@ -666,7 +668,7 @@ public abstract class RopeNodes {
             // Converting a rope to a java.lang.String may populate the byte[], so we need to query for the array status beforehand.
             final boolean bytesAreNull = rope.getRawBytes() == null;
 
-            System.err.println(String.format("%s (%s; BN: %b; BL: %d; CL: %d; CR: %s; V: %d, D: %d)",
+            System.err.println(StringUtils.format("%s (%s; BN: %b; BL: %d; CL: %d; CR: %s; V: %d, D: %d)",
                     printString ? rope.toString() : "<skipped>",
                     rope.getClass().getSimpleName(),
                     bytesAreNull,
