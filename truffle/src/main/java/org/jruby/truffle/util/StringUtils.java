@@ -13,7 +13,7 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 
 import java.util.Locale;
 
-public final class StringUtils {
+public abstract class StringUtils {
 
     @TruffleBoundary
     public static String format(Locale locale, String format, Object... args) {
