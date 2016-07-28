@@ -1019,6 +1019,11 @@ int rb_io_wait_writable(int fd) {
   abort();
 }
 
+void rb_thread_wait_fd(int fd) {
+  fprintf(stderr, "rb_thread_wait_fd not implemented\n");
+  abort();
+}
+
 // Data
 
 // Typed data
