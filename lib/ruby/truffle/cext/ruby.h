@@ -615,6 +615,17 @@ NORETURN(void rb_eof_error(void));
 
 // Data
 
+struct RData {
+  // No RBasic object header
+  void (*dmark)(void *data);
+  void (*dfree)(void *data);
+  void *data;
+};
+
+struct RData *rb_jt_wrap_rdata(VALUE value);
+
+#define RDATA(value) rb_jt_wrap_rdata(value)
+
 #define DATA_PTR(value) *((volatile intptr_t*) 0)
 
 // Typed data
