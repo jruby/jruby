@@ -505,11 +505,7 @@ module Commands
       mvn env, *maven_options, '-pl', 'truffle', 'package'
     when 'cexts'
       no_openssl = options.delete('--no-openssl')
-      
       cextc "#{JRUBY_DIR}/truffle/src/main/c/cext"
-
-      openssl_home = ENV['OPENSSL_HOME'] || '/usr'
-
       unless no_openssl
         cextc "#{JRUBY_DIR}/truffle/src/main/c/openssl",
           '-DRUBY_EXTCONF_H="extconf.h"',
