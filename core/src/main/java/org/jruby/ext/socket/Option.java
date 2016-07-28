@@ -55,17 +55,17 @@ public class Option extends RubyObject {
         ByteList result = new ByteList(4);
         this.data = Pack.packInt_i(result, data);
     }
-    
+
     @JRubyMethod(required = 4, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
-        family = ProtocolFamily.valueOf(args[0].convertToInteger().getLongValue());
-        level = SocketLevel.valueOf(args[1].convertToInteger().getLongValue());
-        option = SocketOption.valueOf(args[2].convertToInteger().getLongValue());
+        family = SocketUtils.protocolFamilyFromArg(args[0]);
+        level = RubyBasicSocket.levelFromArg(args[1]);
+        option = RubyBasicSocket.optionFromArg(args[2]);
         data = args[3].convertToString().getByteList();
         intData = Pack.unpackInt_i(ByteBuffer.wrap(data.bytes()));
-        return context.nil;
+        return this;
     }
-    
+
     @JRubyMethod
     public IRubyObject family(ThreadContext context) {
         return context.runtime.newFixnum(family.longValue());
