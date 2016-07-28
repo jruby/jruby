@@ -606,6 +606,7 @@ int rb_io_wait_readable(int fd);
 int rb_io_wait_writable(int fd);
 void rb_thread_wait_fd(int fd);
 
+NORETURN(void rb_eof_error(void));
 
 // Data
 

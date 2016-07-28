@@ -1024,6 +1024,11 @@ void rb_thread_wait_fd(int fd) {
   abort();
 }
 
+NORETURN(void rb_eof_error(void)) {
+  fprintf(stderr, "rb_eof_error not implemented\n");
+  abort();
+}
+
 // Data
 
 // Typed data
