@@ -127,6 +127,7 @@ public abstract class ConditionVariableNodes {
     @CoreMethod(names = "signal")
     public abstract static class SignalNode extends UnaryCoreMethodNode {
 
+        @TruffleBoundary
         @Specialization
         public DynamicObject doSignal(DynamicObject conditionVariable) {
             final Object condition = getCondition(conditionVariable);
@@ -141,6 +142,7 @@ public abstract class ConditionVariableNodes {
     @CoreMethod(names = "broadcast")
     public abstract static class BroadcastNode extends UnaryCoreMethodNode {
 
+        @TruffleBoundary
         @Specialization
         public DynamicObject doBroadcast(DynamicObject conditionVariable) {
             final Object condition = getCondition(conditionVariable);

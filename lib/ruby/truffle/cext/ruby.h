@@ -52,8 +52,12 @@ extern "C" {
 
 // Basic types
 
-//typedef uint64_t VALUE;
-typedef void *VALUE;
+#ifdef JT_INT_VALUE
+  typedef uintptr_t VALUE;
+#else
+  typedef void *VALUE;
+#endif
+
 typedef VALUE ID;
 
 // Helpers
@@ -181,6 +185,7 @@ VALUE rb_jt_get_cTime(void);
 VALUE rb_jt_get_mEnumerable(void);
 VALUE rb_jt_get_mWaitReadable(void);
 VALUE rb_jt_get_mWaitWritable(void);
+VALUE rb_jt_get_mComparable(void);
 
 #define rb_cObject rb_jt_get_cObject()
 #define rb_cArray rb_jt_get_cArray()
@@ -191,6 +196,7 @@ VALUE rb_jt_get_mWaitWritable(void);
 #define rb_mEnumerable rb_jt_get_mEnumerable()
 #define rb_mWaitReadable rb_jt_get_mWaitReadable()
 #define rb_mWaitWritable rb_jt_get_mWaitWritable()
+#define rb_mComparable rb_jt_get_mComparable()
 
 VALUE rb_jt_get_eException(void);
 VALUE rb_jt_get_eRuntimeError(void);
@@ -240,6 +246,7 @@ ID SYM2ID(VALUE value);
 VALUE ID2SYM(ID value);
 
 #define NUM2TIMET(value) NUM2LONG(value)
+#define TIMET2NUM(value) LONG2NUM(value)
 
 // Type checks
 
@@ -258,7 +265,36 @@ VALUE rb_require(const char *feature);
 // Object
 
 VALUE rb_obj_dup(VALUE object);
+
+VALUE rb_jt_obj_taint(VALUE object);
+bool rb_jt_obj_taintable_p(VALUE object);
+bool rb_jt_obj_tainted_p(VALUE object);
+#define RB_OBJ_TAINTABLE(object)        rb_jt_obj_taintable_p(object)
+#define RB_OBJ_TAINTED_RAW(object)      rb_jt_obj_tainted_p(object)
+#define RB_OBJ_TAINTED(object)          rb_jt_obj_tainted_p(object)
+#define RB_OBJ_TAINT_RAW(object)        rb_jt_obj_taint(object)
+#define RB_OBJ_TAINT(object)            rb_jt_obj_taint(object)
+#define RB_OBJ_UNTRUSTED(object)        rb_jt_obj_tainted_p(object)
+#define RB_OBJ_UNTRUST(object)          rb_jt_obj_taint(object)
+#define OBJ_TAINTABLE(object)           rb_jt_obj_taintable_p(object)
+#define OBJ_TAINTED_RAW(object)         rb_jt_obj_tainted_p(object)
+#define OBJ_TAINTED(object)             rb_jt_obj_tainted_p(object)
+#define OBJ_TAINT_RAW(object)           rb_jt_obj_taint(object)
+#define OBJ_TAINT(object)               rb_jt_obj_taint(object)
+#define OBJ_UNTRUSTED(object)           rb_jt_obj_tainted_p(object)
+#define OBJ_UNTRUST(object)             rb_jt_obj_tainted_p(object)
+
 VALUE rb_obj_freeze(VALUE object);
+bool rb_jt_obj_frozen_p(VALUE object);
+#define rb_obj_freeze_inline(object)    rb_obj_freeze(object)
+#define RB_OBJ_FROZEN_RAW(x)            rb_jt_obj_frozen_p(object)
+#define RB_OBJ_FROZEN(x)                rb_jt_obj_frozen_p(object)
+#define RB_OBJ_FREEZE_RAW(object)       rb_obj_freeze(object)
+#define RB_OBJ_FREEZE(x)                rb_obj_freeze((VALUE)x)
+#define OBJ_FROZEN_RAW(object)          rb_jt_obj_frozen_p(object)
+#define OBJ_FROZEN(object)              rb_jt_obj_frozen_p(object)
+#define OBJ_FREEZE_RAW(object)          rb_obj_freeze(object)
+#define OBJ_FREEZE(object)              rb_obj_freeze(object)
 
 // Integer
 
@@ -331,6 +367,7 @@ VALUE rb_String(VALUE value);
 VALUE rb_str_resize(VALUE string, long length);
 #define RSTRING_GETMEM(string, data_pointer, length_pointer) ((data_pointer) = RSTRING_PTR(string), (length_pointer) = rb_str_len(string))
 VALUE rb_str_split(VALUE string, const char *split);
+void rb_str_modify(VALUE string);
 
 // Symbol
 
@@ -368,6 +405,8 @@ VALUE rb_hash_aref(VALUE hash, VALUE key);
 VALUE rb_hash_aset(VALUE hash, VALUE key, VALUE value);
 VALUE rb_hash_lookup(VALUE hash, VALUE key);
 VALUE rb_hash_lookup2(VALUE hash, VALUE key, VALUE default_value);
+VALUE rb_hash_set_ifnone(VALUE hash, VALUE if_none);
+#define RHASH_SET_IFNONE(hash, if_none) rb_hash_set_ifnone((VALUE) hash, if_none)
 
 typedef unsigned long st_data_t;
 typedef st_data_t st_index_t;
@@ -406,14 +445,18 @@ VALUE rb_funcallv(VALUE object, ID name, int args_count, const VALUE *args);
 VALUE rb_funcallv_public(VALUE object, ID name, int args_count, const VALUE *args);
 #define rb_funcall2 rb_funcallv
 #define rb_funcall3 rb_funcallv_public
+VALUE rb_apply(VALUE object, ID name, VALUE args);
 
 #define RUBY_BLOCK_CALL_FUNC_TAKES_BLOCKARG 1
-#define RB_BLOCK_CALL_FUNC_ARGLIST(yielded_arg, callback_arg) VALUE yielded_arg, VALUE callback_arg, int args_count, const VALUE *args, VALUE block_arg
+#define RB_BLOCK_CALL_FUNC_ARGLIST(yielded_arg, callback_arg) VALUE yielded_arg, VALUE callback_arg, int __args_count, const VALUE *__args, VALUE __block_arg
 typedef VALUE rb_block_call_func(RB_BLOCK_CALL_FUNC_ARGLIST(yielded_arg, callback_arg));
 typedef rb_block_call_func *rb_block_call_func_t;
 VALUE rb_block_call(VALUE object, ID name, int args_count, const VALUE *args, rb_block_call_func_t block_call_func, VALUE data);
 
+VALUE rb_call_super(int args_count, const VALUE *args);
+
 int rb_block_given_p();
+VALUE rb_block_proc(void);
 VALUE rb_yield(VALUE value);
 
 // Instance variables
@@ -569,7 +612,24 @@ int rb_jt_io_handle(VALUE file);
 
 #define GetOpenFile(file, pointer) ((pointer)->fd = rb_jt_io_handle(file))
 
+int rb_io_wait_readable(int fd);
+int rb_io_wait_writable(int fd);
+void rb_thread_wait_fd(int fd);
+
+NORETURN(void rb_eof_error(void));
+
 // Data
+
+struct RData {
+  // No RBasic object header
+  void (*dmark)(void *data);
+  void (*dfree)(void *data);
+  void *data;
+};
+
+struct RData *rb_jt_wrap_rdata(VALUE value);
+
+#define RDATA(value) rb_jt_wrap_rdata(value)
 
 #define DATA_PTR(value) *((volatile intptr_t*) 0)
 
@@ -611,6 +671,14 @@ void *rb_check_typeddata(VALUE value, const rb_data_type_t *data_type);
 #define TypedData_Get_Struct(value, type, data_type, variable) ((variable) = (type *)rb_check_typeddata((value), (data_type)))
 
 #define RTYPEDDATA_DATA(value) *((volatile int*) 0)
+
+// VM
+
+VALUE *rb_ruby_verbose_ptr(void);
+#define ruby_verbose (*rb_ruby_verbose_ptr())
+
+VALUE *rb_ruby_debug_ptr(void);
+#define ruby_debug (*rb_ruby_debug_ptr())
 
 #if defined(__cplusplus)
 }

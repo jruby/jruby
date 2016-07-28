@@ -31,6 +31,8 @@ JDEBUG_TEST = "-Dmaven.surefire.debug=-Xdebug -Xrunjdwp:transport=dt_socket,serv
 JEXCEPTION = "-Xtruffle.exceptions.print_java=true"
 METRICS_REPS = 10
 
+VERBOSE = ENV.include? 'V'
+
 MAC = `uname -a`.include?('Darwin')
 
 if MAC
@@ -331,7 +333,9 @@ module ShellUtils
       options = []
     end
 
-    sh *options, './mvnw', *(['-q'] + args)
+    args = ['-q', *args] unless VERBOSE
+
+    sh *options, './mvnw', *args
   end
 
   def maven_options(*options)
@@ -495,20 +499,17 @@ module Commands
   def build(*options)
     maven_options, other_options = maven_options(*options)
     project = other_options.first
-    env = {'JRUBY_BUILD_MORE_QUIET' => 'true'}
+    env = VERBOSE ? {} : {'JRUBY_BUILD_MORE_QUIET' => 'true'}
     case project
     when 'truffle'
       mvn env, *maven_options, '-pl', 'truffle', 'package'
     when 'cexts'
       no_openssl = options.delete('--no-openssl')
-      
       cextc "#{JRUBY_DIR}/truffle/src/main/c/cext"
-
-      openssl_home = ENV['OPENSSL_HOME'] || '/usr'
-
       unless no_openssl
         cextc "#{JRUBY_DIR}/truffle/src/main/c/openssl",
           '-DRUBY_EXTCONF_H="extconf.h"',
+          '-DJT_INT_VALUE=true',
           '-Werror=implicit-function-declaration'
       end
     when nil

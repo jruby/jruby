@@ -550,6 +550,31 @@ class PSDBenchmarkSuite(AllBenchmarksBenchmarkSuite):
     def time(self):
         return psd_benchmark_time
 
+asciidoctor_benchmarks = [
+    'asciidoctor:file-lines',
+    'asciidoctor:string-lines',
+    'asciidoctor:read-line',
+    'asciidoctor:restore-line',
+    'asciidoctor:load-string',
+    'asciidoctor:load-file',
+    'asciidoctor:quote-match',
+    'asciidoctor:quote-sub',
+    'asciidoctor:join-lines',
+    'asciidoctor:convert'
+]
+
+asciidoctor_benchmark_time = 120
+
+class AsciidoctorBenchmarkSuite(AllBenchmarksBenchmarkSuite):
+    def name(self):
+        return 'asciidoctor'
+
+    def benchmarks(self):
+        return asciidoctor_benchmarks
+
+    def time(self):
+        return asciidoctor_benchmark_time
+
 synthetic_benchmarks = [
     'acid'
 ]
@@ -651,6 +676,7 @@ mx_benchmark.add_bm_suite(TimeBenchmarkSuite())
 mx_benchmark.add_bm_suite(ClassicBenchmarkSuite())
 mx_benchmark.add_bm_suite(ChunkyBenchmarkSuite())
 mx_benchmark.add_bm_suite(PSDBenchmarkSuite())
+mx_benchmark.add_bm_suite(AsciidoctorBenchmarkSuite())
 mx_benchmark.add_bm_suite(SyntheticBenchmarkSuite())
 mx_benchmark.add_bm_suite(MicroBenchmarkSuite())
 mx_benchmark.add_bm_suite(ServerBenchmarkSuite())
