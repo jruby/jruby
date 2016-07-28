@@ -370,13 +370,13 @@ public class RubyEnumerator extends RubyObject {
 
     @JRubyMethod(required = 1)
     public IRubyObject each_with_object(final ThreadContext context, IRubyObject arg, Block block) {
-        return block.isGiven() ? RubyEnumerable.each_with_objectCommon19(context, this, block, arg) :
+        return block.isGiven() ? RubyEnumerable.each_with_objectCommon(context, this, block, arg) :
                 enumeratorizeWithSize(context, this, "each_with_object", new IRubyObject[]{arg}, enumSizeFn(context));
     }
 
     @JRubyMethod
     public IRubyObject with_object(ThreadContext context, final IRubyObject arg, final Block block) {
-        return block.isGiven() ? RubyEnumerable.each_with_objectCommon19(context, this, block, arg) : enumeratorizeWithSize(context, this, "with_object", new IRubyObject[]{arg}, enumSizeFn(context));
+        return block.isGiven() ? RubyEnumerable.each_with_objectCommon(context, this, block, arg) : enumeratorizeWithSize(context, this, "with_object", new IRubyObject[]{arg}, enumSizeFn(context));
     }
 
     @JRubyMethod(rest = true)
@@ -384,14 +384,24 @@ public class RubyEnumerator extends RubyObject {
         return block.isGiven() ? RubyEnumerable.each_entryCommon(context, this, args, block) : enumeratorize(context.runtime, getType(), this, "each_entry", args);
     }
 
-    @JRubyMethod(name = "each_slice")
+    @Deprecated
     public IRubyObject each_slice19(ThreadContext context, IRubyObject arg, final Block block) {
-        return block.isGiven() ? RubyEnumerable.each_slice(context, this, arg, block) : enumeratorize(context.runtime, getType(), this, "each_slice", arg);
+        return each_slice(context, arg, block);
+    }
+
+    @JRubyMethod(name = "each_slice")
+    public IRubyObject each_slice(ThreadContext context, IRubyObject arg, final Block block) {
+        return block.isGiven() ? RubyEnumerable.each_sliceCommon(context, this, arg, block) : enumeratorize(context.runtime, getType(), this, "each_slice", arg);
+    }
+
+    @Deprecated
+    public IRubyObject each_cons19(ThreadContext context, IRubyObject arg, final Block block) {
+        return each_cons(context, arg, block);
     }
 
     @JRubyMethod(name = "each_cons")
-    public IRubyObject each_cons19(ThreadContext context, IRubyObject arg, final Block block) {
-        return block.isGiven() ? RubyEnumerable.each_cons(context, this, arg, block) : enumeratorize(context.runtime, getType(), this, "each_cons", arg);
+    public IRubyObject each_cons(ThreadContext context, IRubyObject arg, final Block block) {
+        return block.isGiven() ? RubyEnumerable.each_consCommon(context, this, arg, block) : enumeratorize(context.runtime, getType(), this, "each_cons", arg);
     }
 
     @JRubyMethod
