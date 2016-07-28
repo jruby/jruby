@@ -22,6 +22,7 @@ public class InterpreterContext {
     // startup interp will mark this at construction and not change but full interpreter will write it
     // much later after running compiler passes.  JIT will not use this field at all.
     protected Instr[] instructions;
+    protected int[] ipcs;
 
     // Cached computed fields
     private boolean hasExplicitCallProtocol;

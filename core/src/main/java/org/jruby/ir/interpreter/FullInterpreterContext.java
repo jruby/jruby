@@ -9,6 +9,7 @@ import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.dataflow.DataFlowProblem;
 import org.jruby.ir.instructions.Instr;
+import org.jruby.ir.instructions.LabelInstr;
 import org.jruby.ir.instructions.ReceiveSelfInstr;
 import org.jruby.ir.passes.CompilerPass;
 import org.jruby.ir.representations.BasicBlock;
@@ -103,7 +104,7 @@ public class FullInterpreterContext extends InterpreterContext {
                 Instr instr = bbInstrs.get(i);
                 if (simple_method && SimpleMethodInterpreterEngine.OPERATIONS.get(instr.getOperation()) == null) simple_method = false;
                 if (!(instr instanceof ReceiveSelfInstr)) {
-                    instr.setIPC(ipc);
+                    if (instr instanceof LabelInstr) ((LabelInstr) instr).getLabel().setTargetPC(ipc);
                     newInstrs.add(instr);
                     ipc++;
                 }

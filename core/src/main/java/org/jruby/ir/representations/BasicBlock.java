@@ -107,17 +107,19 @@ public class BasicBlock implements ExplicitVertexID, Comparable {
         return instrs.isEmpty();
     }
 
+    // FIXME: inline branch fixes this by using callsiteID and not ipc.  Temporary change until it is
+    // merged (this is only for inlining and inlining does not work on master currently).
     public BasicBlock splitAtInstruction(Instr splitPoint, Label newLabel, boolean includeSplitPointInstr) {
         BasicBlock newBB = new BasicBlock(cfg, newLabel);
         int idx = 0;
         int numInstrs = instrs.size();
         boolean found = false;
         for (Instr i: instrs) {
-            if (i.getIPC() == splitPoint.getIPC()) found = true;
+            //if (i.getIPC() == splitPoint.getIPC()) found = true;
 
             // Move instructions from split point into the new bb
             if (found) {
-                if (includeSplitPointInstr || i.getIPC() != splitPoint.getIPC()) newBB.addInstr(i);
+                //if (includeSplitPointInstr || i.getIPC() != splitPoint.getIPC()) newBB.addInstr(i);
             } else {
                 idx++;
             }
@@ -162,7 +164,6 @@ public class BasicBlock implements ExplicitVertexID, Comparable {
 
             for (Instr i: oldInstrs) {
                 Instr clonedInstr = i.clone(ii);
-                clonedInstr.setIPC(i.getIPC());
                 clonedInstr.setRPC(i.getRPC());
                 instrs.add(clonedInstr);
             }

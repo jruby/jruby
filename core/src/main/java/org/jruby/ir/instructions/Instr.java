@@ -38,7 +38,6 @@ import java.util.Map;
 public abstract class Instr {
     public static final Operand[] EMPTY_OPERANDS = new Operand[0];
 
-    private transient int ipc; // Interpreter-only: instruction pointer
     private transient int rpc; // Interpreter-only: rescue pointer
     private transient final Operation operation;
     // Is this instruction live or dead?  During optimization passes, if this instruction
@@ -47,7 +46,6 @@ public abstract class Instr {
     private boolean isDead;
 
     public Instr(Operation operation) {
-        this.ipc = -1;
         this.rpc = -1;
         this.operation = operation;
     }
@@ -145,12 +143,6 @@ public abstract class Instr {
     public Operation getOperation() {
         return operation;
     }
-
-    @Interp
-    public int getIPC() { return ipc; }
-
-    @Interp
-    public void setIPC(int ipc) { this.ipc = ipc; }
 
     @Interp
     public int getRPC() { return rpc; }
