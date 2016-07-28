@@ -170,6 +170,10 @@ module Truffle::CExt
     WaitReadable
   end
 
+  def rb_mComparable
+    Comparable
+  end
+
   def rb_mWaitWritable
     WaitWritable
   end

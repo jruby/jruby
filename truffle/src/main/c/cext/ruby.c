@@ -133,6 +133,10 @@ VALUE rb_jt_get_mWaitWritable(void) {
   return (VALUE) truffle_read(RUBY_CEXT, "rb_mWaitWritable");
 }
 
+VALUE rb_jt_get_mComparable(void) {
+  return (VALUE) truffle_read(RUBY_CEXT, "rb_mComparable");
+}
+
 VALUE rb_jt_get_eException(void) {
   return (VALUE) truffle_read(RUBY_CEXT, "rb_eException");
 }
