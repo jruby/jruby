@@ -291,7 +291,7 @@ test-cexts: {
     [cd, ../..],
     [mv, temp_mx, mx.jruby]
     [mx, sclone, --kind, git, "https://github.com/jruby/jruby-truffle-gem-test-pack.git", jruby-truffle-gem-test-pack],
-    ${jt} [build, cexts, --no-openssl]
+    ${jt} [build, cexts]
   ]
 
   environment: {
