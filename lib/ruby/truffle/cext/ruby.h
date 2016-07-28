@@ -602,6 +602,9 @@ int rb_jt_io_handle(VALUE file);
 
 #define GetOpenFile(file, pointer) ((pointer)->fd = rb_jt_io_handle(file))
 
+int rb_io_wait_readable(int fd);
+int rb_io_wait_writable(int fd);
+
 // Data
 
 #define DATA_PTR(value) *((volatile intptr_t*) 0)

@@ -1009,6 +1009,16 @@ int rb_jt_io_handle(VALUE io) {
   return truffle_invoke_i(RUBY_CEXT, "rb_jt_io_handle", io);
 }
 
+int rb_io_wait_readable(int fd) {
+  fprintf(stderr, "rb_io_wait_readable not implemented\n");
+  abort();
+}
+
+int rb_io_wait_writable(int fd) {
+  fprintf(stderr, "rb_io_wait_writable not implemented\n");
+  abort();
+}
+
 // Data
 
 // Typed data
