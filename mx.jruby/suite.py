@@ -145,7 +145,6 @@ suite = {
                 "truffle:JLINE",
             ],
             "distDependencies": [
-                "RUBY-ZIP",
                 "truffle:TRUFFLE_API",
                 "truffle:TRUFFLE_DEBUG",
             ],
