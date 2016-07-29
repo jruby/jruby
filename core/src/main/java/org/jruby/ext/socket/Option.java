@@ -9,6 +9,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyObject;
 import org.jruby.RubyString;
+import org.jruby.RubyNumeric;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -47,7 +48,7 @@ public class Option extends RubyObject {
 
     public Option(Ruby runtime, RubyClass klass, ProtocolFamily family, SocketLevel level, SocketOption option, int data) {
         super(runtime, klass);
-        
+
         this.family = family;
         this.level = level;
         this.option = option;
@@ -166,24 +167,34 @@ public class Option extends RubyObject {
         return "";
     }
 
-    @JRubyMethod(meta = true)
-    public IRubyObject rb_int(ThreadContext context, IRubyObject self) {
-        return context.nil;
+    @JRubyMethod(name = "int", required = 4, meta = true)
+    public static IRubyObject rb_int(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        ProtocolFamily family = SocketUtils.protocolFamilyFromArg(args[0]);
+        SocketLevel level = RubyBasicSocket.levelFromArg(args[1]);
+        SocketOption option = RubyBasicSocket.optionFromArg(args[2]);
+        int intData = RubyNumeric.fix2int(args[3]);
+
+        return new Option(context.getRuntime(), family, level, option, intData);
     }
-    
+
     @JRubyMethod(name = "int")
     public IRubyObject asInt(ThreadContext context) {
         return context.getRuntime().newFixnum((int) intData);
     }
 
-    @JRubyMethod(meta = true)
-    public IRubyObject bool(ThreadContext context, IRubyObject self) {
-        return context.nil;
+    @JRubyMethod(required = 4, meta = true)
+    public static IRubyObject bool(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        ProtocolFamily family = SocketUtils.protocolFamilyFromArg(args[0]);
+        SocketLevel level = RubyBasicSocket.levelFromArg(args[1]);
+        SocketOption option = RubyBasicSocket.optionFromArg(args[2]);
+        int intData = args[3].isTrue() ? 1 : 0;
+
+        return new Option(context.getRuntime(), family, level, option, intData);
     }
 
     @JRubyMethod
     public IRubyObject bool(ThreadContext context) {
-        return context.nil;
+        return context.getRuntime().newBoolean(intData != 0);
     }
 
     @JRubyMethod(meta = true)
