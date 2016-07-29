@@ -44,10 +44,9 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.CallSite;
 import org.jruby.runtime.Helpers;
-import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.BlockCallback;
 import org.jruby.runtime.CallBlock;
 import org.jruby.runtime.ClassIndex;
@@ -61,6 +60,7 @@ import static org.jruby.runtime.Visibility.*;
 
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.Variable;
+import org.jruby.runtime.callsite.RespondToCallSite;
 import org.jruby.runtime.component.VariableEntry;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
@@ -875,4 +875,36 @@ public class RubyRange extends RubyObject {
             return range;
         }
     };
+
+    /**
+     * Given a range-line object that response to "begin", "end", construct a proper range
+     * by calling those methods and "exclude_end?" with the given call sites.
+     *
+     * @param context current context
+     * @param rangeLike range-like object
+     * @param beginSite "begin" call site
+     * @param endSite "end" call site
+     * @param excludeEndSite "exclude_end?" call site
+     * @return a proper Range based on the results of calling those methods
+     */
+    public static RubyRange rangeFromRangeLike(ThreadContext context, IRubyObject rangeLike, CallSite beginSite, CallSite endSite, CallSite excludeEndSite) {
+        IRubyObject begin = beginSite.call(context, rangeLike, rangeLike);
+        IRubyObject end   = endSite.call(context, rangeLike, rangeLike);
+        IRubyObject excl  = excludeEndSite.call(context, rangeLike, rangeLike);
+        return newRange(context, begin, end, excl.isTrue());
+    }
+
+    /**
+     * Return true if the given object responds to "begin" and "end" methods.
+     *
+     * @param context current context
+     * @param obj possibly range-like object
+     * @param respond_to_begin respond_to? site for begin
+     * @param respond_to_end respond_to? site for end
+     * @return
+     */
+    public static boolean isRangeLike(ThreadContext context, IRubyObject obj, RespondToCallSite respond_to_begin, RespondToCallSite respond_to_end) {
+        return respond_to_begin.respondsTo(context, obj, obj) &&
+                respond_to_end.respondsTo(context, obj, obj);
+    }
 }

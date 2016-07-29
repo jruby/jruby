@@ -266,7 +266,7 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
         }
 
         @Override
-        public RubyBoolean compare(final ThreadContext context, final MethodNames method, IRubyObject other) {
+        public RubyBoolean compare(final ThreadContext context, final VisitorWithState<RubyHash> method, IRubyObject other) {
             syncSize();
             if ( other instanceof RubyHashMap ) {
                 ((RubyHashMap) other).syncSize();

@@ -19,6 +19,7 @@ public class JavaSites {
     public final ObjectSites Object = new ObjectSites();
     public final ArraySites Array = new ArraySites();
     public final StringSites String = new StringSites();
+    public final HashSites Hash = new HashSites();
     public final NumericSites Numeric = new NumericSites();
     public final IntegerSites Integer = new IntegerSites();
     public final FixnumSites Fixnum = new FixnumSites();
@@ -78,6 +79,7 @@ public class JavaSites {
         public final CheckedSites to_hash_checked = new CheckedSites("to_hash");
         public final CallSite write = new FunctionalCachingCallSite("write");
     }
+
     public static class ArraySites {
         public final CheckedSites to_ary_checked = new CheckedSites("to_ary");
         public final RespondToCallSite respond_to_to_ary = new RespondToCallSite("to_ary");
@@ -86,6 +88,23 @@ public class JavaSites {
         public final CachingCallSite op_cmp_minmax = new FunctionalCachingCallSite("<=>");
         public final CallSite op_gt_minmax = new FunctionalCachingCallSite(">");
         public final CallSite op_lt_minmax = new FunctionalCachingCallSite("<");
+        public final RespondToCallSite respond_to_begin = new RespondToCallSite("begin");
+        public final RespondToCallSite respond_to_end = new RespondToCallSite("end");
+        public final CallSite begin = new FunctionalCachingCallSite("begin");
+        public final CallSite end = new FunctionalCachingCallSite("end");
+        public final CallSite exclude_end = new FunctionalCachingCallSite("exclude_end?");
+        public final CallSite to_enum = new FunctionalCachingCallSite("to_enum");
+        public final CallSite op_times = new FunctionalCachingCallSite("*");
+        public final CallSite op_quo = new FunctionalCachingCallSite("/");
+        public final CallSite op_exp = new FunctionalCachingCallSite("**");
+        public final CallSite call = new FunctionalCachingCallSite("call");
+        public final CallSite sort_by = new FunctionalCachingCallSite("sort_by");
+        public final CallSite op_equal = new FunctionalCachingCallSite("==");
+        public final CallSite eql = new FunctionalCachingCallSite("eql?");
+        public final CallSite op_cmp_bsearch = new FunctionalCachingCallSite("<=>");
+        public final CallSite op_cmp_sort = new FunctionalCachingCallSite("<=>");
+        public final CallSite op_gt_sort = new FunctionalCachingCallSite(">");
+        public final CallSite op_lt_sort = new FunctionalCachingCallSite("<");
     }
 
     public static class StringSites {
@@ -118,6 +137,10 @@ public class JavaSites {
                 return cmp.call(context, other, other, recv);
             }
         };
+    }
+
+    public static class HashSites {
+        public final RespondToCallSite respond_to_to_hash = new RespondToCallSite("to_hash");
     }
 
     public static class NumericSites {

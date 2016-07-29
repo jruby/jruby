@@ -47,9 +47,12 @@ import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockBody;
+import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.Helpers;
+import org.jruby.runtime.JavaSites;
+import org.jruby.runtime.JavaSites.HashSites;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
@@ -1137,12 +1140,12 @@ public class RubyHash extends RubyObject implements Map {
         return internalGet(key);
     }
 
-    public RubyBoolean compare(final ThreadContext context, final MethodNames method, IRubyObject other) {
+    public RubyBoolean compare(final ThreadContext context, VisitorWithState<RubyHash> visitor, IRubyObject other) {
 
         Ruby runtime = context.runtime;
 
         if (!(other instanceof RubyHash)) {
-            if (!other.respondsTo("to_hash")) {
+            if (!sites(context).respond_to_to_hash.respondsTo(context, other, other)) {
                 return runtime.getFalse();
             }
             return Helpers.rbEqual(context, other, this);
@@ -1155,10 +1158,7 @@ public class RubyHash extends RubyObject implements Map {
         }
 
         try {
-            VisitorWithState vws = method == OP_EQUAL ?
-                    FindMismatchUsingEqualVisitor :
-                    FindMismatchUsingEqlVisitor;
-            visitAll(context, vws, otherHash);
+            visitAll(context, visitor, otherHash);
         } catch (Mismatch e) {
             return runtime.getFalse();
         }
@@ -1204,7 +1204,7 @@ public class RubyHash extends RubyObject implements Map {
     @Override
     @JRubyMethod(name = "==")
     public IRubyObject op_equal(final ThreadContext context, IRubyObject other) {
-        return RecursiveComparator.compare(context, MethodNames.OP_EQUAL, this, other);
+        return RecursiveComparator.compare(context, FindMismatchUsingEqualVisitor, this, other);
     }
 
     /** rb_hash_eql
@@ -1212,7 +1212,7 @@ public class RubyHash extends RubyObject implements Map {
      */
     @JRubyMethod(name = "eql?")
     public IRubyObject op_eql(final ThreadContext context, IRubyObject other) {
-        return RecursiveComparator.compare(context, MethodNames.EQL, this, other);
+        return RecursiveComparator.compare(context, FindMismatchUsingEqlVisitor, this, other);
     }
 
     @Deprecated
@@ -2559,6 +2559,10 @@ public class RubyHash extends RubyObject implements Map {
      */
     public IRubyObject aref(IRubyObject key) {
         return op_aref(getRuntime().getCurrentContext(), key);
+    }
+
+    private static HashSites sites(ThreadContext context) {
+        return context.sites.Hash;
     }
 
     @Deprecated

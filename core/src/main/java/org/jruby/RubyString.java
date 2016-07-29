@@ -2867,12 +2867,8 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         } else {
             ThreadContext context = runtime.getCurrentContext();
             StringSites sites = sites(context);
-            if (sites.respond_to_begin.respondsTo(context, idx, idx) &&
-                    sites.respond_to_end.respondsTo(context, idx, idx)) {
-                IRubyObject begin = sites.begin.call(context, idx, idx);
-                IRubyObject end   = sites.end.call(context, idx, idx);
-                IRubyObject excl  = sites.exclude_end.call(context, idx, idx);
-                RubyRange range = RubyRange.newRange(context, begin, end, excl.isTrue());
+            if (RubyRange.isRangeLike(context, idx, sites.respond_to_begin, sites.respond_to_end)) {
+                RubyRange range = RubyRange.rangeFromRangeLike(context, idx, sites.begin, sites.end, sites.exclude_end);
 
                 int[] begLen = range.begLenInt(getByteList().length(), 0);
                 return begLen == null ? runtime.getNil() : byteSubstr(runtime, begLen[0], begLen[1]);
@@ -3002,13 +2998,9 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             return begLen == null ? runtime.getNil() : substr19(runtime, begLen[0], begLen[1]);
         } else {
             StringSites sites = sites(context);
-            if (sites.respond_to_begin.respondsTo(context, arg, arg) &&
-                    sites.respond_to_end.respondsTo(context, arg, arg)) {
+            if (RubyRange.isRangeLike(context, arg, sites.respond_to_begin, sites.respond_to_end)) {
                 int len = strLength();
-                IRubyObject begin = sites.begin.call(context, arg, arg);
-                IRubyObject end   = sites.end.call(context, arg, arg);
-                IRubyObject excl  = sites.exclude_end.call(context, arg, arg);
-                RubyRange range = RubyRange.newRange(context, begin, end, excl.isTrue());
+                RubyRange range = RubyRange.rangeFromRangeLike(context, arg, sites.begin, sites.end, sites.exclude_end);
 
                 int[] begLen = range.begLenInt(len, 0);
                 return begLen == null ? runtime.getNil() : substr19(runtime, begLen[0], begLen[1]);
@@ -3124,12 +3116,8 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             return arg1;
         } else {
             StringSites sites = sites(context);
-            if (sites.respond_to_begin.respondsTo(context, arg0, arg0) &&
-                    sites.respond_to_end.respondsTo(context, arg0, arg0)) {
-                IRubyObject begin = sites.begin.call(context, arg0, arg0);
-                IRubyObject end   = sites.end.call(context, arg0, arg0);
-                IRubyObject excl  = sites.exclude_end.call(context, arg0, arg0);
-                RubyRange rng = RubyRange.newRange(context, begin, end, excl.isTrue());
+            if (RubyRange.isRangeLike(context, arg0, sites.respond_to_begin, sites.respond_to_end)) {
+                RubyRange rng = RubyRange.rangeFromRangeLike(context, arg0, sites.begin, sites.end, sites.exclude_end);
 
                 int[] begLen = rng.begLenInt(strLength(), 2);
                 replaceInternal19(begLen[0], begLen[1], arg1.convertToString());
