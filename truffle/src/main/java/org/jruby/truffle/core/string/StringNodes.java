@@ -623,6 +623,7 @@ public abstract class StringNodes {
             return substringNode;
         }
 
+        @Override
         protected boolean isRubiniusUndefined(Object object) {
             return object == coreLibrary().getRubiniusUndefined();
         }

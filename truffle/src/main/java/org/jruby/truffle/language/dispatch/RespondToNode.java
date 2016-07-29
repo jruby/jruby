@@ -28,6 +28,7 @@ public class RespondToNode extends RubyNode {
         this.dispatch = new DoesRespondDispatchHeadNode(context, true);
     }
 
+    @Override
     public boolean executeBoolean(VirtualFrame frame) {
         // TODO(cseaton): check this is actually a static "find if there is such method" and not a dynamic call to respond_to?
         return dispatch.doesRespondTo(frame, methodName, child.execute(frame));
