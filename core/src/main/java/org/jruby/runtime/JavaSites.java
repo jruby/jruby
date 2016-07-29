@@ -141,6 +141,9 @@ public class JavaSites {
 
     public static class HashSites {
         public final RespondToCallSite respond_to_to_hash = new RespondToCallSite("to_hash");
+        public final CallSite default_ = new FunctionalCachingCallSite("default");
+        public final CallSite flatten_bang = new FunctionalCachingCallSite("flatten!");
+        public final CallSite call = new FunctionalCachingCallSite("call");
     }
 
     public static class NumericSites {
