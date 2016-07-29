@@ -22,7 +22,7 @@ def mavenLib(mavenDep, sha1):
     }
 
 suite = {
-    "mxversion": "5.35.3",
+    "mxversion": "5.36.0",
     "name": "jrubytruffle",
     "defaultLicense": "EPL",
 
@@ -102,12 +102,12 @@ suite = {
         },
 
         "jruby-truffle-ruby": {
-            "class": "JavaArchiveProject",
+            "class": "ArchiveProject",
             "outputDir": "truffle/src/main/ruby",
             "prefix": "jruby-truffle",
         },
 
-        # Depends on jruby-maven extracting jni libs in lib/jni
+        # Depends on jruby-core extracting jni libs in lib/jni
         "jruby-lib-jni": {
             "class": "ArchiveProject",
             "outputDir": "lib/jni",
@@ -115,16 +115,18 @@ suite = {
             "dependencies": [ "jruby-core" ],
         },
 
+        # Depends on jruby-core installing gems in lib/ruby
         "jruby-lib-ruby": {
             "class": "ArchiveProject",
             "outputDir": "lib/ruby",
             "prefix": "lib/ruby",
+            "dependencies": [ "jruby-core" ],
         },
 
         "jruby-licences": {
             "class": "LicensesProject",
-            "outputDir": ".",
-            "prefix": ".",
+            "outputDir": "",
+            "prefix": "",
         },
     },
 

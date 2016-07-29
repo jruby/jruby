@@ -27,75 +27,20 @@ TimeStampFile = mx.TimeStampFile
 
 # Project and BuildTask classes
 
-class ArchiveBaseProject(mx.Project):
+class ArchiveProject(mx.ArchivableProject):
     def __init__(self, suite, name, deps, workingSets, theLicense, **args):
-        mx.Project.__init__(self, suite, name, "", [], deps, workingSets, _suite.dir, theLicense)
+        mx.ArchivableProject.__init__(self, suite, name, deps, workingSets, theLicense)
         assert 'prefix' in args
         assert 'outputDir' in args
 
-    def getBuildTask(self, args):
-        return ArchiveBuildTask(self, args)
-
-    def getResults(self):
-        results = []
-        outputDir = join(_suite.dir, self.outputDir)
-        for root, _, files in os.walk(outputDir):
-            for name in files:
-                path = join(root, name)
-                results.append(path)
-        return results
-
-class JavaArchiveProject(ArchiveBaseProject):
-    def __init__(self, suite, name, deps, workingSets, theLicense, **args):
-        ArchiveBaseProject.__init__(self, suite, name, deps, workingSets, theLicense, **args)
-        self.javaCompliance = "1.8"
-
-    def isJavaProject(self):
-        return True
+    def output_dir(self):
+        return join(self.dir, self.outputDir)
 
     def archive_prefix(self):
         return self.prefix
 
-    def output_dir(self, relative=False):
-        return join(_suite.dir, self.outputDir)
-
-    def source_gen_dir(self, relative=False):
-        return None
-
-    def source_dirs(self):
-        return []
-
-    def annotation_processors(self):
-        return []
-
-class ArchiveProject(ArchiveBaseProject):
-    def isNativeProject(self):
-        return True # for archiving purposes
-
-    def getOutput(self):
-        # Paths in the tarball will be relative to output,
-        # so we need prefix to be the same as outputDir.
-        assert self.prefix == self.outputDir
-        return _suite.dir
-
-class ArchiveBuildTask(mx.BuildTask):
-    def __init__(self, project, args):
-        mx.BuildTask.__init__(self, project, args, 1)
-
-    def __str__(self):
-        return 'Archive {}'.format(self.subject)
-
-    def needsBuild(self, newestInput):
-        return (False, 'Files are already on disk')
-
-    def newestOutput(self):
-        return TimeStampFile.newest(self.subject.getResults())
-
-    def build(self):
-        pass
-
-    def clean(self, forBuild=False):
-        pass
+    def getResults(self):
+        return mx.ArchivableProject.walk(self.output_dir())
 
 class LicensesProject(ArchiveProject):
     license_files = ['BSDL', 'COPYING', 'LICENSE.RUBY']
@@ -163,15 +108,33 @@ class AntlrBuildTask(mx.BuildTask):
     def clean(self, forBuild=False):
         pass
 
-# Call to Maven to build everything
+def mavenSetup():
+    mavenDir = join(_suite.dir, 'mxbuild', 'mvn')
+    maven_repo_arg = '-Dmaven.repo.local=' + mavenDir
+    env = os.environ.copy()
+    env['JRUBY_BUILD_MORE_QUIET'] = 'true'
+    # HACK: since the maven executable plugin does not configure the
+    # java executable that is used we unfortunately need to append it to the PATH
+    javaHome = os.getenv('JAVA_HOME')
+    if javaHome:
+        env["PATH"] = javaHome + '/bin' + os.pathsep + env["PATH"]
+        mx.logv('Setting PATH to {}'.format(os.environ["PATH"]))
+    mx.run(['java', '-version'])
+    return maven_repo_arg, env
 
 class JRubyCoreMavenProject(mx.MavenProject):
     def getBuildTask(self, args):
-        return MavenBuildTask(self, args)
+        return MavenBuildTask(self, args, 1)
 
-class MavenBuildTask(ArchiveBuildTask):
+    def getResults(self):
+        return None
+
+class MavenBuildTask(mx.BuildTask):
     def __str__(self):
         return 'Building {} with Maven'.format(self.subject)
+
+    def newestOutput(self):
+        return TimeStampFile(join(_suite.dir, self.subject.jar))
 
     def needsBuild(self, newestInput):
         sup = mx.BuildTask.needsBuild(self, newestInput)
@@ -183,9 +146,13 @@ class MavenBuildTask(ArchiveBuildTask):
         if not jar.exists():
             return (True, 'no jar yet')
 
-        jni_libs = join(_suite.dir, 'lib', 'jni')
+        jni_libs = join(_suite.dir, 'lib/jni')
         if not exists(jni_libs) or not os.listdir(jni_libs):
             return (True, jni_libs)
+
+        bundler = join(_suite.dir, 'lib/ruby/gems/shared/gems/bundler-1.10.6')
+        if not exists(bundler) or not os.listdir(bundler):
+            return (True, bundler)
 
         for watched in self.subject.watch:
             watched = join(_suite.dir, watched)
@@ -202,39 +169,16 @@ class MavenBuildTask(ArchiveBuildTask):
 
         return (False, 'all files are up to date')
 
-    def newestOutput(self):
-        return TimeStampFile(join(_suite.dir, self.subject.jar))
-
     def build(self):
-        mx.log('...perform build of {}'.format(self.subject))
         cwd = _suite.dir
-        mavenDir = join(cwd, 'mxbuild', 'mvn')
-        maven_repo_arg = '-Dmaven.repo.local=' + mavenDir
-
-        # HACK: since the maven executable plugin does not configure the
-        # java executable that is used we unfortunately need to append it to the PATH
-        javaHome = os.getenv('JAVA_HOME')
-        if javaHome:
-            os.environ["PATH"] = os.environ["JAVA_HOME"] + '/bin' + os.pathsep + os.environ["PATH"]
-            mx.logv('Setting PATH to {}'.format(os.environ["PATH"]))
-
-        mx.run(['java', '-version'])
-
-        # Build jruby-truffle
-        env = os.environ.copy()
-        env['JRUBY_BUILD_MORE_QUIET'] = 'true'
-
+        maven_repo_arg, env = mavenSetup()
         mx.log("Building jruby-core with Maven")
-        # Also build lib for the gems which end in stdlib (like psych)
         mx.run_maven(['-q', '-DskipTests', maven_repo_arg, '-pl', 'core,lib'], cwd=cwd, env=env)
-
-        env = os.environ.copy()
+        # Install Bundler
         gem_home = join(_suite.dir, 'lib', 'ruby', 'gems', 'shared')
         env['GEM_HOME'] = gem_home
         env['GEM_PATH'] = gem_home
         mx.run(['bin/jruby', 'bin/gem', 'install', 'bundler', '-v', '1.10.6'], cwd=cwd, env=env)
-    
-        mx.log('...finished build of {}'.format(self.subject))
 
     def clean(self, forBuild=False):
         if forBuild:
