@@ -244,9 +244,9 @@ def jt(args, suite=None, nonZeroIsFatal=True, out=None, err=None, timeout=None, 
     jt = join(rubyDir, 'tool', 'jt.rb')
     return mx.run(['ruby', jt] + args, nonZeroIsFatal=nonZeroIsFatal, out=out, err=err, timeout=timeout, env=env, cwd=cwd)
 
-class BackgroundServerTask:
-    FNULL = open(os.devnull, 'w')
+FNULL = open(os.devnull, 'w')
 
+class BackgroundServerTask:
     def __init__(self, args):
         self.args = args
 
