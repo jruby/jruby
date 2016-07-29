@@ -60,8 +60,8 @@ public class Option extends RubyObject {
     @JRubyMethod(required = 4, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
         family = SocketUtils.protocolFamilyFromArg(args[0]);
-        level = RubyBasicSocket.levelFromArg(args[1]);
-        option = RubyBasicSocket.optionFromArg(args[2]);
+        level = SocketUtils.levelFromArg(args[1]);
+        option = SocketUtils.optionFromArg(args[2]);
         data = args[3].convertToString().getByteList();
         intData = Pack.unpackInt_i(ByteBuffer.wrap(data.bytes()));
         return this;
@@ -170,8 +170,8 @@ public class Option extends RubyObject {
     @JRubyMethod(name = "int", required = 4, meta = true)
     public static IRubyObject rb_int(ThreadContext context, IRubyObject self, IRubyObject[] args) {
         ProtocolFamily family = SocketUtils.protocolFamilyFromArg(args[0]);
-        SocketLevel level = RubyBasicSocket.levelFromArg(args[1]);
-        SocketOption option = RubyBasicSocket.optionFromArg(args[2]);
+        SocketLevel level = SocketUtils.levelFromArg(args[1]);
+        SocketOption option = SocketUtils.optionFromArg(args[2]);
         int intData = RubyNumeric.fix2int(args[3]);
 
         return new Option(context.getRuntime(), family, level, option, intData);
@@ -185,8 +185,8 @@ public class Option extends RubyObject {
     @JRubyMethod(required = 4, meta = true)
     public static IRubyObject bool(ThreadContext context, IRubyObject self, IRubyObject[] args) {
         ProtocolFamily family = SocketUtils.protocolFamilyFromArg(args[0]);
-        SocketLevel level = RubyBasicSocket.levelFromArg(args[1]);
-        SocketOption option = RubyBasicSocket.optionFromArg(args[2]);
+        SocketLevel level = SocketUtils.levelFromArg(args[1]);
+        SocketOption option = SocketUtils.optionFromArg(args[2]);
         int intData = args[3].isTrue() ? 1 : 0;
 
         return new Option(context.getRuntime(), family, level, option, intData);
