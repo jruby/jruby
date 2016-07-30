@@ -279,7 +279,15 @@ public class JavaSites {
         public final CheckedSites close_checked = new CheckedSites("close");
         public final CheckedSites to_path_checked1 = new CheckedSites("to_path");
         public final CheckedSites to_path_checked2 = new CheckedSites("to_path");
+        public final RespondToCallSite respond_to_write = new RespondToCallSite("write");
         public final CallSite write = new FunctionalCachingCallSite("write");
+        public final RespondToCallSite respond_to_read = new RespondToCallSite("read");
+        public final CallSite read = new FunctionalCachingCallSite("read");
+        public final CallSite to_f = new FunctionalCachingCallSite("to_f");
+        public final CallSite new_ = new FunctionalCachingCallSite("new");
+        public final RespondToCallSite respond_to_to_int = new RespondToCallSite("to_int");
+        public final RespondToCallSite respond_to_to_io = new RespondToCallSite("to_io");
+        public final RespondToCallSite respond_to_to_hash = new RespondToCallSite("to_hash");
     }
 
     public static class TypeConverterSites {
