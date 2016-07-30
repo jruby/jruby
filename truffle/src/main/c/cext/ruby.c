@@ -284,7 +284,7 @@ VALUE rb_jt_obj_taint(VALUE object) {
 }
 
 bool rb_jt_obj_taintable_p(VALUE object) {
-  return truffle_invoke_b(RUBY_CEXT, "RB_OBJ_TAINTED", object);
+  return truffle_invoke_b(RUBY_CEXT, "RB_OBJ_TAINTABLE", object);
 }
 
 bool rb_jt_obj_tainted_p(VALUE object) {

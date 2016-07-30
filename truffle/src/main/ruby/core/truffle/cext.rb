@@ -242,7 +242,7 @@ module Truffle::CExt
     !nil.equal?(value) && !false.equal?(value)
   end
 
-  def RB_OBJ_TAINTED(object)
+  def RB_OBJ_TAINTABLE(object)
     case object
       when TrueClass, FalseClass, Fixnum, Float, NilClass, Symbol
         true
