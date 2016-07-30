@@ -287,6 +287,7 @@ public class RubyContext extends ExecutionContext {
         return rootLexicalScope;
     }
 
+    @Override
     public CompilerOptions getCompilerOptions() {
         return compilerOptions;
     }

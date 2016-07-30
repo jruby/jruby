@@ -12,7 +12,7 @@ package org.jruby.truffle.language.control;
 public class JavaException extends RuntimeException {
 
     public JavaException(Throwable cause) {
-        super(cause);
+        super(cause.getMessage(), cause);
     }
 
     @Override

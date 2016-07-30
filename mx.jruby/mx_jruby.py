@@ -13,16 +13,235 @@ import pipes
 import shutil
 import json
 import time
+import tarfile
+import zipfile
 from threading import Thread
+from os.path import join, exists
 
 import mx
 import mx_benchmark
 
 _suite = mx.suite('jruby')
 
+TimeStampFile = mx.TimeStampFile
+
+# Project and BuildTask classes
+
+class ArchiveProject(mx.ArchivableProject):
+    def __init__(self, suite, name, deps, workingSets, theLicense, **args):
+        mx.ArchivableProject.__init__(self, suite, name, deps, workingSets, theLicense)
+        assert 'prefix' in args
+        assert 'outputDir' in args
+
+    def output_dir(self):
+        return join(self.dir, self.outputDir)
+
+    def archive_prefix(self):
+        return self.prefix
+
+    def getResults(self):
+        return mx.ArchivableProject.walk(self.output_dir())
+
+class LicensesProject(ArchiveProject):
+    license_files = ['BSDL', 'COPYING', 'LICENSE.RUBY']
+
+    def getResults(self):
+        return [join(_suite.dir, f) for f in self.license_files]
+
+class AntlrProject(mx.Project):
+    def __init__(self, suite, name, deps, workingSets, theLicense, **args):
+        mx.Project.__init__(self, suite, name, "", [], deps, workingSets, _suite.dir, theLicense)
+        assert 'outputDir' in args
+        assert 'sourceDir' in args
+        assert 'grammars' in args
+        self.doNotArchive = True
+
+    def getBuildTask(self, args):
+        return AntlrBuildTask(self, args)
+
+class AntlrBuildTask(mx.BuildTask):
+    def __init__(self, project, args):
+        mx.BuildTask.__init__(self, project, args, 1)
+
+    def __str__(self):
+        return 'Generate Antlr grammar for {}'.format(self.subject)
+
+    def needsBuild(self, newestInput):
+        sup = mx.BuildTask.needsBuild(self, newestInput)
+        if sup[0]:
+            return sup
+        newestOutput = self.newestOutput()
+        if not newestOutput:
+            return (True, "no class files yet")
+        src = join(_suite.dir, self.subject.sourceDir)
+        for root, _, files in os.walk(src):
+            for name in files:
+                file = TimeStampFile(join(root, name))
+                if file.isNewerThan(newestOutput):
+                    return (True, file)
+        return (False, 'all files are up to date')
+
+    def newestOutput(self):
+        out = join(_suite.dir, self.subject.outputDir)
+        newest = None
+        for root, _, files in os.walk(out):
+            for name in files:
+                file = TimeStampFile(join(root, name))
+                if not newest or file.isNewerThan(newest):
+                    newest = file
+        return newest
+
+    def build(self):
+        antlr4 = None
+        for lib in _suite.libs:
+            if lib.name == "ANTLR4_MAIN":
+                antlr4 = lib
+        assert antlr4
+
+        antlr4jar = antlr4.classpath_repr()
+        out = join(_suite.dir, self.subject.outputDir)
+        src = join(_suite.dir, self.subject.sourceDir)
+        for grammar in self.subject.grammars:
+            pkg = os.path.dirname(grammar).replace('/', '.')
+            mx.run_java(['-jar', antlr4jar, '-o', out, '-package', pkg, grammar], cwd=src)
+
+    def clean(self, forBuild=False):
+        pass
+
+def mavenSetup():
+    mavenDir = join(_suite.dir, 'mxbuild', 'mvn')
+    maven_repo_arg = '-Dmaven.repo.local=' + mavenDir
+    env = os.environ.copy()
+    env['JRUBY_BUILD_MORE_QUIET'] = 'true'
+    # HACK: since the maven executable plugin does not configure the
+    # java executable that is used we unfortunately need to append it to the PATH
+    javaHome = os.getenv('JAVA_HOME')
+    if javaHome:
+        env["PATH"] = javaHome + '/bin' + os.pathsep + env["PATH"]
+        mx.logv('Setting PATH to {}'.format(os.environ["PATH"]))
+    mx.run(['java', '-version'])
+    return maven_repo_arg, env
+
+class JRubyCoreMavenProject(mx.MavenProject):
+    def getBuildTask(self, args):
+        return MavenBuildTask(self, args, 1)
+
+    def getResults(self):
+        return None
+
+class MavenBuildTask(mx.BuildTask):
+    def __str__(self):
+        return 'Building {} with Maven'.format(self.subject)
+
+    def newestOutput(self):
+        return TimeStampFile(join(_suite.dir, self.subject.jar))
+
+    def needsBuild(self, newestInput):
+        sup = mx.BuildTask.needsBuild(self, newestInput)
+        if sup[0]:
+            return sup
+
+        jar = self.newestOutput()
+
+        if not jar.exists():
+            return (True, 'no jar yet')
+
+        jni_libs = join(_suite.dir, 'lib/jni')
+        if not exists(jni_libs) or not os.listdir(jni_libs):
+            return (True, jni_libs)
+
+        bundler = join(_suite.dir, 'lib/ruby/gems/shared/gems/bundler-1.10.6')
+        if not exists(bundler) or not os.listdir(bundler):
+            return (True, bundler)
+
+        for watched in self.subject.watch:
+            watched = join(_suite.dir, watched)
+            if not exists(watched):
+                return (True, watched + ' does not exist')
+            elif os.path.isfile(watched) and TimeStampFile(watched).isNewerThan(jar):
+                return (True, watched + ' is newer than the jar')
+            else:
+                for root, _, files in os.walk(watched):
+                    for name in files:
+                        source = join(root, name)
+                        if TimeStampFile(source).isNewerThan(jar):
+                            return (True, source + ' is newer than the jar')
+
+        return (False, 'all files are up to date')
+
+    def build(self):
+        cwd = _suite.dir
+        maven_repo_arg, env = mavenSetup()
+        mx.log("Building jruby-core with Maven")
+        mx.run_maven(['-q', '-DskipTests', maven_repo_arg, '-pl', 'core,lib'], cwd=cwd, env=env)
+        # Install Bundler
+        gem_home = join(_suite.dir, 'lib', 'ruby', 'gems', 'shared')
+        env['GEM_HOME'] = gem_home
+        env['GEM_PATH'] = gem_home
+        mx.run(['bin/jruby', 'bin/gem', 'install', 'bundler', '-v', '1.10.6'], cwd=cwd, env=env)
+
+    def clean(self, forBuild=False):
+        if forBuild:
+            return
+        mx.run_maven(['-q', 'clean'], nonZeroIsFatal=False, cwd=_suite.dir)
+        jar = self.newestOutput()
+        if jar.exists():
+            os.remove(jar.path)
+
+# Commands
+
+def extractArguments(args):
+    vmArgs = []
+    rubyArgs = []
+    for i in range(len(args)):
+        arg = args[i]
+        if arg.startswith('-J-'):
+            vmArgs.append(arg[2:])
+        elif arg.startswith('-X'):
+            vmArgs.append('-Djruby.' + arg[2:])
+        else:
+            rubyArgs.append(arg)
+    return vmArgs, rubyArgs
+
+def extractTarball(file, target_dir):
+    if file.endswith('tar'):
+        with tarfile.open(file, 'r:') as tf:
+            tf.extractall(target_dir)
+    elif file.endswith('jar') or file.endswith('zip'):
+        with zipfile.ZipFile(file, "r") as zf:
+            zf.extractall(target_dir)
+    else:
+        mx.abort('Unsupported compressed file ' + file)
+
+def setup_jruby_home():
+    rubyZip = mx.distribution('RUBY-ZIP').path
+    assert exists(rubyZip)
+    extractPath = join(_suite.dir, 'mxbuild', 'ruby-zip-extracted')
+    if TimeStampFile(extractPath).isOlderThan(rubyZip):
+        if exists(extractPath):
+            shutil.rmtree(extractPath)
+        extractTarball(rubyZip, extractPath)
+    env = os.environ.copy()
+    env['JRUBY_HOME'] = extractPath
+    return env
+
+def ruby_command(args):
+    """runs Ruby"""
+    vmArgs, rubyArgs = extractArguments(args)
+    vmArgs += ['-cp', mx.classpath(['TRUFFLE_API', 'RUBY'])]
+    vmArgs += ['org.jruby.Main', '-X+T']
+    env = setup_jruby_home()
+    mx.run_java(vmArgs + rubyArgs, env=env)
+
+mx.update_commands(_suite, {
+    'ruby' : [ruby_command, '[ruby args|@VM options]'],
+})
+
+# Utilities
+
 def jt(args, suite=None, nonZeroIsFatal=True, out=None, err=None, timeout=None, env=None, cwd=None):
     rubyDir = _suite.dir
-    jt = os.path.join(rubyDir, 'tool', 'jt.rb')
+    jt = join(rubyDir, 'tool', 'jt.rb')
     return mx.run(['ruby', jt] + args, nonZeroIsFatal=nonZeroIsFatal, out=out, err=err, timeout=timeout, env=env, cwd=cwd)
 
 FNULL = open(os.devnull, 'w')
@@ -30,210 +249,30 @@ FNULL = open(os.devnull, 'w')
 class BackgroundServerTask:
     def __init__(self, args):
         self.args = args
-    
+
     def __enter__(self):
         preexec_fn, creationflags = mx._get_new_progress_group_args()
         if mx._opts.verbose:
             mx.log(' '.join(['(background)'] + map(pipes.quote, self.args)))
         self.process = subprocess.Popen(self.args, preexec_fn=preexec_fn, creationflags=creationflags, stdout=FNULL, stderr=FNULL)
         mx._addSubprocess(self.process, self.args)
-    
+
     def __exit__(self, type, value, traceback):
         self.process.kill()
         self.process.wait()
-    
+
     def is_running(self):
         return self.process.poll() is None
 
 class BackgroundJT(BackgroundServerTask):
     def __init__(self, args):
         rubyDir = _suite.dir
-        jt = os.path.join(rubyDir, 'tool', 'jt.rb')
+        jt = join(rubyDir, 'tool', 'jt.rb')
         BackgroundServerTask.__init__(self, ['ruby', jt] + args)
 
-class MavenProject(mx.Project):
-    def __init__(self, suite, name, deps, workingSets, theLicense, **args):
-        mx.Project.__init__(self, suite, name, "", [], deps, workingSets, _suite.dir, theLicense)
-        self.javaCompliance = "1.7"
-        self.build = hasattr(args, 'build')
-        self.prefix = args['prefix']
-
-    def source_dirs(self):
-        return []
-
-    def output_dir(self, relative=False):
-        dir = os.path.join(_suite.dir, self.prefix)
-        return dir.rstrip('/')
-
-    def source_gen_dir(self):
-        return None
-
-    def getOutput(self, replaceVar=False):
-        return os.path.join(_suite.dir, "target")
-
-    def getResults(self, replaceVar=False):
-        return mx.Project.getResults(self, replaceVar=replaceVar)
-
-    def getBuildTask(self, args):
-        return MavenBuildTask(self, args, None, None)
-
-    def isJavaProject(self):
-        return True
-
-    def archive_prefix(self):
-        return self.prefix
-
-    def annotation_processors(self):
-        return []
-
-    def find_classes_with_matching_source_line(self, pkgRoot, function, includeInnerClasses=False):
-        return dict()
-
-class MavenBuildTask(mx.BuildTask):
-    def __init__(self, project, args, vmbuild, vm):
-        mx.BuildTask.__init__(self, project, args, 1)
-        self.vm = vm
-        self.vmbuild = vmbuild
-
-    def __str__(self):
-        return 'Building Maven for {}'.format(self.subject)
-
-    def needsBuild(self, newestInput):
-        return (True, 'Let us re-build everytime')
-
-    def newestOutput(self):
-        return None
-
-    def build(self):
-        if not self.subject.build:
-            mx.log("...skip build of {}".format(self.subject))
-            return
-        mx.log('...perform build of {}'.format(self.subject))
-
-        rubyDir = _suite.dir
-        mavenDir = os.path.join(rubyDir, 'mxbuild', 'mvn')
-
-        # HACK: since the maven executable plugin does not configure the
-        # java executable that is used we unfortunately need to append it to the PATH
-        javaHome = os.getenv('JAVA_HOME')
-        if javaHome:
-            os.environ["PATH"] = os.environ["JAVA_HOME"] + '/bin' + os.pathsep + os.environ["PATH"]
-
-        mx.logv('Setting PATH to {}'.format(os.environ["PATH"]))
-        mx.logv('Calling java -version')
-        mx.run(['java', '-version'])
-
-        # Truffle version
-
-        truffle = mx.suite('truffle')
-        truffle_commit = truffle.vc.parent(truffle.dir)
-        maven_version_arg = '-Dtruffle.version=' + truffle_commit
-        maven_repo_arg = '-Dmaven.repo.local=' + mavenDir
-        
-        mx.run_mx(['maven-install', '--repo', mavenDir, '--only', 'TRUFFLE_API,TRUFFLE_DEBUG,TRUFFLE_DSL_PROCESSOR,TRUFFLE_TCK'], suite=truffle)
-
-        open(os.path.join(rubyDir, 'VERSION'), 'w').write('graal-vm\n')
-
-        # Build jruby-truffle
-        
-        env = os.environ.copy()
-        env['JRUBY_BUILD_MORE_QUIET'] = 'true'
-
-        mx.run_maven(['-q', '--version', maven_repo_arg], nonZeroIsFatal=False, cwd=rubyDir, env=env)
-
-        mx.log('Building without tests')
-
-        mx.run_maven(['-q', '-DskipTests', maven_version_arg, maven_repo_arg], cwd=rubyDir, env=env)
-
-        mx.log('Building complete version')
-
-        mx.run_maven(['-q', '-Pcomplete', '-DskipTests', maven_version_arg, maven_repo_arg], cwd=rubyDir, env=env)
-        mx.run(['zip', '-d', 'maven/jruby-complete/target/jruby-complete-graal-vm.jar', 'META-INF/jruby.home/lib/*'], cwd=rubyDir)
-        mx.run(['bin/jruby', 'bin/gem', 'install', 'bundler', '-v', '1.10.6'], cwd=rubyDir)
-    
-        mx.log('...finished build of {}'.format(self.subject))
-
-    def clean(self, forBuild=False):
-        if forBuild:
-            return
-        rubyDir = _suite.dir
-        mx.run_maven(['-q', 'clean'], nonZeroIsFatal=False, cwd=rubyDir)
-
-class LicensesProject(mx.Project):
-    def __init__(self, suite, name, deps, workingSets, theLicense, **args):
-        mx.Project.__init__(self, suite, name, "", [], deps, workingSets, _suite.dir, theLicense)
-        self.javaCompliance = "1.7"
-        self.build = hasattr(args, 'build')
-        self.prefix = args['prefix']
-
-    def source_dirs(self):
-        return []
-
-    def output_dir(self, relative=False):
-        dir = os.path.join(_suite.dir, self.prefix)
-        return dir.rstrip('/')
-
-    def source_gen_dir(self):
-        return None
-
-    def getOutput(self, replaceVar=False):
-        return os.path.join(_suite.dir, "target")
-
-    def getResults(self, replaceVar=False):
-        return mx.Project.getResults(self, replaceVar=replaceVar)
-
-    def getBuildTask(self, args):
-        return LicensesBuildTask(self, args, None, None)
-
-    def isJavaProject(self):
-        return True
-
-    def archive_prefix(self):
-        return self.prefix
-
-    def annotation_processors(self):
-        return []
-
-    def find_classes_with_matching_source_line(self, pkgRoot, function, includeInnerClasses=False):
-        return dict()
-
-class LicensesBuildTask(mx.BuildTask):
-    def __init__(self, project, args, vmbuild, vm):
-        mx.BuildTask.__init__(self, project, args, 1)
-        self.vm = vm
-        self.vmbuild = vmbuild
-
-    def __str__(self):
-        return 'Building licences for {}'.format(self.subject)
-
-    def needsBuild(self, newestInput):
-        return (True, 'Let us re-build everytime')
-
-    def newestOutput(self):
-        return None
-
-    def build(self):
-        if not self.subject.build:
-            mx.log("...skip build of {}".format(self.subject))
-            return
-        mx.log('...perform build of {}'.format(self.subject))
-
-        rubyDir = _suite.dir
-        licenses_dir = os.path.join(rubyDir, 'licenses')
-        if not os.path.exists(licenses_dir):
-            os.mkdir(licenses_dir)
-        for f in ['BSDL', 'COPYING', 'LICENSE.RUBY']:
-            shutil.copyfile(os.path.join(rubyDir, f), os.path.join(licenses_dir, f))
-        
-        mx.log('...finished build of {}'.format(self.subject))
-
-    def clean(self, forBuild=False):
-        if forBuild:
-            return
-        rubyDir = _suite.dir
-        licenses_dir = os.path.join(rubyDir, 'licenses')
-        if os.path.exists(licenses_dir):
-            shutil.rmtree(licenses_dir)
+##############
+# BENCHMARKS #
+##############
 
 class RubyBenchmarkSuite(mx_benchmark.BenchmarkSuite):
     def group(self):
@@ -602,10 +641,10 @@ class MicroBenchmarkSuite(AllBenchmarksBenchmarkSuite):
         jt(['where', 'repos', 'all-ruby-benchmarks'], out=out)
         all_ruby_benchmarks = out.data.strip()
         benchmarks = []
-        for root, dirs, files in os.walk(os.path.join(all_ruby_benchmarks, 'micro')):
+        for root, dirs, files in os.walk(join(all_ruby_benchmarks, 'micro')):
             for name in files:
                 if name.endswith('.rb'):
-                    benchmark_file = os.path.join(root, name)[len(all_ruby_benchmarks)+1:]
+                    benchmark_file = join(root, name)[len(all_ruby_benchmarks)+1:]
                     out = mx.OutputCapture()
                     jt(['benchmark', 'list', benchmark_file], out=out)
                     benchmarks.extend([benchmark_file + ':' + b.strip() for b in out.data.split('\n') if len(b.strip()) > 0])

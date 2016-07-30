@@ -88,66 +88,66 @@ void rb_free_tmp_buffer(volatile VALUE *buffer_pointer);
 // Types
 
 enum ruby_value_type {
-    RUBY_T_NONE     = 0x00,
+  RUBY_T_NONE     = 0x00,
 
-    RUBY_T_OBJECT   = 0x01,
-    RUBY_T_CLASS    = 0x02,
-    RUBY_T_MODULE   = 0x03,
-    RUBY_T_FLOAT    = 0x04,
-    RUBY_T_STRING   = 0x05,
-    RUBY_T_REGEXP   = 0x06,
-    RUBY_T_ARRAY    = 0x07,
-    RUBY_T_HASH     = 0x08,
-    RUBY_T_STRUCT   = 0x09,
-    RUBY_T_BIGNUM   = 0x0a,
-    RUBY_T_FILE     = 0x0b,
-    RUBY_T_DATA     = 0x0c,
-    RUBY_T_MATCH    = 0x0d,
-    RUBY_T_COMPLEX  = 0x0e,
-    RUBY_T_RATIONAL = 0x0f,
+  RUBY_T_OBJECT   = 0x01,
+  RUBY_T_CLASS    = 0x02,
+  RUBY_T_MODULE   = 0x03,
+  RUBY_T_FLOAT    = 0x04,
+  RUBY_T_STRING   = 0x05,
+  RUBY_T_REGEXP   = 0x06,
+  RUBY_T_ARRAY    = 0x07,
+  RUBY_T_HASH     = 0x08,
+  RUBY_T_STRUCT   = 0x09,
+  RUBY_T_BIGNUM   = 0x0a,
+  RUBY_T_FILE     = 0x0b,
+  RUBY_T_DATA     = 0x0c,
+  RUBY_T_MATCH    = 0x0d,
+  RUBY_T_COMPLEX  = 0x0e,
+  RUBY_T_RATIONAL = 0x0f,
 
-    RUBY_T_NIL      = 0x11,
-    RUBY_T_TRUE     = 0x12,
-    RUBY_T_FALSE    = 0x13,
-    RUBY_T_SYMBOL   = 0x14,
-    RUBY_T_FIXNUM   = 0x15,
-    RUBY_T_UNDEF    = 0x16,
+  RUBY_T_NIL      = 0x11,
+  RUBY_T_TRUE     = 0x12,
+  RUBY_T_FALSE    = 0x13,
+  RUBY_T_SYMBOL   = 0x14,
+  RUBY_T_FIXNUM   = 0x15,
+  RUBY_T_UNDEF    = 0x16,
 
-    RUBY_T_IMEMO    = 0x1a,
-    RUBY_T_NODE     = 0x1b,
-    RUBY_T_ICLASS   = 0x1c,
-    RUBY_T_ZOMBIE   = 0x1d,
+  RUBY_T_IMEMO    = 0x1a,
+  RUBY_T_NODE     = 0x1b,
+  RUBY_T_ICLASS   = 0x1c,
+  RUBY_T_ZOMBIE   = 0x1d,
 
-    RUBY_T_MASK     = 0x1f
+  RUBY_T_MASK     = 0x1f
 };
 
-#define T_NONE      RUBY_T_NONE
-#define T_NIL       RUBY_T_NIL
-#define T_OBJECT    RUBY_T_OBJECT
-#define T_CLASS     RUBY_T_CLASS
-#define T_ICLASS    RUBY_T_ICLASS
-#define T_MODULE    RUBY_T_MODULE
-#define T_FLOAT     RUBY_T_FLOAT
-#define T_STRING    RUBY_T_STRING
-#define T_REGEXP    RUBY_T_REGEXP
-#define T_ARRAY     RUBY_T_ARRAY
-#define T_HASH      RUBY_T_HASH
-#define T_STRUCT    RUBY_T_STRUCT
-#define T_BIGNUM    RUBY_T_BIGNUM
-#define T_FILE      RUBY_T_FILE
-#define T_FIXNUM    RUBY_T_FIXNUM
-#define T_TRUE      RUBY_T_TRUE
-#define T_FALSE     RUBY_T_FALSE
-#define T_DATA      RUBY_T_DATA
-#define T_MATCH     RUBY_T_MATCH
-#define T_SYMBOL    RUBY_T_SYMBOL
+#define T_NONE    RUBY_T_NONE
+#define T_NIL     RUBY_T_NIL
+#define T_OBJECT  RUBY_T_OBJECT
+#define T_CLASS   RUBY_T_CLASS
+#define T_ICLASS  RUBY_T_ICLASS
+#define T_MODULE  RUBY_T_MODULE
+#define T_FLOAT   RUBY_T_FLOAT
+#define T_STRING  RUBY_T_STRING
+#define T_REGEXP  RUBY_T_REGEXP
+#define T_ARRAY   RUBY_T_ARRAY
+#define T_HASH    RUBY_T_HASH
+#define T_STRUCT  RUBY_T_STRUCT
+#define T_BIGNUM  RUBY_T_BIGNUM
+#define T_FILE    RUBY_T_FILE
+#define T_FIXNUM  RUBY_T_FIXNUM
+#define T_TRUE    RUBY_T_TRUE
+#define T_FALSE   RUBY_T_FALSE
+#define T_DATA    RUBY_T_DATA
+#define T_MATCH   RUBY_T_MATCH
+#define T_SYMBOL  RUBY_T_SYMBOL
 #define T_RATIONAL  RUBY_T_RATIONAL
 #define T_COMPLEX   RUBY_T_COMPLEX
-#define T_IMEMO     RUBY_T_IMEMO
-#define T_UNDEF     RUBY_T_UNDEF
-#define T_NODE      RUBY_T_NODE
-#define T_ZOMBIE    RUBY_T_ZOMBIE
-#define T_MASK      RUBY_T_MASK
+#define T_IMEMO   RUBY_T_IMEMO
+#define T_UNDEF   RUBY_T_UNDEF
+#define T_NODE    RUBY_T_NODE
+#define T_ZOMBIE  RUBY_T_ZOMBIE
+#define T_MASK    RUBY_T_MASK
 
 int rb_type(VALUE value);
 #define TYPE(value) rb_type((VALUE) (value))
@@ -171,10 +171,10 @@ VALUE rb_jt_get_Qfalse(void);
 VALUE rb_jt_get_Qtrue(void);
 VALUE rb_jt_get_Qnil(void);
 
-#define Qundef rb_jt_get_Qundef()
-#define Qfalse rb_jt_get_Qfalse()
-#define Qtrue rb_jt_get_Qtrue()
-#define Qnil rb_jt_get_Qnil()
+#define Qundef  rb_jt_get_Qundef()
+#define Qfalse  rb_jt_get_Qfalse()
+#define Qtrue   rb_jt_get_Qtrue()
+#define Qnil    rb_jt_get_Qnil()
 
 VALUE rb_jt_get_cObject(void);
 VALUE rb_jt_get_cArray(void);
@@ -187,16 +187,16 @@ VALUE rb_jt_get_mWaitReadable(void);
 VALUE rb_jt_get_mWaitWritable(void);
 VALUE rb_jt_get_mComparable(void);
 
-#define rb_cObject rb_jt_get_cObject()
-#define rb_cArray rb_jt_get_cArray()
-#define rb_cHash rb_jt_get_cHash()
-#define rb_mKernel rb_jt_get_mKernel()
-#define rb_cProc rb_jt_get_cProc()
-#define rb_cTime rb_jt_get_cTime()
-#define rb_mEnumerable rb_jt_get_mEnumerable()
-#define rb_mWaitReadable rb_jt_get_mWaitReadable()
-#define rb_mWaitWritable rb_jt_get_mWaitWritable()
-#define rb_mComparable rb_jt_get_mComparable()
+#define rb_cObject          rb_jt_get_cObject()
+#define rb_cArray           rb_jt_get_cArray()
+#define rb_cHash            rb_jt_get_cHash()
+#define rb_mKernel          rb_jt_get_mKernel()
+#define rb_cProc            rb_jt_get_cProc()
+#define rb_cTime            rb_jt_get_cTime()
+#define rb_mEnumerable      rb_jt_get_mEnumerable()
+#define rb_mWaitReadable    rb_jt_get_mWaitReadable()
+#define rb_mWaitWritable    rb_jt_get_mWaitWritable()
+#define rb_mComparable      rb_jt_get_mComparable()
 
 VALUE rb_jt_get_eException(void);
 VALUE rb_jt_get_eRuntimeError(void);
@@ -207,14 +207,14 @@ VALUE rb_jt_get_eArgError(void);
 VALUE rb_jt_get_eRangeError(void);
 VALUE rb_jt_get_eNotImpError(void);
 
-#define rb_eException rb_jt_get_eException()
-#define rb_eRuntimeError rb_jt_get_eRuntimeError()
-#define rb_eStandardError rb_jt_get_eStandardError()
-#define rb_eNoMemError rb_jt_get_eNoMemError()
-#define rb_eTypeError rb_jt_get_eTypeError()
-#define rb_eArgError rb_jt_get_eArgError()
-#define rb_eRangeError rb_jt_get_eRangeError()
-#define rb_eNotImpError rb_jt_get_eNotImpError()
+#define rb_eException       rb_jt_get_eException()
+#define rb_eRuntimeError    rb_jt_get_eRuntimeError()
+#define rb_eStandardError   rb_jt_get_eStandardError()
+#define rb_eNoMemError      rb_jt_get_eNoMemError()
+#define rb_eTypeError       rb_jt_get_eTypeError()
+#define rb_eArgError        rb_jt_get_eArgError()
+#define rb_eRangeError      rb_jt_get_eRangeError()
+#define rb_eNotImpError     rb_jt_get_eNotImpError()
 
 // Conversions
 
@@ -327,16 +327,16 @@ double RFLOAT_VALUE(VALUE value);
 
 // String
 
-#define PRI_VALUE_PREFIX "l"
-#define PRI_LONG_PREFIX "l"
-#define PRI_64_PREFIX PRI_LONG_PREFIX
-#define RUBY_PRI_VALUE_MARK "\v"
-#define PRIdVALUE PRI_VALUE_PREFIX"d"
-#define PRIoVALUE PRI_VALUE_PREFIX"o"
-#define PRIuVALUE PRI_VALUE_PREFIX"u"
-#define PRIxVALUE PRI_VALUE_PREFIX"x"
-#define PRIXVALUE PRI_VALUE_PREFIX"X"
-#define PRIsVALUE PRI_VALUE_PREFIX"i" RUBY_PRI_VALUE_MARK
+#define PRI_VALUE_PREFIX        "l"
+#define PRI_LONG_PREFIX         "l"
+#define PRI_64_PREFIX           PRI_LONG_PREFIX
+#define RUBY_PRI_VALUE_MARK     "\v"
+#define PRIdVALUE               PRI_VALUE_PREFIX"d"
+#define PRIoVALUE               PRI_VALUE_PREFIX"o"
+#define PRIuVALUE               PRI_VALUE_PREFIX"u"
+#define PRIxVALUE               PRI_VALUE_PREFIX"x"
+#define PRIXVALUE               PRI_VALUE_PREFIX"X"
+#define PRIsVALUE               PRI_VALUE_PREFIX"i" RUBY_PRI_VALUE_MARK
 
 char *RSTRING_PTR(VALUE string);
 int rb_str_len(VALUE string);

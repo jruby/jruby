@@ -88,6 +88,7 @@ public abstract class BigDecimalNodes {
     @NodeChild(value = "precision", type = RubyNode.class)
     public abstract static class AddNode extends AbstractAddNode {
 
+        @Override
         @Specialization(guards = {
                 "isNormal(a)",
                 "isNormalRubyBigDecimal(b)"
@@ -96,6 +97,7 @@ public abstract class BigDecimalNodes {
             return super.add(frame, a, b, precision);
         }
 
+        @Override
         @Specialization(guards = {
                 "isRubyBigDecimal(b)",
                 "!isNormal(a) || !isNormal(b)"
@@ -129,6 +131,7 @@ public abstract class BigDecimalNodes {
     @NodeChild(value = "precision", type = RubyNode.class)
     public abstract static class SubNode extends AbstractSubNode {
 
+        @Override
         @Specialization(guards = {
                 "isNormal(a)",
                 "isNormalRubyBigDecimal(b)"
@@ -137,6 +140,7 @@ public abstract class BigDecimalNodes {
             return super.subNormal(frame, a, b, precision);
         }
 
+        @Override
         @Specialization(guards = {
                 "isRubyBigDecimal(b)",
                 "!isNormal(a) || !isNormal(b)"
@@ -235,6 +239,7 @@ public abstract class BigDecimalNodes {
     @NodeChild(value = "precision", type = RubyNode.class)
     public abstract static class MultNode extends AbstractMultNode {
 
+        @Override
         @Specialization(guards = {
                 "isNormal(a)",
                 "isNormalRubyBigDecimal(b)"
@@ -243,6 +248,7 @@ public abstract class BigDecimalNodes {
             return super.mult(frame, a, b, precision);
         }
 
+        @Override
         @Specialization(guards = {
                 "isNormal(a)",
                 "isSpecialRubyBigDecimal(b)"
@@ -251,6 +257,7 @@ public abstract class BigDecimalNodes {
             return super.multNormalSpecial(frame, a, b, precision);
         }
 
+        @Override
         @Specialization(guards = {
                 "!isNormal(a)",
                 "isNormalRubyBigDecimal(b)"
@@ -259,6 +266,7 @@ public abstract class BigDecimalNodes {
             return super.multSpecialNormal(frame, a, b, precision);
         }
 
+        @Override
         @Specialization(guards = {
                 "!isNormal(a)",
                 "isSpecialRubyBigDecimal(b)"
@@ -369,6 +377,7 @@ public abstract class BigDecimalNodes {
             }
         }
 
+        @Override
         @Specialization(guards = {
                 "isNormal(a)",
                 "isSpecialRubyBigDecimal(b)"
@@ -402,6 +411,7 @@ public abstract class BigDecimalNodes {
             }
         }
 
+        @Override
         @Specialization(guards = {
                 "!isNormal(a)",
                 "isNormalRubyBigDecimal(b)"
@@ -432,6 +442,7 @@ public abstract class BigDecimalNodes {
             }
         }
 
+        @Override
         @Specialization(guards = {
                 "!isNormal(a)",
                 "isSpecialRubyBigDecimal(b)"
