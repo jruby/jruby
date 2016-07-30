@@ -164,7 +164,7 @@ public class ExceptionTranslatingNode extends RubyNode {
 
         final String message;
 
-        if (throwable.getMessage().startsWith("LLVM error")) {
+        if (throwable.getMessage() != null && throwable.getMessage().startsWith("LLVM error")) {
             message = throwable.getMessage();
         } else {
             final StringBuilder messageBuilder = new StringBuilder();
