@@ -3218,7 +3218,7 @@ public abstract class StringNodes {
         }
 
         @TruffleBoundary(throwsControlFlowException = true)
-        @Specialization(guards = {"isRubyEncoding(rubyEncoding)", "!isSimple(code, rubyEncoding)"})
+        @Specialization(guards = { "isRubyEncoding(rubyEncoding)", "!isSimple(code, rubyEncoding)", "isCodepoint(code)" })
         public DynamicObject stringFromCodepoint(long code, DynamicObject rubyEncoding) {
             final Encoding encoding = EncodingOperations.getEncoding(rubyEncoding);
             final int length;
@@ -3246,6 +3246,11 @@ public abstract class StringNodes {
             }
 
             return createString(RopeOperations.create(bytes, encoding, CodeRange.CR_VALID));
+        }
+
+        protected boolean isCodepoint(long code) {
+            // Fits in an unsigned int
+            return code >= 0 && code < (1L << 32);
         }
 
         protected boolean isSimple(long code, DynamicObject encoding) {
