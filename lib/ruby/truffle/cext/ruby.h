@@ -171,10 +171,10 @@ VALUE rb_jt_get_Qfalse(void);
 VALUE rb_jt_get_Qtrue(void);
 VALUE rb_jt_get_Qnil(void);
 
-#define Qundef rb_jt_get_Qundef()
-#define Qfalse rb_jt_get_Qfalse()
-#define Qtrue rb_jt_get_Qtrue()
-#define Qnil rb_jt_get_Qnil()
+#define Qundef  rb_jt_get_Qundef()
+#define Qfalse  rb_jt_get_Qfalse()
+#define Qtrue   rb_jt_get_Qtrue()
+#define Qnil    rb_jt_get_Qnil()
 
 VALUE rb_jt_get_cObject(void);
 VALUE rb_jt_get_cArray(void);
@@ -187,16 +187,16 @@ VALUE rb_jt_get_mWaitReadable(void);
 VALUE rb_jt_get_mWaitWritable(void);
 VALUE rb_jt_get_mComparable(void);
 
-#define rb_cObject rb_jt_get_cObject()
-#define rb_cArray rb_jt_get_cArray()
-#define rb_cHash rb_jt_get_cHash()
-#define rb_mKernel rb_jt_get_mKernel()
-#define rb_cProc rb_jt_get_cProc()
-#define rb_cTime rb_jt_get_cTime()
-#define rb_mEnumerable rb_jt_get_mEnumerable()
-#define rb_mWaitReadable rb_jt_get_mWaitReadable()
-#define rb_mWaitWritable rb_jt_get_mWaitWritable()
-#define rb_mComparable rb_jt_get_mComparable()
+#define rb_cObject          rb_jt_get_cObject()
+#define rb_cArray           rb_jt_get_cArray()
+#define rb_cHash            rb_jt_get_cHash()
+#define rb_mKernel          rb_jt_get_mKernel()
+#define rb_cProc            rb_jt_get_cProc()
+#define rb_cTime            rb_jt_get_cTime()
+#define rb_mEnumerable      rb_jt_get_mEnumerable()
+#define rb_mWaitReadable    rb_jt_get_mWaitReadable()
+#define rb_mWaitWritable    rb_jt_get_mWaitWritable()
+#define rb_mComparable      rb_jt_get_mComparable()
 
 VALUE rb_jt_get_eException(void);
 VALUE rb_jt_get_eRuntimeError(void);
@@ -207,14 +207,14 @@ VALUE rb_jt_get_eArgError(void);
 VALUE rb_jt_get_eRangeError(void);
 VALUE rb_jt_get_eNotImpError(void);
 
-#define rb_eException rb_jt_get_eException()
-#define rb_eRuntimeError rb_jt_get_eRuntimeError()
-#define rb_eStandardError rb_jt_get_eStandardError()
-#define rb_eNoMemError rb_jt_get_eNoMemError()
-#define rb_eTypeError rb_jt_get_eTypeError()
-#define rb_eArgError rb_jt_get_eArgError()
-#define rb_eRangeError rb_jt_get_eRangeError()
-#define rb_eNotImpError rb_jt_get_eNotImpError()
+#define rb_eException       rb_jt_get_eException()
+#define rb_eRuntimeError    rb_jt_get_eRuntimeError()
+#define rb_eStandardError   rb_jt_get_eStandardError()
+#define rb_eNoMemError      rb_jt_get_eNoMemError()
+#define rb_eTypeError       rb_jt_get_eTypeError()
+#define rb_eArgError        rb_jt_get_eArgError()
+#define rb_eRangeError      rb_jt_get_eRangeError()
+#define rb_eNotImpError     rb_jt_get_eNotImpError()
 
 // Conversions
 
@@ -327,16 +327,16 @@ double RFLOAT_VALUE(VALUE value);
 
 // String
 
-#define PRI_VALUE_PREFIX "l"
-#define PRI_LONG_PREFIX "l"
-#define PRI_64_PREFIX PRI_LONG_PREFIX
-#define RUBY_PRI_VALUE_MARK "\v"
-#define PRIdVALUE PRI_VALUE_PREFIX"d"
-#define PRIoVALUE PRI_VALUE_PREFIX"o"
-#define PRIuVALUE PRI_VALUE_PREFIX"u"
-#define PRIxVALUE PRI_VALUE_PREFIX"x"
-#define PRIXVALUE PRI_VALUE_PREFIX"X"
-#define PRIsVALUE PRI_VALUE_PREFIX"i" RUBY_PRI_VALUE_MARK
+#define PRI_VALUE_PREFIX        "l"
+#define PRI_LONG_PREFIX         "l"
+#define PRI_64_PREFIX           PRI_LONG_PREFIX
+#define RUBY_PRI_VALUE_MARK     "\v"
+#define PRIdVALUE               PRI_VALUE_PREFIX"d"
+#define PRIoVALUE               PRI_VALUE_PREFIX"o"
+#define PRIuVALUE               PRI_VALUE_PREFIX"u"
+#define PRIxVALUE               PRI_VALUE_PREFIX"x"
+#define PRIXVALUE               PRI_VALUE_PREFIX"X"
+#define PRIsVALUE               PRI_VALUE_PREFIX"i" RUBY_PRI_VALUE_MARK
 
 char *RSTRING_PTR(VALUE string);
 int rb_str_len(VALUE string);
