@@ -166,6 +166,33 @@ public final class ArrayJavaProxy extends JavaProxy {
         return RubyArray.newArrayNoCopy(runtime, ary);
     }
 
+    @JRubyMethod(name = "count") // @override Enumerable#count
+    public IRubyObject count(final ThreadContext context, final Block block) {
+        final Ruby runtime = context.runtime;
+        if ( block.isGiven() ) {
+            final Object array = getObject(); int count = 0;
+            for ( int i = 0; i < length(); i++ ) {
+                IRubyObject next = JavaUtil.convertJavaArrayElementToRuby(runtime, converter, array, i);
+                if ( block.yield( context, next ).isTrue() ) count++;
+            }
+            return RubyFixnum.newFixnum(runtime, count);
+        }
+        return RubyFixnum.newFixnum(runtime, length());
+    }
+
+    @JRubyMethod(name = "count") // @override Enumerable#count
+    public IRubyObject count(final ThreadContext context, final IRubyObject obj, final Block unused) {
+        // unused block due DescriptorInfo not (yet) supporting if a method receives block and an override doesn't
+        final Ruby runtime = context.runtime;
+        final Object array = getObject(); int count = 0;
+        for ( int i = 0; i < length(); i++ ) {
+            // NOTE: could be former improved by special case handling primitive arrays and == ...
+            IRubyObject next = JavaUtil.convertJavaArrayElementToRuby(runtime, converter, array, i);
+            if ( RubyObject.equalInternal(context, next, obj) ) count++;
+        }
+        return RubyFixnum.newFixnum(runtime, count);
+    }
+
     @JRubyMethod(name = "dig", required = 1, rest = true)
     public final IRubyObject dig(ThreadContext context, IRubyObject[] args) {
         return dig(context, args, 0);

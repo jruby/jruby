@@ -1132,6 +1132,20 @@ describe "ArrayJavaProxy" do
     expect( arr.last(1) ).to eql []
   end
 
+  it 'counts' do
+    arr = [ '1', '2', '3' ].to_java('java.lang.String')
+    expect( arr.count ).to eql 3
+    expect( arr.count('2') ).to eql 1
+    expect( arr.count(1) ).to eql 0
+
+    arr = [ 1, 2, 2 ].to_java(:int)
+    expect( arr.count { |e| e > 0 } ).to eql 3
+    expect( arr.count(2) ).to eql 2
+
+    arr = Java::byte[0].new
+    expect( arr.count ).to eql 0
+  end
+
   describe "#dig" do
 
     it 'returns #at with one arg' do
