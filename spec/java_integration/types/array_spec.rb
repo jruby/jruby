@@ -52,14 +52,14 @@ describe "A Java primitive Array of type" do
       expect(arr[0]).to be_falsey
       expect(arr[1]).to be_falsey
       expect(arr[2]).to be_falsey
-      expect(arr[3]).to be_truthy
-      expect(arr[4]).to be_falsey
+      expect(arr[3]).to be true
+      expect(arr[4]).to be false
     end
 
     it "should be possible to get values from primitive array" do
       arr = [false, true, false].to_java :boolean
-      expect(arr[0]).to be_falsey
-      expect(arr[1]).to be_truthy
+      expect(arr[0]).to be false
+      expect(arr[1]).to be true
       expect(arr[2]).to be_falsey
     end
 
@@ -180,6 +180,24 @@ describe "A Java primitive Array of type" do
       expect([86, 87].to_java(:byte).to_s).to eq("VW")
     end
 
+    it "detects element using include?" do
+      arr = Java::byte[3].new
+      arr[0] = 1
+      arr[1] = 127
+      arr[2] = -128
+
+      expect(arr.include?(1)).to be true
+      expect(arr.include?(0)).to be false
+      expect(arr.include?(10000)).to be false
+      expect(arr.include?(127)).to be true
+      expect(arr.include?(-128)).to be true
+      expect(arr.include?(-127)).to be false
+      expect(arr.include?(-1)).to be false
+      expect(arr.include?(-200)).to be false
+      expect(arr.include?(nil)).to be false
+      expect(arr.include?('x')).to be false
+    end
+
     it "clones" do
       arr = Java::byte[10].new
       arr[1] = 1
@@ -283,6 +301,21 @@ describe "A Java primitive Array of type" do
       arr = [100, 101, 102].to_java :char
       expect(arr.to_s).to match(/\[C@[0-9a-f]+$/)
     end
+
+    it "detects element using include?" do
+      arr = Java::char[3].new
+      arr[0] = 1
+      arr[1] = 0
+      arr[2] = 64
+
+      expect(arr.include?(1)).to be true
+      expect(arr.include?(0)).to be true
+      expect(arr.include?(10)).to be false
+      expect(arr.include?(64)).to be true
+      expect(arr.include?(-128)).to be false
+      expect(arr.include?(-1)).to be false
+      expect(arr.include?('z')).to be false
+    end
   end
 
   describe "double" do
@@ -370,6 +403,22 @@ describe "A Java primitive Array of type" do
     it "inspects to show type and contents" do
       arr = [1.0, 1.1, 1.2].to_java :double
       expect(arr.inspect).to match(/^double\[1\.0, 1\.1, 1\.2\]@[0-9a-f]+$/)
+    end
+
+    it "detects element using include?" do
+      arr = Java::double[3].new
+      arr[0] = 111
+      arr[1] = 0.001
+      arr[2] = -1234560000.789
+
+      expect(arr.include?(111)).to be true
+      expect(arr.include?(111.1)).to be false
+      expect(arr.include?(0.0011)).to be false
+      expect(arr.include?(0.001)).to be true
+      expect(arr.include?(-1234560000.789)).to be true
+      expect(arr.include?(-1234560000.79)).to be false
+      expect(arr.include?(nil)).to be false
+      expect(arr.include?('x')).to be false
     end
   end
 
@@ -468,6 +517,23 @@ describe "A Java primitive Array of type" do
       arr = [1.0, 1.1, 1.2].to_java :float
       expect(arr.inspect).to match(/^float\[1\.0, 1\.1, 1\.2\]@[0-9a-f]+$/)
     end
+
+    it "detects element using include?" do
+      arr = Java::float[3].new
+      arr[0] = 111
+      arr[1] = 0.001
+      arr[2] = -123456.789
+
+      expect(arr.include?(111)).to be true
+      expect(arr.include?(111.1)).to be false
+      expect(arr.include?(0.0011)).to be false
+      expect(arr.include?(0.001)).to be true
+      expect(arr.include?(-123456.789)).to be true
+      # expect(arr.include?(-123456.79)).to be false
+      expect(arr.include?(-123456.8)).to be false
+      expect(arr.include?(nil)).to be false
+      expect(arr.include?('x')).to be false
+    end
   end
 
   describe "int" do
@@ -559,6 +625,25 @@ describe "A Java primitive Array of type" do
     it "inspects to show type and contents" do
       arr = [13, 42, 120].to_java :int
       expect(arr.inspect).to match(/^int\[13, 42, 120\]@[0-9a-f]+$/)
+    end
+
+    it "detects element using include?" do
+      arr = Java::int[8].new
+      arr[0] = -1
+      arr[1] = 22
+      arr[3] = 2147483647
+      arr[6] = -111111111
+
+      expect(arr.include?(0)).to be true
+      expect(arr.include?(1)).to be false
+      expect(arr.include?(22)).to be true
+      expect(arr.include?(-111111111)).to be true
+      expect(arr.include?(-1111111111111)).to be false
+      expect(arr.include?(2147483648)).to be false
+      expect(arr.include?(2147483646)).to be false
+      expect(arr.include?(2147483647)).to be true
+      expect(arr.include?(nil)).to be false
+      expect(arr.include?('x')).to be false
     end
   end
 
@@ -655,6 +740,24 @@ describe "A Java primitive Array of type" do
       expect( dup.object_id ).to_not eql arr.object_id
       dup[1] = 11
       expect(arr[1]).to eq(1)
+    end
+
+    it "detects element using include?" do
+      arr = Java::long[8].new
+      arr[0] = -1
+      arr[1] = 22
+      arr[3] = 2147483647000
+      arr[6] = -111111111000
+
+      expect(arr.include?(0)).to be true
+      expect(arr.include?(1)).to be false
+      expect(arr.include?(22)).to be true
+      expect(arr.include?(-111111111)).to be false
+      expect(arr.include?(-111111111000)).to be true
+      expect(arr.include?(2147483647001)).to be false
+      expect(arr.include?(2147483647000)).to be true
+      expect(arr.include?(nil)).to be false
+      expect(arr.include?('x')).to be false
     end
   end
 
