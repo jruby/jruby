@@ -72,14 +72,14 @@ public class RubyEnumerator extends RubyObject {
     private IRubyObject feedValue;
 
     public static void defineEnumerator(Ruby runtime) {
-        RubyModule enm = runtime.getClassFromPath("Enumerable");
+        final RubyModule Enumerable = runtime.getModule("Enumerable");
 
-        final RubyClass enmr;
-        enmr = runtime.defineClass("Enumerator", runtime.getObject(), ENUMERATOR_ALLOCATOR);
+        final RubyClass Enumerator;
+        Enumerator = runtime.defineClass("Enumerator", runtime.getObject(), ENUMERATOR_ALLOCATOR);
 
-        enmr.includeModule(enm);
-        enmr.defineAnnotatedMethods(RubyEnumerator.class);
-        runtime.setEnumerator(enmr);
+        Enumerator.includeModule(Enumerable);
+        Enumerator.defineAnnotatedMethods(RubyEnumerator.class);
+        runtime.setEnumerator(Enumerator);
 
         RubyGenerator.createGeneratorClass(runtime);
         RubyYielder.createYielderClass(runtime);
@@ -100,12 +100,12 @@ public class RubyEnumerator extends RubyObject {
 
     private RubyEnumerator(Ruby runtime, RubyClass type, IRubyObject object, IRubyObject method, IRubyObject[] args, IRubyObject size) {
         super(runtime, type);
-        initialize20(runtime, object, method, args, size, null);
+        initialize(runtime, object, method, args, size, null);
     }
 
     private RubyEnumerator(Ruby runtime, RubyClass type, IRubyObject object, IRubyObject method, IRubyObject[] args, SizeFn sizeFn) {
         super(runtime, type);
-        initialize20(runtime, object, method, args, null, sizeFn);
+        initialize(runtime, object, method, args, null, sizeFn);
     }
 
     private RubyEnumerator(Ruby runtime, RubyClass type, IRubyObject object, IRubyObject method, IRubyObject[] args) {
@@ -156,25 +156,36 @@ public class RubyEnumerator extends RubyObject {
 
     @Override
     public IRubyObject initialize(ThreadContext context) {
-        return initialize20(context, Block.NULL_BLOCK);
+        return initialize(context, Block.NULL_BLOCK);
     }
 
+    @JRubyMethod(name = "initialize", visibility = PRIVATE)
+    public IRubyObject initialize(ThreadContext context, Block block) {
+        return initialize(context, NULL_ARRAY, block);
+    }
+
+    @Deprecated
     public IRubyObject initialize19(ThreadContext context, Block block) {
-        return initialize20(context, block);
+        return initialize(context, block);
     }
 
-    @JRubyMethod(name = "initialize", visibility = PRIVATE)
+    @Deprecated
     public IRubyObject initialize20(ThreadContext context, Block block) {
-        return initialize20(context, NULL_ARRAY, block);
+        return initialize(context, block);
     }
 
     @JRubyMethod(name = "initialize", visibility = PRIVATE)
+    public IRubyObject initialize(ThreadContext context, IRubyObject object, Block block) {
+        return initialize(context, new IRubyObject[]{ object }, block);
+    }
+
+    @Deprecated
     public IRubyObject initialize20(ThreadContext context, IRubyObject object, Block block) {
-        return initialize20(context, new IRubyObject[]{ object }, block);
+        return initialize(context, object, block);
     }
 
     @JRubyMethod(name = "initialize", visibility = PRIVATE, rest = true)
-    public IRubyObject initialize20(ThreadContext context, IRubyObject[] args, Block block) {
+    public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block block) {
         Ruby runtime = context.runtime;
         IRubyObject object;
         IRubyObject method = runtime.newSymbol("each");
@@ -205,54 +216,72 @@ public class RubyEnumerator extends RubyObject {
             }
         }
 
-        return initialize20(runtime, object, method, args, size, null);
+        return initialize(runtime, object, method, args, size, null);
     }
 
-    public IRubyObject initialize(ThreadContext context, IRubyObject object, IRubyObject method) {
-        return initialize20(context, object, method, Block.NULL_BLOCK);
-    }
-
-    public IRubyObject initialize19(ThreadContext context, IRubyObject object, IRubyObject method, Block block) {
-        return initialize20(context, object, method, block);
+    @Deprecated
+    public IRubyObject initialize20(ThreadContext context, IRubyObject[] args, Block block) {
+        return initialize(context, args, block);
     }
 
     @JRubyMethod(name = "initialize", visibility = PRIVATE)
-    public IRubyObject initialize20(ThreadContext context, IRubyObject object, IRubyObject method, Block block) {
+    public IRubyObject initialize(ThreadContext context, IRubyObject object, IRubyObject method, Block block) {
         if (block.isGiven()) {
             throw context.runtime.newArgumentError(2, 1);
         }
         return initialize(context.runtime, object, method, NULL_ARRAY);
     }
 
-    public IRubyObject initialize(ThreadContext context, IRubyObject object, IRubyObject method, IRubyObject methodArg) {
-        return initialize20(context, object, method, methodArg, Block.NULL_BLOCK);
+    public IRubyObject initialize(ThreadContext context, IRubyObject object, IRubyObject method) {
+        return initialize(context, object, method, Block.NULL_BLOCK);
     }
 
-    public IRubyObject initialize19(ThreadContext context, IRubyObject object, IRubyObject method, IRubyObject methodArg, Block block) {
-        return initialize20(context, object, method, methodArg, Block.NULL_BLOCK);
+    @Deprecated
+    public IRubyObject initialize19(ThreadContext context, IRubyObject object, IRubyObject method, Block block) {
+        return initialize(context, object, method, block);
+    }
+
+    @Deprecated
+    public IRubyObject initialize20(ThreadContext context, IRubyObject object, IRubyObject method, Block block) {
+        return initialize(context, object, method, block);
     }
 
     @JRubyMethod(name = "initialize", visibility = PRIVATE)
-    public IRubyObject initialize20(ThreadContext context, IRubyObject object, IRubyObject method, IRubyObject methodArg, Block block) {
+    public IRubyObject initialize(ThreadContext context, IRubyObject object, IRubyObject method, IRubyObject methodArg, Block block) {
         if (block.isGiven()) {
             throw context.runtime.newArgumentError(3, 1);
         }
         return initialize(context.runtime, object, method, new IRubyObject[] { methodArg });
     }
 
-    public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
-        return initialize20(context, args, Block.NULL_BLOCK);
+    public IRubyObject initialize(ThreadContext context, IRubyObject object, IRubyObject method, IRubyObject methodArg) {
+        return initialize(context, object, method, methodArg, Block.NULL_BLOCK);
     }
 
+    @Deprecated
+    public IRubyObject initialize19(ThreadContext context, IRubyObject object, IRubyObject method, IRubyObject methodArg, Block block) {
+        return initialize(context, object, method, methodArg, Block.NULL_BLOCK);
+    }
+
+    @Deprecated
+    public IRubyObject initialize20(ThreadContext context, IRubyObject object, IRubyObject method, IRubyObject methodArg, Block block) {
+        return initialize(context, object, method, methodArg, block);
+    }
+
+    public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
+        return initialize(context, args, Block.NULL_BLOCK);
+    }
+
+    @Deprecated
     public IRubyObject initialize19(ThreadContext context, IRubyObject[] args, Block block) {
-        return initialize20(context, args, block);
+        return initialize(context, args, block);
     }
 
     private IRubyObject initialize(Ruby runtime, IRubyObject object, IRubyObject method, IRubyObject[] methodArgs) {
-        return initialize20(runtime, object, method, methodArgs, null, null);
+        return initialize(runtime, object, method, methodArgs, null, null);
     }
 
-    private IRubyObject initialize20(Ruby runtime, IRubyObject object, IRubyObject method, IRubyObject[] methodArgs, IRubyObject size, SizeFn sizeFn) {
+    private IRubyObject initialize(Ruby runtime, IRubyObject object, IRubyObject method, IRubyObject[] methodArgs, IRubyObject size, SizeFn sizeFn) {
         this.object = object;
         this.method = method.asJavaString();
         this.methodArgs = methodArgs;
