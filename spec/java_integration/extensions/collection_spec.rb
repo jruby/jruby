@@ -192,6 +192,18 @@ describe "Collection Ruby extensions" do
     expect( set.contains 3.to_java(:short) ).to be true
   end
 
+  it 'counts' do
+    vec = java.util.Vector.new [1, 2, 2, 3, 2, 4, 2, 5, 2]
+    expect( vec.count ).to eql 9
+    expect( java.util.Collections::EMPTY_SET.count ).to eql 0
+
+    expect( vec.count { |i| i > 2 } ).to eq 3
+    expect( vec.count(2) ).to eq 5
+
+    expect( java.util.HashSet.new(vec).count(2) ).to eq 1
+    expect( java.util.LinkedHashSet.new(vec).count(0) ).to eq 0
+  end
+
   it "should respect to_ary objects defined on iteration" do
     class Pair
       def initialize(a, b)

@@ -137,6 +137,9 @@ public abstract class JavaLang {
             if ( block.isGiven() ) {
                 return countBlock(context, iterable.iterator(), block);
             }
+            if ( iterable instanceof java.util.Collection ) {
+                return RubyFixnum.newFixnum(runtime, ((java.util.Collection) iterable).size());
+            }
             int count = 0;
             for( java.util.Iterator it = iterable.iterator(); it.hasNext(); ) { it.next(); count++; }
             return RubyFixnum.newFixnum(runtime, count);
