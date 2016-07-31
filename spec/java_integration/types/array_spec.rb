@@ -1084,7 +1084,7 @@ describe "ArrayJavaProxy" do
 
   it "to_a coerces nested Java arrays to Ruby arrays" do
     arr = [[1],[2]].to_java(Java::byte[]).to_a
-    expect(arr.first).to eq([1])
+    expect(arr.first).to eql [1]
     expect(arr.first.first).to be_kind_of(Fixnum)
   end
 
@@ -1100,6 +1100,36 @@ describe "ArrayJavaProxy" do
     r_arr = j_arr.to_ary
     j_arr[0] = 3
     expect( r_arr[0] ).to eql 1
+  end
+
+  it 'supports #first (Enumerable)' do
+    arr = [ '1', '2', '3' ].to_java('java.lang.String')
+    expect( arr.first ).to eql '1'
+    expect( arr.first(2) ).to eql [ '1', '2' ]
+
+    arr = [ 1, 2, 3 ].to_java(:int)
+    expect( arr.first ).to eql 1
+    expect( arr.first(1) ).to eql [ 1 ]
+    expect( arr.first(5) ).to eql [ 1, 2, 3 ]
+
+    arr = Java::byte[0].new
+    expect( arr.first ).to be nil
+    expect( arr.first(1) ).to eql []
+  end
+
+  it 'supports #last (like Ruby Array)' do
+    arr = [ '1', '2', '3' ].to_java('java.lang.String')
+    expect( arr.last ).to eql '3'
+    expect( arr.last(2) ).to eql [ '2', '3' ]
+
+    arr = [ 1, 2, 3 ].to_java(:int)
+    expect( arr.last ).to eql 3
+    expect( arr.last(1) ).to eql [ 3 ]
+    expect( arr.last(8) ).to eql [ 1, 2, 3 ]
+
+    arr = Java::byte[0].new
+    expect( arr.last ).to be nil
+    expect( arr.last(1) ).to eql []
   end
 
   describe "#dig" do
