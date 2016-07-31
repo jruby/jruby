@@ -117,7 +117,7 @@ public abstract class JavaLang {
             return context.nil;
         }
 
-        @JRubyMethod(name = { "to_a", "entries" })
+        @JRubyMethod(name = { "to_a", "entries" }) // @override Enumerable#to_a
         public static IRubyObject to_a(final ThreadContext context, final IRubyObject self, final Block block) {
             final Ruby runtime = context.runtime;
             final RubyArray ary = runtime.newArray();
@@ -128,6 +128,39 @@ public abstract class JavaLang {
                 ary.append( convertJavaToUsableRubyObject(runtime, value) );
             }
             return ary;
+        }
+
+        @JRubyMethod(name = "count") // @override Enumerable#count
+        public static IRubyObject count(final ThreadContext context, final IRubyObject self, final Block block) {
+            final Ruby runtime = context.runtime;
+            java.lang.Iterable iterable = unwrapJavaObject(self);
+            if ( block.isGiven() ) {
+                return countBlock(context, iterable.iterator(), block);
+            }
+            int count = 0;
+            for( java.util.Iterator it = iterable.iterator(); it.hasNext(); ) { it.next(); count++; }
+            return RubyFixnum.newFixnum(runtime, count);
+        }
+
+        static RubyFixnum countBlock(final ThreadContext context, final java.util.Iterator it, final Block block) {
+            final Ruby runtime = context.runtime;
+            int count = 0; while ( it.hasNext() ) {
+                IRubyObject next = convertJavaToUsableRubyObject( runtime, it.next() );
+                if ( block.yield( context, next ).isTrue() ) count++;
+            }
+            return RubyFixnum.newFixnum(runtime, count);
+        }
+
+        @JRubyMethod(name = "count") // @override Enumerable#count
+        public static IRubyObject count(final ThreadContext context, final IRubyObject self, final IRubyObject obj, final Block unused) {
+            // unused block due DescriptorInfo not (yet) supporting if a method receives block and an override doesn't
+            final Ruby runtime = context.runtime;
+            java.lang.Iterable iterable = unwrapJavaObject(self);
+            int count = 0; for ( java.util.Iterator it = iterable.iterator(); it.hasNext(); ) {
+                IRubyObject next = convertJavaToUsableRubyObject( runtime, it.next() );
+                if ( RubyObject.equalInternal(context, next, obj) ) count++;
+            }
+            return RubyFixnum.newFixnum(runtime, count);
         }
 
     }

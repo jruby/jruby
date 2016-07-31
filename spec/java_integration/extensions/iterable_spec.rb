@@ -54,6 +54,26 @@ describe 'java.lang.Iterable' do
     expect( path.to_a ).to eql iterate_path(path)
   end
 
+  it 'counts' do
+    file_system = java.nio.file.FileSystems.getDefault
+    path = file_system.getPath(__FILE__)
+    expect( path.count ).to eq iterate_path(path).size
+
+    expect( path.count { |p| p.to_s == 'iterable_spec.rb' } ).to eq 1
+    a_path = iterate_path(path).last
+
+    path = file_system.getPath(__FILE__)
+    expect( path.count(nil) ).to eq 0
+    expect( path.count(a_path) ).to eq 1
+  end
+
+  it 'converts #to_a' do
+    file_system = java.nio.file.FileSystems.getDefault
+    path = file_system.getPath(__FILE__)
+    expect( path.to_a ).to_not be_empty
+    expect( path.to_a ).to eql iterate_path(path)
+  end
+
   private
 
   def iterate_path(path)
