@@ -343,6 +343,7 @@ public abstract class RopeNodes {
             return new ValidLeafRope(bytes, encoding, calculatedCharacterLength);
         }
 
+        @TruffleBoundary
         @Specialization(guards = { "isValid(codeRange)", "!isFixedWidth(encoding)", "wasNotProvided(characterLength)" })
         public LeafRope makeValidLeafRope(byte[] bytes, Encoding encoding, CodeRange codeRange, Object characterLength) {
             // Exctracted from StringSupport.strLength.

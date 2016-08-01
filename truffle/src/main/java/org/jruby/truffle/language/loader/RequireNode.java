@@ -105,7 +105,7 @@ public abstract class RequireNode extends RubyNode {
                     return false;
                 }
 
-                final String mimeType = source.getMimeType();
+                final String mimeType = getSourceMimeType(source);
 
                 if (RubyLanguage.MIME_TYPE.equals(mimeType)) {
                     final RubyRootNode rootNode = getContext().getCodeLoader().parse(
@@ -160,6 +160,11 @@ public abstract class RequireNode extends RubyNode {
                 fileLocks.unlock(expandedPath, lock);
             }
         }
+    }
+
+    @TruffleBoundary
+    private String getSourceMimeType(Source source) {
+        return source.getMimeType();
     }
 
     @TruffleBoundary

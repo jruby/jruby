@@ -177,7 +177,7 @@ public abstract class BasicObjectNodes {
 
             // TODO (pitr 15-Oct-2015): fix this ugly hack, required for AS, copy-paste
             final String space = getSpace(line);
-            final Source source = getContext().getSourceLoader().loadFragment(space + code.toString(), StringOperations.rope(fileName).toString());
+            final Source source = loadFragment(space + code.toString(), StringOperations.rope(fileName).toString());
 
             final RubyRootNode rootNode = getContext().getCodeLoader().parse(source, code.getEncoding(), ParserContext.EVAL, null, true, this);
             final CodeLoader.DeferredCall deferredCall = getContext().getCodeLoader().prepareExecute(ParserContext.EVAL, DeclarationContext.INSTANCE_EVAL, rootNode, null, receiver);
@@ -204,6 +204,11 @@ public abstract class BasicObjectNodes {
         private String getSpace(int line) {
             final String s = new String(new char[Math.max(line - 1, 0)]);
             return StringUtils.replace(s, "\0", "\n");
+        }
+
+        @TruffleBoundary
+        private Source loadFragment(String fragment, String name) {
+            return getContext().getSourceLoader().loadFragment(fragment, name);
         }
 
     }

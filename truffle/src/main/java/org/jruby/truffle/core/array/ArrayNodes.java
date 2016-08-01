@@ -943,7 +943,7 @@ public abstract class ArrayNodes {
         public long hashNull(DynamicObject array) {
             final int size = 0;
             long h = Helpers.hashStart(getContext().getJRubyRuntime(), size);
-            h = Helpers.murmurCombine(h, System.identityHashCode(ArrayNodes.class));
+            h = Helpers.murmurCombine(h, identityHashCode(ArrayNodes.class));
             return Helpers.hashEnd(h);
         }
 
@@ -954,7 +954,7 @@ public abstract class ArrayNodes {
             final int size = getSize(array);
             // TODO BJF Jul 4, 2016 Seed could be chosen in advance to avoid branching
             long h = Helpers.hashStart(getContext().getJRubyRuntime(), size);
-            h = Helpers.murmurCombine(h, System.identityHashCode(ArrayNodes.class));
+            h = Helpers.murmurCombine(h, identityHashCode(ArrayNodes.class));
             final ArrayMirror store = strategy.newMirror(array);
 
             for (int n = 0; n < size; n++) {
@@ -977,6 +977,11 @@ public abstract class ArrayNodes {
             } else {
                 return (long) result;
             }
+        }
+
+        @TruffleBoundary
+        private int identityHashCode(Object o) {
+            return System.identityHashCode(o);
         }
 
     }
