@@ -14,27 +14,15 @@ import com.oracle.truffle.api.vm.PolyglotEngine;
 import com.oracle.truffle.tck.TruffleTCK;
 
 import org.jruby.truffle.RubyLanguage;
-import org.junit.Test;
 
 import static org.junit.Assert.*;
 
 public class RubyTckTest extends TruffleTCK {
-
-    private static PolyglotEngine engine;
-
-    @Test
-    public void checkVM() {
+    @Override
+    protected PolyglotEngine prepareVM() throws Exception {
         PolyglotEngine engine = PolyglotEngine.newBuilder().build();
         assertNotNull(engine.getLanguages().get(mimeType()));
-    }
-
-    @Override
-    protected synchronized PolyglotEngine prepareVM() throws Exception {
-        if (engine == null) {
-            engine = PolyglotEngine.newBuilder().build();
-            engine.eval(Source.fromFileName("src/test/ruby/tck.rb"));
-        }
-
+        engine.eval(Source.fromFileName("src/test/ruby/tck.rb"));
         return engine;
     }
 
