@@ -46,7 +46,7 @@ import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ClassIndex;
-import org.jruby.runtime.JavaSites;
+import org.jruby.runtime.JavaSites.FloatSites;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -56,8 +56,6 @@ import org.jruby.util.ByteList;
 import org.jruby.util.ConvertDouble;
 import org.jruby.util.Sprintf;
 
-import static org.jruby.runtime.Helpers.invokedynamic;
-import static org.jruby.runtime.invokedynamic.MethodNames.OP_EQUAL;
 import static org.jruby.util.Numeric.f_abs;
 import static org.jruby.util.Numeric.f_add;
 import static org.jruby.util.Numeric.f_expt;
@@ -349,7 +347,7 @@ public class RubyFloat extends RubyNumeric {
     */
     @JRubyMethod(name = "quo")
         public IRubyObject magnitude(ThreadContext context, IRubyObject other) {
-        return callMethod(context, "/", other);
+        return sites(context).op_quo.call(context, this, this, other);
     }
 
     /** flo_mod
@@ -461,7 +459,8 @@ public class RubyFloat extends RubyNumeric {
             case FLOAT:
                 double d_other = ((RubyNumeric) other).getDoubleValue();
                 if (value < 0 && (d_other != Math.round(d_other))) {
-                    return RubyComplex.newComplexRaw(context.runtime, this).callMethod(context, "**", other);
+                    RubyComplex complex = RubyComplex.newComplexRaw(context.runtime, this);
+                    return sites(context).op_exp.call(context, complex, complex, other);
                 } else {
                     return op_pow(context, other);
                 }
@@ -533,8 +532,9 @@ public class RubyFloat extends RubyNumeric {
             double b = ((RubyNumeric) other).getDoubleValue();
             return dbl_cmp(runtime, value, b);
         default:
-            if (Double.isInfinite(value) && other.respondsTo("infinite?")) {
-                IRubyObject infinite = other.callMethod(context, "infinite?");
+            FloatSites sites = sites(context);
+            if (Double.isInfinite(value) && sites.respond_to_infinite.respondsTo(context, other, other, true)) {
+                IRubyObject infinite = sites.infinite.call(context, other, other);
                 if (infinite.isNil()) {
                     return value > 0.0 ? RubyFixnum.one(runtime) : RubyFixnum.minus_one(runtime);
                 }
@@ -546,7 +546,7 @@ public class RubyFloat extends RubyNumeric {
                     return value < 0.0 ? RubyFixnum.zero(runtime) : RubyFixnum.one(runtime);
                 }
             }
-            return coerceCmp(context, sites(context).op_cmp, other);
+            return coerceCmp(context, sites.op_cmp, other);
         }
     }
 
@@ -801,7 +801,7 @@ public class RubyFloat extends RubyNumeric {
                     f_lshift(context, one, f_sub(context,one,rn)));
         }
 
-        if (invokedynamic(context, a, OP_EQUAL, b).isTrue()) return f_to_r(context, this);
+        if (sites(context).op_equal.call(context, a, a, b).isTrue()) return f_to_r(context, this);
 
         IRubyObject[] ary = new IRubyObject[2];
         ary[0] = a;
@@ -996,7 +996,7 @@ public class RubyFloat extends RubyNumeric {
         return RubyFloat.newFloat(getRuntime(), Math.nextAfter(value, Double.NEGATIVE_INFINITY));
     }
 
-    private static JavaSites.FloatSites sites(ThreadContext context) {
+    private static FloatSites sites(ThreadContext context) {
         return context.sites.Float;
     }
 }

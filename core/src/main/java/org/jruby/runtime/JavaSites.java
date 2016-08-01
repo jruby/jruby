@@ -250,6 +250,9 @@ public class JavaSites {
         public final CallSite op_le = new FunctionalCachingCallSite("<=");
         public final CallSite op_gt = new FunctionalCachingCallSite(">");
         public final CallSite op_lt = new FunctionalCachingCallSite("<");
+        public final CallSite op_equal = new FunctionalCachingCallSite("==");
+        public final RespondToCallSite respond_to_infinite = new RespondToCallSite("infinite?");
+        public final CallSite infinite = new FunctionalCachingCallSite("infinite?");
     }
 
     public static class TimeSites {
