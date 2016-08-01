@@ -16,6 +16,11 @@ import java.util.Locale;
 public abstract class StringUtils {
 
     @TruffleBoundary
+    public static String create(byte[] bytes) {
+        return new String(bytes);
+    }
+
+    @TruffleBoundary
     public static String format(Locale locale, String format, Object... args) {
         return String.format(locale, format, args);
     }
