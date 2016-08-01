@@ -216,6 +216,12 @@ psd-benchmarks: {
   ] ${post-process-and-upload-results}
 }
 
+image-demo-benchmarks: {
+  run: ${setup-benchmarks} [
+    [mx, benchmark, image-demo]
+  ] ${post-process-and-upload-results}
+}
+
 asciidoctor-benchmarks: {
   run: ${setup-benchmarks} [
     [mx, benchmark, asciidoctor]
@@ -406,6 +412,14 @@ builds: [
   {name: ruby-benchmarks-psd-graal-enterprise} ${common} ${graal-enterprise} ${bench-caps} ${jruby-truffle} ${psd-benchmarks},
   {name: ruby-benchmarks-psd-graal-enterprise-no-om} ${common} ${graal-enterprise-no-om} ${bench-caps} ${jruby-truffle} ${psd-benchmarks},
   {name: ruby-benchmarks-psd-graal-vm} ${common} ${graal-vm} ${daily-bench-caps} ${jruby-truffle} ${psd-benchmarks},
+
+  {name: ruby-benchmarks-image-demo-noindy} ${common} ${no-graal} ${daily-bench-caps} ${jruby-noindy-benchmark} ${image-demo-benchmarks},
+  {name: ruby-benchmarks-image-demo-indy} ${common} ${no-graal} ${daily-bench-caps} ${jruby-indy-benchmark} ${image-demo-benchmarks},
+  {name: ruby-benchmarks-image-demo-no-graal} ${common} ${no-graal} ${weekly-bench-caps} ${jruby-truffle} ${image-demo-benchmarks},
+  {name: ruby-benchmarks-image-demo-graal-core} ${common} ${graal-core} ${bench-caps} ${jruby-truffle} ${image-demo-benchmarks},
+  {name: ruby-benchmarks-image-demo-graal-enterprise} ${common} ${graal-enterprise} ${bench-caps} ${jruby-truffle} ${image-demo-benchmarks},
+  {name: ruby-benchmarks-image-demo-graal-enterprise-no-om} ${common} ${graal-enterprise-no-om} ${bench-caps} ${jruby-truffle} ${image-demo-benchmarks},
+  {name: ruby-benchmarks-image-demo-graal-vm} ${common} ${graal-vm} ${daily-bench-caps} ${jruby-truffle} ${image-demo-benchmarks},
 
   {name: ruby-benchmarks-asciidoctor-noindy} ${common} ${no-graal} ${daily-bench-caps} ${jruby-noindy-benchmark} ${asciidoctor-benchmarks},
   {name: ruby-benchmarks-asciidoctor-indy} ${common} ${no-graal} ${daily-bench-caps} ${jruby-indy-benchmark} ${asciidoctor-benchmarks},
