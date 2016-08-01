@@ -3,16 +3,7 @@ package org.jruby.java.proxies;
 import java.lang.reflect.Array;
 import java.util.Arrays;
 
-import org.jruby.Ruby;
-import org.jruby.RubyArray;
-import org.jruby.RubyBoolean;
-import org.jruby.RubyClass;
-import org.jruby.RubyFixnum;
-import org.jruby.RubyModule;
-import org.jruby.RubyNumeric;
-import org.jruby.RubyObject;
-import org.jruby.RubyRange;
-import org.jruby.RubyString;
+import org.jruby.*;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.java.util.ArrayUtils;
@@ -20,6 +11,7 @@ import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaArray;
 import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaUtil;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -74,23 +66,6 @@ public final class ArrayJavaProxy extends JavaProxy {
         return (JavaArray) dataGetStruct();
     }
 
-    @JRubyMethod(name = {"length", "size"})
-    public RubyFixnum length(ThreadContext context) {
-        return context.runtime.newFixnum( Array.getLength( getObject() ) );
-    }
-
-    @JRubyMethod(name = "empty?")
-    public RubyBoolean empty_p(ThreadContext context) {
-        return context.runtime.newBoolean( Array.getLength( getObject() ) == 0 );
-    }
-
-    @JRubyMethod(name = "[]")
-    public IRubyObject op_aref(ThreadContext context, IRubyObject arg) {
-        if ( arg instanceof RubyRange ) return arrayRange(context, (RubyRange) arg);
-        final int i = convertArrayIndex(arg);
-        return ArrayUtils.arefDirect(context.runtime, getObject(), converter, i);
-    }
-
     public Object get(final int index) {
         return Array.get(getObject(), index);
     }
@@ -103,6 +78,25 @@ public final class ArrayJavaProxy extends JavaProxy {
         return ArrayUtils.asetDirect(runtime, getObject(), converter, index, value);
     }
 
+    public final int length() { return Array.getLength( getObject() ); }
+
+    @JRubyMethod(name = {"length", "size"})
+    public RubyFixnum length(ThreadContext context) {
+        return context.runtime.newFixnum( length() );
+    }
+
+    @JRubyMethod(name = "empty?")
+    public RubyBoolean empty_p(ThreadContext context) {
+        return context.runtime.newBoolean( length() == 0 );
+    }
+
+    @JRubyMethod(name = "[]")
+    public final IRubyObject op_aref(ThreadContext context, IRubyObject arg) {
+        if ( arg instanceof RubyRange ) return arrayRange(context, (RubyRange) arg);
+        final int i = convertArrayIndex(arg);
+        return ArrayUtils.arefDirect(context.runtime, getObject(), converter, i);
+    }
+
     @JRubyMethod(name = "[]", required = 1, rest = true)
     public final IRubyObject op_aref(ThreadContext context, IRubyObject[] args) {
         if ( args.length == 1 ) return op_aref(context, args[0]);
@@ -112,6 +106,285 @@ public final class ArrayJavaProxy extends JavaProxy {
     @JRubyMethod(name = "[]=")
     public final IRubyObject op_aset(ThreadContext context, IRubyObject index, IRubyObject value) {
         return setValue(context.runtime, convertArrayIndex(index), value);
+    }
+
+    @JRubyMethod(name = { "include?", "member?" }) // Enumerable override
+    public IRubyObject include_p(ThreadContext context, IRubyObject obj) {
+        final Object array = getObject();
+
+        final Class<?> componentClass = array.getClass().getComponentType();
+
+        if ( componentClass.isPrimitive() ) {
+            switch (componentClass.getName().charAt(0)) {
+                case 'b':
+                    if (componentClass == byte.class) return context.runtime.newBoolean( includes(context, (byte[]) array, obj) );
+                    else /* if (componentClass == boolean.class) */ return context.runtime.newBoolean( includes(context, (boolean[]) array, obj) );
+                    // break;
+                case 's':
+                    /* if (componentClass == short.class) */ return context.runtime.newBoolean( includes(context, (short[]) array, obj) );
+                    // break;
+                case 'c':
+                    /* if (componentClass == char.class) */ return context.runtime.newBoolean( includes(context, (char[]) array, obj) );
+                    // break;
+                case 'i':
+                    /* if (componentClass == int.class) */ return context.runtime.newBoolean( includes(context, (int[]) array, obj) );
+                    // break;
+                case 'l':
+                    /* if (componentClass == long.class) */ return context.runtime.newBoolean( includes(context, (long[]) array, obj) );
+                    // break;
+                case 'f':
+                    /* if (componentClass == float.class) */ return context.runtime.newBoolean( includes(context, (float[]) array, obj) );
+                    // break;
+                case 'd':
+                    /* if (componentClass == double.class) */ return context.runtime.newBoolean( includes(context, (double[]) array, obj) );
+                    // break;
+            }
+        }
+        return context.runtime.newBoolean( includes(context, (Object[]) array, obj) );
+    }
+
+    private boolean includes(final ThreadContext context, final Object[] array, final IRubyObject obj) {
+        final int len = array.length;
+        if ( len == 0 ) return false;
+        final Ruby runtime = context.runtime;
+        for ( int i = 0; i < len; i++ ) {
+            IRubyObject value = JavaUtil.convertJavaArrayElementToRuby(runtime, converter, array, i);
+            if ( equalInternal(context, value, obj) ) return true;
+        }
+        return false;
+    }
+
+    private boolean includes(final ThreadContext context, final byte[] array, final IRubyObject obj) {
+        final int len = array.length;
+        if ( len == 0 ) return false;
+        final Ruby runtime = context.runtime;
+        if ( obj instanceof RubyFixnum ) {
+            final long objVal = ((RubyInteger) obj).getLongValue();
+            if ( objVal < Byte.MIN_VALUE || objVal > Byte.MAX_VALUE ) return false;
+
+            for ( int i = 0; i < len; i++ ) {
+                if ( (byte) objVal == array[i] ) return true;
+            }
+            return false;
+        }
+        for ( int i = 0; i < len; i++ ) {
+            IRubyObject value = RubyFixnum.newFixnum(runtime, array[i]);
+            if ( equalInternal(context, value, obj) ) return true;
+        }
+        return false;
+    }
+
+    private boolean includes(final ThreadContext context, final short[] array, final IRubyObject obj) {
+        final int len = array.length;
+        if ( len == 0 ) return false;
+        final Ruby runtime = context.runtime;
+        if ( obj instanceof RubyFixnum ) {
+            final long objVal = ((RubyInteger) obj).getLongValue();
+            if ( objVal < Short.MIN_VALUE || objVal > Short.MAX_VALUE ) return false;
+
+            for ( int i = 0; i < len; i++ ) {
+                if ( (short) objVal == array[i] ) return true;
+            }
+            return false;
+        }
+        for ( int i = 0; i < len; i++ ) {
+            IRubyObject value = RubyFixnum.newFixnum(runtime, array[i]);
+            if ( equalInternal(context, value, obj) ) return true;
+        }
+        return false;
+    }
+
+    private boolean includes(final ThreadContext context, final int[] array, final IRubyObject obj) {
+        final int len = array.length;
+        if ( len == 0 ) return false;
+        final Ruby runtime = context.runtime;
+        if ( obj instanceof RubyFixnum ) {
+            final long objVal = ((RubyInteger) obj).getLongValue();
+            if ( objVal < Integer.MIN_VALUE || objVal > Integer.MAX_VALUE ) return false;
+
+            for ( int i = 0; i < len; i++ ) {
+                if ( (int) objVal == array[i] ) return true;
+            }
+            return false;
+        }
+        for ( int i = 0; i < len; i++ ) {
+            IRubyObject value = RubyFixnum.newFixnum(runtime, array[i]);
+            if ( equalInternal(context, value, obj) ) return true;
+        }
+        return false;
+    }
+
+    private boolean includes(final ThreadContext context, final long[] array, final IRubyObject obj) {
+        final int len = array.length;
+        if ( len == 0 ) return false;
+        final Ruby runtime = context.runtime;
+        if ( obj instanceof RubyFixnum ) {
+            final long objVal = ((RubyInteger) obj).getLongValue();
+
+            for ( int i = 0; i < len; i++ ) {
+                if ( objVal == array[i] ) return true;
+            }
+            return false;
+        }
+        for ( int i = 0; i < len; i++ ) {
+            IRubyObject value = RubyFixnum.newFixnum(runtime, array[i]);
+            if ( equalInternal(context, value, obj) ) return true;
+        }
+        return false;
+    }
+
+    private boolean includes(final ThreadContext context, final char[] array, final IRubyObject obj) {
+        final int len = array.length;
+        if ( len == 0 ) return false;
+        final Ruby runtime = context.runtime;
+        if ( obj instanceof RubyFixnum ) {
+            final long objVal = ((RubyInteger) obj).getLongValue();
+            if ( objVal < Character.MIN_VALUE || objVal > Character.MAX_VALUE ) return false;
+
+            for ( int i = 0; i < len; i++ ) {
+                if ( (int) objVal == array[i] ) return true;
+            }
+            return false;
+        }
+        for ( int i = 0; i < len; i++ ) {
+            IRubyObject value = RubyFixnum.newFixnum(runtime, array[i]);
+            if ( equalInternal(context, value, obj) ) return true;
+        }
+        return false;
+    }
+
+    private boolean includes(final ThreadContext context, final boolean[] array, final IRubyObject obj) {
+        final int len = array.length;
+        if ( len == 0 ) return false;
+        final Ruby runtime = context.runtime;
+        if ( obj instanceof RubyBoolean ) {
+            final boolean objVal = ((RubyBoolean) obj).isTrue();
+
+            for ( int i = 0; i < len; i++ ) {
+                if ( objVal == array[i] ) return true;
+            }
+            return false;
+        }
+        for ( int i = 0; i < len; i++ ) {
+            IRubyObject value = RubyBoolean.newBoolean(runtime, array[i]);
+            if ( equalInternal(context, value, obj) ) return true;
+        }
+        return false;
+    }
+
+    private boolean includes(final ThreadContext context, final float[] array, final IRubyObject obj) {
+        final int len = array.length;
+        if ( len == 0 ) return false;
+        final Ruby runtime = context.runtime;
+        if ( obj instanceof RubyFloat ) {
+            final double objVal = ((RubyFloat) obj).getDoubleValue();
+
+            for ( int i = 0; i < len; i++ ) {
+                if ( (float) objVal == array[i] ) return true;
+            }
+            return false;
+        }
+        for ( int i = 0; i < len; i++ ) {
+            IRubyObject value = RubyFloat.newFloat(runtime, array[i]);
+            if ( equalInternal(context, value, obj) ) return true;
+        }
+        return false;
+    }
+
+    private boolean includes(final ThreadContext context, final double[] array, final IRubyObject obj) {
+        final int len = array.length;
+        if ( len == 0 ) return false;
+        final Ruby runtime = context.runtime;
+        if ( obj instanceof RubyFloat ) {
+            final double objVal = ((RubyFloat) obj).getDoubleValue();
+
+            for ( int i = 0; i < len; i++ ) {
+                if ( objVal == array[i] ) return true;
+            }
+            return false;
+        }
+        for ( int i = 0; i < len; i++ ) {
+            IRubyObject value = RubyFloat.newFloat(runtime, array[i]);
+            if ( equalInternal(context, value, obj) ) return true;
+        }
+        return false;
+    }
+
+    @JRubyMethod(name = "first") // Enumerable override
+    public IRubyObject first(ThreadContext context) {
+        final Object array = getObject();
+        // Enumerable does not raise when length == 0 (compatibility)
+        if ( Array.getLength(array) == 0 ) return context.nil;
+        return JavaUtil.convertJavaArrayElementToRuby(context.runtime, converter, array, 0);
+    }
+
+    @JRubyMethod(name = "first") // Enumerable override
+    public IRubyObject first(ThreadContext context, IRubyObject count) {
+        final Object array = getObject();
+        int len = count.convertToInteger().getIntValue();
+        int size = Array.getLength(array); if ( len > size ) len = size;
+
+        final Ruby runtime = context.runtime;
+        if ( len == 0 ) return RubyArray.newEmptyArray(runtime);
+        final IRubyObject[] ary = new IRubyObject[len];
+        for ( int i = 0; i < len; i++ ) {
+            ary[i] = JavaUtil.convertJavaArrayElementToRuby(runtime, converter, array, i);
+        }
+        return RubyArray.newArrayNoCopy(runtime, ary);
+    }
+
+    @JRubyMethod(name = "last") // ~ Array#last
+    public IRubyObject last(ThreadContext context) {
+        final Object array = getObject();
+        final int len = Array.getLength(array);
+        if ( len == 0 ) return context.nil;
+        return JavaUtil.convertJavaArrayElementToRuby(context.runtime, converter, array, len - 1);
+    }
+
+    @JRubyMethod(name = "last") // ~ Array#last
+    public IRubyObject last(ThreadContext context, IRubyObject count) {
+        final Object array = getObject();
+
+        int len = RubyFixnum.fix2int(count);
+        int size = Array.getLength(array);
+        int start = size - len; if ( start < 0 ) start = 0;
+        int end = start + len; if ( end > size ) end = size;
+        len = end - start;
+
+        final Ruby runtime = context.runtime;
+        if ( len == 0 ) return RubyArray.newEmptyArray(runtime);
+        final IRubyObject[] ary = new IRubyObject[len];
+        for ( int i = 0; i < len; i++ ) {
+            ary[i] = JavaUtil.convertJavaArrayElementToRuby(runtime, converter, array, i + start);
+        }
+        return RubyArray.newArrayNoCopy(runtime, ary);
+    }
+
+    @JRubyMethod(name = "count") // @override Enumerable#count
+    public IRubyObject count(final ThreadContext context, final Block block) {
+        final Ruby runtime = context.runtime;
+        if ( block.isGiven() ) {
+            final Object array = getObject(); int count = 0;
+            for ( int i = 0; i < Array.getLength(array); i++ ) {
+                IRubyObject next = JavaUtil.convertJavaArrayElementToRuby(runtime, converter, array, i);
+                if ( block.yield( context, next ).isTrue() ) count++;
+            }
+            return RubyFixnum.newFixnum(runtime, count);
+        }
+        return RubyFixnum.newFixnum(runtime, length());
+    }
+
+    @JRubyMethod(name = "count") // @override Enumerable#count
+    public IRubyObject count(final ThreadContext context, final IRubyObject obj, final Block unused) {
+        // unused block due DescriptorInfo not (yet) supporting if a method receives block and an override doesn't
+        final Ruby runtime = context.runtime;
+        final Object array = getObject(); int count = 0;
+        for ( int i = 0; i < Array.getLength(array); i++ ) {
+            // NOTE: could be former improved by special case handling primitive arrays and == ...
+            IRubyObject next = JavaUtil.convertJavaArrayElementToRuby(runtime, converter, array, i);
+            if ( RubyObject.equalInternal(context, next, obj) ) count++;
+        }
+        return RubyFixnum.newFixnum(runtime, count);
     }
 
     @JRubyMethod(name = "dig", required = 1, rest = true)
@@ -165,6 +438,10 @@ public final class ArrayJavaProxy extends JavaProxy {
     @JRubyMethod
     public IRubyObject each(ThreadContext context, Block block) {
         final Ruby runtime = context.runtime;
+        if ( ! block.isGiven() ) { // ... Enumerator.new(self, :each)
+            return runtime.getEnumerator().callMethod("new", this, runtime.newSymbol("each"));
+        }
+
         final Object array = getObject();
         final int length = Array.getLength(array);
 
@@ -175,13 +452,37 @@ public final class ArrayJavaProxy extends JavaProxy {
         return this;
     }
 
-    @JRubyMethod(name = {"to_a", "to_ary"})
+    @JRubyMethod
+    public IRubyObject each_with_index(final ThreadContext context, final Block block) {
+        final Ruby runtime = context.runtime;
+        if ( ! block.isGiven() ) { // ... Enumerator.new(self, :each)
+            return runtime.getEnumerator().callMethod("new", this, runtime.newSymbol("each_with_index"));
+        }
+
+        final boolean arity2 = block.getSignature().arity() == Arity.TWO_ARGUMENTS;
+
+        final Object array = getObject();
+        final int length = Array.getLength(array);
+
+        for ( int i = 0; i < length; i++ ) {
+            IRubyObject element = ArrayUtils.arefDirect(runtime, array, converter, i);
+            final RubyInteger index = RubyFixnum.newFixnum(runtime, i);
+            if ( arity2 ) {
+                block.yieldSpecific(context, element, index);
+            } else {
+                block.yield(context, RubyArray.newArray(runtime, element, index));
+            }
+        }
+        return this;
+    }
+
+    @JRubyMethod(name = { "to_a", "entries" }, alias = "to_ary")
     public RubyArray to_a(ThreadContext context) {
         final Object array = getObject();
         return JavaUtil.convertJavaArrayToRubyWithNesting(context, array);
     }
 
-    @JRubyMethod(name = {"component_type"})
+    @JRubyMethod(name = "component_type")
     public IRubyObject component_type(ThreadContext context) {
         Class<?> componentType = getObject().getClass().getComponentType();
         final JavaClass javaClass = JavaClass.get(context.runtime, componentType);

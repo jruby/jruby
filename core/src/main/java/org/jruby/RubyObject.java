@@ -466,7 +466,7 @@ public class RubyObject extends RubyBasicObject {
      * Helper method for checking equality, first using Java identity
      * equality, and then calling the "==" method.
      */
-    protected static boolean equalInternal(final ThreadContext context, final IRubyObject a, final IRubyObject b){
+    public static boolean equalInternal(final ThreadContext context, final IRubyObject a, final IRubyObject b){
         if (a == b) {
             return true;
         } else if (a instanceof RubySymbol) {

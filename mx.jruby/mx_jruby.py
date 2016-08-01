@@ -589,6 +589,26 @@ class PSDBenchmarkSuite(AllBenchmarksBenchmarkSuite):
     def time(self):
         return psd_benchmark_time
 
+image_demo_benchmarks = [
+    'image-demo-conv',
+    'image-demo-sobel',
+]
+
+image_demo_benchmark_time = 120
+
+class ImageDemoBenchmarkSuite(AllBenchmarksBenchmarkSuite):
+    def name(self):
+        return 'image-demo'
+
+    def directory(self):
+        return 'image-demo'
+
+    def benchmarks(self):
+        return image_demo_benchmarks
+
+    def time(self):
+        return image_demo_benchmark_time
+
 asciidoctor_benchmarks = [
     'asciidoctor:file-lines',
     'asciidoctor:string-lines',
@@ -715,6 +735,7 @@ mx_benchmark.add_bm_suite(TimeBenchmarkSuite())
 mx_benchmark.add_bm_suite(ClassicBenchmarkSuite())
 mx_benchmark.add_bm_suite(ChunkyBenchmarkSuite())
 mx_benchmark.add_bm_suite(PSDBenchmarkSuite())
+mx_benchmark.add_bm_suite(ImageDemoBenchmarkSuite())
 mx_benchmark.add_bm_suite(AsciidoctorBenchmarkSuite())
 mx_benchmark.add_bm_suite(SyntheticBenchmarkSuite())
 mx_benchmark.add_bm_suite(MicroBenchmarkSuite())

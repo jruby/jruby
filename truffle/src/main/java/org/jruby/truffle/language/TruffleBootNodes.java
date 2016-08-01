@@ -34,6 +34,7 @@ import org.jruby.truffle.language.loader.CodeLoader;
 import org.jruby.truffle.language.loader.SourceLoader;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.parser.ParserContext;
+import org.jruby.truffle.util.ByteListUtils;
 import org.jruby.util.ByteList;
 import org.jruby.util.Memo;
 
@@ -94,7 +95,7 @@ public abstract class TruffleBootNodes {
             coreLibrary().getGlobalVariables().put(
                     "$0",
                     StringOperations.createString(getContext(),
-                            ByteList.create(getContext().getJRubyInterop().getArg0())));
+                            ByteListUtils.create(getContext().getJRubyInterop().getArg0())));
 
             String inputFile = getContext().getJRubyInterop().getOriginalInputFile();
 

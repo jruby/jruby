@@ -180,6 +180,22 @@ public abstract class JavaUtil {
             return RubyArray.newArrayNoCopy(context.runtime, convertJavaArrayToRuby(context.runtime, array));
         }
 
+        /*
+        @JRubyMethod(name = "count") // @override Enumerable#count
+        public IRubyObject count(final ThreadContext context, final IRubyObject self, final Block block) {
+            final Ruby runtime = context.runtime;
+            final java.util.Collection coll = unwrapJavaObject(self);
+            if ( block.isGiven() ) {
+                return JavaLang.Iterable.countBlock(context, coll.iterator(), block);
+            }
+            return RubyFixnum.newFixnum(runtime, coll.size());
+        }
+
+        @JRubyMethod(name = "count") // @override Enumerable#count
+        public static IRubyObject count(final ThreadContext context, final IRubyObject self, final IRubyObject obj, final Block unused) {
+            return JavaLang.Iterable.count(context, self, obj, Block.NULL_BLOCK);
+        } */
+
         @JRubyMethod(name = "+", required = 1)
         public static IRubyObject op_plus(final ThreadContext context, final IRubyObject self, final IRubyObject coll) {
             final IRubyObject dup = self.callMethod(context, "dup");

@@ -16,6 +16,11 @@ import java.util.Locale;
 public abstract class StringUtils {
 
     @TruffleBoundary
+    public static String create(byte[] bytes) {
+        return new String(bytes);
+    }
+
+    @TruffleBoundary
     public static String format(Locale locale, String format, Object... args) {
         return String.format(locale, format, args);
     }
@@ -33,6 +38,11 @@ public abstract class StringUtils {
     @TruffleBoundary
     public static String replace(String string, CharSequence target, CharSequence replacement) {
         return string.replace(target, replacement);
+    }
+
+    @TruffleBoundary
+    public static String toLowerCase(String string) {
+        return string.toLowerCase();
     }
 
 }

@@ -92,7 +92,7 @@ public abstract class FormatCharacterNode extends FormatNode {
             // TODO BJF check char length is > 0
             charString = Character.toString((char) charValue);
         } else {
-            final String resultString = new String((byte[]) toStrResult);
+            final String resultString = StringUtils.create((byte[]) toStrResult);
             final int size = resultString.length();
             if (size > 1) {
                 throw new RaiseException(getContext().getCoreExceptions().argumentErrorCharacterRequired(this));

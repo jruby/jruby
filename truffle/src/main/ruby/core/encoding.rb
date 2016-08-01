@@ -230,12 +230,6 @@ class Encoding
       end
       initialize_jruby(*[@source_encoding, @destination_encoding, @options])
     end
-    
-    alias_method :initialize_rubinius, :initialize
-
-    def initialize(*args)
-      initialize_rubinius(*args)
-    end
 
     def convert(str)
       str = StringValue(str)
