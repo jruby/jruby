@@ -130,6 +130,7 @@ public class JavaSites {
         public final CallSite op_minus = new FunctionalCachingCallSite("-");
         public final CallSite op_lshift = new FunctionalCachingCallSite("<<");
         public final CallSite op_and = new FunctionalCachingCallSite("&");
+        public final CheckedSites to_hash_checked = new CheckedSites("to_hash");
 
         public final Ruby.RecursiveFunctionEx recursive_cmp = new Ruby.RecursiveFunctionEx<IRubyObject>() {
             @Override

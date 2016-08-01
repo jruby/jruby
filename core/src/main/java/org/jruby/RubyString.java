@@ -2389,7 +2389,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     @JRubyMethod(name = "sub!", reads = BACKREF, writes = BACKREF)
     public IRubyObject sub_bang19(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
         Ruby runtime = context.runtime;
-        IRubyObject hash = TypeConverter.convertToTypeWithCheck(arg1, runtime.getHash(), "to_hash");
+        IRubyObject hash = TypeConverter.convertToTypeWithCheck(context, arg1, runtime.getHash(), sites(context).to_hash_checked);
         frozenCheck();
 
         RubyRegexp regexp = arg0 instanceof RubyRegexp ? (RubyRegexp) arg0 :
@@ -2546,7 +2546,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     private IRubyObject gsub19(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block, final boolean bang) {
         Ruby runtime = context.runtime;
-        IRubyObject tryHash = TypeConverter.convertToTypeWithCheck(arg1, runtime.getHash(), "to_hash");
+        IRubyObject tryHash = TypeConverter.convertToTypeWithCheck(context, arg1, runtime.getHash(), sites(context).to_hash_checked);
 
         final RubyHash hash;
         final RubyString str;
