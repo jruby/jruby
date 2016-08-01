@@ -40,4 +40,9 @@ public abstract class StringUtils {
         return string.replace(target, replacement);
     }
 
+    @TruffleBoundary
+    public static String toLowerCase(String string) {
+        return string.toLowerCase();
+    }
+
 }
