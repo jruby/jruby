@@ -11,6 +11,7 @@ import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaArray;
 import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaUtil;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -437,6 +438,10 @@ public final class ArrayJavaProxy extends JavaProxy {
     @JRubyMethod
     public IRubyObject each(ThreadContext context, Block block) {
         final Ruby runtime = context.runtime;
+        if ( ! block.isGiven() ) { // ... Enumerator.new(self, :each)
+            return runtime.getEnumerator().callMethod("new", this, runtime.newSymbol("each"));
+        }
+
         final Object array = getObject();
         final int length = Array.getLength(array);
 
@@ -447,7 +452,31 @@ public final class ArrayJavaProxy extends JavaProxy {
         return this;
     }
 
-    @JRubyMethod(name = { "to_a", "to_ary" })
+    @JRubyMethod
+    public IRubyObject each_with_index(final ThreadContext context, final Block block) {
+        final Ruby runtime = context.runtime;
+        if ( ! block.isGiven() ) { // ... Enumerator.new(self, :each)
+            return runtime.getEnumerator().callMethod("new", this, runtime.newSymbol("each_with_index"));
+        }
+
+        final boolean arity2 = block.getSignature().arity() == Arity.TWO_ARGUMENTS;
+
+        final Object array = getObject();
+        final int length = Array.getLength(array);
+
+        for ( int i = 0; i < length; i++ ) {
+            IRubyObject element = ArrayUtils.arefDirect(runtime, array, converter, i);
+            final RubyInteger index = RubyFixnum.newFixnum(runtime, i);
+            if ( arity2 ) {
+                block.yieldSpecific(context, element, index);
+            } else {
+                block.yield(context, RubyArray.newArray(runtime, element, index));
+            }
+        }
+        return this;
+    }
+
+    @JRubyMethod(name = { "to_a", "entries" }, alias = "to_ary")
     public RubyArray to_a(ThreadContext context) {
         final Object array = getObject();
         return JavaUtil.convertJavaArrayToRubyWithNesting(context, array);

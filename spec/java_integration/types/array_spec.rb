@@ -1196,6 +1196,11 @@ describe "ArrayJavaProxy" do
     r_arr = j_arr.to_a
     j_arr[0] = 3
     expect( r_arr[0] ).to eql 1
+
+    j_arr = [1, 2].to_java(:int)
+    r_arr = j_arr.entries
+    j_arr[0] = 3
+    expect( r_arr[0] ).to eql 1
   end
 
   it "returns a new array from to_ary" do
@@ -1247,6 +1252,35 @@ describe "ArrayJavaProxy" do
 
     arr = Java::byte[0].new
     expect( arr.count ).to eql 0
+  end
+
+  it 'each return self' do
+    arr = Java::int[5].new
+    expect( arr.each { |i| i } ).to be arr
+    arr = [].to_java
+    expect( arr.each { |i| i } ).to be arr
+  end
+
+  it 'each without block' do
+    arr = Java::float[5].new; arr[1] = 1.0
+    expect( enum = arr.each ).to be_a Enumerator
+    expect( enum.next ).to eql 0.0
+    expect( enum.next ).to eql 1.0
+  end
+
+  it 'each with index' do
+    arr = Java::byte[5].new
+    counter = 0
+    ret = arr.each_with_index { |el, i| expect(el).to eql 0; expect(i).to eql(counter); counter += 1 }
+    expect( counter ).to eql 5
+    expect( ret ).to eql arr
+
+    arr = Java::long[4].new; arr[1] = 1; arr[2] = 1; arr[3] = 3
+    expect( enum = arr.each_with_index ).to be_a Enumerator
+    expect( enum.next ).to eql [0, 0]
+    expect( enum.next ).to eql [1, 1]
+    expect( enum.next ).to eql [1, 2]
+    expect( enum.next ).to eql [3, 3]
   end
 
   describe "#dig" do
