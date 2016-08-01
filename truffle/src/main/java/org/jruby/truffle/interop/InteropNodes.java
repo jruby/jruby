@@ -45,6 +45,7 @@ import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.JavaException;
 import org.jruby.truffle.language.control.RaiseException;
+import org.jruby.truffle.util.ByteListUtils;
 import org.jruby.util.ByteList;
 import java.io.IOException;
 
@@ -316,12 +317,13 @@ public abstract class InteropNodes {
     @CoreMethod(names = "unbox", isModuleFunction = true, required = 1)
     public abstract static class UnboxNode extends CoreMethodArrayArgumentsNode {
 
+        @TruffleBoundary
         @Specialization
         public DynamicObject unbox(CharSequence receiver) {
             // TODO CS-21-Dec-15 this shouldn't be needed - we need to convert j.l.String to Ruby's String automatically
 
             return Layouts.STRING.createString(coreLibrary().getStringFactory(),
-                    StringOperations.ropeFromByteList(ByteList.create(receiver)));
+                    StringOperations.ropeFromByteList(ByteListUtils.create(receiver)));
         }
 
         @Specialization

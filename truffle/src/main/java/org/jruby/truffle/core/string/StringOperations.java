@@ -46,6 +46,7 @@ import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.language.RubyGuards;
+import org.jruby.truffle.util.ByteListUtils;
 import org.jruby.truffle.util.StringUtils;
 import org.jruby.util.ByteList;
 
@@ -195,7 +196,7 @@ public abstract class StringOperations {
 
     @TruffleBoundary
     public static ByteList createByteList(CharSequence s) {
-        return ByteList.create(s);
+        return ByteListUtils.create(s);
     }
 
     public static Rope rope(DynamicObject string) {
