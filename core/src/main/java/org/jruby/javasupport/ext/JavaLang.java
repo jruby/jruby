@@ -92,7 +92,7 @@ public abstract class JavaLang {
                 final Object value = iterator.next();
                 block.yield(context, convertJavaToUsableRubyObject(runtime, value));
             }
-            return context.nil;
+            return self;
         }
 
         @JRubyMethod
@@ -114,7 +114,7 @@ public abstract class JavaLang {
                     block.yield(context, RubyArray.newArray(runtime, rValue, index));
                 }
             }
-            return context.nil;
+            return self;
         }
 
         @JRubyMethod(name = { "to_a", "entries" }) // @override Enumerable#to_a

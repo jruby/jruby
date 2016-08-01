@@ -13,8 +13,9 @@ describe "Collection Ruby extensions" do
     expect(data).to eq @data
 
     data = []
-    java.util.concurrent.LinkedBlockingQueue.new(@data).each { |elem| data << elem }
+    ret = java.util.concurrent.LinkedBlockingQueue.new(@data).each { |elem| data << elem }
     expect(data).to eq @data
+    expect(ret).to be_a java.util.concurrent.LinkedBlockingQueue
   end
 
   it 'iterates with an Enumerator on #each' do
@@ -30,9 +31,10 @@ describe "Collection Ruby extensions" do
     set = java.util.LinkedHashSet.new
     @data.each { |elem| set.add elem }
     data = []; idx = []
-    set.each_with_index { |elem, i| data << elem; idx << i }
+    ret = set.each_with_index { |elem, i| data << elem; idx << i }
     expect(data).to eq @data
     expect(idx).to eq [0, 1, 2, 3]
+    expect(ret).to be set
 
     data = []
     java.util.concurrent.LinkedBlockingQueue.new.each_with_index { |elem| data << elem }
