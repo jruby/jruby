@@ -29,6 +29,7 @@ public class JavaSites {
     public final EnumerableSites Enumerable = new EnumerableSites();
     public final ComparableSites Comparable = new ComparableSites();
     public final IOSites IO = new IOSites();
+    public final FileSites File = new FileSites();
     public final TypeConverterSites TypeConverter = new TypeConverterSites();
     public final HelpersSites Helpers = new HelpersSites();
     public final IRRuntimeHelpersSites IRRuntimeHelpers = new IRRuntimeHelpersSites();
@@ -288,6 +289,14 @@ public class JavaSites {
         public final RespondToCallSite respond_to_to_int = new RespondToCallSite("to_int");
         public final RespondToCallSite respond_to_to_io = new RespondToCallSite("to_io");
         public final RespondToCallSite respond_to_to_hash = new RespondToCallSite("to_hash");
+    }
+
+    public static class FileSites {
+        public final CallSite to_path = new FunctionalCachingCallSite("to_path");
+        public final RespondToCallSite respond_to_to_path = new RespondToCallSite("to_path");
+        public final CheckedSites to_time_checked = new CheckedSites("to_time");
+        public final CheckedSites to_int_checked = new CheckedSites("to_int");
+        public final CheckedSites to_hash_checked = new CheckedSites("to_hash");
     }
 
     public static class TypeConverterSites {
