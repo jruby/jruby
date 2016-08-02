@@ -17,13 +17,13 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.hash.BucketsStrategy;
+import org.jruby.truffle.core.hash.KeyValue;
 import org.jruby.truffle.core.hash.HashOperations;
 import org.jruby.truffle.language.PerformanceWarnings;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 public class ReadKeywordRestArgumentNode extends RubyNode {
 
@@ -61,9 +61,9 @@ public class ReadKeywordRestArgumentNode extends RubyNode {
 
         final DynamicObject hashObject = (DynamicObject) hash;
 
-        final List<Map.Entry<Object, Object>> entries = new ArrayList<>();
+        final List<KeyValue> entries = new ArrayList<>();
 
-        outer: for (Map.Entry<Object, Object> keyValue : HashOperations.iterableKeyValues(hashObject)) {
+        outer: for (KeyValue keyValue : HashOperations.iterableKeyValues(hashObject)) {
             if (!RubyGuards.isRubySymbol(keyValue.getKey())) {
                 continue;
             }

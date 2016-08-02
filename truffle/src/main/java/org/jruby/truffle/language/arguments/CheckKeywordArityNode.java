@@ -15,13 +15,13 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.hash.KeyValue;
 import org.jruby.truffle.core.hash.HashOperations;
 import org.jruby.truffle.language.PerformanceWarnings;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.methods.Arity;
-import java.util.Map;
 
 public class CheckKeywordArityNode extends RubyNode {
 
@@ -72,7 +72,7 @@ public class CheckKeywordArityNode extends RubyNode {
 
         final DynamicObject keywordHash = (DynamicObject) keywordArguments;
 
-        for (Map.Entry<Object, Object> keyValue : HashOperations.iterableKeyValues(keywordHash)) {
+        for (KeyValue keyValue : HashOperations.iterableKeyValues(keywordHash)) {
             if (arity.hasKeywordsRest()) {
                 if (RubyGuards.isRubySymbol(keyValue.getKey())) {
                     continue;

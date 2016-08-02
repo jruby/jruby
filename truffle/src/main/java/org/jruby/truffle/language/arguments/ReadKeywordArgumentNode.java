@@ -15,11 +15,10 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.hash.KeyValue;
 import org.jruby.truffle.core.hash.HashOperations;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
-
-import java.util.Map;
 
 public class ReadKeywordArgumentNode extends RubyNode {
 
@@ -58,7 +57,7 @@ public class ReadKeywordArgumentNode extends RubyNode {
 
         assert RubyGuards.isRubyHash(hash);
 
-        for (Map.Entry<Object, Object> keyValue : HashOperations.iterableKeyValues(hash)) {
+        for (KeyValue keyValue : HashOperations.iterableKeyValues(hash)) {
             if (RubyGuards.isRubySymbol(keyValue.getKey()) && keyValue.getKey().toString().equals(name)) {
                 return keyValue.getValue();
             }

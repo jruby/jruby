@@ -18,7 +18,6 @@ import org.jruby.truffle.language.RubyGuards;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.NoSuchElementException;
 
 public abstract class BucketsStrategy {
@@ -34,7 +33,7 @@ public abstract class BucketsStrategy {
     private static final int[] CAPACITIES = Arrays.copyOf(org.jruby.RubyHash.MRI_PRIMES, org.jruby.RubyHash.MRI_PRIMES.length - 1);
 
     @TruffleBoundary
-    public static DynamicObject create(RubyContext context, Collection<Map.Entry<Object, Object>> entries, boolean byIdentity) {
+    public static DynamicObject create(RubyContext context, Collection<KeyValue> entries, boolean byIdentity) {
         int actualSize = entries.size();
 
         final int bucketsCount = capacityGreaterThan(entries.size()) * OVERALLOCATE_FACTOR;
@@ -43,7 +42,7 @@ public abstract class BucketsStrategy {
         Entry firstInSequence = null;
         Entry lastInSequence = null;
 
-        for (Map.Entry<Object, Object> entry : entries) {
+        for (KeyValue entry : entries) {
             Object key = entry.getKey();
 
             if (!byIdentity && RubyGuards.isRubyString(key)) {
@@ -203,8 +202,8 @@ public abstract class BucketsStrategy {
         assert HashOperations.verifyStore(context, hash);
     }
 
-    public static Iterator<Map.Entry<Object, Object>> iterateKeyValues(final Entry firstInSequence) {
-        return new Iterator<Map.Entry<Object, Object>>() {
+    public static Iterator<KeyValue> iterateKeyValues(final Entry firstInSequence) {
+        return new Iterator<KeyValue>() {
 
             private Entry entry = firstInSequence;
 
@@ -214,31 +213,12 @@ public abstract class BucketsStrategy {
             }
 
             @Override
-            public Map.Entry<Object, Object> next() {
+            public KeyValue next() {
                 if (!hasNext()) {
                     throw new NoSuchElementException();
                 }
 
-                final Entry finalEntry = entry;
-
-                final Map.Entry<Object, Object> entryResult = new Map.Entry<Object, Object>() {
-
-                    @Override
-                    public Object getKey() {
-                        return finalEntry.getKey();
-                    }
-
-                    @Override
-                    public Object getValue() {
-                        return finalEntry.getValue();
-                    }
-
-                    @Override
-                    public Object setValue(Object value) {
-                        throw new UnsupportedOperationException();
-                    }
-
-                };
+                final KeyValue entryResult = new KeyValue(entry.getKey(), entry.getValue());
 
                 entry = entry.getNextInSequence();
 
@@ -253,11 +233,11 @@ public abstract class BucketsStrategy {
         };
     }
 
-    public static Iterable<Map.Entry<Object, Object>> iterableKeyValues(final Entry firstInSequence) {
-        return new Iterable<Map.Entry<Object, Object>>() {
+    public static Iterable<KeyValue> iterableKeyValues(final Entry firstInSequence) {
+        return new Iterable<KeyValue>() {
 
             @Override
-            public Iterator<Map.Entry<Object, Object>> iterator() {
+            public Iterator<KeyValue> iterator() {
                 return iterateKeyValues(firstInSequence);
             }
 
