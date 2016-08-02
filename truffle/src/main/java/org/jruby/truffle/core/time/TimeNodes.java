@@ -279,7 +279,7 @@ public abstract class TimeNodes {
 
     }
 
-    @Primitive(name = "time_s_specific", needsSelf = false, lowerFixnum = 2)
+    @Primitive(name = "time_s_specific", lowerFixnum = 2)
     public static abstract class TimeSSpecificPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Child private GetTimeZoneNode getTimeZoneNode;
@@ -290,23 +290,23 @@ public abstract class TimeNodes {
         }
 
         @Specialization(guards = { "isUTC" })
-        public DynamicObject timeSSpecificUTC(long seconds, int nanoseconds, boolean isUTC, Object offset) {
+        public DynamicObject timeSSpecificUTC(DynamicObject timeClass, long seconds, int nanoseconds, boolean isUTC, Object offset) {
             final long milliseconds = getMillis(seconds, nanoseconds);
-            return Layouts.TIME.createTime(coreLibrary().getTimeFactory(), utcTime(milliseconds), nanoseconds % 1_000_000, nil(), nil(), false, isUTC);
+            return Layouts.TIME.createTime(Layouts.CLASS.getInstanceFactory(timeClass), utcTime(milliseconds), nanoseconds % 1_000_000, nil(), nil(), false, isUTC);
         }
 
         @Specialization(guards = { "!isUTC", "isNil(offset)" })
-        public DynamicObject timeSSpecific(VirtualFrame frame, long seconds, int nanoseconds, boolean isUTC, Object offset) {
+        public DynamicObject timeSSpecific(VirtualFrame frame, DynamicObject timeClass, long seconds, int nanoseconds, boolean isUTC, Object offset) {
             final long milliseconds = getMillis(seconds, nanoseconds);
-            return Layouts.TIME.createTime(coreLibrary().getTimeFactory(),
+            return Layouts.TIME.createTime(Layouts.CLASS.getInstanceFactory(timeClass),
                     localtime(milliseconds, getTimeZoneNode.executeGetTimeZone(frame)),
                     nanoseconds % 1_000_000, nil(), offset, false, isUTC);
         }
 
         @Specialization(guards = { "!isUTC" })
-        public DynamicObject timeSSpecific(VirtualFrame frame, long seconds, int nanoseconds, boolean isUTC, long offset) {
+        public DynamicObject timeSSpecific(VirtualFrame frame, DynamicObject timeClass, long seconds, int nanoseconds, boolean isUTC, long offset) {
             final long milliseconds = getMillis(seconds, nanoseconds);
-            return Layouts.TIME.createTime(coreLibrary().getTimeFactory(),
+            return Layouts.TIME.createTime(Layouts.CLASS.getInstanceFactory(timeClass),
                     offsetTime(milliseconds, offset), nanoseconds % 1_000_000, nil(), nil(), false, isUTC);
         }
 
