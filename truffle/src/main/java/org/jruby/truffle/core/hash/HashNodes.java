@@ -36,6 +36,7 @@ import org.jruby.truffle.core.array.ArrayBuilderNode;
 import org.jruby.truffle.core.basicobject.BasicObjectNodes;
 import org.jruby.truffle.core.basicobject.BasicObjectNodesFactory;
 import org.jruby.truffle.language.NotProvided;
+import org.jruby.truffle.language.PerformanceWarnings;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.SnippetNode;
@@ -47,7 +48,6 @@ import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.language.yield.YieldNode;
-
 import java.util.Arrays;
 import java.util.Map;
 
@@ -1144,9 +1144,10 @@ public abstract class HashNodes {
 
         @Specialization(guards = { "isRubyHash(other)", "!isCompareByIdentity(hash)" })
         public DynamicObject merge(VirtualFrame frame, DynamicObject hash, DynamicObject other, DynamicObject block) {
-            CompilerDirectives.bailout("Hash#merge with a block cannot be compiled at the moment");
+            PerformanceWarnings.warn("Hash#merge with a block is not yet optimized");
 
-            final DynamicObject merged = allocateObjectNode.allocateHash(Layouts.BASIC_OBJECT.getLogicalClass(hash), new Entry[BucketsStrategy.capacityGreaterThan(Layouts.HASH.getSize(hash) + Layouts.HASH.getSize(other))], 0, null, null, null, null, false); 
+            final int capacity = BucketsStrategy.capacityGreaterThan(Layouts.HASH.getSize(hash) + Layouts.HASH.getSize(other));
+            final DynamicObject merged = allocateObjectNode.allocateHash(Layouts.BASIC_OBJECT.getLogicalClass(hash), new Entry[capacity], 0, null, null, null, null, false);
 
             int size = 0;
 
