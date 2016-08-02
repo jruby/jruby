@@ -55,6 +55,7 @@ public class ReadKeywordArgumentNode extends RubyNode {
 
     @TruffleBoundary
     private Object lookupKeywordInHash(DynamicObject hash) {
+
         assert RubyGuards.isRubyHash(hash);
 
         for (Map.Entry<Object, Object> keyValue : HashOperations.iterableKeyValues(hash)) {
