@@ -28,8 +28,14 @@ public class BoundaryUtils {
 
         @Override
         public BoundaryIterator<E> iterator() {
-            return new BoundaryIterator<E>(iterable.iterator());
+            return new BoundaryIterator<E>(getIterator());
         }
+
+        @TruffleBoundary
+        private Iterator<E> getIterator() {
+            return iterable.iterator();
+        }
+
     }
 
     public static final class BoundaryIterator<E> implements Iterator<E> {

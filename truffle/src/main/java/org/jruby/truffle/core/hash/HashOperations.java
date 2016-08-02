@@ -14,6 +14,7 @@ import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyGuards;
+import org.jruby.truffle.util.BoundaryUtils.BoundaryIterable;
 import org.jruby.truffle.util.StringUtils;
 import java.util.Collections;
 import java.util.Iterator;
@@ -117,17 +118,17 @@ public abstract class HashOperations {
     }
 
     @TruffleBoundary
-    public static Iterable<KeyValue> iterableKeyValues(final DynamicObject hash) {
+    public static BoundaryIterable<KeyValue> iterableKeyValues(final DynamicObject hash) {
         assert RubyGuards.isRubyHash(hash);
 
-        return new Iterable<KeyValue>() {
+        return BoundaryIterable.wrap(new Iterable<KeyValue>() {
 
             @Override
             public Iterator<KeyValue> iterator() {
                 return iterateKeyValues(hash);
             }
 
-        };
+        });
     }
 
 }
