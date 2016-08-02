@@ -288,6 +288,30 @@ module Enumerable
     ary
   end
 
+  def grep_v(pattern)
+    ary = []
+
+    if block_given?
+      each do
+        o = Truffle.single_block_arg
+        unless pattern === o
+          # Regexp.set_block_last_match # TODO BJF Aug 1, 2016 Investigate for removal
+          ary << yield(o)
+        end
+      end
+    else
+      each do
+        o = Truffle.single_block_arg
+        unless pattern === o
+          # Regexp.set_block_last_match # TODO BJF Aug 1, 2016 Investigate for removal
+          ary << o
+        end
+      end
+    end
+
+    ary
+  end
+
   def sort(&prc)
     ary = to_a
     ary.frozen? ? ary.sort(&prc) : ary.sort!(&prc)
