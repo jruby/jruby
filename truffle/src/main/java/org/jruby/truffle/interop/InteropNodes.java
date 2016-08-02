@@ -42,6 +42,7 @@ import org.jruby.truffle.core.cast.NameToJavaStringNodeGen;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.string.StringCachingGuards;
 import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.language.PerformanceWarnings;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.JavaException;
 import org.jruby.truffle.language.control.RaiseException;
@@ -117,7 +118,7 @@ public abstract class InteropNodes {
                 VirtualFrame frame,
                 TruffleObject receiver,
                 Object[] args) {
-            CompilerDirectives.bailout("can't compile megamorphic interop EXECUTE message sends");
+            PerformanceWarnings.warn("megamorphic interop EXECUTE message send");
 
             final Node executeNode = createExecuteNode(args.length);
 
@@ -128,6 +129,7 @@ public abstract class InteropNodes {
             }
         }
 
+        @TruffleBoundary
         protected Node createExecuteNode(int argsLength) {
             return Message.createExecute(argsLength).createNode();
         }
@@ -182,7 +184,7 @@ public abstract class InteropNodes {
                 TruffleObject receiver,
                 DynamicObject identifier,
                 Object[] args) {
-            CompilerDirectives.bailout("can't compile megamorphic interop INVOKE message sends");
+            PerformanceWarnings.warn("megamorphic interop INVOKE message send");
 
             final Node invokeNode = createInvokeNode(args.length);
 
@@ -196,6 +198,7 @@ public abstract class InteropNodes {
             }
         }
 
+        @TruffleBoundary
         protected Node createInvokeNode(int argsLength) {
             return Message.createInvoke(argsLength).createNode();
         }
