@@ -152,7 +152,7 @@ class Float < Numeric
     ndigits = Rubinius::Type.coerce_to(ndigits, Integer, :to_int)
 
     if ndigits == 0
-      return Truffle.invoke_primitive :float_round, self
+      return self.round
     elsif ndigits < 0
       return truncate.round ndigits
     end
@@ -170,7 +170,7 @@ class Float < Numeric
     end
 
     f = 10**ndigits
-    Truffle.invoke_primitive(:float_round, self * f) / f.to_f
+    (self * f).round / f.to_f
   end
 
   def coerce(other)
