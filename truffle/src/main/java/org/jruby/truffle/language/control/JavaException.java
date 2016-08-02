@@ -9,10 +9,17 @@
  */
 package org.jruby.truffle.language.control;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+
 public class JavaException extends RuntimeException {
 
     public JavaException(Throwable cause) {
-        super(cause.getMessage(), cause);
+        super(doGetMessage(cause), cause);
+    }
+
+    @TruffleBoundary
+    private static String doGetMessage(Throwable cause) {
+        return cause.getMessage();
     }
 
     @Override
