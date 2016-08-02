@@ -36,6 +36,7 @@ import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
+import jnr.constants.platform.Errno;
 import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.common.IRubyWarnings;
@@ -739,8 +740,14 @@ public abstract class KernelNodes {
             try {
                 process = builder.start();
             } catch (IOException e) {
-                // TODO(cs): proper Ruby exception
-                throw new JavaException(e);
+                if (e.getMessage().contains("Permission denied")) {
+                    throw new RaiseException(getContext().getCoreExceptions().errnoError(Errno.EACCES.intValue(), this));
+                } else if (e.getMessage().contains("No such file or directory")) {
+                    throw new RaiseException(getContext().getCoreExceptions().errnoError(Errno.ENOENT.intValue(), this));
+                } else {
+                    // TODO(cs): proper Ruby exception
+                    throw new JavaException(e);
+                }
             }
 
             int exitCode = context.getThreadManager().runUntilResult(this, new BlockingAction<Integer>() {
