@@ -136,6 +136,17 @@ public abstract class ExceptionNodes {
 
     }
 
+    @Primitive(name = "exception_set_message")
+    public abstract static class MessageSetNode extends PrimitiveArrayArgumentsNode {
+
+        @Specialization
+        public Object setMessage(DynamicObject error, Object message) {
+            Layouts.EXCEPTION.setMessage(error, message);
+            return error;
+        }
+
+    }
+
     @Primitive(name = "exception_errno_error", needsSelf = false)
     public static abstract class ExceptionErrnoErrorPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
