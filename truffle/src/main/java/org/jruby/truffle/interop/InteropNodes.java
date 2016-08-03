@@ -48,6 +48,8 @@ import org.jruby.truffle.language.control.JavaException;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.util.ByteListUtils;
 import org.jruby.util.ByteList;
+
+import java.io.File;
 import java.io.IOException;
 
 @CoreClass("Truffle::Interop")
@@ -60,7 +62,7 @@ public abstract class InteropNodes {
         @Specialization(guards = "isRubyString(fileName)")
         public Object importFile(DynamicObject fileName) {
             try {
-                final Source sourceObject = Source.fromFileName(fileName.toString());
+                final Source sourceObject = Source.newBuilder(new File(fileName.toString())).build();
                 getContext().getEnv().parse(sourceObject).call();
             } catch (IOException e) {
                 throw new JavaException(e);
