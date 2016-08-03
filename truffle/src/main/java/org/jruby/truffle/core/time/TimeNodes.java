@@ -283,22 +283,24 @@ public abstract class TimeNodes {
     public static abstract class TimeSSpecificPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Child private GetTimeZoneNode getTimeZoneNode;
+        @Child private AllocateObjectNode allocateObjectNode;
 
         public TimeSSpecificPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             getTimeZoneNode = GetTimeZoneNodeGen.create();
+            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
         }
 
         @Specialization(guards = { "isUTC" })
         public DynamicObject timeSSpecificUTC(DynamicObject timeClass, long seconds, int nanoseconds, boolean isUTC, Object offset) {
             final long milliseconds = getMillis(seconds, nanoseconds);
-            return Layouts.TIME.createTime(Layouts.CLASS.getInstanceFactory(timeClass), utcTime(milliseconds), nanoseconds % 1_000_000, nil(), nil(), false, isUTC);
+            return allocateObjectNode.allocate(timeClass, utcTime(milliseconds), nanoseconds % 1_000_000, nil(), nil(), false, isUTC);
         }
 
         @Specialization(guards = { "!isUTC", "isNil(offset)" })
         public DynamicObject timeSSpecific(VirtualFrame frame, DynamicObject timeClass, long seconds, int nanoseconds, boolean isUTC, Object offset) {
             final long milliseconds = getMillis(seconds, nanoseconds);
-            return Layouts.TIME.createTime(Layouts.CLASS.getInstanceFactory(timeClass),
+            return allocateObjectNode.allocate(timeClass,
                     localtime(milliseconds, getTimeZoneNode.executeGetTimeZone(frame)),
                     nanoseconds % 1_000_000, nil(), offset, false, isUTC);
         }
@@ -306,7 +308,7 @@ public abstract class TimeNodes {
         @Specialization(guards = { "!isUTC" })
         public DynamicObject timeSSpecific(VirtualFrame frame, DynamicObject timeClass, long seconds, int nanoseconds, boolean isUTC, long offset) {
             final long milliseconds = getMillis(seconds, nanoseconds);
-            return Layouts.TIME.createTime(Layouts.CLASS.getInstanceFactory(timeClass),
+            return allocateObjectNode.allocate(timeClass,
                     offsetTime(milliseconds, offset), nanoseconds % 1_000_000, nil(), nil(), false, isUTC);
         }
 
