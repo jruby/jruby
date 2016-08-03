@@ -38,8 +38,6 @@ import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.builtins.CoreMethodNode;
-import org.jruby.truffle.builtins.Primitive;
-import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.builtins.YieldingCoreMethodNode;
 import org.jruby.truffle.core.array.ArrayNodesFactory.MaxBlockNodeFactory;
 import org.jruby.truffle.core.array.ArrayNodesFactory.MinBlockNodeFactory;
@@ -937,13 +935,15 @@ public abstract class ArrayNodes {
     @CoreMethod(names = "hash_internal")
     public abstract static class HashNode extends ArrayCoreMethodNode {
 
+        private static final int MURMUR_ARRAY_SEED = System.identityHashCode(ArrayNodes.class);
+
         @Child private ToIntNode toIntNode;
 
         @Specialization(guards = "isNullArray(array)")
         public long hashNull(DynamicObject array) {
             final int size = 0;
             long h = Helpers.hashStart(getContext().getJRubyRuntime(), size);
-            h = Helpers.murmurCombine(h, identityHashCode(ArrayNodes.class));
+            h = Helpers.murmurCombine(h, MURMUR_ARRAY_SEED);
             return Helpers.hashEnd(h);
         }
 
@@ -954,7 +954,7 @@ public abstract class ArrayNodes {
             final int size = getSize(array);
             // TODO BJF Jul 4, 2016 Seed could be chosen in advance to avoid branching
             long h = Helpers.hashStart(getContext().getJRubyRuntime(), size);
-            h = Helpers.murmurCombine(h, identityHashCode(ArrayNodes.class));
+            h = Helpers.murmurCombine(h, MURMUR_ARRAY_SEED);
             final ArrayMirror store = strategy.newMirror(array);
 
             for (int n = 0; n < size; n++) {
@@ -977,11 +977,6 @@ public abstract class ArrayNodes {
             } else {
                 return (long) result;
             }
-        }
-
-        @TruffleBoundary
-        private int identityHashCode(Object o) {
-            return System.identityHashCode(o);
         }
 
     }
