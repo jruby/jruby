@@ -222,7 +222,6 @@ public class CoreLibrary {
     private final DynamicObject errnoModule;
     private final DynamicObject kernelModule;
     private final DynamicObject rubiniusModule;
-    private final DynamicObject rubiniusChannelClass;
     private final DynamicObject rubiniusFFIModule;
     private final DynamicObject rubiniusFFIPointerClass;
     private final DynamicObject signalModule;
@@ -586,7 +585,6 @@ public class CoreLibrary {
         rubiniusFFIPointerClass = defineClass(rubiniusFFIModule, objectClass, "Pointer");
         Layouts.CLASS.setInstanceFactoryUnsafe(rubiniusFFIPointerClass, Layouts.POINTER.createPointerShape(rubiniusFFIPointerClass, rubiniusFFIPointerClass));
 
-        rubiniusChannelClass = defineClass(rubiniusModule, objectClass, "Channel");
         defineClass(rubiniusModule, objectClass, "Mirror");
         defineModule(rubiniusModule, "Type");
 
@@ -1340,10 +1338,6 @@ public class CoreLibrary {
 
     public DynamicObject getTranscodingClass() {
         return transcodingClass;
-    }
-
-    public DynamicObject getRubiniusChannelClass() {
-        return rubiniusChannelClass;
     }
 
     public DynamicObject getRubiniusFFIPointerClass() {
