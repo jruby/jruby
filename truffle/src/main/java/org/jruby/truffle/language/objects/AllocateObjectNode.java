@@ -147,6 +147,10 @@ public abstract class AllocateObjectNode extends RubyNode {
         return object;
     }
 
+    protected DynamicObjectFactory getInstanceFactory(DynamicObject classToAllocate) {
+        return Layouts.CLASS.getInstanceFactory(classToAllocate);
+    }
+
     private DynamicObject string(String value) {
         return createString(StringOperations.encodeRope(value, UTF8Encoding.INSTANCE));
     }

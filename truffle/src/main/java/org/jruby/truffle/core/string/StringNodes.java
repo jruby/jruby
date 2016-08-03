@@ -2728,6 +2728,8 @@ public abstract class StringNodes {
             return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), objects, objects.length);
         }
 
+        // because the factory is not constant
+        @TruffleBoundary
         private DynamicObject makeString(DynamicObject source, int index, int length) {
             assert RubyGuards.isRubyString(source);
 

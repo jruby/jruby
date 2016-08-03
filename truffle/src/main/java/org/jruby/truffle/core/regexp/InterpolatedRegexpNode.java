@@ -55,7 +55,8 @@ public class InterpolatedRegexpNode extends RubyNode {
 
         final org.jruby.RubyString preprocessed = org.jruby.RubyRegexp.preprocessDRegexp(getContext().getJRubyRuntime(), strings, options);
 
-        final DynamicObject regexp = RegexpNodes.createRubyRegexp(getContext(), this, coreLibrary().getRegexpClass(), StringOperations.ropeFromByteList(preprocessed.getByteList()), options);
+        final DynamicObject regexp = RegexpNodes.createRubyRegexp(getContext(), this, coreLibrary().getRegexpFactory(),
+                StringOperations.ropeFromByteList(preprocessed.getByteList()), options);
 
         if (options.isEncodingNone()) {
             final Rope source = Layouts.REGEXP.getSource(regexp);

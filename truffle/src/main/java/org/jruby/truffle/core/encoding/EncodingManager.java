@@ -46,13 +46,13 @@ public class EncodingManager {
     }
 
     @TruffleBoundary
-    public static DynamicObject newRubyEncoding(RubyContext context, DynamicObject encodingClass, Encoding encoding, byte[] name, int p, int end, boolean dummy) {
+    public static DynamicObject newRubyEncoding(RubyContext context, Encoding encoding, byte[] name, int p, int end, boolean dummy) {
         // TODO (nirvdrum 21-Jun-16): We probably don't need to create a ByteList and two Ropes. Without any guarantees on the code range of the encoding name, however, we must be conservative.
         final Rope rope = StringOperations.ropeFromByteList(new ByteList(name, p, end, USASCIIEncoding.INSTANCE, false));
         final Rope cachedRope = context.getRopeTable().getRope(rope.getBytes(), rope.getEncoding(), rope.getCodeRange());
         final DynamicObject string = context.getFrozenStrings().getFrozenString(cachedRope);
 
-        return Layouts.ENCODING.createEncoding(Layouts.CLASS.getInstanceFactory(encodingClass), encoding, string, dummy);
+        return Layouts.ENCODING.createEncoding(context.getCoreLibrary().getEncodingFactory(), encoding, string, dummy);
     }
 
     public DynamicObject[] getUnsafeEncodingList() {
@@ -84,8 +84,8 @@ public class EncodingManager {
     }
 
     @TruffleBoundary
-    public void defineEncoding(DynamicObject encodingClass, EncodingDB.Entry encodingEntry, byte[] name, int p, int end) {
-        final DynamicObject rubyEncoding = newRubyEncoding(context, encodingClass, null, name, p, end, encodingEntry.isDummy());
+    public void defineEncoding(EncodingDB.Entry encodingEntry, byte[] name, int p, int end) {
+        final DynamicObject rubyEncoding = newRubyEncoding(context, null, name, p, end, encodingEntry.isDummy());
 
         ENCODING_LIST_BY_ENCODING_LIST_INDEX[encodingEntry.getIndex()] = rubyEncoding;
         LOOKUP.put(Layouts.ENCODING.getName(rubyEncoding).toString().toLowerCase(Locale.ENGLISH), rubyEncoding);

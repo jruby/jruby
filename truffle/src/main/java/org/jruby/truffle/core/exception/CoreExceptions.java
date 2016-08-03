@@ -498,8 +498,12 @@ public class CoreExceptions {
     @TruffleBoundary
     public DynamicObject nameError(String message, Object receiver, String name, Node currentNode) {
         final DynamicObject nameString = StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE));
-        DynamicObject nameError = ExceptionOperations.createNameError(context.getCoreLibrary().getNameErrorClass(), nameString, context.getCallStack().getBacktrace(currentNode), receiver, context.getSymbolTable().getSymbol(name));
-        return nameError;
+        return Layouts.NAME_ERROR.createNameError(
+                context.getCoreLibrary().getNameErrorFactory(),
+                nameString,
+                context.getCallStack().getBacktrace(currentNode),
+                receiver,
+                context.getSymbolTable().getSymbol(name));
     }
 
     // NoMethodError
@@ -508,15 +512,25 @@ public class CoreExceptions {
     public DynamicObject noMethodError(String message, Object receiver, String name, Object[] args, Node currentNode) {
         final DynamicObject messageString = StringOperations.createString(context, StringOperations.encodeRope(message, UTF8Encoding.INSTANCE));
         final DynamicObject argsArray =  createArray(context, args, args.length);
-        final DynamicObject noMethodError = ExceptionOperations.createNoMethodError(context.getCoreLibrary().getNoMethodErrorClass(), messageString, context.getCallStack().getBacktrace(currentNode), receiver, context.getSymbolTable().getSymbol(name), argsArray);
-        return noMethodError;
+        return Layouts.NO_METHOD_ERROR.createNoMethodError(
+                context.getCoreLibrary().getNoMethodErrorFactory(),
+                messageString,
+                context.getCallStack().getBacktrace(currentNode),
+                receiver,
+                context.getSymbolTable().getSymbol(name),
+                argsArray);
     }
 
     @TruffleBoundary
     public DynamicObject noSuperMethodOutsideMethodError(Node currentNode) {
         final DynamicObject messageString = StringOperations.createString(context, StringOperations.encodeRope("super called outside of method", UTF8Encoding.INSTANCE));
         // TODO BJF Jul 21, 2016 Review to add receiver
-        DynamicObject noMethodError = ExceptionOperations.createNameError(context.getCoreLibrary().getNoMethodErrorClass(), messageString, context.getCallStack().getBacktrace(currentNode), null, context.getSymbolTable().getSymbol("<unknown>"));
+        DynamicObject noMethodError = Layouts.NAME_ERROR.createNameError(
+                context.getCoreLibrary().getNoMethodErrorFactory(),
+                messageString,
+                context.getCallStack().getBacktrace(currentNode),
+                null,
+                context.getSymbolTable().getSymbol("<unknown>"));
         // FIXME: the name of the method is not known in this case currently
         return noMethodError;
     }

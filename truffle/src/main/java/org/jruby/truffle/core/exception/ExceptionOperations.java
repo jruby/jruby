@@ -42,20 +42,16 @@ public abstract class ExceptionOperations {
         return Layouts.ARRAY.createArray(context.getCoreLibrary().getArrayFactory(), array, array.length);
     }
 
+    // because the factory is not constant
+    @TruffleBoundary
     public static DynamicObject createRubyException(DynamicObject rubyClass, Object message, Backtrace backtrace) {
         return Layouts.EXCEPTION.createException(Layouts.CLASS.getInstanceFactory(rubyClass), message, backtrace);
     }
 
+    // because the factory is not constant
+    @TruffleBoundary
     public static DynamicObject createSystemCallError(DynamicObject rubyClass, Object message, Backtrace backtrace, int errno) {
         return Layouts.SYSTEM_CALL_ERROR.createSystemCallError(Layouts.CLASS.getInstanceFactory(rubyClass), message, backtrace, errno);
-    }
-
-    public static DynamicObject createNameError(DynamicObject rubyClass, Object message, Backtrace backtrace, Object receiver, Object name) {
-        return Layouts.NAME_ERROR.createNameError(Layouts.CLASS.getInstanceFactory(rubyClass), message, backtrace, receiver, name);
-    }
-
-    public static DynamicObject createNoMethodError(DynamicObject rubyClass, Object message, Backtrace backtrace, Object receiver, Object name, DynamicObject args) {
-        return Layouts.NO_METHOD_ERROR.createNoMethodError(Layouts.CLASS.getInstanceFactory(rubyClass), message, backtrace, receiver, name, args);
     }
 
 }
