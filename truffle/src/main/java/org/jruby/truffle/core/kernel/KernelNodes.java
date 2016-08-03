@@ -36,6 +36,7 @@ import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
+import jnr.constants.platform.Errno;
 import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.common.IRubyWarnings;
@@ -68,6 +69,7 @@ import org.jruby.truffle.core.format.FormatExceptionTranslator;
 import org.jruby.truffle.core.format.exceptions.FormatException;
 import org.jruby.truffle.core.format.exceptions.InvalidFormatException;
 import org.jruby.truffle.core.format.printf.PrintfCompiler;
+import org.jruby.truffle.core.hash.KeyValue;
 import org.jruby.truffle.core.hash.HashOperations;
 import org.jruby.truffle.core.kernel.KernelNodesFactory.CopyNodeFactory;
 import org.jruby.truffle.core.kernel.KernelNodesFactory.SameOrEqualNodeFactory;
@@ -134,7 +136,6 @@ import org.jruby.truffle.language.parser.jruby.TranslatorDriver;
 import org.jruby.truffle.language.threadlocal.ThreadLocalObject;
 import org.jruby.truffle.platform.UnsafeGroup;
 import org.jruby.truffle.util.StringUtils;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -144,7 +145,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 @CoreClass("Kernel")
 public abstract class KernelNodes {
@@ -174,7 +174,7 @@ public abstract class KernelNodes {
             final List<String> envp = new ArrayList<>();
 
             // TODO(CS): cast
-            for (Map.Entry<Object, Object> keyValue : HashOperations.iterableKeyValues(envAsHash)) {
+            for (KeyValue keyValue : HashOperations.iterableKeyValues(envAsHash)) {
                 envp.add(keyValue.getKey().toString() + "=" + keyValue.getValue().toString());
             }
 
@@ -346,11 +346,8 @@ public abstract class KernelNodes {
             return callerLocations(omit, -1);
         }
 
-        @TruffleBoundary
         @Specialization
         public DynamicObject callerLocations(int omit, int length) {
-            final DynamicObject threadBacktraceLocationClass = coreLibrary().getThreadBacktraceLocationClass();
-
             final Backtrace backtrace = getContext().getCallStack().getBacktrace(this, 1 + omit, true, null);
 
             int locationsCount = backtrace.getActivations().size();
@@ -363,7 +360,7 @@ public abstract class KernelNodes {
 
             for (int n = 0; n < locationsCount; n++) {
                 Activation activation = backtrace.getActivations().get(n);
-                locations[n] = ThreadBacktraceLocationLayoutImpl.INSTANCE.createThreadBacktraceLocation(Layouts.CLASS.getInstanceFactory(threadBacktraceLocationClass), activation);
+                locations[n] = Layouts.THREAD_BACKTRACE_LOCATION.createThreadBacktraceLocation(coreLibrary().getThreadBacktraceLocationFactory(), activation);
             }
 
             return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), locations, locations.length);
@@ -731,7 +728,7 @@ public abstract class KernelNodes {
             final ProcessBuilder builder = new ProcessBuilder(commandLine);
             builder.inheritIO();
 
-            for (Map.Entry<Object, Object> keyValue : HashOperations.iterableKeyValues(envAsHash)) {
+            for (KeyValue keyValue : HashOperations.iterableKeyValues(envAsHash)) {
                 builder.environment().put(keyValue.getKey().toString(), keyValue.getValue().toString());
             }
 
@@ -740,8 +737,14 @@ public abstract class KernelNodes {
             try {
                 process = builder.start();
             } catch (IOException e) {
-                // TODO(cs): proper Ruby exception
-                throw new JavaException(e);
+                if (e.getMessage().contains("Permission denied")) {
+                    throw new RaiseException(getContext().getCoreExceptions().errnoError(Errno.EACCES.intValue(), this));
+                } else if (e.getMessage().contains("No such file or directory")) {
+                    throw new RaiseException(getContext().getCoreExceptions().errnoError(Errno.ENOENT.intValue(), this));
+                } else {
+                    // TODO(cs): proper Ruby exception
+                    throw new JavaException(e);
+                }
             }
 
             int exitCode = context.getThreadManager().runUntilResult(this, new BlockingAction<Integer>() {

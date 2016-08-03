@@ -9,16 +9,15 @@
  */
 package org.jruby.truffle.core.hash;
 
-import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyGuards;
+import org.jruby.truffle.util.BoundaryUtils.BoundaryIterable;
 import org.jruby.truffle.util.StringUtils;
-
 import java.util.Collections;
 import java.util.Iterator;
-import java.util.Map;
 
 public abstract class HashOperations {
 
@@ -103,8 +102,8 @@ public abstract class HashOperations {
         return true;
     }
 
-    @CompilerDirectives.TruffleBoundary
-    public static Iterator<Map.Entry<Object, Object>> iterateKeyValues(DynamicObject hash) {
+    @TruffleBoundary
+    public static Iterator<KeyValue> iterateKeyValues(DynamicObject hash) {
         assert RubyGuards.isRubyHash(hash);
 
         if (HashGuards.isNullHash(hash)) {
@@ -118,18 +117,18 @@ public abstract class HashOperations {
         }
     }
 
-    @CompilerDirectives.TruffleBoundary
-    public static Iterable<Map.Entry<Object, Object>> iterableKeyValues(final DynamicObject hash) {
+    @TruffleBoundary
+    public static BoundaryIterable<KeyValue> iterableKeyValues(final DynamicObject hash) {
         assert RubyGuards.isRubyHash(hash);
 
-        return new Iterable<Map.Entry<Object, Object>>() {
+        return BoundaryIterable.wrap(new Iterable<KeyValue>() {
 
             @Override
-            public Iterator<Map.Entry<Object, Object>> iterator() {
+            public Iterator<KeyValue> iterator() {
                 return iterateKeyValues(hash);
             }
 
-        };
+        });
     }
 
 }

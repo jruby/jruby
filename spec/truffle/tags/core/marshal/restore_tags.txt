@@ -5,9 +5,6 @@ fails:Marshal.restore loads an array containing objects having marshal_dump meth
 fails:Marshal.restore loads an Array with proc
 fails:Marshal.restore loads a Random
 fails:Marshal.restore for an Array loads an array containing the same objects
-fails:Marshal.restore for an Exception loads a marshalled exception with no message
-fails:Marshal.restore for an Exception loads a marshalled exception with a message
-fails:Marshal.restore for an Exception loads a marshalled exception with a backtrace
 fails:Marshal.restore for a user Class raises ArgumentError if the object from an 'o' stream is not dumpable as 'o' type user class
 fails:Marshal.restore for a user Class that extends a core type other than Object or BasicObject raises ArgumentError if the resulting class does not extend the same type
 fails:Marshal.restore for a wrapped C pointer loads

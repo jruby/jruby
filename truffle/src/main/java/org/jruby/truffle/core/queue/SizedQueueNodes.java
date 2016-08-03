@@ -15,6 +15,7 @@ import com.oracle.truffle.api.dsl.CreateCast;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.nodes.Node.Child;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import org.jruby.runtime.Visibility;
@@ -27,7 +28,7 @@ import org.jruby.truffle.core.cast.BooleanCastWithDefaultNodeGen;
 import org.jruby.truffle.core.thread.ThreadManager.BlockingAction;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
-
+import org.jruby.truffle.language.objects.AllocateObjectNode;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -41,9 +42,12 @@ public abstract class SizedQueueNodes {
     @CoreMethod(names = "allocate", constructor = true)
     public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
 
+        @Child private AllocateObjectNode allocateNode = AllocateObjectNode.create();
+
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
-            return Layouts.SIZED_QUEUE.createSizedQueue(Layouts.CLASS.getInstanceFactory(rubyClass), null);
+            Object queue = null;
+            return allocateNode.allocate(rubyClass, queue);
         }
 
     }

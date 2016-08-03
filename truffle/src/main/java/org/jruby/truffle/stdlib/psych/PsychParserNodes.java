@@ -92,6 +92,8 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
 @CoreClass("Psych::Parser")
 public abstract class PsychParserNodes {
@@ -184,8 +186,8 @@ public abstract class PsychParserNodes {
                         Map<String, String> tagsMap = startEvent.getTags();
                         DynamicObject tags = Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), null, 0);
 
-                        if (tagsMap != null && tagsMap.size() > 0) {
-                            for (Map.Entry<String, String> tag : BoundaryIterable.wrap(tagsMap.entrySet())) {
+                        if (tagsMap != null && size(tagsMap) > 0) {
+                            for (Map.Entry<String, String> tag : BoundaryIterable.wrap(entrySet(tagsMap))) {
                                 Object key = stringFor(getKey(tag), tainted, taintNode);
                                 Object value = stringFor(getValue(tag), tainted, taintNode);
                                 tagPushNode.execute(frame,
@@ -326,6 +328,16 @@ public abstract class PsychParserNodes {
 
         private DynamicObject createUTF8String(String value) {
             return createString(StringOperations.encodeRope(value, UTF8Encoding.INSTANCE));
+        }
+
+        @TruffleBoundary
+        private int size(Map<String, String> tagsMap) {
+            return tagsMap.size();
+        }
+
+        @TruffleBoundary
+        private Set<Entry<String, String>> entrySet(Map<String, String> tagsMap) {
+            return tagsMap.entrySet();
         }
 
         @TruffleBoundary

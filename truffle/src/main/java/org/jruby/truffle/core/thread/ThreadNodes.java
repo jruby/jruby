@@ -410,7 +410,7 @@ public abstract class ThreadNodes {
         @Specialization
         public DynamicObject allocate(
                 DynamicObject rubyClass,
-                @Cached("createAllocateObjectNode()") AllocateObjectNode allocateObjectNode,
+                @Cached("create()") AllocateObjectNode allocateObjectNode,
                 @Cached("createReadAbortOnExceptionNode()") ReadObjectFieldNode readAbortOnException ) {
             final DynamicObject object = allocateObjectNode.allocate(
                     rubyClass,
@@ -430,10 +430,6 @@ public abstract class ThreadNodes {
             Layouts.THREAD.setFiberManagerUnsafe(object, new FiberManager(getContext(), object)); // Because it is cyclic
 
             return object;
-        }
-
-        protected AllocateObjectNode createAllocateObjectNode() {
-            return AllocateObjectNodeGen.create(null, null);
         }
 
         protected ReadObjectFieldNode createReadAbortOnExceptionNode() {

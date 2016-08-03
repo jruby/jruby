@@ -18,6 +18,7 @@ import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.core.array.ArrayOperations;
+import org.jruby.truffle.core.hash.KeyValue;
 import org.jruby.truffle.core.hash.HashOperations;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.control.RaiseException;
@@ -26,7 +27,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Map.Entry;
 
 @CoreClass("Truffle::Process")
 public abstract class TruffleProcessNodes {
@@ -83,7 +83,7 @@ public abstract class TruffleProcessNodes {
             }
 
             Collection<SpawnFileAction> actions = new ArrayList<>();
-            for (Entry<Object, Object> keyValue : HashOperations.iterableKeyValues(options)) {
+            for (KeyValue keyValue : HashOperations.iterableKeyValues(options)) {
                 final Object key = keyValue.getKey();
                 final Object value = keyValue.getValue();
 

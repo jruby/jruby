@@ -70,7 +70,7 @@ public class RubyContext extends ExecutionContext {
     private final PrimitiveManager primitiveManager = new PrimitiveManager();
     private final JRubyInterop jrubyInterop = new JRubyInterop(this);
     private final SafepointManager safepointManager = new SafepointManager(this);
-    private final SymbolTable symbolTable = new SymbolTable(this);
+    private final SymbolTable symbolTable;
     private final InteropManager interopManager = new InteropManager(this);
     private final CodeLoader codeLoader = new CodeLoader(this);
     private final FeatureLoader featureLoader = new FeatureLoader(this);
@@ -140,6 +140,8 @@ public class RubyContext extends ExecutionContext {
 
         coreLibrary = new CoreLibrary(this);
         coreLibrary.initialize();
+
+        symbolTable = new SymbolTable(coreLibrary.getSymbolFactory());
 
         // Create objects that need core classes
 

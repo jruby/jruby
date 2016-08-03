@@ -42,7 +42,7 @@ public abstract class PointerPrimitiveNodes {
 
         public PointerAllocatePrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
+            allocateObjectNode = AllocateObjectNode.create();
         }
 
         @Specialization
@@ -59,7 +59,7 @@ public abstract class PointerPrimitiveNodes {
 
         public PointerMallocPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
+            allocateObjectNode = AllocateObjectNode.create();
         }
 
         @Specialization
@@ -110,7 +110,7 @@ public abstract class PointerPrimitiveNodes {
 
         public PointerAddPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
+            allocateObjectNode = AllocateObjectNode.create();
         }
 
         @Specialization
@@ -199,7 +199,7 @@ public abstract class PointerPrimitiveNodes {
 
         public PointerReadPointerPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
+            allocateObjectNode = AllocateObjectNode.create();
         }
 
         @Specialization
@@ -281,7 +281,7 @@ public abstract class PointerPrimitiveNodes {
         public DynamicObject getAtOffsetPointer(DynamicObject pointer, int offset, int type) {
             if (allocateObjectNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                allocateObjectNode = insert(AllocateObjectNodeGen.create(getContext(), getEncapsulatingSourceSection(), null, null));
+                allocateObjectNode = insert(AllocateObjectNode.create());
             }
 
             final Pointer readPointer = Layouts.POINTER.getPointer(pointer).getPointer(offset);

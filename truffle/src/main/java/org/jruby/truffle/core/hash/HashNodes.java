@@ -36,6 +36,7 @@ import org.jruby.truffle.core.array.ArrayBuilderNode;
 import org.jruby.truffle.core.basicobject.BasicObjectNodes;
 import org.jruby.truffle.core.basicobject.BasicObjectNodesFactory;
 import org.jruby.truffle.language.NotProvided;
+import org.jruby.truffle.language.PerformanceWarnings;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.SnippetNode;
@@ -47,9 +48,7 @@ import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.language.yield.YieldNode;
-
 import java.util.Arrays;
-import java.util.Map;
 
 
 @CoreClass("Hash")
@@ -62,7 +61,7 @@ public abstract class HashNodes {
 
         public AllocateNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
+            allocateObjectNode = AllocateObjectNode.create();
         }
 
         @Specialization
@@ -82,7 +81,7 @@ public abstract class HashNodes {
         public ConstructNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             hashNode = new HashNode(context, sourceSection);
-            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
+            allocateObjectNode = AllocateObjectNode.create();
         }
 
         @ExplodeLoop
@@ -630,7 +629,7 @@ public abstract class HashNodes {
         public DynamicObject eachBuckets(VirtualFrame frame, DynamicObject hash, DynamicObject block) {
             assert HashOperations.verifyStore(getContext(), hash);
 
-            for (Map.Entry<Object, Object> keyValue : BucketsStrategy.iterableKeyValues(Layouts.HASH.getFirstInSequence(hash))) {
+            for (KeyValue keyValue : BucketsStrategy.iterableKeyValues(Layouts.HASH.getFirstInSequence(hash))) {
                 yieldPair(frame, block, keyValue.getKey(), keyValue.getValue());
             }
 
@@ -845,7 +844,7 @@ public abstract class HashNodes {
             int index = 0;
 
             try {
-                for (Map.Entry<Object, Object> keyValue : BucketsStrategy.iterableKeyValues(Layouts.HASH.getFirstInSequence(hash))) {
+                for (KeyValue keyValue : BucketsStrategy.iterableKeyValues(Layouts.HASH.getFirstInSequence(hash))) {
                     arrayBuilderNode.appendValue(store, index, yieldPair(frame, block, keyValue.getKey(), keyValue.getValue()));
                     index++;
                 }
@@ -883,7 +882,7 @@ public abstract class HashNodes {
             super(context, sourceSection);
             eqlNode = DispatchHeadNodeFactory.createMethodCall(context);
             setNode = SetNodeGen.create(context, sourceSection, null, null, null, null);
-            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
+            allocateObjectNode = AllocateObjectNode.create();
         }
 
         // Merge with an empty hash, without a block
@@ -1065,11 +1064,11 @@ public abstract class HashNodes {
 
             final DynamicObject merged = allocateObjectNode.allocateHash(Layouts.BASIC_OBJECT.getLogicalClass(hash), new Entry[BucketsStrategy.capacityGreaterThan(Layouts.HASH.getSize(hash) + Layouts.HASH.getSize(other))], 0, null, null, null, null, false);
 
-            for (Map.Entry<Object, Object> keyValue : BucketsStrategy.iterableKeyValues(Layouts.HASH.getFirstInSequence(hash))) {
+            for (KeyValue keyValue : BucketsStrategy.iterableKeyValues(Layouts.HASH.getFirstInSequence(hash))) {
                 setNode.executeSet(frame, merged, keyValue.getKey(), keyValue.getValue(), isCompareByIdentity);
             }
 
-            for (Map.Entry<Object, Object> keyValue : BucketsStrategy.iterableKeyValues(Layouts.HASH.getFirstInSequence(other))) {
+            for (KeyValue keyValue : BucketsStrategy.iterableKeyValues(Layouts.HASH.getFirstInSequence(other))) {
                 setNode.executeSet(frame, merged, keyValue.getKey(), keyValue.getValue(), isCompareByIdentity);
             }
 
@@ -1101,7 +1100,7 @@ public abstract class HashNodes {
                 }
             }
 
-            for (Map.Entry<Object, Object> keyValue : BucketsStrategy.iterableKeyValues(Layouts.HASH.getFirstInSequence(other))) {
+            for (KeyValue keyValue : BucketsStrategy.iterableKeyValues(Layouts.HASH.getFirstInSequence(other))) {
                 setNode.executeSet(frame, merged, keyValue.getKey(), keyValue.getValue(), isCompareByIdentity);
             }
 
@@ -1122,7 +1121,7 @@ public abstract class HashNodes {
 
             final DynamicObject merged = allocateObjectNode.allocateHash(Layouts.BASIC_OBJECT.getLogicalClass(hash), new Entry[BucketsStrategy.capacityGreaterThan(Layouts.HASH.getSize(hash) + Layouts.HASH.getSize(other))], 0, null, null, null, null, false);
 
-            for (Map.Entry<Object, Object> keyValue : BucketsStrategy.iterableKeyValues(Layouts.HASH.getFirstInSequence(hash))) {
+            for (KeyValue keyValue : BucketsStrategy.iterableKeyValues(Layouts.HASH.getFirstInSequence(hash))) {
                 setNode.executeSet(frame, merged, keyValue.getKey(), keyValue.getValue(), isCompareByIdentity);
             }
 
@@ -1144,13 +1143,14 @@ public abstract class HashNodes {
 
         @Specialization(guards = { "isRubyHash(other)", "!isCompareByIdentity(hash)" })
         public DynamicObject merge(VirtualFrame frame, DynamicObject hash, DynamicObject other, DynamicObject block) {
-            CompilerDirectives.bailout("Hash#merge with a block cannot be compiled at the moment");
+            PerformanceWarnings.warn("Hash#merge with a block is not yet optimized");
 
-            final DynamicObject merged = allocateObjectNode.allocateHash(Layouts.BASIC_OBJECT.getLogicalClass(hash), new Entry[BucketsStrategy.capacityGreaterThan(Layouts.HASH.getSize(hash) + Layouts.HASH.getSize(other))], 0, null, null, null, null, false); 
+            final int capacity = BucketsStrategy.capacityGreaterThan(Layouts.HASH.getSize(hash) + Layouts.HASH.getSize(other));
+            final DynamicObject merged = allocateObjectNode.allocateHash(Layouts.BASIC_OBJECT.getLogicalClass(hash), new Entry[capacity], 0, null, null, null, null, false);
 
             int size = 0;
 
-            for (Map.Entry<Object, Object> keyValue : HashOperations.iterableKeyValues(hash)) {
+            for (KeyValue keyValue : HashOperations.iterableKeyValues(hash)) {
                 setNode.executeSet(frame, merged, keyValue.getKey(), keyValue.getValue(), false);
                 size++;
             }
@@ -1160,7 +1160,7 @@ public abstract class HashNodes {
                 lookupEntryNode = insert(new LookupEntryNode(getContext(), getSourceSection()));
             }
 
-            for (Map.Entry<Object, Object> keyValue : HashOperations.iterableKeyValues(other)) {
+            for (KeyValue keyValue : HashOperations.iterableKeyValues(other)) {
                 final HashLookupResult searchResult = lookupEntryNode.lookup(frame, merged, keyValue.getKey());
 
                 if (searchResult.getEntry() == null) {

@@ -634,6 +634,19 @@ class AsciidoctorBenchmarkSuite(AllBenchmarksBenchmarkSuite):
     def time(self):
         return asciidoctor_benchmark_time
 
+class OptcarrotBenchmarkSuite(AllBenchmarksBenchmarkSuite):
+    def name(self):
+        return 'optcarrot'
+
+    def directory(self):
+        return 'optcarrot'
+
+    def benchmarks(self):
+        return ['optcarrot']
+
+    def time(self):
+        return 120
+
 synthetic_benchmarks = [
     'acid'
 ]
@@ -737,6 +750,7 @@ mx_benchmark.add_bm_suite(ChunkyBenchmarkSuite())
 mx_benchmark.add_bm_suite(PSDBenchmarkSuite())
 mx_benchmark.add_bm_suite(ImageDemoBenchmarkSuite())
 mx_benchmark.add_bm_suite(AsciidoctorBenchmarkSuite())
+mx_benchmark.add_bm_suite(OptcarrotBenchmarkSuite())
 mx_benchmark.add_bm_suite(SyntheticBenchmarkSuite())
 mx_benchmark.add_bm_suite(MicroBenchmarkSuite())
 mx_benchmark.add_bm_suite(ServerBenchmarkSuite())

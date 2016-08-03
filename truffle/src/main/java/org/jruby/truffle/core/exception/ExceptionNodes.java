@@ -42,7 +42,7 @@ public abstract class ExceptionNodes {
 
         public AllocateNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
+            allocateObjectNode = AllocateObjectNode.create();
         }
 
         @Specialization
@@ -132,6 +132,17 @@ public abstract class ExceptionNodes {
         @Specialization
         public Object message(DynamicObject exception) {
             return Layouts.EXCEPTION.getMessage(exception);
+        }
+
+    }
+
+    @Primitive(name = "exception_set_message")
+    public abstract static class MessageSetNode extends PrimitiveArrayArgumentsNode {
+
+        @Specialization
+        public Object setMessage(DynamicObject error, Object message) {
+            Layouts.EXCEPTION.setMessage(error, message);
+            return error;
         }
 
     }

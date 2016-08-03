@@ -14,9 +14,9 @@ import java.util.Iterator;
 
 public class BoundaryUtils {
 
-    public static class BoundaryIterable<E> implements Iterable<E> {
+    public static final class BoundaryIterable<E> implements Iterable<E> {
 
-        public static <E> Iterable<E> wrap(Iterable<E> iterable) {
+        public static <E> BoundaryIterable<E> wrap(Iterable<E> iterable) {
             return new BoundaryIterable<>(iterable);
         }
 
@@ -27,12 +27,18 @@ public class BoundaryUtils {
         }
 
         @Override
-        public Iterator<E> iterator() {
-            return new BoundaryIterator<E>(iterable.iterator());
+        public BoundaryIterator<E> iterator() {
+            return new BoundaryIterator<E>(getIterator());
         }
+
+        @TruffleBoundary
+        private Iterator<E> getIterator() {
+            return iterable.iterator();
+        }
+
     }
 
-    public static class BoundaryIterator<E> implements Iterator<E> {
+    public static final class BoundaryIterator<E> implements Iterator<E> {
 
         private final Iterator<E> iterator;
 

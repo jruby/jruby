@@ -29,6 +29,7 @@ import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
@@ -69,7 +70,6 @@ import org.jruby.truffle.util.StringUtils;
 import org.jruby.util.ByteList;
 import org.jruby.util.RegexpOptions;
 import org.jruby.util.RegexpSupport;
-
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -151,7 +151,7 @@ public abstract class RegexpNodes {
         final DynamicObject post = createSubstring(makeSubstringNode, source, region.end[0], sourceRope.byteLength() - region.end[0]);
         final DynamicObject global = createSubstring(makeSubstringNode, source, region.beg[0], region.end[0] - region.beg[0]);
 
-        final DynamicObject matchObject = Layouts.MATCH_DATA.createMatchData(Layouts.CLASS.getInstanceFactory(context.getCoreLibrary().getMatchDataClass()),
+        final DynamicObject matchObject = Layouts.MATCH_DATA.createMatchData(context.getCoreLibrary().getMatchDataFactory(),
                 source, regexp, region, values, pre, post, global, null);
 
         if (operator) {
@@ -200,6 +200,8 @@ public abstract class RegexpNodes {
         }
     }
 
+    // because the factory is not constant
+    @TruffleBoundary
     private static DynamicObject createSubstring(RopeNodes.MakeSubstringNode makeSubstringNode, DynamicObject source, int start, int length) {
         assert RubyGuards.isRubyString(source);
 
@@ -382,24 +384,19 @@ public abstract class RegexpNodes {
         setSource(regexp, setSource);
     }
 
-    public static DynamicObject createRubyRegexp(RubyContext context, Node currentNode, DynamicObject regexpClass, Rope source, RegexpOptions options) {
+    public static DynamicObject createRubyRegexp(RubyContext context, Node currentNode, DynamicObjectFactory factory, Rope source, RegexpOptions options) {
         final Regex regexp = RegexpNodes.compile(currentNode, context, source, options);
 
         // The RegexpNodes.compile operation may modify the encoding of the source rope. This modified copy is stored
         // in the Regex object as the "user object". Since ropes are immutable, we need to take this updated copy when
         // constructing the final regexp.
-        return Layouts.REGEXP.createRegexp(Layouts.CLASS.getInstanceFactory(regexpClass), regexp, (Rope) regexp.getUserObject(), options, null);
+        return Layouts.REGEXP.createRegexp(factory, regexp, (Rope) regexp.getUserObject(), options, null);
     }
 
-    public static DynamicObject createRubyRegexp(DynamicObject regexpClass, Regex regex, Rope source, RegexpOptions options) {
-        final DynamicObject regexp = Layouts.REGEXP.createRegexp(Layouts.CLASS.getInstanceFactory(regexpClass), null, null, RegexpOptions.NULL_OPTIONS, null);
+    @TruffleBoundary
+    public static DynamicObject createRubyRegexp(DynamicObjectFactory factory, Regex regex, Rope source, RegexpOptions options) {
+        final DynamicObject regexp = Layouts.REGEXP.createRegexp(factory, null, null, RegexpOptions.NULL_OPTIONS, null);
         RegexpNodes.setOptions(regexp, options);
-        RegexpNodes.initialize(regexp, regex, source);
-        return regexp;
-    }
-
-    public static DynamicObject createRubyRegexp(DynamicObject regexpClass, Regex regex, Rope source) {
-        final DynamicObject regexp = Layouts.REGEXP.createRegexp(Layouts.CLASS.getInstanceFactory(regexpClass), null, null, RegexpOptions.NULL_OPTIONS, null);
         RegexpNodes.initialize(regexp, regex, source);
         return regexp;
     }
@@ -608,7 +605,7 @@ public abstract class RegexpNodes {
 
         public AllocateNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            allocateNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
+            allocateNode = AllocateObjectNode.create();
         }
 
         @Specialization

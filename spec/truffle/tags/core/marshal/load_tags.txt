@@ -2,9 +2,6 @@ fails:Marshal.load loads an array containing objects having _dump method, and wi
 fails:Marshal.load loads an array containing objects having marshal_dump method, and with proc
 fails:Marshal.load loads a Random
 fails:Marshal.load for an Array loads an array containing the same objects
-fails:Marshal.load for an Exception loads a marshalled exception with no message
-fails:Marshal.load for an Exception loads a marshalled exception with a message
-fails:Marshal.load for an Exception loads a marshalled exception with a backtrace
 fails:Marshal.load for a user Class raises ArgumentError if the object from an 'o' stream is not dumpable as 'o' type user class
 fails:Marshal.load for a user Class that extends a core type other than Object or BasicObject raises ArgumentError if the resulting class does not extend the same type
 fails:Marshal.load for a wrapped C pointer loads
