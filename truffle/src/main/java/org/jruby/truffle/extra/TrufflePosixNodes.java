@@ -103,7 +103,7 @@ public abstract class TrufflePosixNodes {
 
         public EnvironNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
+            allocateObjectNode = AllocateObjectNode.create();
         }
 
         @Specialization

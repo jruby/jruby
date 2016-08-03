@@ -32,7 +32,7 @@ public abstract class AtomicReferenceNodes {
 
         public AllocateNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            allocateNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
+            allocateNode = AllocateObjectNode.create();
         }
 
         @Specialization

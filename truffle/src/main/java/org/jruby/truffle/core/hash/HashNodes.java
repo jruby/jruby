@@ -61,7 +61,7 @@ public abstract class HashNodes {
 
         public AllocateNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
+            allocateObjectNode = AllocateObjectNode.create();
         }
 
         @Specialization
@@ -81,7 +81,7 @@ public abstract class HashNodes {
         public ConstructNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             hashNode = new HashNode(context, sourceSection);
-            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
+            allocateObjectNode = AllocateObjectNode.create();
         }
 
         @ExplodeLoop
@@ -882,7 +882,7 @@ public abstract class HashNodes {
             super(context, sourceSection);
             eqlNode = DispatchHeadNodeFactory.createMethodCall(context);
             setNode = SetNodeGen.create(context, sourceSection, null, null, null, null);
-            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
+            allocateObjectNode = AllocateObjectNode.create();
         }
 
         // Merge with an empty hash, without a block

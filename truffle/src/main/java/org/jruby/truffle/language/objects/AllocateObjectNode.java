@@ -39,11 +39,11 @@ import org.jruby.truffle.language.control.RaiseException;
 @Instrumentable(factory = AllocateObjectNodeWrapper.class)
 public abstract class AllocateObjectNode extends RubyNode {
 
-    private final boolean useCallerFrameForTracing;
-
-    public AllocateObjectNode() {
-        this(null, null);
+    public static AllocateObjectNode create() {
+        return AllocateObjectNodeGen.create(null, null, null, null);
     }
+
+    private final boolean useCallerFrameForTracing;
 
     public AllocateObjectNode(RubyContext context, SourceSection sourceSection) {
         this(context, sourceSection, true);

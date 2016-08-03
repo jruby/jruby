@@ -119,7 +119,7 @@ public abstract class IOPrimitiveNodes {
 
         public IOAllocatePrimitiveNode(RubyContext context, SourceSection sourceSection) {
             newBufferNode = DispatchHeadNodeFactory.createMethodCall(context);
-            allocateNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
+            allocateNode = AllocateObjectNode.create();
         }
 
         @Specialization

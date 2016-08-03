@@ -166,7 +166,7 @@ public abstract class StringNodes {
 
         public AllocateNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
+            allocateObjectNode = AllocateObjectNode.create();
         }
 
         @Specialization
@@ -253,7 +253,7 @@ public abstract class StringNodes {
 
         public MulNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
+            allocateObjectNode = AllocateObjectNode.create();
         }
 
         public abstract DynamicObject executeInt(VirtualFrame frame, DynamicObject string, int times);
@@ -477,7 +477,7 @@ public abstract class StringNodes {
 
         public GetIndexNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
+            allocateObjectNode = AllocateObjectNode.create();
         }
 
         @Specialization(guards = "wasNotProvided(length) || isRubiniusUndefined(length)")
@@ -1057,7 +1057,7 @@ public abstract class StringNodes {
 
         public EachCharNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
+            allocateObjectNode = AllocateObjectNode.create();
             makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
         }
 
@@ -1702,7 +1702,7 @@ public abstract class StringNodes {
 
         public DumpNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
+            allocateObjectNode = AllocateObjectNode.create();
         }
 
         @Specialization(guards = "isAsciiCompatible(string)")
@@ -2758,7 +2758,7 @@ public abstract class StringNodes {
 
         public StringByteSubstringPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
+            allocateObjectNode = AllocateObjectNode.create();
             makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
             taintResultNode = new TaintResultNode(context, sourceSection);
         }
@@ -3126,7 +3126,7 @@ public abstract class StringNodes {
 
         public StringFindCharacterNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
+            allocateObjectNode = AllocateObjectNode.create();
             makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
         }
 
@@ -3857,7 +3857,7 @@ public abstract class StringNodes {
 
         public StringPatternPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
+            allocateObjectNode = AllocateObjectNode.create();
             makeLeafRopeNode = RopeNodes.MakeLeafRopeNode.create();
             makeRepeatingNode = RopeNodes.MakeRepeatingNode.create();
         }
@@ -4289,7 +4289,7 @@ public abstract class StringNodes {
 
             if (allocateNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                allocateNode = insert(AllocateObjectNodeGen.create(getContext(), getSourceSection(), null, null));
+                allocateNode = insert(AllocateObjectNode.create());
             }
 
             if (makeSubstringNode == null) {
@@ -4318,7 +4318,7 @@ public abstract class StringNodes {
 
             if (allocateNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                allocateNode = insert(AllocateObjectNodeGen.create(getContext(), getSourceSection(), null, null));
+                allocateNode = insert(AllocateObjectNode.create());
             }
 
             if (taintResultNode == null) {

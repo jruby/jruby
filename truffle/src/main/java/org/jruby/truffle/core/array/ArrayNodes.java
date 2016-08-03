@@ -107,7 +107,7 @@ public abstract class ArrayNodes {
 
         public AllocateNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            allocateNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
+            allocateNode = AllocateObjectNode.create();
         }
 
         @Specialization
@@ -193,7 +193,7 @@ public abstract class ArrayNodes {
 
         public MulNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
+            allocateObjectNode = AllocateObjectNode.create();
         }
 
         protected abstract Object executeMul(VirtualFrame frame, DynamicObject array, int count);
@@ -275,7 +275,7 @@ public abstract class ArrayNodes {
 
         public IndexNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
+            allocateObjectNode = AllocateObjectNode.create();
         }
 
         @Specialization

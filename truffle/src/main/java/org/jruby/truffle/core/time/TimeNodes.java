@@ -165,7 +165,7 @@ public abstract class TimeNodes {
 
         public DupInternalNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
+            allocateObjectNode = AllocateObjectNode.create();
         }
 
         @Specialization
@@ -245,7 +245,7 @@ public abstract class TimeNodes {
 
         public AllocateNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
+            allocateObjectNode = AllocateObjectNode.create();
         }
 
         @Specialization
@@ -263,7 +263,7 @@ public abstract class TimeNodes {
 
         public TimeSNowPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
+            allocateObjectNode = AllocateObjectNode.create();
             getTimeZoneNode = GetTimeZoneNodeGen.create();
         }
 
@@ -288,7 +288,7 @@ public abstract class TimeNodes {
         public TimeSSpecificPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             getTimeZoneNode = GetTimeZoneNodeGen.create();
-            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
+            allocateObjectNode = AllocateObjectNode.create();
         }
 
         @Specialization(guards = { "isUTC" })
@@ -427,7 +427,7 @@ public abstract class TimeNodes {
         public TimeSFromArrayPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             getTimeZoneNode = GetTimeZoneNodeGen.create();
-            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
+            allocateObjectNode = AllocateObjectNode.create();
         }
 
         @Specialization(guards = {"!fromutc", "!isNil(utcoffset)"})
