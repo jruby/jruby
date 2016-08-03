@@ -1151,10 +1151,10 @@ module Marshal
         ivar = get_symbol
         value = construct
         case ivar
-          when :bt
-            obj.__instance_variable_set__ :@custom_backtrace, value
-          when :mesg
-            Truffle.invoke_primitive :exception_set_message, obj, value
+        when :bt
+          obj.__instance_variable_set__ :@custom_backtrace, value
+        when :mesg
+          Truffle.invoke_primitive :exception_set_message, obj, value
         end
       end
     end
