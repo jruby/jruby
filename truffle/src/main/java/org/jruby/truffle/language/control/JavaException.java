@@ -13,6 +13,8 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 
 public class JavaException extends RuntimeException {
 
+    private static final long serialVersionUID = -5710714298554437748L;
+
     public JavaException(Throwable cause) {
         super(doGetMessage(cause), cause);
     }

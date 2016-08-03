@@ -24,19 +24,19 @@ public interface TracePointLayout extends BasicObjectLayout {
 
     DynamicObject createTracePoint(
             DynamicObjectFactory factory,
-            @Nullable Class[] tags,
+            @Nullable Object[] tags,
             @Nullable DynamicObject event,
             @Nullable DynamicObject path,
             int line,
             @Nullable DynamicObject binding,
             @Nullable DynamicObject proc,
-            @Nullable EventBinding eventBinding,
+            @Nullable Object eventBinding,
             boolean insideProc);
 
     boolean isTracePoint(DynamicObject object);
 
-    Class[] getTags(DynamicObject object);
-    void setTags(DynamicObject object, Class[] value);
+    Object[] getTags(DynamicObject object);
+    void setTags(DynamicObject object, Object[] value);
 
     DynamicObject getEvent(DynamicObject object);
     void setEvent(DynamicObject object, DynamicObject value);
@@ -53,8 +53,8 @@ public interface TracePointLayout extends BasicObjectLayout {
     DynamicObject getProc(DynamicObject object);
     void setProc(DynamicObject object, DynamicObject value);
 
-    EventBinding getEventBinding(DynamicObject object);
-    void setEventBinding(DynamicObject object, EventBinding value);
+    Object getEventBinding(DynamicObject object);
+    void setEventBinding(DynamicObject object, Object value);
 
     boolean getInsideProc(DynamicObject object);
     void setInsideProc(DynamicObject object, boolean value);

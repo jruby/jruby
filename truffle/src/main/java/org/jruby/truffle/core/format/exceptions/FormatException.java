@@ -13,6 +13,8 @@ import com.oracle.truffle.api.nodes.ControlFlowException;
 
 public class FormatException extends ControlFlowException {
 
+    private static final long serialVersionUID = -6570764260422083237L;
+
     private final String message;
 
     public FormatException() {

@@ -13,4 +13,6 @@ import com.oracle.truffle.api.nodes.ControlFlowException;
 
 public final class RedoException extends ControlFlowException {
 
+    private static final long serialVersionUID = 7279456434679526564L;
+
 }

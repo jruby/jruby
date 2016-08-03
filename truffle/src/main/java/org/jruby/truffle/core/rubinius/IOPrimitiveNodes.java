@@ -419,6 +419,8 @@ public abstract class IOPrimitiveNodes {
     public static abstract class IOWriteNonBlockPrimitiveNode extends IOPrimitiveArrayArgumentsNode {
 
         static class StopWriting extends ControlFlowException {
+            private static final long serialVersionUID = 1096318435617097172L;
+
             final int bytesWritten;
 
             public StopWriting(int bytesWritten) {

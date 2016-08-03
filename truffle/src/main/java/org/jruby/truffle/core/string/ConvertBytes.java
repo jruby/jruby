@@ -193,6 +193,7 @@ public class ConvertBytes {
         }
     }
 
+    @SuppressWarnings("fallthrough")
     private int calculateLength() {
         int len = 0;
         byte second = ((str+1 < end) && data[str] == '0') ? data[str+1] : (byte)0;
@@ -537,6 +538,8 @@ public class ConvertBytes {
     }
 
     public static class ERange extends RuntimeException {
+        private static final long serialVersionUID = 3393153027217708024L;
+
         public static enum Kind {Overflow, Underflow};
         private ConvertBytes.ERange.Kind kind;
         public ERange() {

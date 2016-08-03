@@ -82,7 +82,7 @@ public abstract class TracePointNodes {
 
         @Specialization(guards = "isTracePoint(tracePoint)")
         public boolean enable(VirtualFrame frame, DynamicObject tracePoint, DynamicObject block) {
-            EventBinding<?> eventBinding = Layouts.TRACE_POINT.getEventBinding(tracePoint);
+            EventBinding<?> eventBinding = (EventBinding<?>) Layouts.TRACE_POINT.getEventBinding(tracePoint);
             final boolean alreadyEnabled = eventBinding != null;
 
             if (!alreadyEnabled) {
@@ -106,7 +106,7 @@ public abstract class TracePointNodes {
 
         @TruffleBoundary
         public static EventBinding<?> createEventBinding(final RubyContext context, final DynamicObject tracePoint) {
-            return context.getInstrumenter().attachFactory(SourceSectionFilter.newBuilder().tagIs(Layouts.TRACE_POINT.getTags(tracePoint)).build(), new ExecutionEventNodeFactory() {
+            return context.getInstrumenter().attachFactory(SourceSectionFilter.newBuilder().tagIs((Class<?>[]) Layouts.TRACE_POINT.getTags(tracePoint)).build(), new ExecutionEventNodeFactory() {
                 @Override
                 public ExecutionEventNode create(EventContext eventContext) {
                     return new TracePointEventNode(context, tracePoint);
@@ -135,7 +135,7 @@ public abstract class TracePointNodes {
 
         @Specialization(guards = "isTracePoint(tracePoint)")
         public boolean disable(VirtualFrame frame, DynamicObject tracePoint, DynamicObject block) {
-            EventBinding<?> eventBinding = Layouts.TRACE_POINT.getEventBinding(tracePoint);
+            EventBinding<?> eventBinding = (EventBinding<?>) Layouts.TRACE_POINT.getEventBinding(tracePoint);
             final boolean alreadyEnabled = eventBinding != null;
 
             if (alreadyEnabled) {

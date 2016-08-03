@@ -11,6 +11,8 @@ package org.jruby.truffle.language.control;
 
 public class TruffleFatalException extends RuntimeException {
 
+    private static final long serialVersionUID = 7605882675552845547L;
+
     public TruffleFatalException(String message, Exception cause) {
         super(message, cause);
     }
