@@ -34,18 +34,17 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.encoding.EncodingManager;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyGuards;
+import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.util.StringUtils;
 import org.jruby.util.ByteList;
 import org.jruby.util.Memo;
 import org.jruby.util.StringSupport;
 import org.jruby.util.io.EncodingUtils;
-
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.concurrent.ConcurrentHashMap;
-
 import static org.jruby.truffle.core.rope.CodeRange.CR_7BIT;
 import static org.jruby.truffle.core.rope.CodeRange.CR_BROKEN;
 import static org.jruby.truffle.core.rope.CodeRange.CR_UNKNOWN;
@@ -644,6 +643,21 @@ public class RopeOperations {
         // If we get this far, one must be CR_7BIT and the other must be CR_VALID, so promote to the more general code range.
 
         return CR_VALID;
+    }
+
+    @TruffleBoundary
+    public static int codePoint(RubyContext context, Rope rope, int start) {
+        byte[] bytes = rope.getBytes();
+        int p = start;
+        int end = rope.byteLength();
+        Encoding enc = rope.getEncoding();
+
+        assert p < end : "empty string";
+        int cl = StringSupport.preciseLength(enc, bytes, p, end);
+        if (cl <= 0) {
+            throw new RaiseException(context.getCoreExceptions().argumentError("invalid byte sequence in " + enc, null));
+        }
+        return enc.mbcToCode(bytes, p, end);
     }
 
 }

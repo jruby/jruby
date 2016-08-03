@@ -137,7 +137,6 @@ import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
-import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.language.objects.IsFrozenNode;
 import org.jruby.truffle.language.objects.IsFrozenNodeGen;
 import org.jruby.truffle.language.objects.TaintNode;
@@ -1481,12 +1480,10 @@ public abstract class StringNodes {
             final Encoding enc = RopeOperations.STR_ENC_GET(rope);
             final int s = 0;
             final int end = s + rope.byteLength();
-            final byte[] bytes = rope.getBytes();
 
             int p = s;
-
             while (p < end) {
-                int c = StringSupport.codePoint(getContext().getJRubyRuntime(), enc, bytes, p, end);
+                int c = RopeOperations.codePoint(getContext(), rope, p);
                 if (!ASCIIEncoding.INSTANCE.isSpace(c)) break;
                 p += StringSupport.codeLength(enc, c);
             }
@@ -1529,16 +1526,11 @@ public abstract class StringNodes {
             final Rope rope = rope(string);
 
             try {
-                return codePoint(rope.getEncoding(), rope.getBytes(), 0, rope.byteLength());
+                return RopeOperations.codePoint(getContext(), rope, 0);
             } catch (IllegalArgumentException e) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
                 throw new RaiseException(coreExceptions().argumentError(e.getMessage(), this));
             }
-        }
-
-        @TruffleBoundary
-        private int codePoint(Encoding encoding, byte[] bytes, int p, int end) {
-            return StringSupport.codePoint(encoding, bytes, p, end);
         }
 
     }
@@ -1621,7 +1613,7 @@ public abstract class StringNodes {
             int endp = end;
             int prev;
             while ((prev = prevCharHead(enc, bytes, start, endp, end)) != -1) {
-                int point = StringSupport.codePoint(getContext().getJRubyRuntime(), enc, bytes, prev, end);
+                int point = RopeOperations.codePoint(getContext(), rope, prev);
                 if (point != 0 && !ASCIIEncoding.INSTANCE.isSpace(point)) break;
                 endp = prev;
             }
@@ -2474,7 +2466,7 @@ public abstract class StringNodes {
             byte[] bytes = rope.getBytesCopy();
             boolean modify = false;
 
-            int c = StringSupport.codePoint(getContext().getJRubyRuntime(), enc, bytes, s, end);
+            int c = RopeOperations.codePoint(getContext(), rope, s);
             if (enc.isLower(c)) {
                 enc.codeToMbc(StringSupport.toUpper(enc, c), bytes, s);
                 modify = true;
@@ -2482,7 +2474,7 @@ public abstract class StringNodes {
 
             s += StringSupport.codeLength(enc, c);
             while (s < end) {
-                c = StringSupport.codePoint(getContext().getJRubyRuntime(), enc, bytes, s, end);
+                c = RopeOperations.codePoint(getContext(), rope, s);
                 if (enc.isUpper(c)) {
                     enc.codeToMbc(StringSupport.toLower(enc, c), bytes, s);
                     modify = true;
@@ -2492,7 +2484,6 @@ public abstract class StringNodes {
 
             if (modify) {
                 StringOperations.setRope(string, makeLeafRopeNode.executeMake(bytes, rope.getEncoding(), rope.getCodeRange(), rope.characterLength()));
-
                 return string;
             }
 
@@ -2694,7 +2685,7 @@ public abstract class StringNodes {
                     c = bytes[p++] & 0xff;
                 } else {
                     try {
-                        c = StringSupport.codePoint(getContext().getJRubyRuntime(), enc, bytes, p, end);
+                        c = RopeOperations.codePoint(getContext(), rope, p);
                     } catch (org.jruby.exceptions.RaiseException ex) {
                         throw new RaiseException(getContext().getJRubyInterop().toTruffle(ex.getException(), this));
                     }
