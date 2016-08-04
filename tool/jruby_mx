@@ -9,7 +9,7 @@ java = ENV["JAVACMD"] || "java"
 java_flags = []
 rest = []
 
-# Translate shortcuts like -J-G: and -Xtruffle.
+# Translate shortcuts like -J-G:, -J and -Xtruffle.
 parse_options = lambda do |args|
   until args.empty?
     case arg = args.shift
@@ -23,6 +23,10 @@ parse_options = lambda do |args|
       java_flags << "-J-D#{GRAAL_OPTIONS_PREFIX}#{$'}=false"
     when /^-J-G:/
       java_flags << "-J-D#{GRAAL_OPTIONS_PREFIX}#{$'}"
+    when /^-J-(cp|classpath)$/
+      java_flags << arg << args.shift
+    when /^-J/
+      java_flags << arg
     when /^-Xtruffle\./
       java_flags << "-J-Djruby.#{arg[2..-1]}"
     else
