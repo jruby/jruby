@@ -52,7 +52,7 @@ import static org.jruby.runtime.Visibility.PRIVATE;
 /**
  * Implementation of Ruby's Enumerator module.
  */
-@JRubyModule(name="Enumerable::Enumerator", include="Enumerable")
+@JRubyModule(name="Enumerator", include="Enumerable")
 public class RubyEnumerator extends RubyObject {
     /** target for each operation */
     private IRubyObject object;
@@ -75,7 +75,7 @@ public class RubyEnumerator extends RubyObject {
         final RubyModule Enumerable = runtime.getModule("Enumerable");
 
         final RubyClass Enumerator;
-        Enumerator = runtime.defineClass("Enumerator", runtime.getObject(), ENUMERATOR_ALLOCATOR);
+        Enumerator = runtime.defineClass("Enumerator", runtime.getObject(), ALLOCATOR);
 
         Enumerator.includeModule(Enumerable);
         Enumerator.defineAnnotatedMethods(RubyEnumerator.class);
@@ -85,7 +85,7 @@ public class RubyEnumerator extends RubyObject {
         RubyYielder.createYielderClass(runtime);
     }
 
-    private static ObjectAllocator ENUMERATOR_ALLOCATOR = new ObjectAllocator() {
+    private static final ObjectAllocator ALLOCATOR = new ObjectAllocator() {
         @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyEnumerator(runtime, klass);
