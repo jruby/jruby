@@ -501,7 +501,8 @@ public class RubyEnumerator extends RubyObject {
 
     @JRubyMethod
     public synchronized IRubyObject next(ThreadContext context) {
-        ensureNexter(context);
+        ensureNexter(context.runtime);
+
         if (!feedValue.isNil()) feedValue = context.nil;
         return nexter.next();
     }
@@ -520,28 +521,24 @@ public class RubyEnumerator extends RubyObject {
 
     @JRubyMethod
     public synchronized IRubyObject peek(ThreadContext context) {
-        ensureNexter(context);
+        ensureNexter(context.runtime);
 
         return nexter.peek();
     }
 
     @JRubyMethod(name = "peek_values")
-    public synchronized IRubyObject peekValues(ThreadContext context) {
-        ensureNexter(context);
-
-        return RubyArray.newArray(context.runtime, nexter.peek());
+    public IRubyObject peekValues(ThreadContext context) {
+        return RubyArray.newArray(context.runtime, peek(context));
     }
 
     @JRubyMethod(name = "next_values")
-    public synchronized IRubyObject nextValues(ThreadContext context) {
-        ensureNexter(context);
-        if (!feedValue.isNil()) feedValue = context.nil;
-        return RubyArray.newArray(context.runtime, nexter.next());
+    public IRubyObject nextValues(ThreadContext context) {
+        return RubyArray.newArray(context.runtime, next(context));
     }
 
     @JRubyMethod
     public IRubyObject feed(ThreadContext context, IRubyObject val) {
-        ensureNexter(context);
+        ensureNexter(context.runtime);
         if (!feedValue.isNil()) {
             throw context.runtime.newTypeError("feed value already set");
         }
@@ -550,16 +547,16 @@ public class RubyEnumerator extends RubyObject {
         return context.nil;
     }
 
-    private void ensureNexter(ThreadContext context) {
+    private void ensureNexter(final Ruby runtime) {
         if (nexter == null) {
             if (Options.ENUMERATOR_LIGHTWEIGHT.load()) {
                 if (object instanceof RubyArray && method.equals("each") && methodArgs.length == 0) {
-                    nexter = new ArrayNexter(context.runtime, object, method, methodArgs);
+                    nexter = new ArrayNexter(runtime, object, method, methodArgs);
                 } else {
-                    nexter = new ThreadedNexter(context.runtime, object, method, methodArgs);
+                    nexter = new ThreadedNexter(runtime, object, method, methodArgs);
                 }
             } else {
-                nexter = new ThreadedNexter(context.runtime, object, method, methodArgs);
+                nexter = new ThreadedNexter(runtime, object, method, methodArgs);
             }
         }
     }
