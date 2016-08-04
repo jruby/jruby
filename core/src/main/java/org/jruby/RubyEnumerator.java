@@ -477,18 +477,24 @@ public class RubyEnumerator extends RubyObject {
         return with_index_common(context, block, "each_with_index", context.nil);
     }
 
-    public IRubyObject with_index(ThreadContext context, final Block block) {
-        return with_index19(context, block);
-    }
-
     @JRubyMethod(name = "with_index")
-    public IRubyObject with_index19(ThreadContext context, final Block block) {
+    public IRubyObject with_index(ThreadContext context, final Block block) {
         return with_index_common(context, block, "with_index", context.nil);
     }
 
+    @Deprecated
+    public IRubyObject with_index19(ThreadContext context, final Block block) {
+        return with_index(context, block);
+    }
+
     @JRubyMethod(name = "with_index")
-    public IRubyObject with_index19(ThreadContext context, IRubyObject arg, final Block block) {
+    public IRubyObject with_index(ThreadContext context, IRubyObject arg, final Block block) {
         return with_index_common(context, block, "with_index", arg);
+    }
+
+    @Deprecated
+    public IRubyObject with_index19(ThreadContext context, IRubyObject arg, final Block block) {
+        return with_index(context, arg, block);
     }
 
     private volatile Nexter nexter = null;
