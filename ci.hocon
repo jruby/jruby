@@ -21,7 +21,7 @@ common: {
     [mx, sclone, --kind, git, "https://github.com/jruby/jruby-build-pack.git", jruby-build-pack],
     [cp, bin/jruby.bash, bin/jruby],
     [chmod, +x, bin/jruby],
-    ${jt} [build, --build-pack]
+    [mx, build]
   ]
 
   timelimit: "01:00:00"
