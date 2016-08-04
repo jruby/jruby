@@ -29,10 +29,12 @@ parse_options = lambda do |args|
       java_flags << arg
     when /^-Xtruffle\./
       java_flags << "-J-Djruby.#{arg[2..-1]}"
-    else
+    else # Not a VM argument, leave untouched
       rest << arg
+      break
     end
   end
+  rest += args
 end
 
 parse_options.call(ARGV)
