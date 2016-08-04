@@ -1,0 +1,52 @@
+#!/usr/bin/env ruby
+
+JRUBY = File.expand_path('../..', __FILE__)
+
+GRAAL_OPTIONS_PREFIX = "graal."
+
+java = ENV["JAVACMD"] || "java"
+
+java_flags = []
+rest = []
+
+# Translate shortcuts like -J-G: and -Xtruffle.
+parse_options = lambda do |args|
+  until args.empty?
+    case arg = args.shift
+    when "-X+T"
+      # Just drop it
+    when "-X-T"
+      abort "Can only run JRuby+Truffle with mx"
+    when /^-J-G:\+/
+      java_flags << "-J-D#{GRAAL_OPTIONS_PREFIX}#{$'}=true"
+    when /^-J-G:-/
+      java_flags << "-J-D#{GRAAL_OPTIONS_PREFIX}#{$'}=false"
+    when /^-J-G:/
+      java_flags << "-J-D#{GRAAL_OPTIONS_PREFIX}#{$'}"
+    when /^-Xtruffle\./
+      java_flags << "-J-Djruby.#{arg[2..-1]}"
+    else
+      rest << arg
+    end
+  end
+end
+
+parse_options.call(ARGV)
+parse_options.call(ENV["JRUBY_OPTS"].to_s.split(' '))
+
+args = ["mx"]
+unless java == "java"
+  java_home = java[%r{^(.+)/bin/java$}, 1]
+  args << '--java-home' << java_home
+end
+args << "ruby"
+args << "-J-Xss2048k"
+args += java_flags
+args += rest
+
+if args.include?('-d')
+  args.insert(1, '-v')
+  puts "$ " + args.join(' ')
+end
+
+exec(*args)

@@ -200,7 +200,8 @@ def extractArguments(args):
         elif arg.startswith('-X'):
             vmArgs.append('-Djruby.' + arg[2:])
         else:
-            rubyArgs.append(arg)
+            rubyArgs.extend(args[i:])
+            break
     return vmArgs, rubyArgs
 
 def extractTarball(file, target_dir):

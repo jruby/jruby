@@ -44,7 +44,7 @@ parse_options = lambda do |args|
       extra_classpath << args.shift
     when /^-J/
       java_flags << arg[2..-1]
-    when /^-Xtruffle./
+    when /^-Xtruffle\./
       java_flags << "-Djruby.#{arg[2..-1]}"
     else
       rest << arg

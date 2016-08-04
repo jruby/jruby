@@ -128,6 +128,12 @@ module Utilities
     ENV["JRUBY_ECLIPSE"] == "true" and !truffle_version.end_with?('SNAPSHOT')
   end
 
+  def self.mx?
+    mx_ruby_jar = "#{JRUBY_DIR}/mxbuild/dists/ruby.jar"
+    constants_file = "#{JRUBY_DIR}/core/src/main/java/org/jruby/runtime/Constants.java"
+    File.exist?(mx_ruby_jar) && File.mtime(mx_ruby_jar) >= File.mtime(constants_file)
+  end
+
   def self.find_ruby
     if ENV["RUBY_BIN"]
       ENV["RUBY_BIN"]
@@ -142,7 +148,9 @@ module Utilities
   end
 
   def self.find_jruby
-    if jruby_eclipse?
+    if mx?
+      "#{JRUBY_DIR}/tool/jruby_mx"
+    elsif jruby_eclipse?
       "#{JRUBY_DIR}/tool/jruby_eclipse"
     elsif ENV['RUBY_BIN']
       ENV['RUBY_BIN']
@@ -152,7 +160,7 @@ module Utilities
   end
 
   def self.find_jruby_bin_dir
-    if jruby_eclipse?
+    if jruby_eclipse? or mx?
       JRUBY_DIR + "/bin"
     else
       File.dirname(find_jruby)
@@ -391,7 +399,9 @@ module ShellUtils
       command, *args = args
     end
 
-    if Utilities.jruby_eclipse?
+    if Utilities.mx?
+      args.unshift "-ttool/jruby_mx"
+    elsif Utilities.jruby_eclipse?
       args.unshift "-ttool/jruby_eclipse"
     end
 
