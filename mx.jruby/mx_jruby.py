@@ -229,7 +229,11 @@ def setup_jruby_home():
 def ruby_command(args):
     """runs Ruby"""
     vmArgs, rubyArgs = extractArguments(args)
-    vmArgs += ['-cp', mx.classpath(['TRUFFLE_API', 'RUBY'])]
+    classpath = mx.classpath(['TRUFFLE_API', 'RUBY']).split(':')
+    truffle_api, classpath = classpath[0], classpath[1:]
+    assert os.path.basename(truffle_api) == "truffle-api.jar"
+    vmArgs += ['-Xbootclasspath/p:' + truffle_api]
+    vmArgs += ['-cp', ':'.join(classpath)]
     vmArgs += ['org.jruby.Main', '-X+T']
     env = setup_jruby_home()
     mx.run_java(vmArgs + rubyArgs, env=env)
