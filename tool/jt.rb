@@ -1031,11 +1031,8 @@ module Commands
     samples = []
     METRICS_REPS.times do
       Utilities.log '.', "sampling\n"
-      r, w = IO.pipe
-      run '-Xtruffle.metrics.memory_used_on_exit=true', '-J-verbose:gc', *args, {err: w, out: w, no_print_cmd: true}
-      w.close
-      samples.push memory_allocated(r.read)
-      r.close
+      out, _ = run '-Xtruffle.metrics.memory_used_on_exit=true', '-J-verbose:gc', *args, {capture: true, no_print_cmd: true}
+      samples.push memory_allocated(out)
     end
     Utilities.log "\n", nil
     range = samples.max - samples.min
@@ -1116,13 +1113,10 @@ module Commands
     samples = []
     METRICS_REPS.times do
       Utilities.log '.', "sampling\n"
-      r, w = IO.pipe
       start = Time.now
-      run '-Xtruffle.metrics.time=true', *args, {err: w, out: w, no_print_cmd: true}
+      out, _ = run '-Xtruffle.metrics.time=true', *args, {capture: true, no_print_cmd: true}
       finish = Time.now
-      w.close
-      samples.push get_times(r.read, finish - start)
-      r.close
+      samples.push get_times(out, finish - start)
     end
     Utilities.log "\n", nil
     results = {}
