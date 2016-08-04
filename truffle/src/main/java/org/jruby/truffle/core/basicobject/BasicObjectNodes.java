@@ -239,10 +239,10 @@ public abstract class BasicObjectNodes {
     @CoreMethod(names = "__instance_variables__")
     public abstract static class InstanceVariablesNode extends CoreMethodArrayArgumentsNode {
 
-        public abstract DynamicObject executeObject(DynamicObject self);
+        public abstract DynamicObject execute(Object self);
 
         @TruffleBoundary
-        @Specialization
+        @Specialization(guards = {"!isNil(self)", "!isRubySymbol(self)"})
         public DynamicObject instanceVariables(DynamicObject self) {
             List<Object> keys = self.getShape().getKeyList();
 
@@ -257,6 +257,31 @@ public abstract class BasicObjectNodes {
             }
             final int size = names.size();
             return ArrayHelpers.createArray(getContext(), names.toArray(new Object[size]), size);
+        }
+
+        @Specialization
+        public DynamicObject instanceVariables(int self) {
+            return ArrayHelpers.createArray(getContext(), null, 0);
+        }
+
+        @Specialization
+        public DynamicObject instanceVariables(long self) {
+            return ArrayHelpers.createArray(getContext(), null, 0);
+        }
+
+        @Specialization
+        public DynamicObject instanceVariables(boolean self) {
+            return ArrayHelpers.createArray(getContext(), null, 0);
+        }
+
+        @Specialization(guards = "isNil(object)")
+        public DynamicObject instanceVariablesNil(DynamicObject object) {
+            return ArrayHelpers.createArray(getContext(), null, 0);
+        }
+
+        @Specialization(guards = "isRubySymbol(object)")
+        public DynamicObject instanceVariablesSymbol(DynamicObject object) {
+            return ArrayHelpers.createArray(getContext(), null, 0);
         }
 
     }

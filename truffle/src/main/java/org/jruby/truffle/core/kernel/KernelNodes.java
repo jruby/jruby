@@ -1050,8 +1050,8 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public DynamicObject instanceVariables(VirtualFrame frame, DynamicObject self) {
-            return instanceVariablesNode.executeObject(self);
+        public DynamicObject instanceVariables(VirtualFrame frame, Object self) {
+            return instanceVariablesNode.execute(self);
         }
 
     }
