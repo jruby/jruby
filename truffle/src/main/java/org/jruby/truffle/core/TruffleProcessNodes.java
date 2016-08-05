@@ -34,6 +34,7 @@ public abstract class TruffleProcessNodes {
     @CoreMethod(names = "spawn", onSingleton = true, required = 4, unsafe = UnsafeGroup.PROCESSES)
     public abstract static class SpawnNode extends CoreMethodArrayArgumentsNode {
 
+        @TruffleBoundary
         @Specialization(guards = {
                 "isRubyString(command)",
                 "isRubyArray(arguments)",
@@ -46,14 +47,11 @@ public abstract class TruffleProcessNodes {
 
             Collection<SpawnFileAction> fileActions = parseOptions(options);
 
-            final long longPid = call(
+            int pid = call(
                     StringOperations.getString(command),
                     toStringArray(arguments),
                     toStringArray(environmentVariables),
                     fileActions);
-            assert longPid <= Integer.MAX_VALUE;
-            // VMWaitPidPrimitiveNode accepts only int
-            final int pid = (int) longPid;
 
             if (pid == -1) {
                 // TODO (pitr 07-Sep-2015): needs compatibility improvements
@@ -126,7 +124,7 @@ public abstract class TruffleProcessNodes {
         }
 
         @TruffleBoundary
-        private long call(String command, String[] arguments, String[] environmentVariables, Collection<SpawnFileAction> fileActions) {
+        private int call(String command, String[] arguments, String[] environmentVariables, Collection<SpawnFileAction> fileActions) {
             return getContext().getNativePlatform().getPosix().posix_spawnp(
                     command,
                     fileActions,

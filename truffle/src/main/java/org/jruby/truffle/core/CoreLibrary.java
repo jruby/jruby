@@ -1168,6 +1168,11 @@ public class CoreLibrary {
         return ((int) value) == value;
     }
 
+    public static int long2int(long value) {
+        assert fitsIntoInteger(value);
+        return (int) value;
+    }
+
     public RubyContext getContext() {
         return context;
     }
