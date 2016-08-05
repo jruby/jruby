@@ -9,6 +9,8 @@ java = ENV["JAVACMD"] || "java"
 java_flags = []
 ruby_flags = []
 
+print_command = false
+
 # Separate java and ruby flags from JRUBY_OPTS and ARGV.
 # Also translate shortcuts like -J-G:, -J and -Xtruffle.
 parse_options = lambda do |args|
@@ -18,6 +20,8 @@ parse_options = lambda do |args|
       # Just drop it
     when "-X-T"
       abort "Can only run JRuby+Truffle with mx"
+    when "-J-cmd"
+      print_command = true
     when /^-J-G:\+/
       java_flags << "-J-D#{GRAAL_OPTIONS_PREFIX}#{$'}=true"
     when /^-J-G:-/
@@ -51,7 +55,7 @@ args << "-J-Xss2048k"
 args += java_flags
 args += ruby_flags
 
-if args.include?('-d')
+if print_command
   args.insert(1, '-v')
   puts "$ " + args.join(' ')
 end
