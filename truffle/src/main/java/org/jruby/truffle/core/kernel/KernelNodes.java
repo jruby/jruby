@@ -62,6 +62,7 @@ import org.jruby.truffle.core.cast.NameToJavaStringNodeGen;
 import org.jruby.truffle.core.cast.NameToSymbolOrStringNodeGen;
 import org.jruby.truffle.core.cast.TaintResultNode;
 import org.jruby.truffle.core.cast.ToPathNodeGen;
+import org.jruby.truffle.core.cast.ToStrNode;
 import org.jruby.truffle.core.cast.ToStrNodeGen;
 import org.jruby.truffle.core.encoding.EncodingOperations;
 import org.jruby.truffle.core.format.BytesResult;
@@ -153,6 +154,17 @@ public abstract class KernelNodes {
     public abstract static class BacktickNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode toHashNode;
+        @Child private ToStrNode toStrNode;
+
+        @Specialization(guards = "!isRubyString(command)")
+        public DynamicObject backtickCoerce(VirtualFrame frame, DynamicObject command) {
+            // TODO BJF Aug 4, 2016 Needs SafeStringValue here
+            if (toStrNode == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                toStrNode = insert(ToStrNodeGen.create(getContext(), getSourceSection(), null));
+            }
+            return backtick(frame, toStrNode.executeToStr(frame, command));
+        }
 
         @Specialization(guards = "isRubyString(command)")
         public DynamicObject backtick(VirtualFrame frame, DynamicObject command) {
