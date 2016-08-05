@@ -1,2 +1,1 @@
-fails:File.read raises an Errno::EISDIR when passed a path that is a directory
 fails(windows):File.read raises an Errno::EACCES when passed a path that is a directory
