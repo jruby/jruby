@@ -172,6 +172,46 @@ module Process
     Struct::Tms.new(*cpu_times)
   end
 
+  def self.kill(signal, *pids)
+    raise ArgumentError, "PID argument required" if pids.length == 0
+
+    use_process_group = false
+    signal = signal.to_s if signal.kind_of?(Symbol)
+
+    if signal.kind_of?(String)
+      if signal[0] == ?-
+        signal = signal[1..-1]
+        use_process_group = true
+      end
+
+      if signal[0..2] == "SIG"
+        signal = signal[3..-1]
+      end
+
+      signal = Signal::Names[signal]
+    end
+
+    raise ArgumentError unless signal.kind_of? Fixnum
+
+    if signal < 0
+      signal = -signal
+      use_process_group = true
+    end
+
+    signal_name = Signal::Numbers[signal]
+
+    pids.each do |pid|
+      pid = Rubinius::Type.coerce_to pid, Integer, :to_int
+
+      pid = -pid if use_process_group
+      result = Truffle::POSIX.kill(pid, signal, signal_name)
+
+      Errno.handle if result == -1
+    end
+
+    pids.length
+  end
+
   def self.abort(msg=nil)
     if msg
       msg = StringValue(msg)

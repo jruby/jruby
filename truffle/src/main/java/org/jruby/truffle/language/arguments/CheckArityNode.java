@@ -31,7 +31,11 @@ public class CheckArityNode extends RubyNode {
 
         if (!checkArity(arity, given)) {
             checkFailedProfile.enter();
-            throw new RaiseException(coreExceptions().argumentError(given, arity.getRequired(), this));
+            if (arity.getOptional() > 0) {
+                throw new RaiseException(coreExceptions().argumentError(given, arity.getRequired(), arity.getOptional(), this));
+            } else {
+                throw new RaiseException(coreExceptions().argumentError(given, arity.getRequired(), this));
+            }
         }
     }
 

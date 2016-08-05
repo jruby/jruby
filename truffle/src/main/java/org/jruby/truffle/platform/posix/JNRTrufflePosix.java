@@ -19,10 +19,10 @@ import jnr.posix.Passwd;
 import jnr.posix.SignalHandler;
 import jnr.posix.SpawnFileAction;
 import jnr.posix.Times;
-
 import java.io.FileDescriptor;
 import java.nio.ByteBuffer;
 import java.util.Collection;
+import org.jruby.truffle.core.CoreLibrary;
 
 public class JNRTrufflePosix implements TrufflePosix {
 
@@ -306,8 +306,8 @@ public class JNRTrufflePosix implements TrufflePosix {
     }
 
     @Override
-    public long posix_spawnp(String path, Collection<? extends SpawnFileAction> fileActions, Collection<? extends CharSequence> argv, Collection<? extends CharSequence> envp) {
-        return posix.posix_spawnp(path, fileActions, argv, envp);
+    public int posix_spawnp(String path, Collection<? extends SpawnFileAction> fileActions, Collection<? extends CharSequence> argv, Collection<? extends CharSequence> envp) {
+        return CoreLibrary.long2int(posix.posix_spawnp(path, fileActions, argv, envp));
     }
 
     @Override

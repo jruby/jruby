@@ -26,10 +26,8 @@ import org.jruby.truffle.core.cast.DefaultValueNodeGen;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.platform.UnsafeGroup;
 import org.jruby.truffle.platform.posix.ClockGetTime;
 import org.jruby.truffle.platform.posix.TimeSpec;
-import org.jruby.truffle.platform.signal.Signal;
 
 @CoreClass("Process")
 public abstract class ProcessNodes {
@@ -124,34 +122,6 @@ public abstract class ProcessNodes {
 
         protected static boolean isMonotonicRaw(int clock_id) {
             return clock_id == CLOCK_MONOTONIC_RAW;
-        }
-
-    }
-
-    @CoreMethod(names = "kill", onSingleton = true, required = 2, unsafe = {UnsafeGroup.PROCESSES, UnsafeGroup.SIGNALS})
-    public abstract static class KillNode extends CoreMethodArrayArgumentsNode {
-
-        @TruffleBoundary
-        @Specialization(guards = "isRubySymbol(signalName)")
-        public int kill(DynamicObject signalName, int pid) {
-            int self = posix().getpid();
-
-            if (self == pid) {
-                return raise(Layouts.SYMBOL.getString(signalName));
-            } else {
-                throw new UnsupportedOperationException();
-            }
-        }
-
-        @TruffleBoundary
-        private int raise(String signalName) {
-            Signal signal = getContext().getNativePlatform().getSignalManager().createSignal(signalName);
-            try {
-                getContext().getNativePlatform().getSignalManager().raise(signal);
-            } catch (IllegalArgumentException e) {
-                throw new RaiseException(coreExceptions().argumentError(e.getMessage(), this));
-            }
-            return 1;
         }
 
     }
