@@ -262,10 +262,10 @@ public abstract class TrufflePosixNodes {
     @CoreMethod(names = "mkfifo", isModuleFunction = true, required = 2, unsafe = UnsafeGroup.IO)
     public abstract static class MkfifoNode extends CoreMethodArrayArgumentsNode {
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization(guards = "isRubyString(path)")
         public int mkfifo(DynamicObject path, int mode) {
-            return posix().mkfifo(path.toString(), mode);
+            return posix().mkfifo(StringOperations.getString(path), mode);
         }
 
     }
