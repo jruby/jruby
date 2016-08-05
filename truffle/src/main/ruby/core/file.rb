@@ -345,6 +345,18 @@ class File < IO
     paths.size
   end
 
+  def self.mkfifo(path, mode = undefined)
+    mode = if undefined.equal?(mode)
+             0666
+           else
+             Rubinius::Type.coerce_to mode, Integer, :to_int
+           end
+    path = Rubinius::Type.coerce_to_path(path)
+    status = Truffle::POSIX.mkfifo(path, mode)
+    Errno.handle path if status != 0
+    status
+  end
+
   ##
   # Returns the change time for the named file (the
   # time at which directory information about the

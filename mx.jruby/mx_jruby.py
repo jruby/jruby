@@ -193,14 +193,19 @@ class MavenBuildTask(mx.BuildTask):
 def extractArguments(args):
     vmArgs = []
     rubyArgs = []
-    for i in range(len(args)):
-        arg = args[i]
-        if arg.startswith('-J-'):
+    while args:
+        arg = args.pop(0)
+        if arg == '-J-cp' or arg == '-J-classpath':
+            vmArgs.append(arg[2:])
+            vmArgs.append(args.pop(0))
+        elif arg.startswith('-J-'):
             vmArgs.append(arg[2:])
         elif arg.startswith('-X'):
             vmArgs.append('-Djruby.' + arg[2:])
         else:
             rubyArgs.append(arg)
+            rubyArgs.extend(args)
+            break
     return vmArgs, rubyArgs
 
 def extractTarball(file, target_dir):
@@ -228,7 +233,11 @@ def setup_jruby_home():
 def ruby_command(args):
     """runs Ruby"""
     vmArgs, rubyArgs = extractArguments(args)
-    vmArgs += ['-cp', mx.classpath(['TRUFFLE_API', 'RUBY'])]
+    classpath = mx.classpath(['TRUFFLE_API', 'RUBY']).split(':')
+    truffle_api, classpath = classpath[0], classpath[1:]
+    assert os.path.basename(truffle_api) == "truffle-api.jar"
+    vmArgs += ['-Xbootclasspath/p:' + truffle_api]
+    vmArgs += ['-cp', ':'.join(classpath)]
     vmArgs += ['org.jruby.Main', '-X+T']
     env = setup_jruby_home()
     mx.run_java(vmArgs + rubyArgs, env=env)

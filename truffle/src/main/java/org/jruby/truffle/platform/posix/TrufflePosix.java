@@ -100,5 +100,6 @@ public interface TrufflePosix {
     String getcwd();
     int fsync(int fd);
     int isatty(int fd);
+    int mkfifo(String path, int mode);
 
 }

@@ -11,7 +11,7 @@ describe 'java.lang.Iterable' do
     ret = path.each { |p| paths << p.to_s }
     expect( paths ).to_not be_empty
     expect( paths.last ).to eq 'iterable_spec.rb'
-    expect( ret ).to eq path
+    expect( ret ).to be path
   end
 
   it 'iterates with an Enumerator on #each' do
@@ -29,7 +29,7 @@ describe 'java.lang.Iterable' do
     expect( paths ).to_not be_empty
     expect( paths[-1][0].to_s ).to eq 'iterable_spec.rb'
     expect( paths[-1][1] ).to eq paths.size - 1
-    expect( ret ).to eq path
+    expect( ret ).to eql path
 
     paths = []; idxs = []
     ret = path.each_with_index { |p, i| paths << p; idxs << i }
@@ -37,6 +37,7 @@ describe 'java.lang.Iterable' do
     expect( paths[-1].to_s ).to eq 'iterable_spec.rb'
     expect( idxs[0] ).to eq 0
     expect( idxs[-1] ).to eq paths.size - 1
+    expect( ret ).to be path
   end
 
   it 'iterates with an Enumerator on #each_with_index' do

@@ -259,6 +259,17 @@ public abstract class TrufflePosixNodes {
 
     }
 
+    @CoreMethod(names = "mkfifo", isModuleFunction = true, required = 2, unsafe = UnsafeGroup.IO)
+    public abstract static class MkfifoNode extends CoreMethodArrayArgumentsNode {
+
+        @TruffleBoundary
+        @Specialization(guards = "isRubyString(path)")
+        public int mkfifo(DynamicObject path, int mode) {
+            return posix().mkfifo(StringOperations.getString(path), mode);
+        }
+
+    }
+
     @CoreMethod(names = "putenv", isModuleFunction = true, required = 1, unsafe = UnsafeGroup.PROCESSES)
     public abstract static class PutenvNode extends CoreMethodArrayArgumentsNode {
 

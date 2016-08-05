@@ -128,6 +128,12 @@ module Utilities
     ENV["JRUBY_ECLIPSE"] == "true" and !truffle_version.end_with?('SNAPSHOT')
   end
 
+  def self.mx?
+    mx_ruby_jar = "#{JRUBY_DIR}/mxbuild/dists/ruby.jar"
+    constants_file = "#{JRUBY_DIR}/core/src/main/java/org/jruby/runtime/Constants.java"
+    File.exist?(mx_ruby_jar) && File.mtime(mx_ruby_jar) >= File.mtime(constants_file)
+  end
+
   def self.find_ruby
     if ENV["RUBY_BIN"]
       ENV["RUBY_BIN"]
@@ -142,7 +148,9 @@ module Utilities
   end
 
   def self.find_jruby
-    if jruby_eclipse?
+    if mx?
+      "#{JRUBY_DIR}/tool/jruby_mx"
+    elsif jruby_eclipse?
       "#{JRUBY_DIR}/tool/jruby_eclipse"
     elsif ENV['RUBY_BIN']
       ENV['RUBY_BIN']
@@ -152,7 +160,12 @@ module Utilities
   end
 
   def self.find_jruby_bin_dir
-    if jruby_eclipse?
+    # Make sure bin/ruby points to the right launcher
+    ruby_symlink = "#{JRUBY_DIR}/bin/ruby"
+    FileUtils.rm_f ruby_symlink
+    File.symlink Utilities.find_jruby, ruby_symlink
+
+    if jruby_eclipse? or mx?
       JRUBY_DIR + "/bin"
     else
       File.dirname(find_jruby)
@@ -282,7 +295,7 @@ module ShellUtils
     else
       status = $? unless capture
       $stderr.puts "FAILED (#{status}): #{printable_cmd(args)}"
-      
+
       if capture
         $stderr.puts out
         $stderr.puts err
@@ -391,7 +404,9 @@ module ShellUtils
       command, *args = args
     end
 
-    if Utilities.jruby_eclipse?
+    if Utilities.mx?
+      args.unshift "-ttool/jruby_mx"
+    elsif Utilities.jruby_eclipse?
       args.unshift "-ttool/jruby_eclipse"
     end
 
@@ -408,82 +423,84 @@ module Commands
   include ShellUtils
 
   def help
-    puts 'jt checkout name                               checkout a different Git branch and rebuild'
-    puts 'jt bootstrap [options]                         run the build system\'s bootstrap phase'
-    puts 'jt build [options]                             build'
-    puts 'jt rebuild [options]                           clean and build'
-    puts '    truffle                                    build only the Truffle part, assumes the rest is up-to-date'
-    puts '    cexts [--no-openssl]                       build the cext backend (set SULONG_HOME and maybe USE_SYSTEM_CLANG)'
-    puts '    --offline                                  use the build pack to build offline'
-    puts 'jt clean                                       clean'
-    puts 'jt irb                                         irb'
-    puts 'jt rebuild                                     clean and build'
-    puts 'jt run [options] args...                       run JRuby with -X+T and args'
-    puts '    --graal         use Graal (set either GRAALVM_BIN or GRAAL_HOME and maybe JVMCI_JAVA_HOME)'
-    puts '    --js            add Graal.js to the classpath (set GRAAL_JS_JAR)'
-    puts '    --asm           show assembly (implies --graal)'
-    puts '    --server        run an instrumentation server on port 8080'
-    puts '    --igv           make sure IGV is running and dump Graal graphs after partial escape (implies --graal)'
-    puts '        --full      show all phases, not just up to the Truffle partial escape'
-    puts "    --jdebug        run a JDWP debug server on #{JDEBUG_PORT}"
-    puts '    --jexception[s] print java exceptions'
-    puts '    --exec          use exec rather than system'
-    puts '    --no-print-cmd  don\'t print the command'
-    puts 'jt e 14 + 2                                    evaluate an expression'
-    puts 'jt puts 14 + 2                                 evaluate and print an expression'
-    puts 'jt cextc directory clang-args                  compile the C extension in directory, with optional extra clang arguments'
-    puts 'jt test                                        run all mri tests, specs and integration tests (set SULONG_HOME, and maybe USE_SYSTEM_CLANG)'
-    puts 'jt test tck [--jdebug]                         run the Truffle Compatibility Kit tests'
-    puts 'jt test mri                                    run mri tests'
-    puts 'jt test specs                                  run all specs'
-    puts 'jt test specs fast                             run all specs except sub-processes, GC, sleep, ...'
-    puts 'jt test spec/ruby/language                     run specs in this directory'
-    puts 'jt test spec/ruby/language/while_spec.rb       run specs in this file'
-    puts 'jt test compiler                               run compiler tests (uses the same logic as --graal to find Graal)'
-    puts '    --no-java-cmd   don\'t set JAVACMD - rely on bin/jruby or RUBY_BIN to have Graal already'
-    puts 'jt test integration                            runs all integration tests'
-    puts 'jt test integration TESTS                      runs the given integration tests'
-    puts 'jt test gems                                   tests using gems'
-    puts 'jt test ecosystem [--offline]                  tests using the wider ecosystem such as bundler, Rails, etc'
-    puts '                                                   (when --offline it will not use rubygems.org)'
-    puts 'jt test cexts [--no-libxml --no-openssl]       run C extension tests'
-    puts '                                                   (implies --graal, where Graal needs to include Sulong, set SULONG_HOME to a built checkout of Sulong, and set GEM_HOME)'
-    puts 'jt test report :language                       build a report on language specs'
-    puts '               :core                               (results go into test/target/mspec-html-report)'
-    puts '               :library'
-    puts 'jt tag spec/ruby/language                      tag failing specs in this directory'
-    puts 'jt tag spec/ruby/language/while_spec.rb        tag failing specs in this file'
-    puts 'jt tag all spec/ruby/language                  tag all specs in this file, without running them'
-    puts 'jt untag spec/ruby/language                    untag passing specs in this directory'
-    puts 'jt untag spec/ruby/language/while_spec.rb      untag passing specs in this file'
-    puts 'jt metrics alloc [--json] ...                  how much memory is allocated running a program (use -Xclassic to test normal JRuby on this metric and others)'
-    puts 'jt metrics minheap ...                         what is the smallest heap you can use to run an application'
-    puts 'jt metrics time ...                            how long does it take to run a command, broken down into different phases'
-    puts 'jt tarball                                     build the and test the distribution tarball'
-    puts 'jt benchmark [options] args...                 run benchmark-interface (implies --graal)'
-    puts '    --no-graal       don\'t imply --graal'
-    puts '    note that to run most MRI benchmarks, you should translate them first with normal Ruby and cache the result, such as'
-    puts '        benchmark bench/mri/bm_vm1_not.rb --cache'
-    puts '        jt benchmark bench/mri/bm_vm1_not.rb --use-cache'
-    puts 'jt where repos ...                            find these repositories'
-    puts
-    puts 'you can also put build or rebuild in front of any command'
-    puts
-    puts 'recognised environment variables:'
-    puts
-    puts '  RUBY_BIN                                     The JRuby+Truffle executable to use (normally just bin/jruby)'
-    puts '  GRAALVM_BIN                                  GraalVM executable (java command) to use'
-    puts '  GRAAL_HOME                                   Directory where there is a built checkout of the Graal compiler'
-    puts '                                               (make sure mx is on your path and maybe set JVMCI_JAVA_HOME)'
-    puts '  JVMCI_JAVA_HOME                              The Java with JVMCI to use with GRAAL_HOME'
-    puts '  GRAALVM_RELEASE_BIN                          Default GraalVM executable when using a released version of Truffle (such as on master)'
-    puts '  GRAAL_HOME_TRUFFLE_HEAD                      Default Graal directory when using a snapshot version of Truffle (such as on truffle-head)'
-    puts '  SULONG_HOME                                  The Sulong source repository, if you want to run cextc'
-    puts '  USE_SYSTEM_CLANG                             Use the system clang rather than Sulong\'s when compiling C extensions'
-    puts '  GRAAL_JS_JAR                                 The location of trufflejs.jar'
-    puts '  SL_JAR                                       The location of truffle-sl.jar'
-    puts '  LIBXML_HOME, LIBXML_INCLUDE, LIBXML_LIB      The location of libxml2 (the directory containing include etc), and the direct include directory and library file'
-    puts '  OPENSSL_HOME, OPENSSL_INCLUDE, OPENSSL_LIB               ... OpenSSL ...'
+    puts <<-TXT.gsub(/^#{' '*6}/, '')
+      jt checkout name                               checkout a different Git branch and rebuild
+      jt bootstrap [options]                         run the build system\'s bootstrap phase
+      jt build [options]                             build
+      jt rebuild [options]                           clean and build
+          truffle                                    build only the Truffle part, assumes the rest is up-to-date
+          cexts [--no-openssl]                       build the cext backend (set SULONG_HOME and maybe USE_SYSTEM_CLANG)
+          --offline                                  use the build pack to build offline
+      jt clean                                       clean
+      jt irb                                         irb
+      jt rebuild                                     clean and build
+      jt run [options] args...                       run JRuby with -X+T and args
+          --graal         use Graal (set either GRAALVM_BIN or GRAAL_HOME and maybe JVMCI_JAVA_HOME)
+          --js            add Graal.js to the classpath (set GRAAL_JS_JAR)
+          --asm           show assembly (implies --graal)
+          --server        run an instrumentation server on port 8080
+          --igv           make sure IGV is running and dump Graal graphs after partial escape (implies --graal)
+              --full      show all phases, not just up to the Truffle partial escape
+          --jdebug        run a JDWP debug server on #{JDEBUG_PORT}
+          --jexception[s] print java exceptions
+          --exec          use exec rather than system
+          --no-print-cmd  don\'t print the command
+      jt e 14 + 2                                    evaluate an expression
+      jt puts 14 + 2                                 evaluate and print an expression
+      jt cextc directory clang-args                  compile the C extension in directory, with optional extra clang arguments
+      jt test                                        run all mri tests, specs and integration tests (set SULONG_HOME, and maybe USE_SYSTEM_CLANG)
+      jt test tck [--jdebug]                         run the Truffle Compatibility Kit tests
+      jt test mri                                    run mri tests
+      jt test specs                                  run all specs
+      jt test specs fast                             run all specs except sub-processes, GC, sleep, ...
+      jt test spec/ruby/language                     run specs in this directory
+      jt test spec/ruby/language/while_spec.rb       run specs in this file
+      jt test compiler                               run compiler tests (uses the same logic as --graal to find Graal)
+          --no-java-cmd   don\'t set JAVACMD - rely on bin/jruby or RUBY_BIN to have Graal already
+      jt test integration                            runs all integration tests
+      jt test integration TESTS                      runs the given integration tests
+      jt test gems                                   tests using gems
+      jt test ecosystem [--offline]                  tests using the wider ecosystem such as bundler, Rails, etc
+                                                         (when --offline it will not use rubygems.org)
+      jt test cexts [--no-libxml --no-openssl]       run C extension tests
+                                                         (implies --graal, where Graal needs to include Sulong, set SULONG_HOME to a built checkout of Sulong, and set GEM_HOME)
+      jt test report :language                       build a report on language specs
+                     :core                               (results go into test/target/mspec-html-report)
+                     :library
+      jt tag spec/ruby/language                      tag failing specs in this directory
+      jt tag spec/ruby/language/while_spec.rb        tag failing specs in this file
+      jt tag all spec/ruby/language                  tag all specs in this file, without running them
+      jt untag spec/ruby/language                    untag passing specs in this directory
+      jt untag spec/ruby/language/while_spec.rb      untag passing specs in this file
+      jt metrics alloc [--json] ...                  how much memory is allocated running a program (use -Xclassic to test normal JRuby on this metric and others)
+      jt metrics minheap ...                         what is the smallest heap you can use to run an application
+      jt metrics time ...                            how long does it take to run a command, broken down into different phases
+      jt tarball                                     build the and test the distribution tarball
+      jt benchmark [options] args...                 run benchmark-interface (implies --graal)
+          --no-graal       don\'t imply --graal
+          note that to run most MRI benchmarks, you should translate them first with normal Ruby and cache the result, such as
+              benchmark bench/mri/bm_vm1_not.rb --cache
+              jt benchmark bench/mri/bm_vm1_not.rb --use-cache
+      jt where repos ...                            find these repositories
+
+      you can also put build or rebuild in front of any command
+
+      recognised environment variables:
+
+        RUBY_BIN                                     The JRuby+Truffle executable to use (normally just bin/jruby)
+        GRAALVM_BIN                                  GraalVM executable (java command) to use
+        GRAAL_HOME                                   Directory where there is a built checkout of the Graal compiler
+                                                     (make sure mx is on your path and maybe set JVMCI_JAVA_HOME)
+        JVMCI_JAVA_HOME                              The Java with JVMCI to use with GRAAL_HOME
+        GRAALVM_RELEASE_BIN                          Default GraalVM executable when using a released version of Truffle (such as on master)
+        GRAAL_HOME_TRUFFLE_HEAD                      Default Graal directory when using a snapshot version of Truffle (such as on truffle-head)
+        SULONG_HOME                                  The Sulong source repository, if you want to run cextc
+        USE_SYSTEM_CLANG                             Use the system clang rather than Sulong\'s when compiling C extensions
+        GRAAL_JS_JAR                                 The location of trufflejs.jar
+        SL_JAR                                       The location of truffle-sl.jar
+        LIBXML_HOME, LIBXML_INCLUDE, LIBXML_LIB      The location of libxml2 (the directory containing include etc), and the direct include directory and library file
+        OPENSSL_HOME, OPENSSL_INCLUDE, OPENSSL_LIB               ... OpenSSL ...
+    TXT
   end
 
   def checkout(branch)
@@ -670,7 +687,7 @@ module Commands
     config_libs = config['libs'] || ''
     config_libs = `echo #{config_libs}`.strip
     config_libs = config_libs.split(' ')
-    
+
     if MAC
       config_libs.each do |lib|
         if lib.include?('.so')
@@ -767,7 +784,7 @@ module Commands
   def test_cexts(*args)
     no_libxml = args.delete('--no-libxml')
     no_openssl = args.delete('--no-openssl')
-    
+
     # Test that we can compile and run some basic C code that uses libxml and openssl
 
     unless no_libxml
@@ -1014,11 +1031,8 @@ module Commands
     samples = []
     METRICS_REPS.times do
       Utilities.log '.', "sampling\n"
-      r, w = IO.pipe
-      run '-Xtruffle.metrics.memory_used_on_exit=true', '-J-verbose:gc', *args, {err: w, out: w, no_print_cmd: true}
-      w.close
-      samples.push memory_allocated(r.read)
-      r.close
+      out, _ = run '-Xtruffle.metrics.memory_used_on_exit=true', '-J-verbose:gc', *args, {capture: true, no_print_cmd: true}
+      samples.push memory_allocated(out)
     end
     Utilities.log "\n", nil
     range = samples.max - samples.min
@@ -1099,13 +1113,10 @@ module Commands
     samples = []
     METRICS_REPS.times do
       Utilities.log '.', "sampling\n"
-      r, w = IO.pipe
       start = Time.now
-      run '-Xtruffle.metrics.time=true', *args, {err: w, out: w, no_print_cmd: true}
+      out, _ = run '-Xtruffle.metrics.time=true', *args, {capture: true, no_print_cmd: true}
       finish = Time.now
-      w.close
-      samples.push get_times(r.read, finish - start)
-      r.close
+      samples.push get_times(out, finish - start)
     end
     Utilities.log "\n", nil
     results = {}

@@ -414,4 +414,9 @@ public class JNRTrufflePosix implements TrufflePosix {
     public int isatty(int fd) {
         return posix.libc().isatty(fd);
     }
+
+    @Override
+    public int mkfifo(String path, int mode) {
+        return posix.mkfifo(path, mode);
+    }
 }
