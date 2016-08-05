@@ -441,5 +441,19 @@ module Rubinius
     def self.object_respond_to_marshal_load?(obj)
       object_respond_to? obj, :marshal_load, true
     end
+
+    def self.check_arity(arg_count, min, max)
+      if arg_count < min || (max != -1 && arg_count > max)
+           error_message = if min == max
+                             "wrong number of arguments (given %d, expected %d)" % [arg_count, min]
+                           elsif max == -1
+                             "wrong number of arguments (given %d, expected %d+)" % [arg_count, min]
+                           else
+                             "wrong number of arguments (given %d, expected %d..%d)" %  [arg_count, min, max]
+                           end
+           raise ArgumentError, error_message
+      end
+    end
+
   end
 end
