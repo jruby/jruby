@@ -141,6 +141,7 @@ public final class ThreadContext {
     public transient SecureRandom secureRandom;
 
     private static boolean tryPreferredPRNG = true;
+    private static boolean trySHA1PRNG = true;
 
     public final JavaSites sites;
 
@@ -156,6 +157,13 @@ public final class ThreadContext {
                 }
             }
             if (secureRandom == null) {
+                if (trySHA1PRNG) {
+                    try {
+                        secureRandom = SecureRandom.getInstance("SHA1PRNG");
+                    } catch (Exception e) {
+                        trySHA1PRNG = false;
+                    }
+                }
                 secureRandom = new SecureRandom();
             }
             this.secureRandom = secureRandom;
