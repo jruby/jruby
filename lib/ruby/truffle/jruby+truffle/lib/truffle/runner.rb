@@ -400,7 +400,7 @@ module Truffle
 
     def run
       Dir.chdir @options[:global][:dir] do
-        log "executing #{@subcommand}"
+        log format 'executing "%s" command', @subcommand
         send "subcommand_#{@subcommand}", @argv_after_subcommand
       end
     end
