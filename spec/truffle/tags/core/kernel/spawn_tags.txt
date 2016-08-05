@@ -1,5 +1,3 @@
-fails:Kernel#spawn unsets other environment variables when given a true :unsetenv_others option
-fails:Kernel#spawn unsets other environment variables when given a non-false :unsetenv_others option
 fails:Kernel#spawn joins the current process if pgroup: false
 fails:Kernel#spawn joins the current process if pgroup: nil
 fails:Kernel#spawn joins a new process group if pgroup: true

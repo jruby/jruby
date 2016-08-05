@@ -126,8 +126,7 @@ module Rubinius
                 key.each { |k| redirect @options, convert_io_fd(k), to }
               when :unsetenv_others
                 if value
-                  array = @options[:env] = []
-                  ENV.each_key { |k| array << convert_env_key(k) << nil }
+                  @options[:unsetenv_others] = true
                 end
               when :pgroup
                 if value == true
