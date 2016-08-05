@@ -1,4 +1,3 @@
-fails:Kernel#spawn returns immediately
 fails:Kernel#spawn sets environment variables in the child environment
 fails:Kernel#spawn unsets environment variables whose value is nil
 fails:Kernel#spawn calls #to_hash to convert the environment
@@ -24,7 +23,6 @@ fails:Kernel#spawn with multiple arguments raises an ArgumentError if an argumen
 fails:Kernel#spawn with a command array raises an ArgumentError if the Strings in the Array include a null byte
 fails:Kernel#spawn when passed :chdir changes to the directory passed for :chdir
 fails:Kernel#spawn when passed :chdir calls #to_path to convert the :chdir value
-fails:Kernel.spawn returns immediately
 fails:Kernel.spawn sets environment variables in the child environment
 fails:Kernel.spawn unsets environment variables whose value is nil
 fails:Kernel.spawn calls #to_hash to convert the environment

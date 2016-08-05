@@ -26,6 +26,8 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.builtins.Primitive;
+import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.rope.RopeNodes;
 import org.jruby.truffle.core.rope.RopeNodesFactory;
@@ -38,9 +40,8 @@ import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.platform.UnsafeGroup;
-
+import org.jruby.truffle.platform.signal.Signal;
 import java.nio.charset.StandardCharsets;
-
 import static org.jruby.truffle.core.string.StringOperations.decodeUTF8;
 
 @CoreClass("Truffle::POSIX")
@@ -903,6 +904,34 @@ public abstract class TrufflePosixNodes {
         @Specialization
         public int close(int file) {
             return posix().close(file);
+        }
+
+    }
+
+    @CoreMethod(names = "kill", isModuleFunction = true, unsafe = { UnsafeGroup.PROCESSES, UnsafeGroup.SIGNALS }, required = 3)
+    public abstract static class KillNode extends CoreMethodArrayArgumentsNode {
+
+        @TruffleBoundary
+        @Specialization(guards = "isRubyString(signalName)")
+        public int kill(int pid, int signalNumber, DynamicObject signalName) {
+            int self = posix().getpid();
+
+            if (self == pid) {
+                Signal signal = getContext().getNativePlatform().getSignalManager().createSignal(StringOperations.getString(signalName));
+                return raise(signal);
+            } else {
+                return posix().kill(pid, signalNumber);
+            }
+        }
+
+        @TruffleBoundary
+        private int raise(Signal signal) {
+            try {
+                getContext().getNativePlatform().getSignalManager().raise(signal);
+            } catch (IllegalArgumentException e) {
+                throw new RaiseException(coreExceptions().argumentError(e.getMessage(), this));
+            }
+            return 1;
         }
 
     }
