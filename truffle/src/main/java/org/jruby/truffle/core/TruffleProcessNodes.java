@@ -127,7 +127,6 @@ public abstract class TruffleProcessNodes {
 
         @TruffleBoundary
         private long call(String command, String[] arguments, String[] environmentVariables, Collection<SpawnFileAction> fileActions) {
-            // TODO (pitr 04-Sep-2015): only simple implementation, does not support file actions or other options
             return getContext().getNativePlatform().getPosix().posix_spawnp(
                     command,
                     fileActions,
