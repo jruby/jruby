@@ -501,7 +501,7 @@ public class RubyEnumerator extends RubyObject {
 
     @JRubyMethod
     public synchronized IRubyObject next(ThreadContext context) {
-        ensureNexter(context.runtime);
+        final Nexter nexter = ensureNexter(context.runtime);
 
         if (!feedValue.isNil()) feedValue = context.nil;
         return nexter.next();
@@ -521,7 +521,7 @@ public class RubyEnumerator extends RubyObject {
 
     @JRubyMethod
     public synchronized IRubyObject peek(ThreadContext context) {
-        ensureNexter(context.runtime);
+        final Nexter nexter = ensureNexter(context.runtime);
 
         return nexter.peek();
     }
@@ -537,8 +537,8 @@ public class RubyEnumerator extends RubyObject {
     }
 
     @JRubyMethod
-    public IRubyObject feed(ThreadContext context, IRubyObject val) {
-        ensureNexter(context.runtime);
+    public synchronized IRubyObject feed(ThreadContext context, IRubyObject val) {
+        final Nexter nexter = ensureNexter(context.runtime);
         if (!feedValue.isNil()) {
             throw context.runtime.newTypeError("feed value already set");
         }
@@ -547,18 +547,16 @@ public class RubyEnumerator extends RubyObject {
         return context.nil;
     }
 
-    private void ensureNexter(final Ruby runtime) {
-        if (nexter == null) {
-            if (Options.ENUMERATOR_LIGHTWEIGHT.load()) {
-                if (object instanceof RubyArray && method.equals("each") && methodArgs.length == 0) {
-                    nexter = new ArrayNexter(runtime, object, method, methodArgs);
-                } else {
-                    nexter = new ThreadedNexter(runtime, object, method, methodArgs);
-                }
-            } else {
-                nexter = new ThreadedNexter(runtime, object, method, methodArgs);
+    private Nexter ensureNexter(final Ruby runtime) {
+        Nexter nexter = this.nexter;
+        if (nexter != null) return nexter;
+
+        if (Options.ENUMERATOR_LIGHTWEIGHT.load()) {
+            if (object instanceof RubyArray && method.equals("each") && methodArgs.length == 0) {
+                return this.nexter = new ArrayNexter(runtime, object, method, methodArgs);
             }
         }
+        return this.nexter = new ThreadedNexter(runtime, object, method, methodArgs);
     }
 
     @Override
@@ -788,7 +786,7 @@ public class RubyEnumerator extends RubyObject {
             // if it's an exception, raise it
             if (value instanceof RubyException) {
                 doneObject = value;
-                throw new RaiseException((RubyException)value);
+                throw new RaiseException((RubyException) value);
             }
 
             // otherwise, just return it
