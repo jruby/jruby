@@ -68,6 +68,3 @@ ActionController::LiveStreamTest:
 - test_exception_callback_when_committed
 - test_async_stream # fails on travis
 - test_abort_with_full_buffer # fails intermittently on CI
-ApplicationIntegrationTest:
-- test_missing_route_helper_after_controller_access
-- test_missing_route_helper_before_controller_access
