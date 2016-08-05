@@ -53,7 +53,6 @@ use-language-truffle: ["&&", git, fetch, "&&", git, reset, --hard, ${truffle-ver
 
 graal-core: ${labsjdk} {
   setup: ${common.setup} [
-    [mv, mx.jruby, temp_mx],
     [mkdir, graal-workspace],
     [cd, graal-workspace],
     ${clone_graal} ["https://github.com/graalvm/graal-core.git", graal-core],
@@ -62,7 +61,6 @@ graal-core: ${labsjdk} {
     [cd, ../truffle] ${use-language-truffle} [cd, ../graal-core],
     [mx, --java-home, "$JVMCI_JAVA_HOME", build],
     [cd, ../..],
-    [mv, temp_mx, mx.jruby]
   ]
 
   environment: {
@@ -74,7 +72,6 @@ graal-core: ${labsjdk} {
 
 graal-enterprise: ${labsjdk} {
   setup: ${common.setup} [
-    [mv, mx.jruby, temp_mx],
     [mkdir, graal-workspace],
     [cd, graal-workspace],
     ${clone_graal} ["https://github.com/graalvm/graal-enterprise.git", graal-enterprise],
@@ -83,7 +80,6 @@ graal-enterprise: ${labsjdk} {
     [cd, ../../truffle] ${use-language-truffle} [cd, ../graal-enterprise/graal-enterprise],
     [mx, --java-home, "$JVMCI_JAVA_HOME", build],
     [cd, ../../..],
-    [mv, temp_mx, mx.jruby]
   ]
 
   environment: {
@@ -122,7 +118,6 @@ sulong: ${labsjdk} {
   }
 
   setup: ${common.setup} [
-    [mv, mx.jruby, temp_mx],
     [mkdir, sulong-workspace],
     [cd, sulong-workspace],
     [mx, sclone, --kind, git, "https://github.com/graalvm/sulong.git", sulong],
@@ -130,7 +125,6 @@ sulong: ${labsjdk} {
     [mx, sforceimports],
     [mx, build],
     [cd, ../..],
-    [mv, temp_mx, mx.jruby]
     ${jt} [build, cexts]
   ]
 }
