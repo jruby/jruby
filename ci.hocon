@@ -53,18 +53,16 @@ use-language-truffle: ["&&", git, fetch, "&&", git, reset, --hard, ${truffle-ver
 
 graal-core: ${labsjdk} {
   setup: ${common.setup} [
-    [mkdir, graal-workspace],
-    [cd, graal-workspace],
-    ${clone_graal} ["https://github.com/graalvm/graal-core.git", graal-core],
-    [cd, graal-core],
+    ${clone_graal} ["https://github.com/graalvm/graal-core.git", ../graal-core],
+    [cd, ../graal-core],
     [mx, sforceimports],
     [cd, ../truffle] ${use-language-truffle} [cd, ../graal-core],
     [mx, --java-home, "$JVMCI_JAVA_HOME", build],
-    [cd, ../..],
+    [cd, ../main]
   ]
 
   environment: {
-    GRAAL_HOME: graal-workspace/graal-core,
+    GRAAL_HOME: ../graal-core,
     HOST_VM: server,
     HOST_VM_CONFIG: graal-core
   }
@@ -72,18 +70,16 @@ graal-core: ${labsjdk} {
 
 graal-enterprise: ${labsjdk} {
   setup: ${common.setup} [
-    [mkdir, graal-workspace],
-    [cd, graal-workspace],
-    ${clone_graal} ["https://github.com/graalvm/graal-enterprise.git", graal-enterprise],
-    [cd, graal-enterprise/graal-enterprise],
+    ${clone_graal} ["https://github.com/graalvm/graal-enterprise.git", ../graal-enterprise],
+    [cd, ../graal-enterprise/graal-enterprise],
     [mx, sforceimports],
     [cd, ../../truffle] ${use-language-truffle} [cd, ../graal-enterprise/graal-enterprise],
     [mx, --java-home, "$JVMCI_JAVA_HOME", build],
-    [cd, ../../..],
+    [cd, ../../main]
   ]
 
   environment: {
-    GRAAL_HOME: graal-workspace/graal-enterprise/graal-enterprise,
+    GRAAL_HOME: ../graal-enterprise/graal-enterprise,
     HOST_VM: server,
     HOST_VM_CONFIG: graal-enterprise
   }
@@ -94,7 +90,7 @@ graal-enterprise-no-om: {
   setup: ${graal-enterprise.setup}
 
   environment: {
-    GRAAL_HOME: graal-workspace/graal-enterprise/graal-enterprise,
+    GRAAL_HOME: ../graal-enterprise/graal-enterprise,
     HOST_VM: server,
     HOST_VM_CONFIG: graal-enterprise-no-om,
     JRUBY_OPTS: "-J-Dtruffle.object.LayoutFactory=com.oracle.truffle.object.basic.DefaultLayoutFactory"
