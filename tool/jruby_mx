@@ -7,9 +7,10 @@ GRAAL_OPTIONS_PREFIX = "graal."
 java = ENV["JAVACMD"] || "java"
 
 java_flags = []
-rest = []
+ruby_flags = []
 
-# Translate shortcuts like -J-G:, -J and -Xtruffle.
+# Separate java and ruby flags from JRUBY_OPTS and ARGV.
+# Also translate shortcuts like -J-G:, -J and -Xtruffle.
 parse_options = lambda do |args|
   until args.empty?
     case arg = args.shift
@@ -30,15 +31,15 @@ parse_options = lambda do |args|
     when /^-Xtruffle\./
       java_flags << "-J-Djruby.#{arg[2..-1]}"
     else # Not a VM argument, leave untouched
-      rest << arg
+      ruby_flags << arg
       break
     end
   end
-  rest += args
+  ruby_flags += args
 end
 
-parse_options.call(ARGV)
 parse_options.call(ENV["JRUBY_OPTS"].to_s.split(' '))
+parse_options.call(ARGV)
 
 args = ["mx"]
 unless java == "java"
@@ -48,7 +49,7 @@ end
 args << "ruby"
 args << "-J-Xss2048k"
 args += java_flags
-args += rest
+args += ruby_flags
 
 if args.include?('-d')
   args.insert(1, '-v')
