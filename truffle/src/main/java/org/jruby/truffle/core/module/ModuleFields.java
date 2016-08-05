@@ -318,7 +318,10 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
     @TruffleBoundary
     public void addMethod(RubyContext context, Node currentNode, InternalMethod method) {
         assert ModuleOperations.canBindMethodTo(method.getDeclaringModule(), rubyModuleObject) ||
-                ModuleOperations.assignableTo(context.getCoreLibrary().getObjectClass(), method.getDeclaringModule());
+                ModuleOperations.assignableTo(context.getCoreLibrary().getObjectClass(), method.getDeclaringModule()) ||
+                // TODO (pitr-ch 24-Jul-2016): find out why undefined methods sometimes do not match above assertion
+                // e.g. "block in _routes route_set.rb:525" in rails/actionpack/lib/action_dispatch/routing/
+                (method.isUndefined() && methods.get(method.getName()) != null);
 
         if (context.getCoreLibrary().isLoadingRubyCore()) {
             final InternalMethod currentMethod = methods.get(method.getName());
@@ -491,8 +494,9 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
     }
 
     public void newVersion(Set<DynamicObject> alreadyInvalidated, boolean considerLexicalDependents) {
-        if (alreadyInvalidated.contains(rubyModuleObject))
+        if (alreadyInvalidated.contains(rubyModuleObject)) {
             return;
+        }
 
         unmodifiedAssumption.invalidate();
         alreadyInvalidated.add(rubyModuleObject);
@@ -516,8 +520,9 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
 
     public void addLexicalDependent(DynamicObject lexicalChild) {
         assert RubyGuards.isRubyModule(lexicalChild);
-        if (lexicalChild != rubyModuleObject)
+        if (lexicalChild != rubyModuleObject) {
             lexicalDependents.add(lexicalChild);
+        }
     }
 
     public Assumption getUnmodifiedAssumption() {

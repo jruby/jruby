@@ -56,6 +56,7 @@ import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.dispatch.MissingBehavior;
 import org.jruby.truffle.language.objects.IsANode;
 import org.jruby.truffle.language.objects.IsANodeGen;
+import org.jruby.truffle.util.DoubleUtils;
 
 @CoreClass("Math")
 public abstract class MathNodes {
@@ -475,7 +476,7 @@ public abstract class MathNodes {
         public double function(double a, double b) {
             if (Double.isNaN(b)) {
                 exceptionProfile.enter();
-                throw new RaiseException(coreExceptions().rangeError("float", Double.toString(b), "integer", this));
+                throw new RaiseException(coreExceptions().rangeError("float", DoubleUtils.toString(b), "integer", this));
             }
 
             return a * Math.pow(2, b);

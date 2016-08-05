@@ -12,6 +12,9 @@ package org.jruby.truffle.core.numeric;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Cached;
+import com.oracle.truffle.api.dsl.CreateCast;
+import com.oracle.truffle.api.dsl.NodeChild;
+import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
@@ -28,12 +31,15 @@ import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.builtins.Primitive;
 import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
-import org.jruby.truffle.language.NotProvided;
+import org.jruby.truffle.builtins.PrimitiveNode;
+import org.jruby.truffle.core.cast.DefaultValueNodeGen;
+import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.SnippetNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
-
+import org.jruby.truffle.util.DoubleUtils;
+import org.jruby.truffle.util.StringUtils;
 import java.util.Locale;
 
 @CoreClass("Float")
@@ -625,18 +631,20 @@ public abstract class FloatNodes {
 
     }
 
-    @CoreMethod(names = "round", optional = 1)
-    public abstract static class RoundNode extends CoreMethodArrayArgumentsNode {
+    @NodeChildren({
+            @NodeChild(value = "n", type = RubyNode.class),
+            @NodeChild(value = "ndigits", type = RubyNode.class)
+    })
+    @Primitive(name = "float_round", lowerFixnum = 1)
+    public abstract static class FloatRoundPrimitiveNode extends PrimitiveNode {
 
-        @Child private FixnumOrBignumNode fixnumOrBignum;
-
-        public RoundNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            fixnumOrBignum = new FixnumOrBignumNode(context, sourceSection);
+        @CreateCast("ndigits")
+        public RubyNode coerceDefault(RubyNode ndigits) {
+            return DefaultValueNodeGen.create(null, null, 0, ndigits);
         }
 
-        @Specialization(guards = "doubleInIntRange(n)")
-        public int roundFittingInt(double n, NotProvided ndigits,
+        @Specialization(guards = { "ndigits == 0", "doubleInIntRange(n)" })
+        public int roundFittingInt(double n, int ndigits,
                 @Cached("createBinaryProfile()") ConditionProfile positiveProfile) {
             int l = (int) n;
             if (positiveProfile.profile(n >= 0.0)) {
@@ -656,9 +664,9 @@ public abstract class FloatNodes {
             return Integer.MIN_VALUE < n && n < Integer.MAX_VALUE;
         }
 
-        @Specialization(guards = "doubleInLongRange(n)")
-        public long roundFittingLong(double n, NotProvided ndigits,
-                                     @Cached("createBinaryProfile()") ConditionProfile positiveProfile) {
+        @Specialization(guards = { "ndigits == 0", "doubleInLongRange(n)" }, contains = "roundFittingInt")
+        public long roundFittingLong(double n, int ndigits,
+                @Cached("createBinaryProfile()") ConditionProfile positiveProfile) {
             long l = (long) n;
             if (positiveProfile.profile(n >= 0.0)) {
                 if (n - l >= 0.5) {
@@ -677,10 +685,11 @@ public abstract class FloatNodes {
             return Long.MIN_VALUE < n && n < Long.MAX_VALUE;
         }
 
-        @Specialization
-        public Object round(double n, NotProvided ndigits,
+        @Specialization(guards = "ndigits == 0", contains = "roundFittingLong")
+        public Object round(double n, int ndigits,
                 @Cached("createBinaryProfile()") ConditionProfile positiveProfile,
-                @Cached("create()") BranchProfile errorProfile) {
+                @Cached("create()") BranchProfile errorProfile,
+                @Cached("new()") FixnumOrBignumNode fixnumOrBignum) {
             // Algorithm copied from JRuby - not shared as we want to branch profile it
 
             if (Double.isInfinite(n)) {
@@ -712,13 +721,14 @@ public abstract class FloatNodes {
             return fixnumOrBignum.fixnumOrBignum(f);
         }
 
-        @Specialization(guards = "wasProvided(ndigits)")
-        public Object round(
-                VirtualFrame frame,
-                double n,
-                Object ndigits,
-                @Cached("createMethodCall()") CallDispatchHeadNode callNode) {
-            return callNode.call(frame, n, "round_internal", ndigits);
+        @Specialization(guards = "ndigits != 0")
+        public Object roundDigits(double n, int ndigits) {
+            return null; // Primitive failure
+        }
+
+        @Specialization(guards = "!isInteger(ndigits)")
+        public Object roundFallback(double n, Object ndigits) {
+            return null; // Primitive failure
         }
 
     }
@@ -770,10 +780,10 @@ public abstract class FloatNodes {
         @Specialization
         public DynamicObject toS(double value) {
             if (Double.isInfinite(value) || Double.isNaN(value)) {
-                return create7BitString(Double.toString(value), USASCIIEncoding.INSTANCE);
+                return create7BitString(DoubleUtils.toString(value), USASCIIEncoding.INSTANCE);
             }
 
-            String str = String.format(Locale.ENGLISH, "%.15g", value);
+            String str = StringUtils.format(Locale.ENGLISH, "%.15g", value);
 
             // If no dot, add one to show it's a floating point number
             if (str.indexOf('.') == -1) {
@@ -809,13 +819,13 @@ public abstract class FloatNodes {
         @Specialization
         public DynamicObject dToA(double value) {
             // Large enough to print all digits of Float::MIN.
-            String string = String.format(Locale.ENGLISH, "%.1022f", value);
+            String string = StringUtils.format(Locale.ENGLISH, "%.1022f", value);
 
             if (string.toLowerCase(Locale.ENGLISH).contains("e")) {
                 throw new UnsupportedOperationException();
             }
 
-            string = string.replace("-", "");
+            string = StringUtils.replace(string, "-", "");
             while (string.charAt(string.length() - 1) == '0') {
                 string = string.substring(0, string.length() - 1);
             }
@@ -823,7 +833,7 @@ public abstract class FloatNodes {
             int decimal;
 
             if (string.startsWith("0.")) {
-                string = string.replace("0.", "");
+                string = StringUtils.replace(string, "0.", "");
                 decimal = 0;
 
                 while (string.charAt(0) == '0') {
@@ -837,7 +847,7 @@ public abstract class FloatNodes {
                     throw new UnsupportedOperationException();
                 }
 
-                string = string.replace(".", "");
+                string = StringUtils.replace(string, ".", "");
             }
 
             final int sign = value < 0 ? 1 : 0;
@@ -857,59 +867,5 @@ public abstract class FloatNodes {
         }
 
     }
-
-    @Primitive(name = "float_round")
-    public static abstract class FloatRoundPrimitiveNode extends PrimitiveArrayArgumentsNode {
-
-        @Child private FixnumOrBignumNode fixnumOrBignum;
-
-        private final BranchProfile greaterZero = BranchProfile.create();
-        private final BranchProfile lessZero = BranchProfile.create();
-
-        public FloatRoundPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            fixnumOrBignum = new FixnumOrBignumNode(context, sourceSection);
-        }
-
-        @Specialization
-        public Object round(double n,
-                @Cached("create()") BranchProfile errorProfile) {
-            // Algorithm copied from JRuby - not shared as we want to branch profile it
-
-            if (Double.isInfinite(n)) {
-                errorProfile.enter();
-                throw new RaiseException(coreExceptions().floatDomainError("Infinity", this));
-            }
-
-            if (Double.isNaN(n)) {
-                errorProfile.enter();
-                throw new RaiseException(coreExceptions().floatDomainError("NaN", this));
-            }
-
-            double f = n;
-
-            if (f > 0.0) {
-                greaterZero.enter();
-
-                f = Math.floor(f);
-
-                if (n - f >= 0.5) {
-                    f += 1.0;
-                }
-            } else if (f < 0.0) {
-                lessZero.enter();
-
-                f = Math.ceil(f);
-
-                if (f - n >= 0.5) {
-                    f -= 1.0;
-                }
-            }
-
-            return fixnumOrBignum.fixnumOrBignum(f);
-        }
-
-    }
-
 
 }

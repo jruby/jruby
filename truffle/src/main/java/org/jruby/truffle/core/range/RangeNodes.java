@@ -219,7 +219,7 @@ public abstract class RangeNodes {
 
         public DupNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
+            allocateObjectNode = AllocateObjectNode.create();
         }
 
         @Specialization(guards = "isIntRange(range)")
@@ -565,7 +565,7 @@ public abstract class RangeNodes {
             }
             if (allocateNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                allocateNode = insert(AllocateObjectNodeGen.create(getContext(), getSourceSection(), null, null));
+                allocateNode = insert(AllocateObjectNode.create());
             }
 
             final Object cmpResult;
@@ -599,7 +599,7 @@ public abstract class RangeNodes {
 
         public AllocateNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            allocateNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
+            allocateNode = AllocateObjectNode.create();
         }
 
         @Specialization

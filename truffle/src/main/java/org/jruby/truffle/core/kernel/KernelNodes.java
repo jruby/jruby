@@ -36,6 +36,7 @@ import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
+import jnr.constants.platform.Errno;
 import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.common.IRubyWarnings;
@@ -61,6 +62,7 @@ import org.jruby.truffle.core.cast.NameToJavaStringNodeGen;
 import org.jruby.truffle.core.cast.NameToSymbolOrStringNodeGen;
 import org.jruby.truffle.core.cast.TaintResultNode;
 import org.jruby.truffle.core.cast.ToPathNodeGen;
+import org.jruby.truffle.core.cast.ToStrNode;
 import org.jruby.truffle.core.cast.ToStrNodeGen;
 import org.jruby.truffle.core.encoding.EncodingOperations;
 import org.jruby.truffle.core.format.BytesResult;
@@ -68,6 +70,7 @@ import org.jruby.truffle.core.format.FormatExceptionTranslator;
 import org.jruby.truffle.core.format.exceptions.FormatException;
 import org.jruby.truffle.core.format.exceptions.InvalidFormatException;
 import org.jruby.truffle.core.format.printf.PrintfCompiler;
+import org.jruby.truffle.core.hash.KeyValue;
 import org.jruby.truffle.core.hash.HashOperations;
 import org.jruby.truffle.core.kernel.KernelNodesFactory.CopyNodeFactory;
 import org.jruby.truffle.core.kernel.KernelNodesFactory.SameOrEqualNodeFactory;
@@ -133,6 +136,7 @@ import org.jruby.truffle.language.parser.ParserContext;
 import org.jruby.truffle.language.parser.jruby.TranslatorDriver;
 import org.jruby.truffle.language.threadlocal.ThreadLocalObject;
 import org.jruby.truffle.platform.UnsafeGroup;
+import org.jruby.truffle.util.StringUtils;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -142,7 +146,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 @CoreClass("Kernel")
 public abstract class KernelNodes {
@@ -151,6 +154,17 @@ public abstract class KernelNodes {
     public abstract static class BacktickNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode toHashNode;
+        @Child private ToStrNode toStrNode;
+
+        @Specialization(guards = "!isRubyString(command)")
+        public DynamicObject backtickCoerce(VirtualFrame frame, DynamicObject command) {
+            // TODO BJF Aug 4, 2016 Needs SafeStringValue here
+            if (toStrNode == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                toStrNode = insert(ToStrNodeGen.create(getContext(), getSourceSection(), null));
+            }
+            return backtick(frame, toStrNode.executeToStr(frame, command));
+        }
 
         @Specialization(guards = "isRubyString(command)")
         public DynamicObject backtick(VirtualFrame frame, DynamicObject command) {
@@ -172,7 +186,7 @@ public abstract class KernelNodes {
             final List<String> envp = new ArrayList<>();
 
             // TODO(CS): cast
-            for (Map.Entry<Object, Object> keyValue : HashOperations.iterableKeyValues(envAsHash)) {
+            for (KeyValue keyValue : HashOperations.iterableKeyValues(envAsHash)) {
                 envp.add(keyValue.getKey().toString() + "=" + keyValue.getValue().toString());
             }
 
@@ -344,11 +358,8 @@ public abstract class KernelNodes {
             return callerLocations(omit, -1);
         }
 
-        @TruffleBoundary
         @Specialization
         public DynamicObject callerLocations(int omit, int length) {
-            final DynamicObject threadBacktraceLocationClass = coreLibrary().getThreadBacktraceLocationClass();
-
             final Backtrace backtrace = getContext().getCallStack().getBacktrace(this, 1 + omit, true, null);
 
             int locationsCount = backtrace.getActivations().size();
@@ -361,7 +372,7 @@ public abstract class KernelNodes {
 
             for (int n = 0; n < locationsCount; n++) {
                 Activation activation = backtrace.getActivations().get(n);
-                locations[n] = ThreadBacktraceLocationLayoutImpl.INSTANCE.createThreadBacktraceLocation(Layouts.CLASS.getInstanceFactory(threadBacktraceLocationClass), activation);
+                locations[n] = Layouts.THREAD_BACKTRACE_LOCATION.createThreadBacktraceLocation(coreLibrary().getThreadBacktraceLocationFactory(), activation);
             }
 
             return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), locations, locations.length);
@@ -651,7 +662,8 @@ public abstract class KernelNodes {
             final Rope code = StringOperations.rope(rubySource);
 
             // TODO (pitr 15-Oct-2015): fix this ugly hack, required for AS, copy-paste
-            final String space = new String(new char[Math.max(line - 1, 0)]).replace("\0", "\n");
+            final String s = new String(new char[Math.max(line - 1, 0)]);
+            final String space = StringUtils.replace(s, "\0", "\n");
             // TODO CS 14-Apr-15 concat space + code as a rope, otherwise the string will be copied after the rope is converted
             final Source source = getContext().getSourceLoader().loadFragment(space + RopeOperations.decodeRope(code), filename);
 
@@ -728,7 +740,7 @@ public abstract class KernelNodes {
             final ProcessBuilder builder = new ProcessBuilder(commandLine);
             builder.inheritIO();
 
-            for (Map.Entry<Object, Object> keyValue : HashOperations.iterableKeyValues(envAsHash)) {
+            for (KeyValue keyValue : HashOperations.iterableKeyValues(envAsHash)) {
                 builder.environment().put(keyValue.getKey().toString(), keyValue.getValue().toString());
             }
 
@@ -737,8 +749,14 @@ public abstract class KernelNodes {
             try {
                 process = builder.start();
             } catch (IOException e) {
-                // TODO(cs): proper Ruby exception
-                throw new JavaException(e);
+                if (e.getMessage().contains("Permission denied")) {
+                    throw new RaiseException(getContext().getCoreExceptions().errnoError(Errno.EACCES.intValue(), this));
+                } else if (e.getMessage().contains("No such file or directory")) {
+                    throw new RaiseException(getContext().getCoreExceptions().errnoError(Errno.ENOENT.intValue(), this));
+                } else {
+                    // TODO(cs): proper Ruby exception
+                    throw new JavaException(e);
+                }
             }
 
             int exitCode = context.getThreadManager().runUntilResult(this, new BlockingAction<Integer>() {
@@ -1044,8 +1062,8 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public DynamicObject instanceVariables(VirtualFrame frame, DynamicObject self) {
-            return instanceVariablesNode.executeObject(self);
+        public DynamicObject instanceVariables(VirtualFrame frame, Object self) {
+            return instanceVariablesNode.execute(self);
         }
 
     }

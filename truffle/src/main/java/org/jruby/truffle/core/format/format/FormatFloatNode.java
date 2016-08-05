@@ -16,6 +16,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.FormatNode;
 import org.jruby.truffle.core.format.printf.PrintfSimpleTreeBuilder;
+import org.jruby.truffle.util.StringUtils;
 
 import java.nio.charset.StandardCharsets;
 
@@ -45,14 +46,14 @@ public abstract class FormatFloatNode extends FormatNode {
     @TruffleBoundary
     @Specialization(guards = "isInfinite(value)")
     public byte[] formatInfinite(int width, int precision, double value) {
-        final String infinityString = String.format(getInfiniteFormatString(width), value);
+        final String infinityString = StringUtils.format(getInfiniteFormatString(width), value);
         return mapInfiniteResult(infinityString).getBytes(StandardCharsets.US_ASCII);
     }
 
     @TruffleBoundary
     @Specialization(guards = "!isInfinite(value)")
     public byte[] formatFinite(int width, int precision,double value) {
-        return mapFiniteResult(String.format(getFiniteFormatString(width, precision), value)).getBytes(StandardCharsets.US_ASCII);
+        return mapFiniteResult(StringUtils.format(getFiniteFormatString(width, precision), value)).getBytes(StandardCharsets.US_ASCII);
     }
 
     protected boolean isInfinite(double value) {

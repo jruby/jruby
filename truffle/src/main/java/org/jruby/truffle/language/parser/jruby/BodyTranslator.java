@@ -166,6 +166,7 @@ import org.jruby.truffle.language.threadlocal.WrapInThreadLocalNodeGen;
 import org.jruby.truffle.language.yield.YieldExpressionNode;
 import org.jruby.truffle.platform.graal.AssertConstantNodeGen;
 import org.jruby.truffle.platform.graal.AssertNotCompiledNodeGen;
+import org.jruby.truffle.util.StringUtils;
 import org.jruby.util.ByteList;
 import org.jruby.util.KeyValuePair;
 import java.io.File;
@@ -2623,7 +2624,7 @@ public class BodyTranslator extends Translator {
         // The RegexpNodes.compile operation may modify the encoding of the source rope. This modified copy is stored
         // in the Regex object as the "user object". Since ropes are immutable, we need to take this updated copy when
         // constructing the final regexp.
-        final DynamicObject regexp = RegexpNodes.createRubyRegexp(context.getCoreLibrary().getRegexpClass(), regex, (Rope) regex.getUserObject(), node.getOptions());
+        final DynamicObject regexp = RegexpNodes.createRubyRegexp(context.getCoreLibrary().getRegexpFactory(), regex, (Rope) regex.getUserObject(), node.getOptions());
         Layouts.REGEXP.getOptions(regexp).setLiteral(true);
 
         final ObjectLiteralNode literalNode = new ObjectLiteralNode(context, translate(node.getPosition()), regexp);
@@ -3053,9 +3054,9 @@ public class BodyTranslator extends Translator {
             }
 
             if (environment.getBlockDepth() > 1) {
-                return String.format("block (%d levels) in %s", environment.getBlockDepth(), methodParent.getNamedMethodName());
+                return StringUtils.format("block (%d levels) in %s", environment.getBlockDepth(), methodParent.getNamedMethodName());
             } else {
-                return String.format("block in %s", methodParent.getNamedMethodName());
+                return StringUtils.format("block in %s", methodParent.getNamedMethodName());
             }
         } else {
             return environment.getNamedMethodName();

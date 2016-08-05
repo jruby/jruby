@@ -140,16 +140,16 @@ public class JavaClass extends JavaObject {
         // JavaClass? Do we want them to do that? Can you Class.new(JavaClass)? Should you be able to?
         // NOTE: NOT_ALLOCATABLE_ALLOCATOR is probably OK here, since we don't intend for people to monkey with
         // this type and it can't be marshalled. Confirm. JRUBY-415
-        RubyClass JavaCLass = Java.defineClassUnder("JavaClass", JavaObject, ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+        RubyClass JavaClass = Java.defineClassUnder("JavaClass", JavaObject, ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
 
-        JavaCLass.includeModule(runtime.getModule("Comparable"));
+        JavaClass.includeModule(runtime.getModule("Comparable"));
 
-        JavaCLass.defineAnnotatedMethods(JavaClass.class);
+        JavaClass.defineAnnotatedMethods(JavaClass.class);
 
-        JavaCLass.getMetaClass().undefineMethod("new");
-        JavaCLass.getMetaClass().undefineMethod("allocate");
+        JavaClass.getMetaClass().undefineMethod("new");
+        JavaClass.getMetaClass().undefineMethod("allocate");
 
-        return JavaCLass;
+        return JavaClass;
     }
 
     public final Class javaClass() {
@@ -175,14 +175,14 @@ public class JavaClass extends JavaObject {
     }
 
     static boolean isPrimitiveName(final String name) {
-        return JavaUtil.PRIMITIVE_CLASSES.containsKey(name);
+        return JavaUtil.getPrimitiveClass(name) != null;
     }
 
     public static JavaClass forNameVerbose(Ruby runtime, String className) {
         Class<?> klass = null; // "boolean".length() == 7
         if (className.length() < 8 && Character.isLowerCase(className.charAt(0))) {
             // one word type name that starts lower-case...it may be a primitive type
-            klass = JavaUtil.PRIMITIVE_CLASSES.get(className);
+            klass = JavaUtil.getPrimitiveClass(className);
         }
         synchronized (JavaClass.class) {
             if (klass == null) {

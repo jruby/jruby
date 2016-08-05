@@ -1154,7 +1154,7 @@ module Marshal
         when :bt
           obj.__instance_variable_set__ :@custom_backtrace, value
         when :mesg
-          obj.__instance_variable_set__ :@reason_message, value
+          Truffle.invoke_primitive :exception_set_message, obj, value
         end
       end
     end

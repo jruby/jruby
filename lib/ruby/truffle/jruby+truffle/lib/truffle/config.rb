@@ -134,7 +134,8 @@ additions = {
       end
       # activate
       require "minitest/reporters"
-      Minitest::Reporters.use! Minitest::Reporters::SpecReporter.new
+      reporter_class = ENV["CI"] ? Minitest::Reporters::SpecReporter : Minitest::Reporters::ProgressReporter
+      Minitest::Reporters.use! reporter_class.new
     RUBY
 }.reduce({}) do |h, (k, v)|
   file_name = format '%s.rb', k

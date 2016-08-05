@@ -9,6 +9,8 @@
  */
 package org.jruby.truffle.core.format;
 
+import org.jruby.truffle.util.StringUtils;
+
 public abstract class DescriptionTruncater {
 
     /**
@@ -16,7 +18,7 @@ public abstract class DescriptionTruncater {
      * enough to be used in Truffle and Graal diagnostics.
      */
     public static String trunate(String format) {
-        format = format.replace("\\s+", "");
+        format = StringUtils.replace(format, "\\s+", "");
 
         if (format.length() > 10) {
             format = format.substring(0, 10) + "…";

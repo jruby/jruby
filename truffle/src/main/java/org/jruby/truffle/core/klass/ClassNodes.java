@@ -38,6 +38,7 @@ import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.objects.SingletonClassNode;
 import org.jruby.truffle.language.objects.SingletonClassNodeGen;
+import org.jruby.truffle.util.StringUtils;
 
 @CoreClass("Class")
 public abstract class ClassNodes {
@@ -227,7 +228,7 @@ public abstract class ClassNodes {
             singletonSuperclass = getLazyCreatedSingletonClass(context, getSuperClass(rubyClass));
         }
 
-        String name = String.format("#<Class:%s>", Layouts.MODULE.getFields(rubyClass).getName());
+        String name = StringUtils.format("#<Class:%s>", Layouts.MODULE.getFields(rubyClass).getName());
         Layouts.BASIC_OBJECT.setMetaClass(rubyClass, ClassNodes.createRubyClass(context, Layouts.BASIC_OBJECT.getLogicalClass(rubyClass), null, singletonSuperclass, name, true, rubyClass, true));
 
         return Layouts.BASIC_OBJECT.getMetaClass(rubyClass);

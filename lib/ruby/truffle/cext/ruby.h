@@ -52,8 +52,12 @@ extern "C" {
 
 // Basic types
 
-//typedef uint64_t VALUE;
-typedef void *VALUE;
+#ifdef JT_INT_VALUE
+  typedef uintptr_t VALUE;
+#else
+  typedef void *VALUE;
+#endif
+
 typedef VALUE ID;
 
 // Helpers
@@ -84,66 +88,66 @@ void rb_free_tmp_buffer(volatile VALUE *buffer_pointer);
 // Types
 
 enum ruby_value_type {
-    RUBY_T_NONE     = 0x00,
+  RUBY_T_NONE     = 0x00,
 
-    RUBY_T_OBJECT   = 0x01,
-    RUBY_T_CLASS    = 0x02,
-    RUBY_T_MODULE   = 0x03,
-    RUBY_T_FLOAT    = 0x04,
-    RUBY_T_STRING   = 0x05,
-    RUBY_T_REGEXP   = 0x06,
-    RUBY_T_ARRAY    = 0x07,
-    RUBY_T_HASH     = 0x08,
-    RUBY_T_STRUCT   = 0x09,
-    RUBY_T_BIGNUM   = 0x0a,
-    RUBY_T_FILE     = 0x0b,
-    RUBY_T_DATA     = 0x0c,
-    RUBY_T_MATCH    = 0x0d,
-    RUBY_T_COMPLEX  = 0x0e,
-    RUBY_T_RATIONAL = 0x0f,
+  RUBY_T_OBJECT   = 0x01,
+  RUBY_T_CLASS    = 0x02,
+  RUBY_T_MODULE   = 0x03,
+  RUBY_T_FLOAT    = 0x04,
+  RUBY_T_STRING   = 0x05,
+  RUBY_T_REGEXP   = 0x06,
+  RUBY_T_ARRAY    = 0x07,
+  RUBY_T_HASH     = 0x08,
+  RUBY_T_STRUCT   = 0x09,
+  RUBY_T_BIGNUM   = 0x0a,
+  RUBY_T_FILE     = 0x0b,
+  RUBY_T_DATA     = 0x0c,
+  RUBY_T_MATCH    = 0x0d,
+  RUBY_T_COMPLEX  = 0x0e,
+  RUBY_T_RATIONAL = 0x0f,
 
-    RUBY_T_NIL      = 0x11,
-    RUBY_T_TRUE     = 0x12,
-    RUBY_T_FALSE    = 0x13,
-    RUBY_T_SYMBOL   = 0x14,
-    RUBY_T_FIXNUM   = 0x15,
-    RUBY_T_UNDEF    = 0x16,
+  RUBY_T_NIL      = 0x11,
+  RUBY_T_TRUE     = 0x12,
+  RUBY_T_FALSE    = 0x13,
+  RUBY_T_SYMBOL   = 0x14,
+  RUBY_T_FIXNUM   = 0x15,
+  RUBY_T_UNDEF    = 0x16,
 
-    RUBY_T_IMEMO    = 0x1a,
-    RUBY_T_NODE     = 0x1b,
-    RUBY_T_ICLASS   = 0x1c,
-    RUBY_T_ZOMBIE   = 0x1d,
+  RUBY_T_IMEMO    = 0x1a,
+  RUBY_T_NODE     = 0x1b,
+  RUBY_T_ICLASS   = 0x1c,
+  RUBY_T_ZOMBIE   = 0x1d,
 
-    RUBY_T_MASK     = 0x1f
+  RUBY_T_MASK     = 0x1f
 };
 
-#define T_NONE      RUBY_T_NONE
-#define T_NIL       RUBY_T_NIL
-#define T_OBJECT    RUBY_T_OBJECT
-#define T_CLASS     RUBY_T_CLASS
-#define T_ICLASS    RUBY_T_ICLASS
-#define T_MODULE    RUBY_T_MODULE
-#define T_FLOAT     RUBY_T_FLOAT
-#define T_STRING    RUBY_T_STRING
-#define T_REGEXP    RUBY_T_REGEXP
-#define T_ARRAY     RUBY_T_ARRAY
-#define T_HASH      RUBY_T_HASH
-#define T_STRUCT    RUBY_T_STRUCT
-#define T_BIGNUM    RUBY_T_BIGNUM
-#define T_FILE      RUBY_T_FILE
-#define T_FIXNUM    RUBY_T_FIXNUM
-#define T_TRUE      RUBY_T_TRUE
-#define T_FALSE     RUBY_T_FALSE
-#define T_DATA      RUBY_T_DATA
-#define T_MATCH     RUBY_T_MATCH
-#define T_SYMBOL    RUBY_T_SYMBOL
+#define T_NONE    RUBY_T_NONE
+#define T_NIL     RUBY_T_NIL
+#define T_OBJECT  RUBY_T_OBJECT
+#define T_CLASS   RUBY_T_CLASS
+#define T_ICLASS  RUBY_T_ICLASS
+#define T_MODULE  RUBY_T_MODULE
+#define T_FLOAT   RUBY_T_FLOAT
+#define T_STRING  RUBY_T_STRING
+#define T_REGEXP  RUBY_T_REGEXP
+#define T_ARRAY   RUBY_T_ARRAY
+#define T_HASH    RUBY_T_HASH
+#define T_STRUCT  RUBY_T_STRUCT
+#define T_BIGNUM  RUBY_T_BIGNUM
+#define T_FILE    RUBY_T_FILE
+#define T_FIXNUM  RUBY_T_FIXNUM
+#define T_TRUE    RUBY_T_TRUE
+#define T_FALSE   RUBY_T_FALSE
+#define T_DATA    RUBY_T_DATA
+#define T_MATCH   RUBY_T_MATCH
+#define T_SYMBOL  RUBY_T_SYMBOL
 #define T_RATIONAL  RUBY_T_RATIONAL
 #define T_COMPLEX   RUBY_T_COMPLEX
-#define T_IMEMO     RUBY_T_IMEMO
-#define T_UNDEF     RUBY_T_UNDEF
-#define T_NODE      RUBY_T_NODE
-#define T_ZOMBIE    RUBY_T_ZOMBIE
-#define T_MASK      RUBY_T_MASK
+#define T_IMEMO   RUBY_T_IMEMO
+#define T_UNDEF   RUBY_T_UNDEF
+#define T_NODE    RUBY_T_NODE
+#define T_ZOMBIE  RUBY_T_ZOMBIE
+#define T_MASK    RUBY_T_MASK
 
 int rb_type(VALUE value);
 #define TYPE(value) rb_type((VALUE) (value))
@@ -167,10 +171,10 @@ VALUE rb_jt_get_Qfalse(void);
 VALUE rb_jt_get_Qtrue(void);
 VALUE rb_jt_get_Qnil(void);
 
-#define Qundef rb_jt_get_Qundef()
-#define Qfalse rb_jt_get_Qfalse()
-#define Qtrue rb_jt_get_Qtrue()
-#define Qnil rb_jt_get_Qnil()
+#define Qundef  rb_jt_get_Qundef()
+#define Qfalse  rb_jt_get_Qfalse()
+#define Qtrue   rb_jt_get_Qtrue()
+#define Qnil    rb_jt_get_Qnil()
 
 VALUE rb_jt_get_cObject(void);
 VALUE rb_jt_get_cArray(void);
@@ -181,16 +185,18 @@ VALUE rb_jt_get_cTime(void);
 VALUE rb_jt_get_mEnumerable(void);
 VALUE rb_jt_get_mWaitReadable(void);
 VALUE rb_jt_get_mWaitWritable(void);
+VALUE rb_jt_get_mComparable(void);
 
-#define rb_cObject rb_jt_get_cObject()
-#define rb_cArray rb_jt_get_cArray()
-#define rb_cHash rb_jt_get_cHash()
-#define rb_mKernel rb_jt_get_mKernel()
-#define rb_cProc rb_jt_get_cProc()
-#define rb_cTime rb_jt_get_cTime()
-#define rb_mEnumerable rb_jt_get_mEnumerable()
-#define rb_mWaitReadable rb_jt_get_mWaitReadable()
-#define rb_mWaitWritable rb_jt_get_mWaitWritable()
+#define rb_cObject          rb_jt_get_cObject()
+#define rb_cArray           rb_jt_get_cArray()
+#define rb_cHash            rb_jt_get_cHash()
+#define rb_mKernel          rb_jt_get_mKernel()
+#define rb_cProc            rb_jt_get_cProc()
+#define rb_cTime            rb_jt_get_cTime()
+#define rb_mEnumerable      rb_jt_get_mEnumerable()
+#define rb_mWaitReadable    rb_jt_get_mWaitReadable()
+#define rb_mWaitWritable    rb_jt_get_mWaitWritable()
+#define rb_mComparable      rb_jt_get_mComparable()
 
 VALUE rb_jt_get_eException(void);
 VALUE rb_jt_get_eRuntimeError(void);
@@ -201,14 +207,14 @@ VALUE rb_jt_get_eArgError(void);
 VALUE rb_jt_get_eRangeError(void);
 VALUE rb_jt_get_eNotImpError(void);
 
-#define rb_eException rb_jt_get_eException()
-#define rb_eRuntimeError rb_jt_get_eRuntimeError()
-#define rb_eStandardError rb_jt_get_eStandardError()
-#define rb_eNoMemError rb_jt_get_eNoMemError()
-#define rb_eTypeError rb_jt_get_eTypeError()
-#define rb_eArgError rb_jt_get_eArgError()
-#define rb_eRangeError rb_jt_get_eRangeError()
-#define rb_eNotImpError rb_jt_get_eNotImpError()
+#define rb_eException       rb_jt_get_eException()
+#define rb_eRuntimeError    rb_jt_get_eRuntimeError()
+#define rb_eStandardError   rb_jt_get_eStandardError()
+#define rb_eNoMemError      rb_jt_get_eNoMemError()
+#define rb_eTypeError       rb_jt_get_eTypeError()
+#define rb_eArgError        rb_jt_get_eArgError()
+#define rb_eRangeError      rb_jt_get_eRangeError()
+#define rb_eNotImpError     rb_jt_get_eNotImpError()
 
 // Conversions
 
@@ -240,6 +246,7 @@ ID SYM2ID(VALUE value);
 VALUE ID2SYM(ID value);
 
 #define NUM2TIMET(value) NUM2LONG(value)
+#define TIMET2NUM(value) LONG2NUM(value)
 
 // Type checks
 
@@ -258,7 +265,36 @@ VALUE rb_require(const char *feature);
 // Object
 
 VALUE rb_obj_dup(VALUE object);
+
+VALUE rb_jt_obj_taint(VALUE object);
+bool rb_jt_obj_taintable_p(VALUE object);
+bool rb_jt_obj_tainted_p(VALUE object);
+#define RB_OBJ_TAINTABLE(object)        rb_jt_obj_taintable_p(object)
+#define RB_OBJ_TAINTED_RAW(object)      rb_jt_obj_tainted_p(object)
+#define RB_OBJ_TAINTED(object)          rb_jt_obj_tainted_p(object)
+#define RB_OBJ_TAINT_RAW(object)        rb_jt_obj_taint(object)
+#define RB_OBJ_TAINT(object)            rb_jt_obj_taint(object)
+#define RB_OBJ_UNTRUSTED(object)        rb_jt_obj_tainted_p(object)
+#define RB_OBJ_UNTRUST(object)          rb_jt_obj_taint(object)
+#define OBJ_TAINTABLE(object)           rb_jt_obj_taintable_p(object)
+#define OBJ_TAINTED_RAW(object)         rb_jt_obj_tainted_p(object)
+#define OBJ_TAINTED(object)             rb_jt_obj_tainted_p(object)
+#define OBJ_TAINT_RAW(object)           rb_jt_obj_taint(object)
+#define OBJ_TAINT(object)               rb_jt_obj_taint(object)
+#define OBJ_UNTRUSTED(object)           rb_jt_obj_tainted_p(object)
+#define OBJ_UNTRUST(object)             rb_jt_obj_tainted_p(object)
+
 VALUE rb_obj_freeze(VALUE object);
+bool rb_jt_obj_frozen_p(VALUE object);
+#define rb_obj_freeze_inline(object)    rb_obj_freeze(object)
+#define RB_OBJ_FROZEN_RAW(x)            rb_jt_obj_frozen_p(object)
+#define RB_OBJ_FROZEN(x)                rb_jt_obj_frozen_p(object)
+#define RB_OBJ_FREEZE_RAW(object)       rb_obj_freeze(object)
+#define RB_OBJ_FREEZE(x)                rb_obj_freeze((VALUE)x)
+#define OBJ_FROZEN_RAW(object)          rb_jt_obj_frozen_p(object)
+#define OBJ_FROZEN(object)              rb_jt_obj_frozen_p(object)
+#define OBJ_FREEZE_RAW(object)          rb_obj_freeze(object)
+#define OBJ_FREEZE(object)              rb_obj_freeze(object)
 
 // Integer
 
@@ -291,16 +327,16 @@ double RFLOAT_VALUE(VALUE value);
 
 // String
 
-#define PRI_VALUE_PREFIX "l"
-#define PRI_LONG_PREFIX "l"
-#define PRI_64_PREFIX PRI_LONG_PREFIX
-#define RUBY_PRI_VALUE_MARK "\v"
-#define PRIdVALUE PRI_VALUE_PREFIX"d"
-#define PRIoVALUE PRI_VALUE_PREFIX"o"
-#define PRIuVALUE PRI_VALUE_PREFIX"u"
-#define PRIxVALUE PRI_VALUE_PREFIX"x"
-#define PRIXVALUE PRI_VALUE_PREFIX"X"
-#define PRIsVALUE PRI_VALUE_PREFIX"i" RUBY_PRI_VALUE_MARK
+#define PRI_VALUE_PREFIX        "l"
+#define PRI_LONG_PREFIX         "l"
+#define PRI_64_PREFIX           PRI_LONG_PREFIX
+#define RUBY_PRI_VALUE_MARK     "\v"
+#define PRIdVALUE               PRI_VALUE_PREFIX"d"
+#define PRIoVALUE               PRI_VALUE_PREFIX"o"
+#define PRIuVALUE               PRI_VALUE_PREFIX"u"
+#define PRIxVALUE               PRI_VALUE_PREFIX"x"
+#define PRIXVALUE               PRI_VALUE_PREFIX"X"
+#define PRIsVALUE               PRI_VALUE_PREFIX"i" RUBY_PRI_VALUE_MARK
 
 char *RSTRING_PTR(VALUE string);
 int rb_str_len(VALUE string);
@@ -331,6 +367,7 @@ VALUE rb_String(VALUE value);
 VALUE rb_str_resize(VALUE string, long length);
 #define RSTRING_GETMEM(string, data_pointer, length_pointer) ((data_pointer) = RSTRING_PTR(string), (length_pointer) = rb_str_len(string))
 VALUE rb_str_split(VALUE string, const char *split);
+void rb_str_modify(VALUE string);
 
 // Symbol
 
@@ -368,6 +405,8 @@ VALUE rb_hash_aref(VALUE hash, VALUE key);
 VALUE rb_hash_aset(VALUE hash, VALUE key, VALUE value);
 VALUE rb_hash_lookup(VALUE hash, VALUE key);
 VALUE rb_hash_lookup2(VALUE hash, VALUE key, VALUE default_value);
+VALUE rb_hash_set_ifnone(VALUE hash, VALUE if_none);
+#define RHASH_SET_IFNONE(hash, if_none) rb_hash_set_ifnone((VALUE) hash, if_none)
 
 typedef unsigned long st_data_t;
 typedef st_data_t st_index_t;
@@ -406,14 +445,18 @@ VALUE rb_funcallv(VALUE object, ID name, int args_count, const VALUE *args);
 VALUE rb_funcallv_public(VALUE object, ID name, int args_count, const VALUE *args);
 #define rb_funcall2 rb_funcallv
 #define rb_funcall3 rb_funcallv_public
+VALUE rb_apply(VALUE object, ID name, VALUE args);
 
 #define RUBY_BLOCK_CALL_FUNC_TAKES_BLOCKARG 1
-#define RB_BLOCK_CALL_FUNC_ARGLIST(yielded_arg, callback_arg) VALUE yielded_arg, VALUE callback_arg, int args_count, const VALUE *args, VALUE block_arg
+#define RB_BLOCK_CALL_FUNC_ARGLIST(yielded_arg, callback_arg) VALUE yielded_arg, VALUE callback_arg, int __args_count, const VALUE *__args, VALUE __block_arg
 typedef VALUE rb_block_call_func(RB_BLOCK_CALL_FUNC_ARGLIST(yielded_arg, callback_arg));
 typedef rb_block_call_func *rb_block_call_func_t;
 VALUE rb_block_call(VALUE object, ID name, int args_count, const VALUE *args, rb_block_call_func_t block_call_func, VALUE data);
 
+VALUE rb_call_super(int args_count, const VALUE *args);
+
 int rb_block_given_p();
+VALUE rb_block_proc(void);
 VALUE rb_yield(VALUE value);
 
 // Instance variables
@@ -569,7 +612,24 @@ int rb_jt_io_handle(VALUE file);
 
 #define GetOpenFile(file, pointer) ((pointer)->fd = rb_jt_io_handle(file))
 
+int rb_io_wait_readable(int fd);
+int rb_io_wait_writable(int fd);
+void rb_thread_wait_fd(int fd);
+
+NORETURN(void rb_eof_error(void));
+
 // Data
+
+struct RData {
+  // No RBasic object header
+  void (*dmark)(void *data);
+  void (*dfree)(void *data);
+  void *data;
+};
+
+struct RData *rb_jt_wrap_rdata(VALUE value);
+
+#define RDATA(value) rb_jt_wrap_rdata(value)
 
 #define DATA_PTR(value) *((volatile intptr_t*) 0)
 
@@ -611,6 +671,14 @@ void *rb_check_typeddata(VALUE value, const rb_data_type_t *data_type);
 #define TypedData_Get_Struct(value, type, data_type, variable) ((variable) = (type *)rb_check_typeddata((value), (data_type)))
 
 #define RTYPEDDATA_DATA(value) *((volatile int*) 0)
+
+// VM
+
+VALUE *rb_ruby_verbose_ptr(void);
+#define ruby_verbose (*rb_ruby_verbose_ptr())
+
+VALUE *rb_ruby_debug_ptr(void);
+#define ruby_debug (*rb_ruby_debug_ptr())
 
 #if defined(__cplusplus)
 }

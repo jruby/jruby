@@ -15,6 +15,8 @@ import org.jruby.truffle.Layouts;
 
 public class RaiseException extends ControlFlowException {
 
+    private static final long serialVersionUID = -4128190563044417424L;
+
     private final DynamicObject exception;
 
     public RaiseException(DynamicObject exception) {

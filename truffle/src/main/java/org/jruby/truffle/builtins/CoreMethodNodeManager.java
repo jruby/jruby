@@ -43,6 +43,8 @@ import org.jruby.truffle.language.objects.SelfNode;
 import org.jruby.truffle.language.objects.SingletonClassNode;
 import org.jruby.truffle.language.parser.jruby.Translator;
 import org.jruby.truffle.platform.UnsafeGroup;
+import org.jruby.truffle.util.StringUtils;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -85,7 +87,7 @@ public class CoreMethodNodeManager {
                 final RubyConstant constant = ModuleOperations.lookupConstant(context, module, moduleName);
 
                 if (constant == null) {
-                    throw new RuntimeException(String.format("Module %s not found when adding core library", moduleName));
+                    throw new RuntimeException(StringUtils.format("Module %s not found when adding core library", moduleName));
                 }
 
                 module = (DynamicObject) constant.getValue();

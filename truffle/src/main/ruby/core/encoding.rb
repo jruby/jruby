@@ -228,13 +228,7 @@ class Encoding
           @replacement_converters << name << converters
         end
       end
-    end
-    
-    alias_method :initialize_rubinius, :initialize
-
-    def initialize(*args)
-      initialize_rubinius(*args)
-      initialize_jruby(*args)
+      initialize_jruby(*[@source_encoding, @destination_encoding, @options])
     end
 
     def convert(str)

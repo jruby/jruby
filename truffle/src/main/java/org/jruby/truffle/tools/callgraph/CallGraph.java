@@ -73,7 +73,7 @@ public class CallGraph {
         final Map<String, Set<String>> rootNodeLocalTypes = localTypes.get(rootNode);
 
         if (rootNodeLocalTypes == null) {
-            return Collections.EMPTY_MAP;
+            return Collections.<String, Set<String>>emptyMap();
         } else {
             return rootNodeLocalTypes;
         }

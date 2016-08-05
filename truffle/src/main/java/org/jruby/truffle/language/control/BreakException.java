@@ -13,6 +13,8 @@ import com.oracle.truffle.api.nodes.ControlFlowException;
 
 public final class BreakException extends ControlFlowException {
 
+    private static final long serialVersionUID = -8260344464830705773L;
+
     private final BreakID breakID;
     private final Object result;
 

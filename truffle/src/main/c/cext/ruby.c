@@ -133,6 +133,10 @@ VALUE rb_jt_get_mWaitWritable(void) {
   return (VALUE) truffle_read(RUBY_CEXT, "rb_mWaitWritable");
 }
 
+VALUE rb_jt_get_mComparable(void) {
+  return (VALUE) truffle_read(RUBY_CEXT, "rb_mComparable");
+}
+
 VALUE rb_jt_get_eException(void) {
   return (VALUE) truffle_read(RUBY_CEXT, "rb_eException");
 }
@@ -269,12 +273,30 @@ VALUE rb_require(const char *feature) {
   abort();
 }
 
+// Object
+
 VALUE rb_obj_dup(VALUE object) {
   return (VALUE) truffle_invoke((void *)object, "dup");
 }
 
+VALUE rb_jt_obj_taint(VALUE object) {
+  return (VALUE) truffle_invoke((void *)object, "taint");
+}
+
+bool rb_jt_obj_taintable_p(VALUE object) {
+  return truffle_invoke_b(RUBY_CEXT, "RB_OBJ_TAINTABLE", object);
+}
+
+bool rb_jt_obj_tainted_p(VALUE object) {
+  return truffle_invoke_b((void *)object, "tainted?");
+}
+
 VALUE rb_obj_freeze(VALUE object) {
   return (VALUE) truffle_invoke((void *)object, "freeze");
+}
+
+bool rb_jt_obj_frozen_p(VALUE object) {
+  return truffle_invoke_b((void *)object, "frozen?");
 }
 
 // Integer
@@ -426,6 +448,10 @@ VALUE rb_str_split(VALUE string, const char *split) {
   return (VALUE) truffle_invoke(string, "split", rb_str_new_cstr(split));
 }
 
+void rb_str_modify(VALUE string) {
+  // Does nothing because writing to the string pointer will cause necessary invalidations anyway
+}
+
 // Symbol
 
 ID rb_intern(const char *string) {
@@ -537,6 +563,11 @@ VALUE rb_hash_lookup2(VALUE hash, VALUE key, VALUE default_value) {
   return (VALUE) truffle_invoke((void *)hash, "fetch", key, default_value);
 }
 
+VALUE rb_hash_set_ifnone(VALUE hash, VALUE if_none) {
+  fprintf(stderr, "rb_hash_set_ifnone not implemented\n");
+  abort();
+}
+
 st_index_t rb_memhash(const void *data, long length) {
   // Not a proper hash - just something that produces a stable result for now
 
@@ -631,13 +662,28 @@ VALUE rb_funcallv_public(VALUE object, ID name, int args_count, const VALUE *arg
   abort();
 }
 
+VALUE rb_apply(VALUE object, ID name, VALUE args) {
+  fprintf(stderr, "rb_apply not implemented\n");
+  abort();
+}
+
 VALUE rb_block_call(VALUE object, ID name, int args_count, const VALUE *args, rb_block_call_func_t block_call_func, VALUE data) {
   fprintf(stderr, "rb_block_call not implemented\n");
   abort();
 }
 
+VALUE rb_call_super(int args_count, const VALUE *args) {
+  fprintf(stderr, "rb_call_super not implemented\n");
+  abort();
+}
+
 int rb_block_given_p() {
   return truffle_invoke_i(RUBY_CEXT, "rb_block_given_p");
+}
+
+VALUE rb_block_proc(void) {
+  fprintf(stderr, "rb_block_proc not implemented\n");
+  abort();
 }
 
 VALUE rb_yield(VALUE value) {
@@ -991,7 +1037,32 @@ int rb_jt_io_handle(VALUE io) {
   return truffle_invoke_i(RUBY_CEXT, "rb_jt_io_handle", io);
 }
 
+int rb_io_wait_readable(int fd) {
+  fprintf(stderr, "rb_io_wait_readable not implemented\n");
+  abort();
+}
+
+int rb_io_wait_writable(int fd) {
+  fprintf(stderr, "rb_io_wait_writable not implemented\n");
+  abort();
+}
+
+void rb_thread_wait_fd(int fd) {
+  fprintf(stderr, "rb_thread_wait_fd not implemented\n");
+  abort();
+}
+
+NORETURN(void rb_eof_error(void)) {
+  fprintf(stderr, "rb_eof_error not implemented\n");
+  abort();
+}
+
 // Data
+
+struct RData *rb_jt_wrap_rdata(VALUE value) {
+  fprintf(stderr, "RDATA not implemented\n");
+  abort();
+}
 
 // Typed data
 
@@ -1013,4 +1084,20 @@ VALUE rb_data_typed_object_make(VALUE ruby_class, const rb_data_type_t *type, vo
 void *rb_check_typeddata(VALUE value, const rb_data_type_t *data_type) {
   fprintf(stderr, "rb_check_typeddata not implemented\n");
   abort();
+}
+
+// VM
+
+VALUE rb_jt_ruby_verbose_ptr;
+
+VALUE *rb_ruby_verbose_ptr(void) {
+  rb_jt_ruby_verbose_ptr = truffle_invoke(RUBY_CEXT, "rb_ruby_verbose_ptr");
+  return &rb_jt_ruby_verbose_ptr;
+}
+
+VALUE rb_jt_ruby_debug_ptr;
+
+VALUE *rb_ruby_debug_ptr(void) {
+  rb_jt_ruby_debug_ptr = truffle_invoke(RUBY_CEXT, "rb_ruby_debug_ptr");
+  return &rb_jt_ruby_debug_ptr;
 }

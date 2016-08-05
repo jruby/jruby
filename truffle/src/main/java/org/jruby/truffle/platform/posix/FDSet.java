@@ -11,6 +11,7 @@
 package org.jruby.truffle.platform.posix;
 
 import jnr.ffi.Pointer;
+import org.jruby.truffle.util.StringUtils;
 
 public class FDSet {
 
@@ -44,7 +45,7 @@ public class FDSet {
 
     private void checkBounds(int fd) {
         if (fd < 0 || fd >= MAX_FDS) {
-            throw new IllegalArgumentException(String.format("Supplied file descriptor value must be > 0 and < %d", MAX_FDS));
+            throw new IllegalArgumentException(StringUtils.format("Supplied file descriptor value must be > 0 and < %d", MAX_FDS));
         }
     }
 

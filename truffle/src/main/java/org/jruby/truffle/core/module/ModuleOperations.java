@@ -22,6 +22,7 @@ import org.jruby.truffle.language.RubyConstant;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.methods.InternalMethod;
+import org.jruby.truffle.util.StringUtils;
 import org.jruby.util.IdUtil;
 import org.jruby.util.func.Function1;
 
@@ -183,7 +184,7 @@ public abstract class ModuleOperations {
 
         final String lastSegment = fullName.substring(start);
         if (!IdUtil.isValidConstantName19(lastSegment)) {
-            throw new RaiseException(context.getCoreExceptions().nameError(String.format("wrong constant name %s", fullName), module, fullName, currentNode));
+            throw new RaiseException(context.getCoreExceptions().nameError(StringUtils.format("wrong constant name %s", fullName), module, fullName, currentNode));
         }
 
         return lookupConstantWithInherit(context, module, lastSegment, inherit, currentNode);
@@ -194,7 +195,7 @@ public abstract class ModuleOperations {
         assert RubyGuards.isRubyModule(module);
 
         if (!IdUtil.isValidConstantName19(name)) {
-            throw new RaiseException(context.getCoreExceptions().nameError(String.format("wrong constant name %s", name), module, name, currentNode));
+            throw new RaiseException(context.getCoreExceptions().nameError(StringUtils.format("wrong constant name %s", name), module, name, currentNode));
         }
 
         if (inherit) {

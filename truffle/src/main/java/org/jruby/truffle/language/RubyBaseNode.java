@@ -16,7 +16,6 @@ import com.oracle.truffle.api.dsl.TypeSystemReference;
 import com.oracle.truffle.api.instrumentation.StandardTags;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.ffi.provider.MemoryManager;
 import org.jcodings.Encoding;
@@ -66,10 +65,6 @@ public abstract class RubyBaseNode extends Node {
 
     protected boolean isRubiniusUndefined(Object value) {
         return value == coreLibrary().getRubiniusUndefined();
-    }
-
-    protected DynamicObjectFactory getInstanceFactory(DynamicObject rubyClass) {
-        return Layouts.CLASS.getInstanceFactory(rubyClass);
     }
 
     // Helpers methods for terseness

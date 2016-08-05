@@ -33,7 +33,7 @@ public abstract class ArrayDupNode extends RubyNode {
 
     public ArrayDupNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
-        allocateNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
+        allocateNode = AllocateObjectNode.create();
     }
 
     public abstract DynamicObject executeDup(VirtualFrame frame, DynamicObject array);

@@ -22,6 +22,7 @@ public class PrintfSimpleParser {
         this.source = source;
     }
 
+    @SuppressWarnings("fallthrough")
     public List<SprintfConfig> parse() {
         List<SprintfConfig> configs = new ArrayList<>();
         ArgType argType = ArgType.NONE;

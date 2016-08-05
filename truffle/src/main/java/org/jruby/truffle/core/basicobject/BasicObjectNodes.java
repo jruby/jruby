@@ -51,6 +51,8 @@ import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.language.parser.ParserContext;
 import org.jruby.truffle.language.supercall.SuperCallNode;
 import org.jruby.truffle.language.yield.YieldNode;
+import org.jruby.truffle.util.StringUtils;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -175,7 +177,7 @@ public abstract class BasicObjectNodes {
 
             // TODO (pitr 15-Oct-2015): fix this ugly hack, required for AS, copy-paste
             final String space = getSpace(line);
-            final Source source = getContext().getSourceLoader().loadFragment(space + code.toString(), StringOperations.rope(fileName).toString());
+            final Source source = loadFragment(space + code.toString(), StringOperations.rope(fileName).toString());
 
             final RubyRootNode rootNode = getContext().getCodeLoader().parse(source, code.getEncoding(), ParserContext.EVAL, null, true, this);
             final CodeLoader.DeferredCall deferredCall = getContext().getCodeLoader().prepareExecute(ParserContext.EVAL, DeclarationContext.INSTANCE_EVAL, rootNode, null, receiver);
@@ -200,7 +202,13 @@ public abstract class BasicObjectNodes {
 
         @TruffleBoundary
         private String getSpace(int line) {
-            return new String(new char[Math.max(line - 1, 0)]).replace("\0", "\n");
+            final String s = new String(new char[Math.max(line - 1, 0)]);
+            return StringUtils.replace(s, "\0", "\n");
+        }
+
+        @TruffleBoundary
+        private Source loadFragment(String fragment, String name) {
+            return getContext().getSourceLoader().loadFragment(fragment, name);
         }
 
     }
@@ -231,10 +239,10 @@ public abstract class BasicObjectNodes {
     @CoreMethod(names = "__instance_variables__")
     public abstract static class InstanceVariablesNode extends CoreMethodArrayArgumentsNode {
 
-        public abstract DynamicObject executeObject(DynamicObject self);
+        public abstract DynamicObject execute(Object self);
 
         @TruffleBoundary
-        @Specialization
+        @Specialization(guards = {"!isNil(self)", "!isRubySymbol(self)"})
         public DynamicObject instanceVariables(DynamicObject self) {
             List<Object> keys = self.getShape().getKeyList();
 
@@ -249,6 +257,31 @@ public abstract class BasicObjectNodes {
             }
             final int size = names.size();
             return ArrayHelpers.createArray(getContext(), names.toArray(new Object[size]), size);
+        }
+
+        @Specialization
+        public DynamicObject instanceVariables(int self) {
+            return ArrayHelpers.createArray(getContext(), null, 0);
+        }
+
+        @Specialization
+        public DynamicObject instanceVariables(long self) {
+            return ArrayHelpers.createArray(getContext(), null, 0);
+        }
+
+        @Specialization
+        public DynamicObject instanceVariables(boolean self) {
+            return ArrayHelpers.createArray(getContext(), null, 0);
+        }
+
+        @Specialization(guards = "isNil(object)")
+        public DynamicObject instanceVariablesNil(DynamicObject object) {
+            return ArrayHelpers.createArray(getContext(), null, 0);
+        }
+
+        @Specialization(guards = "isRubySymbol(object)")
+        public DynamicObject instanceVariablesSymbol(DynamicObject object) {
+            return ArrayHelpers.createArray(getContext(), null, 0);
         }
 
     }
@@ -342,7 +375,7 @@ public abstract class BasicObjectNodes {
 
         public AllocateNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
+            allocateObjectNode = AllocateObjectNode.create();
         }
 
         @Specialization
