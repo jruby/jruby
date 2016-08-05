@@ -1,14 +1,5 @@
-fails:Kernel#spawn sets environment variables in the child environment
-fails:Kernel#spawn unsets environment variables whose value is nil
-fails:Kernel#spawn calls #to_hash to convert the environment
-fails:Kernel#spawn calls #to_str to convert the environment keys
-fails:Kernel#spawn calls #to_str to convert the environment values
-fails:Kernel#spawn raises an ArgumentError if an environment key includes an equals sign
-fails:Kernel#spawn raises an ArgumentError if an environment key includes a null byte
-fails:Kernel#spawn raises an ArgumentError if an environment value includes a null byte
 fails:Kernel#spawn unsets other environment variables when given a true :unsetenv_others option
 fails:Kernel#spawn unsets other environment variables when given a non-false :unsetenv_others option
-fails:Kernel#spawn does not unset environment variables included in the environment hash
 fails:Kernel#spawn joins the current process if pgroup: false
 fails:Kernel#spawn joins the current process if pgroup: nil
 fails:Kernel#spawn joins a new process group if pgroup: true
@@ -23,17 +14,8 @@ fails:Kernel#spawn with multiple arguments raises an ArgumentError if an argumen
 fails:Kernel#spawn with a command array raises an ArgumentError if the Strings in the Array include a null byte
 fails:Kernel#spawn when passed :chdir changes to the directory passed for :chdir
 fails:Kernel#spawn when passed :chdir calls #to_path to convert the :chdir value
-fails:Kernel.spawn sets environment variables in the child environment
-fails:Kernel.spawn unsets environment variables whose value is nil
-fails:Kernel.spawn calls #to_hash to convert the environment
-fails:Kernel.spawn calls #to_str to convert the environment keys
-fails:Kernel.spawn calls #to_str to convert the environment values
-fails:Kernel.spawn raises an ArgumentError if an environment key includes an equals sign
-fails:Kernel.spawn raises an ArgumentError if an environment key includes a null byte
-fails:Kernel.spawn raises an ArgumentError if an environment value includes a null byte
 fails:Kernel.spawn unsets other environment variables when given a true :unsetenv_others option
 fails:Kernel.spawn unsets other environment variables when given a non-false :unsetenv_others option
-fails:Kernel.spawn does not unset environment variables included in the environment hash
 fails:Kernel.spawn joins the current process if pgroup: false
 fails:Kernel.spawn joins the current process if pgroup: nil
 fails:Kernel.spawn joins a new process group if pgroup: true

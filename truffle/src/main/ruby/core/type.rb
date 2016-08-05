@@ -295,6 +295,11 @@ module Rubinius
       raise PrimitiveFailure, "Object.infect primitive failed"
     end
 
+    def self.check_null_safe(string)
+      raise ArgumentError, "string contains NULL byte" if string.include? "\0"
+      string
+    end
+
     def self.coerce_to_encoding(obj)
       case obj
       when Encoding
