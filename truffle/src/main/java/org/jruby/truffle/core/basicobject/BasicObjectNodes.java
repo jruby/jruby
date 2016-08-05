@@ -14,8 +14,12 @@ import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.CreateCast;
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.Frame;
+import com.oracle.truffle.api.frame.FrameInstance;
+import com.oracle.truffle.api.frame.FrameInstanceVisitor;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
+import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
@@ -37,6 +41,7 @@ import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
+import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
@@ -47,7 +52,6 @@ import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.methods.UnsupportedOperationBehavior;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
-import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.language.parser.ParserContext;
 import org.jruby.truffle.language.supercall.SuperCallNode;
 import org.jruby.truffle.language.yield.YieldNode;
@@ -311,20 +315,45 @@ public abstract class BasicObjectNodes {
         @TruffleBoundary
         private DynamicObject buildMethodMissingException(Object self, DynamicObject nameObject, Object[] args, DynamicObject block) {
             final String name = nameObject.toString();
+            final FrameInstance relevantCallerFrame = getRelevantCallerFrame();
 
-            if (lastCallWasSuper()) {
+            if (lastCallWasSuper(relevantCallerFrame)) {
                 return coreExceptions().noSuperMethodError(name, self, args, this);
             } else if (lastCallWasCallingPrivateMethod(self, name)) {
                 return coreExceptions().privateMethodError(name, self, args, this);
-            } else if (lastCallWasVCall()) {
+            } else if (lastCallWasVCall(relevantCallerFrame)) {
                 return coreExceptions().nameErrorUndefinedLocalVariableOrMethod(name, self, this);
             } else {
                 return coreExceptions().noMethodErrorOnReceiver(name, self, args, this);
             }
         }
 
-        private boolean lastCallWasSuper() {
-            final SuperCallNode superCallNode = NodeUtil.findParent(Truffle.getRuntime().getCallerFrame().getCallNode(), SuperCallNode.class);
+        private FrameInstance getRelevantCallerFrame() {
+            return Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<FrameInstance>() {
+                @Override
+                public FrameInstance visitFrame(FrameInstance frameInstance) {
+                    final Node callNode = frameInstance.getCallNode();
+                    if (callNode == null) {
+                        // skip current frame
+                        return null;
+                    }
+
+                    final SuperCallNode superCallNode = NodeUtil.findParent(callNode, SuperCallNode.class);
+                    final Frame frame = frameInstance.getFrame(FrameInstance.FrameAccess.READ_ONLY, true);
+                    final String superMethodName = RubyArguments.getMethod(frame).getName();
+
+                    if (superCallNode != null && superMethodName.equals("method_missing")) {
+                        // skip super calls of method_missing itself
+                        return null;
+                    }
+
+                    return frameInstance;
+                }
+            });
+        }
+
+        private boolean lastCallWasSuper(FrameInstance callerFrame) {
+            final SuperCallNode superCallNode = NodeUtil.findParent(callerFrame.getCallNode(), SuperCallNode.class);
             return superCallNode != null;
         }
 
@@ -337,8 +366,8 @@ public abstract class BasicObjectNodes {
             return method != null && !method.isUndefined();
         }
 
-        private boolean lastCallWasVCall() {
-            final RubyCallNode callNode = NodeUtil.findParent(Truffle.getRuntime().getCallerFrame().getCallNode(), RubyCallNode.class);
+        private boolean lastCallWasVCall(FrameInstance callerFrame) {
+            final RubyCallNode callNode = NodeUtil.findParent(callerFrame.getCallNode(), RubyCallNode.class);
             return callNode != null && callNode.isVCall();
         }
 
