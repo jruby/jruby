@@ -9,7 +9,7 @@
  */
 package org.jruby.truffle.language.arguments;
 
-import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
@@ -17,13 +17,13 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.hash.BucketsStrategy;
+import org.jruby.truffle.core.hash.KeyValue;
 import org.jruby.truffle.core.hash.HashOperations;
+import org.jruby.truffle.language.PerformanceWarnings;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
-
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 public class ReadKeywordRestArgumentNode extends RubyNode {
 
@@ -52,13 +52,18 @@ public class ReadKeywordRestArgumentNode extends RubyNode {
             return Layouts.HASH.createHash(coreLibrary().getHashFactory(), null, 0, null, null, null, null, false);
         }
 
-        CompilerDirectives.bailout("Ruby keyword arguments aren't optimized");
+        return extractKeywordHash(hash);
+    }
+
+    @TruffleBoundary
+    private Object extractKeywordHash(final Object hash) {
+        PerformanceWarnings.warn(PerformanceWarnings.KWARGS_NOT_OPTIMIZED_YET);
 
         final DynamicObject hashObject = (DynamicObject) hash;
 
-        final List<Map.Entry<Object, Object>> entries = new ArrayList<>();
+        final List<KeyValue> entries = new ArrayList<>();
 
-        outer: for (Map.Entry<Object, Object> keyValue : HashOperations.iterableKeyValues(hashObject)) {
+        outer: for (KeyValue keyValue : HashOperations.iterableKeyValues(hashObject)) {
             if (!RubyGuards.isRubySymbol(keyValue.getKey())) {
                 continue;
             }

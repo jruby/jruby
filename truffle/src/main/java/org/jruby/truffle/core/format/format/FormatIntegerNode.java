@@ -18,6 +18,7 @@ import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.FormatNode;
 import org.jruby.truffle.core.format.printf.PrintfSimpleTreeBuilder;
+import org.jruby.truffle.util.StringUtils;
 import org.jruby.util.ConvertBytes;
 
 import java.math.BigInteger;
@@ -77,7 +78,7 @@ public abstract class FormatIntegerNode extends FormatNode {
                     formatted = "0" + formatted;
                 }
                 if (value < 0) {
-                    formatted = "..7" + new String(elide(ConvertBytes.intToOctalBytes(value), format, precision));
+                    formatted = "..7" + StringUtils.create(elide(ConvertBytes.intToOctalBytes(value), format, precision));
                     ;
                 }
                 break;
@@ -126,7 +127,7 @@ public abstract class FormatIntegerNode extends FormatNode {
                     formatted = "0" + formatted;
                 }
                 if (value < 0) {
-                    formatted = "..7" + new String(elide(ConvertBytes.longToOctalBytes(value), format, precision));
+                    formatted = "..7" + StringUtils.create(elide(ConvertBytes.longToOctalBytes(value), format, precision));
                 }
                 break;
             case 'd':

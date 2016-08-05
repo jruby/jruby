@@ -210,8 +210,7 @@ public class JavaUtil {
 
     public static IRubyObject convertJavaArrayElementToRuby(Ruby runtime, JavaConverter converter, Object array, int i) {
         if (converter == null || converter == JAVA_DEFAULT_CONVERTER) {
-            IRubyObject x = convertJavaToUsableRubyObject(runtime, ((Object[])array)[i]);
-            return x;
+            return convertJavaToUsableRubyObject(runtime, ((Object[])array)[i]);
         }
         return converter.get(runtime, array, i);
     }
@@ -1015,7 +1014,7 @@ public class JavaUtil {
         return ((JavaProxy)self).getObject();
     }
 
-    public static final Map<String,Class> PRIMITIVE_CLASSES;
+    public static final Map<String, Class> PRIMITIVE_CLASSES;
     static {
         Map<String, Class> primitiveClasses = new HashMap<>(10, 1);
         primitiveClasses.put("boolean", Boolean.TYPE);
@@ -1027,6 +1026,22 @@ public class JavaUtil {
         primitiveClasses.put("float", Float.TYPE);
         primitiveClasses.put("double", Double.TYPE);
         PRIMITIVE_CLASSES = Collections.unmodifiableMap(primitiveClasses);
+    }
+
+    static Class<?> getPrimitiveClass(final String name) {
+        switch (name) {
+            case "boolean": return Boolean.TYPE;
+            case "byte": return Byte.TYPE;
+            case "char": return Character.TYPE;
+            case "short": return Short.TYPE;
+            case "int": return Integer.TYPE;
+            case "long": return Long.TYPE;
+            case "float": return Float.TYPE;
+            case "double": return Double.TYPE;
+
+            case "void": return Void.TYPE;
+        }
+        return null;
     }
 
     @Deprecated

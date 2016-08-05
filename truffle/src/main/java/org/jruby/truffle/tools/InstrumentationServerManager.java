@@ -22,6 +22,7 @@ import org.jruby.truffle.language.SafepointAction;
 import org.jruby.truffle.language.backtrace.Backtrace;
 import org.jruby.truffle.language.backtrace.BacktraceFormatter;
 import org.jruby.truffle.tools.simpleshell.SimpleShell;
+import org.jruby.truffle.util.StringUtils;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -68,7 +69,7 @@ public class InstrumentationServerManager {
                                     final List<String> lines = BacktraceFormatter.createDefaultFormatter(context)
                                             .formatBacktrace(context, null, backtrace);
 
-                                    builder.append(String.format("#%d %s",
+                                    builder.append(StringUtils.format("#%d %s",
                                             Thread.currentThread().getId(),
                                             Thread.currentThread().getName()));
 

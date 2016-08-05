@@ -84,6 +84,8 @@ import org.jruby.truffle.core.string.StringLayout;
 import org.jruby.truffle.core.string.StringLayoutImpl;
 import org.jruby.truffle.core.symbol.SymbolLayout;
 import org.jruby.truffle.core.symbol.SymbolLayoutImpl;
+import org.jruby.truffle.core.thread.ThreadBacktraceLocationLayout;
+import org.jruby.truffle.core.thread.ThreadBacktraceLocationLayoutImpl;
 import org.jruby.truffle.core.thread.ThreadLayout;
 import org.jruby.truffle.core.thread.ThreadLayoutImpl;
 import org.jruby.truffle.core.time.TimeLayout;
@@ -136,6 +138,7 @@ public abstract class Layouts {
     public static final StringLayout STRING = StringLayoutImpl.INSTANCE;
     public static final SymbolLayout SYMBOL = SymbolLayoutImpl.INSTANCE;
     public static final ThreadLayout THREAD = ThreadLayoutImpl.INSTANCE;
+    public static final ThreadBacktraceLocationLayout THREAD_BACKTRACE_LOCATION = ThreadBacktraceLocationLayoutImpl.INSTANCE;
     public static final TimeLayout TIME = TimeLayoutImpl.INSTANCE;
     public static final UnboundMethodLayout UNBOUND_METHOD = UnboundMethodLayoutImpl.INSTANCE;
     public static final WeakRefLayout WEAK_REF_LAYOUT = WeakRefLayoutImpl.INSTANCE;

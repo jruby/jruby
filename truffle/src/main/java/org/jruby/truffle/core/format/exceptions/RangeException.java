@@ -11,6 +11,8 @@ package org.jruby.truffle.core.format.exceptions;
 
 public class RangeException extends FormatException {
 
+    private static final long serialVersionUID = -6312025908880011931L;
+
     public RangeException(String message) {
         super(message);
     }

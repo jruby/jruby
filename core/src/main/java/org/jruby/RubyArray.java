@@ -265,10 +265,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
             case 2:
                 return new RubyArrayTwoObject(runtime, args[0], args[1]);
         }
-        RubyArray arr = new RubyArray(runtime, new IRubyObject[args.length]);
-        System.arraycopy(args, 0, arr.values, 0, args.length);
-        arr.realLength = args.length;
-        return arr;
+        return newArrayNoCopy(runtime, args, 0, args.length);
     }
 
     /**
@@ -4054,7 +4051,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         return ary;
     }
 
-    private static int SORTED_THRESHOLD = 10;
+    private static final int SORTED_THRESHOLD = 10;
 
     @JRubyMethod(name = "sample", optional = 2)
     public IRubyObject sample(ThreadContext context, IRubyObject[] args) {
@@ -4129,8 +4126,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
                 }
                 if (k >= l && (++k >= g))
                     ++k;
-                return newArray(runtime, eltOk(i),
-                        eltOk(j), eltOk(k));
+                return newArray(runtime, eltOk(i), eltOk(j), eltOk(k));
             }
 
             int len = realLength;
@@ -4163,7 +4159,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
                     result[j] = result[i];
                     result[i] = tmp;
                 }
-                RubyArray ary = newArrayMayCopy(runtime, result);
+                RubyArray ary = newArrayNoCopy(runtime, result);
                 ary.realLength = n;
                 return ary;
             }

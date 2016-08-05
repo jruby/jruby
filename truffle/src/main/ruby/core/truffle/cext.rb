@@ -170,6 +170,10 @@ module Truffle::CExt
     WaitReadable
   end
 
+  def rb_mComparable
+    Comparable
+  end
+
   def rb_mWaitWritable
     WaitWritable
   end
@@ -236,6 +240,15 @@ module Truffle::CExt
 
   def RTEST(value)
     !nil.equal?(value) && !false.equal?(value)
+  end
+
+  def RB_OBJ_TAINTABLE(object)
+    case object
+      when TrueClass, FalseClass, Fixnum, Float, NilClass, Symbol
+        true
+      else
+        false
+    end
   end
 
   def rb_float_new(value)
@@ -510,6 +523,14 @@ module Truffle::CExt
 
   def rb_data_typed_object_wrap(ruby_class, data, data_type)
     raise 'not implemented'
+  end
+
+  def rb_ruby_verbose_ptr
+    $VERBOSE
+  end
+
+  def rb_ruby_debug_ptr
+    $DEBUG
   end
 
 end

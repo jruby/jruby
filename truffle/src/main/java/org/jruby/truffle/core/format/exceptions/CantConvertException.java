@@ -11,6 +11,8 @@ package org.jruby.truffle.core.format.exceptions;
 
 public class CantConvertException extends FormatException {
 
+    private static final long serialVersionUID = -1748812990145250644L;
+
     public CantConvertException(String message) {
         super(message);
     }

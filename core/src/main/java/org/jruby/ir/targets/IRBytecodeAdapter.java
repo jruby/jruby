@@ -633,4 +633,5 @@ public abstract class IRBytecodeAdapter {
     private Map<Integer, String> variableNames = new HashMap<Integer, String>();
     protected final Signature signature;
     private final ClassData classData;
+    public int ipc = 0;  // counter for dumping instr index when in DEBUG
 }

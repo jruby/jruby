@@ -20,7 +20,7 @@ module Java::java::util::Collection
   end
 
   # Re-implemented for efficiency, so that we do not (`#each`) loop over the collection
-  # for types where its not necessary (e.g. *java.util.Set* instances), using (native) `contains`.
+  # for types where its not necessary (e.g. *java.util.Set* instances), uses (native) `java.util.Collection#contains`.
   # @see Java::java::lang::Iterable#include?
   # @return [true, false]
   # @since 9.1.3
@@ -92,6 +92,8 @@ module Java::java::util::Collection
   def to_a
     # stub implemented in org.jruby.javasupport.ext.JavaUtil.java
   end
+  # @since 9.1.3
+  alias entries to_a
 
   # Return a dup-ed collection (if possible).
   # @example

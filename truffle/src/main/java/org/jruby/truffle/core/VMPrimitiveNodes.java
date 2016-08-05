@@ -479,7 +479,7 @@ public abstract class VMPrimitiveNodes {
 
         @TruffleBoundary
         @Specialization
-        public Object waitPID(final int input_pid, boolean no_hang) {
+        public Object waitPID(int input_pid, boolean no_hang) {
             // Transliterated from Rubinius C++ - not tidied up significantly to make merging changes easier
 
             int options = 0;

@@ -92,7 +92,7 @@ public abstract class PsychEmitterNodes {
 
         public AllocateNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            allocateNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
+            allocateNode = AllocateObjectNode.create();
         }
 
         @Specialization
@@ -137,6 +137,7 @@ public abstract class PsychEmitterNodes {
     @CoreMethod(names = "start_stream", required = 1)
     public abstract static class StartStreamNode extends CoreMethodArrayArgumentsNode {
 
+        @TruffleBoundary
         @Specialization
         public DynamicObject startStream(DynamicObject emitter, int encodingOrdinal) {
             if (Layouts.PSYCH_EMITTER.getEmitter(emitter) != null) {

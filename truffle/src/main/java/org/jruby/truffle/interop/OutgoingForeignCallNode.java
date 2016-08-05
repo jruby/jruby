@@ -10,6 +10,7 @@
 package org.jruby.truffle.interop;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
@@ -27,6 +28,7 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.language.PerformanceWarnings;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.JavaException;
 
@@ -66,9 +68,10 @@ public abstract class OutgoingForeignCallNode extends RubyNode {
             VirtualFrame frame,
             TruffleObject receiver,
             Object[] args) {
-        CompilerDirectives.bailout("can't compile megamorphic outgoing foreign calls");
+        PerformanceWarnings.warn("megamorphic outgoing foreign call");
 
         if (megamorphicToForeignNode == null) {
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             megamorphicToForeignNode = insert(RubyToForeignNodeGen.create(getContext(), null, null));
         }
 
@@ -81,6 +84,7 @@ public abstract class OutgoingForeignCallNode extends RubyNode {
         return createHelperNode(args.length).executeCall(frame, receiver, foreignArgs);
     }
 
+    @TruffleBoundary
     protected OutgoingNode createHelperNode(int argsLength) {
         if (name.equals("[]") && argsLength == 1) {
             return new IndexReadOutgoingNode();

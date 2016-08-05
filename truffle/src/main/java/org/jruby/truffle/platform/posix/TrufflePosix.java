@@ -78,7 +78,7 @@ public interface TrufflePosix {
     int chdir(String path);
     long sysconf(Sysconf name);
     Times times();
-    long posix_spawnp(String path, Collection<? extends SpawnFileAction> fileActions, Collection<? extends CharSequence> argv, Collection<? extends CharSequence> envp);
+    int posix_spawnp(String path, Collection<? extends SpawnFileAction> fileActions, Collection<? extends CharSequence> argv, Collection<? extends CharSequence> envp);
     int flock(int fd, int operation);
     int dup(int fd);
     int dup2(int oldFd, int newFd);
@@ -100,5 +100,6 @@ public interface TrufflePosix {
     String getcwd();
     int fsync(int fd);
     int isatty(int fd);
+    int mkfifo(String path, int mode);
 
 }

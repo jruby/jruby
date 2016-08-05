@@ -13,8 +13,9 @@ describe "Collection Ruby extensions" do
     expect(data).to eq @data
 
     data = []
-    java.util.concurrent.LinkedBlockingQueue.new(@data).each { |elem| data << elem }
+    ret = java.util.concurrent.LinkedBlockingQueue.new(@data).each { |elem| data << elem }
     expect(data).to eq @data
+    expect(ret).to be_a java.util.concurrent.LinkedBlockingQueue
   end
 
   it 'iterates with an Enumerator on #each' do
@@ -30,9 +31,10 @@ describe "Collection Ruby extensions" do
     set = java.util.LinkedHashSet.new
     @data.each { |elem| set.add elem }
     data = []; idx = []
-    set.each_with_index { |elem, i| data << elem; idx << i }
+    ret = set.each_with_index { |elem, i| data << elem; idx << i }
     expect(data).to eq @data
     expect(idx).to eq [0, 1, 2, 3]
+    expect(ret).to be set
 
     data = []
     java.util.concurrent.LinkedBlockingQueue.new.each_with_index { |elem| data << elem }
@@ -190,6 +192,18 @@ describe "Collection Ruby extensions" do
     set.add 3.to_java(:short)
     expect( set.contains 3.to_java ).to be true
     expect( set.contains 3.to_java(:short) ).to be true
+  end
+
+  it 'counts' do
+    vec = java.util.Vector.new [1, 2, 2, 3, 2, 4, 2, 5, 2]
+    expect( vec.count ).to eql 9
+    expect( java.util.Collections::EMPTY_SET.count ).to eql 0
+
+    expect( vec.count { |i| i > 2 } ).to eq 3
+    expect( vec.count(2) ).to eq 5
+
+    expect( java.util.HashSet.new(vec).count(2) ).to eq 1
+    expect( java.util.LinkedHashSet.new(vec).count(0) ).to eq 0
   end
 
   it "should respect to_ary objects defined on iteration" do

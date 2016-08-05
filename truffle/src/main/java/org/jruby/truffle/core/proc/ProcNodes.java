@@ -123,7 +123,7 @@ public abstract class ProcNodes {
         private AllocateObjectNode getAllocateObjectNode() {
             if (allocateObjectNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                allocateObjectNode = insert(AllocateObjectNodeGen.create(getContext(), null, null, null));
+                allocateObjectNode = insert(AllocateObjectNode.create());
             }
 
             return allocateObjectNode;
@@ -165,7 +165,7 @@ public abstract class ProcNodes {
         private AllocateObjectNode getAllocateObjectNode() {
             if (allocateObjectNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                allocateObjectNode = insert(AllocateObjectNodeGen.create(getContext(), null, null, null));
+                allocateObjectNode = insert(AllocateObjectNode.create());
             }
 
             return allocateObjectNode;

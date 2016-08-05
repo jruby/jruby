@@ -37,6 +37,7 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jcodings.Encoding;
+import org.jruby.Ruby;
 import org.jruby.RubyEncoding;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
@@ -46,8 +47,11 @@ import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.language.RubyGuards;
+import org.jruby.truffle.language.control.RaiseException;
+import org.jruby.truffle.util.ByteListUtils;
+import org.jruby.truffle.util.StringUtils;
 import org.jruby.util.ByteList;
-
+import org.jruby.util.StringSupport;
 import java.nio.charset.Charset;
 
 public abstract class StringOperations {
@@ -115,7 +119,7 @@ public abstract class StringOperations {
 
         if (existingCodeRange != codeRange) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            throw new RuntimeException(String.format("Tried changing the code range value for a rope from %d to %d", existingCodeRange, codeRange));
+            throw new RuntimeException(StringUtils.format("Tried changing the code range value for a rope from %d to %d", existingCodeRange, codeRange));
         }
     }
 
@@ -194,7 +198,7 @@ public abstract class StringOperations {
 
     @TruffleBoundary
     public static ByteList createByteList(CharSequence s) {
-        return ByteList.create(s);
+        return ByteListUtils.create(s);
     }
 
     public static Rope rope(DynamicObject string) {

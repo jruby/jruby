@@ -9,12 +9,12 @@ import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.dataflow.DataFlowProblem;
 import org.jruby.ir.instructions.Instr;
+import org.jruby.ir.instructions.LabelInstr;
 import org.jruby.ir.instructions.ReceiveSelfInstr;
 import org.jruby.ir.passes.CompilerPass;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
 import org.jruby.ir.representations.CFGLinearizer;
-import org.jruby.ir.representations.IGVCFGVisitor;
 
 /**
  * Created by enebo on 2/27/15.
@@ -25,6 +25,11 @@ public class FullInterpreterContext extends InterpreterContext {
     // Creation of this field will happen in generateInstructionsForInterpretation or during IRScope.prepareForCompilation.
     // FIXME: At some point when we relinearize after running another phase of passes we should document that here to know how this field is changed
     private BasicBlock[] linearizedBBList = null;
+
+    // Contains pairs of values.  The first value is number of instrs in this range + number of instrs before
+    // this range.  The second number is the rescuePC.  getRescuePC(ipc) will walk this list and first odd value
+    // less than this value will be the rpc.
+    private int[] rescueIPCs = null;
 
     /** Map of name -> dataflow problem */
     private Map<String, DataFlowProblem> dataFlowProblems;
@@ -86,7 +91,6 @@ public class FullInterpreterContext extends InterpreterContext {
     /** We plan on running this in full interpreted mode.  This will fixup ipc, rpc, and generate instr list */
     public void generateInstructionsForIntepretation() {
         linearizeBasicBlocks();
-        boolean simple_method = getScope() instanceof IRMethod;
 
         // Pass 1. Set up IPCs for labels and instructions and build linear instr list
         List<Instr> newInstrs = new ArrayList<>();
@@ -101,32 +105,37 @@ public class FullInterpreterContext extends InterpreterContext {
             // FIXME: Can be replaced with System.arrayCopy to avoid call newInstrs.add a zillion times
             for (int i = 0; i < bbInstrsLength; i++) {
                 Instr instr = bbInstrs.get(i);
-                if (simple_method && SimpleMethodInterpreterEngine.OPERATIONS.get(instr.getOperation()) == null) simple_method = false;
                 if (!(instr instanceof ReceiveSelfInstr)) {
-                    instr.setIPC(ipc);
+                    if (instr instanceof LabelInstr) ((LabelInstr) instr).getLabel().setTargetPC(ipc);
                     newInstrs.add(instr);
                     ipc++;
                 }
             }
         }
 
-        if (simple_method) getScope().getFlags().add(IRFlags.SIMPLE_METHOD);
-
         cfg.getExitBB().getLabel().setTargetPC(ipc + 1);  // Exit BB ipc
 
         Instr[] linearizedInstrArray = newInstrs.toArray(new Instr[newInstrs.size()]);
 
+        BasicBlock[] basicBlocks = getLinearizedBBList();
+        rescueIPCs = new int[2 * basicBlocks.length];
+
         // Pass 2: Use ipc info from previous to mark all linearized instrs rpc
         ipc = 0;
-        for (BasicBlock b : getLinearizedBBList()) {
-            BasicBlock rescuerBB = cfg.getRescuerBBFor(b);
+        for (int i = 0; i < basicBlocks.length; i++) {
+            BasicBlock bb = basicBlocks[i];
+            BasicBlock rescuerBB = cfg.getRescuerBBFor(bb);
             int rescuerPC = rescuerBB == null ? -1 : rescuerBB.getLabel().getTargetPC();
-            for (Instr instr : b.getInstrs()) {
+            rescueIPCs[i * 2] = ipc + bb.getInstrs().size();
+            rescueIPCs[i * 2 + 1] = rescuerPC;
+
+            for (Instr instr : bb.getInstrs()) {
                 // FIXME: If we did not omit instrs from previous pass, we could end up just doing
                 // a size and for loop this n times instead of walking an examining each instr
                 if (!(instr instanceof ReceiveSelfInstr)) {
-                    linearizedInstrArray[ipc].setRPC(rescuerPC);
                     ipc++;
+                } else {
+                    rescueIPCs[i * 2]--;
                 }
             }
         }
@@ -169,5 +178,14 @@ public class FullInterpreterContext extends InterpreterContext {
     @Override
     public String toStringInstrs() {
         return "\nCFG:\n" + cfg.toStringGraph() + "\nInstructions:\n" + cfg.toStringInstrs();
+    }
+
+    public int determineRPC(int ipc) {
+        int length = rescueIPCs.length;
+        for (int i = 0; i + 1 < length; i += 2) {
+            if (ipc <= rescueIPCs[i]) return rescueIPCs[i + 1];
+        }
+
+        throw new RuntimeException("BUG: no RPC found for " + getFileName() + ":" + getName() + ":" + ipc + getInstructions());
     }
 }

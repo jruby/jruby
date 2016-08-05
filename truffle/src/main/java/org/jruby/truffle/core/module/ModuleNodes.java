@@ -95,6 +95,7 @@ import org.jruby.truffle.language.parser.ParserContext;
 import org.jruby.truffle.language.parser.jruby.Translator;
 import org.jruby.truffle.language.yield.YieldNode;
 import org.jruby.truffle.platform.UnsafeGroup;
+import org.jruby.truffle.util.StringUtils;
 import org.jruby.util.IdUtil;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -522,7 +523,7 @@ public abstract class ModuleNodes {
         @Specialization(guards = "isRubyString(filename)")
         public DynamicObject autoload(DynamicObject module, String name, DynamicObject filename) {
             if (!IdUtil.isValidConstantName19(name)) {
-                throw new RaiseException(coreExceptions().nameError(String.format("autoload must be constant name: %s", name), module, name, this));
+                throw new RaiseException(coreExceptions().nameError(StringUtils.format("autoload must be constant name: %s", name), module, name, this));
             }
 
             if (isEmptyNode.executeIsEmpty(filename)) {
@@ -623,7 +624,8 @@ public abstract class ModuleNodes {
             Encoding encoding = Layouts.STRING.getRope(rubySource).getEncoding();
 
             // TODO (pitr 15-Oct-2015): fix this ugly hack, required for AS, copy-paste
-            final String space = new String(new char[Math.max(line - 1, 0)]).replace("\0", "\n");
+            final String s = new String(new char[Math.max(line - 1, 0)]);
+            final String space = StringUtils.replace(s, "\0", "\n");
             Source source = getContext().getSourceLoader().loadFragment(space + code, file);
 
             final RubyRootNode rootNode = getContext().getCodeLoader().parse(source, encoding, ParserContext.MODULE, callerFrame, true, this);
@@ -964,7 +966,7 @@ public abstract class ModuleNodes {
         @Specialization
         public Object setConstant(DynamicObject module, String name, Object value) {
             if (!IdUtil.isValidConstantName19(name)) {
-                throw new RaiseException(coreExceptions().nameError(String.format("wrong constant name %s", name), module, name, this));
+                throw new RaiseException(coreExceptions().nameError(StringUtils.format("wrong constant name %s", name), module, name, this));
             }
 
             Layouts.MODULE.getFields(module).setConstant(getContext(), this, name, value);

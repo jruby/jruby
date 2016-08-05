@@ -237,6 +237,7 @@ public abstract class ArrayBuilderNode extends Node {
             }
         }
 
+        @Override
         public Object finish(Object store, int length) {
             return store;
         }
@@ -309,6 +310,7 @@ public abstract class ArrayBuilderNode extends Node {
             return appendValueFallback(store, index, value, expectedLength);
         }
 
+        @Override
         public Object finish(Object store, int length) {
             return store;
         }
@@ -384,6 +386,7 @@ public abstract class ArrayBuilderNode extends Node {
             }
         }
 
+        @Override
         public Object finish(Object store, int length) {
             return store;
         }
@@ -497,6 +500,7 @@ public abstract class ArrayBuilderNode extends Node {
             return store;
         }
 
+        @Override
         public Object finish(Object store, int length) {
             return store;
         }

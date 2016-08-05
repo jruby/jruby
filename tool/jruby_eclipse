@@ -4,7 +4,10 @@
 
 JRUBY = File.expand_path('../..', __FILE__)
 
-M2REPO = "#{Dir.home}/.m2/repository"
+# Handle missing $HOME variable
+home = Dir.home rescue "/home/#{`whoami`.chomp}"
+
+M2REPO = "#{home}/.m2/repository"
 
 TRUFFLE_VERSION = File.foreach("#{JRUBY}/truffle/pom.rb") { |line|
   break $1 if /'truffle\.version' => '(\d+\.\d+|\h+-SNAPSHOT)'/ =~ line
@@ -44,7 +47,7 @@ parse_options = lambda do |args|
       extra_classpath << args.shift
     when /^-J/
       java_flags << arg[2..-1]
-    when /^-Xtruffle./
+    when /^-Xtruffle\./
       java_flags << "-Djruby.#{arg[2..-1]}"
     else
       rest << arg

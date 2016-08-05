@@ -32,6 +32,7 @@ import org.jruby.truffle.language.objects.ObjectGraph;
 import org.jruby.truffle.language.objects.ObjectIDOperations;
 import org.jruby.truffle.language.objects.ReadObjectFieldNode;
 import org.jruby.truffle.language.objects.ReadObjectFieldNodeGen;
+import org.jruby.truffle.util.StringUtils;
 
 @CoreClass("ObjectSpace")
 public abstract class ObjectSpaceNodes {
@@ -72,7 +73,7 @@ public abstract class ObjectSpaceNodes {
                 }
             }
 
-            throw new RaiseException(coreExceptions().rangeError(String.format("0x%016x is not id value", id), this));
+            throw new RaiseException(coreExceptions().rangeError(StringUtils.format("0x%016x is not id value", id), this));
         }
 
         @Specialization(guards = { "isRubyBignum(id)", "isLargeFixnumID(id)" })

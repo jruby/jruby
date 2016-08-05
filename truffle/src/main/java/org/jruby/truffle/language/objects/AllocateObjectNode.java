@@ -39,11 +39,11 @@ import org.jruby.truffle.language.control.RaiseException;
 @Instrumentable(factory = AllocateObjectNodeWrapper.class)
 public abstract class AllocateObjectNode extends RubyNode {
 
-    private final boolean useCallerFrameForTracing;
-
-    public AllocateObjectNode() {
-        this(null, null);
+    public static AllocateObjectNode create() {
+        return AllocateObjectNodeGen.create(null, null, null, null);
     }
+
+    private final boolean useCallerFrameForTracing;
 
     public AllocateObjectNode(RubyContext context, SourceSection sourceSection) {
         this(context, sourceSection, true);
@@ -145,6 +145,10 @@ public abstract class AllocateObjectNode extends RubyNode {
                 allocatingSourceSection.getStartLine());
 
         return object;
+    }
+
+    protected DynamicObjectFactory getInstanceFactory(DynamicObject classToAllocate) {
+        return Layouts.CLASS.getInstanceFactory(classToAllocate);
     }
 
     private DynamicObject string(String value) {

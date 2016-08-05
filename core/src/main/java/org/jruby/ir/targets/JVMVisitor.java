@@ -168,8 +168,6 @@ public class JVMVisitor extends IRVisitor {
 
         IRBytecodeAdapter m = jvmMethod();
 
-        int ipc = 0; // synthetic, used for debug traces that show which instr failed
-
         Label currentRescue = null;
         Label currentRegionStart = null;
         Label currentBlockStart = null;
@@ -227,7 +225,6 @@ public class JVMVisitor extends IRVisitor {
 
             // visit remaining instrs
             for (Instr instr : bb.getInstrs()) {
-                if (DEBUG) instr.setIPC(ipc++); // debug mode uses instr offset for backtrace
                 visit(instr);
             }
 
@@ -363,7 +360,7 @@ public class JVMVisitor extends IRVisitor {
 
     public void visit(Instr instr) {
         if (DEBUG) { // debug will skip emitting actual file line numbers
-            jvmAdapter().line(instr.getIPC());
+            jvmAdapter().line(++jvmMethod().ipc);
         }
         instr.visit(this);
     }

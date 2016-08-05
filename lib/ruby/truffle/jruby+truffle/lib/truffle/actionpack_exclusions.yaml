@@ -1,22 +1,9 @@
 ---
 IntegrationProcessTest:
-- test_cookie_persist_to_next_request
-- test_https_and_port_via_host_and_https!
-- test_https_and_port_via_process
-- test_port_via_host!
-- test_port_via_process
-- test_cookie_persist_to_next_request_on_another_domain
 - test_get
-- test_get_with_parameters
-- test_get_with_query_string
 - test_get_xml_rss_atom
-- test_head
 - test_post
 - test_redirect
-- test_request_with_bad_format
-- test_respect_removal_of_default_headers_by_a_controller_action
-- test_response_cookies_are_added_to_the_cookie_jar_for_the_next_request
-- test_xml_http_request_get
 ExpiresInRenderTest:
 - test_dynamic_render_with_file
 - test_permitted_dynamic_render_file_hash
@@ -80,6 +67,7 @@ TestGenerationPrefix::WithMountedEngine:
 ActionController::LiveStreamTest:
 - test_exception_callback_when_committed
 - test_async_stream # fails on travis
+- test_abort_with_full_buffer # fails intermittently on CI
 ApplicationIntegrationTest:
 - test_missing_route_helper_after_controller_access
 - test_missing_route_helper_before_controller_access

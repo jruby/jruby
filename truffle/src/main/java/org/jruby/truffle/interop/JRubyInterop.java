@@ -9,7 +9,7 @@
  */
 package org.jruby.truffle.interop;
 
-import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.RubyContext;
@@ -29,7 +29,7 @@ public class JRubyInterop {
         this.context = context;
     }
 
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     public DynamicObject toTruffle(org.jruby.RubyException jrubyException, RubyNode currentNode) {
         switch (jrubyException.getMetaClass().getName()) {
             case "ArgumentError":
@@ -41,6 +41,7 @@ public class JRubyInterop {
         throw new UnsupportedOperationException();
     }
 
+    @TruffleBoundary
     public String getArg0() {
         return context.getJRubyRuntime().getGlobalVariables().get("$0").toString();
     }

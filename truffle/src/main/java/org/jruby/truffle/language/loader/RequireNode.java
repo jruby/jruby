@@ -40,6 +40,7 @@ import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.parser.ParserContext;
+import org.jruby.truffle.util.StringUtils;
 
 @NodeChild("feature")
 public abstract class RequireNode extends RubyNode {
@@ -104,7 +105,7 @@ public abstract class RequireNode extends RubyNode {
                     return false;
                 }
 
-                final String mimeType = source.getMimeType();
+                final String mimeType = getSourceMimeType(source);
 
                 if (RubyLanguage.MIME_TYPE.equals(mimeType)) {
                     final RubyRootNode rootNode = getContext().getCodeLoader().parse(
@@ -145,7 +146,7 @@ public abstract class RequireNode extends RubyNode {
                 } else {
                     errorProfile.enter();
 
-                    if (expandedPath.toLowerCase().endsWith(".su")) {
+                    if (StringUtils.toLowerCase(expandedPath).endsWith(".su")) {
                         throw new RaiseException(cextSupportNotAvailable(expandedPath));
                     } else {
                         throw new RaiseException(unknownLanguage(expandedPath, mimeType));
@@ -159,6 +160,11 @@ public abstract class RequireNode extends RubyNode {
                 fileLocks.unlock(expandedPath, lock);
             }
         }
+    }
+
+    @TruffleBoundary
+    private String getSourceMimeType(Source source) {
+        return source.getMimeType();
     }
 
     @TruffleBoundary
