@@ -53,7 +53,7 @@ import static org.jruby.runtime.Visibility.PRIVATE;
  * Implementation of Ruby's Enumerator module.
  */
 @JRubyModule(name="Enumerator", include="Enumerable")
-public class RubyEnumerator extends RubyObject {
+public class RubyEnumerator extends RubyObject implements java.util.Iterator<Object> {
     /** target for each operation */
     private IRubyObject object;
 
@@ -572,6 +572,23 @@ public class RubyEnumerator extends RubyObject {
         }
     }
 
+    // java.util.Iterator :
+
+    @Override
+    public synchronized boolean hasNext() {
+        return ensureNexter(getRuntime()).hasNext();
+    }
+
+    @Override
+    public Object next() {
+        return next( getRuntime().getCurrentContext() ).toJava( java.lang.Object.class );
+    }
+
+    @Override
+    public void remove() {
+        throw new UnsupportedOperationException();
+    }
+
     /**
      * "Function" type for java-created enumerators with size.  Should be implemented so that calls to
      * SizeFn#size are kept in sync with the size of the created enum (i.e. if the object underlying an enumerator
@@ -616,6 +633,8 @@ public class RubyEnumerator extends RubyObject {
         public abstract void shutdown();
 
         public abstract IRubyObject peek();
+
+        abstract boolean hasNext() ;
     }
 
     private static class ArrayNexter extends Nexter {
@@ -652,7 +671,12 @@ public class RubyEnumerator extends RubyObject {
         }
 
         private void checkIndex() throws RaiseException {
-            if (index >= array.size()) throw runtime.newStopIteration(array, null);
+            if ( ! hasNext() ) throw runtime.newStopIteration(array, null);
+        }
+
+        @Override
+        final boolean hasNext() {
+            return index < array.size();
         }
     }
 
@@ -791,6 +815,11 @@ public class RubyEnumerator extends RubyObject {
 
             // otherwise, just return it
             return value;
+        }
+
+        @Override
+        final synchronized boolean hasNext() {
+            return lastValue != NEVER;
         }
 
         @Override
