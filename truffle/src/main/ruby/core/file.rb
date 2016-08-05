@@ -345,15 +345,8 @@ class File < IO
     paths.size
   end
 
-  def self.mkfifo(*args)
-    arg_count = args.size
-    Rubinius::Type.check_arity(arg_count, 1, 2)
-    path = args[0]
-    mode = if arg_count > 1
-             Rubinius::Type.coerce_to args[1], Integer, :to_int
-           else
-             0666
-           end
+  def self.mkfifo(path, mode = 0666)
+    mode = Rubinius::Type.coerce_to mode, Integer, :to_int
     path = Rubinius::Type.coerce_to_path(path)
     status = Truffle::POSIX.mkfifo(path, mode)
     Errno.handle path if status != 0
