@@ -160,7 +160,9 @@ if i = ARGV.index('slow') and ARGV[i-1] == '--excl-tag' and is_child_process
 
     def exception(state)
       if state.exception.is_a? SlowSpecException
-        tag = SpecTag.new("slow:#{state.describe} #{state.it}")
+        tag = SpecTag.new
+        tag.tag = 'slow'
+        tag.description = "#{state.describe} #{state.it}"
         MSpec.write_tag(tag)
       end
     end
