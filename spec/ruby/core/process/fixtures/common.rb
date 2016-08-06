@@ -42,6 +42,7 @@ module ProcessSpecs
       rm_r @pid_file
 
       @thread = Thread.new do
+        Thread.current.abort_on_exception = true
         args = [@pid_file, scenario, ruby_exe]
         @result = ruby_exe @script, args: args
       end
