@@ -78,29 +78,34 @@ import java.util.Iterator;
 public abstract class RegexpNodes {
 
     @TruffleBoundary
-    public static Object matchCommon(RubyContext context, RopeNodes.MakeSubstringNode makeSubstringNode, DynamicObject regexp, DynamicObject source, boolean operator, boolean setNamedCaptures, int startPos) {
+    public static Matcher preprocess(RubyContext context, DynamicObject regexp, DynamicObject string) {
         assert RubyGuards.isRubyRegexp(regexp);
-        assert RubyGuards.isRubyString(source);
+        assert RubyGuards.isRubyString(string);
 
-        final Rope sourceRope = StringOperations.rope(source);
+        final Rope stringRope = StringOperations.rope(string);
 
         final Rope regexpSourceRope = Layouts.REGEXP.getSource(regexp);
-        final Encoding enc = checkEncoding(regexp, sourceRope, true);
+        final Encoding enc = checkEncoding(regexp, stringRope, true);
         final ByteList preprocessed = RegexpSupport.preprocess(context.getJRubyRuntime(), RopeOperations.getByteListReadOnly(regexpSourceRope), enc, new Encoding[] { null }, RegexpSupport.ErrorMode.RAISE);
 
-        final Regex r = new Regex(preprocessed.getUnsafeBytes(), preprocessed.getBegin(), preprocessed.getBegin() + preprocessed.getRealSize(), Layouts.REGEXP.getOptions(regexp).toJoniOptions(), checkEncoding(regexp, sourceRope, true));
-        final Matcher matcher = r.matcher(sourceRope.getBytes(), 0, sourceRope.byteLength());
-        int range = sourceRope.byteLength();
-
-        return matchCommon(context, makeSubstringNode, regexp, source, operator, setNamedCaptures, matcher, startPos, range);
+        final Regex regex = new Regex(preprocessed.getUnsafeBytes(), preprocessed.getBegin(), preprocessed.getBegin() + preprocessed.getRealSize(),
+                Layouts.REGEXP.getOptions(regexp).toJoniOptions(), checkEncoding(regexp, stringRope, true));
+        return regex.matcher(stringRope.getBytes(), 0, stringRope.byteLength());
     }
 
     @TruffleBoundary
-    public static Object matchCommon(RubyContext context, RopeNodes.MakeSubstringNode makeSubstringNode, DynamicObject regexp, DynamicObject source, boolean operator, boolean setNamedCaptures, Matcher matcher, int startPos, int range) {
-        assert RubyGuards.isRubyRegexp(regexp);
-        assert RubyGuards.isRubyString(source);
+    public static Object matchCommon(RubyContext context, RopeNodes.MakeSubstringNode makeSubstringNode, DynamicObject regexp, DynamicObject string, boolean operator, boolean setNamedCaptures, int startPos) {
+        final Matcher matcher = preprocess(context, regexp, string);
+        int range = StringOperations.rope(string).byteLength();
+        return matchCommon(context, makeSubstringNode, regexp, string, operator, setNamedCaptures, matcher, startPos, range);
+    }
 
-        final Rope sourceRope = StringOperations.rope(source);
+    @TruffleBoundary
+    public static Object matchCommon(RubyContext context, RopeNodes.MakeSubstringNode makeSubstringNode, DynamicObject regexp, DynamicObject string, boolean operator, boolean setNamedCaptures, Matcher matcher, int startPos, int range) {
+        assert RubyGuards.isRubyRegexp(regexp);
+        assert RubyGuards.isRubyString(string);
+
+        final Rope sourceRope = StringOperations.rope(string);
 
         final int match = matcher.search(startPos, range, Option.DEFAULT);
 
@@ -128,43 +133,21 @@ public abstract class RegexpNodes {
             final int start = region.beg[n];
             final int end = region.end[n];
 
-            if (operator) {
-                final Object groupString;
-
-                if (start > -1 && end > -1) {
-                    groupString = createSubstring(makeSubstringNode, source, start, end - start);
-                } else {
-                    groupString = nil;
-                }
-
-                values[n] = groupString;
+            if (start > -1 && end > -1) {
+                values[n] = createSubstring(makeSubstringNode, string, start, end - start);
             } else {
-                if (start == -1 || end == -1) {
-                    values[n] = nil;
-                } else {
-                    values[n] = createSubstring(makeSubstringNode, source, start, end - start);
-                }
+                values[n] = nil;
             }
         }
 
-        final DynamicObject pre = createSubstring(makeSubstringNode, source, 0, region.beg[0]);
-        final DynamicObject post = createSubstring(makeSubstringNode, source, region.end[0], sourceRope.byteLength() - region.end[0]);
-        final DynamicObject global = createSubstring(makeSubstringNode, source, region.beg[0], region.end[0] - region.beg[0]);
+        final DynamicObject pre = createSubstring(makeSubstringNode, string, 0, region.beg[0]);
+        final DynamicObject post = createSubstring(makeSubstringNode, string, region.end[0], sourceRope.byteLength() - region.end[0]);
+        final DynamicObject global = createSubstring(makeSubstringNode, string, region.beg[0], region.end[0] - region.beg[0]);
 
-        final DynamicObject matchObject = Layouts.MATCH_DATA.createMatchData(context.getCoreLibrary().getMatchDataFactory(),
-                source, regexp, region, values, pre, post, global, null);
+        final DynamicObject matchData = Layouts.MATCH_DATA.createMatchData(context.getCoreLibrary().getMatchDataFactory(),
+                string, regexp, region, values, pre, post, global, null);
 
-        if (operator) {
-            if (values.length > 0) {
-                int nonNil = values.length - 1;
-
-                while (values[nonNil] == nil) {
-                    nonNil--;
-                }
-            }
-        }
-
-        RegexpSetLastMatchPrimitiveNode.setLastMatch(context, matchObject);
+        RegexpSetLastMatchPrimitiveNode.setLastMatch(context, matchData);
 
         if (setNamedCaptures && Layouts.REGEXP.getRegex(regexp).numberOfNames() > 0) {
             final Frame frame = context.getCallStack().getCallerFrameIgnoringSend().getFrame(FrameAccess.READ_WRITE, false);
@@ -183,7 +166,7 @@ public abstract class RegexpNodes {
                     final int start = region.beg[nth];
                     final int end = region.end[nth];
                     if (start != -1) {
-                        value = createSubstring(makeSubstringNode, source, start, end - start);
+                        value = createSubstring(makeSubstringNode, string, start, end - start);
                     } else {
                         value = nil;
                     }
@@ -196,7 +179,7 @@ public abstract class RegexpNodes {
         if (operator) {
             return matcher.getBegin();
         } else {
-            return matchObject;
+            return matchData;
         }
     }
 
