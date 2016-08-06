@@ -371,13 +371,13 @@ public class IRBuilder {
         if (node.isNewline()) {
             int currLineNum = node.getLine();
             if (currLineNum != _lastProcessedLineNum) { // Do not emit multiple line number instrs for the same line
+                addInstr(manager.newLineNumber(currLineNum));
                 if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
                     addInstr(new TraceInstr(RubyEvent.LINE, methodNameFor(), getFileName(), currLineNum));
                     if (needsCodeCoverage()) {
                         addInstr(new TraceInstr(RubyEvent.COVERAGE, methodNameFor(), getFileName(), currLineNum));
                     }
                 }
-                addInstr(manager.newLineNumber(currLineNum));
                 _lastProcessedLineNum = currLineNum;
             }
         }
@@ -1740,6 +1740,7 @@ public class IRBuilder {
         this.needsCodeCoverage = needsCodeCoverage;
 
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
+            addInstr(manager.newLineNumber(scope.getLineNumber()));
             addInstr(new TraceInstr(RubyEvent.CALL, getName(), getFileName(), scope.getLineNumber()));
         }
 
