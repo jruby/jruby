@@ -169,6 +169,7 @@ import org.jruby.truffle.platform.graal.AssertNotCompiledNodeGen;
 import org.jruby.truffle.util.StringUtils;
 import org.jruby.util.ByteList;
 import org.jruby.util.KeyValuePair;
+import org.jruby.util.RegexpOptions;
 import java.io.File;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
@@ -2613,21 +2614,17 @@ public class BodyTranslator extends Translator {
     @Override
     public RubyNode visitRegexpNode(org.jruby.ast.RegexpNode node) {
         final Rope rope = StringOperations.ropeFromByteList(node.getValue());
-        Regex regex = RegexpNodes.compile(currentNode, context, rope, node.getOptions());
+        final RegexpOptions options = node.getOptions();
+        options.setLiteral(true);
+        Regex regex = RegexpNodes.compile(currentNode, context, rope, options);
 
         // The RegexpNodes.compile operation may modify the encoding of the source rope. This modified copy is stored
         // in the Regex object as the "user object". Since ropes are immutable, we need to take this updated copy when
         // constructing the final regexp.
-        final DynamicObject regexp = RegexpNodes.createRubyRegexp(context.getCoreLibrary().getRegexpFactory(), regex, (Rope) regex.getUserObject(), node.getOptions());
-        Layouts.REGEXP.getOptions(regexp).setLiteral(true);
+        final Rope updatedRope = (Rope) regex.getUserObject();
+        final DynamicObject regexp = RegexpNodes.createRubyRegexp(context.getCoreLibrary().getRegexpFactory(), regex, updatedRope, options);
 
         final ObjectLiteralNode literalNode = new ObjectLiteralNode(context, translate(node.getPosition()), regexp);
-
-        if (node.getOptions().isOnce()) {
-            final RubyNode ret = new OnceNode(context, literalNode.getEncapsulatingSourceSection(), literalNode);
-            return addNewlineIfNeeded(node, ret);
-        }
-
         return addNewlineIfNeeded(node, literalNode);
     }
 
