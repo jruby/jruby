@@ -258,7 +258,7 @@ describe :process_spawn, shared: true do
   it "does not unset environment variables included in the environment hash" do
     lambda do
       Process.wait @object.spawn({"FOO" => "BAR"}, 'ruby', fixture(__FILE__, "env.rb"), unsetenv_others: true)
-    end.should output_to_fd("FOO=BAR\n")
+    end.should output_to_fd("BAR")
   end
 
   # :pgroup
