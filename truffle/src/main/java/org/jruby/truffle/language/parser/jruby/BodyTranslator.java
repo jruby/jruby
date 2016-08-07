@@ -1974,17 +1974,11 @@ public class BodyTranslator extends Translator {
                     final NameEntry e = i.next();
                     final String name = new String(e.name, e.nameP, e.nameEnd - e.nameP, StandardCharsets.UTF_8).intern();
 
-                    if (environment.hasOwnScopeForAssignments()) {
-                        environment.declareVar(name);
-                    } else {
-                        TranslatorEnvironment environmentToDeclareIn = environment;
-
-                        while (!environmentToDeclareIn.hasOwnScopeForAssignments()) {
-                            environmentToDeclareIn = environmentToDeclareIn.getParent();
-                        }
-
-                        environmentToDeclareIn.declareVar(name);
+                    TranslatorEnvironment environmentToDeclareIn = environment;
+                    while (!environmentToDeclareIn.hasOwnScopeForAssignments()) {
+                        environmentToDeclareIn = environmentToDeclareIn.getParent();
                     }
+                    environmentToDeclareIn.declareVar(name);
                 }
             }
         }
