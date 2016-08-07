@@ -582,13 +582,12 @@ public abstract class TrufflePosixNodes {
         public DynamicObject getcwd(DynamicObject resultPath, int maxSize) {
             // We just ignore maxSize - I think this is ok
 
-            final String path = getContext().getJRubyRuntime().getCurrentDirectory();
             final String cwd = posix().getcwd();
+            final String path = getContext().getJRubyRuntime().getCurrentDirectory();
             assert path.equals(cwd);
 
             final byte[] bytes = cwd.getBytes(StandardCharsets.UTF_8);
-            final Encoding encoding = Layouts.STRING.getRope(resultPath).getEncoding();
-            StringOperations.setRope(resultPath, makeLeafRopeNode.executeMake(bytes, encoding, CodeRange.CR_UNKNOWN, NotProvided.INSTANCE));
+            StringOperations.setRope(resultPath, makeLeafRopeNode.executeMake(bytes, UTF8Encoding.INSTANCE, CodeRange.CR_UNKNOWN, NotProvided.INSTANCE));
             return resultPath;
         }
 
