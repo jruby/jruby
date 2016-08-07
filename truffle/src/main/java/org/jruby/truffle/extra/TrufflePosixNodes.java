@@ -19,6 +19,7 @@ import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.constants.platform.Fcntl;
 import jnr.ffi.Pointer;
+import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.platform.Platform;
 import org.jruby.truffle.Layouts;
@@ -394,7 +395,8 @@ public abstract class TrufflePosixNodes {
             final int result = posix().chdir(pathString);
 
             if (result == 0) {
-                getContext().getJRubyRuntime().setCurrentDirectory(pathString);
+                final String cwd = posix().getcwd();
+                getContext().getJRubyRuntime().setCurrentDirectory(cwd);
             }
 
             return result;
@@ -581,7 +583,12 @@ public abstract class TrufflePosixNodes {
             // We just ignore maxSize - I think this is ok
 
             final String path = getContext().getJRubyRuntime().getCurrentDirectory();
-            StringOperations.setRope(resultPath, makeLeafRopeNode.executeMake(path.getBytes(StandardCharsets.UTF_8), Layouts.STRING.getRope(resultPath).getEncoding(), CodeRange.CR_UNKNOWN, NotProvided.INSTANCE));
+            final String cwd = posix().getcwd();
+            assert path.equals(cwd);
+
+            final byte[] bytes = cwd.getBytes(StandardCharsets.UTF_8);
+            final Encoding encoding = Layouts.STRING.getRope(resultPath).getEncoding();
+            StringOperations.setRope(resultPath, makeLeafRopeNode.executeMake(bytes, encoding, CodeRange.CR_UNKNOWN, NotProvided.INSTANCE));
             return resultPath;
         }
 
