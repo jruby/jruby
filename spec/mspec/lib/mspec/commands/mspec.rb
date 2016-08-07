@@ -1,7 +1,5 @@
 #!/usr/bin/env ruby
 
-MSPEC_HOME = File.expand_path(File.dirname(__FILE__) + '/../../..')
-
 require 'mspec/version'
 require 'mspec/utils/options'
 require 'mspec/utils/script'
