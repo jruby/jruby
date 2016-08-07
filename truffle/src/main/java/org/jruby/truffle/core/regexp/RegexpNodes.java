@@ -257,21 +257,6 @@ public abstract class RegexpNodes {
         bytes = shimModifiers(bytes);
 
         try {
-            /*
-                    // This isn't quite right - we shouldn't be looking up by name, we need a real reference to this constants
-        if (node.getOptions().isEncodingNone()) {
-            if (!all7Bit(node.getValue().bytes())) {
-                regexp.getSource().setEncoding(ASCIIEncoding.INSTANCE);
-            } else {
-                regexp.getSource().setEncoding(USASCIIEncoding.INSTANCE);
-            }
-        } else if (node.getOptions().getKCode().getKCode().equals("SJIS")) {
-            regexp.getSource().setEncoding(Windows_31JEncoding.INSTANCE);
-        } else if (node.getOptions().getKCode().getKCode().equals("UTF8")) {
-            regexp.getSource().setEncoding(UTF8Encoding.INSTANCE);
-        }
-             */
-
             final ByteList byteList = RopeOperations.getByteListReadOnly(bytes);
             Encoding enc = bytes.getEncoding();
             Encoding[] fixedEnc = new Encoding[]{null};
@@ -292,10 +277,10 @@ public abstract class RegexpNodes {
             if (fixedEnc[0] != null) options.setFixed(true);
             //if (regexpOptions.isEncodingNone()) setEncodingNone();
 
-            Regex ret = new Regex(unescaped.getUnsafeBytes(), unescaped.getBegin(), unescaped.getBegin() + unescaped.getRealSize(), options.toJoniOptions(), enc, Syntax.RUBY);
-            ret.setUserObject(RopeOperations.withEncodingVerySlow(bytes, enc));
+            Regex regexp = new Regex(unescaped.getUnsafeBytes(), unescaped.getBegin(), unescaped.getBegin() + unescaped.getRealSize(), options.toJoniOptions(), enc, Syntax.RUBY);
+            regexp.setUserObject(RopeOperations.withEncodingVerySlow(bytes, enc));
 
-            return ret;
+            return regexp;
         } catch (ValueException e) {
             throw new RaiseException(context.getCoreExceptions().runtimeError("error compiling regex", currentNode));
         } catch (SyntaxException e) {
