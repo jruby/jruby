@@ -1,2 +1,3 @@
 fails:Zlib::Inflate#finish inflates chunked data
 slow:Zlib::Inflate#finish
+slow:Zlib::Inflate#finish each chunk should have the same prefix
