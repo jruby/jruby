@@ -66,11 +66,11 @@ import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
-import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.util.StringUtils;
 import org.jruby.util.ByteList;
 import org.jruby.util.RegexpOptions;
 import org.jruby.util.RegexpSupport;
+import org.jruby.util.RegexpSupport.ErrorMode;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -79,25 +79,29 @@ import java.util.Iterator;
 public abstract class RegexpNodes {
 
     @TruffleBoundary
-    public static Matcher preprocess(RubyContext context, DynamicObject regexp, DynamicObject string) {
-        assert RubyGuards.isRubyRegexp(regexp);
-        assert RubyGuards.isRubyString(string);
-
+    public static Matcher createMatcher(RubyContext context, DynamicObject regexp, DynamicObject string) {
         final Rope stringRope = StringOperations.rope(string);
-
-        final Rope regexpSourceRope = Layouts.REGEXP.getSource(regexp);
         final Encoding enc = checkEncoding(regexp, stringRope, true);
-        final ByteList preprocessed = RegexpSupport.preprocess(context.getJRubyRuntime(), RopeOperations.getByteListReadOnly(regexpSourceRope), enc, new Encoding[] { null }, RegexpSupport.ErrorMode.RAISE);
+        Regex regex = Layouts.REGEXP.getRegex(regexp);
 
-        final Regex regex = new Regex(preprocessed.getUnsafeBytes(), preprocessed.getBegin(), preprocessed.getBegin() + preprocessed.getRealSize(),
-                Layouts.REGEXP.getOptions(regexp).toJoniOptions(), checkEncoding(regexp, stringRope, true));
+        if (regex.getEncoding() != enc) {
+            final Encoding[] fixedEnc = new Encoding[] { null };
+            final ByteList sourceByteList = RopeOperations.getByteListReadOnly(Layouts.REGEXP.getSource(regexp));
+            final ByteList preprocessed = RegexpSupport.preprocess(context.getJRubyRuntime(), sourceByteList, enc, fixedEnc, ErrorMode.RAISE);
+            final RegexpOptions options = Layouts.REGEXP.getOptions(regexp);
+            final Encoding newEnc = checkEncoding(regexp, stringRope, true);
+            regex = new Regex(preprocessed.getUnsafeBytes(), preprocessed.getBegin(), preprocessed.getBegin() + preprocessed.getRealSize(),
+                    options.toJoniOptions(), newEnc);
+            assert enc == newEnc;
+        }
+
         return regex.matcher(stringRope.getBytes(), 0, stringRope.byteLength());
     }
 
     @TruffleBoundary
     public static Object matchCommon(RubyContext context, Node currentNode, RopeNodes.MakeSubstringNode makeSubstringNode, DynamicObject regexp, DynamicObject string, boolean operator,
             boolean setNamedCaptures, int startPos) {
-        final Matcher matcher = preprocess(context, regexp, string);
+        final Matcher matcher = createMatcher(context, regexp, string);
         int range = StringOperations.rope(string).byteLength();
         return matchCommon(context, currentNode, makeSubstringNode, regexp, string, operator, setNamedCaptures, matcher, startPos, range);
     }

@@ -114,7 +114,7 @@ public abstract class RegexpPrimitiveNodes {
         @Specialization(guards = {"isInitialized(regexp)", "isRubyString(string)", "isValidEncoding(string)"})
         public Object searchRegion(DynamicObject regexp, DynamicObject string, int start, int end, boolean forward,
                                    @Cached("createX()") RopeNodes.MakeSubstringNode makeSubstringNode) {
-            final Matcher matcher = RegexpNodes.preprocess(getContext(), regexp, string);
+            final Matcher matcher = RegexpNodes.createMatcher(getContext(), regexp, string);
 
             if (forward) {
                 // Search forward through the string.
