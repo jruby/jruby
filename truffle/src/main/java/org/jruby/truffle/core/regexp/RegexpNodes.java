@@ -316,7 +316,8 @@ public abstract class RegexpNodes {
     public static Encoding checkEncoding(DynamicObject regexp, Rope str, boolean warn) {
         assert RubyGuards.isRubyRegexp(regexp);
 
-        final Regex pattern = Layouts.REGEXP.getRegex(regexp);
+        final Encoding strEnc = str.getEncoding();
+        final Encoding regexEnc = Layouts.REGEXP.getRegex(regexp).getEncoding();
 
         /*
         if (str.scanForCodeRange() == StringSupport.CR_BROKEN) {
@@ -324,9 +325,12 @@ public abstract class RegexpNodes {
         }
         */
         //check();
-        Encoding enc = str.getEncoding();
-        if (!enc.isAsciiCompatible()) {
-            if (enc != pattern.getEncoding()) {
+        if (strEnc == regexEnc) {
+            return regexEnc;
+        } else if (regexEnc == USASCIIEncoding.INSTANCE && str.getCodeRange() == CodeRange.CR_7BIT) {
+            return regexEnc;
+        } else if (!strEnc.isAsciiCompatible()) {
+            if (strEnc != regexEnc) {
                 //encodingMatchError(getRuntime(), pattern, enc);
             }
         } else if (Layouts.REGEXP.getOptions(regexp).isFixed()) {
@@ -337,14 +341,14 @@ public abstract class RegexpNodes {
                 encodingMatchError(getRuntime(), pattern, enc);
             }
             */
-            enc = pattern.getEncoding();
+            return regexEnc;
         }
         /*
         if (warn && this.options.isEncodingNone() && enc != ASCIIEncoding.INSTANCE && str.scanForCodeRange() != StringSupport.CR_7BIT) {
             getRuntime().getWarnings().warn(ID.REGEXP_MATCH_AGAINST_STRING, "regexp match /.../n against to " + enc + " string");
         }
         */
-        return enc;
+        return strEnc;
     }
 
     public static void initialize(RubyContext context, DynamicObject regexp, Node currentNode, Rope setSource, int options) {
