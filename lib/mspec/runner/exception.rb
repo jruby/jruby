@@ -1,3 +1,6 @@
+# Initialize $MSPEC_DEBUG
+$MSPEC_DEBUG = false unless defined?($MSPEC_DEBUG)
+
 class ExceptionState
   attr_reader :description, :describe, :it, :exception
 
@@ -33,11 +36,7 @@ class ExceptionState
   def backtrace
     @backtrace_filter ||= MSpecScript.config[:backtrace_filter]
 
-    begin
-      bt = @exception.awesome_backtrace.show.split "\n"
-    rescue Exception
-      bt = @exception.backtrace || []
-    end
+    bt = @exception.backtrace || []
 
     bt.select { |line| $MSPEC_DEBUG or @backtrace_filter !~ line }.join("\n")
   end
