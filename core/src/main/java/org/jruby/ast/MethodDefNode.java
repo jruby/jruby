@@ -36,14 +36,14 @@ import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 
 public abstract class MethodDefNode extends Node implements INameNode, DefNode {
-	protected final String name;
-	protected final ArgsNode argsNode;
-	protected final StaticScope scope;
-	protected final Node bodyNode;
-	protected final int endLine;
+    protected final String name;
+    protected final ArgsNode argsNode;
+    protected final StaticScope scope;
+    protected final Node bodyNode;
+    protected final int endLine;
 
-	public MethodDefNode(ISourcePosition position, String name, ArgsNode argsNode,
-	        StaticScope scope, Node bodyNode, int endLine) {
+    public MethodDefNode(ISourcePosition position, String name, ArgsNode argsNode,
+            StaticScope scope, Node bodyNode, int endLine) {
         super(position, bodyNode.containsVariableAssignment());
 
         assert bodyNode != null : "bodyNode must not be null";
@@ -52,49 +52,49 @@ public abstract class MethodDefNode extends Node implements INameNode, DefNode {
         this.argsNode = argsNode;
         this.scope = scope;
         this.bodyNode = bodyNode;
-		this.endLine = endLine;
-	}
+        this.endLine = endLine;
+    }
 
 
-	/**
-	 * Gets the argsNode.
-	 * @return Returns a Node
-	 */
-	public ArgsNode getArgsNode() {
-	    return argsNode;
-	}
-
-	/**
-	 * Get the static scoping information.
-	 *
-	 * @return the scoping info
-	 */
-	public StaticScope getScope() {
-	    return scope;
-	}
-
-	/**
-	 * Gets the body of this class.
-	 *
-	 * @return the contents
-	 */
-	public Node getBodyNode() {
-	    return bodyNode;
-	}
-
-	/**
-	 * Gets the name.
-	 * @return Returns a String
-	 */
-	public String getName() {
-	    return name;
-	}
-
-	/**
-	 * Which line is the 'end' encountered on.  Useful for RETURN event generation.
-	 * @return the zero-based line number
+    /**
+     * Gets the argsNode.
+     * @return Returns a Node
      */
-	public int getEndLine() {
-		return endLine;
-	}
+    public ArgsNode getArgsNode() {
+        return argsNode;
+    }
+
+    /**
+     * Get the static scoping information.
+     *
+     * @return the scoping info
+     */
+    public StaticScope getScope() {
+        return scope;
+    }
+
+    /**
+     * Gets the body of this class.
+     *
+     * @return the contents
+     */
+    public Node getBodyNode() {
+        return bodyNode;
+    }
+
+    /**
+     * Gets the name.
+     * @return Returns a String
+     */
+    public String getName() {
+        return name;
+    }
+
+    /**
+     * Which line is the 'end' encountered on.  Useful for RETURN event generation.
+     * @return the zero-based line number
+     */
+    public int getEndLine() {
+        return endLine;
+    }
 }
