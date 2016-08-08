@@ -1,6 +1,8 @@
 require 'test/unit'
+require 'test/jruby/test_helper'
 
 class TestEnumerator < Test::Unit::TestCase
+  include TestHelper
 
   def test_stop_result_array
     a = [1, 2]
@@ -14,10 +16,10 @@ class TestEnumerator < Test::Unit::TestCase
     assert_equal(a, exc.result)
     #assert_equal('iteration reached an end', exc.message)
 
-    #enum = a.map
-    #enum.next; enum.next
-    #exc = assert_raise(StopIteration) { enum.next }
-    #assert_equal([nil, nil], exc.result)
+    enum = a.map
+    enum.next; enum.next
+    exc = assert_raise(StopIteration) { enum.next }
+    assert_equal([nil, nil], exc.result)
     #assert_equal('iteration reached an end', exc.message)
   end
 
@@ -72,6 +74,134 @@ class TestEnumerator < Test::Unit::TestCase
     fib.next
     exc = assert_raise(StopIteration) { fib.next }
     assert_equal(:done, exc.result)
+  end
+
+  # Enumerator's Java Support :
+
+  IterationException = StopIteration # java.util.NoSuchElementException
+
+  def test_java_iterator
+    arr = [1, 2, 3]
+
+    assert_equal 3, arr.each_with_index.size
+
+    iter = arr.each_with_index.to_java
+    assert iter.is_a?(java.util.Iterator)
+    assert_equal([1, 0], iter.next)
+    assert_equal([2, 1], iter.next)
+    assert_equal([3, 2], iter.next)
+    assert_raise(IterationException) { iter.next }
+
+    iter = [ 1 ].each_with_index.to_java
+    assert iter.hasNext; assert iter.hasNext; iter.next
+    assert ! iter.hasNext
+    assert_raise(IterationException) { iter.next }
+    assert ! iter.hasNext
+
+    enum = Enumerator.new do |out|
+      a = 1 ; loop do
+        raise StopIteration if a > 10
+        out << a; (a = a * 2)
+      end
+    end
+    iter = enum.to_java
+    assert_equal nil, enum.size
+
+    assert iter.hasNext; assert_equal 1, iter.next
+    assert iter.hasNext; assert iter.hasNext; assert_equal 2, iter.next
+    assert_equal 4, iter.next
+    assert iter.hasNext; assert_equal 8, iter.next
+    assert ! iter.hasNext
+    assert_raise(IterationException) { iter.next }
+    assert ! iter.hasNext
+  end
+
+  def test_java_iterator_array
+    arr = [1, 2, 3]
+    iter = arr.each.to_java
+    assert iter.is_a?(java.util.Iterator)
+    assert_equal(1, iter.next)
+    assert_equal(2, iter.next)
+    assert_equal(3, iter.next)
+    ex = assert_raise(IterationException) { iter.next }
+    #assert_equal(StopIteration, ex.cause.exception.class)
+    #assert_equal(arr, ex.cause.exception.result)
+
+    enum = arr.each
+    assert_equal 3, enum.size
+
+    iter = enum.to_java
+    assert_equal 1, iter.next
+    assert iter.hasNext; assert_equal 2, iter.next
+    assert iter.hasNext; assert iter.hasNext; assert_equal 3, iter.next
+    assert ! iter.hasNext; assert ! iter.hasNext
+    assert_raise(IterationException) { iter.next }
+    assert ! iter.hasNext; assert ! iter.hasNext
+  end
+
+  def test_java8_streaming_array
+    return unless JAVA_8
+
+    arr = (1..200).to_a
+    enum = arr.each; threaded = false
+    stream = java.util.stream.StreamSupport.stream spliterator(enum, threaded), false
+    # assert_equal 200, stream.count
+    list = stream.limit(100).map { |el| el + 1000 }.collect(java.util.stream.Collectors.toList)
+    assert_equal 1001, list[0]
+    assert_equal 1100, list[99]
+    assert_equal 100, list.count
+  end
+
+  def test_java8_streaming
+    return unless JAVA_8
+
+    enum = Enumerator.new do |out|
+      i = 1 ; loop do
+        raise StopIteration if i > 100
+        out << i * 10; (i += 1)
+      end
+    end
+    threaded = true
+    stream = java.util.stream.StreamSupport.stream spliterator(enum, threaded), false
+    list = stream.limit(100).map { |el| el + 1 }.collect(java.util.stream.Collectors.toList)
+    assert_equal 11, list[0]
+    assert_equal 1001, list[99]
+    assert_equal 100, list.count
+
+    stream = java.util.stream.StreamSupport.stream spliterator(enum, threaded), false
+    set = stream.map { |el| el % 99 }.collect(java.util.stream.Collectors.toSet)
+    # assert_equal 11, list[0]
+    # assert_equal 1001, list[99]
+    # assert_equal 100, list.count
+  end
+
+  protected
+
+  def assert_raise(klass = StandardError, &block)
+    if klass.ancestors.include?(java.lang.Throwable)
+      begin
+        yield
+      rescue java.lang.Throwable => ex
+        return ex if ex.is_a?(klass)
+        raise ex
+      end
+    end
+    super
+  end
+
+  private
+
+  def spliterator(enum, threaded = true)
+    size = enum.size || -1
+    mod = java.util.Spliterator::NONNULL
+    if size.is_a?(Numeric)
+      size = size.to_i
+      mod ||= java.util.Spliterator::SIZED
+    end
+    if threaded
+      mod ||= java.util.Spliterator.IMMUTABLE;
+    end
+    java.util.Spliterators.spliterator(enum, size, mod);
   end
 
 end

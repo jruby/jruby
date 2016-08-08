@@ -714,13 +714,7 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
 
         @Override
         public synchronized IRubyObject next() {
-            if (doneObject != null) {
-                return returnValue(doneObject);
-            }
-
-            ensureStarted();
-
-            return returnValue(take());
+            return nextImpl(false);
         }
 
         @Override
@@ -749,7 +743,7 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
         @Override
         public synchronized IRubyObject peek() {
             if (doneObject != null) {
-                return returnValue(doneObject);
+                return returnValue(doneObject, false);
             }
 
             ensureStarted();
@@ -760,7 +754,7 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
 
             peekTake();
 
-            return returnValue(lastValue);
+            return returnValue(lastValue, false);
         }
 
         private void ensureStarted() {
@@ -800,16 +794,18 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
             }
         }
 
-        private IRubyObject returnValue(IRubyObject value) {
+        private IRubyObject returnValue(IRubyObject value, final boolean silent) {
             // if it's the NEVER object, raise StopIteration
             if (value == NEVER) {
                 doneObject = value;
+                if ( silent ) return null;
                 throw runtime.newStopIteration(stopValue, "iteration reached an end");
             }
 
             // if it's an exception, raise it
             if (value instanceof RubyException) {
                 doneObject = value;
+                if ( silent ) return null;
                 throw new RaiseException((RubyException) value);
             }
 
@@ -817,9 +813,22 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
             return value;
         }
 
+        private IRubyObject nextImpl(boolean hasNext) {
+            if (doneObject != null) {
+                return returnValue(doneObject, hasNext);
+            }
+
+            ensureStarted();
+
+            return returnValue(take(), hasNext);
+        }
+
         @Override
         final synchronized boolean hasNext() {
-            return lastValue != NEVER;
+            if ( doneObject == NEVER ) return false; // already done
+            // we're doing read-ahead so Iterator#hasNext() might do enum.next
+            // value 'buffering' - to be returned on following Iterator#next
+            return ( lastValue = nextImpl(true) ) != null;
         }
 
         @Override
