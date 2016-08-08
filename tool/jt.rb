@@ -957,7 +957,8 @@ module Commands
 
     if args.first == 'fast'
       args.shift
-      options += %w[--excl-tag slow -T-Xtruffle.backtraces.limit=4]
+      options += %w[--excl-tag slow]
+      options << "-T-Xtruffle.backtraces.limit=4" unless args[-2..-1] == %w[-t ruby]
     end
 
     if args.delete('--graal')
