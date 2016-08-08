@@ -110,4 +110,8 @@ public class IterNode extends Node implements DefNode {
     public List<Node> childNodes() {
         return Node.createList(varNode, bodyNode);
     }
+
+    public int getEndLine() {
+        return -1;
+    }
 }
