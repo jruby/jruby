@@ -1744,6 +1744,7 @@ public class IRBuilder {
         this.needsCodeCoverage = needsCodeCoverage;
 
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
+            // Explicit line number here because we need a line number for trace before we process any nodes
             addInstr(manager.newLineNumber(scope.getLineNumber()));
             addInstr(new TraceInstr(RubyEvent.CALL, getName(), getFileName(), scope.getLineNumber()));
         }
