@@ -40,9 +40,10 @@ public abstract class MethodDefNode extends Node implements INameNode, DefNode {
 	protected final ArgsNode argsNode;
 	protected final StaticScope scope;
 	protected final Node bodyNode;
+	protected final int endLine;
 
 	public MethodDefNode(ISourcePosition position, String name, ArgsNode argsNode,
-	        StaticScope scope, Node bodyNode) {
+	        StaticScope scope, Node bodyNode, int endLine) {
         super(position, bodyNode.containsVariableAssignment());
 
         assert bodyNode != null : "bodyNode must not be null";
@@ -51,6 +52,7 @@ public abstract class MethodDefNode extends Node implements INameNode, DefNode {
         this.argsNode = argsNode;
         this.scope = scope;
         this.bodyNode = bodyNode;
+		this.endLine = endLine;
 	}
 
 
@@ -86,5 +88,13 @@ public abstract class MethodDefNode extends Node implements INameNode, DefNode {
 	 */
 	public String getName() {
 	    return name;
+	}
+
+	/**
+	 * Which line is the 'end' encountered on.  Useful for RETURN event generation.
+	 * @return the zero-based line number
+     */
+	public int getEndLine() {
+		return endLine;
 	}
 }

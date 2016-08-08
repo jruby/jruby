@@ -964,14 +964,6 @@ public class IRBuilder {
         Variable exc = createTemporaryVariable();
         addInstr(new ReceiveJRubyExceptionInstr(exc));
 
-        if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-            // FIXME: We also should add a line number instruction so that backtraces
-            // inside the trace function get the correct line. Unfortunately, we don't
-            // have one here and we can't do it dynamically like TraceInstr does.
-            // See https://github.com/jruby/jruby/issues/4051
-            addInstr(new TraceInstr(RubyEvent.RETURN, getName(), getFileName(), -1));
-        }
-
         // Handle break using runtime helper
         // --> IRRuntimeHelpers.handleNonlocalReturn(scope, bj, blockType)
         Variable ret = createTemporaryVariable();
@@ -1766,11 +1758,8 @@ public class IRBuilder {
         Operand rv = build(defNode.getBodyNode());
 
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-            // FIXME: We also should add a line number instruction so that backtraces
-            // inside the trace function get the correct line. Unfortunately, we don't
-            // have one here and we can't do it dynamically like TraceInstr does.
-            // See https://github.com/jruby/jruby/issues/4051
-            addInstr(new TraceInstr(RubyEvent.RETURN, getName(), getFileName(), -1));
+            addInstr(new LineNumberInstr(defNode.getEndLine()));
+            addInstr(new TraceInstr(RubyEvent.RETURN, getName(), getFileName(), defNode.getEndLine()));
         }
 
         if (rv != null) addInstr(new ReturnInstr(rv));
@@ -3395,6 +3384,11 @@ public class IRBuilder {
             if (sm != null) addInstr(new NonlocalReturnInstr(retVal, sm.getName()));
         } else {
             retVal = processEnsureRescueBlocks(retVal);
+
+            if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
+                addInstr(new TraceInstr(RubyEvent.RETURN, getName(), getFileName(), returnNode.getLine()));
+            }
+
             addInstr(new ReturnInstr(retVal));
         }
 
