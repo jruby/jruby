@@ -381,7 +381,7 @@ describe :process_spawn, shared: true do
   it "redirects STDOUT to the given file descriptior if out: Fixnum" do
     File.open(@name, 'w') do |file|
       lambda do
-        Process.wait @object.spawn(ruby_cmd("print :glark"), out: file.fileno)
+        Process.wait @object.spawn(ruby_cmd(fixture(__FILE__, "print.rb")), out: file.fileno)
       end.should output_to_fd("glark", file)
     end
   end
@@ -389,18 +389,18 @@ describe :process_spawn, shared: true do
   it "redirects STDOUT to the given file if out: IO" do
     File.open(@name, 'w') do |file|
       lambda do
-        Process.wait @object.spawn(ruby_cmd("print :glark"), out: file)
+        Process.wait @object.spawn(ruby_cmd(fixture(__FILE__, "print.rb")), out: file)
       end.should output_to_fd("glark", file)
     end
   end
 
   it "redirects STDOUT to the given file if out: String" do
-    Process.wait @object.spawn(ruby_cmd("print :glark"), out: @name)
+    Process.wait @object.spawn(ruby_cmd(fixture(__FILE__, "print.rb")), out: @name)
     @name.should have_data("glark")
   end
 
   it "redirects STDOUT to the given file if out: [String name, String mode]" do
-    Process.wait @object.spawn(ruby_cmd("print :glark"), out: [@name, 'w'])
+    Process.wait @object.spawn(ruby_cmd(fixture(__FILE__, "print.rb")), out: [@name, 'w'])
     @name.should have_data("glark")
   end
 
