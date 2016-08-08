@@ -54,6 +54,12 @@ fails:Kernel.spawn when passed close_others: true does not close STDOUT
 fails:Kernel.spawn when passed close_others: true does not close STDERR
 fails(flakey on Travis):Kernel#spawn when passed close_others: false closes file descriptors >= 3 in the child process because they are set close_on_exec by default
 fails(flakey on Travis):Kernel.spawn when passed close_others: false closes file descriptors >= 3 in the child process because they are set close_on_exec by default
+ci:Kernel#spawn redirects STDOUT to the given file if out: String
+ci:Kernel#spawn redirects STDOUT to the given file if out: [String name, String mode]
+ci:Kernel#spawn redirects STDERR to the given file if err: String
+ci:Kernel.spawn redirects STDOUT to the given file if out: String
+ci:Kernel.spawn redirects STDOUT to the given file if out: [String name, String mode]
+ci:Kernel.spawn redirects STDERR to the given file if err: String
 slow:Kernel#spawn redirects STDOUT to the given file if out: String
 slow:Kernel#spawn redirects STDOUT to the given file if out: [String name, String mode]
 slow:Kernel#spawn redirects STDERR to the given file if err: String
