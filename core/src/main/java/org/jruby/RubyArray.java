@@ -4434,6 +4434,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     @JRubyMethod(name = "max")
     public IRubyObject max(ThreadContext context, Block block) {
         if (block.isGiven()) return maxWithBlock(context, block);
+        if (realLength < 1) return context.nil;
 
         IRubyObject result = UNDEF;
         ArraySites sites = sites(context);
