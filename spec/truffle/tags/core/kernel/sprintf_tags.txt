@@ -1,6 +1,2 @@
-fails:Kernel#sprintf passes some tests for positive %x
-fails:Kernel#sprintf passes some tests for negative %x
-fails:Kernel#sprintf passes kstephens's tests
 fails:Kernel#sprintf returns a String in the same encoding as the format String if compatible
 fails:Kernel#sprintf returns a String in the argument encoding if format encoding is more restrictive
-fails:Kernel#sprintf with negative values with format %x precedes the number with '..'
