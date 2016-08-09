@@ -15,11 +15,6 @@ import java.util.NoSuchElementException;
 public abstract class BasicArrayMirror implements ArrayMirror {
 
     @Override
-    public ArrayMirror copyArrayAndMirror() {
-        return copyArrayAndMirror(getLength());
-    }
-
-    @Override
     public Object[] getBoxedCopy() {
         return getBoxedCopy(getLength());
     }

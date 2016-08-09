@@ -35,6 +35,11 @@ class IntegerArrayMirror extends BasicArrayMirror {
     }
 
     @Override
+    public ArrayMirror copyArrayAndMirror() {
+        return new IntegerArrayMirror(array.clone());
+    }
+
+    @Override
     public ArrayMirror copyArrayAndMirror(int newLength) {
         return new IntegerArrayMirror(Arrays.copyOf(array, newLength));
     }
