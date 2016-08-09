@@ -660,7 +660,6 @@ module Commands
     end
 
     config_file = File.join(cext_dir, '.jruby-cext-build.yml')
-
     unless File.exist?(config_file)
       abort "There is no .jruby-cext-build.yml in #{cext_dir} at the moment - I don't know how to build it"
     end
@@ -670,6 +669,7 @@ module Commands
 
     src = replace_env_vars(config['src'])
     src = File.expand_path(src, cext_dir)
+    src = Dir[src]
 
     config_cflags = config['cflags'] || ''
     config_cflags = replace_env_vars(config_cflags)
@@ -689,7 +689,7 @@ module Commands
     end
 
     config_libs = config['libs'] || ''
-    config_libs = replace_env_vars(conf)
+    config_libs = replace_env_vars(config_libs)
     config_libs = config_libs.split(' ')
 
     if MAC
