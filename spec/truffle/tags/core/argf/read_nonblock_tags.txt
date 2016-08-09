@@ -11,7 +11,6 @@ fails:ARGF.read_nonblock reads the contents of a special device file
 fails:ARGF.read_nonblock reads up to the given amount of bytes
 fails:ARGF.read_nonblock reads up to the given bytes from STDIN
 fails:ARGF.read_nonblock reads up to the given bytes from a file when a file and STDIN are present
-fails:ARGF.read_nonblock raises IO::EAGAINWaitReadable when STDIN is empty
 fails:ARGF.read_nonblock returns :wait_readable when the :exception is set to false
 fails:ARGF.read_nonblock when using multiple files reads up to the given amount of bytes from the first file
 fails:ARGF.read_nonblock when using multiple files returns an empty String when reading after having read the first file in its entirety

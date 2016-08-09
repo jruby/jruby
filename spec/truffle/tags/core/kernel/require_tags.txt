@@ -1,46 +1,20 @@
-fails:Kernel#require (path resolution) calls #to_path on non-String objects
 fails:Kernel#require (path resolution) does not require file twice after $LOAD_PATH change
 fails:Kernel#require (path resolution) with an unreadable file raises a LoadError
-fails:Kernel#require (file extensions) loads a .rb extensioned file when a C-extension file of the same name is loaded
-fails:Kernel#require (file extensions) does not load a C-extension file if a .rb extensioned file is already loaded
-fails:Kernel#require (file extensions) loads a .rb extensioned file when a complex-extensioned C-extension file of the same name is loaded
-fails:Kernel#require (file extensions) does not load a C-extension file if a complex-extensioned .rb file is already loaded
 fails:Kernel#require ($LOAD_FEATURES) does not load a ./ relative path that is already stored
 fails:Kernel#require ($LOAD_FEATURES) does not load a ../ relative path that is already stored
 fails:Kernel#require ($LOAD_FEATURES) does not load a non-canonical path that is already stored
-fails:Kernel#require ($LOAD_FEATURES) when a non-extensioned file is in $LOADED_FEATURES loads a .rb extensioned file when a non extensioned file is in $LOADED_FEATURES
-fails:Kernel#require ($LOAD_FEATURES) when a non-extensioned file is in $LOADED_FEATURES loads a .rb extensioned file from a subdirectory
 fails:Kernel#require ($LOAD_FEATURES) when a non-extensioned file is in $LOADED_FEATURES returns false if the file is not found
 fails:Kernel#require ($LOAD_FEATURES) when a non-extensioned file is in $LOADED_FEATURES returns false when passed a path and the file is not found
 fails:Kernel#require (shell expansion) performs tilde expansion on a .rb file before storing paths in $LOADED_FEATURES
 fails:Kernel#require (shell expansion) performs tilde expansion on a non-extensioned file before storing paths in $LOADED_FEATURES
-fails:Kernel.require (path resolution) calls #to_path on non-String objects
 fails:Kernel.require (path resolution) does not require file twice after $LOAD_PATH change
 fails:Kernel.require (path resolution) with an unreadable file raises a LoadError
-fails:Kernel.require (file extensions) loads a .rb extensioned file when passed a non-extensioned path
-fails:Kernel.require (file extensions) loads a .rb extensioned file when a C-extension file of the same name is loaded
-fails:Kernel.require (file extensions) does not load a C-extension file if a .rb extensioned file is already loaded
-fails:Kernel.require (file extensions) loads a .rb extensioned file when passed a non-.rb extensioned path
-fails:Kernel.require (file extensions) loads a .rb extensioned file when a complex-extensioned C-extension file of the same name is loaded
-fails:Kernel.require (file extensions) does not load a C-extension file if a complex-extensioned .rb file is already loaded
 fails:Kernel.require ($LOAD_FEATURES) does not load a ./ relative path that is already stored
 fails:Kernel.require ($LOAD_FEATURES) does not load a ../ relative path that is already stored
 fails:Kernel.require ($LOAD_FEATURES) does not load a non-canonical path that is already stored
-fails:Kernel.require ($LOAD_FEATURES) when a non-extensioned file is in $LOADED_FEATURES loads a .rb extensioned file when a non extensioned file is in $LOADED_FEATURES
-fails:Kernel.require ($LOAD_FEATURES) when a non-extensioned file is in $LOADED_FEATURES loads a .rb extensioned file from a subdirectory
 fails:Kernel.require ($LOAD_FEATURES) when a non-extensioned file is in $LOADED_FEATURES returns false if the file is not found
 fails:Kernel.require ($LOAD_FEATURES) when a non-extensioned file is in $LOADED_FEATURES returns false when passed a path and the file is not found
 fails:Kernel.require (shell expansion) performs tilde expansion on a .rb file before storing paths in $LOADED_FEATURES
 fails:Kernel.require (shell expansion) performs tilde expansion on a non-extensioned file before storing paths in $LOADED_FEATURES
-fails:Kernel#require stores the missing path in a LoadError object
-fails:Kernel.require stores the missing path in a LoadError object
-fails:Kernel#require (concurrently) blocks a second thread from returning while the 1st is still requiring
-fails:Kernel.require (concurrently) blocks a second thread from returning while the 1st is still requiring
-fails:Kernel#require (concurrently) blocks based on the path
-fails:Kernel.require (concurrently) blocks based on the path
-fails:Kernel#require (concurrently) allows a 2nd require if the 1st raised an exception
-fails:Kernel.require (concurrently) allows a 2nd require if the 1st raised an exception
-fails:Kernel#require (concurrently) blocks a 3rd require if the 1st raises an exception and the 2nd is still running
-fails:Kernel.require (concurrently) blocks a 3rd require if the 1st raises an exception and the 2nd is still running
 slow:Kernel#require (concurrently) blocks based on the path
 slow:Kernel.require (concurrently) blocks based on the path
