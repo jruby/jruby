@@ -674,6 +674,15 @@ module Commands
     config_cflags = config['cflags'] || ''
     config_cflags = replace_env_vars(config_cflags)
     config_cflags = config_cflags.split
+    # Expand include paths
+    config_cflags.map! { |cflag|
+      if cflag.start_with? '-I'
+        inc = File.expand_path(cflag[2..-1], cext_dir)
+        "-I#{inc}"
+      else
+        cflag
+      end
+    }
 
     out = File.expand_path(config['out'], cext_dir)
 
