@@ -45,11 +45,11 @@ import java.io.ObjectOutputStream;
 import java.util.List;
 import java.util.Set;
 
-import org.jcodings.Encoding;
 import org.jruby.anno.JRubyClass;
-import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
+import org.jruby.runtime.JavaSites;
+import org.jruby.runtime.JavaSites.ObjectSites;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -60,7 +60,6 @@ import static org.jruby.runtime.invokedynamic.MethodNames.EQL;
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_EQUAL;
 import static org.jruby.runtime.invokedynamic.MethodNames.HASH;
 import org.jruby.util.cli.Options;
-import org.jruby.util.io.EncodingUtils;
 
 /**
  * RubyObject represents the implementation of the Object class in Ruby. As such,
@@ -330,7 +329,8 @@ public class RubyObject extends RubyBasicObject {
      */
     @Override
     public String toString() {
-        RubyString rubyString = Helpers.invoke(getRuntime().getCurrentContext(), this, "to_s").convertToString();
+        ThreadContext context = getRuntime().getCurrentContext();
+        RubyString rubyString = sites(context).to_s.call(context, this, this).convertToString();
         return rubyString.getUnicodeValue();
     }
 
@@ -338,55 +338,60 @@ public class RubyObject extends RubyBasicObject {
      * Call the Ruby initialize method with the supplied arguments and block.
      */
     public final void callInit(IRubyObject[] args, Block block) {
-        Helpers.invoke(getRuntime().getCurrentContext(), this, "initialize", args, block);
+        ThreadContext context = getRuntime().getCurrentContext();
+        metaClass.getBaseCallSite(RubyClass.CS_IDX_INITIALIZE).call(context, this, this, args, block);
     }
 
     /**
      * Call the Ruby initialize method with the supplied arguments and block.
      */
     public final void callInit(Block block) {
-        Helpers.invoke(getRuntime().getCurrentContext(), this, "initialize", block);
+        ThreadContext context = getRuntime().getCurrentContext();
+        metaClass.getBaseCallSite(RubyClass.CS_IDX_INITIALIZE).call(context, this, this, block);
     }
 
     /**
      * Call the Ruby initialize method with the supplied arguments and block.
      */
     public final void callInit(IRubyObject arg0, Block block) {
-        Helpers.invoke(getRuntime().getCurrentContext(), this, "initialize", arg0, block);
+        ThreadContext context = getRuntime().getCurrentContext();
+        metaClass.getBaseCallSite(RubyClass.CS_IDX_INITIALIZE).call(context, this, this, arg0, block);
     }
 
     /**
      * Call the Ruby initialize method with the supplied arguments and block.
      */
     public final void callInit(IRubyObject arg0, IRubyObject arg1, Block block) {
-        Helpers.invoke(getRuntime().getCurrentContext(), this, "initialize", arg0, arg1, block);
+        ThreadContext context = getRuntime().getCurrentContext();
+        metaClass.getBaseCallSite(RubyClass.CS_IDX_INITIALIZE).call(context, this, this, arg0, arg1, block);
     }
 
     /**
      * Call the Ruby initialize method with the supplied arguments and block.
      */
     public final void callInit(IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
-        Helpers.invoke(getRuntime().getCurrentContext(), this, "initialize", arg0, arg1, arg2, block);
+        ThreadContext context = getRuntime().getCurrentContext();
+        metaClass.getBaseCallSite(RubyClass.CS_IDX_INITIALIZE).call(context, this, this, arg0, arg1, arg2, block);
     }
 
     public final void callInit(ThreadContext context, IRubyObject[] args, Block block) {
-        getMetaClass().getBaseCallSite(RubyClass.CS_IDX_INITIALIZE).call(context, this, this, args, block);
+        metaClass.getBaseCallSite(RubyClass.CS_IDX_INITIALIZE).call(context, this, this, args, block);
     }
 
     public final void callInit(ThreadContext context, Block block) {
-        getMetaClass().getBaseCallSite(RubyClass.CS_IDX_INITIALIZE).call(context, this, this, block);
+        metaClass.getBaseCallSite(RubyClass.CS_IDX_INITIALIZE).call(context, this, this, block);
     }
 
     public final void callInit(ThreadContext context, IRubyObject arg0, Block block) {
-        getMetaClass().getBaseCallSite(RubyClass.CS_IDX_INITIALIZE).call(context, this, this, arg0, block);
+        metaClass.getBaseCallSite(RubyClass.CS_IDX_INITIALIZE).call(context, this, this, arg0, block);
     }
 
     public final void callInit(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
-        getMetaClass().getBaseCallSite(RubyClass.CS_IDX_INITIALIZE).call(context, this, this, arg0, arg1, block);
+        metaClass.getBaseCallSite(RubyClass.CS_IDX_INITIALIZE).call(context, this, this, arg0, arg1, block);
     }
 
     public final void callInit(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
-        getMetaClass().getBaseCallSite(RubyClass.CS_IDX_INITIALIZE).call(context, this, this, arg0, arg1, arg2, block);
+        metaClass.getBaseCallSite(RubyClass.CS_IDX_INITIALIZE).call(context, this, this, arg0, arg1, arg2, block);
     }
 
     /**
@@ -522,35 +527,38 @@ public class RubyObject extends RubyBasicObject {
     // MRI: rb_obj_dig
     public static IRubyObject dig(ThreadContext context, IRubyObject obj, IRubyObject[] args, int idx) {
         if ( obj.isNil() ) return context.nil;
+
+        Ruby runtime = context.runtime;
+        ObjectSites sites = sites(context);
+
         if ( obj instanceof RubyArray ) {
-            // TODO: cache somewhere
-            if (obj.getMetaClass().searchMethod("dig").isBuiltin()) {
+            if (sites.dig_array.isBuiltin(obj.getMetaClass())) {
                 return ((RubyArray) obj).dig(context, args, idx);
             }
         }
         if ( obj instanceof RubyHash ) {
-            // TODO: cache somewhere
-            if (obj.getMetaClass().searchMethod("dig").isBuiltin()) {
+            if (sites.dig_hash.isBuiltin(obj.getMetaClass())) {
                 return ((RubyHash) obj).dig(context, args, idx);
             }
         }
         if ( obj instanceof RubyStruct ) {
-            // TODO: cache somewhere
-            if (obj.getMetaClass().searchMethod("dig").isBuiltin()) {
+            if (sites.dig_struct.isBuiltin(obj.getMetaClass())) {
                 return ((RubyStruct) obj).dig(context, args, idx);
             }
         }
-        if ( obj.respondsTo("dig") ) {
+        if (sites.respond_to_dig.respondsTo(context, obj, obj, true) ) {
             final int len = args.length - idx;
             switch ( len ) {
                 case 1:
-                    return obj.callMethod(context, "dig", args[idx]);
+                    return sites.dig_misc.call(context, obj, obj, args[idx]);
                 case 2:
-                    return obj.callMethod(context, "dig", new IRubyObject[] { args[idx], args[idx+1] });
+                    return sites.dig_misc.call(context, obj, obj, args[idx], args[idx+1]);
+                case 3:
+                    return sites.dig_misc.call(context, obj, obj, args[idx], args[idx+1], args[idx+2]);
                 default:
                     IRubyObject[] rest = new IRubyObject[len];
                     System.arraycopy(args, idx, rest, 0, len);
-                    return obj.callMethod(context, "dig", rest);
+                    return sites.dig_misc.call(context, obj, obj, rest);
             }
         }
         throw context.runtime.newTypeError(obj.getMetaClass().getName() + " does not have #dig method");
@@ -585,6 +593,10 @@ public class RubyObject extends RubyBasicObject {
         for (int i = 0; i < ivarCount; i++) {
             setInstanceVariable((String)in.readObject(), (IRubyObject)in.readObject());
         }
+    }
+
+    private static ObjectSites sites(ThreadContext context) {
+        return context.sites.Object;
     }
 
 }

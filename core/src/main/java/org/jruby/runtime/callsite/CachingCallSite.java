@@ -249,6 +249,15 @@ public abstract class CachingCallSite extends CallSite {
         }
     }
 
+    public CacheEntry retrieveCache(RubyClass selfType) {
+        // This must be retrieved *once* to avoid racing with other threads.
+        CacheEntry cache = this.cache;
+        if (CacheEntry.typeOk(cache, selfType)) {
+            return cache;
+        }
+        return cacheAndGet(selfType, methodName);
+    }
+
     public CacheEntry retrieveCache(RubyClass selfType, String methodName) {
         // This must be retrieved *once* to avoid racing with other threads.
         CacheEntry cache = this.cache;

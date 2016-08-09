@@ -52,6 +52,7 @@ describe VersionGuard, "#match?" do
   end
 
   before :each do
+    hide_deprecation_warnings
     @ruby_version = Object.const_get :RUBY_VERSION
     @ruby_patch = Object.const_get :RUBY_PATCHLEVEL
 

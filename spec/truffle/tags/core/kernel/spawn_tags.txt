@@ -52,6 +52,14 @@ fails:Kernel#spawn when passed close_others: true does not close STDERR
 fails:Kernel.spawn when passed close_others: true does not close STDIN
 fails:Kernel.spawn when passed close_others: true does not close STDOUT
 fails:Kernel.spawn when passed close_others: true does not close STDERR
+fails(flakey on Travis):Kernel#spawn when passed close_others: false closes file descriptors >= 3 in the child process because they are set close_on_exec by default
+fails(flakey on Travis):Kernel.spawn when passed close_others: false closes file descriptors >= 3 in the child process because they are set close_on_exec by default
+ci:Kernel#spawn redirects STDOUT to the given file if out: String
+ci:Kernel#spawn redirects STDOUT to the given file if out: [String name, String mode]
+ci:Kernel#spawn redirects STDERR to the given file if err: String
+ci:Kernel.spawn redirects STDOUT to the given file if out: String
+ci:Kernel.spawn redirects STDOUT to the given file if out: [String name, String mode]
+ci:Kernel.spawn redirects STDERR to the given file if err: String
 slow:Kernel#spawn redirects STDOUT to the given file if out: String
 slow:Kernel#spawn redirects STDOUT to the given file if out: [String name, String mode]
 slow:Kernel#spawn redirects STDERR to the given file if err: String
@@ -74,3 +82,41 @@ slow:Kernel.spawn redirects STDERR to the given file descriptor if err: IO
 slow:Kernel.spawn redirects STDERR to child STDOUT if :err => [:child, :out]
 slow:Kernel.spawn redirects both STDERR and STDOUT to the given file descriptior
 slow:Kernel.spawn redirects both STDERR and STDOUT to the given IO
+slow:Kernel#spawn returns the process ID of the new process as a Fixnum
+slow:Kernel#spawn returns immediately
+slow:Kernel#spawn sets environment variables in the child environment
+slow:Kernel#spawn unsets environment variables whose value is nil
+slow:Kernel#spawn calls #to_hash to convert the environment
+slow:Kernel#spawn calls #to_str to convert the environment keys
+slow:Kernel#spawn calls #to_str to convert the environment values
+slow:Kernel#spawn raises an ArgumentError if an environment key includes an equals sign
+slow:Kernel#spawn raises an ArgumentError if an environment key includes a null byte
+slow:Kernel#spawn raises an ArgumentError if an environment value includes a null byte
+slow:Kernel#spawn unsets other environment variables when given a true :unsetenv_others option
+slow:Kernel#spawn unsets other environment variables when given a non-false :unsetenv_others option
+slow:Kernel#spawn does not unset other environment variables when given a false :unsetenv_others option
+slow:Kernel#spawn does not unset other environment variables when given a nil :unsetenv_others option
+slow:Kernel#spawn does not unset environment variables included in the environment hash
+slow:Kernel#spawn joins the current process group by default
+slow:Kernel#spawn uses the current working directory as its working directory
+slow:Kernel#spawn uses the current umask by default
+slow:Kernel#spawn when passed close_others: false closes file descriptors >= 3 in the child process because they are set close_on_exec by default
+slow:Kernel#spawn when passed close_others: false does not close file descriptors >= 3 in the child process if fds are set close_on_exec=false
+slow:Kernel.spawn returns the process ID of the new process as a Fixnum
+slow:Kernel.spawn returns immediately
+slow:Kernel.spawn sets environment variables in the child environment
+slow:Kernel.spawn unsets environment variables whose value is nil
+slow:Kernel.spawn calls #to_hash to convert the environment
+slow:Kernel.spawn calls #to_str to convert the environment keys
+slow:Kernel.spawn calls #to_str to convert the environment values
+slow:Kernel.spawn raises an ArgumentError if an environment key includes an equals sign
+slow:Kernel.spawn raises an ArgumentError if an environment key includes a null byte
+slow:Kernel.spawn raises an ArgumentError if an environment value includes a null byte
+slow:Kernel.spawn does not unset other environment variables when given a false :unsetenv_others option
+slow:Kernel.spawn does not unset other environment variables when given a nil :unsetenv_others option
+slow:Kernel.spawn does not unset environment variables included in the environment hash
+slow:Kernel.spawn joins the current process group by default
+slow:Kernel.spawn uses the current working directory as its working directory
+slow:Kernel.spawn uses the current umask by default
+slow:Kernel.spawn when passed close_others: false closes file descriptors >= 3 in the child process because they are set close_on_exec by default
+slow:Kernel.spawn when passed close_others: false does not close file descriptors >= 3 in the child process if fds are set close_on_exec=false

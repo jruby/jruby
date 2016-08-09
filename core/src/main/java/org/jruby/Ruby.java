@@ -59,6 +59,7 @@ import org.jruby.javasupport.JavaSupport;
 import org.jruby.javasupport.JavaSupportImpl;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
+import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.invokedynamic.InvokeDynamicSupport;
 import org.jruby.util.ClassDefiningClassLoader;
 import org.objectweb.asm.util.TraceClassVisitor;
@@ -159,7 +160,6 @@ import org.jruby.util.log.LoggerFactory;
 import org.objectweb.asm.ClassReader;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileDescriptor;
 import java.io.IOException;
@@ -4310,7 +4310,11 @@ public final class Ruby implements Constantizable {
         if (val != null ) val.remove(obj);
     }
 
-    public static interface RecursiveFunction {
+    public interface RecursiveFunctionEx<T> {
+        IRubyObject call(ThreadContext context, T state, IRubyObject obj, boolean recur);
+    }
+
+    public interface RecursiveFunction  {
         IRubyObject call(IRubyObject obj, boolean recur);
     }
 
@@ -4467,7 +4471,7 @@ public final class Ruby implements Constantizable {
 
     ThreadLocal<Map<String, Map<IRubyObject, IRubyObject>>> symMap = new ThreadLocal<>();
 
-    public IRubyObject safeRecurse(RecursiveFunction func, IRubyObject obj, String name, boolean outer) {
+    public <T> IRubyObject safeRecurse(RecursiveFunctionEx<T> func, ThreadContext context, T state, IRubyObject obj, String name, boolean outer) {
         Map<IRubyObject, IRubyObject> guards = safeRecurseGetGuards(name);
 
         boolean outermost = outer && !guards.containsKey(recursiveKey);
@@ -4477,29 +4481,29 @@ public final class Ruby implements Constantizable {
             if (outer && !outermost) {
                 throw new RecursiveError(guards);
             }
-            return func.call(obj, true);
+            return func.call(context, state, obj, true);
         } else {
             if (outermost) {
-                return safeRecurseOutermost(func, obj, guards);
+                return safeRecurseOutermost(func, context, state, obj, guards);
             } else {
-                return safeRecurseInner(func, obj, guards);
+                return safeRecurseInner(func, context, state, obj, guards);
             }
         }
     }
 
-    private IRubyObject safeRecurseOutermost(RecursiveFunction func, IRubyObject obj, Map<IRubyObject, IRubyObject> guards) {
+    private <T> IRubyObject safeRecurseOutermost(RecursiveFunctionEx<T> func, ThreadContext context, T state, IRubyObject obj, Map<IRubyObject, IRubyObject> guards) {
         boolean recursed = false;
         guards.put(recursiveKey, recursiveKey);
 
         try {
-            return safeRecurseInner(func, obj, guards);
+            return safeRecurseInner(func, context, state, obj, guards);
         } catch (RecursiveError re) {
             if (re.tag != guards) {
                 throw re;
             }
             recursed = true;
             guards.remove(recursiveKey);
-            return func.call(obj, true);
+            return func.call(context, state, obj, true);
         } finally {
             if (!recursed) guards.remove(recursiveKey);
         }
@@ -4519,10 +4523,10 @@ public final class Ruby implements Constantizable {
         } return guards;
     }
 
-    private IRubyObject safeRecurseInner(RecursiveFunction func, IRubyObject obj, Map<IRubyObject, IRubyObject> guards) {
+    private <T> IRubyObject safeRecurseInner(RecursiveFunctionEx<T> func, ThreadContext context, T state, IRubyObject obj, Map<IRubyObject, IRubyObject> guards) {
         try {
             guards.put(obj, obj);
-            return func.call(obj, false);
+            return func.call(context, state, obj, false);
         } finally {
             guards.remove(obj);
         }
@@ -5087,6 +5091,18 @@ public final class Ruby implements Constantizable {
         return filenoUtil;
     }
 
+    @Deprecated
+    public IRubyObject safeRecurse(RecursiveFunction func, IRubyObject obj, String name, boolean outer) {
+        return safeRecurse(LEGACY_RECURSE, getCurrentContext(), func, obj, name, outer);
+    }
+
+    private static final RecursiveFunctionEx<RecursiveFunction> LEGACY_RECURSE = new RecursiveFunctionEx<RecursiveFunction>() {
+        @Override
+        public IRubyObject call(ThreadContext context, RecursiveFunction func, IRubyObject obj, boolean recur) {
+            return func.call(obj, recur);
+        }
+    };
+
     private final ConcurrentHashMap<String, Invalidator> constantNameInvalidators =
         new ConcurrentHashMap<String, Invalidator>(
             16    /* default initial capacity */,
@@ -5417,4 +5433,6 @@ public final class Ruby implements Constantizable {
             return RubyModule.loadPopulatorFor(type);
         }
     };
+
+    public final JavaSites sites = new JavaSites();
 }

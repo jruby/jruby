@@ -35,8 +35,12 @@ package org.jruby;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
+import org.jruby.runtime.CallSite;
+import org.jruby.runtime.JavaSites;
+import org.jruby.runtime.JavaSites.ComparableSites;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callsite.RespondToCallSite;
 
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_CMP;
@@ -63,7 +67,7 @@ public class RubyComparable {
     /** rb_cmpint
      *
      */
-    public static int cmpint(ThreadContext context, IRubyObject val, IRubyObject a, IRubyObject b) {
+    public static int cmpint(ThreadContext context, CallSite op_gt, CallSite op_lt, IRubyObject val, IRubyObject a, IRubyObject b) {
         if (val == context.nil) cmperr(a, b);
         if (val instanceof RubyFixnum) {
             final int asInt = RubyNumeric.fix2int((RubyFixnum) val);
@@ -82,10 +86,16 @@ public class RubyComparable {
 
         RubyFixnum zero = RubyFixnum.zero(context.runtime);
 
-        if (val.callMethod(context, ">", zero).isTrue()) return 1;
-        if (val.callMethod(context, "<", zero).isTrue()) return -1;
+        ComparableSites sites = sites(context);
+        if (op_gt.call(context, val, val, zero).isTrue()) return 1;
+        if (op_lt.call(context, val, val, zero).isTrue()) return -1;
 
         return 0;
+    }
+
+    public static int cmpint(ThreadContext context, IRubyObject val, IRubyObject a, IRubyObject b) {
+        ComparableSites sites = sites(context);
+        return cmpint(context, sites.op_gt, sites.op_lt, val, a, b);
     }
 
     /** rb_cmperr
@@ -106,14 +116,23 @@ public class RubyComparable {
      *
      */
     public static IRubyObject invcmp(final ThreadContext context, final IRubyObject recv, final IRubyObject other) {
+        return invcmp(context, DEFAULT_INVCMP, recv, other);
+    }
+
+    private static final Ruby.RecursiveFunctionEx DEFAULT_INVCMP = new Ruby.RecursiveFunctionEx<IRubyObject>() {
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject recv, IRubyObject other, boolean recur) {
+            if (recur || !sites(context).respond_to_op_cmp.respondsTo(context, other, other)) return context.runtime.getNil();
+            return sites(context).op_cmp.call(context, other, other, recv);
+        }
+    };
+
+    /** rb_invcmp
+     *
+     */
+    public static IRubyObject invcmp(final ThreadContext context, Ruby.RecursiveFunctionEx func, IRubyObject recv, IRubyObject other) {
         final Ruby runtime = context.runtime;
-        IRubyObject result = runtime.execRecursiveOuter(new Ruby.RecursiveFunction() {
-            @Override
-            public IRubyObject call(IRubyObject obj, boolean recur) {
-                if (recur || !other.respondsTo("<=>")) return context.runtime.getNil();
-                return invokedynamic(context, other, OP_CMP, recv);
-            }
-        }, recv);
+        IRubyObject result = runtime.safeRecurse(func, context, recv, other, "<=>", true);
 
         if (result.isNil()) return result;
         return RubyFixnum.newFixnum(runtime, -cmpint(context, result, recv, other));
@@ -147,7 +166,7 @@ public class RubyComparable {
             @Override
             public IRubyObject call(IRubyObject obj, boolean recur) {
                 if (recur) return runtime.getNil();
-                return invokedynamic(context, recv, OP_CMP, other);
+                return sites(context).op_cmp.call(context, recv, recv, other);
             }
         }, recv);
 
@@ -163,7 +182,7 @@ public class RubyComparable {
     // <=> may return nil in many circumstances, e.g. 3 <=> NaN
     @JRubyMethod(name = ">", required = 1)
     public static RubyBoolean op_gt(ThreadContext context, IRubyObject recv, IRubyObject other) {
-        IRubyObject result = invokedynamic(context, recv, OP_CMP, other);
+        IRubyObject result = sites(context).op_cmp.call(context, recv, recv, other);
 
         if (result.isNil()) cmperr(recv, other);
 
@@ -175,7 +194,7 @@ public class RubyComparable {
      */
     @JRubyMethod(name = ">=", required = 1)
     public static RubyBoolean op_ge(ThreadContext context, IRubyObject recv, IRubyObject other) {
-        IRubyObject result = invokedynamic(context, recv, OP_CMP, other);
+        IRubyObject result = sites(context).op_cmp.call(context, recv, recv, other);
 
         if (result.isNil()) cmperr(recv, other);
 
@@ -187,7 +206,15 @@ public class RubyComparable {
      */
     @JRubyMethod(name = "<", required = 1)
     public static RubyBoolean op_lt(ThreadContext context, IRubyObject recv, IRubyObject other) {
-        IRubyObject result = invokedynamic(context, recv, OP_CMP, other);
+        IRubyObject result = sites(context).op_cmp.call(context, recv, recv, other);
+
+        if (result.isNil()) cmperr(recv, other);
+
+        return RubyBoolean.newBoolean(context.runtime, cmpint(context, result, recv, other) < 0);
+    }
+
+    public static RubyBoolean op_lt(ThreadContext context, CallSite cmp, IRubyObject recv, IRubyObject other) {
+        IRubyObject result = cmp.call(context, recv, recv, other);
 
         if (result.isNil()) cmperr(recv, other);
 
@@ -199,7 +226,7 @@ public class RubyComparable {
      */
     @JRubyMethod(name = "<=", required = 1)
     public static RubyBoolean op_le(ThreadContext context, IRubyObject recv, IRubyObject other) {
-        IRubyObject result = invokedynamic(context, recv, OP_CMP, other);
+        IRubyObject result = sites(context).op_cmp.call(context, recv, recv, other);
 
         if (result.isNil()) cmperr(recv, other);
 
@@ -212,5 +239,9 @@ public class RubyComparable {
     @JRubyMethod(name = "between?", required = 2)
     public static RubyBoolean between_p(ThreadContext context, IRubyObject recv, IRubyObject first, IRubyObject second) {
         return context.runtime.newBoolean(op_lt(context, recv, first).isFalse() && op_gt(context, recv, second).isFalse());
+    }
+
+    private static ComparableSites sites(ThreadContext context) {
+        return context.sites.Comparable;
     }
 }

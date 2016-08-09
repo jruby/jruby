@@ -50,11 +50,11 @@ import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.Helpers;
+import org.jruby.runtime.JavaSites.HashSites;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.invokedynamic.MethodNames;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.RecursiveComparator;
@@ -71,11 +71,8 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
-import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.Visibility.PRIVATE;
-import static org.jruby.runtime.invokedynamic.MethodNames.DEFAULT;
 import static org.jruby.RubyEnumerator.SizeFn;
-import static org.jruby.runtime.invokedynamic.MethodNames.OP_EQUAL;
 
 // Design overview:
 //
@@ -490,10 +487,6 @@ public class RubyHash extends RubyObject implements Map {
     private static final boolean MRI_HASH = true;
     private static final boolean MRI_HASH_RESIZE = true;
 
-    protected static int hashValue(final int h) {
-        return MRI_HASH ? MRIHashValue(h) : JavaSoftHashValue(h);
-    }
-
     protected final int hashValue(final IRubyObject key) {
         final int h = isComparedByIdentity() ? System.identityHashCode(key) : key.hashCode();
         return MRI_HASH ? MRIHashValue(h) : JavaSoftHashValue(h);
@@ -707,19 +700,6 @@ public class RubyHash extends RubyObject implements Map {
         return this;
     }
 
-    /** rb_hash_default
-     *
-     */
-    @Deprecated
-    public IRubyObject default_value_get(ThreadContext context, IRubyObject[] args) {
-        switch (args.length) {
-            case 0: return default_value_get(context);
-            case 1: return default_value_get(context, args[0]);
-            default:
-                throw context.runtime.newArgumentError(args.length, 1);
-        }
-    }
-
     @JRubyMethod(name = "default")
     public IRubyObject default_value_get(ThreadContext context) {
         if ((flags & PROCDEFAULT_HASH_F) != 0) {
@@ -731,7 +711,7 @@ public class RubyHash extends RubyObject implements Map {
     @JRubyMethod(name = "default")
     public IRubyObject default_value_get(ThreadContext context, IRubyObject arg) {
         if ((flags & PROCDEFAULT_HASH_F) != 0) {
-            return Helpers.invoke(context, ifNone, "call", this, arg);
+            return sites(context).call.call(context, ifNone, ifNone, this, arg);
         }
         return ifNone == UNDEF ? context.nil : ifNone;
     }
@@ -1137,12 +1117,12 @@ public class RubyHash extends RubyObject implements Map {
         return internalGet(key);
     }
 
-    public RubyBoolean compare(final ThreadContext context, final MethodNames method, IRubyObject other) {
+    public RubyBoolean compare(final ThreadContext context, VisitorWithState<RubyHash> visitor, IRubyObject other) {
 
         Ruby runtime = context.runtime;
 
         if (!(other instanceof RubyHash)) {
-            if (!other.respondsTo("to_hash")) {
+            if (!sites(context).respond_to_to_hash.respondsTo(context, other, other)) {
                 return runtime.getFalse();
             }
             return Helpers.rbEqual(context, other, this);
@@ -1155,10 +1135,7 @@ public class RubyHash extends RubyObject implements Map {
         }
 
         try {
-            VisitorWithState vws = method == OP_EQUAL ?
-                    FindMismatchUsingEqualVisitor :
-                    FindMismatchUsingEqlVisitor;
-            visitAll(context, vws, otherHash);
+            visitAll(context, visitor, otherHash);
         } catch (Mismatch e) {
             return runtime.getFalse();
         }
@@ -1204,7 +1181,7 @@ public class RubyHash extends RubyObject implements Map {
     @Override
     @JRubyMethod(name = "==")
     public IRubyObject op_equal(final ThreadContext context, IRubyObject other) {
-        return RecursiveComparator.compare(context, MethodNames.OP_EQUAL, this, other);
+        return RecursiveComparator.compare(context, FindMismatchUsingEqualVisitor, this, other);
     }
 
     /** rb_hash_eql
@@ -1212,7 +1189,7 @@ public class RubyHash extends RubyObject implements Map {
      */
     @JRubyMethod(name = "eql?")
     public IRubyObject op_eql(final ThreadContext context, IRubyObject other) {
-        return RecursiveComparator.compare(context, MethodNames.EQL, this, other);
+        return RecursiveComparator.compare(context, FindMismatchUsingEqlVisitor, this, other);
     }
 
     @Deprecated
@@ -1226,7 +1203,7 @@ public class RubyHash extends RubyObject implements Map {
     @JRubyMethod(name = "[]", required = 1)
     public IRubyObject op_aref(ThreadContext context, IRubyObject key) {
         IRubyObject value;
-        return ((value = internalGet(key)) == null) ? invokedynamic(context, this, DEFAULT, key) : value;
+        return ((value = internalGet(key)) == null) ? sites(context).default_.call(context, this, this, key) : value;
     }
 
     /** hash_le_i
@@ -1680,7 +1657,7 @@ public class RubyHash extends RubyObject implements Map {
         }
 
         if ((flags & PROCDEFAULT_HASH_F) != 0) {
-            return this.callMethod(context, "default", context.nil);
+            return sites(context).default_.call(context, this, this, context.nil);
         }
         return ifNone == UNDEF ? context.nil : ifNone;
     }
@@ -1977,14 +1954,14 @@ public class RubyHash extends RubyObject implements Map {
     @JRubyMethod
     public IRubyObject flatten(ThreadContext context) {
         RubyArray ary = to_a();
-        ary.callMethod(context, "flatten!", RubyFixnum.one(context.runtime));
+        sites(context).flatten_bang.call(context, ary, ary, RubyFixnum.one(context.runtime));
         return ary;
     }
 
     @JRubyMethod
     public IRubyObject flatten(ThreadContext context, IRubyObject level) {
         RubyArray ary = to_a();
-        ary.callMethod(context, "flatten!", level);
+        sites(context).flatten_bang.call(context, ary, ary, level);
         return ary;
     }
 
@@ -2561,6 +2538,10 @@ public class RubyHash extends RubyObject implements Map {
         return op_aref(getRuntime().getCurrentContext(), key);
     }
 
+    private static HashSites sites(ThreadContext context) {
+        return context.sites.Hash;
+    }
+
     @Deprecated
     public final void fastASetCheckString19(Ruby runtime, IRubyObject key, IRubyObject value) {
         fastASetCheckString(runtime, key, value);
@@ -2597,5 +2578,18 @@ public class RubyHash extends RubyObject implements Map {
     public final void visitAll(Visitor visitor) {
         // use -1 to disable concurrency checks
         visitLimited(getRuntime().getCurrentContext(), visitor, -1, null);
+    }
+
+    /** rb_hash_default
+     *
+     */
+    @Deprecated
+    public IRubyObject default_value_get(ThreadContext context, IRubyObject[] args) {
+        switch (args.length) {
+            case 0: return default_value_get(context);
+            case 1: return default_value_get(context, args[0]);
+            default:
+                throw context.runtime.newArgumentError(args.length, 1);
+        }
     }
 }

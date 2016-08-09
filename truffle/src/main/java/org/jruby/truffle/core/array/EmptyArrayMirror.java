@@ -27,6 +27,11 @@ public class EmptyArrayMirror extends BasicArrayMirror {
     }
 
     @Override
+    public ArrayMirror copyArrayAndMirror() {
+        return new EmptyArrayMirror();
+    }
+
+    @Override
     public ArrayMirror copyArrayAndMirror(int newLength) {
         return new EmptyArrayMirror();
     }

@@ -28,6 +28,7 @@ import org.jruby.ir.persistence.IRReaderStream;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.*;
+import org.jruby.runtime.JavaSites.IRRuntimeHelpersSites;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.runtime.callsite.FunctionalCachingCallSite;
@@ -1458,7 +1459,7 @@ public class IRRuntimeHelpers {
     @JIT
     public static RubyArray irSplat(ThreadContext context, IRubyObject ary) {
         Ruby runtime = context.runtime;
-        IRubyObject tmp = TypeConverter.convertToTypeWithCheck19(ary, runtime.getArray(), "to_a");
+        IRubyObject tmp = TypeConverter.convertToTypeWithCheck19(context, ary, runtime.getArray(), sites(context).to_a_checked);
         if (tmp.isNil()) {
             tmp = runtime.newArray(ary);
         }
@@ -1915,5 +1916,9 @@ public class IRRuntimeHelpers {
     @JIT
     public static RubyArray newArray(ThreadContext context, IRubyObject obj0, IRubyObject obj1) {
         return RubyArray.newArray(context.runtime, obj0, obj1);
+    }
+
+    private static IRRuntimeHelpersSites sites(ThreadContext context) {
+        return context.sites.IRRuntimeHelpers;
     }
 }

@@ -58,6 +58,7 @@ import org.jruby.truffle.core.rope.RopeNodesFactory;
 import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.rubinius.RegexpPrimitiveNodes.RegexpSetLastMatchPrimitiveNode;
 import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.core.thread.ThreadManager.BlockingAction;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
@@ -65,11 +66,11 @@ import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
-import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.util.StringUtils;
 import org.jruby.util.ByteList;
 import org.jruby.util.RegexpOptions;
 import org.jruby.util.RegexpSupport;
+import org.jruby.util.RegexpSupport.ErrorMode;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -78,31 +79,47 @@ import java.util.Iterator;
 public abstract class RegexpNodes {
 
     @TruffleBoundary
-    public static Object matchCommon(RubyContext context, RopeNodes.MakeSubstringNode makeSubstringNode, DynamicObject regexp, DynamicObject source, boolean operator, boolean setNamedCaptures, int startPos) {
-        assert RubyGuards.isRubyRegexp(regexp);
-        assert RubyGuards.isRubyString(source);
+    public static Matcher createMatcher(RubyContext context, DynamicObject regexp, DynamicObject string) {
+        final Rope stringRope = StringOperations.rope(string);
+        final Encoding enc = checkEncoding(regexp, stringRope, true);
+        Regex regex = Layouts.REGEXP.getRegex(regexp);
 
-        final Rope sourceRope = StringOperations.rope(source);
+        if (regex.getEncoding() != enc) {
+            final Encoding[] fixedEnc = new Encoding[] { null };
+            final ByteList sourceByteList = RopeOperations.getByteListReadOnly(Layouts.REGEXP.getSource(regexp));
+            final ByteList preprocessed = RegexpSupport.preprocess(context.getJRubyRuntime(), sourceByteList, enc, fixedEnc, ErrorMode.RAISE);
+            final RegexpOptions options = Layouts.REGEXP.getOptions(regexp);
+            final Encoding newEnc = checkEncoding(regexp, stringRope, true);
+            regex = new Regex(preprocessed.getUnsafeBytes(), preprocessed.getBegin(), preprocessed.getBegin() + preprocessed.getRealSize(),
+                    options.toJoniOptions(), newEnc);
+            assert enc == newEnc;
+        }
 
-        final Rope regexpSourceRope = Layouts.REGEXP.getSource(regexp);
-        final Encoding enc = checkEncoding(regexp, sourceRope, true);
-        final ByteList preprocessed = RegexpSupport.preprocess(context.getJRubyRuntime(), RopeOperations.getByteListReadOnly(regexpSourceRope), enc, new Encoding[] { null }, RegexpSupport.ErrorMode.RAISE);
-
-        final Regex r = new Regex(preprocessed.getUnsafeBytes(), preprocessed.getBegin(), preprocessed.getBegin() + preprocessed.getRealSize(), Layouts.REGEXP.getOptions(regexp).toJoniOptions(), checkEncoding(regexp, sourceRope, true));
-        final Matcher matcher = r.matcher(sourceRope.getBytes(), 0, sourceRope.byteLength());
-        int range = sourceRope.byteLength();
-
-        return matchCommon(context, makeSubstringNode, regexp, source, operator, setNamedCaptures, matcher, startPos, range);
+        return regex.matcher(stringRope.getBytes(), 0, stringRope.byteLength());
     }
 
     @TruffleBoundary
-    public static Object matchCommon(RubyContext context, RopeNodes.MakeSubstringNode makeSubstringNode, DynamicObject regexp, DynamicObject source, boolean operator, boolean setNamedCaptures, Matcher matcher, int startPos, int range) {
+    public static Object matchCommon(RubyContext context, Node currentNode, RopeNodes.MakeSubstringNode makeSubstringNode, DynamicObject regexp, DynamicObject string, boolean operator,
+            boolean setNamedCaptures, int startPos) {
+        final Matcher matcher = createMatcher(context, regexp, string);
+        int range = StringOperations.rope(string).byteLength();
+        return matchCommon(context, currentNode, makeSubstringNode, regexp, string, operator, setNamedCaptures, matcher, startPos, range);
+    }
+
+    @TruffleBoundary
+    public static Object matchCommon(RubyContext context, Node currentNode, RopeNodes.MakeSubstringNode makeSubstringNode, DynamicObject regexp, DynamicObject string, boolean operator,
+            boolean setNamedCaptures, Matcher matcher, int startPos, int range) {
         assert RubyGuards.isRubyRegexp(regexp);
-        assert RubyGuards.isRubyString(source);
+        assert RubyGuards.isRubyString(string);
 
-        final Rope sourceRope = StringOperations.rope(source);
+        final Rope sourceRope = StringOperations.rope(string);
 
-        final int match = matcher.search(startPos, range, Option.DEFAULT);
+        int match = context.getThreadManager().runUntilResult(currentNode, new BlockingAction<Integer>() {
+            @Override
+            public Integer block() throws InterruptedException {
+                return matcher.searchInterruptible(startPos, range, Option.DEFAULT);
+            }
+        });
 
         final DynamicObject nil = context.getCoreLibrary().getNilObject();
 
@@ -121,6 +138,8 @@ public abstract class RegexpNodes {
             return nil;
         }
 
+        assert match >= 0;
+
         final Region region = matcher.getEagerRegion();
         final Object[] values = new Object[region.numRegs];
 
@@ -128,43 +147,21 @@ public abstract class RegexpNodes {
             final int start = region.beg[n];
             final int end = region.end[n];
 
-            if (operator) {
-                final Object groupString;
-
-                if (start > -1 && end > -1) {
-                    groupString = createSubstring(makeSubstringNode, source, start, end - start);
-                } else {
-                    groupString = nil;
-                }
-
-                values[n] = groupString;
+            if (start > -1 && end > -1) {
+                values[n] = createSubstring(makeSubstringNode, string, start, end - start);
             } else {
-                if (start == -1 || end == -1) {
-                    values[n] = nil;
-                } else {
-                    values[n] = createSubstring(makeSubstringNode, source, start, end - start);
-                }
+                values[n] = nil;
             }
         }
 
-        final DynamicObject pre = createSubstring(makeSubstringNode, source, 0, region.beg[0]);
-        final DynamicObject post = createSubstring(makeSubstringNode, source, region.end[0], sourceRope.byteLength() - region.end[0]);
-        final DynamicObject global = createSubstring(makeSubstringNode, source, region.beg[0], region.end[0] - region.beg[0]);
+        final DynamicObject pre = createSubstring(makeSubstringNode, string, 0, region.beg[0]);
+        final DynamicObject post = createSubstring(makeSubstringNode, string, region.end[0], sourceRope.byteLength() - region.end[0]);
+        final DynamicObject global = createSubstring(makeSubstringNode, string, region.beg[0], region.end[0] - region.beg[0]);
 
-        final DynamicObject matchObject = Layouts.MATCH_DATA.createMatchData(context.getCoreLibrary().getMatchDataFactory(),
-                source, regexp, region, values, pre, post, global, null);
+        final DynamicObject matchData = Layouts.MATCH_DATA.createMatchData(context.getCoreLibrary().getMatchDataFactory(),
+                string, regexp, region, values, pre, post, global, null);
 
-        if (operator) {
-            if (values.length > 0) {
-                int nonNil = values.length - 1;
-
-                while (values[nonNil] == nil) {
-                    nonNil--;
-                }
-            }
-        }
-
-        RegexpSetLastMatchPrimitiveNode.setLastMatch(context, matchObject);
+        RegexpSetLastMatchPrimitiveNode.setLastMatch(context, matchData);
 
         if (setNamedCaptures && Layouts.REGEXP.getRegex(regexp).numberOfNames() > 0) {
             final Frame frame = context.getCallStack().getCallerFrameIgnoringSend().getFrame(FrameAccess.READ_WRITE, false);
@@ -183,7 +180,7 @@ public abstract class RegexpNodes {
                     final int start = region.beg[nth];
                     final int end = region.end[nth];
                     if (start != -1) {
-                        value = createSubstring(makeSubstringNode, source, start, end - start);
+                        value = createSubstring(makeSubstringNode, string, start, end - start);
                     } else {
                         value = nil;
                     }
@@ -196,7 +193,7 @@ public abstract class RegexpNodes {
         if (operator) {
             return matcher.getBegin();
         } else {
-            return matchObject;
+            return matchData;
         }
     }
 
@@ -264,21 +261,6 @@ public abstract class RegexpNodes {
         bytes = shimModifiers(bytes);
 
         try {
-            /*
-                    // This isn't quite right - we shouldn't be looking up by name, we need a real reference to this constants
-        if (node.getOptions().isEncodingNone()) {
-            if (!all7Bit(node.getValue().bytes())) {
-                regexp.getSource().setEncoding(ASCIIEncoding.INSTANCE);
-            } else {
-                regexp.getSource().setEncoding(USASCIIEncoding.INSTANCE);
-            }
-        } else if (node.getOptions().getKCode().getKCode().equals("SJIS")) {
-            regexp.getSource().setEncoding(Windows_31JEncoding.INSTANCE);
-        } else if (node.getOptions().getKCode().getKCode().equals("UTF8")) {
-            regexp.getSource().setEncoding(UTF8Encoding.INSTANCE);
-        }
-             */
-
             final ByteList byteList = RopeOperations.getByteListReadOnly(bytes);
             Encoding enc = bytes.getEncoding();
             Encoding[] fixedEnc = new Encoding[]{null};
@@ -299,10 +281,10 @@ public abstract class RegexpNodes {
             if (fixedEnc[0] != null) options.setFixed(true);
             //if (regexpOptions.isEncodingNone()) setEncodingNone();
 
-            Regex ret = new Regex(unescaped.getUnsafeBytes(), unescaped.getBegin(), unescaped.getBegin() + unescaped.getRealSize(), options.toJoniOptions(), enc, Syntax.RUBY);
-            ret.setUserObject(RopeOperations.withEncodingVerySlow(bytes, enc));
+            Regex regexp = new Regex(unescaped.getUnsafeBytes(), unescaped.getBegin(), unescaped.getBegin() + unescaped.getRealSize(), options.toJoniOptions(), enc, Syntax.RUBY);
+            regexp.setUserObject(RopeOperations.withEncodingVerySlow(bytes, enc));
 
-            return ret;
+            return regexp;
         } catch (ValueException e) {
             throw new RaiseException(context.getCoreExceptions().runtimeError("error compiling regex", currentNode));
         } catch (SyntaxException e) {
@@ -334,7 +316,8 @@ public abstract class RegexpNodes {
     public static Encoding checkEncoding(DynamicObject regexp, Rope str, boolean warn) {
         assert RubyGuards.isRubyRegexp(regexp);
 
-        final Regex pattern = Layouts.REGEXP.getRegex(regexp);
+        final Encoding strEnc = str.getEncoding();
+        final Encoding regexEnc = Layouts.REGEXP.getRegex(regexp).getEncoding();
 
         /*
         if (str.scanForCodeRange() == StringSupport.CR_BROKEN) {
@@ -342,9 +325,12 @@ public abstract class RegexpNodes {
         }
         */
         //check();
-        Encoding enc = str.getEncoding();
-        if (!enc.isAsciiCompatible()) {
-            if (enc != pattern.getEncoding()) {
+        if (strEnc == regexEnc) {
+            return regexEnc;
+        } else if (regexEnc == USASCIIEncoding.INSTANCE && str.getCodeRange() == CodeRange.CR_7BIT) {
+            return regexEnc;
+        } else if (!strEnc.isAsciiCompatible()) {
+            if (strEnc != regexEnc) {
                 //encodingMatchError(getRuntime(), pattern, enc);
             }
         } else if (Layouts.REGEXP.getOptions(regexp).isFixed()) {
@@ -355,14 +341,14 @@ public abstract class RegexpNodes {
                 encodingMatchError(getRuntime(), pattern, enc);
             }
             */
-            enc = pattern.getEncoding();
+            return regexEnc;
         }
         /*
         if (warn && this.options.isEncodingNone() && enc != ASCIIEncoding.INSTANCE && str.scanForCodeRange() != StringSupport.CR_7BIT) {
             getRuntime().getWarnings().warn(ID.REGEXP_MATCH_AGAINST_STRING, "regexp match /.../n against to " + enc + " string");
         }
         */
-        return enc;
+        return strEnc;
     }
 
     public static void initialize(RubyContext context, DynamicObject regexp, Node currentNode, Rope setSource, int options) {
@@ -415,7 +401,7 @@ public abstract class RegexpNodes {
 
         @Specialization(guards = "isRubyString(string)")
         public Object match(DynamicObject regexp, DynamicObject string) {
-            return matchCommon(getContext(), makeSubstringNode, regexp, string, true, true, 0);
+            return matchCommon(getContext(), this, makeSubstringNode, regexp, string, true, true, 0);
         }
 
         @Specialization(guards = "isRubySymbol(symbol)")
@@ -469,7 +455,7 @@ public abstract class RegexpNodes {
 
         @Specialization(guards = "isRubyString(string)")
         public Object matchStart(DynamicObject regexp, DynamicObject string, int startPos) {
-            final Object matchResult = matchCommon(getContext(), makeSubstringNode, regexp, string, false, false, startPos);
+            final Object matchResult = matchCommon(getContext(), this, makeSubstringNode, regexp, string, false, false, startPos);
             if (RubyGuards.isRubyMatchData(matchResult) && Layouts.MATCH_DATA.getRegion((DynamicObject) matchResult).numRegs > 0
                 && Layouts.MATCH_DATA.getRegion((DynamicObject) matchResult).beg[0] == startPos) {
                 return matchResult;
@@ -523,7 +509,7 @@ public abstract class RegexpNodes {
 
         @Specialization(guards = "isRubyString(string)")
         public Object searchFrom(DynamicObject regexp, DynamicObject string, int startPos) {
-            return matchCommon(getContext(), makeSubstringNode, regexp, string, false, false, startPos);
+            return matchCommon(getContext(), this, makeSubstringNode, regexp, string, false, false, startPos);
         }
     }
 

@@ -40,6 +40,8 @@ import org.jruby.runtime.CallBlock;
 import org.jruby.runtime.CallBlock19;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaInternalBlockBody;
+import org.jruby.runtime.JavaSites;
+import org.jruby.runtime.JavaSites.EnumerableSites;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -1923,7 +1925,7 @@ public class RubyEnumerable {
         return new SizeFn() {
             @Override
             public IRubyObject size(IRubyObject[] args) {
-                return self.checkCallMethod(context, "size");
+                return self.checkCallMethod(context, sites(context).size_checked);
             }
         };
     }
@@ -2074,5 +2076,9 @@ public class RubyEnumerable {
             result.op_aset(context, ((RubyArray)ary).eltOk(0), ((RubyArray)ary).eltOk(1));
             return context.nil;
         }
+    }
+
+    private static EnumerableSites sites(ThreadContext context) {
+        return context.sites.Enumerable;
     }
 }

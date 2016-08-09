@@ -59,12 +59,12 @@ import org.jruby.runtime.profile.ProfileCollection;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
 import org.jruby.util.RecursiveComparator;
 import org.jruby.util.RubyDateFormatter;
+import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
 import java.lang.ref.WeakReference;
 import java.security.SecureRandom;
-import java.util.Arrays;
 import java.util.Locale;
 import java.util.Set;
 
@@ -140,20 +140,30 @@ public final class ThreadContext {
     @Deprecated
     public transient SecureRandom secureRandom;
 
+    private static boolean tryPreferredPRNG = true;
     private static boolean trySHA1PRNG = true;
+
+    public final JavaSites sites;
 
     @SuppressWarnings("deprecated")
     public SecureRandom getSecureRandom() {
         SecureRandom secureRandom = this.secureRandom;
         if (secureRandom == null) {
-            if (trySHA1PRNG) {
+            if (tryPreferredPRNG) {
                 try {
-                    secureRandom = SecureRandom.getInstance("SHA1PRNG");
+                    secureRandom = SecureRandom.getInstance(Options.PREFERRED_PRNG.load());
                 } catch (Exception e) {
-                    trySHA1PRNG = false;
+                    tryPreferredPRNG = false;
                 }
             }
             if (secureRandom == null) {
+                if (trySHA1PRNG) {
+                    try {
+                        secureRandom = SecureRandom.getInstance("SHA1PRNG");
+                    } catch (Exception e) {
+                        trySHA1PRNG = false;
+                    }
+                }
                 secureRandom = new SecureRandom();
             }
             this.secureRandom = secureRandom;
@@ -177,6 +187,7 @@ public final class ThreadContext {
         }
 
         this.runtimeCache = runtime.getRuntimeCache();
+        this.sites = runtime.sites;
 
         // TOPLEVEL self and a few others want a top-level scope.  We create this one right
         // away and then pass it into top-level parse so it ends up being the top level.

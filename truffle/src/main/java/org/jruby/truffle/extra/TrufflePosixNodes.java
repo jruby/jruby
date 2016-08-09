@@ -29,6 +29,7 @@ import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.builtins.Primitive;
 import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.core.rope.CodeRange;
+import org.jruby.truffle.core.rope.LeafRope;
 import org.jruby.truffle.core.rope.RopeNodes;
 import org.jruby.truffle.core.rope.RopeNodesFactory;
 import org.jruby.truffle.core.string.StringOperations;
@@ -394,7 +395,8 @@ public abstract class TrufflePosixNodes {
             final int result = posix().chdir(pathString);
 
             if (result == 0) {
-                getContext().getJRubyRuntime().setCurrentDirectory(pathString);
+                final String cwd = posix().getcwd();
+                getContext().getJRubyRuntime().setCurrentDirectory(cwd);
             }
 
             return result;
@@ -565,7 +567,7 @@ public abstract class TrufflePosixNodes {
 
     }
 
-    @CoreMethod(names = "getcwd", isModuleFunction = true, required = 2, unsafe = UnsafeGroup.IO)
+    @CoreMethod(names = "getcwd", isModuleFunction = true, unsafe = UnsafeGroup.IO)
     public abstract static class GetcwdNode extends CoreMethodArrayArgumentsNode {
 
         @Child private RopeNodes.MakeLeafRopeNode makeLeafRopeNode;
@@ -575,14 +577,16 @@ public abstract class TrufflePosixNodes {
             makeLeafRopeNode = RopeNodesFactory.MakeLeafRopeNodeGen.create(null, null, null, null);
         }
 
-        @CompilerDirectives.TruffleBoundary
-        @Specialization(guards = "isRubyString(resultPath)")
-        public DynamicObject getcwd(DynamicObject resultPath, int maxSize) {
-            // We just ignore maxSize - I think this is ok
-
+        @TruffleBoundary
+        @Specialization
+        public DynamicObject getcwd() {
+            final String cwd = posix().getcwd();
             final String path = getContext().getJRubyRuntime().getCurrentDirectory();
-            StringOperations.setRope(resultPath, makeLeafRopeNode.executeMake(path.getBytes(StandardCharsets.UTF_8), Layouts.STRING.getRope(resultPath).getEncoding(), CodeRange.CR_UNKNOWN, NotProvided.INSTANCE));
-            return resultPath;
+            assert path.equals(cwd);
+
+            final byte[] bytes = cwd.getBytes(StandardCharsets.UTF_8);
+            final LeafRope rope = makeLeafRopeNode.executeMake(bytes, UTF8Encoding.INSTANCE, CodeRange.CR_UNKNOWN, NotProvided.INSTANCE);
+            return StringOperations.createString(getContext(), rope);
         }
 
     }

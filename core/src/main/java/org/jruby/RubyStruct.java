@@ -50,8 +50,6 @@ import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ByteList;
 import org.jruby.util.IdUtil;
 
-import java.util.concurrent.Callable;
-
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.Visibility.PRIVATE;
@@ -569,14 +567,15 @@ public class RubyStruct extends RubyObject {
     @JRubyMethod(name = {"inspect", "to_s"})
     public RubyString inspect(final ThreadContext context) {
         final Ruby runtime = context.runtime;
-        final RubyStruct struct = this;
         // recursion guard
-        return (RubyString) runtime.safeRecurse(new Ruby.RecursiveFunction() {
-            public IRubyObject call(IRubyObject obj, boolean recur) {
-                return inspectStruct(context, recur);
-            }
-        }, struct, "inspect", false);
+        return (RubyString) runtime.safeRecurse(RECURSIVE_INSPECT, context, this, this, "inspect", false);
     }
+
+    private static final Ruby.RecursiveFunctionEx RECURSIVE_INSPECT = new Ruby.RecursiveFunctionEx<RubyStruct>() {
+        public IRubyObject call(ThreadContext context, RubyStruct self, IRubyObject obj, boolean recur) {
+            return self.inspectStruct(context, recur);
+        }
+    };
 
     @JRubyMethod(name = {"to_a", "values"})
     @Override

@@ -35,6 +35,11 @@ class LongArrayMirror extends BasicArrayMirror {
     }
 
     @Override
+    public ArrayMirror copyArrayAndMirror() {
+        return new LongArrayMirror(array.clone());
+    }
+
+    @Override
     public ArrayMirror copyArrayAndMirror(int newLength) {
         return new LongArrayMirror(Arrays.copyOf(array, newLength));
     }

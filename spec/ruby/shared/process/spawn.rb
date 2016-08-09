@@ -225,17 +225,19 @@ describe :process_spawn, shared: true do
 
   # :unsetenv_others
 
+  # Use the system ruby when the environment is empty as it could easily break launchers.
+
   it "unsets other environment variables when given a true :unsetenv_others option" do
     ENV["FOO"] = "BAR"
     lambda do
-      Process.wait @object.spawn(ruby_cmd(fixture(__FILE__, "env.rb")), unsetenv_others: true)
+      Process.wait @object.spawn('ruby', fixture(__FILE__, "env.rb"), unsetenv_others: true)
     end.should output_to_fd("")
   end
 
   it "unsets other environment variables when given a non-false :unsetenv_others option" do
     ENV["FOO"] = "BAR"
     lambda do
-      Process.wait @object.spawn(ruby_cmd(fixture(__FILE__, "env.rb")), unsetenv_others: :true)
+      Process.wait @object.spawn('ruby', fixture(__FILE__, "env.rb"), unsetenv_others: :true)
     end.should output_to_fd("")
   end
 
@@ -255,7 +257,7 @@ describe :process_spawn, shared: true do
 
   it "does not unset environment variables included in the environment hash" do
     lambda do
-      Process.wait @object.spawn({"FOO" => "BAR"}, ruby_cmd(fixture(__FILE__, "env.rb"), options: '--disable-gems'), unsetenv_others: true)
+      Process.wait @object.spawn({"FOO" => "BAR"}, 'ruby', fixture(__FILE__, "env.rb"), unsetenv_others: true)
     end.should output_to_fd("BAR")
   end
 
@@ -379,7 +381,7 @@ describe :process_spawn, shared: true do
   it "redirects STDOUT to the given file descriptior if out: Fixnum" do
     File.open(@name, 'w') do |file|
       lambda do
-        Process.wait @object.spawn(ruby_cmd("print :glark"), out: file.fileno)
+        Process.wait @object.spawn(ruby_cmd(fixture(__FILE__, "print.rb")), out: file.fileno)
       end.should output_to_fd("glark", file)
     end
   end
@@ -387,18 +389,18 @@ describe :process_spawn, shared: true do
   it "redirects STDOUT to the given file if out: IO" do
     File.open(@name, 'w') do |file|
       lambda do
-        Process.wait @object.spawn(ruby_cmd("print :glark"), out: file)
+        Process.wait @object.spawn(ruby_cmd(fixture(__FILE__, "print.rb")), out: file)
       end.should output_to_fd("glark", file)
     end
   end
 
   it "redirects STDOUT to the given file if out: String" do
-    Process.wait @object.spawn(ruby_cmd("print :glark"), out: @name)
+    Process.wait @object.spawn(ruby_cmd(fixture(__FILE__, "print.rb")), out: @name)
     @name.should have_data("glark")
   end
 
   it "redirects STDOUT to the given file if out: [String name, String mode]" do
-    Process.wait @object.spawn(ruby_cmd("print :glark"), out: [@name, 'w'])
+    Process.wait @object.spawn(ruby_cmd(fixture(__FILE__, "print.rb")), out: [@name, 'w'])
     @name.should have_data("glark")
   end
 
