@@ -333,6 +333,14 @@ module ShellUtils
     end
   end
 
+  def replace_env_vars(string, env = ENV)
+    string.gsub(/\$([A-Z_]+)/) {
+      var = $1
+      abort "You need to set $#{var}" unless env[var]
+      env[var]
+    }
+  end
+
   def sh(*args)
     Dir.chdir(JRUBY_DIR) do
       raw_sh(*args)
@@ -660,16 +668,12 @@ module Commands
     config = YAML.load_file(config_file)
     config_src = config['src']
 
-    if config_src.start_with?('$GEM_HOME/')
-      abort 'You need to set $GEM_HOME' unless ENV['GEM_HOME']
-      src = Dir[ENV['GEM_HOME'] + config_src['$GEM_HOME'.size..-1]]
-    else
-      src = Dir[File.join(cext_dir, config_src)]
-    end
+    src = replace_env_vars(config['src'])
+    src = File.expand_path(src, cext_dir)
 
     config_cflags = config['cflags'] || ''
-    config_cflags = `echo #{config_cflags}`.strip
-    config_cflags = config_cflags.split(' ')
+    config_cflags = replace_env_vars(config_cflags)
+    config_cflags = config_cflags.split
 
     out = File.expand_path(config['out'], cext_dir)
 
@@ -685,7 +689,7 @@ module Commands
     end
 
     config_libs = config['libs'] || ''
-    config_libs = `echo #{config_libs}`.strip
+    config_libs = replace_env_vars(conf)
     config_libs = config_libs.split(' ')
 
     if MAC
