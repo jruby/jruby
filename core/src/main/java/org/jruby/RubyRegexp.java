@@ -329,6 +329,15 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         }
     }
 
+    /**
+     * throws RaiseException on error so parser can pick this up and give proper line and line number
+     * error as opposed to any non-literal regexp creation which may raise a syntax error but will not
+     * have this extra source info in the error message
+     */
+    public static RubyRegexp newRegexpParser(Ruby runtime, ByteList pattern, RegexpOptions options) {
+        return new RubyRegexp(runtime, pattern, (RegexpOptions)options.clone());
+    }
+
     // used only by the compiler/interpreter (will set the literal flag)
     public static RubyRegexp newDRegexp(Ruby runtime, RubyString pattern, RegexpOptions options) {
         try {

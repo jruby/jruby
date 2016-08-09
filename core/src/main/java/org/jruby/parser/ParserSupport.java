@@ -1384,7 +1384,13 @@ public class ParserSupport {
         // Joni doesn't support these modifiers - but we can fix up in some cases - let the error delay until we try that
         if (stringValue.startsWith("(?u)") || stringValue.startsWith("(?a)") || stringValue.startsWith("(?d)"))
             return;
-        RubyRegexp.newRegexp(getConfiguration().getRuntime(), value, options);
+
+        try {
+            // This is only for syntax checking but this will as a side-effect create an entry in the regexp cache.
+            RubyRegexp.newRegexpParser(getConfiguration().getRuntime(), value, (RegexpOptions)options.clone());
+        } catch (RaiseException re) {
+            compile_error(re.getMessage());
+        }
     }
 
     public Node newRegexpNode(ISourcePosition position, Node contents, RegexpNode end) {
