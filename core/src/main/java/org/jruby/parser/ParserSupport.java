@@ -1337,7 +1337,7 @@ public class ParserSupport {
     public void compile_error(String message) { // mri: rb_compile_error_with_enc
         String line = lexer.getCurrentLine();
         ISourcePosition position = lexer.getPosition();
-        String errorMessage = lexer.getFile() + ":" + position.getLine() + ": ";
+        String errorMessage = lexer.getFile() + ":" + (position.getLine() + 1) + ": ";
 
         if (line != null && line.length() > 5) {
             boolean addNewline = message != null && ! message.endsWith("\n");
