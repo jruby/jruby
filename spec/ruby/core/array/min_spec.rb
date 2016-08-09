@@ -1,6 +1,19 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 
 describe "Array#min" do
+  it "returns nil with no values" do
+    [].min.should == nil
+  end
+
+  it "returns only element in one element array" do
+    [1].min.should == 1
+  end
+
+  it "returns smallest value with multiple elements" do
+    [1,2].min.should == 1
+    [2,1].min.should == 1
+  end
+
   describe "given a block with one argument" do
     it "yields in turn the last length-1 values from the array" do
       ary = []
