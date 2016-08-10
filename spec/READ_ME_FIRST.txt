@@ -14,7 +14,7 @@ using the standalone RubySpec repository outside of
 JRuby tree.
 
 More info about RubySpec can be found here:
-http://rubyspec.org/projects/show/rubyspec
+https://github.com/ruby/spec
 
 JRuby-specific info can be found here:
-http://kenai.com/projects/jruby/pages/JRubyAndRubySpecs
+https://github.com/jruby/jruby/wiki/JRubyAndRubySpecs
