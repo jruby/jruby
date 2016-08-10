@@ -588,7 +588,8 @@ public class SocketUtils {
 
         if(type instanceof RubyString || type instanceof RubySymbol) {
             String typeString = type.toString();
-            sockType = Sock.valueOf("SOCK_" + typeString);
+            if (!typeString.startsWith("SOCK_")) typeString = "SOCK_" + typeString;
+            sockType = Sock.valueOf(typeString);
         } else {
             int typeInt = RubyNumeric.fix2int(type);
             sockType = Sock.valueOf(typeInt);
