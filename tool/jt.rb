@@ -315,6 +315,9 @@ module ShellUtils
     if Hash === args.first
       env, *args = args
     end
+    if Hash === args.last && args.last.empty?
+      *args, options = args
+    end
     env = env.map { |k,v| "#{k}=#{shellescape(v)}" }.join(' ')
     args = args.map { |a| shellescape(a) }.join(' ')
     env.empty? ? args : "#{env} #{args}"
