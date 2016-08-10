@@ -1,5 +1,6 @@
 class Hash
   def to_proc
-    ->(key) {self[key]}
+    hash_self = self
+    ->(key) {hash_self[key]}
   end
 end
