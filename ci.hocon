@@ -1,5 +1,8 @@
 jt: [ruby, tool/jt.rb]
 
+# Allow a version mismatch with truffle to prefer the language truffle version
+clone_graal: [mx, --version-conflict-resolution, ignore, sclone, --kind, git]
+
 common-setup: [
   [mx, sclone, --kind, git, "https://github.com/jruby/jruby-build-pack.git", jruby-build-pack],
   [cp, bin/jruby.bash, bin/jruby],
@@ -39,7 +42,7 @@ graal-core: {
     [mv, mx.jruby, temp_mx],
     [mkdir, graal-workspace],
     [cd, graal-workspace],
-    [mx, sclone, --kind, git, "https://github.com/graalvm/graal-core.git", graal-core],
+    ${clone_graal} ["https://github.com/graalvm/graal-core.git", graal-core],
     [cd, graal-core],
     [git, checkout, graal-vm-0.12],
     [mx, sforceimports],
@@ -60,7 +63,7 @@ graal-enterprise: {
     [mv, mx.jruby, temp_mx],
     [mkdir, graal-workspace],
     [cd, graal-workspace],
-    [mx, sclone, --kind, git, "https://github.com/graalvm/graal-enterprise.git", graal-enterprise],
+    ${clone_graal} ["https://github.com/graalvm/graal-enterprise.git", graal-enterprise],
     [hg, clone, "http://hg.openjdk.java.net/graal/graal-jvmci-8", jvmci] // temporarily until next GraalVM release
     [cd, graal-enterprise],
     [git, checkout, graal-vm-0.12],
