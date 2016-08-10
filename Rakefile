@@ -16,15 +16,6 @@ begin
 rescue
 end
 
-task :default => [:build]
-
-desc "Build JRuby"
-task :build do
-  ant "jar"
-end
-
-task :jar => :build
-
 desc "Clean all built output"
 task :clean do
   delete_files = FileList.new do |fl|

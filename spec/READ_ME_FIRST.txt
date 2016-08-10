@@ -3,7 +3,7 @@
 The RubySpec files in 'spec/ruby' dir are not intended
 to be edited directly, since the location is not safe,
 and will be deleted/recreated every time there is a
-spec version update!!! Also, 'ant clean-all' will
+spec version update!!! Also, 'rake spec:clean_specs' will
 delete the whole directory.
 
 If you have some modified files in spec/ruby directory,
