@@ -503,6 +503,10 @@ public class RubyClass extends RubyModule {
         return invoke(context, self, name, args, callType, block);
     }
 
+    public boolean notVisibleAndNotMethodMissing(DynamicMethod method, String name, IRubyObject caller, CallType callType) {
+        return !method.isCallableFrom(caller, callType) && !name.equals("method_missing");
+    }
+
     public IRubyObject invoke(ThreadContext context, IRubyObject self, String name,
             CallType callType, Block block) {
         DynamicMethod method = searchMethod(name);
@@ -954,19 +958,14 @@ public class RubyClass extends RubyModule {
         }
     }
 
-    private static boolean shouldCallMethodMissing(DynamicMethod method) {
+    private boolean shouldCallMethodMissing(DynamicMethod method) {
         return method.isUndefined();
     }
-
-    private static boolean shouldCallMethodMissing(DynamicMethod method, String name, IRubyObject caller, CallType callType) {
+    private boolean shouldCallMethodMissing(DynamicMethod method, String name, IRubyObject caller, CallType callType) {
         return method.isUndefined() || notVisibleAndNotMethodMissing(method, name, caller, callType);
     }
 
-    private static boolean notVisibleAndNotMethodMissing(DynamicMethod method, String name, IRubyObject caller, CallType callType) {
-        return !method.isCallableFrom(caller, callType) && !name.equals("method_missing");
-    }
-
-    public final IRubyObject invokeInherited(ThreadContext context, IRubyObject self, IRubyObject subclass) {
+    public IRubyObject invokeInherited(ThreadContext context, IRubyObject self, IRubyObject subclass) {
         DynamicMethod method = getMetaClass().searchMethod("inherited");
 
         if (method.isUndefined()) {
@@ -1082,18 +1081,20 @@ public class RubyClass extends RubyModule {
         setSuperClass(superClass);
     }
 
-    public final Collection<RubyClass> subclasses(boolean includeDescendants) {
-        final Set<RubyClass> subclasses = this.subclasses;
-        if (subclasses != null) {
-            Collection<RubyClass> classes = new ArrayList<RubyClass>(subclasses);
+    public Collection<RubyClass> subclasses(boolean includeDescendants) {
+        Set<RubyClass> mySubclasses = subclasses;
+        if (mySubclasses != null) {
+            Collection<RubyClass> mine = new ArrayList<RubyClass>(mySubclasses);
             if (includeDescendants) {
-                for ( RubyClass klass: subclasses ) {
-                    classes.addAll(klass.subclasses(includeDescendants));
+                for (RubyClass i: mySubclasses) {
+                    mine.addAll(i.subclasses(includeDescendants));
                 }
             }
-            return classes;
+
+            return mine;
+        } else {
+            return Collections.EMPTY_LIST;
         }
-        return Collections.EMPTY_LIST;
     }
 
     /**
@@ -1144,7 +1145,7 @@ public class RubyClass extends RubyModule {
     }
 
     @Override
-    public final void becomeSynchronized() {
+    public void becomeSynchronized() {
         // make this class and all subclasses sync
         synchronized (runtime.getHierarchyLock()) {
             super.becomeSynchronized();

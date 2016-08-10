@@ -1074,10 +1074,10 @@ public class BodyTranslator extends Translator {
             return "(unknown)";
         }
 
-        final String path = source.getPath();
+        final String path = source.getName();
 
         if (path == null) {
-            throw new UnsupportedOperationException();
+            return source.getName();
         }
 
         return path;

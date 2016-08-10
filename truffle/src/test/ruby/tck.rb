@@ -155,3 +155,13 @@ def add_array(array, index, value)
 end
 
 Truffle::Interop.export_method(:add_array)
+
+def count_up_while(f)
+  counter = 0
+  loop do
+    break unless f.call(counter)
+    counter += 1
+  end
+end
+
+Truffle::Interop.export_method(:count_up_while)

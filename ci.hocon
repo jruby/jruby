@@ -6,8 +6,8 @@ clone_graal: [mx, --version-conflict-resolution, ignore, sclone, --kind, git]
 common-setup: [
   [mx, sclone, --kind, git, "https://github.com/jruby/jruby-build-pack.git", jruby-build-pack],
   [cp, bin/jruby.bash, bin/jruby],
-  [chmod, "+x", bin/jruby],
-  ${jt} [build, --offline]
+  [chmod, +x, bin/jruby],
+  ${jt} [build] # --offline
 ]
 
 common: {

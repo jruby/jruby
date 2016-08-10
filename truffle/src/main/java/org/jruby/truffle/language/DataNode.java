@@ -38,7 +38,7 @@ public class DataNode extends RubyNode {
         final Object data = snippetNode.execute(frame,
                 "Truffle.get_data(file, offset)",
                 "file", StringOperations.createString(getContext(),
-                        ByteListUtils.create(getEncapsulatingSourceSection().getSource().getPath())),
+                        ByteListUtils.create(getEncapsulatingSourceSection().getSource().getName())),
                 "offset", endPosition);
 
         Layouts.MODULE.getFields(coreLibrary().getObjectClass()).setConstant(getContext(), null, "DATA", data);

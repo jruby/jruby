@@ -3291,8 +3291,8 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             RubyArray argsArr = RubyArray.newArray(runtime, RubyFixnum.newFixnum(runtime, value.length()), context.nil);
 
             if (b instanceof RubyFixnum && e instanceof RubyFixnum) {
-                long bi = RubyNumeric.fix2long(b);
-                long ei = RubyNumeric.fix2long(e);
+                int bi = RubyNumeric.fix2int(b);
+                int ei = RubyNumeric.fix2int(e);
 
                 while (bi <= ei) {
                     if (excl && bi == ei) break;
