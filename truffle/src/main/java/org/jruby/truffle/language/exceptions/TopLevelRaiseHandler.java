@@ -26,6 +26,7 @@ public class TopLevelRaiseHandler extends RubyNode {
 
     @Child private RubyNode body;
     @Child private IntegerCastNode integerCastNode;
+    @Child private SetExceptionVariableNode setExceptionVariableNode;
 
     public TopLevelRaiseHandler(RubyContext context, SourceSection sourceSection, RubyNode body) {
         super(context, sourceSection);
@@ -41,6 +42,7 @@ public class TopLevelRaiseHandler extends RubyNode {
             body.execute(frame);
         } catch (RaiseException e) {
             lastException = AtExitManager.handleAtExitException(getContext(), e);
+            getSetExceptionVariableNode().setLastException(frame, lastException);
         } finally {
             final DynamicObject atExitException = getContext().getAtExitManager().runAtExitHooks();
 
@@ -69,6 +71,15 @@ public class TopLevelRaiseHandler extends RubyNode {
         }
 
         return integerCastNode.executeCastInt(value);
+    }
+
+    private SetExceptionVariableNode getSetExceptionVariableNode() {
+        if (setExceptionVariableNode == null) {
+            CompilerDirectives.transferToInterpreterAndInvalidate();
+            setExceptionVariableNode = insert(new SetExceptionVariableNode(getContext()));
+        }
+
+        return setExceptionVariableNode;
     }
 
 }
