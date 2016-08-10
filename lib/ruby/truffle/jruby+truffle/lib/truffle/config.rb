@@ -236,7 +236,7 @@ Truffle::Runner.add_config :psd,
 
 class Truffle::Runner::CIEnvironment
   def rails_ci
-    declare_options debug:   ['--[no-]debug', 'Run tests with remote debugging enabled.',
+    declare_options debug:   ['-d', '--[no-]debug', 'Run tests with remote debugging enabled.',
                               STORE_NEW_VALUE, false],
                     exclude: ['--[no-]exclude', 'Exclude known failing tests',
                               STORE_NEW_VALUE, true]
