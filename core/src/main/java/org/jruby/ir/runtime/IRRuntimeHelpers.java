@@ -755,9 +755,34 @@ public class IRRuntimeHelpers {
         return rubyClass;
     }
 
-    @JIT
-    public static IRubyObject mergeKeywordArguments(ThreadContext context, IRubyObject restKwarg, IRubyObject explcitKwarg) {
-        return ((RubyHash) TypeConverter.checkHashType(context.runtime, restKwarg)).merge(context, explcitKwarg, Block.NULL_BLOCK);
+    @JIT @Interp
+    public static IRubyObject mergeKeywordArguments(ThreadContext context, IRubyObject restKwarg, IRubyObject explicitKwarg) {
+        RubyHash hash = (RubyHash) TypeConverter.checkHashType(context.runtime, restKwarg).dup();
+
+        hash.modify();
+        final RubyHash otherHash = explicitKwarg.convertToHash();
+
+        if (otherHash.empty_p().isTrue()) return hash;
+
+        otherHash.visitAll(context, new KwargMergeVisitor(hash), Block.NULL_BLOCK);
+
+        return hash;
+    }
+
+    private static class KwargMergeVisitor extends RubyHash.VisitorWithState<Block> {
+        final RubyHash target;
+
+        KwargMergeVisitor(RubyHash target) {
+            this.target = target;
+        }
+
+        @Override
+        public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, Block block) {
+            // All kwargs keys must be symbols.
+            TypeConverter.checkType(context, key, context.runtime.getSymbol());
+
+            target.op_aset(context, key, value);
+        }
     }
 
     @JIT
