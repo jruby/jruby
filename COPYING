@@ -75,7 +75,7 @@ below. Also see LICENSE.RUBY for most files found in lib/ruby/stdlib.
  joni (http://github.com/jruby/joni) are distributed
  under the MIT license.
 
- ant (http://ant.apache.org/),
+ maven (http://maven.apache.org/),
  jnr-constants (http://github.com/jnr/jnr-constants),
  joda-time (http://joda-time.sourceforge.net),
  jffi (https://github.com/jnr/jffi),
