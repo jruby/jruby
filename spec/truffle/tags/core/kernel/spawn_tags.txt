@@ -28,7 +28,6 @@ fails:Kernel.spawn with multiple arguments raises an ArgumentError if an argumen
 fails:Kernel.spawn with a command array raises an ArgumentError if the Strings in the Array include a null byte
 fails:Kernel.spawn when passed :chdir changes to the directory passed for :chdir
 fails:Kernel.spawn when passed :chdir calls #to_path to convert the :chdir value
-fails:Kernel#spawn with Integer option keys maps the key to a file descriptor in the child that inherits the file descriptor from the parent specified by the value
 fails:Kernel.spawn with Integer option keys maps the key to a file descriptor in the child that inherits the file descriptor from the parent specified by the value
 fails(windows):Kernel#spawn raises an ArgumentError if given :pgroup option
 fails(windows):Kernel.spawn raises an ArgumentError if given :pgroup option
@@ -120,3 +119,4 @@ slow:Kernel.spawn uses the current working directory as its working directory
 slow:Kernel.spawn uses the current umask by default
 slow:Kernel.spawn when passed close_others: false closes file descriptors >= 3 in the child process because they are set close_on_exec by default
 slow:Kernel.spawn when passed close_others: false does not close file descriptors >= 3 in the child process if fds are set close_on_exec=false
+slow:Kernel#spawn with Integer option keys maps the key to a file descriptor in the child that inherits the file descriptor from the parent specified by the value

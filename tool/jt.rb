@@ -30,6 +30,7 @@ JDEBUG = "-J-agentlib:jdwp=transport=dt_socket,server=y,address=#{JDEBUG_PORT},s
 JDEBUG_TEST = "-Dmaven.surefire.debug=-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=#{JDEBUG_PORT} -Xnoagent -Djava.compiler=NONE"
 JEXCEPTION = "-Xtruffle.exceptions.print_java=true"
 METRICS_REPS = 10
+CEXTC_CONF_FILE = '.jruby-cext-build.yml'
 
 VERBOSE = ENV.include? 'V'
 
@@ -314,6 +315,9 @@ module ShellUtils
     if Hash === args.first
       env, *args = args
     end
+    if Hash === args.last && args.last.empty?
+      *args, options = args
+    end
     env = env.map { |k,v| "#{k}=#{shellescape(v)}" }.join(' ')
     args = args.map { |a| shellescape(a) }.join(' ')
     env.empty? ? args : "#{env} #{args}"
@@ -331,6 +335,14 @@ module ShellUtils
     else
       str
     end
+  end
+
+  def replace_env_vars(string, env = ENV)
+    string.gsub(/\$([A-Z_]+)/) {
+      var = $1
+      abort "You need to set $#{var}" unless env[var]
+      env[var]
+    }
   end
 
   def sh(*args)
@@ -651,25 +663,30 @@ module Commands
       cextc ruby_cext_api
     end
 
-    config_file = File.join(cext_dir, '.jruby-cext-build.yml')
-
+    config_file = File.join(cext_dir, CEXTC_CONF_FILE)
     unless File.exist?(config_file)
-      abort "There is no .jruby-cext-build.yml in #{cext_dir} at the moment - I don't know how to build it"
+      abort "There is no #{CEXTC_CONF_FILE} in #{cext_dir} at the moment - I don't know how to build it"
     end
 
     config = YAML.load_file(config_file)
     config_src = config['src']
 
-    if config_src.start_with?('$GEM_HOME/')
-      abort 'You need to set $GEM_HOME' unless ENV['GEM_HOME']
-      src = Dir[ENV['GEM_HOME'] + config_src['$GEM_HOME'.size..-1]]
-    else
-      src = Dir[File.join(cext_dir, config_src)]
-    end
+    src = replace_env_vars(config['src'])
+    src = File.expand_path(src, cext_dir)
+    src = Dir[src]
 
     config_cflags = config['cflags'] || ''
-    config_cflags = `echo #{config_cflags}`.strip
-    config_cflags = config_cflags.split(' ')
+    config_cflags = replace_env_vars(config_cflags)
+    config_cflags = config_cflags.split
+    # Expand include paths
+    config_cflags.map! { |cflag|
+      if cflag.start_with? '-I'
+        inc = File.expand_path(cflag[2..-1], cext_dir)
+        "-I#{inc}"
+      else
+        cflag
+      end
+    }
 
     out = File.expand_path(config['out'], cext_dir)
 
@@ -685,7 +702,7 @@ module Commands
     end
 
     config_libs = config['libs'] || ''
-    config_libs = `echo #{config_libs}`.strip
+    config_libs = replace_env_vars(config_libs)
     config_libs = config_libs.split(' ')
 
     if MAC
@@ -838,17 +855,20 @@ module Commands
     [
         ['oily_png', ['chunky_png-1.3.6', 'oily_png-1.2.0'], ['oily_png']],
         ['psd_native', ['chunky_png-1.3.6', 'oily_png-1.2.0', 'bindata-2.3.1', 'hashie-3.4.4', 'psd-enginedata-1.1.1', 'psd-2.1.2', 'psd_native-1.1.3'], ['oily_png', 'psd_native']],
-        ['nokogiri', [], ['nokogiri']]
-    ].each do |gem_name, dependencies, libs|
+        ['nokogiri', [], ['nokogiri']],
+        ['ruby-argon2', [], [], "#{ENV['GEM_HOME']}/bundler/gems/ruby-argon2-5a527075e88b"]
+    ].each do |gem_name, dependencies, libs, gem_root|
       next if gem_name == 'nokogiri' # nokogiri totally excluded
       next if gem_name == 'nokogiri' && no_libxml
-      config = "#{JRUBY_DIR}/test/truffle/cexts/#{gem_name}"
-      cextc config, '-Werror=implicit-function-declaration'
+      unless gem_root and File.exist?(File.join(gem_root, CEXTC_CONF_FILE))
+        gem_root = "#{JRUBY_DIR}/test/truffle/cexts/#{gem_name}"
+      end
+      cextc gem_root, '-Werror=implicit-function-declaration'
       next if gem_name == 'psd_native' # psd_native is excluded just for running
       run '--graal',
         *dependencies.map { |d| "-I#{ENV['GEM_HOME']}/gems/#{d}/lib" },
         *libs.map { |l| "-I#{JRUBY_DIR}/test/truffle/cexts/#{l}/lib" },
-        "#{JRUBY_DIR}/test/truffle/cexts/#{gem_name}/test.rb"
+        "#{JRUBY_DIR}/test/truffle/cexts/#{gem_name}/test.rb", gem_root
     end
   end
   private :test_cexts

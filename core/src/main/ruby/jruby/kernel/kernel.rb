@@ -10,7 +10,7 @@ module Kernel
 
     absolute_feature = File.expand_path(relative_arg, File.dirname(File.realpath(file)))
 
-    require absolute_feature
+    ::Kernel.require absolute_feature
   end
 
   def exec(*args)
