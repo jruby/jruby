@@ -19,7 +19,7 @@ require 'timeout'
 require 'yaml'
 require 'open3'
 
-GRAALVM_VERSION = '0.12'
+GRAALVM_VERSION = '0.15'
 
 JRUBY_DIR = File.expand_path('../..', __FILE__)
 M2_REPO = File.expand_path('~/.m2/repository')
