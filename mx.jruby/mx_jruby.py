@@ -654,7 +654,7 @@ class OptcarrotBenchmarkSuite(AllBenchmarksBenchmarkSuite):
         return ['optcarrot']
 
     def time(self):
-        return 600
+        return 200
 
 synthetic_benchmarks = [
     'acid'
