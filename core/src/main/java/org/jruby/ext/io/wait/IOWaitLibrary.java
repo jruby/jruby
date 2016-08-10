@@ -155,7 +155,8 @@ public class IOWaitLibrary implements Library {
             if (tv < 0) throw runtime.newArgumentError("time interval must be positive");
         }
 
-        boolean ready = fptr.ready(runtime, context.getThread(), SelectionKey.OP_WRITE, tv);
+        boolean ready = fptr.ready(runtime, context.getThread(), SelectionKey.OP_CONNECT | SelectionKey.OP_WRITE, tv);
+
         fptr.checkClosed();
         if (ready)
             return io;

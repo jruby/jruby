@@ -530,7 +530,7 @@ public class RubySocket extends RubyBasicSocket {
             }
 
             if ( ! result ) {
-                if (!ex) return runtime.newSymbol("wait_readable");
+                if (!ex) return runtime.newSymbol("wait_writable");
                 throw runtime.newErrnoEINPROGRESSWritableError();
             }
         }
