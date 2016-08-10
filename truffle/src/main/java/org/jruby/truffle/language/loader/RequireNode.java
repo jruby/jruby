@@ -186,7 +186,7 @@ public abstract class RequireNode extends RubyNode {
         final Object initFunction = getContext().getEnv().importSymbol("@Init_" + getBaseName(expandedPath));
 
         if (!(initFunction instanceof TruffleObject)) {
-            throw new UnsupportedOperationException();
+            throw new UnsupportedOperationException("initFunction is not a TruffleObject but a " + initFunction.getClass());
         }
 
         return (TruffleObject) initFunction;
