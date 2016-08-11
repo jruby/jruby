@@ -129,6 +129,16 @@ public abstract class TruffleDebugNodes {
         }
     }
 
+    @CoreMethod(names = "shape", onSingleton = true, required = 1)
+    public abstract static class ShapeNode extends CoreMethodArrayArgumentsNode {
+
+        @Specialization
+        public DynamicObject shape(DynamicObject object) {
+            return createString(StringOperations.encodeRope(object.getShape().toString(), UTF8Encoding.INSTANCE));
+        }
+
+    }
+
     @CoreMethod(names = "array_storage", onSingleton = true, required = 1)
     public abstract static class ArrayStorageNode extends CoreMethodArrayArgumentsNode {
 
