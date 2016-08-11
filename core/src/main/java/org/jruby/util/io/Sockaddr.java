@@ -84,11 +84,14 @@ public class Sockaddr {
         final Ruby runtime = context.runtime;
         ByteList val = addr.convertToString().getByteList();
 
-        validateSockaddr(runtime, val);
+        AddressFamily af = getAddressFamilyFromSockaddr(runtime, val);
+
+        if (af != AddressFamily.AF_INET &&
+                af != AddressFamily.AF_INET6) {
+            throw runtime.newArgumentError("can't resolve socket address of wrong type");
+        }
 
         int port = ((val.get(2)&0xff) << 8) + (val.get(3)&0xff);
-
-        AddressFamily af = getAddressFamilyFromSockaddr(runtime, val);
 
         final StringBuilder formatAddr = new StringBuilder();
 
@@ -212,24 +215,16 @@ public class Sockaddr {
         ds.write(port);
     }
 
-    public static void validateSockaddr(Ruby runtime, ByteList val) {
-        int high = val.get(0) & 0xff;
-        int low = val.get(1) & 0xff;
-
-        AddressFamily af = AddressFamily.valueOf((high << 8) + low);
-
-        if (af != AddressFamily.AF_INET &&
-                af != AddressFamily.AF_INET6) {
-            throw runtime.newArgumentError("can't resolve socket address of wrong type");
-        }
-    }
-
     public static AddressFamily getAddressFamilyFromSockaddr(Ruby runtime, ByteList val) {
+        if (val.length() < 2) {
+            throw runtime.newArgumentError("too short sockaddr");
+        }
+
         int high = val.get(0) & 0xff;
         int low = val.get(1) & 0xff;
 
         return AddressFamily.valueOf((high << 8) + low);
-        }
+    }
 
     private static RuntimeException sockerr(Ruby runtime, String msg) {
         return new RaiseException(runtime, runtime.getClass("SocketError"), msg, true);

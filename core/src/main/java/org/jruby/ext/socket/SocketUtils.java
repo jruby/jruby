@@ -168,6 +168,20 @@ public class SocketUtils {
         return context.runtime.newString(bl);
     }
 
+    public static IRubyObject unpack_sockaddr_un(ThreadContext context, IRubyObject addr) {
+        final Ruby runtime = context.runtime;
+        ByteList val = addr.convertToString().getByteList();
+
+        AddressFamily af = Sockaddr.getAddressFamilyFromSockaddr(context.runtime, val);
+
+        if (af != AddressFamily.AF_UNIX) {
+            throw runtime.newArgumentError("not an AF_UNIX sockaddr");
+        }
+
+        String filename = Sockaddr.addressFromSockaddr_un(context, addr).path();
+        return context.runtime.newString(filename);
+    }
+
     public static IRubyObject gethostbyname(ThreadContext context, IRubyObject hostname) {
         Ruby runtime = context.runtime;
 
