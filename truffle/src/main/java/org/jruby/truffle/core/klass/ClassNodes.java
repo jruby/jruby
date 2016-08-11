@@ -168,10 +168,13 @@ public abstract class ClassNodes {
             fields.newVersion();
         }
 
-        DynamicObjectFactory factory = Layouts.CLASS.getInstanceFactory(superclass);
-        factory = Layouts.BASIC_OBJECT.setLogicalClass(factory, rubyClass);
-        factory = Layouts.BASIC_OBJECT.setMetaClass(factory, rubyClass);
-        Layouts.CLASS.setInstanceFactoryUnsafe(rubyClass, factory);
+        // Singleton classes cannot be instantiated
+        if (!isSingleton) {
+            DynamicObjectFactory factory = Layouts.CLASS.getInstanceFactory(superclass);
+            factory = Layouts.BASIC_OBJECT.setLogicalClass(factory, rubyClass);
+            factory = Layouts.BASIC_OBJECT.setMetaClass(factory, rubyClass);
+            Layouts.CLASS.setInstanceFactoryUnsafe(rubyClass, factory);
+        }
 
         return rubyClass;
     }
@@ -179,6 +182,7 @@ public abstract class ClassNodes {
     @TruffleBoundary
     public static void initialize(RubyContext context, DynamicObject rubyClass, DynamicObject superclass) {
         assert RubyGuards.isRubyClass(superclass);
+        assert !Layouts.CLASS.getIsSingleton(rubyClass) : "Singleton classes can only be created internally";
 
         Layouts.MODULE.getFields(rubyClass).parentModule = Layouts.MODULE.getFields(superclass).start;
         Layouts.MODULE.getFields(superclass).addDependent(rubyClass);
