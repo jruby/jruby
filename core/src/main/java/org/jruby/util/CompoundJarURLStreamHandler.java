@@ -155,13 +155,11 @@ public class CompoundJarURLStreamHandler extends URLStreamHandler {
                 try {
                     result = openEntryWithCache(path, baseInputStream, 1);
                 } catch (IOException ex) {
-                    close(baseInputStream);
-
                     throw ex;
                 } catch (RuntimeException ex) {
-                    close(baseInputStream);
-
                     throw ex;
+                } finally {
+                    close(baseInputStream);
                 }
             } else {
                 result = baseInputStream;
