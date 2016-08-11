@@ -128,7 +128,7 @@ class Object
       end
 
       escape = opts.delete(:escape)
-      if escape
+      if code and not File.exist?(code) and escape != false
         tmpfile = tmp("rubyexe.rb")
         File.open(tmpfile, "w") { |f| f.write(code) }
         code = tmpfile
@@ -144,7 +144,7 @@ class Object
           key = key.to_s
           ENV.delete key unless saved_env.key? key
         end
-        File.delete tmpfile if escape
+        File.delete tmpfile if tmpfile
       end
     end
   end
