@@ -21,6 +21,7 @@ import com.oracle.truffle.api.nodes.RootNode;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.RubyContext;
@@ -49,15 +50,11 @@ public class LazyRubyRootNode extends RootNode implements InternalRootNode {
         super(RubyLanguage.class, sourceSection, frameDescriptor);
         this.source = source;
         this.argumentNames = argumentNames;
+        this.findContextNode = RubyLanguage.INSTANCE.unprotectedCreateFindContextNode();
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
-        if (findContextNode == null) {
-            CompilerDirectives.transferToInterpreterAndInvalidate();
-            findContextNode = insert(RubyLanguage.INSTANCE.unprotectedCreateFindContextNode());
-        }
-
         final RubyContext context = RubyLanguage.INSTANCE.unprotectedFindContext(findContextNode);
 
         if (cachedContext == null) {
@@ -83,8 +80,16 @@ public class LazyRubyRootNode extends RootNode implements InternalRootNode {
                     context.getCoreLibrary().getObjectClass(), Visibility.PUBLIC, callTarget);
         }
 
-        return callNode.call(frame, RubyArguments.pack(null, null, method, DeclarationContext.TOP_LEVEL, null,
-                mainObject, null, frame.getArguments()));
+        Object[] arguments = RubyArguments.pack(
+                null,
+                null,
+                method,
+                DeclarationContext.TOP_LEVEL,
+                null,
+                mainObject,
+                null,
+                frame.getArguments());
+        return callNode.call(frame, arguments);
     }
 
 }
