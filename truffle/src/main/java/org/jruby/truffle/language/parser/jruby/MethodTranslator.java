@@ -401,7 +401,7 @@ public class MethodTranslator extends BodyTranslator {
         }
     }
 
-    private static SourceSection considerExtendingMethodToCoverEnd(SourceSection sourceSection) {
+    private SourceSection considerExtendingMethodToCoverEnd(SourceSection sourceSection) {
         if (sourceSection == null) {
             return sourceSection;
         }
@@ -418,7 +418,7 @@ public class MethodTranslator extends BodyTranslator {
         for (;;) {
             final String lineAfterString = source.getCode(lineAfter).replaceAll("\\s+$","");
             if (lineAfterString.equals(indentationOnFirstLine + "end") || lineAfterString.equals(indentationOnFirstLine + "}")) {
-                return source.createSection(sourceSection.getIdentifier(), sourceSection.getCharIndex(), sourceSection.getCharLength() + 1 + source.getLineLength(lineAfter));
+                return source.createSection(getIdentifier(), sourceSection.getCharIndex(), sourceSection.getCharLength() + 1 + source.getLineLength(lineAfter));
             }
             if (++lineAfter >= source.getLineCount()) {
                 return sourceSection;

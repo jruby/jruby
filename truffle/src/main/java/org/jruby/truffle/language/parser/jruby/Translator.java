@@ -117,7 +117,7 @@ public abstract class Translator extends org.jruby.ast.visitor.AbstractNodeVisit
         length = Math.min(length, base.getSource().getLength() - index);
         length = Math.max(0, length);
 
-        return base.getSource().createSection(base.getIdentifier(), index, length);
+        return base.getSource().createSection(identifier, index, length);
     }
 
     public static SourceSection enclosing(String identifier, SourceSection base, RubyNode[] sequence) {
