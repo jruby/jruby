@@ -1180,7 +1180,6 @@ public abstract class ModuleNodes {
             assert Layouts.CLASS.getIsSingleton(Layouts.BASIC_OBJECT.getMetaClass(self));
 
             Layouts.MODULE.getFields(selfMetaClass).initCopy(fromMetaClass); // copy class methods
-            Layouts.CLASS.setSuperclass(self, Layouts.CLASS.getSuperclass(from));
 
             return nil();
         }
