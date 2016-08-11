@@ -145,6 +145,10 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
         }
     }
 
+    private boolean hasPrependedModules() {
+        return start.getParentModule() != this;
+    }
+
     @TruffleBoundary
     public void initCopy(DynamicObject from) {
         assert RubyGuards.isRubyModule(from);
@@ -155,7 +159,8 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
         this.constants.putAll(fromFields.constants);
         this.classVariables.putAll(fromFields.classVariables);
 
-        if (fromFields.start.getParentModule() != fromFields) {
+        if (fromFields.hasPrependedModules()) {
+            // Then the parent is the first in the prepend chain
             this.parentModule = fromFields.start.getParentModule();
         } else {
             this.parentModule = fromFields.parentModule;
