@@ -245,6 +245,26 @@ class SocketTest < Test::Unit::TestCase
     end
   end
 
+  def test_connect_nonblock_no_exception
+    serv = ServerSocket.new(:INET, :STREAM)
+    serv.bind(Socket.sockaddr_in(0, "127.0.0.1"), 5)
+    c = Socket.new(:INET, :STREAM)
+    servaddr = serv.getsockname
+    rv = c.connect_nonblock(servaddr, exception: false)
+    case rv
+    when 0
+      # some OSes return immediately on non-blocking local connect()
+    else
+      assert_equal :wait_writable, rv
+    end
+    assert_equal([ [], [c], [] ], IO.select(nil, [c], nil, 60))
+    assert_equal(0, c.connect_nonblock(servaddr, exception: false),
+                 'there should be no EISCONN error')
+  ensure
+    serv.close if serv
+    c.close if c
+  end
+
 end
 
 
@@ -667,4 +687,3 @@ class ServerTest < Test::Unit::TestCase
     client.close rescue nil
   end if RUBY_VERSION >= '1.9'
 end
-

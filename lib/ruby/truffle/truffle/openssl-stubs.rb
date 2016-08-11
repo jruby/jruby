@@ -95,6 +95,9 @@ module OpenSSL
   module SSL
     SSLError = Class.new StandardError
   end
+
+  class SSL::SSLSocket
+  end
 end
 
 # make it look as openssl is loaded

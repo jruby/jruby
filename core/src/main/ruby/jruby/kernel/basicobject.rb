@@ -3,4 +3,8 @@ class BasicObject
   def !=(other)
     !(self == other)
   end
+
+  def !~(other)
+    !(self =~ other)
+  end
 end

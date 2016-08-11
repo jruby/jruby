@@ -41,7 +41,11 @@ import jnr.enxio.channels.NativeDeviceChannel;
 import jnr.enxio.channels.NativeSelectableChannel;
 import jnr.posix.POSIX;
 import org.jcodings.transcode.EConvFlags;
+import org.jruby.runtime.CallSite;
 import org.jruby.runtime.Helpers;
+import org.jruby.runtime.JavaSites;
+import org.jruby.runtime.JavaSites.IOSites;
+import org.jruby.runtime.callsite.RespondToCallSite;
 import org.jruby.util.StringSupport;
 import org.jruby.util.io.ChannelFD;
 import org.jruby.util.io.EncodingUtils;
@@ -895,7 +899,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         int ofmode;
         int[] oflags_p = {ModeFlags.RDONLY};
 
-        if(opt != null && !opt.isNil() && !(opt instanceof RubyHash) && !(opt.respondsTo("to_hash"))) {
+        if(opt != null && !opt.isNil() && !(opt instanceof RubyHash) && !(sites(context).respond_to_to_hash.respondsTo(context, opt, opt))) {
             throw runtime.newArgumentError("last argument must be a hash!");
         }
 
@@ -1158,7 +1162,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
         if (vmode.isNil())
             oflags = OpenFlags.O_RDONLY.intValue();
-        else if (!(intmode = TypeConverter.checkIntegerType(runtime, vmode, "to_int")).isNil())
+        else if (!(intmode = TypeConverter.checkIntegerType(context, vmode)).isNil())
             oflags = RubyNumeric.num2int(intmode);
         else {
             vmode = vmode.convertToString();
@@ -1410,7 +1414,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         tmp = TypeConverter.ioCheckIO(runtime, io);
         if (tmp.isNil()) {
 	        /* port is not IO, call write method for it. */
-            return io.callMethod(context, "write", str);
+            return sites(context).write.call(context, io, io, str);
         }
         io = (RubyIO)tmp;
         if (((RubyString)str).size() == 0) return RubyFixnum.zero(runtime);
@@ -1437,7 +1441,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
     @JRubyMethod(name = "<<", required = 1)
     public IRubyObject op_append(ThreadContext context, IRubyObject anObject) {
         // Claims conversion is done via 'to_s' in docs.
-        callMethod(context, "write", anObject);
+        sites(context).write.call(context, this, this, anObject);
 
         return this;
     }
@@ -1612,7 +1616,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         } else {
             byte c = RubyNumeric.num2chr(object);
             IRubyObject str = RubyString.newStringShared(context.runtime, RubyFixnum.SINGLE_CHAR_BYTELISTS19[c & 0xFF]);
-            maybeIO.callMethod(context, "write", str);
+            sites(context).write.call(context, maybeIO, maybeIO, str);
         }
 
         return object;
@@ -1946,11 +1950,12 @@ public class RubyIO extends RubyObject implements IOEncodable {
     // io_close
     protected static IRubyObject ioClose(Ruby runtime, IRubyObject io) {
         ThreadContext context = runtime.getCurrentContext();
-        IRubyObject closed = io.checkCallMethod(context, "closed?");
+        IOSites sites = sites(context);
+        IRubyObject closed = io.checkCallMethod(context, sites.closed_checked);
         if (closed != null && closed.isTrue()) return io;
         IRubyObject oldExc = runtime.getGlobalVariables().get("$!"); // Save $!
         try {
-            return io.checkCallMethod(context, "close");
+            return io.checkCallMethod(context, sites.close_checked);
         } catch (RaiseException re) {
             if (re.getMessage().contains(CLOSED_STREAM_MSG)) {
                 // ignore
@@ -2523,15 +2528,15 @@ public class RubyIO extends RubyObject implements IOEncodable {
     }
 
     protected IRubyObject write(ThreadContext context, ByteList byteList) {
-        return callMethod(context, "write", RubyString.newStringShared(context.runtime, byteList));
+        return sites(context).write.call(context, this, this, RubyString.newStringShared(context.runtime, byteList));
     }
 
     protected static IRubyObject write(ThreadContext context, IRubyObject maybeIO, ByteList byteList) {
-        return maybeIO.callMethod(context, "write", RubyString.newStringShared(context.runtime, byteList));
+        return sites(context).write.call(context, maybeIO, maybeIO, RubyString.newStringShared(context.runtime, byteList));
     }
 
     public static IRubyObject write(ThreadContext context, IRubyObject maybeIO, IRubyObject str) {
-        return maybeIO.callMethod(context, "write", str);
+        return sites(context).write.call(context, maybeIO, maybeIO, str);
     }
 
     @Override
@@ -3287,7 +3292,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
         // io_s_foreach
 
-        IRubyObject[] methodArguments = processReadlinesMethodArguments(args);
+        IRubyObject[] methodArguments = processReadlinesMethodArguments(context, args);
 
         try {
             IRubyObject str;
@@ -3334,7 +3339,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         }
         else {
             try { // MRI calls to_f even if not respond_to? (or respond_to_missing?) :to_f
-                _timeout = _timeout.callMethod(context, "to_f");
+                _timeout = sites(context).to_f.call(context, _timeout, _timeout);
             }
             catch (RaiseException e) {
                 TypeConverter.handleUncoercibleObject(true, _timeout, context.runtime.getFloat());
@@ -3472,45 +3477,6 @@ public class RubyIO extends RubyObject implements IOEncodable {
     }
 
     /**
-     *  options is a hash which can contain:
-     *    encoding: string or encoding
-     *    mode: string
-     *    open_args: array of string
-     */
-    /*
-    private static IRubyObject write19(ThreadContext context, IRubyObject recv, IRubyObject path, IRubyObject str, IRubyObject offset, RubyHash options) {
-        Ruby runtime = context.runtime;
-        RubyString pathStr = StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, path));
-        failIfDirectory(runtime, pathStr);
-
-        final RubyIO file;
-
-        long mode = ModeFlags.CREAT;
-
-        if (options == null || options.isEmpty()) {
-            if (offset.isNil()) {
-                mode |= ModeFlags.WRONLY;
-            } else {
-                mode |= ModeFlags.RDWR;
-            }
-
-            file = (RubyIO) Helpers.invoke(context, runtime.getFile(), "new", path, RubyFixnum.newFixnum(runtime, mode));
-        } else if (!options.containsKey(runtime.newSymbol("mode"))) {
-            mode |= ModeFlags.WRONLY;
-            file = (RubyIO) Helpers.invoke(context, runtime.getFile(), "new", path, RubyFixnum.newFixnum(runtime, mode), options);
-        } else {
-            file = (RubyIO) Helpers.invoke(context, runtime.getFile(), "new", path, options);
-        }
-
-        try {
-            if (!offset.isNil()) file.seek(context, offset);
-            return file.write(context, str);
-        } finally  {
-            file.close();
-        }
-    } */
-
-    /**
      * binread is just like read, except it doesn't take options and it forces
      * mode to be "rb:ASCII-8BIT"
      *
@@ -3533,7 +3499,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
         } else if (args.length > 1) {
             length = args[1];
         }
-        RubyIO file = (RubyIO) Helpers.invoke(context, runtime.getFile(), "new", path, runtime.newString("rb:ASCII-8BIT"));
+        RubyClass File = runtime.getFile();
+        RubyIO file = (RubyIO) sites(context).new_.call(context, File, File, path, runtime.newString("rb:ASCII-8BIT"));
 
         try {
             if (!offset.isNil()) {
@@ -3676,18 +3643,19 @@ public class RubyIO extends RubyObject implements IOEncodable {
         IRubyObject io = openKeyArgs(context, recv, args, opt);
         if (io.isNil()) return io;
 
-        IRubyObject[] methodArguments = processReadlinesMethodArguments(args);
+        IRubyObject[] methodArguments = processReadlinesMethodArguments(context, args);
 
         return readlinesCommon19(context, (RubyIO)io, methodArguments);
     }
 
-    private static IRubyObject[] processReadlinesMethodArguments(IRubyObject[] args) {
+    private static IRubyObject[] processReadlinesMethodArguments(ThreadContext context, IRubyObject[] args) {
         int count = args.length;
         IRubyObject[] methodArguments = IRubyObject.NULL_ARRAY;
 
-        if(count >= 3 && (args[2] instanceof RubyFixnum || args[2].respondsTo("to_int"))) {
+        RespondToCallSite respond_to_to_int = sites(context).respond_to_to_int;
+        if(count >= 3 && (args[2] instanceof RubyFixnum || respond_to_to_int.respondsTo(context, args[2], args[2]))) {
             methodArguments = new IRubyObject[]{args[1], args[2]};
-        } else if (count >= 2 && (args[1] instanceof RubyFixnum || args[1].respondsTo("to_int"))) {
+        } else if (count >= 2 && (args[1] instanceof RubyFixnum || respond_to_to_int.respondsTo(context, args[1], args[1]))) {
             methodArguments = new IRubyObject[]{args[1]};
         } else if (count >= 2 && !(args[1] instanceof RubyHash))  {
             methodArguments = new IRubyObject[]{args[1]};
@@ -4045,6 +4013,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
             }
         }
 
+        IOSites sites = sites(context);
+
         boolean close1 = false;
         boolean close2 = false;
         try {
@@ -4053,15 +4023,15 @@ public class RubyIO extends RubyObject implements IOEncodable {
                 close1 = true;
             } else if (arg1 instanceof RubyIO) {
                 io1 = (RubyIO) arg1;
-            } else if (arg1.respondsTo("to_path")) {
-                RubyString path = (RubyString) TypeConverter.convertToType19(arg1, runtime.getString(), "to_path");
+            } else if (sites.to_path_checked1.respond_to_X.respondsTo(context, arg1, arg1)) {
+                RubyString path = (RubyString) TypeConverter.convertToType19(context, arg1, runtime.getString(), sites.to_path_checked1);
                 io1 = (RubyIO) RubyFile.open(context, runtime.getFile(), new IRubyObject[]{path}, Block.NULL_BLOCK);
                 close1 = true;
-            } else if (arg1.respondsTo("read")) {
+            } else if (sites.respond_to_read.respondsTo(context, arg1, arg1, true)) {
                 if (length == null) {
-                    read = arg1.callMethod(context, "read", runtime.getNil()).convertToString();
+                    read = sites.read.call(context, arg1, arg1, context.nil).convertToString();
                 } else {
-                    read = arg1.callMethod(context, "read", length).convertToString();
+                    read = sites.read.call(context, arg1, arg1, length).convertToString();
                 }
             } else {
                 throw runtime.newArgumentError("Should be String or IO");
@@ -4072,11 +4042,11 @@ public class RubyIO extends RubyObject implements IOEncodable {
                 close2 = true;
             } else if (arg2 instanceof RubyIO) {
                 io2 = (RubyIO) arg2;
-            } else if (arg2.respondsTo("to_path")) {
-                RubyString path = (RubyString) TypeConverter.convertToType19(arg2, runtime.getString(), "to_path");
+            } else if (sites.to_path_checked2.respond_to_X.respondsTo(context, arg2, arg2)) {
+                RubyString path = (RubyString) TypeConverter.convertToType19(context, arg2, runtime.getString(), sites.to_path_checked2);
                 io2 = (RubyIO) RubyFile.open(context, runtime.getFile(), new IRubyObject[]{path, runtime.newString("w")}, Block.NULL_BLOCK);
                 close2 = true;
-            } else if (arg2.respondsTo("write")) {
+            } else if (sites.respond_to_write.respondsTo(context, arg2, arg2, true)) {
                 if (read == null) {
                     if (length == null) {
                         read = io1.read(context, runtime.getNil()).convertToString();
@@ -4084,7 +4054,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
                         read = io1.read(context, length).convertToString();
                     }
                 }
-                return arg2.callMethod(context, "write", read);
+                return sites.write.call(context, arg2, arg2, read);
             } else {
                 throw runtime.newArgumentError("Should be String or IO");
             }
@@ -4251,7 +4221,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
     @JRubyMethod(name = "try_convert", meta = true)
     public static IRubyObject tryConvert(ThreadContext context, IRubyObject recv, IRubyObject arg) {
-        return arg.respondsTo("to_io") ? convertToIO(context, arg) : context.runtime.getNil();
+        return sites(context).respond_to_to_io.respondsTo(context, arg, arg, true) ? convertToIO(context, arg) : context.runtime.getNil();
     }
 
     private static ByteList getNilByteList(Ruby runtime) {
@@ -4648,6 +4618,10 @@ public class RubyIO extends RubyObject implements IOEncodable {
     }
 
     private static final byte[] NEWLINE_BYTES = { (byte) '\n' };
+
+    private static IOSites sites(ThreadContext context) {
+        return context.sites.IO;
+    }
 
     @Deprecated
     public IRubyObject getline(Ruby runtime, ByteList separator) {

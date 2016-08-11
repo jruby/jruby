@@ -26,6 +26,18 @@ ruby_version_is "2.3" do
         end
       end
 
+      context "passed as the block for instance_exec" do
+        it "always retrieves the original hash's values" do
+          hash = {foo: 1, bar: 2}
+          proc = hash.to_proc
+
+          hash.instance_exec(:foo, &proc).should == 1
+
+          hash2 = {quux: 1}
+          hash2.instance_exec(:foo, &proc).should == 1
+        end
+      end
+
       context "with no stored key" do
         it "returns nil" do
           @proc.call(@unstored).should be_nil

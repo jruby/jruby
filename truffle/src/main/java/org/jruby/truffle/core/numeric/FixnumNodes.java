@@ -804,7 +804,7 @@ public abstract class FixnumNodes {
                 Object a,
                 DynamicObject b,
                 @Cached("new()") SnippetNode snippetNode) {
-            return snippetNode.execute(frame, "a ^ Rubinius::Type.coerce_to_bitwise_operand(b)", "a", a, "b", b);
+            return snippetNode.execute(frame, "redo_coerced :^, b", "b", b);
         }
 
     }

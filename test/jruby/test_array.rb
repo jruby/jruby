@@ -36,4 +36,13 @@ class TestArray < Test::Unit::TestCase
       assert_no_match(/Enumerable/, [].method(method).to_s)
     }
   end
+
+  # GH-4021
+  def test_range_to_a
+    assert_equal [ '2202702806' ], ("2202702806".."2202702806").to_a
+    str = '12345678900000'; assert (str..str).include?(str)
+    str = '2202702806'; assert_equal true, (str..str).member?(str)
+    str = '2202702806'; assert_equal false, (str..str).member?(str.to_i)
+  end
+
 end

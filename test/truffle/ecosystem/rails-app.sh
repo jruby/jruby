@@ -2,9 +2,9 @@
 
 set -e
 
-cd test/truffle/ecosystem/rails-app
+cd ../jruby-truffle-gem-test-pack/gem-testing/rails-app
 
-JRUBY_BIN=../../../../bin
+JRUBY_BIN=../../../jruby/bin
 JRUBY=$JRUBY_BIN/jruby
 JTR=$JRUBY_BIN/jruby+truffle
 
@@ -22,7 +22,7 @@ else
 
     $JRUBY $JRUBY_BIN/gem install bundler
 
-    $JTR setup
+    $JTR setup --offline
     $JTR run -r rubygems -- bin/rails server &
     serverpid=$!
     url=http://localhost:3000

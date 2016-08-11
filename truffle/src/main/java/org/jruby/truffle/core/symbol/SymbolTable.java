@@ -33,8 +33,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class SymbolTable {
 
-    private final RubyContext context;
-    private DynamicObjectFactory symbolFactory;
+    private final DynamicObjectFactory symbolFactory;
 
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
 
@@ -46,8 +45,8 @@ public class SymbolTable {
     // deduplicate symbols
     private final Map<SymbolEquality, Reference<DynamicObject>> symbolSet = new WeakHashMap<>();
 
-    public SymbolTable(RubyContext context) {
-        this.context = context;
+    public SymbolTable(DynamicObjectFactory symbolFactory) {
+        this.symbolFactory = symbolFactory;
     }
 
     @TruffleBoundary
@@ -130,7 +129,7 @@ public class SymbolTable {
         // Symbol has to have reference to its SymbolEquality otherwise it would be GCed.
         final SymbolEquality equalityWrapper = new SymbolEquality();
         final DynamicObject symbol = Layouts.SYMBOL.createSymbol(
-                getSymbolFactory(),
+                symbolFactory,
                 string,
                 rope,
                 string.hashCode(),
@@ -138,13 +137,6 @@ public class SymbolTable {
 
         equalityWrapper.setSymbol(symbol);
         return symbol;
-    }
-
-    private DynamicObjectFactory getSymbolFactory() {
-        if (symbolFactory == null) {
-            symbolFactory = Layouts.CLASS.getInstanceFactory(context.getCoreLibrary().getSymbolClass());
-        }
-        return symbolFactory;
     }
 
     private <K, V> V readRef(Map<K, Reference<V>> map, K key) {
@@ -181,6 +173,7 @@ public class SymbolTable {
     public static String checkInstanceVariableName(
             RubyContext context,
             String name,
+            Object receiver,
             Node currentNode) {
         // if (!IdUtil.isValidInstanceVariableName(name)) {
 
@@ -188,6 +181,7 @@ public class SymbolTable {
         if (!(name.startsWith("@") && name.length() > 1 && IdUtil.isInitialCharacter(name.charAt(1)))) {
             throw new RaiseException(context.getCoreExceptions().nameErrorInstanceNameNotAllowable(
                     name,
+                    receiver,
                     currentNode));
         }
         return name;
@@ -197,10 +191,12 @@ public class SymbolTable {
     public static String checkClassVariableName(
             RubyContext context,
             String name,
+            Object receiver,
             Node currentNode) {
         if (!IdUtil.isValidClassVariableName(name)) {
             throw new RaiseException(context.getCoreExceptions().nameErrorInstanceNameNotAllowable(
                     name,
+                    receiver,
                     currentNode));
         }
         return name;

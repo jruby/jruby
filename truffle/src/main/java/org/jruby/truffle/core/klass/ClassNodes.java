@@ -17,7 +17,6 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
-import com.oracle.truffle.api.object.ObjectType;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.runtime.Visibility;
@@ -38,11 +37,10 @@ import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.objects.SingletonClassNode;
 import org.jruby.truffle.language.objects.SingletonClassNodeGen;
+import org.jruby.truffle.util.StringUtils;
 
 @CoreClass("Class")
 public abstract class ClassNodes {
-
-    private final static com.oracle.truffle.api.object.Layout LAYOUT = com.oracle.truffle.api.object.Layout.createLayout();
 
     /**
      * Special constructor for class Class
@@ -50,24 +48,29 @@ public abstract class ClassNodes {
     @TruffleBoundary
     public static DynamicObject createClassClass(RubyContext context) {
         final ModuleFields model = new ModuleFields(context, null, "Class");
+        model.setFullName(model.givenBaseName);
 
-        final DynamicObject rubyClass = LAYOUT.newInstance(LAYOUT.createShape(new ObjectType()));
+        final DynamicObjectFactory tempFactory = Layouts.CLASS.createClassShape(null, null);
+        final DynamicObject rubyClass = Layouts.CLASS.createClass(tempFactory, model, false, null, null, null);
 
-        final DynamicObjectFactory factory = Layouts.CLASS.createClassShape(rubyClass, rubyClass);
+        Layouts.BASIC_OBJECT.setLogicalClass(rubyClass, rubyClass);
+        Layouts.BASIC_OBJECT.setMetaClass(rubyClass, rubyClass);
 
-        rubyClass.setShapeAndGrow(rubyClass.getShape(), factory.getShape());
         assert RubyGuards.isRubyModule(rubyClass);
         assert RubyGuards.isRubyClass(rubyClass);
 
         model.rubyModuleObject = rubyClass;
-        Layouts.CLASS.setInstanceFactoryUnsafe(rubyClass, factory);
-        Layouts.MODULE.setFields(rubyClass, model);
-        model.setFullName(model.givenBaseName);
+
+        // Class.new creates instance of Class
+        final DynamicObjectFactory instanceFactory = Layouts.CLASS.createClassShape(rubyClass, rubyClass);
+        Layouts.CLASS.setInstanceFactoryUnsafe(rubyClass, instanceFactory);
 
         assert RubyGuards.isRubyModule(rubyClass);
         assert RubyGuards.isRubyClass(rubyClass);
+
         assert Layouts.MODULE.getFields(rubyClass) == model;
         assert Layouts.BASIC_OBJECT.getLogicalClass(rubyClass) == rubyClass;
+        assert Layouts.BASIC_OBJECT.getMetaClass(rubyClass) == rubyClass;
 
         return rubyClass;
     }
@@ -227,7 +230,7 @@ public abstract class ClassNodes {
             singletonSuperclass = getLazyCreatedSingletonClass(context, getSuperClass(rubyClass));
         }
 
-        String name = String.format("#<Class:%s>", Layouts.MODULE.getFields(rubyClass).getName());
+        String name = StringUtils.format("#<Class:%s>", Layouts.MODULE.getFields(rubyClass).getName());
         Layouts.BASIC_OBJECT.setMetaClass(rubyClass, ClassNodes.createRubyClass(context, Layouts.BASIC_OBJECT.getLogicalClass(rubyClass), null, singletonSuperclass, name, true, rubyClass, true));
 
         return Layouts.BASIC_OBJECT.getMetaClass(rubyClass);

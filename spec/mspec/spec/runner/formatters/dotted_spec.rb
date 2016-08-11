@@ -68,12 +68,6 @@ describe DottedFormatter, "#print" do
     formatter = DottedFormatter.new
     formatter.print "begonias"
   end
-
-  it "rescues errors from flush" do
-    $stdout.should_receive(:flush).and_raise(RuntimeError.new)
-    formatter = DottedFormatter.new
-    formatter.print("begonias").should == nil
-  end
 end
 
 describe DottedFormatter, "#exception" do

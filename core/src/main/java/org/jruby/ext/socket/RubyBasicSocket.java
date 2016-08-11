@@ -248,8 +248,8 @@ public class RubyBasicSocket extends RubyIO {
     public IRubyObject getsockopt(ThreadContext context, IRubyObject _level, IRubyObject _opt) {
         Ruby runtime = context.runtime;
 
-        SocketLevel level = levelFromArg(_level);
-        SocketOption opt = optionFromArg(_opt);
+        SocketLevel level = SocketUtils.levelFromArg(_level);
+        SocketOption opt = SocketUtils.optionFromArg(_opt);
 
         try {
             Channel channel = getOpenChannel();
@@ -282,8 +282,8 @@ public class RubyBasicSocket extends RubyIO {
     public IRubyObject setsockopt(ThreadContext context, IRubyObject _level, IRubyObject _opt, IRubyObject val) {
         Ruby runtime = context.runtime;
 
-        SocketLevel level = levelFromArg(_level);
-        SocketOption opt = optionFromArg(_opt);
+        SocketLevel level = SocketUtils.levelFromArg(_level);
+        SocketOption opt = SocketUtils.optionFromArg(_opt);
 
         try {
             Channel channel = getOpenChannel();
@@ -706,26 +706,6 @@ public class RubyBasicSocket extends RubyIO {
             return RubyNumeric.fix2int(val) != 0;
         }
         return val.isTrue();
-    }
-
-    protected static SocketOption optionFromArg(IRubyObject _opt) {
-        SocketOption opt;
-        if (_opt instanceof RubyString || _opt instanceof RubySymbol) {
-            opt = SocketOption.valueOf("SO_" + _opt.toString());
-        } else {
-            opt = SocketOption.valueOf(RubyNumeric.fix2int(_opt));
-        }
-        return opt;
-    }
-
-    protected static SocketLevel levelFromArg(IRubyObject _level) {
-        SocketLevel level;
-        if (_level instanceof RubyString || _level instanceof RubySymbol) {
-            level = SocketLevel.valueOf("SOL_" + _level.toString());
-        } else {
-            level = SocketLevel.valueOf(RubyNumeric.fix2int(_level));
-        }
-        return level;
     }
 
     protected IRubyObject addrFor(ThreadContext context, InetSocketAddress addr, boolean reverse) {

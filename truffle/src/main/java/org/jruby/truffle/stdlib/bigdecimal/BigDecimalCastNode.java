@@ -80,18 +80,10 @@ public abstract class BigDecimalCastNode extends RubyNode {
             final Object numerator = numeratorCallNode.call(frame, value, "numerator");
             final Object denominator = denominatorCallNode.call(frame, value, "denominator");
 
-            final RubyRational rubyRationalValue = RubyRational.newRationalRaw(
-                    getContext().getJRubyRuntime(),
-                    toJRubyInteger(numerator),
-                    toJRubyInteger(denominator));
+            final RubyRational rubyRationalValue = newRationalRaw(numerator, denominator);
 
             try {
-                return RubyBigDecimal
-                        .getVpRubyObjectWithPrec19Inner(
-                                getContext().getJRubyRuntime().getCurrentContext(),
-                                rubyRationalValue,
-                                (RoundingMode) roundingMode)
-                        .getBigDecimalValue();
+                return toBigDecimal(rubyRationalValue, (RoundingMode) roundingMode);
             } catch (Exception e) {
                 throw e;
             }
@@ -104,6 +96,23 @@ public abstract class BigDecimalCastNode extends RubyNode {
                 return result;
             }
         }
+    }
+
+    @TruffleBoundary
+    private RubyRational newRationalRaw(Object numerator, Object denominator) {
+        return RubyRational.newRationalRaw(
+                getContext().getJRubyRuntime(),
+                toJRubyInteger(numerator),
+                toJRubyInteger(denominator));
+    }
+
+    @TruffleBoundary
+    private BigDecimal toBigDecimal(RubyRational rubyRationalValue, RoundingMode roundingMode) {
+        return RubyBigDecimal
+                .getVpRubyObjectWithPrec19Inner(
+                        getContext().getJRubyRuntime().getCurrentContext(),
+                        rubyRationalValue, roundingMode)
+                .getBigDecimalValue();
     }
 
     @TruffleBoundary

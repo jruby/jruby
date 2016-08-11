@@ -109,7 +109,7 @@ class Exception
     out << ms.serialize_fixnum(2)
 
     out << ms.serialize(:mesg)
-    out << ms.serialize(self.message)
+    out << ms.serialize(Truffle.invoke_primitive(:exception_message, self))
     out << ms.serialize(:bt)
     out << ms.serialize(self.backtrace)
 
@@ -1154,7 +1154,7 @@ module Marshal
         when :bt
           obj.__instance_variable_set__ :@custom_backtrace, value
         when :mesg
-          obj.__instance_variable_set__ :@reason_message, value
+          Truffle.invoke_primitive :exception_set_message, obj, value
         end
       end
     end

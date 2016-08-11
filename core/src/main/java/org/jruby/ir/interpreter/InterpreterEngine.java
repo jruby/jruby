@@ -204,7 +204,8 @@ public class InterpreterEngine {
             } catch (Throwable t) {
                 if (debug) extractToMethodToAvoidC2Crash(instr, t);
 
-                ipc = instr.getRPC();
+                // StartupInterpreterEngine never calls this method so we know it is a full build.
+                ipc = ((FullInterpreterContext) interpreterContext).determineRPC(ipc);
 
                 if (debug) {
                     Interpreter.LOG.info("in : " + interpreterContext.getScope() + ", caught Java throwable: " + t + "; excepting instr: " + instr);

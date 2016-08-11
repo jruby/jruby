@@ -119,7 +119,7 @@ public abstract class IOPrimitiveNodes {
 
         public IOAllocatePrimitiveNode(RubyContext context, SourceSection sourceSection) {
             newBufferNode = DispatchHeadNodeFactory.createMethodCall(context);
-            allocateNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
+            allocateNode = AllocateObjectNode.create();
         }
 
         @Specialization
@@ -184,7 +184,7 @@ public abstract class IOPrimitiveNodes {
 
     }
 
-    @Primitive(name = "io_open", needsSelf = false, lowerFixnumParameters = { 1, 2 }, unsafe = UnsafeGroup.IO)
+    @Primitive(name = "io_open", needsSelf = false, lowerFixnum = { 2, 3 }, unsafe = UnsafeGroup.IO)
     public static abstract class IOOpenPrimitiveNode extends IOPrimitiveArrayArgumentsNode {
 
         @TruffleBoundary(throwsControlFlowException = true)
@@ -257,7 +257,7 @@ public abstract class IOPrimitiveNodes {
 
     }
 
-    @Primitive(name = "io_read_if_available", lowerFixnumParameters = 0, unsafe = UnsafeGroup.IO)
+    @Primitive(name = "io_read_if_available", lowerFixnum = 1, unsafe = UnsafeGroup.IO)
     public static abstract class IOReadIfAvailableNode extends IOPrimitiveArrayArgumentsNode {
 
         @TruffleBoundary(throwsControlFlowException = true)
@@ -328,7 +328,7 @@ public abstract class IOPrimitiveNodes {
 
     }
 
-    @Primitive(name = "io_reopen_path", lowerFixnumParameters = 1, unsafe = UnsafeGroup.IO)
+    @Primitive(name = "io_reopen_path", lowerFixnum = 2, unsafe = UnsafeGroup.IO)
     public static abstract class IOReopenPathPrimitiveNode extends IOPrimitiveArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode resetBufferingNode;
@@ -419,6 +419,8 @@ public abstract class IOPrimitiveNodes {
     public static abstract class IOWriteNonBlockPrimitiveNode extends IOPrimitiveArrayArgumentsNode {
 
         static class StopWriting extends ControlFlowException {
+            private static final long serialVersionUID = 1096318435617097172L;
+
             final int bytesWritten;
 
             public StopWriting(int bytesWritten) {
@@ -529,7 +531,7 @@ public abstract class IOPrimitiveNodes {
 
     }
 
-    @Primitive(name = "io_seek", lowerFixnumParameters = { 0, 1 }, unsafe = UnsafeGroup.IO)
+    @Primitive(name = "io_seek", lowerFixnum = { 1, 2 }, unsafe = UnsafeGroup.IO)
     public static abstract class IOSeekPrimitiveNode extends IOPrimitiveArrayArgumentsNode {
 
         @Specialization
@@ -565,7 +567,7 @@ public abstract class IOPrimitiveNodes {
 
     }
 
-    @Primitive(name = "io_sysread", unsafe = UnsafeGroup.IO, lowerFixnumParameters = 0)
+    @Primitive(name = "io_sysread", unsafe = UnsafeGroup.IO, lowerFixnum = 1)
     public static abstract class IOSysReadPrimitiveNode extends IOPrimitiveArrayArgumentsNode {
 
         @TruffleBoundary(throwsControlFlowException = true)
@@ -599,7 +601,7 @@ public abstract class IOPrimitiveNodes {
 
     }
 
-    @Primitive(name = "io_select", needsSelf = false, lowerFixnumParameters = 3, unsafe = UnsafeGroup.IO)
+    @Primitive(name = "io_select", needsSelf = false, lowerFixnum = 4, unsafe = UnsafeGroup.IO)
     public static abstract class IOSelectPrimitiveNode extends IOPrimitiveArrayArgumentsNode {
 
         public abstract Object executeSelect(DynamicObject readables, DynamicObject writables, DynamicObject errorables, Object Timeout);
@@ -624,8 +626,13 @@ public abstract class IOPrimitiveNodes {
             return selectOneSet(writables, timeoutMicros, 2);
         }
 
+        @Specialization(guards = { "isNilOrEmpty(readables)", "isNilOrEmpty(writables)", "isRubyArray(errorables)" })
+        public Object selectErrorables(DynamicObject readables, DynamicObject writables, DynamicObject errorables, int timeoutMicros) {
+            return selectOneSet(errorables, timeoutMicros, 3);
+        }
+
         @TruffleBoundary(throwsControlFlowException = true)
-        private Object selectOneSet(DynamicObject setToSelect, int timeoutMicros, int setNb) {
+        private Object selectOneSet(DynamicObject setToSelect, final int timeoutMicros, int setNb) {
             assert setNb >= 1 && setNb <= 3;
             final Object[] readableObjects = ArrayOperations.toObjectArray(setToSelect);
             final int[] fds = getFileDescriptors(setToSelect);
@@ -642,11 +649,14 @@ public abstract class IOPrimitiveNodes {
                     }
                     final int result = callSelect(nfds, fdSet, timeoutToUse);
 
-                    if (result == 0) {
+                    if (result == 0 && timeoutMicros != 0) {
+                        // interrupted, try again
                         return null;
+                    } else {
+                        // result == 0: nothing was ready
+                        // result >  0: some were ready
+                        return result;
                     }
-
-                    return result;
                 }
 
                 private int callSelect(int nfds, FDSet fdSet, Timeval timeoutToUse) {

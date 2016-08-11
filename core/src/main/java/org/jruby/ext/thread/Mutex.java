@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2006 MenTaLguY <mental@rydia.net>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -108,7 +108,7 @@ public class Mutex extends RubyObject {
         if (!lock.isHeldByCurrentThread()) {
             throw runtime.newThreadError("Mutex is not owned by calling thread");
         }
-        
+
         boolean hasQueued = lock.hasQueuedThreads();
         context.getThread().unlock(lock);
         return hasQueued ? context.nil : this;
@@ -148,7 +148,7 @@ public class Mutex extends RubyObject {
     public IRubyObject synchronize(ThreadContext context, Block block) {
         lock(context);
         try {
-            return block.yield(context, null);
+            return block.call(context);
         } finally {
             unlock(context);
         }
@@ -164,5 +164,5 @@ public class Mutex extends RubyObject {
             throw context.runtime.newThreadError("Mutex relocking by same thread");
         }
     }
-    
+
 }

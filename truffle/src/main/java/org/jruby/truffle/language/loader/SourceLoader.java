@@ -14,6 +14,7 @@ import org.jruby.Ruby;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.RubyLanguage;
 import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.util.StringUtils;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -42,18 +43,23 @@ public class SourceLoader {
         } else if (canonicalPath.startsWith(TRUFFLE_SCHEME) || canonicalPath.startsWith(JRUBY_SCHEME)) {
             return loadResource(canonicalPath);
         } else {
-            final File file = new File(canonicalPath);
+            final File file = new File(canonicalPath).getCanonicalFile();
+
             if (!file.canRead()) {
                 throw new IOException("Can't read file " + canonicalPath);
             }
-            return Source.fromFileName(canonicalPath);
-            //return Source.newBuilder(new File(canonicalPath)).build();
+
+            if (canonicalPath.toLowerCase().endsWith(".su")) {
+                return Source.newBuilder(file).name(file.getPath()).build();
+            } else {
+                // We need to assume all other files are Ruby, so the file type detection isn't enough
+                return Source.newBuilder(file).name(file.getPath()).mimeType(RubyLanguage.MIME_TYPE).build();
+            }
         }
     }
 
     public Source loadFragment(String fragment, String name) {
-        return Source.fromText(fragment, name);
-        //return Source.newBuilder(fragment).name(name).mimeType(RubyLanguage.MIME_TYPE).build();
+        return Source.newBuilder(fragment).name(name).mimeType(RubyLanguage.MIME_TYPE).build();
     }
 
     private Source loadResource(String path) throws IOException {
@@ -75,14 +81,13 @@ public class SourceLoader {
         }
 
         final Path normalizedPath = relativePath.normalize();
-        final InputStream stream = relativeClass.getResourceAsStream(normalizedPath.toString().replace('\\', '/'));
+        final InputStream stream = relativeClass.getResourceAsStream(StringUtils.replace(normalizedPath.toString(), '\\', '/'));
 
         if (stream == null) {
             throw new FileNotFoundException(path);
         }
 
-        return Source.fromReader(new InputStreamReader(stream, StandardCharsets.UTF_8), path);
-        //return Source.newBuilder(new InputStreamReader(stream, StandardCharsets.UTF_8)).name(path).mimeType(RubyLanguage.MIME_TYPE).build();
+        return Source.newBuilder(new InputStreamReader(stream, StandardCharsets.UTF_8)).name(path).mimeType(RubyLanguage.MIME_TYPE).build();
     }
 
 }

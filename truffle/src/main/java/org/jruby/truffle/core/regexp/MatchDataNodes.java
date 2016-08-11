@@ -17,6 +17,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
+import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import java.util.Arrays;
 import org.jcodings.Encoding;
@@ -40,6 +41,7 @@ import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
+import org.jruby.truffle.util.StringUtils;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
 
@@ -171,13 +173,13 @@ public abstract class MatchDataNodes {
 
         @Child private ToIntNode toIntNode;
 
-        @TruffleBoundary
         @Specialization
-        public Object getIndex(DynamicObject matchData, int index, NotProvided length) {
+        public Object getIndex(DynamicObject matchData, int index, NotProvided length,
+                               @Cached("createBinaryProfile()") ConditionProfile indexOutOfBoundsProfile) {
             final Object[] values = Layouts.MATCH_DATA.getValues(matchData);
             final int normalizedIndex = ArrayOperations.normalizeIndex(values.length, index);
 
-            if ((normalizedIndex < 0) || (normalizedIndex >= values.length)) {
+            if (indexOutOfBoundsProfile.profile((normalizedIndex < 0) || (normalizedIndex >= values.length))) {
                 return nil();
             } else {
                 return values[normalizedIndex];
@@ -197,41 +199,44 @@ public abstract class MatchDataNodes {
         @TruffleBoundary(throwsControlFlowException = true)
         @Specialization(guards = "isRubySymbol(index)")
         public Object getIndexSymbol(DynamicObject matchData, DynamicObject index, NotProvided length,
-                @Cached("create()") BranchProfile errorProfile) {
+                @Cached("create()") BranchProfile errorProfile,
+                @Cached("createBinaryProfile()") ConditionProfile indexOutOfBoundsProfile) {
             try {
                 final Rope value = Layouts.SYMBOL.getRope(index);
                 final int i = Layouts.REGEXP.getRegex(Layouts.MATCH_DATA.getRegexp(matchData)).nameToBackrefNumber(value.getBytes(), 0, value.byteLength(), Layouts.MATCH_DATA.getRegion(matchData));
 
-                return getIndex(matchData, i, NotProvided.INSTANCE);
+                return getIndex(matchData, i, NotProvided.INSTANCE, indexOutOfBoundsProfile);
             } catch (final ValueException e) {
                 throw new RaiseException(
-                        coreExceptions().indexError(String.format("undefined group name reference: %s", Layouts.SYMBOL.getString(index)), this));
+                        coreExceptions().indexError(StringUtils.format("undefined group name reference: %s", Layouts.SYMBOL.getString(index)), this));
             }
         }
 
         @TruffleBoundary(throwsControlFlowException = true)
         @Specialization(guards = "isRubyString(index)")
-        public Object getIndexString(DynamicObject matchData, DynamicObject index, NotProvided length) {
+        public Object getIndexString(DynamicObject matchData, DynamicObject index, NotProvided length,
+                                     @Cached("createBinaryProfile()") ConditionProfile indexOutOfBoundsProfile) {
             try {
                 final Rope value = StringOperations.rope(index);
                 final int i = Layouts.REGEXP.getRegex(Layouts.MATCH_DATA.getRegexp(matchData)).nameToBackrefNumber(value.getBytes(), 0, value.byteLength(), Layouts.MATCH_DATA.getRegion(matchData));
 
-                return getIndex(matchData, i, NotProvided.INSTANCE);
+                return getIndex(matchData, i, NotProvided.INSTANCE, indexOutOfBoundsProfile);
             }
             catch (final ValueException e) {
                 throw new RaiseException(
-                        coreExceptions().indexError(String.format("undefined group name reference: %s", index.toString()), this));
+                        coreExceptions().indexError(StringUtils.format("undefined group name reference: %s", index.toString()), this));
             }
         }
 
         @Specialization(guards = { "!isRubySymbol(index)", "!isRubyString(index)", "!isIntRange(index)" })
-        public Object getIndex(VirtualFrame frame, DynamicObject matchData, Object index, NotProvided length) {
+        public Object getIndex(VirtualFrame frame, DynamicObject matchData, Object index, NotProvided length,
+                               @Cached("createBinaryProfile()") ConditionProfile indexOutOfBoundsProfile) {
             if (toIntNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
                 toIntNode = insert(ToIntNode.create());
             }
 
-            return getIndex(matchData, toIntNode.doInt(frame, index), NotProvided.INSTANCE);
+            return getIndex(matchData, toIntNode.doInt(frame, index), NotProvided.INSTANCE, indexOutOfBoundsProfile);
         }
 
         @TruffleBoundary
@@ -260,7 +265,7 @@ public abstract class MatchDataNodes {
         @TruffleBoundary
         @Specialization(guards = "!inBounds(matchData, index)")
         public Object beginError(DynamicObject matchData, int index) {
-            throw new RaiseException(coreExceptions().indexError(String.format("index %d out of matches", index), this));
+            throw new RaiseException(coreExceptions().indexError(StringUtils.format("index %d out of matches", index), this));
         }
 
         protected boolean inBounds(DynamicObject matchData, int index) {
@@ -291,7 +296,7 @@ public abstract class MatchDataNodes {
         @TruffleBoundary
         @Specialization(guards = "!inBounds(matchData, index)")
         public Object endError(DynamicObject matchData, int index) {
-            throw new RaiseException(coreExceptions().indexError(String.format("index %d out of matches", index), this));
+            throw new RaiseException(coreExceptions().indexError(StringUtils.format("index %d out of matches", index), this));
         }
 
         protected boolean inBounds(DynamicObject matchData, int index) {

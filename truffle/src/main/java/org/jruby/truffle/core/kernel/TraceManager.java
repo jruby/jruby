@@ -55,6 +55,7 @@ public class TraceManager {
         this.instrumenter = instrumenter;
     }
 
+    @TruffleBoundary
     public void setTraceFunc(final DynamicObject traceFunc) {
         assert RubyGuards.isRubyProc(traceFunc);
 

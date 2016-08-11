@@ -14,6 +14,7 @@ package org.jruby.truffle.core.encoding;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.Node.Child;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.Encoding;
@@ -47,17 +48,14 @@ import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
+import org.jruby.truffle.language.objects.AllocateObjectNode;
+import org.jruby.truffle.util.StringUtils;
 import org.jruby.util.ByteList;
 import org.jruby.util.io.EncodingUtils;
-
 import static org.jruby.truffle.core.string.StringOperations.rope;
 
 @CoreClass("Encoding::Converter")
 public abstract class EncodingConverterNodes {
-
-    public static DynamicObject createEncodingConverter(DynamicObject rubyClass, EConv econv) {
-        return Layouts.ENCODING_CONVERTER.createEncodingConverter(Layouts.CLASS.getInstanceFactory(rubyClass), econv);
-    }
 
     @NonStandard
     @CoreMethod(names = "initialize_jruby", required = 2, optional = 1, visibility = Visibility.PRIVATE)
@@ -189,20 +187,12 @@ public abstract class EncodingConverterNodes {
     @CoreMethod(names = "allocate", constructor = true)
     public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
 
+        @Child private AllocateObjectNode allocateNode = AllocateObjectNode.create();
+
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
-            return createEncodingConverter(rubyClass, null);
-        }
-
-    }
-
-
-    @Primitive(name = "encoding_converter_allocate")
-    public static abstract class EncodingConverterAllocateNode extends PrimitiveArrayArgumentsNode {
-
-        @Specialization
-        public Object encodingConverterAllocate(DynamicObject encodingConverterClass, NotProvided unused1, NotProvided unused2) {
-            return EncodingConverterNodes.createEncodingConverter(encodingConverterClass, null);
+            Object econv = null;
+            return allocateNode.allocate(rubyClass, econv);
         }
 
     }
@@ -392,7 +382,8 @@ public abstract class EncodingConverterNodes {
             lookupTableWriteNode.call(frame, ret, "[]=", getSymbol("result"), eConvResultToSymbol(lastError.getResult()));
             lookupTableWriteNode.call(frame, ret, "[]=", getSymbol("source_encoding_name"), createString(new ByteList(lastError.getSource())));
             lookupTableWriteNode.call(frame, ret, "[]=", getSymbol("destination_encoding_name"), createString(new ByteList(lastError.getDestination())));
-            lookupTableWriteNode.call(frame, ret, "[]=", getSymbol("error_bytes"), createString(new ByteList(lastError.getErrorBytes())));
+            lookupTableWriteNode.call(frame, ret, "[]=", getSymbol("error_bytes"), createString(new ByteList(lastError.getErrorBytes(),
+                lastError.getErrorBytesP(), lastError.getErrorBytesP() + lastError.getErrorBytesLength())));
 
             if (lastError.getReadAgainLength() != 0) {
                 lookupTableWriteNode.call(frame, ret, "[]=", getSymbol("read_again_bytes"), createString(new ByteList(lastError.getErrorBytes(),
@@ -414,7 +405,7 @@ public abstract class EncodingConverterNodes {
                 case IncompleteInput: return getSymbol("incomplete_input");
             }
 
-            throw new UnsupportedOperationException(String.format("Unknown EConv result: %s", result));
+            throw new UnsupportedOperationException(StringUtils.format("Unknown EConv result: %s", result));
         }
 
     }

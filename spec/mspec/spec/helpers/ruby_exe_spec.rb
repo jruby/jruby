@@ -185,7 +185,7 @@ describe Object, "#ruby_exe" do
   it "executes (using `) the result of calling #ruby_cmd with the given arguments" do
     code = "code"
     options = {}
-    @script.should_receive(:ruby_cmd).with(code, options).and_return("ruby_cmd")
+    @script.should_receive(:ruby_cmd).and_return("ruby_cmd")
     @script.should_receive(:`).with("ruby_cmd")
     @script.ruby_exe(code, options)
   end

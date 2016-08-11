@@ -29,6 +29,8 @@ package org.jruby.ext.socket;
 import jnr.constants.platform.AddressFamily;
 import jnr.constants.platform.ProtocolFamily;
 import jnr.constants.platform.Sock;
+import jnr.constants.platform.SocketLevel;
+import jnr.constants.platform.SocketOption;
 import jnr.netdb.Protocol;
 import jnr.netdb.Service;
 import org.jruby.Ruby;
@@ -586,7 +588,8 @@ public class SocketUtils {
 
         if(type instanceof RubyString || type instanceof RubySymbol) {
             String typeString = type.toString();
-            sockType = Sock.valueOf("SOCK_" + typeString);
+            if (!typeString.startsWith("SOCK_")) typeString = "SOCK_" + typeString;
+            sockType = Sock.valueOf(typeString);
         } else {
             int typeInt = RubyNumeric.fix2int(type);
             sockType = Sock.valueOf(typeInt);
@@ -622,6 +625,26 @@ public class SocketUtils {
         }
 
         return proto;
+    }
+
+    static SocketLevel levelFromArg(IRubyObject _level) {
+        SocketLevel level;
+        if (_level instanceof RubyString || _level instanceof RubySymbol) {
+            level = SocketLevel.valueOf("SOL_" + _level.toString());
+        } else {
+            level = SocketLevel.valueOf(RubyNumeric.fix2int(_level));
+        }
+        return level;
+    }
+
+    static SocketOption optionFromArg(IRubyObject _opt) {
+        SocketOption opt;
+        if (_opt instanceof RubyString || _opt instanceof RubySymbol) {
+            opt = SocketOption.valueOf("SO_" + _opt.toString());
+        } else {
+            opt = SocketOption.valueOf(RubyNumeric.fix2int(_opt));
+        }
+        return opt;
     }
 
     public static int portToInt(IRubyObject port) {

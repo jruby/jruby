@@ -96,6 +96,7 @@ public abstract class DispatchNode extends RubyNode {
         return NodeUtil.findParent(this, DispatchHeadNode.class);
     }
 
+    @Override
     public final Object execute(VirtualFrame frame) {
         throw new IllegalStateException("do not call execute on dispatch nodes");
     }

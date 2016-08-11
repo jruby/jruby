@@ -57,3 +57,6 @@ exclude :test_keyword_self_reference, "needs investigation"
 exclude :test_keyword_empty_splat, "needs investigation"
 exclude :test_null_range_cmdarg, "needs investigation"
 exclude :test_too_big_nth_ref, "needs investigation"
+exclude :"test_keyword_duplicated_splat", "needs investigation"
+exclude :test_keyword_duplicated, "needs investigation"
+

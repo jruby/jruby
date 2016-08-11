@@ -5,14 +5,6 @@ include Truffle::Runner::ConfigUtils
 include Truffle::Runner::OptionBlocks
 
 stubs = {
-    # TODO (pitr-ch 23-Jun-2016): remove? it's not used any more
-    minitest: dedent(<<-RUBY),
-      require 'minitest'
-      # mock load_plugins as it loads rubygems
-      def Minitest.load_plugins
-      end
-    RUBY
-
     activesupport_isolation: dedent(<<-RUBY),
       require 'active_support/testing/isolation'
 
@@ -117,14 +109,42 @@ stubs = {
       end
     RUBY
 
+    kernel_gem: dedent(<<-RUBY),
+      module Kernel
+        def gem(gem_name, *requirements)
+          puts format 'ignoring %s gem activation, already added to $LOAD_PATH by bundler/setup.rb',
+                      gem_name
+        end
+      end
+    RUBY
+
 }.reduce({}) do |h, (k, v)|
   file_name = "stub-#{k}"
   h.update k => { setup: { file: { "#{file_name}.rb" => v } },
                   run:   { require: [file_name] } }
 end
 
+additions = {
+    minitest_reporters: dedent(<<-RUBY)
+      require 'rbconfig'
+      # add minitest-reporters and its dependencies to $LOAD_PATH
+      path = File.expand_path('..', __FILE__)
+      %w[ansi-1.5.0 ruby-progressbar-1.8.0 minitest-reporters-1.1.9].each do |gem_dir|
+        $:.unshift "\#{path}/../\#{RUBY_ENGINE}/\#{RbConfig::CONFIG['ruby_version']}/gems/\#{gem_dir}/lib"
+      end
+      # activate
+      require "minitest/reporters"
+      reporter_class = ENV["CI"] ? Minitest::Reporters::SpecReporter : Minitest::Reporters::ProgressReporter
+      Minitest::Reporters.use! reporter_class.new
+    RUBY
+}.reduce({}) do |h, (k, v)|
+  file_name = format '%s.rb', k
+  h.update k => { setup: { file: { file_name => v } },
+                  run:   { require: [file_name] } }
+end
+
 replacements = {
-    bundler: dedent(<<-RUBY),
+    :bundler => dedent(<<-RUBY),
       module Bundler
         BundlerError = Class.new(Exception)
         def self.setup
@@ -132,11 +152,11 @@ replacements = {
       end
     RUBY
     :'bundler/gem_tasks'    => nil,
-    java:                   nil,
-    bcrypt_ext:             nil,
-    method_source:          nil,
+    :java                   => nil,
+    :bcrypt_ext             => nil,
+    :method_source          => nil,
     :'rails-html-sanitizer' => nil,
-    nokogiri:               nil
+    :nokogiri               => nil
 }.reduce({}) do |h, (k, v)|
   h.update k => { setup: { file: { "#{k}.rb" => v || %[puts "loaded '#{k}.rb' an empty replacement"] } } }
 end
@@ -156,6 +176,8 @@ end
 
 rails_common =
     deep_merge replacements.fetch(:bundler),
+               stubs.fetch(:kernel_gem),
+               additions.fetch(:minitest_reporters),
                setup: { without: %w(db job) },
                run:   { environment: { 'N' => 1 },
                         require:     %w(rubygems date bigdecimal pathname openssl-stubs) }
@@ -172,15 +194,14 @@ Truffle::Runner.add_config :activemodel,
                                stubs.fetch(:activesupport_isolation),
                                stubs.fetch(:bcrypt))
 
-# TODO (pitr-ch 23-Jun-2016): investigate, fails intermittently
 Truffle::Runner.add_config :actionpack,
                            deep_merge(
                                rails_common,
                                stubs.fetch(:html_sanitizer),
                                setup: { file: { 'excluded-tests.rb' => format(dedent(<<-RUBY), exclusion_file(:actionpack)),
-                              failures = %s
-                              require 'truffle/exclude_rspec_examples'
-                              Truffle.exclude_rspec_examples failures
+                                                  failures = %s
+                                                  require 'truffle/exclude_rspec_examples'
+                                                  Truffle.exclude_rspec_examples failures
                                                 RUBY
                                } })
 
@@ -214,43 +235,40 @@ Truffle::Runner.add_config :psd,
 
 
 class Truffle::Runner::CIEnvironment
-  def rails_ci(exclude)
-    repository_name 'rails'
+  def rails_ci
+    declare_options debug:   ['--[no-]debug', 'Run tests with remote debugging enabled.',
+                              STORE_NEW_VALUE, false],
+                    exclude: ['--[no-]exclude', 'Exclude known failing tests',
+                              STORE_NEW_VALUE, true]
 
-    git_clone 'https://github.com/rails/rails.git' unless File.exists? repository_dir
-    git_checkout git_tag('4.2.6')
+    repository_name 'rails'
 
     use_only_https_git_paths!
 
     has_to_succeed setup
-    set_result run([%w[--require-pattern test/**/*_test.rb],
-                    (exclude ? %w[-r excluded-tests] : []),
-                    %w[-- -I test -e nil]].flatten(1))
+    set_result run([*%w[--require-pattern test/**/*_test.rb],
+                    *(%w[-r excluded-tests] if option(:exclude)),
+                    *(%w[--debug] if option(:debug)),
+                    *%w[-- -I test -e nil]])
   end
 end
 
 Truffle::Runner.add_ci_definition :actionpack do
-  declare_options exclude: ['--[no-]exclude',
-                            'Exclude known failing tests',
-                            STORE_NEW_VALUE,
-                            true]
   subdir 'actionpack'
-  rails_ci option(:exclude)
+  rails_ci
 end
 
 Truffle::Runner.add_ci_definition :activemodel do
   subdir 'activemodel'
-  rails_ci false
+  rails_ci
 end
 
 Truffle::Runner.add_ci_definition :activesupport do
   subdir 'activesupport'
-  rails_ci false
+  rails_ci
 end
 
 Truffle::Runner.add_ci_definition :algebrick do
-  git_clone 'https://github.com/pitr-ch/algebrick.git' unless File.exists? repository_dir
-  git_checkout git_tag '0.7.3'
 
   has_to_succeed setup
 

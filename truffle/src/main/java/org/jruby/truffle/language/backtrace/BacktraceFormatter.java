@@ -20,6 +20,7 @@ import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.loader.SourceLoader;
+import org.jruby.truffle.util.StringUtils;
 
 import java.io.PrintWriter;
 import java.util.ArrayList;
@@ -100,7 +101,7 @@ public class BacktraceFormatter {
                     e.printStackTrace();
                 }
 
-                lines.add(String.format("(exception %s %s", e.getMessage(), e.getStackTrace()[0].toString()));
+                lines.add(StringUtils.format("(exception %s %s", e.getMessage(), e.getStackTrace()[0].toString()));
             }
         }
 
@@ -234,6 +235,20 @@ public class BacktraceFormatter {
         }
 
         return true;
+    }
+
+    /** For debug purposes. */
+    public static boolean isUserSourceSection(RubyContext context, SourceSection sourceSection) {
+        if (!BacktraceFormatter.isCore(sourceSection)) {
+            return false;
+        }
+
+        final String path = sourceSection.getSource().getPath();
+        if (path.startsWith(context.getCoreLibrary().getCoreLoadPath())) {
+            return false;
+        }
+
+        return path.indexOf("/lib/ruby/stdlib/rubygems") == -1;
     }
 
     private String formatForeign(Node callNode) {

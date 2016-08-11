@@ -9,7 +9,7 @@ project 'JRuby Truffle' do
 
   properties( 'polyglot.dump.pom' => 'pom.xml',
               'polyglot.dump.readonly' => true,
-              'truffle.version' => '0.14',
+              'truffle.version' => '0.16',
               'jruby.basedir' => '${basedir}/..',
               'maven.test.skip' => 'true' )
 
@@ -17,6 +17,9 @@ project 'JRuby Truffle' do
   jar 'org.antlr:antlr4-runtime:4.5.1-1'
 
   jar 'org.jruby:jruby-core', '${project.version}', :scope => 'provided'
+
+  repository( :url => 'http://lafo.ssw.uni-linz.ac.at/nexus/content/repositories/snapshots/',
+              :id => 'truffle' )
 
   truffle_version = '${truffle.version}'
   jar 'com.oracle.truffle:truffle-api:' + truffle_version

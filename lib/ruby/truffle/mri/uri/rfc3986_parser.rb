@@ -1,1 +1,1 @@
-require_relative '../../stdlib/uri/rfc3986_parser'
+require_relative '../../../stdlib/uri/rfc3986_parser'

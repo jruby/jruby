@@ -45,7 +45,7 @@ public abstract class ConditionVariableNodes {
 
         public AllocateNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            allocateNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
+            allocateNode = AllocateObjectNode.create();
         }
 
         @Specialization
@@ -80,28 +80,44 @@ public abstract class ConditionVariableNodes {
         }
 
         @TruffleBoundary
-        private void doWait(final long durationInMillis, ReentrantLock lock, DynamicObject thread, Object condition) {
+        private void doWait(
+                final long durationInMillis,
+                ReentrantLock lock,
+                DynamicObject thread,
+                Object condition) {
+
             final long start = System.currentTimeMillis();
+            boolean doLock = false;
 
-            // First lock the condition so we only release the Mutex when we are in wait() and ready to be notified
-            synchronized (condition) {
-                MutexOperations.unlock(lock, thread, this);
-                try {
-                    getContext().getThreadManager().runUntilResult(this, new BlockingAction<Boolean>() {
-                        @Override
-                        public Boolean block() throws InterruptedException {
-                            long now = System.currentTimeMillis();
-                            long slept = now - start;
+            try {
+                // First acquire the condition monitor, so we only release the Mutex
+                // when we own the condition monitor blocking notify/notifyAll calls until
+                // we are in wait(), ready to be notified.
+                synchronized (condition) {
+                    MutexOperations.unlock(lock, thread, this);
+                    // successfully unlocked, do lock later
+                    doLock = true;
+                    getContext().getThreadManager().
+                            runUntilResult(this, new BlockingAction<Boolean>() {
+                                @Override
+                                public Boolean block() throws InterruptedException {
+                                    long now = System.currentTimeMillis();
+                                    long slept = now - start;
 
-                            if (slept >= durationInMillis) {
-                                return SUCCESS;
-                            }
+                                    if (slept >= durationInMillis) {
+                                        return SUCCESS;
+                                    }
 
-                            condition.wait(durationInMillis - slept);
-                            return SUCCESS;
-                        }
-                    });
-                } finally {
+                                    condition.wait(durationInMillis - slept);
+                                    return SUCCESS;
+                                }
+                            });
+                }
+            } finally {
+                // Has to lock again *after* condition lock is released, otherwise it would be
+                // locked in reverse order condition > mutex opposed to normal locking order
+                // mutex > condition (as in signal, broadcast), which would lead to deadlock.
+                if (doLock) {
                     MutexOperations.lock(lock, thread, this);
                 }
             }
@@ -111,6 +127,7 @@ public abstract class ConditionVariableNodes {
     @CoreMethod(names = "signal")
     public abstract static class SignalNode extends UnaryCoreMethodNode {
 
+        @TruffleBoundary
         @Specialization
         public DynamicObject doSignal(DynamicObject conditionVariable) {
             final Object condition = getCondition(conditionVariable);
@@ -125,6 +142,7 @@ public abstract class ConditionVariableNodes {
     @CoreMethod(names = "broadcast")
     public abstract static class BroadcastNode extends UnaryCoreMethodNode {
 
+        @TruffleBoundary
         @Specialization
         public DynamicObject doBroadcast(DynamicObject conditionVariable) {
             final Object condition = getCondition(conditionVariable);

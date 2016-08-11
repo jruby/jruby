@@ -1,2 +1,0 @@
-fails:Encoding::Converter.new calls #to_str to convert the source encoding argument to an encoding name
-fails:Encoding::Converter.new calls #to_str to convert the destination encoding argument to an encoding name

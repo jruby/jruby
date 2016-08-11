@@ -11,8 +11,8 @@ package org.jruby.truffle;
 
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.vm.PolyglotEngine;
-import com.oracle.truffle.tools.TruffleProfiler;
 import java.io.IOException;
+
 import org.jruby.JRubyTruffleInterface;
 import org.jruby.Ruby;
 import org.jruby.truffle.interop.JRubyContextWrapper;
@@ -32,11 +32,6 @@ public class JRubyTruffleImpl implements JRubyTruffleInterface {
         engine = PolyglotEngine.newBuilder()
                 .globalSymbol(JRubyTruffleInterface.RUNTIME_SYMBOL, new JRubyContextWrapper(runtime))
                 .build();
-
-        if (Options.TRUFFLE_PROFILER.load()) {
-            engine.getInstruments().get(TruffleProfiler.ID).setEnabled(true);
-        }
-
         try {
             context = (RubyContext) engine.eval(loadSource("Truffle::Boot.context", "context")).get();
         } catch (IOException e) {
@@ -72,8 +67,7 @@ public class JRubyTruffleImpl implements JRubyTruffleInterface {
     }
 
     private Source loadSource(String source, String name) {
-        return Source.fromText(source, name).withMimeType(RubyLanguage.MIME_TYPE);
-        //return Source.newBuilder(source).name(name).mimeType(RubyLanguage.MIME_TYPE).build();
+        return Source.newBuilder(source).name(name).mimeType(RubyLanguage.MIME_TYPE).build();
     }
     
 }

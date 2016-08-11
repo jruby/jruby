@@ -1,1 +1,1 @@
-require_relative '../../stdlib/uri/mailto'
+require_relative '../../../stdlib/uri/mailto'

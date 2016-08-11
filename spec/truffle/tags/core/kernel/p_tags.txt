@@ -1,2 +1,0 @@
-fails:Kernel#p flushes output if receiver is a File
-fails:Kernel#p is not affected by setting $\, $/ or $,

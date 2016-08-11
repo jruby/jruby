@@ -15,8 +15,8 @@ class Object
     MSpec.current.it msg, &block
   end
 
-  def it_should_behave_like(desc)
-    MSpec.current.it_should_behave_like desc
+  def it_should_behave_like(*args)
+    MSpec.current.it_should_behave_like(*args)
   end
 
   # For ReadRuby compatiability

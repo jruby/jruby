@@ -128,6 +128,11 @@ describe "Hash literal" do
     {a: 1, **obj, c: 3}.should == {a:1, b: 2, c: 3, d: 4}
   end
 
+  it "raises a TypeError if any splatted elements keys are not symbols" do
+    h = {1 => 2, b: 3}
+    lambda { {a: 1, **h} }.should raise_error(TypeError)
+  end
+
   it "raises a TypeError if #to_hash does not return a Hash" do
     obj = mock("hash splat")
     obj.should_receive(:to_hash).and_return(obj)

@@ -3,7 +3,7 @@ namespace :spec do
   # The specs below this section will run specs, but they will not retrieve
   # the specs they run against.  This is so we can run the similiar mspec
   # runs against a stable and head version of the rubyspecs.
-  
+
   desc "Run rubyspecs expected to pass in interpreted mode"
   task :ruby => :ci_interpreted
   desc "Run rubyspecs expected to pass in interpreted mode"
@@ -67,32 +67,32 @@ namespace :spec do
   desc "Tagged specs in JIT mode only (threshold=0)"
   task :compiled do
     mspec :compile_mode => "JIT",
-       :jit_threshold => 0, 
+       :jit_threshold => 0,
        :format => 'd'
   end
 
   desc "Tagged specs in AOT mode only"
   task :precompiled do
     mspec :compile_mode => "FORCE",
-       :jit_threshold => 0, 
+       :jit_threshold => 0,
        :format => 'd'
   end
 
   desc "All specs in interpreted mode only"
   task :all_interpreted do
-    mspec :compile_mode => "OFF", 
+    mspec :compile_mode => "OFF",
        :format => 'd'
   end
 
   desc "All specs in JIT mode only (threshold=0)"
   task :all_compiled_18 do
-    mspec :compile_mode => "JIT", :jit_threshold => 0, 
+    mspec :compile_mode => "JIT", :jit_threshold => 0,
        :format => 'd'
   end
 
   desc "All specs in AOT mode only"
   task :all_precompiled do
-    mspec :compile_mode => "FORCE", :jit_threshold => 0, 
+    mspec :compile_mode => "FORCE", :jit_threshold => 0,
        :format => 'd'
   end
 
@@ -114,7 +114,7 @@ namespace :spec do
     puts "Rolling mspec to stable version"
     git_submodule_update('spec/mspec')
   end
-  
+
   task :fast_forward_to_rubyspec_head => :fetch_latest_specs do
     puts "Rolling to rubyspec to latest version"
     git_checkout('rubyspec', 'origin/HEAD', RUBYSPEC_DIR)
@@ -148,7 +148,6 @@ namespace :spec do
   def clean_spec_dirs(wipe_spec_dir = false)
     rm_rf RUBYSPEC_DIR if wipe_spec_dir
     rm_rf MSPEC_DIR
-    rm_f RUBYSPEC_TAR_FILE
     rm_f MSPEC_TAR_FILE
     rm_f File.join(SPEC_DIR, "rubyspecs.current.revision")
   end

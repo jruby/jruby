@@ -16,7 +16,6 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreClass;
@@ -25,7 +24,6 @@ import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.builtins.NonStandard;
 import org.jruby.truffle.builtins.Primitive;
 import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
-import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.backtrace.Backtrace;
@@ -36,6 +34,23 @@ import org.jruby.truffle.language.objects.ReadObjectFieldNodeGen;
 
 @CoreClass("Exception")
 public abstract class ExceptionNodes {
+
+    @CoreMethod(names = "allocate", constructor = true)
+    public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
+
+        @Child private AllocateObjectNode allocateObjectNode;
+
+        public AllocateNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            allocateObjectNode = AllocateObjectNode.create();
+        }
+
+        @Specialization
+        public DynamicObject allocateNameError(DynamicObject rubyClass) {
+            return allocateObjectNode.allocate(rubyClass, nil(), null);
+        }
+
+    }
 
     @CoreMethod(names = "initialize", optional = 1)
     public abstract static class InitializeNode extends CoreMethodArrayArgumentsNode {
@@ -101,46 +116,33 @@ public abstract class ExceptionNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject captureBacktrace(DynamicObject exception, int offset) {
-            final Backtrace backtrace = getContext().getCallStack().getBacktrace(this, offset, exception);
+            final Backtrace backtrace = getContext().getCallStack().getBacktrace(
+                    this,
+                    offset,
+                    exception);
             Layouts.EXCEPTION.setBacktrace(exception, backtrace);
             return nil();
         }
 
     }
 
-    @CoreMethod(names = "message")
-    public abstract static class MessageNode extends CoreMethodArrayArgumentsNode {
+    @Primitive(name = "exception_message")
+    public abstract static class MessagePrimitiveNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
-        public Object message(
-                DynamicObject exception,
-                @Cached("createBinaryProfile()") ConditionProfile messageProfile) {
-            final Object message = Layouts.EXCEPTION.getMessage(exception);
-
-            if (messageProfile.profile(message == null)) {
-                final String className = Layouts.MODULE.getFields(
-                        Layouts.BASIC_OBJECT.getLogicalClass(exception)).getName();
-                return createString(StringOperations.encodeRope(className, UTF8Encoding.INSTANCE));
-            } else {
-                return message;
-            }
+        public Object message(DynamicObject exception) {
+            return Layouts.EXCEPTION.getMessage(exception);
         }
 
     }
 
-    @CoreMethod(names = "allocate", constructor = true)
-    public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
-
-        @Child private AllocateObjectNode allocateObjectNode;
-
-        public AllocateNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
-        }
+    @Primitive(name = "exception_set_message")
+    public abstract static class MessageSetNode extends PrimitiveArrayArgumentsNode {
 
         @Specialization
-        public DynamicObject allocate(DynamicObject rubyClass) {
-            return allocateObjectNode.allocate(rubyClass, null, null, nil());
+        public Object setMessage(DynamicObject error, Object message) {
+            Layouts.EXCEPTION.setMessage(error, message);
+            return error;
         }
 
     }
@@ -150,12 +152,19 @@ public abstract class ExceptionNodes {
 
         @TruffleBoundary
         @Specialization
-        public DynamicObject exceptionErrnoError(DynamicObject message, int errno, DynamicObject location) {
+        public DynamicObject exceptionErrnoError(
+                DynamicObject message,
+                int errno,
+                DynamicObject location) {
             final String errorMessage;
-            if(RubyGuards.isRubyString(location)){
-                errorMessage = " @ " + location.toString() + " - " + message.toString();
+            if (message != nil()) {
+                if (RubyGuards.isRubyString(location)) {
+                    errorMessage = " @ " + location.toString() + " - " + message.toString();
+                } else {
+                    errorMessage = " - " + message.toString();
+                }
             } else {
-                errorMessage = " - " + message.toString();
+                errorMessage = "";
             }
             return coreExceptions().errnoError(errno, errorMessage, this);
         }

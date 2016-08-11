@@ -34,17 +34,17 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.encoding.EncodingManager;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyGuards;
+import org.jruby.truffle.language.control.RaiseException;
+import org.jruby.truffle.util.StringUtils;
 import org.jruby.util.ByteList;
 import org.jruby.util.Memo;
 import org.jruby.util.StringSupport;
 import org.jruby.util.io.EncodingUtils;
-
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.concurrent.ConcurrentHashMap;
-
 import static org.jruby.truffle.core.rope.CodeRange.CR_7BIT;
 import static org.jruby.truffle.core.rope.CodeRange.CR_BROKEN;
 import static org.jruby.truffle.core.rope.CodeRange.CR_UNKNOWN;
@@ -88,7 +88,7 @@ public class RopeOperations {
             case CR_BROKEN: return new InvalidLeafRope(bytes, encoding);
             default: {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                throw new RuntimeException(String.format("Unknown code range type: %d", codeRange));
+                throw new RuntimeException(StringUtils.format("Unknown code range type: %d", codeRange));
             }
         }
     }
@@ -403,14 +403,15 @@ public class RopeOperations {
                     }
                 } else {
                     final int bytesToCopy = substringLengths.peek();
-                    int loopCount = bytesToCopy / repeatingRope.getChild().byteLength();
+                    final int patternLength = repeatingRope.getChild().byteLength();
+                    int loopCount = (bytesToCopy + patternLength - 1) / patternLength;
 
                     // Fix the offset to be appropriate for a given child. The offset is reset the first time it is
                     // consumed, so there's no need to worry about adversely affecting anything by adjusting it here.
                     offset %= repeatingRope.getChild().byteLength();
 
-                    // Adjust the loop count in case we're straddling a boundary.
-                    if (offset != 0) {
+                    // Adjust the loop count in case we're straddling two boundaries.
+                    if (offset > 0 && ((bytesToCopy - (patternLength - offset)) % patternLength) > 0) {
                         loopCount++;
                     }
 
@@ -476,12 +477,13 @@ public class RopeOperations {
             final Rope child = repeatingRope.getChild();
 
             int remainingLength = length;
-            int loopCount = length / child.byteLength();
+            final int patternLength = child.byteLength();
+            int loopCount = (length + patternLength - 1) / patternLength;
 
             offset %= child.byteLength();
 
-            // Adjust the loop count in case we're straddling a boundary.
-            if (offset != 0) {
+            // Adjust the loop count in case we're straddling two boundaries.
+            if (offset > 0 && ((length - (patternLength - offset)) % patternLength) > 0) {
                 loopCount++;
             }
 
@@ -641,6 +643,21 @@ public class RopeOperations {
         // If we get this far, one must be CR_7BIT and the other must be CR_VALID, so promote to the more general code range.
 
         return CR_VALID;
+    }
+
+    @TruffleBoundary
+    public static int codePoint(RubyContext context, Rope rope, int start) {
+        byte[] bytes = rope.getBytes();
+        int p = start;
+        int end = rope.byteLength();
+        Encoding enc = rope.getEncoding();
+
+        assert p < end : "empty string";
+        int cl = StringSupport.preciseLength(enc, bytes, p, end);
+        if (cl <= 0) {
+            throw new RaiseException(context.getCoreExceptions().argumentError("invalid byte sequence in " + enc, null));
+        }
+        return enc.mbcToCode(bytes, p, end);
     }
 
 }

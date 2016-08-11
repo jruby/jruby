@@ -1,5 +1,7 @@
 require 'mspec/version'
 
+MSPEC_HOME = File.expand_path('../../../..', __FILE__)
+
 class MSpecOption
   attr_reader :short, :long, :arg, :description, :block
 

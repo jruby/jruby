@@ -34,6 +34,7 @@ import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
+import org.jruby.truffle.util.StringUtils;
 
 /**
  * This is a port of MRI's rb_cmpint, as taken from RubyComparable and broken out into specialized nodes.
@@ -93,7 +94,7 @@ public abstract class CmpIntNode extends RubyNode {
 
     @TruffleBoundary
     private String formatMessage(Object receiver, Object other) {
-        return String.format("comparison of %s with %s failed",
+        return StringUtils.format("comparison of %s with %s failed",
                 Layouts.MODULE.getFields(coreLibrary().getLogicalClass(receiver)).getName(),
                 Layouts.MODULE.getFields(coreLibrary().getLogicalClass(other)).getName());
     }

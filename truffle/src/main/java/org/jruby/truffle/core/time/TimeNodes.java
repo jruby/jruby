@@ -39,6 +39,7 @@ import org.jruby.truffle.language.SnippetNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
+import org.jruby.truffle.util.StringUtils;
 import org.jruby.util.RubyDateFormatter;
 
 import java.util.Locale;
@@ -113,7 +114,7 @@ public abstract class TimeNodes {
             Layouts.TIME.setIsUtc(time, false);
             Layouts.TIME.setRelativeOffset(time, false);
             Layouts.TIME.setZone(time, zone);
-            Layouts.TIME.setDateTime(time, dateTime.withZone(dateTimeZone));
+            Layouts.TIME.setDateTime(time, withZone(dateTime, dateTimeZone));
 
             return time;
         }
@@ -126,7 +127,7 @@ public abstract class TimeNodes {
             Layouts.TIME.setIsUtc(time, false);
             Layouts.TIME.setRelativeOffset(time, true);
             Layouts.TIME.setZone(time, nil());
-            Layouts.TIME.setDateTime(time, dateTime.withZone(zone));
+            Layouts.TIME.setDateTime(time, withZone(dateTime, zone));
 
             return time;
         }
@@ -134,6 +135,11 @@ public abstract class TimeNodes {
         @TruffleBoundary
         public DateTimeZone getDateTimeZone(int offset) {
             return DateTimeZone.forOffsetMillis(offset * 1000);
+        }
+
+        @TruffleBoundary
+        private DateTime withZone(DateTime dateTime, DateTimeZone zone) {
+            return dateTime.withZone(zone);
         }
 
     }
@@ -159,7 +165,7 @@ public abstract class TimeNodes {
 
         public DupInternalNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
+            allocateObjectNode = AllocateObjectNode.create();
         }
 
         @Specialization
@@ -239,7 +245,7 @@ public abstract class TimeNodes {
 
         public AllocateNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
+            allocateObjectNode = AllocateObjectNode.create();
         }
 
         @Specialization
@@ -257,7 +263,7 @@ public abstract class TimeNodes {
 
         public TimeSNowPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
+            allocateObjectNode = AllocateObjectNode.create();
             getTimeZoneNode = GetTimeZoneNodeGen.create();
         }
 
@@ -273,34 +279,36 @@ public abstract class TimeNodes {
 
     }
 
-    @Primitive(name = "time_s_specific", needsSelf = false, lowerFixnumParameters = { 1 })
+    @Primitive(name = "time_s_specific", lowerFixnum = 2)
     public static abstract class TimeSSpecificPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Child private GetTimeZoneNode getTimeZoneNode;
+        @Child private AllocateObjectNode allocateObjectNode;
 
         public TimeSSpecificPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             getTimeZoneNode = GetTimeZoneNodeGen.create();
+            allocateObjectNode = AllocateObjectNode.create();
         }
 
         @Specialization(guards = { "isUTC" })
-        public DynamicObject timeSSpecificUTC(long seconds, int nanoseconds, boolean isUTC, Object offset) {
+        public DynamicObject timeSSpecificUTC(DynamicObject timeClass, long seconds, int nanoseconds, boolean isUTC, Object offset) {
             final long milliseconds = getMillis(seconds, nanoseconds);
-            return Layouts.TIME.createTime(coreLibrary().getTimeFactory(), utcTime(milliseconds), nanoseconds % 1_000_000, nil(), nil(), false, isUTC);
+            return allocateObjectNode.allocate(timeClass, utcTime(milliseconds), nanoseconds % 1_000_000, nil(), nil(), false, isUTC);
         }
 
         @Specialization(guards = { "!isUTC", "isNil(offset)" })
-        public DynamicObject timeSSpecific(VirtualFrame frame, long seconds, int nanoseconds, boolean isUTC, Object offset) {
+        public DynamicObject timeSSpecific(VirtualFrame frame, DynamicObject timeClass, long seconds, int nanoseconds, boolean isUTC, Object offset) {
             final long milliseconds = getMillis(seconds, nanoseconds);
-            return Layouts.TIME.createTime(coreLibrary().getTimeFactory(),
+            return allocateObjectNode.allocate(timeClass,
                     localtime(milliseconds, getTimeZoneNode.executeGetTimeZone(frame)),
                     nanoseconds % 1_000_000, nil(), offset, false, isUTC);
         }
 
         @Specialization(guards = { "!isUTC" })
-        public DynamicObject timeSSpecific(VirtualFrame frame, long seconds, int nanoseconds, boolean isUTC, long offset) {
+        public DynamicObject timeSSpecific(VirtualFrame frame, DynamicObject timeClass, long seconds, int nanoseconds, boolean isUTC, long offset) {
             final long milliseconds = getMillis(seconds, nanoseconds);
-            return Layouts.TIME.createTime(coreLibrary().getTimeFactory(),
+            return allocateObjectNode.allocate(timeClass,
                     offsetTime(milliseconds, offset), nanoseconds % 1_000_000, nil(), nil(), false, isUTC);
         }
 
@@ -308,7 +316,7 @@ public abstract class TimeNodes {
             try {
                 return ExactMath.addExact(ExactMath.multiplyExact(seconds, 1000L), (nanoseconds / 1_000_000));
             } catch (ArithmeticException e) {
-                String message = String.format("UNIX epoch + %d seconds out of range for Time (Joda-Time limitation)", seconds);
+                String message = StringUtils.format("UNIX epoch + %d seconds out of range for Time (Joda-Time limitation)", seconds);
                 throw new RaiseException(coreExceptions().rangeError(message, this));
             }
         }
@@ -410,7 +418,7 @@ public abstract class TimeNodes {
 
     }
 
-    @Primitive(name = "time_s_from_array", needsSelf = true, lowerFixnumParameters = { 0 /*sec*/, 1 /* min */, 2 /* hour */, 3 /* mday */, 4 /* month */, 5 /* year */, 6 /*nsec*/, 7 /*isdst*/ })
+    @Primitive(name = "time_s_from_array", needsSelf = true, lowerFixnum = { 1 /*sec*/, 2 /* min */, 3 /* hour */, 4 /* mday */, 5 /* month */, 6 /* year */, 7 /*nsec*/, 8 /*isdst*/})
     public static abstract class TimeSFromArrayPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Child GetTimeZoneNode getTimeZoneNode;
@@ -419,7 +427,7 @@ public abstract class TimeNodes {
         public TimeSFromArrayPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             getTimeZoneNode = GetTimeZoneNodeGen.create();
-            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
+            allocateObjectNode = AllocateObjectNode.create();
         }
 
         @Specialization(guards = {"!fromutc", "!isNil(utcoffset)"})
@@ -500,7 +508,7 @@ public abstract class TimeNodes {
                 relativeOffset = true;
                 zoneToStore = nil();
             } else {
-                throw new UnsupportedOperationException(String.format("%s %s %s %s", isdst, fromutc, utcoffset, utcoffset.getClass()));
+                throw new UnsupportedOperationException(StringUtils.format("%s %s %s %s", isdst, fromutc, utcoffset, utcoffset.getClass()));
             }
 
             dt = dt.withZoneRetainFields(zone);
@@ -539,7 +547,7 @@ public abstract class TimeNodes {
 
     }
 
-    @Primitive(name = "time_set_nseconds", lowerFixnumParameters = 0)
+    @Primitive(name = "time_set_nseconds", lowerFixnum = 1)
     public static abstract class TimeSetNSecondsPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @TruffleBoundary

@@ -12,7 +12,6 @@ package org.jruby.truffle.core.thread;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.object.DynamicObjectFactory;
 import jnr.posix.DefaultNativeTimeval;
 import jnr.posix.Timeval;
 import org.jruby.RubyThread.Status;
@@ -50,15 +49,15 @@ public class ThreadManager {
 
     public ThreadManager(RubyContext context) {
         this.context = context;
-        this.rootThread = createRubyThread(context, context.getCoreLibrary().getThreadClass());
+        this.rootThread = createRubyThread(context);
     }
 
     public static final InterruptMode DEFAULT_INTERRUPT_MODE = InterruptMode.IMMEDIATE;
     public static final Status DEFAULT_STATUS = Status.RUN;
 
-    public static DynamicObject createRubyThread(RubyContext context, DynamicObject rubyClass) {
+    public static DynamicObject createRubyThread(RubyContext context) {
         final DynamicObject object = Layouts.THREAD.createThread(
-                Layouts.CLASS.getInstanceFactory(rubyClass),
+                context.getCoreLibrary().getThreadFactory(),
                 createThreadLocals(context),
                 DEFAULT_INTERRUPT_MODE,
                 DEFAULT_STATUS,

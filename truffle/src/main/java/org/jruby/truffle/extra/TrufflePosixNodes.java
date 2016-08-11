@@ -26,7 +26,10 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.builtins.Primitive;
+import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.core.rope.CodeRange;
+import org.jruby.truffle.core.rope.LeafRope;
 import org.jruby.truffle.core.rope.RopeNodes;
 import org.jruby.truffle.core.rope.RopeNodesFactory;
 import org.jruby.truffle.core.string.StringOperations;
@@ -38,9 +41,8 @@ import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.platform.UnsafeGroup;
-
+import org.jruby.truffle.platform.signal.Signal;
 import java.nio.charset.StandardCharsets;
-
 import static org.jruby.truffle.core.string.StringOperations.decodeUTF8;
 
 @CoreClass("Truffle::POSIX")
@@ -103,7 +105,7 @@ public abstract class TrufflePosixNodes {
 
         public EnvironNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
+            allocateObjectNode = AllocateObjectNode.create();
         }
 
         @Specialization
@@ -259,6 +261,17 @@ public abstract class TrufflePosixNodes {
 
     }
 
+    @CoreMethod(names = "mkfifo", isModuleFunction = true, required = 2, unsafe = UnsafeGroup.IO)
+    public abstract static class MkfifoNode extends CoreMethodArrayArgumentsNode {
+
+        @TruffleBoundary
+        @Specialization(guards = "isRubyString(path)")
+        public int mkfifo(DynamicObject path, int mode) {
+            return posix().mkfifo(StringOperations.getString(path), mode);
+        }
+
+    }
+
     @CoreMethod(names = "putenv", isModuleFunction = true, required = 1, unsafe = UnsafeGroup.PROCESSES)
     public abstract static class PutenvNode extends CoreMethodArrayArgumentsNode {
 
@@ -382,7 +395,8 @@ public abstract class TrufflePosixNodes {
             final int result = posix().chdir(pathString);
 
             if (result == 0) {
-                getContext().getJRubyRuntime().setCurrentDirectory(pathString);
+                final String cwd = posix().getcwd();
+                getContext().getJRubyRuntime().setCurrentDirectory(cwd);
             }
 
             return result;
@@ -553,7 +567,7 @@ public abstract class TrufflePosixNodes {
 
     }
 
-    @CoreMethod(names = "getcwd", isModuleFunction = true, required = 2, unsafe = UnsafeGroup.IO)
+    @CoreMethod(names = "getcwd", isModuleFunction = true, unsafe = UnsafeGroup.IO)
     public abstract static class GetcwdNode extends CoreMethodArrayArgumentsNode {
 
         @Child private RopeNodes.MakeLeafRopeNode makeLeafRopeNode;
@@ -563,14 +577,16 @@ public abstract class TrufflePosixNodes {
             makeLeafRopeNode = RopeNodesFactory.MakeLeafRopeNodeGen.create(null, null, null, null);
         }
 
-        @CompilerDirectives.TruffleBoundary
-        @Specialization(guards = "isRubyString(resultPath)")
-        public DynamicObject getcwd(DynamicObject resultPath, int maxSize) {
-            // We just ignore maxSize - I think this is ok
-
+        @TruffleBoundary
+        @Specialization
+        public DynamicObject getcwd() {
+            final String cwd = posix().getcwd();
             final String path = getContext().getJRubyRuntime().getCurrentDirectory();
-            StringOperations.setRope(resultPath, makeLeafRopeNode.executeMake(path.getBytes(StandardCharsets.UTF_8), Layouts.STRING.getRope(resultPath).getEncoding(), CodeRange.CR_UNKNOWN, NotProvided.INSTANCE));
-            return resultPath;
+            assert path.equals(cwd);
+
+            final byte[] bytes = cwd.getBytes(StandardCharsets.UTF_8);
+            final LeafRope rope = makeLeafRopeNode.executeMake(bytes, UTF8Encoding.INSTANCE, CodeRange.CR_UNKNOWN, NotProvided.INSTANCE);
+            return StringOperations.createString(getContext(), rope);
         }
 
     }
@@ -892,6 +908,34 @@ public abstract class TrufflePosixNodes {
         @Specialization
         public int close(int file) {
             return posix().close(file);
+        }
+
+    }
+
+    @CoreMethod(names = "kill", isModuleFunction = true, unsafe = { UnsafeGroup.PROCESSES, UnsafeGroup.SIGNALS }, required = 3)
+    public abstract static class KillNode extends CoreMethodArrayArgumentsNode {
+
+        @TruffleBoundary
+        @Specialization(guards = "isRubyString(signalName)")
+        public int kill(int pid, int signalNumber, DynamicObject signalName) {
+            int self = posix().getpid();
+
+            if (self == pid) {
+                Signal signal = getContext().getNativePlatform().getSignalManager().createSignal(StringOperations.getString(signalName));
+                return raise(signal);
+            } else {
+                return posix().kill(pid, signalNumber);
+            }
+        }
+
+        @TruffleBoundary
+        private int raise(Signal signal) {
+            try {
+                getContext().getNativePlatform().getSignalManager().raise(signal);
+            } catch (IllegalArgumentException e) {
+                throw new RaiseException(coreExceptions().argumentError(e.getMessage(), this));
+            }
+            return 1;
         }
 
     }

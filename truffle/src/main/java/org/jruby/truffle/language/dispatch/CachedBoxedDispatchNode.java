@@ -19,6 +19,7 @@ import com.oracle.truffle.api.object.Shape;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.methods.InternalMethod;
+import org.jruby.truffle.util.StringUtils;
 
 public class CachedBoxedDispatchNode extends CachedDispatchNode {
 
@@ -98,7 +99,7 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
 
     @Override
     public String toString() {
-        return String.format("CachedBoxedDispatchNode(:%s, %s@%x, %s)",
+        return StringUtils.format("CachedBoxedDispatchNode(:%s, %s@%x, %s)",
                 getCachedNameAsSymbol().toString(),
                 expectedShape, expectedShape.hashCode(),
                 method == null ? "null" : method.toString());

@@ -191,14 +191,6 @@ class Random
   # Returns a random binary string.
   # The argument size specified the length of the result string.
   def bytes(length)
-    length = Rubinius::Type.coerce_to length, Integer, :to_int
-    s = ''
-    i = 0
-    while i < length
-      s << @randomizer.random_integer(255).chr
-      i += 1
-    end
-
-    s
+    Truffle.invoke_primitive :randomizer_bytes, @randomizer, length
   end
 end

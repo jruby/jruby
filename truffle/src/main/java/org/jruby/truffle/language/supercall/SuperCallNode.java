@@ -50,7 +50,6 @@ public class SuperCallNode extends RubyNode {
         this.callMethodNode = CallInternalMethodNodeGen.create(context, sourceSection, null, new RubyNode[] {});
     }
 
-    @ExplodeLoop
     @Override
     public final Object execute(VirtualFrame frame) {
         final Object self = RubyArguments.getSelf(frame);

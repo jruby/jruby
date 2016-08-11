@@ -14,6 +14,7 @@ import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.Layouts;
@@ -38,7 +39,10 @@ public class RubyCallNode extends RubyNode {
     @Children private final RubyNode[] arguments;
 
     private final boolean isSplatted;
+    private final boolean ignoreVisibility;
     private final boolean isVCall;
+    private final boolean isSafeNavigation;
+    private final boolean isAttrAssign;
 
     @Child private CallDispatchHeadNode dispatchHead;
 
@@ -51,17 +55,15 @@ public class RubyCallNode extends RubyNode {
     @Child private CallDispatchHeadNode respondToMissing;
     @Child private BooleanCastNode respondToMissingCast;
 
-    private final boolean ignoreVisibility;
+    private final ConditionProfile nilProfile;
 
-    public RubyCallNode(RubyContext context, SourceSection section, String methodName, RubyNode receiver, RubyNode block, boolean isSplatted, RubyNode... arguments) {
-        this(context, section, methodName, receiver, block, isSplatted, false, arguments);
+    public RubyCallNode(RubyContext context, SourceSection section, RubyNode receiver, String methodName, RubyNode block, RubyNode[] arguments,
+            boolean isSplatted, boolean ignoreVisibility) {
+        this(context, section, receiver, methodName, block, arguments, isSplatted, ignoreVisibility, false, false, false);
     }
 
-    public RubyCallNode(RubyContext context, SourceSection section, String methodName, RubyNode receiver, RubyNode block, boolean isSplatted, boolean ignoreVisibility, RubyNode... arguments) {
-        this(context, section, methodName, receiver, block, isSplatted, ignoreVisibility, false, arguments);
-    }
-
-    public RubyCallNode(RubyContext context, SourceSection section, String methodName, RubyNode receiver, RubyNode block, boolean isSplatted, boolean ignoreVisibility, boolean isVCall, RubyNode... arguments) {
+    public RubyCallNode(RubyContext context, SourceSection section, RubyNode receiver, String methodName, RubyNode block, RubyNode[] arguments,
+            boolean isSplatted, boolean ignoreVisibility, boolean isVCall, boolean isSafeNavigation, boolean isAttrAssign) {
         super(context, section);
 
         this.methodName = methodName;
@@ -75,13 +77,28 @@ public class RubyCallNode extends RubyNode {
         }
 
         this.isSplatted = isSplatted;
-        this.isVCall = isVCall;
         this.ignoreVisibility = ignoreVisibility;
+        this.isVCall = isVCall;
+        this.isSafeNavigation = isSafeNavigation;
+        this.isAttrAssign = isAttrAssign;
+
+        if (isSafeNavigation) {
+            nilProfile = ConditionProfile.createCountingProfile();
+        } else {
+            nilProfile = null;
+        }
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
         final Object receiverObject = receiver.execute(frame);
+
+        if (isSafeNavigation) {
+            if (nilProfile.profile(receiverObject == nil())) {
+                return nil();
+            }
+        }
+
         final Object[] argumentsObjects = executeArguments(frame);
         final DynamicObject blockObject = executeBlock(frame);
 
@@ -90,7 +107,12 @@ public class RubyCallNode extends RubyNode {
             dispatchHead = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), ignoreVisibility));
         }
 
-        return dispatchHead.dispatch(frame, receiverObject, methodName, blockObject, argumentsObjects);
+        final Object returnValue = dispatchHead.dispatch(frame, receiverObject, methodName, blockObject, argumentsObjects);
+        if (isAttrAssign) {
+            return argumentsObjects[argumentsObjects.length - 1];
+        } else {
+            return returnValue;
+        }
     }
 
     private DynamicObject executeBlock(VirtualFrame frame) {

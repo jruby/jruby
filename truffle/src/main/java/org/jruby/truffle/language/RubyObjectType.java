@@ -10,6 +10,7 @@
 package org.jruby.truffle.language;
 
 import com.oracle.truffle.api.CompilerAsserts;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.interop.ForeignAccess;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.ObjectType;
@@ -17,10 +18,12 @@ import org.jruby.truffle.Layouts;
 import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.interop.RubyMessageResolutionAccessor;
+import org.jruby.truffle.util.StringUtils;
 
 public class RubyObjectType extends ObjectType {
 
     @Override
+    @TruffleBoundary
     public String toString(DynamicObject object) {
         CompilerAsserts.neverPartOfCompilation();
 
@@ -33,7 +36,7 @@ public class RubyObjectType extends ObjectType {
         } else if (RubyGuards.isRubyModule(object)) {
             return Layouts.MODULE.getFields(object).toString();
         } else {
-            return String.format("DynamicObject@%x<logicalClass=%s>", System.identityHashCode(object),
+            return StringUtils.format("DynamicObject@%x<logicalClass=%s>", System.identityHashCode(object),
                     Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(object)).getName());
         }
     }

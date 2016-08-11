@@ -36,7 +36,7 @@ public abstract class ArrayReadSliceNormalizedNode extends RubyNode {
 
     public ArrayReadSliceNormalizedNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
-        allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
+        allocateObjectNode = AllocateObjectNode.create();
     }
 
     public abstract DynamicObject executeReadSlice(DynamicObject array, int index, int length);

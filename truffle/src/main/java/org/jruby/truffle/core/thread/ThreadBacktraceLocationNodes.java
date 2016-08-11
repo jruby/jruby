@@ -45,7 +45,7 @@ public class ThreadBacktraceLocationNodes {
 
             // TODO CS 30-Apr-15: not absolute - not sure how to solve that
 
-            final String path = sourceSection.getSource().getPath();
+            final String path = sourceSection.getSource().getName();
 
             if (path == null) {
                 return coreStrings().UNKNOWN.createInstance();

@@ -119,6 +119,7 @@ public abstract class VMPrimitiveNodes {
     @Primitive(name = "vm_gc_start", needsSelf = false)
     public static abstract class VMGCStartPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
+        @TruffleBoundary
         @Specialization
         public DynamicObject vmGCStart() {
             System.gc();
@@ -478,7 +479,7 @@ public abstract class VMPrimitiveNodes {
 
         @TruffleBoundary
         @Specialization
-        public Object waitPID(final int input_pid, boolean no_hang) {
+        public Object waitPID(int input_pid, boolean no_hang) {
             // Transliterated from Rubinius C++ - not tidied up significantly to make merging changes easier
 
             int options = 0;

@@ -110,7 +110,8 @@ def compile_extension_jruby_truffle(name)
     f.puts "out: #{output_file}"
   end
 
-  system "#{RbConfig::CONFIG['bindir']}/jruby", "#{RbConfig::CONFIG['bindir']}/../tool/jt.rb", 'cextc', extension_path
+  system "#{RbConfig::CONFIG['bindir']}/../tool/jt.rb", 'cextc', extension_path
+  raise "Compilation of #{extension_path} failed" unless $?.success?
 
   output_file
 ensure

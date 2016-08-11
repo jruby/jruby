@@ -1,1 +1,1 @@
-require_relative '../stdlib/unicode_normalize'
+require_relative '../../stdlib/unicode_normalize'
