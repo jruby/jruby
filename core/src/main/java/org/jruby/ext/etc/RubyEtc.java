@@ -387,7 +387,14 @@ public class RubyEtc {
     public static IRubyObject getgrent(IRubyObject recv) {
         Ruby runtime = recv.getRuntime();
         try {
-            Group gr = runtime.getPosix().getgrent();
+            Group gr;
+
+            // We synchronize on this class so at least all JRuby instances in this classloader are safe.
+            // See jruby/jruby#4057
+            synchronized (RubyEtc.class) {
+                gr = runtime.getPosix().getgrent();
+            }
+
             if (gr != null) {
                 return setupGroup(recv.getRuntime(), gr);
             } else {
