@@ -59,7 +59,7 @@ module Utilities
 
   def self.truffle_version
     File.foreach("#{JRUBY_DIR}/truffle/pom.rb") do |line|
-      if /'truffle\.version' => '(\d+\.\d+(?:-SNAPSHOT)?|\h+-SNAPSHOT)'/ =~ line
+      if /'truffle\.version' => '((?:\d+\.\d+|\h+)(?:-SNAPSHOT)?)'/ =~ line
         break $1
       end
     end
