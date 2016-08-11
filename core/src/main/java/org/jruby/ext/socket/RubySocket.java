@@ -323,6 +323,11 @@ public class RubySocket extends RubyBasicSocket {
     }
 
     @JRubyMethod(meta = true)
+    public static IRubyObject unpack_sockaddr_un(ThreadContext context, IRubyObject recv, IRubyObject addr) {
+        return SocketUtils.unpack_sockaddr_un(context, addr);
+    }
+
+    @JRubyMethod(meta = true)
     public static IRubyObject gethostbyname(ThreadContext context, IRubyObject recv, IRubyObject hostname) {
         return SocketUtils.gethostbyname(context, hostname);
     }
