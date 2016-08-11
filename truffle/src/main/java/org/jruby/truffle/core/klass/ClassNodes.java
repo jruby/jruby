@@ -170,10 +170,7 @@ public abstract class ClassNodes {
 
         // Singleton classes cannot be instantiated
         if (!isSingleton) {
-            DynamicObjectFactory factory = Layouts.CLASS.getInstanceFactory(superclass);
-            factory = Layouts.BASIC_OBJECT.setLogicalClass(factory, rubyClass);
-            factory = Layouts.BASIC_OBJECT.setMetaClass(factory, rubyClass);
-            Layouts.CLASS.setInstanceFactoryUnsafe(rubyClass, factory);
+            setInstanceFactory(rubyClass, superclass);
         }
 
         return rubyClass;
@@ -190,12 +187,18 @@ public abstract class ClassNodes {
         Layouts.MODULE.getFields(rubyClass).newVersion();
         ensureItHasSingletonClassCreated(context, rubyClass);
 
-        DynamicObjectFactory factory = Layouts.CLASS.getInstanceFactory(superclass);
+        setInstanceFactory(rubyClass, superclass);
+
+        // superclass is set only here in initialize method to its final value
+        Layouts.CLASS.setSuperclass(rubyClass, superclass);
+    }
+
+    public static void setInstanceFactory(DynamicObject rubyClass, DynamicObject baseClass) {
+        assert !Layouts.CLASS.getIsSingleton(rubyClass) : "Singleton classes cannot be instantiated";
+        DynamicObjectFactory factory = Layouts.CLASS.getInstanceFactory(baseClass);
         factory = Layouts.BASIC_OBJECT.setLogicalClass(factory, rubyClass);
         factory = Layouts.BASIC_OBJECT.setMetaClass(factory, rubyClass);
         Layouts.CLASS.setInstanceFactoryUnsafe(rubyClass, factory);
-        // superclass is set only here in initialize method to its final value
-        Layouts.CLASS.setSuperclass(rubyClass, superclass);
     }
 
     private static DynamicObject ensureItHasSingletonClassCreated(RubyContext context, DynamicObject rubyClass) {

@@ -173,14 +173,9 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
         }
 
         if (Layouts.CLASS.isClass(rubyModuleObject)) {
-            if (Layouts.CLASS.getIsSingleton(from)) {
-                // Singleton classes cannot be instantiated
-                Layouts.CLASS.setInstanceFactoryUnsafe(rubyModuleObject, null);
-            } else {
-                DynamicObjectFactory instanceFactory = Layouts.CLASS.getInstanceFactory(from);
-                instanceFactory = Layouts.BASIC_OBJECT.setLogicalClass(instanceFactory, rubyModuleObject);
-                instanceFactory = Layouts.BASIC_OBJECT.setMetaClass(instanceFactory, rubyModuleObject);
-                Layouts.CLASS.setInstanceFactoryUnsafe(rubyModuleObject, instanceFactory);
+            // Singleton classes cannot be instantiated
+            if (!Layouts.CLASS.getIsSingleton(from)) {
+                ClassNodes.setInstanceFactory(rubyModuleObject, from);
             }
 
             Layouts.CLASS.setSuperclass(rubyModuleObject, Layouts.CLASS.getSuperclass(from));
