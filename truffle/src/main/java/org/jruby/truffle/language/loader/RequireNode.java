@@ -183,13 +183,19 @@ public abstract class RequireNode extends RubyNode {
 
     @TruffleBoundary
     private TruffleObject getInitFunction(final String expandedPath) {
-        final Object initFunction = getContext().getEnv().importSymbol("@Init_" + getBaseName(expandedPath));
+        final String initFunctionName = "@Init_" + getBaseName(expandedPath);
+
+        final Object initFunction = getContext().getEnv().importSymbol(initFunctionName);
 
         if (!(initFunction instanceof TruffleObject)) {
             if (initFunction == null) {
-                throw new UnsupportedOperationException("initFunction was null!");
+                throw new RaiseException(getContext().getCoreExceptions().internalError(
+                        String.format("Couldn't find the cext initialise function %s in %s", initFunctionName, expandedPath),
+                        callNode));
             } else {
-                throw new UnsupportedOperationException("initFunction is not a TruffleObject but a " + initFunction.getClass());
+                throw new RaiseException(getContext().getCoreExceptions().internalError(
+                        String.format("The cext initialise function %s in %s was not a Truffle object", initFunctionName, expandedPath),
+                        callNode));
             }
         }
 
