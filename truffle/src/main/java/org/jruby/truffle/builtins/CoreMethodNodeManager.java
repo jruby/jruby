@@ -244,7 +244,7 @@ public class CoreMethodNodeManager {
         if (!isSafe(context, method.unsafe())) {
             node = new UnsafeNode(context, sourceSection);
         } else {
-            node = Translator.sequence(context, sourceSection, Arrays.asList(checkArity, methodNode));
+            node = Translator.sequence(context, sharedMethodInfo.getName(), sourceSection, Arrays.asList(checkArity, methodNode));
             node = transformResult(method, node);
         }
 
