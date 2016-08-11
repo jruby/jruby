@@ -387,7 +387,8 @@ public abstract class ClassNodes {
     public abstract static class AllocateConstructorNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
-        public DynamicObject allocate(DynamicObject rubyClass) {
+        public DynamicObject allocate(DynamicObject classClass) {
+            assert classClass == coreLibrary().getClassClass() : "Subclasses of class Class are forbidden in Ruby";
             return createRubyClass(getContext(), coreLibrary().getClassClass(), null, coreLibrary().getObjectClass(), null, false, null, false);
         }
 
