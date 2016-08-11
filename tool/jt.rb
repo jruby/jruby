@@ -43,7 +43,7 @@ else
 end
 
 # Expand GEM_HOME relative to cwd so it cannot be misinterpreted later.
-ENV['GEM_HOME'] = File.expand_path(ENV['GEM_HOME'])
+ENV['GEM_HOME'] = File.expand_path(ENV['GEM_HOME']) if ENV['GEM_HOME']
 
 LIBXML_HOME = ENV['LIBXML_HOME'] = ENV['LIBXML_HOME'] || '/usr'
 LIBXML_LIB_HOME = ENV['LIBXML_LIB_HOME'] = ENV['LIBXML_LIB_HOME'] || "#{LIBXML_HOME}/lib"
