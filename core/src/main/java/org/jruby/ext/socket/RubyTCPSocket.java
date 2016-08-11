@@ -107,8 +107,16 @@ public class RubyTCPSocket extends RubyIPSocket {
                 // Do this nonblocking so we can be interrupted
                 channel.configureBlocking(false);
                 channel.connect( new InetSocketAddress(InetAddress.getByName(remoteHost), remotePort) );
-                context.getThread().select(channel, this, SelectionKey.OP_CONNECT);
-                channel.finishConnect();
+
+                // wait for connection
+                while (!context.getThread().select(channel, this, SelectionKey.OP_CONNECT)) {
+                    context.pollThreadEvents();
+                }
+
+                // complete connection
+                while (!channel.finishConnect()) {
+                    context.pollThreadEvents();
+                }
 
                 // only try to set blocking back if we succeeded to finish connecting
                 channel.configureBlocking(true);
