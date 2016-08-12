@@ -60,7 +60,7 @@ public class Binding {
     /**
      * frame of method which defined this block
      */
-    private Frame frame;
+    private final Frame frame;
 
     public String method;
     public String filename;
@@ -75,7 +75,7 @@ public class Binding {
     /**
      * A reference to all variable values (and names) that are in-scope for this block.
      */
-    private DynamicScope dynamicScope;
+    private final DynamicScope dynamicScope;
 
     /**
      * Binding-local scope for 1.9 mode.
@@ -95,6 +95,7 @@ public class Binding {
 
     public Binding(IRubyObject self, Frame frame,
                    Visibility visibility, DynamicScope dynamicScope, String method, String filename, int line) {
+        assert frame != null;
         this.self = self;
         this.frame = frame;
         this.visibility = visibility;
@@ -106,6 +107,7 @@ public class Binding {
 
     private Binding(IRubyObject self, Frame frame,
                     Visibility visibility, DynamicScope dynamicScope, String method, String filename, int line, DynamicScope dummyScope) {
+        assert frame != null;
         this.self = self;
         this.frame = frame;
         this.visibility = visibility;
@@ -117,6 +119,7 @@ public class Binding {
     }
     
     public Binding(Frame frame, DynamicScope dynamicScope, String method, String filename, int line) {
+        assert frame != null;
         this.self = frame.getSelf();
         this.frame = frame;
         this.visibility = frame.getVisibility();
@@ -128,22 +131,28 @@ public class Binding {
 
     public Binding(IRubyObject self) {
         this.self = self;
+        this.frame = Frame.DUMMY;
+        this.dynamicScope = null;
     }
 
     public Binding(IRubyObject self, Frame frame,
                    Visibility visibility) {
+        assert frame != null;
         this.self = self;
         this.frame = frame;
         this.visibility = visibility;
+        this.dynamicScope = null;
     }
 
     public Binding(IRubyObject self, DynamicScope dynamicScope) {
         this.self = self;
+        this.frame = Frame.DUMMY;
         this.dynamicScope = dynamicScope;
     }
 
     public Binding(IRubyObject self, Frame frame,
                    Visibility visibility, DynamicScope dynamicScope) {
+        assert frame != null;
         this.self = self;
         this.frame = frame;
         this.visibility = visibility;
