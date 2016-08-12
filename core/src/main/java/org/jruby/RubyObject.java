@@ -42,6 +42,9 @@ package org.jruby;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -224,6 +227,9 @@ public class RubyObject extends RubyBasicObject {
         OBJECT_VAR8_ALLOCATOR,
         OBJECT_VAR9_ALLOCATOR
     };
+
+    public static final Set<ObjectAllocator> FIELD_ALLOCATOR_SET =
+            Collections.unmodifiableSet(new HashSet<ObjectAllocator>(Arrays.asList(FIELD_ALLOCATORS)));
 
     public static final Class[] FIELD_ALLOCATED_CLASSES = {
         RubyObject.class,

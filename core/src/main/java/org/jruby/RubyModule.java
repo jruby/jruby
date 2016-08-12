@@ -1659,7 +1659,7 @@ public class RubyModule extends RubyObject {
             if (superClazz == null) superClazz = runtime.getObject();
 
             if (allocator == null) {
-                if (superClazz == runtime.getObject()) {
+                if (isReifiable(runtime, superClazz)) {
                     if (RubyInstanceConfig.REIFY_RUBY_CLASSES) {
                         allocator = REIFYING_OBJECT_ALLOCATOR;
                     } else if (Options.REIFY_VARIABLES.load()) {
@@ -1676,6 +1676,19 @@ public class RubyModule extends RubyObject {
         }
 
         return clazz;
+    }
+
+    /**
+     * Determine if a new child of the given class can have its variables reified.
+     */
+    private boolean isReifiable(Ruby runtime, RubyClass superClass) {
+        if (superClass == runtime.getObject()) return true;
+
+        if (superClass.getAllocator() == IVAR_INSPECTING_OBJECT_ALLOCATOR) return true;
+
+        if (FIELD_ALLOCATOR_SET.contains(superClass.getAllocator())) return true;
+
+        return false;
     }
 
     /** this method should be used only by interpreter or compiler
