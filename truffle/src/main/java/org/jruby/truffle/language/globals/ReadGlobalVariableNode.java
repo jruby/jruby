@@ -25,9 +25,16 @@ public abstract class ReadGlobalVariableNode extends RubyNode {
         this.name = name;
     }
 
+    @Specialization(assumptions = "storage.getUnchangedAssumption()")
+    public Object readConstant(
+            @Cached("getStorage()") GlobalVariableStorage storage,
+            @Cached("storage.getValue()") Object value) {
+        return value;
+    }
+
     @Specialization
     public Object read(@Cached("getStorage()") GlobalVariableStorage storage) {
-        return storage.value;
+        return storage.getValue();
     }
 
     protected GlobalVariableStorage getStorage() {

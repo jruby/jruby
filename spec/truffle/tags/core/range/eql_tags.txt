@@ -1,0 +1,1 @@
+fails:Range#eql? returns false if the endpoints are not eql?

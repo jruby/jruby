@@ -12,6 +12,9 @@ package org.jruby.truffle.language.loader;
 import com.oracle.truffle.api.source.Source;
 import org.jruby.Ruby;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.RubyLanguage;
+import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.util.StringUtils;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -36,22 +39,27 @@ public class SourceLoader {
 
     public Source load(String canonicalPath) throws IOException {
         if (canonicalPath.equals("-e")) {
-            return loadInlineScript();
+            return loadFragment(new String(context.getJRubyRuntime().getInstanceConfig().inlineScript(), StandardCharsets.UTF_8), "-e");
         } else if (canonicalPath.startsWith(TRUFFLE_SCHEME) || canonicalPath.startsWith(JRUBY_SCHEME)) {
             return loadResource(canonicalPath);
         } else {
-            final File file = new File(canonicalPath);
+            final File file = new File(canonicalPath).getCanonicalFile();
+
             if (!file.canRead()) {
                 throw new IOException("Can't read file " + canonicalPath);
             }
-            assert file.getCanonicalPath().equals(canonicalPath) : canonicalPath;
-            return Source.fromFileName(canonicalPath);
+
+            if (canonicalPath.toLowerCase().endsWith(".su")) {
+                return Source.newBuilder(file).name(file.getPath()).build();
+            } else {
+                // We need to assume all other files are Ruby, so the file type detection isn't enough
+                return Source.newBuilder(file).name(file.getPath()).mimeType(RubyLanguage.MIME_TYPE).build();
+            }
         }
     }
 
-    private Source loadInlineScript() {
-        return Source.fromText(new String(context.getJRubyRuntime().getInstanceConfig().inlineScript(),
-                StandardCharsets.UTF_8), "-e");
+    public Source loadFragment(String fragment, String name) {
+        return Source.newBuilder(fragment).name(name).mimeType(RubyLanguage.MIME_TYPE).build();
     }
 
     private Source loadResource(String path) throws IOException {
@@ -73,13 +81,13 @@ public class SourceLoader {
         }
 
         final Path normalizedPath = relativePath.normalize();
-        final InputStream stream = relativeClass.getResourceAsStream(normalizedPath.toString().replace('\\', '/'));
+        final InputStream stream = relativeClass.getResourceAsStream(StringUtils.replace(normalizedPath.toString(), '\\', '/'));
 
         if (stream == null) {
             throw new FileNotFoundException(path);
         }
 
-        return Source.fromReader(new InputStreamReader(stream, StandardCharsets.UTF_8), path);
+        return Source.newBuilder(new InputStreamReader(stream, StandardCharsets.UTF_8)).name(path).mimeType(RubyLanguage.MIME_TYPE).build();
     }
 
 }

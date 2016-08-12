@@ -10,39 +10,22 @@ class MSpecScript
     RbConfig::CONFIG['host_os'] == 'linux'
   end
 
-  set :target, File.expand_path("../../../bin/jruby#{windows? ? '.bat' : ''}", __FILE__)
+  JRUBY_DIR = File.expand_path('../../..', __FILE__)
+
+  set :target, "#{JRUBY_DIR}/bin/jruby#{windows? ? '.bat' : ''}"
 
   if ARGV[-2..-1] != %w[-t ruby] # No flags for MRI
-    set :flags, %w[-X+T -J-ea -J-esa -J-Xmx2G]
+    flags = %w[
+      -X+T
+      -J-ea
+      -J-esa
+      -J-Xmx2G
+      -Xtruffle.graal.warn_unless=false
+    ]
+    core_path = "#{JRUBY_DIR}/truffle/src/main/ruby"
+    flags << "-Xtruffle.core.load_path=#{core_path}" if File.directory?(core_path)
+    set :flags, flags
   end
-
-  set :capi, [
-    "spec/ruby/optional/capi",
-
-    # Incorrect C code for spec?
-    "^spec/ruby/optional/capi/data_spec.rb",
-
-    # Requires 'ruby/encoding.h'
-    "^spec/ruby/optional/capi/encoding_spec.rb",
-
-    # Requires 'ruby/io.h'
-    "^spec/ruby/optional/capi/io_spec.rb",
-
-    # Incorrect C code for spec?
-    "^spec/ruby/optional/capi/proc_spec.rb",
-
-    # Requires 'ruby/re.h'
-    "^spec/ruby/optional/capi/regexp_spec.rb",
-
-    # Requires 'ruby/intern.h'
-    "^spec/ruby/optional/capi/struct_spec.rb",
-
-    # Requires 'ruby/thread.h'
-    "^spec/ruby/optional/capi/thread_spec.rb",
-
-    # Missing symbol @Init_typed_data_spec.
-    "^spec/ruby/optional/capi/typed_data_spec.rb"
-  ]
 
   set :command_line, [
     "spec/ruby/command_line"
@@ -92,6 +75,46 @@ class MSpecScript
     "^spec/ruby/library/openssl/x509/name/parse_spec.rb"
   ]
 
+  set :capi, [
+    "spec/ruby/optional/capi",
+
+    # Global variables
+    "^spec/ruby/optional/capi/gc_spec.rb",
+
+    # Fixnum boundaries do not match
+    "^spec/ruby/optional/capi/bignum_spec.rb",
+
+    # Incorrect C code for spec?
+    "^spec/ruby/optional/capi/data_spec.rb",
+
+    # Requires 'ruby/encoding.h'
+    "^spec/ruby/optional/capi/encoding_spec.rb",
+
+    # Requires 'ruby/io.h'
+    "^spec/ruby/optional/capi/io_spec.rb",
+
+    # Requires 'ruby/re.h'
+    "^spec/ruby/optional/capi/regexp_spec.rb",
+
+    # Requires 'ruby/intern.h'
+    "^spec/ruby/optional/capi/struct_spec.rb",
+
+    # Requires 'ruby/thread.h'
+    "^spec/ruby/optional/capi/thread_spec.rb",
+
+    # Missing symbol @Init_typed_data_spec.
+    "^spec/ruby/optional/capi/typed_data_spec.rb"
+  ]
+
+  # A subset of the C-API with passing specs for development
+  set :capi_dev, [
+    "spec/ruby/optional/capi/array_spec.rb",
+    "spec/ruby/optional/capi/class_spec.rb",
+    "spec/ruby/optional/capi/module_spec.rb",
+    "spec/ruby/optional/capi/proc_spec.rb",
+    "spec/ruby/optional/capi/string_spec.rb",
+  ]
+
   set :truffle, [
     "spec/truffle/specs"
   ]
@@ -128,7 +151,8 @@ class MSpecScript
   set :files, get(:language) + get(:core) + get(:library) + get(:truffle)
 end
 
-if respond_to?(:ruby_exe)
+is_child_process = respond_to?(:ruby_exe)
+if i = ARGV.index('slow') and ARGV[i-1] == '--excl-tag' and is_child_process
   class SlowSpecsTagger
     def initialize
       MSpec.register :exception, self
@@ -136,7 +160,9 @@ if respond_to?(:ruby_exe)
 
     def exception(state)
       if state.exception.is_a? SlowSpecException
-        tag = SpecTag.new("slow:#{state.describe} #{state.it}")
+        tag = SpecTag.new
+        tag.tag = 'slow'
+        tag.description = "#{state.describe} #{state.it}"
         MSpec.write_tag(tag)
       end
     end
@@ -145,13 +171,26 @@ if respond_to?(:ruby_exe)
   class SlowSpecException < Exception
   end
 
-  class ::Object
-    alias old_ruby_exe ruby_exe
-    def ruby_exe(*args, &block)
-      if (MSpecScript.get(:xtags) || []).include? 'slow'
-        raise SlowSpecException, "Was tagged as slow as it uses ruby_exe(). Rerun specs."
+  require 'timeout'
+
+  slow_methods = [
+    [Object, [:ruby_exe, :ruby_cmd]],
+    [ObjectSpace.singleton_class, [:each_object]],
+    [GC.singleton_class, [:start]],
+    [Kernel, [:system]],
+    [Kernel.singleton_class, [:system]],
+    [Timeout.singleton_class, [:timeout]],
+  ]
+
+  slow_methods.each do |klass, meths|
+    klass.class_exec do
+      meths.each do |meth|
+        define_method(meth) do |*args, &block|
+          raise SlowSpecException, "Was tagged as slow as it uses #{meth}(). Rerun specs."
+        end
+        # Keep visibility of Kernel#system
+        private meth if klass == Kernel and meth == :system
       end
-      old_ruby_exe(*args, &block)
     end
   end
 

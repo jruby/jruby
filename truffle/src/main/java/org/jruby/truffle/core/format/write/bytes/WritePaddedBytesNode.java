@@ -21,30 +21,29 @@ import org.jruby.truffle.core.format.FormatNode;
  * Simply write bytes.
  */
 @NodeChildren({
+        @NodeChild(value = "width", type = FormatNode.class),
         @NodeChild(value = "value", type = FormatNode.class),
 })
 public abstract class WritePaddedBytesNode extends FormatNode {
 
     private final ConditionProfile leftJustifiedProfile = ConditionProfile.createBinaryProfile();
-    private final int padding;
     private final boolean leftJustified;
 
-    public WritePaddedBytesNode(RubyContext context, int padding, boolean leftJustified) {
+    public WritePaddedBytesNode(RubyContext context, boolean leftJustified) {
         super(context);
-        this.padding = padding;
         this.leftJustified = leftJustified;
     }
 
     @Specialization
-    public Object write(VirtualFrame frame, byte[] bytes) {
+    public Object write(VirtualFrame frame, int padding, byte[] bytes) {
         if (leftJustifiedProfile.profile(leftJustified)) {
-            return writeLeftJustified(frame, bytes);
+            return writeLeftJustified(frame, padding, bytes);
         } else {
-            return writeRightJustified(frame, bytes);
+            return writeRightJustified(frame, padding, bytes);
         }
     }
 
-    private Object writeLeftJustified(VirtualFrame frame, byte[] bytes) {
+    private Object writeLeftJustified(VirtualFrame frame, int padding, byte[] bytes) {
         writeBytes(frame, bytes);
 
         for (int n = 0; n < padding - bytes.length; n++) {
@@ -54,7 +53,7 @@ public abstract class WritePaddedBytesNode extends FormatNode {
         return null;
     }
 
-    private Object writeRightJustified(VirtualFrame frame, byte[] bytes) {
+    private Object writeRightJustified(VirtualFrame frame, int padding, byte[] bytes) {
         for (int n = 0; n < padding - bytes.length; n++) {
             writeByte(frame, (byte) ' ');
         }

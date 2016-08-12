@@ -11,8 +11,11 @@ package org.jruby.truffle.language.control;
 
 import com.oracle.truffle.api.nodes.ControlFlowException;
 import com.oracle.truffle.api.object.DynamicObject;
+import org.jruby.truffle.Layouts;
 
 public class RaiseException extends ControlFlowException {
+
+    private static final long serialVersionUID = -4128190563044417424L;
 
     private final DynamicObject exception;
 
@@ -22,6 +25,16 @@ public class RaiseException extends ControlFlowException {
 
     public DynamicObject getException() {
         return exception;
+    }
+
+    @Override
+    public String getMessage() {
+        Object message = Layouts.EXCEPTION.getMessage(exception);
+        if (message != null) {
+            return message.toString();
+        } else {
+            return null;
+        }
     }
 
 }

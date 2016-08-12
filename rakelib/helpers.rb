@@ -24,9 +24,6 @@ def load_build_properties_into_constants
 end
 load_build_properties_into_constants
 
-# def ant(*args)
-#   raise 'running ant failed!' unless system "ant -logger org.apache.tools.ant.NoBannerLogger #{args.join(' ')}"
-# end
 require 'digest'
 
 class HashTask < Struct.new(:hash, :file)

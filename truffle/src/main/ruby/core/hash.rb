@@ -32,9 +32,19 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-unless Rubinius::Config['hash.hamt']
 class Hash
   include Enumerable
+
+  def self.contains_all_internal(one, two)
+    one.all? do |key, value|
+      if two.has_key?(key)
+        two_value = two[key]
+        value.equal?(two_value) || value == two_value
+      else
+        false
+      end
+    end
+  end
 
   def self.new_from_associate_array(associate_array)
     hash = new
@@ -95,6 +105,19 @@ class Hash
   # Used internally to get around subclasses redefining #[]=
   alias_method :__store__, :[]=
 
+  def <(other)
+     other = Rubinius::Type.coerce_to(other, Hash, :to_hash)
+     return false if self.size >= other.size
+     self.class.contains_all_internal(self, other)
+  end
+
+  def <=(other)
+    other = Rubinius::Type.coerce_to(other, Hash, :to_hash)
+    return false if self.size > other.size
+    self.class.contains_all_internal(self, other)
+  end
+
+
   def ==(other)
     return true if self.equal? other
     unless other.kind_of? Hash
@@ -120,6 +143,18 @@ class Hash
       end
     end
     true
+  end
+
+  def >(other)
+    other = Rubinius::Type.coerce_to(other, Hash, :to_hash)
+    return false if self.size <= other.size
+    self.class.contains_all_internal(other, self)
+  end
+
+  def >=(other)
+    other = Rubinius::Type.coerce_to(other, Hash, :to_hash)
+    return false if self.size < other.size
+    self.class.contains_all_internal(other, self)
   end
 
   def assoc(key)
@@ -149,6 +184,16 @@ class Hash
     @default_proc = prc
   end
 
+  def dig(key, *more)
+    result = self[key]
+    if result.nil? || more.empty?
+      result
+    else
+      raise TypeError, "#{result.class} does not have #dig method" unless result.respond_to?(:dig)
+      result.dig(*more)
+    end
+  end
+
   def fetch(key, default=undefined)
     if item = find_item(key)
       return item.value
@@ -157,6 +202,12 @@ class Hash
     return yield(key) if block_given?
     return default unless undefined.equal?(default)
     raise KeyError, "key #{key} not found"
+  end
+
+  def fetch_values(*keys, &block)
+    keys.map do |key|
+      self.fetch(key, &block)
+    end
   end
 
   def flatten(level=1)
@@ -415,6 +466,10 @@ class Hash
     self
   end
 
+  def to_proc
+    lambda { |key| self[key] }
+  end
+
   # Implementation of a fundamental Rubinius method that allows their Hash
   # implementation to work. We probably want to remove uses of this in the long
   # term, as it creates objects which already exist for them and we have to
@@ -466,5 +521,4 @@ class Hash
     copy
   end
 
-end
 end

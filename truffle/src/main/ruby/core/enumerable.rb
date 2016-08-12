@@ -162,9 +162,38 @@ module Enumerable
     h
   end
 
+  def slice_after(arg = undefined, &block)
+    has_arg = !(undefined.equal? arg)
+    if block_given?
+        raise ArgumentError, "both pattern and block are given" if has_arg
+    else
+      raise ArgumentError, "wrong number of arguments (0 for 1)" unless has_arg
+      block = Proc.new{ |elem| arg === elem }
+    end
+    Enumerator.new do |yielder|
+      accumulator = nil
+      each do |*elem|
+        elem = elem[0] if elem.size == 1
+        end_slice = block.yield(elem)
+        accumulator ||= []
+        if end_slice
+          accumulator << elem
+          yielder.yield accumulator
+          accumulator = nil
+        else
+          accumulator << elem
+        end
+      end
+      yielder.yield accumulator if accumulator
+    end
+  end
+
   def slice_before(arg = undefined, &block)
     if block_given?
       has_init = !(undefined.equal? arg)
+      if has_init
+        raise ArgumentError, "both pattern and block are given"
+      end
     else
       raise ArgumentError, "wrong number of arguments (0 for 1)" if undefined.equal? arg
       block = Proc.new{ |elem| arg === elem }
@@ -172,7 +201,8 @@ module Enumerable
     Enumerator.new do |yielder|
       init = arg.dup if has_init
       accumulator = nil
-      each do |elem|
+      each do |*elem|
+        elem = elem[0] if elem.size == 1
         start_new = has_init ? block.yield(elem, init) : block.yield(elem)
         if start_new
           yielder.yield accumulator if accumulator
@@ -280,6 +310,30 @@ module Enumerable
         o = Truffle.single_block_arg
         if pattern === o
           Regexp.set_block_last_match
+          ary << o
+        end
+      end
+    end
+
+    ary
+  end
+
+  def grep_v(pattern)
+    ary = []
+
+    if block_given?
+      each do
+        o = Truffle.single_block_arg
+        unless pattern === o
+          # Regexp.set_block_last_match # TODO BJF Aug 1, 2016 Investigate for removal
+          ary << yield(o)
+        end
+      end
+    else
+      each do
+        o = Truffle.single_block_arg
+        unless pattern === o
+          # Regexp.set_block_last_match # TODO BJF Aug 1, 2016 Investigate for removal
           ary << o
         end
       end
@@ -561,6 +615,8 @@ module Enumerable
 
     undefined.equal?(min) ? nil : min
   end
+  
+  alias_method :min_internal, :min
 
   def max
     max = undefined
@@ -582,6 +638,8 @@ module Enumerable
 
     undefined.equal?(max) ? nil : max
   end
+  
+  alias_method :max_internal, :max
 
   def max_by
     return to_enum(:max_by) { enumerator_size } unless block_given?

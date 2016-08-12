@@ -112,10 +112,6 @@ class String
     raise PrimitiveFailure, "String#find_character primitive failed"
   end
 
-  def num_bytes
-    bytesize
-  end
-
   def byte_append(str)
     Truffle.primitive :string_byte_append
     raise TypeError, "String#byte_append primitive only accepts Strings"
@@ -255,7 +251,7 @@ class String
     end
 
     while match = pattern.match_from(self, index)
-      fin = match.full.at(1)
+      fin = match.byte_end(0)
 
       if match.collapsing?
         if char = find_character(fin)
@@ -436,7 +432,7 @@ class String
 
   def shorten!(size)
     return if bytesize == 0
-    self.num_bytes -= size
+    Truffle::String.truncate(self, bytesize - size)
   end
 
   def each_codepoint
@@ -569,146 +565,6 @@ class String
     false
   end
 
-  def inspect
-    result_encoding = Encoding.default_internal || Encoding.default_external
-    unless result_encoding.ascii_compatible?
-      result_encoding = Encoding::US_ASCII
-    end
-
-    enc = encoding
-    ascii = enc.ascii_compatible?
-    enc_name = enc.name
-    unicode = enc_name.start_with?("UTF-") && enc_name[4] != ?7
-
-    if unicode
-      if enc.equal? Encoding::UTF_16
-        a = getbyte 0
-        b = getbyte 1
-
-        if a == 0xfe and b == 0xff
-          enc = Encoding::UTF_16BE
-        elsif a == 0xff and b == 0xfe
-          enc = Encoding::UTF_16LE
-        else
-          unicode = false
-        end
-      elsif enc.equal? Encoding::UTF_32
-        a = getbyte 0
-        b = getbyte 1
-        c = getbyte 2
-        d = getbyte 3
-
-        if a == 0 and b == 0 and c == 0xfe and d == 0xfe
-          enc = Encoding::UTF_32BE
-        elsif a == 0xff and b == 0xfe and c == 0 and d == 0
-          enc = Encoding::UTF_32LE
-        else
-          unicode = false
-        end
-      end
-    end
-
-    array = []
-
-    index = 0
-    total = bytesize
-    while index < total
-      char = chr_at index
-
-      if char
-        bs = char.bytesize
-
-        if (ascii or unicode) and bs == 1
-          escaped = nil
-
-          byte = getbyte(index)
-          if byte >= 7 and byte <= 92
-            case byte
-              when 7  # \a
-                escaped = '\a'
-              when 8  # \b
-                escaped = '\b'
-              when 9  # \t
-                escaped = '\t'
-              when 10 # \n
-                escaped = '\n'
-              when 11 # \v
-                escaped = '\v'
-              when 12 # \f
-                escaped = '\f'
-              when 13 # \r
-                escaped = '\r'
-              when 27 # \e
-                escaped = '\e'
-              when 34 # \"
-                escaped = '\"'
-              when 35 # #
-                case getbyte(index += 1)
-                  when 36   # $
-                    escaped = '\#$'
-                  when 64   # @
-                    escaped = '\#@'
-                  when 123  # {
-                    escaped = '\#{'
-                  else
-                    index -= 1
-                end
-              when 92 # \\
-                escaped = '\\\\'
-            end
-
-            if escaped
-              array << escaped
-              index += 1
-              next
-            end
-          end
-        end
-
-        if char.printable?
-          array << char
-        else
-          code = char.ord
-          escaped = code.to_s(16).upcase
-
-          if unicode
-            if code < 0x10000
-              pad = "0" * (4 - escaped.bytesize)
-              array << "\\u#{pad}#{escaped}"
-            else
-              array << "\\u{#{escaped}}"
-            end
-          else
-            if code < 0x100
-              pad = "0" * (2 - escaped.bytesize)
-              array << "\\x#{pad}#{escaped}"
-            else
-              array << "\\x{#{escaped}}"
-            end
-          end
-        end
-
-        index += bs
-      else
-        array << "\\x#{getbyte(index).to_s(16)}"
-        index += 1
-      end
-    end
-
-    size = array.inject(0) { |s, chr| s += chr.bytesize }
-    result = String.pattern size + 2, ?".ord
-    m = Rubinius::Mirror.reflect result
-
-    index = 1
-    array.each do |chr|
-      m.copy_from chr, 0, chr.bytesize, index
-      index += chr.bytesize
-    end
-
-    Rubinius::Type.infect result, self
-    result.force_encoding result_encoding
-  end
-
   def prepend(other)
     self[0, 0] = other
     self
@@ -744,6 +600,7 @@ class String
   def sub(pattern, replacement=undefined)
     # Because of the behavior of $~, this is duplicated from sub! because
     # if we call sub! from sub, the last_match can't be updated properly.
+    dup = self.dup
 
     unless valid_encoding?
       raise ArgumentError, "invalid byte sequence in #{encoding}"
@@ -769,7 +626,7 @@ class String
     end
 
     pattern = Rubinius::Type.coerce_to_regexp(pattern, true) unless pattern.kind_of? Regexp
-    match = pattern.match_from(self, 0)
+    match = pattern.match_from(dup, 0)
 
     Regexp.last_match = match
 
@@ -799,7 +656,7 @@ class String
       ret.append(match.post_match)
       tainted ||= val.tainted?
     else
-      return self
+      return dup
     end
 
     ret.taint if tainted
@@ -850,10 +707,14 @@ class String
       if use_yield || hash
         Regexp.last_match = match
 
+        duped = dup
         if use_yield
           val = yield match.to_s
         else
           val = hash[match.to_s]
+        end
+        if duped != self
+          raise RuntimeError, "string modified"
         end
         untrusted = true if val.untrusted?
         val = val.to_s unless val.kind_of?(String)
@@ -936,7 +797,7 @@ class String
       end
     end
 
-    self.num_bytes = bytes
+    Truffle::String.truncate(self, bytes)
 
     self
   end
@@ -1002,7 +863,7 @@ class String
       bytes = bytesize - size
     end
 
-    self.num_bytes = bytes
+    Truffle::String.truncate(self, bytes)
 
     self
   end
@@ -1159,7 +1020,7 @@ class String
     last_match = nil
 
     ret = byteslice(0, 0) # Empty string and string subclass
-    offset = match.full.at(0) if match
+    offset = match.byte_begin(0) if match
 
     while match
       if str = match.pre_match_from(last_end)
@@ -1190,7 +1051,7 @@ class String
 
       tainted ||= val.tainted?
 
-      last_end = match.full.at(1)
+      last_end = match.byte_end(0)
 
       if match.collapsing?
         if char = find_character(offset)
@@ -1199,7 +1060,7 @@ class String
           offset += 1
         end
       else
-        offset = match.full.at(1)
+        offset = match.byte_end(0)
       end
 
       last_match = match
@@ -1207,7 +1068,7 @@ class String
       match = pattern.match_from self, offset
       break unless match
 
-      offset = match.full.at(0)
+      offset = match.byte_begin(0)
     end
 
     Regexp.last_match = last_match
@@ -1268,7 +1129,7 @@ class String
     last_match = nil
 
     ret = byteslice(0, 0) # Empty string and string subclass
-    offset = match.full.at(0)
+    offset = match.byte_begin(0)
 
     while match
       if str = match.pre_match_from(last_end)
@@ -1299,7 +1160,7 @@ class String
 
       tainted ||= val.tainted?
 
-      last_end = match.full.at(1)
+      last_end = match.byte_end(0)
 
       if match.collapsing?
         if char = find_character(offset)
@@ -1308,7 +1169,7 @@ class String
           offset += 1
         end
       else
-        offset = match.full.at(1)
+        offset = match.byte_end(0)
       end
 
       last_match = match
@@ -1316,7 +1177,7 @@ class String
       match = pattern.match_from self, offset
       break unless match
 
-      offset = match.full.at(0)
+      offset = match.byte_begin(0)
     end
 
     Regexp.last_match = last_match
@@ -1780,7 +1641,12 @@ class String
     if args.is_a? Hash
       sprintf(self, args)
     else
-      sprintf(self, *args)
+      result = Rubinius::Type.check_convert_type args, Array, :to_ary
+      if result.nil?
+        sprintf(self, args)
+      else
+        sprintf(self, *result)
+      end
     end
   end
 
@@ -1793,6 +1659,12 @@ class String
   def downcase
     s = dup
     s.downcase!
+    s
+  end
+
+  def upcase
+    s = dup
+    s.upcase!
     s
   end
 

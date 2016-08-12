@@ -6,6 +6,7 @@ import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.InstanceVariables;
@@ -71,6 +72,8 @@ public class UndefinedValue extends Operand implements IRubyObject {
     public IRubyObject callMethod(ThreadContext context, int methodIndex, String name, IRubyObject arg) { throw undefinedOperation(); }
 
     public IRubyObject checkCallMethod(ThreadContext context, String name) { throw undefinedOperation(); }
+
+    public IRubyObject checkCallMethod(ThreadContext context, JavaSites.CheckedSites sites) { throw undefinedOperation(); }
 
     public boolean isNil() { throw undefinedOperation(); }
 

@@ -1,4 +1,3 @@
-fails:C-API Array function rb_Array returns obj wrapped in an array if it cannot be converted to an array
 fails:C-API Array function rb_ary_new4 returns returns an array with the passed values
 fails:C-API Array function rb_ary_join joins elements of an array with a string
 fails:C-API Array function rb_ary_to_s creates an Array literal representation as a String

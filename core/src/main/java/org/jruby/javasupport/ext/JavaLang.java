@@ -92,7 +92,7 @@ public abstract class JavaLang {
                 final Object value = iterator.next();
                 block.yield(context, convertJavaToUsableRubyObject(runtime, value));
             }
-            return context.nil;
+            return self;
         }
 
         @JRubyMethod
@@ -114,7 +114,56 @@ public abstract class JavaLang {
                     block.yield(context, RubyArray.newArray(runtime, rValue, index));
                 }
             }
-            return context.nil;
+            return self;
+        }
+
+        @JRubyMethod(name = { "to_a", "entries" }) // @override Enumerable#to_a
+        public static IRubyObject to_a(final ThreadContext context, final IRubyObject self, final Block block) {
+            final Ruby runtime = context.runtime;
+            final RubyArray ary = runtime.newArray();
+            java.lang.Iterable iterable = unwrapJavaObject(self);
+            java.util.Iterator iterator = iterable.iterator();
+            while ( iterator.hasNext() ) {
+                final Object value = iterator.next();
+                ary.append( convertJavaToUsableRubyObject(runtime, value) );
+            }
+            return ary;
+        }
+
+        @JRubyMethod(name = "count") // @override Enumerable#count
+        public static IRubyObject count(final ThreadContext context, final IRubyObject self, final Block block) {
+            final Ruby runtime = context.runtime;
+            java.lang.Iterable iterable = unwrapJavaObject(self);
+            if ( block.isGiven() ) {
+                return countBlock(context, iterable.iterator(), block);
+            }
+            if ( iterable instanceof java.util.Collection ) {
+                return RubyFixnum.newFixnum(runtime, ((java.util.Collection) iterable).size());
+            }
+            int count = 0;
+            for( java.util.Iterator it = iterable.iterator(); it.hasNext(); ) { it.next(); count++; }
+            return RubyFixnum.newFixnum(runtime, count);
+        }
+
+        static RubyFixnum countBlock(final ThreadContext context, final java.util.Iterator it, final Block block) {
+            final Ruby runtime = context.runtime;
+            int count = 0; while ( it.hasNext() ) {
+                IRubyObject next = convertJavaToUsableRubyObject( runtime, it.next() );
+                if ( block.yield( context, next ).isTrue() ) count++;
+            }
+            return RubyFixnum.newFixnum(runtime, count);
+        }
+
+        @JRubyMethod(name = "count") // @override Enumerable#count
+        public static IRubyObject count(final ThreadContext context, final IRubyObject self, final IRubyObject obj, final Block unused) {
+            // unused block due DescriptorInfo not (yet) supporting if a method receives block and an override doesn't
+            final Ruby runtime = context.runtime;
+            java.lang.Iterable iterable = unwrapJavaObject(self);
+            int count = 0; for ( java.util.Iterator it = iterable.iterator(); it.hasNext(); ) {
+                IRubyObject next = convertJavaToUsableRubyObject( runtime, it.next() );
+                if ( RubyObject.equalInternal(context, next, obj) ) count++;
+            }
+            return RubyFixnum.newFixnum(runtime, count);
         }
 
     }
@@ -170,7 +219,7 @@ public abstract class JavaLang {
             for ( int i=0; i < len; i++ ) {
                 backtrace[i] = RubyString.newString(runtime, stackTrace[i].toString());
             }
-            return RubyArray.newArrayNoCopy(runtime, backtrace);
+            return RubyArray.newArrayMayCopy(runtime, backtrace);
         }
 
         @JRubyMethod // can not set backtrace for a java.lang.Throwable

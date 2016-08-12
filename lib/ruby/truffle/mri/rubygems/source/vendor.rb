@@ -1,1 +1,1 @@
-require_relative '../../../stdlib/rubygems/source/' + File.basename(__FILE__)
+require_relative '../../../../stdlib/rubygems/source/' + File.basename(__FILE__)

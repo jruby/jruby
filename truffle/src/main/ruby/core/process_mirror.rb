@@ -36,7 +36,7 @@ module Rubinius
   class Mirror
     module Process
       def self.set_status_global(status)
-        ::Thread.current[:$?] = status
+        $? = status
       end
 
       def self.exec(*args)
@@ -46,7 +46,7 @@ module Rubinius
       end
 
       def self.spawn(*args)
-        exe = Execute.new(*args)
+        exe = Execute.new(*args) 
 
         begin
           pid = exe.spawn exe.options, exe.command, exe.argv
@@ -126,8 +126,7 @@ module Rubinius
                 key.each { |k| redirect @options, convert_io_fd(k), to }
               when :unsetenv_others
                 if value
-                  array = @options[:env] = []
-                  ENV.each_key { |k| array << convert_env_key(k) << nil }
+                  @options[:unsetenv_others] = true
                 end
               when :pgroup
                 if value == true
@@ -153,7 +152,7 @@ module Rubinius
             array = (@options[:env] ||= [])
 
             env.each do |key, value|
-              array << convert_env_key(key) << convert_env_value(value)
+              array << [convert_env_key(key), convert_env_value(value)]
             end
           end
         end
@@ -230,6 +229,34 @@ module Rubinius
           end
         end
 
+        def convert_file_mode(obj)
+          case obj
+          when ::Fixnum
+            obj
+          when ::String
+            OFLAGS[obj]
+          when nil
+            OFLAGS["r"]
+          else
+            Rubinius::Type.coerce_to obj, Integer, :to_int
+          end
+        end
+
+        def convert_env_key(key)
+          key = Rubinius::Type.check_null_safe(StringValue(key))
+
+          if key.include?("=")
+            raise ArgumentError, "environment name contains a equal : #{key}"
+          end
+
+          key
+        end
+
+        def convert_env_value(value)
+          return if value.nil?
+          Rubinius::Type.check_null_safe(StringValue(value))
+        end
+
         # Mapping of string open modes to integer oflag versions.
         OFLAGS = {
           "r"  => ::File::RDONLY,
@@ -242,8 +269,10 @@ module Rubinius
 
         def spawn(options, command, arguments)
           options ||= {}
-          env     = options[:unsetenv_others] ? {} : ENV.to_hash
-          env.merge! Hash[options[:env]] if options[:env]
+          env = options.delete(:unsetenv_others) ? {} : ENV.to_hash
+          if add_to_env = options.delete(:env)
+            env.merge! Hash[add_to_env]
+          end
 
           env_array = env.map { |k, v| "#{k}=#{v}" }
 
@@ -251,7 +280,7 @@ module Rubinius
             command, arguments = 'bash', ['bash', '-c', command]
           end
 
-          Truffle::Process.spawn command, arguments, env_array
+          Truffle::Process.spawn command, arguments, env_array, options
         end
 
         def exec(command, args)

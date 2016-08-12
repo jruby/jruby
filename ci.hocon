@@ -15,137 +15,73 @@ common: {
     ruby:       ">=2.1.0"
     "java/jdk": "==1.8.0/60"
   }
-  
+
   environment: {
     CI: "true",
     JAVA_OPTS: -Xmx2G
   }
-  
+
   setup: ${common-setup}
 
-  timelimit: "30:00"
+  timelimit: "01:00:00"
 }
 
-no-graal: {
-  environment: {
-    HOST_VM: server,
-    HOST_VM_CONFIG: default
-  }
-}
-
-graal-core: {
-  setup: ${common-setup} [
-    [rm, -rf, mx.jruby],
-    [mkdir, graal-workspace],
-    [cd, graal-workspace],
-    [mx, sclone, --kind, git, "https://github.com/graalvm/graal-core.git", graal-core],
-    [cd, graal-core],
-    [git, checkout, graal-vm-0.12],
-    [mx, sforceimports],
-    [mx, --vm, server, build],
-    [cd, ../..]
-  ]
-  
-  environment: {
-    GRAAL_BIN: graal-workspace/jvmci/jdk1.8.0_60/product/bin/java,
-    HOST_VM: server,
-    HOST_VM_CONFIG: graal-core
-  }
-}
-
-graalvm: {
+graal-vm: {
   downloads: {
     GRAALVM_DIR: {
       name: graalvm-release,
-      version: "0.12",
+      version: "0.16",
       platformspecific: true
     }
   }
-  
+
   environment: {
-    GRAAL_BIN: "$GRAALVM_DIR/bin/java"
+    GRAALVM_BIN: "$GRAALVM_DIR/bin/java"
     HOST_VM: server,
-    HOST_VM_CONFIG: graal-enterprise
-  }
-}
-
-jruby-noindy: {
-  environment: {
-    GUEST_VM: jruby,
-    GUEST_VM_CONFIG: noindy,
-    JRUBY_OPTS: "-X-T -Xcompile.invokedynamic=false"
-  }
-}
-
-jruby-indy: {
-  environment: {
-    GUEST_VM: jruby,
-    GUEST_VM_CONFIG: indy,
-    JRUBY_OPTS: "-X-T -Xcompile.invokedynamic=true"
-  }
-}
-
-jruby-truffle: {
-  environment: {
-    GUEST_VM: jruby,
-    GUEST_VM_CONFIG: truffle,
+    HOST_VM_CONFIG: graal-vm
   }
 }
 
 gate-caps: {
-  capabilities: [linux, amd64, gate, post-push]
+  capabilities: [linux, amd64]
+  targets: [gate, post-push]
 }
 
-bench-caps: {
-  capabilities: [x52, linux, amd64, bench, post-push]
+jruby-truffle-gem-test-pack: {
+  setup: ${common-setup} [
+    [mx, sclone, --kind, git, "https://github.com/jruby/jruby-truffle-gem-test-pack.git", ../jruby-truffle-gem-test-pack]
+  ]
 }
 
-daily-bench-caps: {
-  capabilities: [x52, linux, amd64, daily]
-}
+test-gems: ${jruby-truffle-gem-test-pack} {
+  environment: {
+    GEM_HOME: ../jruby-truffle-gem-test-pack/gems
+  }
 
-post-process-and-upload-results: [
-  [tool/truffle/post-process-results-json.rb, bench-results.json, bench-results-processed.json],
-  [cat, bench-results-processed.json],
-  [bench-uploader.py, bench-results-processed.json]
-]
-
-metrics: {
   run: [
-    [mx, benchmark, allocation]
-  ] ${post-process-and-upload-results} [
-    [mx, benchmark, minheap]
-  ] ${post-process-and-upload-results} [
-    [mx, benchmark, time]
-  ] ${post-process-and-upload-results}
+    ${jt} [test, gems]
+  ]
 }
 
-compiler-metrics: {
+test-ecosystem: ${jruby-truffle-gem-test-pack} {
   run: [
-    [mx, benchmark, "allocation:compile-mandelbrot"]
-  ] ${post-process-and-upload-results} [
-    [mx, benchmark, "minheap:compile-mandelbrot"]
-  ] ${post-process-and-upload-results} [
-    [mx, benchmark, "time:compile-mandelbrot"]
-  ] ${post-process-and-upload-results}
+    [bin/jruby, bin/gem, install, ../jruby-truffle-gem-test-pack/gems/cache/bundler-1.12.5.gem],
+    ${jt} [test, ecosystem]
+  ]
 }
 
 builds: [
   {name: ruby-test-fast} ${common} ${gate-caps} {run: [${jt} [test, fast]]},
+  {name: ruby-test-tck} ${common} ${gate-caps} {run: [${jt} [test, tck]]},
   {name: ruby-test-specs-command-line} ${common} ${gate-caps} {run: [${jt} [test, specs, ":command_line"]]},
   {name: ruby-test-specs-language} ${common} ${gate-caps} {run: [${jt} [test, specs, ":language"]]},
-  {name: ruby-test-specs-core} ${common} ${gate-caps} {run: [${jt} [test, specs, ":core"]]},
+  {name: ruby-test-specs-core} ${common} ${gate-caps} {run: [${jt} [test, specs, -Gci, ":core"]]},
   {name: ruby-test-specs-library} ${common} ${gate-caps} {run: [${jt} [test, specs, ":library"]]},
   {name: ruby-test-specs-truffle} ${common} ${gate-caps} {run: [${jt} [test, specs, ":truffle"]]},
   {name: ruby-test-integration} ${common} ${gate-caps} {run: [${jt} [test, integration]]},
-  {name: ruby-test-tck} ${common} ${gate-caps} {run: [${jt} [test, tck]]},
+  {name: ruby-test-gems} ${common} ${gate-caps} ${test-gems},
+  {name: ruby-test-ecosystem} ${common} ${gate-caps} ${test-ecosystem},
   {name: ruby-test-tarball} ${common} ${gate-caps} {run: [${jt} [tarball]]},
-  
-  {name: ruby-test-compiler-graal-core} ${common} ${graal-core} ${gate-caps} {run: [${jt} [test, compiler]]},
-  {name: ruby-test-compiler-graalvm} ${common} ${graalvm} ${gate-caps} {run: [${jt} [test, compiler]]},
-  
-  {name: ruby-metrics-noindy} ${common} ${no-graal} ${daily-bench-caps} ${jruby-noindy} ${metrics},
-  {name: ruby-metrics-indy} ${common} ${no-graal} ${daily-bench-caps} ${jruby-indy} ${metrics},
-  {name: ruby-metrics-truffle} ${common} ${no-graal} ${bench-caps} ${jruby-truffle} ${metrics},
-  {name: ruby-metrics-compiler} ${common} ${graalvm} ${bench-caps} ${jruby-truffle} ${compiler-metrics}
+
+  {name: ruby-test-compiler-graal-vm} ${common} ${graal-vm} ${gate-caps} {run: [${jt} [test, compiler]]},
 ]

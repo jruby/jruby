@@ -1,0 +1,7 @@
+---
+- actionpack
+- activesupport
+- activemodel
+- algebrick
+
+# - [gem_name, --option] # is alternative format

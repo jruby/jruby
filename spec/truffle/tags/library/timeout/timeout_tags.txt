@@ -1,0 +1,4 @@
+slow:Timeout.timeout raises Timeout::Error when it times out with no specified error type
+slow:Timeout.timeout raises specified error type when it times out
+slow:Timeout.timeout does not wait too long
+slow:Timeout.timeout returns back the last value in the block

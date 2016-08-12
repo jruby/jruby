@@ -398,7 +398,7 @@ public final class EncodingService {
     public Encoding getEncodingFromString(String string) {
         if (string == null) return null;
 
-        ByteList name = new ByteList(ByteList.plain(string));
+        ByteList name = new ByteList(ByteList.plain(string), false);
         checkAsciiEncodingName(name);
 
         SpecialEncoding special = SpecialEncoding.valueOf(name);
@@ -495,8 +495,6 @@ public final class EncodingService {
      * @return the charset
      */
     public Charset charsetForEncoding(Encoding encoding) {
-        Charset charset = encoding.getCharset();
-
         if (encoding.toString().equals("ASCII-8BIT")) {
             return Charset.forName("ISO-8859-1");
         }

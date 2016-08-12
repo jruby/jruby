@@ -17,15 +17,15 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.backtrace.Backtrace;
 import org.jruby.truffle.language.backtrace.BacktraceFormatter;
-
+import org.jruby.truffle.language.backtrace.BacktraceFormatter.FormattingFlags;
 import java.util.EnumSet;
 import java.util.List;
 
 public abstract class ExceptionOperations {
 
     private static final EnumSet<BacktraceFormatter.FormattingFlags> FORMAT_FLAGS = EnumSet.of(
-            BacktraceFormatter.FormattingFlags.OMIT_FROM_PREFIX,
-            BacktraceFormatter.FormattingFlags.OMIT_EXCEPTION);
+            FormattingFlags.OMIT_FROM_PREFIX,
+            FormattingFlags.OMIT_EXCEPTION);
 
     @TruffleBoundary
     public static DynamicObject backtraceAsRubyStringArray(RubyContext context, DynamicObject exception, Backtrace backtrace) {
@@ -42,12 +42,16 @@ public abstract class ExceptionOperations {
         return Layouts.ARRAY.createArray(context.getCoreLibrary().getArrayFactory(), array, array.length);
     }
 
-    public static DynamicObject createRubyException(DynamicObject rubyClass) {
-        return Layouts.EXCEPTION.createException(Layouts.CLASS.getInstanceFactory(rubyClass), null, null);
-    }
-
+    // because the factory is not constant
+    @TruffleBoundary
     public static DynamicObject createRubyException(DynamicObject rubyClass, Object message, Backtrace backtrace) {
         return Layouts.EXCEPTION.createException(Layouts.CLASS.getInstanceFactory(rubyClass), message, backtrace);
+    }
+
+    // because the factory is not constant
+    @TruffleBoundary
+    public static DynamicObject createSystemCallError(DynamicObject rubyClass, Object message, Backtrace backtrace, int errno) {
+        return Layouts.SYSTEM_CALL_ERROR.createSystemCallError(Layouts.CLASS.getInstanceFactory(rubyClass), message, backtrace, errno);
     }
 
 }

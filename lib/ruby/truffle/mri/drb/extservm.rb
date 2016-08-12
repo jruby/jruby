@@ -1,1 +1,1 @@
-require_relative '../../stdlib/drb/extservm'
+require_relative '../../../stdlib/drb/extservm'

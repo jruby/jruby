@@ -314,22 +314,24 @@ public class RubyMatchData extends RubyObject {
 
     private RubyArray match_array(Ruby runtime, int start) {
         check();
+        IRubyObject nil = runtime.getNil();
         if (regs == null) {
             if (start != 0) return runtime.newEmptyArray();
             if (begin == -1) {
-                return runtime.newArray(runtime.getNil());
+                return runtime.newArray(nil);
             } else {
                 RubyString ss = makeShared(runtime, str, begin, end - begin);
                 return runtime.newArray( ss.infectBy(this) );
             }
         } else {
-            RubyArray arr = runtime.newArray(regs.numRegs - start);
-            for (int i=start; i<regs.numRegs; i++) {
+            RubyArray arr = RubyArray.newBlankArray(runtime, regs.numRegs - start);
+            int index = 0;
+            for (int i=start; i < regs.numRegs; i++) {
                 if (regs.beg[i] == -1) {
-                    arr.append(runtime.getNil());
+                    arr.store(index++, nil);
                 } else {
                     RubyString ss = makeShared(runtime, str, regs.beg[i], regs.end[i] - regs.beg[i]);
-                    arr.append( ss.infectBy(this) );
+                    arr.store(index++, ss.infectBy(this));
                 }
             }
             return arr;

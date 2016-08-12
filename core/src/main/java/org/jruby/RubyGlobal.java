@@ -53,19 +53,24 @@ import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.ReadonlyGlobalVariable;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.ByteList;
 import org.jruby.util.KCode;
 import org.jruby.util.OSEnvironment;
 import org.jruby.util.RegexpOptions;
 import org.jruby.util.cli.OutputStrings;
+import org.jruby.util.io.ChannelHelper;
 import org.jruby.util.io.EncodingUtils;
+import org.jruby.util.io.FilenoUtil;
 import org.jruby.util.io.OpenFile;
 import org.jruby.util.io.STDIO;
 
 import static org.jruby.internal.runtime.GlobalVariable.Scope.*;
 
+import java.io.FileDescriptor;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.channels.Channel;
 import java.nio.channels.Channels;
 import java.util.Map;
@@ -191,21 +196,7 @@ public class RubyGlobal {
 
         runtime.defineVariable(new BacktraceGlobalVariable(runtime, "$@"), THREAD);
 
-        IRubyObject stdin = RubyIO.prepStdio(
-                runtime, runtime.getIn(), prepareStdioChannel(runtime, STDIO.IN, runtime.getIn()), OpenFile.READABLE, runtime.getIO(), "<STDIN>");
-        IRubyObject stdout = RubyIO.prepStdio(
-                runtime, runtime.getOut(), prepareStdioChannel(runtime, STDIO.OUT, runtime.getOut()), OpenFile.WRITABLE, runtime.getIO(), "<STDOUT>");
-        IRubyObject stderr = RubyIO.prepStdio(
-                runtime, runtime.getErr(), prepareStdioChannel(runtime, STDIO.ERR, runtime.getErr()), OpenFile.WRITABLE | OpenFile.SYNC, runtime.getIO(), "<STDERR>");
-
-        runtime.defineVariable(new InputGlobalVariable(runtime, "$stdin", stdin), GLOBAL);
-        runtime.defineVariable(new OutputGlobalVariable(runtime, "$stdout", stdout), GLOBAL);
-        globals.alias("$>", "$stdout");
-        runtime.defineVariable(new OutputGlobalVariable(runtime, "$stderr", stderr), GLOBAL);
-
-        runtime.defineGlobalConstant("STDIN", stdin);
-        runtime.defineGlobalConstant("STDOUT", stdout);
-        runtime.defineGlobalConstant("STDERR", stderr);
+        initSTDIO(runtime, globals);
 
         runtime.defineVariable(new LoadedFeatures(runtime, "$\""), GLOBAL);
         runtime.defineVariable(new LoadedFeatures(runtime, "$LOADED_FEATURES"), GLOBAL);
@@ -276,20 +267,90 @@ public class RubyGlobal {
         globals.alias("$LAST_PAREN_MATCH", "$+");
     }
 
+    public static void initSTDIO(Ruby runtime, GlobalVariables globals) {
+        RubyIO stdin = RubyIO.prepStdio(
+                runtime, runtime.getIn(), prepareStdioChannel(runtime, STDIO.IN, runtime.getIn()), OpenFile.READABLE, runtime.getIO(), "<STDIN>");
+        RubyIO stdout = RubyIO.prepStdio(
+                runtime, runtime.getOut(), prepareStdioChannel(runtime, STDIO.OUT, runtime.getOut()), OpenFile.WRITABLE, runtime.getIO(), "<STDOUT>");
+        RubyIO stderr = RubyIO.prepStdio(
+                runtime, runtime.getErr(), prepareStdioChannel(runtime, STDIO.ERR, runtime.getErr()), OpenFile.WRITABLE | OpenFile.SYNC, runtime.getIO(), "<STDERR>");
+
+        if (runtime.getObject().getConstantFromNoConstMissing("STDIN") == null) {
+            runtime.defineVariable(new InputGlobalVariable(runtime, "$stdin", stdin), GLOBAL);
+            runtime.defineVariable(new OutputGlobalVariable(runtime, "$stdout", stdout), GLOBAL);
+            globals.alias("$>", "$stdout");
+            runtime.defineVariable(new OutputGlobalVariable(runtime, "$stderr", stderr), GLOBAL);
+
+            runtime.defineGlobalConstant("STDIN", stdin);
+            runtime.defineGlobalConstant("STDOUT", stdout);
+            runtime.defineGlobalConstant("STDERR", stderr);
+        } else {
+            ((RubyIO) runtime.getObject().getConstant("STDIN")).getOpenFile().setFD(stdin.getOpenFile().fd());
+            ((RubyIO) runtime.getObject().getConstant("STDOUT")).getOpenFile().setFD(stdout.getOpenFile().fd());
+            ((RubyIO) runtime.getObject().getConstant("STDERR")).getOpenFile().setFD(stderr.getOpenFile().fd());
+        }
+    }
+
     private static Channel prepareStdioChannel(Ruby runtime, STDIO stdio, Object stream) {
         if (runtime.getPosix().isNative() && stdio.isJVMDefault(stream) && !Platform.IS_WINDOWS) {
-            // use real native channel for stdio
-            return new NativeDeviceChannel(stdio.fileno());
-        } else {
-            switch (stdio) {
-                case IN:
-                    return Channels.newChannel((InputStream)stream);
-                case OUT:
-                case ERR:
-                    return Channels.newChannel((OutputStream)stream);
-                default: throw new RuntimeException("invalid stdio: " + stdio);
+            // use real native fileno for stdio, if possible
+
+            // try typical stdio stream and channel types
+            int fileno = -1;
+            Channel channel = null;
+
+            if (stream instanceof Channel) {
+                channel = (Channel) stream;
+                fileno = FilenoUtil.filenoFrom(channel);
+            } else if (stream instanceof InputStream) {
+                InputStream unwrappedStream = ChannelHelper.unwrapFilterInputStream((InputStream) stream);
+                if (unwrappedStream instanceof FileInputStream) {
+                    fileno = FilenoUtil.filenoFrom(((FileInputStream) unwrappedStream).getChannel());
+                }
+            } else if (stream instanceof OutputStream) {
+                OutputStream unwrappedStream = ChannelHelper.unwrapFilterOutputStream((OutputStream) stream);
+                if (unwrappedStream instanceof FileOutputStream) {
+                    fileno = FilenoUtil.filenoFrom(((FileOutputStream) unwrappedStream).getChannel());
+                }
+            }
+
+            if (fileno >= 0) {
+                // We got a real fileno, use it
+                return new NativeDeviceChannel(fileno);
             }
         }
+
+        // fall back on non-direct stdio
+        // NOTE (CON): This affects interactivity in any case where we cannot determine the real fileno and use native.
+        //             We do force flushing of stdout and stdout, but we can't provide all the interactive niceities
+        //             without a proper native channel. See https://github.com/jruby/jruby/issues/2690
+        switch (stdio) {
+            case IN:
+                return Channels.newChannel((InputStream)stream);
+            case OUT:
+            case ERR:
+                return Channels.newChannel((OutputStream)stream);
+            default: throw new RuntimeException("invalid stdio: " + stdio);
+        }
+    }
+
+    // TODO: gross...see https://github.com/ninjudd/drip/issues/96
+    private static int unwrapDripStream(Object stream) {
+        if (stream.getClass().getName().startsWith("org.flatland.drip.Switchable")) {
+
+            try {
+                FileDescriptor fd = (FileDescriptor) stream.getClass().getMethod("getFD").invoke(stream);
+                return FilenoUtil.filenoFrom(fd);
+            } catch (NoSuchMethodException nsme) {
+                nsme.printStackTrace(System.err);
+            } catch (IllegalAccessException iae) {
+                iae.printStackTrace(System.err);
+            } catch (InvocationTargetException ite) {
+                ite.printStackTrace(System.err);
+            }
+        }
+
+        return -1;
     }
 
 

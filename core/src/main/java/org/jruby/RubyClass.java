@@ -31,6 +31,9 @@
 package org.jruby;
 
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.JavaSites;
+import org.jruby.runtime.callsite.CachingCallSite;
+import org.jruby.runtime.callsite.RespondToCallSite;
 import org.jruby.runtime.ivars.VariableAccessor;
 import static org.jruby.util.CodegenUtils.ci;
 import static org.jruby.util.CodegenUtils.p;
@@ -632,8 +635,26 @@ public class RubyClass extends RubyModule {
      *
      * MRI: rb_check_funcall
      */
+    public final IRubyObject finvokeChecked(ThreadContext context, IRubyObject self, JavaSites.CheckedSites sites) {
+        return checkFuncallDefault(context, self, sites);
+    }
+
+    /**
+     * Safely attempt to invoke the given method name on self, using respond_to? and method_missing as appropriate.
+     *
+     * MRI: rb_check_funcall
+     */
     public final IRubyObject finvokeChecked(ThreadContext context, IRubyObject self, String name, IRubyObject... args) {
         return checkFuncallDefault(context, self, name, args);
+    }
+
+    /**
+     * Safely attempt to invoke the given method name on self, using respond_to? and method_missing as appropriate.
+     *
+     * MRI: rb_check_funcall
+     */
+    public final IRubyObject finvokeChecked(ThreadContext context, IRubyObject self, JavaSites.CheckedSites sites, IRubyObject... args) {
+        return checkFuncallDefault(context, self, sites, args);
     }
 
     // MRI: rb_check_funcall_default
@@ -648,12 +669,44 @@ public class RubyClass extends RubyModule {
         return me.call(context, self, klass, name, args);
     }
 
+    // MRI: rb_check_funcall_default
+    private IRubyObject checkFuncallDefault(ThreadContext context, IRubyObject self, JavaSites.CheckedSites sites, IRubyObject[] args) {
+        final RubyClass klass = self.getMetaClass();
+        if (!checkFuncallRespondTo(context, klass, self, sites.respond_to_X)) return null; // return def;
+
+        DynamicMethod me = sites.site.retrieveCache(klass).method;
+        if (!checkFuncallCallable(context, me, CallType.FUNCTIONAL, self)) {
+            return checkFuncallMissing(context, klass, self, sites.methodName, sites.respond_to_missing, sites.method_missing, args);
+        }
+        return me.call(context, self, klass, sites.methodName, args);
+    }
+
+    // MRI: rb_check_funcall_default
+    private IRubyObject checkFuncallDefault(ThreadContext context, IRubyObject self, JavaSites.CheckedSites sites) {
+        final RubyClass klass = self.getMetaClass();
+        if (!checkFuncallRespondTo(context, klass, self, sites.respond_to_X)) return null; // return def;
+
+        DynamicMethod me = sites.site.retrieveCache(klass).method;
+        if (!checkFuncallCallable(context, me, CallType.FUNCTIONAL, self)) {
+            return checkFuncallMissing(context, klass, self, sites.methodName, sites.respond_to_missing, sites.method_missing);
+        }
+        return me.call(context, self, klass, sites.methodName);
+    }
+
     // MRI: check_funcall_exec
     private static IRubyObject checkFuncallExec(ThreadContext context, IRubyObject self, String name, IRubyObject... args) {
         IRubyObject[] newArgs = new IRubyObject[args.length + 1];
         System.arraycopy(args, 0, newArgs, 1, args.length);
         newArgs[0] = context.runtime.newSymbol(name);
         return self.callMethod(context, "method_missing", newArgs);
+    }
+
+    // MRI: check_funcall_exec
+    private static IRubyObject checkFuncallExec(ThreadContext context, IRubyObject self, String name, CallSite methodMissingSite, IRubyObject... args) {
+        IRubyObject[] newArgs = new IRubyObject[args.length + 1];
+        System.arraycopy(args, 0, newArgs, 1, args.length);
+        newArgs[0] = context.runtime.newSymbol(name);
+        return methodMissingSite.call(context, self, self, newArgs);
     }
 
     // MRI: check_funcall_failed
@@ -691,6 +744,33 @@ public class RubyClass extends RubyModule {
         return true;
     }
 
+    /**
+     * Check if the method has a custom respond_to? and call it if so with the method ID we're hoping to call.
+     *
+     * MRI: check_funcall_respond_to
+     */
+    private static boolean checkFuncallRespondTo(ThreadContext context, RubyClass klass, IRubyObject recv, RespondToCallSite respondToSite) {
+        final Ruby runtime = context.runtime;
+        DynamicMethod me = respondToSite.retrieveCache(klass).method;
+
+        // NOTE: isBuiltin here would be NOEX_BASIC in MRI, a flag only added to respond_to?, method_missing, and
+        //       respond_to_missing? Same effect, I believe.
+        if (me != null && !me.isUndefined() && !me.isBuiltin()) {
+            int arityValue = me.getArity().getValue();
+
+            if (arityValue > 2) throw runtime.newArgumentError("respond_to? must accept 1 or 2 arguments (requires " + arityValue + ")");
+
+            boolean result;
+            if (arityValue == 1) {
+                result = respondToSite.respondsTo(context, recv, recv);
+            } else {
+                result = respondToSite.respondsTo(context, recv, recv, true);
+            }
+            return result;
+        }
+        return true;
+    }
+
     // MRI: check_funcall_callable
     public static boolean checkFuncallCallable(ThreadContext context, DynamicMethod method, CallType callType, IRubyObject self) {
         return rbMethodCallStatus(context, method, callType, self);
@@ -723,6 +803,34 @@ public class RubyClass extends RubyModule {
         final IRubyObject $ex = context.getErrorInfo();
         try {
             return checkFuncallExec(context, self, method, args);
+        }
+        catch (RaiseException e) {
+            context.setErrorInfo($ex); // restore $!
+            return checkFuncallFailed(context, self, method, runtime.getNoMethodError(), args);
+        }
+    }
+
+    // MRI: check_funcall_missing
+    private static IRubyObject checkFuncallMissing(ThreadContext context, RubyClass klass, IRubyObject self, String method, CachingCallSite respondToMissingSite, CachingCallSite methodMissingSite, IRubyObject... args) {
+        final Ruby runtime = context.runtime;
+
+        DynamicMethod me = respondToMissingSite.retrieveCache(klass).method;
+        // MRI: basic_obj_respond_to_missing ...
+        if ( me != null && ! me.isUndefined() && ! me.isBuiltin() ) {
+            IRubyObject ret;
+            if (me.getArity().getValue() == 1) {
+                ret = me.call(context, self, klass, "respond_to_missing?", runtime.newSymbol(method));
+            } else {
+                ret = me.call(context, self, klass, "respond_to_missing?", runtime.newSymbol(method), runtime.getTrue());
+            }
+            if ( ! ret.isTrue() ) return null;
+        }
+
+        if (methodMissingSite.retrieveCache(klass).method.isBuiltin()) return null;
+
+        final IRubyObject $ex = context.getErrorInfo();
+        try {
+            return checkFuncallExec(context, self, method, methodMissingSite, args);
         }
         catch (RaiseException e) {
             context.setErrorInfo($ex); // restore $!
@@ -1039,7 +1147,7 @@ public class RubyClass extends RubyModule {
     @Override
     public void becomeSynchronized() {
         // make this class and all subclasses sync
-        synchronized (getRuntime().getHierarchyLock()) {
+        synchronized (runtime.getHierarchyLock()) {
             super.becomeSynchronized();
             Set<RubyClass> mySubclasses = subclasses;
             if (mySubclasses != null) for (RubyClass subclass : mySubclasses) {
@@ -1091,7 +1199,7 @@ public class RubyClass extends RubyModule {
         }
     }
 
-    public Ruby getClassRuntime() {
+    public final Ruby getClassRuntime() {
         return runtime;
     }
 

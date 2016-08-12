@@ -14,6 +14,8 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jcodings.specific.ASCIIEncoding;
+import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.rope.Rope;
@@ -53,15 +55,16 @@ public class InterpolatedRegexpNode extends RubyNode {
 
         final org.jruby.RubyString preprocessed = org.jruby.RubyRegexp.preprocessDRegexp(getContext().getJRubyRuntime(), strings, options);
 
-        final DynamicObject regexp = RegexpNodes.createRubyRegexp(getContext(), this, coreLibrary().getRegexpClass(), StringOperations.ropeFromByteList(preprocessed.getByteList()), options);
+        final DynamicObject regexp = RegexpNodes.createRubyRegexp(getContext(), this, coreLibrary().getRegexpFactory(),
+                StringOperations.ropeFromByteList(preprocessed.getByteList()), options);
 
         if (options.isEncodingNone()) {
             final Rope source = Layouts.REGEXP.getSource(regexp);
 
             if (!BodyTranslator.all7Bit(preprocessed.getByteList().bytes())) {
-                Layouts.REGEXP.setSource(regexp, RopeOperations.withEncodingVerySlow(source, getContext().getJRubyRuntime().getEncodingService().getAscii8bitEncoding()));
+                Layouts.REGEXP.setSource(regexp, RopeOperations.withEncodingVerySlow(source, ASCIIEncoding.INSTANCE));
             } else {
-                Layouts.REGEXP.setSource(regexp, RopeOperations.withEncodingVerySlow(source, getContext().getJRubyRuntime().getEncodingService().getUSAsciiEncoding()));
+                Layouts.REGEXP.setSource(regexp, RopeOperations.withEncodingVerySlow(source, USASCIIEncoding.INSTANCE));
             }
         }
 
@@ -73,7 +76,7 @@ public class InterpolatedRegexpNode extends RubyNode {
         DynamicObject[] values = new DynamicObject[children.length];
         for (int i = 0; i < children.length; i++) {
             final Object value = children[i].execute(frame);
-            values[i] = (DynamicObject) toS.call(frame, value, "to_s", null);
+            values[i] = (DynamicObject) toS.call(frame, value, "to_s");
         }
         return values;
     }

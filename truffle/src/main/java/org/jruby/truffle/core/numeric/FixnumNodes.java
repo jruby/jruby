@@ -584,7 +584,7 @@ public abstract class FixnumNodes {
                 "!isLong(b)",
                 "!isRubyBignum(b)" })
         public Object equal(VirtualFrame frame, Object a, Object b) {
-            return reverseCallNode.call(frame, b, "==", null, a);
+            return reverseCallNode.call(frame, b, "==", a);
         }
 
     }
@@ -804,12 +804,12 @@ public abstract class FixnumNodes {
                 Object a,
                 DynamicObject b,
                 @Cached("new()") SnippetNode snippetNode) {
-            return snippetNode.execute(frame, "a ^ Rubinius::Type.coerce_to_bitwise_operand(b)", "a", a, "b", b);
+            return snippetNode.execute(frame, "redo_coerced :^, b", "b", b);
         }
 
     }
 
-    @CoreMethod(names = "<<", required = 1, lowerFixnumParameters = 0)
+    @CoreMethod(names = "<<", required = 1, lowerFixnum = 1)
     public abstract static class LeftShiftNode extends BignumNodes.BignumCoreMethodNode {
 
         @Child private RightShiftNode rightShiftNode;
@@ -856,7 +856,7 @@ public abstract class FixnumNodes {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
                 fallbackCallNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf(getContext()));
             }
-            return fallbackCallNode.call(frame, a, "left_shift_fallback", null, b);
+            return fallbackCallNode.call(frame, a, "left_shift_fallback", b);
         }
 
         static boolean canShiftIntoInt(int a, int b) {
@@ -873,7 +873,7 @@ public abstract class FixnumNodes {
 
     }
 
-    @CoreMethod(names = ">>", required = 1, lowerFixnumParameters = 0)
+    @CoreMethod(names = ">>", required = 1, lowerFixnum = 1)
     public abstract static class RightShiftNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode fallbackCallNode;
@@ -936,7 +936,7 @@ public abstract class FixnumNodes {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
                 fallbackCallNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf(getContext()));
             }
-            return fallbackCallNode.call(frame, a, "right_shift_fallback", null, b);
+            return fallbackCallNode.call(frame, a, "right_shift_fallback", b);
         }
 
         protected static boolean isPositive(DynamicObject b) {

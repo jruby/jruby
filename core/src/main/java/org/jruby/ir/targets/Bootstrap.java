@@ -48,8 +48,8 @@ import static org.jruby.util.CodegenUtils.sig;
 
 public class Bootstrap {
     public final static String BOOTSTRAP_BARE_SIG = sig(CallSite.class, Lookup.class, String.class, MethodType.class);
-    public final static String BOOTSTRAP_LONG_STRING_INT_SIG = sig(CallSite.class, Lookup.class, String.class, MethodType.class, long.class, String.class, int.class);
-    public final static String BOOTSTRAP_DOUBLE_STRING_INT_SIG = sig(CallSite.class, Lookup.class, String.class, MethodType.class, double.class, String.class, int.class);
+    public final static String BOOTSTRAP_LONG_STRING_INT_SIG = sig(CallSite.class, Lookup.class, String.class, MethodType.class, long.class, int.class, String.class, int.class);
+    public final static String BOOTSTRAP_DOUBLE_STRING_INT_SIG = sig(CallSite.class, Lookup.class, String.class, MethodType.class, double.class, int.class, String.class, int.class);
     public static final Class[] REIFIED_OBJECT_CLASSES = {
         RubyObjectVar0.class,
         RubyObjectVar1.class,
@@ -211,7 +211,7 @@ public class Bootstrap {
     }
 
     public static IRubyObject array(ThreadContext context, IRubyObject[] elts) {
-        return RubyArray.newArrayNoCopy(context.runtime, elts);
+        return RubyArray.newArrayMayCopy(context.runtime, elts);
     }
 
     public static Handle contextValue() {
@@ -816,7 +816,7 @@ public class Bootstrap {
         return value;
     }
 
-    public static boolean testArg0ModuleMatch(IRubyObject arg0, int id) {
+    public static boolean testModuleMatch(ThreadContext context, IRubyObject arg0, int id) {
         return arg0 instanceof RubyModule && ((RubyModule)arg0).id == id;
     }
 

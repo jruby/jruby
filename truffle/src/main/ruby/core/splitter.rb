@@ -1,3 +1,11 @@
+# Copyright (c) 2016 Oracle and/or its affiliates. All rights reserved. This
+# code is released under a tri EPL/GPL/LGPL license. You can use it,
+# redistribute it and/or modify it under the terms of the:
+#
+# Eclipse Public License version 1.0
+# GNU General Public License version 2
+# GNU Lesser General Public License version 2.1
+#
 # Copyright (c) 2007-2015, Evan Phoenix and contributors
 # All rights reserved.
 #
@@ -28,7 +36,7 @@ module Rubinius
   class Splitter
     def self.split_characters(string, pattern, limit, tail_empty)
       if limit
-        string.chars.take(limit - 1) << string[(limit - 1)..-1]
+        string.chars.take(limit - 1) << (string.size > (limit - 1) ? string[(limit - 1)..-1] : "")
       else
         ret = string.chars.to_a
         # Use #byteslice because it returns the right class and taints
@@ -115,7 +123,7 @@ module Rubinius
 
         collapsed = match.collapsing?
 
-        unless collapsed && (match.full.at(0) == last_match_end)
+        unless collapsed && (match.byte_begin(0) == last_match_end)
           ret << match.pre_match_from(last_match_end)
 
           # length > 1 means there are captures
@@ -124,13 +132,13 @@ module Rubinius
           end
         end
 
-        start = match.full.at(1)
+        start = match.byte_end(0)
         if collapsed
           start += 1
         end
 
         last_match = match
-        last_match_end = last_match.full.at(1)
+        last_match_end = last_match.byte_end(0)
       end
 
       if last_match

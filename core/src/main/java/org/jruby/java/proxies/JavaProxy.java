@@ -18,7 +18,6 @@ import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyHash;
-import org.jruby.RubyHash.Visitor;
 import org.jruby.RubyMethod;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
@@ -180,18 +179,13 @@ public class JavaProxy extends RubyObject {
     /**
      * Create a name/newname map of fields to be exposed as methods.
      */
-    private static Map<String, String> getFieldListFromArgs(final IRubyObject[] args) {
+    private static Map<String, String> getFieldListFromArgs(ThreadContext context, IRubyObject[] args) {
         final HashMap<String, String> map = new HashMap<>(args.length, 1);
         // Get map of all fields we want to define.
         for (int i = 0; i < args.length; i++) {
             final IRubyObject arg = args[i];
             if ( arg instanceof RubyHash ) {
-                ((RubyHash) arg).visitAll(new Visitor() {
-                    @Override
-                    public void visit(IRubyObject key, IRubyObject value) {
-                        map.put(key.asString().toString(), value.asString().toString());
-                    }
-                });
+                ((RubyHash) arg).visitAll(context, MapPopulatorVisitor, map);
             } else {
                 String value = arg.asString().toString();
                 map.put(value, value);
@@ -199,6 +193,13 @@ public class JavaProxy extends RubyObject {
         }
         return map;
     }
+
+    private static final RubyHash.VisitorWithState<Map> MapPopulatorVisitor = new RubyHash.VisitorWithState<Map>() {
+        @Override
+        public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, Map map) {
+            map.put(key.asString().toString(), value.asString().toString());
+        }
+    };
 
     // Look through all mappings to find a match entry for this field
     private static void installField(final ThreadContext context,
@@ -249,7 +250,7 @@ public class JavaProxy extends RubyObject {
     private static void findFields(final ThreadContext context,
         final RubyModule topModule, final IRubyObject[] args,
         final boolean asReader, final boolean asWriter) {
-        final Map<String, String> fieldMap = getFieldListFromArgs(args);
+        final Map<String, String> fieldMap = getFieldListFromArgs(context, args);
 
         for (RubyModule module = topModule; module != null; module = module.getSuperClass()) {
             final Class<?> javaClass = JavaClass.getJavaClassIfProxy(context, module);

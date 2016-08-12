@@ -64,6 +64,7 @@ public class RubyLanguage extends TruffleLanguage<RubyContext> {
 
         if (runtimeWrapper == null) {
             RubyInstanceConfig config = new RubyInstanceConfig();
+            config.processArgumentsWithRubyopts();
             config.setCompileMode(RubyInstanceConfig.CompileMode.TRUFFLE);
             runtime = Ruby.newInstance(config);
         } else {

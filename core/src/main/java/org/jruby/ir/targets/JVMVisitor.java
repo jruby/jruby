@@ -16,8 +16,6 @@ import org.jruby.ir.instructions.defined.GetErrorInfoInstr;
 import org.jruby.ir.instructions.defined.RestoreErrorInfoInstr;
 import org.jruby.ir.instructions.specialized.OneFixnumArgNoBlockCallInstr;
 import org.jruby.ir.instructions.specialized.OneFloatArgNoBlockCallInstr;
-import org.jruby.ir.instructions.specialized.OneOperandArgNoBlockCallInstr;
-import org.jruby.ir.instructions.specialized.ZeroOperandArgNoBlockCallInstr;
 import org.jruby.ir.operands.*;
 import org.jruby.ir.operands.Boolean;
 import org.jruby.ir.operands.Float;
@@ -170,8 +168,6 @@ public class JVMVisitor extends IRVisitor {
 
         IRBytecodeAdapter m = jvmMethod();
 
-        int ipc = 0; // synthetic, used for debug traces that show which instr failed
-
         Label currentRescue = null;
         Label currentRegionStart = null;
         Label currentBlockStart = null;
@@ -229,7 +225,6 @@ public class JVMVisitor extends IRVisitor {
 
             // visit remaining instrs
             for (Instr instr : bb.getInstrs()) {
-                if (DEBUG) instr.setIPC(ipc++); // debug mode uses instr offset for backtrace
                 visit(instr);
             }
 
@@ -365,7 +360,7 @@ public class JVMVisitor extends IRVisitor {
 
     public void visit(Instr instr) {
         if (DEBUG) { // debug will skip emitting actual file line numbers
-            jvmAdapter().line(instr.getIPC());
+            jvmAdapter().line(++jvmMethod().ipc);
         }
         instr.visit(this);
     }
@@ -575,7 +570,7 @@ public class JVMVisitor extends IRVisitor {
         jvmMethod().loadSelf();
         visit(arrayderefinstr.getReceiver());
         visit(arrayderefinstr.getKey());
-        jvmMethod().invokeArrayDeref();
+        jvmMethod().invokeArrayDeref(file, lastLine);
         jvmStoreLocal(arrayderefinstr.getResult());
     }
 
@@ -1017,11 +1012,10 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void CallInstr(CallInstr callInstr) {
-        if (callInstr instanceof OneFixnumArgNoBlockCallInstr && MethodIndex.getFastFixnumOpsMethod(callInstr.getName()) != null) {
+        if (callInstr instanceof OneFixnumArgNoBlockCallInstr) {
             oneFixnumArgNoBlockCallInstr((OneFixnumArgNoBlockCallInstr) callInstr);
             return;
-        } else if (callInstr instanceof OneFloatArgNoBlockCallInstr &&
-                MethodIndex.getFastFloatOpsMethod(callInstr.getName()) != null) {
+        } else if (callInstr instanceof OneFloatArgNoBlockCallInstr) {
             oneFloatArgNoBlockCallInstr((OneFloatArgNoBlockCallInstr) callInstr);
             return;
         }
@@ -1103,16 +1097,17 @@ public class JVMVisitor extends IRVisitor {
         if (jvm.methodData().specificArity >= 0) {
             // no arity check in specific arity path
         } else {
-            jvmMethod().loadRuntime();
+            jvmMethod().loadContext();
             jvmMethod().loadStaticScope();
             jvmMethod().loadArgs();
+            // TODO: pack these, e.g. in a constant pool String
             jvmAdapter().ldc(checkarityinstr.required);
             jvmAdapter().ldc(checkarityinstr.opt);
             jvmAdapter().ldc(checkarityinstr.rest);
             jvmAdapter().ldc(checkarityinstr.receivesKeywords);
             jvmAdapter().ldc(checkarityinstr.restKey);
             jvmMethod().loadBlockType();
-            jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "checkArity", sig(void.class, Ruby.class, StaticScope.class, Object[].class, int.class, int.class, boolean.class, boolean.class, int.class, Block.Type.class));
+            jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "checkArity", sig(void.class, ThreadContext.class, StaticScope.class, Object[].class, int.class, int.class, boolean.class, boolean.class, int.class, Block.Type.class));
         }
     }
 
@@ -1300,7 +1295,8 @@ public class JVMVisitor extends IRVisitor {
         visit(eqqinstr.getArg2());
         String siteName = jvmMethod().getUniqueSiteName("===");
         IRBytecodeAdapter.cacheCallSite(jvmAdapter(), jvmMethod().getClassData().clsName, siteName, "===", CallType.FUNCTIONAL, false);
-        jvmMethod().invokeIRHelper("isEQQ", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, CallSite.class));
+        jvmAdapter().ldc(eqqinstr.isSplattedValue());
+        jvmMethod().invokeIRHelper("isEQQ", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, CallSite.class, boolean.class));
         jvmStoreLocal(eqqinstr.getResult());
     }
 
@@ -1555,7 +1551,7 @@ public class JVMVisitor extends IRVisitor {
 
         visit(receiver);
 
-        m.invokeOtherOneFixnum(file, lastLine, name, fixnum);
+        m.invokeOtherOneFixnum(file, lastLine, name, fixnum, oneFixnumArgNoBlockCallInstr.getCallType());
 
         if (result != null) {
             jvmStoreLocal(result);
@@ -1566,10 +1562,6 @@ public class JVMVisitor extends IRVisitor {
     }
 
     public void oneFloatArgNoBlockCallInstr(OneFloatArgNoBlockCallInstr oneFloatArgNoBlockCallInstr) {
-        if (MethodIndex.getFastFloatOpsMethod(oneFloatArgNoBlockCallInstr.getName()) == null) {
-            CallInstr(oneFloatArgNoBlockCallInstr);
-            return;
-        }
         IRBytecodeAdapter m = jvmMethod();
         String name = oneFloatArgNoBlockCallInstr.getName();
         double flote = oneFloatArgNoBlockCallInstr.getFloatArg();
@@ -1584,7 +1576,7 @@ public class JVMVisitor extends IRVisitor {
 
         visit(receiver);
 
-        m.invokeOtherOneFloat(file, lastLine, name, flote);
+        m.invokeOtherOneFloat(file, lastLine, name, flote, oneFloatArgNoBlockCallInstr.getCallType());
 
         if (result != null) {
             jvmStoreLocal(result);

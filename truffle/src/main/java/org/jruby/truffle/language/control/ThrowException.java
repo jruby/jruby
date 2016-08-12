@@ -13,6 +13,8 @@ import com.oracle.truffle.api.nodes.ControlFlowException;
 
 public class ThrowException extends ControlFlowException {
 
+    private static final long serialVersionUID = 5996793715653695919L;
+
     private final Object tag;
     private final Object value;
 

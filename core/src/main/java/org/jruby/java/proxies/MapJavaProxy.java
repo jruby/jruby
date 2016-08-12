@@ -44,11 +44,11 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.invokedynamic.MethodNames;
 
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
+import org.jruby.util.TypeConverter;
 
 /**
  * A proxy for wrapping <code>java.util.Map</code> instances.
@@ -251,21 +251,22 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
         }
 
         @Override
-        public void visitAll(Visitor visitor) {
+        public <T> void visitAll(ThreadContext context, VisitorWithState visitor, T state) {
             final Ruby runtime = getRuntime();
             // NOTE: this is here to make maps act similar to Hash-es which allow modifications while
             // iterating (meant from the same thread) ... thus we avoid iterating entrySet() directly
             final Map<Object, Object> map = mapDelegate();
             final Map.Entry[] entries = map.entrySet().toArray( new Map.Entry[map.size() ] );
+            int index = 0;
             for ( Map.Entry entry : entries ) {
                 IRubyObject key = JavaUtil.convertJavaToUsableRubyObject(runtime, entry.getKey());
                 IRubyObject value = JavaUtil.convertJavaToUsableRubyObject(runtime, entry.getValue());
-                visitor.visit(key, value);
+                visitor.visit(context, this, key, value, index++, state);
             }
         }
 
         @Override
-        public RubyBoolean compare(final ThreadContext context, final MethodNames method, IRubyObject other) {
+        public RubyBoolean compare(final ThreadContext context, final VisitorWithState<RubyHash> method, IRubyObject other) {
             syncSize();
             if ( other instanceof RubyHashMap ) {
                 ((RubyHashMap) other).syncSize();
@@ -447,7 +448,11 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
 
     @JRubyMethod(name = "to_proc")
     public RubyProc to_proc(ThreadContext context) {
-        return getOrCreateRubyHashMap().to_proc(context);
+        IRubyObject newProc = getOrCreateRubyHashMap().callMethod("to_proc");
+
+        TypeConverter.checkType(context, newProc, context.runtime.getProc());
+
+        return (RubyProc) newProc;
     }
 
     /** rb_hash_to_s

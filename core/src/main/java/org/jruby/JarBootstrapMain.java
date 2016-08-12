@@ -49,7 +49,7 @@ package org.jruby;
  * </pre>
  */
 public class JarBootstrapMain {
-    public static final String JAR_BOOTSTRAP = "classpath:jar-bootstrap.rb";
+    public static final String JAR_BOOTSTRAP = "classpath:/jar-bootstrap.rb";
     public static void main(String[] args) {
         String[] newArgs = new String[args.length + 1];
         newArgs[0] = JAR_BOOTSTRAP;

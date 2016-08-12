@@ -1,2 +1,0 @@
-fails(regexp):String#sub! with pattern and block raises a RuntimeError if the string is modified while substituting
-fails:String#sub with pattern, replacement returns a copy of self when no modification is made

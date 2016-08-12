@@ -111,7 +111,7 @@ public abstract class SetNode extends RubyNode {
             if (n < size) {
                 final boolean equal;
                 if (profiledByIdentity) {
-                    equal = equalNode.executeReferenceEqual(frame, key, PackedArrayStrategy.getKey(store, n));
+                    equal = equalNode.executeReferenceEqual(key, PackedArrayStrategy.getKey(store, n));
                 } else {
                     equal = hashed == PackedArrayStrategy.getHashed(store, n) &&
                             eqlNode.callBoolean(frame, key, "eql?", null, PackedArrayStrategy.getKey(store, n));
@@ -243,7 +243,7 @@ public abstract class SetNode extends RubyNode {
             CompilerDirectives.transferToInterpreterAndInvalidate();
             dupNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
         }
-        return dupNode.call(frame, value, "dup", null);
+        return dupNode.call(frame, value, "dup");
     }
 
     private Object freeze(VirtualFrame frame, Object value) {
@@ -251,7 +251,7 @@ public abstract class SetNode extends RubyNode {
             CompilerDirectives.transferToInterpreterAndInvalidate();
             freezeNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
         }
-        return freezeNode.call(frame, value, "freeze", null);
+        return freezeNode.call(frame, value, "freeze");
     }
 
 }

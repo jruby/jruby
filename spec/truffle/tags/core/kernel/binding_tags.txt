@@ -1,1 +1,0 @@
-fails:Kernel.binding returns a binding for the caller

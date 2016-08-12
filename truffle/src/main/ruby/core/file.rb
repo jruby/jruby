@@ -345,6 +345,14 @@ class File < IO
     paths.size
   end
 
+  def self.mkfifo(path, mode = 0666)
+    mode = Rubinius::Type.coerce_to mode, Integer, :to_int
+    path = Rubinius::Type.coerce_to_path(path)
+    status = Truffle::POSIX.mkfifo(path, mode)
+    Errno.handle path if status != 0
+    status
+  end
+
   ##
   # Returns the change time for the named file (the
   # time at which directory information about the
@@ -1333,6 +1341,44 @@ class File::Stat
     if mode & S_IWOTH == S_IWOTH
       tmp = mode & (S_IRUGO | S_IWUGO | S_IXUGO)
       return Rubinius::Type.coerce_to tmp, Fixnum, :to_int
+    end
+  end
+end
+
+if Truffle::Safe.io_safe?
+  STDIN = File.new(0)
+  STDOUT = File.new(1)
+  STDERR = File.new(2)
+else
+  STDIN = nil
+  STDOUT = nil
+  STDERR = nil
+end
+
+$stdin = STDIN
+$stdout = STDOUT
+$stderr = STDERR
+
+class << STDIN
+  def external_encoding
+    super || Encoding.default_external
+  end
+end
+
+if Truffle::Safe.io_safe?
+  if STDOUT.tty?
+    STDOUT.sync = true
+  else
+    Truffle::Kernel.at_exit true do
+      STDOUT.flush
+    end
+  end
+
+  if STDERR.tty?
+    STDERR.sync = true
+  else
+    Truffle::Kernel.at_exit true do
+      STDERR.flush
     end
   end
 end

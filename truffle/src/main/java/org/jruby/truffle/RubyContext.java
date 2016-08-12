@@ -16,9 +16,11 @@ import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.TruffleLanguage;
 import com.oracle.truffle.api.instrumentation.Instrumenter;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.source.Source;
 import org.jruby.Ruby;
 import org.jruby.truffle.builtins.PrimitiveManager;
 import org.jruby.truffle.core.CoreLibrary;
+import org.jruby.truffle.core.encoding.EncodingManager;
 import org.jruby.truffle.core.exception.CoreExceptions;
 import org.jruby.truffle.core.kernel.AtExitManager;
 import org.jruby.truffle.core.kernel.TraceManager;
@@ -68,18 +70,20 @@ public class RubyContext extends ExecutionContext {
     private final PrimitiveManager primitiveManager = new PrimitiveManager();
     private final JRubyInterop jrubyInterop = new JRubyInterop(this);
     private final SafepointManager safepointManager = new SafepointManager(this);
-    private final SymbolTable symbolTable = new SymbolTable(this);
+    private final SymbolTable symbolTable;
     private final InteropManager interopManager = new InteropManager(this);
     private final CodeLoader codeLoader = new CodeLoader(this);
     private final FeatureLoader featureLoader = new FeatureLoader(this);
     private final TraceManager traceManager;
     private final ObjectSpaceManager objectSpaceManager = new ObjectSpaceManager(this);
     private final AtExitManager atExitManager = new AtExitManager(this);
-    private final SourceCache sourceCache = new SourceCache(new SourceLoader(this));
+    private final SourceLoader sourceLoader = new SourceLoader(this);
+    private final SourceCache sourceCache = new SourceCache(sourceLoader);
     private final CallStackManager callStack = new CallStackManager(this);
     private final CoreStrings coreStrings = new CoreStrings(this);
     private final FrozenStrings frozenStrings = new FrozenStrings(this);
     private final CoreExceptions coreExceptions = new CoreExceptions(this);
+    private final EncodingManager encodingManager = new EncodingManager(this);
 
     private final CompilerOptions compilerOptions = Truffle.getRuntime().createCompilerOptions();
 
@@ -136,6 +140,8 @@ public class RubyContext extends ExecutionContext {
 
         coreLibrary = new CoreLibrary(this);
         coreLibrary.initialize();
+
+        symbolTable = new SymbolTable(coreLibrary.getSymbolFactory());
 
         // Create objects that need core classes
 
@@ -283,6 +289,7 @@ public class RubyContext extends ExecutionContext {
         return rootLexicalScope;
     }
 
+    @Override
     public CompilerOptions getCompilerOptions() {
         return compilerOptions;
     }
@@ -301,6 +308,10 @@ public class RubyContext extends ExecutionContext {
 
     public AttachmentsManager getAttachmentsManager() {
         return attachmentsManager;
+    }
+
+    public SourceLoader getSourceLoader() {
+        return sourceLoader;
     }
 
     public SourceCache getSourceCache() {
@@ -349,6 +360,10 @@ public class RubyContext extends ExecutionContext {
 
     public CoreExceptions getCoreExceptions() {
         return coreExceptions;
+    }
+
+    public EncodingManager getEncodingManager() {
+        return encodingManager;
     }
 
 }

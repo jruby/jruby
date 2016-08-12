@@ -42,6 +42,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.runtime.ivars.VariableAccessor;
+import org.jruby.specialized.RubyArraySpecialized;
 import org.jruby.util.ByteList;
 import org.jruby.util.JavaNameMangler;
 import org.jruby.util.RegexpOptions;
@@ -389,7 +390,7 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         invoke(file, line, name, arity, hasClosure, CallType.NORMAL, isPotentiallyRefined);
     }
 
-    public void invokeArrayDeref() {
+    public void invokeArrayDeref(String file, int line) {
         SkinnyMethodAdapter adapter2;
         String incomingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyString.class));
 
@@ -532,11 +533,17 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         }
     }
 
-    public void invokeOtherOneFixnum(String file, int line, String name, long fixnum) {
+    public void invokeOtherOneFixnum(String file, int line, String name, long fixnum, CallType callType) {
         if (!MethodIndex.hasFastFixnumOps(name)) {
             pushFixnum(fixnum);
-            invokeOther(file, line, name, 1, false, false);
+            if (callType == CallType.NORMAL) {
+                invokeOther(file, line, name, 1, false, false);
+            } else {
+                invokeSelf(file, line, name, 1, false, callType, false);
+            }
+            return;
         }
+
         SkinnyMethodAdapter adapter2;
         String incomingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT));
         String outgoingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, long.class));
@@ -582,11 +589,17 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         adapter.invokestatic(getClassData().clsName, methodName, incomingSig);
     }
 
-    public void invokeOtherOneFloat(String file, int line, String name, double flote) {
+    public void invokeOtherOneFloat(String file, int line, String name, double flote, CallType callType) {
         if (!MethodIndex.hasFastFloatOps(name)) {
             pushFloat(flote);
-            invokeOther(file, line, name, 1, false, false);
+            if (callType == CallType.NORMAL) {
+                invokeOther(file, line, name, 1, false, false);
+            } else {
+                invokeSelf(file, line, name, 1, false, callType, false);
+            }
+            return;
         }
+
         SkinnyMethodAdapter adapter2;
         String incomingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT));
         String outgoingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, double.class));
@@ -833,6 +846,12 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
 
     public void array(int length) {
         if (length > MAX_ARGUMENTS) throw new NotCompilableException("literal array has more than " + MAX_ARGUMENTS + " elements");
+
+        // use utility method for supported sizes
+        if (length <= RubyArraySpecialized.MAX_PACKED_SIZE) {
+            invokeIRHelper("newArray", sig(RubyArray.class, params(ThreadContext.class, IRubyObject.class, length)));
+            return;
+        }
 
         SkinnyMethodAdapter adapter2;
         String incomingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, length));

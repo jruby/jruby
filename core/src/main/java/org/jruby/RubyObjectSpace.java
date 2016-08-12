@@ -82,8 +82,8 @@ public class RubyObjectSpace {
     }
 
     @JRubyMethod(required = 1, module = true, visibility = PRIVATE)
-    public static IRubyObject undefine_finalizer(IRubyObject recv, IRubyObject arg1, Block block) {
-        recv.getRuntime().getObjectSpace().removeFinalizers(RubyNumeric.fix2long(arg1.id()));
+    public static IRubyObject undefine_finalizer(IRubyObject recv, IRubyObject obj, Block block) {
+        recv.getRuntime().getObjectSpace().removeFinalizers(RubyNumeric.fix2long(obj.id()));
         return recv;
     }
 

@@ -26,6 +26,7 @@ import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.loader.RequireNode;
+import org.jruby.truffle.util.StringUtils;
 import org.jruby.util.IdUtil;
 
 @NodeChildren({ @NodeChild("module"), @NodeChild("name"), @NodeChild("constant"), @NodeChild("lookupConstantNode") })
@@ -55,7 +56,7 @@ public abstract class GetConstantNode extends RubyNode {
         // We remove it first to allow lookup to ignore it and add it back if there was a failure.
         Layouts.MODULE.getFields(constant.getDeclaringModule()).removeConstant(getContext(), this, name);
         try {
-            requireNode.executeRequire(frame, StringOperations.getString(getContext(), path));
+            requireNode.executeRequire(frame, StringOperations.getString(path));
             final RubyConstant resolvedConstant = lookupConstantNode.lookupConstant(frame, module, name);
             return executeGetConstant(frame, module, name, resolvedConstant, lookupConstantNode);
         } catch (RaiseException e) {
@@ -94,7 +95,7 @@ public abstract class GetConstantNode extends RubyNode {
             boolean isValidConstantName,
             DynamicObject symbolName) {
         if (!isValidConstantName) {
-            throw new RaiseException(coreExceptions().nameError(formatError(name), name, this));
+            throw new RaiseException(coreExceptions().nameError(formatError(name), module, name, this));
         }
 
         if (constMissingNode == null) {
@@ -102,12 +103,12 @@ public abstract class GetConstantNode extends RubyNode {
             constMissingNode = insert(createConstMissingNode());
         }
 
-        return constMissingNode.call(frame, module, "const_missing", null, symbolName);
+        return constMissingNode.call(frame, module, "const_missing", symbolName);
     }
 
     @TruffleBoundary
     private String formatError(String name) {
-        return String.format("wrong constant name %s", name);
+        return StringUtils.format("wrong constant name %s", name);
     }
 
     protected boolean isValidConstantName(String name) {

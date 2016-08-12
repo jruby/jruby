@@ -13,8 +13,10 @@ import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Cached;
+import com.oracle.truffle.api.dsl.CreateCast;
 import com.oracle.truffle.api.dsl.Fallback;
 import com.oracle.truffle.api.dsl.ImportStatic;
+import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.interop.ArityException;
@@ -34,17 +36,44 @@ import org.jruby.truffle.Layouts;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.builtins.CoreMethodNode;
 import org.jruby.truffle.core.cast.NameToJavaStringNode;
+import org.jruby.truffle.core.cast.NameToJavaStringNodeGen;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.string.StringCachingGuards;
 import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.language.PerformanceWarnings;
+import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.control.JavaException;
+import org.jruby.truffle.language.control.RaiseException;
+import org.jruby.truffle.util.ByteListUtils;
 import org.jruby.util.ByteList;
+
+import java.io.File;
 import java.io.IOException;
 
 @CoreClass("Truffle::Interop")
 public abstract class InteropNodes {
 
-    @CoreMethod(names = "executable?", isModuleFunction = true, needsSelf = false, required = 1)
+    @CoreMethod(names = "import_file", isModuleFunction = true, required = 1)
+    public abstract static class ImportFileNode extends CoreMethodArrayArgumentsNode {
+
+        @TruffleBoundary
+        @Specialization(guards = "isRubyString(fileName)")
+        public Object importFile(DynamicObject fileName) {
+            try {
+                final Source sourceObject = Source.newBuilder(new File(fileName.toString())).build();
+                getContext().getEnv().parse(sourceObject).call();
+            } catch (IOException e) {
+                throw new JavaException(e);
+            }
+
+            return nil();
+        }
+
+    }
+
+    @CoreMethod(names = "executable?", isModuleFunction = true, required = 1)
     public abstract static class IsExecutableNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
@@ -61,7 +90,7 @@ public abstract class InteropNodes {
 
     }
 
-    @CoreMethod(names = "execute", isModuleFunction = true, needsSelf = false, required = 1, rest = true)
+    @CoreMethod(names = "execute", isModuleFunction = true, required = 1, rest = true)
     public abstract static class ExecuteNode extends CoreMethodArrayArgumentsNode {
 
         // NOTE (eregon, 30/05/2016): If you want to introduce automatic argument conversion here,
@@ -82,7 +111,7 @@ public abstract class InteropNodes {
                 return ForeignAccess.sendExecute(executeNode, frame, receiver, args);
             } catch (UnsupportedTypeException | ArityException | UnsupportedMessageException e) {
                 exceptionProfile.enter();
-                throw new RuntimeException(e);
+                throw new JavaException(e);
             }
         }
 
@@ -91,17 +120,18 @@ public abstract class InteropNodes {
                 VirtualFrame frame,
                 TruffleObject receiver,
                 Object[] args) {
-            CompilerDirectives.bailout("can't compile megamorphic interop EXECUTE message sends");
+            PerformanceWarnings.warn("megamorphic interop EXECUTE message send");
 
             final Node executeNode = createExecuteNode(args.length);
 
             try {
                 return ForeignAccess.sendExecute(executeNode, frame, receiver, args);
             } catch (UnsupportedTypeException | ArityException | UnsupportedMessageException e) {
-                throw new RuntimeException(e);
+                throw new JavaException(e);
             }
         }
 
+        @TruffleBoundary
         protected Node createExecuteNode(int argsLength) {
             return Message.createExecute(argsLength).createNode();
         }
@@ -112,7 +142,7 @@ public abstract class InteropNodes {
 
     }
 
-    @CoreMethod(names = "invoke", isModuleFunction = true, needsSelf = false, required = 2, rest = true)
+    @CoreMethod(names = "invoke", isModuleFunction = true, required = 2, rest = true)
     public abstract static class InvokeNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization(
@@ -143,7 +173,7 @@ public abstract class InteropNodes {
                     | UnsupportedMessageException
                     | UnknownIdentifierException e) {
                 exceptionProfile.enter();
-                throw new RuntimeException(e);
+                throw new JavaException(e);
             }
         }
 
@@ -156,7 +186,7 @@ public abstract class InteropNodes {
                 TruffleObject receiver,
                 DynamicObject identifier,
                 Object[] args) {
-            CompilerDirectives.bailout("can't compile megamorphic interop INVOKE message sends");
+            PerformanceWarnings.warn("megamorphic interop INVOKE message send");
 
             final Node invokeNode = createInvokeNode(args.length);
 
@@ -166,10 +196,11 @@ public abstract class InteropNodes {
                     | ArityException
                     | UnsupportedMessageException
                     | UnknownIdentifierException e) {
-                throw new RuntimeException(e);
+                throw new JavaException(e);
             }
         }
 
+        @TruffleBoundary
         protected Node createInvokeNode(int argsLength) {
             return Message.createInvoke(argsLength).createNode();
         }
@@ -180,7 +211,7 @@ public abstract class InteropNodes {
 
     }
 
-    @CoreMethod(names = "size?", isModuleFunction = true, needsSelf = false, required = 1)
+    @CoreMethod(names = "size?", isModuleFunction = true, required = 1)
     public abstract static class HasSizeNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
@@ -197,7 +228,7 @@ public abstract class InteropNodes {
 
     }
 
-    @CoreMethod(names = "size", isModuleFunction = true, needsSelf = false, required = 1)
+    @CoreMethod(names = "size", isModuleFunction = true, required = 1)
     public abstract static class SizeNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
@@ -215,7 +246,7 @@ public abstract class InteropNodes {
                 return ForeignAccess.sendGetSize(getSizeNode, frame, receiver);
             } catch (UnsupportedMessageException e) {
                 exceptionProfile.enter();
-                throw new RuntimeException(e);
+                throw new JavaException(e);
             }
         }
 
@@ -225,7 +256,7 @@ public abstract class InteropNodes {
 
     }
 
-    @CoreMethod(names = "boxed?", isModuleFunction = true, needsSelf = false, required = 1)
+    @CoreMethod(names = "boxed?", isModuleFunction = true, required = 1)
     public abstract static class BoxedNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
@@ -288,15 +319,16 @@ public abstract class InteropNodes {
 
     }
 
-    @CoreMethod(names = "unbox", isModuleFunction = true, needsSelf = false, required = 1)
+    @CoreMethod(names = "unbox", isModuleFunction = true, required = 1)
     public abstract static class UnboxNode extends CoreMethodArrayArgumentsNode {
 
+        @TruffleBoundary
         @Specialization
         public DynamicObject unbox(CharSequence receiver) {
             // TODO CS-21-Dec-15 this shouldn't be needed - we need to convert j.l.String to Ruby's String automatically
 
             return Layouts.STRING.createString(coreLibrary().getStringFactory(),
-                    StringOperations.ropeFromByteList(ByteList.create(receiver)));
+                    StringOperations.ropeFromByteList(ByteListUtils.create(receiver)));
         }
 
         @Specialization
@@ -309,7 +341,7 @@ public abstract class InteropNodes {
                 return ForeignAccess.sendUnbox(unboxNode, frame, receiver);
             } catch (UnsupportedMessageException e) {
                 exceptionProfile.enter();
-                throw new RuntimeException(e);
+                throw new JavaException(e);
             }
         }
 
@@ -324,7 +356,7 @@ public abstract class InteropNodes {
 
     }
 
-    @CoreMethod(names = "null?", isModuleFunction = true, needsSelf = false, required = 1)
+    @CoreMethod(names = "null?", isModuleFunction = true, required = 1)
     public abstract static class NullNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
@@ -346,7 +378,7 @@ public abstract class InteropNodes {
 
     }
 
-    @CoreMethod(names = "read", isModuleFunction = true, needsSelf = false, required = 2)
+    @CoreMethod(names = "read", isModuleFunction = true, required = 2)
     @ImportStatic(StringCachingGuards.class)
     public abstract static class ReadNode extends CoreMethodArrayArgumentsNode {
 
@@ -361,7 +393,7 @@ public abstract class InteropNodes {
                 return ForeignAccess.sendRead(readNode, frame, receiver, identifier);
             } catch (UnknownIdentifierException | UnsupportedMessageException e) {
                 exceptionProfile.enter();
-                throw new RuntimeException(e);
+                throw new JavaException(e);
             }
         }
 
@@ -378,7 +410,7 @@ public abstract class InteropNodes {
                 return ForeignAccess.sendRead(readNode, frame, receiver, identifierString);
             } catch (UnknownIdentifierException | UnsupportedMessageException e) {
                 exceptionProfile.enter();
-                throw new RuntimeException(e);
+                throw new JavaException(e);
             }
         }
 
@@ -401,7 +433,7 @@ public abstract class InteropNodes {
                 return ForeignAccess.sendRead(readNode, frame, receiver, identifierString);
             } catch (UnknownIdentifierException | UnsupportedMessageException e) {
                 exceptionProfile.enter();
-                throw new RuntimeException(e);
+                throw new JavaException(e);
             }
         }
 
@@ -419,7 +451,7 @@ public abstract class InteropNodes {
                 return ForeignAccess.sendRead(readNode, frame, receiver, objectToString(identifier));
             } catch (UnknownIdentifierException | UnsupportedMessageException e) {
                 exceptionProfile.enter();
-                throw new RuntimeException(e);
+                throw new JavaException(e);
             }
         }
 
@@ -438,7 +470,7 @@ public abstract class InteropNodes {
 
     }
 
-    @CoreMethod(names = "write", isModuleFunction = true, needsSelf = false, required = 3)
+    @CoreMethod(names = "write", isModuleFunction = true, required = 3)
     @ImportStatic(StringCachingGuards.class)
     public abstract static class WriteNode extends CoreMethodArrayArgumentsNode {
 
@@ -454,7 +486,7 @@ public abstract class InteropNodes {
                 return ForeignAccess.sendWrite(writeNode, frame, receiver, identifier, value);
             } catch (UnknownIdentifierException | UnsupportedTypeException | UnsupportedMessageException e) {
                 exceptionProfile.enter();
-                throw new RuntimeException(e);
+                throw new JavaException(e);
             }
         }
 
@@ -472,7 +504,7 @@ public abstract class InteropNodes {
                 return ForeignAccess.sendWrite(writeNode, frame, receiver, identifierString, value);
             } catch (UnknownIdentifierException | UnsupportedTypeException | UnsupportedMessageException e) {
                 exceptionProfile.enter();
-                throw new RuntimeException(e);
+                throw new JavaException(e);
             }
         }
 
@@ -496,7 +528,7 @@ public abstract class InteropNodes {
                 return ForeignAccess.sendWrite(writeNode, frame, receiver, identifierString, value);
             } catch (UnknownIdentifierException | UnsupportedTypeException | UnsupportedMessageException e) {
                 exceptionProfile.enter();
-                throw new RuntimeException(e);
+                throw new JavaException(e);
             }
         }
 
@@ -515,7 +547,7 @@ public abstract class InteropNodes {
                 return ForeignAccess.sendWrite(writeNode, frame, receiver, objectToString(identifier), value);
             } catch (UnknownIdentifierException | UnsupportedTypeException | UnsupportedMessageException e) {
                 exceptionProfile.enter();
-                throw new RuntimeException(e);
+                throw new JavaException(e);
             }
         }
 
@@ -534,7 +566,7 @@ public abstract class InteropNodes {
 
     }
 
-    @CoreMethod(names = "export", isModuleFunction = true, needsSelf = false, required = 2)
+    @CoreMethod(names = "export", isModuleFunction = true, required = 2)
     public abstract static class ExportNode extends CoreMethodArrayArgumentsNode {
 
         @TruffleBoundary
@@ -546,18 +578,35 @@ public abstract class InteropNodes {
 
     }
 
-    @CoreMethod(names = "import", isModuleFunction = true, needsSelf = false, required = 1)
-    public abstract static class ImportNode extends CoreMethodArrayArgumentsNode {
+    @CoreMethod(names = "import", isModuleFunction = true, required = 1)
+    @NodeChild(value = "name", type = RubyNode.class)
+    public abstract static class ImportNode extends CoreMethodNode {
+
+        @CreateCast("name")
+        public RubyNode coercetNameToString(RubyNode newName) {
+            return NameToJavaStringNodeGen.create(newName);
+        }
+
+        @Specialization
+        public Object importObject(String name,
+                @Cached("create()") BranchProfile errorProfile) {
+            final Object value = doImport(name);
+            if (value != null) {
+                return value;
+            } else {
+                errorProfile.enter();
+                throw new RaiseException(coreExceptions().nameErrorImportNotFound(name, this));
+            }
+        }
 
         @TruffleBoundary
-        @Specialization(guards = "isRubyString(name) || isRubySymbol(name)")
-        public Object importObject(DynamicObject name) {
+        private Object doImport(String name) {
             return getContext().getInteropManager().importObject(name.toString());
         }
 
     }
 
-    @CoreMethod(names = "mime_type_supported?", isModuleFunction = true, needsSelf = false, required =1)
+    @CoreMethod(names = "mime_type_supported?", isModuleFunction = true, required = 1)
     public abstract static class MimeTypeSupportedNode extends CoreMethodArrayArgumentsNode {
 
         @TruffleBoundary
@@ -568,7 +617,7 @@ public abstract class InteropNodes {
 
     }
 
-    @CoreMethod(names = "eval", isModuleFunction = true, needsSelf = false, required = 2)
+    @CoreMethod(names = "eval", isModuleFunction = true, required = 2)
     @ImportStatic(StringCachingGuards.class)
     public abstract static class EvalNode extends CoreMethodArrayArgumentsNode {
 
@@ -597,13 +646,13 @@ public abstract class InteropNodes {
         @TruffleBoundary
         protected CallTarget parse(DynamicObject mimeType, DynamicObject source) {
             final String mimeTypeString = mimeType.toString();
-            final Source sourceObject = Source.fromText(source.toString(), "(eval)").withMimeType(mimeTypeString);
+            final Source sourceObject = Source.newBuilder(source.toString()).name("(eval)").mimeType(mimeTypeString).build();
 
             try {
                 return getContext().getEnv().parse(sourceObject);
             } catch (IOException e) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                throw new RuntimeException(e);
+                throw new JavaException(e);
             }
         }
 
@@ -613,14 +662,29 @@ public abstract class InteropNodes {
 
     }
 
-    @CoreMethod(names = "to_java_string", isModuleFunction = true, needsSelf = false, required = 1)
+    @CoreMethod(names = "to_java_string", isModuleFunction = true, required = 1)
     public abstract static class InteropToJavaStringNode extends CoreMethodArrayArgumentsNode {
 
-        @Child NameToJavaStringNode toJavaStringNode = NameToJavaStringNode.create();
+        @Specialization
+        public Object toJavaString(
+                VirtualFrame frame, Object value,
+                @Cached("create()") NameToJavaStringNode toJavaStringNode) {
+            return toJavaStringNode.executeToJavaString(frame, value);
+        }
+
+    }
+
+    @CoreMethod(names = "from_java_string", isModuleFunction = true, required = 1)
+    public abstract static class InteropFromJavaStringNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
-        public Object toJavaString(VirtualFrame frame, Object value) {
-            return toJavaStringNode.executeToJavaString(frame, value);
+        public Object fromJavaString(VirtualFrame frame, Object value,
+                                     @Cached("createForeignToRubyNode()") ForeignToRubyNode foreignToRubyNode) {
+            return foreignToRubyNode.executeConvert(frame, value);
+        }
+
+        protected ForeignToRubyNode createForeignToRubyNode() {
+            return ForeignToRubyNodeGen.create(null);
         }
 
     }

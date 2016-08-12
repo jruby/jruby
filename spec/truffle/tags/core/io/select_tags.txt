@@ -7,3 +7,4 @@ fails:IO.select returns supplied objects correctly even when monitoring the same
 fails:IO.select invokes to_io on supplied objects that are not IO and returns the supplied objects
 fails:IO.select when passed nil for timeout sleeps forever
 fails:IO.select when passed nil for timeout sets the thread's status to 'sleep'
+fails:IO.select when passed nil for timeout sleeps forever and sets the thread status to 'sleep'

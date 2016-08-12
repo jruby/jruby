@@ -295,6 +295,11 @@ module Rubinius
       raise PrimitiveFailure, "Object.infect primitive failed"
     end
 
+    def self.check_null_safe(string)
+      raise ArgumentError, "string contains NULL byte" if string.include? "\0"
+      string
+    end
+
     def self.coerce_to_encoding(obj)
       case obj
       when Encoding
@@ -419,6 +424,17 @@ module Rubinius
       enc
     end
 
+    # similar to rb_inspect
+    def self.inspect(val)
+      str = Rubinius::Type.coerce_to(val.inspect, String, :to_s)
+      result_encoding = Encoding.default_internal || Encoding.default_external
+      if str.ascii_only? || (result_encoding.ascii_compatible? && str.encoding == result_encoding)
+        str
+      else
+        Truffle.invoke_primitive :string_escape, str
+      end
+    end
+
     def self.object_respond_to__dump?(obj)
       object_respond_to? obj, :_dump, true
     end
@@ -430,5 +446,19 @@ module Rubinius
     def self.object_respond_to_marshal_load?(obj)
       object_respond_to? obj, :marshal_load, true
     end
+
+    def self.check_arity(arg_count, min, max)
+      if arg_count < min || (max != -1 && arg_count > max)
+           error_message = if min == max
+                             "wrong number of arguments (given %d, expected %d)" % [arg_count, min]
+                           elsif max == -1
+                             "wrong number of arguments (given %d, expected %d+)" % [arg_count, min]
+                           else
+                             "wrong number of arguments (given %d, expected %d..%d)" %  [arg_count, min, max]
+                           end
+           raise ArgumentError, error_message
+      end
+    end
+
   end
 end

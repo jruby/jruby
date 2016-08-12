@@ -9,11 +9,9 @@ import org.jcodings.Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
-import org.jruby.ir.IRScope;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.runtime.CallType;
-import org.jruby.runtime.CompiledIRBlockBody;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -374,8 +372,10 @@ public abstract class IRBytecodeAdapter {
      * If this invokes against a Hash with a frozen string, it will follow an optimized path.
      *
      * Stack required: context, self, target, arg0
+     * @param file
+     * @param line
      */
-    public abstract void invokeArrayDeref();
+    public abstract void invokeArrayDeref(String file, int line);
 
     /**
      * Invoke a fixnum-receiving method on an object other than self.
@@ -384,7 +384,7 @@ public abstract class IRBytecodeAdapter {
      *
      * @param name name of the method to invoke
      */
-    public abstract void invokeOtherOneFixnum(String file, int line, String name, long fixnum);
+    public abstract void invokeOtherOneFixnum(String file, int line, String name, long fixnum, CallType callType);
 
     /**
      * Invoke a float-receiving method on an object other than self.
@@ -393,7 +393,7 @@ public abstract class IRBytecodeAdapter {
      *
      * @param name name of the method to invoke
      */
-    public abstract void invokeOtherOneFloat(String file, int line, String name, double flote);
+    public abstract void invokeOtherOneFloat(String file, int line, String name, double flote, CallType callType);
 
 
     /**
@@ -633,4 +633,5 @@ public abstract class IRBytecodeAdapter {
     private Map<Integer, String> variableNames = new HashMap<Integer, String>();
     protected final Signature signature;
     private final ClassData classData;
+    public int ipc = 0;  // counter for dumping instr index when in DEBUG
 }

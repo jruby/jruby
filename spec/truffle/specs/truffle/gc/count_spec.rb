@@ -16,9 +16,10 @@ describe "Truffle::GC.count" do
   
   it "increases as collections are run" do
     count_before = Truffle::GC.count
-    escape = []
-    100_000.times do
-      escape << Time.now.to_s
+    i = 0
+    while Truffle::GC.count <= count_before and i < 10
+      GC.start
+      i += 1
     end
     Truffle::GC.count.should > count_before
   end

@@ -1,3 +1,0 @@
-fails:CApiFloatSpecs rb_float_new creates a new float
-fails:CApiFloatSpecs RFLOAT_VALUE returns the C double value of the Float
-fails:CApiFloatSpecs rb_Float creates a new Float from a String

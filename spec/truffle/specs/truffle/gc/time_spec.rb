@@ -16,9 +16,10 @@ describe "Truffle::GC.time" do
   
   it "increases as collections are run" do
     time_before = Truffle::GC.time
-    escape = []
-    100_000.times do
-      escape << Time.now.to_s
+    i = 0
+    while Truffle::GC.time <= time_before and i < 10
+      GC.start
+      i += 1
     end
     Truffle::GC.time.should > time_before
   end

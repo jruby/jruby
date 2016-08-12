@@ -53,6 +53,7 @@ import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.core.adapaters.OutputStreamAdapter;
 import org.jruby.truffle.core.array.ArrayOperations;
+import org.jruby.truffle.core.encoding.EncodingManager;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
@@ -91,7 +92,7 @@ public abstract class PsychEmitterNodes {
 
         public AllocateNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            allocateNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
+            allocateNode = AllocateObjectNode.create();
         }
 
         @Specialization
@@ -123,9 +124,9 @@ public abstract class PsychEmitterNodes {
                 @Cached("createMethodCall()") CallDispatchHeadNode canonicalCallNode,
                 @Cached("createMethodCall()") CallDispatchHeadNode indentationCallNode) {
             final DumperOptions options = new DumperOptions();
-            options.setWidth((int) lineWidthCallNode.call(frame, optionsSet, "line_width", null));
-            options.setCanonical((boolean) canonicalCallNode.call(frame, optionsSet, "canonical", null));
-            options.setIndent((int) indentationCallNode.call(frame, optionsSet, "indentation", null));
+            options.setWidth((int) lineWidthCallNode.call(frame, optionsSet, "line_width"));
+            options.setCanonical((boolean) canonicalCallNode.call(frame, optionsSet, "canonical"));
+            options.setIndent((int) indentationCallNode.call(frame, optionsSet, "indentation"));
             Layouts.PSYCH_EMITTER.setOptions(emitter, options);
             Layouts.PSYCH_EMITTER.setIo(emitter, io);
             return nil();
@@ -136,6 +137,7 @@ public abstract class PsychEmitterNodes {
     @CoreMethod(names = "start_stream", required = 1)
     public abstract static class StartStreamNode extends CoreMethodArrayArgumentsNode {
 
+        @TruffleBoundary
         @Specialization
         public DynamicObject startStream(DynamicObject emitter, int encodingOrdinal) {
             if (Layouts.PSYCH_EMITTER.getEmitter(emitter) != null) {
@@ -143,7 +145,7 @@ public abstract class PsychEmitterNodes {
             }
 
             final Encoding encoding = YAMLEncoding.values()[encodingOrdinal].getEncoding();
-            final Charset charset = getContext().getJRubyRuntime().getEncodingService().charsetForEncoding(encoding);
+            final Charset charset = EncodingManager.charsetForEncoding(encoding);
 
             Layouts.PSYCH_EMITTER.setEmitter(emitter,
                     new Emitter(

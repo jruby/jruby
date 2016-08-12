@@ -50,8 +50,6 @@ import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ByteList;
 import org.jruby.util.IdUtil;
 
-import java.util.concurrent.Callable;
-
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.Visibility.PRIVATE;
@@ -390,25 +388,10 @@ public class RubyStruct extends RubyObject {
 
         final RubyArray member = __member__((RubyClass) recv);
         final int len = member.getLength();
-        RubyArray result = runtime.newArray(len);
+        RubyArray result = RubyArray.newBlankArray(runtime, len);
 
         for ( int i = 0; i < len; i++ ) {
-            // this looks weird, but it's because they're RubySymbol and that's java.lang.String internally
-            result.append( runtime.newString(member.eltInternal(i).asJavaString()) );
-        }
-
-        return result;
-    }
-
-    public static RubyArray members19(IRubyObject recv, Block block) {
-        final Ruby runtime = recv.getRuntime();
-
-        final RubyArray member = __member__((RubyClass) recv);
-        final int len = member.getLength();
-        RubyArray result = runtime.newArray(len);
-
-        for ( int i = 0; i < len; i++ ) {
-            result.append( member.eltInternal(i) );
+            result.store(i, member.eltInternal(i));
         }
 
         return result;
@@ -584,19 +567,20 @@ public class RubyStruct extends RubyObject {
     @JRubyMethod(name = {"inspect", "to_s"})
     public RubyString inspect(final ThreadContext context) {
         final Ruby runtime = context.runtime;
-        final RubyStruct struct = this;
         // recursion guard
-        return (RubyString) runtime.safeRecurse(new Ruby.RecursiveFunction() {
-            public IRubyObject call(IRubyObject obj, boolean recur) {
-                return inspectStruct(context, recur);
-            }
-        }, struct, "inspect", false);
+        return (RubyString) runtime.safeRecurse(RECURSIVE_INSPECT, context, this, this, "inspect", false);
     }
+
+    private static final Ruby.RecursiveFunctionEx RECURSIVE_INSPECT = new Ruby.RecursiveFunctionEx<RubyStruct>() {
+        public IRubyObject call(ThreadContext context, RubyStruct self, IRubyObject obj, boolean recur) {
+            return self.inspectStruct(context, recur);
+        }
+    };
 
     @JRubyMethod(name = {"to_a", "values"})
     @Override
     public RubyArray to_a() {
-        return getRuntime().newArray(values);
+        return RubyArray.newArrayMayCopy(getRuntime(), values);
     }
 
     @JRubyMethod
@@ -633,7 +617,7 @@ public class RubyStruct extends RubyObject {
         RubyArray member = __member__();
 
         for (int i = 0; i < values.length; i++) {
-            block.yield(context, getRuntime().newArrayNoCopy(new IRubyObject[]{member.eltInternal(i), values[i]}));
+            block.yield(context, RubyArray.newArray(context.runtime, member.eltInternal(i), values[i]));
         }
 
         return this;
@@ -864,5 +848,10 @@ public class RubyStruct extends RubyObject {
         public DynamicMethod dup() {
             return new Accessor((RubyClass) getImplementationClass(), index);
         }
+    }
+
+    @Deprecated
+    public static RubyArray members19(IRubyObject recv, Block block) {
+        return members(recv, block);
     }
 }

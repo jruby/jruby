@@ -143,8 +143,8 @@ public class JavaSupportImpl extends JavaSupport {
     }
 
     public Class loadJavaClass(String className) throws ClassNotFoundException {
-        Class primitiveClass;
-        if ((primitiveClass = JavaUtil.PRIMITIVE_CLASSES.get(className)) == null) {
+        Class<?> primitiveClass;
+        if ((primitiveClass = JavaUtil.getPrimitiveClass(className)) == null) {
             if (!Ruby.isSecurityRestricted()) {
                 for(Loader loader : runtime.getInstanceConfig().getExtraLoaders()) {
                     try {
@@ -403,14 +403,14 @@ public class JavaSupportImpl extends JavaSupport {
     private final Map<ProxyClassKey, JavaProxyClass> javaProxyClasses = new HashMap<>();
 
     @Override
-    final JavaProxyClass fetchJavaProxyClass(ProxyClassKey classKey) {
+    final protected JavaProxyClass fetchJavaProxyClass(ProxyClassKey classKey) {
         synchronized (javaProxyClasses) {
             return javaProxyClasses.get(classKey);
         }
     }
 
     @Override
-    final JavaProxyClass saveJavaProxyClass(ProxyClassKey classKey, JavaProxyClass klass) {
+    final protected JavaProxyClass saveJavaProxyClass(ProxyClassKey classKey, JavaProxyClass klass) {
         synchronized (javaProxyClasses) {
             JavaProxyClass existing = javaProxyClasses.get(classKey);
             if ( existing != null ) return existing;

@@ -1,3 +1,13 @@
+/*
+ * Copyright (c) 2016 Oracle and/or its affiliates. All rights reserved. This
+ * code is released under a tri EPL/GPL/LGPL license. You can use it,
+ * redistribute it and/or modify it under the terms of the:
+ *
+ * Eclipse Public License version 1.0
+ * GNU General Public License version 2
+ * GNU Lesser General Public License version 2.1
+ */
+
 package org.jruby.truffle.language.loader;
 
 import com.oracle.truffle.api.CallTarget;
@@ -25,10 +35,12 @@ import org.jruby.truffle.RubyLanguage;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
+import org.jruby.truffle.language.control.JavaException;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.parser.ParserContext;
+import org.jruby.truffle.util.StringUtils;
 
 @NodeChild("feature")
 public abstract class RequireNode extends RubyNode {
@@ -93,53 +105,52 @@ public abstract class RequireNode extends RubyNode {
                     return false;
                 }
 
-                final String mimeType = source.getMimeType();
-                switch (mimeType) {
-                    case RubyLanguage.MIME_TYPE: {
-                        final RubyRootNode rootNode = getContext().getCodeLoader().parse(
-                                source,
-                                UTF8Encoding.INSTANCE,
-                                ParserContext.TOP_LEVEL,
-                                null,
-                                true,
-                                this);
+                final String mimeType = getSourceMimeType(source);
 
-                        final CodeLoader.DeferredCall deferredCall = getContext().getCodeLoader().prepareExecute(
-                                ParserContext.TOP_LEVEL,
-                                DeclarationContext.TOP_LEVEL,
-                                rootNode,
-                                null,
-                                coreLibrary().getMainObject());
+                if (RubyLanguage.MIME_TYPE.equals(mimeType)) {
+                    final RubyRootNode rootNode = getContext().getCodeLoader().parse(
+                            source,
+                            UTF8Encoding.INSTANCE,
+                            ParserContext.TOP_LEVEL,
+                            null,
+                            true,
+                            this);
 
-                        deferredCall.call(frame, callNode);
-                        break;
+                    final CodeLoader.DeferredCall deferredCall = getContext().getCodeLoader().prepareExecute(
+                            ParserContext.TOP_LEVEL,
+                            DeclarationContext.TOP_LEVEL,
+                            rootNode,
+                            null,
+                            coreLibrary().getMainObject());
+
+                    deferredCall.call(frame, callNode);
+                } else if (RubyLanguage.CEXT_MIME_TYPE.equals(mimeType)) {
+                    featureLoader.ensureCExtImplementationLoaded(frame, callNode);
+
+                    final CallTarget callTarget = featureLoader.parseSource(source);
+                    callNode.call(frame, callTarget, new Object[] {});
+
+                    final TruffleObject initFunction = getInitFunction(expandedPath);
+
+                    if (!ForeignAccess.sendIsExecutable(isExecutableNode, frame, initFunction)) {
+                        CompilerDirectives.transferToInterpreterAndInvalidate();
+                        throw new UnsupportedOperationException();
                     }
 
-                    case RubyLanguage.CEXT_MIME_TYPE: {
-                        featureLoader.ensureCExtImplementationLoaded(frame, callNode);
-
-                        final CallTarget callTarget = featureLoader.parseSource(source);
-                        callNode.call(frame, callTarget, new Object[] {});
-
-                        final TruffleObject initFunction = getInitFunction(expandedPath);
-
-                        if (!ForeignAccess.sendIsExecutable(isExecutableNode, frame, initFunction)) {
-                            CompilerDirectives.transferToInterpreterAndInvalidate();
-                            throw new UnsupportedOperationException();
-                        }
-
-                        try {
-                            ForeignAccess.sendExecute(executeNode, frame, initFunction);
-                        } catch (InteropException e) {
-                            CompilerDirectives.transferToInterpreterAndInvalidate();
-                            throw new RuntimeException(e);
-                        }
-                        break;
+                    try {
+                        ForeignAccess.sendExecute(executeNode, frame, initFunction);
+                    } catch (InteropException e) {
+                        CompilerDirectives.transferToInterpreterAndInvalidate();
+                        throw new JavaException(e);
                     }
+                } else {
+                    errorProfile.enter();
 
-                    default:
-                        errorProfile.enter();
+                    if (StringUtils.toLowerCase(expandedPath).endsWith(".su")) {
+                        throw new RaiseException(cextSupportNotAvailable(expandedPath));
+                    } else {
                         throw new RaiseException(unknownLanguage(expandedPath, mimeType));
+                    }
                 }
 
                 addToLoadedFeatures(frame, pathString);
@@ -149,6 +160,18 @@ public abstract class RequireNode extends RubyNode {
                 fileLocks.unlock(expandedPath, lock);
             }
         }
+    }
+
+    @TruffleBoundary
+    private String getSourceMimeType(Source source) {
+        return source.getMimeType();
+    }
+
+    @TruffleBoundary
+    private DynamicObject cextSupportNotAvailable(String expandedPath) {
+        return getContext().getCoreExceptions().internalError(
+                "cext support is not available to load " + expandedPath,
+                callNode);
     }
 
     @TruffleBoundary
@@ -163,7 +186,11 @@ public abstract class RequireNode extends RubyNode {
         final Object initFunction = getContext().getEnv().importSymbol("@Init_" + getBaseName(expandedPath));
 
         if (!(initFunction instanceof TruffleObject)) {
-            throw new UnsupportedOperationException();
+            if (initFunction == null) {
+                throw new UnsupportedOperationException("initFunction was null!");
+            } else {
+                throw new UnsupportedOperationException("initFunction is not a TruffleObject but a " + initFunction.getClass());
+            }
         }
 
         return (TruffleObject) initFunction;
@@ -190,7 +217,7 @@ public abstract class RequireNode extends RubyNode {
     private void addToLoadedFeatures(VirtualFrame frame, DynamicObject feature) {
         final DynamicObject loadedFeatures = coreLibrary().getLoadedFeatures();
         synchronized (getContext().getFeatureLoader().getLoadedFeaturesLock()) {
-            addToLoadedFeatures.call(frame, loadedFeatures, "<<", null, feature);
+            addToLoadedFeatures.call(frame, loadedFeatures, "<<", feature);
         }
     }
 

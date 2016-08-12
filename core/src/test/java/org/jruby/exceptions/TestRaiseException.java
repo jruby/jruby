@@ -34,7 +34,7 @@ public class TestRaiseException extends TestRubyBase {
             );
             fail();
         }
-        catch(RaiseException ex) {
+        catch (RaiseException ex) {
             assert ex.toString().startsWith("org.jruby.exceptions.RaiseException: (StandardError)");
 
             StackTraceElement[] stack = ex.getStackTrace();
@@ -43,6 +43,19 @@ public class TestRaiseException extends TestRubyBase {
             assertEquals(1, stack[0].getLineNumber());
             assertEquals("second", stack[1].getMethodName());
             assertEquals(2, stack[1].getLineNumber());
+        }
+    }
+
+    public void testToString() {
+        try {
+            runtime.evalScriptlet("def foo(arg); end; foo(1, 2)");
+            fail();
+        }
+        catch (RaiseException ex) {
+            // NOTE: probably makes sense for RubyException#toString to
+            // "ArgumentError: wrong number of arguments (given 2, expected 1)"
+            // instead of just the message (as to_s does)
+            assertNotNull( ex.getException().toString() );
         }
     }
 

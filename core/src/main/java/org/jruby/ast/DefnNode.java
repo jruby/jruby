@@ -44,8 +44,8 @@ import org.jruby.parser.StaticScope;
  */
 public class DefnNode extends MethodDefNode implements INameNode {
     public DefnNode(ISourcePosition position, String name, ArgsNode argsNode,
-            StaticScope scope, Node bodyNode) {
-        super(position, name, argsNode, scope, bodyNode);
+            StaticScope scope, Node bodyNode, int endLine) {
+        super(position, name, argsNode, scope, bodyNode, endLine);
     }
 
     public NodeType getNodeType() {

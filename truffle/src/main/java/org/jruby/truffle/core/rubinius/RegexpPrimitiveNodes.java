@@ -14,22 +14,17 @@ import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
-import org.jcodings.Encoding;
 import org.joni.Matcher;
-import org.joni.Regex;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.Primitive;
 import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.core.regexp.RegexpGuards;
 import org.jruby.truffle.core.regexp.RegexpNodes;
-import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeNodes;
-import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.util.ByteList;
-import org.jruby.util.RegexpSupport;
+import org.jruby.truffle.util.StringUtils;
 
 /**
  * Rubinius primitives associated with the Ruby {@code Regexp} class.
@@ -47,7 +42,7 @@ public abstract class RegexpPrimitiveNodes {
 
     }
 
-    @Primitive(name = "regexp_initialize", lowerFixnumParameters = 1)
+    @Primitive(name = "regexp_initialize", lowerFixnum = 2)
     @ImportStatic(RegexpGuards.class)
     public static abstract class RegexpInitializePrimitiveNode extends PrimitiveArrayArgumentsNode {
 
@@ -96,7 +91,7 @@ public abstract class RegexpPrimitiveNodes {
 
     }
 
-    @Primitive(name = "regexp_search_region", lowerFixnumParameters = {1, 2})
+    @Primitive(name = "regexp_search_region", lowerFixnum = { 2, 3 })
     @ImportStatic(RegexpGuards.class)
     public static abstract class RegexpSearchRegionPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
@@ -112,27 +107,21 @@ public abstract class RegexpPrimitiveNodes {
 
         @TruffleBoundary
         private String formatError(DynamicObject string) {
-            return String.format("invalid byte sequence in %s", Layouts.STRING.getRope(string).getEncoding());
+            return StringUtils.format("invalid byte sequence in %s", Layouts.STRING.getRope(string).getEncoding());
         }
 
         @TruffleBoundary
         @Specialization(guards = {"isInitialized(regexp)", "isRubyString(string)", "isValidEncoding(string)"})
         public Object searchRegion(DynamicObject regexp, DynamicObject string, int start, int end, boolean forward,
                                    @Cached("createX()") RopeNodes.MakeSubstringNode makeSubstringNode) {
-            final Rope stringRope = StringOperations.rope(string);
-            final Rope regexpSourceRope = Layouts.REGEXP.getSource(regexp);
-            final Encoding enc = RegexpNodes.checkEncoding(regexp, stringRope, true);
-            ByteList preprocessed = RegexpSupport.preprocess(getContext().getJRubyRuntime(), RopeOperations.getByteListReadOnly(regexpSourceRope), enc, new Encoding[]{null}, RegexpSupport.ErrorMode.RAISE);
-            Rope preprocessedRope = RegexpNodes.shimModifiers(StringOperations.ropeFromByteList(preprocessed));
-            final Regex r = new Regex(preprocessedRope.getBytes(), 0, preprocessedRope.byteLength(), Layouts.REGEXP.getRegex(regexp).getOptions(), RegexpNodes.checkEncoding(regexp, stringRope, true));
-            final Matcher matcher = r.matcher(stringRope.getBytes(), 0, stringRope.byteLength());
+            final Matcher matcher = RegexpNodes.createMatcher(getContext(), regexp, string);
 
             if (forward) {
                 // Search forward through the string.
-                return RegexpNodes.matchCommon(getContext(), makeSubstringNode, regexp, string, false, false, matcher, start, end);
+                return RegexpNodes.matchCommon(getContext(), this, makeSubstringNode, regexp, string, false, false, matcher, start, end);
             } else {
                 // Search backward through the string.
-                return RegexpNodes.matchCommon(getContext(), makeSubstringNode, regexp, string, false, false, matcher, end, start);
+                return RegexpNodes.matchCommon(getContext(), this, makeSubstringNode, regexp, string, false, false, matcher, end, start);
             }
         }
 
@@ -150,7 +139,8 @@ public abstract class RegexpPrimitiveNodes {
         @TruffleBoundary
         public static void setLastMatch(RubyContext context, Object matchData) {
             final DynamicObject threadLocals = Layouts.THREAD.getThreadLocals(context.getThreadManager().getCurrentThread());
-            threadLocals.set("$~", matchData);
+            boolean res = threadLocals.set("$~", matchData);
+            assert res;
         }
 
     }

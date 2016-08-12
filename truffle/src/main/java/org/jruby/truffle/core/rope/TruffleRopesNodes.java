@@ -22,6 +22,7 @@ import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.platform.UnsafeGroup;
+import org.jruby.truffle.util.StringUtils;
 
 @CoreClass("Truffle::Ropes")
 public abstract class TruffleRopesNodes {
@@ -49,7 +50,7 @@ public abstract class TruffleRopesNodes {
             final Rope rope = StringOperations.rope(string);
 
             for (int i = 0; i < rope.byteLength(); i++) {
-                builder.append(String.format("\\x%02x", rope.get(i)));
+                builder.append(StringUtils.format("\\x%02x", rope.get(i)));
             }
 
             return createString(StringOperations.encodeRope(builder.toString(), UTF8Encoding.INSTANCE));

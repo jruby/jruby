@@ -37,7 +37,6 @@
  */
 package org.jruby.truffle.core;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Fallback;
@@ -55,10 +54,7 @@ import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.Primitive;
 import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
-import org.jruby.truffle.core.basicobject.BasicObjectNodes;
 import org.jruby.truffle.core.basicobject.BasicObjectNodes.ReferenceEqualNode;
-import org.jruby.truffle.core.basicobject.BasicObjectNodesFactory;
-import org.jruby.truffle.core.basicobject.BasicObjectNodesFactory.ReferenceEqualNodeFactory;
 import org.jruby.truffle.core.kernel.KernelNodes;
 import org.jruby.truffle.core.kernel.KernelNodesFactory;
 import org.jruby.truffle.core.proc.ProcSignalHandler;
@@ -96,30 +92,22 @@ public abstract class VMPrimitiveNodes {
     public abstract static class CatchNode extends PrimitiveArrayArgumentsNode {
 
         @Child private YieldNode dispatchNode;
-        @Child private BasicObjectNodes.ReferenceEqualNode referenceEqualNode;
 
         public CatchNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             dispatchNode = new YieldNode(context);
         }
 
-        private boolean areSame(VirtualFrame frame, Object left, Object right) {
-            if (referenceEqualNode == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                referenceEqualNode = insert(BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(null));
-            }
-            return referenceEqualNode.executeReferenceEqual(frame, left, right);
-        }
-
         @Specialization
         public Object doCatch(VirtualFrame frame, Object tag, DynamicObject block,
                 @Cached("create()") BranchProfile catchProfile,
-                @Cached("createBinaryProfile()") ConditionProfile matchProfile) {
+                @Cached("createBinaryProfile()") ConditionProfile matchProfile,
+                @Cached("create()") ReferenceEqualNode referenceEqualNode) {
             try {
                 return dispatchNode.dispatch(frame, block, tag);
             } catch (ThrowException e) {
                 catchProfile.enter();
-                if (matchProfile.profile(areSame(frame, e.getTag(), tag))) {
+                if (matchProfile.profile(referenceEqualNode.executeReferenceEqual(e.getTag(), tag))) {
                     return e.getValue();
                 } else {
                     throw e;
@@ -131,6 +119,7 @@ public abstract class VMPrimitiveNodes {
     @Primitive(name = "vm_gc_start", needsSelf = false)
     public static abstract class VMGCStartPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
+        @TruffleBoundary
         @Specialization
         public DynamicObject vmGCStart() {
             System.gc();
@@ -172,10 +161,10 @@ public abstract class VMPrimitiveNodes {
             final DynamicObject metaClass = coreLibrary().getMetaClass(object);
 
             if (Layouts.CLASS.getIsSingleton(metaClass)) {
-                final Object ret = newArrayNode.call(frame, coreLibrary().getArrayClass(), "new", null);
+                final Object ret = newArrayNode.call(frame, coreLibrary().getArrayClass(), "new");
 
                 for (DynamicObject included : Layouts.MODULE.getFields(metaClass).prependedAndIncludedModules()) {
-                    arrayAppendNode.call(frame, ret, "<<", null, included);
+                    arrayAppendNode.call(frame, ret, "<<", included);
                 }
 
                 return ret;
@@ -232,16 +221,10 @@ public abstract class VMPrimitiveNodes {
     @Primitive(name = "vm_object_equal", needsSelf = false)
     public static abstract class VMObjectEqualPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
-        @Child ReferenceEqualNode referenceEqualNode;
-
-        public VMObjectEqualPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            referenceEqualNode = ReferenceEqualNodeFactory.create(null);
-        }
-
         @Specialization
-        public boolean vmObjectEqual(VirtualFrame frame, Object a, Object b) {
-            return referenceEqualNode.executeReferenceEqual(frame, a, b);
+        public boolean vmObjectEqual(VirtualFrame frame, Object a, Object b,
+                @Cached("create()") ReferenceEqualNode referenceEqualNode) {
+            return referenceEqualNode.executeReferenceEqual(a, b);
         }
 
     }
@@ -496,7 +479,7 @@ public abstract class VMPrimitiveNodes {
 
         @TruffleBoundary
         @Specialization
-        public Object waitPID(final int input_pid, boolean no_hang) {
+        public Object waitPID(int input_pid, boolean no_hang) {
             // Transliterated from Rubinius C++ - not tidied up significantly to make merging changes easier
 
             int options = 0;

@@ -3,3 +3,7 @@ fails:Zlib::Inflate.inflate properly handles excessive data, byte-by-byte
 fails:Zlib::Inflate#inflate without break inflates chunked data
 slow:Zlib::Inflate#inflate with break
 slow:Zlib::Inflate#inflate without break
+slow:Zlib::Inflate#inflate inflates lots of data
+slow:Zlib::Inflate.inflate inflates lots of data
+slow:Zlib::Inflate#inflate without break properly handles chunked data
+slow:Zlib::Inflate#inflate with break inflates chunked break

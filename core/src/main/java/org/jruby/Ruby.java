@@ -59,6 +59,7 @@ import org.jruby.javasupport.JavaSupport;
 import org.jruby.javasupport.JavaSupportImpl;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
+import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.invokedynamic.InvokeDynamicSupport;
 import org.jruby.util.ClassDefiningClassLoader;
 import org.objectweb.asm.util.TraceClassVisitor;
@@ -159,7 +160,6 @@ import org.jruby.util.log.LoggerFactory;
 import org.objectweb.asm.ClassReader;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileDescriptor;
 import java.io.IOException;
@@ -315,6 +315,7 @@ public final class Ruby implements Constantizable {
 
         if (reinitCore) {
             RubyGlobal.initARGV(this);
+            RubyGlobal.initSTDIO(this, globalVariables);
         }
     }
 
@@ -925,7 +926,7 @@ public final class Ruby implements Constantizable {
         try {
             clazz = getJRubyClassLoader().loadClass("org.jruby.truffle.JRubyTruffleImpl");
         } catch (Exception e) {
-            throw new RuntimeException("Truffle backend not available", e);
+            throw new RuntimeException("JRuby's Truffle backend not available - either it was not compiled because JRuby was built with Java 7, or it has been removed", e);
         }
 
         final JRubyTruffleInterface truffleContext;
@@ -1240,10 +1241,10 @@ public final class Ruby implements Constantizable {
         threadService.initMainThread();
 
         // Get the main threadcontext (gets constructed for us)
-        ThreadContext tc = getCurrentContext();
+        final ThreadContext context = getCurrentContext();
 
         // Construct the top-level execution frame and scope for the main thread
-        tc.prepareTopLevel(objectClass, topSelf);
+        context.prepareTopLevel(objectClass, topSelf);
 
         // Initialize all the core classes
         bootstrap();
@@ -1259,14 +1260,14 @@ public final class Ruby implements Constantizable {
         // FIXME: This registers itself into static scope as a side-effect.  Let's make this
         // relationship handled either more directly or through a descriptice method
         // FIXME: We need a failing test case for this since removing it did not regress tests
-        new IRScriptBody(irManager, "", tc.getCurrentScope().getStaticScope());
+        new IRScriptBody(irManager, "", context.getCurrentScope().getStaticScope());
 
         // Initialize the "dummy" class used as a marker
         dummyClass = new RubyClass(this, classClass);
-        dummyClass.freeze(tc);
+        dummyClass.freeze(context);
 
         // Create global constants and variables
-        RubyGlobal.createGlobals(tc, this);
+        RubyGlobal.createGlobals(context, this);
 
         // Prepare LoadService and load path
         getLoadService().init(config.getLoadPaths());
@@ -1291,9 +1292,8 @@ public final class Ruby implements Constantizable {
             isRestricted.set(null, false);
             isRestricted.setAccessible(false);
         } catch (Exception e) {
-            if (isDebug()) {
-                System.err.println("unable to enable unlimited-strength crypto");
-                e.printStackTrace();
+            if (isDebug() || LOG.isDebugEnabled()) {
+                LOG.debug("unable to enable unlimited-strength crypto", e);
             }
         }
 
@@ -1315,7 +1315,7 @@ public final class Ruby implements Constantizable {
             initRubyPreludes();
 
             // everything booted, so SizedQueue should be available; set up root fiber
-            ThreadFiber.initRootFiber(tc);
+            ThreadFiber.initRootFiber(context);
         }
 
         if(config.isProfiling()) {
@@ -1340,7 +1340,7 @@ public final class Ruby implements Constantizable {
         // Require in all libraries specified on command line
         if (getInstanceConfig().getCompileMode() != CompileMode.TRUFFLE) {
             for (String scriptName : config.getRequiredLibraries()) {
-                topSelf.callMethod(getCurrentContext(), "require", RubyString.newString(this, scriptName));
+                topSelf.callMethod(context, "require", RubyString.newString(this, scriptName));
             }
         }
     }
@@ -3275,7 +3275,7 @@ public final class Ruby implements Constantizable {
         // clear out threadlocals so they don't leak
         recursive = new ThreadLocal<Map<String, RubyHash>>();
 
-        ThreadContext context = getCurrentContext();
+        final ThreadContext context = getCurrentContext();
 
         // FIXME: 73df3d230b9d92c7237d581c6366df1b92ad9b2b exposed no toplevel scope existing anymore (I think the
         // bogus scope I removed was playing surrogate toplevel scope and wallpapering this bug).  For now, add a
@@ -3289,15 +3289,14 @@ public final class Ruby implements Constantizable {
             RubyProc proc = atExitBlocks.pop();
             // IRubyObject oldExc = context.runtime.getGlobalVariables().get("$!"); // Save $!
             try {
-                proc.call(getCurrentContext(), IRubyObject.NULL_ARRAY);
+                proc.call(context, IRubyObject.NULL_ARRAY);
             } catch (RaiseException rj) {
                 RubyException raisedException = rj.getException();
                 if (!getSystemExit().isInstance(raisedException)) {
                     status = 1;
                     printError(raisedException);
                 } else {
-                    IRubyObject statusObj = raisedException.callMethod(
-                            getCurrentContext(), "status");
+                    IRubyObject statusObj = raisedException.callMethod(context, "status");
                     if (statusObj != null && !statusObj.isNil()) {
                         status = RubyNumeric.fix2int(statusObj);
                     }
@@ -3313,7 +3312,7 @@ public final class Ruby implements Constantizable {
             IRubyObject[] trapResultEntries = ((RubyArray) trapResult).toJavaArray();
             IRubyObject exitHandlerProc = trapResultEntries[0];
             if (exitHandlerProc instanceof RubyProc) {
-                ((RubyProc) exitHandlerProc).call(this.getCurrentContext(), this.getSingleNilArray());
+                ((RubyProc) exitHandlerProc).call(context, getSingleNilArray());
             }
         }
 
@@ -4312,7 +4311,11 @@ public final class Ruby implements Constantizable {
         if (val != null ) val.remove(obj);
     }
 
-    public static interface RecursiveFunction {
+    public interface RecursiveFunctionEx<T> {
+        IRubyObject call(ThreadContext context, T state, IRubyObject obj, boolean recur);
+    }
+
+    public interface RecursiveFunction  {
         IRubyObject call(IRubyObject obj, boolean recur);
     }
 
@@ -4363,18 +4366,19 @@ public final class Ruby implements Constantizable {
 
     private void recursivePush(IRubyObject list, IRubyObject obj, IRubyObject paired_obj) {
         IRubyObject pair_list;
-        if(paired_obj == null) {
-            ((RubyHash)list).op_aset(getCurrentContext(), obj, getTrue());
-        } else if((pair_list = ((RubyHash)list).fastARef(obj)) == null) {
-            ((RubyHash)list).op_aset(getCurrentContext(), obj, paired_obj);
+        final ThreadContext context = getCurrentContext();
+        if (paired_obj == null) {
+            ((RubyHash) list).op_aset(context, obj, getTrue());
+        } else if ((pair_list = ((RubyHash)list).fastARef(obj)) == null) {
+            ((RubyHash) list).op_aset(context, obj, paired_obj);
         } else {
-            if(!(pair_list instanceof RubyHash)) {
+            if (!(pair_list instanceof RubyHash)) {
                 IRubyObject other_paired_obj = pair_list;
                 pair_list = RubyHash.newHash(this);
-                ((RubyHash)pair_list).op_aset(getCurrentContext(), other_paired_obj, getTrue());
-                ((RubyHash)list).op_aset(getCurrentContext(), obj, pair_list);
+                ((RubyHash) pair_list).op_aset(context, other_paired_obj, getTrue());
+                ((RubyHash) list).op_aset(context, obj, pair_list);
             }
-            ((RubyHash)pair_list).op_aset(getCurrentContext(), paired_obj, getTrue());
+            ((RubyHash)pair_list).op_aset(context, paired_obj, getTrue());
         }
     }
 
@@ -4468,7 +4472,7 @@ public final class Ruby implements Constantizable {
 
     ThreadLocal<Map<String, Map<IRubyObject, IRubyObject>>> symMap = new ThreadLocal<>();
 
-    public IRubyObject safeRecurse(RecursiveFunction func, IRubyObject obj, String name, boolean outer) {
+    public <T> IRubyObject safeRecurse(RecursiveFunctionEx<T> func, ThreadContext context, T state, IRubyObject obj, String name, boolean outer) {
         Map<IRubyObject, IRubyObject> guards = safeRecurseGetGuards(name);
 
         boolean outermost = outer && !guards.containsKey(recursiveKey);
@@ -4478,29 +4482,29 @@ public final class Ruby implements Constantizable {
             if (outer && !outermost) {
                 throw new RecursiveError(guards);
             }
-            return func.call(obj, true);
+            return func.call(context, state, obj, true);
         } else {
             if (outermost) {
-                return safeRecurseOutermost(func, obj, guards);
+                return safeRecurseOutermost(func, context, state, obj, guards);
             } else {
-                return safeRecurseInner(func, obj, guards);
+                return safeRecurseInner(func, context, state, obj, guards);
             }
         }
     }
 
-    private IRubyObject safeRecurseOutermost(RecursiveFunction func, IRubyObject obj, Map<IRubyObject, IRubyObject> guards) {
+    private <T> IRubyObject safeRecurseOutermost(RecursiveFunctionEx<T> func, ThreadContext context, T state, IRubyObject obj, Map<IRubyObject, IRubyObject> guards) {
         boolean recursed = false;
         guards.put(recursiveKey, recursiveKey);
 
         try {
-            return safeRecurseInner(func, obj, guards);
+            return safeRecurseInner(func, context, state, obj, guards);
         } catch (RecursiveError re) {
             if (re.tag != guards) {
                 throw re;
             }
             recursed = true;
             guards.remove(recursiveKey);
-            return func.call(obj, true);
+            return func.call(context, state, obj, true);
         } finally {
             if (!recursed) guards.remove(recursiveKey);
         }
@@ -4520,10 +4524,10 @@ public final class Ruby implements Constantizable {
         } return guards;
     }
 
-    private IRubyObject safeRecurseInner(RecursiveFunction func, IRubyObject obj, Map<IRubyObject, IRubyObject> guards) {
+    private <T> IRubyObject safeRecurseInner(RecursiveFunctionEx<T> func, ThreadContext context, T state, IRubyObject obj, Map<IRubyObject, IRubyObject> guards) {
         try {
             guards.put(obj, obj);
-            return func.call(obj, false);
+            return func.call(context, state, obj, false);
         } finally {
             guards.remove(obj);
         }
@@ -4782,15 +4786,13 @@ public final class Ruby implements Constantizable {
      *
      * @param name the name of the method
      * @param method
-     * @deprecated This should be an implementation detail of the ProfilingService and should remove from the Ruby class.
      */
-    @Deprecated
+    @SuppressWarnings("deprecation")
     void addProfiledMethod(final String name, final DynamicMethod method) {
         if (!config.isProfiling()) return;
         if (method.isUndefined()) return;
 
         getProfiledMethods().addProfiledMethod( name, method );
-
     }
 
     /**
@@ -5089,6 +5091,18 @@ public final class Ruby implements Constantizable {
     public FilenoUtil getFilenoUtil() {
         return filenoUtil;
     }
+
+    @Deprecated
+    public IRubyObject safeRecurse(RecursiveFunction func, IRubyObject obj, String name, boolean outer) {
+        return safeRecurse(LEGACY_RECURSE, getCurrentContext(), func, obj, name, outer);
+    }
+
+    private static final RecursiveFunctionEx<RecursiveFunction> LEGACY_RECURSE = new RecursiveFunctionEx<RecursiveFunction>() {
+        @Override
+        public IRubyObject call(ThreadContext context, RecursiveFunction func, IRubyObject obj, boolean recur) {
+            return func.call(obj, recur);
+        }
+    };
 
     private final ConcurrentHashMap<String, Invalidator> constantNameInvalidators =
         new ConcurrentHashMap<String, Invalidator>(
@@ -5420,4 +5434,6 @@ public final class Ruby implements Constantizable {
             return RubyModule.loadPopulatorFor(type);
         }
     };
+
+    public final JavaSites sites = new JavaSites();
 }

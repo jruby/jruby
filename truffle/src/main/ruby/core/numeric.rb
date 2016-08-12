@@ -57,7 +57,27 @@ class Numeric
     return nil
   end
 
-  def step(limit, step=1)
+  def step(limit = undefined, step = undefined, by: undefined, to: undefined)
+    limit = if !undefined.equal?(limit) && !undefined.equal?(to)
+              raise ArgumentError, "to is given twice"
+            elsif !undefined.equal?(limit)
+              limit
+            elsif !undefined.equal?(to)
+              to
+            else
+              nil
+            end
+    step = if !undefined.equal?(step) && !undefined.equal?(by)
+             raise ArgumentError, "step is given twice"
+           elsif !undefined.equal?(step)
+             step
+           elsif !undefined.equal?(by)
+             by
+           else
+             1
+           end
+
+
     unless block_given?
       return to_enum(:step, limit, step) do
         Rubinius::Mirror::Numeric.reflect(self).step_size(limit, step)

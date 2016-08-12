@@ -1,6 +1,5 @@
 package org.jruby.runtime;
 
-import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Array;
 import java.nio.channels.ClosedChannelException;
 import java.nio.charset.Charset;
@@ -16,7 +15,6 @@ import org.jruby.ast.Node;
 import org.jruby.ast.OptArgNode;
 import org.jruby.ast.UnnamedRestArgNode;
 import org.jruby.ast.types.INameNode;
-import org.jruby.ast.util.ArgsUtil;
 import org.jruby.ast.RequiredKeywordArgumentValueNode;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
@@ -29,6 +27,7 @@ import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.parser.StaticScope;
 import org.jruby.platform.Platform;
+import org.jruby.runtime.JavaSites.HelpersSites;
 import org.jruby.runtime.backtrace.BacktraceData;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.invokedynamic.MethodNames;
@@ -51,7 +50,6 @@ import org.jcodings.unicode.UnicodeEncoding;
 
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.invokedynamic.MethodNames.EQL;
-import static org.jruby.runtime.invokedynamic.MethodNames.HASH;
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_EQUAL;
 import static org.jruby.util.CodegenUtils.sig;
 import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
@@ -453,8 +451,18 @@ public class Helpers {
     }
 
     // MRI: rb_check_funcall
+    public static IRubyObject invokeChecked(ThreadContext context, IRubyObject self, JavaSites.CheckedSites sites) {
+        return self.getMetaClass().finvokeChecked(context, self, sites);
+    }
+
+    // MRI: rb_check_funcall
     public static IRubyObject invokeChecked(ThreadContext context, IRubyObject self, String name, IRubyObject... args) {
         return self.getMetaClass().finvokeChecked(context, self, name, args);
+    }
+
+    // MRI: rb_check_funcall
+    public static IRubyObject invokeChecked(ThreadContext context, IRubyObject self, JavaSites.CheckedSites sites, IRubyObject... args) {
+        return self.getMetaClass().finvokeChecked(context, self, sites, args);
     }
 
     /**
@@ -543,13 +551,6 @@ public class Helpers {
 
     public static RubyArray ensureRubyArray(Ruby runtime, IRubyObject value) {
         return value instanceof RubyArray ? (RubyArray)value : RubyArray.newArray(runtime, value);
-    }
-
-    public static RubyArray ensureMultipleAssignableRubyArray(IRubyObject value, Ruby runtime, boolean masgnHasHead) {
-        if (!(value instanceof RubyArray)) {
-            value = ArgsUtil.convertToRubyArray19(runtime, value, masgnHasHead);
-        }
-        return (RubyArray) value;
     }
 
     public static IRubyObject nullToNil(IRubyObject value, ThreadContext context) {
@@ -994,7 +995,7 @@ public class Helpers {
         if (start >= input.length) {
             return RubyArray.newEmptyArray(runtime);
         } else {
-            return RubyArray.newArrayNoCopy(runtime, input, start);
+            return RubyArray.newArrayMayCopy(runtime, input, start);
         }
     }
 
@@ -1003,7 +1004,7 @@ public class Helpers {
         if (length <= 0) {
             return RubyArray.newEmptyArray(runtime);
         } else {
-            return RubyArray.newArrayNoCopy(runtime, input, start, length);
+            return RubyArray.newArrayMayCopy(runtime, input, start, length);
         }
     }
 
@@ -2175,18 +2176,6 @@ public class Helpers {
         return (String[])list.toArray(new String[list.size()]);
     }
 
-    public static IRubyObject[] arraySlice1N(IRubyObject arrayish) {
-        arrayish = aryToAry(arrayish);
-        RubyArray arrayish2 = ensureMultipleAssignableRubyArray(arrayish, arrayish.getRuntime(), true);
-        return new IRubyObject[] {arrayEntryOrNilZero(arrayish2), subarrayOrEmpty(arrayish2, arrayish2.getRuntime(), 1)};
-    }
-
-    public static IRubyObject arraySlice1(IRubyObject arrayish) {
-        arrayish = aryToAry(arrayish);
-        RubyArray arrayish2 = ensureMultipleAssignableRubyArray(arrayish, arrayish.getRuntime(), true);
-        return arrayEntryOrNilZero(arrayish2);
-    }
-
     public static RubyClass metaclass(IRubyObject object) {
         return object instanceof RubyBasicObject ?
             ((RubyBasicObject)object).getMetaClass() :
@@ -2401,10 +2390,11 @@ public class Helpers {
     public static RubyArray argumentDescriptorsToParameters(Ruby runtime, ArgumentDescriptor[] argsDesc, boolean isLambda) {
         if (argsDesc == null) Thread.dumpStack();
 
-        final RubyArray params = RubyArray.newArray(runtime, argsDesc.length);
+        final RubyArray params = RubyArray.newBlankArray(runtime, argsDesc.length);
 
-        for (ArgumentDescriptor param : argsDesc) {
-            params.append( param.toArrayForm(runtime, isLambda) );
+        for (int i = 0; i < argsDesc.length; i++) {
+            ArgumentDescriptor param = argsDesc[i];
+            params.store(i, param.toArrayForm(runtime, isLambda));
         }
 
         return params;
@@ -2734,13 +2724,8 @@ public class Helpers {
 
     // MRI: rb_hash
     public static RubyFixnum safeHash(final ThreadContext context, IRubyObject obj) {
-        final Ruby runtime = context.runtime;
-        IRubyObject hval = runtime.safeRecurse(new Ruby.RecursiveFunction() {
-            public IRubyObject call(IRubyObject obj, boolean recur) {
-                if (recur) return RubyFixnum.zero(runtime);
-                return invokedynamic(context, obj, HASH);
-            }
-        }, obj, "hash", true);
+        Ruby runtime = context.runtime;
+        IRubyObject hval = runtime.safeRecurse(sites(context).recursive_hash, context, runtime, obj, "hash", true);
 
         while (!(hval instanceof RubyFixnum)) {
             if (hval instanceof RubyBignum) {
@@ -2784,6 +2769,10 @@ public class Helpers {
 
     public static long murmur1(long h) {
         return murmur_step(h, 16);
+    }
+
+    private static HelpersSites sites(ThreadContext context) {
+        return context.sites.Helpers;
     }
 
     @Deprecated

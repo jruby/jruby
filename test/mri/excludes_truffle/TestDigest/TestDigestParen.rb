@@ -1,0 +1,5 @@
+exclude :"test_no_lib", "needs investigation"
+exclude :"test_no_lib_no_def", "needs investigation"
+exclude :"test_race", "needs investigation"
+exclude :"test_race_mixed", "needs investigation"
+exclude :"test_sha2", "needs investigation"

@@ -371,13 +371,13 @@ public class IRBuilder {
         if (node.isNewline()) {
             int currLineNum = node.getLine();
             if (currLineNum != _lastProcessedLineNum) { // Do not emit multiple line number instrs for the same line
+                addInstr(manager.newLineNumber(currLineNum));
                 if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
                     addInstr(new TraceInstr(RubyEvent.LINE, methodNameFor(), getFileName(), currLineNum));
                     if (needsCodeCoverage()) {
                         addInstr(new TraceInstr(RubyEvent.COVERAGE, methodNameFor(), getFileName(), currLineNum));
                     }
                 }
-                addInstr(manager.newLineNumber(currLineNum));
                 _lastProcessedLineNum = currLineNum;
             }
         }
@@ -964,10 +964,6 @@ public class IRBuilder {
         Variable exc = createTemporaryVariable();
         addInstr(new ReceiveJRubyExceptionInstr(exc));
 
-        if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-            addInstr(new TraceInstr(RubyEvent.RETURN, getName(), getFileName(), -1));
-        }
-
         // Handle break using runtime helper
         // --> IRRuntimeHelpers.handleNonlocalReturn(scope, bj, blockType)
         Variable ret = createTemporaryVariable();
@@ -1151,13 +1147,11 @@ public class IRBuilder {
                 }
             } else {
                 Operand expression = buildWithOrder(whenNode.getExpressionNodes(), whenNode.containsVariableAssignment());
+                Node exprNodes = whenNode.getExpressionNodes();
+                boolean needsSplat = exprNodes instanceof ArgsPushNode || exprNodes instanceof SplatNode || exprNodes instanceof ArgsCatNode;
 
-                if (value != UndefinedValue.UNDEFINED) {
-                    addInstr(new EQQInstr(eqqResult, expression, value));
-                    v1 = eqqResult;
-                } else {
-                    v1 = expression;
-                }
+                addInstr(new EQQInstr(eqqResult, expression, value, needsSplat));
+                v1 = eqqResult;
                 v2 = manager.getTrue();
             }
             addInstr(BEQInstr.create(v1, v2, bodyLabel));
@@ -1613,30 +1607,7 @@ public class IRBuilder {
         case TRUENODE:
             return new FrozenString("true");
         case DREGEXPNODE: case DSTRNODE: {
-            final Node dNode = node;
-
-            // protected code
-            CodeBlock protectedCode = new CodeBlock() {
-                public Operand run() {
-                    build(dNode);
-                    // always an expression as long as we get through here without an exception!
-                    return new FrozenString("expression");
-                }
-            };
-            // rescue block
-            CodeBlock rescueBlock = new CodeBlock() {
-                public Operand run() { return manager.getNil(); } // Nothing to do if we got an exception
-            };
-
-            // Try verifying definition, and if we get an JumpException exception, process it with the rescue block above
-            Operand v = protectCodeWithRescue(protectedCode, rescueBlock);
-            Label doneLabel = getNewLabel();
-            Variable tmpVar = getValueInTemporaryVariable(v);
-            addInstr(BNEInstr.create(doneLabel, tmpVar, manager.getNil()));
-            addInstr(new CopyInstr(tmpVar, new FrozenString("expression")));
-            addInstr(new LabelInstr(doneLabel));
-
-            return tmpVar;
+            return new FrozenString("expression");
         }
         case ARRAYNODE: { // If all elts of array are defined the array is as well
             ArrayNode array = (ArrayNode) node;
@@ -1720,12 +1691,24 @@ public class IRBuilder {
 
             CodeBlock protectedCode = new CodeBlock() {
                 public Operand run() {
-                    Operand v = colon instanceof Colon2Node ?
-                            build(((Colon2Node)colon).getLeftNode()) : new ObjectClass();
+                    if (!(colon instanceof Colon2Node)) { // colon3 (weird inheritance)
+                        return addResultInstr(new RuntimeHelperCall(createTemporaryVariable(),
+                                IS_DEFINED_CONSTANT_OR_METHOD, new Operand[] {new ObjectClass(), new FrozenString(name)}));
+                    }
 
-                    Variable tmpVar = createTemporaryVariable();
-                    addInstr(new RuntimeHelperCall(tmpVar, IS_DEFINED_CONSTANT_OR_METHOD, new Operand[] {v, new FrozenString(name)}));
-                    return tmpVar;
+                    Label bad = getNewLabel();
+                    Label done = getNewLabel();
+                    Variable result = createTemporaryVariable();
+                    Operand test = buildGetDefinition(((Colon2Node) colon).getLeftNode());
+                    addInstr(BEQInstr.create(test, manager.getNil(), bad));
+                    Operand lhs = build(((Colon2Node) colon).getLeftNode());
+                    addInstr(new RuntimeHelperCall(result, IS_DEFINED_CONSTANT_OR_METHOD, new Operand[] {lhs, new FrozenString(name)}));
+                    addInstr(new JumpInstr(done));
+                    addInstr(new LabelInstr(bad));
+                    addInstr(new CopyInstr(result, manager.getNil()));
+                    addInstr(new LabelInstr(done));
+
+                    return result;
                 }
             };
 
@@ -1920,6 +1903,8 @@ public class IRBuilder {
         this.needsCodeCoverage = needsCodeCoverage;
 
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
+            // Explicit line number here because we need a line number for trace before we process any nodes
+            addInstr(manager.newLineNumber(scope.getLineNumber()));
             addInstr(new TraceInstr(RubyEvent.CALL, getName(), getFileName(), scope.getLineNumber()));
         }
 
@@ -1940,7 +1925,8 @@ public class IRBuilder {
         Operand rv = build(defNode.getBodyNode());
 
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-            addInstr(new TraceInstr(RubyEvent.RETURN, getName(), getFileName(), -1));
+            addInstr(new LineNumberInstr(defNode.getEndLine()));
+            addInstr(new TraceInstr(RubyEvent.RETURN, getName(), getFileName(), defNode.getEndLine()));
         }
 
         if (rv != null) addInstr(new ReturnInstr(rv));
@@ -2067,20 +2053,22 @@ public class IRBuilder {
         if (opt > 0) {
             int optIndex = argsNode.getOptArgIndex();
             for (int j = 0; j < opt; j++, argIndex++) {
-                // Jump to 'l' if this arg is not null.  If null, fall through and build the default value!
-                Label l = getNewLabel();
-                OptArgNode n = (OptArgNode)args[optIndex + j];
-                String argName = n.getName();
-                Variable av = getNewLocalVariable(argName, 0);
+                // We fall through or jump to variableAssigned once we know we have a valid value in place.
+                Label variableAssigned = getNewLabel();
+                OptArgNode optArg = (OptArgNode)args[optIndex + j];
+                String argName = optArg.getName();
+                Variable argVar = getNewLocalVariable(argName, 0);
                 if (scope instanceof IRMethod) addArgumentDescription(ArgumentType.opt, argName);
-                Variable temp = createTemporaryVariable();
                 // You need at least required+j+1 incoming args for this opt arg to get an arg at all
-                addInstr(new ReceiveOptArgInstr(av, signature.required(), signature.pre(), j));
-                addInstr(BNEInstr.create(l, av, UndefinedValue.UNDEFINED)); // if 'av' is not undefined, go to default
-                addInstr(new CopyInstr(av, buildNil())); // wipe out undefined value with nil
-                Operand defaultResult = build(n.getValue());
-                addInstr(new CopyInstr(av, defaultResult));
-                addInstr(new LabelInstr(l));
+                addInstr(new ReceiveOptArgInstr(argVar, signature.required(), signature.pre(), j));
+                addInstr(BNEInstr.create(variableAssigned, argVar, UndefinedValue.UNDEFINED));
+                // We add this extra nil copy because we do not know if we have a circular defininition of
+                // argVar: proc { |a=a| } or proc { |a = foo(bar(a))| }.
+                addInstr(new CopyInstr(argVar, manager.getNil()));
+                // This bare build looks weird but OptArgNode is just a marker and value is either a LAsgnNode
+                // or a DAsgnNode.  So building the value will end up having a copy(var, assignment).
+                build(optArg.getValue());
+                addInstr(new LabelInstr(variableAssigned));
             }
         }
 
@@ -2875,10 +2863,10 @@ public class IRBuilder {
 
     private InterpreterContext buildIterInner(IterNode iterNode) {
         prepareImplicitState();                                    // recv_self, add frame block, etc)
+        addCurrentScopeAndModule();                                // %current_scope/%current_module
 
         if (iterNode.getVarNode().getNodeType() != null) receiveBlockArgs(iterNode);
 
-        addCurrentScopeAndModule();                                // %current_scope/%current_module
         addInstr(new LabelInstr(((IRClosure) scope).startLabel));  // start label -- used by redo!
 
         // Build closure body and return the result of the closure
@@ -3563,6 +3551,11 @@ public class IRBuilder {
             if (sm != null) addInstr(new NonlocalReturnInstr(retVal, sm.getName()));
         } else {
             retVal = processEnsureRescueBlocks(retVal);
+
+            if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
+                addInstr(new TraceInstr(RubyEvent.RETURN, getName(), getFileName(), returnNode.getLine()));
+            }
+
             addInstr(new ReturnInstr(retVal));
         }
 
@@ -3891,6 +3884,10 @@ public class IRBuilder {
         Operand bodyReturnValue = build(bodyNode);
 
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
+            // FIXME: We also should add a line number instruction so that backtraces
+            // inside the trace function get the correct line. Unfortunately, we don't
+            // have one here and we can't do it dynamically like TraceInstr does.
+            // See https://github.com/jruby/jruby/issues/4051
             addInstr(new TraceInstr(RubyEvent.END, null, getFileName(), -1));
         }
 

@@ -390,6 +390,26 @@ module Enumerable
         end
       end
 
+      def grep_v(pattern)
+        if block_given?
+          Lazy.new(self, nil) do |yielder, *args|
+            val = args.length >= 2 ? args : args.first
+            unless pattern === val
+              # Regexp.set_block_last_match # TODO BJF Aug 2, 2016 Investigate for removal
+              yielder.yield yield(val)
+            end
+          end
+        else
+          Lazy.new(self, nil) do |yielder, *args|
+            val = args.length >= 2 ? args : args.first
+            unless pattern === val
+              # Regexp.set_block_last_match # TODO BJF Aug 2, 2016 Investigate for removal
+              yielder.yield val
+            end
+          end
+        end
+      end
+
       def map
         raise ArgumentError, 'Lazy#{map,collect} requires a block' unless block_given?
 

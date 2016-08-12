@@ -86,13 +86,13 @@ public class Block {
     public static final Block NULL_BLOCK = new Block(BlockBody.NULL_BODY);
 
     public Block(BlockBody body, Binding binding) {
+        assert binding != null;
         this.body = body;
         this.binding = binding;
     }
 
     public Block(BlockBody body) {
-        this.body = body;
-        this.binding = null;
+        this(body, Binding.DUMMY);
     }
 
     public DynamicScope allocScope(DynamicScope parentScope) {

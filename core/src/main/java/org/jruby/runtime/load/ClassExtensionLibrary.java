@@ -71,7 +71,7 @@ public class ClassExtensionLibrary implements Library {
         if (leftmostIdentifier == all.length) return null;
 
         // make service name out of last element
-        String serviceName = buildServiceName(all[all.length - 1]);
+        CharSequence serviceName = buildServiceName(all[all.length - 1]);
 
         // allocate once with plenty of space, to reduce object churn
         StringBuilder classNameBuilder = new StringBuilder(searchName.length() * 2);
@@ -80,16 +80,14 @@ public class ClassExtensionLibrary implements Library {
         for (int i = all.length - 1; i >= leftmostIdentifier; i--) {
             buildClassName(classNameBuilder, classFileBuilder, all, i, serviceName);
 
-            String classFileName = classFileBuilder.toString();
-
             // bail out once if see a dash in the name
-            if (classFileName.contains("-")) return null;
+            if (classFileBuilder.indexOf("-", 0) >= 0) return null;
 
             // look for the filename in classloader resources
             URL resource = runtime.getJRubyClassLoader().getResource(classFileBuilder.toString());
             if (resource == null) continue;
 
-            String className = classNameBuilder.toString();
+            final String className = classNameBuilder.toString();
 
             try {
                 Class theClass = runtime.getJavaSupport().loadJavaClass(className);
@@ -99,7 +97,7 @@ public class ClassExtensionLibrary implements Library {
                 continue;
             } catch (UnsupportedClassVersionError ucve) {
                 if (runtime.isDebug()) ucve.printStackTrace();
-                throw runtime.newLoadError("JRuby ext built for wrong Java version in `" + className + "': " + ucve, className.toString());
+                throw runtime.newLoadError("JRuby ext built for wrong Java version in `" + className + "': " + ucve, className);
             }
         }
 
@@ -126,7 +124,7 @@ public class ClassExtensionLibrary implements Library {
         return true;
     }
 
-    private static void buildClassName(StringBuilder nameBuilder, StringBuilder fileBuilder, String[] all, int i, String serviceName) {
+    private static void buildClassName(StringBuilder nameBuilder, StringBuilder fileBuilder, String[] all, int i, CharSequence serviceName) {
         nameBuilder.setLength(0);
         fileBuilder.setLength(0);
         for (int j = i; j < all.length - 1; j++) {
@@ -137,15 +135,16 @@ public class ClassExtensionLibrary implements Library {
         fileBuilder.append(serviceName).append(".class");
     }
 
-    private static String buildServiceName(String jarName) {
+    private static CharSequence buildServiceName(final String jarName) {
         String[] last = jarName.split("_");
-        StringBuilder serviceName = new StringBuilder();
+        StringBuilder serviceName = new StringBuilder(jarName.length() + 7);
         for (int i = 0, j = last.length; i < j; i++) {
-            if ("".equals(last[i])) break;
-            serviceName.append(Character.toUpperCase(last[i].charAt(0))).append(last[i].substring(1));
+            final String l = last[i];
+            if (l.length() == 0) break;
+            serviceName.append(Character.toUpperCase(l.charAt(0))).append(l.substring(1));
         }
         serviceName.append("Service");
-        return serviceName.toString();
+        return serviceName;
     }
 
     public ClassExtensionLibrary(String name, Class extension) {

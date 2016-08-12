@@ -15,15 +15,15 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public abstract class CachingCallSite extends CallSite {
     protected CacheEntry cache = CacheEntry.NULL_CACHE;
-    public static volatile int totalCallSites;
-//    private AtomicBoolean isPolymorphic = new AtomicBoolean(false);
+    //public static volatile int totalCallSites;
+    //private AtomicBoolean isPolymorphic = new AtomicBoolean(false);
 
     public CachingCallSite(String methodName, CallType callType) {
         super(methodName, callType);
-        totalCallSites++;
+        //totalCallSites++;
     }
 
-    public CacheEntry getCache() {
+    public final CacheEntry getCache() {
         return cache;
     }
 
@@ -39,7 +39,7 @@ public abstract class CachingCallSite extends CallSite {
         return ClassIndex.NO_INDEX.ordinal();
     }
 
-    public String getMethodName() {
+    public final String getMethodName() {
         return methodName;
     }
 
@@ -249,6 +249,15 @@ public abstract class CachingCallSite extends CallSite {
         }
     }
 
+    public CacheEntry retrieveCache(RubyClass selfType) {
+        // This must be retrieved *once* to avoid racing with other threads.
+        CacheEntry cache = this.cache;
+        if (CacheEntry.typeOk(cache, selfType)) {
+            return cache;
+        }
+        return cacheAndGet(selfType, methodName);
+    }
+
     public CacheEntry retrieveCache(RubyClass selfType, String methodName) {
         // This must be retrieved *once* to avoid racing with other threads.
         CacheEntry cache = this.cache;
@@ -258,9 +267,25 @@ public abstract class CachingCallSite extends CallSite {
         return cacheAndGet(selfType, methodName);
     }
 
+    public boolean isBuiltin(RubyClass selfType) {
+        // This must be retrieved *once* to avoid racing with other threads.
+        CacheEntry cache = this.cache;
+        if (CacheEntry.typeOk(cache, selfType)) {
+            return cache.method.isBuiltin();
+        }
+        return cacheAndGetBuiltin(selfType, methodName);
+    }
+
     private CacheEntry cacheAndGet(RubyClass selfType, String methodName) {
         CacheEntry entry = selfType.searchWithCache(methodName);
-        return cache = entry;
+        if (!entry.method.isUndefined()) cache = entry;
+        return entry;
+    }
+
+    private boolean cacheAndGetBuiltin(RubyClass selfType, String methodName) {
+        CacheEntry entry = selfType.searchWithCache(methodName);
+        if (!entry.method.isUndefined()) return false;
+        return entry.method.isBuiltin();
     }
     
     protected IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, Block block, IRubyObject[] args, ThreadContext context, IRubyObject self) {

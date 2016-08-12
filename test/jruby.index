@@ -108,8 +108,7 @@ jruby/test_instantiating_interfaces
 jruby/test_openssl
 jruby/test_tempfile_cleanup
 
-# Disabled until the new JIT/AOT is more complete
+jruby/test_reified_variables
 jruby/compiler/test_jrubyc
 jruby/test_load_compiled_ruby
 jruby/test_load_compiled_ruby_class_from_classpath
-

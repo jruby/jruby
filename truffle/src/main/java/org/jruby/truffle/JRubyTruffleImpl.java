@@ -11,12 +11,13 @@ package org.jruby.truffle;
 
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.vm.PolyglotEngine;
-import com.oracle.truffle.tools.TruffleProfiler;
 import java.io.IOException;
+
 import org.jruby.JRubyTruffleInterface;
 import org.jruby.Ruby;
 import org.jruby.truffle.interop.JRubyContextWrapper;
 import org.jruby.truffle.language.control.ExitException;
+import org.jruby.truffle.language.control.JavaException;
 import org.jruby.truffle.platform.graal.Graal;
 import org.jruby.util.cli.Options;
 
@@ -31,16 +32,10 @@ public class JRubyTruffleImpl implements JRubyTruffleInterface {
         engine = PolyglotEngine.newBuilder()
                 .globalSymbol(JRubyTruffleInterface.RUNTIME_SYMBOL, new JRubyContextWrapper(runtime))
                 .build();
-
-        if (Options.TRUFFLE_PROFILER.load()) {
-            engine.getInstruments().get(TruffleProfiler.ID).setEnabled(true);
-        }
-
         try {
-            context = (RubyContext) engine.eval(Source.fromText("Truffle::Boot.context", "context")
-                    .withMimeType(RubyLanguage.MIME_TYPE)).get();
+            context = (RubyContext) engine.eval(loadSource("Truffle::Boot.context", "context")).get();
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new JavaException(e);
         }
     }
 
@@ -55,21 +50,24 @@ public class JRubyTruffleImpl implements JRubyTruffleInterface {
         context.getJRubyInterop().setOriginalInputFile(rootNode.getPosition().getFile());
 
         try {
-            return engine.eval(Source.fromText("Truffle::Boot.run_jruby_root", "run_jruby_root")
-                    .withMimeType(RubyLanguage.MIME_TYPE)).get();
+            return engine.eval(loadSource("Truffle::Boot.run_jruby_root", "run_jruby_root")).get();
         } catch (IOException e) {
             if (e.getCause() instanceof ExitException) {
                 final ExitException exit = (ExitException) e.getCause();
                 throw new org.jruby.exceptions.MainExitException(exit.getCode());
             }
 
-            throw new RuntimeException(e);
+            throw new JavaException(e);
         }
     }
 
     @Override
     public void dispose() {
         engine.dispose();
+    }
+
+    private Source loadSource(String source, String name) {
+        return Source.newBuilder(source).name(name).mimeType(RubyLanguage.MIME_TYPE).build();
     }
     
 }

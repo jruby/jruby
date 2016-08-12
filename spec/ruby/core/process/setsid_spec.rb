@@ -20,14 +20,17 @@ describe "Process.setsid" do
       }
       write.close
       read2.close
-      pgid_child = read.gets
+      pgid_child = Integer(read.gets)
       read.close
-      pgid = Process.getsid(pid)
+      platform_is_not :aix do
+        # AIX does not allow Process.getsid(pid)
+        # if pid is in a different session.
+        pgid = Process.getsid(pid)
+        pgid_child.should == pgid
+      end
       write2.close
       Process.wait pid
 
-      pgid_child = Integer(pgid_child)
-      pgid_child.should == pgid
       pgid_child.should_not == Process.getsid
     end
   end

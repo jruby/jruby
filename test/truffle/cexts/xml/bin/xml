@@ -1,0 +1,5 @@
+#!/usr/bin/env ruby
+
+require 'xml'
+
+puts XML.UTF8Strlen("hello π")

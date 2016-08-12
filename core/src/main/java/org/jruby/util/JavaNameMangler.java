@@ -318,7 +318,7 @@ public class JavaNameMangler {
         final String type = name.get(1); // e.g. RUBY $ class $ methodName
         // root body gets named (root)
         switch (type) {
-            case "script":    return "<top>";
+            case "script":    return "<main>";
             case "metaclass": return "singleton class";
             // remaining cases have an encoded name
             case "method":    return demangleMethodName(name.get(2));

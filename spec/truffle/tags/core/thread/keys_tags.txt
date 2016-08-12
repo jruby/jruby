@@ -1,3 +1,0 @@
-fails:Thread#keys returns an array of the names of the thread-local variables as symbols
-fails:Thread#keys is not shared across fibers
-fails:Thread#keys stores a local in another thread when in a fiber

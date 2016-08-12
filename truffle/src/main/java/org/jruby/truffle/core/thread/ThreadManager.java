@@ -12,7 +12,6 @@ package org.jruby.truffle.core.thread;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.object.DynamicObjectFactory;
 import jnr.posix.DefaultNativeTimeval;
 import jnr.posix.Timeval;
 import org.jruby.RubyThread.Status;
@@ -50,17 +49,19 @@ public class ThreadManager {
 
     public ThreadManager(RubyContext context) {
         this.context = context;
-        this.rootThread = createRubyThread(context, context.getCoreLibrary().getThreadClass());
+        this.rootThread = createRubyThread(context);
     }
 
-    public static DynamicObject createRubyThread(RubyContext context, DynamicObject rubyClass) {
-        final DynamicObject threadLocals = createThreadLocals(context);
+    public static final InterruptMode DEFAULT_INTERRUPT_MODE = InterruptMode.IMMEDIATE;
+    public static final Status DEFAULT_STATUS = Status.RUN;
+
+    public static DynamicObject createRubyThread(RubyContext context) {
         final DynamicObject object = Layouts.THREAD.createThread(
-                Layouts.CLASS.getInstanceFactory(rubyClass),
-                threadLocals,
-                InterruptMode.IMMEDIATE,
-                Status.RUN,
-                new ArrayList<Lock>(),
+                context.getCoreLibrary().getThreadFactory(),
+                createThreadLocals(context),
+                DEFAULT_INTERRUPT_MODE,
+                DEFAULT_STATUS,
+                new ArrayList<>(),
                 null,
                 new CountDownLatch(1),
                 getGlobalAbortOnException(context),
@@ -69,7 +70,9 @@ public class ThreadManager {
                 null,
                 new AtomicBoolean(false),
                 0);
+
         Layouts.THREAD.setFiberManagerUnsafe(object, new FiberManager(context, object)); // Because it is cyclic
+
         return object;
     }
 
@@ -78,9 +81,8 @@ public class ThreadManager {
         return (boolean) threadClass.get("@abort_on_exception");
     }
 
-    private static DynamicObject createThreadLocals(RubyContext context) {
-        final DynamicObjectFactory instanceFactory = Layouts.CLASS.getInstanceFactory(context.getCoreLibrary().getObjectClass());
-        final DynamicObject threadLocals = Layouts.BASIC_OBJECT.createBasicObject(instanceFactory);
+    public static DynamicObject createThreadLocals(RubyContext context) {
+        final DynamicObject threadLocals = Layouts.BASIC_OBJECT.createBasicObject(context.getCoreLibrary().getObjectFactory());
         threadLocals.define("$!", context.getCoreLibrary().getNilObject(), 0);
         threadLocals.define("$~", context.getCoreLibrary().getNilObject(), 0);
         threadLocals.define("$?", context.getCoreLibrary().getNilObject(), 0);

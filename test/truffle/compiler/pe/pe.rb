@@ -86,6 +86,7 @@ else
   require_relative 'core/block_given_pe.rb'
   require_relative 'core/string_pe.rb'
   require_relative 'core/class_pe'
+  require_relative 'core/encoding_pe'
   require_relative 'interop/interop_pe'
   require_relative 'macro/pushing_pixels_pe.rb'
   
@@ -117,14 +118,14 @@ EXAMPLES.each do |example|
   runner = proc do
     begin
       tested += 1
-      $value = nil
       eval "
       def test_pe_code
-        $value = Truffle::Graal.assert_constant(begin; #{example.code}; end)
+        value = Truffle::Graal.assert_constant(begin; #{example.code}; end)
         Truffle::Graal.assert_not_compiled
+        value
       end"
       while true
-        test_pe_code
+        value = test_pe_code
       end
     rescue RubyTruffleError => e
       if e.message.include? 'Truffle::Graal.assert_not_compiled'
@@ -144,7 +145,7 @@ EXAMPLES.each do |example|
             report 'FAILED', example.code, "wasn't constant"
             failed += 1
           else
-            if $value == example.expected_value
+            if value == example.expected_value
               report 'OK', example.code
             else
               report 'INCORRECT', example.code, "was: #{$value.inspect} and not: #{example.expected_value.inspect}"

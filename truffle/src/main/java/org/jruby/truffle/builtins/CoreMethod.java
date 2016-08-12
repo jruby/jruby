@@ -55,21 +55,28 @@ public @interface CoreMethod {
 
     boolean needsBlock() default false;
 
-    boolean lowerFixnumSelf() default false;
+    /**
+     * Try to lower argument <code>i</code> (starting at 1) to an int if its value is a long.
+     * Use 0 for <code>self</code>.
+     */
+    int[] lowerFixnum() default {};
 
-    int[] lowerFixnumParameters() default {};
-
-    boolean taintFromSelf() default false;
-
-    int taintFromParameter() default -1;
-
+    /**
+     * Raise an error if self is frozen.
+     */
     boolean raiseIfFrozenSelf() default false;
 
-    int[] raiseIfFrozenParameters() default {};
+    /**
+     * Taint the result if argument <code>i</code> (starting at 1) is tainted.
+     * Use 0 for <code>self</code>.
+     */
+    int taintFrom() default -1;
 
     UnsupportedOperationBehavior unsupportedOperationBehavior() default UnsupportedOperationBehavior.TYPE_ERROR;
 
     boolean returnsEnumeratorIfNoBlock() default false;
+
+    String enumeratorSize() default "";
 
     UnsafeGroup[] unsafe() default {};
 

@@ -55,7 +55,6 @@ import org.jruby.truffle.language.supercall.ReadSuperArgumentsNode;
 import org.jruby.truffle.language.supercall.ReadZSuperArgumentsNode;
 import org.jruby.truffle.language.supercall.SuperCallNode;
 import org.jruby.truffle.language.supercall.ZSuperOutsideMethodNode;
-
 import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Deque;
@@ -99,7 +98,7 @@ public class MethodTranslator extends BodyTranslator {
             final RubyNode castArrayNode = ArrayCastNodeGen.create(context, sourceSection, readArrayNode);
 
             final FrameSlot arraySlot = environment.declareVar(environment.allocateLocalTemp("destructure"));
-            final RubyNode writeArrayNode = new WriteLocalVariableNode(context, sourceSection, arraySlot, castArrayNode);
+            final RubyNode writeArrayNode = WriteLocalVariableNode.createWriteLocalVariableNode(context, sourceSection, arraySlot, castArrayNode);
 
             final LoadArgumentsTranslator destructureArgumentsTranslator = new LoadArgumentsTranslator(currentNode, context, source, isProc, this);
             destructureArgumentsTranslator.pushArraySlot(arraySlot);
@@ -107,7 +106,8 @@ public class MethodTranslator extends BodyTranslator {
 
             final RubyNode shouldDestructure = new ShouldDestructureNode(readArrayNode);
 
-            final RubyNode arrayWasNotNil = sequence(context, sourceSection, Arrays.asList(writeArrayNode, new NotNode(context, sourceSection, new IsNilNode(context, sourceSection, new ReadLocalVariableNode(context, sourceSection, LocalVariableType.FRAME_LOCAL, arraySlot)))));
+            final RubyNode arrayWasNotNil = sequence(context, sourceSection,
+                    Arrays.asList(writeArrayNode, new NotNode(new IsNilNode(context, sourceSection, new ReadLocalVariableNode(context, sourceSection, LocalVariableType.FRAME_LOCAL, arraySlot)))));
 
             final RubyNode shouldDestructureAndArrayWasNotNil = new AndNode(context, sourceSection,
                     shouldDestructure,

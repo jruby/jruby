@@ -1,17 +1,13 @@
 fails:C-API String function rb_str_set_len reduces the size of the string
 fails:C-API String function rb_str_set_len inserts a NULL byte at the length
 fails:C-API String function rb_str_set_len updates the string's attributes visible in C code
-fails:C-API String function rb_str_buf_new returns the equivalent of an empty string
 fails:C-API String function rb_str_buf_new returns a string that can be appended to
 fails:C-API String function rb_str_buf_new returns a string that can be concatenated to another string
 fails:C-API String function rb_str_buf_new returns a string whose bytes can be accessed by RSTRING_PTR
 fails:C-API String function rb_str_buf_new returns a string that can be modified by rb_str_set_len
 fails:C-API String function rb_str_buf_new2 returns a new string object calling strlen on the passed C string
-fails:C-API String function rb_str_new returns a new string object from a char buffer of len characters
-fails:C-API String function rb_str_new returns an empty string if len is 0
 fails:C-API String function rb_str_new2 returns a new string object calling strlen on the passed C string
 fails:C-API String function rb_str_new2 encodes the string with ASCII_8BIT
-fails:C-API String function rb_str_new creates a new String with ASCII-8BIT Encoding
 fails:C-API String function rb_str_new_cstr returns a new string object calling strlen on the passed C string
 fails:C-API String function rb_str_new_cstr encodes the string with ASCII_8BIT
 fails:C-API String function rb_usascii_str_new creates a new String with US-ASCII Encoding from a char buffer of len characters
@@ -53,11 +49,6 @@ fails:C-API String function rb_str_subseq returns a byte-indexed substring
 fails:C-API String function rb_str_substr returns a substring
 fails:C-API String function rb_str_to_str calls #to_str to coerce the value to a String
 fails:C-API String function rb_str_to_str raises a TypeError if coercion fails
-fails:C-API String function RSTRING_PTR returns a pointer to the string's contents
-fails:C-API String function RSTRING_PTR allows changing the characters in the string
-fails:C-API String function RSTRING_PTR reflects changes after a rb_funcall
-fails:C-API String function RSTRING_PTR returns a pointer to the contents of encoded pointer-sized string
-fails:C-API String function RSTRING_LEN returns the size of the string
 fails:C-API String function RSTRING_LENINT returns the size of a string
 fails:C-API String function StringValue does not call #to_str on a String
 fails:C-API String function StringValue does not call #to_s on a String

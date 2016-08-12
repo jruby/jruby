@@ -35,9 +35,9 @@ package org.jruby.truffle.core.string;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
-import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jcodings.Encoding;
+import org.jruby.Ruby;
 import org.jruby.RubyEncoding;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
@@ -48,9 +48,10 @@ import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.control.RaiseException;
+import org.jruby.truffle.util.ByteListUtils;
+import org.jruby.truffle.util.StringUtils;
 import org.jruby.util.ByteList;
-import org.jruby.util.CodeRangeable;
-
+import org.jruby.util.StringSupport;
 import java.nio.charset.Charset;
 
 public abstract class StringOperations {
@@ -70,13 +71,14 @@ public abstract class StringOperations {
     }
 
     // Since ByteList.toString does not decode properly
-    @CompilerDirectives.TruffleBoundary
-    public static String getString(RubyContext context, DynamicObject string) {
-        return RopeOperations.decodeRope(context.getJRubyRuntime(), StringOperations.rope(string));
+    @TruffleBoundary
+    public static String getString(DynamicObject string) {
+        return RopeOperations.decodeRope(StringOperations.rope(string));
     }
 
-    public static StringCodeRangeableWrapper getCodeRangeableReadWrite(final DynamicObject string) {
-        return new StringCodeRangeableWrapper(string) {
+    public static StringCodeRangeableWrapper getCodeRangeableReadWrite(final DynamicObject string,
+                                                                       final EncodingNodes.CheckEncodingNode checkEncodingNode) {
+        return new StringCodeRangeableWrapper(string, checkEncodingNode) {
             private final ByteList byteList = RopeOperations.toByteListCopy(StringOperations.rope(string));
             int codeRange = StringOperations.getCodeRange(string).toInt();
 
@@ -97,8 +99,9 @@ public abstract class StringOperations {
         };
     }
 
-    public static StringCodeRangeableWrapper getCodeRangeableReadOnly(final DynamicObject string) {
-        return new StringCodeRangeableWrapper(string) {
+    public static StringCodeRangeableWrapper getCodeRangeableReadOnly(final DynamicObject string,
+                                                                      final EncodingNodes.CheckEncodingNode checkEncodingNode) {
+        return new StringCodeRangeableWrapper(string, checkEncodingNode) {
             @Override
             public ByteList getByteList() {
                 return StringOperations.getByteListReadOnly(string);
@@ -116,7 +119,7 @@ public abstract class StringOperations {
 
         if (existingCodeRange != codeRange) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            throw new RuntimeException(String.format("Tried changing the code range value for a rope from %d to %d", existingCodeRange, codeRange));
+            throw new RuntimeException(StringUtils.format("Tried changing the code range value for a rope from %d to %d", existingCodeRange, codeRange));
         }
     }
 
@@ -134,22 +137,6 @@ public abstract class StringOperations {
         }
     }
 
-    @TruffleBoundary(throwsControlFlowException = true)
-    public static Encoding checkEncoding(DynamicObject string, CodeRangeable other) {
-        final Encoding encoding = EncodingNodes.CompatibleQueryNode.compatibleEncodingForStrings(string, ((StringCodeRangeableWrapper) other).getString());
-
-        // TODO (nirvdrum 23-Mar-15) We need to raise a proper Truffle+JRuby exception here, rather than a non-Truffle JRuby exception.
-        if (encoding == null) {
-            final RubyContext context = Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(string)).getContext();
-            throw context.getJRubyRuntime().newEncodingCompatibilityError(
-                    String.format("incompatible character encodings: %s and %s",
-                            Layouts.STRING.getRope(string).getEncoding().toString(),
-                            other.getByteList().getEncoding().toString()));
-        }
-
-        return encoding;
-    }
-
     public static int normalizeIndex(int length, int index) {
         return ArrayOperations.normalizeIndex(length, index);
     }
@@ -159,18 +146,6 @@ public abstract class StringOperations {
 
         // TODO (nirvdrum 21-Jan-16): Verify this is supposed to be the byteLength and not the characterLength.
         return ArrayOperations.clampExclusiveIndex(StringOperations.rope(string).byteLength(), index);
-    }
-
-    @TruffleBoundary
-    public static Encoding checkEncoding(RubyContext context, DynamicObject string, DynamicObject other, Node node) {
-        final Encoding encoding = EncodingNodes.CompatibleQueryNode.compatibleEncodingForStrings(string, other);
-
-        if (encoding == null) {
-            throw new RaiseException(context.getCoreExceptions().encodingCompatibilityErrorIncompatible(
-                    rope(string).getEncoding(), rope(other).getEncoding(), node));
-        }
-
-        return encoding;
     }
 
     @TruffleBoundary
@@ -223,7 +198,7 @@ public abstract class StringOperations {
 
     @TruffleBoundary
     public static ByteList createByteList(CharSequence s) {
-        return ByteList.create(s);
+        return ByteListUtils.create(s);
     }
 
     public static Rope rope(DynamicObject string) {

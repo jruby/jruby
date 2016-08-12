@@ -108,19 +108,4 @@ class TestHash < Test::Unit::TestCase
     assert_equal 2, hash[arr2]
   end
 
-  def test_to_proc
-    # TODO move to RubySpec
-    h = { 1 => 10, false => true, '2' => :'20' }
-    assert_equal false, h.to_proc.lambda?
-    proc = h.to_proc
-    assert_equal 10, proc.call(1)
-    assert_equal true, proc.call(false)
-    assert_equal nil, proc.call(2)
-
-    assert_raises(ArgumentError) { proc.call }
-    assert_raises(ArgumentError) { proc.call 1, 2 }
-
-    assert_equal [ 10, 20.to_s.to_sym ], [ 1, '2' ].map(&h)
-  end
-
 end

@@ -12,10 +12,14 @@ package org.jruby.truffle.core.rubinius;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
+import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.RubyRandom;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.builtins.Primitive;
 import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
+import org.jruby.truffle.core.rope.CodeRange;
+import org.jruby.truffle.core.rope.RopeOperations;
+import org.jruby.util.ByteList;
 import org.jruby.util.Random;
 
 import java.math.BigInteger;
@@ -103,6 +107,33 @@ public abstract class RandomizerPrimitiveNodes {
         public DynamicObject randomizerGenSeed(DynamicObject randomizerClass) {
             final BigInteger seed = RubyRandom.randomSeedBigInteger(getContext().getJRubyRuntime().getRandom());
             return createBignum(seed);
+        }
+    }
+
+    @Primitive(name = "randomizer_bytes", lowerFixnum = 1)
+    public static abstract class RandomizerBytesPrimitiveNode extends PrimitiveArrayArgumentsNode {
+
+        @TruffleBoundary
+        @Specialization
+        public DynamicObject genRandBytes(DynamicObject randomizer, int length) {
+            final Random random = Layouts.RANDOMIZER.getRandom(randomizer);
+            final byte[] bytes = new byte[length];
+            int idx = 0;
+            for (; length >= 4; length -= 4) {
+                int r = random.genrandInt32();
+                for (int i = 0; i < 4; ++i) {
+                    bytes[idx++] = (byte) (r & 0xff);
+                    r >>>= 8;
+                }
+            }
+            if (length > 0) {
+                int r = random.genrandInt32();
+                for (int i = 0; i < length; ++i) {
+                    bytes[idx++] = (byte) (r & 0xff);
+                    r >>>= 8;
+                }
+            }
+            return createString(RopeOperations.create(bytes, ASCIIEncoding.INSTANCE, CodeRange.CR_UNKNOWN));
         }
     }
 

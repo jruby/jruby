@@ -138,7 +138,7 @@ public class CoverageManager {
     }
     
     private synchronized AtomicLongArray getCounters(Source source) {
-        if (source.getPath() == null) {
+        if (source.getName() == null) {
             return null;
         }
 

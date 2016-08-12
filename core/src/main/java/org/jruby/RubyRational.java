@@ -70,6 +70,7 @@ import org.jruby.common.IRubyWarnings;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
+import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ObjectMarshal;
 import org.jruby.runtime.ThreadContext;
@@ -485,7 +486,7 @@ public class RubyRational extends RubyNumeric {
             RubyRational otherRational = (RubyRational)other;
             return f_addsub(context, num, den, otherRational.num, otherRational.den, true);
         }            
-        return coerceBin(context, "+", other);
+        return coerceBin(context, sites(context).op_plus, other);
     }
     
     /** nurat_sub
@@ -501,7 +502,7 @@ public class RubyRational extends RubyNumeric {
             RubyRational otherRational = (RubyRational)other;
             return f_addsub(context, num, den, otherRational.num, otherRational.den, false);
         }
-        return coerceBin(context, "-", other);
+        return coerceBin(context, sites(context).op_minus, other);
     }
     
     /** f_muldiv
@@ -554,7 +555,7 @@ public class RubyRational extends RubyNumeric {
             RubyRational otherRational = (RubyRational)other;
             return f_muldiv(context, num, den, otherRational.num, otherRational.den, true);
         }
-        return coerceBin(context, "*", other);
+        return coerceBin(context, sites(context).op_times, other);
     }
     
     /** nurat_div
@@ -576,7 +577,7 @@ public class RubyRational extends RubyNumeric {
             RubyRational otherRational = (RubyRational)other;
             return f_muldiv(context, num, den, otherRational.num, otherRational.den, false);
         }
-        return coerceBin(context, "/", other);
+        return coerceBin(context, sites(context).op_quo, other);
     }
 
     /** nurat_fdiv
@@ -638,7 +639,7 @@ public class RubyRational extends RubyNumeric {
         } else if (other instanceof RubyFloat || other instanceof RubyRational) {
             return f_expt(context, f_to_f(context, this), other);
         }
-        return coerceBin(context, "**", other);
+        return coerceBin(context, sites(context).op_exp, other);
     }
 
     
@@ -666,7 +667,7 @@ public class RubyRational extends RubyNumeric {
             }
             return f_cmp(context, f_sub(context, num1, num2), RubyFixnum.zero(context.runtime));
         }
-        return coerceBin(context, "<=>", other);             
+        return coerceBin(context, sites(context).op_cmp, other);
     }
 
     /** nurat_equal_p
@@ -1113,8 +1114,12 @@ public class RubyRational extends RubyNumeric {
         if (Numeric.CANON && canonicalization) {
             x = newRationalRaw(context.runtime, x);
         } else {
-            x = TypeConverter.convertToType(x, context.runtime.getRational(), "to_r");
+            x = TypeConverter.convertToType(context, x, context.runtime.getRational(), sites(context).to_r_checked);
         }
-        return x.callMethod(context, "/", y);
+        return sites(context).op_quo.call(context, x, x, y);
+    }
+
+    private static JavaSites.RationalSites sites(ThreadContext context) {
+        return context.sites.Rational;
     }
 }

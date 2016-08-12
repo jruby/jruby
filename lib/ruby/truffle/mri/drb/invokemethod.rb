@@ -1,1 +1,1 @@
-require_relative '../../stdlib/drb/invokemethod'
+require_relative '../../../stdlib/drb/invokemethod'

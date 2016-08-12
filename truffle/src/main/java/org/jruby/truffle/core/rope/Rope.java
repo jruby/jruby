@@ -25,6 +25,8 @@ public abstract class Rope {
     protected byte[] bytes;
 
     protected Rope(Encoding encoding, CodeRange codeRange, boolean singleByteOptimizable, int byteLength, int characterLength, int ropeDepth, byte[] bytes) {
+        assert encoding != null;
+
         this.encoding = encoding;
         this.codeRange = codeRange;
         this.singleByteOptimizable = singleByteOptimizable;

@@ -19,7 +19,6 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 public class ConcatHashLiteralNode extends RubyNode {
 
@@ -37,10 +36,10 @@ public class ConcatHashLiteralNode extends RubyNode {
 
     @TruffleBoundary
     private Object buildHash(DynamicObject[] parts) {
-        final List<Map.Entry<Object, Object>> keyValues = new ArrayList<>();
+        final List<KeyValue> keyValues = new ArrayList<>();
 
         for (int i = 0; i < parts.length; i++) {
-            for (Map.Entry<Object, Object> keyValue : HashOperations.iterableKeyValues(parts[i])) {
+            for (KeyValue keyValue : HashOperations.iterableKeyValues(parts[i])) {
                 keyValues.add(keyValue);
             }
         }

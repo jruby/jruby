@@ -1,2 +1,2 @@
-require_relative '../../../../stdlib/test/unit/ui/' + File.basename(__FILE__)
+require_relative '../../../../../stdlib/test/unit/ui/' + File.basename(__FILE__)
 

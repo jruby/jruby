@@ -57,6 +57,8 @@ import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.Helpers;
+import org.jruby.runtime.JavaSites;
+import org.jruby.runtime.JavaSites.KernelSites;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.DynamicScope;
@@ -235,7 +237,7 @@ public class RubyKernel {
         Ruby runtime = context.runtime;
 
         if (lastCallType != CallType.VARIABLE) {
-            throw runtime.newNoMethodError(getMethodMissingFormat(lastVis, lastCallType), recv, name, RubyArray.newArrayNoCopy(runtime, args, dropFirst ? 1 : 0));
+            throw runtime.newNoMethodError(getMethodMissingFormat(lastVis, lastCallType), recv, name, RubyArray.newArrayMayCopy(runtime, args, dropFirst ? 1 : 0));
         } else {
             throw runtime.newNameError(getMethodMissingFormat(lastVis, lastCallType), recv, name);
         }
@@ -307,18 +309,19 @@ public class RubyKernel {
     public static IRubyObject getc(ThreadContext context, IRubyObject recv) {
         context.runtime.getWarnings().warn(ID.DEPRECATED_METHOD, "getc is obsolete; use STDIN.getc instead");
         IRubyObject defin = context.runtime.getGlobalVariables().get("$stdin");
-        return defin.callMethod(context, "getc");
+        return sites(context).getc.call(context, defin, defin);
     }
 
     // MRI: rb_f_gets
     @JRubyMethod(optional = 1, module = true, visibility = PRIVATE)
     public static IRubyObject gets(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = context.runtime;
+        IRubyObject argsFile = runtime.getArgsFile();
 
-        if (recv == runtime.getArgsFile()) {
-            return RubyArgsFile.gets(context, runtime.getArgsFile(), args);
+        if (recv == argsFile) {
+            return RubyArgsFile.gets(context, argsFile, args);
         }
-        return runtime.getArgsFile().callMethod(context, "gets", args);
+        return sites(context).gets.call(context, argsFile, argsFile, args);
     }
 
     @JRubyMethod(optional = 1, module = true, visibility = PRIVATE)
@@ -328,7 +331,8 @@ public class RubyKernel {
         RubyString message = null;
         if(args.length == 1) {
             message = args[0].convertToString();
-            runtime.getGlobalVariables().get("$stderr").callMethod(context, "puts", message);
+            IRubyObject stderr = runtime.getGlobalVariables().get("$stderr");
+            sites(context).puts.call(context, stderr, stderr, message);
         }
 
         exit(runtime, new IRubyObject[] { runtime.getFalse(), message }, false);
@@ -343,28 +347,34 @@ public class RubyKernel {
 
     @JRubyMethod(name = "Complex", module = true, visibility = PRIVATE)
     public static IRubyObject new_complex(ThreadContext context, IRubyObject recv) {
-        return Helpers.invoke(context, context.runtime.getComplex(), "convert");
+        RubyClass complex = context.runtime.getComplex();
+        return sites(context).convert_complex.call(context, complex, complex);
     }
     @JRubyMethod(name = "Complex", module = true, visibility = PRIVATE)
-    public static IRubyObject new_complex(ThreadContext context, IRubyObject recv, IRubyObject arg) {
-        return Helpers.invoke(context, context.runtime.getComplex(), "convert", arg);
+    public static IRubyObject new_complex(ThreadContext context, IRubyObject recv, IRubyObject arg0) {
+        RubyClass complex = context.runtime.getComplex();
+        return sites(context).convert_complex.call(context, complex, complex, arg0);
     }
     @JRubyMethod(name = "Complex", module = true, visibility = PRIVATE)
     public static IRubyObject new_complex(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1) {
-        return Helpers.invoke(context, context.runtime.getComplex(), "convert", arg0, arg1);
+        RubyClass complex = context.runtime.getComplex();
+        return sites(context).convert_complex.call(context, complex, complex, arg0, arg1);
     }
 
     @JRubyMethod(name = "Rational", module = true, visibility = PRIVATE)
     public static IRubyObject new_rational(ThreadContext context, IRubyObject recv) {
-        return Helpers.invoke(context, context.runtime.getRational(), "convert");
+        RubyClass rational = context.runtime.getRational();
+        return sites(context).convert_rational.call(context, rational, rational);
     }
     @JRubyMethod(name = "Rational", module = true, visibility = PRIVATE)
-    public static IRubyObject new_rational(ThreadContext context, IRubyObject recv, IRubyObject arg) {
-        return Helpers.invoke(context, context.runtime.getRational(), "convert", arg);
+    public static IRubyObject new_rational(ThreadContext context, IRubyObject recv, IRubyObject arg0) {
+        RubyClass rational = context.runtime.getRational();
+        return sites(context).convert_rational.call(context, rational, rational, arg0);
     }
     @JRubyMethod(name = "Rational", module = true, visibility = PRIVATE)
     public static IRubyObject new_rational(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1) {
-        return Helpers.invoke(context, context.runtime.getRational(), "convert", arg0, arg1);
+        RubyClass rational = context.runtime.getRational();
+        return sites(context).convert_rational.call(context, rational, rational, arg0, arg1);
     }
 
     public static RubyFloat new_float(IRubyObject recv, IRubyObject object) {
@@ -392,16 +402,18 @@ public class RubyKernel {
         } else if(object.isNil()){
             throw runtime.newTypeError("can't convert nil into Float");
         } else {
-            return (RubyFloat)TypeConverter.convertToType19(object, runtime.getFloat(), "to_f");
+            ThreadContext context = runtime.getCurrentContext();
+            KernelSites sites = sites(context);
+            return (RubyFloat)TypeConverter.convertToType19(context, object, runtime.getFloat(), sites.to_f_checked);
         }
     }
 
     @JRubyMethod(name = "Hash", required = 1, module = true, visibility = PRIVATE)
     public static IRubyObject new_hash(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         IRubyObject tmp;
-        Ruby runtime = recv.getRuntime();
+        Ruby runtime = context.runtime;
         if (arg.isNil()) return RubyHash.newHash(runtime);
-        tmp = TypeConverter.checkHashType(runtime, arg);
+        tmp = TypeConverter.checkHashType(context, sites(context).to_hash_checked, arg);
         if (tmp.isNil()) {
             if (arg instanceof RubyArray && ((RubyArray) arg).isEmpty()) {
                 return RubyHash.newHash(runtime);
@@ -436,10 +448,11 @@ public class RubyKernel {
     @JRubyMethod(name = "String", required = 1, module = true, visibility = PRIVATE)
     public static IRubyObject new_string19(ThreadContext context, IRubyObject recv, IRubyObject object) {
         Ruby runtime = context.runtime;
+        KernelSites sites = sites(context);
 
-        IRubyObject tmp = TypeConverter.checkStringType(runtime, object);
+        IRubyObject tmp = TypeConverter.checkStringType(context, sites.to_str_checked, object, runtime.getString());
         if (tmp.isNil()) {
-            tmp = TypeConverter.convertToType19(object, context.runtime.getString(), "to_s");
+            tmp = TypeConverter.convertToType19(context, object, runtime.getString(), sites(context).to_s_checked);
         }
         return tmp;
     }
@@ -496,7 +509,7 @@ public class RubyKernel {
         if (recv == defout) {
             return RubyIO.putc(context, recv, ch);
         }
-        return defout.callMethod(context, "putc", ch);
+        return sites(context).putc.call(context, defout, defout, ch);
     }
 
     @JRubyMethod(module = true, visibility = PRIVATE)
@@ -507,7 +520,7 @@ public class RubyKernel {
             return RubyIO.puts0(context, recv);
         }
 
-        return defout.callMethod(context, "puts");
+        return sites(context).puts.call(context, defout, defout);
     }
 
     @JRubyMethod(module = true, visibility = PRIVATE)
@@ -518,7 +531,7 @@ public class RubyKernel {
             return RubyIO.puts1(context, recv, arg0);
         }
 
-        return defout.callMethod(context, "puts", arg0);
+        return sites(context).puts.call(context, defout, defout, arg0);
     }
 
     @JRubyMethod(module = true, visibility = PRIVATE)
@@ -529,7 +542,7 @@ public class RubyKernel {
             return RubyIO.puts2(context, recv, arg0, arg1);
         }
 
-        return defout.callMethod(context, "puts", new IRubyObject[]{arg0, arg1});
+        return sites(context).puts.call(context, defout, defout, arg0, arg1);
     }
 
     @JRubyMethod(module = true, visibility = PRIVATE)
@@ -540,7 +553,7 @@ public class RubyKernel {
             return RubyIO.puts3(context, recv, arg0, arg1, arg2);
         }
 
-        return defout.callMethod(context, "puts", new IRubyObject[]{arg0, arg1, arg2});
+        return sites(context).puts.call(context, defout, defout, arg0, arg1, arg2);
     }
 
     @JRubyMethod(rest = true, module = true, visibility = PRIVATE)
@@ -551,7 +564,7 @@ public class RubyKernel {
             return RubyIO.puts(context, recv, args);
         }
 
-        return defout.callMethod(context, "puts", args);
+        return sites(context).puts.call(context, defout, defout, args);
     }
 
     // rb_f_print
@@ -786,7 +799,7 @@ public class RubyKernel {
         if (args.length == 2 && args[1] instanceof RubyHash) {
             arg = args[1];
         } else {
-            RubyArray newArgs = context.runtime.newArrayNoCopy(args);
+            RubyArray newArgs = RubyArray.newArrayMayCopy(context.runtime, args);
             newArgs.shift(context);
             arg = newArgs;
         }
@@ -1129,6 +1142,8 @@ public class RubyKernel {
         return rbThrowInternal(context, tag, value);
     }
 
+    private static final byte[] uncaught_throw_p = { 'u','n','c','a','u','g','h','t',' ','t','h','r','o','w',' ','%','p' };
+
     private static IRubyObject rbThrowInternal(ThreadContext context, IRubyObject tag, IRubyObject arg) {
         final Ruby runtime = context.runtime;
         runtime.getGlobalVariables().set("$!", context.nil);
@@ -1142,13 +1157,7 @@ public class RubyKernel {
 
         // No catch active for this throw
         IRubyObject value = arg == null ? context.nil : arg;
-        String message = "uncaught throw %p";
-
-        final RubyThread currentThread = context.getThread();
-        if (currentThread != runtime.getThreadService().getMainThread()) {
-            message += " in thread 0x" + Integer.toHexString(RubyInteger.fix2int(currentThread.id()));
-        }
-        throw uncaughtThrow(runtime, tag, value, runtime.newString(message));
+        throw uncaughtThrow(runtime, tag, value, RubyString.newStringShared(runtime, uncaught_throw_p));
     }
 
     private static RaiseException uncaughtThrow(Ruby runtime, IRubyObject tag, IRubyObject value, RubyString message) {
@@ -1157,23 +1166,20 @@ public class RubyKernel {
 
     @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject warn(ThreadContext context, IRubyObject recv, IRubyObject message) {
-        Ruby runtime = context.runtime;
+        final Ruby runtime = context.runtime;
 
         if (runtime.warningsEnabled()) {
             IRubyObject out = runtime.getGlobalVariables().get("$stderr");
-            Helpers.invoke(context, out, "write", message);
-            Helpers.invoke(context, out, "write", runtime.getGlobalVariables().getDefaultSeparator());
+            sites(context).write.call(context, out, out, message);
+            sites(context).write.call(context, out, out, runtime.getGlobalVariables().getDefaultSeparator());
         }
-        return runtime.getNil();
+        return context.nil;
     }
 
     @JRubyMethod(module = true, required = 1, rest = true, visibility = PRIVATE)
     public static IRubyObject warn(ThreadContext context, IRubyObject recv, IRubyObject... messages) {
-        Ruby runtime = context.runtime;
-
         for (IRubyObject message : messages) warn(context, recv, message);
-
-        return runtime.getNil();
+        return context.nil;
     }
 
     @JRubyMethod(module = true, visibility = PRIVATE)
@@ -1194,7 +1200,7 @@ public class RubyKernel {
         String var = args[0].toString();
         // ignore if it's not a global var
         if (var.charAt(0) != '$') {
-            return context.runtime.getNil();
+            return context.nil;
         }
         if (args.length == 1) {
             proc = RubyProc.newProc(context.runtime, block, Block.Type.PROC);
@@ -1205,7 +1211,7 @@ public class RubyKernel {
 
         context.runtime.getGlobalVariables().setTraceVar(var, proc);
 
-        return context.runtime.getNil();
+        return context.nil;
     }
 
     @JRubyMethod(required = 1, optional = 1, module = true, visibility = PRIVATE)
@@ -1217,11 +1223,11 @@ public class RubyKernel {
 
         // ignore if it's not a global var
         if (var.charAt(0) != '$') {
-            return context.runtime.getNil();
+            return context.nil;
         }
 
         if (args.length > 1) {
-            ArrayList<IRubyObject> success = new ArrayList<IRubyObject>();
+            ArrayList<IRubyObject> success = new ArrayList<>(args.length);
             for (int i = 1; i < args.length; i++) {
                 if (context.runtime.getGlobalVariables().untraceVar(var, args[i])) {
                     success.add(args[i]);
@@ -1232,7 +1238,7 @@ public class RubyKernel {
             context.runtime.getGlobalVariables().untraceVar(var);
         }
 
-        return context.runtime.getNil();
+        return context.nil;
     }
 
     @JRubyMethod(required = 1, optional = 1, reads = VISIBILITY)
@@ -1259,8 +1265,9 @@ public class RubyKernel {
         }
     }
 
+    @JRubyMethod(name = "proc", module = true, visibility = PRIVATE)
     public static RubyProc proc(ThreadContext context, IRubyObject recv, Block block) {
-        return proc_1_9(context, recv, block);
+        return context.runtime.newProc(Block.Type.PROC, block);
     }
 
     @JRubyMethod(module = true, visibility = PRIVATE)
@@ -1271,9 +1278,9 @@ public class RubyKernel {
         return context.runtime.newProc(type, block);
     }
 
-    @JRubyMethod(name = "proc", module = true, visibility = PRIVATE)
+    @Deprecated
     public static RubyProc proc_1_9(ThreadContext context, IRubyObject recv, Block block) {
-        return context.runtime.newProc(Block.Type.PROC, block);
+        return proc(context, recv, block);
     }
 
     @JRubyMethod(name = "loop", module = true, visibility = PRIVATE)
@@ -1480,9 +1487,7 @@ public class RubyKernel {
             length = newPos;
         }
         ByteList buf = new ByteList(out, 0, length, runtime.getDefaultExternalEncoding(), false);
-        RubyString newString = RubyString.newString(runtime, buf);
-
-        return newString;
+        return RubyString.newString(runtime, buf);
     }
 
     @JRubyMethod(module = true, visibility = PRIVATE)
@@ -1836,14 +1841,16 @@ public class RubyKernel {
         return ((RubyBasicObject)self).initialize_copy(original);
     }
 
+    // Replaced in jruby/kernel/kernel.rb with Ruby for better caching
     @JRubyMethod(name = "initialize_clone", required = 1, visibility = Visibility.PRIVATE)
     public static IRubyObject initialize_clone(ThreadContext context, IRubyObject self, IRubyObject original) {
-        return self.callMethod(context, "initialize_copy", original);
+        return sites(context).initialize_copy.call(context, self, self, original);
     }
 
+    // Replaced in jruby/kernel/kernel.rb with Ruby for better caching
     @JRubyMethod(name = "initialize_dup", required = 1, visibility = Visibility.PRIVATE)
     public static IRubyObject initialize_dup(ThreadContext context, IRubyObject self, IRubyObject original) {
-        return self.callMethod(context, "initialize_copy", original);
+        return sites(context).initialize_copy.call(context, self, self, original);
     }
 
     public static RubyBoolean respond_to_p(IRubyObject self, IRubyObject mname) {
@@ -2096,6 +2103,10 @@ public class RubyKernel {
         public static IRubyObject chomp(ThreadContext context, IRubyObject recv, IRubyObject arg0) {
             return context.setLastLine(getLastlineString(context, context.runtime).chomp(context, arg0));
         }
+    }
+
+    private static KernelSites sites(ThreadContext context) {
+        return context.sites.Kernel;
     }
 
     @Deprecated

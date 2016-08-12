@@ -63,6 +63,8 @@ public class ExceptionTranslatingNode extends RubyNode {
         } catch (StackOverflowError error) {
             errorProfile.enter();
             throw new RaiseException(translate(error));
+        } catch (ThreadDeath death) {
+            throw death;
         } catch (Throwable exception) {
             errorProfile.enter();
             throw new RaiseException(translate(exception));
@@ -162,17 +164,29 @@ public class ExceptionTranslatingNode extends RubyNode {
             throwable.printStackTrace();
         }
 
-        final StringBuilder message = new StringBuilder();
-        message.append(throwable.getClass().getSimpleName());
-        message.append(" ");
-        message.append(throwable.getMessage());
+        final String message = throwable.getMessage();
+        final String reportedMessage;
 
-        if (throwable.getStackTrace().length > 0) {
-            message.append(" ");
-            message.append(throwable.getStackTrace()[0].toString());
+        if (message != null && message.startsWith("LLVM error")) {
+            reportedMessage = message;
+        } else {
+            final StringBuilder messageBuilder = new StringBuilder();
+            messageBuilder.append(throwable.getClass().getSimpleName());
+            messageBuilder.append(" ");
+            if (message != null) {
+                messageBuilder.append(message);
+            } else {
+                messageBuilder.append("<no message>");
+            }
+
+            if (throwable.getStackTrace().length > 0) {
+                messageBuilder.append(" ");
+                messageBuilder.append(throwable.getStackTrace()[0].toString());
+            }
+            reportedMessage = messageBuilder.toString();
         }
 
-        return coreExceptions().internalError(message.toString(), this, throwable);
+        return coreExceptions().internalError(reportedMessage, this, throwable);
     }
 
 }

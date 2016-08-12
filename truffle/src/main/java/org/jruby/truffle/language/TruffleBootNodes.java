@@ -28,11 +28,13 @@ import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.builtins.CoreMethodNode;
 import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.language.control.JavaException;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.loader.CodeLoader;
 import org.jruby.truffle.language.loader.SourceLoader;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.parser.ParserContext;
+import org.jruby.truffle.util.ByteListUtils;
 import org.jruby.util.ByteList;
 import org.jruby.util.Memo;
 
@@ -89,24 +91,20 @@ public abstract class TruffleBootNodes {
     public abstract static class RunJRubyRootNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
-        public Object runJRubyRootNode(VirtualFrame frame, @Cached("create()")IndirectCallNode callNode) {
+        public Object runJRubyRootNode(VirtualFrame frame, @Cached("create()") IndirectCallNode callNode) {
             coreLibrary().getGlobalVariables().put(
                     "$0",
                     StringOperations.createString(getContext(),
-                            ByteList.create(getContext().getJRubyInterop().getArg0())));
+                            ByteListUtils.create(getContext().getJRubyInterop().getArg0())));
 
             String inputFile = getContext().getJRubyInterop().getOriginalInputFile();
 
             final Source source;
 
             try {
-                if (!inputFile.equals("-e")) {
-                    inputFile = new File(inputFile).getCanonicalPath();
-                }
-
                 source = getContext().getSourceCache().getSource(inputFile);
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                throw new JavaException(e);
             }
 
             final RubyRootNode rootNode = getContext().getCodeLoader().parse(
@@ -163,31 +161,7 @@ public abstract class TruffleBootNodes {
         }
 
     }
-
-    @CoreMethod(names = "require_core", isModuleFunction = true, required = 1)
-    public abstract static class RequireCoreNode extends CoreMethodArrayArgumentsNode {
-
-        @Specialization(guards = "isRubyString(feature)")
-        public boolean requireRelative(VirtualFrame frame, DynamicObject feature, @Cached("create()") IndirectCallNode callNode) {
-            final CoreLibrary coreLibrary = getContext().getCoreLibrary();
-            if (!(coreLibrary.isLoadingRubyCore() || getContext().getOptions().PLATFORM_SAFE_LOAD)) {
-                throw new RaiseException(coreExceptions().internalErrorUnsafe(this));
-            }
-
-            final CodeLoader codeLoader = getContext().getCodeLoader();
-            final String path = coreLibrary.getCoreLoadPath() + "/" + feature.toString() + ".rb";
-            try {
-                final RubyRootNode rootNode = codeLoader.parse(getContext().getSourceCache().getSource(path), UTF8Encoding.INSTANCE, ParserContext.TOP_LEVEL, null, true, this);
-                final CodeLoader.DeferredCall deferredCall = codeLoader.prepareExecute(ParserContext.TOP_LEVEL, DeclarationContext.TOP_LEVEL, rootNode, null, coreLibrary.getMainObject());
-                deferredCall.callWithoutCallNode();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-
-            return true;
-        }
-    }
-
+    
     @CoreMethod(names = "source_of_caller", isModuleFunction = true)
     public abstract static class SourceOfCallerNode extends CoreMethodArrayArgumentsNode {
 

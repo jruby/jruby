@@ -10,6 +10,7 @@
 package org.jruby.truffle.interop;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
@@ -27,7 +28,9 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.language.PerformanceWarnings;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.control.JavaException;
 
 @NodeChildren({
         @NodeChild("receiver"),
@@ -65,9 +68,10 @@ public abstract class OutgoingForeignCallNode extends RubyNode {
             VirtualFrame frame,
             TruffleObject receiver,
             Object[] args) {
-        CompilerDirectives.bailout("can't compile megamorphic outgoing foreign calls");
+        PerformanceWarnings.warn("megamorphic outgoing foreign call");
 
         if (megamorphicToForeignNode == null) {
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             megamorphicToForeignNode = insert(RubyToForeignNodeGen.create(getContext(), null, null));
         }
 
@@ -80,6 +84,7 @@ public abstract class OutgoingForeignCallNode extends RubyNode {
         return createHelperNode(args.length).executeCall(frame, receiver, foreignArgs);
     }
 
+    @TruffleBoundary
     protected OutgoingNode createHelperNode(int argsLength) {
         if (name.equals("[]") && argsLength == 1) {
             return new IndexReadOutgoingNode();
@@ -155,7 +160,7 @@ public abstract class OutgoingForeignCallNode extends RubyNode {
                 return ForeignAccess.sendRead(node, frame, receiver, args[0]);
             } catch (UnknownIdentifierException | UnsupportedMessageException e) {
                 exceptionProfile();
-                throw new RuntimeException(e);
+                throw new JavaException(e);
             }
         }
 
@@ -177,7 +182,7 @@ public abstract class OutgoingForeignCallNode extends RubyNode {
                 return ForeignAccess.sendWrite(node, frame, receiver, args[0], args[1]);
             } catch (UnknownIdentifierException | UnsupportedMessageException | UnsupportedTypeException e) {
                 exceptionProfile();
-                throw new RuntimeException(e);
+                throw new JavaException(e);
             }
         }
 
@@ -202,7 +207,7 @@ public abstract class OutgoingForeignCallNode extends RubyNode {
                 return ForeignAccess.sendRead(node, frame, receiver, name);
             } catch (UnknownIdentifierException | UnsupportedMessageException e) {
                 exceptionProfile();
-                throw new RuntimeException(e);
+                throw new JavaException(e);
             }
         }
 
@@ -227,7 +232,7 @@ public abstract class OutgoingForeignCallNode extends RubyNode {
                 return ForeignAccess.sendWrite(node, frame, receiver, name, args[0]);
             } catch (UnknownIdentifierException | UnsupportedMessageException | UnsupportedTypeException e) {
                 exceptionProfile();
-                throw new RuntimeException(e);
+                throw new JavaException(e);
             }
         }
 
@@ -252,7 +257,7 @@ public abstract class OutgoingForeignCallNode extends RubyNode {
                 return ForeignAccess.sendExecute(node, frame, receiver, args);
             } catch (UnsupportedTypeException | ArityException | UnsupportedMessageException e) {
                 exceptionProfile();
-                throw new RuntimeException(e);
+                throw new JavaException(e);
             }
         }
 
@@ -296,7 +301,7 @@ public abstract class OutgoingForeignCallNode extends RubyNode {
                 return ForeignAccess.sendInvoke(node, frame, receiver, name, args);
             } catch (UnsupportedTypeException | ArityException | UnsupportedMessageException | UnknownIdentifierException e) {
                 exceptionProfile();
-                throw new RuntimeException(e);
+                throw new JavaException(e);
             }
         }
 

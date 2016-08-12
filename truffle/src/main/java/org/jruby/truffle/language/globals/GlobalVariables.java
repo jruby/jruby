@@ -30,12 +30,12 @@ public class GlobalVariables {
     }
 
     public Object getOrDefault(String key, Object defaultValue) {
-        final Object v;
-        return ((v = get(key)) != null) ? v : defaultValue;
+        final Object value = get(key);
+        return (value != null) ? value : defaultValue;
     }
 
     public Object get(String key) {
-        return getStorage(key).value;
+        return getStorage(key).getValue();
     }
 
     @TruffleBoundary
@@ -43,8 +43,8 @@ public class GlobalVariables {
         final GlobalVariableStorage currentStorage = variables.get(key);
         if (currentStorage == null) {
             final GlobalVariableStorage newStorage = new GlobalVariableStorage(defaultValue);
-            final GlobalVariableStorage racyNewStorage = variables.putIfAbsent(key, newStorage);
-            return (racyNewStorage == null) ? newStorage : racyNewStorage;
+            final GlobalVariableStorage prevStorage = variables.putIfAbsent(key, newStorage);
+            return (prevStorage == null) ? newStorage : prevStorage;
         } else {
             return currentStorage;
         }
@@ -52,7 +52,7 @@ public class GlobalVariables {
 
     public GlobalVariableStorage put(String key, Object value) {
         GlobalVariableStorage storage = getStorage(key);
-        storage.value = value;
+        storage.setValue(value);
         return storage;
     }
 
@@ -64,7 +64,7 @@ public class GlobalVariables {
         final Collection<GlobalVariableStorage> storages = variables.values();
         final ArrayList<DynamicObject> values = new ArrayList<>(storages.size());
         for (GlobalVariableStorage storage : storages) {
-            final Object value = storage.value;
+            final Object value = storage.getValue();
             if (value instanceof DynamicObject) {
                 values.add((DynamicObject) value);
             }

@@ -39,6 +39,13 @@ public class RubyTckTest extends TruffleTCK {
     }
 
     @Override
+    protected PolyglotEngine prepareVM(PolyglotEngine.Builder preparedBuilder) throws Exception {
+        final PolyglotEngine engine = preparedBuilder.build();
+        engine.eval(Source.fromFileName("src/test/ruby/tck.rb"));
+        return engine;
+    }
+
+    @Override
     protected String mimeType() {
         return RubyLanguage.MIME_TYPE;
     }
@@ -126,6 +133,11 @@ public class RubyTckTest extends TruffleTCK {
     @Override
     protected String addToArray() {
         return "add_array";
+    }
+
+    @Override
+    protected String countUpWhile() {
+        return "count_up_while";
     }
 
     @Override

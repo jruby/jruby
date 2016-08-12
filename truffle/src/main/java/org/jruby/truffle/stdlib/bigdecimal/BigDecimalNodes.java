@@ -16,6 +16,7 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.Node.Child;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.profiles.ConditionProfile;
@@ -36,7 +37,7 @@ import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.SnippetNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
-
+import org.jruby.truffle.language.objects.AllocateObjectNode;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.MathContext;
@@ -88,6 +89,7 @@ public abstract class BigDecimalNodes {
     @NodeChild(value = "precision", type = RubyNode.class)
     public abstract static class AddNode extends AbstractAddNode {
 
+        @Override
         @Specialization(guards = {
                 "isNormal(a)",
                 "isNormalRubyBigDecimal(b)"
@@ -96,6 +98,7 @@ public abstract class BigDecimalNodes {
             return super.add(frame, a, b, precision);
         }
 
+        @Override
         @Specialization(guards = {
                 "isRubyBigDecimal(b)",
                 "!isNormal(a) || !isNormal(b)"
@@ -129,6 +132,7 @@ public abstract class BigDecimalNodes {
     @NodeChild(value = "precision", type = RubyNode.class)
     public abstract static class SubNode extends AbstractSubNode {
 
+        @Override
         @Specialization(guards = {
                 "isNormal(a)",
                 "isNormalRubyBigDecimal(b)"
@@ -137,6 +141,7 @@ public abstract class BigDecimalNodes {
             return super.subNormal(frame, a, b, precision);
         }
 
+        @Override
         @Specialization(guards = {
                 "isRubyBigDecimal(b)",
                 "!isNormal(a) || !isNormal(b)"
@@ -235,6 +240,7 @@ public abstract class BigDecimalNodes {
     @NodeChild(value = "precision", type = RubyNode.class)
     public abstract static class MultNode extends AbstractMultNode {
 
+        @Override
         @Specialization(guards = {
                 "isNormal(a)",
                 "isNormalRubyBigDecimal(b)"
@@ -243,6 +249,7 @@ public abstract class BigDecimalNodes {
             return super.mult(frame, a, b, precision);
         }
 
+        @Override
         @Specialization(guards = {
                 "isNormal(a)",
                 "isSpecialRubyBigDecimal(b)"
@@ -251,6 +258,7 @@ public abstract class BigDecimalNodes {
             return super.multNormalSpecial(frame, a, b, precision);
         }
 
+        @Override
         @Specialization(guards = {
                 "!isNormal(a)",
                 "isNormalRubyBigDecimal(b)"
@@ -259,6 +267,7 @@ public abstract class BigDecimalNodes {
             return super.multSpecialNormal(frame, a, b, precision);
         }
 
+        @Override
         @Specialization(guards = {
                 "!isNormal(a)",
                 "isSpecialRubyBigDecimal(b)"
@@ -324,7 +333,7 @@ public abstract class BigDecimalNodes {
                 throw new RaiseException(coreExceptions().zeroDivisionError(this));
             } else {
                 final Object result = div(frame, a, b, 0);
-                return floorNode.call(frame, result, "floor", null);
+                return floorNode.call(frame, result, "floor");
             }
         }
 
@@ -369,6 +378,7 @@ public abstract class BigDecimalNodes {
             }
         }
 
+        @Override
         @Specialization(guards = {
                 "isNormal(a)",
                 "isSpecialRubyBigDecimal(b)"
@@ -402,6 +412,7 @@ public abstract class BigDecimalNodes {
             }
         }
 
+        @Override
         @Specialization(guards = {
                 "!isNormal(a)",
                 "isNormalRubyBigDecimal(b)"
@@ -432,6 +443,7 @@ public abstract class BigDecimalNodes {
             }
         }
 
+        @Override
         @Specialization(guards = {
                 "!isNormal(a)",
                 "isSpecialRubyBigDecimal(b)"
@@ -521,7 +533,7 @@ public abstract class BigDecimalNodes {
 
             if (negNormalProfile.profile(aType == BigDecimalType.POSITIVE_INFINITY || aType == BigDecimalType.NEGATIVE_INFINITY)) {
                 final int signA = aType == BigDecimalType.POSITIVE_INFINITY ? 1 : -1;
-                final int signB = Integer.signum(signIntegerCast.executeCastInt(signCall.call(frame, b, "sign", null)));
+                final int signB = Integer.signum(signIntegerCast.executeCastInt(signCall.call(frame, b, "sign")));
                 final int sign = signA * signB; // is between -1 and 1, 0 when nan
 
                 final BigDecimalType type = new BigDecimalType[]{ BigDecimalType.NEGATIVE_INFINITY, BigDecimalType.NAN, BigDecimalType.POSITIVE_INFINITY }[sign + 1];
@@ -1378,9 +1390,11 @@ public abstract class BigDecimalNodes {
     @CoreMethod(names = "allocate", constructor = true)
     public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
 
+        @Child private AllocateObjectNode allocateNode = AllocateObjectNode.create();
+
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
-            return Layouts.BIG_DECIMAL.createBigDecimal(Layouts.CLASS.getInstanceFactory(rubyClass), BigDecimal.ZERO, BigDecimalType.NORMAL);
+            return allocateNode.allocate(rubyClass, BigDecimal.ZERO, BigDecimalType.NORMAL);
         }
 
     }

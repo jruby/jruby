@@ -50,7 +50,6 @@ public class SuperCallNode extends RubyNode {
         this.callMethodNode = CallInternalMethodNodeGen.create(context, sourceSection, null, new RubyNode[] {});
     }
 
-    @ExplodeLoop
     @Override
     public final Object execute(VirtualFrame frame) {
         final Object self = RubyArguments.getSelf(frame);
@@ -91,7 +90,7 @@ public class SuperCallNode extends RubyNode {
             CompilerDirectives.transferToInterpreterAndInvalidate();
             callMethodMissingNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf(getContext()));
         }
-        return callMethodMissingNode.call(frame, receiver, "method_missing", block, arguments);
+        return callMethodMissingNode.callWithBlock(frame, receiver, "method_missing", block, arguments);
     }
 
 }

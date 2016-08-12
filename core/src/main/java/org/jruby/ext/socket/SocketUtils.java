@@ -29,6 +29,8 @@ package org.jruby.ext.socket;
 import jnr.constants.platform.AddressFamily;
 import jnr.constants.platform.ProtocolFamily;
 import jnr.constants.platform.Sock;
+import jnr.constants.platform.SocketLevel;
+import jnr.constants.platform.SocketOption;
 import jnr.netdb.Protocol;
 import jnr.netdb.Service;
 import org.jruby.Ruby;
@@ -92,14 +94,14 @@ public class SocketUtils {
 
     public static IRubyObject gethostbyaddr(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.runtime;
-        IRubyObject[] ret = new IRubyObject[4];
+        IRubyObject ret0, ret1, ret2, ret3;
 
-        ret[0] = runtime.newString(Sockaddr.addressFromString(runtime, args[0].convertToString().toString()).getCanonicalHostName());
-        ret[1] = runtime.newArray();
-        ret[2] = runtime.newFixnum(2); // AF_INET
-        ret[3] = args[0];
+        ret0 = runtime.newString(Sockaddr.addressFromString(runtime, args[0].convertToString().toString()).getCanonicalHostName());
+        ret1 = runtime.newArray();
+        ret2 = runtime.newFixnum(2); // AF_INET
+        ret3 = args[0];
 
-        return runtime.newArrayNoCopy(ret);
+        return RubyArray.newArray(runtime, ret0, ret1, ret2, ret3);
     }
 
     public static IRubyObject getservbyname(ThreadContext context, IRubyObject[] args) {
@@ -143,7 +145,7 @@ public class SocketUtils {
         return Sockaddr.pack_sockaddr_in(context, portNum, hostStr);
     }
 
-    public static IRubyObject unpack_sockaddr_in(ThreadContext context, IRubyObject addr) {
+    public static RubyArray unpack_sockaddr_in(ThreadContext context, IRubyObject addr) {
         return Sockaddr.unpack_sockaddr_in(context, addr);
     }
 
@@ -171,13 +173,13 @@ public class SocketUtils {
 
         try {
             InetAddress addr = getRubyInetAddress(hostname.convertToString().getByteList());
-            IRubyObject[] ret = new IRubyObject[4];
+            IRubyObject ret0, ret1, ret2, ret3;
 
-            ret[0] = runtime.newString(addr.getCanonicalHostName());
-            ret[1] = runtime.newArray();
-            ret[2] = runtime.newFixnum(2); // AF_INET
-            ret[3] = runtime.newString(new ByteList(addr.getAddress()));
-            return runtime.newArrayNoCopy(ret);
+            ret0 = runtime.newString(addr.getCanonicalHostName());
+            ret1 = runtime.newArray();
+            ret2 = runtime.newFixnum(2); // AF_INET
+            ret3 = runtime.newString(new ByteList(addr.getAddress()));
+            return RubyArray.newArray(runtime, ret0, ret1, ret2, ret3);
 
         } catch(UnknownHostException e) {
             throw sockerr(runtime, "gethostbyname: name or service not known");
@@ -222,7 +224,7 @@ public class SocketUtils {
                     c[4] = runtime.newFixnum(is_ipv6 ? PF_INET6 : PF_INET);
                     c[5] = runtime.newFixnum(SOCK_DGRAM);
                     c[6] = runtime.newFixnum(IPPROTO_UDP);
-                    l.add(runtime.newArrayNoCopy(c));
+                    l.add(RubyArray.newArrayMayCopy(runtime, c));
                 }
 
                 if (sock_stream) {
@@ -234,7 +236,7 @@ public class SocketUtils {
                     c[4] = runtime.newFixnum(is_ipv6 ? PF_INET6 : PF_INET);
                     c[5] = runtime.newFixnum(SOCK_STREAM);
                     c[6] = runtime.newFixnum(IPPROTO_TCP);
-                    l.add(runtime.newArrayNoCopy(c));
+                    l.add(RubyArray.newArrayMayCopy(runtime, c));
                 }
             }
         });
@@ -380,39 +382,30 @@ public class SocketUtils {
         String host, port;
 
         if (arg0 instanceof RubyArray) {
-            List list = ((RubyArray)arg0).getList();
-            int len = list.size();
+            RubyArray ary = (RubyArray) arg0;
+            final int len = ary.size();
 
             if (len < 3 || len > 4) {
-                throw runtime.newArgumentError("array size should be 3 or 4, "+len+" given");
+                throw runtime.newArgumentError("array size should be 3 or 4, "+ len +" given");
             }
 
             // if array has 4 elements, third element is ignored
-            host = list.size() == 3 ? list.get(2).toString() : list.get(3).toString();
-            port = list.get(1).toString();
+            port = ary.eltInternal(1).toString();
+            host = len == 3 ? ary.eltInternal(2).toString() : ary.eltInternal(3).toString();
 
         } else if (arg0 instanceof RubyString) {
-            String arg = ((RubyString)arg0).toString();
+            String arg = ((RubyString) arg0).toString();
             Matcher m = STRING_IPV4_ADDRESS_PATTERN.matcher(arg);
 
             if (!m.matches()) {
-                IRubyObject obj = unpack_sockaddr_in(context, arg0);
+                RubyArray portAndHost = unpack_sockaddr_in(context, arg0);
 
-                if (obj instanceof RubyArray) {
-                    List list = ((RubyArray)obj).getList();
-                    int len = list.size();
-
-                    if (len != 2) {
-                        throw runtime.newArgumentError("invalid address representation");
-                    }
-
-                    host = list.get(1).toString();
-                    port = list.get(0).toString();
-
-                } else {
-                    throw runtime.newArgumentError("invalid address string");
-
+                if (portAndHost.size() != 2) {
+                    throw runtime.newArgumentError("invalid address representation");
                 }
+
+                port = portAndHost.eltInternal(0).toString();
+                host = portAndHost.eltInternal(1).toString();
 
             } else if ((host = m.group(IPV4_HOST_GROUP)) == null || host.length() == 0 ||
                     (port = m.group(IPV4_PORT_GROUP)) == null || port.length() == 0) {
@@ -595,7 +588,8 @@ public class SocketUtils {
 
         if(type instanceof RubyString || type instanceof RubySymbol) {
             String typeString = type.toString();
-            sockType = Sock.valueOf("SOCK_" + typeString);
+            if (!typeString.startsWith("SOCK_")) typeString = "SOCK_" + typeString;
+            sockType = Sock.valueOf(typeString);
         } else {
             int typeInt = RubyNumeric.fix2int(type);
             sockType = Sock.valueOf(typeInt);
@@ -631,6 +625,26 @@ public class SocketUtils {
         }
 
         return proto;
+    }
+
+    static SocketLevel levelFromArg(IRubyObject _level) {
+        SocketLevel level;
+        if (_level instanceof RubyString || _level instanceof RubySymbol) {
+            level = SocketLevel.valueOf("SOL_" + _level.toString());
+        } else {
+            level = SocketLevel.valueOf(RubyNumeric.fix2int(_level));
+        }
+        return level;
+    }
+
+    static SocketOption optionFromArg(IRubyObject _opt) {
+        SocketOption opt;
+        if (_opt instanceof RubyString || _opt instanceof RubySymbol) {
+            opt = SocketOption.valueOf("SO_" + _opt.toString());
+        } else {
+            opt = SocketOption.valueOf(RubyNumeric.fix2int(_opt));
+        }
+        return opt;
     }
 
     public static int portToInt(IRubyObject port) {

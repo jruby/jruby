@@ -128,7 +128,7 @@ public class JavaClass extends JavaObject {
         for ( int i = classes.length; --i >= 0; ) {
             javaClasses[i] = get(runtime, classes[i]);
         }
-        return RubyArray.newArrayNoCopy(runtime, javaClasses);
+        return RubyArray.newArrayMayCopy(runtime, javaClasses);
     }
 
     public static RubyClass createJavaClassClass(final Ruby runtime, final RubyModule Java) {
@@ -140,16 +140,16 @@ public class JavaClass extends JavaObject {
         // JavaClass? Do we want them to do that? Can you Class.new(JavaClass)? Should you be able to?
         // NOTE: NOT_ALLOCATABLE_ALLOCATOR is probably OK here, since we don't intend for people to monkey with
         // this type and it can't be marshalled. Confirm. JRUBY-415
-        RubyClass JavaCLass = Java.defineClassUnder("JavaClass", JavaObject, ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+        RubyClass JavaClass = Java.defineClassUnder("JavaClass", JavaObject, ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
 
-        JavaCLass.includeModule(runtime.getModule("Comparable"));
+        JavaClass.includeModule(runtime.getModule("Comparable"));
 
-        JavaCLass.defineAnnotatedMethods(JavaClass.class);
+        JavaClass.defineAnnotatedMethods(JavaClass.class);
 
-        JavaCLass.getMetaClass().undefineMethod("new");
-        JavaCLass.getMetaClass().undefineMethod("allocate");
+        JavaClass.getMetaClass().undefineMethod("new");
+        JavaClass.getMetaClass().undefineMethod("allocate");
 
-        return JavaCLass;
+        return JavaClass;
     }
 
     public final Class javaClass() {
@@ -175,14 +175,14 @@ public class JavaClass extends JavaObject {
     }
 
     static boolean isPrimitiveName(final String name) {
-        return JavaUtil.PRIMITIVE_CLASSES.containsKey(name);
+        return JavaUtil.getPrimitiveClass(name) != null;
     }
 
     public static JavaClass forNameVerbose(Ruby runtime, String className) {
         Class<?> klass = null; // "boolean".length() == 7
         if (className.length() < 8 && Character.isLowerCase(className.charAt(0))) {
             // one word type name that starts lower-case...it may be a primitive type
-            klass = JavaUtil.PRIMITIVE_CLASSES.get(className);
+            klass = JavaUtil.getPrimitiveClass(className);
         }
         synchronized (JavaClass.class) {
             if (klass == null) {
@@ -718,29 +718,29 @@ public class JavaClass extends JavaObject {
     public JavaObject new_array(IRubyObject lengthArgument) {
         if (lengthArgument instanceof RubyInteger) {
             // one-dimensional array
-            int length = (int) ((RubyInteger) lengthArgument).getLongValue();
+            int length = ((RubyInteger) lengthArgument).getIntValue();
             return new JavaArray(getRuntime(), Array.newInstance(javaClass(), length));
-        } else if (lengthArgument instanceof RubyArray) {
+        }
+        else if (lengthArgument instanceof RubyArray) {
             // n-dimensional array
-            List list = ((RubyArray)lengthArgument).getList();
-            int length = list.size();
+            IRubyObject[] aryLengths = ((RubyArray)lengthArgument).toJavaArrayMaybeUnsafe();
+            final int length = aryLengths.length;
             if (length == 0) {
                 throw getRuntime().newArgumentError("empty dimensions specifier for java array");
             }
-            int[] dimensions = new int[length];
+            final int[] dimensions = new int[length];
             for (int i = length; --i >= 0; ) {
-                IRubyObject dimensionLength = (IRubyObject)list.get(i);
-                if ( !(dimensionLength instanceof RubyInteger) ) {
-                    throw getRuntime()
-                    .newTypeError(dimensionLength, getRuntime().getInteger());
+                IRubyObject dimLength = aryLengths[i];
+                if ( ! ( dimLength instanceof RubyInteger ) ) {
+                    throw getRuntime().newTypeError(dimLength, getRuntime().getInteger());
                 }
-                dimensions[i] = (int) ((RubyInteger) dimensionLength).getLongValue();
+                dimensions[i] = ((RubyInteger) dimLength).getIntValue();
             }
             return new JavaArray(getRuntime(), Array.newInstance(javaClass(), dimensions));
-        } else {
+        }
+        else {
             throw getRuntime().newArgumentError(
-                    "invalid length or dimensions specifier for java array" +
-            " - must be Integer or Array of Integer");
+                "invalid length or dimensions specifier for java array - must be Integer or Array of Integer");
         }
     }
 

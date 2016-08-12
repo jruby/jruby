@@ -73,7 +73,7 @@ public abstract class SymbolNodes {
 
         @Specialization
         public DynamicObject encoding(DynamicObject symbol) {
-            return EncodingNodes.getEncoding(Layouts.SYMBOL.getRope(symbol).getEncoding());
+            return getContext().getEncodingManager().getRubyEncoding(Layouts.SYMBOL.getRope(symbol).getEncoding());
         }
 
     }

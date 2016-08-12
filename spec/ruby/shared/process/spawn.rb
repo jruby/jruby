@@ -170,14 +170,14 @@ describe :process_spawn, shared: true do
 
   it "sets environment variables in the child environment" do
     lambda do
-      Process.wait @object.spawn({"FOO" => "BAR"}, ruby_cmd('print ENV["FOO"]'))
+      Process.wait @object.spawn({"FOO" => "BAR"}, ruby_cmd(fixture(__FILE__, "env.rb")))
     end.should output_to_fd("BAR")
   end
 
   it "unsets environment variables whose value is nil" do
     ENV["FOO"] = "BAR"
     lambda do
-      Process.wait @object.spawn({"FOO" => nil}, ruby_cmd('print ENV["FOO"]'))
+      Process.wait @object.spawn({"FOO" => nil}, ruby_cmd(fixture(__FILE__, "env.rb")))
     end.should output_to_fd("")
   end
 
@@ -185,7 +185,7 @@ describe :process_spawn, shared: true do
     o = mock("to_hash")
     o.should_receive(:to_hash).and_return({"FOO" => "BAR"})
     lambda do
-      Process.wait @object.spawn(o, ruby_cmd('print ENV["FOO"]'))
+      Process.wait @object.spawn(o, ruby_cmd(fixture(__FILE__, "env.rb")))
     end.should output_to_fd("BAR")
   end
 
@@ -193,7 +193,7 @@ describe :process_spawn, shared: true do
     o = mock("to_str")
     o.should_receive(:to_str).and_return("FOO")
     lambda do
-      Process.wait @object.spawn({o => "BAR"}, ruby_cmd('print ENV["FOO"]'))
+      Process.wait @object.spawn({o => "BAR"}, ruby_cmd(fixture(__FILE__, "env.rb")))
     end.should output_to_fd("BAR")
   end
 
@@ -201,61 +201,63 @@ describe :process_spawn, shared: true do
     o = mock("to_str")
     o.should_receive(:to_str).and_return("BAR")
     lambda do
-      Process.wait @object.spawn({"FOO" => o}, ruby_cmd('print ENV["FOO"]'))
+      Process.wait @object.spawn({"FOO" => o}, ruby_cmd(fixture(__FILE__, "env.rb")))
     end.should output_to_fd("BAR")
   end
 
   it "raises an ArgumentError if an environment key includes an equals sign" do
     lambda do
-      @object.spawn({"FOO=" => "BAR"}, ruby_cmd('print ENV["FOO"]'))
+      @object.spawn({"FOO=" => "BAR"}, ruby_cmd(fixture(__FILE__, "env.rb")))
     end.should raise_error(ArgumentError)
   end
 
   it "raises an ArgumentError if an environment key includes a null byte" do
     lambda do
-      @object.spawn({"\000" => "BAR"}, ruby_cmd('print ENV["FOO"]'))
+      @object.spawn({"\000" => "BAR"}, ruby_cmd(fixture(__FILE__, "env.rb")))
     end.should raise_error(ArgumentError)
   end
 
   it "raises an ArgumentError if an environment value includes a null byte" do
     lambda do
-      @object.spawn({"FOO" => "\000"}, ruby_cmd('print ENV["FOO"]'))
+      @object.spawn({"FOO" => "\000"}, ruby_cmd(fixture(__FILE__, "env.rb")))
     end.should raise_error(ArgumentError)
   end
 
   # :unsetenv_others
 
+  # Use the system ruby when the environment is empty as it could easily break launchers.
+
   it "unsets other environment variables when given a true :unsetenv_others option" do
     ENV["FOO"] = "BAR"
     lambda do
-      Process.wait @object.spawn(ruby_cmd('print ENV["FOO"]'), unsetenv_others: true)
+      Process.wait @object.spawn('ruby', fixture(__FILE__, "env.rb"), unsetenv_others: true)
     end.should output_to_fd("")
   end
 
   it "unsets other environment variables when given a non-false :unsetenv_others option" do
     ENV["FOO"] = "BAR"
     lambda do
-      Process.wait @object.spawn(ruby_cmd('print ENV["FOO"]'), unsetenv_others: :true)
+      Process.wait @object.spawn('ruby', fixture(__FILE__, "env.rb"), unsetenv_others: :true)
     end.should output_to_fd("")
   end
 
   it "does not unset other environment variables when given a false :unsetenv_others option" do
     ENV["FOO"] = "BAR"
     lambda do
-      Process.wait @object.spawn(ruby_cmd('print ENV["FOO"]'), unsetenv_others: false)
+      Process.wait @object.spawn(ruby_cmd(fixture(__FILE__, "env.rb")), unsetenv_others: false)
     end.should output_to_fd("BAR")
   end
 
   it "does not unset other environment variables when given a nil :unsetenv_others option" do
     ENV["FOO"] = "BAR"
     lambda do
-      Process.wait @object.spawn(ruby_cmd('print ENV["FOO"]'), unsetenv_others: nil)
+      Process.wait @object.spawn(ruby_cmd(fixture(__FILE__, "env.rb")), unsetenv_others: nil)
     end.should output_to_fd("BAR")
   end
 
   it "does not unset environment variables included in the environment hash" do
     lambda do
-      Process.wait @object.spawn({"FOO" => "BAR"}, ruby_cmd('print ENV["FOO"]', options: '--disable-gems'), unsetenv_others: true)
+      Process.wait @object.spawn({"FOO" => "BAR"}, 'ruby', fixture(__FILE__, "env.rb"), unsetenv_others: true)
     end.should output_to_fd("BAR")
   end
 
@@ -299,9 +301,10 @@ describe :process_spawn, shared: true do
     end
 
     it "joins the specified process group if pgroup: pgid" do
+      pgid = Process.getpgid(Process.pid)
       lambda do
-        Process.wait @object.spawn(ruby_cmd("print Process.getpgid(Process.pid)"), pgroup: 123)
-      end.should_not output_to_fd("123")
+        Process.wait @object.spawn(ruby_cmd("print Process.getpgid(Process.pid)"), pgroup: pgid)
+      end.should output_to_fd(pgid.to_s)
     end
 
     it "raises an ArgumentError if given a negative :pgroup option" do
@@ -378,7 +381,7 @@ describe :process_spawn, shared: true do
   it "redirects STDOUT to the given file descriptior if out: Fixnum" do
     File.open(@name, 'w') do |file|
       lambda do
-        Process.wait @object.spawn(ruby_cmd("print :glark"), out: file.fileno)
+        Process.wait @object.spawn(ruby_cmd(fixture(__FILE__, "print.rb")), out: file.fileno)
       end.should output_to_fd("glark", file)
     end
   end
@@ -386,18 +389,18 @@ describe :process_spawn, shared: true do
   it "redirects STDOUT to the given file if out: IO" do
     File.open(@name, 'w') do |file|
       lambda do
-        Process.wait @object.spawn(ruby_cmd("print :glark"), out: file)
+        Process.wait @object.spawn(ruby_cmd(fixture(__FILE__, "print.rb")), out: file)
       end.should output_to_fd("glark", file)
     end
   end
 
   it "redirects STDOUT to the given file if out: String" do
-    Process.wait @object.spawn(ruby_cmd("print :glark"), out: @name)
+    Process.wait @object.spawn(ruby_cmd(fixture(__FILE__, "print.rb")), out: @name)
     @name.should have_data("glark")
   end
 
   it "redirects STDOUT to the given file if out: [String name, String mode]" do
-    Process.wait @object.spawn(ruby_cmd("print :glark"), out: [@name, 'w'])
+    Process.wait @object.spawn(ruby_cmd(fixture(__FILE__, "print.rb")), out: [@name, 'w'])
     @name.should have_data("glark")
   end
 

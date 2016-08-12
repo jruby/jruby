@@ -47,7 +47,7 @@ public abstract class GetTimeZoneNode extends RubyNode {
         if (tz == nil()) {
             return DateTimeZone.getDefault();
         } else if (RubyGuards.isRubyString(tz)) {
-            return TimeZoneParser.parse(this, StringOperations.getString(getContext(), (DynamicObject) tz));
+            return TimeZoneParser.parse(this, StringOperations.getString((DynamicObject) tz));
         } else {
             throw new UnsupportedOperationException();
         }

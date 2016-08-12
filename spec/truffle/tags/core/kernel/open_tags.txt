@@ -1,3 +1,0 @@
-fails:Kernel#open opens an io when path starts with a pipe
-fails:Kernel#open opens an io when called with a block
-fails:Kernel#open opens an io for writing

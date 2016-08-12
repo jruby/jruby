@@ -30,6 +30,7 @@
 package org.jruby.util.io;
 
 import java.io.IOException;
+import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.ArrayList;
 import java.util.List;
@@ -38,6 +39,7 @@ import java.nio.channels.spi.SelectorProvider;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.Iterator;
 
 /**
  * This is a simple implementation of a hard-referenced java.nio.channels.Selector
@@ -82,7 +84,16 @@ public class SelectorPool {
      *
      * @param selector the selector to put back
      */
-    public synchronized void put(Selector selector) {
+    public void put(Selector selector) {
+        Iterator<SelectionKey> key_iterator = selector.keys().iterator();
+        while(key_iterator.hasNext()) key_iterator.next().cancel();
+
+        try {
+            selector.selectNow();
+        } catch (Exception e) {
+            //ignore
+        }
+
         returnToPool(selector);
     }
     
@@ -130,7 +141,7 @@ public class SelectorPool {
         return selector;
     }
 
-    private void returnToPool(Selector selector) {
+    private synchronized void returnToPool(Selector selector) {
         openSelectors.remove(selector);
         if (selector.isOpen()) {
             SelectorProvider provider = selector.provider();

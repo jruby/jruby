@@ -43,6 +43,8 @@ import org.jruby.truffle.language.objects.SelfNode;
 import org.jruby.truffle.language.objects.SingletonClassNode;
 import org.jruby.truffle.language.parser.jruby.Translator;
 import org.jruby.truffle.platform.UnsafeGroup;
+import org.jruby.truffle.util.StringUtils;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -85,7 +87,7 @@ public class CoreMethodNodeManager {
                 final RubyConstant constant = ModuleOperations.lookupConstant(context, module, moduleName);
 
                 if (constant == null) {
-                    throw new RuntimeException(String.format("Module %s not found when adding core library", moduleName));
+                    throw new RuntimeException(StringUtils.format("Module %s not found when adding core library", moduleName));
                 }
 
                 module = (DynamicObject) constant.getValue();
@@ -188,32 +190,14 @@ public class CoreMethodNodeManager {
 
         if (needsSelf) {
             RubyNode readSelfNode = new SelfNode(context, sourceSection);
-
-            if (method.lowerFixnumSelf()) {
-                readSelfNode = FixnumLowerNodeGen.create(context, sourceSection, readSelfNode);
-            }
-
-            if (method.raiseIfFrozenSelf()) {
-                readSelfNode = new RaiseIfFrozenNode(readSelfNode);
-            }
-
-            argumentsNodes.add(readSelfNode);
+            argumentsNodes.add(transformArgument(method, readSelfNode, 0));
         }
 
         final int nArgs = required + optional;
 
         for (int n = 0; n < nArgs; n++) {
             RubyNode readArgumentNode = new ReadPreArgumentNode(n, MissingArgumentBehavior.UNDEFINED);
-
-            if (ArrayUtils.contains(method.lowerFixnumParameters(), n)) {
-                readArgumentNode = FixnumLowerNodeGen.create(context, sourceSection, readArgumentNode);
-            }
-
-            if (ArrayUtils.contains(method.raiseIfFrozenParameters(), n)) {
-                readArgumentNode = new RaiseIfFrozenNode(readArgumentNode);
-            }
-
-            argumentsNodes.add(readArgumentNode);
+            argumentsNodes.add(transformArgument(method, readArgumentNode, n + 1));
         }
         if (method.rest()) {
             argumentsNodes.add(new ReadRemainingArgumentsNode(nArgs));
@@ -256,30 +240,50 @@ public class CoreMethodNodeManager {
 
         final RubyNode checkArity = Translator.createCheckArityNode(context, sourceSection, sharedMethodInfo.getArity());
 
-        RubyNode sequence;
-
+        RubyNode node;
         if (!isSafe(context, method.unsafe())) {
-            sequence = new UnsafeNode(context, sourceSection);
+            node = new UnsafeNode(context, sourceSection);
         } else {
-            sequence = Translator.sequence(context, sourceSection, Arrays.asList(checkArity, methodNode));
-
-            if (method.returnsEnumeratorIfNoBlock()) {
-                // TODO BF 3-18-2015 Handle multiple method names correctly
-                sequence = new ReturnEnumeratorIfNoBlockNode(method.names()[0], sequence);
-            }
-
-            if (method.taintFromSelf() || method.taintFromParameter() != -1) {
-                sequence = new TaintResultNode(method.taintFromSelf(),
-                        method.taintFromParameter(),
-                        sequence);
-            }
+            node = Translator.sequence(context, sourceSection, Arrays.asList(checkArity, methodNode));
+            node = transformResult(method, node);
         }
 
-        final ExceptionTranslatingNode exceptionTranslatingNode = new ExceptionTranslatingNode(context, sourceSection, sequence, method.unsupportedOperationBehavior());
+        final ExceptionTranslatingNode exceptionTranslatingNode = new ExceptionTranslatingNode(context, sourceSection, node, method.unsupportedOperationBehavior());
 
         final RubyRootNode rootNode = new RubyRootNode(context, sourceSection, null, sharedMethodInfo, exceptionTranslatingNode, false);
 
         return Truffle.getRuntime().createCallTarget(rootNode);
+    }
+
+    private static RubyNode transformArgument(CoreMethod method, RubyNode argument, int n) {
+        if (ArrayUtils.contains(method.lowerFixnum(), n)) {
+            argument = FixnumLowerNodeGen.create(null, null, argument);
+        }
+
+        if (n == 0 && method.raiseIfFrozenSelf()) {
+            argument = new RaiseIfFrozenNode(argument);
+        }
+
+        return argument;
+    }
+
+    private static RubyNode transformResult(CoreMethod method, RubyNode node) {
+        if (!method.enumeratorSize().isEmpty()) {
+            assert !method.returnsEnumeratorIfNoBlock(): "Only one of enumeratorSize or returnsEnumeratorIfNoBlock can be specified";
+            // TODO BF 6-27-2015 Handle multiple method names correctly
+            node = new EnumeratorSizeNode(method.enumeratorSize(), method.names()[0], node);
+        } else if (method.returnsEnumeratorIfNoBlock()) {
+            // TODO BF 3-18-2015 Handle multiple method names correctly
+            node = new ReturnEnumeratorIfNoBlockNode(method.names()[0], node);
+        }
+
+        if (method.taintFrom() != -1) {
+            final boolean taintFromSelf = method.taintFrom() == 0;
+            final int taintFromArg = taintFromSelf ? -1 : method.taintFrom() - 1;
+            node = new TaintResultNode(taintFromSelf, taintFromArg, node);
+        }
+
+        return node;
     }
 
     public static boolean isSafe(RubyContext context, UnsafeGroup[] groups) {

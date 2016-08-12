@@ -44,5 +44,9 @@ describe "Array#sort_by!" do
     partially_sorted.any?{|ary| ary != [1, 2, 3, 4, 5]}.should be_true
   end
 
+  it "changes nothing when called on a single element array" do
+    [1].sort_by!(&:to_s).should == [1]
+  end
+
   it_behaves_like :enumeratorized_with_origin_size, :sort_by!, [1,2,3]
 end

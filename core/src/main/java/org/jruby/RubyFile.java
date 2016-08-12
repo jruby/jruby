@@ -67,6 +67,8 @@ import jnr.posix.FileStat;
 import jnr.posix.util.Platform;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
+import org.jruby.runtime.JavaSites;
+import org.jruby.runtime.JavaSites.FileSites;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import static org.jruby.runtime.Visibility.*;
@@ -346,7 +348,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         }
 
         if (args.length > 0 && args.length <= 3) {
-            IRubyObject fd = TypeConverter.convertToTypeWithCheck(args[0], context.runtime.getFixnum(), "to_int");
+            IRubyObject fd = TypeConverter.convertToTypeWithCheck(context, args[0], context.runtime.getFixnum(), sites(context).to_int_checked);
             if (!fd.isNil()) {
                 if (args.length == 1) {
                     return super.initialize(context, fd, block);
@@ -1027,6 +1029,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     @JRubyMethod(required = 2, meta = true)
     public static IRubyObject symlink(ThreadContext context, IRubyObject recv, IRubyObject from, IRubyObject to) {
         Ruby runtime = context.runtime;
+
         RubyString fromStr = StringSupport.checkEmbeddedNulls(runtime, get_path(context, from));
         RubyString toStr = StringSupport.checkEmbeddedNulls(runtime, get_path(context, to));
         String tovalue = toStr.getUnicodeValue();
@@ -1105,8 +1108,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         long[] mtimeval = null;
 
         if (args[0] != runtime.getNil() || args[1] != runtime.getNil()) {
-            atimeval = extractTimeval(runtime, args[0]);
-            mtimeval = extractTimeval(runtime, args[1]);
+            atimeval = extractTimeval(context, args[0]);
+            mtimeval = extractTimeval(context, args[1]);
         }
 
         for (int i = 2, j = args.length; i < j; i++) {
@@ -1284,7 +1287,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             }
             case 4:
                 if (!args[3].isNil()) {
-                    options = TypeConverter.convertToTypeWithCheck(args[3], context.runtime.getHash(), "to_hash");
+                    options = TypeConverter.convertToTypeWithCheck(context, args[3], context.runtime.getHash(), sites(context).to_hash_checked);
                     if (options.isNil()) {
                         throw runtime.newArgumentError("wrong number of arguments (4 for 1..3)");
                     }
@@ -1336,7 +1339,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     public static RubyString get_path(ThreadContext context, IRubyObject path) {
         if (path instanceof RubyString) return (RubyString) path;
 
-        if (path.respondsTo("to_path")) path = path.callMethod(context, "to_path");
+        FileSites sites = sites(context);
+        if (sites.respond_to_to_path.respondsTo(context, path, path, true)) path = sites.to_path.call(context, path, path);
 
         return filePathConvert(context, path.convertToString());
     }
@@ -1506,7 +1510,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
      * Extract a timeval (an array of 2 longs: seconds and microseconds from epoch) from
      * an IRubyObject.
      */
-    private static long[] extractTimeval(Ruby runtime, IRubyObject value) {
+    private static long[] extractTimeval(ThreadContext context, IRubyObject value) {
         long[] timeval = new long[2];
 
         if (value instanceof RubyFloat) {
@@ -1521,7 +1525,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             if (value instanceof RubyTime) {
                 time = ((RubyTime) value);
             } else {
-                time = (RubyTime) TypeConverter.convertToType(value, runtime.getTime(), "to_time", true);
+                time = (RubyTime) TypeConverter.convertToType(context, value, context.runtime.getTime(), sites(context).to_time_checked, true);
             }
             timeval[0] = Platform.IS_32_BIT ? RubyNumeric.num2int(time.to_i()) : RubyNumeric.num2long(time.to_i());
             timeval[1] = Platform.IS_32_BIT ? RubyNumeric.num2int(time.usec()) : RubyNumeric.num2long(time.usec());
@@ -1957,7 +1961,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         final Ruby runtime = context.runtime;
         final String separator = runtime.getClass("File").getConstant("SEPARATOR").toString();
 
-        final RubyArray argsAry = RubyArray.newArrayNoCopyLight(runtime, args);
+        final RubyArray argsAry = RubyArray.newArrayMayCopy(runtime, args);
 
         final StringBuilder buffer = new StringBuilder(24);
         boolean isTainted = joinImpl(buffer, separator, context, recv, argsAry);
@@ -2092,6 +2096,10 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         file.close();
 
         return RubyFixnum.zero(runtime);
+    }
+
+    private static FileSites sites(ThreadContext context) {
+        return context.sites.File;
     }
 
     @Deprecated

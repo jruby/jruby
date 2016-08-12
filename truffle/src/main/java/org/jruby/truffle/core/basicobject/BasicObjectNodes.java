@@ -14,8 +14,12 @@ import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.CreateCast;
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.Frame;
+import com.oracle.truffle.api.frame.FrameInstance;
+import com.oracle.truffle.api.frame.FrameInstanceVisitor;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
+import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
@@ -29,6 +33,7 @@ import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.builtins.NonStandard;
 import org.jruby.truffle.builtins.UnaryCoreMethodNode;
 import org.jruby.truffle.core.array.ArrayHelpers;
+import org.jruby.truffle.core.basicobject.BasicObjectNodesFactory.ReferenceEqualNodeFactory;
 import org.jruby.truffle.core.cast.BooleanCastNodeGen;
 import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.core.rope.Rope;
@@ -36,6 +41,7 @@ import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
+import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
@@ -46,10 +52,10 @@ import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.methods.UnsupportedOperationBehavior;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
-import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.language.parser.ParserContext;
 import org.jruby.truffle.language.supercall.SuperCallNode;
 import org.jruby.truffle.language.yield.YieldNode;
+import org.jruby.truffle.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -93,7 +99,11 @@ public abstract class BasicObjectNodes {
     @CoreMethod(names = { "equal?", "==" }, required = 1)
     public abstract static class ReferenceEqualNode extends CoreMethodArrayArgumentsNode {
 
-        public abstract boolean executeReferenceEqual(VirtualFrame frame, Object a, Object b);
+        public static ReferenceEqualNode create() {
+            return ReferenceEqualNodeFactory.create(null);
+        }
+
+        public abstract boolean executeReferenceEqual(Object a, Object b);
 
         @Specialization
         public boolean equal(boolean a, boolean b) {
@@ -170,8 +180,8 @@ public abstract class BasicObjectNodes {
             final Rope code = StringOperations.rope(string);
 
             // TODO (pitr 15-Oct-2015): fix this ugly hack, required for AS, copy-paste
-            final String space = new String(new char[Math.max(line - 1, 0)]).replace("\0", "\n");
-            final Source source = Source.fromText(space + code.toString(), StringOperations.rope(fileName).toString());
+            final String space = getSpace(line);
+            final Source source = loadFragment(space + code.toString(), StringOperations.rope(fileName).toString());
 
             final RubyRootNode rootNode = getContext().getCodeLoader().parse(source, code.getEncoding(), ParserContext.EVAL, null, true, this);
             final CodeLoader.DeferredCall deferredCall = getContext().getCodeLoader().prepareExecute(ParserContext.EVAL, DeclarationContext.INSTANCE_EVAL, rootNode, null, receiver);
@@ -192,6 +202,17 @@ public abstract class BasicObjectNodes {
         @Specialization
         public Object instanceEval(VirtualFrame frame, Object receiver, NotProvided string, NotProvided fileName, NotProvided line, DynamicObject block) {
             return yield.dispatchWithModifiedSelf(frame, block, receiver, receiver);
+        }
+
+        @TruffleBoundary
+        private String getSpace(int line) {
+            final String s = new String(new char[Math.max(line - 1, 0)]);
+            return StringUtils.replace(s, "\0", "\n");
+        }
+
+        @TruffleBoundary
+        private Source loadFragment(String fragment, String name) {
+            return getContext().getSourceLoader().loadFragment(fragment, name);
         }
 
     }
@@ -222,10 +243,10 @@ public abstract class BasicObjectNodes {
     @CoreMethod(names = "__instance_variables__")
     public abstract static class InstanceVariablesNode extends CoreMethodArrayArgumentsNode {
 
-        public abstract DynamicObject executeObject(DynamicObject self);
+        public abstract DynamicObject execute(Object self);
 
         @TruffleBoundary
-        @Specialization
+        @Specialization(guards = {"!isNil(self)", "!isRubySymbol(self)"})
         public DynamicObject instanceVariables(DynamicObject self) {
             List<Object> keys = self.getShape().getKeyList();
 
@@ -240,6 +261,31 @@ public abstract class BasicObjectNodes {
             }
             final int size = names.size();
             return ArrayHelpers.createArray(getContext(), names.toArray(new Object[size]), size);
+        }
+
+        @Specialization
+        public DynamicObject instanceVariables(int self) {
+            return ArrayHelpers.createArray(getContext(), null, 0);
+        }
+
+        @Specialization
+        public DynamicObject instanceVariables(long self) {
+            return ArrayHelpers.createArray(getContext(), null, 0);
+        }
+
+        @Specialization
+        public DynamicObject instanceVariables(boolean self) {
+            return ArrayHelpers.createArray(getContext(), null, 0);
+        }
+
+        @Specialization(guards = "isNil(object)")
+        public DynamicObject instanceVariablesNil(DynamicObject object) {
+            return ArrayHelpers.createArray(getContext(), null, 0);
+        }
+
+        @Specialization(guards = "isRubySymbol(object)")
+        public DynamicObject instanceVariablesSymbol(DynamicObject object) {
+            return ArrayHelpers.createArray(getContext(), null, 0);
         }
 
     }
@@ -269,20 +315,45 @@ public abstract class BasicObjectNodes {
         @TruffleBoundary
         private DynamicObject buildMethodMissingException(Object self, DynamicObject nameObject, Object[] args, DynamicObject block) {
             final String name = nameObject.toString();
+            final FrameInstance relevantCallerFrame = getRelevantCallerFrame();
 
-            if (lastCallWasSuper()) {
-                return coreExceptions().noSuperMethodError(name, this);
+            if (lastCallWasSuper(relevantCallerFrame)) {
+                return coreExceptions().noSuperMethodError(name, self, args, this);
             } else if (lastCallWasCallingPrivateMethod(self, name)) {
-                return coreExceptions().privateMethodError(name, self, this);
-            } else if (lastCallWasVCall()) {
+                return coreExceptions().privateMethodError(name, self, args, this);
+            } else if (lastCallWasVCall(relevantCallerFrame)) {
                 return coreExceptions().nameErrorUndefinedLocalVariableOrMethod(name, self, this);
             } else {
-                return coreExceptions().noMethodErrorOnReceiver(name, self, this);
+                return coreExceptions().noMethodErrorOnReceiver(name, self, args, this);
             }
         }
 
-        private boolean lastCallWasSuper() {
-            final SuperCallNode superCallNode = NodeUtil.findParent(Truffle.getRuntime().getCallerFrame().getCallNode(), SuperCallNode.class);
+        private FrameInstance getRelevantCallerFrame() {
+            return Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<FrameInstance>() {
+                @Override
+                public FrameInstance visitFrame(FrameInstance frameInstance) {
+                    final Node callNode = frameInstance.getCallNode();
+                    if (callNode == null) {
+                        // skip current frame
+                        return null;
+                    }
+
+                    final SuperCallNode superCallNode = NodeUtil.findParent(callNode, SuperCallNode.class);
+                    final Frame frame = frameInstance.getFrame(FrameInstance.FrameAccess.READ_ONLY, true);
+                    final String superMethodName = RubyArguments.getMethod(frame).getName();
+
+                    if (superCallNode != null && superMethodName.equals("method_missing")) {
+                        // skip super calls of method_missing itself
+                        return null;
+                    }
+
+                    return frameInstance;
+                }
+            });
+        }
+
+        private boolean lastCallWasSuper(FrameInstance callerFrame) {
+            final SuperCallNode superCallNode = NodeUtil.findParent(callerFrame.getCallNode(), SuperCallNode.class);
             return superCallNode != null;
         }
 
@@ -295,8 +366,8 @@ public abstract class BasicObjectNodes {
             return method != null && !method.isUndefined();
         }
 
-        private boolean lastCallWasVCall() {
-            final RubyCallNode callNode = NodeUtil.findParent(Truffle.getRuntime().getCallerFrame().getCallNode(), RubyCallNode.class);
+        private boolean lastCallWasVCall(FrameInstance callerFrame) {
+            final RubyCallNode callNode = NodeUtil.findParent(callerFrame.getCallNode(), RubyCallNode.class);
             return callNode != null && callNode.isVCall();
         }
 
@@ -321,7 +392,7 @@ public abstract class BasicObjectNodes {
 
         @Specialization
         public Object send(VirtualFrame frame, Object self, Object name, Object[] args, DynamicObject block) {
-            return dispatchNode.call(frame, self, name, block, args);
+            return dispatchNode.callWithBlock(frame, self, name, block, args);
         }
 
     }
@@ -333,7 +404,7 @@ public abstract class BasicObjectNodes {
 
         public AllocateNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
+            allocateObjectNode = AllocateObjectNode.create();
         }
 
         @Specialization

@@ -8,16 +8,18 @@ describe "String#downcase" do
     "hello".downcase.should == "hello"
   end
 
-  it "is locale insensitive (only replaces A-Z)" do
-    "ÄÖÜ".downcase.should == "ÄÖÜ"
-
-    str = Array.new(256) { |c| c.chr }.join
-    expected = Array.new(256) do |i|
-      c = i.chr
-      c.between?("A", "Z") ? c.downcase : c
-    end.join
-
-    str.downcase.should == expected
+  ruby_version_is ''...'2.4' do
+    it "is locale insensitive (only replaces A-Z)" do
+      "ÄÖÜ".downcase.should == "ÄÖÜ"
+  
+      str = Array.new(256) { |c| c.chr }.join
+      expected = Array.new(256) do |i|
+        c = i.chr
+        c.between?("A", "Z") ? c.downcase : c
+      end.join
+  
+      str.downcase.should == expected
+    end
   end
 
   it "taints result when self is tainted" do

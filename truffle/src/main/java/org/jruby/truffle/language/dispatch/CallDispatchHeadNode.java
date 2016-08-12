@@ -42,18 +42,17 @@ public class CallDispatchHeadNode extends DispatchHeadNode {
         super(context, ignoreVisibility, missingBehavior, DispatchAction.CALL_METHOD);
     }
 
-    public Object call(
+    public Object call(VirtualFrame frame, Object receiver, Object method, Object... arguments) {
+        return dispatch(frame, receiver, method, null, arguments);
+    }
+
+    public Object callWithBlock(
             VirtualFrame frame,
-            Object receiverObject,
-            Object methodName,
-            DynamicObject blockObject,
-            Object... argumentsObjects) {
-        return dispatch(
-                frame,
-                receiverObject,
-                methodName,
-                blockObject,
-                argumentsObjects);
+            Object receiver,
+            Object method,
+            DynamicObject block,
+            Object... arguments) {
+        return dispatch(frame, receiver, method, block, arguments);
     }
 
     public boolean callBoolean(
@@ -76,7 +75,7 @@ public class CallDispatchHeadNode extends DispatchHeadNode {
             Object methodName,
             DynamicObject blockObject,
             Object... argumentsObjects) {
-        final Object value = call(frame, receiverObject, methodName, blockObject, argumentsObjects);
+        final Object value = dispatch(frame, receiverObject, methodName, blockObject, argumentsObjects);
 
         if (value instanceof Double) {
             return (double) value;
@@ -96,7 +95,7 @@ public class CallDispatchHeadNode extends DispatchHeadNode {
             Object methodName,
             DynamicObject blockObject,
             Object... argumentsObjects) {
-        final Object value = call(frame, receiverObject, methodName, blockObject, argumentsObjects);
+        final Object value = dispatch(frame, receiverObject, methodName, blockObject, argumentsObjects);
 
         if (value instanceof Integer) {
             return (int) value;

@@ -29,6 +29,7 @@
 package org.jruby.ext.socket;
 
 import org.jruby.Ruby;
+import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
@@ -118,15 +119,14 @@ public class RubyIPSocket extends RubyBasicSocket {
                 hostAddress = sender.getAddress().getHostAddress();
             }
 
-            IRubyObject addressArray = context.runtime.newArray(
-                    new IRubyObject[]{
-                            runtime.newString("AF_INET"),
-                            runtime.newFixnum(port),
-                            runtime.newString(hostName),
-                            runtime.newString(hostAddress)
-                    });
+            IRubyObject addressArray = RubyArray.newArray(
+                    runtime,
+                    runtime.newString("AF_INET"),
+                    runtime.newFixnum(port),
+                    runtime.newString(hostName),
+                    runtime.newString(hostAddress));
 
-            return runtime.newArray(result, addressArray);
+            return RubyArray.newArray(runtime, result, addressArray);
 
         } catch (BadDescriptorException e) {
             throw runtime.newErrnoEBADFError();

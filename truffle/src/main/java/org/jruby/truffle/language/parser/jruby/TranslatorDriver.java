@@ -190,7 +190,7 @@ public class TranslatorDriver implements Parser {
                 final String name = argumentNames[n];
                 final RubyNode readNode = new ReadPreArgumentNode(n, MissingArgumentBehavior.NIL);
                 final FrameSlot slot = environment.getFrameDescriptor().findFrameSlot(name);
-                sequence.add(new WriteLocalVariableNode(context, sourceSection, slot, readNode));
+                sequence.add(WriteLocalVariableNode.createWriteLocalVariableNode(context, sourceSection, slot, readNode));
             }
 
             sequence.add(truffleNode);

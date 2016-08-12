@@ -48,7 +48,7 @@ public abstract class LookupForExistingModuleNode extends RubyNode {
             // call or the recursive execute call.
 
             Layouts.MODULE.getFields(lexicalParent).removeConstant(getContext(), this, name);
-            getRequireNode().executeRequire(frame, StringOperations.getString(getContext(), (DynamicObject) constant.getValue()));
+            getRequireNode().executeRequire(frame, StringOperations.getString((DynamicObject) constant.getValue()));
             return deepConstantSearch(name, lexicalParent);
         }
 

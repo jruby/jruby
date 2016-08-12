@@ -63,6 +63,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
+import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -514,7 +515,7 @@ public class RubyComplex extends RubyNumeric {
         } else if (other instanceof RubyNumeric && f_real_p(context, other).isTrue()) {
             return newComplex(context, getMetaClass(), f_add(context, real, other), image);
         }
-        return coerceBin(context, "+", other);
+        return coerceBin(context, sites(context).op_plus, other);
     }
 
     /** nucomp_sub
@@ -530,7 +531,7 @@ public class RubyComplex extends RubyNumeric {
         } else if (other instanceof RubyNumeric && f_real_p(context, other).isTrue()) {
             return newComplex(context, getMetaClass(), f_sub(context, real, other), image);
         }
-        return coerceBin(context, "-", other);
+        return coerceBin(context, sites(context).op_minus, other);
     }
 
     /** nucomp_mul
@@ -557,7 +558,7 @@ public class RubyComplex extends RubyNumeric {
                     f_mul(context, real, other),
                     f_mul(context, image, other));
         }
-        return coerceBin(context, "*", other);
+        return coerceBin(context, sites(context).op_times, other);
     }
     
     /** nucomp_div / nucomp_quo
@@ -586,7 +587,7 @@ public class RubyComplex extends RubyNumeric {
                 return RubyRational.newInstance(context, context.runtime.getRational(), coercedOther.first(), coercedOther.last());
             }
         }
-        return coerceBin(context, "/", other);
+        return coerceBin(context, sites(context).op_quo, other);
     }
 
     /** nucomp_fdiv
@@ -660,7 +661,7 @@ public class RubyComplex extends RubyNumeric {
             IRubyObject theta = a.eltInternal(1);
             return f_complex_polar(context, getMetaClass(), f_expt(context, r, other), f_mul(context, theta, other));
         }
-        return coerceBin(context, "**", other);
+        return coerceBin(context, sites(context).op_exp, other);
     }
 
     /** nucomp_equal_p
@@ -1052,5 +1053,9 @@ public class RubyComplex extends RubyNumeric {
             throw context.runtime.newArgumentError("invalid value for convert(): " + s.convertToString());
         }
         return a.eltInternal(0);
-    }    
+    }
+
+    private static JavaSites.ComplexSites sites(ThreadContext context) {
+        return context.sites.Complex;
+    }
 }
