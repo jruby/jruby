@@ -49,8 +49,6 @@ import java.lang.invoke.MethodHandles;
  */
 public abstract class BlockBody {
 
-    public static final String[] EMPTY_PARAMETER_LIST = org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
-
     protected final Signature signature;
     protected volatile MethodHandle testBlockBody;
 
