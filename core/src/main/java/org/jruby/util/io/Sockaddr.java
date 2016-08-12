@@ -209,22 +209,25 @@ public class Sockaddr {
     }
 
     public static IRubyObject pack_sockaddr_un(ThreadContext context, IRubyObject filename) {
-        ByteList str = filename.convertToString().getByteList();
+        ByteArrayOutputStream bufS = new ByteArrayOutputStream();
 
-        AddressFamily af = AddressFamily.AF_UNIX;
-        int high = (af.intValue() & 0xff00) >> 8;
-        int low = af.intValue() & 0xff;
+        try {
+            DataOutputStream ds = new DataOutputStream(bufS);
 
-        ByteList bl = new ByteList();
-        bl.append((byte)high);
-        bl.append((byte)low);
-        bl.append(str);
+            String path = filename.convertToString().asJavaString();
 
-        for(int i=str.length();i<104;i++) {
-            bl.append((byte)0);
+            writeSockaddrHeader(AddressFamily.AF_UNIX, ds);
+            ds.writeBytes(path);
+
+            for(int i=path.length();i<104;i++) {
+                ds.writeInt(0);
+            }
+        } catch (IOException e) {
+            throw sockerr(context.runtime, "pack_sockaddr_un: internal error");
         }
 
-        return context.runtime.newString(bl);
+        return context.runtime.newString(new ByteList(bufS.toByteArray(),
+                false));
     }
 
     public static IRubyObject unpack_sockaddr_un(ThreadContext context, IRubyObject addr) {
