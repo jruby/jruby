@@ -65,7 +65,7 @@ module Truffle
         cmd = Array(cmd) # wrap if it's just a string
 
         formatted_env, command = if cmd[0].is_a?(Hash)
-                                   [cmd[0].map { |k, v| "#{k}=#{v}" }, cmd[1..-1]]
+                                   [cmd[0].map { |k, v| "#{k}=\"#{v}\"" }, cmd[1..-1]]
                                  else
                                    [[], cmd]
                                  end
