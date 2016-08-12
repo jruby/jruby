@@ -20,21 +20,41 @@ ruby_version_is "2.3" do
         @proc = @hash.to_proc
       end
 
+      it "is not a lambda" do
+        @proc.lambda?.should == false
+      end
+
+      it "raises ArgumentError if not passed exactly one argument" do
+        lambda {
+          @proc.call
+        }.should raise_error(ArgumentError)
+
+        lambda {
+          @proc.call 1, 2
+        }.should raise_error(ArgumentError)
+      end
+
       context "with a stored key" do
         it "returns the paired value" do
           @proc.call(@key).should equal(@value)
         end
       end
 
-      context "passed as the block for instance_exec" do
-        it "always retrieves the original hash's values" do
-          hash = {foo: 1, bar: 2}
-          proc = hash.to_proc
+      context "passed as a block" do
+        it "retrieves the hash's values" do
+          [@key].map(&@proc)[0].should equal(@value)
+        end
 
-          hash.instance_exec(:foo, &proc).should == 1
+        context "to instance_exec" do
+          it "always retrieves the original hash's values" do
+            hash = {foo: 1, bar: 2}
+            proc = hash.to_proc
 
-          hash2 = {quux: 1}
-          hash2.instance_exec(:foo, &proc).should == 1
+            hash.instance_exec(:foo, &proc).should == 1
+
+            hash2 = {quux: 1}
+            hash2.instance_exec(:foo, &proc).should == 1
+          end
         end
       end
 
