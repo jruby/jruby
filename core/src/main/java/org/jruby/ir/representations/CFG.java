@@ -418,22 +418,32 @@ public class CFG {
         // System.out.println("\nGraph:\n" + toStringGraph());
         // System.out.println("\nInstructions:\n" + toStringInstrs());
 
-        // FIXME: Quick and dirty implementation
-        while (true) {
-            BasicBlock bbToRemove = null;
-            for (BasicBlock b : graph.allData()) {
-                if (b == entryBB) continue; // Skip entry bb!
+        Queue<BasicBlock> worklist = new LinkedList();
+        Set<BasicBlock> living = new HashSet();
+        worklist.add(entryBB);
+        living.add(entryBB);
 
-                // Every other bb should have at least one incoming edge
-                if (graph.findVertexFor(b).getIncomingEdges().isEmpty()) {
-                    bbToRemove = b;
-                    break;
+        while (!worklist.isEmpty()) {
+            BasicBlock current = worklist.remove();
+
+            for (BasicBlock bb: graph.findVertexFor(current).getOutgoingDestinationsData()) {
+                if (!living.contains(bb)) {
+                    worklist.add(bb);
+                    living.add(bb);
                 }
             }
-            if (bbToRemove == null) break;
+        }
 
-            removeBB(bbToRemove);
-            removeNestedScopesFromBB(bbToRemove);
+        // Seems like Java should have simpler way of doing this.
+        // We canot just remove in this loop or we get concmodexc.
+        Set<BasicBlock> dead = new HashSet();
+        for (BasicBlock bb: graph.allData()) {
+            if (!living.contains(bb)) dead.add(bb);
+        }
+
+        for (BasicBlock bb: dead) {
+            removeBB(bb);
+            removeNestedScopesFromBB(bb);
         }
     }
 
