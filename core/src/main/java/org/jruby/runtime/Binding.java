@@ -49,7 +49,8 @@ public class Binding {
     public static final Binding DUMMY =
             new Binding(
                     RubyBasicObject.NEVER,
-                    Frame.DUMMY,
+                    // Can't use Frame.DUMMY because of circular static init seeing it before it's assigned
+                    new Frame(),
                     Visibility.PUBLIC,
                     new NoVarsDynamicScope(StaticScopeFactory.newStaticScope(null, StaticScope.Type.BLOCK, null)),
                     "<dummy>",
