@@ -1,6 +1,5 @@
 class Hash
   def to_proc
-    hash_self = self
-    proc {|key| hash_self[key]}
+    method(:[]).to_proc
   end
 end
