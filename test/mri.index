@@ -47,6 +47,7 @@ ruby/test_io.rb
 ruby/test_io_m17n.rb
 ruby/test_iterator.rb
 ruby/test_lambda.rb
+ruby/test_lazy_enumerator.rb
 ruby/test_literal.rb
 ruby/test_m17n.rb
 ruby/test_m17n_comb.rb
@@ -727,7 +728,6 @@ ruby/enc/test_windows_1251.rb
 # ruby/test_backtrace.rb
 # ruby/test_iseq.rb
 # ruby/test_keyword.rb
-# ruby/test_lazy_enumerator.rb
 # ruby/test_not.rb
 # ruby/test_refinement.rb
 # ruby/test_rubyvm.rb
