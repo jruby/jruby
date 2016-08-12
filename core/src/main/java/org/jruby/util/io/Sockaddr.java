@@ -66,16 +66,7 @@ public class Sockaddr {
     }
 
     public static UnixSocketAddress addressFromSockaddr_un(ThreadContext context, IRubyObject arg) {
-        ByteList bl = arg.convertToString().getByteList();
-        byte[] raw = bl.bytes();
-
-        int end = 2;
-        for (; end < raw.length; end++) {
-            if (raw[end] == 0) break;
-        }
-
-        ByteList path = new ByteList(raw, 2, end, false);
-        String pathStr = Helpers.decodeByteList(context.runtime, path);
+        String pathStr = pathFromSockaddr_un(context, arg);
 
         return new UnixSocketAddress(new File(pathStr));
     }
@@ -240,7 +231,7 @@ public class Sockaddr {
             throw runtime.newArgumentError("not an AF_UNIX sockaddr");
         }
 
-        String filename = Sockaddr.addressFromSockaddr_un(context, addr).path();
+        String filename = pathFromSockaddr_un(context, addr);
         return context.runtime.newString(filename);
     }
 
@@ -280,5 +271,19 @@ public class Sockaddr {
 
     private static RuntimeException sockerr(Ruby runtime, String msg) {
         return new RaiseException(runtime, runtime.getClass("SocketError"), msg, true);
+    }
+
+    private static String pathFromSockaddr_un(ThreadContext context, IRubyObject arg) {
+        ByteList bl = arg.convertToString().getByteList();
+        byte[] raw = bl.bytes();
+
+        int end = 2;
+        for (; end < raw.length; end++) {
+            if (raw[end] == 0) break;
+        }
+
+        ByteList path = new ByteList(raw, 2, end, false);
+
+        return Helpers.decodeByteList(context.runtime, path);
     }
 }
