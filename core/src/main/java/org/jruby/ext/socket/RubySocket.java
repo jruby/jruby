@@ -303,7 +303,7 @@ public class RubySocket extends RubyBasicSocket {
 
     @JRubyMethod(name = {"pack_sockaddr_in", "sockaddr_in"}, meta = true)
     public static IRubyObject pack_sockaddr_in(ThreadContext context, IRubyObject recv, IRubyObject port, IRubyObject host) {
-        return SocketUtils.pack_sockaddr_in(context, port, host);
+        return Sockaddr.pack_sockaddr_in(context, port, host);
     }
 
     @JRubyMethod(meta = true)
@@ -313,12 +313,12 @@ public class RubySocket extends RubyBasicSocket {
 
     @JRubyMethod(name = {"pack_sockaddr_un", "sockaddr_un"}, meta = true)
     public static IRubyObject pack_sockaddr_un(ThreadContext context, IRubyObject recv, IRubyObject filename) {
-        return SocketUtils.pack_sockaddr_un(context, filename);
+        return Sockaddr.pack_sockaddr_un(context, filename);
     }
 
     @JRubyMethod(meta = true)
     public static IRubyObject unpack_sockaddr_un(ThreadContext context, IRubyObject recv, IRubyObject addr) {
-        return SocketUtils.unpack_sockaddr_un(context, addr);
+        return Sockaddr.unpack_sockaddr_un(context, addr);
     }
 
     @JRubyMethod(meta = true)

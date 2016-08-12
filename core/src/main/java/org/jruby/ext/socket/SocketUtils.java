@@ -130,56 +130,19 @@ public class SocketUtils {
         return runtime.newFixnum(port);
     }
 
+    @Deprecated
     public static IRubyObject pack_sockaddr_in(ThreadContext context, IRubyObject port, IRubyObject host) {
-        final int portNum;
-        if ( ! port.isNil() ) {
-            portNum = port instanceof RubyString ?
-                    Integer.parseInt(port.convertToString().toString()) :
-                        RubyNumeric.fix2int(port);
-        }
-        else {
-            portNum = 0;
-        }
-
-        final String hostStr = host.isNil() ? null : host.convertToString().toString();
-        return Sockaddr.pack_sockaddr_in(context, portNum, hostStr);
+        return Sockaddr.pack_sockaddr_in(context, port, host);
     }
 
+    @Deprecated
     public static RubyArray unpack_sockaddr_in(ThreadContext context, IRubyObject addr) {
         return Sockaddr.unpack_sockaddr_in(context, addr);
     }
 
+    @Deprecated
     public static IRubyObject pack_sockaddr_un(ThreadContext context, IRubyObject filename) {
-        ByteList str = filename.convertToString().getByteList();
-
-        AddressFamily af = AddressFamily.AF_UNIX;
-        int high = (af.intValue() & 0xff00) >> 8;
-        int low = af.intValue() & 0xff;
-
-        ByteList bl = new ByteList();
-        bl.append((byte)high);
-        bl.append((byte)low);
-        bl.append(str);
-
-        for(int i=str.length();i<104;i++) {
-            bl.append((byte)0);
-        }
-
-        return context.runtime.newString(bl);
-    }
-
-    public static IRubyObject unpack_sockaddr_un(ThreadContext context, IRubyObject addr) {
-        final Ruby runtime = context.runtime;
-        ByteList val = addr.convertToString().getByteList();
-
-        AddressFamily af = Sockaddr.getAddressFamilyFromSockaddr(context.runtime, val);
-
-        if (af != AddressFamily.AF_UNIX) {
-            throw runtime.newArgumentError("not an AF_UNIX sockaddr");
-        }
-
-        String filename = Sockaddr.addressFromSockaddr_un(context, addr).path();
-        return context.runtime.newString(filename);
+        return Sockaddr.pack_sockaddr_un(context, filename);
     }
 
     public static IRubyObject gethostbyname(ThreadContext context, IRubyObject hostname) {
@@ -412,7 +375,7 @@ public class SocketUtils {
             Matcher m = STRING_IPV4_ADDRESS_PATTERN.matcher(arg);
 
             if (!m.matches()) {
-                RubyArray portAndHost = unpack_sockaddr_in(context, arg0);
+                RubyArray portAndHost = Sockaddr.unpack_sockaddr_in(context, arg0);
 
                 if (portAndHost.size() != 2) {
                     throw runtime.newArgumentError("invalid address representation");
