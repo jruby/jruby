@@ -1,6 +1,5 @@
 class Hash
   def to_proc
-    this_hash = self
-    proc {|*a| this_hash[*a]}
+    method(:[]).to_proc
   end
 end
