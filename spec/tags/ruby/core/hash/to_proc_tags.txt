@@ -1,1 +1,0 @@
-fails:Hash#to_proc the returned proc is not a lambda
