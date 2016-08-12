@@ -83,7 +83,6 @@ matrix:
     - env: JT='test specs :truffle'
       jdk: oraclejdk8
   allow_failures:
-    - env: PHASE='-Prake -Dtask=test:mri:fullint'
     - env: JT='test mri'
       jdk: oraclejdk8
     - env: JT='test gems' JAVA_OPTS="$JAVA_OPTS -Xmx512m" HAS_REDIS=true

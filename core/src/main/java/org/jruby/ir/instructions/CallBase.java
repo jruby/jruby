@@ -227,6 +227,9 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
             }
         }
 
+        // Refined scopes require dynamic scope in order to get the static scope
+        if (potentiallyRefined) scope.getFlags().add(REQUIRES_DYNSCOPE);
+
         return modifiedScope;
     }
 
