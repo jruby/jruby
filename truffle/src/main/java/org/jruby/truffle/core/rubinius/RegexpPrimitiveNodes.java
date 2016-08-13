@@ -118,10 +118,10 @@ public abstract class RegexpPrimitiveNodes {
 
             if (forward) {
                 // Search forward through the string.
-                return RegexpNodes.matchCommon(getContext(), this, makeSubstringNode, regexp, string, false, false, matcher, start, end);
+                return RegexpNodes.matchCommon(getContext(), this, makeSubstringNode, regexp, string, false, matcher, start, end);
             } else {
                 // Search backward through the string.
-                return RegexpNodes.matchCommon(getContext(), this, makeSubstringNode, regexp, string, false, false, matcher, end, start);
+                return RegexpNodes.matchCommon(getContext(), this, makeSubstringNode, regexp, string, false, matcher, end, start);
             }
         }
 

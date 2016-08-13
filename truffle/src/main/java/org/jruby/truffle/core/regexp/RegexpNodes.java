@@ -100,15 +100,15 @@ public abstract class RegexpNodes {
     }
 
     @TruffleBoundary
-    public static Object matchCommon(RubyContext context, Node currentNode, RopeNodes.MakeSubstringNode makeSubstringNode, DynamicObject regexp, DynamicObject string, boolean operator,
+    public static DynamicObject matchCommon(RubyContext context, Node currentNode, RopeNodes.MakeSubstringNode makeSubstringNode, DynamicObject regexp, DynamicObject string,
             boolean setNamedCaptures, int startPos) {
         final Matcher matcher = createMatcher(context, regexp, string);
         int range = StringOperations.rope(string).byteLength();
-        return matchCommon(context, currentNode, makeSubstringNode, regexp, string, operator, setNamedCaptures, matcher, startPos, range);
+        return matchCommon(context, currentNode, makeSubstringNode, regexp, string, setNamedCaptures, matcher, startPos, range);
     }
 
     @TruffleBoundary
-    public static Object matchCommon(RubyContext context, Node currentNode, RopeNodes.MakeSubstringNode makeSubstringNode, DynamicObject regexp, DynamicObject string, boolean operator,
+    public static DynamicObject matchCommon(RubyContext context, Node currentNode, RopeNodes.MakeSubstringNode makeSubstringNode, DynamicObject regexp, DynamicObject string,
             boolean setNamedCaptures, Matcher matcher, int startPos, int range) {
         assert RubyGuards.isRubyRegexp(regexp);
         assert RubyGuards.isRubyString(string);
@@ -191,11 +191,7 @@ public abstract class RegexpNodes {
             }
         }
 
-        if (operator) {
-            return matcher.getBegin();
-        } else {
-            return matchData;
-        }
+        return matchData;
     }
 
     // because the factory is not constant
@@ -392,17 +388,29 @@ public abstract class RegexpNodes {
     public abstract static class MatchOperatorNode extends CoreMethodArrayArgumentsNode {
 
         @Child private RopeNodes.MakeSubstringNode makeSubstringNode;
+        @Child private RegexpSetLastMatchPrimitiveNode setLastMatchNode;
         @Child private CallDispatchHeadNode toSNode;
         @Child private ToStrNode toStrNode;
 
         public MatchOperatorNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
+            setLastMatchNode = RegexpPrimitiveNodesFactory.RegexpSetLastMatchPrimitiveNodeFactory.create(null);
         }
 
         @Specialization(guards = "isRubyString(string)")
         public Object match(DynamicObject regexp, DynamicObject string) {
-            return matchCommon(getContext(), this, makeSubstringNode, regexp, string, true, true, 0);
+            final Matcher matcher = createMatcher(getContext(), regexp, string);
+            final int range = StringOperations.rope(string).byteLength();
+
+            final DynamicObject matchData = matchCommon(getContext(), this, makeSubstringNode, regexp, string, true, matcher, 0, range);
+            setLastMatchNode.executeSetLastMatch(matchData);
+
+            if (matchData != nil()) {
+                return matcher.getBegin();
+            }
+
+            return nil();
         }
 
         @Specialization(guards = "isRubySymbol(symbol)")
@@ -456,7 +464,7 @@ public abstract class RegexpNodes {
 
         @Specialization(guards = "isRubyString(string)")
         public Object matchStart(DynamicObject regexp, DynamicObject string, int startPos) {
-            final Object matchResult = matchCommon(getContext(), this, makeSubstringNode, regexp, string, false, false, startPos);
+            final Object matchResult = matchCommon(getContext(), this, makeSubstringNode, regexp, string, false, startPos);
             if (RubyGuards.isRubyMatchData(matchResult) && Layouts.MATCH_DATA.getRegion((DynamicObject) matchResult).numRegs > 0
                 && Layouts.MATCH_DATA.getRegion((DynamicObject) matchResult).beg[0] == startPos) {
                 return matchResult;
@@ -510,7 +518,7 @@ public abstract class RegexpNodes {
 
         @Specialization(guards = "isRubyString(string)")
         public Object searchFrom(DynamicObject regexp, DynamicObject string, int startPos) {
-            return matchCommon(getContext(), this, makeSubstringNode, regexp, string, false, false, startPos);
+            return matchCommon(getContext(), this, makeSubstringNode, regexp, string, false, startPos);
         }
     }
 
