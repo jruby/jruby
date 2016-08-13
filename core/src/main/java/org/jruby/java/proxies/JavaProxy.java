@@ -112,14 +112,14 @@ public class JavaProxy extends RubyObject {
     }
 
     static JavaClass java_class(final ThreadContext context, final RubyModule module) {
-        return (JavaClass) Helpers.invoke(context, module, "java_class");
+        return (JavaClass) JavaClass.java_class(context, module);
     }
 
     @JRubyMethod(meta = true, frame = true) // framed for invokeSuper
     public static IRubyObject inherited(ThreadContext context, IRubyObject recv, IRubyObject subclass) {
-        IRubyObject subJavaClass = Helpers.invoke(context, subclass, "java_class");
+        IRubyObject subJavaClass = JavaClass.java_class(context, (RubyClass) subclass);
         if (subJavaClass.isNil()) {
-            subJavaClass = Helpers.invoke(context, recv, "java_class");
+            subJavaClass = JavaClass.java_class(context, (RubyClass) recv);
             Helpers.invoke(context, subclass, "java_class=", subJavaClass);
         }
         return Helpers.invokeSuper(context, recv, subclass, Block.NULL_BLOCK);
@@ -265,8 +265,7 @@ public class JavaProxy extends RubyObject {
 
         // We could not find all of them print out first one (we could print them all?)
         if ( ! fieldMap.isEmpty() ) {
-            throw JavaClass.undefinedFieldError(context.runtime,
-                    topModule.getName(), fieldMap.keySet().iterator().next());
+            throw JavaClass.undefinedFieldError(context.runtime, topModule.getName(), fieldMap.keySet().iterator().next());
         }
 
     }

@@ -46,6 +46,7 @@ import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.java.addons.ClassJavaAddons;
 import org.jruby.java.proxies.ArrayJavaProxy;
 import org.jruby.java.proxies.ConcreteJavaProxy;
 import org.jruby.java.util.ArrayUtils;
@@ -54,6 +55,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.CodegenUtils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -63,8 +65,6 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.List;
-import org.jruby.util.CodegenUtils;
 
 import static org.jruby.RubyModule.undefinedMethodMessage;
 
@@ -156,23 +156,56 @@ public class JavaClass extends JavaObject {
         return (Class<?>) getValue();
     }
 
+    /**
+     * Get the associated JavaClass for a proxy module.
+     *
+     * The passed module/class is assumed to be a Java proxy module/class!
+     * @param context
+     * @param proxy
+     * @return class
+     */
     public static Class<?> getJavaClass(final ThreadContext context, final RubyModule proxy) {
-        final IRubyObject javaClass = Helpers.invoke(context, proxy, "java_class");
-        return ((JavaClass) javaClass).javaClass();
+        return ((JavaClass) java_class(context, proxy)).javaClass();
     }
 
+    /**
+     * Retieve a JavaClass if the passed module/class is a Java proxy.
+     * @param context
+     * @param proxy
+     * @return class or null if not a Java proxy
+     *
+     * @note Class objects have a java_class method but they're not considered Java proxies!
+     */
     public static Class<?> getJavaClassIfProxy(final ThreadContext context, final RubyModule proxy) {
-        IRubyObject java_class = proxy.getInstanceVariable("@java_class");
-        if (java_class == null && proxy.respondsTo("java_class")) {
-            java_class = Helpers.invoke(context, proxy, "java_class");
-        }
+        IRubyObject java_class = java_class(context, proxy);
         return ( java_class instanceof JavaClass ) ? ((JavaClass) java_class).javaClass() : null;
     }
 
-    public static boolean isProxyType(final ThreadContext context, final RubyModule proxy) {
+    //public static boolean isProxyType(final ThreadContext context, final RubyModule proxy) {
+    //    IRubyObject java_class = proxy.getInstanceVariable("@java_class");
+    //    return (java_class != null && java_class.isTrue()) ||
+    //            proxy.respondsTo("java_class"); // not all proxy types have @java_class set
+    //}
+
+    /**
+     * Returns the (reified or proxied) Java class if the passed Ruby module/class has one.
+     * @param context
+     * @param proxy
+     * @return Java proxy class, Java reified class or nil
+     */
+    public static IRubyObject java_class(final ThreadContext context, final RubyModule proxy) {
+        // NOTE: without this "hack" we would always need to call java_class (and catch RaiseException)
+        //if ( proxy instanceof RubyClass ) return ClassJavaAddons.java_class(context, proxy);
+
         IRubyObject java_class = proxy.getInstanceVariable("@java_class");
-        return (java_class != null && java_class.isTrue()) ||
-                proxy.respondsTo("java_class"); // not all proxy types has @java_class set
+        if ( java_class == null ) { // || java_class.isNil()
+            if ( proxy.respondsTo("java_class") ) { // NOTE: quite bad since built-in Ruby classes will return
+                // a Ruby Java proxy for java.lang.Class while Java proxies will return a JavaClass instance !
+                java_class = Helpers.invoke(context, proxy, "java_class");
+            }
+            else java_class = context.nil; // we return != null (just like callMethod would)
+        }
+        return java_class;
     }
 
     static boolean isPrimitiveName(final String name) {

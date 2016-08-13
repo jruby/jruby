@@ -30,6 +30,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jruby.javasupport.JavaClass;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.callsite.CachingCallSite;
@@ -1855,13 +1856,14 @@ public class RubyClass extends RubyModule {
     }
 
     @Override
-    public Object toJava(Class klass) {
-        if (klass == Class.class) {
+    public Object toJava(final Class target) {
+        if (target == Class.class) {
             if (reifiedClass == null) reifyWithAncestors(); // possibly auto-reify
             // Class requested; try java_class or else return nearest reified class
-            if (respondsTo("java_class")) {
-                return callMethod("java_class").toJava(klass);
-            }
+            final ThreadContext context = getRuntime().getCurrentContext();
+            IRubyObject javaClass = JavaClass.java_class(context, this);
+            if ( ! javaClass.isNil() ) return javaClass.toJava(target);
+
             for (RubyClass current = this; current != null; current = current.getSuperClass()) {
                 Class reifiedClazz = current.getReifiedClass();
                 if ( reifiedClazz != null ) return reifiedClazz;
@@ -1869,12 +1871,12 @@ public class RubyClass extends RubyModule {
             // should never fall through, since RubyObject has a reified class
         }
 
-        if (klass.isAssignableFrom(RubyClass.class)) {
+        if (target.isAssignableFrom(RubyClass.class)) {
             // they're asking for something RubyClass extends, give them that
             return this;
         }
 
-        return defaultToJava(klass);
+        return defaultToJava(target);
     }
 
     /**
