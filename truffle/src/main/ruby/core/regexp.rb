@@ -222,7 +222,7 @@ class Regexp
 
   def match(str, pos=0)
     unless str
-      Regexp.last_match = nil
+      Truffle.invoke_primitive(:regexp_set_last_match, nil)
       return nil
     end
 
@@ -233,7 +233,7 @@ class Regexp
     pos = pos < 0 ? pos + str.size : pos
     pos = m.character_to_byte_index pos
     result = search_region(str, pos, str.bytesize, true)
-    Regexp.last_match = result
+    Truffle.invoke_primitive(:regexp_set_last_match, result)
 
     if result && block_given?
       yield result
@@ -248,16 +248,16 @@ class Regexp
     elsif !other.kind_of? String
       other = Rubinius::Type.check_convert_type other, String, :to_str
       unless other
-        Regexp.last_match = nil
+        Truffle.invoke_primitive(:regexp_set_last_match, nil)
         return false
       end
     end
 
     if match = match_from(other, 0)
-      Regexp.last_match = match
+      Truffle.invoke_primitive(:regexp_set_last_match, match)
       true
     else
-      Regexp.last_match = nil
+      Truffle.invoke_primitive(:regexp_set_last_match, nil)
       false
     end
   end
@@ -286,7 +286,7 @@ class Regexp
     line = $_
 
     unless line.kind_of?(String)
-      Regexp.last_match = nil
+      Truffle.invoke_primitive(:regexp_set_last_match, nil)
       return nil
     end
 

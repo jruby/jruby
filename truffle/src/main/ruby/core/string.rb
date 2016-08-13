@@ -133,7 +133,7 @@ class String
     case pattern
       when Regexp
         match_data = pattern.search_region(self, 0, bytesize, true)
-        Regexp.last_match = match_data
+        Truffle.invoke_primitive(:regexp_set_last_match, match_data)
         return match_data.begin(0) if match_data
       when String
         raise TypeError, "type mismatch: String given"
@@ -191,7 +191,7 @@ class String
 
     if pattern.kind_of? Regexp
       if m = pattern.match(self)
-        Regexp.last_match = m
+        Truffle.invoke_primitive(:regexp_set_last_match, m)
         return [m.pre_match, m.to_s, m.post_match]
       end
     else
@@ -213,7 +213,7 @@ class String
   def rpartition(pattern)
     if pattern.kind_of? Regexp
       if m = pattern.search_region(self, 0, size, false)
-        Regexp.last_match = m
+        Truffle.invoke_primitive(:regexp_set_last_match, m)
         [m.pre_match, m[0], m.post_match]
       end
     else
@@ -268,14 +268,14 @@ class String
       val.taint if taint
 
       if block_given?
-        Regexp.last_match = match
+        Truffle.invoke_primitive(:regexp_set_last_match, match)
         yield(val)
       else
         ret << val
       end
     end
 
-    Regexp.last_match = last_match
+    Truffle.invoke_primitive(:regexp_set_last_match, last_match)
     return ret
   end
 
@@ -628,7 +628,7 @@ class String
     pattern = Rubinius::Type.coerce_to_regexp(pattern, true) unless pattern.kind_of? Regexp
     match = pattern.match_from(dup, 0)
 
-    Regexp.last_match = match
+    Truffle.invoke_primitive(:regexp_set_last_match, match)
 
     ret = byteslice(0, 0) # Empty string and string subclass
 
@@ -636,7 +636,7 @@ class String
       ret.append match.pre_match
 
       if use_yield || hash
-        Regexp.last_match = match
+        Truffle.invoke_primitive(:regexp_set_last_match, match)
 
         if use_yield
           val = yield match.to_s
@@ -697,7 +697,7 @@ class String
     pattern = Rubinius::Type.coerce_to_regexp(pattern, true) unless pattern.kind_of? Regexp
     match = pattern.match_from(self, 0)
 
-    Regexp.last_match = match
+    Truffle.invoke_primitive(:regexp_set_last_match, match)
 
     ret = byteslice(0, 0) # Empty string and string subclass
 
@@ -705,7 +705,7 @@ class String
       ret.append match.pre_match
 
       if use_yield || hash
-        Regexp.last_match = match
+        Truffle.invoke_primitive(:regexp_set_last_match, match)
 
         duped = dup
         if use_yield
@@ -750,7 +750,7 @@ class String
       if one.kind_of? Regexp
         lm = Regexp.last_match
         self[one] = '' if result
-        Regexp.last_match = lm
+        Truffle.invoke_primitive(:regexp_set_last_match, lm)
       else
         self[one] = '' if result
       end
@@ -760,7 +760,7 @@ class String
       if one.kind_of? Regexp
         lm = Regexp.last_match
         self[one, two] = '' if result
-        Regexp.last_match = lm
+        Truffle.invoke_primitive(:regexp_set_last_match, lm)
       else
         self[one, two] = '' if result
       end
@@ -1009,7 +1009,7 @@ class String
     match = pattern.search_region(self, 0, bytesize, true)
 
     unless match
-      Regexp.last_match = nil
+      Truffle.invoke_primitive(:regexp_set_last_match, nil)
     end
 
     duped = dup
@@ -1028,7 +1028,7 @@ class String
       end
 
       if use_yield || hash
-        Regexp.last_match = match
+        Truffle.invoke_primitive(:regexp_set_last_match, match)
 
         if use_yield
           val = yield match.to_s
@@ -1071,7 +1071,7 @@ class String
       offset = match.byte_begin(0)
     end
 
-    Regexp.last_match = last_match
+    Truffle.invoke_primitive(:regexp_set_last_match, last_match)
 
     str = byteslice(last_end, bytesize-last_end+1)
     if str
@@ -1117,7 +1117,7 @@ class String
     match = pattern.search_region(self, 0, bytesize, true)
 
     unless match
-      Regexp.last_match = nil
+      Truffle.invoke_primitive(:regexp_set_last_match, nil)
       return nil
     end
 
@@ -1137,7 +1137,7 @@ class String
       end
 
       if use_yield || hash
-        Regexp.last_match = match
+        Truffle.invoke_primitive(:regexp_set_last_match, match)
 
         if use_yield
           val = yield match.to_s
@@ -1180,7 +1180,7 @@ class String
       offset = match.byte_begin(0)
     end
 
-    Regexp.last_match = last_match
+    Truffle.invoke_primitive(:regexp_set_last_match, last_match)
 
     str = byteslice(last_end, bytesize-last_end+1)
     if str
@@ -1551,10 +1551,10 @@ class String
       m = Rubinius::Mirror.reflect self
       start = m.character_to_byte_index start
       if match = str.match_from(self, start)
-        Regexp.last_match = match
+        Truffle.invoke_primitive(:regexp_set_last_match, match)
         return match.begin(0)
       else
-        Regexp.last_match = nil
+        Truffle.invoke_primitive(:regexp_set_last_match, nil)
         return
       end
     end
@@ -1604,7 +1604,7 @@ class String
         Rubinius::Type.compatible_encoding self, sub
 
         match_data = sub.search_region(self, 0, byte_finish, false)
-        Regexp.last_match = match_data
+        Truffle.invoke_primitive(:regexp_set_last_match, match_data)
         return match_data.begin(0) if match_data
 
       else
