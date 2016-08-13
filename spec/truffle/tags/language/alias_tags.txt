@@ -1,1 +1,2 @@
 slow:The alias keyword on top level defines the alias on Object
+fails:The alias keyword on top level defines the alias on Object
