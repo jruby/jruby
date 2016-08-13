@@ -134,18 +134,13 @@ public class PrintfSimpleTreeBuilder {
                             case 'f':
                             case 'e':
                             case 'E':
-                                node = WriteBytesNodeGen.create(context,
-                                    FormatFloatNodeGen.create(context,
-                                        config.getFormat(), config.isHasSpace(), config.isZero(), config.isPlus(), config.isMinus(),
-                                        widthNode,
-                                        precisionNode,
-                                        ToDoubleWithCoercionNodeGen.create(context,
-                                            valueNode)));
-                                break;
                             case 'g':
                             case 'G':
                                 node = WriteBytesNodeGen.create(context,
-                                    FormatFloatHumanReadableNodeGen.create(context,
+                                    FormatFloatNodeGen.create(context,
+                                        config.getFormat(), config.isHasSpace(), config.isZero(), config.isPlus(), config.isMinus(), config.isFsharp(),
+                                        widthNode,
+                                        precisionNode,
                                         ToDoubleWithCoercionNodeGen.create(context,
                                             valueNode)));
                                 break;
