@@ -72,20 +72,9 @@ matrix:
     - env: COMMAND=test/check_versions.sh
       jdk: oraclejdk8
     # JRuby+Truffle needs Java 8
-    - env: JT='test specs :command_line'
+    - env: JT='test fast'
       jdk: oraclejdk8
-    - env: JT='test specs :language'
-      jdk: oraclejdk8
-    - env: JT='test specs :core'
-      jdk: oraclejdk8
-    - env: JT='test specs :library'
-      jdk: oraclejdk8
-    - env: JT='test specs :truffle'
-      jdk: oraclejdk8
-  allow_failures:
-    - env: JT='test mri'
-      jdk: oraclejdk8
-    - env: JT='test gems' JAVA_OPTS="$JAVA_OPTS -Xmx512m" HAS_REDIS=true
+  #allow_failures:
     #- env: PHASE='-Pj2ee'
     #  jdk: oraclejdk7
     # NOTE: build seems to never start (waited for any to finish for more than a day) - probably a travis-ci bug
