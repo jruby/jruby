@@ -13,17 +13,24 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.Frame;
+import com.oracle.truffle.api.frame.FrameDescriptor;
+import com.oracle.truffle.api.frame.FrameInstance;
+import com.oracle.truffle.api.frame.FrameSlot;
+import com.oracle.truffle.api.frame.FrameSlotKind;
+import com.oracle.truffle.api.frame.FrameSlotTypeException;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.joni.Matcher;
 import org.jruby.truffle.Layouts;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.Primitive;
 import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.core.regexp.RegexpGuards;
 import org.jruby.truffle.core.regexp.RegexpNodes;
 import org.jruby.truffle.core.rope.RopeNodes;
 import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.control.RaiseException;
+import org.jruby.truffle.language.threadlocal.ThreadLocalObject;
 import org.jruby.truffle.util.StringUtils;
 
 /**
@@ -127,31 +134,95 @@ public abstract class RegexpPrimitiveNodes {
 
     }
 
-    @Primitive(name = "regexp_set_last_match")
+    @Primitive(name = "regexp_set_last_match", needsSelf = false)
     public static abstract class RegexpSetLastMatchPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
-        @Specialization
-        public Object setLastMatchData(DynamicObject regexpClass, Object matchData) {
-            setLastMatch(getContext(), matchData);
-            return matchData;
+        public static RegexpSetLastMatchPrimitiveNode create() {
+            return RegexpPrimitiveNodesFactory.RegexpSetLastMatchPrimitiveNodeFactory.create(null);
         }
 
+        public abstract DynamicObject executeSetLastMatch(Object matchData);
+
         @TruffleBoundary
-        public static void setLastMatch(RubyContext context, Object matchData) {
-            final DynamicObject threadLocals = Layouts.THREAD.getThreadLocals(context.getThreadManager().getCurrentThread());
-            boolean res = threadLocals.set("$~", matchData);
-            assert res;
+        @Specialization
+        public DynamicObject setLastMatchData(DynamicObject matchData) {
+            // TODO (nirvdrum 08-Aug-16): Validate that the matchData is either nil or a MatchData object, otherwise throw an exception. It should use the same logic as assigning $~ does in the translator.
+
+            Frame frame = getContext().getCallStack().getCallerFrameIgnoringSend().getFrame(FrameInstance.FrameAccess.READ_WRITE, true);
+            FrameSlot slot = frame.getFrameDescriptor().findFrameSlot("$~");
+
+            while (slot == null) {
+                final Frame nextFrame = RubyArguments.getDeclarationFrame(frame);
+
+                if (nextFrame == null) {
+                    slot = frame.getFrameDescriptor().addFrameSlot("$~", FrameSlotKind.Object);
+                } else {
+                    slot = nextFrame.getFrameDescriptor().findFrameSlot("$~");
+                    frame = nextFrame;
+                }
+            }
+
+            final Object previousMatchData;
+            try {
+                previousMatchData = frame.getObject(slot);
+
+                if (previousMatchData instanceof ThreadLocalObject) {
+                    final ThreadLocalObject threadLocalObject = (ThreadLocalObject) previousMatchData;
+
+                    threadLocalObject.set(matchData);
+                } else {
+                    frame.setObject(slot, ThreadLocalObject.wrap(getContext(), matchData));
+                }
+            } catch (FrameSlotTypeException e) {
+                throw new IllegalStateException(e);
+            }
+
+            return matchData;
         }
 
     }
 
-    @Primitive(name = "regexp_set_block_last_match")
+    @Primitive(name = "regexp_set_block_last_match", needsSelf = false)
     public static abstract class RegexpSetBlockLastMatchPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
-        @Specialization
-        public DynamicObject setBlockLastMatch(DynamicObject regexpClass) {
-            // TODO CS 7-Mar-15 what does this do?
-            return nil();
+        @TruffleBoundary
+        @Specialization(guards = "isRubyProc(block)")
+        public Object setBlockLastMatch(DynamicObject block, DynamicObject matchData) {
+
+            Frame callerFrame = Layouts.PROC.getDeclarationFrame(block);
+
+            if (callerFrame == null) {
+                return matchData;
+            }
+
+            Frame tempFrame = RubyArguments.getDeclarationFrame(callerFrame);
+
+            while (tempFrame != null) {
+                callerFrame = tempFrame;
+                tempFrame = RubyArguments.getDeclarationFrame(callerFrame);
+            }
+
+            final FrameDescriptor callerFrameDescriptor = callerFrame.getFrameDescriptor();
+
+            try {
+                final FrameSlot frameSlot = callerFrameDescriptor.findFrameSlot("$~");
+
+                if (frameSlot == null) {
+                    return matchData;
+                }
+
+                final Object matchDataHolder = callerFrame.getObject(frameSlot);
+
+                if (matchDataHolder instanceof ThreadLocalObject) {
+                    ((ThreadLocalObject) matchDataHolder).set(matchData);
+                } else {
+                    callerFrame.setObject(frameSlot, ThreadLocalObject.wrap(getContext(), matchData));
+                }
+            } catch (FrameSlotTypeException e) {
+                throw new IllegalStateException(e);
+            }
+
+            return matchData;
         }
 
     }

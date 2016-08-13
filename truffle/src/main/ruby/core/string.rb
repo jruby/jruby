@@ -1204,7 +1204,7 @@ class String
              else
                pattern.match self, pos
              end
-    Regexp.propagate_last_match
+    Truffle.invoke_primitive(:regexp_set_last_match, $~)
     result
   end
 

@@ -103,15 +103,6 @@ class Regexp
     raise PrimitiveFailure, "Regexp#options primitive failed"
   end
     
-  def self.last_match(n = nil)
-    if n
-      # TODO (nirvdrum Jan. 8, 2015) Make sure this supports symbol keys for named capture lookup.
-      $~.values_at(n).first
-    else
-      $~
-    end
-  end
-
   def self.last_match=(match)
     Truffle.primitive :regexp_set_last_match
 
@@ -127,7 +118,7 @@ class Regexp
     raise PrimitiveFailure, "Regexp#propagate_last_match primitive failed"
   end
 
-  def self.set_block_last_match
+  def self.set_block_last_match(block, match_data)
     Truffle.primitive :regexp_set_block_last_match
     raise PrimitiveFailure, "Regexp#set_block_last_match primitive failed"
   end

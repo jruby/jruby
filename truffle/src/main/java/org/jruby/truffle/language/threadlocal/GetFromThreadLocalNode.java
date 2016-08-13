@@ -12,27 +12,40 @@ package org.jruby.truffle.language.threadlocal;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 
-@NodeChild(value = "value", type = RubyNode.class)
-public abstract class GetFromThreadLocalNode extends RubyNode {
+public class GetFromThreadLocalNode extends RubyNode {
 
-    public GetFromThreadLocalNode(RubyContext context, SourceSection sourceSection) {
+    @Child private RubyNode value;
+
+    public GetFromThreadLocalNode(RubyContext context, SourceSection sourceSection, RubyNode value) {
         super(context, sourceSection);
+        this.value = value;
+    }
+
+    @Override
+    public Object isDefined(VirtualFrame frame) {
+        return value.isDefined(frame);
+    }
+
+    @Override
+    public Object execute(VirtualFrame frame) {
+        final Object threadLocalObject = value.execute(frame);
+
+        if (RubyGuards.isThreadLocal(threadLocalObject)) {
+            return getThreadLocalValue((ThreadLocalObject) threadLocalObject);
+        }
+
+        return threadLocalObject;
     }
 
     @TruffleBoundary
-    @Specialization
-    public Object get(ThreadLocalObject threadLocal) {
-        return threadLocal.get();
+    private Object getThreadLocalValue(ThreadLocalObject threadLocalObject) {
+        return threadLocalObject.get();
     }
-
-    @Specialization(guards = "!isThreadLocal(value)")
-    public Object get(Object value) {
-        return value;
-    }
-
 
 }

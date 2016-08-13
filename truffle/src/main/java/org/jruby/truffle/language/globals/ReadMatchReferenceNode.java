@@ -9,7 +9,6 @@
  */
 package org.jruby.truffle.language.globals;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
@@ -17,6 +16,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.threadlocal.GetFromThreadLocalNode;
 
 public class ReadMatchReferenceNode extends RubyNode {
 
@@ -27,18 +27,23 @@ public class ReadMatchReferenceNode extends RubyNode {
 
     private final int index;
 
-    @Child private ReadThreadLocalGlobalVariableNode readMatchNode;
+    @Child private GetFromThreadLocalNode readMatchNode;
 
     private final ConditionProfile matchNilProfile = ConditionProfile.createBinaryProfile();
 
-    public ReadMatchReferenceNode(RubyContext context, SourceSection sourceSection, int index) {
+    public ReadMatchReferenceNode(RubyContext context, SourceSection sourceSection, GetFromThreadLocalNode readMatchNode, int index) {
         super(context, sourceSection);
+        this.readMatchNode = readMatchNode;
         this.index = index;
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
-        final Object match = getReadMatchNode().execute(frame);
+        if (readMatchNode == null) {
+            return nil();
+        }
+
+        final Object match = readMatchNode.execute(frame);
 
         if (matchNilProfile.profile(match == nil())) {
             return nil();
@@ -86,15 +91,6 @@ public class ReadMatchReferenceNode extends RubyNode {
         } else {
             return coreStrings().GLOBAL_VARIABLE.createInstance();
         }
-    }
-
-    private ReadThreadLocalGlobalVariableNode getReadMatchNode() {
-        if (readMatchNode == null) {
-            CompilerDirectives.transferToInterpreterAndInvalidate();
-            readMatchNode = insert(new ReadThreadLocalGlobalVariableNode(getContext(), null, "$~", true));
-        }
-
-        return readMatchNode;
     }
 
 }

@@ -33,8 +33,8 @@ import java.util.Set;
 
 public abstract class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor<RubyNode> {
 
-    public static final Set<String> ALWAYS_DEFINED_GLOBALS = new HashSet<>(Arrays.asList("$~", "$!"));
-    public static final Set<String> FRAME_LOCAL_GLOBAL_VARIABLES = new HashSet<>(Arrays.asList("$_", "$+", "$&", "$`", "$'"));
+    public static final Set<String> ALWAYS_DEFINED_GLOBALS = new HashSet<>(Arrays.asList("$!", "$~"));
+    public static final Set<String> FRAME_LOCAL_GLOBAL_VARIABLES = new HashSet<>(Arrays.asList("$_", "$+", "$&", "$`", "$'", "$~", "$1", "$2", "$3", "$4", "$5", "$6", "$7", "$8", "$9"));
 
     protected final Node currentNode;
     protected final RubyContext context;

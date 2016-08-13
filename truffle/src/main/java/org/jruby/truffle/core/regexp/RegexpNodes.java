@@ -20,12 +20,15 @@ package org.jruby.truffle.core.regexp;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Fallback;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.Frame;
+import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.FrameInstance.FrameAccess;
 import com.oracle.truffle.api.frame.FrameSlot;
+import com.oracle.truffle.api.frame.FrameSlotTypeException;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
@@ -57,8 +60,10 @@ import org.jruby.truffle.core.rope.RopeNodes;
 import org.jruby.truffle.core.rope.RopeNodesFactory;
 import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.rubinius.RegexpPrimitiveNodes.RegexpSetLastMatchPrimitiveNode;
+import org.jruby.truffle.core.rubinius.RegexpPrimitiveNodesFactory;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.core.thread.ThreadManager.BlockingAction;
+import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
@@ -66,6 +71,7 @@ import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
+import org.jruby.truffle.language.threadlocal.ThreadLocalObject;
 import org.jruby.truffle.util.StringUtils;
 import org.jruby.util.ByteList;
 import org.jruby.util.RegexpOptions;
@@ -125,8 +131,6 @@ public abstract class RegexpNodes {
         final DynamicObject nil = context.getCoreLibrary().getNilObject();
 
         if (match == -1) {
-            RegexpSetLastMatchPrimitiveNode.setLastMatch(context, nil);
-
             if (setNamedCaptures && Layouts.REGEXP.getRegex(regexp).numberOfNames() > 0) {
                 final Frame frame = context.getCallStack().getCallerFrameIgnoringSend().getFrame(FrameAccess.READ_WRITE, false);
                 for (Iterator<NameEntry> i = Layouts.REGEXP.getRegex(regexp).namedBackrefIterator(); i.hasNext();) {
@@ -161,8 +165,6 @@ public abstract class RegexpNodes {
 
         final DynamicObject matchData = Layouts.MATCH_DATA.createMatchData(context.getCoreLibrary().getMatchDataFactory(),
                 string, regexp, region, values, pre, post, global, null);
-
-        RegexpSetLastMatchPrimitiveNode.setLastMatch(context, matchData);
 
         if (setNamedCaptures && Layouts.REGEXP.getRegex(regexp).numberOfNames() > 0) {
             final Frame frame = context.getCallStack().getCallerFrameIgnoringSend().getFrame(FrameAccess.READ_WRITE, false);
@@ -471,6 +473,60 @@ public abstract class RegexpNodes {
             }
             return nil();
         }
+    }
+
+    @CoreMethod(names = "last_match", onSingleton = true, optional = 1, lowerFixnum = 1)
+    public abstract static class LastMatchNode extends CoreMethodArrayArgumentsNode {
+
+        @Specialization
+        public Object lastMatch(NotProvided index) {
+            return getMatchData();
+        }
+
+        @Specialization
+        public Object lastMatch(VirtualFrame frame, int index,
+                                @Cached("create()") MatchDataNodes.GetIndexNode getIndexNode) {
+            final Object matchData = getMatchData();
+
+            if (matchData == nil()) {
+                return nil();
+            } else {
+                return getIndexNode.executeGetIndex(frame, matchData, index, NotProvided.INSTANCE);
+            }
+        }
+
+        @TruffleBoundary
+        private Object getMatchData() {
+            Frame frame = getContext().getCallStack().getCallerFrameIgnoringSend().getFrame(FrameInstance.FrameAccess.READ_WRITE, true);
+            FrameSlot slot = frame.getFrameDescriptor().findFrameSlot("$~");
+
+            while (slot == null) {
+                final Frame nextFrame = RubyArguments.getDeclarationFrame(frame);
+
+                if (nextFrame == null) {
+                    return nil();
+                } else {
+                    slot = nextFrame.getFrameDescriptor().findFrameSlot("$~");
+                    frame = nextFrame;
+                }
+            }
+
+            final Object previousMatchData;
+            try {
+                previousMatchData = frame.getObject(slot);
+
+                if (previousMatchData instanceof ThreadLocalObject) {
+                    final ThreadLocalObject threadLocalObject = (ThreadLocalObject) previousMatchData;
+
+                    return threadLocalObject.get();
+                } else {
+                    return previousMatchData;
+                }
+            } catch (FrameSlotTypeException e) {
+                throw new IllegalStateException(e);
+            }
+        }
+
     }
 
     @CoreMethod(names = { "quote", "escape" }, onSingleton = true, required = 1)
