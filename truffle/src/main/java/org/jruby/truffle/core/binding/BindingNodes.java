@@ -35,6 +35,7 @@ import org.jruby.truffle.language.locals.ReadFrameSlotNodeGen;
 import org.jruby.truffle.language.locals.WriteFrameSlotNode;
 import org.jruby.truffle.language.locals.WriteFrameSlotNodeGen;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
+import org.jruby.truffle.language.parser.jruby.Translator;
 import org.jruby.truffle.language.threadlocal.ThreadLocalObject;
 
 import java.util.ArrayList;
@@ -309,7 +310,9 @@ public abstract class BindingNodes {
             final List<Object> names = new ArrayList<>();
             while (frame != null) {
                 for (FrameSlot slot : frame.getFrameDescriptor().getSlots()) {
-                    if (slot.getIdentifier() instanceof String && !((String) slot.getIdentifier()).startsWith("rubytruffle_temp_frame_on_stack_marker")) {
+                    if (slot.getIdentifier() instanceof String &&
+                            !((String) slot.getIdentifier()).startsWith("rubytruffle_temp_frame_on_stack_marker") &&
+                            !Translator.FRAME_LOCAL_GLOBAL_VARIABLES.contains(slot.getIdentifier())) {
                         names.add(context.getSymbolTable().getSymbol((String) slot.getIdentifier()));
                     }
                 }
