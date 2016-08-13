@@ -42,6 +42,9 @@ else
   SO = 'so'
 end
 
+# Expand GEM_HOME relative to cwd so it cannot be misinterpreted later.
+ENV['GEM_HOME'] = File.expand_path(ENV['GEM_HOME']) if ENV['GEM_HOME']
+
 LIBXML_HOME = ENV['LIBXML_HOME'] = ENV['LIBXML_HOME'] || '/usr'
 LIBXML_LIB_HOME = ENV['LIBXML_LIB_HOME'] = ENV['LIBXML_LIB_HOME'] || "#{LIBXML_HOME}/lib"
 LIBXML_INCLUDE = ENV['LIBXML_INCLUDE'] = ENV['LIBXML_INCLUDE'] || "#{LIBXML_HOME}/include/libxml2"
@@ -59,7 +62,7 @@ module Utilities
 
   def self.truffle_version
     File.foreach("#{JRUBY_DIR}/truffle/pom.rb") do |line|
-      if /'truffle\.version' => '(\d+\.\d+(?:-SNAPSHOT)?|\h+-SNAPSHOT)'/ =~ line
+      if /'truffle\.version' => '((?:\d+\.\d+|\h+)(?:-SNAPSHOT)?)'/ =~ line
         break $1
       end
     end
@@ -672,8 +675,10 @@ module Commands
     config_src = config['src']
 
     src = replace_env_vars(config['src'])
+    # Expand relative to the cext directory
     src = File.expand_path(src, cext_dir)
-    src = Dir[src]
+    src_files = Dir[src]
+    raise "No source files found in #{src}!" if src_files.empty?
 
     config_cflags = config['cflags'] || ''
     config_cflags = replace_env_vars(config_cflags)
@@ -692,7 +697,7 @@ module Commands
 
     lls = []
 
-    src.each do |src|
+    src_files.each do |src|
       ll = File.join(File.dirname(out), File.basename(src, '.*') + '.ll')
 
       clang "-I#{SULONG_HOME}/include", '-Ilib/ruby/truffle/cext', '-S', '-emit-llvm', *config_cflags, *clang_opts, src, '-o', ll

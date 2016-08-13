@@ -141,7 +141,7 @@ public class MethodTranslator extends BodyTranslator {
         }
 
         // Procs
-        final RubyNode bodyProc = new CatchForProcNode(context, enclosing(sourceSection, body.getEncapsulatingSourceSection()), composeBody(preludeProc, NodeUtil.cloneNode(body)));
+        final RubyNode bodyProc = new CatchForProcNode(context, enclosing(getIdentifier(), sourceSection, body.getEncapsulatingSourceSection()), composeBody(preludeProc, NodeUtil.cloneNode(body)));
 
         final RubyRootNode newRootNodeForProcs = new RubyRootNode(context, considerExtendingMethodToCoverEnd(bodyProc.getEncapsulatingSourceSection()), environment.getFrameDescriptor(), environment.getSharedMethodInfo(),
                 bodyProc, environment.needsDeclarationFrame());
@@ -193,7 +193,7 @@ public class MethodTranslator extends BodyTranslator {
     }
 
     private RubyNode composeBody(RubyNode prelude, RubyNode body) {
-        final SourceSection sourceSection = enclosing(prelude.getSourceSection(), body.getSourceSection());
+        final SourceSection sourceSection = enclosing(getIdentifier(), prelude.getSourceSection(), body.getSourceSection());
 
         body = sequence(context, sourceSection, Arrays.asList(prelude, body));
 
@@ -401,7 +401,7 @@ public class MethodTranslator extends BodyTranslator {
         }
     }
 
-    private static SourceSection considerExtendingMethodToCoverEnd(SourceSection sourceSection) {
+    private SourceSection considerExtendingMethodToCoverEnd(SourceSection sourceSection) {
         if (sourceSection == null) {
             return sourceSection;
         }
@@ -418,7 +418,7 @@ public class MethodTranslator extends BodyTranslator {
         for (;;) {
             final String lineAfterString = source.getCode(lineAfter).replaceAll("\\s+$","");
             if (lineAfterString.equals(indentationOnFirstLine + "end") || lineAfterString.equals(indentationOnFirstLine + "}")) {
-                return source.createSection(sourceSection.getIdentifier(), sourceSection.getCharIndex(), sourceSection.getCharLength() + 1 + source.getLineLength(lineAfter));
+                return source.createSection(getIdentifier(), sourceSection.getCharIndex(), sourceSection.getCharLength() + 1 + source.getLineLength(lineAfter));
             }
             if (++lineAfter >= source.getLineCount()) {
                 return sourceSection;

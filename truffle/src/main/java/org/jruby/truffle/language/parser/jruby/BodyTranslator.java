@@ -404,7 +404,7 @@ public class BodyTranslator extends Translator {
 
             length = Math.min(length + startIndex, sourceSection.getSource().getLength()) - startIndex;
 
-            ret = sequence(context, sourceSection.getSource().createSection(sourceSection.getIdentifier(), startIndex, length), translatedChildren);
+            ret = sequence(context, sourceSection.getSource().createSection(getIdentifier(), startIndex, length), translatedChildren);
         }
 
         return addNewlineIfNeeded(node, ret);
@@ -634,7 +634,7 @@ public class BodyTranslator extends Translator {
 
         children.addAll(Arrays.asList(argumentsAndBlock.getArguments()));
 
-        final SourceSection enclosingSourceSection = enclosing(sourceSection, children.toArray(new RubyNode[children.size()]));
+        final SourceSection enclosingSourceSection = enclosing(getIdentifier(), sourceSection, children.toArray(new RubyNode[children.size()]));
         RubyNode translated = new RubyCallNode(context, enclosingSourceSection,
                 receiver, methodName, argumentsAndBlock.getBlock(), argumentsAndBlock.getArguments(), argumentsAndBlock.isSplatted(),
                 privately || ignoreVisibility, isVCall, node.isLazy(), isAttrAssign);

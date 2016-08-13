@@ -135,7 +135,8 @@ public class TranslatorDriver implements Parser {
             throw new RaiseException(context.getCoreExceptions().syntaxError(message, currentNode));
         }
 
-        final SourceSection sourceSection = source.createSection("<main>", 0, source.getCode().length());
+        final String identifier = "<main>";
+        final SourceSection sourceSection = source.createSection(identifier, 0, source.getCode().length());
 
         final InternalMethod parentMethod = parentFrame == null ? null : RubyArguments.getMethod(parentFrame);
         LexicalScope lexicalScope;
@@ -194,13 +195,13 @@ public class TranslatorDriver implements Parser {
             }
 
             sequence.add(truffleNode);
-            truffleNode = Translator.sequence(context, sourceSection, sequence);
+            truffleNode = Translator.sequence(context, identifier, sourceSection, sequence);
         }
 
         // Load flip-flop states
 
         if (environment.getFlipFlopStates().size() > 0) {
-            truffleNode = Translator.sequence(context, truffleNode.getSourceSection(), Arrays.asList(translator.initFlipFlopStates(truffleNode.getSourceSection()), truffleNode));
+            truffleNode = Translator.sequence(context, identifier, truffleNode.getSourceSection(), Arrays.asList(translator.initFlipFlopStates(truffleNode.getSourceSection()), truffleNode));
         }
 
         // Catch next
@@ -218,13 +219,13 @@ public class TranslatorDriver implements Parser {
         truffleNode = new CatchRetryAsErrorNode(context, truffleNode.getSourceSection(), truffleNode);
 
         if (parserContext == ParserContext.TOP_LEVEL_FIRST) {
-            truffleNode = Translator.sequence(context, sourceSection, Arrays.asList(
+            truffleNode = Translator.sequence(context, identifier, sourceSection, Arrays.asList(
                     new SetTopLevelBindingNode(context, sourceSection),
                     new LoadRequiredLibrariesNode(context, sourceSection),
                     truffleNode));
 
             if (node.hasEndPosition()) {
-                truffleNode = Translator.sequence(context, sourceSection, Arrays.asList(
+                truffleNode = Translator.sequence(context, identifier, sourceSection, Arrays.asList(
                         new DataNode(context, sourceSection, node.getEndPosition()),
                         truffleNode));
             }

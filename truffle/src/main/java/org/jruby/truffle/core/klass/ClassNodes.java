@@ -168,10 +168,10 @@ public abstract class ClassNodes {
             fields.newVersion();
         }
 
-        DynamicObjectFactory factory = Layouts.CLASS.getInstanceFactory(superclass);
-        factory = Layouts.BASIC_OBJECT.setLogicalClass(factory, rubyClass);
-        factory = Layouts.BASIC_OBJECT.setMetaClass(factory, rubyClass);
-        Layouts.CLASS.setInstanceFactoryUnsafe(rubyClass, factory);
+        // Singleton classes cannot be instantiated
+        if (!isSingleton) {
+            setInstanceFactory(rubyClass, superclass);
+        }
 
         return rubyClass;
     }
@@ -179,6 +179,7 @@ public abstract class ClassNodes {
     @TruffleBoundary
     public static void initialize(RubyContext context, DynamicObject rubyClass, DynamicObject superclass) {
         assert RubyGuards.isRubyClass(superclass);
+        assert !Layouts.CLASS.getIsSingleton(rubyClass) : "Singleton classes can only be created internally";
 
         Layouts.MODULE.getFields(rubyClass).parentModule = Layouts.MODULE.getFields(superclass).start;
         Layouts.MODULE.getFields(superclass).addDependent(rubyClass);
@@ -186,12 +187,18 @@ public abstract class ClassNodes {
         Layouts.MODULE.getFields(rubyClass).newVersion();
         ensureItHasSingletonClassCreated(context, rubyClass);
 
-        DynamicObjectFactory factory = Layouts.CLASS.getInstanceFactory(superclass);
+        setInstanceFactory(rubyClass, superclass);
+
+        // superclass is set only here in initialize method to its final value
+        Layouts.CLASS.setSuperclass(rubyClass, superclass);
+    }
+
+    public static void setInstanceFactory(DynamicObject rubyClass, DynamicObject baseClass) {
+        assert !Layouts.CLASS.getIsSingleton(rubyClass) : "Singleton classes cannot be instantiated";
+        DynamicObjectFactory factory = Layouts.CLASS.getInstanceFactory(baseClass);
         factory = Layouts.BASIC_OBJECT.setLogicalClass(factory, rubyClass);
         factory = Layouts.BASIC_OBJECT.setMetaClass(factory, rubyClass);
         Layouts.CLASS.setInstanceFactoryUnsafe(rubyClass, factory);
-        // superclass is set only here in initialize method to its final value
-        Layouts.CLASS.setSuperclass(rubyClass, superclass);
     }
 
     private static DynamicObject ensureItHasSingletonClassCreated(RubyContext context, DynamicObject rubyClass) {
@@ -387,7 +394,8 @@ public abstract class ClassNodes {
     public abstract static class AllocateConstructorNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
-        public DynamicObject allocate(DynamicObject rubyClass) {
+        public DynamicObject allocate(DynamicObject classClass) {
+            assert classClass == coreLibrary().getClassClass() : "Subclasses of class Class are forbidden in Ruby";
             return createRubyClass(getContext(), coreLibrary().getClassClass(), null, coreLibrary().getObjectClass(), null, false, null, false);
         }
 

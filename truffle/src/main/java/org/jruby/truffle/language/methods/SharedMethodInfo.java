@@ -118,8 +118,6 @@ public class SharedMethodInfo {
 
         if (sourceSection == null) {
             suffix = name;
-        } else if (sourceSection.getSource() == null) {
-            suffix = sourceSection.getIdentifier();
         } else {
             suffix = name + " " + sourceSection.getShortDescription();
         }

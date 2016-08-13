@@ -391,7 +391,7 @@ public abstract class ModuleNodes {
                 ReadPreArgumentNode readArgument = new ReadPreArgumentNode(0, MissingArgumentBehavior.RUNTIME_ERROR);
                 accessInstanceVariable = new WriteInstanceVariableNode(getContext(), sourceSection, ivar, self, readArgument);
             }
-            final RubyNode sequence = Translator.sequence(getContext(), sourceSection, Arrays.asList(checkArity, accessInstanceVariable));
+            final RubyNode sequence = Translator.sequence(getContext(), name, sourceSection, Arrays.asList(checkArity, accessInstanceVariable));
             final RubyRootNode rootNode = new RubyRootNode(getContext(), sourceSection, null, sharedMethodInfo, sequence, false);
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
             final InternalMethod method = new InternalMethod(sharedMethodInfo, accessorName, module, visibility, callTarget);
@@ -1180,7 +1180,6 @@ public abstract class ModuleNodes {
             assert Layouts.CLASS.getIsSingleton(Layouts.BASIC_OBJECT.getMetaClass(self));
 
             Layouts.MODULE.getFields(selfMetaClass).initCopy(fromMetaClass); // copy class methods
-            Layouts.CLASS.setSuperclass(self, Layouts.CLASS.getSuperclass(from));
 
             return nil();
         }

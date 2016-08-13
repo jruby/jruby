@@ -46,7 +46,11 @@ public abstract class Translator extends org.jruby.ast.visitor.AbstractNodeVisit
         this.source = source;
     }
 
-    public static RubyNode sequence(RubyContext context, SourceSection sourceSection, List<RubyNode> sequence) {
+    public RubyNode sequence(RubyContext context, SourceSection sourceSection, List<RubyNode> sequence) {
+        return sequence(context, getIdentifier(), sourceSection, sequence);
+    }
+
+    public static RubyNode sequence(RubyContext context, String identifier, SourceSection sourceSection, List<RubyNode> sequence) {
         final List<RubyNode> flattened = flatten(context, sequence, true);
 
         if (flattened.isEmpty()) {
@@ -55,11 +59,11 @@ public abstract class Translator extends org.jruby.ast.visitor.AbstractNodeVisit
             return flattened.get(0);
         } else {
             final RubyNode[] flatSequence = flattened.toArray(new RubyNode[flattened.size()]);
-            return new SequenceNode(context, enclosing(sourceSection, flatSequence), flatSequence);
+            return new SequenceNode(context, enclosing(identifier, sourceSection, flatSequence), flatSequence);
         }
     }
 
-    public static SourceSection enclosing(SourceSection base, SourceSection... sourceSections) {
+    public static SourceSection enclosing(String identifier, SourceSection base, SourceSection... sourceSections) {
         for (SourceSection sourceSection : sourceSections) {
             if (base == null) {
                 base = sourceSection;
@@ -113,17 +117,17 @@ public abstract class Translator extends org.jruby.ast.visitor.AbstractNodeVisit
         length = Math.min(length, base.getSource().getLength() - index);
         length = Math.max(0, length);
 
-        return base.getSource().createSection(base.getIdentifier(), index, length);
+        return base.getSource().createSection(identifier, index, length);
     }
 
-    public static SourceSection enclosing(SourceSection base, RubyNode[] sequence) {
+    public static SourceSection enclosing(String identifier, SourceSection base, RubyNode[] sequence) {
         final SourceSection[] sourceSections = new SourceSection[sequence.length];
 
         for (int n = 0; n < sequence.length; n++) {
             sourceSections[n] = sequence[n].getEncapsulatingSourceSection();
         }
 
-        return enclosing(base, sourceSections);
+        return enclosing(identifier, base, sourceSections);
     }
 
     private static List<RubyNode> flatten(RubyContext context, List<RubyNode> sequence, boolean allowTrailingNil) {

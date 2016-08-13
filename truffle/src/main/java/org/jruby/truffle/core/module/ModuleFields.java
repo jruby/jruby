@@ -15,7 +15,9 @@ import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.utilities.CyclicAssumption;
+
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
@@ -145,6 +147,10 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
         }
     }
 
+    private boolean hasPrependedModules() {
+        return start.getParentModule() != this;
+    }
+
     @TruffleBoundary
     public void initCopy(DynamicObject from) {
         assert RubyGuards.isRubyModule(from);
@@ -155,7 +161,8 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
         this.constants.putAll(fromFields.constants);
         this.classVariables.putAll(fromFields.classVariables);
 
-        if (fromFields.start.getParentModule() != fromFields) {
+        if (fromFields.hasPrependedModules()) {
+            // Then the parent is the first in the prepend chain
             this.parentModule = fromFields.start.getParentModule();
         } else {
             this.parentModule = fromFields.parentModule;
@@ -163,6 +170,15 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
 
         for (DynamicObject ancestor : fromFields.parentAncestors()) {
             Layouts.MODULE.getFields(ancestor).addDependent(rubyModuleObject);
+        }
+
+        if (Layouts.CLASS.isClass(rubyModuleObject)) {
+            // Singleton classes cannot be instantiated
+            if (!Layouts.CLASS.getIsSingleton(from)) {
+                ClassNodes.setInstanceFactory(rubyModuleObject, from);
+            }
+
+            Layouts.CLASS.setSuperclass(rubyModuleObject, Layouts.CLASS.getSuperclass(from));
         }
     }
 

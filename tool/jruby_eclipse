@@ -10,7 +10,7 @@ home = Dir.home rescue "/home/#{`whoami`.chomp}"
 M2REPO = "#{home}/.m2/repository"
 
 TRUFFLE_VERSION = File.foreach("#{JRUBY}/truffle/pom.rb") { |line|
-  break $1 if /'truffle\.version' => '(\d+\.\d+|\h+-SNAPSHOT)'/ =~ line
+  break $1 if /'truffle\.version' => '((?:\d+\.\d+|\h+)(?:-SNAPSHOT)?)'/ =~ line
 }
 
 TRUFFLEJARS = %W[

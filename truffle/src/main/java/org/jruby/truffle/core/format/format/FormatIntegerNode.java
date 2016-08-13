@@ -29,8 +29,6 @@ import org.jruby.util.ByteList;
 import org.jruby.util.ConvertBytes;
 
 import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
-import java.util.Locale;
 
 @NodeChildren({
     @NodeChild(value = "width", type = FormatNode.class),
@@ -46,6 +44,11 @@ public abstract class FormatIntegerNode extends FormatNode {
     private static final byte[] PREFIX_BINARY_UC = {'0', 'B'};
 
     private static final byte[] PREFIX_NEGATIVE = {'.', '.'};
+
+    private static final BigInteger BIG_32 = BigInteger.valueOf(((long)Integer.MAX_VALUE + 1L) << 1);
+    private static final BigInteger BIG_64 = BIG_32.shiftLeft(32);
+    private static final BigInteger BIG_MINUS_32 = BigInteger.valueOf((long)Integer.MIN_VALUE << 1);
+    private static final BigInteger BIG_MINUS_64 = BIG_MINUS_32.shiftLeft(32);
 
     private final char format;
     private final boolean hasSpaceFlag;
@@ -74,10 +77,42 @@ public abstract class FormatIntegerNode extends FormatNode {
     @Specialization
     public byte[] format(int width, int precision, long arg) {
 
-        ByteList buf = new ByteList();
+        final char fchar = this.getFormatCharacter();
+        final boolean sign = this.getSign(fchar);
+        final int base = this.getBase(fchar);
+        final boolean zero = arg == 0;
+        final boolean negative = arg < 0;
 
-        boolean usePrefixForZero = false;
+        final byte[] bytes;
+        if (negative && fchar == 'u') {
+            bytes = getUnsignedNegativeBytes(arg);
+        } else {
+            bytes = getFixnumBytes(arg, base, sign, fchar == 'X');
+        }
 
+        return formatBytes(width, precision, fchar, sign, base, zero, negative, bytes);
+    }
+
+    @TruffleBoundary
+    @Specialization(guards = "isRubyBignum(value)")
+    public byte[] format(int width, int precision, DynamicObject value) {
+        final BigInteger bigInteger = Layouts.BIGNUM.getValue(value);
+        final boolean negative = bigInteger.signum() < 0;
+        final boolean zero = bigInteger.equals(BigInteger.ZERO);
+        final char fchar = this.getFormatCharacter();
+        final boolean sign = this.getSign(fchar);
+        final int base = this.getBase(fchar);
+
+        final byte[] bytes;
+        if (negative && fchar == 'u') {
+            bytes = getUnsignedNegativeBytes(bigInteger);
+        } else {
+            bytes = getBignumBytes(bigInteger, base, sign, fchar == 'X');
+        }
+        return formatBytes(width, precision, fchar, sign, base, zero, negative, bytes);
+    }
+
+    private byte[] formatBytes(int width, int precision, char fchar, boolean sign, int base, boolean zero, boolean negative, byte[] bytes) {
         boolean hasMinusFlag = this.hasMinusFlag;
         if (width == PrintfSimpleTreeBuilder.DEFAULT) {
             width = 0;
@@ -90,57 +125,16 @@ public abstract class FormatIntegerNode extends FormatNode {
             precision = PrintfSimpleTreeBuilder.DEFAULT;
         }
 
-        byte[] bytes = null;
         int first = 0;
         byte[] prefix = null;
-        boolean sign;
-        boolean negative;
+
         byte signChar = 0;
         byte leadChar = 0;
-        int base;
 
-        char fchar = this.format;
-
-        // 'd' and 'i' are the same
-        if (fchar == 'i') fchar = 'd';
-
-        // 'u' with space or plus flags is same as 'd'
-        if (fchar == 'u' && (hasSpaceFlag || hasPlusFlag)) {
-            fchar = 'd';
-        }
-        sign = (fchar == 'd' || (hasSpaceFlag || hasPlusFlag));
-
-        switch (fchar) {
-            case 'o':
-                base = 8;
-                break;
-            case 'x':
-            case 'X':
-                base = 16;
-                break;
-            case 'b':
-            case 'B':
-                base = 2;
-                break;
-            case 'u':
-            case 'd':
-            default:
-                base = 10;
-                break;
-        }
-
-        boolean zero;
-
-        negative = arg < 0;
-        zero = arg == 0;
-        if (negative && fchar == 'u') {
-            bytes = getUnsignedNegativeBytes(arg);
-        } else {
-            bytes = getFixnumBytes(arg, base, sign, fchar == 'X');
-        }
+        ByteList buf = new ByteList();
 
         if (hasFSharp) {
-            if (!zero || usePrefixForZero) {
+            if (!zero) {
                 switch (fchar) {
                     case 'o':
                         prefix = PREFIX_OCTAL;
@@ -204,7 +198,6 @@ public abstract class FormatIntegerNode extends FormatNode {
         int numlen = bytes.length - first;
         len += numlen;
 
-
         boolean hasPrecisionFlag = precision != PrintfSimpleTreeBuilder.DEFAULT;
 
         //        if ((flags & (FLAG_ZERO|FLAG_PRECISION)) == FLAG_ZERO) {
@@ -225,7 +218,7 @@ public abstract class FormatIntegerNode extends FormatNode {
 
         if (len < precision) {
             if (leadChar == 0) {
-                if (fchar != 'd' || usePrefixForZero || !negative ||
+                if (fchar != 'd' || !negative ||
                     hasPrecisionFlag ||
                     (hasZeroFlag && !hasMinusFlag)) {
                     buf.fill('0', precision - len);
@@ -233,15 +226,12 @@ public abstract class FormatIntegerNode extends FormatNode {
             } else if (leadChar == '.') {
                 buf.fill(leadChar, precision - len);
                 buf.append(PREFIX_NEGATIVE);
-            } else if (!usePrefixForZero) {
+            } else {
                 buf.append(PREFIX_NEGATIVE);
                 buf.fill(leadChar, precision - len - 1);
-            } else {
-                buf.fill(leadChar, precision - len + 1); // the 1 is for the stripped sign char
             }
         } else if (leadChar != 0) {
-            if (((!hasZeroFlag && precision == PrintfSimpleTreeBuilder.DEFAULT) && usePrefixForZero) ||
-                (!usePrefixForZero && "xXbBo".indexOf(fchar) != -1)) {
+            if ( "xXbBo".indexOf(fchar) != -1) {
                 buf.append(PREFIX_NEGATIVE);
             }
             if (leadChar != '.') buf.append(leadChar);
@@ -249,11 +239,37 @@ public abstract class FormatIntegerNode extends FormatNode {
         buf.append(bytes, first, numlen);
 
         if (width > 0) buf.fill(' ', width);
-        if (len < precision && fchar == 'd' && negative &&
-            !usePrefixForZero && hasMinusFlag) {
+        if (len < precision && fchar == 'd' && negative  && hasMinusFlag) {
             buf.fill(' ', precision - len);
         }
         return buf.bytes();
+    }
+
+    private boolean getSign(char fchar) {
+        return (fchar == 'd' || (hasSpaceFlag || hasPlusFlag));
+    }
+
+    private static int getBase(char fchar) {
+        final int base;
+        switch (fchar) {
+            case 'o':
+                base = 8;
+                break;
+            case 'x':
+            case 'X':
+                base = 16;
+                break;
+            case 'b':
+            case 'B':
+                base = 2;
+                break;
+            case 'u':
+            case 'd':
+            default:
+                base = 10;
+                break;
+        }
+        return base;
     }
 
 
@@ -324,45 +340,80 @@ public abstract class FormatIntegerNode extends FormatNode {
         return ConvertBytes.longToCharBytes(((Long.MAX_VALUE + 1L) << 1) + arg);
     }
 
+    private char getFormatCharacter(){
+        char fchar = this.format;
 
-    @TruffleBoundary
-    @Specialization(guards = "isRubyBignum(value)")
-    public byte[] format(int width, int precision, DynamicObject value) {
-        final BigInteger bigInteger = Layouts.BIGNUM.getValue(value);
+        // 'd' and 'i' are the same
+        if (fchar == 'i') fchar = 'd';
 
-        String formatted;
-        switch (format) {
-            case 'd':
-            case 'i':
-            case 'u':
-                formatted = bigInteger.toString();
-                break;
+        // 'u' with space or plus flags is same as 'd'
+        if (fchar == 'u' && (hasSpaceFlag || hasPlusFlag)) {
+            fchar = 'd';
+        }
+        return fchar;
+    }
 
-            case 'o':
-                formatted = bigInteger.toString(8).toLowerCase(Locale.ENGLISH);
-                break;
 
-            case 'x':
-                formatted = bigInteger.toString(16).toLowerCase(Locale.ENGLISH);
-                break;
 
-            case 'X':
-                formatted = bigInteger.toString(16).toUpperCase(Locale.ENGLISH);
-                break;
 
+    private byte[] getUnsignedNegativeBytes(BigInteger bigval) {
+        // calculation for negatives when %u specified
+        // for values >= Integer.MIN_VALUE * 2, MRI uses (the equivalent of)
+        //   long neg_u = (((long)Integer.MAX_VALUE + 1) << 1) + val
+        // for smaller values, BigInteger math is required to conform to MRI's
+        // result.
+
+        // ok, now it gets expensive...
+        int shift = 0;
+        // go through negated powers of 32 until we find one small enough
+        for (BigInteger minus = BIG_MINUS_64;
+             bigval.compareTo(minus) < 0;
+             minus = minus.shiftLeft(32), shift++) {
+        }
+        // add to the corresponding positive power of 32 for the result.
+        // meaningful? no. conformant? yes. I just write the code...
+        BigInteger nPower32 = shift > 0 ? BIG_64.shiftLeft(32 * shift) : BIG_64;
+        return stringToBytes(nPower32.add(bigval).toString(), false);
+    }
+
+    private static byte[] getBignumBytes(BigInteger val, int base, boolean sign, boolean upper) {
+        if (sign || base == 10 || val.signum() >= 0) {
+            return stringToBytes(val.toString(base), upper);
+        }
+
+        // negative values
+        byte[] bytes = val.toByteArray();
+        switch (base) {
+            case 2:
+                return ConvertBytes.twosComplementToBinaryBytes(bytes);
+            case 8:
+                return ConvertBytes.twosComplementToOctalBytes(bytes);
+            case 16:
+                return ConvertBytes.twosComplementToHexBytes(bytes, upper);
             default:
-                throw new UnsupportedOperationException();
+                return stringToBytes(val.toString(base), upper);
         }
+    }
 
-        while (formatted.length() < precision) {
-            formatted = "0" + formatted;
+
+    private static byte[] stringToBytes(CharSequence s, boolean upper) {
+        int len = s.length();
+        byte[] bytes = new byte[len];
+        if (upper) {
+            for (int i = len; --i >= 0; ) {
+                int b = (byte) ((int) s.charAt(i) & (int) 0xff);
+                if (b >= 'a' && b <= 'z') {
+                    bytes[i] = (byte) (b & ~0x20);
+                } else {
+                    bytes[i] = (byte) b;
+                }
+            }
+        } else {
+            for (int i = len; --i >= 0; ) {
+                bytes[i] = (byte) ((int) s.charAt(i) & (int) 0xff);
+            }
         }
-
-        while (formatted.length() < width) {
-            formatted = " " + formatted;
-        }
-
-        return formatted.getBytes(StandardCharsets.US_ASCII);
+        return bytes;
     }
 
 }
