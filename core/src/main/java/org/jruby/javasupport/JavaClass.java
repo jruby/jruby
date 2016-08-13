@@ -162,16 +162,17 @@ public class JavaClass extends JavaObject {
     }
 
     public static Class<?> getJavaClassIfProxy(final ThreadContext context, final RubyModule proxy) {
-        final IRubyObject javaClass;
-        try {
-            javaClass = Helpers.invoke(context, proxy, "java_class");
+        IRubyObject java_class = proxy.getInstanceVariable("@java_class");
+        if (java_class == null && proxy.respondsTo("java_class")) {
+            java_class = Helpers.invoke(context, proxy, "java_class");
         }
-        catch (RuntimeException e) {
-            // clear $! since our "java_class" invoke above may have failed and set it
-            context.setErrorInfo(context.nil);
-            return null;
-        }
-        return ( javaClass instanceof JavaClass ) ? ((JavaClass) javaClass).javaClass() : null;
+        return ( java_class instanceof JavaClass ) ? ((JavaClass) java_class).javaClass() : null;
+    }
+
+    public static boolean isProxyType(final ThreadContext context, final RubyModule proxy) {
+        IRubyObject java_class = proxy.getInstanceVariable("@java_class");
+        return (java_class != null && java_class.isTrue()) ||
+                proxy.respondsTo("java_class"); // not all proxy types has @java_class set
     }
 
     static boolean isPrimitiveName(final String name) {
