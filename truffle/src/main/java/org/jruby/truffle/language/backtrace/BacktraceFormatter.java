@@ -11,6 +11,7 @@ package org.jruby.truffle.language.backtrace;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.nodes.RootNode;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
@@ -129,7 +130,9 @@ public class BacktraceFormatter {
             builder.append("\tfrom ");
         }
 
-        if (activation.getCallNode().getRootNode() instanceof RubyRootNode) {
+        final RootNode rootNode = activation.getCallNode().getRootNode().getRootNode();
+
+        if (rootNode instanceof RubyRootNode) {
             final SourceSection sourceSection = activation.getCallNode().getEncapsulatingSourceSection();
             final SourceSection reportedSourceSection;
             String reportedName;
@@ -142,7 +145,7 @@ public class BacktraceFormatter {
                 reportedName = getMethodNameFromActivation(activation);
             } else {
                 reportedSourceSection = sourceSection;
-                reportedName = sourceSection.getIdentifier();
+                reportedName = rootNode.getName();
             }
 
             if (reportedSourceSection == null) {
@@ -264,9 +267,19 @@ public class BacktraceFormatter {
             } else {
                 builder.append(sourceSection.getShortDescription());
 
-                if (sourceSection.getIdentifier() != null && !sourceSection.getIdentifier().isEmpty()) {
+                final RootNode rootNode = callNode.getRootNode();
+
+                final String identifier;
+
+                if (rootNode instanceof RubyRootNode) {
+                    identifier = rootNode.getName();
+                } else {
+                    identifier = sourceSection.getIdentifier();
+                }
+
+                if (identifier != null && !identifier.isEmpty()) {
                     builder.append(":in `");
-                    builder.append(sourceSection.getIdentifier());
+                    builder.append(identifier);
                     builder.append("'");
                 }
             }

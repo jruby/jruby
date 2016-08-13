@@ -11,6 +11,8 @@ package org.jruby.truffle.core.thread;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.nodes.RootNode;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
@@ -19,6 +21,7 @@ import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.UnaryCoreMethodNode;
 import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.backtrace.Activation;
 
 @CoreClass("Thread::Backtrace::Location")
@@ -84,7 +87,11 @@ public class ThreadBacktraceLocationNodes {
                 return coreStrings().BACKTRACE_OMITTED_LIMIT.createInstance();
             }
 
-            final SourceSection sourceSection = activation.getCallNode().getEncapsulatingSourceSection();
+            final Node callNode = activation.getCallNode();
+
+            final RootNode rootNode = callNode.getRootNode();
+
+            final SourceSection sourceSection = callNode.getEncapsulatingSourceSection();
 
             if (sourceSection.getSource() == null) {
                 return createString(StringOperations.encodeRope(sourceSection.getShortDescription(), UTF8Encoding.INSTANCE));
@@ -95,7 +102,7 @@ public class ThreadBacktraceLocationNodes {
                     ":",
                     sourceSection.getStartLine(),
                     ":in `",
-                    sourceSection.getIdentifier(),
+                    rootNode.getName(),
                     "'"));
         }
 
