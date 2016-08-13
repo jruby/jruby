@@ -87,17 +87,6 @@ public abstract class RegexpPrimitiveNodes {
 
     }
 
-    @Primitive(name = "regexp_propagate_last_match")
-    public static abstract class RegexpPropagateLastMatchPrimitiveNode extends PrimitiveArrayArgumentsNode {
-
-        @Specialization
-        public DynamicObject propagateLastMatch(DynamicObject regexpClass) {
-            // TODO (nirvdrum 08-Jun-15): This method seems to exist just to fix Rubinius's broken frame-local scoping.  This assertion needs to be verified, however.
-            return nil();
-        }
-
-    }
-
     @Primitive(name = "regexp_search_region", lowerFixnum = { 2, 3 })
     @ImportStatic(RegexpGuards.class)
     public static abstract class RegexpSearchRegionPrimitiveNode extends PrimitiveArrayArgumentsNode {
