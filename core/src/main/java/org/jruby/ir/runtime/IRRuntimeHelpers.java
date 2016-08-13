@@ -383,12 +383,9 @@ public class IRRuntimeHelpers {
                 IRubyObject testType = testTypes.eltInternal(i);
                 if (IRRuntimeHelpers.isJavaExceptionHandled(context, testType, throwable, true)) {
                     IRubyObject exceptionObj;
-                    if (n == 1 && testType == runtime.getNativeException()) {
-                        // wrap Throwable in a NativeException object
-                        exceptionObj = new NativeException(runtime, runtime.getNativeException(), throwable);
-                        ((NativeException)exceptionObj).prepareIntegratedBacktrace(context, throwable.getStackTrace());
-                    } else {
-                        // wrap as normal JI object
+                    if (n == 1) {
+                        exceptionObj = wrapJavaException(context, testType, throwable);
+                    } else { // wrap as normal JI object
                         exceptionObj = JavaUtil.convertJavaToUsableRubyObject(runtime, throwable);
                     }
 
@@ -396,22 +393,24 @@ public class IRRuntimeHelpers {
                     return true;
                 }
             }
-        } else if (Helpers.checkJavaException(throwable, excType, context)) {
-            IRubyObject exceptionObj;
-            if (excType == runtime.getNativeException()) {
-                // wrap Throwable in a NativeException object
-                exceptionObj = new NativeException(runtime, runtime.getNativeException(), throwable);
-                ((NativeException)exceptionObj).prepareIntegratedBacktrace(context, throwable.getStackTrace());
-            } else {
-                // wrap as normal JI object
-                exceptionObj = JavaUtil.convertJavaToUsableRubyObject(runtime, throwable);
-            }
-
-            runtime.getGlobalVariables().set("$!", exceptionObj);
+        }
+        else if (Helpers.checkJavaException(throwable, excType, context)) {
+            runtime.getGlobalVariables().set("$!", wrapJavaException(context, excType, throwable));
             return true;
         }
 
         return false;
+    }
+
+    private static IRubyObject wrapJavaException(final ThreadContext context, final IRubyObject excType, final Throwable throwable) {
+        final Ruby runtime = context.runtime;
+        if (excType == runtime.getNativeException()) { // wrap Throwable in a NativeException object
+            NativeException exception = new NativeException(runtime, runtime.getNativeException(), throwable);
+            exception.prepareIntegratedBacktrace(context, throwable.getStackTrace());
+            return exception;
+        }
+        // wrap as normal JI object
+        return JavaUtil.convertJavaToUsableRubyObject(runtime, throwable);
     }
 
     private static boolean isRubyExceptionHandled(ThreadContext context, IRubyObject excType, Object excObj) {
@@ -462,10 +461,9 @@ public class IRRuntimeHelpers {
                 IRubyObject eqqVal = isUndefValue ? v : callSite.call(context, v, v, value);
                 if (eqqVal.isTrue()) return eqqVal;
             }
-            return context.runtime.newBoolean(false);
-        } else {
-            return isUndefValue ? receiver : callSite.call(context, receiver, receiver, value);
+            return context.runtime.getFalse();
         }
+        return isUndefValue ? receiver : callSite.call(context, receiver, receiver, value);
     }
 
     @Deprecated
@@ -477,8 +475,7 @@ public class IRRuntimeHelpers {
         return (block == Block.NULL_BLOCK) ? runtime.getNil() : runtime.newProc(Block.Type.PROC, block);
     }
 
-    public static IRubyObject yield(ThreadContext context, Block b, IRubyObject yieldArg, boolean unwrapArray) {
-        IRubyObject yieldVal = (IRubyObject)yieldArg;
+    public static IRubyObject yield(ThreadContext context, Block b, IRubyObject yieldVal, boolean unwrapArray) {
         return (unwrapArray && (yieldVal instanceof RubyArray)) ? b.yieldArray(context, yieldVal, null) : b.yield(context, yieldVal);
     }
 
