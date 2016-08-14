@@ -93,7 +93,11 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
 
     /* package scope */
     JavaProxyClass(final Class<?> proxyClass) {
-        super(getThreadLocalRuntime(), getThreadLocalRuntime().getModule("Java").getClass("JavaProxyClass"));
+        this(getThreadLocalRuntime(), proxyClass);
+    }
+
+    private JavaProxyClass(final Ruby runtime, final Class<?> proxyClass) {
+        super(runtime, runtime.getModule("Java").getClass("JavaProxyClass"));
         this.proxyClass = proxyClass;
     }
 
