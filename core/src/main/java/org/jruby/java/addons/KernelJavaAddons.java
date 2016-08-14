@@ -1,12 +1,7 @@
 package org.jruby.java.addons;
 
-import org.jruby.Ruby;
 import org.jruby.RubyArray;
-import org.jruby.RubyModule;
-import org.jruby.RubyString;
-import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.java.proxies.JavaProxy;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaClass;
 import org.jruby.runtime.ThreadContext;
@@ -27,13 +22,11 @@ public class KernelJavaAddons {
     public static IRubyObject to_java(ThreadContext context, final IRubyObject fromObject, final IRubyObject type) {
         if ( type.isNil() ) return to_java(context, fromObject);
 
-        final Ruby runtime = context.runtime;
-
-        final JavaClass targetType = getTargetType(context, runtime, type);
+        final JavaClass targetType = resolveTargetType(context, type);
         if ( fromObject instanceof RubyArray ) {
             return targetType.javaArrayFromRubyArray(context, (RubyArray) fromObject);
         }
-        return Java.getInstance(runtime, fromObject.toJava(targetType.javaClass()));
+        return Java.getInstance(context.runtime, fromObject.toJava(targetType.javaClass()));
     }
 
     @JRubyMethod(rest = true)
@@ -78,30 +71,10 @@ public class KernelJavaAddons {
         return recv.getRuntime().getNil();
     }
 
-    private static JavaClass getTargetType(ThreadContext context, Ruby runtime, IRubyObject type) {
-
-        if (type instanceof RubyString || type instanceof RubySymbol) {
-            final String className = type.toString();
-            JavaClass targetType = runtime.getJavaSupport().getNameClassMap().get(className);
-            if ( targetType == null ) targetType = JavaClass.forNameVerbose(runtime, className);
-            return targetType;
-        }
-        if (type instanceof JavaProxy) {
-            final Object wrapped = ((JavaProxy) type).getObject();
-            if ( wrapped instanceof Class ) {
-                return JavaClass.get(runtime, (Class) wrapped);
-            }
-            throw runtime.newTypeError("not a valid target type: " + type);
-        }
-        if (type instanceof JavaClass) {
-            return (JavaClass) type;
-        }
-        if (type instanceof RubyModule) {
-            IRubyObject java_class = JavaClass.java_class(context, (RubyModule) type);
-            if ( ! java_class.isNil() ) return (JavaClass) java_class;
-        }
-
-        throw runtime.newTypeError("unable to convert to type: " + type);
+    static JavaClass resolveTargetType(ThreadContext context, IRubyObject type) {
+        JavaClass javaType = JavaClass.resolveType(context, type);
+        if ( javaType == null ) throw context.runtime.newTypeError("unable to convert to type: " + type);
+        return javaType;
     }
 
 }

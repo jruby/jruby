@@ -25,7 +25,6 @@ import org.jruby.ir.operands.Splat;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.persistence.IRReader;
 import org.jruby.ir.persistence.IRReaderStream;
-import org.jruby.javasupport.JavaUtil;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.*;
 import org.jruby.runtime.JavaSites.IRRuntimeHelpersSites;
@@ -366,7 +365,7 @@ public class IRRuntimeHelpers {
         }
         // Ruby exceptions, errors, and other java exceptions.
         // These can be rescued -- run rescue blocks
-        return (excObj instanceof RaiseException) ? ((RaiseException)excObj).getException() : excObj;
+        return (excObj instanceof RaiseException) ? ((RaiseException) excObj).getException() : excObj;
     }
 
     private static boolean isJavaExceptionHandled(ThreadContext context, IRubyObject excType, Object excObj, boolean arrayCheck) {
@@ -374,29 +373,32 @@ public class IRRuntimeHelpers {
             return false;
         }
 
-        Ruby runtime = context.runtime;
-        Throwable throwable = (Throwable)excObj;
+        final Ruby runtime = context.runtime;
+        final Throwable ex = (Throwable) excObj;
 
         if (excType instanceof RubyArray) {
             RubyArray testTypes = (RubyArray)excType;
             for (int i = 0, n = testTypes.getLength(); i < n; i++) {
                 IRubyObject testType = testTypes.eltInternal(i);
-                if (IRRuntimeHelpers.isJavaExceptionHandled(context, testType, throwable, true)) {
-                    IRubyObject exceptionObj;
+                if (IRRuntimeHelpers.isJavaExceptionHandled(context, testType, ex, true)) {
+                    IRubyObject exception;
                     if (n == 1) {
-                        exceptionObj = wrapJavaException(context, testType, throwable);
+                        exception = wrapJavaException(context, testType, ex);
                     } else { // wrap as normal JI object
-                        exceptionObj = JavaUtil.convertJavaToUsableRubyObject(runtime, throwable);
+                        exception = Helpers.wrapJavaException(runtime, ex);
                     }
 
-                    runtime.getGlobalVariables().set("$!", exceptionObj);
+                    runtime.getGlobalVariables().set("$!", exception);
                     return true;
                 }
             }
         }
-        else if (Helpers.checkJavaException(throwable, excType, context)) {
-            runtime.getGlobalVariables().set("$!", wrapJavaException(context, excType, throwable));
-            return true;
+        else {
+            IRubyObject exception = wrapJavaException(context, excType, ex);
+            if (Helpers.checkJavaException(exception, ex, excType, context)) {
+                runtime.getGlobalVariables().set("$!", exception);
+                return true;
+            }
         }
 
         return false;
@@ -409,8 +411,7 @@ public class IRRuntimeHelpers {
             exception.prepareIntegratedBacktrace(context, throwable.getStackTrace());
             return exception;
         }
-        // wrap as normal JI object
-        return JavaUtil.convertJavaToUsableRubyObject(runtime, throwable);
+        return Helpers.wrapJavaException(runtime, throwable); // wrap as normal JI object
     }
 
     private static boolean isRubyExceptionHandled(ThreadContext context, IRubyObject excType, Object excObj) {

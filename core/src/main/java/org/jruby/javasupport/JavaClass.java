@@ -43,12 +43,14 @@ import org.jruby.RubyClass;
 import org.jruby.RubyInteger;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
+import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.java.addons.ClassJavaAddons;
 import org.jruby.java.proxies.ArrayJavaProxy;
 import org.jruby.java.proxies.ConcreteJavaProxy;
+import org.jruby.java.proxies.JavaProxy;
 import org.jruby.java.util.ArrayUtils;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ObjectAllocator;
@@ -177,35 +179,81 @@ public class JavaClass extends JavaObject {
      * @note Class objects have a java_class method but they're not considered Java proxies!
      */
     public static Class<?> getJavaClassIfProxy(final ThreadContext context, final RubyModule proxy) {
-        IRubyObject java_class = java_class(context, proxy);
-        return ( java_class instanceof JavaClass ) ? ((JavaClass) java_class).javaClass() : null;
+        JavaClass javaClass = getJavaClassIfProxyImpl(context, proxy);
+        return javaClass == null ? null : javaClass.javaClass();
     }
 
-    //public static boolean isProxyType(final ThreadContext context, final RubyModule proxy) {
-    //    IRubyObject java_class = proxy.getInstanceVariable("@java_class");
-    //    return (java_class != null && java_class.isTrue()) ||
-    //            proxy.respondsTo("java_class"); // not all proxy types have @java_class set
-    //}
+    private static JavaClass getJavaClassIfProxyImpl(final ThreadContext context, final RubyModule proxy) {
+        final IRubyObject java_class = java_class(context, proxy);
+        return ( java_class instanceof JavaClass ) ? (JavaClass) java_class : null;
+    }
+
+    // expected to handle Java proxy (Ruby) sub-classes as well
+    public static boolean isProxyType(final ThreadContext context, final RubyModule proxy) {
+        return getJavaClassIfProxyImpl(context, proxy) != null;
+        //IRubyObject java_class = proxy.getInstanceVariable("@java_class");
+        //return (java_class != null && java_class.isTrue()) ||
+        //        proxy.respondsTo("java_class"); // not all proxy types have @java_class set
+    }
 
     /**
      * Returns the (reified or proxied) Java class if the passed Ruby module/class has one.
      * @param context
-     * @param proxy
+     * @param type
      * @return Java proxy class, Java reified class or nil
      */
-    public static IRubyObject java_class(final ThreadContext context, final RubyModule proxy) {
-        // NOTE: without this "hack" we would always need to call java_class (and catch RaiseException)
-        //if ( proxy instanceof RubyClass ) return ClassJavaAddons.java_class(context, proxy);
-
-        IRubyObject java_class = proxy.getInstanceVariable("@java_class");
+    public static IRubyObject java_class(final ThreadContext context, final RubyModule type) {
+        IRubyObject java_class = type.getInstanceVariable("@java_class");
         if ( java_class == null ) { // || java_class.isNil()
-            if ( proxy.respondsTo("java_class") ) { // NOTE: quite bad since built-in Ruby classes will return
+            if ( type.respondsTo("java_class") ) { // NOTE: quite bad since built-in Ruby classes will return
                 // a Ruby Java proxy for java.lang.Class while Java proxies will return a JavaClass instance !
-                java_class = Helpers.invoke(context, proxy, "java_class");
+                java_class = Helpers.invoke(context, type, "java_class");
             }
             else java_class = context.nil; // we return != null (just like callMethod would)
         }
         return java_class;
+    }
+
+    /*
+    public static Class<?> gerJavaClass(final ThreadContext context, final RubyModule type) {
+        IRubyObject java_class = java_class(context, type);
+        if ( java_class == context.nil ) return null;
+        return resolveClassType(context, java_class).javaClass();
+    } */
+
+    /**
+     * Resolves a Java class from a passed type parameter.
+     *
+     * Uisng the rules accepted by `to_java(type)` in Ruby land.
+     * @param context
+     * @param type
+     * @return resolved type or null if resolution failed
+     */
+    public static JavaClass resolveType(final ThreadContext context, final IRubyObject type) {
+        if (type instanceof RubyString || type instanceof RubySymbol) {
+            final Ruby runtime = context.runtime;
+            final String className = type.toString();
+            JavaClass targetType = runtime.getJavaSupport().getNameClassMap().get(className);
+            if ( targetType == null ) targetType = JavaClass.forNameVerbose(runtime, className);
+            return targetType;
+        }
+        return resolveClassType(context, type);
+    }
+
+    // this should handle the type returned from Class#java_class
+    private static JavaClass resolveClassType(final ThreadContext context, final IRubyObject type) {
+        if (type instanceof JavaProxy) { // due Class#java_class wrapping
+            final Object wrapped = ((JavaProxy) type).getObject();
+            if ( wrapped instanceof Class ) return JavaClass.get(context.runtime, (Class) wrapped);
+            return null;
+        }
+        if (type instanceof JavaClass) {
+            return (JavaClass) type;
+        }
+        if (type instanceof RubyModule) { // assuming a proxy module/class e.g. to_java(java.lang.String)
+            return getJavaClassIfProxyImpl(context, (RubyModule) type);
+        }
+        return null;
     }
 
     static boolean isPrimitiveName(final String name) {
