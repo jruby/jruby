@@ -266,8 +266,8 @@ public class RubyBasicSocket extends RubyIO {
                 }
 
                 int value = SocketType.forChannel(channel).getSocketOption(channel, opt);
-
-                return new Option(runtime, ProtocolFamily.PF_INET, level, opt, value);
+                ByteList packedValue = Option.packInt(value);
+                return new Option(runtime, ProtocolFamily.PF_INET, level, opt, packedValue);
 
             default:
                 throw runtime.newErrnoENOPROTOOPTError();
