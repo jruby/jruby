@@ -597,75 +597,14 @@ class String
     self
   end
 
-  def sub(pattern, replacement=undefined)
-    # Because of the behavior of $~, this is duplicated from sub! because
-    # if we call sub! from sub, the last_match can't be updated properly.
-    dup = self.dup
-
-    unless valid_encoding?
-      raise ArgumentError, "invalid byte sequence in #{encoding}"
-    end
-
-    if undefined.equal? replacement
-      unless block_given?
-        raise ArgumentError, "method '#{__method__}': given 1, expected 2"
-      end
-      use_yield = true
-      tainted = false
-    else
-      tainted = replacement.tainted?
-      untrusted = replacement.untrusted?
-
-      unless replacement.kind_of?(String)
-        hash = Rubinius::Type.check_convert_type(replacement, Hash, :to_hash)
-        replacement = StringValue(replacement) unless hash
-        tainted ||= replacement.tainted?
-        untrusted ||= replacement.untrusted?
-      end
-      use_yield = false
-    end
-
-    pattern = Rubinius::Type.coerce_to_regexp(pattern, true) unless pattern.kind_of? Regexp
-    match = pattern.match_from(dup, 0)
-
-    Truffle.invoke_primitive(:regexp_set_last_match, match)
-
-    ret = byteslice(0, 0) # Empty string and string subclass
-
-    if match
-      ret.append match.pre_match
-
-      if use_yield || hash
-        Truffle.invoke_primitive(:regexp_set_last_match, match)
-
-        if use_yield
-          val = yield match.to_s
-        else
-          val = hash[match.to_s]
-        end
-        untrusted = true if val.untrusted?
-        val = val.to_s unless val.kind_of?(String)
-
-        tainted ||= val.tainted?
-
-        ret.append val
-      else
-        replacement.to_sub_replacement(ret, match)
-      end
-
-      ret.append(match.post_match)
-      tainted ||= val.tainted?
-    else
-      return dup
-    end
-
-    ret.taint if tainted
-    ret.untrust if untrusted
-
-    ret
+  def sub(pattern, replacement=undefined, &block)
+    s = dup
+    s.sub!(pattern, replacement, &block)
+    Truffle.invoke_primitive(:regexp_set_last_match, $~)
+    s
   end
 
-  def sub!(pattern, replacement=undefined)
+  def sub!(pattern, replacement=undefined, &block)
     # Because of the behavior of $~, this is duplicated from sub! because
     # if we call sub! from sub, the last_match can't be updated properly.
 
@@ -697,6 +636,7 @@ class String
     pattern = Rubinius::Type.coerce_to_regexp(pattern, true) unless pattern.kind_of? Regexp
     match = pattern.match_from(self, 0)
 
+    Regexp.set_block_last_match(block, match) if block_given?
     Truffle.invoke_primitive(:regexp_set_last_match, match)
 
     ret = byteslice(0, 0) # Empty string and string subclass
@@ -705,8 +645,6 @@ class String
       ret.append match.pre_match
 
       if use_yield || hash
-        Truffle.invoke_primitive(:regexp_set_last_match, match)
-
         duped = dup
         if use_yield
           val = yield match.to_s
