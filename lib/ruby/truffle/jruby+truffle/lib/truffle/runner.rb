@@ -637,19 +637,22 @@ module Truffle
           '-X+T',
           "-J-Xmx#{@options[:run][:xmx]}",
           *(%w[-J-ea -J-esa] unless @options[:run][:no_asserts]),
-          ("-Xtruffle.core.load_path=#{core_load_path}" if @options[:global][:use_fs_core] && !missing_core_load_path),
-          ('-Xtruffle.exceptions.print_java=true' if @options[:run][:jexception])
+          *("-Xtruffle.core.load_path=#{core_load_path}" if @options[:global][:use_fs_core] && !missing_core_load_path),
+          *('-Xtruffle.exceptions.print_java=true' if @options[:run][:jexception])
       ]
 
-      bundler_setup = "./#{@options[:global][:truffle_bundle_path]}/bundler/setup.rb"
-      cmd_options   = [
-          *(truffle_options unless @options[:run][:no_truffle]),
-          (format(@options[:global][:debug_option], @options[:global][:debug_port]) if @options[:run][:debug]),
+      jruby_options = [
+          *(format(@options[:global][:debug_option], @options[:global][:debug_port]) if @options[:run][:debug]),
+          *(truffle_options unless @options[:run][:no_truffle])
+      ]
+
+      bundler_setup = File.expand_path "#{@options[:global][:truffle_bundle_path]}/bundler/setup.rb"
+      env_options   = [
           *ruby_options,
           *(['-r', bundler_setup] if File.exist? bundler_setup),
           *@options[:run][:load_path].flat_map { |v| ['-I', v] },
           *@options[:run][:require].flat_map { |v| ['-r', v] }
-      ].compact
+      ]
 
       env            = @options[:run][:environment]
       env['JAVACMD'] = @options[:global][:graal_path] if @options[:run][:graal]
@@ -657,7 +660,8 @@ module Truffle
 
       cmd = [(env unless env.empty?),
              @options[:run][:interpreter_path].to_s,
-             *cmd_options,
+             *jruby_options,
+             *env_options,
              executable,
              *rest
       ].compact
@@ -688,7 +692,7 @@ module Truffle
                             File.read(Pathname(@called_from_dir).join(path))
                           end
                         end
-        cis_to_run     = YAML.load(batch_content)
+        cis_to_run    = YAML.load(batch_content)
 
         results = cis_to_run.map do |ci|
           # ci is just a name or a array of name and options
