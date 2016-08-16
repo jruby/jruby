@@ -259,6 +259,8 @@ public class JRubyClassLoader extends URLClassLoader implements ClassDefiningCla
                     }
                 } catch (IOException e) {
                     // just fall-through to the re-throw below
+                    LOG.debug("findClass IOException in getting class for url: " +
+                            classUrl + ", message: " + e.getMessage(), e);
                 }
             }
 
