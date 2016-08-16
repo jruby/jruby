@@ -79,15 +79,15 @@ graal-enterprise: {
     [mkdir, graal-workspace],
     [cd, graal-workspace],
     ${clone_graal} ["https://github.com/graalvm/graal-enterprise.git", graal-enterprise],
-    [cd, graal-enterprise],
+    [cd, graal-enterprise/graal-enterprise],
     [mx, sforceimports],
     [mx, --java-home, "$JVMCI_JAVA_HOME", build],
-    [cd, ../..],
+    [cd, ../../..],
     [mv, temp_mx, mx.jruby]
   ]
 
   environment: {
-    GRAAL_HOME: graal-workspace/graal-enterprise,
+    GRAAL_HOME: graal-workspace/graal-enterprise/graal-enterprise,
     HOST_VM: server,
     HOST_VM_CONFIG: graal-enterprise
   }
@@ -98,7 +98,7 @@ graal-enterprise-no-om: {
   setup: ${graal-enterprise.setup}
 
   environment: {
-    GRAAL_HOME: graal-workspace/graal-enterprise,
+    GRAAL_HOME: graal-workspace/graal-enterprise/graal-enterprise,
     HOST_VM: server,
     HOST_VM_CONFIG: graal-enterprise-no-om,
     JRUBY_OPTS: "-J-Dtruffle.object.LayoutFactory=com.oracle.truffle.object.basic.DefaultLayoutFactory"
