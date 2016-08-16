@@ -152,12 +152,12 @@ module Utilities
   end
 
   def self.find_jruby
-    if mx?
+    if ENV['RUBY_BIN']
+      ENV['RUBY_BIN']
+    elsif mx?
       "#{JRUBY_DIR}/tool/jruby_mx"
     elsif jruby_eclipse?
       "#{JRUBY_DIR}/tool/jruby_eclipse"
-    elsif ENV['RUBY_BIN']
-      ENV['RUBY_BIN']
     else
       "#{JRUBY_DIR}/bin/jruby"
     end
@@ -169,7 +169,9 @@ module Utilities
     FileUtils.rm_f ruby_symlink
     File.symlink Utilities.find_jruby, ruby_symlink
 
-    if jruby_eclipse? or mx?
+    if ENV['RUBY_BIN']
+      File.dirname(ENV['RUBY_BIN'])
+    elsif jruby_eclipse? or mx?
       JRUBY_DIR + "/bin"
     else
       File.dirname(find_jruby)
