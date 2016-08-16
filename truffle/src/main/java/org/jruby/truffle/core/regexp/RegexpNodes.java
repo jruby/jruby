@@ -514,7 +514,7 @@ public abstract class RegexpNodes {
 
         @TruffleBoundary
         private Object getMatchData() {
-            Frame frame = getContext().getCallStack().getCallerFrameIgnoringSend().getFrame(FrameInstance.FrameAccess.READ_WRITE, true);
+            Frame frame = getContext().getCallStack().getCallerFrameIgnoringSend().getFrame(FrameAccess.READ_ONLY, true);
             FrameSlot slot = frame.getFrameDescriptor().findFrameSlot("$~");
 
             while (slot == null) {
