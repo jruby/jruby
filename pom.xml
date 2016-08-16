@@ -106,7 +106,7 @@ DO NOT MODIFIY - GENERATED CODE
   <properties>
     <rspec-core.version>3.4.4</rspec-core.version>
     <polyglot.dump.readonly>true</polyglot.dump.readonly>
-    <racc.version>1.4.13</racc.version>
+    <racc.version>1.4.14</racc.version>
     <its.j2ee>j2ee*/pom.xml</its.j2ee>
     <jruby.basedir>${project.basedir}</jruby.basedir>
     <minitest.version>5.4.1</minitest.version>
