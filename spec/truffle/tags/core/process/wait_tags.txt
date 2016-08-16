@@ -1,4 +1,3 @@
-fails:Process.wait raises an Errno::ECHILD if there are no child processes
 fails:Process.wait returns its childs pid
 fails:Process.wait sets $? to a Process::Status
 fails:Process.wait waits for any child process if no pid is given

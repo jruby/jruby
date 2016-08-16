@@ -1,7 +1,4 @@
-fails:IO.read from a pipe runs the rest as a subprocess and returns the standard output
 fails:IO.read from a pipe opens a pipe to a fork if the rest is -
-fails:IO.read from a pipe reads only the specified number of bytes requested
-fails:IO.read from a pipe raises Errno::ESPIPE if passed an offset
 fails(hangs):IO#read raises IOError when stream is closed by another thread
 fails(windows):IO#read on Windows normalizes line endings in text mode
 fails(windows):IO#read on Windows does not normalize line endings in binary mode

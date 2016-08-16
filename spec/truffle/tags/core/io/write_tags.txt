@@ -1,3 +1,3 @@
 fails(windows):IO#write on Windows normalizes line endings in text mode
 fails(windows):IO#write on Windows does not normalize line endings in binary mode
-fails:IO.write on a FIFO writes correctly
+slow:IO.write on a FIFO writes correctly
