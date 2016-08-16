@@ -1794,7 +1794,10 @@ public class Helpers {
     }
 
     private static void addModuleMethod(RubyModule containingClass, String name, DynamicMethod method, ThreadContext context, RubySymbol sym) {
-        containingClass.getSingletonClass().addMethod(name, new WrapperMethod(containingClass.getSingletonClass(), method, Visibility.PUBLIC));
+        DynamicMethod singletonMethod = method.dup();
+        singletonMethod.setImplementationClass(containingClass.getSingletonClass());
+        singletonMethod.setVisibility(Visibility.PUBLIC);
+        containingClass.getSingletonClass().addMethod(name, singletonMethod);
         containingClass.callMethod(context, "singleton_method_added", sym);
     }
 
