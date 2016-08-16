@@ -528,19 +528,14 @@ public abstract class RegexpNodes {
                 }
             }
 
-            final Object previousMatchData;
-            try {
-                previousMatchData = frame.getObject(slot);
+            final Object previousMatchData = frame.getValue(slot);
 
-                if (previousMatchData instanceof ThreadLocalObject) {
-                    final ThreadLocalObject threadLocalObject = (ThreadLocalObject) previousMatchData;
+            if (previousMatchData instanceof ThreadLocalObject) {
+                final ThreadLocalObject threadLocalObject = (ThreadLocalObject) previousMatchData;
 
-                    return threadLocalObject.get();
-                } else {
-                    return previousMatchData;
-                }
-            } catch (FrameSlotTypeException e) {
-                throw new IllegalStateException(e);
+                return threadLocalObject.get();
+            } else {
+                return previousMatchData;
             }
         }
 
