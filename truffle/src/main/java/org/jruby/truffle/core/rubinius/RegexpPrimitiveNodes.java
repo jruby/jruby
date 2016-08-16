@@ -19,6 +19,7 @@ import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.FrameSlotKind;
 import com.oracle.truffle.api.frame.FrameSlotTypeException;
+import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.joni.Matcher;
 import org.jruby.truffle.Layouts;
@@ -30,6 +31,7 @@ import org.jruby.truffle.core.rope.RopeNodes;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.control.RaiseException;
+import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.threadlocal.ThreadLocalObject;
 import org.jruby.truffle.util.StringUtils;
 
@@ -106,18 +108,20 @@ public abstract class RegexpPrimitiveNodes {
             return StringUtils.format("invalid byte sequence in %s", Layouts.STRING.getRope(string).getEncoding());
         }
 
-        @TruffleBoundary
         @Specialization(guards = {"isInitialized(regexp)", "isRubyString(string)", "isValidEncoding(string)"})
-        public Object searchRegion(DynamicObject regexp, DynamicObject string, int start, int end, boolean forward,
-                                   @Cached("createX()") RopeNodes.MakeSubstringNode makeSubstringNode) {
-            final Matcher matcher = RegexpNodes.createMatcher(getContext(), regexp, string);
+        public Object searchRegion(VirtualFrame frame, DynamicObject regexp, DynamicObject string,
+                                   int start, int end, boolean forward,
+                                   @Cached("createX()") RopeNodes.MakeSubstringNode makeSubstringNode,
+                                   @Cached("createMethodCall()") CallDispatchHeadNode dupNode) {
+            final DynamicObject dupedString = (DynamicObject) dupNode.call(frame, string, "dup");
+            final Matcher matcher = RegexpNodes.createMatcher(getContext(), regexp, dupedString);
 
             if (forward) {
                 // Search forward through the string.
-                return RegexpNodes.matchCommon(getContext(), this, makeSubstringNode, regexp, string, false, matcher, start, end);
+                return RegexpNodes.matchCommon(getContext(), this, makeSubstringNode, regexp, dupedString, false, matcher, start, end);
             } else {
                 // Search backward through the string.
-                return RegexpNodes.matchCommon(getContext(), this, makeSubstringNode, regexp, string, false, matcher, end, start);
+                return RegexpNodes.matchCommon(getContext(), this, makeSubstringNode, regexp, dupedString, false, matcher, end, start);
             }
         }
 
