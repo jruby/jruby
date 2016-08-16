@@ -80,7 +80,7 @@ DO NOT MODIFIY - GENERATED CODE
   <mailingLists>
     <mailingList>
       <name>jruby</name>
-      <archive>http://blade.nagaokaut.ac.jp/ruby/jruby/index.shtml</archive>
+      <archive>https://github.com/jruby/jruby/wiki/MailingLists</archive>
     </mailingList>
   </mailingLists>
   <modules>
