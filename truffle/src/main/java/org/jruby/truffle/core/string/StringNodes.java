@@ -581,18 +581,7 @@ public abstract class StringNodes {
                 Object capture,
                 @Cached("createMethodCallIgnoreVisibility()") CallDispatchHeadNode callNode,
                 @Cached("create()") RegexpPrimitiveNodes.RegexpSetLastMatchPrimitiveNode setLastMatchNode) {
-            final Object matchStrPair = callNode.call(frame, string, "subpattern", regexp, 0);
-
-            if (matchStrPair == nil()) {
-                setLastMatchNode.executeSetLastMatch(nil());
-                return nil();
-            }
-
-            final Object[] array = (Object[]) Layouts.ARRAY.getStore((DynamicObject) matchStrPair);
-
-            setLastMatchNode.executeSetLastMatch(array[0]);
-
-            return array[1];
+            return sliceCapture(frame, string, regexp, 0, callNode, setLastMatchNode);
         }
 
         @Specialization(guards = {"isRubyRegexp(regexp)", "wasProvided(capture)"})
