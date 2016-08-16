@@ -188,20 +188,20 @@ public abstract class RegexpPrimitiveNodes {
         @Specialization(guards = { "isRubyProc(block)", "isSuitableMatchDataType(getContext(), matchData)" })
         public Object setBlockLastMatch(DynamicObject block, DynamicObject matchData) {
 
-            Frame callerFrame = Layouts.PROC.getDeclarationFrame(block);
+            Frame methodFrame = Layouts.PROC.getDeclarationFrame(block);
 
-            if (callerFrame == null) {
+            if (methodFrame == null) {
                 return matchData;
             }
 
-            Frame tempFrame = RubyArguments.getDeclarationFrame(callerFrame);
+            Frame tempFrame = RubyArguments.getDeclarationFrame(methodFrame);
 
             while (tempFrame != null) {
-                callerFrame = tempFrame;
-                tempFrame = RubyArguments.getDeclarationFrame(callerFrame);
+                methodFrame = tempFrame;
+                tempFrame = RubyArguments.getDeclarationFrame(methodFrame);
             }
 
-            final FrameDescriptor callerFrameDescriptor = callerFrame.getFrameDescriptor();
+            final FrameDescriptor callerFrameDescriptor = methodFrame.getFrameDescriptor();
 
             try {
                 final FrameSlot frameSlot = callerFrameDescriptor.findFrameSlot("$~");
@@ -210,12 +210,12 @@ public abstract class RegexpPrimitiveNodes {
                     return matchData;
                 }
 
-                final Object matchDataHolder = callerFrame.getObject(frameSlot);
+                final Object matchDataHolder = methodFrame.getObject(frameSlot);
 
                 if (matchDataHolder instanceof ThreadLocalObject) {
                     ((ThreadLocalObject) matchDataHolder).set(matchData);
                 } else {
-                    callerFrame.setObject(frameSlot, ThreadLocalObject.wrap(getContext(), matchData));
+                    methodFrame.setObject(frameSlot, ThreadLocalObject.wrap(getContext(), matchData));
                 }
             } catch (FrameSlotTypeException e) {
                 throw new IllegalStateException(e);
