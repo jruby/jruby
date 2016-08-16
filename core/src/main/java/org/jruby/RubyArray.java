@@ -2524,10 +2524,10 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
                 IRubyObject value2 = eltOk(1);
                 boolean second = block.yield(context, value2).isTrue();
                 if (first) {
-                    if (second) return new RubyArrayTwoObject(runtime, value, value2);
-                    return new RubyArrayOneObject(runtime, value);
+                    if (second) return newArray(runtime, value, value2);
+                    return newArray(runtime, value);
                 } else if (second) {
-                    return new RubyArrayOneObject(runtime, value2);
+                    return newArray(runtime, value2);
                 }
                 return newEmptyArray(runtime);
             }
@@ -3178,11 +3178,11 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
             case 2:
                 switch (realLength) {
                     case 0:
-                        return new RubyArrayTwoObject(runtime, y.eltInternal(0), y.eltInternal(1));
+                        return newArray(runtime, y.eltInternal(0), y.eltInternal(1));
                     case 1:
-                        return new RubyArrayTwoObject(runtime, eltInternal(0), y.eltInternal(0));
+                        return newArray(runtime, eltInternal(0), y.eltInternal(0));
                     case 2:
-                        return new RubyArrayTwoObject(runtime, eltInternal(0), eltInternal(1));
+                        return newArray(runtime, eltInternal(0), eltInternal(1));
                 }
         }
 
