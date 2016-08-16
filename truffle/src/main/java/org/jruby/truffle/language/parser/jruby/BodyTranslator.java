@@ -1832,7 +1832,7 @@ public class BodyTranslator extends Translator {
         // Unset this flag for any for any blocks within the for statement's body
         final boolean hasOwnScope = isLambda || !translatingForStatement;
 
-        final String name = isLambda ? "(lambda)" : currentCallMethodName;
+        final String name = isLambda ? "(lambda)" : getIdentifierInNewEnvironment(true, currentCallMethodName);
         final boolean isProc = !isLambda;
 
         final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, environment.getLexicalScope(), MethodTranslator.getArity(argsNode), name, true, Helpers.argsNodeToArgumentDescriptors(argsNode), false, false, false);
@@ -3051,6 +3051,24 @@ public class BodyTranslator extends Translator {
             }
         } else {
             return environment.getNamedMethodName();
+        }
+    }
+
+    protected String getIdentifierInNewEnvironment(boolean isBlock, String namedMethodName) {
+        if (isBlock) {
+            TranslatorEnvironment methodParent = environment;
+
+            while (methodParent.isBlock()) {
+                methodParent = methodParent.getParent();
+            }
+
+            if (environment.getBlockDepth() + 1 > 1) {
+                return StringUtils.format("block (%d levels) in %s", environment.getBlockDepth() + 1, methodParent.getNamedMethodName());
+            } else {
+                return StringUtils.format("block in %s", methodParent.getNamedMethodName());
+            }
+        } else {
+            return namedMethodName;
         }
     }
 
