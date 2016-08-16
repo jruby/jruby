@@ -23,12 +23,14 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.joni.Matcher;
 import org.jruby.truffle.Layouts;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.Primitive;
 import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.core.regexp.RegexpGuards;
 import org.jruby.truffle.core.regexp.RegexpNodes;
 import org.jruby.truffle.core.rope.RopeNodes;
 import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
@@ -40,6 +42,10 @@ import org.jruby.truffle.util.StringUtils;
 
  */
 public abstract class RegexpPrimitiveNodes {
+
+    public static boolean isSuitableMatchDataType(RubyContext context, DynamicObject matchData) {
+        return matchData == context.getCoreLibrary().getNilObject() || RubyGuards.isRubyMatchData(matchData);
+    }
 
     @Primitive(name = "regexp_fixed_encoding_p")
     public static abstract class RegexpFixedEncodingPrimitiveNode extends PrimitiveArrayArgumentsNode {
@@ -128,6 +134,7 @@ public abstract class RegexpPrimitiveNodes {
     }
 
     @Primitive(name = "regexp_set_last_match", needsSelf = false)
+    @ImportStatic(RegexpPrimitiveNodes.class)
     public static abstract class RegexpSetLastMatchPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         public static RegexpSetLastMatchPrimitiveNode create() {
@@ -137,10 +144,8 @@ public abstract class RegexpPrimitiveNodes {
         public abstract DynamicObject executeSetLastMatch(Object matchData);
 
         @TruffleBoundary
-        @Specialization
+        @Specialization(guards = "isSuitableMatchDataType(getContext(), matchData)")
         public DynamicObject setLastMatchData(DynamicObject matchData) {
-            // TODO (nirvdrum 08-Aug-16): Validate that the matchData is either nil or a MatchData object, otherwise throw an exception. It should use the same logic as assigning $~ does in the translator.
-
             Frame frame = getContext().getCallStack().getCallerFrameIgnoringSend().getFrame(FrameInstance.FrameAccess.READ_WRITE, true);
             FrameSlot slot = frame.getFrameDescriptor().findFrameSlot("$~");
 
@@ -176,10 +181,11 @@ public abstract class RegexpPrimitiveNodes {
     }
 
     @Primitive(name = "regexp_set_block_last_match", needsSelf = false)
+    @ImportStatic(RegexpPrimitiveNodes.class)
     public static abstract class RegexpSetBlockLastMatchPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @TruffleBoundary
-        @Specialization(guards = "isRubyProc(block)")
+        @Specialization(guards = { "isRubyProc(block)", "isSuitableMatchDataType(getContext(), matchData)" })
         public Object setBlockLastMatch(DynamicObject block, DynamicObject matchData) {
 
             Frame callerFrame = Layouts.PROC.getDeclarationFrame(block);
