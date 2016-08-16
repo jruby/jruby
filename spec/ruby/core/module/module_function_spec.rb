@@ -128,6 +128,24 @@ describe "Module#module_function with specific method names" do
     end
     m.respond_to?(:require).should be_true
   end
+
+  it "creates Module methods that super up the singleton class of the module" do
+    super_m = Module.new do
+      def foo
+        "super_m"
+      end
+    end
+
+    m = Module.new do
+      extend super_m
+      module_function
+      def foo
+        ["m", super]
+      end
+    end
+
+    m.foo.should == ["m", "super_m"]
+  end
 end
 
 describe "Module#module_function as a toggle (no arguments) in a Module body" do
