@@ -370,9 +370,12 @@ module ShellUtils
 
   def maven_options(*options)
     maven_options = []
+    build_pack = options.delete('--build-pack')
     offline = options.delete('--offline')
-    if offline
+    if build_pack || offline
       maven_options.push "-Dmaven.repo.local=#{Utilities.find_repo('jruby-build-pack')}/maven"
+    end
+    if offline
       maven_options.push '--offline'
     end
     return [maven_options, options]
@@ -447,6 +450,7 @@ module Commands
       jt rebuild [options]                           clean and build
           truffle                                    build only the Truffle part, assumes the rest is up-to-date
           cexts [--no-openssl]                       build the cext backend (set SULONG_HOME and maybe USE_SYSTEM_CLANG)
+          --build-pack                               use the build pack
           --offline                                  use the build pack to build offline
       jt clean                                       clean
       jt irb                                         irb
@@ -1274,7 +1278,7 @@ class JT
       send(args.shift)
     when "build"
       command = [args.shift]
-      while ['truffle', 'cexts', '--offline', '--no-openssl'].include?(args.first)
+      while ['truffle', 'cexts', '--offline', '--build-pack', '--no-openssl'].include?(args.first)
         command << args.shift
       end
       send(*command)
