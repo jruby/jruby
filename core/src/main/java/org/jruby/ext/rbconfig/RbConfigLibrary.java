@@ -316,6 +316,7 @@ public class RbConfigLibrary implements Library {
         setConfig(context, CONFIG, "topdir",   archDir);
         setConfig(context, CONFIG, "includedir",   includeDir);
         setConfig(context, CONFIG, "rubyhdrdir",   includeDir);
+        setConfig(context, CONFIG, "rubyarchhdrdir", includeDir);
         setConfig(context, CONFIG, "configure_args", "");
         setConfig(context, CONFIG, "datadir", shareDir);
         setConfig(context, CONFIG, "mandir", newFile(normalizedHome, "man").getPath());
@@ -353,6 +354,7 @@ public class RbConfigLibrary implements Library {
 
         setConfig(context, mkmfHash, "libdir", vendorDirGeneral);
         setConfig(context, mkmfHash, "arch", "java");
+        setConfig(context, mkmfHash, "build_cpu", getArchitecture());
         setConfig(context, mkmfHash, "rubylibdir",     rubyLibDir);
         setConfig(context, mkmfHash, "rubysharedlibdir", rubySharedLibDir);
         if (!isSiteVendorSame(runtime)) {
@@ -461,6 +463,7 @@ public class RbConfigLibrary implements Library {
         setConfig(context, mkmfHash, "CPP", cpp);
         setConfig(context, mkmfHash, "CXX", cxx);
         setConfig(context, mkmfHash, "OUTFLAG", "-o ");
+        setConfig(context, mkmfHash, "COUTFLAG", "-o ");
         setConfig(context, mkmfHash, "COMMON_HEADERS", "ruby.h");
         setConfig(context, mkmfHash, "PATH_SEPARATOR", ":");
         setConfig(context, mkmfHash, "INSTALL", "install -c ");
