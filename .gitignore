@@ -47,9 +47,7 @@ lib/jruby*.jar
 lib/native
 lib/ruby/cext/
 lib/ruby/gems
-lib/ruby/stdlib/*jopenssl*.jar
-lib/ruby/stdlib/bcpkix-jdk15on-*.jar
-lib/ruby/stdlib/bcprov-jdk15on-*.jar
+lib/ruby/stdlib/*.jar
 lib/ruby/stdlib/did_you_mean*
 lib/ruby/stdlib/gauntlet_rdoc.rb
 lib/ruby/stdlib/jar*
@@ -60,14 +58,15 @@ lib/ruby/stdlib/net-telnet.rb
 lib/ruby/stdlib/net/telnet*
 lib/ruby/stdlib/openssl*
 lib/ruby/stdlib/org/
-lib/ruby/stdlib/readline/*readline*.jar
 lib/ruby/stdlib/ripper.jar
 lib/ruby/stdlib/rubygems/defaults/jruby_native.rb
 lib/ruby/stdlib/racc*
 lib/ruby/stdlib/rake*
+lib/ruby/stdlib/json*
 lib/ruby/stdlib/rdoc*
 lib/ruby/stdlib/test*
 lib/ruby/stdlib/hoe*
+lib/ruby/stdlib/readline*
 lib/ruby/stdlib/minitest*
 lib/ruby/stdlib/power_assert*
 lib/ruby/stdlib/psych*
