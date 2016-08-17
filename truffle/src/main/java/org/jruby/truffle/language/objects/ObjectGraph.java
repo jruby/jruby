@@ -108,8 +108,10 @@ public abstract class ObjectGraph {
     public static Set<DynamicObject> getAdjacentObjects(DynamicObject object) {
         final Set<DynamicObject> reachable = new HashSet<>();
 
-        reachable.add(Layouts.BASIC_OBJECT.getLogicalClass(object));
-        reachable.add(Layouts.BASIC_OBJECT.getMetaClass(object));
+        if (Layouts.BASIC_OBJECT.isBasicObject(object)) {
+	        reachable.add(Layouts.BASIC_OBJECT.getLogicalClass(object));
+	        reachable.add(Layouts.BASIC_OBJECT.getMetaClass(object));
+        }
 
         for (Property property : object.getShape().getPropertyListInternal(false)) {
             final Object propertyValue = property.get(object, object.getShape());
