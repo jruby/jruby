@@ -36,7 +36,11 @@ class MSpecScript
   ]
 
   set :core, [
-    "spec/ruby/core"
+    "spec/ruby/core",
+    
+    "^spec/ruby/core/io/io_spec.rb",
+    "^spec/ruby/core/io/popen_spec.rb",
+    "^spec/ruby/core/io/pipe_spec.rb"
   ]
 
   set :library, [
