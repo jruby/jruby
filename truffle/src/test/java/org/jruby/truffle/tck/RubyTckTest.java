@@ -16,6 +16,8 @@ import com.oracle.truffle.tck.TruffleTCK;
 import org.jruby.truffle.RubyLanguage;
 import org.junit.Test;
 
+import java.io.File;
+
 import static org.junit.Assert.*;
 
 public class RubyTckTest extends TruffleTCK {
@@ -32,7 +34,7 @@ public class RubyTckTest extends TruffleTCK {
     protected synchronized PolyglotEngine prepareVM() throws Exception {
         if (engine == null) {
             engine = PolyglotEngine.newBuilder().build();
-            engine.eval(Source.fromFileName("src/test/ruby/tck.rb"));
+            engine.eval(Source.newBuilder(new File("src/test/ruby/tck.rb")).build());
         }
 
         return engine;
@@ -41,7 +43,7 @@ public class RubyTckTest extends TruffleTCK {
     @Override
     protected PolyglotEngine prepareVM(PolyglotEngine.Builder preparedBuilder) throws Exception {
         final PolyglotEngine engine = preparedBuilder.build();
-        engine.eval(Source.fromFileName("src/test/ruby/tck.rb"));
+        engine.eval(Source.newBuilder(new File("src/test/ruby/tck.rb")).build());
         return engine;
     }
 
