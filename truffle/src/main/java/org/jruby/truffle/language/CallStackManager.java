@@ -228,9 +228,10 @@ public class CallStackManager {
 
         // Ignore the call to run_jruby_root
         // TODO CS 2-Feb-16 should find a better way to detect this than a string
-        final SourceSection sourceSection = callNode.getEncapsulatingSourceSection();
 
-        if (sourceSection != null && sourceSection.getShortDescription().endsWith("#run_jruby_root")) {
+        final String name = callNode.getRootNode().getName();
+
+        if (name != null && name.equals("run_jruby_root")) {
             return true;
         }
 
