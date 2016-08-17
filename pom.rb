@@ -75,7 +75,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
               'test-unit.version' => '3.1.1',
               'power_assert.version' => '0.2.3',
               'diff-lcs.version' => '1.1.3',
-              'racc.version' => '1.4.13',
+              'racc.version' => '1.4.14',
               # versions for default gems with bin executables
               # used in ./lib/pom.rb and ./maven/jruby-stdlib/pom.rb
               'rdoc.version' => '4.2.0',
