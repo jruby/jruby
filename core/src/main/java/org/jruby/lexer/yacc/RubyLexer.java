@@ -1443,7 +1443,6 @@ public class RubyLexer extends LexingCommon {
         }
 
         newtok(true);
-        int first = c;
         do {
             if (!tokadd_mbchar(c)) return EOF;
             c = nextc();
@@ -1465,8 +1464,10 @@ public class RubyLexer extends LexingCommon {
         int result = 0;
 
         last_state = lex_state;
+        String tempVal;
         if (lastBangOrPredicate) {
             result = Tokens.tFID;
+            tempVal = createTokenString();
         } else {
             if (isLexState(lex_state, EXPR_FNAME)) {
                 if ((c = nextc()) == '=') { 
@@ -1484,14 +1485,14 @@ public class RubyLexer extends LexingCommon {
                     pushback(c);
                 }
             }
+            tempVal = createTokenString();
 
-            if (result == 0 && Character.isUpperCase(first)) {
+            if (result == 0 && Character.isUpperCase(tempVal.charAt(0))) {
                 result = Tokens.tCONSTANT;
             } else {
                 result = Tokens.tIDENTIFIER;
             }
         }
-        String tempVal = createTokenString();
         
         if (isLabelPossible(commandState)) {
             if (isLabelSuffix()) {
