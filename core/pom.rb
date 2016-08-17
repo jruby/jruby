@@ -53,7 +53,7 @@ project 'JRuby Core' do
   jar 'com.github.jnr:jffi:${jffi.version}'
   jar 'com.github.jnr:jffi:${jffi.version}:native'
 
-  jar 'org.jruby.joni:joni:2.1.10'
+  jar 'org.jruby.joni:joni:2.1.11-SNAPSHOT'
   jar 'org.jruby.extras:bytelist:1.0.13'
   jar 'org.jruby.jcodings:jcodings:1.0.18-SNAPSHOT'
   jar 'org.jruby:dirgra:0.3'
