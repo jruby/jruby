@@ -31,7 +31,7 @@
 
 # Because spawn does not yet work on Windows, we fall back on the older open3 there.
 real_open3 = true
-if org.jruby.platform.Platform::IS_WINDOWS
+if respond_to?(:org) && org.jruby.platform.Platform::IS_WINDOWS
   require 'jruby/open3_windows'
   real_open3 = false
 end
