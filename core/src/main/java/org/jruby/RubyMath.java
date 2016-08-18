@@ -447,7 +447,7 @@ public class RubyMath {
      */
     @JRubyMethod(name = "log10", required = 1, module = true, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_8)
     public static RubyFloat log10(IRubyObject recv, IRubyObject x) {
-        double result = Math.log10(needFloat(x).getDoubleValue());
+        double result = Math.log10(((RubyFloat) RubyKernel.new_float(recv,x)).getDoubleValue());
         domainCheck(recv, result, "log10");
         return RubyFloat.newFloat(recv.getRuntime(),result);
     }
