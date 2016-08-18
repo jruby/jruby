@@ -286,31 +286,13 @@ public class RubyProc extends RubyObject implements DataType {
             actual = args.length;
         }
 
-        // FIXME: NOTE IN THE BLOCKCAPALYPSE: I think we only care if there is any kwargs syntax at all and if so it is +1
-        // argument.  This ended up more complex because required() on signature adds +1 is required kwargs.  I suspect
-        // required() is used for two purposes and the +1 might be useful in some other way so I made it all work and
-        // after this we should clean this up (IRBlockBody and BlockBody are also messing with args[] so that should
-        // be part of this cleanup.
-
-        // We add one to our fill and adjust number of incoming args code when there are kwargs.  We subtract one
-        // if it happens to be requiredkwargs since required gets a +1.  This is horrible :)
-        int needsKwargs = blockBody instanceof IRBlockBody && ((IRBlockBody) blockBody).getSignature().hasKwargs() ?
-                1 - ((IRBlockBody) blockBody).getSignature().getRequiredKeywordForArityCount() : 0;
-
         // fixed arity > 0 with mismatch needs a new args array
-        if (isFixed && required > 0 && required+needsKwargs != actual) {
-            IRubyObject[] newArgs = Arrays.copyOf(args, required+needsKwargs);
+        if (isFixed && required > 0 && required != actual) {
+            IRubyObject[] newArgs = Arrays.copyOf(args, required);
 
 
             if (required > actual) {                      // Not enough required args pad.
                 Helpers.fillNil(newArgs, actual, required, context.runtime);
-                // ENEBO: what if we need kwargs here?
-            } else if (needsKwargs != 0) {
-                if (args.length < required+needsKwargs) { // Not enough args and we need an empty {} for kwargs processing.
-                    newArgs[newArgs.length - 1] = RubyHash.newHash(context.runtime);
-                } else {                                  // We have more args than we need and kwargs is always the last arg.
-                    newArgs[newArgs.length - 1] = args[args.length - 1];
-                }
             }
 
             args = newArgs;

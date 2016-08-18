@@ -19,6 +19,7 @@ import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
 import org.jruby.ir.Interp;
 import org.jruby.ir.JIT;
+import org.jruby.ir.Tuple;
 import org.jruby.ir.operands.IRException;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Splat;
@@ -37,6 +38,7 @@ import org.jruby.runtime.callsite.VariableCachingCallSite;
 import org.jruby.runtime.ivars.VariableAccessor;
 import org.jruby.util.ByteList;
 import org.jruby.util.DefinedMessage;
+import org.jruby.util.RecursiveComparator;
 import org.jruby.util.RegexpOptions;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.log.Logger;
@@ -557,27 +559,56 @@ public class IRRuntimeHelpers {
         }
     }
 
-    // Due to our current strategy of destructively processing the kwargs hash we need to dup
-    // and make sure the copy is not frozen.  This has a poor name as encouragement to rewrite
-    // how we handle kwargs internally :)
-    public static void frobnicateKwargsArgument(ThreadContext context, IRubyObject[] args, int requiredArgsCount) {
-        if (args.length <= requiredArgsCount) return; // No kwarg because required args slurp them up.
+    public static IRubyObject[] frobnicateKwargsArgument(ThreadContext context, IRubyObject[] args, int requiredArgsCount) {
+        if (args.length <= requiredArgsCount) return args; // No kwarg because required args slurp them up.
 
-        RubyHash kwargs = toHash(args[args.length - 1], context);
+        IRubyObject kwargs = toHash(args[args.length - 1], context);
 
         if (kwargs != null) {
-            kwargs = (RubyHash) kwargs.dup(context);
-            kwargs.setFrozen(false);
-            args[args.length - 1] = kwargs;
+            if (kwargs.isNil()) { // nil on to_hash is supposed to keep itself as real value so we need to make kwargs hash
+                IRubyObject[] newArgs = new IRubyObject[args.length + 1];
+                System.arraycopy(args, 0, newArgs, 0, args.length);
+                args = newArgs;
+                args[args.length - 1] = RubyHash.newSmallHash(context.runtime); // opt args
+                return args;
+            }
+
+            Tuple<RubyHash, RubyHash> hashes = new Tuple<>(RubyHash.newSmallHash(context.runtime), RubyHash.newSmallHash(context.runtime));
+
+            // We know toHash makes null, nil, or Hash
+            ((RubyHash) kwargs).visitAll(context, DivvyKeywordsVisitor, hashes);
+
+            if (!hashes.b.isEmpty()) { // rest args exists too expand args
+                IRubyObject[] newArgs = new IRubyObject[args.length + 1];
+                System.arraycopy(args, 0, newArgs, 0, args.length);
+                args = newArgs;
+                args[args.length - 2] = hashes.b; // opt args
+            }
+            args[args.length - 1] = hashes.a; // kwargs hash
         }
+
+        return args;
     }
 
-    private static RubyHash toHash(IRubyObject lastArg, ThreadContext context) {
+    private static final RubyHash.VisitorWithState<Tuple<RubyHash, RubyHash>> DivvyKeywordsVisitor = new RubyHash.VisitorWithState<Tuple<RubyHash, RubyHash>>() {
+        @Override
+        public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, Tuple<RubyHash, RubyHash> hashes) {
+            if (key instanceof RubySymbol) {
+                hashes.a.op_aset(context, key, value);
+            } else {
+                hashes.b.op_aset(context, key, value);
+            }
+        }
+    };
+
+    private static IRubyObject toHash(IRubyObject lastArg, ThreadContext context) {
         if (lastArg instanceof RubyHash) return (RubyHash) lastArg;
         if (lastArg.respondsTo("to_hash")) {
             if ( context == null ) context = lastArg.getRuntime().getCurrentContext();
             lastArg = lastArg.callMethod(context, "to_hash");
-            if (lastArg instanceof RubyHash) return (RubyHash) lastArg;
+            if (lastArg.isNil()) return lastArg;
+            TypeConverter.checkType(context, lastArg, context.runtime.getHash());
+            return (RubyHash) lastArg;
         }
         return null;
     }
@@ -588,7 +619,11 @@ public class IRRuntimeHelpers {
 
         Object lastArg = args[args.length - 1];
 
-        if (lastArg instanceof IRubyObject) return toHash((IRubyObject) lastArg, null);
+        if (lastArg instanceof IRubyObject) {
+            IRubyObject returnValue = toHash((IRubyObject) lastArg, null);
+            if (returnValue instanceof RubyHash) return (RubyHash) returnValue;
+        }
+
         return null;
     }
 
@@ -1642,7 +1677,7 @@ public class IRRuntimeHelpers {
         }
 
         int arityValue = sig.arityValue();
-        if (arityValue >= -1 && arityValue <= 1) {
+        if (!sig.hasKwargs() && arityValue >= -1 && arityValue <= 1) {
             return args;
         }
 
@@ -1759,7 +1794,7 @@ public class IRRuntimeHelpers {
     public static IRubyObject[] prepareBlockArgs(ThreadContext context, Block block, IRubyObject[] args, boolean usesKwArgs) {
         args = prepareBlockArgsInternal(context, block, args);
         if (usesKwArgs) {
-            frobnicateKwargsArgument(context, args, block.getBody().getSignature().required());
+            args = frobnicateKwargsArgument(context, args, block.getBody().getSignature().required());
         }
         return args;
     }

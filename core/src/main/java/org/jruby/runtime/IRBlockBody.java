@@ -170,7 +170,7 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
         IRubyObject[] args;
         if (value == null) { // no args case from BlockBody.yieldSpecific
             args = IRubyObject.NULL_ARRAY;
-        } else if (blockArity >= -1 && blockArity <= 1) {
+        } else if (!getSignature().hasKwargs() && blockArity >= -1 && blockArity <= 1) {
             args = new IRubyObject[] { value };
         } else {
             args = toAry(context, value);

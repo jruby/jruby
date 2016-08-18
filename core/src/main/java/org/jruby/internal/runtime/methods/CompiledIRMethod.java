@@ -83,7 +83,7 @@ public class CompiledIRMethod extends AbstractIRMethod {
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
         if (!hasExplicitCallProtocol) return callNoProtocol(context, self, name, args, block);
 
-        if (hasKwargs) IRRuntimeHelpers.frobnicateKwargsArgument(context, args, getSignature().required());
+        if (hasKwargs) args = IRRuntimeHelpers.frobnicateKwargsArgument(context, args, getSignature().required());
 
         return invokeExact(this.variable, context, staticScope, self, args, block, implementationClass, name);
     }
@@ -129,7 +129,7 @@ public class CompiledIRMethod extends AbstractIRMethod {
         RubyModule implementationClass = this.implementationClass;
         pre(context, staticScope, implementationClass, self, name, block);
 
-        if (hasKwargs) IRRuntimeHelpers.frobnicateKwargsArgument(context, args, getSignature().required());
+        if (hasKwargs) args = IRRuntimeHelpers.frobnicateKwargsArgument(context, args, getSignature().required());
 
         try {
             return invokeExact(this.variable, context, staticScope, self, args, block, implementationClass, name);
