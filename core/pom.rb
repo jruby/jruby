@@ -53,9 +53,9 @@ project 'JRuby Core' do
   jar 'com.github.jnr:jffi:${jffi.version}'
   jar 'com.github.jnr:jffi:${jffi.version}:native'
 
-  jar 'org.jruby.joni:joni:2.1.11-SNAPSHOT'
+  jar 'org.jruby.joni:joni:2.1.11'
   jar 'org.jruby.extras:bytelist:1.0.13'
-  jar 'org.jruby.jcodings:jcodings:1.0.18-SNAPSHOT'
+  jar 'org.jruby.jcodings:jcodings:1.0.18'
   jar 'org.jruby:dirgra:0.3'
 
   jar 'com.headius:invokebinder:1.7'
