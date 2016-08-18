@@ -486,12 +486,14 @@ public class IRRuntimeHelpers {
         return b.yieldSpecific(context);
     }
 
-    public static IRubyObject[] convertValueIntoArgArray(ThreadContext context, IRubyObject value, int blockArity, boolean argIsArray) {
+    public static IRubyObject[] convertValueIntoArgArray(ThreadContext context, IRubyObject value,
+                                                         org.jruby.runtime.Signature signature, boolean argIsArray) {
         // SSS FIXME: This should not really happen -- so, some places in the runtime library are breaking this contract.
         if (argIsArray && !(value instanceof RubyArray)) argIsArray = false;
 
-        switch (blockArity) {
-            case -1 : return argIsArray ? ((RubyArray)value).toJavaArray() : new IRubyObject[] { value };
+        switch (signature.arityValue()) {
+            case -1 :
+                return argIsArray || (signature.opt() > 1 && value instanceof RubyArray) ? ((RubyArray)value).toJavaArray() : new IRubyObject[] { value };
             case  0 : return new IRubyObject[] { value };
             case  1 : {
                if (argIsArray) {
@@ -1649,12 +1651,10 @@ public class IRRuntimeHelpers {
     }
 
     private static IRubyObject[] prepareProcArgs(ThreadContext context, Block b, IRubyObject[] args) {
-        if (args.length == 1) {
-            int arityValue = b.getBody().getSignature().arityValue();
-            return IRRuntimeHelpers.convertValueIntoArgArray(context, args[0], arityValue, b.type == Block.Type.NORMAL && args[0] instanceof RubyArray);
-        } else {
-            return args;
-        }
+        if (args.length != 1) return args;
+
+        // Potentially expand single value if it is an array depending on what we are calling.
+        return IRRuntimeHelpers.convertValueIntoArgArray(context, args[0], b.getBody().getSignature(), b.type == Block.Type.NORMAL && args[0] instanceof RubyArray);
     }
 
     private static IRubyObject[] prepareBlockArgsInternal(ThreadContext context, Block block, IRubyObject[] args) {
