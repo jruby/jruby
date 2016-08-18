@@ -46,7 +46,7 @@ public class PrimitiveNodeConstructor {
         List<Class<?>> signature = signatures.get(0);
 
         if (annotation.needsSelf()) {
-            arguments.add(transformArgument(new SelfNode(context), 0));
+            arguments.add(transformArgument(new SelfNode(), 0));
             argumentsCount--;
         }
 

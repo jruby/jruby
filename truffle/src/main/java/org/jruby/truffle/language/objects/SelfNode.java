@@ -19,10 +19,6 @@ public class SelfNode extends RubyNode {
 
     private final ValueProfile valueProfile = ValueProfile.createEqualityProfile();
 
-    public SelfNode(RubyContext context) {
-        super(context, null);
-    }
-
     @Override
     public Object execute(VirtualFrame frame) {
         return valueProfile.profile(RubyArguments.getSelf(frame));

@@ -189,15 +189,15 @@ public class CoreMethodNodeManager {
         final boolean needsSelf = method.constructor() || (!method.isModuleFunction() && !method.onSingleton() && method.needsSelf());
 
         if (needsSelf) {
-            RubyNode readSelfNode = new SelfNode(context);
-            argumentsNodes.add(transformArgument(method, readSelfNode, 0));
+            RubyNode readSelfNode = new SelfNode();
+            argumentsNodes.add(transformArgument(context, sourceSection, method, readSelfNode, 0));
         }
 
         final int nArgs = required + optional;
 
         for (int n = 0; n < nArgs; n++) {
             RubyNode readArgumentNode = new ReadPreArgumentNode(n, MissingArgumentBehavior.UNDEFINED);
-            argumentsNodes.add(transformArgument(method, readArgumentNode, n + 1));
+            argumentsNodes.add(transformArgument(context, sourceSection, method, readArgumentNode, n + 1));
         }
         if (method.rest()) {
             argumentsNodes.add(new ReadRemainingArgumentsNode(nArgs));
@@ -255,13 +255,13 @@ public class CoreMethodNodeManager {
         return Truffle.getRuntime().createCallTarget(rootNode);
     }
 
-    private static RubyNode transformArgument(CoreMethod method, RubyNode argument, int n) {
+    private static RubyNode transformArgument(RubyContext context, SourceSection sourceSection, CoreMethod method, RubyNode argument, int n) {
         if (ArrayUtils.contains(method.lowerFixnum(), n)) {
             argument = FixnumLowerNodeGen.create(null, null, argument);
         }
 
         if (n == 0 && method.raiseIfFrozenSelf()) {
-            argument = new RaiseIfFrozenNode(argument);
+            argument = new RaiseIfFrozenNode(context, sourceSection, argument);
         }
 
         return argument;

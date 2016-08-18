@@ -240,7 +240,7 @@ public class BodyTranslator extends Translator {
         final DynamicObject newName = translateNameNodeToSymbol(node.getNewName());
 
         final RubyNode ret = ModuleNodesFactory.AliasMethodNodeFactory.create(
-                new RaiseIfFrozenNode(new GetDefaultDefineeNode(context, sourceSection)),
+                new RaiseIfFrozenNode(context, sourceSection, new GetDefaultDefineeNode(context, sourceSection)),
                 new ObjectLiteralNode(context, sourceSection, newName),
                 new ObjectLiteralNode(context, sourceSection, oldName));
 
@@ -604,7 +604,7 @@ public class BodyTranslator extends Translator {
     }
 
     private RubyNode translateCheckFrozen(SourceSection sourceSection) {
-        return new RaiseIfFrozenNode(new SelfNode(context));
+        return new RaiseIfFrozenNode(context, sourceSection, new SelfNode());
     }
 
     private RubyNode translateCallNode(org.jruby.ast.CallNode node, boolean ignoreVisibility, boolean isVCall, boolean isAttrAssign) {
@@ -1238,7 +1238,7 @@ public class BodyTranslator extends Translator {
     @Override
     public RubyNode visitDefnNode(org.jruby.ast.DefnNode node) {
         final SourceSection sourceSection = translate(node.getPosition(), node.getName());
-        final RubyNode classNode = new RaiseIfFrozenNode(new GetDefaultDefineeNode(context, sourceSection));
+        final RubyNode classNode = new RaiseIfFrozenNode(context, sourceSection, new GetDefaultDefineeNode(context, sourceSection));
 
         String methodName = node.getName();
 
@@ -1743,7 +1743,7 @@ public class BodyTranslator extends Translator {
 
         // Every case will use a SelfNode, just don't it use more than once.
         // Also note the check for frozen.
-        final RubyNode self = new RaiseIfFrozenNode(new SelfNode(context));
+        final RubyNode self = new RaiseIfFrozenNode(context, sourceSection, new SelfNode());
 
         final String path = getSourcePath(sourceSection);
         final String corePath = buildCorePath("");
@@ -1791,7 +1791,7 @@ public class BodyTranslator extends Translator {
         final String name = node.getName();
 
         // About every case will use a SelfNode, just don't it use more than once.
-        final SelfNode self = new SelfNode(context);
+        final SelfNode self = new SelfNode();
 
         final String path = getSourcePath(sourceSection);
         final String corePath = buildCorePath("");
@@ -2805,7 +2805,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitSelfNode(org.jruby.ast.SelfNode node) {
-        final RubyNode ret = new SelfNode(context);
+        final RubyNode ret = new SelfNode();
         return addNewlineIfNeeded(node, ret);
     }
 
@@ -2861,7 +2861,7 @@ public class BodyTranslator extends Translator {
         final DynamicObject nameSymbol = translateNameNodeToSymbol(node.getName());
 
         final RubyNode ret = ModuleNodesFactory.UndefMethodNodeFactory.create(context, sourceSection, new RubyNode[]{
-                new RaiseIfFrozenNode(new GetDefaultDefineeNode(context, sourceSection)),
+                new RaiseIfFrozenNode(context, sourceSection, new GetDefaultDefineeNode(context, sourceSection)),
                 new ObjectLiteralNode(context, sourceSection, new Object[]{ nameSymbol })
         });
         return addNewlineIfNeeded(node, ret);
