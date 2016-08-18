@@ -17,7 +17,7 @@ DO NOT MODIFIY - GENERATED CODE
   <artifactId>jruby-core</artifactId>
   <name>JRuby Core</name>
   <properties>
-    <version.ruby>2.3.0</version.ruby>
+    <version.ruby>2.3.1</version.ruby>
     <prawn.dir>${test.dir}/prawn</prawn.dir>
     <spec.tags.dir>${spec.dir}/tags</spec.tags.dir>
     <polyglot.dump.pom>pom.xml</polyglot.dump.pom>
@@ -28,7 +28,7 @@ DO NOT MODIFIY - GENERATED CODE
     <jruby.test.memory.permgen>2G</jruby.test.memory.permgen>
     <installer.gems>${jruby.win32ole.gem}</installer.gems>
     <prawn.git.repo>git://github.com/sandal/prawn.git</prawn.git.repo>
-    <version.ruby.minor>0</version.ruby.minor>
+    <version.ruby.minor>1</version.ruby.minor>
     <tzdata.version>2013d</tzdata.version>
     <install4j.executable>/Applications/install4j 4/bin/install4jc</install4j.executable>
     <jay.bin>jay</jay.bin>
@@ -48,7 +48,7 @@ DO NOT MODIFIY - GENERATED CODE
     <parser.dir>core/src/main/java/org/jruby/parser</parser.dir>
     <jruby.basedir>${basedir}/..</jruby.basedir>
     <rubyspec.dir>${spec.dir}/ruby</rubyspec.dir>
-    <version.ruby.revision>52539</version.ruby.revision>
+    <version.ruby.revision>54768</version.ruby.revision>
     <jruby.test.memory>3G</jruby.test.memory>
     <mspec.dir>${spec.dir}/mspec</mspec.dir>
     <build.date>${maven.build.timestamp}</build.date>
