@@ -1,3 +1,5 @@
 #!/usr/bin/env bash
 
-ruby -X+T -J-G:+TruffleCompilationExceptionsAreFatal test/truffle/compiler/osr/osr.rb
+source test/truffle/common.sh.inc
+
+jt ruby --graal -J-G:+TruffleCompilationExceptionsAreFatal test/truffle/compiler/osr/osr.rb

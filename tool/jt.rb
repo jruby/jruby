@@ -783,7 +783,6 @@ module Commands
 
   def test_compiler(*args)
     jruby_opts = []
-    jruby_opts << '-Xtruffle.graal.warn_unless=false'
 
     if ENV['GRAAL_JS_JAR']
       jruby_opts << '-J-cp'
@@ -792,20 +791,10 @@ module Commands
 
     jruby_opts << '-Xtruffle.exceptions.print_java=true'
 
-    no_java_cmd = args.delete('--no-java-cmd')
-
-    unless no_java_cmd
-      javacmd, javacmd_options = Utilities.find_graal_javacmd_and_options
-      jruby_opts.push *javacmd_options
-    end
-
-    env_vars = {}
-    env_vars["JAVACMD"] = javacmd unless no_java_cmd
-    env_vars["JRUBY_OPTS"] = jruby_opts.join(' ')
-    env_vars["PATH"] = "#{Utilities.find_jruby_bin_dir}:#{ENV["PATH"]}"
+    env = { "JRUBY_OPTS" => jruby_opts.join(' ') }
 
     Dir["#{JRUBY_DIR}/test/truffle/compiler/*.sh"].each do |test_script|
-      sh env_vars, test_script
+      sh env, test_script
     end
   end
   private :test_compiler
@@ -895,8 +884,6 @@ module Commands
     env_vars   = env
     jruby_opts = []
 
-    jruby_opts << '-Xtruffle.graal.warn_unless=false'
-
     if ENV['GRAAL_JS_JAR']
       jruby_opts << '-J-cp'
       jruby_opts << Utilities.find_graal_js
@@ -909,7 +896,6 @@ module Commands
 
     env_vars["JRUBY_OPTS"] = jruby_opts.join(' ')
 
-    env_vars["PATH"]       = "#{Utilities.find_jruby_bin_dir}:#{ENV["PATH"]}"
     tests_path             = "#{JRUBY_DIR}/test/truffle/integration"
     single_test            = !args.empty?
     test_names             = single_test ? '{' + args.join(',') + '}' : '*'
@@ -924,8 +910,6 @@ module Commands
     env_vars   = env
     jruby_opts = []
 
-    jruby_opts << '-Xtruffle.graal.warn_unless=false'
-
     if ENV['GRAAL_JS_JAR']
       jruby_opts << '-J-cp'
       jruby_opts << Utilities.find_graal_js
@@ -933,7 +917,6 @@ module Commands
 
     env_vars["JRUBY_OPTS"] = jruby_opts.join(' ')
 
-    env_vars["PATH"]       = "#{Utilities.find_jruby_bin_dir}:#{ENV["PATH"]}"
     tests_path             = "#{JRUBY_DIR}/test/truffle/gems"
     single_test            = !args.empty?
     test_names             = single_test ? '{' + args.join(',') + '}' : '*'
@@ -949,15 +932,12 @@ module Commands
     env_vars   = env
     jruby_opts = []
 
-    jruby_opts << '-Xtruffle.graal.warn_unless=false'
-
     env_vars["JRUBY_OPTS"] = jruby_opts.join(' ')
 
     unless File.exist? "#{JRUBY_DIR}/../jruby-truffle-gem-test-pack/gem-testing"
       raise 'missing ../jruby-truffle-gem-test-pack/gem-testing directory'
     end
 
-    env_vars["PATH"]       = "#{Utilities.find_jruby_bin_dir}:#{ENV["PATH"]}"
     tests_path             = "#{JRUBY_DIR}/test/truffle/ecosystem"
     single_test            = !args.empty?
     test_names             = single_test ? '{' + args.join(',') + '}' : '*'

@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 
+source test/truffle/common.sh.inc
+
 set -e
 
 for f in test/truffle/integration/backtraces/*.rb
 do
   echo $f
-  ruby -X+T $f
+  jt ruby $f
 done

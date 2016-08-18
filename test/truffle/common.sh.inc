@@ -18,3 +18,7 @@ function test_server {
     exit 1
   fi
 }
+
+function jt {
+  ruby tool/jt.rb "$@"
+}
