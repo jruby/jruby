@@ -574,11 +574,7 @@ module Commands
   def run(*args)
     env_vars = args.first.is_a?(Hash) ? args.shift : {}
 
-    jruby_args = [
-      '-X+T',
-      "-Xtruffle.core.load_path=#{JRUBY_DIR}/truffle/src/main/ruby",
-      '-Xtruffle.graal.warn_unless=false'
-    ]
+    jruby_args = ['-X+T']
 
     if ENV['JRUBY_OPTS'] && ENV['JRUBY_OPTS'].include?('-Xclassic')
       jruby_args.delete '-X+T'
@@ -591,11 +587,16 @@ module Commands
       args.unshift dep if args.include?(arg)
     end
 
+    unless args.delete('--no-core-load-path')
+      jruby_args << "-Xtruffle.core.load_path=#{JRUBY_DIR}/truffle/src/main/ruby"
+    end
+
     if args.delete('--graal')
       javacmd, javacmd_options = Utilities.find_graal_javacmd_and_options
       env_vars["JAVACMD"] = javacmd
-      jruby_args.push *javacmd_options
-      jruby_args.delete('-Xtruffle.graal.warn_unless=false')
+      jruby_args.push(*javacmd_options)
+    else
+      jruby_args << '-Xtruffle.graal.warn_unless=false'
     end
 
     if args.delete('--js')

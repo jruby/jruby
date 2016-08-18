@@ -7,5 +7,5 @@ set -e
 for f in test/truffle/integration/backtraces/*.rb
 do
   echo $f
-  jt ruby $f
+  jt ruby --no-core-load-path $f
 done
