@@ -208,6 +208,12 @@ Truffle::Runner.add_config :actionpack,
                                stubs.fetch(:html_sanitizer),
                                exclusions_for(:actionpack))
 
+Truffle::Runner.add_config :railties,
+                           deep_merge(rails_common,
+                                      stubs.fetch(:activesupport_isolation),
+                                      exclusions_for(:railties),
+                                      run: { require: %w[bundler.rb] })
+
 Truffle::Runner.add_config :'concurrent-ruby',
                            setup: { file: { "stub-processor_number.rb" => dedent(<<-RUBY) } },
                               # stub methods calling #system
@@ -270,6 +276,56 @@ end
 Truffle::Runner.add_ci_definition :activesupport do
   subdir 'activesupport'
   rails_ci
+end
+
+Truffle::Runner.add_ci_definition :railties do
+  subdir 'railties'
+  rails_ci has_exclusions:  true,
+           skip_test_files: %w[
+              test/application/asset_debugging_test.rb
+              test/application/assets_test.rb
+              test/application/bin_setup_test.rb
+              test/application/configuration_test.rb
+              test/application/console_test.rb
+              test/application/generators_test.rb
+              test/application/loading_test.rb
+              test/application/mailer_previews_test.rb
+              test/application/middleware_test.rb
+              test/application/multiple_applications_test.rb
+              test/application/paths_test.rb
+              test/application/rackup_test.rb
+              test/application/rake_test.rb
+              test/application/rendering_test.rb
+              test/application/routing_test.rb
+              test/application/runner_test.rb
+              test/application/test_runner_test.rb
+              test/application/test_test.rb
+              test/application/url_generation_test.rb
+              test/application/configuration/base_test.rb
+              test/application/configuration/custom_test.rb
+              test/application/initializers/frameworks_test.rb
+              test/application/initializers/hooks_test.rb
+              test/application/initializers/i18n_test.rb
+              test/application/initializers/load_path_test.rb
+              test/application/initializers/notifications_test.rb
+              test/application/middleware/cache_test.rb
+              test/application/middleware/cookies_test.rb
+              test/application/middleware/exceptions_test.rb
+              test/application/middleware/remote_ip_test.rb
+              test/application/middleware/sendfile_test.rb
+              test/application/middleware/session_test.rb
+              test/application/middleware/static_test.rb
+              test/application/rack/logger_test.rb
+              test/application/rake/dbs_test.rb
+              test/application/rake/migrations_test.rb
+              test/application/rake/notes_test.rb
+              test/railties/engine_test.rb
+              test/railties/generators_test.rb
+              test/railties/mounted_engine_test.rb
+              test/railties/railtie_test.rb
+              test/fixtures
+              test/rails_info_controller_test
+              test/commands/console_test]
 end
 
 Truffle::Runner.add_ci_definition :algebrick do
