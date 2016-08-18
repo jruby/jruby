@@ -28,17 +28,17 @@ default_gems =
   [
    ImportedGem.new( 'jruby-openssl', '0.9.17' ),
    ImportedGem.new( 'jruby-readline', '1.1.dev-SNAPSHOT', false ),
-   ImportedGem.new( 'rake', '${rake.version}' ),
+   ImportedGem.new( 'rake', '${rake.version}', false ),
    ImportedGem.new( 'rdoc', '${rdoc.version}' ),
-   ImportedGem.new( 'minitest', '${minitest.version}' ),
-   ImportedGem.new( 'test-unit', '${test-unit.version}' ),
-   ImportedGem.new( 'power_assert', '${power_assert.version}' ),
+   ImportedGem.new( 'minitest', '${minitest.version}', false ),
+   ImportedGem.new( 'test-unit', '${test-unit.version}', false ),
+   ImportedGem.new( 'power_assert', '${power_assert.version}', false ),
    ImportedGem.new( 'psych', '2.0.17' ),
    ImportedGem.new( 'json', '${json.version}' ),
    ImportedGem.new( 'jar-dependencies', '${jar-dependencies.version}' ),
    ImportedGem.new( 'racc', '${racc.version}'),
-   ImportedGem.new( 'net-telnet', '0.1.1'),
-   ImportedGem.new( 'did_you_mean', '1.0.1'),
+   ImportedGem.new( 'net-telnet', '0.1.1', false),
+   ImportedGem.new( 'did_you_mean', '1.0.1', false),
   ]
 
 project 'JRuby Lib Setup' do
