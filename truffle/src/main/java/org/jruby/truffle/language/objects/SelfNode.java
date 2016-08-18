@@ -11,7 +11,6 @@ package org.jruby.truffle.language.objects;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.profiles.ValueProfile;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
@@ -20,8 +19,8 @@ public class SelfNode extends RubyNode {
 
     private final ValueProfile valueProfile = ValueProfile.createEqualityProfile();
 
-    public SelfNode(RubyContext context, SourceSection sourceSection) {
-        super(context, sourceSection);
+    public SelfNode(RubyContext context) {
+        super(context, null);
     }
 
     @Override

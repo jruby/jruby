@@ -383,7 +383,7 @@ public abstract class ModuleNodes {
             final RubyNode checkArity = Translator.createCheckArityNode(getContext(), sourceSection, arity);
             final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, LexicalScope.NONE, arity, indicativeName, false, null, false, false, false);
 
-            final SelfNode self = new SelfNode(getContext(), sourceSection);
+            final SelfNode self = new SelfNode(getContext());
             final RubyNode accessInstanceVariable;
             if (isGetter) {
                 accessInstanceVariable = new ReadInstanceVariableNode(getContext(), sourceSection, ivar, self);
@@ -1772,7 +1772,7 @@ public abstract class ModuleNodes {
         public UndefMethodNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             this.nameToJavaStringNode = NameToJavaStringNode.create();
-            this.raiseIfFrozenNode = new RaiseIfFrozenNode(new SelfNode(context, sourceSection));
+            this.raiseIfFrozenNode = new RaiseIfFrozenNode(new SelfNode(context));
             this.methodUndefinedNode = DispatchHeadNodeFactory.createMethodCallOnSelf(context);
         }
 

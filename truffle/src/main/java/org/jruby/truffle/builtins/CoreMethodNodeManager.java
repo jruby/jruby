@@ -189,7 +189,7 @@ public class CoreMethodNodeManager {
         final boolean needsSelf = method.constructor() || (!method.isModuleFunction() && !method.onSingleton() && method.needsSelf());
 
         if (needsSelf) {
-            RubyNode readSelfNode = new SelfNode(context, sourceSection);
+            RubyNode readSelfNode = new SelfNode(context);
             argumentsNodes.add(transformArgument(method, readSelfNode, 0));
         }
 

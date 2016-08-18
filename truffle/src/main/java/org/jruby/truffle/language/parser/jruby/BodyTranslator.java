@@ -29,7 +29,6 @@ import org.jruby.parser.ParserSupport;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Visibility;
-import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.PrimitiveNodeConstructor;
 import org.jruby.truffle.core.CoreLibrary;
@@ -51,7 +50,6 @@ import org.jruby.truffle.core.cast.StringToSymbolNodeGen;
 import org.jruby.truffle.core.cast.ToProcNodeGen;
 import org.jruby.truffle.core.cast.ToSNode;
 import org.jruby.truffle.core.cast.ToSNodeGen;
-import org.jruby.truffle.core.exception.SystemCallErrorNodesFactory;
 import org.jruby.truffle.core.hash.ConcatHashLiteralNode;
 import org.jruby.truffle.core.hash.HashLiteralNode;
 import org.jruby.truffle.core.hash.HashNodesFactory;
@@ -135,7 +133,6 @@ import org.jruby.truffle.language.locals.InitFlipFlopSlotNode;
 import org.jruby.truffle.language.locals.LocalFlipFlopStateNode;
 import org.jruby.truffle.language.locals.LocalVariableType;
 import org.jruby.truffle.language.locals.ReadLocalVariableNode;
-import org.jruby.truffle.language.locals.WriteLocalVariableNode;
 import org.jruby.truffle.language.methods.AddMethodNodeGen;
 import org.jruby.truffle.language.methods.Arity;
 import org.jruby.truffle.language.methods.BlockDefinitionNode;
@@ -607,7 +604,7 @@ public class BodyTranslator extends Translator {
     }
 
     private RubyNode translateCheckFrozen(SourceSection sourceSection) {
-        return new RaiseIfFrozenNode(new SelfNode(context, sourceSection));
+        return new RaiseIfFrozenNode(new SelfNode(context));
     }
 
     private RubyNode translateCallNode(org.jruby.ast.CallNode node, boolean ignoreVisibility, boolean isVCall, boolean isAttrAssign) {
@@ -1068,6 +1065,10 @@ public class BodyTranslator extends Translator {
     }
 
     private String getSourcePath(SourceSection sourceSection) {
+        if (sourceSection == null) {
+            return "(unknown)";
+        }
+
         final Source source = sourceSection.getSource();
 
         if (source == null) {
@@ -1742,7 +1743,7 @@ public class BodyTranslator extends Translator {
 
         // Every case will use a SelfNode, just don't it use more than once.
         // Also note the check for frozen.
-        final RubyNode self = new RaiseIfFrozenNode(new SelfNode(context, sourceSection));
+        final RubyNode self = new RaiseIfFrozenNode(new SelfNode(context));
 
         final String path = getSourcePath(sourceSection);
         final String corePath = buildCorePath("");
@@ -1790,7 +1791,7 @@ public class BodyTranslator extends Translator {
         final String name = node.getName();
 
         // About every case will use a SelfNode, just don't it use more than once.
-        final SelfNode self = new SelfNode(context, sourceSection);
+        final SelfNode self = new SelfNode(context);
 
         final String path = getSourcePath(sourceSection);
         final String corePath = buildCorePath("");
@@ -2804,7 +2805,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitSelfNode(org.jruby.ast.SelfNode node) {
-        final RubyNode ret = new SelfNode(context, translate(node.getPosition()));
+        final RubyNode ret = new SelfNode(context);
         return addNewlineIfNeeded(node, ret);
     }
 
