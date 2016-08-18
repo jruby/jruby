@@ -447,13 +447,20 @@ public class RubyMath {
      */
     @JRubyMethod(name = "log10", required = 1, module = true, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_8)
     public static RubyFloat log10(IRubyObject recv, IRubyObject x) {
-        return log_common(recv, ((RubyFloat)RubyKernel.new_float(recv,x)).getDoubleValue(), 10, "log10");
+        double result = Math.log10(needFloat(x).getDoubleValue());
+        domainCheck(recv, result, "log10");
+        return RubyFloat.newFloat(recv.getRuntime(),result);
     }
 
     @JRubyMethod(name = "log10", required = 1, module = true, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_9)
     public static RubyFloat log10_19(IRubyObject recv, IRubyObject x) {
         double value = needFloat(x).getDoubleValue();
-        return log_common19(recv, value, 10, "log10");
+
+        if (value < 0) {
+            throw recv.getRuntime().newMathDomainError("log10");
+        }
+
+        return RubyFloat.newFloat(recv.getRuntime(), Math.log10(value));
     }
 
     /** Returns the base 2 logarithm of x.
