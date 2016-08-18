@@ -5,7 +5,7 @@ if MORE_QUIET
     def say(message)
       if message != spec.post_install_message || !MORE_QUIET
         super
-      end 
+      end
     end
   end
 end
@@ -154,49 +154,48 @@ project 'JRuby Lib Setup' do
       pom_version = ctx.project.properties.get( g.version[2..-2] ) || g.version
       version = pom_version.sub( /-SNAPSHOT/, '' )
 
-      # install the gem unless already installed
-      if Dir[ File.join( default_specs, "#{g.name}-#{version}*.gemspec" ) ].empty?
+      if g.default_spec
+        # install the gem unless already installed
+        if Dir[ File.join( default_specs, "#{g.name}-#{version}*.gemspec" ) ].empty?
 
-        log
-        log "--- gem #{g.name}-#{version} ---"
+          log
+          log "--- gem #{g.name}-#{version} ---"
 
-        # copy the gem content to stdlib
+          # copy the gem content to stdlib
+          log "copy gem content to #{stdlib_dir}"
+          # assume default require_path
+          require_base = File.join( gems, "#{g.name}-#{version}*", 'lib' )
+          require_files = File.join( require_base, '*' )
 
-        log "copy gem content to #{stdlib_dir}"
-        # assume default require_path
-        require_base = File.join( gems, "#{g.name}-#{version}*", 'lib' )
-        require_files = File.join( require_base, '*' )
+          # copy in new ones and mark writable for future updates (e.g. minitest)
+          stdlib_locs = Dir[ require_files ].map do |f|
+            log " copying: #{f} to #{stdlib_dir}" if $VERBOSE
+            FileUtils.cp_r( f, stdlib_dir )
 
-        # copy in new ones and mark writable for future updates (e.g. minitest)
-        stdlib_locs = Dir[ require_files ].map do |f|
-          log " copying: #{f} to #{stdlib_dir}" if $VERBOSE
-          FileUtils.cp_r( f, stdlib_dir )
-
-          stdlib_loc = f.sub( File.dirname(f), stdlib_dir )
-          File.directory?(stdlib_loc) ? Dir[stdlib_loc + "/*"].to_a : stdlib_loc
-        end
-        stdlib_locs.flatten!
-
-        # fix permissions on copied files
-        stdlib_locs.each do |f|
-          next if File.writable? f
-          log " fixing permissions: #{f}" if $VERBOSE
-          # TODO: better way to just set it writable without changing all modes?
-          FileUtils.chmod_R(0644, f)
-        end
-
-        # copy bin files if the gem has any
-        bin = File.join( gems, "#{g.name}-#{version}", 'bin' )
-        if File.exists? bin
-          Dir[ File.join( bin, '*' ) ].each do |f|
-            log "copy to bin: #{File.basename( f )}"
-            target = File.join( bin_stubs, f.sub( /#{gems}/, '' ) )
-            FileUtils.mkdir_p( File.dirname( target ) )
-            FileUtils.cp_r( f, target )
+            stdlib_loc = f.sub( File.dirname(f), stdlib_dir )
+            File.directory?(stdlib_loc) ? Dir[stdlib_loc + "/*"].to_a : stdlib_loc
           end
-        end
+          stdlib_locs.flatten!
 
-        if g.default_spec
+          # fix permissions on copied files
+          stdlib_locs.each do |f|
+            next if File.writable? f
+            log " fixing permissions: #{f}" if $VERBOSE
+            # TODO: better way to just set it writable without changing all modes?
+            FileUtils.chmod_R(0644, f)
+          end
+
+          # copy bin files if the gem has any
+          bin = File.join( gems, "#{g.name}-#{version}", 'bin' )
+          if File.exists? bin
+            Dir[ File.join( bin, '*' ) ].each do |f|
+              log "copy to bin: #{File.basename( f )}"
+              target = File.join( bin_stubs, f.sub( /#{gems}/, '' ) )
+              FileUtils.mkdir_p( File.dirname( target ) )
+              FileUtils.cp_r( f, target )
+            end
+          end
+
           specfile_wildcard = "#{g.name}-#{version}*.gemspec"
           specfile = Dir[ File.join( specs,  specfile_wildcard ) ].first
 
@@ -211,6 +210,22 @@ project 'JRuby Lib Setup' do
           File.open( File.join( default_specs, specname ), 'w' ) do |f|
             f.print( spec.to_ruby )
           end
+        end
+      else
+        gem_path = ctx.project.artifacts.find { |a| a.artifact_id == g.name }.file.to_pathname
+        if Dir[ File.join( jruby_gems, 'cache', File.basename( gem_path ).sub( /.gem/, '*.gem' ) ) ].empty?
+          log
+          log "--- gem #{g.name}-#{version} ---"
+          log "install non-default gem: #{g.name}"
+          log gem_path if $VERBOSE
+
+          installer = Gem::Installer.new( gem_path,
+                                          :wrappers => true,
+                                          :ignore_dependencies => true,
+                                          :install_dir => jruby_gems )
+          def installer.ensure_required_ruby_version_met; end
+          installer.install
+          installer.write_spec
         end
       end
     end
@@ -287,7 +302,7 @@ project 'JRuby Lib Setup' do
 
     resource do
       directory '${gem.home}'
-      includes 'gems/rake-${rake.version}/bin/r*', 'gems/rdoc-${rdoc.version}/bin/r*', 'specifications/default/*.gemspec'
+      includes 'gems/**', 'specifications/*.gemspec', 'specifications/default/*.gemspec'
       target_path '${jruby.complete.gems}'
     end
 
