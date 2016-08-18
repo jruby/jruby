@@ -174,7 +174,7 @@ def exclusion_file(gem_name)
   data.pretty_inspect
 end
 
-def exclusion(name)
+def exclusions_for(name)
   { setup: { file: { 'excluded-tests.rb' => format(dedent(<<-RUBY), exclusion_file(name)) } } }
     failures = %s
     require 'truffle/exclude_rspec_examples'
@@ -206,7 +206,7 @@ Truffle::Runner.add_config :actionpack,
                            deep_merge(
                                rails_common,
                                stubs.fetch(:html_sanitizer),
-                               exclusion(:actionpack))
+                               exclusions_for(:actionpack))
 
 Truffle::Runner.add_config :'concurrent-ruby',
                            setup: { file: { "stub-processor_number.rb" => dedent(<<-RUBY) } },
