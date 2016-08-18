@@ -1,63 +1,6 @@
-#!/usr/bin/env ruby
+#!/usr/bin/env bash
 
-JRUBY = File.expand_path('../..', __FILE__)
+tool="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+root="$(dirname "$tool")"
 
-GRAAL_OPTIONS_PREFIX = "graal."
-
-java = ENV["JAVACMD"] || "java"
-
-java_flags = []
-ruby_flags = []
-
-print_command = false
-
-# Separate java and ruby flags from JRUBY_OPTS and ARGV.
-# Also translate shortcuts like -J-G:, -J and -Xtruffle.
-parse_options = lambda do |args|
-  until args.empty?
-    case arg = args.shift
-    when "-X+T"
-      # Just drop it
-    when "-X-T"
-      abort "Can only run JRuby+Truffle with mx"
-    when "-J-cmd"
-      print_command = true
-    when /^-J-G:\+/
-      java_flags << "-J-D#{GRAAL_OPTIONS_PREFIX}#{$'}=true"
-    when /^-J-G:-/
-      java_flags << "-J-D#{GRAAL_OPTIONS_PREFIX}#{$'}=false"
-    when /^-J-G:/
-      java_flags << "-J-D#{GRAAL_OPTIONS_PREFIX}#{$'}"
-    when /^-J-(cp|classpath)$/
-      java_flags << arg << args.shift
-    when /^-J/
-      java_flags << arg
-    when /^-Xtruffle\./
-      java_flags << "-J-Djruby.#{arg[2..-1]}"
-    else # Not a VM argument, leave untouched
-      ruby_flags << arg
-      break
-    end
-  end
-  ruby_flags += args
-end
-
-parse_options.call(ENV["JRUBY_OPTS"].to_s.split(' '))
-parse_options.call(ARGV)
-
-args = ["mx"]
-unless java == "java"
-  java_home = java[%r{^(.+)/bin/java$}, 1]
-  args << '--java-home' << java_home
-end
-args << "ruby"
-args << "-J-Xss2048k"
-args += java_flags
-args += ruby_flags
-
-if print_command
-  args.insert(1, '-v')
-  puts "$ " + args.join(' ')
-end
-
-exec(*args)
+exec mx -p "$root" ruby "$@";
