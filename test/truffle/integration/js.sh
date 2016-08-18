@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 
+source test/truffle/common.sh.inc
+
 set -e
 
-ruby -X+T test/truffle/integration/js/eval.rb
-ruby -X+T test/truffle/integration/js/inline-exported.rb
+jt ruby test/truffle/integration/js/eval.rb
+jt ruby test/truffle/integration/js/inline-exported.rb

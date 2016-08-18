@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source test/truffle/common.sh.inc
+
 set -e
 set -x
 
@@ -8,7 +10,7 @@ SLEEP_LINE=4
 
 # Test /stacks
 
-ruby -X+T -Xtruffle.instrumentation_server_port=$PORT test/truffle/integration/instrumentation-server/subject.rb &
+jt ruby -Xtruffle.instrumentation_server_port=$PORT test/truffle/integration/instrumentation-server/subject.rb &
 pid=$!
 
 while [ ! -e ready.txt ]; do
@@ -34,7 +36,7 @@ rm ready.txt
 # Test /break
 
 ( echo backtrace ; echo 20000+1400 ; echo exit ) > in.txt
-ruby -X+T -Xtruffle.instrumentation_server_port=$PORT test/truffle/integration/instrumentation-server/subject.rb < in.txt > out.txt &
+jt ruby -Xtruffle.instrumentation_server_port=$PORT test/truffle/integration/instrumentation-server/subject.rb < in.txt > out.txt &
 pid=$!
 
 while [ ! -e ready.txt ]; do

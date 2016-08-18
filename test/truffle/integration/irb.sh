@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 
+source test/truffle/common.sh.inc
+
 set -e
 
-ruby -X+T -S irb < test/truffle/integration/irb/input.txt > temp.txt
+jt ruby -S irb < test/truffle/integration/irb/input.txt > temp.txt
 
 if ! cmp --silent temp.txt test/truffle/integration/irb/output.txt
 then
