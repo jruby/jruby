@@ -238,19 +238,20 @@ Truffle::Runner.add_config :psd,
 
 
 class Truffle::Runner::CIEnvironment
-  def rails_ci
-    declare_options debug:   ['-d', '--[no-]debug', 'Run tests with remote debugging enabled.',
-                              STORE_NEW_VALUE, false],
-                    exclude: ['--[no-]exclude', 'Exclude known failing tests',
-                              STORE_NEW_VALUE, true]
+  def rails_ci(has_exclusions: false, skip_test_files: [])
+    options           = {}
+    options[:debug]   = ['-d', '--[no-]debug', 'Run tests with remote debugging enabled.', STORE_NEW_VALUE, false]
+    options[:exclude] = ['--[no-]exclusion', 'Exclude known failing tests', STORE_NEW_VALUE, true] if has_exclusions
 
+    declare_options options
     repository_name 'rails'
 
     use_only_https_git_paths!
 
     has_to_succeed setup
-    set_result run([*%w[--require-pattern test/**/*_test.rb],
-                    *(%w[-r excluded-tests] if option(:exclude)),
+    set_result run([*(['--exclude-pattern', *skip_test_files.join('|')] unless skip_test_files.empty?),
+                    *%w[--require-pattern test/**/*_test.rb],
+                    *(%w[-r excluded-tests] if has_exclusions && option(:exclude)),
                     *(%w[--debug] if option(:debug)),
                     *%w[-- -I test -e nil]])
   end
@@ -258,7 +259,7 @@ end
 
 Truffle::Runner.add_ci_definition :actionpack do
   subdir 'actionpack'
-  rails_ci
+  rails_ci has_exclusions: true
 end
 
 Truffle::Runner.add_ci_definition :activemodel do
