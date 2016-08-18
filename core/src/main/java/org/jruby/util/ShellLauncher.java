@@ -395,9 +395,14 @@ public class ShellLauncher {
                 // NOTE: Jruby's handling of tildes is more complete than
                 //       MRI's, which can't handle user names after the tilde
                 //       when searching the executable path
-                pathFile = isValidFile(runtime, fdir, fname, isExec);
-                if (pathFile != null) {
-                    break;
+                try {
+                    pathFile = isValidFile(runtime, fdir, fname, isExec);
+                    if (pathFile != null) {
+                        break;
+                    }
+                } catch (SecurityException se) {
+                    // Security prevented accessing this PATH entry, proceed to next
+                    continue;
                 }
             }
         } else {
