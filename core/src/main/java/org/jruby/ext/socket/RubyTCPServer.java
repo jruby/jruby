@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2007 Ola Bini <ola@ologix.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -205,6 +205,7 @@ public class RubyTCPServer extends RubyTCPSocket {
 
                 if (!ready) {
                     // no connection immediately accepted, let them try again
+                    if (!ex) return runtime.newSymbol("wait_readable");
                     throw runtime.newErrnoEAGAINReadableError("Resource temporarily unavailable");
 
                 } else {
