@@ -3260,13 +3260,27 @@ public abstract class StringNodes {
         @TruffleBoundary
         @Specialization
         public Object stringToF(DynamicObject string, boolean strict) {
+            final Rope rope = rope(string);
+            final ByteList byteList = RopeOperations.getByteListReadOnly(rope);
+            if (byteList.getRealSize() == 0) {
+                throw new RaiseException(coreExceptions().argumentError("invalid value for Float()", this));
+            }
+            if (string.toString().startsWith("0x")) {
+                try {
+                    return Double.parseDouble(string.toString());
+                } catch (NumberFormatException e) {
+                    return null;
+                }
+            }
             try {
-                return Double.parseDouble(string.toString());
+                return ConvertDouble.byteListToDouble19(byteList, strict);
             } catch (NumberFormatException e) {
-                return null;
+                if (strict) {
+                    throw new RaiseException(coreExceptions().argumentError("invalid value for Float()", this));
+                }
+                return 0.0;
             }
         }
-
     }
 
     @Primitive(name = "string_index", lowerFixnum = 2)
