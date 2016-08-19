@@ -147,7 +147,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-constants</artifactId>
-      <version>0.9.2</version>
+      <version>0.9.3-SNAPSHOT</version>
       <exclusions>
         <exclusion>
           <artifactId>jnr-ffi</artifactId>
