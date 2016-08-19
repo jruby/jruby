@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+exec `dirname $BASH_SOURCE[0]`/jruby `dirname $BASH_SOURCE[0]`/../lib/ruby/truffle/jruby-truffle-tool/bin/jruby-truffle-tool "$@"

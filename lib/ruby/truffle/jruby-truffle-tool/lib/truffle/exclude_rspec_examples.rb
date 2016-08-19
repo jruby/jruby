@@ -1,4 +1,4 @@
-module Truffle
+module Truffle::Tool
 
   def self.exclude_rspec_examples(exclusions)
     exclusions.each do |mod_name, tests|

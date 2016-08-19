@@ -1,8 +1,8 @@
 require 'pp'
 require 'yaml'
 
-include Truffle::Runner::ConfigUtils
-include Truffle::Runner::OptionBlocks
+include Truffle::Tool::ConfigUtils
+include Truffle::Tool::OptionBlocks
 
 stubs = {
     activesupport_isolation: dedent(<<-RUBY),
@@ -178,7 +178,7 @@ def exclusions_for(name)
   { setup: { file: { 'excluded-tests.rb' => format(dedent(<<-RUBY), exclusion_file(name)) } } }
     failures = %s
     require 'truffle/exclude_rspec_examples'
-    Truffle.exclude_rspec_examples failures
+    Truffle::Tool.exclude_rspec_examples failures
   RUBY
 end
 
@@ -190,32 +190,32 @@ rails_common =
                run:   { environment: { 'N' => 1 },
                         require:     %w(rubygems date bigdecimal pathname openssl-stubs) }
 
-Truffle::Runner.add_config :activesupport,
-                           deep_merge(
-                               rails_common,
-                               stubs.fetch(:activesupport_isolation),
-                               replacements.fetch(:method_source))
+Truffle::Tool.add_config :activesupport,
+                         deep_merge(
+                             rails_common,
+                             stubs.fetch(:activesupport_isolation),
+                             replacements.fetch(:method_source))
 
-Truffle::Runner.add_config :activemodel,
-                           deep_merge(
-                               rails_common,
-                               stubs.fetch(:activesupport_isolation),
-                               stubs.fetch(:bcrypt))
+Truffle::Tool.add_config :activemodel,
+                         deep_merge(
+                             rails_common,
+                             stubs.fetch(:activesupport_isolation),
+                             stubs.fetch(:bcrypt))
 
-Truffle::Runner.add_config :actionpack,
-                           deep_merge(
-                               rails_common,
-                               stubs.fetch(:html_sanitizer),
-                               exclusions_for(:actionpack))
+Truffle::Tool.add_config :actionpack,
+                         deep_merge(
+                             rails_common,
+                             stubs.fetch(:html_sanitizer),
+                             exclusions_for(:actionpack))
 
-Truffle::Runner.add_config :railties,
-                           deep_merge(rails_common,
-                                      stubs.fetch(:activesupport_isolation),
-                                      exclusions_for(:railties),
-                                      run: { require: %w[bundler.rb] })
+Truffle::Tool.add_config :railties,
+                         deep_merge(rails_common,
+                                    stubs.fetch(:activesupport_isolation),
+                                    exclusions_for(:railties),
+                                    run: { require: %w[bundler.rb] })
 
-Truffle::Runner.add_config :'concurrent-ruby',
-                           setup: { file: { "stub-processor_number.rb" => dedent(<<-RUBY) } },
+Truffle::Tool.add_config :'concurrent-ruby',
+                         setup: { file: { "stub-processor_number.rb" => dedent(<<-RUBY) } },
                               # stub methods calling #system
                               require 'concurrent'
                               module Concurrent
@@ -230,20 +230,20 @@ Truffle::Runner.add_config :'concurrent-ruby',
                                   end
                                 end
                               end
-                           RUBY
-                           run: { require: %w(stub-processor_number) }
+                         RUBY
+                         run: { require: %w(stub-processor_number) }
 
-Truffle::Runner.add_config :monkey_patch,
-                           replacements.fetch(:bundler)
+Truffle::Tool.add_config :monkey_patch,
+                         replacements.fetch(:bundler)
 
-Truffle::Runner.add_config :openweather,
-                           replacements.fetch(:'bundler/gem_tasks')
+Truffle::Tool.add_config :openweather,
+                         replacements.fetch(:'bundler/gem_tasks')
 
-Truffle::Runner.add_config :psd,
-                           replacements.fetch(:nokogiri)
+Truffle::Tool.add_config :psd,
+                         replacements.fetch(:nokogiri)
 
 
-class Truffle::Runner::CIEnvironment
+class Truffle::Tool::CIEnvironment
   def rails_ci(has_exclusions: false, skip_test_files: [])
     options           = {}
     options[:debug]   = ['-d', '--[no-]debug', 'Run tests with remote debugging enabled.', STORE_NEW_VALUE, false]
@@ -263,22 +263,22 @@ class Truffle::Runner::CIEnvironment
   end
 end
 
-Truffle::Runner.add_ci_definition :actionpack do
+Truffle::Tool.add_ci_definition :actionpack do
   subdir 'actionpack'
   rails_ci has_exclusions: true
 end
 
-Truffle::Runner.add_ci_definition :activemodel do
+Truffle::Tool.add_ci_definition :activemodel do
   subdir 'activemodel'
   rails_ci
 end
 
-Truffle::Runner.add_ci_definition :activesupport do
+Truffle::Tool.add_ci_definition :activesupport do
   subdir 'activesupport'
   rails_ci
 end
 
-Truffle::Runner.add_ci_definition :railties do
+Truffle::Tool.add_ci_definition :railties do
   subdir 'railties'
   rails_ci has_exclusions:  true,
            skip_test_files: %w[
@@ -328,7 +328,7 @@ Truffle::Runner.add_ci_definition :railties do
               test/commands/console_test]
 end
 
-Truffle::Runner.add_ci_definition :algebrick do
+Truffle::Tool.add_ci_definition :algebrick do
 
   has_to_succeed setup
 

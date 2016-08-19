@@ -6,7 +6,7 @@ cd ../jruby-truffle-gem-test-pack/gem-testing/rails-app
 
 JRUBY_BIN=../../../jruby/bin
 JRUBY=$JRUBY_BIN/jruby
-JTR=$JRUBY_BIN/jruby+truffle
+JTR=$JRUBY_BIN/jruby-truffle-tool
 
 if [ -n "$CI" -a -z "$HAS_REDIS" ]
 then

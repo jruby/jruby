@@ -32,7 +32,7 @@ class String
 end
 
 module Truffle
-  class Runner
+  class Tool
     module CmdUtils
       def execute_cmd(cmd, dir: nil, raise: true, print: false)
         result      = nil
@@ -170,7 +170,7 @@ module Truffle
 
     module Logging
       def log(message)
-        puts 'jtr: ' + message
+        puts 'jtt: ' + message
       end
     end
 
@@ -182,7 +182,7 @@ module Truffle
 
     EXECUTABLE        = File.basename($PROGRAM_NAME)
     BRANDING          = EXECUTABLE.include?('jruby') ? 'JRuby+Truffle' : 'RubyTruffle'
-    LOCAL_CONFIG_FILE = '.jruby+truffle.yaml'
+    LOCAL_CONFIG_FILE = '.jruby-truffle-tool.yaml'
     ROOT              = Pathname(__FILE__).dirname.parent.parent.expand_path
     JRUBY_PATH        = ROOT.join('../../../..').expand_path
     JRUBY_BIN         = JRUBY_PATH.join('bin', 'jruby')
@@ -229,7 +229,7 @@ module Truffle
               debug_port:          ['--debug-port PORT', 'Debug port', STORE_NEW_VALUE, '51819'],
               debug_option:        ['--debug-option OPTION', 'Debug JVM option', STORE_NEW_VALUE,
                                     '-J-agentlib:jdwp=transport=dt_socket,server=y,address=%d,suspend=y'],
-              truffle_bundle_path: ['--truffle-bundle-path NAME', 'Bundle path', STORE_NEW_VALUE, '.jruby+truffle_bundle'],
+              truffle_bundle_path: ['--truffle-bundle-path NAME', 'Bundle path', STORE_NEW_VALUE, '.jruby-truffle-tool_bundle'],
               graal_path:          ['--graal-path PATH', 'Path to Graal', STORE_NEW_VALUE, (JRUBY_PATH + '../GraalVM-0.10/jre/bin/javao').to_s],
               mock_load_path:      ['--mock-load-path PATH',
                                     'Path of mocks & monkey-patches (prepended in $:, relative to --truffle_bundle_path)',
@@ -450,7 +450,7 @@ module Truffle
 
     def load_gem_configuration
       if @gem_name
-        if (hash = Runner.config_for(@gem_name))
+        if (hash = Tool.config_for(@gem_name))
           apply_hash_to_configuration hash
           log "loading configuration for #{@gem_name}"
           log "configuration is:\n#{hash.pretty_inspect}" if verbose?
@@ -802,7 +802,7 @@ module Truffle
       end
 
       def do_definition(name)
-        definition = Runner.ci_for name.to_sym
+        definition = Tool.ci_for name.to_sym
         return false unless definition
 
         log "Using CI definition: #{name}"
@@ -820,8 +820,8 @@ module Truffle
       def declare_options(parse_options: true, **parser_options)
         raise 'cannot declare options after they were parsed' if @option_parsed
 
-        Runner.build_option_parser(parser_options, @options, option_parser: @option_parser)
-        @options.merge! Runner.default_option_values(parser_options)
+        Tool.build_option_parser(parser_options, @options, option_parser: @option_parser)
+        @options.merge! Tool.default_option_values(parser_options)
 
         if !@option_parsed && parse_options
           @option_parsed = true
@@ -844,7 +844,7 @@ module Truffle
       end
 
       def jruby_truffle_path
-        jruby_path.join 'bin', 'jruby+truffle'
+        jruby_path.join 'bin', 'jruby-truffle-tool'
       end
 
       def option(key)
@@ -876,9 +876,9 @@ module Truffle
 
       def setup(*options)
         Dir.chdir(testing_dir) do
-          Runner.new(['setup', *options].compact,
-                     dig_deep(@runner.options, global: :verbose, ci: [:offline, :offline_gem_path]).
-                         tap { |h| h.update setup: h.delete(:ci) }).run
+          Tool.new(['setup', *options].compact,
+                   dig_deep(@runner.options, global: :verbose, ci: [:offline, :offline_gem_path]).
+                       tap { |h| h.update setup: h.delete(:ci) }).run
         end
       end
 
@@ -893,8 +893,8 @@ module Truffle
       def run(options)
         raise ArgumentError unless options.is_a? Array
         Dir.chdir(testing_dir) do
-          Runner.new(['run', *options].compact,
-                     dig_deep(@runner.options, global: :verbose)).run
+          Tool.new(['run', *options].compact,
+                   dig_deep(@runner.options, global: :verbose)).run
         end
       end
 
