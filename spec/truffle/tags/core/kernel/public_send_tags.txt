@@ -1,3 +1,4 @@
 fails:Kernel#public_send has an arity of -1
 fails:Kernel#public_send raises a NoMethodError if the method is protected
 fails:Kernel#public_send raises a NoMethodError if the named method is an alias of a protected method
+fails:Kernel#public_send called from own public method raises a NoMethodError if the method is protected

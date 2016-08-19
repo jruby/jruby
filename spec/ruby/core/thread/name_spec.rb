@@ -44,5 +44,13 @@ ruby_version_is '2.3' do
       @thread.name = nil
       @thread.name.should == nil
     end
+
+    it "calls #to_str to convert name to String" do
+      name = mock("Thread#name")
+      name.should_receive(:to_str).and_return("a thread name")
+
+      @thread.name = name
+      @thread.name.should == "a thread name"
+    end
   end
 end

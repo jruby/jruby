@@ -1,0 +1,7 @@
+fails:StringIO#getch increases self's position by one
+fails:StringIO#getch returns nil when called at the end of self
+fails:StringIO#getch does not increase self's position when called at the end of file
+fails:StringIO#getch returns the charactor at the current position
+fails:StringIO#getch increments #pos by the byte size of the character in multibyte strings
+fails:StringIO#getch returns nil at the end of the string
+fails:StringIO#getch StringIO#getch when self is not readable raises an IOError
