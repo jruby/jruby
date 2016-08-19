@@ -1,0 +1,3 @@
+fails:Addrinfo#ip_port for an ipv4 socket returns the port
+fails:Addrinfo#ip_port for an ipv6 socket returns the port
+fails:Addrinfo#ip_port for a unix socket raises an exception
