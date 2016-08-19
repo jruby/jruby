@@ -20,11 +20,10 @@ describe "Socket::TCPServer.accept_nonblock" do
     sleep 0.1
     s = @server.accept_nonblock
 
-    # commenting while we get some input on the current JRuby situation
-    #    port, address = Socket.unpack_sockaddr_in(s.getsockname)
+    port, address = Socket.unpack_sockaddr_in(s.getsockname)
 
-    #    port.should == SocketSpecs.port
-    #    address.should == "127.0.0.1"
+    port.should == SocketSpecs.port
+    address.should == "127.0.0.1"
     s.should be_kind_of(TCPSocket)
 
     c.close
@@ -34,5 +33,17 @@ describe "Socket::TCPServer.accept_nonblock" do
   it "raises an IOError if the socket is closed" do
     @server.close
     lambda { @server.accept }.should raise_error(IOError)
+  end
+
+  describe 'without a connected client' do
+    it 'raises error' do
+      lambda { @server.accept_nonblock }.should raise_error(IO::WaitReadable)
+    end
+
+    ruby_version_is '2.3' do
+      it 'returns :wait_readable in exceptionless mode' do
+        @server.accept_nonblock(exception: false).should == :wait_readable
+      end
+    end
   end
 end

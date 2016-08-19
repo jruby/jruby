@@ -57,5 +57,11 @@ describe "Socket#connect_nonblock" do
         @socket.connect_nonblock(@addr)
       end.should raise_error(IO::WaitWritable)
     end
+
+    ruby_version_is "2.3" do
+      it "returns :wait_writable in exceptionless mode when the connect would block" do
+        @socket.connect_nonblock(@addr, exception: false).should == :wait_writable
+      end
+    end
   end
 end
