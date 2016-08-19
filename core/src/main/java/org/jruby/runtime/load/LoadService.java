@@ -393,41 +393,15 @@ public class LoadService {
     }
 
     public boolean require(String requireName) {
-        return requireCommon(requireName, true) == RequireState.LOADED;
+        return smartLoadInternal(requireName, true) == RequireState.LOADED;
     }
 
     public boolean autoloadRequire(String requireName) {
-        return requireCommon(requireName, false) != RequireState.CIRCULAR;
+        return smartLoadInternal(requireName, false) != RequireState.CIRCULAR;
     }
 
     private enum RequireState {
         LOADED, ALREADY_LOADED, CIRCULAR
-    }
-
-    private RequireState requireCommon(String file, boolean circularRequireWarning) {
-        checkEmptyLoad(file);
-
-        // check with short name
-        if (featureAlreadyLoaded(file)) {
-            return RequireState.ALREADY_LOADED;
-        }
-
-        SearchState state = findFileForLoad(file);
-
-        if (state.library == null) {
-            throw runtime.newLoadError("no such file to load -- " + state.searchFile, state.searchFile);
-        }
-
-        // check with long name
-        if (featureAlreadyLoaded(state.loadName)) {
-            return RequireState.ALREADY_LOADED;
-        }
-
-        if (!runtime.getProfile().allowRequire(file)) {
-            throw runtime.newLoadError("no such file to load -- " + file, file);
-        }
-
-        return smartLoadInternal(file, circularRequireWarning);
     }
 
     private final RequireLocks requireLocks = new RequireLocks();
@@ -517,6 +491,10 @@ public class LoadService {
         // check with long name
         if (featureAlreadyLoaded(state.loadName)) {
             return RequireState.ALREADY_LOADED;
+        }
+
+        if (!runtime.getProfile().allowRequire(file)) {
+            throw runtime.newLoadError("no such file to load -- " + file, file);
         }
 
         if (!requireLocks.lock(state.loadName)) {
