@@ -1,1 +1,0 @@
-fails:Numeric#divmod returns [quotient, modulus], with quotient being obtained as in Numeric#div then #floor and modulus being obtained by calling self#- with quotient * other
