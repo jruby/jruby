@@ -326,4 +326,10 @@ class Numeric
   def real?
     true
   end
+
+  def singleton_method_added(name)
+      self.singleton_class.send(:remove_method, name)
+      raise TypeError, "can't define singleton method #{name} for #{self.class}"
+  end
+
 end
