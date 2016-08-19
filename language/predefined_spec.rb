@@ -64,19 +64,26 @@ describe "Predefined global $~" do
     def obj.foo; yield; end
     def obj.foo2(&proc); proc.call; end
 
-    match = /foo/.match "foo"
+    match2 = nil
+    match3 = nil
+    match4 = nil
 
-    obj.foo { match = /bar/.match("bar") }
+    match1 = /foo/.match "foo"
 
-    $~.should == match
+    obj.foo { match2 = /bar/.match("bar") }
 
-    eval 'match = /baz/.match("baz")'
+    match2.should_not == nil
+    $~.should == match2
 
-    $~.should == match
+    eval 'match3 = /baz/.match("baz")'
 
-    obj.foo2 { match = /qux/.match("qux") }
+    match3.should_not == nil
+    $~.should == match3
 
-    $~.should == match
+    obj.foo2 { match4 = /qux/.match("qux") }
+
+    match4.should_not == nil
+    $~.should == match4
   end
 
   it "raises an error if assigned an object not nil or instanceof MatchData" do

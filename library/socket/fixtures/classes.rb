@@ -60,10 +60,6 @@ module SocketSpecs
 
   # TCPServer echo server accepting one connection
   class SpecTCPServer
-    def self.start(host=nil, port=nil, logger=nil)
-      new(host, port, logger).start
-    end
-
     attr_accessor :hostname, :port, :logger
 
     def initialize(host=nil, port=nil, logger=nil)
