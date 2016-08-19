@@ -847,6 +847,34 @@ public class JVMVisitor extends IRVisitor {
 
     }
 
+    public void BSwitchInstr(BSwitchInstr bswitchinstr) {
+        visit(bswitchinstr.getCaseOperand());
+        jvmAdapter().dup();
+        jvmAdapter().instance_of(p(RubyFixnum.class));
+        org.objectweb.asm.Label rubyCaseLabel = getJVMLabel(bswitchinstr.getRubyCaseLabel());
+        org.objectweb.asm.Label notFixnum = new org.objectweb.asm.Label();
+        jvmAdapter().iffalse(notFixnum);
+        jvmAdapter().checkcast(p(RubyFixnum.class));
+        jvmAdapter().invokevirtual(p(RubyFixnum.class), "getIntValue", sig(int.class));
+        Label[] targets = bswitchinstr.getTargets();
+        org.objectweb.asm.Label[] jvmTargets = new org.objectweb.asm.Label[targets.length];
+        for (int i = 0; i < targets.length; i++) jvmTargets[i] = getJVMLabel(targets[i]);
+
+        // if jump table is all contiguous values, use a tableswitch
+        int[] jumps = bswitchinstr.getJumps();
+        int low = jumps[0];
+        int high = jumps[jumps.length - 1];
+        int span = high - low;
+        if (span == jumps.length) {
+            jvmAdapter().tableswitch(low, high, getJVMLabel(bswitchinstr.getElseTarget()), jvmTargets);
+        } else {
+            jvmAdapter().lookupswitch(getJVMLabel(bswitchinstr.getElseTarget()), bswitchinstr.getJumps(), jvmTargets);
+        }
+        jvmAdapter().label(notFixnum);
+        jvmAdapter().pop();
+        jvmAdapter().label(rubyCaseLabel);
+    }
+
     @Override
     public void BTrueInstr(BTrueInstr btrueinstr) {
         Operand arg1 = btrueinstr.getArg1();

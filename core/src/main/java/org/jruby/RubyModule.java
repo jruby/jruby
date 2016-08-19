@@ -87,6 +87,7 @@ import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.targets.Bootstrap;
+import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.binding.Initializer;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
@@ -1659,7 +1660,7 @@ public class RubyModule extends RubyObject {
             if (superClazz == null) superClazz = runtime.getObject();
 
             if (allocator == null) {
-                if (superClazz == runtime.getObject()) {
+                if (isReifiable(runtime, superClazz)) {
                     if (RubyInstanceConfig.REIFY_RUBY_CLASSES) {
                         allocator = REIFYING_OBJECT_ALLOCATOR;
                     } else if (Options.REIFY_VARIABLES.load()) {
@@ -1676,6 +1677,19 @@ public class RubyModule extends RubyObject {
         }
 
         return clazz;
+    }
+
+    /**
+     * Determine if a new child of the given class can have its variables reified.
+     */
+    private boolean isReifiable(Ruby runtime, RubyClass superClass) {
+        if (superClass == runtime.getObject()) return true;
+
+        if (superClass.getAllocator() == IVAR_INSPECTING_OBJECT_ALLOCATOR) return true;
+
+        if (FIELD_ALLOCATOR_SET.contains(superClass.getAllocator())) return true;
+
+        return false;
     }
 
     /** this method should be used only by interpreter or compiler
@@ -4640,11 +4654,11 @@ public class RubyModule extends RubyObject {
     }
 
     @Override
-    public Object toJava(Class target) {
+    public Object toJava(final Class target) {
         if (target == Class.class) { // try java_class for proxy modules
-            if ( respondsTo("java_class") ) {
-                return callMethod("java_class").toJava(target);
-            }
+            final ThreadContext context = getRuntime().getCurrentContext();
+            IRubyObject javaClass = JavaClass.java_class(context, this);
+            if ( ! javaClass.isNil() ) return javaClass.toJava(target);
         }
 
         return super.toJava(target);

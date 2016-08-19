@@ -89,8 +89,7 @@ class Class
   ##
   # Get the native or reified (a la become_java!) class for this Ruby class.
   def java_class
-    self_r = JRuby.reference0(self)
-    current = self_r
+    current = JRuby.reference0(self)
     while current
       reified = current.reified_class
       return reified if reified
@@ -98,7 +97,7 @@ class Class
     end
     
     nil
-  end
+  end if false # moved to org.jruby.java.addons.ClassJavaAddons
   
   def _anno_class(cls)
     if cls.kind_of? JClass

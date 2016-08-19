@@ -25,7 +25,6 @@ import org.jruby.ir.operands.Splat;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.persistence.IRReader;
 import org.jruby.ir.persistence.IRReaderStream;
-import org.jruby.javasupport.JavaUtil;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.*;
 import org.jruby.runtime.JavaSites.IRRuntimeHelpersSites;
@@ -366,7 +365,7 @@ public class IRRuntimeHelpers {
         }
         // Ruby exceptions, errors, and other java exceptions.
         // These can be rescued -- run rescue blocks
-        return (excObj instanceof RaiseException) ? ((RaiseException)excObj).getException() : excObj;
+        return (excObj instanceof RaiseException) ? ((RaiseException) excObj).getException() : excObj;
     }
 
     private static boolean isJavaExceptionHandled(ThreadContext context, IRubyObject excType, Object excObj, boolean arrayCheck) {
@@ -374,44 +373,45 @@ public class IRRuntimeHelpers {
             return false;
         }
 
-        Ruby runtime = context.runtime;
-        Throwable throwable = (Throwable)excObj;
+        final Ruby runtime = context.runtime;
+        final Throwable ex = (Throwable) excObj;
 
         if (excType instanceof RubyArray) {
             RubyArray testTypes = (RubyArray)excType;
             for (int i = 0, n = testTypes.getLength(); i < n; i++) {
                 IRubyObject testType = testTypes.eltInternal(i);
-                if (IRRuntimeHelpers.isJavaExceptionHandled(context, testType, throwable, true)) {
-                    IRubyObject exceptionObj;
-                    if (n == 1 && testType == runtime.getNativeException()) {
-                        // wrap Throwable in a NativeException object
-                        exceptionObj = new NativeException(runtime, runtime.getNativeException(), throwable);
-                        ((NativeException)exceptionObj).prepareIntegratedBacktrace(context, throwable.getStackTrace());
-                    } else {
-                        // wrap as normal JI object
-                        exceptionObj = JavaUtil.convertJavaToUsableRubyObject(runtime, throwable);
+                if (IRRuntimeHelpers.isJavaExceptionHandled(context, testType, ex, true)) {
+                    IRubyObject exception;
+                    if (n == 1) {
+                        exception = wrapJavaException(context, testType, ex);
+                    } else { // wrap as normal JI object
+                        exception = Helpers.wrapJavaException(runtime, ex);
                     }
 
-                    runtime.getGlobalVariables().set("$!", exceptionObj);
+                    runtime.getGlobalVariables().set("$!", exception);
                     return true;
                 }
             }
-        } else if (Helpers.checkJavaException(throwable, excType, context)) {
-            IRubyObject exceptionObj;
-            if (excType == runtime.getNativeException()) {
-                // wrap Throwable in a NativeException object
-                exceptionObj = new NativeException(runtime, runtime.getNativeException(), throwable);
-                ((NativeException)exceptionObj).prepareIntegratedBacktrace(context, throwable.getStackTrace());
-            } else {
-                // wrap as normal JI object
-                exceptionObj = JavaUtil.convertJavaToUsableRubyObject(runtime, throwable);
+        }
+        else {
+            IRubyObject exception = wrapJavaException(context, excType, ex);
+            if (Helpers.checkJavaException(exception, ex, excType, context)) {
+                runtime.getGlobalVariables().set("$!", exception);
+                return true;
             }
-
-            runtime.getGlobalVariables().set("$!", exceptionObj);
-            return true;
         }
 
         return false;
+    }
+
+    private static IRubyObject wrapJavaException(final ThreadContext context, final IRubyObject excType, final Throwable throwable) {
+        final Ruby runtime = context.runtime;
+        if (excType == runtime.getNativeException()) { // wrap Throwable in a NativeException object
+            NativeException exception = new NativeException(runtime, runtime.getNativeException(), throwable);
+            exception.prepareIntegratedBacktrace(context, throwable.getStackTrace());
+            return exception;
+        }
+        return Helpers.wrapJavaException(runtime, throwable); // wrap as normal JI object
     }
 
     private static boolean isRubyExceptionHandled(ThreadContext context, IRubyObject excType, Object excObj) {
@@ -462,10 +462,9 @@ public class IRRuntimeHelpers {
                 IRubyObject eqqVal = isUndefValue ? v : callSite.call(context, v, v, value);
                 if (eqqVal.isTrue()) return eqqVal;
             }
-            return context.runtime.newBoolean(false);
-        } else {
-            return isUndefValue ? receiver : callSite.call(context, receiver, receiver, value);
+            return context.runtime.getFalse();
         }
+        return isUndefValue ? receiver : callSite.call(context, receiver, receiver, value);
     }
 
     @Deprecated
@@ -477,8 +476,7 @@ public class IRRuntimeHelpers {
         return (block == Block.NULL_BLOCK) ? runtime.getNil() : runtime.newProc(Block.Type.PROC, block);
     }
 
-    public static IRubyObject yield(ThreadContext context, Block b, IRubyObject yieldArg, boolean unwrapArray) {
-        IRubyObject yieldVal = (IRubyObject)yieldArg;
+    public static IRubyObject yield(ThreadContext context, Block b, IRubyObject yieldVal, boolean unwrapArray) {
         return (unwrapArray && (yieldVal instanceof RubyArray)) ? b.yieldArray(context, yieldVal, null) : b.yield(context, yieldVal);
     }
 
@@ -755,9 +753,34 @@ public class IRRuntimeHelpers {
         return rubyClass;
     }
 
-    @JIT
-    public static IRubyObject mergeKeywordArguments(ThreadContext context, IRubyObject restKwarg, IRubyObject explcitKwarg) {
-        return ((RubyHash) TypeConverter.checkHashType(context.runtime, restKwarg)).merge(context, explcitKwarg, Block.NULL_BLOCK);
+    @JIT @Interp
+    public static IRubyObject mergeKeywordArguments(ThreadContext context, IRubyObject restKwarg, IRubyObject explicitKwarg) {
+        RubyHash hash = (RubyHash) TypeConverter.checkHashType(context.runtime, restKwarg).dup();
+
+        hash.modify();
+        final RubyHash otherHash = explicitKwarg.convertToHash();
+
+        if (otherHash.empty_p().isTrue()) return hash;
+
+        otherHash.visitAll(context, new KwargMergeVisitor(hash), Block.NULL_BLOCK);
+
+        return hash;
+    }
+
+    private static class KwargMergeVisitor extends RubyHash.VisitorWithState<Block> {
+        final RubyHash target;
+
+        KwargMergeVisitor(RubyHash target) {
+            this.target = target;
+        }
+
+        @Override
+        public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, Block block) {
+            // All kwargs keys must be symbols.
+            TypeConverter.checkType(context, key, context.runtime.getSymbol());
+
+            target.op_aset(context, key, value);
+        }
     }
 
     @JIT

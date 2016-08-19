@@ -357,7 +357,13 @@ public class RubyMath {
 
     @JRubyMethod(name = "log10", required = 1, module = true, visibility = Visibility.PRIVATE)
     public static RubyFloat log10_19(ThreadContext context, IRubyObject recv, IRubyObject x) {
-        return log_common19(recv, RubyNumeric.num2dbl(x), 10, "log10");
+        double value = RubyNumeric.num2dbl(x);
+
+        if (value < 0) {
+            throw context.runtime.newMathDomainError("log10");
+        }
+
+        return RubyFloat.newFloat(context.runtime, Math.log10(value));
     }
 
     /** Returns the base 2 logarithm of x.

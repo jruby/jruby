@@ -1,0 +1,2 @@
+fails:Hash#to_proc the returned proc is not a lambda
+fails:Hash#to_proc the returned proc passed as a block to instance_exec always retrieves the original hash's values

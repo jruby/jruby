@@ -1073,6 +1073,27 @@ public class IRBuilder {
     }
 
     public Operand buildCase(CaseNode caseNode) {
+        // scan all cases to see if we have a homogeneous literal case/when
+        NodeType seenType = null;
+        for (Node aCase : caseNode.getCases().children()) {
+            WhenNode whenNode = (WhenNode)aCase;
+            NodeType exprNodeType = whenNode.getExpressionNodes().getNodeType();
+
+            if (seenType == null) {
+                seenType = exprNodeType;
+            } else if (seenType != exprNodeType) {
+                seenType = null;
+                break;
+            }
+        }
+
+        if (seenType != null) {
+            switch (seenType) {
+                case FIXNUMNODE:
+                    return buildFixnumCase(caseNode);
+            }
+        }
+
         // get the incoming case value
         Operand value = build(caseNode.getCaseNode());
 
@@ -1130,6 +1151,152 @@ public class IRBuilder {
                 boolean needsSplat = exprNodes instanceof ArgsPushNode || exprNodes instanceof SplatNode || exprNodes instanceof ArgsCatNode;
 
                 addInstr(new EQQInstr(eqqResult, expression, value, needsSplat));
+                v1 = eqqResult;
+                v2 = manager.getTrue();
+            }
+            addInstr(BEQInstr.create(v1, v2, bodyLabel));
+
+            // SSS FIXME: This doesn't preserve original order of when clauses.  We could consider
+            // preserving the order (or maybe not, since we would have to sort the constants first
+            // in any case) for outputting jump tables in certain situations.
+            //
+            // add body to map for emitting later
+            bodies.put(bodyLabel, whenNode.getBodyNode());
+        }
+
+        // Jump to else in case nothing matches!
+        addInstr(new JumpInstr(elseLabel));
+
+        // Build "else" if it exists
+        if (hasElse) {
+            labels.add(elseLabel);
+            bodies.put(elseLabel, caseNode.getElseNode());
+        }
+
+        // Now, emit bodies while preserving when clauses order
+        for (Label whenLabel: labels) {
+            addInstr(new LabelInstr(whenLabel));
+            Operand bodyValue = build(bodies.get(whenLabel));
+            // bodyValue can be null if the body ends with a return!
+            if (bodyValue != null) {
+                // SSS FIXME: Do local optimization of break results (followed by a copy & jump) to short-circuit the jump right away
+                // rather than wait to do it during an optimization pass when a dead jump needs to be removed.  For this, you have
+                // to look at what the last generated instruction was.
+                addInstr(new CopyInstr(result, bodyValue));
+                addInstr(new JumpInstr(endLabel));
+            }
+        }
+
+        if (!hasElse) {
+            addInstr(new LabelInstr(elseLabel));
+            addInstr(new CopyInstr(result, manager.getNil()));
+            addInstr(new JumpInstr(endLabel));
+        }
+
+        // Close it out
+        addInstr(new LabelInstr(endLabel));
+
+        return result;
+    }
+
+    private Operand buildFixnumCase(CaseNode caseNode) {
+        Map<Integer, Label> jumpTable = new HashMap<>();
+        Map<Node, Label> nodeBodies = new HashMap<>();
+
+        // gather fixnum-when bodies or bail
+        for (Node aCase : caseNode.getCases().children()) {
+            WhenNode whenNode = (WhenNode) aCase;
+            Label bodyLabel = getNewLabel();
+
+            FixnumNode expr = (FixnumNode) whenNode.getExpressionNodes();
+            long exprLong = expr.getValue();
+            if (exprLong > Integer.MAX_VALUE) throw new NotCompilableException("optimized fixnum case has long-ranged when at " + caseNode.getPosition());
+
+            if (jumpTable.get((int) exprLong) == null) {
+                jumpTable.put((int) exprLong, bodyLabel);
+            }
+
+            nodeBodies.put(whenNode, bodyLabel);
+        }
+
+        // sort the jump table
+        Map.Entry<Integer, Label>[] jumpEntries = jumpTable.entrySet().toArray(new Map.Entry[jumpTable.size()]);
+        Arrays.sort(jumpEntries, new Comparator<Map.Entry<Integer, Label>>() {
+            @Override
+            public int compare(Map.Entry<Integer, Label> o1, Map.Entry<Integer, Label> o2) {
+                return Integer.compare(o1.getKey(), o2.getKey());
+            }
+        });
+
+        // build a switch
+        int[] jumps = new int[jumpTable.size()];
+        Label[] targets = new Label[jumps.length];
+        int i = 0;
+        for (Map.Entry<Integer, Label> jumpEntry : jumpEntries) {
+            jumps[i] = jumpEntry.getKey();
+            targets[i] = jumpEntry.getValue();
+            i++;
+        }
+
+        // get the incoming case value
+        Operand value = build(caseNode.getCaseNode());
+
+        Label     eqqPath   = getNewLabel();
+        Label     endLabel  = getNewLabel();
+        boolean   hasElse   = (caseNode.getElseNode() != null);
+        Label     elseLabel = getNewLabel();
+        Variable  result    = createTemporaryVariable();
+
+        // insert fast switch with fallback to eqq
+        addInstr(new BSwitchInstr(jumps, value, eqqPath, targets, elseLabel));
+        addInstr(new LabelInstr(eqqPath));
+
+        List<Label> labels = new ArrayList<>();
+        Map<Label, Node> bodies = new HashMap<>();
+
+        // build each "when"
+        for (Node aCase : caseNode.getCases().children()) {
+            WhenNode whenNode = (WhenNode)aCase;
+            Label bodyLabel = nodeBodies.get(whenNode);
+            if (bodyLabel == null) bodyLabel = getNewLabel();
+
+            Variable eqqResult = createTemporaryVariable();
+            labels.add(bodyLabel);
+            Operand v1, v2;
+            if (whenNode.getExpressionNodes() instanceof ListNode
+                    // DNode produces a proper result, so we don't want the special ListNode handling below
+                    // FIXME: This is obviously gross, and we need a better way to filter out non-expression ListNode here
+                    // See GH #2423
+                    && !(whenNode.getExpressionNodes() instanceof DNode)) {
+                // Note about refactoring:
+                // - BEQInstr has a quick implementation when the second operand is a boolean literal
+                //   If it can be fixed to do this even on the first operand, we can switch around
+                //   v1 and v2 in the UndefinedValue scenario and DRY out this code.
+                // - Even with this asymmetric implementation of BEQInstr, you might be tempted to
+                //   switch around v1 and v2 in the else case.  But, that is equivalent to this Ruby code change:
+                //      (v1 == value) instead of (value == v1)
+                //   It seems that they should be identical, but the first one is v1.==(value) and the second one is
+                //   value.==(v1).  This is just fine *if* the Ruby programmer has implemented an algebraically
+                //   symmetric "==" method on those objects.  If not, then, the results might be unexpected where the
+                //   code (intentionally or otherwise) relies on this asymmetry of "==".  While it could be argued
+                //   that this a Ruby code bug, we will just try to preserve the order of the == check as it appears
+                //   in the Ruby code.
+                if (value == UndefinedValue.UNDEFINED)  {
+                    v1 = build(whenNode.getExpressionNodes());
+                    v2 = manager.getTrue();
+                } else {
+                    v1 = value;
+                    v2 = build(whenNode.getExpressionNodes());
+                }
+            } else {
+                Operand expression = build(whenNode.getExpressionNodes());
+
+                // use frozen string for direct literal strings in `when`
+                if (expression instanceof StringLiteral) {
+                    expression = ((StringLiteral) expression).frozenString;
+                }
+
+                addInstr(new EQQInstr(eqqResult, expression, value));
                 v1 = eqqResult;
                 v2 = manager.getTrue();
             }

@@ -29,7 +29,14 @@
 # - Open3.pipeline : run a pipeline and wait for its completion
 #
 
-module Open3
+# Because spawn does not yet work on Windows, we fall back on the older open3 there.
+real_open3 = true
+if respond_to?(:org) && org.jruby.platform.Platform::IS_WINDOWS
+  require 'jruby/open3_windows'
+  real_open3 = false
+end
+
+real_open3 && module Open3
 
   # Open stdin, stdout, and stderr streams and start external executable.
   # In addition, a thread to wait for the started process is created.

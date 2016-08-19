@@ -114,7 +114,7 @@ describe "A non-wrapped Java exception" do
   it "can be rescued dynamically using Class" do
     cls = Class.new
     (class << cls; self; end).instance_eval do
-      define_method(:===) { |exception| true }
+      define_method(:===) { |exception| puts "=== called: #{exception.inspect}"; true }
     end
     begin
       raise java.lang.NullPointerException.new
@@ -155,13 +155,14 @@ describe "A native exception wrapped by another" do
 end
 
 describe "A Ruby subclass of a Java exception" do
+
   before :all do
     @ex_class = Class.new(java.lang.RuntimeException)
   end
 
-  it "is rescuable with all Java superclasses" do
-    exception = @ex_class.new
+  let(:exception) { @ex_class.new }
 
+  it "is rescuable with all Java superclasses" do
     begin
       raise exception
       fail
@@ -185,8 +186,6 @@ describe "A Ruby subclass of a Java exception" do
   end
 
   it "presents its Ruby nature when rescued" do
-    exception = @ex_class.new
-
     begin
       raise exception
       fail
@@ -195,6 +194,38 @@ describe "A Ruby subclass of a Java exception" do
       expect(t).to equal(exception)
     end
   end
+
+  class MyError1 < Java::JavaLang::RuntimeException; end
+  class MyError2 < Java::JavaLang::RuntimeException; end
+
+  it 'rescues correct type with multiple sub-classes' do
+    expect {
+      begin
+        raise MyError1.new('my_error_1')
+      rescue MyError2 => e
+        fail 'rescued MyError2 => ' + e.inspect
+      end
+    }.to raise_error(MyError1)
+
+    begin
+      raise MyError2.new('my_error_2')
+    rescue MyError1 => e
+      fail 'rescued MyError1: ' + e.inspect
+    rescue MyError2 => e
+      expect(e.message).to eql 'my_error_2'
+    rescue java.lang.RuntimeException => e
+      fail 'rescued java.lang.RuntimeException => ' + e.inspect
+    end
+
+    begin
+      raise MyError2.new('my_error_2')
+    rescue MyError1, RuntimeError => e
+      fail 'rescued MyError1, RuntimeError => ' + e.inspect
+    rescue LoadError, MyError2 => e
+      expect(e.message).to eql 'my_error_2'
+    end
+  end
+
 end
 
 describe "Ruby exception raised through Java and back to Ruby" do

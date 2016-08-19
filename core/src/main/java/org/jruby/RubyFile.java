@@ -1029,6 +1029,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     @JRubyMethod(required = 2, meta = true)
     public static IRubyObject symlink(ThreadContext context, IRubyObject recv, IRubyObject from, IRubyObject to) {
         Ruby runtime = context.runtime;
+
         RubyString fromStr = StringSupport.checkEmbeddedNulls(runtime, get_path(context, from));
         RubyString toStr = StringSupport.checkEmbeddedNulls(runtime, get_path(context, to));
         String tovalue = toStr.getUnicodeValue();

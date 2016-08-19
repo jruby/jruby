@@ -378,7 +378,24 @@ public class IRDumper extends IRVisitor {
     }
 
     private void print(Object obj) {
-        stream.print(obj);
+        if (obj.getClass().isArray()) {
+            if (obj.getClass().getComponentType().isPrimitive()) {
+                switch (obj.getClass().getName().charAt(0)) {
+                    case 'B': stream.print(Arrays.toString((boolean[]) obj)); break;
+                    case 'S': stream.print(Arrays.toString((short[]) obj)); break;
+                    case 'C': stream.print(Arrays.toString((char[]) obj)); break;
+                    case 'I': stream.print(Arrays.toString((int[]) obj)); break;
+                    case 'J': stream.print(Arrays.toString((long[]) obj)); break;
+                    case 'F': stream.print(Arrays.toString((float[]) obj)); break;
+                    case 'D': stream.print(Arrays.toString((double[]) obj)); break;
+                    case 'Z': stream.print(Arrays.toString((boolean[]) obj)); break;
+                }
+            } else {
+                stream.print(Arrays.toString((Object[]) obj));
+            }
+        } else {
+            stream.print(obj);
+        }
     }
 
     private void println(Object... objs) {

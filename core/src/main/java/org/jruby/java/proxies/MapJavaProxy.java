@@ -44,11 +44,11 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.invokedynamic.MethodNames;
 
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
+import org.jruby.util.TypeConverter;
 
 /**
  * A proxy for wrapping <code>java.util.Map</code> instances.
@@ -448,7 +448,11 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
 
     @JRubyMethod(name = "to_proc")
     public RubyProc to_proc(ThreadContext context) {
-        return getOrCreateRubyHashMap().to_proc(context);
+        IRubyObject newProc = getOrCreateRubyHashMap().callMethod("to_proc");
+
+        TypeConverter.checkType(context, newProc, context.runtime.getProc());
+
+        return (RubyProc) newProc;
     }
 
     /** rb_hash_to_s

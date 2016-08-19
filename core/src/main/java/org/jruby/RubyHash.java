@@ -44,16 +44,20 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.JavaUtil;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Constants;
+import org.jruby.runtime.Frame;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites.HashSites;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
@@ -875,110 +879,6 @@ public class RubyHash extends RubyObject implements Map {
             result.store(index, RubyArray.newArray(context.runtime, key, value));
         }
     };
-
-    @JRubyMethod(name = "to_proc")
-    public RubyProc to_proc(ThreadContext context) {
-        final Ruby runtime = context.runtime;
-        return new RubyProc(runtime, runtime.getProc(), new HashBlock(), null, -1);
-    }
-
-    private class HashBlock extends Block {
-
-        HashBlock() {
-            super(BlockBody.NULL_BODY);
-            this.type = Block.Type.PROC;
-        }
-
-        private void checkArity(ThreadContext context, IRubyObject... args) {
-            // acts like a Proc but validate args like a lambda :
-            Signature.ONE_ARGUMENT.checkArity(context.runtime, args);
-        }
-
-        @Override
-        public Signature getSignature() {
-            return Signature.ONE_ARGUMENT;
-        }
-
-        @Override
-        public IRubyObject call(ThreadContext context, IRubyObject[] args) {
-            checkArity(context, args);
-            return op_aref(context, args[0]);
-        }
-        @Override
-        public IRubyObject call(ThreadContext context, IRubyObject[] args, Block blockArg) {
-            return call(context, args);
-        }
-
-        @Override
-        public IRubyObject call(ThreadContext context) {
-            checkArity(context); // fails
-            throw new AssertionError();
-        }
-        @Override
-        public IRubyObject call(ThreadContext context, Block blockArg) {
-            return call(context);
-        }
-        @Override
-        public IRubyObject yieldSpecific(ThreadContext context) {
-            return call(context);
-        }
-
-        @Override
-        public IRubyObject call(ThreadContext context, IRubyObject arg0) {
-            return op_aref(context, arg0);
-        }
-        @Override
-        public IRubyObject call(ThreadContext context, IRubyObject arg0, Block blockArg) {
-            return call(context, arg0);
-        }
-        @Override
-        public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0) {
-            return call(context, arg0);
-        }
-
-        @Override
-        public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
-            checkArity(context, arg0, arg1); // fails
-            throw new AssertionError();
-        }
-        @Override
-        public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block blockArg) {
-            return call(context, arg0, arg1);
-        }
-        @Override
-        public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
-            return call(context, arg0, arg1); // fails
-        }
-
-        @Override
-        public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-            checkArity(context, arg0, arg1, arg2); // fails
-            throw new AssertionError();
-        }
-        @Override
-        public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block blockArg) {
-            return call(context, arg0, arg1, arg2);
-        }
-        @Override
-        public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-            return call(context, arg0, arg1, arg2); // fails
-        }
-
-        @Override
-        public IRubyObject yield(ThreadContext context, IRubyObject value) {
-            return op_aref(context, value);
-        }
-        @Override
-        public IRubyObject yieldNonArray(ThreadContext context, IRubyObject value, IRubyObject self) {
-            return yield(context, value);
-        }
-
-        @Override
-        public IRubyObject yieldArray(ThreadContext context, IRubyObject value, IRubyObject self) {
-            throw new UnsupportedOperationException();
-        }
-
-    }
 
     /** rb_hash_to_s & to_s_hash
      *

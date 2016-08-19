@@ -23,7 +23,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
   issue_management 'https://github.com/jruby/jruby/issues', 'GitHub'
 
   mailing_list "jruby" do
-    archives "http://blade.nagaokaut.ac.jp/ruby/jruby/index.shtml"
+    archives "https://github.com/jruby/jruby/wiki/MailingLists"
   end
 
   license 'GPL 3', 'http://www.gnu.org/licenses/gpl-3.0-standalone.html'
@@ -75,12 +75,12 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
               'test-unit.version' => '3.1.1',
               'power_assert.version' => '0.2.3',
               'diff-lcs.version' => '1.1.3',
-              'racc.version' => '1.4.13',
+              'racc.version' => '1.4.14',
               # versions for default gems with bin executables
               # used in ./lib/pom.rb and ./maven/jruby-stdlib/pom.rb
               'rdoc.version' => '4.2.0',
               'rake.version' => '10.4.2',
-              'jar-dependencies.version' => '0.3.2',
+              'jar-dependencies.version' => '0.3.5',
 
               'jruby-launcher.version' => '1.1.1',
               'ant.version' => '1.9.2',

@@ -1601,7 +1601,6 @@ public class RipperLexer extends LexingCommon {
         // and this hack can disappear.
         int whereKeywordShouldStart = lex_p - 1;
 
-        int first = c;
         do {
             if (!tokadd_mbchar(c)) return EOF;
             c = nextc();
@@ -1622,9 +1621,11 @@ public class RipperLexer extends LexingCommon {
         
         int result = 0;
 
+        String tempVal;
         last_state = lex_state;
         if (lastBangOrPredicate) {
             result = Tokens.tFID;
+            tempVal = createTokenString();
         } else {
             if (isLexState(lex_state, EXPR_FNAME)) {
                 if ((c = nextc()) == '=') { 
@@ -1642,14 +1643,13 @@ public class RipperLexer extends LexingCommon {
                     pushback(c);
                 }
             }
-            if (result == 0 && Character.isUpperCase(first)) {
+            tempVal = createTokenString();
+            if (result == 0 && Character.isUpperCase(tempVal.charAt(0))) {
                 result = Tokens.tCONSTANT;
             } else {
                 result = Tokens.tIDENTIFIER;
             }
         }
-
-        String tempVal = createTokenString();
 
         if (isLabelPossible(commandState)) {
             if (isLabelSuffix()) {

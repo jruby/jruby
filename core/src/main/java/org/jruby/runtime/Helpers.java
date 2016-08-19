@@ -3,6 +3,12 @@ package org.jruby.runtime;
 import java.lang.reflect.Array;
 import java.nio.channels.ClosedChannelException;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.StringTokenizer;
 
 import jnr.constants.platform.Errno;
 import org.jruby.*;
@@ -23,8 +29,10 @@ import org.jruby.internal.runtime.methods.*;
 import org.jruby.ir.IRScopeType;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
+import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaUtil;
+import org.jruby.javasupport.proxy.InternalJavaProxy;
 import org.jruby.parser.StaticScope;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.JavaSites.HelpersSites;
@@ -36,19 +44,12 @@ import org.jruby.util.DefinedMessage;
 import org.jruby.util.MurmurHash;
 import org.jruby.util.TypeConverter;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.StringTokenizer;
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.unicode.UnicodeEncoding;
 
-import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.invokedynamic.MethodNames.EQL;
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_EQUAL;
 import static org.jruby.util.CodegenUtils.sig;
@@ -801,8 +802,8 @@ public class Helpers {
         return isExceptionHandled(currentException, exception1, exception2, context);
     }
 
-    public static boolean checkJavaException(Throwable throwable, IRubyObject catchable, ThreadContext context) {
-        Ruby runtime = context.runtime;
+    public static boolean checkJavaException(final IRubyObject wrappedEx, final Throwable ex, IRubyObject catchable, ThreadContext context) {
+        final Ruby runtime = context.runtime;
         if (
                 // rescue exception needs to catch Java exceptions
                 runtime.getException() == catchable ||
@@ -813,37 +814,46 @@ public class Helpers {
                 // rescue StandardError needs to catch Java exceptions
                 runtime.getStandardError() == catchable) {
 
-            if (throwable instanceof RaiseException) {
-                return isExceptionHandled(((RaiseException)throwable).getException(), catchable, context).isTrue();
+            if (ex instanceof RaiseException) {
+                return isExceptionHandled(((RaiseException) ex).getException(), catchable, context).isTrue();
             }
 
             // let Ruby exceptions decide if they handle it
-            return isExceptionHandled(JavaUtil.convertJavaToUsableRubyObject(runtime, throwable), catchable, context).isTrue();
+            return isExceptionHandled(wrappedEx, catchable, context).isTrue();
+        }
 
-        } else if (runtime.getNativeException() == catchable) {
+        if (runtime.getNativeException() == catchable) {
             // NativeException catches Java exceptions, lazily creating the wrapper
             return true;
+        }
 
-        } else if (catchable instanceof RubyClass && catchable.getInstanceVariables().hasInstanceVariable("@java_class")) {
-            RubyClass rubyClass = (RubyClass)catchable;
-            JavaClass javaClass = (JavaClass)rubyClass.getInstanceVariable("@java_class");
-            if (javaClass != null) {
-                Class cls = javaClass.javaClass();
-                if (cls.isInstance(throwable)) {
-                    return true;
-                }
+        if (catchable instanceof RubyClass && JavaClass.isProxyType(context, (RubyClass) catchable)) {
+            if ( ex instanceof InternalJavaProxy ) { // Ruby sub-class of a Java exception type
+                final IRubyObject target = ((InternalJavaProxy) ex).___getInvocationHandler().getOrig();
+                if ( target != null ) return ((RubyClass) catchable).isInstance(target);
             }
+            return ((RubyClass) catchable).isInstance(wrappedEx);
+        }
 
-        } else if (catchable instanceof RubyModule) {
-            IRubyObject exception = JavaUtil.convertJavaToUsableRubyObject(runtime, throwable);
-            IRubyObject result = invoke(context, catchable, "===", exception);
+        if (catchable instanceof RubyModule) {
+            IRubyObject result = invoke(context, catchable, "===", wrappedEx);
             return result.isTrue();
-
         }
 
         return false;
     }
 
+    public static boolean checkJavaException(final Throwable ex, IRubyObject catchable, ThreadContext context) {
+        return checkJavaException(wrapJavaException(context.runtime, ex), ex, catchable, context);
+    }
+
+    // wrapJavaException(runtime, ex)
+
+    public static IRubyObject wrapJavaException(final Ruby runtime, final Throwable ex) {
+        return JavaUtil.convertJavaToUsableRubyObject(runtime, ex);
+    }
+
+    @Deprecated // due deprecated checkJavaException
     public static IRubyObject isJavaExceptionHandled(Throwable currentThrowable, IRubyObject[] throwables, ThreadContext context) {
         if (currentThrowable instanceof Unrescuable) {
             throwException(currentThrowable);
@@ -867,6 +877,7 @@ public class Helpers {
         }
     }
 
+    @Deprecated // due deprecated checkJavaException
     public static IRubyObject isJavaExceptionHandled(Throwable currentThrowable, IRubyObject throwable, ThreadContext context) {
         if (currentThrowable instanceof Unrescuable) {
             throwException(currentThrowable);
@@ -883,6 +894,7 @@ public class Helpers {
         }
     }
 
+    @Deprecated // due deprecated checkJavaException
     public static IRubyObject isJavaExceptionHandled(Throwable currentThrowable, IRubyObject throwable0, IRubyObject throwable1, ThreadContext context) {
         if (currentThrowable instanceof Unrescuable) {
             throwException(currentThrowable);
@@ -902,6 +914,7 @@ public class Helpers {
         }
     }
 
+    @Deprecated // due deprecated checkJavaException
     public static IRubyObject isJavaExceptionHandled(Throwable currentThrowable, IRubyObject throwable0, IRubyObject throwable1, IRubyObject throwable2, ThreadContext context) {
         if (currentThrowable instanceof Unrescuable) {
             throwException(currentThrowable);
@@ -925,7 +938,7 @@ public class Helpers {
     }
 
     public static void storeExceptionInErrorInfo(Throwable currentThrowable, ThreadContext context) {
-        IRubyObject exception = null;
+        IRubyObject exception;
         if (currentThrowable instanceof RaiseException) {
             exception = ((RaiseException)currentThrowable).getException();
         } else {
@@ -935,7 +948,7 @@ public class Helpers {
     }
 
     public static void storeNativeExceptionInErrorInfo(Throwable currentThrowable, ThreadContext context) {
-        IRubyObject exception = null;
+        IRubyObject exception;
         if (currentThrowable instanceof RaiseException) {
             exception = ((RaiseException)currentThrowable).getException();
         } else {
@@ -1781,7 +1794,10 @@ public class Helpers {
     }
 
     private static void addModuleMethod(RubyModule containingClass, String name, DynamicMethod method, ThreadContext context, RubySymbol sym) {
-        containingClass.getSingletonClass().addMethod(name, new WrapperMethod(containingClass.getSingletonClass(), method, Visibility.PUBLIC));
+        DynamicMethod singletonMethod = method.dup();
+        singletonMethod.setImplementationClass(containingClass.getSingletonClass());
+        singletonMethod.setVisibility(Visibility.PUBLIC);
+        containingClass.getSingletonClass().addMethod(name, singletonMethod);
         containingClass.callMethod(context, "singleton_method_added", sym);
     }
 

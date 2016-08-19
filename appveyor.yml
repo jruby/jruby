@@ -10,21 +10,20 @@ environment:
 install:
   - ps: >-
       Add-Type -AssemblyName System.IO.Compression.FileSystem
-          if (!(Test-Path -Path "C:\maven" )) {
+          if (!(Test-Path -Path "C:\maven\apache-maven-3.3.9" )) {
             (new-object System.Net.WebClient).DownloadFile(
-              'http://www.us.apache.org/dist/maven/maven-3/3.3.3/binaries/apache-maven-3.3.3-bin.zip',
+              'https://www-eu.apache.org/dist/maven/maven-3/3.3.9/binaries/apache-maven-3.3.9-bin.zip',
               'C:\maven-bin.zip'
             )
-
             [System.IO.Compression.ZipFile]::ExtractToDirectory("C:\maven-bin.zip", "C:\maven")
           }
-  - cmd: SET PATH=C:\maven\apache-maven-3.3.3\bin;%JAVA_HOME%\bin;%PATH%
+  - cmd: SET PATH=C:\maven\apache-maven-3.3.9\bin;%JAVA_HOME%\bin;%PATH%
   - cmd: echo %PATH%
   - cmd: java -version
 
 cache:
-  - C:\maven
-  - C:\Users\appveyor\.m2
+  - C:\maven -> appveyor.yml
+  - C:\Users\appveyor\.m2\repository -> pom.xml
 
 test_script:
   - mvn -Ptest

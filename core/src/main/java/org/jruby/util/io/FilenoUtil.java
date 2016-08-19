@@ -91,15 +91,20 @@ public class FilenoUtil {
 
     private static int getFilenoUsingReflection(Channel channel) {
         if (FILE_DESCRIPTOR_FD != null) {
-            FileDescriptor fd = getDescriptorFromChannel(channel);
-            if (fd.valid()) {
-                try {
-                    return (Integer)FILE_DESCRIPTOR_FD.get(fd);
-                } catch (Exception e) {
-                    // failed to get
-                }
+            return filenoFrom(getDescriptorFromChannel(channel));
+        }
+        return -1;
+    }
+
+    public static int filenoFrom(FileDescriptor fd) {
+        if (fd.valid()) {
+            try {
+                return (Integer)FILE_DESCRIPTOR_FD.get(fd);
+            } catch (Exception e) {
+                // failed to get
             }
         }
+
         return -1;
     }
 

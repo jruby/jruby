@@ -3291,17 +3291,17 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             RubyArray argsArr = RubyArray.newArray(runtime, RubyFixnum.newFixnum(runtime, value.length()), context.nil);
 
             if (b instanceof RubyFixnum && e instanceof RubyFixnum) {
-                int bi = RubyNumeric.fix2int(b);
-                int ei = RubyNumeric.fix2int(e);
+                long bl = RubyNumeric.fix2long(b);
+                long el = RubyNumeric.fix2long(e);
 
-                while (bi <= ei) {
-                    if (excl && bi == ei) break;
-                    argsArr.eltSetOk(1, RubyFixnum.newFixnum(runtime, bi));
+                while (bl <= el) {
+                    if (excl && bl == el) break;
+                    argsArr.eltSetOk(1, RubyFixnum.newFixnum(runtime, bl));
                     ByteList to = new ByteList(value.length() + 5);
                     Sprintf.sprintf(to, "%.*d", argsArr);
                     RubyString str = RubyString.newStringNoCopy(runtime, to, USASCIIEncoding.INSTANCE, CR_7BIT);
                     block.yield(context, asSymbol ? runtime.newSymbol(str.toString()) : str);
-                    bi++;
+                    bl++;
                 }
             } else {
                 StringSites sites = sites(context);

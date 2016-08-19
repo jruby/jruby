@@ -194,6 +194,10 @@ class LibrarySearcher {
             // uri: are absolute
             return true;
         }
+        if (path.startsWith("classpath:/")) {
+            // classpath URLS are absolute if they start with a slash
+            return true;
+        }
         return new File(path).isAbsolute();
     }
 

@@ -1,1 +1,2 @@
 fails:Hash literal does not change encoding of literal string keys during creation
+fails:Hash literal raises a TypeError if any splatted elements keys are not symbols
