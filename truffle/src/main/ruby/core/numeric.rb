@@ -250,7 +250,7 @@ class Numeric
 
   def div(other)
     raise ZeroDivisionError, "divided by 0" if other == 0
-    self.__slash__(other).floor
+    (self / other).floor
   end
 
   def fdiv(other)
