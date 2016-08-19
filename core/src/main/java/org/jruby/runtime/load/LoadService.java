@@ -437,7 +437,9 @@ public class LoadService {
 
             if (lock.isHeldByCurrentThread()) return false;
 
-            return lock.tryLock();
+            lock.lock();
+
+            return true;
         }
 
         /**
