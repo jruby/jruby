@@ -464,6 +464,18 @@ public class LoadService {
 
         private LockResult lockWithDeadlockDetection(RequireLock lock) {
             while (true) {
+                // Try to lock for a variable amount of time and check again.
+                // We use a variable amount of time to decrease the likelihood that the deadlocking threads will
+                // always appear to be running and not waiting on a lock.
+                try {
+                    boolean locked = lock.tryLock(500 + (int)(random.nextDouble() * 100), TimeUnit.MILLISECONDS);
+
+                    if (locked) return LockResult.LOCKED;
+                } catch (InterruptedException ie) {
+                    // ignore, proceed back to deadlock check
+                }
+
+                // failed to acquire lock, see if there's a deadlock involved
                 Thread owner = lock.getOwner();
                 if (owner != null) {
                     // already locked, scan for deadlocks
@@ -474,17 +486,6 @@ public class LoadService {
                         // deadlock detected; owner thread is waiting on a lock we own
                         throw runtime.newLoadError("threads \"" + owner.getName() + "\" and \"" + Thread.currentThread().getName() + "\" will deadlock requiring \"" + lock.file + "\"");
                     }
-                }
-
-                // Otherwise try to lock for a variable amount of time and check again.
-                // We use a variable amount of time to decrease the likelihood that the deadlocking threads will
-                // always appear to be running and not waiting on a lock.
-                try {
-                    boolean locked = lock.tryLock(500 + (int)(random.nextDouble() * 100), TimeUnit.MILLISECONDS);
-
-                    if (locked) return LockResult.LOCKED;
-                } catch (InterruptedException ie) {
-                    // ignore, proceed back to deadlock check
                 }
             }
         }
