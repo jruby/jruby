@@ -36,6 +36,9 @@ package org.jruby.runtime.load;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.lang.management.ManagementFactory;
+import java.lang.management.ThreadInfo;
+import java.lang.management.ThreadMXBean;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URI;
@@ -44,7 +47,9 @@ import java.security.AccessControlException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.jar.JarFile;
@@ -197,6 +202,7 @@ public class LoadService {
         }
 
         this.librarySearcher = new LibrarySearcher(this);
+        this.requireLocks = new RequireLocks(runtime);
     }
 
     /**
@@ -404,18 +410,32 @@ public class LoadService {
         LOADED, ALREADY_LOADED, CIRCULAR
     }
 
-    private final RequireLocks requireLocks = new RequireLocks();
+    private final RequireLocks requireLocks;
 
     private static final class RequireLocks {
-        private final ConcurrentHashMap<String, ReentrantLock> pool;
-        // global lock for require must be fair
-        //private final ReentrantLock globalLock;
+        private final ConcurrentHashMap<String, RequireLock> pool = new ConcurrentHashMap<>(8, 0.75f, 2);
+        private final Ruby runtime;
 
         public enum LockResult { LOCKED, CIRCULAR }
 
-        private RequireLocks() {
-            this.pool = new ConcurrentHashMap<>(8, 0.75f, 2);
-            //this.globalLock = new ReentrantLock(true);
+        private class RequireLock extends ReentrantLock {
+            private final String file;
+
+            public RequireLock(String file) {
+                this.file = file;
+            }
+
+            public Thread getOwner() {
+                return super.getOwner();
+            }
+
+            public String getFile() {
+                return file;
+            }
+        }
+
+        private RequireLocks(Ruby runtime) {
+            this.runtime = runtime;
         }
 
         /**
@@ -429,20 +449,47 @@ public class LoadService {
          *         returns false without getting a lock. Otherwise true.
          */
         private LockResult lock(String requireName) {
-            ReentrantLock lock = pool.get(requireName);
+            RequireLock lock = pool.get(requireName);
 
             if (lock == null) {
-                ReentrantLock newLock = new ReentrantLock();
+                RequireLock newLock = new RequireLock(requireName);
                 lock = pool.putIfAbsent(requireName, newLock);
                 if (lock == null) lock = newLock;
             }
 
             if (lock.isHeldByCurrentThread()) return LockResult.CIRCULAR;
 
-            lock.lock();
-
-            return LockResult.LOCKED;
+            return lockWithDeadlockDetection(lock);
         }
+
+        private LockResult lockWithDeadlockDetection(RequireLock lock) {
+            while (true) {
+                Thread owner = lock.getOwner();
+                if (owner != null) {
+                    // already locked, scan for deadlocks
+                    ThreadMXBean tmxb = ManagementFactory.getThreadMXBean();
+                    ThreadInfo ownerInfo = tmxb.getThreadInfo(new long[] {owner.getId()}, false, true)[0];
+
+                    if (ownerInfo != null && ownerInfo.getLockOwnerId() == Thread.currentThread().getId()) {
+                        // deadlock detected; owner thread is waiting on a lock we own
+                        throw runtime.newLoadError("threads \"" + owner.getName() + "\" and \"" + Thread.currentThread().getName() + "\" will deadlock requiring \"" + lock.file + "\"");
+                    }
+                }
+
+                // Otherwise try to lock for a variable amount of time and check again.
+                // We use a variable amount of time to decrease the likelihood that the deadlocking threads will
+                // always appear to be running and not waiting on a lock.
+                try {
+                    boolean locked = lock.tryLock(500 + (int)(random.nextDouble() * 100), TimeUnit.MILLISECONDS);
+
+                    if (locked) return LockResult.LOCKED;
+                } catch (InterruptedException ie) {
+                    // ignore, proceed back to deadlock check
+                }
+            }
+        }
+
+        private static final Random random = new Random(System.currentTimeMillis());
 
         /**
          * Unlock the lock for the specified requireName.
