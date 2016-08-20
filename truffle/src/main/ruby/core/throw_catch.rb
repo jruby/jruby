@@ -60,7 +60,7 @@ module Kernel
 
   def throw(obj, value=nil)
     unless Rubinius::ThrownValue.available? obj
-      raise ArgumentError, "uncaught throw #{obj.inspect}"
+      raise UncaughtThrowError, "uncaught throw #{obj.inspect}"
     end
 
     Rubinius.throw obj, value
