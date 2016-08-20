@@ -1,6 +1,6 @@
 require 'test/unit'
 
-class TestRequireOnce < Test::Unit::TestCase
+class TestRequire < Test::Unit::TestCase
 
   # This test repeatedly requires the same file across several threads, reverting $" each time.
   # It passes when requires are only firing once, regardless of concurrency.
@@ -8,7 +8,7 @@ class TestRequireOnce < Test::Unit::TestCase
   def test_require_fires_once_across_threads
     $foo = 0
     100.times do
-      [1,2,3,4,5].map do |x|
+      [1,2,3,4,5].map do
         Thread.new {require "test/foo_for_test_require_once"}
       end.each {|t| t.join}
       raise "Concurrent requires caused double-loading" if $foo != 1
@@ -23,6 +23,54 @@ class TestRequireOnce < Test::Unit::TestCase
   def test_feature_has_full_name
     load File.dirname(__FILE__) + "/test_require_once_jruby_3234/all.rb"
     assert_equal 1, $jruby_3234
+  end
+
+  def test_concurrent_loading # GH-4091
+    filename = File.join(File.dirname(__FILE__), 'gh4091-sample.rb')
+    assert ! defined?(GH4091)
+    File.open(filename, 'w') do |f|
+      f.write <<OUT
+module GH4091
+  class Sample
+    sleep 0.1
+    1 + 2 + 3 # some boilerplate
+    sleep 0.2
+  end
+end
+OUT
+    end
+
+    current_dir = File.expand_path(File.dirname(__FILE__))
+    if $LOAD_PATH.include?(current_dir)
+      current_dir = false
+    else
+      $LOAD_PATH << current_dir
+    end
+
+    $gh4091_error = nil; threads = []
+    (ENV['THREAD_COUNT'] || 5).to_i.times do
+      threads << Thread.start {
+        begin
+          require 'gh4091-sample'
+          puts JRuby::Sample.new # fails
+        rescue Exception => e
+          unless $gh4091_error
+            $gh4091_error = e
+          end
+        end
+      }
+    end
+    threads.each(&:join)
+
+    e = $gh4091_error
+    fail "concurrent loading failed: #{e.inspect}" if e
+
+  ensure
+    File.unlink(filename) rescue nil
+    $gh4091_error = nil
+    $LOAD_PATH.delete current_dir if current_dir
+    Object.send(:remove_const, GH4091) rescue nil
+    $LOADED_FEATURES.delete 'gh4091-sample.rb'
   end
 
   # module ::Zlib; end
