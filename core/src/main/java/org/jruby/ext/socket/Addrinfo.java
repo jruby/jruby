@@ -281,7 +281,32 @@ public class Addrinfo extends RubyObject {
 
     @JRubyMethod
     public IRubyObject inspect_sockaddr(ThreadContext context) {
-        return context.runtime.newString(socketAddress.toString());
+        if (socketAddress instanceof UnixSocketAddress) {
+            String path = getUnixSocketAddress().path();
+
+            return context.runtime.newString(path.startsWith("/") ? path : "UNIX " + path);
+        }
+
+        int port = getInetSocketAddress().getPort();
+
+        // getHostAddress() returns ip in the full form, but MRI uses short;
+        if (getInetAddress() instanceof Inet6Address) {
+            String host;
+            if (getInet6Address().isLoopbackAddress()) {
+                host = "::1";
+            } else {
+                String fullHost = getInetSocketAddress().getAddress().getHostAddress();
+                host = fullHost.replaceAll("((?::0\\b){2,}):?(?!\\S*\\b\\1:0\\b)(\\S*)", "::$2");
+            }
+            String hostPort = port == 0 ? host : "[" + host + "]:" + port;
+
+            return context.runtime.newString(hostPort);
+        }
+
+        String portString = port == 0 ? "" : ":" + port;
+        String host = getInetSocketAddress().getAddress().getHostAddress();
+
+        return context.runtime.newString(host + portString);
     }
 
     @JRubyMethod(rest = true, meta = true)
@@ -571,13 +596,13 @@ public class Addrinfo extends RubyObject {
         }
         return ht;
       } catch (IOException e) {
-        return 0;   
+        return 0;
       }
     }
 
     private byte[] hwaddr() {
       try {
-        byte[] hw = {0,0,0,0,0,0};                            // loopback   
+        byte[] hw = {0,0,0,0,0,0};                            // loopback
         if (!networkInterface.isLoopback()) {
           hw = networkInterface.getHardwareAddress();
           if (hw == null) {
@@ -621,15 +646,15 @@ public class Addrinfo extends RubyObject {
     private int swapIntEndian(int i) {
       return ((i&0xff)<<24)+((i&0xff00)<<8)+((i&0xff0000)>>8)+((i>>24)&0xff);
     }
-    
+
     private int swapShortEndian(short i) {
       return ((i&0xff)<<8)+((i&0xff00)>>8);
     }
-    
+
     private static RuntimeException sockerr(Ruby runtime, String msg) {
         return new RaiseException(runtime, runtime.getClass("SocketError"), msg, true);
     }
-    
+
     @JRubyMethod(rest = true, notImplemented = true)
     public IRubyObject getnameinfo(ThreadContext context, IRubyObject[] args) {
         // unimplemented
@@ -647,7 +672,7 @@ public class Addrinfo extends RubyObject {
         // unimplemented
         return context.nil;
     }
-    
+
     @JRubyMethod
     public IRubyObject to_str(ThreadContext context){
         return context.runtime.newString(toString());
@@ -693,8 +718,8 @@ public class Addrinfo extends RubyObject {
         }
         return null;
     }
-    
-    public String toString(){  
+
+    public String toString(){
         return socketAddress.toString();
     }
 
