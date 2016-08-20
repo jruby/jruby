@@ -17,7 +17,7 @@ common: {
   setup: [
     [mx, sclone, --kind, git, "https://github.com/jruby/jruby-build-pack.git", jruby-build-pack],
     [cp, bin/jruby.bash, bin/jruby],
-    [chmod, +x, bin/jruby],
+    [chmod, "+x", bin/jruby],
     [mx, build]
   ]
 
@@ -317,9 +317,10 @@ gem-test-pack: {
   environment: {
     GEM_HOME: ../jruby-truffle-gem-test-pack/gems
   }
-  
+
   setup: [
-    [mx, sclone, --kind, git, "https://github.com/jruby/jruby-truffle-gem-test-pack.git", ../jruby-truffle-gem-test-pack]
+    [mx, sclone, --kind, git, "https://github.com/jruby/jruby-truffle-gem-test-pack.git", ../jruby-truffle-gem-test-pack],
+    [test/truffle/gem-test-pack-checkout-revision.sh]
   ]
 }
 
@@ -333,7 +334,7 @@ test-gems: ${gem-test-pack} {
 
 test-ecosystem: ${gem-test-pack} {
   setup: ${common.setup} ${gem-test-pack.setup}
-  
+
   run: [
     [bin/jruby, bin/gem, install, "$GEM_HOME/cache/bundler-1.12.5.gem"],
     ${jt} [test, ecosystem]
