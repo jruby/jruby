@@ -52,7 +52,7 @@ OUT
       threads << Thread.start {
         begin
           require 'gh4091-sample'
-          puts JRuby::Sample.new # fails
+          GH4091::Sample.new # failed in GH-4091
         rescue Exception => e
           unless $gh4091_error
             $gh4091_error = e
