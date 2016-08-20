@@ -237,6 +237,15 @@ class Numeric
   end
   private :math_coerce
 
+  def bit_coerce(other)
+    values = math_coerce(other)
+    unless values[0].is_a?(Integer) && values[1].is_a?(Integer)
+         raise TypeError, "#{values[1].class} can't be coerced into #{self.class}"
+    end
+    values
+  end
+  private :bit_coerce
+
   def redo_coerced(meth, right)
     b, a = math_coerce(right)
     a.__send__ meth, b

@@ -409,6 +409,12 @@ public abstract class BignumNodes {
         public Object bitAnd(DynamicObject a, DynamicObject b) {
             return fixnumOrBignum(Layouts.BIGNUM.getValue(a).and(Layouts.BIGNUM.getValue(b)));
         }
+
+        @Specialization(guards = "!isRubyBignum(b)")
+        public Object bitAnd(VirtualFrame frame, DynamicObject a, DynamicObject b,
+                             @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "self & bit_coerce(b)[1]", "b", b);
+        }
     }
 
     @CoreMethod(names = "|", required = 1)

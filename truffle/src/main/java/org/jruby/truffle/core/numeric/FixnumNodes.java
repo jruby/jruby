@@ -756,9 +756,28 @@ public abstract class FixnumNodes {
         }
 
         @Specialization(guards = "isRubyBignum(b)")
+        public Object bitAndBignum(int a, DynamicObject b) {
+            return fixnumOrBignum(BigInteger.valueOf(a).and(Layouts.BIGNUM.getValue(b)));
+        }
+
+        @Specialization(guards = "isRubyBignum(b)")
         public Object bitAndBignum(long a, DynamicObject b) {
             return fixnumOrBignum(BigInteger.valueOf(a).and(Layouts.BIGNUM.getValue(b)));
         }
+
+        @Specialization(guards = "!isRubyBignum(b)")
+        public Object bitAndNotBignum(VirtualFrame frame, int a, Object b,
+                                      @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "self & bit_coerce(b)[1]", "b", b);
+        }
+
+        @Specialization(guards = "!isRubyBignum(b)")
+        public Object bitAndNotBignum(VirtualFrame frame, long a, Object b,
+                                      @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "self & bit_coerce(b)[1]", "b", b);
+        }
+
+
     }
 
     @CoreMethod(names = "|", required = 1)
