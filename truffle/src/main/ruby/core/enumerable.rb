@@ -30,7 +30,8 @@
 # these methods can be written *in those classes* to override these.
 
 module Enumerable
-  def chunk(initial_state = nil, &original_block)
+  def chunk(&original_block)
+    initial_state = nil
     raise ArgumentError, "no block given" unless block_given?
     ::Enumerator.new do |yielder|
       previous = nil
