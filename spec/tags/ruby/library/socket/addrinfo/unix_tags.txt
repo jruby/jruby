@@ -1,0 +1,2 @@
+fails:Addrinfo.unix creates a addrinfo for a unix socket
+fails:Addrinfo#unix? for a unix socket returns true
