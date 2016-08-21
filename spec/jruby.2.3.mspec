@@ -38,6 +38,7 @@ class MSpecScript
   set :fast, [
     *get(:language),
     *get(:core),
+    *get(:library),
 
     # These all spawn sub-rubies, making them very slow to run
     '^' + SPEC_DIR + '/core/process',
