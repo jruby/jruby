@@ -786,6 +786,12 @@ public class RubySocket extends RubyBasicSocket {
     }
 
     @JRubyMethod
+    public IRubyObject getsockopt(ThreadContext context, IRubyObject _level, IRubyObject _opt) {
+        lazyInit(context, false);
+        return super.getsockopt(context, _level, _opt);
+    }
+
+    @JRubyMethod
     public IRubyObject local_address(ThreadContext context) {
         lazyInit(context, false);
         return super.local_address(context);
