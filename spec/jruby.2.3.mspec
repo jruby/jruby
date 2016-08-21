@@ -92,7 +92,9 @@ class MSpecScript
   end
 
   # prepare additional tags for CI
-  set(:ci_xtags, ["java#{ENV_JAVA['java.specification.version']}"]) # Java version
+  set(:ci_xtags, ['critical'])
+
+  get(:ci_xtags) << "java#{ENV_JAVA['java.specification.version']}" # Java version
 
   if WINDOWS
     # Some specs on Windows will fail in we launch JRuby via
