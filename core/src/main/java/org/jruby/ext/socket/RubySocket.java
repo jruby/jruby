@@ -785,6 +785,12 @@ public class RubySocket extends RubyBasicSocket {
         }
     }
 
+    @JRubyMethod
+    public IRubyObject local_address(ThreadContext context) {
+        lazyInit(context, false);
+        return super.local_address(context);
+    }
+
     @Override
     public RubyBoolean closed_p(ThreadContext context) {
         if (getOpenFile() == null) return context.runtime.getFalse();
