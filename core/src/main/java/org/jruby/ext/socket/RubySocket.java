@@ -776,9 +776,7 @@ public class RubySocket extends RubyBasicSocket {
             return null;
         }
 
-        Channel channel = getChannel();
-
-        return SocketType.forChannel(channel).getLocalSocketAddress(channel);
+        return super.getSocketAddress();
     }
 
     @Deprecated
