@@ -77,8 +77,12 @@ class MSpecScript
     get(:core) << '^' + SPEC_DIR + '/core/process'
   end
 
-  # prepare additional tags for CI
-  set(:ci_xtags, ['critical'])
+  # prepare exclusion tags
+  set(:xtags, get(:xtags) || [])
+  set(:ci_xtags, get(:ci_xtags) || [])
+
+  get(:xtags) << 'critical'
+  get(:ci_xtags) << 'critical'
 
   get(:ci_xtags) << "java#{ENV_JAVA['java.specification.version']}" # Java version
 
