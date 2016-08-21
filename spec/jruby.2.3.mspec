@@ -33,20 +33,6 @@ class MSpecScript
   # Standard library specs
   set :library, [
     SPEC_DIR + '/library',
-
-    # excluded for some reason, see JRUBY-4020
-    '^' + SPEC_DIR + '/library/drb',
-    '^' + SPEC_DIR + '/library/net',
-    '^' + SPEC_DIR + '/library/openssl',
-
-    # unstable
-    '^' + SPEC_DIR + '/library/syslog',
-
-    # masked out because of load-time errors that can't be tagged
-    '^' + SPEC_DIR + '/library/net/http',
-
-    # Module not available
-    '^' + SPEC_DIR + '/library/digest/bubblebabble'
   ]
 
   set :fast, [
