@@ -97,20 +97,7 @@ public class RubyServerSocket extends RubySocket {
 
     @JRubyMethod()
     public IRubyObject bind(ThreadContext context, IRubyObject addr) {
-        final InetSocketAddress iaddr;
-
-        if (addr instanceof Addrinfo) {
-            Addrinfo addrInfo = (Addrinfo) addr;
-            if (!addrInfo.ip_p(context).isTrue()) {
-                throw context.runtime.newTypeError("not an INET or INET6 address: " + addrInfo);
-            }
-            iaddr = new InetSocketAddress(addrInfo.getInetAddress().getHostAddress(), addrInfo.getPort());
-        } else {
-            iaddr = Sockaddr.addressFromSockaddr_in(context, addr);
-        }
-
-        doBind(context, getChannel(), iaddr, 0);
-        return RubyFixnum.zero(context.runtime);
+        return bind(context, addr, RubyFixnum.zero(context.runtime));
     }
 
     @JRubyMethod()
@@ -126,7 +113,9 @@ public class RubyServerSocket extends RubySocket {
         } else {
             iaddr = Sockaddr.addressFromSockaddr_in(context, addr);
         }
-        doBind(context, getChannel(), iaddr, RubyFixnum.fix2int(backlog));
+
+        this.backlog = RubyFixnum.fix2int(backlog);
+        doBind(context, iaddr);
 
         return RubyFixnum.zero(context.runtime);
     }
@@ -231,32 +220,6 @@ public class RubyServerSocket extends RubySocket {
         }
         catch (IOException e) {
             throw sockerr(runtime, e.getLocalizedMessage(), e);
-        }
-    }
-
-    private void doBind(ThreadContext context, Channel channel, InetSocketAddress iaddr, int backlog) {
-        Ruby runtime = context.runtime;
-
-        try {
-            if (channel instanceof ServerSocketChannel) {
-                ServerSocket socket = ((ServerSocketChannel)channel).socket();
-                socket.bind(iaddr, backlog);
-            }
-            else {
-                throw runtime.newErrnoENOPROTOOPTError();
-            }
-        }
-        catch (UnknownHostException e) {
-            throw SocketUtils.sockerr(runtime, "bind(2): unknown host");
-        }
-        catch (SocketException e) {
-            handleSocketException(runtime, e, "bind(2)", iaddr);
-        }
-        catch (IOException e) {
-            throw sockerr(runtime, "bind(2): name or service not known", e);
-        }
-        catch (IllegalArgumentException e) {
-            throw sockerr(runtime, e.getMessage(), e);
         }
     }
 }// RubySocket

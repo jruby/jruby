@@ -261,7 +261,7 @@ public class RubySocket extends RubyBasicSocket {
         return RubyUDPSocket.recvfrom_nonblock(this, context, args);
     }
 
-    private int backlog = -1;
+    protected int backlog = -1;
 
     @JRubyMethod
     public IRubyObject listen(ThreadContext context, IRubyObject backlog) {
