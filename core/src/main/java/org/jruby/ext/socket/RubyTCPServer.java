@@ -91,15 +91,15 @@ public class RubyTCPServer extends RubyTCPSocket {
                 _host = args[0];
                 _port = args[1];
 
-                if (!_host.isNil()) {
-                    RubyString hostString = _host.convertToString();
-                    if (hostString.size() > 0) host = hostString.toString();
+                if (_host.isNil()) {
+                    break;
                 } else if (_host instanceof RubyFixnum) {
                     throw runtime.newTypeError(_host, runtime.getString());
-                } else {
-                    host = _host.convertToString().toString();
                 }
-                
+
+                RubyString hostString = _host.convertToString();
+                if (hostString.size() > 0) host = hostString.toString();
+
                 break;
             case 1:
                 _port = args[0];
