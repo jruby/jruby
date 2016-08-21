@@ -1,10 +1,8 @@
-# Default RubySpec/CI settings for JRuby in 2.1 mode.
+# Default RubySpec/CI settings for JRuby.
 
-# detect windows platform:
 require 'rbconfig'
 require 'java'
 require 'jruby'
-require 'mspec/runner/formatters'
 
 IKVM = java.lang.System.get_property('java.vm.name') =~ /IKVM\.NET/
 WINDOWS = RbConfig::CONFIG['host_os'] =~ /mswin/
@@ -13,6 +11,15 @@ SPEC_DIR = File.join(File.dirname(__FILE__), 'ruby') unless defined?(SPEC_DIR)
 TAGS_DIR = File.join(File.dirname(__FILE__), 'tags') unless defined?(TAGS_DIR)
 
 class MSpecScript
+  jruby = RbConfig::CONFIG['ruby_install_name'] + RbConfig::CONFIG['EXEEXT']
+  jruby = File.expand_path("../../bin/#{jruby}", __FILE__)
+  set :target, jruby
+
+  # Command Line specs
+  set :command_line, [
+    SPEC_DIR + '/command_line',
+  ]
+
   # Language features specs
   set :language, [
     SPEC_DIR + '/language',
@@ -21,6 +28,25 @@ class MSpecScript
   # Core library specs
   set :core, [
     SPEC_DIR + '/core',
+  ]
+
+  # Standard library specs
+  set :library, [
+    SPEC_DIR + '/library',
+
+    # excluded for some reason, see JRUBY-4020
+    '^' + SPEC_DIR + '/library/drb',
+    '^' + SPEC_DIR + '/library/net',
+    '^' + SPEC_DIR + '/library/openssl',
+
+    # unstable
+    '^' + SPEC_DIR + '/library/syslog',
+
+    # masked out because of load-time errors that can't be tagged
+    '^' + SPEC_DIR + '/library/net/http',
+
+    # Module not available
+    '^' + SPEC_DIR + '/library/digest/bubblebabble'
   ]
 
   set :fast, [
@@ -44,6 +70,14 @@ class MSpecScript
     '^' + SPEC_DIR + '/language/predefined/data_spec.rb',
   ]
 
+  # Enable features
+  MSpec.enable_feature :fiber
+  MSpec.enable_feature :fiber_library
+  MSpec.enable_feature :continuation_library
+  MSpec.disable_feature :fork
+  MSpec.enable_feature :encoding
+  MSpec.enable_feature :readline
+
   # Filter out ObjectSpace specs if ObjectSpace is disabled
   unless JRuby.objectspace
     get(:core) << '^' + SPEC_DIR + '/core/objectspace/_id2ref'
@@ -52,41 +86,10 @@ class MSpecScript
 
   if IKVM
     # ftype_spec freezes for some reason under IKVM
-    set(:core, get(:core) + ['^' + SPEC_DIR + '/core/file'])
+    get(:core) << '^' + SPEC_DIR + '/core/file'
     # Process.kill spec hangs
-    set(:core, get(:core) + ['^' + SPEC_DIR + '/core/process'])
+    get(:core) << '^' + SPEC_DIR + '/core/process'
   end
-
-  # An ordered list of the directories containing specs to run
-  # as the CI process.
-  set :library, [
-    SPEC_DIR + '/library',
-
-    # excluded for some reason, see JRUBY-4020
-    '^' + SPEC_DIR + '/library/drb',
-    '^' + SPEC_DIR + '/library/net',
-    '^' + SPEC_DIR + '/library/openssl',
-
-    # unstable
-    '^' + SPEC_DIR + '/library/syslog',
-
-    # masked out because of load-time errors that can't be tagged
-    '^' + SPEC_DIR + '/library/net/http',
-
-    # Module not available
-    '^' + SPEC_DIR + '/library/digest/bubblebabble'
-  ]
-
-  # Command Line specs
-  set :command_line, [ SPEC_DIR + '/command_line' ]
-
-  # Enable features
-  MSpec.enable_feature :continuation
-  MSpec.enable_feature :fiber
-  MSpec.enable_feature :fiber_library
-  MSpec.enable_feature :encoding
-  MSpec.enable_feature :encoding_transition
-  MSpec.enable_feature :readline
 
   # prepare additional tags for CI
   set(:ci_xtags, ["java#{ENV_JAVA['java.specification.version']}"]) # Java version
@@ -102,13 +105,14 @@ class MSpecScript
     get(:ci_xtags) << 'windows'
   end
 
+  # If running specs with jit threshold = 1 or force (AOT) compile, additional tags
+  if JRuby.runtime.instance_config.compile_mode.to_s == "FORCE" ||
+     JRuby.runtime.instance_config.jit_threshold == 1
+    get(:ci_xtags) << 'compiler'
+  end
+
   # This set of files is run by mspec ci
   set :ci_files, get(:language) + get(:core) + get(:command_line) + get(:library)
-
-  # A list of _all_ optional library specs
-  set :optional, [get(:ffi)]
-
-  set :target, File.dirname(__FILE__) + '/../bin/' + RbConfig::CONFIG['ruby_install_name'] + RbConfig::CONFIG['EXEEXT']
 
   set :backtrace_filter, /mspec\//
 
@@ -119,10 +123,4 @@ class MSpecScript
                         [%r(^.*/library/),      TAGS_DIR + '/ruby/library/'],
                         [/_spec.rb$/,       '_tags.txt']
                       ]
-
-  # If running specs with jit threshold = 1 or force (AOT) compile, additional tags
-  if JRuby.runtime.instance_config.compile_mode.to_s == "FORCE" ||
-      JRuby.runtime.instance_config.jit_threshold == 1
-    set(:ci_xtags, (get(:ci_xtags) || []) + ['compiler'])
-  end
 end
