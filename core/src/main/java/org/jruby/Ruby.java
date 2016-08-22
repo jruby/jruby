@@ -170,6 +170,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.net.BindException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -1288,10 +1289,23 @@ public final class Ruby implements Constantizable {
         try {
             Class jceSecurity = Class.forName("javax.crypto.JceSecurity");
             Field isRestricted = jceSecurity.getDeclaredField("isRestricted");
-            isRestricted.setAccessible(true);
-            isRestricted.set(null, false);
-            isRestricted.setAccessible(false);
-        } catch (Exception e) {
+            if ( Boolean.TRUE.equals(isRestricted.get(null)) ) {
+                if ( Modifier.isFinal(isRestricted.getModifiers()) ) {
+                    Field modifiers = Field.class.getDeclaredField("modifiers");
+                    modifiers.setAccessible(true);
+                    modifiers.setInt(isRestricted, isRestricted.getModifiers() & ~Modifier.FINAL);
+                }
+                isRestricted.setAccessible(true);
+                isRestricted.setBoolean(null, false); // isRestricted = false;
+                isRestricted.setAccessible(false);
+            }
+        }
+        catch (ClassNotFoundException e) { // not an OpenJDK ~ JVM
+            if (isDebug() || LOG.isDebugEnabled()) {
+                LOG.debug("unable to enable unlimited-strength crypto " + e);
+            }
+        }
+        catch (Exception e) {
             if (isDebug() || LOG.isDebugEnabled()) {
                 LOG.debug("unable to enable unlimited-strength crypto", e);
             }
