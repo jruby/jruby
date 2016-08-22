@@ -114,7 +114,7 @@ public abstract class Translator extends org.jruby.ast.visitor.AbstractNodeVisit
         length = Math.min(length, base.getSource().getLength() - index);
         length = Math.max(0, length);
 
-        return base.getSource().createSection(index, length);
+        return base.getSource().createSection("(identifier)", index, length);
     }
 
     public static SourceSection enclosing(SourceSection base, RubyNode[] sequence) {
@@ -160,7 +160,7 @@ public abstract class Translator extends org.jruby.ast.visitor.AbstractNodeVisit
                 return parentSourceSection.peek();
             }
         } else {
-            return source.createSection(sourcePosition.getLine() + 1);
+            return source.createSection("(identifier)", sourcePosition.getLine() + 1);
         }
     }
 

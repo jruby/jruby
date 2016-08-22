@@ -418,7 +418,7 @@ public class MethodTranslator extends BodyTranslator {
         for (;;) {
             final String lineAfterString = source.getCode(lineAfter).replaceAll("\\s+$","");
             if (lineAfterString.equals(indentationOnFirstLine + "end") || lineAfterString.equals(indentationOnFirstLine + "}")) {
-                return source.createSection(sourceSection.getCharIndex(), sourceSection.getCharLength() + 1 + source.getLineLength(lineAfter));
+                return source.createSection("(identifier)", sourceSection.getCharIndex(), sourceSection.getCharLength() + 1 + source.getLineLength(lineAfter));
             }
             if (++lineAfter >= source.getLineCount()) {
                 return sourceSection;

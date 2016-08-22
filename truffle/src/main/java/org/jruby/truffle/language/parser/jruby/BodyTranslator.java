@@ -412,7 +412,7 @@ public class BodyTranslator extends Translator {
 
             length = Math.min(length + startIndex, sourceSection.getSource().getLength()) - startIndex;
 
-            ret = sequence(context, sourceSection.getSource().createSection(startIndex, length), translatedChildren);
+            ret = sequence(context, sourceSection.getSource().createSection("(identifier)", startIndex, length), translatedChildren);
         }
 
         return addNewlineIfNeeded(node, ret);
