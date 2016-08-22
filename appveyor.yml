@@ -9,7 +9,3 @@ build: off
 test_script:
   - SET CHECK_LEAKS=true
   - ../mspec/bin/mspec -ff command_line language core library
-branches:
-  only:
-    - master
-    - /^try/
