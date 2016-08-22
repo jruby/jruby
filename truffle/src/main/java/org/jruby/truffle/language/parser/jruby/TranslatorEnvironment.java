@@ -93,15 +93,6 @@ public class TranslatorEnvironment {
         return parent;
     }
 
-    public TranslatorEnvironment getParent(int level) {
-        assert level >= 0;
-        if (level == 0) {
-            return this;
-        } else {
-            return parent.getParent(level - 1);
-        }
-    }
-
     public FrameSlot declareVar(String name) {
         return getFrameDescriptor().findOrAddFrameSlot(name);
     }
@@ -112,20 +103,6 @@ public class TranslatorEnvironment {
         } else {
             return declareVar(name);
         }
-    }
-
-    public SharedMethodInfo findMethodForLocalVar(String name) {
-        TranslatorEnvironment current = this;
-        do {
-            FrameSlot slot = current.getFrameDescriptor().findFrameSlot(name);
-            if (slot != null) {
-                return current.sharedMethodInfo;
-            }
-
-            current = current.parent;
-        } while (current != null);
-
-        return null;
     }
 
     public ReadLocalNode findOrAddLocalVarNodeDangerous(String name, SourceSection sourceSection) {
