@@ -227,7 +227,7 @@ public class RubyDebugTest {
             assertEquals(code, currentCode);
             final MaterializedFrame frame = suspendedEvent.getFrame();
 
-            assertEquals(expectedFrame.length / 2, frame.getFrameDescriptor().getSize());
+            assertEquals(expectedFrame.length / 2, frame.getFrameDescriptor().getSize() - 1);
 
             for (int i = 0; i < expectedFrame.length; i = i + 2) {
                 String expectedIdentifier = (String) expectedFrame[i];
