@@ -1,0 +1,1 @@
+fails:Socket::Option#bool raises TypeError if option has not good size
