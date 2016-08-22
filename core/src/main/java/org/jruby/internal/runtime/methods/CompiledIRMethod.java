@@ -189,11 +189,6 @@ public class CompiledIRMethod extends AbstractIRMethod {
         finally { post(context); }
     }
 
-    @Override
-    public DynamicMethod dup() {
-        return new CompiledIRMethod(variable, specific, specificArity, method, getVisibility(), implementationClass, hasKwargs);
-    }
-
     public String getFile() {
         return method.getFileName();
     }
