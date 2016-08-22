@@ -37,6 +37,11 @@ describe "#ruby_exe_options" do
     @script.ruby_exe_options(:engine).should == 'bin/jruby'
   end
 
+  it "returns 'bin/rbx' when passed :engine, RUBY_NAME is 'rbx'" do
+    Object.const_set :RUBY_NAME, 'rbx'
+    @script.ruby_exe_options(:engine).should == 'bin/rbx'
+  end
+
   it "returns 'ir' when passed :engine and RUBY_NAME is 'ironruby'" do
     Object.const_set :RUBY_NAME, 'ironruby'
     @script.ruby_exe_options(:engine).should == 'ir'
@@ -62,30 +67,6 @@ describe "#ruby_exe_options" do
     bin = RbConfig::CONFIG['RUBY_INSTALL_NAME'] + (RbConfig::CONFIG['EXEEXT'] || RbConfig::CONFIG['exeext'] || '')
     name = File.join RbConfig::CONFIG['bindir'], bin
     @script.ruby_exe_options(:install_name).should == name
-  end
-
-  describe "under Rubinius" do
-    before :each do
-      @ruby_version = RUBY_VERSION
-    end
-
-    after :each do
-      Object.const_set :RUBY_VERSION, @ruby_version
-    end
-
-    it "returns 'bin/rbx' when passed :engine, RUBY_NAME is 'rbx' and RUBY_VERSION < 1.9" do
-      Object.const_set :RUBY_VERSION, "1.8.7"
-      Object.const_set :RUBY_NAME, 'rbx'
-
-      @script.ruby_exe_options(:engine).should == 'bin/rbx'
-    end
-
-    it "returns 'bin/rbx -X19' when passed :engine, RUBY_NAME is 'rbx' and RUBY_VERSION >= 1.9" do
-      Object.const_set :RUBY_VERSION, "1.9.2"
-      Object.const_set :RUBY_NAME, 'rbx'
-
-      @script.ruby_exe_options(:engine).should == 'bin/rbx -X19'
-    end
   end
 end
 
@@ -114,16 +95,29 @@ describe "#resolve_ruby_exe" do
   end
 
   it "expands the path portion of the result of #ruby_exe_options" do
-    @script.should_receive(:ruby_exe_options).and_return("#{@name} -Xfoo")
+    @script.should_receive(:ruby_exe_options).and_return("#{@name}")
     File.should_receive(:file?).with(@name).and_return(true)
     File.should_receive(:executable?).with(@name).and_return(true)
     File.should_receive(:expand_path).with(@name).and_return("/usr/bin/#{@name}")
-    @script.resolve_ruby_exe.should == "/usr/bin/#{@name} -Xfoo"
+    @script.resolve_ruby_exe.should == "/usr/bin/#{@name}"
   end
 
-  it "returns nil if no exe is found" do
+  it "adds the flags after the executable" do
+    @name = 'bin/rbx'
+    @script.should_receive(:ruby_exe_options).and_return(@name)
+    File.should_receive(:file?).with(@name).and_return(true)
+    File.should_receive(:executable?).with(@name).and_return(true)
+    File.should_receive(:expand_path).with(@name).and_return(@name)
+
+    ENV.should_receive(:[]).with("RUBY_FLAGS").and_return('-X19')
+    @script.resolve_ruby_exe.should == 'bin/rbx -X19'
+  end
+
+  it "raises an exception if no exe is found" do
     File.should_receive(:file?).at_least(:once).and_return(false)
-    @script.resolve_ruby_exe.should be_nil
+    lambda {
+      @script.resolve_ruby_exe
+    }.should raise_error(Exception)
   end
 end
 
@@ -132,11 +126,8 @@ describe Object, "#ruby_cmd" do
     @verbose = $VERBOSE
     $VERBOSE = nil
 
-    @ruby_flags = ENV["RUBY_FLAGS"]
-    ENV["RUBY_FLAGS"] = "-w -Q"
-
     @ruby_exe = Object.const_get :RUBY_EXE
-    Object.const_set :RUBY_EXE, 'ruby_spec_exe'
+    Object.const_set :RUBY_EXE, 'ruby_spec_exe -w -Q'
 
     @file = "some/ruby/file.rb"
     @code = %(some "real" 'ruby' code)
@@ -146,7 +137,6 @@ describe Object, "#ruby_cmd" do
 
   after :all do
     Object.const_set :RUBY_EXE, @ruby_exe
-    ENV["RUBY_FLAGS"] = @ruby_flags
     $VERBOSE = @verbose
   end
 
@@ -201,7 +191,6 @@ describe Object, "#ruby_exe" do
     it "preserves the values of existing ENV keys" do
       ENV["ABC"] = "123"
       ENV.stub(:[])
-      ENV.should_receive(:[]).with("RUBY_FLAGS")
       ENV.should_receive(:[]).with("ABC")
       @script.ruby_exe nil, :env => { :ABC => "xyz" }
     end
