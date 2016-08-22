@@ -15,3 +15,5 @@ fails:ARGF.read_nonblock returns :wait_readable when the :exception is set to fa
 fails:ARGF.read_nonblock when using multiple files reads up to the given amount of bytes from the first file
 fails:ARGF.read_nonblock when using multiple files returns an empty String when reading after having read the first file in its entirety
 fails:ARGF.read_nonblock raises IO::EAGAINWaitReadable when STDIN is empty
+fails:ARGF.read_nonblock with STDIN raises IO::EAGAINWaitReadable when empty
+fails:ARGF.read_nonblock with STDIN returns :wait_readable when the :exception is set to false
