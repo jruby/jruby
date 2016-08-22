@@ -11,6 +11,7 @@ package org.jruby.truffle.language.parser.jruby;
 
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.object.HiddenKey;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.ast.MultipleAsgnNode;
@@ -43,6 +44,7 @@ import org.jruby.truffle.language.literal.NilLiteralNode;
 import org.jruby.truffle.language.locals.LocalVariableType;
 import org.jruby.truffle.language.locals.ReadLocalVariableNode;
 import org.jruby.truffle.language.locals.WriteLocalVariableNode;
+import org.jruby.truffle.language.objects.SelfNode;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -105,6 +107,9 @@ public class LoadArgumentsTranslator extends Translator {
         final SourceSection sourceSection = translate(node.getPosition());
 
         final List<RubyNode> sequence = new ArrayList<>();
+
+        sequence.add(loadSelf());
+
         final org.jruby.ast.Node[] args = node.getArgs();
 
         final boolean useHelper = useArray() && node.hasKeyRest();
@@ -249,6 +254,11 @@ public class LoadArgumentsTranslator extends Translator {
         }
 
         return sequence(context, sourceSection, sequence);
+    }
+
+    private RubyNode loadSelf() {
+        final FrameSlot slot = methodBodyTranslator.getEnvironment().getFrameDescriptor().findOrAddFrameSlot(new HiddenKey("(self)"));
+        return WriteLocalVariableNode.createWriteLocalVariableNode(context, null, slot, new SelfNode());
     }
 
     @Override
