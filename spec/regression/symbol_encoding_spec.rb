@@ -11,7 +11,7 @@ describe "symbol encoding" do
     end
   end
 
-  describe "for symbols with ISO-8859-1 compatible non-ASCII codepoints" do
+  describe "for bare symbols with ISO-8859-1 compatible non-ASCII codepoints" do
     it "should be UTF-8" do
       expect(:×.encoding.name).to eq("UTF-8")
     end
@@ -29,7 +29,7 @@ describe "symbol encoding" do
     end
   end
 
-  describe "for symbols with non-ISO-8859-1 codepoints" do
+  describe "for bare symbols with non-ISO-8859-1 codepoints" do
     it "should be UTF-8" do
       expect(:λ.encoding.name).to eq("UTF-8")
     end
@@ -44,6 +44,42 @@ describe "symbol encoding" do
 
     it "should preserve characters when inspected" do
       expect(:λ.inspect).to eq(":λ")
+    end
+  end
+
+  describe "for quoted symbols with ISO-8859-1 compatible non-ASCII codepoints" do
+    it "should be UTF-8" do
+      expect(:"×".encoding.name).to eq("UTF-8")
+    end
+
+    it "should be UTF-8 after converting to string" do
+      expect(:"×".to_s.encoding.name).to eq("UTF-8")
+    end
+
+    it "should preserve characters after converting to string" do
+      expect(:"×".to_s).to eq("×")
+    end
+
+    it "should preserve characters when inspected" do
+      expect(:"×".inspect).to eq(":×")
+    end
+  end
+
+  describe "for quoted symbols with non-ISO-8859-1 codepoints" do
+    it "should be UTF-8" do
+      expect(:"λ".encoding.name).to eq("UTF-8")
+    end
+
+    it "should be UTF-8 after converting to string" do
+      expect(:"λ".to_s.encoding.name).to eq("UTF-8")
+    end
+
+    it "should preserve characters after converting to string" do
+      expect(:"λ".to_s).to eq("λ")
+    end
+
+    it "should preserve characters when inspected" do
+      expect(:"λ".inspect).to eq(":λ")
     end
   end
 end
