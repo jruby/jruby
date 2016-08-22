@@ -24,7 +24,6 @@ import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.builtins.UnaryCoreMethodNode;
-import org.jruby.truffle.core.encoding.EncodingNodes;
 import org.jruby.truffle.core.proc.ProcOperations;
 import org.jruby.truffle.core.proc.ProcType;
 import org.jruby.truffle.language.RubyRootNode;
@@ -111,7 +110,7 @@ public abstract class SymbolNodes {
 
             final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, null, Arity.AT_LEAST_ONE, Layouts.SYMBOL.getString(symbol), true, ArgumentDescriptor.ANON_REST, false, false, false);
 
-            final RubyRootNode rootNode = new RubyRootNode(getContext(), sourceSection, new FrameDescriptor(nil()), sharedMethodInfo, Translator.sequence(getContext(), sharedMethodInfo.getName(), sourceSection, Arrays.asList(Translator.createCheckArityNode(getContext(), sourceSection, Arity.AT_LEAST_ONE), new SymbolProcNode(getContext(), sourceSection, Layouts.SYMBOL.getString(symbol)))), false);
+            final RubyRootNode rootNode = new RubyRootNode(getContext(), sourceSection, new FrameDescriptor(nil()), sharedMethodInfo, Translator.sequence(getContext(), sourceSection, Arrays.asList(Translator.createCheckArityNode(getContext(), sourceSection, Arity.AT_LEAST_ONE), new SymbolProcNode(getContext(), sourceSection, Layouts.SYMBOL.getString(symbol)))), false);
 
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
 

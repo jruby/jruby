@@ -268,14 +268,7 @@ public class BacktraceFormatter {
                 builder.append(sourceSection.getShortDescription());
 
                 final RootNode rootNode = callNode.getRootNode();
-
-                final String identifier;
-
-                if (rootNode instanceof RubyRootNode) {
-                    identifier = rootNode.getName();
-                } else {
-                    identifier = sourceSection.getIdentifier();
-                }
+                final String identifier = rootNode.getName();
 
                 if (identifier != null && !identifier.isEmpty()) {
                     builder.append(":in `");

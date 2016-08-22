@@ -412,7 +412,7 @@ public class BodyTranslator extends Translator {
 
             length = Math.min(length + startIndex, sourceSection.getSource().getLength()) - startIndex;
 
-            ret = sequence(context, sourceSection.getSource().createSection(getIdentifier(), startIndex, length), translatedChildren);
+            ret = sequence(context, sourceSection.getSource().createSection(startIndex, length), translatedChildren);
         }
 
         return addNewlineIfNeeded(node, ret);
@@ -642,7 +642,7 @@ public class BodyTranslator extends Translator {
 
         children.addAll(Arrays.asList(argumentsAndBlock.getArguments()));
 
-        final SourceSection enclosingSourceSection = enclosing(getIdentifier(), sourceSection, children.toArray(new RubyNode[children.size()]));
+        final SourceSection enclosingSourceSection = enclosing(sourceSection, children.toArray(new RubyNode[children.size()]));
         RubyNode translated = new RubyCallNode(context, enclosingSourceSection,
                 receiver, methodName, argumentsAndBlock.getBlock(), argumentsAndBlock.getArguments(), argumentsAndBlock.isSplatted(),
                 privately || ignoreVisibility, isVCall, node.isLazy(), isAttrAssign);
@@ -1248,7 +1248,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitDefnNode(org.jruby.ast.DefnNode node) {
-        final SourceSection sourceSection = translate(node.getPosition(), node.getName());
+        final SourceSection sourceSection = translate(node.getPosition());
         final RubyNode classNode = new RaiseIfFrozenNode(context, sourceSection, new GetDefaultDefineeNode(context, sourceSection));
 
         String methodName = node.getName();
@@ -1260,7 +1260,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitDefsNode(org.jruby.ast.DefsNode node) {
-        final SourceSection sourceSection = translate(node.getPosition(), node.getName());
+        final SourceSection sourceSection = translate(node.getPosition());
 
         final RubyNode objectNode = node.getReceiverNode().accept(this);
 
@@ -3045,25 +3045,6 @@ public class BodyTranslator extends Translator {
 
     public TranslatorEnvironment getEnvironment() {
         return environment;
-    }
-
-    @Override
-    protected String getIdentifier() {
-        if (environment.isBlock()) {
-            TranslatorEnvironment methodParent = environment.getParent();
-
-            while (methodParent.isBlock()) {
-                methodParent = methodParent.getParent();
-            }
-
-            if (environment.getBlockDepth() > 1) {
-                return StringUtils.format("block (%d levels) in %s", environment.getBlockDepth(), methodParent.getNamedMethodName());
-            } else {
-                return StringUtils.format("block in %s", methodParent.getNamedMethodName());
-            }
-        } else {
-            return environment.getNamedMethodName();
-        }
     }
 
     protected String getIdentifierInNewEnvironment(boolean isBlock, String namedMethodName) {

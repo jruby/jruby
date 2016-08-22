@@ -109,11 +109,6 @@ public class ReloadArgumentsTranslator extends Translator {
         return nilNode(sourceSection);
     }
 
-    @Override
-    protected String getIdentifier() {
-        return methodBodyTranslator.getIdentifier();
-    }
-
     public boolean isSplatted() {
         return hasRestParameter;
     }

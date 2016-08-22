@@ -625,9 +625,4 @@ public class LoadArgumentsTranslator extends Translator {
         return new ReadLocalVariableNode(context, sourceSection, LocalVariableType.FRAME_LOCAL, arraySlotStack.peek().getArraySlot());
     }
 
-    @Override
-    protected String getIdentifier() {
-        return methodBodyTranslator.getIdentifier();
-    }
-
 }
