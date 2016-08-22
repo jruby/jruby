@@ -28,6 +28,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.Objects;
@@ -75,7 +76,7 @@ public class RubyDebugTest {
 
         }).build();
 
-        engine.eval(Source.fromFileName("src/test/ruby/init.rb"));
+        engine.eval(Source.newBuilder(new File("src/test/ruby/init.rb")).build());
 
         run.clear();
     }
@@ -268,7 +269,7 @@ public class RubyDebugTest {
     }
 
     private static Source createFactorial() throws IOException {
-        return Source.fromFileName("src/test/ruby/factorial.rb");
+        return Source.newBuilder(new File("src/test/ruby/factorial.rb")).build();
     }
 
     private final String getErr() {
