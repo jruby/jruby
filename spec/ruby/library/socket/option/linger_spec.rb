@@ -1,6 +1,11 @@
 require File.expand_path('../../../../spec_helper', __FILE__)
 require File.expand_path('../../fixtures/classes', __FILE__)
 
+option_pack = 'i*'
+platform_is :windows do
+  option_pack = 's*'
+end
+
 describe "Socket::Option.linger" do
   it "creates a new Socket::Option for SO_LINGER" do
     so = Socket::Option.linger(1, 10)
@@ -8,15 +13,15 @@ describe "Socket::Option.linger" do
     so.family.should == Socket::Constants::AF_UNSPEC
     so.level.should == Socket::Constants::SOL_SOCKET
     so.optname.should == Socket::Constants::SO_LINGER
-    so.data.should == [1, 10].pack('i*')
+    so.data.should == [1, 10].pack(option_pack)
   end
 
   it "accepts boolean as onoff argument" do
     so = Socket::Option.linger(false, 0)
-    so.data.should == [0, 0].pack('i*')
+    so.data.should == [0, 0].pack(option_pack)
 
     so = Socket::Option.linger(true, 1)
-    so.data.should == [1, 1].pack('i*')
+    so.data.should == [1, 1].pack(option_pack)
   end
 end
 
@@ -48,8 +53,10 @@ describe "Socket::Option#linger" do
     lambda { so.linger }.should raise_error(TypeError)
   end
 
-  it "raises TypeError if option has not good size" do
-    so = Socket::Option.int(:AF_UNSPEC, :SOL_SOCKET, :LINGER, 1)
-    lambda { so.linger }.should raise_error(TypeError)
+  platform_is_not :windows do
+    it "raises TypeError if option has not good size" do
+      so = Socket::Option.int(:AF_UNSPEC, :SOL_SOCKET, :LINGER, 1)
+      lambda { so.linger }.should raise_error(TypeError)
+    end
   end
 end

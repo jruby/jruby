@@ -22,7 +22,7 @@ describe "Kernel.chop" do
   it_behaves_like :kernel_chop, "Kernel.chop"
 end
 
-describe "#chop" do
+describe "Kernel#chop" do
   it_behaves_like :kernel_chop_private, :chop
 
   it_behaves_like :kernel_chop, "chop"

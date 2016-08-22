@@ -43,11 +43,7 @@ module SocketSpecs
   end
 
   def self.local_port
-    @base ||= $$
-    @base += 1
-    local_port = (@base % (0xffff-1024)) + 1024
-    local_port += 1 if local_port == port
-    local_port
+    find_available_port
   end
 
   def self.sockaddr_in(port, host)

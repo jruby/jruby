@@ -1,0 +1,2 @@
+fails:Addrinfo#inspect_sockaddr IPv6
+fails:Addrinfo#inspect_sockaddr UNIX

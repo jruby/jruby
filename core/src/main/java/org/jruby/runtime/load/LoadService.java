@@ -411,6 +411,8 @@ public class LoadService {
         // global lock for require must be fair
         //private final ReentrantLock globalLock;
 
+        public enum LockResult { LOCKED, CIRCULAR }
+
         private RequireLocks() {
             this.pool = new ConcurrentHashMap<>(8, 0.75f, 2);
             //this.globalLock = new ReentrantLock(true);
@@ -426,7 +428,7 @@ public class LoadService {
          * @return If the sync object already locked by current thread, it just
          *         returns false without getting a lock. Otherwise true.
          */
-        private boolean lock(String requireName) {
+        private LockResult lock(String requireName) {
             ReentrantLock lock = pool.get(requireName);
 
             if (lock == null) {
@@ -435,9 +437,11 @@ public class LoadService {
                 if (lock == null) lock = newLock;
             }
 
-            if (lock.isHeldByCurrentThread()) return false;
+            if (lock.isHeldByCurrentThread()) return LockResult.CIRCULAR;
 
-            return lock.tryLock();
+            lock.lock();
+
+            return LockResult.LOCKED;
         }
 
         /**
@@ -497,7 +501,7 @@ public class LoadService {
             throw runtime.newLoadError("no such file to load -- " + file, file);
         }
 
-        if (!requireLocks.lock(state.loadName)) {
+        if (requireLocks.lock(state.loadName) == RequireLocks.LockResult.CIRCULAR) {
             if (circularRequireWarning && runtime.isVerbose()) {
                 warnCircularRequire(state.loadName);
             }

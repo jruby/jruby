@@ -4,7 +4,7 @@ describe "The -x command line option" do
   end
 
   it "runs code after the first /\#!.*ruby.*/-ish line in target file" do
-    result = `#{RUBY_EXE} -x #{@file}`
+    result = ruby_exe(@file, options: '-x')
     result.should == "success\n"
   end
 

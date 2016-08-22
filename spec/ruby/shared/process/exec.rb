@@ -194,7 +194,7 @@ describe :process_exec, shared: true do
             f = File.open("#{@name}", "w+")
             child_fd = f.fileno + 1
             File.open("#{@child_fd_file}", "w") { |io| io.print child_fd }
-            exec "#{RUBY_EXE}", "#{map_fd_fixture}", child_fd.to_s, { child_fd => f }
+            exec "#{ruby_cmd(map_fd_fixture)} \#{child_fd}", { child_fd => f }
             EOC
 
           ruby_exe(cmd, escape: true)

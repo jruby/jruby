@@ -43,7 +43,9 @@ module ProcessSpecs
 
       @thread = Thread.new do
         Thread.current.abort_on_exception = true
-        args = [@pid_file, scenario, ruby_exe]
+        args = [@pid_file]
+        args << scenario if scenario
+        args << ruby_exe.inspect if scenario and ruby_exe
         @result = ruby_exe @script, args: args
       end
       Thread.pass while @thread.status and !File.exist?(@pid_file)
