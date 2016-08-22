@@ -79,7 +79,6 @@ import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.internal.runtime.methods.ProcMethod;
 import org.jruby.internal.runtime.methods.SynchronizedDynamicMethod;
 import org.jruby.internal.runtime.methods.UndefinedMethod;
-import org.jruby.internal.runtime.methods.WrapperMethod;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -1379,7 +1378,11 @@ public class RubyModule extends RubyObject {
                 method.setVisibility(visibility);
             } else {
                 // FIXME: Why was this using a FullFunctionCallbackMethod before that did callSuper?
-                addMethod(name, new WrapperMethod(this, method, visibility));
+                DynamicMethod newMethod = method.dup();
+                newMethod.setImplementationClass(this);
+                newMethod.setVisibility(visibility);
+
+                addMethod(name, newMethod);
             }
 
             invalidateCoreClasses();
@@ -1552,6 +1555,7 @@ public class RubyModule extends RubyObject {
 
             newMethod = method.getMethod().dup();
             newMethod.setImplementationClass(this);
+            newMethod.setVisibility(visibility);
         } else {
             throw runtime.newTypeError("wrong argument type " + arg1.getType().getName() + " (expected Proc/Method)");
         }
@@ -2247,7 +2251,10 @@ public class RubyModule extends RubyObject {
             for (int i = 0; i < args.length; i++) {
                 String name = args[i].asJavaString().intern();
                 DynamicMethod method = deepMethodSearch(name, runtime);
-                getSingletonClass().addMethod(name, new WrapperMethod(getSingletonClass(), method, PUBLIC));
+                DynamicMethod newMethod = method.dup();
+                newMethod.setImplementationClass(getSingletonClass());
+                newMethod.setVisibility(PUBLIC);
+                getSingletonClass().addMethod(name, newMethod);
                 callMethod(context, "singleton_method_added", context.runtime.fastNewSymbol(name));
             }
         }
