@@ -108,13 +108,8 @@ public class RubyDebugTest {
 
         assertExecutedOK("Algorithm loaded");
 
-        run.addLast(new Runnable() {
-
-            @Override
-            public void run() {
-                //fail("the breakpoint should hit instead");
-            }
-
+        run.addLast(() -> {
+            //fail("the breakpoint should hit instead");
         });
 
         assertLocation(3, "1",
@@ -139,15 +134,10 @@ public class RubyDebugTest {
         final Source factorial = createFactorial();
         engine.eval(factorial);
 
-        run.addLast(new Runnable() {
-
-            @Override
-            public void run() {
-                assertNull(suspendedEvent);
-                assertNotNull(executionEvent);
-                executionEvent.prepareStepInto();
-            }
-
+        run.addLast(() -> {
+            assertNull(suspendedEvent);
+            assertNotNull(executionEvent);
+            executionEvent.prepareStepInto();
         });
 
         assertLocation(13, "res = fac(2)", "res", null);
