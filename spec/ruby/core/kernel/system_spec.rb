@@ -7,11 +7,11 @@ describe :kernel_system, shared: true do
   end
 
   it "returns true when the command exits with a zero exit status" do
-    @object.system("#{RUBY_EXE} -e 'exit 0'").should == true
+    @object.system(ruby_cmd('exit 0')).should == true
   end
 
   it "returns false when the command exits with a non-zero exit status" do
-    @object.system("#{RUBY_EXE} -e 'exit 1'").should == false
+    @object.system(ruby_cmd('exit 1')).should == false
   end
 
   it "returns nil when command execution fails" do
@@ -63,9 +63,9 @@ describe :kernel_system, shared: true do
 
   platform_is :windows do
     it "runs commands starting with any number of @ using shell" do
-      `#{RUBY_EXE} -e "p system 'does_not_exist'" 2>NUL`.chomp.should == "nil"
+      `#{ruby_cmd("p system 'does_not_exist'")} 2>NUL`.chomp.should == "nil"
       @object.system('@does_not_exist').should == false
-      @object.system("@@@#{RUBY_EXE} -e 'exit 0'").should == true
+      @object.system("@@@#{ruby_cmd('exit 0')}").should == true
     end
   end
 end

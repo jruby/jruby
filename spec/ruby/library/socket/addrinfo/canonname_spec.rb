@@ -10,7 +10,10 @@ describe "Addrinfo#canonname" do
 
   it "returns the canonical name for a host" do
     canonname = @addrinfos.map { |a| a.canonname }.find { |name| name and name.include?("localhost") }
-    canonname.should include("localhost")
+    if canonname
+      canonname.should include("localhost")
+    else
+      canonname.should == nil
+    end
   end
-
 end
