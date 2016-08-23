@@ -15,11 +15,11 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.array.ArrayUtils;
 import org.jruby.truffle.core.numeric.FixnumLowerNodeGen;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.arguments.ProfileArgumentNode;
 import org.jruby.truffle.language.arguments.MissingArgumentBehavior;
 import org.jruby.truffle.language.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.language.arguments.ReadSelfNode;
 import org.jruby.truffle.language.control.ReturnID;
-import org.jruby.truffle.language.objects.SelfNode;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -47,12 +47,12 @@ public class PrimitiveNodeConstructor {
         List<Class<?>> signature = signatures.get(0);
 
         if (annotation.needsSelf()) {
-            arguments.add(transformArgument(new ReadSelfNode(), 0));
+            arguments.add(transformArgument(new ProfileArgumentNode(new ReadSelfNode()), 0));
             argumentsCount--;
         }
 
         for (int n = 0; n < argumentsCount; n++) {
-            RubyNode readArgumentNode = new ReadPreArgumentNode(n, MissingArgumentBehavior.UNDEFINED);
+            RubyNode readArgumentNode = new ProfileArgumentNode(new ReadPreArgumentNode(n, MissingArgumentBehavior.UNDEFINED));
             arguments.add(transformArgument(readArgumentNode, n + 1));
         }
 

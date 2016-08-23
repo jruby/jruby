@@ -11,7 +11,6 @@ package org.jruby.truffle.language.parser.jruby;
 
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.nodes.Node;
-import com.oracle.truffle.api.object.HiddenKey;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.ast.MultipleAsgnNode;
@@ -27,6 +26,7 @@ import org.jruby.truffle.core.array.PrimitiveArrayNodeFactory;
 import org.jruby.truffle.core.cast.SplatCastNode;
 import org.jruby.truffle.core.cast.SplatCastNodeGen;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.arguments.ProfileArgumentNode;
 import org.jruby.truffle.language.arguments.ArrayIsAtLeastAsLargeAsNode;
 import org.jruby.truffle.language.arguments.MissingArgumentBehavior;
 import org.jruby.truffle.language.arguments.MissingKeywordArgumentNode;
@@ -261,7 +261,7 @@ public class LoadArgumentsTranslator extends Translator {
 
     private RubyNode loadSelf() {
         final FrameSlot slot = methodBodyTranslator.getEnvironment().getFrameDescriptor().findOrAddFrameSlot(SelfNode.SELF_IDENTIFIER);
-        return WriteLocalVariableNode.createWriteLocalVariableNode(context, null, slot, new ReadSelfNode());
+        return WriteLocalVariableNode.createWriteLocalVariableNode(context, null, slot, new ProfileArgumentNode(new ReadSelfNode()));
     }
 
     @Override
@@ -324,7 +324,7 @@ public class LoadArgumentsTranslator extends Translator {
             return PrimitiveArrayNodeFactory.read(context, sourceSection, loadArray(sourceSection), index);
         } else {
             if (state == State.PRE) {
-                return new ReadPreArgumentNode(index, isProc ? MissingArgumentBehavior.NIL : MissingArgumentBehavior.RUNTIME_ERROR);
+                return new ProfileArgumentNode(new ReadPreArgumentNode(index, isProc ? MissingArgumentBehavior.NIL : MissingArgumentBehavior.RUNTIME_ERROR));
             } else if (state == State.POST) {
                 return new ReadPostArgumentNode(-index);
             } else {

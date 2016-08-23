@@ -63,6 +63,7 @@ import org.jruby.truffle.language.RubyConstant;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
+import org.jruby.truffle.language.arguments.ProfileArgumentNode;
 import org.jruby.truffle.language.arguments.MissingArgumentBehavior;
 import org.jruby.truffle.language.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.language.arguments.ReadSelfNode;
@@ -88,7 +89,6 @@ import org.jruby.truffle.language.objects.IsANodeGen;
 import org.jruby.truffle.language.objects.IsFrozenNode;
 import org.jruby.truffle.language.objects.IsFrozenNodeGen;
 import org.jruby.truffle.language.objects.ReadInstanceVariableNode;
-import org.jruby.truffle.language.objects.SelfNode;
 import org.jruby.truffle.language.objects.SingletonClassNode;
 import org.jruby.truffle.language.objects.SingletonClassNodeGen;
 import org.jruby.truffle.language.objects.WriteInstanceVariableNode;
@@ -384,12 +384,12 @@ public abstract class ModuleNodes {
             final RubyNode checkArity = Translator.createCheckArityNode(getContext(), sourceSection, arity);
             final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, LexicalScope.NONE, arity, indicativeName, false, null, false, false, false);
 
-            final ReadSelfNode self = new ReadSelfNode();
+            final RubyNode self = new ProfileArgumentNode(new ReadSelfNode());
             final RubyNode accessInstanceVariable;
             if (isGetter) {
                 accessInstanceVariable = new ReadInstanceVariableNode(getContext(), sourceSection, ivar, self);
             } else {
-                ReadPreArgumentNode readArgument = new ReadPreArgumentNode(0, MissingArgumentBehavior.RUNTIME_ERROR);
+                RubyNode readArgument = new ProfileArgumentNode(new ReadPreArgumentNode(0, MissingArgumentBehavior.RUNTIME_ERROR));
                 accessInstanceVariable = new WriteInstanceVariableNode(getContext(), sourceSection, ivar, self, readArgument);
             }
             final RubyNode sequence = Translator.sequence(getContext(), sourceSection, Arrays.asList(checkArity, accessInstanceVariable));
@@ -1773,7 +1773,7 @@ public abstract class ModuleNodes {
         public UndefMethodNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             this.nameToJavaStringNode = NameToJavaStringNode.create();
-            this.raiseIfFrozenNode = new RaiseIfFrozenNode(context, sourceSection, new ReadSelfNode());
+            this.raiseIfFrozenNode = new RaiseIfFrozenNode(context, sourceSection, new ProfileArgumentNode(new ReadSelfNode()));
             this.methodUndefinedNode = DispatchHeadNodeFactory.createMethodCallOnSelf(context);
         }
 

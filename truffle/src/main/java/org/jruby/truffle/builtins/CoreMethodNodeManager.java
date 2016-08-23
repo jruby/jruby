@@ -30,6 +30,7 @@ import org.jruby.truffle.language.RubyConstant;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
+import org.jruby.truffle.language.arguments.ProfileArgumentNode;
 import org.jruby.truffle.language.arguments.MissingArgumentBehavior;
 import org.jruby.truffle.language.arguments.ReadBlockNode;
 import org.jruby.truffle.language.arguments.ReadCallerFrameNode;
@@ -40,7 +41,6 @@ import org.jruby.truffle.language.methods.Arity;
 import org.jruby.truffle.language.methods.ExceptionTranslatingNode;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.methods.SharedMethodInfo;
-import org.jruby.truffle.language.objects.SelfNode;
 import org.jruby.truffle.language.objects.SingletonClassNode;
 import org.jruby.truffle.language.parser.jruby.Translator;
 import org.jruby.truffle.platform.UnsafeGroup;
@@ -190,14 +190,14 @@ public class CoreMethodNodeManager {
         final boolean needsSelf = method.constructor() || (!method.isModuleFunction() && !method.onSingleton() && method.needsSelf());
 
         if (needsSelf) {
-            RubyNode readSelfNode = new ReadSelfNode();
+            RubyNode readSelfNode = new ProfileArgumentNode(new ReadSelfNode());
             argumentsNodes.add(transformArgument(context, sourceSection, method, readSelfNode, 0));
         }
 
         final int nArgs = required + optional;
 
         for (int n = 0; n < nArgs; n++) {
-            RubyNode readArgumentNode = new ReadPreArgumentNode(n, MissingArgumentBehavior.UNDEFINED);
+            RubyNode readArgumentNode = new ProfileArgumentNode(new ReadPreArgumentNode(n, MissingArgumentBehavior.UNDEFINED));
             argumentsNodes.add(transformArgument(context, sourceSection, method, readArgumentNode, n + 1));
         }
         if (method.rest()) {

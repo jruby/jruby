@@ -67,6 +67,7 @@ import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.SnippetNode;
 import org.jruby.truffle.language.arguments.MissingArgumentBehavior;
+import org.jruby.truffle.language.arguments.ProfileArgumentNode;
 import org.jruby.truffle.language.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.control.RaiseException;
@@ -1460,7 +1461,7 @@ public abstract class ArrayNodes {
 
             callTarget = Truffle.getRuntime().createCallTarget(new RubyRootNode(context, null, null, sharedMethodInfo, MaxBlockNodeFactory.create(context, null, new RubyNode[]{
                                         new ReadDeclarationVariableNode(context, null, LocalVariableType.FRAME_LOCAL, 1, frameSlot),
-                                        new ReadPreArgumentNode(0, MissingArgumentBehavior.RUNTIME_ERROR)
+                                        new ProfileArgumentNode(new ReadPreArgumentNode(0, MissingArgumentBehavior.RUNTIME_ERROR))
                                 }), false));
         }
 
@@ -1582,7 +1583,7 @@ public abstract class ArrayNodes {
 
             callTarget = Truffle.getRuntime().createCallTarget(new RubyRootNode(context, null, null, sharedMethodInfo, MinBlockNodeFactory.create(context, null, new RubyNode[]{
                                         new ReadDeclarationVariableNode(context, null, LocalVariableType.FRAME_LOCAL, 1, frameSlot),
-                                        new ReadPreArgumentNode(0, MissingArgumentBehavior.RUNTIME_ERROR)
+                                        new ProfileArgumentNode(new ReadPreArgumentNode(0, MissingArgumentBehavior.RUNTIME_ERROR))
                                 }), false));
         }
 

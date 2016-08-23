@@ -16,6 +16,7 @@ import org.jruby.ast.RestArgNode;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.arguments.MissingArgumentBehavior;
+import org.jruby.truffle.language.arguments.ProfileArgumentNode;
 import org.jruby.truffle.language.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.language.control.SequenceNode;
 
@@ -94,7 +95,7 @@ public class ReloadArgumentsTranslator extends Translator {
 
     @Override
     public RubyNode visitMultipleAsgnNode(org.jruby.ast.MultipleAsgnNode node) {
-        return new ReadPreArgumentNode(index, MissingArgumentBehavior.NIL);
+        return new ProfileArgumentNode(new ReadPreArgumentNode(index, MissingArgumentBehavior.NIL));
     }
 
     @Override

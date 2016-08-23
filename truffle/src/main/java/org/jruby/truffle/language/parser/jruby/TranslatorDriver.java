@@ -29,6 +29,7 @@ import org.jruby.truffle.language.DataNode;
 import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
+import org.jruby.truffle.language.arguments.ProfileArgumentNode;
 import org.jruby.truffle.language.arguments.MissingArgumentBehavior;
 import org.jruby.truffle.language.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.language.arguments.ReadSelfNode;
@@ -186,7 +187,7 @@ public class TranslatorDriver implements Parser {
         // Load arguments
 
         final FrameSlot selfSlot = environment.getFrameDescriptor().findOrAddFrameSlot(SelfNode.SELF_IDENTIFIER);
-        final WriteLocalVariableNode writeSelfNode = WriteLocalVariableNode.createWriteLocalVariableNode(context, null, selfSlot, new ReadSelfNode());
+        final WriteLocalVariableNode writeSelfNode = WriteLocalVariableNode.createWriteLocalVariableNode(context, null, selfSlot, new ProfileArgumentNode(new ReadSelfNode()));
         truffleNode = Translator.sequence(context, sourceSection, Arrays.asList(writeSelfNode, truffleNode));
 
         if (argumentNames != null && argumentNames.length > 0) {
@@ -194,7 +195,7 @@ public class TranslatorDriver implements Parser {
 
             for (int n = 0; n < argumentNames.length; n++) {
                 final String name = argumentNames[n];
-                final RubyNode readNode = new ReadPreArgumentNode(n, MissingArgumentBehavior.NIL);
+                final RubyNode readNode = new ProfileArgumentNode(new ReadPreArgumentNode(n, MissingArgumentBehavior.NIL));
                 final FrameSlot slot = environment.getFrameDescriptor().findFrameSlot(name);
                 sequence.add(WriteLocalVariableNode.createWriteLocalVariableNode(context, sourceSection, slot, readNode));
             }
