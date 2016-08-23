@@ -167,6 +167,10 @@ class Dir
       end
     end
 
+    # Truffle: ensure glob'd files are always sorted in consistent order,
+    # it avoids headaches due to platform differences (OS X is sorted, Linux not).
+    matches.sort!
+
     if block
       matches.each(&block)
       return nil
