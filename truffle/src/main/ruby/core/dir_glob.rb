@@ -324,7 +324,6 @@ class Dir
       matches = []
       env = Environment.new(matches)
       node.call env, nil
-      env.matches
       # Truffle: ensure glob'd files are always sorted in consistent order,
       # it avoids headaches due to platform differences (OS X is sorted, Linux not).
       matches.sort!
