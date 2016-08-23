@@ -255,11 +255,6 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
         if (callCount++ >= Options.JIT_THRESHOLD.load()) runtime.getJITCompiler().buildThresholdReached(context, this);
     }
 
-    @Override
-    public DynamicMethod dup() {
-        return new InterpretedIRMethod(method, getVisibility(), implementationClass);
-    }
-
     public String getClassName(ThreadContext context) {
         return null;
     }

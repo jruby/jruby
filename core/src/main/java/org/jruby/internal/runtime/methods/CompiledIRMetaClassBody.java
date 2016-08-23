@@ -50,9 +50,4 @@ public class CompiledIRMetaClassBody extends CompiledIRMethod {
         }
         context.setCurrentVisibility(getVisibility());
     }
-
-    @Override
-    public DynamicMethod dup() {
-        return new CompiledIRMetaClassBody(variable, method, implementationClass);
-    }
 }

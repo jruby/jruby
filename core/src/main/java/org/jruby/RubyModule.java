@@ -82,7 +82,6 @@ import org.jruby.internal.runtime.methods.ProcMethod;
 import org.jruby.internal.runtime.methods.Scoping;
 import org.jruby.internal.runtime.methods.SynchronizedDynamicMethod;
 import org.jruby.internal.runtime.methods.UndefinedMethod;
-import org.jruby.internal.runtime.methods.WrapperMethod;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
@@ -454,7 +453,11 @@ public class RubyModule extends RubyObject {
     // note that addMethod now does its own put, so any change made to
     // functionality here should be made there as well
     private void putMethod(String name, DynamicMethod method) {
-        if (hasPrepends()) method = new WrapperMethod(methodLocation, method, method.getVisibility());
+        if (hasPrepends()) {
+            method = method.dup();
+            method.setImplementationClass(methodLocation);
+        }
+
         methodLocation.getMethodsForWrite().put(name, method);
 
         getRuntime().addProfiledMethod(name, method);
@@ -1194,7 +1197,10 @@ public class RubyModule extends RubyObject {
      * @param method The method to bind
      */
     public final void addMethodAtBootTimeOnly(String name, DynamicMethod method) {
-        if (hasPrepends()) method = new WrapperMethod(methodLocation, method, method.getVisibility());
+        if (hasPrepends()) {
+            method = method.dup();
+            method.setImplementationClass(methodLocation);
+        }
 
         methodLocation.getMethodsForWrite().put(name, method);
 
@@ -1776,7 +1782,11 @@ public class RubyModule extends RubyObject {
                 method.setVisibility(visibility);
             } else {
                 // FIXME: Why was this using a FullFunctionCallbackMethod before that did callSuper?
-                methodLocation.addMethod(name, new WrapperMethod(this, method, visibility));
+                DynamicMethod newMethod = method.dup();
+                newMethod.setImplementationClass(this);
+                newMethod.setVisibility(visibility);
+
+                methodLocation.addMethod(name, newMethod);
             }
 
             invalidateCoreClasses();
@@ -1971,7 +1981,9 @@ public class RubyModule extends RubyObject {
 
             checkValidBindTargetFrom(context, (RubyModule)method.owner(context));
 
-            newMethod = new WrapperMethod(this, method.getMethod(), visibility);
+            newMethod = method.getMethod().dup();
+            newMethod.setImplementationClass(this);
+            newMethod.setVisibility(visibility);
         } else {
             throw runtime.newTypeError("wrong argument type " + arg1.getType().getName() + " (expected Proc/Method)");
         }
@@ -2728,7 +2740,10 @@ public class RubyModule extends RubyObject {
             for (int i = 0; i < args.length; i++) {
                 String name = args[i].asJavaString().intern();
                 DynamicMethod method = deepMethodSearch(name, runtime);
-                getSingletonClass().addMethod(name, new WrapperMethod(getSingletonClass(), method, PUBLIC));
+                DynamicMethod newMethod = method.dup();
+                newMethod.setImplementationClass(getSingletonClass());
+                newMethod.setVisibility(PUBLIC);
+                getSingletonClass().addMethod(name, newMethod);
                 callMethod(context, "singleton_method_added", context.runtime.fastNewSymbol(name));
             }
         }
