@@ -198,7 +198,7 @@ module Truffle
 
     begin
       apply_pattern = -> (pattern, old, options) do
-        Dir.glob(pattern) do |file|
+        Dir.glob(pattern).sort.each do |file|
           if options[:exclude_pattern].any? { |p| /#{p}/ =~ file }
             puts "skipped: #{file}"
             next
@@ -370,7 +370,7 @@ module Truffle
         @gem_name = if @options[:global][:configuration]
                       @options[:global][:configuration].to_sym
                     else
-                      candidates = Dir['*.gemspec']
+                      candidates = Dir['*.gemspec'].sort
                       if candidates.size == 1
                         gem_name, _ = candidates.first.split('.')
                         gem_name.to_sym
@@ -518,7 +518,7 @@ module Truffle
           gem_name, options = parse_gemfile_line(line)
           repo_name         = options[:git].split('/').last
           repo_match        = "#{gems_path}/bundler/gems/#{repo_name}-*"
-          repo_path         = Dir[repo_match].first
+          repo_path         = Dir[repo_match].sort.first
 
           ["# Overridden by jtr\n",
            '# ' + line,
@@ -623,7 +623,7 @@ module Truffle
       end
 
       executable = if @options[:run][:executable]
-                     executables = Dir.glob("#{@options[:global][:truffle_bundle_path]}/jruby+truffle/*/gems/*/{bin,exe}/*")
+                     executables = Dir.glob("#{@options[:global][:truffle_bundle_path]}/jruby+truffle/*/gems/*/{bin,exe}/*").sort
                      executables.find { |path| File.basename(path) == @options[:run][:executable] } or
                          raise "no executable with name '#{@options[:run][:executable]}' found"
                    end
