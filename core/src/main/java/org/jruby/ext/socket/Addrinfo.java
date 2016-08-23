@@ -34,6 +34,7 @@ import java.net.NetworkInterface;
 import java.net.SocketAddress;
 import java.net.UnknownHostException;
 import java.net.SocketException;
+import java.util.regex.Pattern;
 import org.jruby.exceptions.RaiseException;
 
 import org.jruby.util.TypeConverter;
@@ -291,13 +292,7 @@ public class Addrinfo extends RubyObject {
 
         // getHostAddress() returns ip in the full form, but MRI uses short;
         if (getInetAddress() instanceof Inet6Address) {
-            String host;
-            if (getInet6Address().isLoopbackAddress()) {
-                host = "::1";
-            } else {
-                String fullHost = getInetSocketAddress().getAddress().getHostAddress();
-                host = fullHost.replaceAll("((?::0\\b){2,}):?(?!\\S*\\b\\1:0\\b)(\\S*)", "::$2");
-            }
+            String host = ipv6_ip();
             String hostPort = port == 0 ? host : "[" + host + "]:" + port;
 
             return context.runtime.newString(hostPort);
@@ -441,7 +436,10 @@ public class Addrinfo extends RubyObject {
             throw SocketUtils.sockerr(context.runtime, "need IPv4 or IPv6 address");
         }
         // TODO: (gf) for IPv6 link-local address this appends a numeric interface index (like MS-Windows), should append interface name on Linux
-        return context.runtime.newString(((InetSocketAddress) socketAddress).getAddress().getHostAddress());
+        String fullHost = ((InetSocketAddress) socketAddress).getAddress().getHostAddress();
+        String host = (getAddressFamily() == AF_INET6) ? ipv6_ip() : fullHost;
+
+        return context.runtime.newString(host);
     }
 
     @JRubyMethod(notImplemented = true)
@@ -651,8 +649,21 @@ public class Addrinfo extends RubyObject {
       return ((i&0xff)<<8)+((i&0xff00)>>8);
     }
 
+    private String ipv6_ip() {
+        if (getAddressFamily() != AF_INET6) return null;
+
+        InetAddress in = getInetAddress();
+
+        if (in.isLoopbackAddress()) return "::1";
+        return ipv6Compact(in.getHostAddress());
+    }
+
     private static RuntimeException sockerr(Ruby runtime, String msg) {
         return new RaiseException(runtime, runtime.getClass("SocketError"), msg, true);
+    }
+
+    private static String ipv6Compact(String fullHost) {
+        return IPV6_COMPACT.matcher(fullHost).replaceAll("::$2");
     }
 
     @JRubyMethod(rest = true, notImplemented = true)
@@ -742,4 +753,5 @@ public class Addrinfo extends RubyObject {
     private NetworkInterface networkInterface;
     private boolean isBroadcast;
     private Protocol protocol = Protocol.getProtocolByNumber(0);
+    private static final Pattern IPV6_COMPACT = Pattern.compile("((?::0\\b){2,}):?(?!\\S*\\b\\1:0\\b)(\\S*)");
 }
