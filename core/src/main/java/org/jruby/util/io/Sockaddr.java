@@ -5,6 +5,7 @@ import jnr.unixsocket.UnixSocketAddress;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyNumeric;
+import org.jruby.RubyBoolean;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.ext.socket.Addrinfo;
 import org.jruby.platform.Platform;
@@ -177,13 +178,25 @@ public class Sockaddr {
 
     public static RubyArray unpack_sockaddr_in(ThreadContext context, IRubyObject addr) {
         final Ruby runtime = context.runtime;
+
+        if (addr instanceof Addrinfo) {
+            Addrinfo addrinfo = (Addrinfo)addr;
+
+            if (((RubyBoolean)addrinfo.ip_p(context)).isFalse()) {
+                throw runtime.newArgumentError("not an AF_INET/AF_INET6 sockaddr");
+            }
+
+            return RubyArray.newArray(runtime, addrinfo.ip_port(context),
+                                      addrinfo.ip_address(context));
+        }
+
         ByteList val = addr.convertToString().getByteList();
 
         AddressFamily af = getAddressFamilyFromSockaddr(runtime, val);
 
         if (af != AddressFamily.AF_INET &&
-                af != AddressFamily.AF_INET6) {
-            throw runtime.newArgumentError("can't resolve socket address of wrong type");
+            af != AddressFamily.AF_INET6) {
+            throw runtime.newArgumentError("not an AF_INET/AF_INET6 sockaddr");
         }
 
         int port = ((val.get(2)&0xff) << 8) + (val.get(3)&0xff);
@@ -224,6 +237,16 @@ public class Sockaddr {
 
     public static IRubyObject unpack_sockaddr_un(ThreadContext context, IRubyObject addr) {
         final Ruby runtime = context.runtime;
+
+        if (addr instanceof Addrinfo) {
+            Addrinfo addrinfo = (Addrinfo)addr;
+
+            if (((RubyBoolean)addrinfo.unix_p(context)).isFalse()) {
+                throw runtime.newArgumentError("not an AF_UNIX sockaddr");
+            }
+            return addrinfo.unix_path(context);
+        }
+
         ByteList val = addr.convertToString().getByteList();
 
         AddressFamily af = getAddressFamilyFromSockaddr(runtime, val);
