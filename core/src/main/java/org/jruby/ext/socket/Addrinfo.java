@@ -422,7 +422,7 @@ public class Addrinfo extends RubyObject {
         return context.runtime.newBoolean(getAddressFamily() == AF_UNIX);
     }
 
-    @JRubyMethod(name = "ip?", notImplemented = true)
+    @JRubyMethod(name = "ip?")
     public IRubyObject ip_p(ThreadContext context) {
         return context.runtime.newBoolean(getAddressFamily() == AF_INET || getAddressFamily() == AF_INET6);
     }
