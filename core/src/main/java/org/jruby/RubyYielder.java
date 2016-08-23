@@ -96,17 +96,13 @@ public class RubyYielder extends RubyObject {
     }
 
     @JRubyMethod(rest = true)
-    public IRubyObject yield(ThreadContext context, IRubyObject[]args) {
+    public IRubyObject yield(ThreadContext context, IRubyObject[] args) {
         checkInit();
         return proc.call19(context, args, Block.NULL_BLOCK);
     }
 
     @JRubyMethod(name = "<<", rest = true)
-    public IRubyObject op_lshift(ThreadContext context, IRubyObject[]args) {
-        if (args.length == 1 &&
-                args[0] instanceof RubyArray &&
-                ((RubyArray) args[0]).getLength() == 1)
-            args[0] = RubyArray.newArray(context.runtime, args[0]);
+    public IRubyObject op_lshift(ThreadContext context, IRubyObject[] args) {
         yield(context, args);
         return this;
     }
