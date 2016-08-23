@@ -17,6 +17,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
@@ -77,7 +78,8 @@ public class Sockaddr {
     }
 
     public static UnixSocketAddress addressFromSockaddr_un(ThreadContext context, IRubyObject arg) {
-        String pathStr = pathFromSockaddr_un(context, arg);
+        byte[] raw = arg.convertToString().getBytes();
+        String pathStr = pathFromSockaddr_un(context, raw);
 
         return new UnixSocketAddress(new File(pathStr));
     }
@@ -222,23 +224,27 @@ public class Sockaddr {
         return RubyArray.newArray(runtime, runtime.newFixnum(port), RubyString.newString(runtime, formatAddr));
     }
 
-    public static IRubyObject pack_sockaddr_un(ThreadContext context, String path) {
-        ByteArrayOutputStream bufS = new ByteArrayOutputStream();
+    public static IRubyObject pack_sockaddr_un(ThreadContext context, String unixpath) {
+        final Ruby runtime = context.runtime;
 
-        try {
-            DataOutputStream ds = new DataOutputStream(bufS);
-            writeSockaddrHeader(AddressFamily.AF_UNIX, ds);
-            ds.writeUTF(path);
+        ByteBuffer buf = ByteBuffer.allocate(SOCKADDR_UN_SIZE);
 
-            for(int i=path.length();i<104;i++) {
-                ds.writeInt(0);
-            }
-        } catch (IOException e) {
-            throw sockerr(context.runtime, "pack_sockaddr_un: internal error");
+        byte[] path = unixpath.getBytes();
+
+        if (path.length > SOCKADDR_UN_PATH) {
+            String errorMsg = "too long unix socket path (%d bytes given but %d bytes max)";
+            String formattedErrorMsg = String.format(errorMsg, path.length, SOCKADDR_UN_PATH);
+            throw runtime.newArgumentError(formattedErrorMsg);
         }
 
-        return context.runtime.newString(new ByteList(bufS.toByteArray(),
-                false));
+        int afamily = AddressFamily.AF_UNIX.intValue();
+        int high = (afamily & 0xff00) >> 8;
+        int low = afamily & 0xff;
+        buf.put((byte)high);
+        buf.put((byte)low);
+        buf.put(path);
+
+        return RubyString.newString(runtime, buf.array());
     }
 
     public static IRubyObject unpack_sockaddr_un(ThreadContext context, IRubyObject addr) {
@@ -253,15 +259,15 @@ public class Sockaddr {
             return addrinfo.unix_path(context);
         }
 
-        ByteList val = addr.convertToString().getByteList();
+        byte[] val = addr.convertToString().getBytes();
 
-        AddressFamily af = getAddressFamilyFromSockaddr(runtime, val);
+        AddressFamily af = AddressFamily.valueOf(uint16(val[0], val[1]));
 
         if (af != AddressFamily.AF_UNIX) {
             throw runtime.newArgumentError("not an AF_UNIX sockaddr");
         }
 
-        String filename = pathFromSockaddr_un(context, addr);
+        String filename = pathFromSockaddr_un(context, val);
         return context.runtime.newString(filename);
     }
 
@@ -299,18 +305,13 @@ public class Sockaddr {
         return AddressFamily.valueOf((high << 8) + low);
     }
 
-    private static String pathFromSockaddr_un(ThreadContext context, IRubyObject arg) {
-        ByteList bl = arg.convertToString().getByteList();
-        byte[] raw = bl.bytes();
-
+    private static String pathFromSockaddr_un(ThreadContext context, byte[] raw) {
         int end = 2;
         for (; end < raw.length; end++) {
             if (raw[end] == 0) break;
         }
 
-        ByteList path = new ByteList(raw, 2, end, false);
-
-        return Helpers.decodeByteList(context.runtime, path);
+        return new String(raw, 2, (end - 2));
     }
 
     public static SocketAddress sockaddrFromBytes(Ruby runtime, byte[] val) throws IOException {
@@ -345,4 +346,9 @@ public class Sockaddr {
     private static int uint16(byte high, byte low) {
         return ((high & 0xFF) << 8) + (low & 0xFF);
     }
+
+    // sizeof(sockaddr_un) on Linux
+    // 2 bytes sun_family + 108 bytes sun_path
+    private static final int SOCKADDR_UN_PATH = 108;
+    private static final int SOCKADDR_UN_SIZE = 2 + SOCKADDR_UN_PATH;
 }
