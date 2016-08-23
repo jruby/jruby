@@ -31,6 +31,7 @@ import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.arguments.MissingArgumentBehavior;
 import org.jruby.truffle.language.arguments.ReadPreArgumentNode;
+import org.jruby.truffle.language.arguments.ReadSelfNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.exceptions.TopLevelRaiseHandler;
@@ -41,6 +42,7 @@ import org.jruby.truffle.language.methods.CatchRetryAsErrorNode;
 import org.jruby.truffle.language.methods.CatchReturnAsErrorNode;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.methods.SharedMethodInfo;
+import org.jruby.truffle.language.objects.SelfNode;
 import org.jruby.truffle.language.parser.Parser;
 import org.jruby.truffle.language.parser.ParserContext;
 
@@ -182,6 +184,10 @@ public class TranslatorDriver implements Parser {
         }
 
         // Load arguments
+
+        final FrameSlot selfSlot = environment.getFrameDescriptor().findOrAddFrameSlot(SelfNode.SELF_IDENTIFIER);
+        final WriteLocalVariableNode writeSelfNode = WriteLocalVariableNode.createWriteLocalVariableNode(context, null, selfSlot, new ReadSelfNode());
+        truffleNode = Translator.sequence(context, sourceSection, Arrays.asList(writeSelfNode, truffleNode));
 
         if (argumentNames != null && argumentNames.length > 0) {
             final List<RubyNode> sequence = new ArrayList<>();

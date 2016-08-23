@@ -65,6 +65,7 @@ import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.arguments.MissingArgumentBehavior;
 import org.jruby.truffle.language.arguments.ReadPreArgumentNode;
+import org.jruby.truffle.language.arguments.ReadSelfNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.constants.GetConstantNode;
 import org.jruby.truffle.language.constants.LookupConstantNode;
@@ -383,7 +384,7 @@ public abstract class ModuleNodes {
             final RubyNode checkArity = Translator.createCheckArityNode(getContext(), sourceSection, arity);
             final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, LexicalScope.NONE, arity, indicativeName, false, null, false, false, false);
 
-            final SelfNode self = new SelfNode();
+            final ReadSelfNode self = new ReadSelfNode();
             final RubyNode accessInstanceVariable;
             if (isGetter) {
                 accessInstanceVariable = new ReadInstanceVariableNode(getContext(), sourceSection, ivar, self);
@@ -1772,7 +1773,7 @@ public abstract class ModuleNodes {
         public UndefMethodNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             this.nameToJavaStringNode = NameToJavaStringNode.create();
-            this.raiseIfFrozenNode = new RaiseIfFrozenNode(context, sourceSection, new SelfNode());
+            this.raiseIfFrozenNode = new RaiseIfFrozenNode(context, sourceSection, new ReadSelfNode());
             this.methodUndefinedNode = DispatchHeadNodeFactory.createMethodCallOnSelf(context);
         }
 

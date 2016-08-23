@@ -37,6 +37,7 @@ import org.jruby.truffle.language.arguments.ReadOptionalArgumentNode;
 import org.jruby.truffle.language.arguments.ReadPostArgumentNode;
 import org.jruby.truffle.language.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.language.arguments.ReadRestArgumentNode;
+import org.jruby.truffle.language.arguments.ReadSelfNode;
 import org.jruby.truffle.language.arguments.RunBlockKWArgsHelperNode;
 import org.jruby.truffle.language.control.IfElseNode;
 import org.jruby.truffle.language.control.IfNode;
@@ -108,7 +109,9 @@ public class LoadArgumentsTranslator extends Translator {
 
         final List<RubyNode> sequence = new ArrayList<>();
 
-        sequence.add(loadSelf());
+        //if (!arraySlotStack.isEmpty()) {
+            sequence.add(loadSelf());
+        //}
 
         final org.jruby.ast.Node[] args = node.getArgs();
 
@@ -257,8 +260,8 @@ public class LoadArgumentsTranslator extends Translator {
     }
 
     private RubyNode loadSelf() {
-        final FrameSlot slot = methodBodyTranslator.getEnvironment().getFrameDescriptor().findOrAddFrameSlot(new HiddenKey("(self)"));
-        return WriteLocalVariableNode.createWriteLocalVariableNode(context, null, slot, new SelfNode());
+        final FrameSlot slot = methodBodyTranslator.getEnvironment().getFrameDescriptor().findOrAddFrameSlot(SelfNode.SELF_IDENTIFIER);
+        return WriteLocalVariableNode.createWriteLocalVariableNode(context, null, slot, new ReadSelfNode());
     }
 
     @Override

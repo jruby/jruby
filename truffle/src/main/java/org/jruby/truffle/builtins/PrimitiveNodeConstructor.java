@@ -17,6 +17,7 @@ import org.jruby.truffle.core.numeric.FixnumLowerNodeGen;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.arguments.MissingArgumentBehavior;
 import org.jruby.truffle.language.arguments.ReadPreArgumentNode;
+import org.jruby.truffle.language.arguments.ReadSelfNode;
 import org.jruby.truffle.language.control.ReturnID;
 import org.jruby.truffle.language.objects.SelfNode;
 
@@ -46,7 +47,7 @@ public class PrimitiveNodeConstructor {
         List<Class<?>> signature = signatures.get(0);
 
         if (annotation.needsSelf()) {
-            arguments.add(transformArgument(new SelfNode(), 0));
+            arguments.add(transformArgument(new ReadSelfNode(), 0));
             argumentsCount--;
         }
 

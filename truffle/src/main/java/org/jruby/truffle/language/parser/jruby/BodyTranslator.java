@@ -73,6 +73,7 @@ import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.arguments.ArrayIsAtLeastAsLargeAsNode;
+import org.jruby.truffle.language.arguments.ReadSelfNode;
 import org.jruby.truffle.language.arguments.SingleBlockArgNode;
 import org.jruby.truffle.language.constants.ReadConstantWithLexicalScopeNode;
 import org.jruby.truffle.language.constants.ReadConstantNode;
@@ -133,6 +134,7 @@ import org.jruby.truffle.language.locals.InitFlipFlopSlotNode;
 import org.jruby.truffle.language.locals.LocalFlipFlopStateNode;
 import org.jruby.truffle.language.locals.LocalVariableType;
 import org.jruby.truffle.language.locals.ReadLocalVariableNode;
+import org.jruby.truffle.language.locals.WriteLocalVariableNode;
 import org.jruby.truffle.language.methods.AddMethodNodeGen;
 import org.jruby.truffle.language.methods.Arity;
 import org.jruby.truffle.language.methods.BlockDefinitionNode;
@@ -615,7 +617,7 @@ public class BodyTranslator extends Translator {
     }
 
     private RubyNode translateCheckFrozen(SourceSection sourceSection) {
-        return new RaiseIfFrozenNode(context, sourceSection, new SelfNode());
+        return new RaiseIfFrozenNode(context, sourceSection, new SelfNode(environment.getFrameDescriptor().findOrAddFrameSlot(SelfNode.SELF_IDENTIFIER)));
     }
 
     private RubyNode translateCallNode(org.jruby.ast.CallNode node, boolean ignoreVisibility, boolean isVCall, boolean isAttrAssign) {
@@ -946,6 +948,10 @@ public class BodyTranslator extends Translator {
         if (environment.getFlipFlopStates().size() > 0) {
             body = sequence(context, sourceSection, Arrays.asList(initFlipFlopStates(sourceSection), body));
         }
+
+        final FrameSlot selfSlot = environment.getFrameDescriptor().findOrAddFrameSlot(SelfNode.SELF_IDENTIFIER);
+        final WriteLocalVariableNode writeSelfNode = WriteLocalVariableNode.createWriteLocalVariableNode(context, null, selfSlot, new ReadSelfNode());
+        body = sequence(context, sourceSection, Arrays.asList(writeSelfNode, body));
 
         final RubyRootNode rootNode = new RubyRootNode(context, sourceSection, environment.getFrameDescriptor(), environment.getSharedMethodInfo(), body, environment.needsDeclarationFrame());
 
@@ -1754,7 +1760,7 @@ public class BodyTranslator extends Translator {
 
         // Every case will use a SelfNode, just don't it use more than once.
         // Also note the check for frozen.
-        final RubyNode self = new RaiseIfFrozenNode(context, sourceSection, new SelfNode());
+        final RubyNode self = new RaiseIfFrozenNode(context, sourceSection, new SelfNode(environment.getFrameDescriptor().findOrAddFrameSlot(SelfNode.SELF_IDENTIFIER)));
 
         final String path = getSourcePath(sourceSection);
         final String corePath = buildCorePath("");
@@ -1802,7 +1808,7 @@ public class BodyTranslator extends Translator {
         final String name = node.getName();
 
         // About every case will use a SelfNode, just don't it use more than once.
-        final SelfNode self = new SelfNode();
+        final SelfNode self = new SelfNode(environment.getFrameDescriptor().findOrAddFrameSlot(SelfNode.SELF_IDENTIFIER));
 
         final String path = getSourcePath(sourceSection);
         final String corePath = buildCorePath("");
@@ -2816,7 +2822,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitSelfNode(org.jruby.ast.SelfNode node) {
-        final RubyNode ret = new SelfNode();
+        final RubyNode ret = new SelfNode(environment.getFrameDescriptor().findOrAddFrameSlot(SelfNode.SELF_IDENTIFIER));
         return addNewlineIfNeeded(node, ret);
     }
 

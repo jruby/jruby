@@ -9,19 +9,34 @@
  */
 package org.jruby.truffle.language.objects;
 
+import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.profiles.ValueProfile;
-import org.jruby.truffle.RubyContext;
+import com.oracle.truffle.api.object.HiddenKey;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.arguments.RubyArguments;
+import org.jruby.truffle.language.locals.ReadFrameSlotNode;
+import org.jruby.truffle.language.locals.ReadFrameSlotNodeGen;
 
 public class SelfNode extends RubyNode {
 
-    private final ValueProfile valueProfile = ValueProfile.createEqualityProfile();
+    public static HiddenKey SELF_IDENTIFIER = new HiddenKey("(self)");
+
+    private final FrameSlot selfSlot;
+
+    @Child private ReadFrameSlotNode readSelfSlotNode;
+
+    public SelfNode(FrameSlot selfSlot) {
+        this.selfSlot = selfSlot;
+    }
 
     @Override
     public Object execute(VirtualFrame frame) {
-        return valueProfile.profile(RubyArguments.getSelf(frame));
+        if (readSelfSlotNode == null) {
+            CompilerDirectives.transferToInterpreterAndInvalidate();
+            readSelfSlotNode = insert(ReadFrameSlotNodeGen.create(selfSlot));
+        }
+
+        return readSelfSlotNode.executeRead(frame);
     }
 
     @Override

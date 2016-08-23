@@ -35,6 +35,7 @@ import org.jruby.truffle.language.arguments.ReadBlockNode;
 import org.jruby.truffle.language.arguments.ReadCallerFrameNode;
 import org.jruby.truffle.language.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.language.arguments.ReadRemainingArgumentsNode;
+import org.jruby.truffle.language.arguments.ReadSelfNode;
 import org.jruby.truffle.language.methods.Arity;
 import org.jruby.truffle.language.methods.ExceptionTranslatingNode;
 import org.jruby.truffle.language.methods.InternalMethod;
@@ -189,7 +190,7 @@ public class CoreMethodNodeManager {
         final boolean needsSelf = method.constructor() || (!method.isModuleFunction() && !method.onSingleton() && method.needsSelf());
 
         if (needsSelf) {
-            RubyNode readSelfNode = new SelfNode();
+            RubyNode readSelfNode = new ReadSelfNode();
             argumentsNodes.add(transformArgument(context, sourceSection, method, readSelfNode, 0));
         }
 
