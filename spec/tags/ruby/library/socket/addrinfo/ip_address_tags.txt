@@ -1,2 +1,1 @@
 fails:Addrinfo#ip_address for an ipv6 socket returns the ip address
-fails:Addrinfo#ip_address for a unix socket raises an exception
