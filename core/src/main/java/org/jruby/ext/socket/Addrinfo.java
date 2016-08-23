@@ -269,15 +269,16 @@ public class Addrinfo extends RubyObject {
 
     @JRubyMethod
     public IRubyObject inspect(ThreadContext context) {
+        String base = "#<Addrinfo: %s>";
+        String val;
+
         if (interfaceLink == true) {
-            return context.runtime.newString("#<Addrinfo: " + packet_inspect() + ">");
-        } else {
-            if (socketAddress instanceof InetSocketAddress) {
-                return context.runtime.newString("#<Addrinfo: " + getInetSocketAddress().getAddress().getHostAddress() + ">");
-            } else {
-                return context.runtime.newString("#<Addrinfo: " + getUnixSocketAddress().path() + ">");
-            }
+            val = packet_inspect();
+        }  else {
+            val = inspect_sockaddr(context).toString();
         }
+
+        return context.runtime.newString(String.format(base, val));
     }
 
     @JRubyMethod
