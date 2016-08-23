@@ -605,13 +605,15 @@ public abstract class RubyBasicSocket extends RubyIO {
     }
 
     protected IRubyObject getSocknameCommon(ThreadContext context, String caller) {
-        InetSocketAddress sock = getInetSocketAddress();
+        if (getInetSocketAddress() != null) {
+            return Sockaddr.pack_sockaddr_in(context, getInetSocketAddress());
+        }
 
-        if (sock != null) return Sockaddr.pack_sockaddr_in(context, sock);
+        if (getUnixSocketAddress() != null) {
+            return Sockaddr.pack_sockaddr_un(context, getUnixSocketAddress().path());
+        }
 
-        UnixSocketAddress unixSocketAddress = getUnixSocketAddress();
-
-        return Sockaddr.pack_sockaddr_un(context, unixSocketAddress.path());
+        return Sockaddr.pack_sockaddr_in(context, 0, "0.0.0.0");
     }
 
     private IRubyObject shutdownInternal(ThreadContext context, int how) throws BadDescriptorException {
