@@ -426,7 +426,7 @@ public abstract class ThreadNodes {
                 DynamicObject rubyClass,
                 @Cached("create()") AllocateObjectNode allocateObjectNode,
                 @Cached("createReadAbortOnExceptionNode()") ReadObjectFieldNode readAbortOnException ) {
-            final DynamicObject rootGroup = Layouts.THREAD.getThreadGroup(getContext().getThreadManager().getRootThread());
+            final DynamicObject currentGroup = Layouts.THREAD.getThreadGroup(getContext().getThreadManager().getCurrentThread());
             final DynamicObject object = allocateObjectNode.allocate(
                     rubyClass,
                     ThreadManager.createThreadLocals(getContext()),
@@ -441,7 +441,7 @@ public abstract class ThreadNodes {
                     new AtomicReference<>(null),
                     new AtomicBoolean(false),
                     new AtomicInteger(0),
-                    rootGroup);
+                    currentGroup);
 
             Layouts.THREAD.setFiberManagerUnsafe(object, new FiberManager(getContext(), object)); // Because it is cyclic
 

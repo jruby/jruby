@@ -60,10 +60,6 @@
 
 class Thread
 
-  def initialize
-    Truffle.invoke_primitive :thread_set_group, self, Thread.current.group
-  end
-
   # Implementation note: ideally, the recursive_objects
   # lookup table would be different per method call.
   # Currently it doesn't cause problems, but if ever
