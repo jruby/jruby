@@ -17,7 +17,7 @@ public class ProfileArgumentNode extends RubyNode {
 
     @Child private RubyNode readArgumentNode;
 
-    private final ValueProfile valueProfile = ValueProfile.createEqualityProfile();
+    private final ValueProfile valueProfile = ValueProfile.createClassProfile();
 
     public ProfileArgumentNode(RubyNode readArgumentNode) {
         this.readArgumentNode = readArgumentNode;
