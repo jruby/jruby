@@ -788,7 +788,15 @@ public class CoreLibrary {
             });
         }
 
-        ForkJoinPool.commonPool().invokeAll(tasks);
+        for (Future<Void> future : ForkJoinPool.commonPool().invokeAll(tasks)) {
+            try {
+                future.get();
+            } catch (InterruptedException e) {
+                throw new JavaException(e);
+            } catch (ExecutionException e) {
+                throw new JavaException(e.getCause());
+            }
+        }
 
         coreMethodNodeManager.allMethodInstalled();
 
