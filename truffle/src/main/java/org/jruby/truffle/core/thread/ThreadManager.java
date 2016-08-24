@@ -49,13 +49,14 @@ public class ThreadManager {
 
     public ThreadManager(RubyContext context) {
         this.context = context;
-        this.rootThread = createRubyThread(context);
+        final DynamicObject group = Layouts.THREAD_GROUP.createThreadGroup(context.getCoreLibrary().getThreadGroupFactory(), false);
+        this.rootThread = createRubyThread(context, group);
     }
 
     public static final InterruptMode DEFAULT_INTERRUPT_MODE = InterruptMode.IMMEDIATE;
     public static final Status DEFAULT_STATUS = Status.RUN;
 
-    public static DynamicObject createRubyThread(RubyContext context) {
+    public static DynamicObject createRubyThread(RubyContext context, DynamicObject group) {
         final DynamicObject object = Layouts.THREAD.createThread(
                 context.getCoreLibrary().getThreadFactory(),
                 createThreadLocals(context),
@@ -69,7 +70,8 @@ public class ThreadManager {
                 null,
                 null,
                 new AtomicBoolean(false),
-                0);
+                0,
+                group);
 
         Layouts.THREAD.setFiberManagerUnsafe(object, new FiberManager(context, object)); // Because it is cyclic
 

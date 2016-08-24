@@ -794,6 +794,22 @@ public class CoreExceptions {
         return threadError("Attempt to unlock a mutex which is locked by another thread", currentNode);
     }
 
+    public DynamicObject threadErrorFrozenToThreadGroup(Node currentNode) {
+        return threadError("can't move to the frozen thread group", currentNode);
+    }
+
+    public DynamicObject threadErrorFrozenFromThreadGroup(Node currentNode) {
+        return threadError("can't move from the frozen thread group", currentNode);
+    }
+
+    public DynamicObject threadErrorToEnclosedThreadGroup(Node currentNode) {
+        return threadError("can't move to the enclosed thread group", currentNode);
+    }
+
+    public DynamicObject threadErrorFromEnclosedThreadGroup(Node currentNode) {
+        return threadError("can't move from the enclosed thread group", currentNode);
+    }
+
     // SecurityError
 
     @TruffleBoundary

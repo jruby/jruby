@@ -45,7 +45,8 @@ public interface ThreadLayout extends BasicObjectLayout {
             @Nullable @Volatile DynamicObject exception,
             @Nullable @Volatile Object value,
             AtomicBoolean wakeUp,
-            @Volatile int priority);
+            @Volatile int priority,
+            @Nullable DynamicObject threadGroup);
 
     boolean isThread(ObjectType objectType);
     boolean isThread(DynamicObject object);
@@ -81,5 +82,8 @@ public interface ThreadLayout extends BasicObjectLayout {
 
     int getPriority(DynamicObject object);
     void setPriority(DynamicObject object, int value);
+
+    DynamicObject getThreadGroup(DynamicObject object);
+    void setThreadGroup(DynamicObject object, DynamicObject value);
 
 }

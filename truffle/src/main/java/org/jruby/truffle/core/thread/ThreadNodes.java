@@ -113,6 +113,15 @@ public abstract class ThreadNodes {
 
     }
 
+    @CoreMethod(names = "group")
+    public abstract static class GroupNode extends CoreMethodArrayArgumentsNode {
+
+        @Specialization
+        public DynamicObject group(DynamicObject thread) {
+            return Layouts.THREAD.getThreadGroup(thread);
+        }
+    }
+
     @CoreMethod(names = { "kill", "exit", "terminate" }, unsafe = UnsafeGroup.THREADS)
     public abstract static class KillNode extends CoreMethodArrayArgumentsNode {
 
@@ -412,6 +421,7 @@ public abstract class ThreadNodes {
                 DynamicObject rubyClass,
                 @Cached("create()") AllocateObjectNode allocateObjectNode,
                 @Cached("createReadAbortOnExceptionNode()") ReadObjectFieldNode readAbortOnException ) {
+            final DynamicObject rootGroup = Layouts.THREAD.getThreadGroup(getContext().getThreadManager().getRootThread());
             final DynamicObject object = allocateObjectNode.allocate(
                     rubyClass,
                     ThreadManager.createThreadLocals(getContext()),
@@ -425,7 +435,8 @@ public abstract class ThreadNodes {
                     new AtomicReference<>(null),
                     new AtomicReference<>(null),
                     new AtomicBoolean(false),
-                    new AtomicInteger(0));
+                    new AtomicInteger(0),
+                    rootGroup);
 
             Layouts.THREAD.setFiberManagerUnsafe(object, new FiberManager(getContext(), object)); // Because it is cyclic
 
