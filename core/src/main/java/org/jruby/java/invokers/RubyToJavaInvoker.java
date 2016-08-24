@@ -279,7 +279,8 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
     }
 
     static <T extends AccessibleObject> T setAccessible(T accessible) {
-        if ( ! Ruby.isSecurityRestricted() ) {
+        if (!accessible.isAccessible() &&
+                !Ruby.isSecurityRestricted() ) {
             try { accessible.setAccessible(true); }
             catch (SecurityException e) {}
             catch (RuntimeException re) {
@@ -300,7 +301,8 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
     }
 
     static <T extends AccessibleObject> T[] setAccessible(T[] accessibles) {
-        if ( ! Ruby.isSecurityRestricted() ) {
+        if (!allAreAccessible(accessibles) &&
+                !Ruby.isSecurityRestricted() ) {
             try { AccessibleObject.setAccessible(accessibles, true); }
             catch (SecurityException e) {}
             catch (RuntimeException re) {
@@ -308,6 +310,11 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
             }
         }
         return accessibles;
+    }
+
+    private static <T extends AccessibleObject> boolean allAreAccessible(T[] accessibles) {
+        for (T accessible : accessibles) if (!accessible.isAccessible()) return false;
+        return true;
     }
 
     protected T findCallable(IRubyObject self, String name, IRubyObject[] args, final int arity) {
