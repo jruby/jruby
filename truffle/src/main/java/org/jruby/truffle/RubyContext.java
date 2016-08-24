@@ -153,12 +153,8 @@ public class RubyContext extends ExecutionContext {
 
         // Load the nodes
 
-        org.jruby.Main.printTruffleTimeMetric("before-load-primitives");
-        coreLibrary.addPrimitives();
-        org.jruby.Main.printTruffleTimeMetric("after-load-primitives");
-
         org.jruby.Main.printTruffleTimeMetric("before-load-nodes");
-        coreLibrary.addCoreMethods();
+        coreLibrary.addCoreMethods(primitiveManager);
         org.jruby.Main.printTruffleTimeMetric("after-load-nodes");
 
         // Load the reset of the core library

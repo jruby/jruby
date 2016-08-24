@@ -13,13 +13,17 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.TruffleOptions;
+import com.oracle.truffle.api.dsl.NodeFactory;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.interop.java.JavaInterop;
+import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.object.Layout;
 import com.oracle.truffle.api.object.Property;
+
 import jnr.constants.platform.Errno;
+
 import org.jcodings.EncodingDB;
 import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.transcode.EConvFlags;
@@ -31,6 +35,7 @@ import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreMethodNodeManager;
+import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.builtins.PrimitiveManager;
 import org.jruby.truffle.core.array.ArrayNodes;
 import org.jruby.truffle.core.array.ArrayNodesFactory;
@@ -132,11 +137,15 @@ import org.jruby.truffle.stdlib.psych.PsychParserNodesFactory;
 import org.jruby.truffle.stdlib.psych.YAMLEncoding;
 import org.jruby.truffle.util.StringUtils;
 import org.jruby.util.cli.OutputStrings;
+
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Future;
@@ -671,142 +680,115 @@ public class CoreLibrary {
         initializeSignalConstants();
     }
 
-    public void addPrimitives() {
-        final PrimitiveManager primitiveManager = context.getPrimitiveManager();
-
-        ForkJoinPool.commonPool().invokeAll(Arrays.asList(() -> {
-            primitiveManager.addPrimitiveNodes(SymbolNodesFactory.getFactories());
-            primitiveManager.addPrimitiveNodes(FixnumNodesFactory.getFactories());
-            primitiveManager.addPrimitiveNodes(BignumNodesFactory.getFactories());
-            primitiveManager.addPrimitiveNodes(FloatNodesFactory.getFactories());
-            primitiveManager.addPrimitiveNodes(VMPrimitiveNodesFactory.getFactories());
-            return null;
-        }, () -> {
-            primitiveManager.addPrimitiveNodes(EncodingNodesFactory.getFactories());
-            primitiveManager.addPrimitiveNodes(EncodingConverterNodesFactory.getFactories());
-            primitiveManager.addPrimitiveNodes(RegexpPrimitiveNodesFactory.getFactories());
-            primitiveManager.addPrimitiveNodes(RandomizerPrimitiveNodesFactory.getFactories());
-            primitiveManager.addPrimitiveNodes(ObjectNodesFactory.getFactories());
-            return null;
-        }, () -> {
-            primitiveManager.addPrimitiveNodes(ArrayNodesFactory.getFactories());
-            primitiveManager.addPrimitiveNodes(StatPrimitiveNodesFactory.getFactories());
-            primitiveManager.addPrimitiveNodes(PointerPrimitiveNodesFactory.getFactories());
-            primitiveManager.addPrimitiveNodes(NativeFunctionPrimitiveNodesFactory.getFactories());
-            return null;
-        }, () -> {
-            primitiveManager.addPrimitiveNodes(DirNodesFactory.getFactories());
-            primitiveManager.addPrimitiveNodes(IOPrimitiveNodesFactory.getFactories());
-            primitiveManager.addPrimitiveNodes(IOBufferPrimitiveNodesFactory.getFactories());
-            primitiveManager.addPrimitiveNodes(ExceptionNodesFactory.getFactories());
-            primitiveManager.addPrimitiveNodes(NameErrorNodesFactory.getFactories());
-            primitiveManager.addPrimitiveNodes(NoMethodErrorNodesFactory.getFactories());
-            primitiveManager.addPrimitiveNodes(SystemCallErrorNodesFactory.getFactories());
-            return null;
-        }, () -> {
-            primitiveManager.addPrimitiveNodes(ThreadNodesFactory.getFactories());
-            primitiveManager.addPrimitiveNodes(WeakRefPrimitiveNodesFactory.getFactories());
-            primitiveManager.addPrimitiveNodes(TimeNodesFactory.getFactories());
-            primitiveManager.addPrimitiveNodes(StringNodesFactory.getFactories());
-
-            // Catch all
-            primitiveManager.addPrimitiveNodes(UndefinedPrimitiveNodesFactory.getFactories());
-
-            return null;
-        }));
-    }
-
-    public void addCoreMethods() {
+    public void addCoreMethods(PrimitiveManager primitiveManager) {
         arrayMinBlock = new ArrayNodes.MinBlock(context);
         arrayMaxBlock = new ArrayNodes.MaxBlock(context);
 
-        final CoreMethodNodeManager coreMethodNodeManager = new CoreMethodNodeManager(context, node.getSingletonClassNode());
+        final CoreMethodNodeManager coreMethodNodeManager =
+                new CoreMethodNodeManager(context, node.getSingletonClassNode(), primitiveManager);
 
-        ForkJoinPool.commonPool().invokeAll(Arrays.asList(() -> {
-            coreMethodNodeManager.addCoreMethodNodes(ArrayNodesFactory.getFactories());
-            coreMethodNodeManager.addCoreMethodNodes(BasicObjectNodesFactory.getFactories());
-            coreMethodNodeManager.addCoreMethodNodes(BindingNodesFactory.getFactories());
-            coreMethodNodeManager.addCoreMethodNodes(BignumNodesFactory.getFactories());
-            coreMethodNodeManager.addCoreMethodNodes(ClassNodesFactory.getFactories());
-            coreMethodNodeManager.addCoreMethodNodes(ConditionVariableNodesFactory.getFactories());
-            coreMethodNodeManager.addCoreMethodNodes(ExceptionNodesFactory.getFactories());
-            coreMethodNodeManager.addCoreMethodNodes(NameErrorNodesFactory.getFactories());
-            coreMethodNodeManager.addCoreMethodNodes(NoMethodErrorNodesFactory.getFactories());
-            coreMethodNodeManager.addCoreMethodNodes(SystemCallErrorNodesFactory.getFactories());
-            coreMethodNodeManager.addCoreMethodNodes(FalseClassNodesFactory.getFactories());
-            return null;
-        }, () -> {
-            coreMethodNodeManager.addCoreMethodNodes(FiberNodesFactory.getFactories());
-            coreMethodNodeManager.addCoreMethodNodes(FixnumNodesFactory.getFactories());
-            coreMethodNodeManager.addCoreMethodNodes(FloatNodesFactory.getFactories());
-            coreMethodNodeManager.addCoreMethodNodes(HashNodesFactory.getFactories());
-            coreMethodNodeManager.addCoreMethodNodes(IntegerNodesFactory.getFactories());
-            coreMethodNodeManager.addCoreMethodNodes(KernelNodesFactory.getFactories());
-            coreMethodNodeManager.addCoreMethodNodes(MainNodesFactory.getFactories());
-            coreMethodNodeManager.addCoreMethodNodes(MatchDataNodesFactory.getFactories());
-            return null;
-        }, () -> {
-            coreMethodNodeManager.addCoreMethodNodes(MathNodesFactory.getFactories());
-            coreMethodNodeManager.addCoreMethodNodes(ModuleNodesFactory.getFactories());
-            coreMethodNodeManager.addCoreMethodNodes(MutexNodesFactory.getFactories());
-            coreMethodNodeManager.addCoreMethodNodes(ObjectSpaceNodesFactory.getFactories());
-            coreMethodNodeManager.addCoreMethodNodes(ProcessNodesFactory.getFactories());
-            coreMethodNodeManager.addCoreMethodNodes(ProcNodesFactory.getFactories());
-            coreMethodNodeManager.addCoreMethodNodes(QueueNodesFactory.getFactories());
-            coreMethodNodeManager.addCoreMethodNodes(RangeNodesFactory.getFactories());
-            return null;
-        }, () -> {
-            coreMethodNodeManager.addCoreMethodNodes(RegexpNodesFactory.getFactories());
-            coreMethodNodeManager.addCoreMethodNodes(SizedQueueNodesFactory.getFactories());
-            coreMethodNodeManager.addCoreMethodNodes(StringNodesFactory.getFactories());
-            coreMethodNodeManager.addCoreMethodNodes(SymbolNodesFactory.getFactories());
-            coreMethodNodeManager.addCoreMethodNodes(ThreadNodesFactory.getFactories());
-            coreMethodNodeManager.addCoreMethodNodes(TrueClassNodesFactory.getFactories());
-            coreMethodNodeManager.addCoreMethodNodes(TruffleGCNodesFactory.getFactories());
-            coreMethodNodeManager.addCoreMethodNodes(TruffleBootNodesFactory.getFactories());
-            return null;
-        }, () -> {
-            coreMethodNodeManager.addCoreMethodNodes(AttachmentsInternalNodesFactory.getFactories());
-            coreMethodNodeManager.addCoreMethodNodes(TruffleGraalNodesFactory.getFactories());
-            coreMethodNodeManager.addCoreMethodNodes(EncodingNodesFactory.getFactories());
-            coreMethodNodeManager.addCoreMethodNodes(EncodingConverterNodesFactory.getFactories());
-            coreMethodNodeManager.addCoreMethodNodes(InteropNodesFactory.getFactories());
-            coreMethodNodeManager.addCoreMethodNodes(CExtNodesFactory.getFactories());
-            coreMethodNodeManager.addCoreMethodNodes(MethodNodesFactory.getFactories());
-            coreMethodNodeManager.addCoreMethodNodes(UnboundMethodNodesFactory.getFactories());
-            return null;
-        }, () -> {
-            coreMethodNodeManager.addCoreMethodNodes(ByteArrayNodesFactory.getFactories());
-            coreMethodNodeManager.addCoreMethodNodes(TimeNodesFactory.getFactories());
-            coreMethodNodeManager.addCoreMethodNodes(TrufflePosixNodesFactory.getFactories());
-            coreMethodNodeManager.addCoreMethodNodes(RubiniusTypeNodesFactory.getFactories());
-            coreMethodNodeManager.addCoreMethodNodes(ThreadBacktraceLocationNodesFactory.getFactories());
-            coreMethodNodeManager.addCoreMethodNodes(DigestNodesFactory.getFactories());
-            coreMethodNodeManager.addCoreMethodNodes(BigDecimalNodesFactory.getFactories());
-            coreMethodNodeManager.addCoreMethodNodes(ObjSpaceNodesFactory.getFactories());
-            return null;
-        }, () -> {
-            coreMethodNodeManager.addCoreMethodNodes(EtcNodesFactory.getFactories());
-            coreMethodNodeManager.addCoreMethodNodes(PsychParserNodesFactory.getFactories());
-            coreMethodNodeManager.addCoreMethodNodes(PsychEmitterNodesFactory.getFactories());
-            coreMethodNodeManager.addCoreMethodNodes(AtomicReferenceNodesFactory.getFactories());
-            coreMethodNodeManager.addCoreMethodNodes(TracePointNodesFactory.getFactories());
-            coreMethodNodeManager.addCoreMethodNodes(CoverageNodesFactory.getFactories());
-            coreMethodNodeManager.addCoreMethodNodes(TruffleRopesNodesFactory.getFactories());
-            coreMethodNodeManager.addCoreMethodNodes(TruffleFixnumNodesFactory.getFactories());
-            return null;
-        }, () -> {
-            coreMethodNodeManager.addCoreMethodNodes(TruffleSafeNodesFactory.getFactories());
-            coreMethodNodeManager.addCoreMethodNodes(TruffleSystemNodesFactory.getFactories());
-            coreMethodNodeManager.addCoreMethodNodes(TruffleKernelNodesFactory.getFactories());
-            coreMethodNodeManager.addCoreMethodNodes(TruffleProcessNodesFactory.getFactories());
-            coreMethodNodeManager.addCoreMethodNodes(TruffleDebugNodesFactory.getFactories());
-            coreMethodNodeManager.addCoreMethodNodes(TruffleBindingNodesFactory.getFactories());
-            coreMethodNodeManager.addCoreMethodNodes(TruffleArrayNodesFactory.getFactories());
-            coreMethodNodeManager.addCoreMethodNodes(TruffleStringNodesFactory.getFactories());
-            coreMethodNodeManager.addCoreMethodNodes(BCryptNodesFactory.getFactories());
-            return null;
-        }));
+        // Sorted alphabetically to avoid duplicates
+        List<List<? extends NodeFactory<? extends RubyNode>>> factories = Arrays.asList(
+                ArrayNodesFactory.getFactories(),
+                AtomicReferenceNodesFactory.getFactories(),
+                AttachmentsInternalNodesFactory.getFactories(),
+                BasicObjectNodesFactory.getFactories(),
+                BCryptNodesFactory.getFactories(),
+                BigDecimalNodesFactory.getFactories(),
+                BignumNodesFactory.getFactories(),
+                BindingNodesFactory.getFactories(),
+                ByteArrayNodesFactory.getFactories(),
+                CExtNodesFactory.getFactories(),
+                ClassNodesFactory.getFactories(),
+                ConditionVariableNodesFactory.getFactories(),
+                CoverageNodesFactory.getFactories(),
+                DigestNodesFactory.getFactories(),
+                DirNodesFactory.getFactories(),
+                EncodingConverterNodesFactory.getFactories(),
+                EncodingNodesFactory.getFactories(),
+                EtcNodesFactory.getFactories(),
+                ExceptionNodesFactory.getFactories(),
+                FalseClassNodesFactory.getFactories(),
+                FiberNodesFactory.getFactories(),
+                FixnumNodesFactory.getFactories(),
+                FloatNodesFactory.getFactories(),
+                HashNodesFactory.getFactories(),
+                IntegerNodesFactory.getFactories(),
+                InteropNodesFactory.getFactories(),
+                IOBufferPrimitiveNodesFactory.getFactories(),
+                IOPrimitiveNodesFactory.getFactories(),
+                KernelNodesFactory.getFactories(),
+                MainNodesFactory.getFactories(),
+                MatchDataNodesFactory.getFactories(),
+                MathNodesFactory.getFactories(),
+                MethodNodesFactory.getFactories(),
+                ModuleNodesFactory.getFactories(),
+                MutexNodesFactory.getFactories(),
+                NameErrorNodesFactory.getFactories(),
+                NativeFunctionPrimitiveNodesFactory.getFactories(),
+                NoMethodErrorNodesFactory.getFactories(),
+                ObjectNodesFactory.getFactories(),
+                ObjectSpaceNodesFactory.getFactories(),
+                ObjSpaceNodesFactory.getFactories(),
+                PointerPrimitiveNodesFactory.getFactories(),
+                ProcessNodesFactory.getFactories(),
+                ProcNodesFactory.getFactories(),
+                PsychEmitterNodesFactory.getFactories(),
+                PsychParserNodesFactory.getFactories(),
+                QueueNodesFactory.getFactories(),
+                RandomizerPrimitiveNodesFactory.getFactories(),
+                RangeNodesFactory.getFactories(),
+                RegexpNodesFactory.getFactories(),
+                RegexpPrimitiveNodesFactory.getFactories(),
+                RubiniusTypeNodesFactory.getFactories(),
+                SizedQueueNodesFactory.getFactories(),
+                StatPrimitiveNodesFactory.getFactories(),
+                StringNodesFactory.getFactories(),
+                SymbolNodesFactory.getFactories(),
+                SystemCallErrorNodesFactory.getFactories(),
+                ThreadBacktraceLocationNodesFactory.getFactories(),
+                ThreadNodesFactory.getFactories(),
+                TimeNodesFactory.getFactories(),
+                TracePointNodesFactory.getFactories(),
+                TrueClassNodesFactory.getFactories(),
+                TruffleArrayNodesFactory.getFactories(),
+                TruffleBindingNodesFactory.getFactories(),
+                TruffleBootNodesFactory.getFactories(),
+                TruffleDebugNodesFactory.getFactories(),
+                TruffleFixnumNodesFactory.getFactories(),
+                TruffleGCNodesFactory.getFactories(),
+                TruffleGraalNodesFactory.getFactories(),
+                TruffleKernelNodesFactory.getFactories(),
+                TrufflePosixNodesFactory.getFactories(),
+                TruffleProcessNodesFactory.getFactories(),
+                TruffleRopesNodesFactory.getFactories(),
+                TruffleSafeNodesFactory.getFactories(),
+                TruffleStringNodesFactory.getFactories(),
+                TruffleSystemNodesFactory.getFactories(),
+                UnboundMethodNodesFactory.getFactories(),
+                UndefinedPrimitiveNodesFactory.getFactories(),
+                VMPrimitiveNodesFactory.getFactories(),
+                WeakRefPrimitiveNodesFactory.getFactories()
+                );
+
+        int nFactories = factories.size();
+        int threads = 8;
+        int chunk = nFactories / threads;
+
+        List<Callable<Void>> tasks = new ArrayList<>(threads);
+        for (int t = 0; t < threads; t++) {
+            final int nb = t;
+            tasks.add(() -> {
+                int start = nb * chunk;
+                int end = nb == threads - 1 ? nFactories : (nb + 1) * chunk;
+                for (int i = start; i < end; i++) {
+                    coreMethodNodeManager.addCoreMethodNodes(factories.get(i));
+                }
+                return null;
+            });
+        }
+
+        ForkJoinPool.commonPool().invokeAll(tasks);
 
         coreMethodNodeManager.allMethodInstalled();
 

@@ -15,6 +15,7 @@ import com.oracle.truffle.api.dsl.GeneratedBy;
 import com.oracle.truffle.api.dsl.NodeFactory;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
@@ -55,23 +56,31 @@ public class CoreMethodNodeManager {
     private static final boolean CHECK_AMBIGUOUS_OPTIONAL_ARGS = System.getenv("TRUFFLE_CHECK_AMBIGUOUS_OPTIONAL_ARGS") != null;
     private final RubyContext context;
     private final SingletonClassNode singletonClassNode;
+    private final PrimitiveManager primitiveManager;
 
-    public CoreMethodNodeManager(RubyContext context, SingletonClassNode singletonClassNode) {
+    public CoreMethodNodeManager(RubyContext context, SingletonClassNode singletonClassNode, PrimitiveManager primitiveManager) {
         this.context = context;
         this.singletonClassNode = singletonClassNode;
+        this.primitiveManager = primitiveManager;
     }
 
     public void addCoreMethodNodes(List<? extends NodeFactory<? extends RubyNode>> nodeFactories) {
-        final Class<?> firstNodeClass = nodeFactories.get(0).getClass().getAnnotation(GeneratedBy.class).value();
-        final String moduleName = firstNodeClass.getEnclosingClass().getAnnotation(CoreClass.class).value();
-        final DynamicObject module = getModule(moduleName);
+        String moduleName = null;
+        DynamicObject module = null;
 
         for (NodeFactory<? extends RubyNode> nodeFactory : nodeFactories) {
             final Class<?> nodeClass = nodeFactory.getClass().getAnnotation(GeneratedBy.class).value();
             final CoreMethod methodAnnotation = nodeClass.getAnnotation(CoreMethod.class);
+            Primitive primitiveAnnotation;
 
             if (methodAnnotation != null) {
+                if (module == null) {
+                    moduleName = nodeClass.getEnclosingClass().getAnnotation(CoreClass.class).value();
+                    module = getModule(moduleName);
+                }
                 addCoreMethod(module, new MethodDetails(moduleName, methodAnnotation, nodeFactory));
+            } else if ((primitiveAnnotation = nodeClass.getAnnotation(Primitive.class)) != null) {
+                primitiveManager.addPrimitive(nodeFactory, primitiveAnnotation);
             }
         }
     }
