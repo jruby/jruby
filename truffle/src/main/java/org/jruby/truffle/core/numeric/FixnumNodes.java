@@ -237,7 +237,7 @@ public abstract class FixnumNodes {
         }
     }
 
-    @CoreMethod(names = { "/", "__slash__" }, required = 1)
+    @CoreMethod(names = { "/", "div", "__slash__" }, required = 1)
     public abstract static class DivNode extends CoreMethodArrayArgumentsNode {
 
         private final BranchProfile bGreaterZero = BranchProfile.create();
