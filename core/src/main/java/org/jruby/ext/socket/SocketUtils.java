@@ -139,7 +139,7 @@ public class SocketUtils {
 
     @Deprecated
     public static RubyArray unpack_sockaddr_in(ThreadContext context, IRubyObject addr) {
-        return Sockaddr.unpack_sockaddr_in(context, addr);
+        return (RubyArray) Sockaddr.unpack_sockaddr_in(context, addr);
     }
 
     @Deprecated
@@ -378,7 +378,7 @@ public class SocketUtils {
             Matcher m = STRING_IPV4_ADDRESS_PATTERN.matcher(arg);
 
             if (!m.matches()) {
-                RubyArray portAndHost = Sockaddr.unpack_sockaddr_in(context, arg0);
+                RubyArray portAndHost = (RubyArray) Sockaddr.unpack_sockaddr_in(context, arg0);
 
                 if (portAndHost.size() != 2) {
                     throw runtime.newArgumentError("invalid address representation");
