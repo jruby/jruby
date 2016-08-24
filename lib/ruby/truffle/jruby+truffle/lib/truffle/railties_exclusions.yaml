@@ -88,3 +88,5 @@ ScaffoldGeneratorTest:
 - test_scaffold_tests_pass_by_default_inside_mountable_engine
 - test_scaffold_with_namespace_on_invoke
 - test_scaffold_with_namespace_on_revoke
+GeneratorsTest:
+- test_rails_root_templates
