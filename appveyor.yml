@@ -11,7 +11,7 @@ install:
       Add-Type -AssemblyName System.IO.Compression.FileSystem
           if (!(Test-Path -Path "C:\maven" )) {
             (new-object System.Net.WebClient).DownloadFile(
-              'http://www.us.apache.org/dist/maven/maven-3/3.3.3/binaries/apache-maven-3.3.3-bin.zip',
+              'http://archive.apache.org/dist/maven/maven-3/3.3.3/binaries/apache-maven-3.3.3-bin.zip',
               'C:\maven-bin.zip'
             )
 
@@ -21,7 +21,7 @@ install:
       Add-Type -AssemblyName System.IO.Compression.FileSystem
           if (!(Test-Path -Path "C:\ant" )) {
             (new-object System.Net.WebClient).DownloadFile(
-              'http://www.us.apache.org/dist/ant/binaries/apache-ant-1.9.7-bin.zip',
+              'http://archive.apache.org/dist/ant/binaries/apache-ant-1.9.7-bin.zip',
               'C:\ant-bin.zip'
             )
 
