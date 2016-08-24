@@ -297,15 +297,14 @@ public class Sockaddr {
             return addrinfo.unix_path(context);
         }
 
-        byte[] val = addr.convertToString().getBytes();
-
-        AddressFamily af = AddressFamily.valueOf(uint16(val[0], val[1]));
+        ByteList val = addr.convertToString().getByteList();
+        AddressFamily af = getAddressFamilyFromSockaddr(runtime, val);
 
         if (af != AddressFamily.AF_UNIX) {
             throw runtime.newArgumentError("not an AF_UNIX sockaddr");
         }
 
-        String filename = pathFromSockaddr_un(context, val);
+        String filename = pathFromSockaddr_un(context, val.bytes());
         return context.runtime.newString(filename);
     }
 
