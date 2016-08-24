@@ -227,7 +227,7 @@ class SocketTest < Test::Unit::TestCase
       TCPSocket.new('0.0.0.0', 42)
     rescue Errno::ECONNREFUSED => e
       # Connection refused - connect(2) for "0.0.0.0" port 42
-      assert_equal 'Connection refused - connect(2) for "0.0.0.0" port 42', e.message
+      assert_equal "Connection refused - connect(2) for \"0.0.0.0\" port 42", e.message
     else; fail 'not raised'
     end
 

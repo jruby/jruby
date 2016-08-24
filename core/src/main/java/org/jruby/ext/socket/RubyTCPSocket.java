@@ -142,7 +142,7 @@ public class RubyTCPSocket extends RubyIPSocket {
                         // try next address
                         continue;
                     }
-                    throw runtime.newErrnoECONNREFUSEDError("connect(2) for " + remoteHost + " port " + remotePort);
+                    throw runtime.newErrnoECONNREFUSEDError("connect(2) for \"" + remoteHost + "\" port " + remotePort);
                 } catch (UnknownHostException e) {
                     throw SocketUtils.sockerr(runtime, "initialize: name or service not known");
                 }
