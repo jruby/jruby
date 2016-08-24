@@ -10,6 +10,9 @@
 package org.jruby.truffle.language.arguments;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.interop.TruffleObject;
+import com.oracle.truffle.api.profiles.ConditionProfile;
+import com.oracle.truffle.api.profiles.PrimitiveValueProfile;
 import com.oracle.truffle.api.profiles.ValueProfile;
 import org.jruby.truffle.language.RubyNode;
 
@@ -17,7 +20,9 @@ public class ProfileArgumentNode extends RubyNode {
 
     @Child private RubyNode readArgumentNode;
 
-    private final ValueProfile valueProfile = ValueProfile.createClassProfile();
+    private final ConditionProfile objectProfile = ConditionProfile.createBinaryProfile();
+    private final ValueProfile primitiveProfile = PrimitiveValueProfile.createEqualityProfile();
+    private final ValueProfile classProfile = ValueProfile.createClassProfile();
 
     public ProfileArgumentNode(RubyNode readArgumentNode) {
         this.readArgumentNode = readArgumentNode;
@@ -25,7 +30,13 @@ public class ProfileArgumentNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        return valueProfile.profile(readArgumentNode.execute(frame));
+        final Object value = readArgumentNode.execute(frame);
+
+        if (objectProfile.profile(value instanceof TruffleObject)) {
+            return classProfile.profile(value);
+        } else {
+            return primitiveProfile.profile(value);
+        }
     }
 
 }
