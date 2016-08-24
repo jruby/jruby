@@ -53,7 +53,7 @@ import static org.jruby.runtime.Visibility.PRIVATE;
  * Implementation of Ruby's Enumerator module.
  */
 @JRubyModule(name="Enumerator", include="Enumerable")
-public class RubyEnumerator extends RubyObject {
+public class RubyEnumerator extends RubyObject implements java.util.Iterator<Object> {
     /** target for each operation */
     private IRubyObject object;
 
@@ -434,20 +434,30 @@ public class RubyEnumerator extends RubyObject {
     }
 
     @JRubyMethod
-    public IRubyObject size(ThreadContext context) {
+    public final IRubyObject size(ThreadContext context) {
         if (sizeFn != null) {
             return sizeFn.size(methodArgs);
         }
 
+        IRubyObject size = this.size;
         if (size != null) {
             if (size.respondsTo("call")) {
+                if (context == null) context = getRuntime().getCurrentContext();
                 return size.callMethod(context, "call");
             }
 
             return size;
         }
 
-        return context.nil;
+        return context == null ? null : context.nil;
+    }
+
+    public long size() {
+        final IRubyObject size = size(null);
+        if ( size instanceof RubyNumeric ) {
+            return ((RubyNumeric) size).getLongValue();
+        }
+        return -1;
     }
 
     private SizeFn enumSizeFn(final ThreadContext context) {
@@ -501,7 +511,8 @@ public class RubyEnumerator extends RubyObject {
 
     @JRubyMethod
     public synchronized IRubyObject next(ThreadContext context) {
-        ensureNexter(context);
+        final Nexter nexter = ensureNexter(context.runtime);
+
         if (!feedValue.isNil()) feedValue = context.nil;
         return nexter.next();
     }
@@ -520,28 +531,24 @@ public class RubyEnumerator extends RubyObject {
 
     @JRubyMethod
     public synchronized IRubyObject peek(ThreadContext context) {
-        ensureNexter(context);
+        final Nexter nexter = ensureNexter(context.runtime);
 
         return nexter.peek();
     }
 
     @JRubyMethod(name = "peek_values")
-    public synchronized IRubyObject peekValues(ThreadContext context) {
-        ensureNexter(context);
-
-        return RubyArray.newArray(context.runtime, nexter.peek());
+    public IRubyObject peekValues(ThreadContext context) {
+        return RubyArray.newArray(context.runtime, peek(context));
     }
 
     @JRubyMethod(name = "next_values")
-    public synchronized IRubyObject nextValues(ThreadContext context) {
-        ensureNexter(context);
-        if (!feedValue.isNil()) feedValue = context.nil;
-        return RubyArray.newArray(context.runtime, nexter.next());
+    public IRubyObject nextValues(ThreadContext context) {
+        return RubyArray.newArray(context.runtime, next(context));
     }
 
     @JRubyMethod
-    public IRubyObject feed(ThreadContext context, IRubyObject val) {
-        ensureNexter(context);
+    public synchronized IRubyObject feed(ThreadContext context, IRubyObject val) {
+        final Nexter nexter = ensureNexter(context.runtime);
         if (!feedValue.isNil()) {
             throw context.runtime.newTypeError("feed value already set");
         }
@@ -550,18 +557,16 @@ public class RubyEnumerator extends RubyObject {
         return context.nil;
     }
 
-    private void ensureNexter(ThreadContext context) {
-        if (nexter == null) {
-            if (Options.ENUMERATOR_LIGHTWEIGHT.load()) {
-                if (object instanceof RubyArray && method.equals("each") && methodArgs.length == 0) {
-                    nexter = new ArrayNexter(context.runtime, object, method, methodArgs);
-                } else {
-                    nexter = new ThreadedNexter(context.runtime, object, method, methodArgs);
-                }
-            } else {
-                nexter = new ThreadedNexter(context.runtime, object, method, methodArgs);
+    private Nexter ensureNexter(final Ruby runtime) {
+        Nexter nexter = this.nexter;
+        if (nexter != null) return nexter;
+
+        if (Options.ENUMERATOR_LIGHTWEIGHT.load()) {
+            if (object instanceof RubyArray && method.equals("each") && methodArgs.length == 0) {
+                return this.nexter = new ArrayNexter(runtime, object, method, methodArgs);
             }
         }
+        return this.nexter = new ThreadedNexter(runtime, object, method, methodArgs);
     }
 
     @Override
@@ -575,6 +580,23 @@ public class RubyEnumerator extends RubyObject {
         } finally {
             super.finalize();
         }
+    }
+
+    // java.util.Iterator :
+
+    @Override
+    public synchronized boolean hasNext() {
+        return ensureNexter(getRuntime()).hasNext();
+    }
+
+    @Override
+    public Object next() {
+        return next( getRuntime().getCurrentContext() ).toJava( java.lang.Object.class );
+    }
+
+    @Override
+    public void remove() {
+        throw new UnsupportedOperationException();
     }
 
     /**
@@ -623,6 +645,8 @@ public class RubyEnumerator extends RubyObject {
         public abstract void shutdown();
 
         public abstract IRubyObject peek();
+
+        abstract boolean hasNext() ;
     }
 
     private static class ArrayNexter extends Nexter {
@@ -659,7 +683,12 @@ public class RubyEnumerator extends RubyObject {
         }
 
         private void checkIndex() throws RaiseException {
-            if (index >= array.size()) throw runtime.newStopIteration(array, null);
+            if ( ! hasNext() ) throw runtime.newStopIteration(array, null);
+        }
+
+        @Override
+        final boolean hasNext() {
+            return index < array.size();
         }
     }
 
@@ -697,13 +726,7 @@ public class RubyEnumerator extends RubyObject {
 
         @Override
         public synchronized IRubyObject next() {
-            if (doneObject != null) {
-                return returnValue(doneObject);
-            }
-
-            ensureStarted();
-
-            return returnValue(take());
+            return nextImpl(false);
         }
 
         @Override
@@ -732,7 +755,7 @@ public class RubyEnumerator extends RubyObject {
         @Override
         public synchronized IRubyObject peek() {
             if (doneObject != null) {
-                return returnValue(doneObject);
+                return returnValue(doneObject, false);
             }
 
             ensureStarted();
@@ -743,7 +766,7 @@ public class RubyEnumerator extends RubyObject {
 
             peekTake();
 
-            return returnValue(lastValue);
+            return returnValue(lastValue, false);
         }
 
         private void ensureStarted() {
@@ -783,21 +806,41 @@ public class RubyEnumerator extends RubyObject {
             }
         }
 
-        private IRubyObject returnValue(IRubyObject value) {
+        private IRubyObject returnValue(IRubyObject value, final boolean silent) {
             // if it's the NEVER object, raise StopIteration
             if (value == NEVER) {
                 doneObject = value;
+                if ( silent ) return null;
                 throw runtime.newStopIteration(stopValue, "iteration reached an end");
             }
 
             // if it's an exception, raise it
             if (value instanceof RubyException) {
                 doneObject = value;
-                throw new RaiseException((RubyException)value);
+                if ( silent ) return null;
+                throw new RaiseException((RubyException) value);
             }
 
             // otherwise, just return it
             return value;
+        }
+
+        private IRubyObject nextImpl(boolean hasNext) {
+            if (doneObject != null) {
+                return returnValue(doneObject, hasNext);
+            }
+
+            ensureStarted();
+
+            return returnValue(take(), hasNext);
+        }
+
+        @Override
+        final synchronized boolean hasNext() {
+            if ( doneObject == NEVER ) return false; // already done
+            // we're doing read-ahead so Iterator#hasNext() might do enum.next
+            // value 'buffering' - to be returned on following Iterator#next
+            return ( lastValue = nextImpl(true) ) != null;
         }
 
         @Override
