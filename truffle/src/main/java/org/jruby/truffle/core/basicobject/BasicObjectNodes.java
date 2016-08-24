@@ -363,7 +363,11 @@ public abstract class BasicObjectNodes {
          */
         private boolean lastCallWasCallingPrivateMethod(Object self, String name) {
             final InternalMethod method = ModuleOperations.lookupMethod(coreLibrary().getMetaClass(self), name);
-            return method != null && !method.isUndefined();
+            if (method != null && !method.isUndefined()) {
+                assert method.getVisibility().isPrivate() || method.getVisibility().isProtected();
+                return true;
+            }
+            return false;
         }
 
         private boolean lastCallWasVCall(FrameInstance callerFrame) {
