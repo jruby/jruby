@@ -92,9 +92,7 @@ public class ObjectSpaceManager {
 
         if (finalizerThread == null) {
             // TODO(CS): should we be running this in a real Ruby thread?
-
-            final DynamicObject rootGroup = Layouts.THREAD.getThreadGroup(context.getThreadManager().getRootThread());
-            finalizerThread = ThreadManager.createRubyThread(context, rootGroup);
+            finalizerThread = ThreadManager.createRubyThread(context);
             ThreadManager.initialize(finalizerThread, context, null, "finalizer", new Runnable() {
                 @Override
                 public void run() {

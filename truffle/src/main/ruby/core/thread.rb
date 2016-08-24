@@ -60,6 +60,10 @@
 
 class Thread
 
+  def initialize
+    Truffle.invoke_primitive :thread_set_group, self, Thread.current.group
+  end
+
   # Implementation note: ideally, the recursive_objects
   # lookup table would be different per method call.
   # Currently it doesn't cause problems, but if ever
@@ -350,4 +354,40 @@ class Thread
   end
 
 end
+
+class ThreadGroup
+  def initialize
+    @enclosed = false
+  end
+
+  def enclose
+    @enclosed = true
+  end
+
+  def enclosed?
+    @enclosed
+  end
+
+  def add(thread)
+    raise ThreadError, "can't move to the frozen thread group" if self.frozen?
+    raise ThreadError, "can't move to the enclosed thread group" if self.enclosed?
+
+    from_tg = thread.group
+    return nil unless from_tg
+    raise ThreadError, "can't move from the frozen thread group" if from_tg.frozen?
+    raise ThreadError, "can't move from the enclosed thread group" if from_tg.enclosed?
+
+    Truffle.invoke_primitive :thread_set_group, thread, self
+    self
+  end
+
+  def list
+    Thread.list.find_all { |th| th.group == self }
+  end
+
+  Default = ThreadGroup.new
+
+end
+Truffle.invoke_primitive :thread_set_group, Thread.current, ThreadGroup::Default
+
 

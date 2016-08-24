@@ -94,7 +94,6 @@ import org.jruby.truffle.core.string.TruffleStringNodesFactory;
 import org.jruby.truffle.core.symbol.SymbolNodesFactory;
 import org.jruby.truffle.core.thread.ThreadBacktraceLocationLayoutImpl;
 import org.jruby.truffle.core.thread.ThreadBacktraceLocationNodesFactory;
-import org.jruby.truffle.core.thread.ThreadGroupNodesFactory;
 import org.jruby.truffle.core.thread.ThreadNodesFactory;
 import org.jruby.truffle.core.time.TimeNodesFactory;
 import org.jruby.truffle.core.tracepoint.TracePointNodesFactory;
@@ -226,8 +225,6 @@ public class CoreLibrary {
     private final DynamicObject systemExitClass;
     private final DynamicObject threadClass;
     private final DynamicObjectFactory threadFactory;
-    private final DynamicObject threadGroupClass;
-    private final DynamicObjectFactory threadGroupFactory;
     private final DynamicObject threadBacktraceClass;
     private final DynamicObject threadBacktraceLocationClass;
     private final DynamicObjectFactory threadBacktraceLocationFactory;
@@ -531,11 +528,6 @@ public class CoreLibrary {
         threadFactory = Layouts.THREAD.createThreadShape(threadClass, threadClass);
         Layouts.CLASS.setInstanceFactoryUnsafe(threadClass, threadFactory);
 
-
-        threadGroupClass = defineClass("ThreadGroup");
-        threadGroupFactory = Layouts.THREAD_GROUP.createThreadGroupShape(threadGroupClass, threadGroupClass);
-        Layouts.CLASS.setInstanceFactoryUnsafe(threadGroupClass, threadGroupFactory);
-
         threadBacktraceClass = defineClass(threadClass, objectClass, "Backtrace");
         threadBacktraceLocationClass = defineClass(threadBacktraceClass, objectClass, "Location");
         threadBacktraceLocationFactory = ThreadBacktraceLocationLayoutImpl.INSTANCE.createThreadBacktraceLocationShape(threadBacktraceLocationClass, threadBacktraceLocationClass);
@@ -755,7 +747,6 @@ public class CoreLibrary {
                 SymbolNodesFactory.getFactories(),
                 SystemCallErrorNodesFactory.getFactories(),
                 ThreadBacktraceLocationNodesFactory.getFactories(),
-                ThreadGroupNodesFactory.getFactories(),
                 ThreadNodesFactory.getFactories(),
                 TimeNodesFactory.getFactories(),
                 TracePointNodesFactory.getFactories(),
@@ -1300,10 +1291,6 @@ public class CoreLibrary {
 
     public DynamicObjectFactory getThreadFactory() {
         return threadFactory;
-    }
-
-    public DynamicObjectFactory getThreadGroupFactory() {
-        return threadGroupFactory;
     }
 
     public DynamicObject getTypeErrorClass() {

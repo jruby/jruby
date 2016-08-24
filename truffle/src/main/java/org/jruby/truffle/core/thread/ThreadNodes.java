@@ -118,7 +118,12 @@ public abstract class ThreadNodes {
 
         @Specialization
         public DynamicObject group(DynamicObject thread) {
-            return Layouts.THREAD.getThreadGroup(thread);
+            final DynamicObject group = Layouts.THREAD.getThreadGroup(thread);
+            if (group == null) {
+                return nil();
+            } else {
+                return group;
+            }
         }
     }
 
@@ -525,6 +530,19 @@ public abstract class ThreadNodes {
             }
             Layouts.THREAD.setPriority(thread, rubyPriority);
             return rubyPriority;
+        }
+    }
+
+    @Primitive(name = "thread_set_group", unsafe = UnsafeGroup.THREADS)
+    public static abstract class ThreadSetGroupPrimitiveNode extends PrimitiveArrayArgumentsNode {
+        public ThreadSetGroupPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization(guards = "isRubyThread(thread)")
+        public DynamicObject setGroup(DynamicObject thread, DynamicObject threadGroup) {
+            Layouts.THREAD.setThreadGroup(thread, threadGroup);
+            return threadGroup;
         }
     }
 
