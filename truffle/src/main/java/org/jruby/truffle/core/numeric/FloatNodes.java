@@ -576,6 +576,8 @@ public abstract class FloatNodes {
             fixnumOrBignum = new FixnumOrBignumNode(context, sourceSection);
         }
 
+        public abstract Object executeFloor(double n);
+
         @Specialization
         public Object floor(double n) {
             return fixnumOrBignum.fixnumOrBignum(Math.floor(n));

@@ -17,6 +17,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
@@ -30,6 +31,7 @@ import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.truffle.core.cast.BooleanCastNode;
 import org.jruby.truffle.core.cast.BooleanCastNodeGen;
 import org.jruby.truffle.core.cast.ToIntNode;
+import org.jruby.truffle.core.numeric.BignumNodesFactory.DivNodeFactory;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.SnippetNode;
 import org.jruby.truffle.language.control.RaiseException;
@@ -136,8 +138,10 @@ public abstract class BignumNodes {
 
     }
 
-    @CoreMethod(names = { "/", "div", "__slash__" }, required = 1)
+    @CoreMethod(names = { "/", "__slash__" }, required = 1)
     public abstract static class DivNode extends BignumCoreMethodNode {
+
+        public abstract Object executeDiv(VirtualFrame frame, Object a, Object b);
 
         @TruffleBoundary
         @Specialization
@@ -168,6 +172,29 @@ public abstract class BignumNodes {
                 return fixnumOrBignum(result.subtract(BigInteger.ONE));
             } else {
                 return fixnumOrBignum(result);
+            }
+        }
+
+    }
+
+    // Defined in Java as we need to statically call #/
+    @CoreMethod(names = "div", required = 1)
+    public abstract static class IDivNode extends BignumNodes.BignumCoreMethodNode {
+
+        @Child DivNode divNode = DivNodeFactory.create(null);
+        @Child FloatNodes.FloorNode floorNode = FloatNodesFactory.FloorNodeFactory.create(null, null, null);
+
+        @Specialization
+        public Object idiv(VirtualFrame frame, Object a, Object b,
+                @Cached("createBinaryProfile()") ConditionProfile zeroProfile) {
+            Object quotient = divNode.executeDiv(frame, a, b);
+            if (quotient instanceof Double) {
+                if (zeroProfile.profile((double) b == 0.0)) {
+                    throw new RaiseException(coreExceptions().zeroDivisionError(this));
+                }
+                return floorNode.executeFloor((double) quotient);
+            } else {
+                return quotient;
             }
         }
 

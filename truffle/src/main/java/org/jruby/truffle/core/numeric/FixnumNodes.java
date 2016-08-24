@@ -20,6 +20,7 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
@@ -29,6 +30,7 @@ import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.builtins.Primitive;
 import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.core.CoreLibrary;
+import org.jruby.truffle.core.numeric.FixnumNodesFactory.DivNodeFactory;
 import org.jruby.truffle.core.rope.LazyIntRope;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.SnippetNode;
@@ -237,7 +239,7 @@ public abstract class FixnumNodes {
         }
     }
 
-    @CoreMethod(names = { "/", "div", "__slash__" }, required = 1)
+    @CoreMethod(names = { "/", "__slash__" }, required = 1)
     public abstract static class DivNode extends CoreMethodArrayArgumentsNode {
 
         private final BranchProfile bGreaterZero = BranchProfile.create();
@@ -248,6 +250,8 @@ public abstract class FixnumNodes {
         private final BranchProfile bMinusOneAMinimum = BranchProfile.create();
         private final BranchProfile bMinusOneANotMinimum = BranchProfile.create();
         private final BranchProfile finalCase = BranchProfile.create();
+
+        public abstract Object executeDiv(VirtualFrame frame, Object a, Object b);
 
         // int
 
@@ -366,6 +370,29 @@ public abstract class FixnumNodes {
 
         protected static boolean isLongMinValue(long a) {
             return a == Long.MIN_VALUE;
+        }
+
+    }
+
+    // Defined in Java as we need to statically call #/
+    @CoreMethod(names = "div", required = 1)
+    public abstract static class IDivNode extends BignumNodes.BignumCoreMethodNode {
+
+        @Child DivNode divNode = DivNodeFactory.create(null);
+        @Child FloatNodes.FloorNode floorNode = FloatNodesFactory.FloorNodeFactory.create(null, null, null);
+
+        @Specialization
+        public Object idiv(VirtualFrame frame, Object a, Object b,
+                @Cached("createBinaryProfile()") ConditionProfile zeroProfile) {
+            Object quotient = divNode.executeDiv(frame, a, b);
+            if (quotient instanceof Double) {
+                if (zeroProfile.profile((double) b == 0.0)) {
+                    throw new RaiseException(coreExceptions().zeroDivisionError(this));
+                }
+                return floorNode.executeFloor((double) quotient);
+            } else {
+                return quotient;
+            }
         }
 
     }
