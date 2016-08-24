@@ -132,12 +132,12 @@ public class RipperLexer {
         return parser.getRuntime().isVerbose();
     }
 
-    public void warn(String message) {
-        throw new UnsupportedOperationException("Not supported yet.");
+    public void warn(String fmt) {
+        parser.dispatch("warning", getRuntime().newString(fmt));
     }
     
-    public void warning(String message) {
-        throw new UnsupportedOperationException("Not supported yet.");
+    public void warning(String fmt) {
+        parser.dispatch("warning", getRuntime().newString(fmt));
     }
     
     public enum Keyword {
