@@ -139,25 +139,27 @@ public abstract class SingletonClassNode extends RubyNode {
 
     @TruffleBoundary
     protected DynamicObject getSingletonClassForInstance(DynamicObject object) {
-        if (Layouts.CLASS.getIsSingleton(Layouts.BASIC_OBJECT.getMetaClass(object))) {
-            return Layouts.BASIC_OBJECT.getMetaClass(object);
+        synchronized (object) {
+            DynamicObject metaClass = Layouts.BASIC_OBJECT.getMetaClass(object);
+            if (Layouts.CLASS.getIsSingleton(metaClass)) {
+                return metaClass;
+            }
+
+            final DynamicObject logicalClass = Layouts.BASIC_OBJECT.getLogicalClass(object);
+
+            final String name = StringUtils.format("#<Class:#<%s:0x%x>>", Layouts.MODULE.getFields(logicalClass).getName(),
+                    ObjectIDOperations.verySlowGetObjectID(getContext(), object));
+
+            final DynamicObject singletonClass = ClassNodes.createSingletonClassOfObject(
+                    getContext(), logicalClass, object, name);
+
+            if (isFrozen(object)) {
+                freeze(singletonClass);
+            }
+
+            Layouts.BASIC_OBJECT.setMetaClass(object, singletonClass);
+            return singletonClass;
         }
-
-        final DynamicObject logicalClass = Layouts.BASIC_OBJECT.getLogicalClass(object);
-
-        final String name = StringUtils.format("#<Class:#<%s:0x%x>>", Layouts.MODULE.getFields(logicalClass).getName(),
-                ObjectIDOperations.verySlowGetObjectID(getContext(), object));
-
-        final DynamicObject singletonClass = ClassNodes.createSingletonClassOfObject(
-                getContext(), logicalClass, object, name);
-
-        if (isFrozen(object)) {
-            freeze(singletonClass);
-        }
-
-        Layouts.BASIC_OBJECT.setMetaClass(object, singletonClass);
-
-        return singletonClass;
     }
 
     public void freeze(final DynamicObject singletonClass) {

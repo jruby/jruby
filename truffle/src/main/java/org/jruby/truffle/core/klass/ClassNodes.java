@@ -213,19 +213,23 @@ public abstract class ClassNodes {
     }
 
     public static DynamicObject getSingletonClassOrNull(RubyContext context, DynamicObject rubyClass) {
-        if (Layouts.CLASS.getIsSingleton(Layouts.BASIC_OBJECT.getMetaClass(rubyClass))) {
-            return ensureItHasSingletonClassCreated(context, Layouts.BASIC_OBJECT.getMetaClass(rubyClass));
+        DynamicObject metaClass = Layouts.BASIC_OBJECT.getMetaClass(rubyClass);
+        if (Layouts.CLASS.getIsSingleton(metaClass)) {
+            return ensureItHasSingletonClassCreated(context, metaClass);
         } else {
             return null;
         }
     }
 
     private static DynamicObject getLazyCreatedSingletonClass(RubyContext context, DynamicObject rubyClass) {
-        if (Layouts.CLASS.getIsSingleton(Layouts.BASIC_OBJECT.getMetaClass(rubyClass))) {
-            return Layouts.BASIC_OBJECT.getMetaClass(rubyClass);
-        }
+        synchronized (rubyClass) {
+            DynamicObject metaClass = Layouts.BASIC_OBJECT.getMetaClass(rubyClass);
+            if (Layouts.CLASS.getIsSingleton(metaClass)) {
+                return metaClass;
+            }
 
-        return createSingletonClass(context, rubyClass);
+            return createSingletonClass(context, rubyClass);
+        }
     }
 
     @TruffleBoundary
@@ -238,7 +242,8 @@ public abstract class ClassNodes {
         }
 
         String name = StringUtils.format("#<Class:%s>", Layouts.MODULE.getFields(rubyClass).getName());
-        Layouts.BASIC_OBJECT.setMetaClass(rubyClass, ClassNodes.createRubyClass(context, Layouts.BASIC_OBJECT.getLogicalClass(rubyClass), null, singletonSuperclass, name, true, rubyClass, true));
+        DynamicObject metaClass = ClassNodes.createRubyClass(context, Layouts.BASIC_OBJECT.getLogicalClass(rubyClass), null, singletonSuperclass, name, true, rubyClass, true);
+        Layouts.BASIC_OBJECT.setMetaClass(rubyClass, metaClass);
 
         return Layouts.BASIC_OBJECT.getMetaClass(rubyClass);
     }
