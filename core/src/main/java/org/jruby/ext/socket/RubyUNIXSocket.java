@@ -381,6 +381,11 @@ public class RubyUNIXSocket extends RubyBasicSocket {
         init_sock(runtime, channel, null);
     }
 
+    @Override
+    protected IRubyObject addrFor(ThreadContext context, InetSocketAddress addr, boolean reverse) {
+        return context.nil;
+    }
+
     //private UnixSocketChannel asUnixSocket() {
     //    return (UnixSocketChannel)getOpenFile().fd().ch;
     //}
