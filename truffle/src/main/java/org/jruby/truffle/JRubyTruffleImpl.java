@@ -55,6 +55,8 @@ public class JRubyTruffleImpl implements JRubyTruffleInterface {
 
         try {
             return engine.eval(loadSource("Truffle::Boot.run_jruby_root", "run_jruby_root")).get();
+        } catch (RuntimeException ex) {
+            throw ex;
         } catch (Exception e) {
             if (e.getCause() instanceof ExitException) {
                 final ExitException exit = (ExitException) e.getCause();
