@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2002 Jan Arne Petersen <jpetersen@uni-bonn.de>
- *
+ * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -28,9 +28,10 @@
 package org.jruby.runtime.load;
 
 import org.jruby.Ruby;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
- *
+ * 
  * @author jpetersen
  */
 public interface IAutoloadMethod {
