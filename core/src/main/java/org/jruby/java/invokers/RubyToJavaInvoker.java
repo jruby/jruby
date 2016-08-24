@@ -282,14 +282,30 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
         if ( ! Ruby.isSecurityRestricted() ) {
             try { accessible.setAccessible(true); }
             catch (SecurityException e) {}
+            catch (RuntimeException re) {
+                rethrowIfNotInaccessibleObject(re);
+            }
         }
         return accessible;
+    }
+
+    private static void rethrowIfNotInaccessibleObject(RuntimeException re) {
+        // Mega gross, but how else are we supposed to catch this and support Java 8?
+        if (re.getClass().getName().equals("java.lang.reflect.InaccessibleObjectException")) {
+            // ok, leave it inaccessible
+        } else {
+            // throw all other RuntimeException
+            throw re;
+        }
     }
 
     static <T extends AccessibleObject> T[] setAccessible(T[] accessibles) {
         if ( ! Ruby.isSecurityRestricted() ) {
             try { AccessibleObject.setAccessible(accessibles, true); }
             catch (SecurityException e) {}
+            catch (RuntimeException re) {
+                rethrowIfNotInaccessibleObject(re);
+            }
         }
         return accessibles;
     }
