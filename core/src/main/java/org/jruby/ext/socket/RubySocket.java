@@ -851,6 +851,12 @@ public class RubySocket extends RubyBasicSocket {
         return super.local_address(context);
     }
 
+    @JRubyMethod
+    public IRubyObject getsockname(ThreadContext context) {
+        lazyInit(context, false);
+        return getSocknameCommon(context, "getsockname");
+    }
+
     @Override
     public RubyBoolean closed_p(ThreadContext context) {
         if (getOpenFile() == null) return context.runtime.getFalse();
