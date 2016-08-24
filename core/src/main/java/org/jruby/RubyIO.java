@@ -1754,10 +1754,18 @@ public class RubyIO extends RubyObject implements IOEncodable {
         if (fptr.io_fflush(context) < 0)
             throw runtime.newSystemCallError("");
 
-//        # ifndef _WIN32	/* already called in io_fflush() */
-//        if ((int)rb_thread_io_blocking_region(nogvl_fsync, fptr, fptr->fd) < 0)
-//            rb_sys_fail_path(fptr->pathv);
-//        # endif
+        if (!Platform.IS_WINDOWS) { /* already called in io_fflush() */
+            try {
+                if (fptr.fileChannel() != null) fptr.fileChannel().force(true);
+                if (fptr.fd().chNative != null) {
+                    int ret = runtime.getPosix().fsync(fptr.fd().chNative.getFD());
+                    if (ret < 0) throw runtime.newErrnoFromInt(runtime.getPosix().errno());
+                }
+            } catch (IOException ioe) {
+                throw runtime.newIOErrorFromException(ioe);
+            }
+        }
+
         return RubyFixnum.zero(runtime);
     }
 
