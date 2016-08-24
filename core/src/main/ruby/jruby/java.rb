@@ -38,3 +38,4 @@ load 'jruby/java/java_utilities.rb'
 
 load 'jruby/java/core_ext.rb'
 load 'jruby/java/java_ext.rb'
+load 'jruby/java/java_8.rb' if java.util.Spliterator rescue nil

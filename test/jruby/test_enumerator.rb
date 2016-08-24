@@ -143,8 +143,8 @@ class TestEnumerator < Test::Unit::TestCase
     return unless JAVA_8
 
     arr = (1..200).to_a
-    enum = arr.each; threaded = false
-    stream = java.util.stream.StreamSupport.stream spliterator(enum, threaded), false
+    enum = arr.each
+    stream = enum.to_java.stream
     # assert_equal 200, stream.count
     list = stream.limit(100).map { |el| el + 1000 }.collect(java.util.stream.Collectors.toList)
     assert_equal 1001, list[0]
@@ -161,18 +161,20 @@ class TestEnumerator < Test::Unit::TestCase
         out << i * 10; (i += 1)
       end
     end
-    threaded = true
-    stream = java.util.stream.StreamSupport.stream spliterator(enum, threaded), false
+    enum2 = enum.dup
+
+    stream = enum.to_java.stream
     list = stream.limit(100).map { |el| el + 1 }.collect(java.util.stream.Collectors.toList)
     assert_equal 11, list[0]
     assert_equal 1001, list[99]
     assert_equal 100, list.count
 
-    stream = java.util.stream.StreamSupport.stream spliterator(enum, threaded), false
+    stream = java.util.stream.StreamSupport.stream enum2.to_java.spliterator, false
     set = stream.map { |el| el % 99 }.collect(java.util.stream.Collectors.toSet)
-    # assert_equal 11, list[0]
-    # assert_equal 1001, list[99]
-    # assert_equal 100, list.count
+
+    assert_equal 99, set.size
+    assert set.include?(98)
+    assert ! set.include?(99)
   end
 
   protected
@@ -187,21 +189,6 @@ class TestEnumerator < Test::Unit::TestCase
       end
     end
     super
-  end
-
-  private
-
-  def spliterator(enum, threaded = true)
-    size = enum.size || -1
-    mod = java.util.Spliterator::NONNULL
-    if size.is_a?(Numeric)
-      size = size.to_i
-      mod ||= java.util.Spliterator::SIZED
-    end
-    if threaded
-      mod ||= java.util.Spliterator.IMMUTABLE;
-    end
-    java.util.Spliterators.spliterator(enum, size, mod);
   end
 
 end

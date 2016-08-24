@@ -434,20 +434,30 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
     }
 
     @JRubyMethod
-    public IRubyObject size(ThreadContext context) {
+    public final IRubyObject size(ThreadContext context) {
         if (sizeFn != null) {
             return sizeFn.size(methodArgs);
         }
 
+        IRubyObject size = this.size;
         if (size != null) {
             if (size.respondsTo("call")) {
+                if (context == null) context = getRuntime().getCurrentContext();
                 return size.callMethod(context, "call");
             }
 
             return size;
         }
 
-        return context.nil;
+        return context == null ? null : context.nil;
+    }
+
+    public long size() {
+        final IRubyObject size = size(null);
+        if ( size instanceof RubyNumeric ) {
+            return ((RubyNumeric) size).getLongValue();
+        }
+        return -1;
     }
 
     private SizeFn enumSizeFn(final ThreadContext context) {
