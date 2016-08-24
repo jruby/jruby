@@ -824,6 +824,7 @@ public class ChannelStream implements Stream, Finalizable, NonblockWritingStream
 
     public synchronized void sync() throws IOException, BadDescriptorException {
         flushWrite();
+        descriptor.fsync();
     }
 
     /**

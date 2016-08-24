@@ -52,6 +52,8 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import jnr.enxio.channels.NativeSelectableChannel;
 import org.jruby.Ruby;
 import org.jruby.RubyFile;
 
@@ -796,6 +798,15 @@ public class ChannelDescriptor {
         // tidy up
         finish(true);
 
+    }
+
+    /**
+     * Attempt to sync the OS IO buffers (a la fsync(2)).
+     */
+    public void fsync() throws IOException {
+        if (channel instanceof FileChannel) {
+            ((FileChannel) channel).force(true);
+        }
     }
 
     void finish(boolean close) throws BadDescriptorException, IOException {
