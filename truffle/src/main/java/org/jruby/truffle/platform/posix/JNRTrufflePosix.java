@@ -19,10 +19,11 @@ import jnr.posix.Passwd;
 import jnr.posix.SignalHandler;
 import jnr.posix.SpawnFileAction;
 import jnr.posix.Times;
+import org.jruby.truffle.core.CoreLibrary;
+
 import java.io.FileDescriptor;
 import java.nio.ByteBuffer;
 import java.util.Collection;
-import org.jruby.truffle.core.CoreLibrary;
 
 public class JNRTrufflePosix implements TrufflePosix {
 

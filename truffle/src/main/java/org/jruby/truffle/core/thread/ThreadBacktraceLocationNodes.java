@@ -21,7 +21,6 @@ import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.UnaryCoreMethodNode;
 import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.StringOperations;
-import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.backtrace.Activation;
 
 @CoreClass("Thread::Backtrace::Location")

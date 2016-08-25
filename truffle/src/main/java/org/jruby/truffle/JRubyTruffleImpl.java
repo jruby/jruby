@@ -11,8 +11,6 @@ package org.jruby.truffle;
 
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.vm.PolyglotEngine;
-import java.io.IOException;
-
 import org.jruby.JRubyTruffleInterface;
 import org.jruby.Ruby;
 import org.jruby.truffle.interop.JRubyContextWrapper;
@@ -20,6 +18,8 @@ import org.jruby.truffle.language.control.ExitException;
 import org.jruby.truffle.language.control.JavaException;
 import org.jruby.truffle.platform.graal.Graal;
 import org.jruby.util.cli.Options;
+
+import java.io.IOException;
 
 public class JRubyTruffleImpl implements JRubyTruffleInterface {
 

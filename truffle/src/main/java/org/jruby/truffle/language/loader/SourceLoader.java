@@ -13,7 +13,6 @@ import com.oracle.truffle.api.source.Source;
 import org.jruby.Ruby;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.RubyLanguage;
-import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.util.StringUtils;
 
 import java.io.File;

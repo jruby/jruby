@@ -9,14 +9,13 @@
  */
 package org.jruby.truffle.builtins;
 
-import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.SnippetNode;
-import org.jruby.truffle.language.arguments.RubyArguments;
-
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
+import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SnippetNode;
+import org.jruby.truffle.language.arguments.RubyArguments;
 
 public class EnumeratorSizeNode extends RubyNode {
 

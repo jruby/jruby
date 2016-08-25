@@ -9,7 +9,6 @@
  */
 package org.jruby.truffle.core.tracepoint;
 
-import com.oracle.truffle.api.instrumentation.EventBinding;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.object.dsl.Layout;

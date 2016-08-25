@@ -9,7 +9,6 @@
  */
 package org.jruby.truffle.interop.cext;
 
-import static org.jruby.truffle.core.string.StringOperations.rope;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.interop.CanResolve;
 import com.oracle.truffle.api.interop.MessageResolution;
@@ -22,6 +21,8 @@ import org.jruby.truffle.core.rope.RopeNodes.GetByteNode;
 import org.jruby.truffle.core.rope.RopeNodesFactory.GetByteNodeGen;
 import org.jruby.truffle.core.string.StringNodes.SetByteNode;
 import org.jruby.truffle.core.string.StringNodesFactory.SetByteNodeFactory;
+
+import static org.jruby.truffle.core.string.StringOperations.rope;
 
 @MessageResolution(
         receiverType = CExtString.class,

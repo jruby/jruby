@@ -27,9 +27,6 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.Source;
-import java.io.File;
-import java.io.IOException;
-import java.util.concurrent.locks.ReentrantLock;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.RubyLanguage;
 import org.jruby.truffle.core.string.StringOperations;
@@ -41,6 +38,10 @@ import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.parser.ParserContext;
 import org.jruby.truffle.util.StringUtils;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.concurrent.locks.ReentrantLock;
 
 @NodeChild("feature")
 public abstract class RequireNode extends RubyNode {

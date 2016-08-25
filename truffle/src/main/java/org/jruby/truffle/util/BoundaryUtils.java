@@ -10,6 +10,7 @@
 package org.jruby.truffle.util;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+
 import java.util.Iterator;
 
 public class BoundaryUtils {

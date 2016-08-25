@@ -71,6 +71,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.RegexpOptions;
 import org.jruby.util.RegexpSupport;
 import org.jruby.util.RegexpSupport.ErrorMode;
+
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Iterator;

@@ -47,7 +47,6 @@ import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.JavaException;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.util.ByteListUtils;
-import org.jruby.util.ByteList;
 
 import java.io.File;
 import java.io.IOException;
