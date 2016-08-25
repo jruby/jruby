@@ -9,7 +9,6 @@ cache:
 before_script:
   - unset GEM_PATH GEM_HOME IRBRC JRUBY_OPTS
   - export PATH="`pwd`/bin:$PATH"
-  - echo $HOME
 
 jdk: oraclejdk8
 
