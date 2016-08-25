@@ -1568,8 +1568,15 @@ public abstract class StringNodes {
 
 
         @Specialization(guards = { "string != other", "isRubyString(other)" })
-        public DynamicObject replace(DynamicObject string, DynamicObject other) {
-            StringOperations.setRope(string, rope(other));
+        public DynamicObject replace(DynamicObject string, DynamicObject other,
+                                     @Cached("createBinaryProfile()") ConditionProfile ropeBufferProfile) {
+            final Rope rope = rope(other);
+
+            if (ropeBufferProfile.profile(rope instanceof RopeBuffer)) {
+                StringOperations.setRope(string, ((RopeBuffer) rope).dup());
+            } else {
+                StringOperations.setRope(string, rope);
+            }
 
             return string;
         }
