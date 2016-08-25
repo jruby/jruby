@@ -36,7 +36,9 @@ import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
+
 import jnr.constants.platform.Errno;
+
 import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.common.IRubyWarnings;
@@ -137,15 +139,18 @@ import org.jruby.truffle.language.parser.jruby.TranslatorDriver;
 import org.jruby.truffle.language.threadlocal.ThreadLocalObject;
 import org.jruby.truffle.platform.UnsafeGroup;
 import org.jruby.truffle.util.StringUtils;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.lang.ProcessBuilder.Redirect;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 @CoreClass("Kernel")
 public abstract class KernelNodes {
@@ -183,18 +188,21 @@ public abstract class KernelNodes {
 
         @TruffleBoundary
         private DynamicObject spawnAndCaptureOutput(DynamicObject command, final DynamicObject envAsHash) {
-            final List<String> envp = new ArrayList<>();
+            // We need to run via bash to get the variable and other expansion we expect
+            String[] cmdArray = new String[] { "bash", "-c", command.toString() };
 
-            // TODO(CS): cast
+            ProcessBuilder builder = new ProcessBuilder(cmdArray).redirectError(Redirect.INHERIT);
+
+            Map<String, String> env = builder.environment();
+            env.clear();
             for (KeyValue keyValue : HashOperations.iterableKeyValues(envAsHash)) {
-                envp.add(keyValue.getKey().toString() + "=" + keyValue.getValue().toString());
+                // TODO(CS): toString
+                env.put(keyValue.getKey().toString(), keyValue.getValue().toString());
             }
 
             final Process process;
-
             try {
-                // We need to run via bash to get the variable and other expansion we expect
-                process = Runtime.getRuntime().exec(new String[]{ "bash", "-c", command.toString() }, envp.toArray(new String[envp.size()]));
+                process = builder.start();
             } catch (IOException e) {
                 throw new JavaException(e);
             }
