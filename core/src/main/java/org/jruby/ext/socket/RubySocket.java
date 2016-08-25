@@ -211,9 +211,7 @@ public class RubySocket extends RubyBasicSocket {
 
         boolean exception = ArgsUtil.extractKeywordArg(context, "exception", opts) != runtime.getFalse();
 
-        doConnectNonblock(context, addr, exception);
-
-        return RubyFixnum.zero(context.runtime);
+        return doConnectNonblock(context, addr, exception);
     }
 
     @JRubyMethod()
@@ -222,7 +220,7 @@ public class RubySocket extends RubyBasicSocket {
 
         doConnect(context, addr, true);
 
-        return RubyFixnum.zero(context.runtime);
+        return doConnect(context, addr, true);
     }
 
     @JRubyMethod()
