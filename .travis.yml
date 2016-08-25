@@ -26,6 +26,9 @@ matrix:
   - env: JT='test mri'
   allow_failures:
   - env: JT='test mri'
+  # Exlude the default job https://github.com/travis-ci/travis-ci/issues/4681
+  exclude:
+  - jdk: oraclejdk8
 
 install: tool/travis-install.sh
 script: tool/travis-script.sh
