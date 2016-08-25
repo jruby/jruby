@@ -43,6 +43,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
+import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.constants.platform.Errno;
 import org.jruby.truffle.Layouts;
@@ -51,6 +52,7 @@ import org.jruby.truffle.builtins.Primitive;
 import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.core.exception.ExceptionOperations;
 import org.jruby.truffle.core.rope.Rope;
+import org.jruby.truffle.core.rope.RopeBuffer;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
@@ -87,13 +89,26 @@ public abstract class IOBufferPrimitiveNodes {
     public static abstract class IOBufferUnshiftPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Specialization(guards = "isRubyString(string)")
-        public int unshift(VirtualFrame frame, DynamicObject ioBuffer, DynamicObject string, int startPosition) {
+        public int unshift(VirtualFrame frame, DynamicObject ioBuffer, DynamicObject string, int startPosition,
+                           @Cached("createBinaryProfile()") ConditionProfile ropeBufferProfile) {
             Layouts.IO_BUFFER.setWriteSynced(ioBuffer, false);
 
             final Rope rope = StringOperations.rope(string);
-            int stringSize = rope.byteLength() - startPosition;
             final int usedSpace = Layouts.IO_BUFFER.getUsed(ioBuffer);
             final int availableSpace = IOBUFFER_SIZE - usedSpace;
+
+            final byte[] bytes;
+            int stringSize;
+
+            if (ropeBufferProfile.profile(rope instanceof RopeBuffer)) {
+                final ByteList byteList = ((RopeBuffer) rope).getByteList();
+
+                bytes = byteList.unsafeBytes();
+                stringSize = byteList.realSize() - startPosition;
+            } else {
+                bytes = rope.getBytes();
+                stringSize = rope.byteLength() - startPosition;
+            }
 
             if (stringSize > availableSpace) {
                 stringSize = availableSpace;
@@ -101,8 +116,8 @@ public abstract class IOBufferPrimitiveNodes {
 
             ByteList storage = Layouts.BYTE_ARRAY.getBytes(Layouts.IO_BUFFER.getStorage(ioBuffer));
 
-            // Data is copied here - can we do something COW?
-            System.arraycopy(rope.getBytes(), startPosition, storage.getUnsafeBytes(), storage.begin() + usedSpace, stringSize);
+            // TODO (nirvdrum 08-24-16): Data is copied here - can we do something COW?
+            System.arraycopy(bytes, startPosition, storage.getUnsafeBytes(), storage.begin() + usedSpace, stringSize);
 
             Layouts.IO_BUFFER.setUsed(ioBuffer, usedSpace + stringSize);
 
