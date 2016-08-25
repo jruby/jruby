@@ -158,7 +158,7 @@ public class SocketUtils {
             InetAddress addr = getRubyInetAddresses(hostname.convertToString().getByteList())[0];
             IRubyObject ret0, ret1, ret2, ret3;
 
-            ret0 = runtime.newString(addr.getCanonicalHostName());
+            ret0 = runtime.newString(getHostAddress(context, addr, !isBroadcastHostname(hostname)));
             ret1 = runtime.newArray();
             ret2 = runtime.newFixnum(2); // AF_INET
             ret3 = runtime.newString(new ByteList(addr.getAddress()));
@@ -501,6 +501,10 @@ public class SocketUtils {
             ret = addr.getHostAddress();
         }
         return ret;
+    }
+
+    private static Boolean isBroadcastHostname(IRubyObject hostname) {
+        return hostname.convertToString().asJavaString().equals(BROADCAST);
     }
 
     private static final Pattern STRING_IPV4_ADDRESS_PATTERN = Pattern.compile("((.*)\\/)?([\\.0-9]+)(:([0-9]+))?");
