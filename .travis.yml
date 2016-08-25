@@ -30,8 +30,11 @@ matrix:
   exclude:
   - jdk: oraclejdk8
 
-install: tool/travis-install.sh
-script: tool/travis-script.sh
+install:
+- if [ -z "$SKIP_BUILD" ]; then V=1 tool/jt.rb build; fi
+script:
+- $COMMAND
+- tool/jt.rb $JT
 
 notifications:
   irc:
