@@ -417,9 +417,10 @@ public class RopeOperations {
                         loopCount++;
                     }
 
-                    // TODO (nirvdrum 06-Apr-16) Rather than process the same child over and over, there may be opportunity to re-use the results from whole sections.
+                    // TODO (nirvdrum 25-Aug-2016): Flattening the rope with CR_VALID will cause a character length recalculation, even though we already know what it is. That operation should be made more optimal.
+                    final Rope flattenedChild = flatten(repeatingRope.getChild());
                     for (int i = 0; i < loopCount; i++) {
-                        workStack.push(repeatingRope.getChild());
+                        workStack.push(flattenedChild);
                     }
                 }
             } else {
