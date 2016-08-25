@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2007 Ola Bini <ola@ologix.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -28,6 +28,8 @@
 package org.jruby.ext.socket;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.BindException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -52,6 +54,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import org.jruby.util.io.FilenoUtil;
 import org.jruby.util.io.SelectorFactory;
 import java.nio.channels.spi.SelectorProvider;
 
@@ -82,18 +85,27 @@ public class RubyTCPServer extends RubyTCPSocket {
     @JRubyMethod(name = "initialize", required = 1, optional = 1, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.runtime;
-        IRubyObject _host = args[0];
-        IRubyObject _port = args.length > 1 ? args[1] : context.nil;
+        IRubyObject _host;
+        IRubyObject _port = null;
+        String host = "0.0.0.0";
 
-        String host;
-        if(_host.isNil()|| ((_host instanceof RubyString) && ((RubyString) _host).isEmpty())) {
-            host = "0.0.0.0";
-        } else if (_host instanceof RubyFixnum) {
-            // numeric host, use it for port
-            _port = _host;
-            host = "0.0.0.0";
-        } else {
-            host = _host.convertToString().toString();
+        switch (args.length) {
+            case 2:
+                _host = args[0];
+                _port = args[1];
+
+                if (_host.isNil()) {
+                    break;
+                } else if (_host instanceof RubyFixnum) {
+                    throw runtime.newTypeError(_host, runtime.getString());
+                }
+
+                RubyString hostString = _host.convertToString();
+                if (hostString.size() > 0) host = hostString.toString();
+
+                break;
+            case 1:
+                _port = args[0];
         }
 
         int port = SocketUtils.getPortFrom(context, _port);
@@ -204,7 +216,8 @@ public class RubyTCPServer extends RubyTCPSocket {
 
                 if (!ready) {
                     // no connection immediately accepted, let them try again
-                    throw runtime.newErrnoEAGAINError("Resource temporarily unavailable");
+                    if (!ex) return runtime.newSymbol("wait_readable");
+                    throw runtime.newErrnoEAGAINReadableError("Resource temporarily unavailable");
 
                 } else {
                     // otherwise one key has been selected (ours) so we get the channel and hand it off
@@ -227,8 +240,70 @@ public class RubyTCPServer extends RubyTCPSocket {
         }
     }
 
+    @JRubyMethod(name = "sysaccept")
+    public IRubyObject sysaccept(ThreadContext context) {
+        Ruby runtime = context.runtime;
+
+        try {
+            RubyThread thread = context.getThread();
+
+            while (true) {
+                boolean ready = thread.select(this, SelectionKey.OP_ACCEPT);
+
+                if (!ready) {
+                    // we were woken up without being selected...poll for thread events and go back to sleep
+                    context.pollThreadEvents();
+
+                } else {
+                    SocketChannel connected = getServerSocketChannel().accept();
+                    if (connected == null) continue;
+
+                    connected.finishConnect();
+
+                    return runtime.newFixnum(FilenoUtil.filenoFrom(connected));
+                }
+            }
+
+        } catch(IOException e) {
+            throw runtime.newIOErrorFromException(e);
+        }
+    }
+
+    private static volatile Method listenFunction;
+    static {
+        Method listen = null;
+        try {
+            listen = Class.forName("sun.nio.ch.Net").getDeclaredMethod("listen", int.class);
+            listen.setAccessible(true);
+        } catch (Exception e) {
+            // can't use listen, backlog will be a no-op
+        }
+        listenFunction = listen;
+    }
+
     @JRubyMethod(name = "listen", required = 1)
-    public IRubyObject listen(ThreadContext context, IRubyObject backlog) {
+    public IRubyObject listen(ThreadContext context, IRubyObject _backlog) {
+        int backlog = _backlog.convertToInteger().getIntValue();
+
+        if (listenFunction != null) {
+            int ret = 0;
+            try {
+                listenFunction.invoke(FilenoUtil.getDescriptorFromChannel(getServerSocketChannel()), backlog);
+            } catch (InvocationTargetException ite) {
+                // We should only get IOException from this, or else something else is wrong
+                if (ite.getTargetException() instanceof IOException) {
+                    IOException ioe = (IOException) ite.getTargetException();
+                    throw context.runtime.newIOErrorFromException(ioe);
+                }
+
+                // give up attempting to use this function
+                listenFunction = null;
+            } catch (IllegalAccessException iae) {
+                // give up attempting to use this function
+                listenFunction = null;
+            }
+        }
+
         return RubyFixnum.zero(context.runtime);
     }
 

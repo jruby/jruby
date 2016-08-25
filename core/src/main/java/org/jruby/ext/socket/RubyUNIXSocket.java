@@ -29,6 +29,7 @@ package org.jruby.ext.socket;
 
 import jnr.constants.platform.Fcntl;
 import jnr.constants.platform.OpenFlags;
+import jnr.constants.platform.Sock;
 import jnr.constants.platform.SocketLevel;
 import jnr.constants.platform.SocketOption;
 import jnr.ffi.LastError;
@@ -53,12 +54,15 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.io.BadDescriptorException;
 import org.jruby.util.io.ModeFlags;
 import org.jruby.util.io.OpenFile;
 import org.jruby.util.io.FilenoUtil;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.nio.channels.Channel;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -118,8 +122,9 @@ public class RubyUNIXSocket extends RubyBasicSocket {
     public IRubyObject peeraddr(ThreadContext context) {
         final Ruby runtime = context.runtime;
 
-        final RubyString path = openFile.getPath() == null ? RubyString.newEmptyString(runtime) : runtime.newString(openFile.getPath());
-        return runtime.newArray( runtime.newString("AF_UNIX"), path );
+        return runtime.newArray(
+                runtime.newString("AF_UNIX"),
+                runtime.newString(getUnixRemoteSocket().path()));
     }
 
     @JRubyMethod(name = "recvfrom", required = 1, optional = 1)
@@ -376,6 +381,12 @@ public class RubyUNIXSocket extends RubyBasicSocket {
 
     protected void init_sock(Ruby runtime, Channel channel) {
         init_sock(runtime, channel, null);
+    }
+
+    protected IRubyObject addrFor(ThreadContext context, SocketAddress addr, boolean reverse) {
+        final Ruby runtime = context.runtime;
+
+        return new Addrinfo(runtime, runtime.getClass("Addrinfo"), addr, Sock.SOCK_STREAM);
     }
 
     //private UnixSocketChannel asUnixSocket() {

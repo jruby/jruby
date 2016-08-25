@@ -3794,6 +3794,10 @@ public final class Ruby implements Constantizable {
         return newRaiseException(getErrno().getClass("EINTR"), "Interrupted");
     }
 
+    public RaiseException newErrnoEAFNOSUPPORTError(String message) {
+        return newRaiseException(getErrno().getClass("EAFNOSUPPORT"), message);
+    }
+
     public RaiseException newErrnoFromLastPOSIXErrno() {
         RubyClass errnoClass = getErrno(getPosix().errno());
         if (errnoClass == null) errnoClass = systemCallError;
@@ -4114,6 +4118,8 @@ public final class Ruby implements Constantizable {
                     return newErrnoENFILEError();
                 case "Network is unreachable" :
                     return newErrnoENETUNREACHError();
+                case "Address already in use" :
+                    return newErrnoEADDRINUSEError();
                 default :
                     if ( Platform.IS_WINDOWS ) {
                         if ( errorMessage.contains("connection was aborted") ) {

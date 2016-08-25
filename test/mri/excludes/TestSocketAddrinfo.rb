@@ -1,5 +1,3 @@
-exclude :test_addrinfo_inspect_sockaddr_inet6, "needs investigation"
-exclude :test_addrinfo_inspect_sockaddr_unix, "needs investigation"
 exclude :test_addrinfo_ip, "needs investigation"
 exclude :test_addrinfo_ip_unpack, "needs investigation"
 exclude :test_addrinfo_ip_unpack_inet6, "needs investigation"

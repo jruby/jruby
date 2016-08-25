@@ -76,6 +76,11 @@ public class RubyTCPSocket extends RubyIPSocket {
         super(runtime, type);
     }
 
+    @Override
+    public IRubyObject recv_nonblock(ThreadContext context, IRubyObject[] args) {
+        return null;
+    }
+
     @JRubyMethod(required = 2, optional = 2, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.runtime;
@@ -95,46 +100,52 @@ public class RubyTCPSocket extends RubyIPSocket {
         try {
             // This is a bit convoluted because (1) SocketChannel.bind is only in jdk 7 and
             // (2) Socket.getChannel() seems to return null in some cases
-            channel = SocketChannel.open();
-            Socket socket = channel.socket();
+            InetAddress[] allAddresses = InetAddress.getAllByName(remoteHost);
 
-            if (localHost != null) {
-                socket.setReuseAddress(true);
-                socket.bind( new InetSocketAddress(InetAddress.getByName(localHost), localPort) );
-            }
+            // try all addresses associated with the hostname until one works. See MRI: init_inetsock_internal
+            for (int i = 0; i < allAddresses.length; i++) {
+                InetAddress inet = allAddresses[i];
 
-            try {
-                // Do this nonblocking so we can be interrupted
-                channel.configureBlocking(false);
-                channel.connect( new InetSocketAddress(InetAddress.getByName(remoteHost), remotePort) );
+                channel = SocketChannel.open();
+                Socket socket = channel.socket();
 
-                // wait for connection
-                while (!context.getThread().select(channel, this, SelectionKey.OP_CONNECT)) {
-                    context.pollThreadEvents();
+                if (localHost != null) {
+                    socket.setReuseAddress(true);
+                    socket.bind(new InetSocketAddress(InetAddress.getByName(localHost), localPort));
                 }
 
-                // complete connection
-                while (!channel.finishConnect()) {
-                    context.pollThreadEvents();
+                try {
+                    // Do this nonblocking so we can be interrupted
+                    channel.configureBlocking(false);
+                    boolean connected = channel.connect(new InetSocketAddress(inet, remotePort));
+                    if (!connected) {
+                        context.getThread().select(channel, this, SelectionKey.OP_CONNECT);
+                        channel.finishConnect();
+                    }
+
+                    // only try to set blocking back if we succeeded to finish connecting
+                    channel.configureBlocking(true);
+
+                    initSocket(newChannelFD(runtime, channel));
+                    success = true;
+                    break;
+                } catch (BindException e) {
+                    throw runtime.newErrnoEADDRFromBindException(e, " to: " + remoteHost + ':' + remotePort);
+                } catch (NoRouteToHostException e) {
+                    if (i+1 < allAddresses.length) {
+                        // try next address
+                        continue;
+                    }
+                    throw runtime.newErrnoEHOSTUNREACHError("SocketChannel.connect");
+                } catch (ConnectException e) {
+                    if (i+1 < allAddresses.length) {
+                        // try next address
+                        continue;
+                    }
+                    throw runtime.newErrnoECONNREFUSEDError("connect(2) for \"" + remoteHost + "\" port " + remotePort);
+                } catch (UnknownHostException e) {
+                    throw SocketUtils.sockerr(runtime, "initialize: name or service not known");
                 }
-
-                // only try to set blocking back if we succeeded to finish connecting
-                channel.configureBlocking(true);
-
-                initSocket(newChannelFD(runtime, channel));
-                success = true;
-            }
-            catch (BindException e) {
-            	throw runtime.newErrnoEADDRFromBindException(e, " to: " + remoteHost + ':' + remotePort);
-            }
-            catch (NoRouteToHostException e) {
-                throw runtime.newErrnoEHOSTUNREACHError("SocketChannel.connect");
-            }
-            catch (ConnectException e) {
-                throw runtime.newErrnoECONNREFUSEDError("connect(2) for " + host.inspect() + " port " + remotePort);
-            }
-            catch (UnknownHostException e) {
-                throw SocketUtils.sockerr(runtime, "initialize: name or service not known");
             }
         }
         catch (ClosedChannelException e) {

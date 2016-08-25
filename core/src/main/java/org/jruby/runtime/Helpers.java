@@ -2807,4 +2807,10 @@ public class Helpers {
         return builder.toString();
     }
 
+    public static byte[] subseq(byte[] ary, int start, int len) {
+        byte[] newAry = new byte[len];
+        System.arraycopy(ary, start, newAry, 0, len);
+        return newAry;
+    }
+
 }
