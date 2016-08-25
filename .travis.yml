@@ -17,8 +17,7 @@ before_script:
   - echo $HOME
 
 jdk:
-  - openjdk7
-#  - oraclejdk8
+  - oraclejdk8
 
 os:
   - linux
@@ -30,45 +29,31 @@ env:
 
 matrix:
   include:
-    # JRuby+Truffle needs Java 8
     - env: JT='test specs :command_line'
-      jdk: oraclejdk8
     - env: JT='test specs :language'
-      jdk: oraclejdk8
     - env: JT='test specs :core'
-      jdk: oraclejdk8
     - env: JT='test specs :library'
-      jdk: oraclejdk8
     - env: JT='test specs :truffle'
-      jdk: oraclejdk8
     - env: JT='test integration'
-      jdk: oraclejdk8
     - env:
       - COMMAND=test/truffle/gems/install-gems.sh
       - JT='test gems'
-      jdk: oraclejdk8
     - env:
       - JAVA_OPTS="$JAVA_OPTS -Xmx512m"
       - HAS_REDIS=true
       - COMMAND=test/truffle/ecosystem-travis-install.sh
       - JT='test ecosystem'
-      jdk: oraclejdk8
     - env: JT='test tck'
-      jdk: oraclejdk8
     - env:
       - JT=check_ambiguous_arguments
       - SKIP_BUILD=true
       - V=1
-      jdk: oraclejdk8
     - env: JT='test mri'
-      jdk: oraclejdk8
   allow_failures:
     - env: JT='test mri'
-      jdk: oraclejdk8
     - env:
       - COMMAND=test/truffle/gems/install-gems.sh
       - JT='test gems'
-      jdk: oraclejdk8
 
 install: tool/travis-install.sh
 script: tool/travis-script.sh
