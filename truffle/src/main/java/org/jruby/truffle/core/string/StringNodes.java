@@ -713,7 +713,13 @@ public abstract class StringNodes {
     public abstract static class ByteSizeNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
-        public int byteSize(DynamicObject string) {
+        public int byteSize(DynamicObject string, @Cached("createBinaryProfile()") ConditionProfile ropeBufferProfile) {
+            final Rope rope = rope(string);
+
+            if (ropeBufferProfile.profile(rope instanceof RopeBuffer)) {
+                return ((RopeBuffer) rope).getByteList().realSize();
+            }
+
             return rope(string).byteLength();
         }
 
