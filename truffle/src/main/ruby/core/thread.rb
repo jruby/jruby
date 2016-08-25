@@ -378,7 +378,7 @@ class ThreadGroup
   end
 
   def list
-    Thread.list.find_all { |th| th.group == self }
+    Thread.list.select { |th| th.group == self }
   end
 
   Default = ThreadGroup.new

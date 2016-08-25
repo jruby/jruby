@@ -118,13 +118,9 @@ public abstract class ThreadNodes {
 
         @Specialization
         public DynamicObject group(DynamicObject thread) {
-            final DynamicObject group = Layouts.THREAD.getThreadGroup(thread);
-            if (group == null) {
-                return nil();
-            } else {
-                return group;
-            }
+            return Layouts.THREAD.getThreadGroup(thread);
         }
+
     }
 
     @CoreMethod(names = { "kill", "exit", "terminate" }, unsafe = UnsafeGroup.THREADS)
