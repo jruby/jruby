@@ -18,11 +18,6 @@ before_script:
 
 jdk: oraclejdk8
 
-env:
-  global:
-    - JAVA_OPTS="-XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Xmn48M -Xmx512M"
-    - MALLOC_ARENA_MAX=2
-
 matrix:
   include:
     - env: JT='test specs :command_line'
