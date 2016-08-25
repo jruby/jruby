@@ -69,6 +69,31 @@ module Enumerable
     end
   end
 
+  def chunk_while(&block)
+    block = Proc.new(block)
+    Enumerator.new do |yielder|
+      accumulator = nil
+      prev = nil
+      each do |*elem|
+        elem = elem[0] if elem.size == 1
+        if accumulator == nil
+          accumulator = [elem]
+          prev = elem
+        else
+          start_new = block.yield(prev, elem)
+          if !start_new
+            yielder.yield accumulator if accumulator
+            accumulator = [elem]
+          else
+            accumulator << elem
+          end
+          prev = elem
+        end
+      end
+      yielder.yield accumulator if accumulator
+    end
+  end
+
   def collect
     if block_given?
       ary = []
