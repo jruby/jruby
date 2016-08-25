@@ -27,37 +27,19 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.socket;
 
-import jnr.constants.platform.Sock;
 import org.jruby.Ruby;
-import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
-import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.ast.util.ArgsUtil;
-import org.jruby.common.IRubyWarnings;
-import org.jruby.runtime.ObjectAllocator;
-import org.jruby.runtime.ThreadContext;
+import org.jruby.anno.JRubyClass;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.io.ChannelFD;
-import org.jruby.util.io.ModeFlags;
-import org.jruby.util.io.Sockaddr;
-
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.net.ServerSocket;
-import java.net.SocketException;
-import java.net.StandardSocketOptions;
-import java.net.UnknownHostException;
-import java.nio.channels.Channel;
-import java.nio.channels.IllegalBlockingModeException;
-import java.nio.channels.SelectableChannel;
-import java.nio.channels.ServerSocketChannel;
-import java.nio.channels.SocketChannel;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.ObjectAllocator;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
+@Deprecated
 @JRubyClass(name="Socket", parent="BasicSocket", include="Socket::Constants")
 public class RubyServerSocket extends RubySocket {
     static void createServerSocket(Ruby runtime) {
@@ -76,150 +58,17 @@ public class RubyServerSocket extends RubySocket {
         super(runtime, type);
     }
 
-    @JRubyMethod(name = "listen")
-    public IRubyObject listen(ThreadContext context, IRubyObject backlog) {
-        context.runtime.getWarnings().warnOnce(
-                IRubyWarnings.ID.LISTEN_SERVER_SOCKET,
-                "pass backlog to #bind instead of #listen (http://wiki.jruby.org/ServerSocket)");
-
-        return context.runtime.newFixnum(0);
-    }
-
-    @JRubyMethod(notImplemented = true)
-    public IRubyObject connect_nonblock(ThreadContext context, IRubyObject arg) {
-        throw SocketUtils.sockerr(context.runtime, "server socket cannot connect");
-    }
-
-    @JRubyMethod(notImplemented = true)
-    public IRubyObject connect(ThreadContext context, IRubyObject arg) {
-        throw SocketUtils.sockerr(context.runtime, "server socket cannot connect");
-    }
-
+    @Deprecated
     @JRubyMethod()
     public IRubyObject bind(ThreadContext context, IRubyObject addr) {
         return bind(context, addr, RubyFixnum.zero(context.runtime));
     }
 
+    @Deprecated
     @JRubyMethod()
     public IRubyObject bind(ThreadContext context, IRubyObject addr, IRubyObject backlog) {
-        final InetSocketAddress iaddr;
+        this.backlog = backlog.convertToInteger().getIntValue();
 
-        if (addr instanceof Addrinfo) {
-            Addrinfo addrInfo = (Addrinfo) addr;
-            if (!addrInfo.ip_p(context).isTrue()) {
-                throw context.runtime.newTypeError("not an INET or INET6 address: " + addrInfo);
-            }
-            iaddr = new InetSocketAddress(addrInfo.getInetAddress().getHostAddress(), addrInfo.getPort());
-        } else {
-            iaddr = Sockaddr.addressFromSockaddr_in(context, addr);
-        }
-
-        this.backlog = RubyFixnum.fix2int(backlog);
-        doBind(context, iaddr);
-
-        return RubyFixnum.zero(context.runtime);
-    }
-
-    @JRubyMethod()
-    public IRubyObject accept(ThreadContext context) {
-        return doAccept(this, context, true);
-    }
-
-    @JRubyMethod()
-    public IRubyObject accept_nonblock(ThreadContext context) {
-        return accept_nonblock(context, context.nil);
-    }
-
-    @JRubyMethod()
-    public IRubyObject accept_nonblock(ThreadContext context, IRubyObject opts) {
-        return doAcceptNonblock(this, context, ArgsUtil.extractKeywordArg(context, "exception", opts) != context.runtime.getFalse());
-    }
-
-    protected ChannelFD initChannelFD(Ruby runtime) {
-        Channel channel;
-
-        try {
-            if (soType == Sock.SOCK_STREAM) {
-                channel = ServerSocketChannel.open();
-            }
-            else {
-                throw runtime.newArgumentError("unsupported server socket type `" + soType + "'");
-            }
-
-            return newChannelFD(runtime, channel);
-        }
-        catch (IOException e) {
-            throw sockerr(runtime, "initialize: " + e.toString(), e);
-        }
-    }
-
-    public static IRubyObject doAcceptNonblock(RubySocket sock, ThreadContext context, boolean ex) {
-        try {
-            Channel channel = sock.getChannel();
-            if (channel instanceof SelectableChannel) {
-                SelectableChannel selectable = (SelectableChannel)channel;
-
-                synchronized (selectable.blockingLock()) {
-                    boolean oldBlocking = selectable.isBlocking();
-
-                    try {
-                        selectable.configureBlocking(false);
-
-                        IRubyObject socket = doAccept(sock, context, ex);
-                        if (!(socket instanceof RubySocket)) return socket;
-                        SocketChannel socketChannel = (SocketChannel)((RubySocket)socket).getChannel();
-                        InetSocketAddress addr = (InetSocketAddress)socketChannel.socket().getRemoteSocketAddress();
-
-                        return context.runtime.newArray(
-                                socket,
-                                Sockaddr.packSockaddrFromAddress(context, addr));
-                    } finally {
-                        selectable.configureBlocking(oldBlocking);
-                    }
-                }
-            }
-            else {
-                throw context.runtime.newErrnoENOPROTOOPTError();
-            }
-        }
-        catch (IOException e) {
-            throw sockerr(context.runtime, e.getLocalizedMessage(), e);
-        }
-    }
-
-    public static IRubyObject doAccept(RubySocket sock, ThreadContext context, boolean ex) {
-        Ruby runtime = context.runtime;
-
-        Channel channel = sock.getChannel();
-
-        try {
-            if (channel instanceof ServerSocketChannel) {
-                ServerSocketChannel serverChannel = (ServerSocketChannel)sock.getChannel();
-
-                SocketChannel socket = serverChannel.accept();
-
-                if (socket == null) {
-                    // This appears to be undocumented in JDK; null as a sentinel value
-                    // for a nonblocking accept with nothing available. We raise for Ruby.
-                    // indicates that no connection is available in non-blocking mode
-                    if (!ex) return runtime.newSymbol("wait_readable");
-                    throw runtime.newErrnoEAGAINReadableError("accept(2) would block");
-                }
-
-                RubySocket rubySocket = new RubySocket(runtime, runtime.getClass("Socket"));
-                rubySocket.initFromServer(runtime, sock, socket);
-
-                return runtime.newArray(rubySocket, new Addrinfo(runtime, runtime.getClass("Addrinfo"), socket.getRemoteAddress()));
-            }
-            throw runtime.newErrnoENOPROTOOPTError();
-        }
-        catch (IllegalBlockingModeException e) {
-            // indicates that no connection is available in non-blocking mode
-            if (!ex) return runtime.newSymbol("wait_readable");
-            throw runtime.newErrnoEAGAINReadableError("accept(2) would block");
-        }
-        catch (IOException e) {
-            throw sockerr(runtime, e.getLocalizedMessage(), e);
-        }
+        return super.bind(context, addr);
     }
 }// RubySocket

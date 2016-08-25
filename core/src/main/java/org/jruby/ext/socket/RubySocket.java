@@ -38,9 +38,10 @@ import java.net.SocketAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.nio.channels.AlreadyConnectedException;
-import java.nio.channels.Channel;
+import java.nio.channels.IllegalBlockingModeException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.ConnectionPendingException;
+import java.nio.channels.Channel;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.ServerSocketChannel;
@@ -286,7 +287,7 @@ public class RubySocket extends RubyBasicSocket {
             throw context.runtime.newErrnoEINVALError();
         }
 
-        return RubyServerSocket.doAccept(this, context, true);
+        return doAccept(this, context, true);
     }
 
     @JRubyMethod()
@@ -304,7 +305,7 @@ public class RubySocket extends RubyBasicSocket {
             throw context.runtime.newErrnoEINVALError();
         }
 
-        return RubyServerSocket.doAcceptNonblock(this, context, ArgsUtil.extractKeywordArg(context, "exception", opts) != context.runtime.getFalse());
+        return doAcceptNonblock(this, context, ArgsUtil.extractKeywordArg(context, "exception", opts) != context.runtime.getFalse());
     }
 
     @JRubyMethod(meta = true)
@@ -741,6 +742,75 @@ public class RubySocket extends RubyBasicSocket {
     protected void lazyOptions() {
         for (Runnable runnable : lazySocketOptions) {
             runnable.run();
+        }
+    }
+
+    public static IRubyObject doAcceptNonblock(RubySocket sock, ThreadContext context, boolean ex) {
+        try {
+            Channel channel = sock.getChannel();
+            if (channel instanceof SelectableChannel) {
+                SelectableChannel selectable = (SelectableChannel)channel;
+
+                synchronized (selectable.blockingLock()) {
+                    boolean oldBlocking = selectable.isBlocking();
+
+                    try {
+                        selectable.configureBlocking(false);
+
+                        IRubyObject socket = doAccept(sock, context, ex);
+                        if (!(socket instanceof RubySocket)) return socket;
+                        SocketChannel socketChannel = (SocketChannel)((RubySocket)socket).getChannel();
+                        InetSocketAddress addr = (InetSocketAddress)socketChannel.socket().getRemoteSocketAddress();
+
+                        return context.runtime.newArray(
+                                socket,
+                                Sockaddr.packSockaddrFromAddress(context, addr));
+                    } finally {
+                        selectable.configureBlocking(oldBlocking);
+                    }
+                }
+            }
+            else {
+                throw context.runtime.newErrnoENOPROTOOPTError();
+            }
+        }
+        catch (IOException e) {
+            throw sockerr(context.runtime, e.getLocalizedMessage(), e);
+        }
+    }
+
+    public static IRubyObject doAccept(RubySocket sock, ThreadContext context, boolean ex) {
+        Ruby runtime = context.runtime;
+        Channel channel = sock.getChannel();
+
+        try {
+            if (channel instanceof ServerSocketChannel) {
+                ServerSocketChannel serverChannel = (ServerSocketChannel)sock.getChannel();
+
+                SocketChannel socket = serverChannel.accept();
+
+                if (socket == null) {
+                    // This appears to be undocumented in JDK; null as a sentinel value
+                    // for a nonblocking accept with nothing available. We raise for Ruby.
+                    // indicates that no connection is available in non-blocking mode
+                    if (!ex) return runtime.newSymbol("wait_readable");
+                    throw runtime.newErrnoEAGAINReadableError("accept(2) would block");
+                }
+
+                RubySocket rubySocket = new RubySocket(runtime, runtime.getClass("Socket"));
+                rubySocket.initFromServer(runtime, sock, socket);
+
+                return runtime.newArray(rubySocket, new Addrinfo(runtime, runtime.getClass("Addrinfo"), socket.getRemoteAddress()));
+            }
+            throw runtime.newErrnoENOPROTOOPTError();
+        }
+        catch (IllegalBlockingModeException e) {
+            // indicates that no connection is available in non-blocking mode
+            if (!ex) return runtime.newSymbol("wait_readable");
+            throw runtime.newErrnoEAGAINReadableError("accept(2) would block");
+        }
+        catch (IOException e) {
+            throw sockerr(runtime, e.getLocalizedMessage(), e);
         }
     }
 
