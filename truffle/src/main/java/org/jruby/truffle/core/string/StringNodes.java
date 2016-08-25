@@ -200,24 +200,31 @@ public abstract class StringNodes {
         }
 
         @Specialization(guards = {"isRubyString(other)", "getEncoding(string) == getEncoding(other)"})
-        public DynamicObject addSameEncoding(DynamicObject string, DynamicObject other) {
-            return add(string, other, getEncoding(string));
+        public DynamicObject addSameEncoding(DynamicObject string, DynamicObject other,
+                                             @Cached("createBinaryProfile()") ConditionProfile ropeBufferProfile) {
+            return add(string, other, getEncoding(string), ropeBufferProfile);
         }
 
         @Specialization(guards = {"isRubyString(other)", "getEncoding(string) != getEncoding(other)", "isUTF8AndUSASCII(string, other)"})
-        public DynamicObject addUTF8AndUSASCII(DynamicObject string, DynamicObject other) {
-            return add(string, other, UTF8Encoding.INSTANCE);
+        public DynamicObject addUTF8AndUSASCII(DynamicObject string, DynamicObject other,
+                                               @Cached("createBinaryProfile()") ConditionProfile ropeBufferProfile) {
+            return add(string, other, UTF8Encoding.INSTANCE, ropeBufferProfile);
         }
 
         @Specialization(guards = {"isRubyString(other)", "getEncoding(string) != getEncoding(other)", "!isUTF8AndUSASCII(string, other)"})
-        public DynamicObject addDifferentEncodings(DynamicObject string, DynamicObject other) {
+        public DynamicObject addDifferentEncodings(DynamicObject string, DynamicObject other,
+                                                   @Cached("createBinaryProfile()") ConditionProfile ropeBufferProfile) {
             final Encoding enc = checkEncodingNode.executeCheckEncoding(string, other);
-            return add(string, other, enc);
+            return add(string, other, enc, ropeBufferProfile);
         }
 
-        private DynamicObject add(DynamicObject string, DynamicObject other, Encoding encoding) {
-            final Rope left = rope(string);
+        private DynamicObject add(DynamicObject string, DynamicObject other, Encoding encoding, ConditionProfile ropeBufferProfile) {
+            Rope left = rope(string);
             final Rope right = rope(other);
+
+            if (ropeBufferProfile.profile(left instanceof RopeBuffer)) {
+                left = ((RopeBuffer) left).dup();
+            }
 
             final Rope concatRope = makeConcatNode.executeMake(left, right, encoding);
 
