@@ -629,6 +629,12 @@ public class CoreLibrary {
         randomizerFactory = Layouts.RANDOMIZER.createRandomizerShape(randomizerClass, randomizerClass);
         Layouts.CLASS.setInstanceFactoryUnsafe(randomizerClass, randomizerFactory);
 
+        // Standard library
+
+        digestClass = defineClass(truffleModule, basicObjectClass, "Digest");
+        digestFactory = Layouts.DIGEST.createDigestShape(digestClass, digestClass);
+        Layouts.CLASS.setInstanceFactoryUnsafe(digestClass, digestFactory);
+
         // Include the core modules
 
         includeModules(comparableModule);
@@ -641,10 +647,6 @@ public class CoreLibrary {
         rubiniusUndefined = objectFactory.newInstance();
 
         globalVariables = new GlobalVariables(nilObject);
-
-        digestClass = defineClass(truffleModule, basicObjectClass, "Digest");
-        digestFactory = Layouts.DIGEST.createDigestShape(digestClass, digestClass);
-        Layouts.CLASS.setInstanceFactoryUnsafe(digestClass, digestFactory);
 
         // No need for new version since it's null before which is not cached
         assert Layouts.CLASS.getSuperclass(basicObjectClass) == null;
