@@ -213,36 +213,45 @@ public class JavaProxy extends RubyObject {
             final Map.Entry<String,String> entry = iter.next();
             if ( entry.getKey().equals( fieldName ) ) {
 
-                if ( Ruby.isSecurityRestricted() && ! Modifier.isPublic(field.getModifiers()) ) {
-                    throw context.runtime.newSecurityError("Cannot change accessibility on fields in a restricted mode: field '" + fieldName + "'");
+                installField(context, entry.getValue(), field, module, asReader, asWriter);
+
+                iter.remove(); break;
+            }
+        }
+    }
+
+    private static void installField(final ThreadContext context,
+        final String asName, final Field field, final RubyModule target,
+        boolean asReader, Boolean asWriter) {
+
+        if ( Ruby.isSecurityRestricted() && ! Modifier.isPublic(field.getModifiers()) ) {
+            throw context.runtime.newSecurityError("Cannot change accessibility on field in restricted mode  '" + field + "'");
+        }
+
+        final String fieldName = field.getName();
+
+        if ( Modifier.isStatic(field.getModifiers()) ) {
+            if ( asReader ) {
+                target.getSingletonClass().addMethod(asName, new StaticFieldGetter(fieldName, target, field));
+            }
+            if ( asWriter == null || asWriter ) {
+                if ( Modifier.isFinal(field.getModifiers()) ) {
+                    if ( asWriter == null ) return;
+                    // e.g. Cannot change final field 'private final char[] java.lang.String.value'
+                    throw context.runtime.newSecurityError("Cannot change final field '" + field + "'");
                 }
-
-                String asName = entry.getValue();
-
-                if ( Modifier.isStatic(field.getModifiers()) ) {
-                    if ( asReader ) {
-                        module.getSingletonClass().addMethod(asName, new StaticFieldGetter(fieldName, module, field));
-                    }
-                    if ( asWriter ) {
-                        if ( Modifier.isFinal(field.getModifiers()) ) {
-                            throw context.runtime.newSecurityError("Cannot change final field '" + fieldName + "'");
-                        }
-                        module.getSingletonClass().addMethod(asName + '=', new StaticFieldSetter(fieldName, module, field));
-                    }
-                } else {
-                    if ( asReader ) {
-                        module.addMethod(asName, new InstanceFieldGetter(fieldName, module, field));
-                    }
-                    if ( asWriter ) {
-                        if ( Modifier.isFinal(field.getModifiers()) ) {
-                            throw context.runtime.newSecurityError("Cannot change final field '" + fieldName + "'");
-                        }
-                        module.addMethod(asName + '=', new InstanceFieldSetter(fieldName, module, field));
-                    }
+                target.getSingletonClass().addMethod(asName + '=', new StaticFieldSetter(fieldName, target, field));
+            }
+        } else {
+            if ( asReader ) {
+                target.addMethod(asName, new InstanceFieldGetter(fieldName, target, field));
+            }
+            if ( asWriter == null || asWriter ) {
+                if ( Modifier.isFinal(field.getModifiers()) ) {
+                    if ( asWriter == null ) return;
+                    throw context.runtime.newSecurityError("Cannot change final field '" + field + "'");
                 }
-
-                iter.remove();
-                break;
+                target.addMethod(asName + '=', new InstanceFieldSetter(fieldName, target, field));
             }
         }
     }
