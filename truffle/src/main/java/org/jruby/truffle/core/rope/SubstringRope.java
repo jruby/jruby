@@ -46,6 +46,19 @@ public class SubstringRope extends Rope {
     }
 
     @Override
+    protected byte[] getBytesSlow() {
+        if (child.getRawBytes() != null) {
+            final byte[] ret = new byte[byteLength()];
+
+            System.arraycopy(child.getRawBytes(), offset, ret, 0, byteLength());
+
+            return ret;
+        }
+
+        return RopeOperations.extractRange(child, offset, byteLength());
+    }
+
+    @Override
     public byte getByteSlow(int index) {
         return child.getByteSlow(index + offset);
     }
