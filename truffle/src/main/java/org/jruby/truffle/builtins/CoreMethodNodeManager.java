@@ -45,6 +45,7 @@ import org.jruby.truffle.language.methods.SharedMethodInfo;
 import org.jruby.truffle.language.objects.SingletonClassNode;
 import org.jruby.truffle.language.parser.jruby.Translator;
 import org.jruby.truffle.platform.UnsafeGroup;
+import org.jruby.truffle.tools.ChaosNodeGen;
 import org.jruby.truffle.util.StringUtils;
 
 import java.util.ArrayList;
@@ -258,9 +259,13 @@ public class CoreMethodNodeManager {
             node = transformResult(method, node);
         }
 
-        final ExceptionTranslatingNode exceptionTranslatingNode = new ExceptionTranslatingNode(context, sourceSection, node, method.unsupportedOperationBehavior());
+        RubyNode bodyNode = new ExceptionTranslatingNode(context, sourceSection, node, method.unsupportedOperationBehavior());
 
-        final RubyRootNode rootNode = new RubyRootNode(context, sourceSection, null, sharedMethodInfo, exceptionTranslatingNode, false);
+        if (context.getOptions().CHAOS) {
+            bodyNode = ChaosNodeGen.create(bodyNode);
+        }
+
+        final RubyRootNode rootNode = new RubyRootNode(context, sourceSection, null, sharedMethodInfo, bodyNode, false);
 
         return Truffle.getRuntime().createCallTarget(rootNode);
     }

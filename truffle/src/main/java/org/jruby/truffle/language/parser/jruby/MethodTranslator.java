@@ -56,6 +56,8 @@ import org.jruby.truffle.language.supercall.ReadSuperArgumentsNode;
 import org.jruby.truffle.language.supercall.ReadZSuperArgumentsNode;
 import org.jruby.truffle.language.supercall.SuperCallNode;
 import org.jruby.truffle.language.supercall.ZSuperOutsideMethodNode;
+import org.jruby.truffle.tools.ChaosNodeGen;
+
 import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Deque;
@@ -137,6 +139,10 @@ public class MethodTranslator extends BodyTranslator {
             }
 
             body = translateNodeOrNil(sourceSection, bodyNode);
+
+            if (context.getOptions().CHAOS) {
+                body = ChaosNodeGen.create(body);
+            }
         } finally {
             parentSourceSection.pop();
         }
@@ -251,6 +257,11 @@ public class MethodTranslator extends BodyTranslator {
 
         // TODO(CS, 10-Jan-15) why do we only translate exceptions in methods and not blocks?
         body = new ExceptionTranslatingNode(context, body.getSourceSection(), body, UnsupportedOperationBehavior.TYPE_ERROR);
+
+        if (context.getOptions().CHAOS) {
+            body = ChaosNodeGen.create(body);
+        }
+
         return body;
     }
 

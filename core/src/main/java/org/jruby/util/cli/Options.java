@@ -305,6 +305,7 @@ public class Options {
     public static final Option<Boolean> TRUFFLE_METRICS_MEMORY_USED_ON_EXIT = bool(TRUFFLE, "truffle.metrics.memory_used_on_exit", false, "Print the size of heap memory in use on exit.");
     public static final Option<Boolean> TRUFFLE_CALL_GRAPH = bool(TRUFFLE, "truffle.callgraph", false, "Maintain a call graph.");
     public static final Option<String> TRUFFLE_CALL_GRAPH_WRITE = string(TRUFFLE, "truffle.callgraph.write", "File to write the call garph to on exit.");
+    public static final Option<Boolean> TRUFFLE_CHAOS = bool(TRUFFLE, "truffle.chaos", false, "Randomly modify the representation of objects.");
 
     public static final Option<Boolean> TRUFFLE_GRAAL_WARNING_UNLESS = bool(TRUFFLE, "truffle.graal.warn_unless", true, "Warn unless the JVM has the Graal compiler.");
     public static final Option<Boolean> TRUFFLE_PERF_WARNING = bool(TRUFFLE, "truffle.perf.warn", false, "Warn when using a fature which is not optimized yet.");
