@@ -33,6 +33,8 @@ public class SubstringRope extends Rope {
         super(encoding, codeRange, singleByteOptimizable, byteLength, characterLength, child.depth() + 1, null);
         this.child = child;
         this.offset = offset;
+
+        assert byteLength <= child.byteLength();
     }
 
     @Override
