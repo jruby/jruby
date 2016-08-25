@@ -16,8 +16,7 @@ before_script:
   - export PATH="`pwd`/bin:$PATH"
   - echo $HOME
 
-jdk:
-  - oraclejdk8
+jdk: oraclejdk8
 
 os:
   - linux
