@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 set -e
+set -x
 
 bin/jruby bin/gem install execjs -v 2.6.0
 bin/jruby bin/gem install rack -v 1.6.1

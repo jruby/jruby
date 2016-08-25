@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+set -e
+set -x
+
 unset GEM_HOME GEM_PATH
 
 bin/jruby bin/gem install bundler
