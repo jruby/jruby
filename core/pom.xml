@@ -657,6 +657,39 @@ DO NOT MODIFIY - GENERATED CODE
   </build>
   <profiles>
     <profile>
+      <id>all</id>
+      <build>
+        <plugins>
+          <plugin>
+            <artifactId>maven-shade-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>shade the asm classes</id>
+                <phase>package</phase>
+                <goals>
+                  <goal>shade</goal>
+                </goals>
+                <configuration>
+                  <artifactSet>
+                    <includes>
+                      <include>com.github.jnr:jnr-ffi</include>
+                      <include>org.ow2.asm:*</include>
+                    </includes>
+                  </artifactSet>
+                  <relocations>
+                    <relocation>
+                      <pattern>org.objectweb</pattern>
+                      <shadedPattern>org.jruby.org.objectweb</shadedPattern>
+                    </relocation>
+                  </relocations>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
       <id>release</id>
       <build>
         <plugins>

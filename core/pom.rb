@@ -273,7 +273,7 @@ project 'JRuby Core' do
                                          'mainClass' => 'org.jruby.Main' } ] )
   end
 
-  [:release, :main, :osgi, :j2ee, :complete, :dist, :'jruby_complete_jar_extended', :'jruby-jars' ].each do |name|
+  [:all, :release, :main, :osgi, :j2ee, :complete, :dist, :'jruby_complete_jar_extended', :'jruby-jars' ].each do |name|
     profile name do
       plugin :shade do
         execute_goals( 'shade',
