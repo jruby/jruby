@@ -43,13 +43,5 @@ notifications:
       - "%{repository} (%{branch}:%{commit} by %{author}): %{message} (%{build_url})"
     skip_join: true
 
-  # update jruby-head installed on Travis CI
-  webhooks:
-    urls:
-      - "https://rubies.travis-ci.org/rebuild/jruby-head"
-# we are on a branch
-    on_success: always
-    on_failure: never
-
 services:
   - redis-server
