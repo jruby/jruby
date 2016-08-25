@@ -273,7 +273,7 @@ public class RubySocket extends RubyBasicSocket {
 
         lazyInit(context, true);
 
-        return context.nil;
+        return RubyFixnum.zero(context.runtime);
     }
 
     @JRubyMethod()
