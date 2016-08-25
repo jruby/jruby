@@ -76,7 +76,7 @@ module Enumerable
       prev = nil
       each do |*elem|
         elem = elem[0] if elem.size == 1
-        if accumulator == nil
+        if accumulator.nil?
           accumulator = [elem]
           prev = elem
         else
@@ -249,7 +249,7 @@ module Enumerable
       prev = nil
       each do |*elem|
         elem = elem[0] if elem.size == 1
-        if accumulator == nil
+        if accumulator.nil?
           accumulator = [elem]
           prev = elem
         else
