@@ -56,4 +56,7 @@ public class RopeBuffer extends LeafRope {
         return byteList.toString();
     }
 
+    public RopeBuffer dup() {
+        return new RopeBuffer(byteList.dup(), getCodeRange(), isSingleByteOptimizable(), characterLength());
+    }
 }
