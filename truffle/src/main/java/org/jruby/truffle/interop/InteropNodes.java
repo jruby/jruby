@@ -648,6 +648,7 @@ public abstract class InteropNodes {
             final Source sourceObject = Source.newBuilder(source.toString()).name("(eval)").mimeType(mimeTypeString).build();
 
             try {
+                emitIO();
                 return getContext().getEnv().parse(sourceObject);
             } catch (IOException e) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
@@ -659,6 +660,8 @@ public abstract class InteropNodes {
             return getContext().getOptions().EVAL_CACHE;
         }
 
+        private void emitIO() throws IOException {
+        }
     }
 
     @CoreMethod(names = "to_java_string", isModuleFunction = true, required = 1)

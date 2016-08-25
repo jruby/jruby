@@ -34,9 +34,13 @@ public class JRubyTruffleImpl implements JRubyTruffleInterface {
                 .build();
         try {
             context = (RubyContext) engine.eval(loadSource("Truffle::Boot.context", "context")).get();
+            emitIO();
         } catch (IOException e) {
             throw new JavaException(e);
         }
+    }
+
+    private static void emitIO() throws IOException {
     }
 
     @Override
@@ -51,9 +55,15 @@ public class JRubyTruffleImpl implements JRubyTruffleInterface {
 
         try {
             return engine.eval(loadSource("Truffle::Boot.run_jruby_root", "run_jruby_root")).get();
-        } catch (IOException e) {
+        } catch (RuntimeException ex) {
+            throw ex;
+        } catch (Exception e) {
             if (e.getCause() instanceof ExitException) {
                 final ExitException exit = (ExitException) e.getCause();
+                throw new org.jruby.exceptions.MainExitException(exit.getCode());
+            }
+            if (e instanceof ExitException) {
+                final ExitException exit = (ExitException) e;
                 throw new org.jruby.exceptions.MainExitException(exit.getCode());
             }
 
