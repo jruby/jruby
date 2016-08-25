@@ -28,7 +28,6 @@ matrix:
     - env: JT='test mri'
   allow_failures:
     - env: JT='test mri'
-    - env: JT='test gems' COMMAND=test/truffle/gems/install-gems.sh
 
 install: tool/travis-install.sh
 script: tool/travis-script.sh
