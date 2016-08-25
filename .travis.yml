@@ -3,29 +3,29 @@ language: java
 sudo: false
 
 cache:
- directories:
-   - $HOME/.m2
+  directories:
+  - $HOME/.m2
 
 before_script:
-  - unset GEM_PATH GEM_HOME IRBRC JRUBY_OPTS
+- unset GEM_PATH GEM_HOME IRBRC JRUBY_OPTS
 
 jdk: oraclejdk8
 
 matrix:
   include:
-    - env: JT='test specs :command_line'
-    - env: JT='test specs :language'
-    - env: JT='test specs :core'
-    - env: JT='test specs :library'
-    - env: JT='test specs :truffle'
-    - env: JT='test integration'
-    - env: JT='test gems' COMMAND=test/truffle/gems/install-gems.sh
-    - env: JT='test ecosystem' JAVA_OPTS="$JAVA_OPTS -Xmx512m" HAS_REDIS=true COMMAND=test/truffle/ecosystem-travis-install.sh
-    - env: JT='test tck'
-    - env: JT=check_ambiguous_arguments SKIP_BUILD=true V=1
-    - env: JT='test mri'
+  - env: JT='test specs :command_line'
+  - env: JT='test specs :language'
+  - env: JT='test specs :core'
+  - env: JT='test specs :library'
+  - env: JT='test specs :truffle'
+  - env: JT='test integration'
+  - env: JT='test gems' COMMAND=test/truffle/gems/install-gems.sh
+  - env: JT='test ecosystem' JAVA_OPTS="$JAVA_OPTS -Xmx512m" HAS_REDIS=true COMMAND=test/truffle/ecosystem-travis-install.sh
+  - env: JT='test tck'
+  - env: JT='check_ambiguous_arguments' SKIP_BUILD=true V=1
+  - env: JT='test mri'
   allow_failures:
-    - env: JT='test mri'
+  - env: JT='test mri'
 
 install: tool/travis-install.sh
 script: tool/travis-script.sh
@@ -33,12 +33,12 @@ script: tool/travis-script.sh
 notifications:
   irc:
     channels:
-      - "irc.freenode.org#jruby"
+    - "irc.freenode.org#jruby"
     on_success: change
     on_failure: always
     template:
-      - "%{repository} (%{branch}:%{commit} by %{author}): %{message} (%{build_url})"
+    - "%{repository} (%{branch}:%{commit} by %{author}): %{message} (%{build_url})"
     skip_join: true
 
 services:
-  - redis-server
+- redis-server
