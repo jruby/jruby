@@ -82,7 +82,14 @@ public abstract class Translator extends org.jruby.ast.visitor.AbstractNodeVisit
         }
 
         int startLine = base.getStartLine();
-        int endLine = base.getEndLine();
+
+        int endLine;
+
+        try {
+            endLine = base.getEndLine();
+        } catch (IllegalArgumentException e) {
+            endLine = startLine;
+        }
 
         for (SourceSection sourceSection : sourceSections) {
             if (sourceSection == null) {
@@ -91,12 +98,16 @@ public abstract class Translator extends org.jruby.ast.visitor.AbstractNodeVisit
 
             startLine = Math.min(startLine, sourceSection.getStartLine());
 
-            final int nodeEndLine;
+            int nodeEndLine;
 
             if (sourceSection.getSource() == null) {
                 nodeEndLine = sourceSection.getStartLine();
             } else {
-                nodeEndLine = sourceSection.getEndLine();
+                try {
+                    nodeEndLine = sourceSection.getEndLine();
+                } catch (IllegalArgumentException e) {
+                    nodeEndLine = sourceSection.getStartLine();
+                }
             }
 
             endLine = Math.max(endLine, nodeEndLine);
