@@ -18,9 +18,6 @@ before_script:
 
 jdk: oraclejdk8
 
-os:
-  - linux
-
 env:
   global:
     - JAVA_OPTS="-XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Xmn48M -Xmx512M"
