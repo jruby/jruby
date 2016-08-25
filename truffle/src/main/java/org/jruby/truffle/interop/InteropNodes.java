@@ -648,12 +648,7 @@ public abstract class InteropNodes {
             final String mimeTypeString = mimeType.toString();
             final Source sourceObject = Source.newBuilder(source.toString()).name("(eval)").mimeType(mimeTypeString).build();
 
-            try {
-                return getContext().getEnv().parse(sourceObject);
-            } catch (IOException e) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                throw new JavaException(e);
-            }
+            return getContext().getEnv().parse(sourceObject);
         }
 
         protected int getCacheLimit() {
