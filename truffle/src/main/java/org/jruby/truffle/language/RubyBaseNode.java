@@ -17,11 +17,14 @@ import com.oracle.truffle.api.instrumentation.StandardTags;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+
 import jnr.ffi.provider.MemoryManager;
+
 import org.jcodings.Encoding;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.CoreLibrary;
+import org.jruby.truffle.core.array.ArrayHelpers;
 import org.jruby.truffle.core.exception.CoreExceptions;
 import org.jruby.truffle.core.kernel.TraceManager;
 import org.jruby.truffle.core.numeric.BignumOperations;
@@ -35,6 +38,7 @@ import org.jruby.truffle.platform.posix.Sockets;
 import org.jruby.truffle.platform.posix.TrufflePosix;
 import org.jruby.truffle.stdlib.CoverageManager;
 import org.jruby.util.ByteList;
+
 import java.math.BigInteger;
 
 @TypeSystemReference(RubyTypes.class)
@@ -95,6 +99,10 @@ public abstract class RubyBaseNode extends Node {
 
     protected DynamicObject createString(Rope rope) {
         return StringOperations.createString(getContext(), rope);
+    }
+
+    protected DynamicObject createArray(Object store, int size) {
+        return ArrayHelpers.createArray(getContext(), store, size);
     }
 
     protected DynamicObject createBignum(BigInteger value) {

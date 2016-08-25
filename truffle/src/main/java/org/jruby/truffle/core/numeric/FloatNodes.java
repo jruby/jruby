@@ -854,7 +854,7 @@ public abstract class FloatNodes {
 
             final int sign = value < 0 ? 1 : 0;
 
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), new Object[]{create7BitString(string, UTF8Encoding.INSTANCE), decimal, sign, string.length()}, 4);
+            return createArray(new Object[] { create7BitString(string, UTF8Encoding.INSTANCE), decimal, sign, string.length() }, 4);
         }
 
     }

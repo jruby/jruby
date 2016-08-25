@@ -765,7 +765,7 @@ public abstract class ModuleNodes {
             for (String variable : allClassVariables.keySet()) {
                 store[i++] = getSymbol(variable);
             }
-            return ArrayHelpers.createArray(getContext(), store, size);
+            return createArray(store, size);
         }
     }
 
