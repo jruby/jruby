@@ -433,7 +433,7 @@ public abstract class EncodingConverterNodes {
                 ret[4] = createString(new ByteList(ec.lastError.getErrorBytes(), ec.lastError.getErrorBytesP() + ec.lastError.getErrorBytesLength(), ec.lastError.getReadAgainLength()));
             }
 
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), ret, ret.length);
+            return createArray(ret, ret.length);
         }
 
     }

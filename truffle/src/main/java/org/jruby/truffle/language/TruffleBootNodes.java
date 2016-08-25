@@ -135,7 +135,7 @@ public abstract class TruffleBootNodes {
                 array[n] = StringOperations.createString(getContext(), StringOperations.encodeRope(argv[n], UTF8Encoding.INSTANCE));
             }
 
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), array, array.length);
+            return createArray(array, array.length);
         }
 
     }
@@ -153,7 +153,7 @@ public abstract class TruffleBootNodes {
                 array[n] = StringOperations.createString(getContext(), StringOperations.encodeRope(path[n], UTF8Encoding.INSTANCE));
             }
 
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), array, array.length);
+            return createArray(array, array.length);
         }
 
     }

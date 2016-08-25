@@ -692,7 +692,7 @@ public abstract class StringNodes {
                 store[n] = ((int) bytes[n]) & 0xFF;
             }
 
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), store, store.length);
+            return createArray(store, store.length);
         }
 
         @Specialization
@@ -2319,8 +2319,7 @@ public abstract class StringNodes {
         }
 
         private DynamicObject finishUnpack(ArrayResult result) {
-            final DynamicObject array = Layouts.ARRAY.createArray(
-                    coreLibrary().getArrayFactory(), result.getOutput(), result.getOutputLength());
+            final DynamicObject array = createArray(result.getOutput(), result.getOutputLength());
 
             if (result.isTainted()) {
                 if (taintNode == null) {
@@ -2738,7 +2737,7 @@ public abstract class StringNodes {
             if (len > 0 && (limit || len > b || lim < 0)) ret.add(makeString(string, b, len - b));
 
             Object[] objects = ret.toArray();
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), objects, objects.length);
+            return createArray(objects, objects.length);
         }
 
         // because the factory is not constant

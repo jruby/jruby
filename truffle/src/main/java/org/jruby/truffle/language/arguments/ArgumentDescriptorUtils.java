@@ -12,10 +12,11 @@
 package org.jruby.truffle.language.arguments;
 
 import com.oracle.truffle.api.object.DynamicObject;
+
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.ArgumentType;
-import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.array.ArrayHelpers;
 
 public class ArgumentDescriptorUtils {
 
@@ -28,7 +29,7 @@ public class ArgumentDescriptorUtils {
             params[i] = toArray(context, argsDesc[i], isLambda);
         }
 
-        return Layouts.ARRAY.createArray(context.getCoreLibrary().getArrayFactory(), params, params.length);
+        return ArrayHelpers.createArray(context, params, params.length);
     }
 
     public static DynamicObject toArray(RubyContext context,
@@ -57,6 +58,6 @@ public class ArgumentDescriptorUtils {
             };
         }
 
-        return Layouts.ARRAY.createArray(context.getCoreLibrary().getArrayFactory(), store, store.length);
+        return ArrayHelpers.createArray(context, store, store.length);
     }
 }

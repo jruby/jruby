@@ -399,7 +399,7 @@ public abstract class TimeNodes {
             }
 
             final Object[] decomposed = new Object[]{ sec, min, hour, day, month, year, wday, yday, isdst, zone };
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), decomposed, decomposed.length);
+            return createArray(decomposed, decomposed.length);
         }
 
     }

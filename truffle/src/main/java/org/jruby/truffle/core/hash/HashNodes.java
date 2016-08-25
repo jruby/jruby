@@ -103,18 +103,18 @@ public abstract class HashNodes {
                     final Object pair = store[n];
 
                     if (!RubyGuards.isRubyArray(pair)) {
-                        return snippetNode.execute(frame, "_constructor_fallback(*args)", "args", Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), args, args.length));
+                        return snippetNode.execute(frame, "_constructor_fallback(*args)", "args", createArray(args, args.length));
                     }
 
                     final DynamicObject pairArray = (DynamicObject) pair;
                     final Object pairStore = Layouts.ARRAY.getStore(pairArray);
 
                     if (pairStore != null && pairStore.getClass() != Object[].class) {
-                        return snippetNode.execute(frame, "_constructor_fallback(*args)", "args", Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), args, args.length));
+                        return snippetNode.execute(frame, "_constructor_fallback(*args)", "args", createArray(args, args.length));
                     }
 
                     if (Layouts.ARRAY.getSize(pairArray) != 2) {
-                        return snippetNode.execute(frame, "_constructor_fallback(*args)", "args", Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), args, args.length));
+                        return snippetNode.execute(frame, "_constructor_fallback(*args)", "args", createArray(args, args.length));
                     }
 
                     final Object[] pairObjectStore = (Object[]) pairStore;
@@ -137,7 +137,7 @@ public abstract class HashNodes {
                 DynamicObject hashClass,
                 Object[] args,
                 @Cached("new()") SnippetNode snippetNode) {
-            return snippetNode.execute(frame, "_constructor_fallback(*args)", "args", Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), args, args.length));
+            return snippetNode.execute(frame, "_constructor_fallback(*args)", "args", createArray(args, args.length));
         }
 
         public boolean isSmallArrayOfPairs(Object[] args) {
@@ -648,7 +648,7 @@ public abstract class HashNodes {
         }
 
         private Object yieldPair(VirtualFrame frame, DynamicObject block, Object key, Object value) {
-            return yield(frame, block, Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), new Object[] { key, value }, 2));
+            return yield(frame, block, createArray(new Object[] { key, value }, 2));
         }
 
     }
@@ -802,7 +802,7 @@ public abstract class HashNodes {
         public DynamicObject mapNull(VirtualFrame frame, DynamicObject hash, DynamicObject block) {
             assert HashOperations.verifyStore(getContext(), hash);
 
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), null, 0);
+            return createArray(null, 0);
         }
 
         @ExplodeLoop
@@ -830,7 +830,7 @@ public abstract class HashNodes {
                 }
             }
 
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), arrayBuilderNode.finish(resultStore, length), length);
+            return createArray(arrayBuilderNode.finish(resultStore, length), length);
         }
 
         @Specialization(guards = "isBucketHash(hash)")
@@ -854,11 +854,11 @@ public abstract class HashNodes {
                 }
             }
 
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), arrayBuilderNode.finish(store, length), length);
+            return createArray(arrayBuilderNode.finish(store, length), length);
         }
 
         private Object yieldPair(VirtualFrame frame, DynamicObject block, Object key, Object value) {
-            return yield(frame, block, Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), new Object[] { key, value }, 2));
+            return yield(frame, block, createArray(new Object[] { key, value }, 2));
         }
 
     }
@@ -1256,7 +1256,7 @@ public abstract class HashNodes {
             assert HashOperations.verifyStore(getContext(), hash);
 
             Object[] objects = new Object[]{key, value};
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), objects, objects.length);
+            return createArray(objects, objects.length);
         }
 
         @Specialization(guards = {"!isEmptyHash(hash)", "isBucketHash(hash)"})
@@ -1316,7 +1316,7 @@ public abstract class HashNodes {
             assert HashOperations.verifyStore(getContext(), hash);
 
             Object[] objects = new Object[]{key, value};
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), objects, objects.length);
+            return createArray(objects, objects.length);
         }
 
     }

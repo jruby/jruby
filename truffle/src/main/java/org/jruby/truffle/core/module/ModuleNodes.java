@@ -324,7 +324,7 @@ public abstract class ModuleNodes {
             }
 
             Object[] objects = ancestors.toArray(new Object[ancestors.size()]);
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), objects, objects.length);
+            return createArray(objects, objects.length);
         }
     }
 
@@ -802,7 +802,7 @@ public abstract class ModuleNodes {
             }
 
             Object[] objects = constantsArray.toArray(new Object[constantsArray.size()]);
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), objects, objects.length);
+            return createArray(objects, objects.length);
         }
 
     }
@@ -1223,7 +1223,7 @@ public abstract class ModuleNodes {
             }
 
             Object[] objects = modules.toArray(new Object[modules.size()]);
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), objects, objects.length);
+            return createArray(objects, objects.length);
         }
     }
 
@@ -1319,7 +1319,7 @@ public abstract class ModuleNodes {
             }
 
             Object[] objects = modules.toArray(new Object[modules.size()]);
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), objects, objects.length);
+            return createArray(objects, objects.length);
         }
     }
 
@@ -1485,7 +1485,7 @@ public abstract class ModuleNodes {
         @TruffleBoundary
         public DynamicObject getInstanceMethods(DynamicObject module, boolean includeAncestors) {
             Object[] objects = Layouts.MODULE.getFields(module).filterMethods(getContext(), includeAncestors, MethodFilter.by(visibility)).toArray();
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), objects, objects.length);
+            return createArray(objects, objects.length);
         }
 
     }
@@ -1586,7 +1586,7 @@ public abstract class ModuleNodes {
         @Specialization
         public DynamicObject instanceMethods(DynamicObject module, boolean includeAncestors) {
             Object[] objects = Layouts.MODULE.getFields(module).filterMethods(getContext(), includeAncestors, MethodFilter.PUBLIC_PROTECTED).toArray();
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), objects, objects.length);
+            return createArray(objects, objects.length);
         }
     }
 

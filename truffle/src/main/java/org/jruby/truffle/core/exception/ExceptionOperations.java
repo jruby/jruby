@@ -11,9 +11,11 @@ package org.jruby.truffle.core.exception;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.object.DynamicObject;
+
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.array.ArrayHelpers;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.backtrace.Backtrace;
 import org.jruby.truffle.language.backtrace.BacktraceFormatter;
@@ -40,7 +42,7 @@ public abstract class ExceptionOperations {
                     StringOperations.encodeRope(lines.get(n), UTF8Encoding.INSTANCE));
         }
 
-        return Layouts.ARRAY.createArray(context.getCoreLibrary().getArrayFactory(), array, array.length);
+        return ArrayHelpers.createArray(context, array, array.length);
     }
 
     // because the factory is not constant

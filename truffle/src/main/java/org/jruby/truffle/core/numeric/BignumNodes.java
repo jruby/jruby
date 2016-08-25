@@ -574,19 +574,19 @@ public abstract class BignumNodes {
         @Specialization
         public DynamicObject coerce(DynamicObject a, int b) {
             Object[] store = new Object[] { b, a };
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), store, store.length);
+            return createArray(store, store.length);
         }
 
         @Specialization
         public DynamicObject coerce(DynamicObject a, long b) {
             Object[] store = new Object[] { b, a };
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), store, store.length);
+            return createArray(store, store.length);
         }
 
         @Specialization(guards = "isRubyBignum(b)")
         public DynamicObject coerce(DynamicObject a, DynamicObject b) {
             Object[] store = new Object[] { b, a };
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), store, store.length);
+            return createArray(store, store.length);
         }
 
     }

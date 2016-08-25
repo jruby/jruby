@@ -48,7 +48,7 @@ public abstract class SymbolNodes {
         @Specialization
         public DynamicObject allSymbols() {
             Object[] store = getContext().getSymbolTable().allSymbols().toArray();
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), store, store.length);
+            return createArray(store, store.length);
         }
 
     }

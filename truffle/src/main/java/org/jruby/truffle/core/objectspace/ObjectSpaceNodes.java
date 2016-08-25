@@ -155,7 +155,7 @@ public abstract class ObjectSpaceNodes {
             if (respondToCallNode.doesRespondTo(frame, "call", finalizer)) {
                 getContext().getObjectSpaceManager().defineFinalizer(object, finalizer);
                 Object[] objects = new Object[] { 0, finalizer };
-                return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), objects, objects.length);
+                return createArray(objects, objects.length);
             } else {
                 errorProfile.enter();
                 throw new RaiseException(coreExceptions().argumentErrorWrongArgumentType(finalizer, "callable", this));

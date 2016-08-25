@@ -414,7 +414,7 @@ public abstract class EncodingNodes {
 
             System.arraycopy(encodings, 0, arrayStore, 0, encodings.length);
 
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), arrayStore, arrayStore.length);
+            return createArray(arrayStore, arrayStore.length);
         }
     }
 

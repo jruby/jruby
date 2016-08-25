@@ -51,7 +51,6 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.unicode.UnicodeEncoding;
 import org.jruby.RubyEncoding;
 import org.jruby.runtime.Helpers;
-import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
@@ -177,15 +176,15 @@ public abstract class PsychParserNodes {
                         final DynamicObject versionArray;
 
                         if (versionInts == null) {
-                            versionArray = Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), null, 0);
+                            versionArray = createArray(null, 0);
                         } else {
-                            versionArray = Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), new Object[] {
+                            versionArray = createArray(new Object[] {
                                     versionInts[0], versionInts[1]
                             }, 2);
                         }
 
                         Map<String, String> tagsMap = startEvent.getTags();
-                        DynamicObject tags = Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), null, 0);
+                        DynamicObject tags = createArray(null, 0);
 
                         if (tagsMap != null && size(tagsMap) > 0) {
                             for (Map.Entry<String, String> tag : BoundaryIterable.wrap(entrySet(tagsMap))) {

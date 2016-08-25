@@ -679,7 +679,7 @@ public abstract class IOPrimitiveNodes {
                 return nil();
             }
 
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), new Object[] {
+            return createArray(new Object[] {
                     setNb == 1 ? getSetObjects(readableObjects, fds, fdSet) : createEmptyArray(),
                     setNb == 2 ? getSetObjects(readableObjects, fds, fdSet) : createEmptyArray(),
                     setNb == 3 ? getSetObjects(readableObjects, fds, fdSet) : createEmptyArray()
@@ -687,7 +687,7 @@ public abstract class IOPrimitiveNodes {
         }
 
         public DynamicObject createEmptyArray() {
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), null, 0);
+            return createArray(null, 0);
         }
 
         private int[] getFileDescriptors(DynamicObject fileDescriptorArray) {
@@ -731,7 +731,7 @@ public abstract class IOPrimitiveNodes {
                 }
             }
 
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), setObjects, setFdsCount);
+            return createArray(setObjects, setFdsCount);
         }
 
         protected boolean isNilOrEmpty(DynamicObject fds) {

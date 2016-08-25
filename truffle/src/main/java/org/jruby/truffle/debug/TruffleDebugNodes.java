@@ -115,7 +115,7 @@ public abstract class TruffleDebugNodes {
                 array.add(ast(child));
             }
 
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), array.toArray(), array.size());
+            return createArray(array.toArray(), array.size());
         }
 
     }

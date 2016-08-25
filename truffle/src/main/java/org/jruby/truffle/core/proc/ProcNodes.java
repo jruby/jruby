@@ -246,7 +246,7 @@ public abstract class ProcNodes {
                         sourceSection.getSource().getName(), UTF8Encoding.INSTANCE));
 
                 final Object[] objects = new Object[]{file, sourceSection.getStartLine()};
-                return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), objects, objects.length);
+                return createArray(objects, objects.length);
             }
         }
 
