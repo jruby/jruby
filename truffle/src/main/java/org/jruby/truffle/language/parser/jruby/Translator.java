@@ -48,7 +48,7 @@ public abstract class Translator extends org.jruby.ast.visitor.AbstractNodeVisit
     }
 
     public static RubyNode sequence(RubyContext context, SourceSection sourceSection, List<RubyNode> sequence) {
-        final List<RubyNode> flattened = flatten(context, sequence, true);
+        final List<RubyNode> flattened = flatten(sequence, true);
 
         if (flattened.isEmpty()) {
             return new NilLiteralNode(context, sourceSection, true);
@@ -60,57 +60,21 @@ public abstract class Translator extends org.jruby.ast.visitor.AbstractNodeVisit
         }
     }
 
-    public static SourceSection enclosing(SourceSection base, SourceSection... sourceSections) {
-        for (SourceSection sourceSection : sourceSections) {
-            if (base == null) {
-                base = sourceSection;
-            } else {
-                break;
-            }
-        }
-
-        if (base == null) {
-            return null;
-        }
-
-        if (base.getSource() == null) {
-            return base;
-        }
-
-        if (sourceSections.length == 0) {
+    public static SourceSection enclosing(SourceSection base, RubyNode... sequence) {
+        if (base == null || base.getSource() == null) {
             return base;
         }
 
         int startLine = base.getStartLine();
+        int endLine = safeGetEndLine(base);
 
-        int endLine;
+        for (RubyNode node : sequence) {
+            final SourceSection sourceSection = node.getEncapsulatingSourceSection();
 
-        try {
-            endLine = base.getEndLine();
-        } catch (IllegalArgumentException e) {
-            endLine = startLine;
-        }
-
-        for (SourceSection sourceSection : sourceSections) {
-            if (sourceSection == null) {
-                continue;
+            if (sourceSection != null) {
+                startLine = Integer.min(startLine, sourceSection.getStartLine());
+                endLine = Integer.max(endLine, safeGetEndLine(sourceSection));
             }
-
-            startLine = Math.min(startLine, sourceSection.getStartLine());
-
-            int nodeEndLine;
-
-            if (sourceSection.getSource() == null) {
-                nodeEndLine = sourceSection.getStartLine();
-            } else {
-                try {
-                    nodeEndLine = sourceSection.getEndLine();
-                } catch (IllegalArgumentException e) {
-                    nodeEndLine = sourceSection.getStartLine();
-                }
-            }
-
-            endLine = Math.max(endLine, nodeEndLine);
         }
 
         final int index = base.getSource().getLineStartOffset(startLine);
@@ -128,17 +92,19 @@ public abstract class Translator extends org.jruby.ast.visitor.AbstractNodeVisit
         return base.getSource().createSection("(identifier)", index, length);
     }
 
-    public static SourceSection enclosing(SourceSection base, RubyNode[] sequence) {
-        final SourceSection[] sourceSections = new SourceSection[sequence.length];
-
-        for (int n = 0; n < sequence.length; n++) {
-            sourceSections[n] = sequence[n].getEncapsulatingSourceSection();
+    private static int safeGetEndLine(SourceSection sourceSection) {
+        if (sourceSection.getSource() == null) {
+            return sourceSection.getStartLine();
+        } else {
+            try {
+                return sourceSection.getEndLine();
+            } catch (IllegalArgumentException e) {
+                return sourceSection.getStartLine();
+            }
         }
-
-        return enclosing(base, sourceSections);
     }
 
-    private static List<RubyNode> flatten(RubyContext context, List<RubyNode> sequence, boolean allowTrailingNil) {
+    private static List<RubyNode> flatten(List<RubyNode> sequence, boolean allowTrailingNil) {
         final List<RubyNode> flattened = new ArrayList<>();
 
         for (int n = 0; n < sequence.size(); n++) {
@@ -150,7 +116,7 @@ public abstract class Translator extends org.jruby.ast.visitor.AbstractNodeVisit
                     flattened.add(node);
                 }
             } else if (node instanceof SequenceNode) {
-                flattened.addAll(flatten(context, Arrays.asList(((SequenceNode) node).getSequence()), lastNode));
+                flattened.addAll(flatten(Arrays.asList(((SequenceNode) node).getSequence()), lastNode));
             } else {
                 flattened.add(node);
             }

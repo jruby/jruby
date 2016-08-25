@@ -148,7 +148,7 @@ public class MethodTranslator extends BodyTranslator {
         }
 
         // Procs
-        final RubyNode bodyProc = new CatchForProcNode(context, enclosing(sourceSection, body.getEncapsulatingSourceSection()), composeBody(preludeProc, NodeUtil.cloneNode(body)));
+        final RubyNode bodyProc = new CatchForProcNode(context, enclosing(sourceSection, body), composeBody(preludeProc, NodeUtil.cloneNode(body)));
 
         final RubyRootNode newRootNodeForProcs = new RubyRootNode(context, considerExtendingMethodToCoverEnd(bodyProc.getEncapsulatingSourceSection()), environment.getFrameDescriptor(), environment.getSharedMethodInfo(),
                 bodyProc, environment.needsDeclarationFrame());
@@ -200,7 +200,7 @@ public class MethodTranslator extends BodyTranslator {
     }
 
     private RubyNode composeBody(RubyNode prelude, RubyNode body) {
-        final SourceSection sourceSection = enclosing(prelude.getSourceSection(), body.getSourceSection());
+        final SourceSection sourceSection = enclosing(prelude.getSourceSection(), body);
 
         body = sequence(context, sourceSection, Arrays.asList(prelude, body));
 
