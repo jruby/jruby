@@ -399,7 +399,7 @@ ossl_ocspreq_sign(int argc, VALUE *argv, VALUE self)
     else
 	md = GetDigestPtr(digest);
     if (NIL_P(certs))
-	flags |= OCSP_NOCERTS;
+	0;//flags |= OCSP_NOCERTS;
     else
 	x509s = ossl_x509_ary2sk(certs);
 

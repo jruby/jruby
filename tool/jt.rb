@@ -547,7 +547,6 @@ module Commands
       unless no_openssl
         cextc "#{JRUBY_DIR}/truffle/src/main/c/openssl",
           '-DRUBY_EXTCONF_H="extconf.h"',
-          '-DJT_INT_VALUE=true',
           '-Werror=implicit-function-declaration'
       end
     when nil

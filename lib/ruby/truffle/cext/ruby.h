@@ -52,11 +52,7 @@ extern "C" {
 
 // Basic types
 
-#ifdef JT_INT_VALUE
-  typedef uintptr_t VALUE;
-#else
-  typedef void *VALUE;
-#endif
+typedef void *VALUE;
 
 typedef VALUE ID;
 
