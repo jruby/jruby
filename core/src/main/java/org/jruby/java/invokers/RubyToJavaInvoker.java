@@ -232,19 +232,24 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
     }
 
     public static Object[] convertArguments(final ParameterTypes method, final IRubyObject[] args) {
+        return convertArguments(method, args, 0); // 0 - no additional space
+    }
+
+    public static Object[] convertArguments(final ParameterTypes method, final IRubyObject[] args,
+        final int addSpace) {
         final Class<?>[] paramTypes = method.getParameterTypes();
         final Object[] javaArgs; final int len = args.length;
 
         if ( method.isVarArgs() ) {
             final int last = paramTypes.length - 1;
-            javaArgs = new Object[ last + 1 ];
+            javaArgs = new Object[ last + 1 + addSpace ];
             for ( int i = 0; i < last; i++ ) {
                 javaArgs[i] = args[i].toJava(paramTypes[i]);
             }
             javaArgs[ last ] = convertVarArgumentsOnly(paramTypes[ last ], last, args);
         }
         else {
-            javaArgs = new Object[len];
+            javaArgs = new Object[ len + addSpace ];
             for ( int i = 0; i < len; i++ ) {
                 javaArgs[i] = args[i].toJava(paramTypes[i]);
             }
