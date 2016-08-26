@@ -1,2 +1,0 @@
-fails:Socket::Option#linger raises TypeError if not a SO_LINGER
-fails:Socket::Option#linger raises TypeError if option has not good size

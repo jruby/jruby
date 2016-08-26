@@ -656,13 +656,13 @@ public class SocketUtils {
     }
 
     static SocketLevel levelFromArg(IRubyObject _level) {
-        SocketLevel level;
         if (_level instanceof RubyString || _level instanceof RubySymbol) {
-            level = SocketLevel.valueOf("SOL_" + _level.toString());
-        } else {
-            level = SocketLevel.valueOf(RubyNumeric.fix2int(_level));
+            String levelString = _level.toString();
+            if(levelString.startsWith("SOL_")) return SocketLevel.valueOf(levelString);
+            return SocketLevel.valueOf("SOL_" + levelString);
         }
-        return level;
+
+        return SocketLevel.valueOf(RubyNumeric.fix2int(_level));
     }
 
     static SocketOption optionFromArg(IRubyObject _opt) {
