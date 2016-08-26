@@ -25,7 +25,6 @@ public class EnumeratorSizeNode extends RubyNode {
     private final String snippet;
 
     public EnumeratorSizeNode(String enumeratorSize, String methodName, RubyNode method) {
-        super(method.getContext());
         this.method = method;
         this.snippet = "to_enum(:" + methodName + ") { " + enumeratorSize + " }";
     }

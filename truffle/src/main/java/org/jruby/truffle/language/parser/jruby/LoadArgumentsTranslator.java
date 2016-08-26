@@ -132,7 +132,7 @@ public class LoadArgumentsTranslator extends Translator {
                 keyRestNameOrNil = context.getCoreLibrary().getNilObject();
             }
 
-            sequence.add(new IfNode(context, fullSourceSection,
+            sequence.add(new IfNode(fullSourceSection,
                     new ArrayIsAtLeastAsLargeAsNode(node.getPreCount() + node.getPostCount(), loadArray(sourceSection)),
                     new RunBlockKWArgsHelperNode(arraySlotStack.peek().getArraySlot(), keyRestNameOrNil)));
         }
@@ -227,7 +227,7 @@ public class LoadArgumentsTranslator extends Translator {
 
         if (useArray()) {
             if (node.getPreCount() == 0 || node.hasRestArg()) {
-                sequence.add(new IfElseNode(context, fullSourceSection,
+                sequence.add(new IfElseNode(fullSourceSection,
                         new ArrayIsAtLeastAsLargeAsNode(node.getPreCount() + node.getPostCount(), loadArray(sourceSection)),
                         notNilAtLeastAsLarge,
                         notNilSmaller));
@@ -432,7 +432,7 @@ public class LoadArgumentsTranslator extends Translator {
 
                 if (useArray()) {
                     // TODO CS 10-Jan-16 we should really hoist this check, or see if Graal does it for us
-                    readNode = new IfElseNode(context, fullSourceSection,
+                    readNode = new IfElseNode(fullSourceSection,
                             new ArrayIsAtLeastAsLargeAsNode(minimum, loadArray(sourceSection)),
                             PrimitiveArrayNodeFactory.read(context, fullSourceSection, loadArray(sourceSection), index),
                             defaultValue);
@@ -606,10 +606,10 @@ public class LoadArgumentsTranslator extends Translator {
 
         return sequence(context, source, sourceSection, Arrays.asList(WriteLocalVariableNode.createWriteLocalVariableNode(context, fullSourceSection,
                 arraySlot, SplatCastNodeGen.create(context, fullSourceSection, SplatCastNode.NilBehavior.ARRAY_WITH_NIL, true,
-                                readArgument(sourceSection))), new IfElseNode(context, fullSourceSection,
+                                readArgument(sourceSection))), new IfElseNode(fullSourceSection,
                         new IsNilNode(context, fullSourceSection, new ReadLocalVariableNode(context, fullSourceSection, LocalVariableType.FRAME_LOCAL, arraySlot)),
                         nil,
-                        new IfElseNode(context, fullSourceSection,
+                        new IfElseNode(fullSourceSection,
                                 new ArrayIsAtLeastAsLargeAsNode(node.getPreCount() + node.getPostCount(), new ReadLocalVariableNode(context, fullSourceSection, LocalVariableType.FRAME_LOCAL, arraySlot)),
                                 notNilAtLeastAsLarge,
                                 notNilSmaller))));

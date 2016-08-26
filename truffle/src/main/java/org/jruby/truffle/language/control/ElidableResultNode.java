@@ -13,7 +13,6 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.NodeCost;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 
 /**
@@ -26,8 +25,8 @@ public class ElidableResultNode extends RubyNode {
     @Child private RubyNode required;
     @Child private RubyNode elidableResult;
 
-    public ElidableResultNode(RubyContext context, SourceSection sourceSection, RubyNode required, RubyNode elidableResult) {
-        super(context, sourceSection);
+    public ElidableResultNode(SourceSection sourceSection, RubyNode required, RubyNode elidableResult) {
+        super(sourceSection);
         this.required = required;
         this.elidableResult = elidableResult;
     }

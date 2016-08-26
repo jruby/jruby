@@ -12,7 +12,6 @@ package org.jruby.truffle.language.control;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
 
@@ -25,8 +24,8 @@ public class BreakNode extends RubyNode {
 
     private final BranchProfile breakFromProcClosureProfile = BranchProfile.create();
 
-    public BreakNode(RubyContext context, SourceSection sourceSection, BreakID breakID, boolean ignoreMarker, RubyNode child) {
-        super(context, sourceSection);
+    public BreakNode(SourceSection sourceSection, BreakID breakID, boolean ignoreMarker, RubyNode child) {
+        super(sourceSection);
         this.breakID = breakID;
         this.ignoreMarker = ignoreMarker;
         this.child = child;

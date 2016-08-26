@@ -11,7 +11,6 @@ package org.jruby.truffle.language.control;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 
 public class ReturnNode extends RubyNode {
@@ -20,8 +19,8 @@ public class ReturnNode extends RubyNode {
 
     @Child private RubyNode value;
 
-    public ReturnNode(RubyContext context, SourceSection sourceSection, ReturnID returnID, RubyNode value) {
-        super(context, sourceSection);
+    public ReturnNode(SourceSection sourceSection, ReturnID returnID, RubyNode value) {
+        super(sourceSection);
         this.returnID = returnID;
         this.value = value;
     }

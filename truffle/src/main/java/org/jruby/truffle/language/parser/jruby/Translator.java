@@ -68,7 +68,7 @@ public abstract class Translator extends org.jruby.ast.visitor.AbstractNodeVisit
                 sequenceSourceSection = enclosingSourceSection.toSourceSection(source);
             }
 
-            return new SequenceNode(context, sequenceSourceSection, flatSequence);
+            return new SequenceNode(sequenceSourceSection, flatSequence);
         }
     }
 
