@@ -188,6 +188,16 @@ describe "JRuby class reification" do
     expect( j_class.newInstance.ola('Jozko') ).to eql 'OLA Jozko'
   end
 
+  it 'has a similar Java class name' do
+    ReifiedSample.become_java!
+    klass = ReifiedSample.java_class
+    expect( klass.getName ).to eql 'rubyobj.ReifiedSample'
+    klass = Class.new(ReifiedSample)
+    hexid = klass.inspect.match(/(0x[0-9a-f]+)/)[1]
+    klass = klass.become_java!
+    expect( klass.getName ).to match /^rubyobj.Class.?#{hexid}/ # rubyobj.Class:0x599f1b7
+  end
+
   describe "java fields" do
     let(:klass) { Class.new(&fields) }
     let(:fields) { proc { java_field "java.lang.String foo" } }

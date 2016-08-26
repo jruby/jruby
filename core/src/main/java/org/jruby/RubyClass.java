@@ -1396,8 +1396,9 @@ public class RubyClass extends RubyModule {
         // re-check reifiable in case another reify call has jumped in ahead of us
         if (!isReifiable()) return;
 
-        // calculate an appropriate name, using "Anonymous####" if none is present
-        final String name = getBaseName() != null ? getName() : ("AnonymousRubyClass__" + id);
+        // calculate an appropriate name, for anonymous using inspect like format e.g. "Class:0x628fad4a"
+        final String name = getBaseName() != null ? getName() :
+                ( "Class:0x" + Integer.toHexString(System.identityHashCode(this)) );
 
         final String javaName = "rubyobj." + name.replaceAll("::", ".");
         final String javaPath = "rubyobj/" + name.replaceAll("::", "/");
