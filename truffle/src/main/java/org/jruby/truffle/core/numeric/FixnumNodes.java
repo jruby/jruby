@@ -69,7 +69,7 @@ public abstract class FixnumNodes {
         public Object negWithOverflow(long value) {
             if (fixnumOrBignumNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                fixnumOrBignumNode = insert(new FixnumOrBignumNode(getContext(), getSourceSection()));
+                fixnumOrBignumNode = insert(new FixnumOrBignumNode(getContext(), null));
             }
 
             return fixnumOrBignumNode.fixnumOrBignum(BigInteger.valueOf(value).negate());

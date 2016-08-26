@@ -29,7 +29,7 @@ public abstract class DispatchNode extends RubyNode {
     public static final Object MISSING = new Missing();
 
     public DispatchNode(RubyContext context, DispatchAction dispatchAction) {
-        super(context, null);
+        super(context);
         this.dispatchAction = dispatchAction;
         assert dispatchAction != null;
     }

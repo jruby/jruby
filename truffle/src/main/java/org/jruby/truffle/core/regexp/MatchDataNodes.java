@@ -360,7 +360,7 @@ public abstract class MatchDataNodes {
 
         public PreMatchNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            taintResultNode = new TaintResultNode(getContext(), getSourceSection());
+            taintResultNode = new TaintResultNode(getContext(), null);
         }
 
         @Specialization
@@ -377,7 +377,7 @@ public abstract class MatchDataNodes {
 
         public PostMatchNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            taintResultNode = new TaintResultNode(getContext(), getSourceSection());
+            taintResultNode = new TaintResultNode(getContext(), null);
         }
 
         @Specialization

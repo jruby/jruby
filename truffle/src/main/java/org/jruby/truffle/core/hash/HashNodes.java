@@ -1157,7 +1157,7 @@ public abstract class HashNodes {
 
             if (lookupEntryNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                lookupEntryNode = insert(new LookupEntryNode(getContext(), getSourceSection()));
+                lookupEntryNode = insert(new LookupEntryNode(getContext(), null));
             }
 
             for (KeyValue keyValue : HashOperations.iterableKeyValues(other)) {

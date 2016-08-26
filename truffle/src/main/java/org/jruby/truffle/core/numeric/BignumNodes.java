@@ -49,7 +49,7 @@ public abstract class BignumNodes {
         public Object fixnumOrBignum(BigInteger value) {
             if (fixnumOrBignum == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                fixnumOrBignum = insert(new FixnumOrBignumNode(getContext(), getSourceSection()));
+                fixnumOrBignum = insert(new FixnumOrBignumNode(getContext(), null));
             }
             return fixnumOrBignum.fixnumOrBignum(value);
         }

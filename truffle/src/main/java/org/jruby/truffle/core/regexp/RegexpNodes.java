@@ -424,7 +424,7 @@ public abstract class RegexpNodes {
         public Object matchGeneric(VirtualFrame frame, DynamicObject regexp, DynamicObject other) {
             if (toStrNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                toStrNode = insert(ToStrNodeGen.create(getContext(), getSourceSection(), null));
+                toStrNode = insert(ToStrNodeGen.create(getContext(), null, null));
             }
 
             return match(regexp, toStrNode.executeToStr(frame, other));
@@ -489,7 +489,7 @@ public abstract class RegexpNodes {
         public DynamicObject quote(VirtualFrame frame, Object raw) {
             if (toStrNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                toStrNode = insert(ToStrNodeGen.create(getContext(), getSourceSection(), null));
+                toStrNode = insert(ToStrNodeGen.create(getContext(), null, null));
             }
 
             return executeQuote(frame, toStrNode.executeToStr(frame, raw));

@@ -123,7 +123,7 @@ public abstract class ObjectNodes {
         public Object objectInfect(Object host, Object source) {
             if (isTaintedNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                isTaintedNode = insert(IsTaintedNodeGen.create(getContext(), getSourceSection(), null));
+                isTaintedNode = insert(IsTaintedNodeGen.create(getContext(), null, null));
             }
 
             if (isTaintedNode.executeIsTainted(source)) {
@@ -131,7 +131,7 @@ public abstract class ObjectNodes {
 
                 if (taintNode == null) {
                     CompilerDirectives.transferToInterpreterAndInvalidate();
-                    taintNode = insert(TaintNodeGen.create(getContext(), getSourceSection(), null));
+                    taintNode = insert(TaintNodeGen.create(getContext(), null, null));
                 }
 
                 taintNode.executeTaint(host);

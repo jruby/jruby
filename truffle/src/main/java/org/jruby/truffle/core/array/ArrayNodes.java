@@ -256,7 +256,7 @@ public abstract class ArrayNodes {
         public boolean respondToToStr(VirtualFrame frame, Object object) {
             if (respondToToStrNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                respondToToStrNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), null, null, null));
+                respondToToStrNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), null, null, null, null));
             }
             return respondToToStrNode.doesRespondToString(frame, object, create7BitString("to_str", UTF8Encoding.INSTANCE), false);
         }
@@ -281,7 +281,7 @@ public abstract class ArrayNodes {
         public Object index(DynamicObject array, int index, NotProvided length) {
             if (readNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                readNode = insert(ArrayReadDenormalizedNodeGen.create(getContext(), getSourceSection(), null, null));
+                readNode = insert(ArrayReadDenormalizedNodeGen.create(getContext(), null, null, null));
             }
             return readNode.executeRead(array, index);
         }
@@ -294,7 +294,7 @@ public abstract class ArrayNodes {
 
             if (readSliceNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                readSliceNode = insert(ArrayReadSliceDenormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null));
+                readSliceNode = insert(ArrayReadSliceDenormalizedNodeGen.create(getContext(), null, null, null, null));
             }
 
             return readSliceNode.executeReadSlice(array, start, length);
@@ -321,7 +321,7 @@ public abstract class ArrayNodes {
 
                 if (readNormalizedSliceNode == null) {
                     CompilerDirectives.transferToInterpreterAndInvalidate();
-                    readNormalizedSliceNode = insert(ArrayReadSliceNormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null));
+                    readNormalizedSliceNode = insert(ArrayReadSliceNormalizedNodeGen.create(getContext(), null, null, null, null));
                 }
 
                 return readNormalizedSliceNode.executeReadSlice(array, normalizedIndex, length);
@@ -558,7 +558,7 @@ public abstract class ArrayNodes {
         private Object read(DynamicObject array, int index) {
             if (readNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                readNode = insert(ArrayReadNormalizedNodeGen.create(getContext(), getSourceSection(), null, null));
+                readNode = insert(ArrayReadNormalizedNodeGen.create(getContext(), null, null, null));
             }
             return readNode.executeRead(array, index);
         }
@@ -566,7 +566,7 @@ public abstract class ArrayNodes {
         private Object write(DynamicObject array, int index, Object value) {
             if (writeNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                writeNode = insert(ArrayWriteNormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null));
+                writeNode = insert(ArrayWriteNormalizedNodeGen.create(getContext(), null, null, null, null));
             }
             return writeNode.executeWrite(array, index, value);
         }
@@ -574,7 +574,7 @@ public abstract class ArrayNodes {
         private DynamicObject readSlice(DynamicObject array, int start, int length) {
             if (readSliceNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                readSliceNode = insert(ArrayReadSliceNormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null));
+                readSliceNode = insert(ArrayReadSliceNormalizedNodeGen.create(getContext(), null, null, null, null));
             }
             return readSliceNode.executeReadSlice(array, start, length);
         }
@@ -606,7 +606,7 @@ public abstract class ArrayNodes {
         public Object at(DynamicObject array, int index) {
             if (readNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                readNode = insert(ArrayReadDenormalizedNodeGen.create(getContext(), getSourceSection(), null, null));
+                readNode = insert(ArrayReadDenormalizedNodeGen.create(getContext(), null, null, null));
             }
             return readNode.executeRead(array, index);
         }
@@ -786,7 +786,7 @@ public abstract class ArrayNodes {
         public void checkFrozen(Object object) {
             if (isFrozenNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                isFrozenNode = insert(IsFrozenNodeGen.create(getContext(), getSourceSection(), null));
+                isFrozenNode = insert(IsFrozenNodeGen.create(getContext(), null, null));
             }
             isFrozenNode.raiseIfFrozen(object);
         }
@@ -1133,7 +1133,7 @@ public abstract class ArrayNodes {
         public boolean respondToToAry(VirtualFrame frame, Object object) {
             if (respondToToAryNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                respondToToAryNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), null, null, null));
+                respondToToAryNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), null, null, null, null));
             }
             return respondToToAryNode.doesRespondToString(frame, object, create7BitString("to_ary", UTF8Encoding.INSTANCE), true);
         }
@@ -1351,7 +1351,7 @@ public abstract class ArrayNodes {
         }
 
         protected ArrayWriteNormalizedNode createWriteNode() {
-            return ArrayWriteNormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null);
+            return ArrayWriteNormalizedNodeGen.create(getContext(), null, null, null, null);
         }
 
     }

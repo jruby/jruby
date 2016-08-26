@@ -2507,7 +2507,7 @@ public class BodyTranslator extends Translator {
         if (node.isLazy()) {
             ReadLocalNode readLocal = environment.findLocalVarNode(temp, sourceSection);
             body = new IfNode(context, fullSourceSection,
-                    new NotNode(new IsNilNode(context, fullSourceSection, readLocal)),
+                    new NotNode(sourceSection, new IsNilNode(context, fullSourceSection, readLocal)),
                     body);
         }
         final RubyNode ret = sequence(context, sourceSection, Arrays.asList(writeTemp, body));
@@ -2957,7 +2957,7 @@ public class BodyTranslator extends Translator {
 
         RubyNode condition = node.getConditionNode().accept(this);
         if (conditionInversed) {
-            condition = new NotNode(condition);
+            condition = new NotNode(sourceSection, condition);
         }
 
         RubyNode body;

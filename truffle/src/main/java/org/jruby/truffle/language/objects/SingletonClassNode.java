@@ -164,7 +164,8 @@ public abstract class SingletonClassNode extends RubyNode {
 
     public void freeze(final DynamicObject singletonClass) {
         if (freezeNode == null) {
-            freezeNode = insert(FreezeNodeGen.create(getContext(), getSourceSection(), null));
+            CompilerDirectives.transferToInterpreterAndInvalidate();
+            freezeNode = insert(FreezeNodeGen.create(getContext(), null, null));
         }
         freezeNode.executeFreeze(singletonClass);
     }
@@ -172,7 +173,7 @@ public abstract class SingletonClassNode extends RubyNode {
     protected boolean isFrozen(Object object) {
         if (isFrozenNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            isFrozenNode = insert(IsFrozenNodeGen.create(getContext(), getSourceSection(), null));
+            isFrozenNode = insert(IsFrozenNodeGen.create(getContext(), null, null));
         }
         return isFrozenNode.executeIsFrozen(object);
     }

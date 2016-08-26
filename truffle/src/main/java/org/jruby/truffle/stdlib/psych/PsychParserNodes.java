@@ -106,7 +106,7 @@ public abstract class PsychParserNodes {
 
         public ParseNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            toStrNode = ToStrNodeGen.create(getContext(), getSourceSection(), null);
+            toStrNode = ToStrNodeGen.create(getContext(), null, null);
         }
 
         public abstract Object executeParse(VirtualFrame frame, DynamicObject parserObject, DynamicObject yaml, Object path);

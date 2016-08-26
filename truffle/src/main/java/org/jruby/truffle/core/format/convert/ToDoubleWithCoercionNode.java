@@ -34,7 +34,7 @@ public abstract class ToDoubleWithCoercionNode extends FormatNode {
     public Object toDouble(VirtualFrame frame, Object value) {
         if (toFNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            toFNode = insert(ToFNodeGen.create(getContext(), getSourceSection(), null));
+            toFNode = insert(ToFNodeGen.create(getContext(), null, null));
         }
 
         return toFNode.doDouble(frame, value);

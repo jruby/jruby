@@ -319,7 +319,7 @@ public class CoreLibrary {
         @Child FreezeNode freezeNode;
 
         public CoreLibraryNode(RubyContext context) {
-            super(context, null);
+            super(context);
             this.singletonClassNode = SingletonClassNodeGen.create(context, null, null);
             this.freezeNode = FreezeNodeGen.create(context, null, null);
             adoptChildren();

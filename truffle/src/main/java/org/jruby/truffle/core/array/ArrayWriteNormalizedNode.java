@@ -102,7 +102,7 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
     }
 
     protected ArrayAppendOneNode createArrayAppendOneNode() {
-        return ArrayAppendOneNodeGen.create(getContext(), getSourceSection(), null, null);
+        return ArrayAppendOneNodeGen.create(getContext(), null, null, null);
     }
 
     // Writing beyond the end of an array - may need to generalize to Object[] or otherwise extend

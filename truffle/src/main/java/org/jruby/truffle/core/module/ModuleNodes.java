@@ -581,7 +581,7 @@ public abstract class ModuleNodes {
         protected DynamicObject toStr(VirtualFrame frame, Object object) {
             if (toStrNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                toStrNode = insert(ToStrNodeGen.create(getContext(), getSourceSection(), null));
+                toStrNode = insert(ToStrNodeGen.create(getContext(), null, null));
             }
             return toStrNode.executeToStr(frame, object);
         }
@@ -1095,7 +1095,7 @@ public abstract class ModuleNodes {
         }
 
         protected CanBindMethodToModuleNode createCanBindMethodToModuleNode() {
-            return CanBindMethodToModuleNodeGen.create(getContext(), getSourceSection(), null, null);
+            return CanBindMethodToModuleNodeGen.create(getContext(), null, null, null);
         }
 
     }
@@ -1134,7 +1134,7 @@ public abstract class ModuleNodes {
         void classEval(VirtualFrame frame, DynamicObject module, DynamicObject block) {
             if (classExecNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                classExecNode = insert(ModuleNodesFactory.ClassExecNodeFactory.create(getContext(), getSourceSection(), null));
+                classExecNode = insert(ModuleNodesFactory.ClassExecNodeFactory.create(getContext(), null, null));
             }
             classExecNode.executeClassExec(frame, module, new Object[]{module}, block);
         }
@@ -1190,7 +1190,7 @@ public abstract class ModuleNodes {
         protected DynamicObject getSingletonClass(DynamicObject object) {
             if (singletonClassNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                singletonClassNode = insert(SingletonClassNodeGen.create(getContext(), getSourceSection(), null));
+                singletonClassNode = insert(SingletonClassNodeGen.create(getContext(), null, null));
             }
 
             return singletonClassNode.executeSingletonClass(object);

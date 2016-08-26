@@ -161,7 +161,7 @@ public abstract class KernelNodes {
             // TODO BJF Aug 4, 2016 Needs SafeStringValue here
             if (toStrNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                toStrNode = insert(ToStrNodeGen.create(getContext(), getSourceSection(), null));
+                toStrNode = insert(ToStrNodeGen.create(getContext(), null, null));
             }
             return backtick(frame, toStrNode.executeToStr(frame, command));
         }
@@ -1253,11 +1253,11 @@ public abstract class KernelNodes {
         }
 
         protected MetaClassNode createMetaClassNode() {
-            return MetaClassNodeGen.create(getContext(), getSourceSection(), null);
+            return MetaClassNodeGen.create(getContext(), null, null);
         }
 
         protected SingletonMethodsNode createSingletonMethodsNode() {
-            return SingletonMethodsNodeFactory.create(getContext(), getSourceSection(), null, null);
+            return SingletonMethodsNodeFactory.create(getContext(), null, null, null);
         }
 
     }
@@ -1916,7 +1916,7 @@ public abstract class KernelNodes {
         protected void checkFrozen(Object object) {
             if (isFrozenNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                isFrozenNode = insert(IsFrozenNodeGen.create(getContext(), getSourceSection(), null));
+                isFrozenNode = insert(IsFrozenNodeGen.create(getContext(), null, null));
             }
             isFrozenNode.raiseIfFrozen(object);
         }

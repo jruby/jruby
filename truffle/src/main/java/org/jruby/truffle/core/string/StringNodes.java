@@ -313,7 +313,7 @@ public abstract class StringNodes {
         public boolean equal(VirtualFrame frame, DynamicObject a, Object b) {
             if (respondToNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                respondToNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), null, null, null));
+                respondToNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), null, null, null, null));
             }
 
             if (respondToNode.doesRespondToString(frame, b, create7BitString("to_str", UTF8Encoding.INSTANCE), false)) {
@@ -367,13 +367,13 @@ public abstract class StringNodes {
         public Object compare(VirtualFrame frame, DynamicObject a, Object b) {
             if (respondToToStrNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                respondToToStrNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), null, null, null));
+                respondToToStrNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), null, null, null, null));
             }
 
             if (respondToToStrNode.doesRespondToString(frame, b, create7BitString("to_str", UTF8Encoding.INSTANCE), false)) {
                 if (toStrNode == null) {
                     CompilerDirectives.transferToInterpreterAndInvalidate();
-                    toStrNode = insert(ToStrNodeGen.create(getContext(), getSourceSection(), null));
+                    toStrNode = insert(ToStrNodeGen.create(getContext(), null, null));
                 }
 
                 try {
@@ -391,7 +391,7 @@ public abstract class StringNodes {
 
             if (respondToCmpNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                respondToCmpNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), null, null, null));
+                respondToCmpNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), null, null, null, null));
             }
 
             if (respondToCmpNode.doesRespondToString(frame, b, create7BitString("<=>", UTF8Encoding.INSTANCE), false)) {
@@ -408,7 +408,7 @@ public abstract class StringNodes {
 
                 if (cmpIntNode == null) {
                     CompilerDirectives.transferToInterpreterAndInvalidate();
-                    cmpIntNode = insert(CmpIntNodeGen.create(getContext(), getSourceSection(), null, null, null));
+                    cmpIntNode = insert(CmpIntNodeGen.create(getContext(), null, null, null, null));
                 }
 
                 return -(cmpIntNode.executeCmpInt(frame, cmpResult, a, b));
@@ -448,7 +448,7 @@ public abstract class StringNodes {
         public Object concatString(DynamicObject string, DynamicObject other) {
             if (stringAppendNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                stringAppendNode = insert(StringNodesFactory.StringAppendPrimitiveNodeFactory.create(getContext(), getSourceSection(), new RubyNode[] {}));
+                stringAppendNode = insert(StringNodesFactory.StringAppendPrimitiveNodeFactory.create(getContext(), null, new RubyNode[] {}));
             }
 
             return stringAppendNode.executeStringAppend(string, other);
@@ -865,7 +865,7 @@ public abstract class StringNodes {
 
             if (taintResultNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                taintResultNode = insert(new TaintResultNode(getContext(), getSourceSection()));
+                taintResultNode = insert(new TaintResultNode(getContext(), null));
             }
 
             final DynamicObject ret = createString(StringOperations.ropeFromByteList(new ByteList(cryptedString, 0, cryptedString.length - 1, ASCIIEncoding.INSTANCE, false)));
@@ -1122,7 +1122,7 @@ public abstract class StringNodes {
 
             if (taintResultNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                taintResultNode = insert(new TaintResultNode(getContext(), getSourceSection()));
+                taintResultNode = insert(new TaintResultNode(getContext(), null));
             }
 
             // TODO (nirvdrum 08-Jan-16) For CR_7BIT, we should always be able set to CR_7BIT. CR_VALID is trickier because any one character could be 7-bit.
@@ -1217,7 +1217,7 @@ public abstract class StringNodes {
                                            @Cached("createBinaryProfile()") ConditionProfile mutableRopeProfile) {
             if (toStrNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                toStrNode = insert(ToStrNodeGen.create(getContext(), getSourceSection(), null));
+                toStrNode = insert(ToStrNodeGen.create(getContext(), null, null));
             }
 
             return forceEncodingString(string, toStrNode.executeToStr(frame, encoding), differentEncodingProfile, mutableRopeProfile);
@@ -1295,7 +1295,7 @@ public abstract class StringNodes {
         public DynamicObject initialize(VirtualFrame frame, DynamicObject self, Object from) {
             if (toStrNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                toStrNode = insert(ToStrNodeGen.create(getContext(), getSourceSection(), null));
+                toStrNode = insert(ToStrNodeGen.create(getContext(), null, null));
             }
 
             return initialize(self, toStrNode.executeToStr(frame, from));
@@ -1304,7 +1304,7 @@ public abstract class StringNodes {
         protected void raiseIfFrozen(Object object) {
             if (isFrozenNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                isFrozenNode = insert(IsFrozenNodeGen.create(getContext(), getSourceSection(), null));
+                isFrozenNode = insert(IsFrozenNodeGen.create(getContext(), null, null));
             }
             isFrozenNode.raiseIfFrozen(object);
         }
@@ -1881,7 +1881,7 @@ public abstract class StringNodes {
 
             if (toStrNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                toStrNode = insert(ToStrNodeGen.create(getContext(), getSourceSection(), null));
+                toStrNode = insert(ToStrNodeGen.create(getContext(), null, null));
             }
 
             final DynamicObject[] otherStrings = new DynamicObject[args.length];
@@ -1899,7 +1899,7 @@ public abstract class StringNodes {
 
             if (checkEncodingNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                checkEncodingNode = insert(checkEncodingNode = EncodingNodesFactory.CheckEncodingNodeGen.create(getContext(), getSourceSection(), null, null));
+                checkEncodingNode = insert(checkEncodingNode = EncodingNodesFactory.CheckEncodingNodeGen.create(getContext(), null, null, null));
             }
 
             final Rope rope = rope(string);
@@ -2182,7 +2182,7 @@ public abstract class StringNodes {
             if (rope(toStr).isEmpty()) {
                 if (deleteBangNode == null) {
                     CompilerDirectives.transferToInterpreterAndInvalidate();
-                    deleteBangNode = insert(StringNodesFactory.DeleteBangNodeFactory.create(getContext(), getSourceSection(), new RubyNode[] {}));
+                    deleteBangNode = insert(StringNodesFactory.DeleteBangNodeFactory.create(getContext(), null, new RubyNode[] {}));
                 }
 
                 return deleteBangNode.executeDeleteBang(frame, self, new DynamicObject[] { fromStr });
@@ -2190,7 +2190,7 @@ public abstract class StringNodes {
 
             if (checkEncodingNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                checkEncodingNode = insert(EncodingNodesFactory.CheckEncodingNodeGen.create(getContext(), getSourceSection(), null, null));
+                checkEncodingNode = insert(EncodingNodesFactory.CheckEncodingNodeGen.create(getContext(), null, null, null));
             }
 
             return StringNodesHelper.trTransHelper(getContext(), checkEncodingNode, self, fromStr, toStr, false);
@@ -2227,7 +2227,7 @@ public abstract class StringNodes {
             if (rope(toStr).isEmpty()) {
                 if (deleteBangNode == null) {
                     CompilerDirectives.transferToInterpreterAndInvalidate();
-                    deleteBangNode = insert(StringNodesFactory.DeleteBangNodeFactory.create(getContext(), getSourceSection(), new RubyNode[] {}));
+                    deleteBangNode = insert(StringNodesFactory.DeleteBangNodeFactory.create(getContext(), null, new RubyNode[] {}));
                 }
 
                 return deleteBangNode.executeDeleteBang(frame, self, new DynamicObject[] { fromStr });
@@ -2235,7 +2235,7 @@ public abstract class StringNodes {
 
             if (checkEncodingNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                checkEncodingNode = insert(EncodingNodesFactory.CheckEncodingNodeGen.create(getContext(), getSourceSection(), null, null));
+                checkEncodingNode = insert(EncodingNodesFactory.CheckEncodingNodeGen.create(getContext(), null, null, null));
             }
 
             return StringNodesHelper.trTransHelper(getContext(), checkEncodingNode, self, fromStr, toStr, true);
@@ -3174,7 +3174,7 @@ public abstract class StringNodes {
         private Object maybeTaint(DynamicObject source, DynamicObject value) {
             if (taintResultNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                taintResultNode = insert(new TaintResultNode(getContext(), getSourceSection()));
+                taintResultNode = insert(new TaintResultNode(getContext(), null));
             }
 
             return taintResultNode.maybeTaint(source, value);
@@ -3626,7 +3626,7 @@ public abstract class StringNodes {
 
             if (checkEncodingNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                checkEncodingNode = insert(checkEncodingNode = EncodingNodesFactory.CheckEncodingNodeGen.create(getContext(), getSourceSection(), null, null));
+                checkEncodingNode = insert(checkEncodingNode = EncodingNodesFactory.CheckEncodingNodeGen.create(getContext(), null, null, null));
             }
 
             final Encoding encoding = checkEncodingNode.executeCheckEncoding(string, pattern);
@@ -4308,7 +4308,7 @@ public abstract class StringNodes {
 
             if (taintResultNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                taintResultNode = insert(new TaintResultNode(getContext(), getSourceSection()));
+                taintResultNode = insert(new TaintResultNode(getContext(), null));
             }
 
             final DynamicObject ret = allocateNode.allocate(
@@ -4332,7 +4332,7 @@ public abstract class StringNodes {
 
             if (taintResultNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                taintResultNode = insert(new TaintResultNode(getContext(), getSourceSection()));
+                taintResultNode = insert(new TaintResultNode(getContext(), null));
             }
 
             final DynamicObject ret = allocateNode.allocate(
