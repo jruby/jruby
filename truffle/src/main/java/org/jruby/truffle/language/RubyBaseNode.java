@@ -64,9 +64,23 @@ public abstract class RubyBaseNode extends Node {
         }
     }
 
+    public RubyBaseNode(RubySourceSection sourceSection) {
+        if (sourceSection != null) {
+            unsafeSetSourceSection(sourceSection);
+        }
+    }
+
     public RubyBaseNode(RubyContext context, SourceSection sourceSection) {
         this.context = context;
-        
+
+        if (sourceSection != null) {
+            unsafeSetSourceSection(sourceSection);
+        }
+    }
+
+    public RubyBaseNode(RubyContext context, RubySourceSection sourceSection) {
+        this.context = context;
+
         if (sourceSection != null) {
             unsafeSetSourceSection(sourceSection);
         }
@@ -183,6 +197,10 @@ public abstract class RubyBaseNode extends Node {
 
     public void unsafeSetSourceSection(SourceSection sourceSection) {
         this.sourceSection = sourceSection;
+    }
+
+    public void unsafeSetSourceSection(RubySourceSection sourceSection) {
+        this.sourceSection = sourceSection.toSourceSection();
     }
 
     public RubySourceSection getRubySourceSection() {
