@@ -36,7 +36,7 @@ public class TaintResultNode extends RubyNode {
     @Child private TaintNode taintNode;
 
     public TaintResultNode(boolean taintFromSelf, int taintFromParameter, RubyNode method) {
-        super(method.getContext(), method.getEncapsulatingSourceSection());
+        super(method.getContext());
         this.taintFromSelf = taintFromSelf;
         this.taintFromParameter = taintFromParameter;
         this.method = method;

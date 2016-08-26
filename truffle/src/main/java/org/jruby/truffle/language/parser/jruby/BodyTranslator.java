@@ -1187,7 +1187,7 @@ public class BodyTranslator extends Translator {
         final InterpolatedRegexpNode i = new InterpolatedRegexpNode(context, sourceSection.toSourceSection(), children.toArray(new RubyNode[children.size()]), node.getOptions());
 
         if (node.getOptions().isOnce()) {
-            final RubyNode ret = new OnceNode(context, i.getEncapsulatingSourceSection(), i);
+            final RubyNode ret = new OnceNode(context, sourceSection.toSourceSection(), i);
             return addNewlineIfNeeded(node, ret);
         }
 

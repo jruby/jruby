@@ -394,7 +394,7 @@ public abstract class HashNodes {
 
         public SetIndexNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            setNode = insert(SetNodeGen.create(getContext(), getEncapsulatingSourceSection(), null, null, null, null));
+            setNode = insert(SetNodeGen.create(getContext(), null, null, null, null, null));
         }
 
         @Specialization

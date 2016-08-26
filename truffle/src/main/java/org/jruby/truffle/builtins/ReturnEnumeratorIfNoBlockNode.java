@@ -27,7 +27,7 @@ public class ReturnEnumeratorIfNoBlockNode extends RubyNode {
     private final ConditionProfile noBlockProfile = ConditionProfile.createBinaryProfile();
 
     public ReturnEnumeratorIfNoBlockNode(String methodName, RubyNode method) {
-        super(method.getContext(), method.getEncapsulatingSourceSection());
+        super(method.getContext());
         this.method = method;
         this.methodSymbol = getSymbol(methodName);
     }
