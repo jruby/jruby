@@ -1405,14 +1405,11 @@ public class RubyClass extends RubyModule {
 
         final Class parentReified = superClass.getRealClass().getReifiedClass();
         if (parentReified == null) {
-            throw getClassRuntime().newTypeError("class " + getName() + " parent class is not yet reified");
+            throw getClassRuntime().newTypeError(getName() + "'s parent class is not yet reified");
         }
 
         Class reifiedParent = RubyObject.class;
-
-        if (superClass.reifiedClass != null) {
-            reifiedParent = superClass.reifiedClass;
-        }
+        if (superClass.reifiedClass != null) reifiedParent = superClass.reifiedClass;
 
         final byte[] classBytes = new Reificator(reifiedParent).reify(javaName, javaPath);
 
@@ -1542,7 +1539,10 @@ public class RubyClass extends RubyModule {
             for (Map.Entry<String,DynamicMethod> methodEntry : getMethods().entrySet()) {
                 final String methodName = methodEntry.getKey();
 
-                if (!JavaNameMangler.willMethodMangleOk(methodName)) continue;
+                if ( ! JavaNameMangler.willMethodMangleOk(methodName) ) {
+                    LOG.debug("{} method: '{}' won't be part of reified Java class", getName(), methodName);
+                    continue;
+                }
 
                 String javaMethodName = JavaNameMangler.mangleMethodName(methodName);
 
