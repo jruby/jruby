@@ -10,11 +10,9 @@
 package org.jruby.truffle.language.control;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.core.cast.BooleanCastNode;
 import org.jruby.truffle.core.cast.BooleanCastNodeGen;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.RubySourceSection;
 
 public class NotNode extends RubyNode {
 

@@ -11,7 +11,6 @@ package org.jruby.truffle.language.control;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.AssumedValue;
 import org.jruby.truffle.language.RubyNode;
 
