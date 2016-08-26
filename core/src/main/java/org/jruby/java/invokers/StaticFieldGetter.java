@@ -14,11 +14,11 @@ public class StaticFieldGetter extends FieldMethodZero {
     }
 
     @Override
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
+    public final IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
         try {
             return JavaUtil.convertJavaToUsableRubyObject(context.runtime, field.get(null));
-        } catch (IllegalAccessException iae) {
-            throw context.runtime.newTypeError("illegal access getting variable: " + iae.getMessage());
         }
+        catch (IllegalAccessException ex) { return handleGetException(context.runtime, ex); }
     }
+
 }
