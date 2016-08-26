@@ -112,7 +112,7 @@ public class MethodTranslator extends BodyTranslator {
             final RubyNode arrayWasNotNil = sequence(context, source, sourceSection,
                     Arrays.asList(writeArrayNode, new NotNode(sourceSection, new IsNilNode(context, fullSourceSection, new ReadLocalVariableNode(context, fullSourceSection, LocalVariableType.FRAME_LOCAL, arraySlot)))));
 
-            final RubyNode shouldDestructureAndArrayWasNotNil = new AndNode(fullSourceSection,
+            final RubyNode shouldDestructureAndArrayWasNotNil = new AndNode(
                     shouldDestructure,
                     arrayWasNotNil);
 

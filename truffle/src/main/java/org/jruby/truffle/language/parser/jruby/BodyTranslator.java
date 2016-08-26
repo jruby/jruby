@@ -274,7 +274,8 @@ public class BodyTranslator extends Translator {
         final RubyNode x = translateNodeOrNil(sourceSection, node.getFirstNode());
         final RubyNode y = translateNodeOrNil(sourceSection, node.getSecondNode());
 
-        final RubyNode ret = new AndNode(sourceSection.toSourceSection(source), x, y);
+        final RubyNode ret = new AndNode(x, y);
+        ret.unsafeSetSourceSection(sourceSection);
         return addNewlineIfNeeded(node, ret);
     }
 
@@ -2458,7 +2459,10 @@ public class BodyTranslator extends Translator {
         final org.jruby.ast.Node lhs = node.getFirstNode();
         final org.jruby.ast.Node rhs = node.getSecondNode();
 
-        final RubyNode ret = new DefinedWrapperNode(context, fullSourceSection, context.getCoreStrings().ASSIGNMENT, new AndNode(fullSourceSection, lhs.accept(this), rhs.accept(this)));
+        final RubyNode andNode = new AndNode(lhs.accept(this), rhs.accept(this));
+        andNode.unsafeSetSourceSection(sourceSection);
+
+        final RubyNode ret = new DefinedWrapperNode(context, fullSourceSection, context.getCoreStrings().ASSIGNMENT, andNode);
         return addNewlineIfNeeded(node, ret);
     }
 
@@ -2545,7 +2549,7 @@ public class BodyTranslator extends Translator {
 
         if (node.getFirstNode().needsDefinitionCheck() && !(node.getFirstNode() instanceof org.jruby.ast.InstVarNode)) {
             RubyNode defined = new DefinedNode(context, translateSourceSection(source, lhs.getRubySourceSection()), lhs);
-            lhs = new AndNode(translateSourceSection(source, lhs.getRubySourceSection()), defined, lhs);
+            lhs = new AndNode(defined, lhs);
         }
 
         final RubyNode ret = new DefinedWrapperNode(context, fullSourceSection, context.getCoreStrings().ASSIGNMENT,
