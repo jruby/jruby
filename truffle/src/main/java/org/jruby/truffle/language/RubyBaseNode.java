@@ -54,9 +54,22 @@ public abstract class RubyBaseNode extends Node {
     public RubyBaseNode() {
     }
 
+    public RubyBaseNode(RubyContext context) {
+        this.context = context;
+    }
+
+    public RubyBaseNode(SourceSection sourceSection) {
+        if (sourceSection != null) {
+            unsafeSetSourceSection(sourceSection);
+        }
+    }
+
     public RubyBaseNode(RubyContext context, SourceSection sourceSection) {
         this.context = context;
-        this.sourceSection = sourceSection;
+        
+        if (sourceSection != null) {
+            unsafeSetSourceSection(sourceSection);
+        }
     }
 
     // Guards which use the context and so can't be static
