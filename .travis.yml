@@ -3,77 +3,48 @@ language: java
 sudo: false
 
 cache:
- directories:
-   - $HOME/.m2
-
-before_install:
-  - export MAVEN_SKIP_RC=true
-  - mvn -Xmx32M -v | grep 1.7.0; if [ $? = 0 ]; then export MAVEN_OPTS="-XX:MaxPermSize=240M"; else export MAVEN_OPTS="-XX:MaxMetaspaceSize=240M -XX:CompressedClassSpaceSize=240M"; fi
-  - export MAVEN_OPTS="-Xmx512M $MAVEN_OPTS"
+  directories:
+  - $HOME/.m2
 
 before_script:
-  - unset GEM_PATH GEM_HOME IRBRC JRUBY_OPTS
-  - export PATH="`pwd`/bin:$PATH"
-  - echo $HOME
+- unset GEM_PATH GEM_HOME IRBRC JRUBY_OPTS
 
 jdk: oraclejdk8
 
-os:
-  - linux
-
-env:
-  global:
-    - JAVA_OPTS="-XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Xmn48M -Xmx512M"
-    - MALLOC_ARENA_MAX=2
-
 matrix:
   include:
-    - env: JT='test specs :command_line'
-    - env: JT='test specs :language'
-    - env: JT='test specs :core'
-    - env: JT='test specs :library'
-    - env: JT='test specs :truffle'
-    - env: JT='test integration'
-    - env:
-      - COMMAND=test/truffle/gems/install-gems.sh
-      - JT='test gems'
-    - env:
-      - JAVA_OPTS="$JAVA_OPTS -Xmx512m"
-      - HAS_REDIS=true
-      - COMMAND=test/truffle/ecosystem-travis-install.sh
-      - JT='test ecosystem'
-    - env: JT='test tck'
-    - env:
-      - JT=check_ambiguous_arguments
-      - SKIP_BUILD=true
-      - V=1
-    - env: JT='test mri'
+  - env: JT='test specs :command_line'
+  - env: JT='test specs :language'
+  - env: JT='test specs :core'
+  - env: JT='test specs :library'
+  - env: JT='test specs :truffle'
+  - env: JT='test integration'
+  - env: JT='test gems' COMMAND=test/truffle/gems/install-gems.sh
+  - env: JT='test ecosystem' JAVA_OPTS="$JAVA_OPTS -Xmx512m" HAS_REDIS=true COMMAND=test/truffle/ecosystem-travis-install.sh
+  - env: JT='test tck'
+  - env: JT='check_ambiguous_arguments' SKIP_BUILD=true V=1
+  - env: JT='test mri'
   allow_failures:
-    - env: JT='test mri'
-    - env:
-      - COMMAND=test/truffle/gems/install-gems.sh
-      - JT='test gems'
+  - env: JT='test mri'
+  # Exlude the default job https://github.com/travis-ci/travis-ci/issues/4681
+  exclude:
+  - jdk: oraclejdk8
 
-install: tool/travis-install.sh
-script: tool/travis-script.sh
+install:
+- if [ -z "$SKIP_BUILD" ]; then V=1 tool/jt.rb build; fi
+script:
+- $COMMAND
+- tool/jt.rb $JT
 
 notifications:
   irc:
     channels:
-      - "irc.freenode.org#jruby"
+    - "irc.freenode.org#jruby"
     on_success: change
     on_failure: always
     template:
-      - "%{repository} (%{branch}:%{commit} by %{author}): %{message} (%{build_url})"
+    - "%{repository} (%{branch}:%{commit} by %{author}): %{message} (%{build_url})"
     skip_join: true
 
-  # update jruby-head installed on Travis CI
-  webhooks:
-    urls:
-      - "https://rubies.travis-ci.org/rebuild/jruby-head"
-# we are on a branch
-    on_success: always
-    on_failure: never
-
 services:
-  - redis-server
+- redis-server
