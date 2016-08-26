@@ -37,13 +37,7 @@ public abstract class ClassJavaAddons {
 
     @JRubyMethod(name = "become_java!", required = 0)
     public static IRubyObject become_java(ThreadContext context, final IRubyObject self) {
-        final RubyClass klass = (RubyClass) self;
-
-        klass.reifyWithAncestors();
-
-        final Class<?> reifiedClass = klass.getReifiedClass();
-        generateFieldAccessors(context, klass, reifiedClass);
-        return asJavaClass(context.runtime, reifiedClass);
+        return becomeJava(context, (RubyClass) self, null, true);
     }
 
     @JRubyMethod(name = "become_java!", required = 1, optional = 1)
@@ -63,6 +57,12 @@ public abstract class ClassJavaAddons {
             }
         }
 
+        return becomeJava(context, klass, dumpDir, useChildLoader);
+    }
+
+    private static IRubyObject becomeJava(final ThreadContext context, final RubyClass klass,
+        final String dumpDir, final boolean useChildLoader) {
+
         klass.reifyWithAncestors(dumpDir, useChildLoader);
 
         final Class<?> reifiedClass = klass.getReifiedClass();
@@ -77,7 +77,7 @@ public abstract class ClassJavaAddons {
                 field = javaClass.getDeclaredField(name);
             }
             catch (NoSuchFieldException e) {
-                throw context.runtime.newRuntimeError("no field: '" + name + "' in reified class for " + klass.inspect());
+                throw context.runtime.newRuntimeError("no field: '" + name + "' in reified class for " + klass.getName());
             }
             JavaProxy.installField(context, name, field, klass);
         }
