@@ -61,6 +61,10 @@ public class RubySourceSection {
     }
 
     public SourceSection toSourceSection() {
+        if (source == null) {
+            return SourceSection.createUnavailable("core", "(identifier)");
+        }
+
         final int index = source.getLineStartOffset(startLine);
 
         int length = 0;

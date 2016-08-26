@@ -48,7 +48,7 @@ public abstract class RubyBaseNode extends Node {
     private static final int FLAG_ROOT = 2;
 
     @CompilationFinal private RubyContext context;
-    @CompilationFinal private SourceSection sourceSection;
+    @CompilationFinal private RubySourceSection sourceSection;
     @CompilationFinal private int flags;
 
     public RubyBaseNode() {
@@ -196,24 +196,24 @@ public abstract class RubyBaseNode extends Node {
     // Source section
 
     public void unsafeSetSourceSection(SourceSection sourceSection) {
-        this.sourceSection = sourceSection;
+        this.sourceSection = new RubySourceSection(sourceSection);
     }
 
     public void unsafeSetSourceSection(RubySourceSection sourceSection) {
-        this.sourceSection = sourceSection.toSourceSection();
+        this.sourceSection = sourceSection;
     }
 
     public RubySourceSection getRubySourceSection() {
-        if (sourceSection == null) {
-            return null;
-        } else {
-            return new RubySourceSection(sourceSection);
-        }
+        return sourceSection;
     }
 
     @Override
     public SourceSection getSourceSection() {
-        return sourceSection;
+        if (sourceSection == null) {
+            return null;
+        } else {
+            return sourceSection.toSourceSection();
+        }
     }
 
     // Tags
