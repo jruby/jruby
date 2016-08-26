@@ -110,13 +110,13 @@ public class MethodTranslator extends BodyTranslator {
             final RubyNode shouldDestructure = new ShouldDestructureNode(readArrayNode);
 
             final RubyNode arrayWasNotNil = sequence(context, source, sourceSection,
-                    Arrays.asList(writeArrayNode, new NotNode(sourceSection, new IsNilNode(context, fullSourceSection, new ReadLocalVariableNode(context, fullSourceSection, LocalVariableType.FRAME_LOCAL, arraySlot)))));
+                    Arrays.asList(writeArrayNode, new NotNode(new IsNilNode(context, fullSourceSection, new ReadLocalVariableNode(context, fullSourceSection, LocalVariableType.FRAME_LOCAL, arraySlot)))));
 
             final RubyNode shouldDestructureAndArrayWasNotNil = new AndNode(
                     shouldDestructure,
                     arrayWasNotNil);
 
-            preludeProc = new IfElseNode(fullSourceSection,
+            preludeProc = new IfElseNode(
                     shouldDestructureAndArrayWasNotNil,
                     newDestructureArguments,
                     loadArguments);
@@ -271,7 +271,7 @@ public class MethodTranslator extends BodyTranslator {
         final SourceSection extendedBodySourceSection;
 
         if (body.getRubySourceSection() == null) {
-            extendedBodySourceSection = null;
+            extendedBodySourceSection = sourceSection.toSourceSection(source);
         } else {
             extendedBodySourceSection = translateSourceSection(source, considerExtendingMethodToCoverEnd(body.getRubySourceSection()));
         }

@@ -15,10 +15,6 @@ import org.jruby.truffle.language.RubyNode;
 
 public class RetryNode extends RubyNode {
 
-    public RetryNode(SourceSection sourceSection) {
-        super(sourceSection);
-    }
-
     @Override
     public Object execute(VirtualFrame frame) {
         throw new RetryException();

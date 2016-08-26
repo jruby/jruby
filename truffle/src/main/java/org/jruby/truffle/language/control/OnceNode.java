@@ -24,8 +24,7 @@ public class OnceNode extends RubyNode {
 
     private final AssumedValue<Object> valueMemo = new AssumedValue<>(OnceNode.class.getName(), null);
 
-    public OnceNode(SourceSection sourceSection, RubyNode child) {
-        super(sourceSection);
+    public OnceNode(RubyNode child) {
         this.child = child;
     }
 

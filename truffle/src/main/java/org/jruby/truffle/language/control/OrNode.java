@@ -25,8 +25,7 @@ public class OrNode extends RubyNode {
 
     private final ConditionProfile conditionProfile = ConditionProfile.createCountingProfile();
 
-    public OrNode(SourceSection sourceSection, RubyNode left, RubyNode right) {
-        super(sourceSection);
+    public OrNode(RubyNode left, RubyNode right) {
         this.left = left;
         this.right = right;
         leftCast = BooleanCastNodeGen.create(null);

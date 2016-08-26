@@ -19,8 +19,7 @@ public class ReturnNode extends RubyNode {
 
     @Child private RubyNode value;
 
-    public ReturnNode(SourceSection sourceSection, ReturnID returnID, RubyNode value) {
-        super(sourceSection);
+    public ReturnNode(ReturnID returnID, RubyNode value) {
         this.returnID = returnID;
         this.value = value;
     }

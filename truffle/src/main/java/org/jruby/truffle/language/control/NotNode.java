@@ -20,8 +20,7 @@ public class NotNode extends RubyNode {
 
     @Child private BooleanCastNode child;
 
-    public NotNode(RubySourceSection sourceSection, RubyNode child) {
-        super(sourceSection);
+    public NotNode(RubyNode child) {
         this.child = BooleanCastNodeGen.create(child);
     }
 

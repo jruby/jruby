@@ -15,10 +15,6 @@ import org.jruby.truffle.language.RubyNode;
 
 public class RedoNode extends RubyNode {
 
-    public RedoNode(SourceSection sourceSection) {
-        super(sourceSection);
-    }
-
     @Override
     public Object execute(VirtualFrame frame) {
         throw new RedoException();

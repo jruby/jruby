@@ -24,8 +24,7 @@ public class IfElseNode extends RubyNode {
 
     private final ConditionProfile conditionProfile = ConditionProfile.createCountingProfile();
 
-    public IfElseNode(SourceSection sourceSection, RubyNode condition, RubyNode thenBody, RubyNode elseBody) {
-        super(sourceSection);
+    public IfElseNode(RubyNode condition, RubyNode thenBody, RubyNode elseBody) {
         this.condition = BooleanCastNodeGen.create(condition);
         this.thenBody = thenBody;
         this.elseBody = elseBody;

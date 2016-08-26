@@ -21,8 +21,7 @@ public class FrameOnStackNode extends RubyNode {
     @Child private RubyNode child;
     @Child private WriteFrameSlotNode writeMarker;
 
-    public FrameOnStackNode(SourceSection sourceSection, RubyNode child, FrameSlot markerSlot) {
-        super(sourceSection);
+    public FrameOnStackNode(RubyNode child, FrameSlot markerSlot) {
         this.child = child;
         writeMarker = WriteFrameSlotNodeGen.create(markerSlot);
     }

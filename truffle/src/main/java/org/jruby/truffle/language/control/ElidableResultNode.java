@@ -25,8 +25,7 @@ public class ElidableResultNode extends RubyNode {
     @Child private RubyNode required;
     @Child private RubyNode elidableResult;
 
-    public ElidableResultNode(SourceSection sourceSection, RubyNode required, RubyNode elidableResult) {
-        super(sourceSection);
+    public ElidableResultNode(RubyNode required, RubyNode elidableResult) {
         this.required = required;
         this.elidableResult = elidableResult;
     }

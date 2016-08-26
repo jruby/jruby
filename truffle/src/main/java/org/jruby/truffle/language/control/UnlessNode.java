@@ -23,8 +23,7 @@ public class UnlessNode extends RubyNode {
 
     private final ConditionProfile conditionProfile = ConditionProfile.createCountingProfile();
 
-    public UnlessNode(SourceSection sourceSection, RubyNode condition, RubyNode thenBody) {
-        super(sourceSection);
+    public UnlessNode(RubyNode condition, RubyNode thenBody) {
         this.condition = BooleanCastNodeGen.create(condition);
         this.thenBody = thenBody;
     }

@@ -17,8 +17,7 @@ public class NextNode extends RubyNode {
 
     @Child private RubyNode child;
 
-    public NextNode(SourceSection sourceSection, RubyNode child) {
-        super(sourceSection);
+    public NextNode(RubyNode child) {
         this.child = child;
     }
 

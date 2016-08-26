@@ -23,8 +23,7 @@ public class IfNode extends RubyNode {
 
     private final ConditionProfile conditionProfile = ConditionProfile.createCountingProfile();
 
-    public IfNode(SourceSection sourceSection, RubyNode condition, RubyNode thenBody) {
-        super(sourceSection);
+    public IfNode(RubyNode condition, RubyNode thenBody) {
         this.condition = BooleanCastNodeGen.create(condition);
         this.thenBody = thenBody;
     }

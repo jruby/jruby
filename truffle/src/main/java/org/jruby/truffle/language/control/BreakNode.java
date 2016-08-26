@@ -24,8 +24,7 @@ public class BreakNode extends RubyNode {
 
     private final BranchProfile breakFromProcClosureProfile = BranchProfile.create();
 
-    public BreakNode(SourceSection sourceSection, BreakID breakID, boolean ignoreMarker, RubyNode child) {
-        super(sourceSection);
+    public BreakNode(BreakID breakID, boolean ignoreMarker, RubyNode child) {
         this.breakID = breakID;
         this.ignoreMarker = ignoreMarker;
         this.child = child;
