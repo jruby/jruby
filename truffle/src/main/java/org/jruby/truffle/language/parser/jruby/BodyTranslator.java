@@ -262,7 +262,7 @@ public class BodyTranslator extends Translator {
                 new ObjectLiteralNode(context, fullSourceSection, newName),
                 new ObjectLiteralNode(context, fullSourceSection, oldName));
 
-        setSourceSection(ret, sourceSection);
+        ret.unsafeSetSourceSection(sourceSection);
 
         return addNewlineIfNeeded(node, ret);
     }
@@ -1089,7 +1089,7 @@ public class BodyTranslator extends Translator {
         }
 
         final RubyNode ret = new WriteConstantNode(node.getName(), moduleNode, rhs);
-        ret.unsafeSetSourceSection(sourceSection.toSourceSection());
+        ret.unsafeSetSourceSection(sourceSection);
 
         return addNewlineIfNeeded(node, ret);
     }
@@ -1795,25 +1795,25 @@ public class BodyTranslator extends Translator {
         if (path.equals(corePath + "hash.rb")) {
             if (name.equals("@default")) {
                 ret = HashNodesFactory.SetDefaultValueNodeFactory.create(self, rhs);
-                setSourceSection(ret, sourceSection);
+                ret.unsafeSetSourceSection(sourceSection);
                 return addNewlineIfNeeded(node, ret);
             } else if (name.equals("@default_proc")) {
                 ret = HashNodesFactory.SetDefaultProcNodeFactory.create(self, rhs);
-                setSourceSection(ret, sourceSection);
+                ret.unsafeSetSourceSection(sourceSection);
                 return addNewlineIfNeeded(node, ret);
             }
         } else if (path.equals(corePath + "range.rb")) {
             if (name.equals("@begin")) {
                 ret = RangeNodesFactory.InternalSetBeginNodeGen.create(self, rhs);
-                setSourceSection(ret, sourceSection);
+                ret.unsafeSetSourceSection(sourceSection);
                 return addNewlineIfNeeded(node, ret);
             } else if (name.equals("@end")) {
                 ret = RangeNodesFactory.InternalSetEndNodeGen.create(self, rhs);
-                setSourceSection(ret, sourceSection);
+                ret.unsafeSetSourceSection(sourceSection);
                 return addNewlineIfNeeded(node, ret);
             } else if (name.equals("@excl")) {
                 ret = RangeNodesFactory.InternalSetExcludeEndNodeGen.create(self, rhs);
-                setSourceSection(ret, sourceSection);
+                ret.unsafeSetSourceSection(sourceSection);
                 return addNewlineIfNeeded(node, ret);
             }
         } else if (path.equals(corePath + "io.rb")) {
@@ -1843,15 +1843,15 @@ public class BodyTranslator extends Translator {
         if (path.equals(corePath + "regexp.rb")) {
             if (name.equals("@source")) {
                 ret = MatchDataNodesFactory.RubiniusSourceNodeGen.create(self);
-                setSourceSection(ret, sourceSection);
+                ret.unsafeSetSourceSection(sourceSection);
                 return addNewlineIfNeeded(node, ret);
             } else if (name.equals("@regexp")) {
                 ret = MatchDataNodesFactory.RegexpNodeFactory.create(new RubyNode[]{ self });
-                setSourceSection(ret, sourceSection);
+                ret.unsafeSetSourceSection(sourceSection);
                 return addNewlineIfNeeded(node, ret);
             } else if (name.equals("@names")) {
                 ret = RegexpNodesFactory.RubiniusNamesNodeGen.create(self);
-                setSourceSection(ret, sourceSection);
+                ret.unsafeSetSourceSection(sourceSection);
                 return addNewlineIfNeeded(node, ret);
             }
         }

@@ -12,7 +12,6 @@ package org.jruby.truffle.language.parser.jruby;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.Ruby;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.InvalidSourcePosition;
 import org.jruby.truffle.RubyContext;
@@ -151,10 +150,6 @@ public abstract class Translator extends org.jruby.ast.visitor.AbstractNodeVisit
         } else {
             return new CheckKeywordArityNode(context, sourceSection.toSourceSection(), arity);
         }
-    }
-
-    protected void setSourceSection(RubyNode node, RubySourceSection sourceSection) {
-        node.unsafeSetSourceSection(sourceSection.toSourceSection());
     }
 
 }
