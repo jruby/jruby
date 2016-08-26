@@ -4209,17 +4209,17 @@ public abstract class StringNodes {
                 final Rope left = concatRope.getLeft();
                 final Rope right = concatRope.getRight();
 
-                if (index < left.byteLength()) {
+                if (index < left.characterLength()) {
                     return searchForSingleByteOptimizableDescendant(left, index, length);
-                } else if (index >= left.byteLength()) {
-                    return searchForSingleByteOptimizableDescendant(right, index - left.byteLength(), length);
+                } else if (index >= left.characterLength()) {
+                    return searchForSingleByteOptimizableDescendant(right, index - left.characterLength(), length);
                 } else {
                     return new SearchResult(index, concatRope);
                 }
             } else if (base instanceof RepeatingRope) {
                 final RepeatingRope repeatingRope = (RepeatingRope) base;
 
-                if (index + length < repeatingRope.getChild().byteLength()) {
+                if (index + length < repeatingRope.getChild().characterLength()) {
                     return searchForSingleByteOptimizableDescendant(repeatingRope.getChild(), index, length);
                 } else {
                     return new SearchResult(index, repeatingRope);
