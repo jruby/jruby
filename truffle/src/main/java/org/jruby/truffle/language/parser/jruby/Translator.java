@@ -63,7 +63,7 @@ public abstract class Translator extends org.jruby.ast.visitor.AbstractNodeVisit
 
             final SourceSection sequenceSourceSection;
 
-            if (enclosingSourceSection.getSource() == null) {
+            if (enclosingSourceSection == null || enclosingSourceSection.getSource() == null) {
                 sequenceSourceSection = null;
             } else {
                 sequenceSourceSection = enclosingSourceSection.toSourceSection();

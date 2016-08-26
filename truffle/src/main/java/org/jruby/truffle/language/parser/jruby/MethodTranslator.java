@@ -247,18 +247,10 @@ public class MethodTranslator extends BodyTranslator {
             prelude = sequence(context, sourceSection, Arrays.asList(checkArity, loadArguments));
         }
 
-        final RubySourceSection rubySourceSection;
-
-        if (body.getSourceSection() == null) {
-            rubySourceSection = sourceSection;
-        } else {
-            rubySourceSection = new RubySourceSection(body.getSourceSection());
-        }
-
-        body = sequence(context, rubySourceSection, Arrays.asList(prelude, body));
+        body = sequence(context, body.getRubySourceSection(), Arrays.asList(prelude, body));
 
         if (environment.getFlipFlopStates().size() > 0) {
-            body = sequence(context, rubySourceSection, Arrays.asList(initFlipFlopStates(sourceSection), body));
+            body = sequence(context, body.getRubySourceSection(), Arrays.asList(initFlipFlopStates(sourceSection), body));
         }
 
         body = new CatchForMethodNode(context, body.getSourceSection(), environment.getReturnID(), body);
@@ -276,14 +268,19 @@ public class MethodTranslator extends BodyTranslator {
     public MethodDefinitionNode compileMethodNode(RubySourceSection sourceSection, String methodName, org.jruby.ast.Node bodyNode, SharedMethodInfo sharedMethodInfo) {
         final RubyNode body = compileMethodBody(sourceSection, methodName, bodyNode, sharedMethodInfo);
 
-        final SourceSection bodySourceSection = body.getSourceSection();
-        final RubySourceSection rubyBodySourceSection = new RubySourceSection(bodySourceSection);
+        final SourceSection extendedBodySourceSection;
+
+        if (body.getRubySourceSection() == null) {
+            extendedBodySourceSection = null;
+        } else {
+            extendedBodySourceSection = considerExtendingMethodToCoverEnd(body.getRubySourceSection()).toSourceSection();
+        }
 
         final RubyRootNode rootNode = new RubyRootNode(
-                context, considerExtendingMethodToCoverEnd(rubyBodySourceSection).toSourceSection(), environment.getFrameDescriptor(), environment.getSharedMethodInfo(), body, environment.needsDeclarationFrame());
+                context, extendedBodySourceSection, environment.getFrameDescriptor(), environment.getSharedMethodInfo(), body, environment.needsDeclarationFrame());
 
         final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
-        return new MethodDefinitionNode(context, bodySourceSection, methodName, environment.getSharedMethodInfo(), callTarget);
+        return new MethodDefinitionNode(context, body.getSourceSection(), methodName, environment.getSharedMethodInfo(), callTarget);
     }
 
     private void declareArguments() {

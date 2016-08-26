@@ -172,6 +172,14 @@ public abstract class RubyBaseNode extends Node {
         this.sourceSection = sourceSection;
     }
 
+    public RubySourceSection getRubySourceSection() {
+        if (sourceSection == null) {
+            return null;
+        } else {
+            return new RubySourceSection(sourceSection);
+        }
+    }
+
     @Override
     public SourceSection getSourceSection() {
         return sourceSection;
