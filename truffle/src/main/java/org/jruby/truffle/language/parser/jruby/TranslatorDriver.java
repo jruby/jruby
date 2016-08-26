@@ -29,6 +29,7 @@ import org.jruby.truffle.language.DataNode;
 import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
+import org.jruby.truffle.language.RubySourceSection;
 import org.jruby.truffle.language.arguments.MissingArgumentBehavior;
 import org.jruby.truffle.language.arguments.ProfileArgumentNode;
 import org.jruby.truffle.language.arguments.ReadPreArgumentNode;
@@ -139,6 +140,7 @@ public class TranslatorDriver implements Parser {
         }
 
         final SourceSection sourceSection = source.createSection("(identifier)", 0, source.getCode().length());
+        final RubySourceSection rubySourceSection = new RubySourceSection(sourceSection);
 
         final InternalMethod parentMethod = parentFrame == null ? null : RubyArguments.getMethod(parentFrame);
         LexicalScope lexicalScope;
@@ -174,9 +176,9 @@ public class TranslatorDriver implements Parser {
         RubyNode truffleNode;
 
         if (node.getBodyNode() == null || node.getBodyNode() instanceof org.jruby.ast.NilNode) {
-            translator.parentSourceSection.push(sourceSection);
+            translator.parentSourceSection.push(rubySourceSection);
             try {
-                truffleNode = translator.nilNode(sourceSection);
+                truffleNode = translator.nilNode(rubySourceSection);
             } finally {
                 translator.parentSourceSection.pop();
             }
@@ -188,7 +190,7 @@ public class TranslatorDriver implements Parser {
 
         final FrameSlot selfSlot = environment.getFrameDescriptor().findOrAddFrameSlot(SelfNode.SELF_IDENTIFIER);
         final WriteLocalVariableNode writeSelfNode = WriteLocalVariableNode.createWriteLocalVariableNode(context, null, selfSlot, new ProfileArgumentNode(new ReadSelfNode()));
-        truffleNode = Translator.sequence(context, sourceSection, Arrays.asList(writeSelfNode, truffleNode));
+        truffleNode = Translator.sequence(context, rubySourceSection, Arrays.asList(writeSelfNode, truffleNode));
 
         if (argumentNames != null && argumentNames.length > 0) {
             final List<RubyNode> sequence = new ArrayList<>();
@@ -201,13 +203,13 @@ public class TranslatorDriver implements Parser {
             }
 
             sequence.add(truffleNode);
-            truffleNode = Translator.sequence(context, sourceSection, sequence);
+            truffleNode = Translator.sequence(context, rubySourceSection, sequence);
         }
 
         // Load flip-flop states
 
         if (environment.getFlipFlopStates().size() > 0) {
-            truffleNode = Translator.sequence(context, truffleNode.getSourceSection(), Arrays.asList(translator.initFlipFlopStates(truffleNode.getSourceSection()), truffleNode));
+            truffleNode = Translator.sequence(context, rubySourceSection, Arrays.asList(translator.initFlipFlopStates(rubySourceSection), truffleNode));
         }
 
         // Catch next
@@ -225,13 +227,13 @@ public class TranslatorDriver implements Parser {
         truffleNode = new CatchRetryAsErrorNode(context, truffleNode.getSourceSection(), truffleNode);
 
         if (parserContext == ParserContext.TOP_LEVEL_FIRST) {
-            truffleNode = Translator.sequence(context, sourceSection, Arrays.asList(
+            truffleNode = Translator.sequence(context, rubySourceSection, Arrays.asList(
                     new SetTopLevelBindingNode(context, sourceSection),
                     new LoadRequiredLibrariesNode(context, sourceSection),
                     truffleNode));
 
             if (node.hasEndPosition()) {
-                truffleNode = Translator.sequence(context, sourceSection, Arrays.asList(
+                truffleNode = Translator.sequence(context, rubySourceSection, Arrays.asList(
                         new DataNode(context, sourceSection, node.getEndPosition()),
                         truffleNode));
             }

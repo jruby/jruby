@@ -14,6 +14,7 @@ import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.LexicalScope;
+import org.jruby.truffle.language.RubySourceSection;
 import org.jruby.truffle.language.control.BreakID;
 import org.jruby.truffle.language.control.ReturnID;
 import org.jruby.truffle.language.locals.LocalVariableType;
@@ -105,7 +106,7 @@ public class TranslatorEnvironment {
         }
     }
 
-    public ReadLocalNode findOrAddLocalVarNodeDangerous(String name, SourceSection sourceSection) {
+    public ReadLocalNode findOrAddLocalVarNodeDangerous(String name, RubySourceSection sourceSection) {
         ReadLocalNode localVar = findLocalVarNode(name, sourceSection);
 
         if (localVar == null) {
@@ -116,7 +117,7 @@ public class TranslatorEnvironment {
         return localVar;
     }
 
-    public ReadLocalNode findLocalVarNode(String name, SourceSection sourceSection) {
+    public ReadLocalNode findLocalVarNode(String name, RubySourceSection sourceSection) {
         TranslatorEnvironment current = this;
         int level = -1;
         try {
@@ -137,9 +138,9 @@ public class TranslatorEnvironment {
                     }
 
                     if (level == 0) {
-                        return new ReadLocalVariableNode(context, sourceSection, type, slot);
+                        return new ReadLocalVariableNode(context, sourceSection.toSourceSection(), type, slot);
                     } else {
-                        return new ReadDeclarationVariableNode(context, sourceSection, type, level, slot);
+                        return new ReadDeclarationVariableNode(context, sourceSection.toSourceSection(), type, level, slot);
                     }
                 }
 
