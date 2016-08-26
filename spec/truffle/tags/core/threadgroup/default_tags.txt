@@ -1,2 +1,0 @@
-fails:ThreadGroup::Default is a ThreadGroup instance
-fails:ThreadGroup::Default is the ThreadGroup of the main thread

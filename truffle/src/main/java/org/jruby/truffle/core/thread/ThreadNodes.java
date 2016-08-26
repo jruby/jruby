@@ -111,6 +111,16 @@ public abstract class ThreadNodes {
 
     }
 
+    @CoreMethod(names = "group")
+    public abstract static class GroupNode extends CoreMethodArrayArgumentsNode {
+
+        @Specialization
+        public DynamicObject group(DynamicObject thread) {
+            return Layouts.THREAD.getThreadGroup(thread);
+        }
+
+    }
+
     @CoreMethod(names = { "kill", "exit", "terminate" }, unsafe = UnsafeGroup.THREADS)
     public abstract static class KillNode extends CoreMethodArrayArgumentsNode {
 
@@ -410,6 +420,7 @@ public abstract class ThreadNodes {
                 DynamicObject rubyClass,
                 @Cached("create()") AllocateObjectNode allocateObjectNode,
                 @Cached("createReadAbortOnExceptionNode()") ReadObjectFieldNode readAbortOnException ) {
+            final DynamicObject currentGroup = Layouts.THREAD.getThreadGroup(getContext().getThreadManager().getCurrentThread());
             final DynamicObject object = allocateObjectNode.allocate(
                     rubyClass,
                     ThreadManager.createThreadLocals(getContext()),
@@ -423,7 +434,8 @@ public abstract class ThreadNodes {
                     new AtomicReference<>(null),
                     new AtomicReference<>(null),
                     new AtomicBoolean(false),
-                    new AtomicInteger(0));
+                    new AtomicInteger(0),
+                    currentGroup);
 
             Layouts.THREAD.setFiberManagerUnsafe(object, new FiberManager(getContext(), object)); // Because it is cyclic
 
@@ -512,6 +524,19 @@ public abstract class ThreadNodes {
             }
             Layouts.THREAD.setPriority(thread, rubyPriority);
             return rubyPriority;
+        }
+    }
+
+    @Primitive(name = "thread_set_group")
+    public static abstract class ThreadSetGroupPrimitiveNode extends PrimitiveArrayArgumentsNode {
+        public ThreadSetGroupPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization(guards = "isRubyThread(thread)")
+        public DynamicObject setGroup(DynamicObject thread, DynamicObject threadGroup) {
+            Layouts.THREAD.setThreadGroup(thread, threadGroup);
+            return threadGroup;
         }
     }
 

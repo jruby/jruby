@@ -352,15 +352,38 @@ class Thread
 end
 
 class ThreadGroup
-
-  attr_reader :list
-
   def initialize
-    @list = []
+    @enclosed = false
+  end
+
+  def enclose
+    @enclosed = true
+  end
+
+  def enclosed?
+    @enclosed
   end
 
   def add(thread)
-    @list.push thread
+    raise ThreadError, "can't move to the frozen thread group" if self.frozen?
+    raise ThreadError, "can't move to the enclosed thread group" if self.enclosed?
+
+    from_tg = thread.group
+    return nil unless from_tg
+    raise ThreadError, "can't move from the frozen thread group" if from_tg.frozen?
+    raise ThreadError, "can't move from the enclosed thread group" if from_tg.enclosed?
+
+    Truffle.invoke_primitive :thread_set_group, thread, self
+    self
   end
 
+  def list
+    Thread.list.select { |th| th.group == self }
+  end
+
+  Default = ThreadGroup.new
+
 end
+Truffle.invoke_primitive :thread_set_group, Thread.current, ThreadGroup::Default
+
+
