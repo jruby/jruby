@@ -81,10 +81,9 @@ public abstract class Translator extends org.jruby.ast.visitor.AbstractNodeVisit
         int endLine = base.getEndLine();
 
         for (RubyNode node : sequence) {
-            final SourceSection fullSourceSection = node.getEncapsulatingSourceSection();
+            final RubySourceSection sourceSection = node.getRubySourceSection();
 
-            if (fullSourceSection != null && fullSourceSection.getSource() != null) {
-                final RubySourceSection sourceSection = new RubySourceSection(fullSourceSection);
+            if (sourceSection != null && sourceSection.getSource() != null) {
                 startLine = Integer.min(startLine, sourceSection.getStartLine());
                 endLine = Integer.max(endLine, sourceSection.getEndLine());
             }

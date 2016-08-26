@@ -15,6 +15,7 @@ import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.TypeSystemReference;
 import com.oracle.truffle.api.instrumentation.StandardTags;
 import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.nodes.RootNode;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
@@ -212,6 +213,24 @@ public abstract class RubyBaseNode extends Node {
         } else {
             return new RubySourceSection(source, sourceStartLine, sourceEndLine);
         }
+    }
+
+    public RubySourceSection getEncapsulatingRubySourceSection() {
+        Node node = this;
+
+        while (node != null) {
+            if (node instanceof RubyBaseNode && ((RubyBaseNode) node).sourceStartLine != 0) {
+                return ((RubyBaseNode) node).getRubySourceSection();
+            }
+
+            if (node instanceof RootNode) {
+                return new RubySourceSection(node.getSourceSection());
+            }
+
+            node = node.getParent();
+        }
+
+        return null;
     }
 
     @Override

@@ -3129,15 +3129,16 @@ public class BodyTranslator extends Translator {
 
     private RubyNode addNewlineIfNeeded(org.jruby.ast.Node jrubyNode, RubyNode node) {
         if (jrubyNode.isNewline()) {
-            final SourceSection current = node.getEncapsulatingSourceSection();
+            final RubySourceSection current = node.getEncapsulatingRubySourceSection();
 
             if (current == null) {
                 return node;
             }
 
             if (context.getCoverageManager() != null) {
-                context.getCoverageManager().setLineHasCode(current.getLineLocation());
+                context.getCoverageManager().setLineHasCode(current.toSourceSection().getLineLocation());
             }
+
             node.unsafeSetIsNewLine();
         }
 
