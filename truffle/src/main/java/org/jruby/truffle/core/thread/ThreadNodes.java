@@ -529,7 +529,7 @@ public abstract class ThreadNodes {
         }
     }
 
-    @Primitive(name = "thread_set_group", unsafe = UnsafeGroup.THREADS)
+    @Primitive(name = "thread_set_group")
     public static abstract class ThreadSetGroupPrimitiveNode extends PrimitiveArrayArgumentsNode {
         public ThreadSetGroupPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
