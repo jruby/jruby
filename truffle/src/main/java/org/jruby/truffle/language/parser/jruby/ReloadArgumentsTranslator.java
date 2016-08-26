@@ -11,8 +11,6 @@ package org.jruby.truffle.language.parser.jruby;
 
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
-import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.Ruby;
 import org.jruby.ast.RestArgNode;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
@@ -73,26 +71,26 @@ public class ReloadArgumentsTranslator extends Translator {
         }
 
         if (node.getPostCount() > 0) {
-            System.err.println("WARNING: post args in zsuper not yet implemented at " + sourceSection.toSourceSection().getShortDescription());
+            System.err.println("WARNING: post args in zsuper not yet implemented at " + sourceSection.toSourceSection(source).getShortDescription());
         }
 
-        if (node.hasKwargs() && !sourceSection.getSource().getName().endsWith("/language/fixtures/super.rb")) {
-            System.err.println("WARNING: kwargs in zsuper not yet implemented at " + sourceSection.toSourceSection().getShortDescription());
+        if (node.hasKwargs() && !source.getName().endsWith("/language/fixtures/super.rb")) {
+            System.err.println("WARNING: kwargs in zsuper not yet implemented at " + sourceSection.toSourceSection(source).getShortDescription());
         }
 
-        return new SequenceNode(context, sourceSection.toSourceSection(), sequence.toArray(new RubyNode[sequence.size()]));
+        return new SequenceNode(context, sourceSection.toSourceSection(source), sequence.toArray(new RubyNode[sequence.size()]));
     }
 
     @Override
     public RubyNode visitArgumentNode(org.jruby.ast.ArgumentNode node) {
         final RubySourceSection sourceSection = translate(node.getPosition());
-        return methodBodyTranslator.getEnvironment().findLocalVarNode(node.getName(), sourceSection);
+        return methodBodyTranslator.getEnvironment().findLocalVarNode(node.getName(), source, sourceSection);
     }
 
     @Override
     public RubyNode visitOptArgNode(org.jruby.ast.OptArgNode node) {
         final RubySourceSection sourceSection = translate(node.getPosition());
-        return methodBodyTranslator.getEnvironment().findLocalVarNode(node.getName(), sourceSection);
+        return methodBodyTranslator.getEnvironment().findLocalVarNode(node.getName(), source, sourceSection);
     }
 
     @Override
@@ -103,13 +101,13 @@ public class ReloadArgumentsTranslator extends Translator {
     @Override
     public RubyNode visitRestArgNode(RestArgNode node) {
         final RubySourceSection sourceSection = translate(node.getPosition());
-        return methodBodyTranslator.getEnvironment().findLocalVarNode(node.getName(), sourceSection);
+        return methodBodyTranslator.getEnvironment().findLocalVarNode(node.getName(), source, sourceSection);
     }
 
     @Override
     protected RubyNode defaultVisit(org.jruby.ast.Node node) {
         final RubySourceSection sourceSection = translate(node.getPosition());
-        return nilNode(sourceSection);
+        return nilNode(source, sourceSection);
     }
 
     public boolean isSplatted() {

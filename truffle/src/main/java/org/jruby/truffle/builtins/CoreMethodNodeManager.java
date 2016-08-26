@@ -251,13 +251,13 @@ public class CoreMethodNodeManager {
             AmbiguousOptionalArgumentChecker.verifyNoAmbiguousOptionalArguments(methodDetails);
         }
 
-        final RubyNode checkArity = Translator.createCheckArityNode(context, rubySourceSection, sharedMethodInfo.getArity());
+        final RubyNode checkArity = Translator.createCheckArityNode(context, sourceSection.getSource(), rubySourceSection, sharedMethodInfo.getArity());
 
         RubyNode node;
         if (!isSafe(context, method.unsafe())) {
             node = new UnsafeNode(context, sourceSection);
         } else {
-            node = Translator.sequence(context, rubySourceSection, Arrays.asList(checkArity, methodNode));
+            node = Translator.sequence(context, sourceSection.getSource(), rubySourceSection, Arrays.asList(checkArity, methodNode));
             node = transformResult(method, node);
         }
 

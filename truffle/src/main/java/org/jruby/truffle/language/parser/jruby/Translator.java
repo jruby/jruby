@@ -48,11 +48,11 @@ public abstract class Translator extends org.jruby.ast.visitor.AbstractNodeVisit
         this.source = source;
     }
 
-    public static RubyNode sequence(RubyContext context, RubySourceSection sourceSection, List<RubyNode> sequence) {
+    public static RubyNode sequence(RubyContext context, Source source, RubySourceSection sourceSection, List<RubyNode> sequence) {
         final List<RubyNode> flattened = flatten(sequence, true);
 
         if (flattened.isEmpty()) {
-            return new NilLiteralNode(context, sourceSection.toSourceSection(), true);
+            return new NilLiteralNode(context, sourceSection.toSourceSection(source), true);
         } else if (flattened.size() == 1) {
             return flattened.get(0);
         } else {
@@ -62,10 +62,10 @@ public abstract class Translator extends org.jruby.ast.visitor.AbstractNodeVisit
 
             final SourceSection sequenceSourceSection;
 
-            if (enclosingSourceSection == null || enclosingSourceSection.getSource() == null) {
+            if (enclosingSourceSection == null) {
                 sequenceSourceSection = null;
             } else {
-                sequenceSourceSection = enclosingSourceSection.toSourceSection();
+                sequenceSourceSection = enclosingSourceSection.toSourceSection(source);
             }
 
             return new SequenceNode(context, sequenceSourceSection, flatSequence);
@@ -73,7 +73,7 @@ public abstract class Translator extends org.jruby.ast.visitor.AbstractNodeVisit
     }
 
     public static RubySourceSection enclosing(RubySourceSection base, RubyNode... sequence) {
-        if (base == null || base.getSource() == null) {
+        if (base == null) {
             return base;
         }
 
@@ -83,13 +83,13 @@ public abstract class Translator extends org.jruby.ast.visitor.AbstractNodeVisit
         for (RubyNode node : sequence) {
             final RubySourceSection sourceSection = node.getRubySourceSection();
 
-            if (sourceSection != null && sourceSection.getSource() != null) {
+            if (sourceSection != null) {
                 startLine = Integer.min(startLine, sourceSection.getStartLine());
                 endLine = Integer.max(endLine, sourceSection.getEndLine());
             }
         }
 
-        return new RubySourceSection(base.getSource(), startLine, endLine);
+        return new RubySourceSection(startLine, endLine);
     }
 
     private static List<RubyNode> flatten(List<RubyNode> sequence, boolean allowTrailingNil) {
@@ -125,12 +125,12 @@ public abstract class Translator extends org.jruby.ast.visitor.AbstractNodeVisit
                 return parentSourceSection.peek();
             }
         } else {
-            return new RubySourceSection(source, sourcePosition.getLine() + 1);
+            return new RubySourceSection(sourcePosition.getLine() + 1);
         }
     }
 
-    protected RubyNode nilNode(RubySourceSection sourceSection) {
-        return new NilLiteralNode(context, sourceSection.toSourceSection(), false);
+    protected RubyNode nilNode(Source source, RubySourceSection sourceSection) {
+        return new NilLiteralNode(context, sourceSection.toSourceSection(source), false);
     }
 
     protected RubyNode translateNodeOrNil(RubySourceSection sourceSection, org.jruby.ast.Node node) {
@@ -138,24 +138,24 @@ public abstract class Translator extends org.jruby.ast.visitor.AbstractNodeVisit
         if (node != null) {
             rubyNode = node.accept(this);
         } else {
-            rubyNode = nilNode(sourceSection);
+            rubyNode = nilNode(source, sourceSection);
         }
         return rubyNode;
     }
 
-    public static RubyNode createCheckArityNode(RubyContext context, RubySourceSection sourceSection, Arity arity) {
+    public static RubyNode createCheckArityNode(RubyContext context, Source source, RubySourceSection sourceSection, Arity arity) {
         if (!arity.acceptsKeywords()) {
             return new CheckArityNode(arity);
         } else {
-            return new CheckKeywordArityNode(context, sourceSection.toSourceSection(), arity);
+            return new CheckKeywordArityNode(context, sourceSection.toSourceSection(source), arity);
         }
     }
 
-    public SourceSection translateSourceSection(RubySourceSection sourceSection) {
+    public SourceSection translateSourceSection(Source source, RubySourceSection sourceSection) {
         if (sourceSection == null) {
             return null;
         } else {
-            return sourceSection.toSourceSection();
+            return sourceSection.toSourceSection(source);
         }
     }
 

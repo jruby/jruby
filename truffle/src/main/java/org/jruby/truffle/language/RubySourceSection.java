@@ -14,13 +14,10 @@ import com.oracle.truffle.api.source.SourceSection;
 
 public class RubySourceSection {
 
-    private final Source source;
     private final int startLine;
     private final int endLine;
 
     public RubySourceSection(SourceSection sourceSection) {
-        source = sourceSection.getSource();
-
         startLine = sourceSection.getStartLine();
 
         if (sourceSection.getSource() == null) {
@@ -38,18 +35,13 @@ public class RubySourceSection {
         }
     }
 
-    public RubySourceSection(Source source, int startLine) {
-        this(source, startLine, startLine);
+    public RubySourceSection(int startLine) {
+        this(startLine, startLine);
     }
 
-    public RubySourceSection(Source source, int startLine, int endLine) {
-        this.source = source;
+    public RubySourceSection(int startLine, int endLine) {
         this.startLine = startLine;
         this.endLine = endLine;
-    }
-
-    public Source getSource() {
-        return source;
     }
 
     public int getStartLine() {
@@ -60,7 +52,7 @@ public class RubySourceSection {
         return endLine;
     }
 
-    public SourceSection toSourceSection() {
+    public SourceSection toSourceSection(Source source) {
         if (source == null) {
             return SourceSection.createUnavailable("core", "(identifier)");
         }

@@ -72,7 +72,7 @@ public class MethodTranslator extends BodyTranslator {
     }
 
     public BlockDefinitionNode compileBlockNode(RubySourceSection sourceSection, String methodName, org.jruby.ast.Node bodyNode, SharedMethodInfo sharedMethodInfo, ProcType type) {
-        final SourceSection fullSourceSection = sourceSection.toSourceSection();
+        final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
         declareArguments();
         final Arity arity = getArity(argsNode);
@@ -109,7 +109,7 @@ public class MethodTranslator extends BodyTranslator {
 
             final RubyNode shouldDestructure = new ShouldDestructureNode(readArrayNode);
 
-            final RubyNode arrayWasNotNil = sequence(context, sourceSection,
+            final RubyNode arrayWasNotNil = sequence(context, source, sourceSection,
                     Arrays.asList(writeArrayNode, new NotNode(sourceSection, new IsNilNode(context, fullSourceSection, new ReadLocalVariableNode(context, fullSourceSection, LocalVariableType.FRAME_LOCAL, arraySlot)))));
 
             final RubyNode shouldDestructureAndArrayWasNotNil = new AndNode(context, fullSourceSection,
@@ -124,9 +124,9 @@ public class MethodTranslator extends BodyTranslator {
             preludeProc = loadArguments;
         }
 
-        final RubyNode checkArity = Translator.createCheckArityNode(context, sourceSection, arityForCheck);
+        final RubyNode checkArity = Translator.createCheckArityNode(context, source, sourceSection, arityForCheck);
 
-        final RubyNode preludeLambda = sequence(context, sourceSection, Arrays.asList(checkArity, NodeUtil.cloneNode(loadArguments)));
+        final RubyNode preludeLambda = sequence(context, source, sourceSection, Arrays.asList(checkArity, NodeUtil.cloneNode(loadArguments)));
 
         RubyNode body;
 
@@ -148,17 +148,17 @@ public class MethodTranslator extends BodyTranslator {
         }
 
         // Procs
-        final RubyNode bodyProc = new CatchForProcNode(context, translateSourceSection(enclosing(sourceSection, body)), composeBody(sourceSection, preludeProc, NodeUtil.cloneNode(body)));
+        final RubyNode bodyProc = new CatchForProcNode(context, translateSourceSection(source, enclosing(sourceSection, body)), composeBody(sourceSection, preludeProc, NodeUtil.cloneNode(body)));
 
-        final RubyRootNode newRootNodeForProcs = new RubyRootNode(context, translateSourceSection(considerExtendingMethodToCoverEnd(sourceSection)), environment.getFrameDescriptor(), environment.getSharedMethodInfo(),
+        final RubyRootNode newRootNodeForProcs = new RubyRootNode(context, translateSourceSection(source, considerExtendingMethodToCoverEnd(sourceSection)), environment.getFrameDescriptor(), environment.getSharedMethodInfo(),
                 bodyProc, environment.needsDeclarationFrame());
 
         // Lambdas
         final RubyNode composed = composeBody(sourceSection, preludeLambda, body /* no copy, last usage */);
-        final RubyNode bodyLambda = new CatchForLambdaNode(context, sourceSection.toSourceSection(), environment.getReturnID(), composed);
+        final RubyNode bodyLambda = new CatchForLambdaNode(context, sourceSection.toSourceSection(source), environment.getReturnID(), composed);
 
         final RubyRootNode newRootNodeForLambdas = new RubyRootNode(
-                context, translateSourceSection(considerExtendingMethodToCoverEnd(sourceSection)),
+                context, translateSourceSection(source, considerExtendingMethodToCoverEnd(sourceSection)),
                 environment.getFrameDescriptor(), environment.getSharedMethodInfo(),
                 bodyLambda,
                 environment.needsDeclarationFrame());
@@ -202,10 +202,10 @@ public class MethodTranslator extends BodyTranslator {
     private RubyNode composeBody(RubySourceSection preludeSourceSection, RubyNode prelude, RubyNode body) {
         final RubySourceSection sourceSection = enclosing(preludeSourceSection, body);
 
-        body = sequence(context, sourceSection, Arrays.asList(prelude, body));
+        body = sequence(context, source, sourceSection, Arrays.asList(prelude, body));
 
         if (environment.getFlipFlopStates().size() > 0) {
-            body = sequence(context, sourceSection, Arrays.asList(initFlipFlopStates(sourceSection), body));
+            body = sequence(context, source, sourceSection, Arrays.asList(initFlipFlopStates(sourceSection), body));
         }
 
         return body;
@@ -242,21 +242,21 @@ public class MethodTranslator extends BodyTranslator {
             // Use Truffle.primitive seems to turn off arity checking. See Time.from_array for example.
             prelude = loadArguments;
         } else {
-            final RubyNode checkArity = Translator.createCheckArityNode(context, sourceSection, arity);
+            final RubyNode checkArity = Translator.createCheckArityNode(context, source, sourceSection, arity);
 
-            prelude = sequence(context, sourceSection, Arrays.asList(checkArity, loadArguments));
+            prelude = sequence(context, source, sourceSection, Arrays.asList(checkArity, loadArguments));
         }
 
-        body = sequence(context, body.getRubySourceSection(), Arrays.asList(prelude, body));
+        body = sequence(context, source, body.getRubySourceSection(), Arrays.asList(prelude, body));
 
         if (environment.getFlipFlopStates().size() > 0) {
-            body = sequence(context, body.getRubySourceSection(), Arrays.asList(initFlipFlopStates(sourceSection), body));
+            body = sequence(context, source, body.getRubySourceSection(), Arrays.asList(initFlipFlopStates(sourceSection), body));
         }
 
-        body = new CatchForMethodNode(context, translateSourceSection(body.getRubySourceSection()), environment.getReturnID(), body);
+        body = new CatchForMethodNode(context, translateSourceSection(source, body.getRubySourceSection()), environment.getReturnID(), body);
 
         // TODO(CS, 10-Jan-15) why do we only translate exceptions in methods and not blocks?
-        body = new ExceptionTranslatingNode(context, translateSourceSection(body.getRubySourceSection()), body, UnsupportedOperationBehavior.TYPE_ERROR);
+        body = new ExceptionTranslatingNode(context, translateSourceSection(source, body.getRubySourceSection()), body, UnsupportedOperationBehavior.TYPE_ERROR);
 
         if (context.getOptions().CHAOS) {
             body = ChaosNodeGen.create(body);
@@ -273,14 +273,14 @@ public class MethodTranslator extends BodyTranslator {
         if (body.getRubySourceSection() == null) {
             extendedBodySourceSection = null;
         } else {
-            extendedBodySourceSection = translateSourceSection(considerExtendingMethodToCoverEnd(body.getRubySourceSection()));
+            extendedBodySourceSection = translateSourceSection(source, considerExtendingMethodToCoverEnd(body.getRubySourceSection()));
         }
 
         final RubyRootNode rootNode = new RubyRootNode(
                 context, extendedBodySourceSection, environment.getFrameDescriptor(), environment.getSharedMethodInfo(), body, environment.needsDeclarationFrame());
 
         final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
-        return new MethodDefinitionNode(context, translateSourceSection(body.getRubySourceSection()), methodName, environment.getSharedMethodInfo(), callTarget);
+        return new MethodDefinitionNode(context, translateSourceSection(source, body.getRubySourceSection()), methodName, environment.getSharedMethodInfo(), callTarget);
     }
 
     private void declareArguments() {
@@ -329,7 +329,7 @@ public class MethodTranslator extends BodyTranslator {
     @Override
     public RubyNode visitSuperNode(org.jruby.ast.SuperNode node) {
         final RubySourceSection sourceSection = translate(node.getPosition());
-        final SourceSection fullSourceSection = sourceSection.toSourceSection();
+        final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
         final ArgumentsAndBlockTranslation argumentsAndBlock = translateArgumentsAndBlock(sourceSection, node.getIterNode(), node.getArgsNode(), environment.getNamedMethodName());
 
@@ -341,7 +341,7 @@ public class MethodTranslator extends BodyTranslator {
     @Override
     public RubyNode visitZSuperNode(org.jruby.ast.ZSuperNode node) {
         final RubySourceSection sourceSection = translate(node.getPosition());
-        final SourceSection fullSourceSection = sourceSection.toSourceSection();
+        final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
         if (environment.isBlock()) {
             // We need the declaration frame to get the arguments to use
@@ -403,8 +403,6 @@ public class MethodTranslator extends BodyTranslator {
             return sourceSection;
         }
 
-        final Source source = sourceSection.getSource();
-
         if (sourceSection.getEndLine() + 1 >= source.getLineCount()) {
             return sourceSection;
         }
@@ -415,7 +413,7 @@ public class MethodTranslator extends BodyTranslator {
         for (;;) {
             final String lineAfterString = source.getCode(lineAfter).replaceAll("\\s+$","");
             if (lineAfterString.equals(indentationOnFirstLine + "end") || lineAfterString.equals(indentationOnFirstLine + "}")) {
-                return new RubySourceSection(sourceSection.getSource(), sourceSection.getStartLine(), sourceSection.getEndLine() + 1);
+                return new RubySourceSection(sourceSection.getStartLine(), sourceSection.getEndLine() + 1);
             }
             if (++lineAfter >= source.getLineCount()) {
                 return sourceSection;

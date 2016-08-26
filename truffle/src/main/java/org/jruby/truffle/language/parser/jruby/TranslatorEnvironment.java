@@ -11,7 +11,7 @@ package org.jruby.truffle.language.parser.jruby;
 
 import com.oracle.truffle.api.frame.FrameDescriptor;
 import com.oracle.truffle.api.frame.FrameSlot;
-import com.oracle.truffle.api.source.SourceSection;
+import com.oracle.truffle.api.source.Source;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.RubySourceSection;
@@ -106,18 +106,18 @@ public class TranslatorEnvironment {
         }
     }
 
-    public ReadLocalNode findOrAddLocalVarNodeDangerous(String name, RubySourceSection sourceSection) {
-        ReadLocalNode localVar = findLocalVarNode(name, sourceSection);
+    public ReadLocalNode findOrAddLocalVarNodeDangerous(String name, Source source, RubySourceSection sourceSection) {
+        ReadLocalNode localVar = findLocalVarNode(name, source, sourceSection);
 
         if (localVar == null) {
             declareVar(name);
-            localVar = findLocalVarNode(name, sourceSection);
+            localVar = findLocalVarNode(name, source, sourceSection);
         }
 
         return localVar;
     }
 
-    public ReadLocalNode findLocalVarNode(String name, RubySourceSection sourceSection) {
+    public ReadLocalNode findLocalVarNode(String name, Source source, RubySourceSection sourceSection) {
         TranslatorEnvironment current = this;
         int level = -1;
         try {
@@ -138,9 +138,9 @@ public class TranslatorEnvironment {
                     }
 
                     if (level == 0) {
-                        return new ReadLocalVariableNode(context, sourceSection.toSourceSection(), type, slot);
+                        return new ReadLocalVariableNode(context, sourceSection.toSourceSection(source), type, slot);
                     } else {
-                        return new ReadDeclarationVariableNode(context, sourceSection.toSourceSection(), type, level, slot);
+                        return new ReadDeclarationVariableNode(context, sourceSection.toSourceSection(source), type, level, slot);
                     }
                 }
 
