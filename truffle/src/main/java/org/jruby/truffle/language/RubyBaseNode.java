@@ -16,6 +16,7 @@ import com.oracle.truffle.api.dsl.TypeSystemReference;
 import com.oracle.truffle.api.instrumentation.StandardTags;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.ffi.provider.MemoryManager;
 import org.jcodings.Encoding;
@@ -48,7 +49,11 @@ public abstract class RubyBaseNode extends Node {
     private static final int FLAG_ROOT = 2;
 
     @CompilationFinal private RubyContext context;
-    @CompilationFinal private RubySourceSection sourceSection;
+
+    @CompilationFinal private Source source;
+    @CompilationFinal private int sourceStartLine;
+    @CompilationFinal private int sourceEndLine;
+
     @CompilationFinal private int flags;
 
     public RubyBaseNode() {
@@ -196,16 +201,22 @@ public abstract class RubyBaseNode extends Node {
     // Source section
 
     public void unsafeSetSourceSection(RubySourceSection sourceSection) {
-        this.sourceSection = sourceSection;
+        source = sourceSection.getSource();
+        sourceStartLine = sourceSection.getStartLine();
+        sourceEndLine = sourceSection.getEndLine();
     }
 
     public RubySourceSection getRubySourceSection() {
-        return sourceSection;
+        if (sourceStartLine == 0) {
+            return null;
+        } else {
+            return new RubySourceSection(source, sourceStartLine, sourceEndLine);
+        }
     }
 
     @Override
     public SourceSection getSourceSection() {
-        if (sourceSection == null) {
+        if (sourceStartLine == 0) {
             return null;
         } else {
             return getRubySourceSection().toSourceSection();
