@@ -50,10 +50,10 @@ public abstract class RubyBaseNode extends Node {
 
     @CompilationFinal private RubyContext context;
 
-    @CompilationFinal private int sourceStartLine;
-    @CompilationFinal private int sourceEndLine;
+    private int sourceStartLine;
+    private int sourceEndLine;
 
-    @CompilationFinal private int flags;
+    private int flags;
 
     public RubyBaseNode() {
     }
