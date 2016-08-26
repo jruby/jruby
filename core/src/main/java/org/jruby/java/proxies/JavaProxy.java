@@ -256,6 +256,11 @@ public class JavaProxy extends RubyObject {
         }
     }
 
+    public static void installField(final ThreadContext context,
+        final String asName, final Field field, final RubyModule target) {
+        installField(context, asName, field, target, true, null);
+    }
+
     private static void findFields(final ThreadContext context,
         final RubyModule topModule, final IRubyObject[] args,
         final boolean asReader, final boolean asWriter) {

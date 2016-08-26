@@ -31,8 +31,8 @@ public abstract class FieldMethodZero extends JavaMethod.JavaMethodZero {
     }
 
     static Object retrieveTargetImpl(final IRubyObject self) {
-        JavaProxy proxy = InstanceMethodInvoker.castJavaProxy(self);
-        return proxy.getObject();
+        // NOTE: we re-use these with Class#become_java!'s generated field accessors
+        return self instanceof JavaProxy ? ((JavaProxy) self).getObject() : self;
     }
 
     protected final IRubyObject handleGetException(final Ruby runtime, final IllegalAccessException ex) {
