@@ -370,23 +370,28 @@ module Enumerable
         end
       end
 
-      def grep(pattern)
+      def grep(pattern, &block)
         if block_given?
           Lazy.new(self, nil) do |yielder, *args|
             val = args.length >= 2 ? args : args.first
             if pattern === val
-              Regexp.set_block_last_match
+              Regexp.set_block_last_match(block, $~)
               yielder.yield yield(val)
             end
           end
         else
-          Lazy.new(self, nil) do |yielder, *args|
+          lazy = Lazy.new(self, nil) do |yielder, *args|
             val = args.length >= 2 ? args : args.first
             if pattern === val
-              Regexp.set_block_last_match
               yielder.yield val
             end
+
+            Truffle.invoke_primitive(:regexp_set_last_match, $~)
           end
+
+          Truffle.invoke_primitive(:regexp_set_last_match, $~)
+
+          lazy
         end
       end
 

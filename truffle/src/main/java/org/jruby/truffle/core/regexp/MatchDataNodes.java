@@ -35,6 +35,7 @@ import org.jruby.truffle.core.cast.TaintResultNode;
 import org.jruby.truffle.core.cast.ToIntNode;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.string.StringGuards;
+import org.jruby.truffle.core.string.StringNodesFactory;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
@@ -173,6 +174,12 @@ public abstract class MatchDataNodes {
     public abstract static class GetIndexNode extends CoreMethodArrayArgumentsNode {
 
         @Child private ToIntNode toIntNode;
+
+        public static GetIndexNode create() {
+            return MatchDataNodesFactory.GetIndexNodeFactory.create(null);
+        }
+
+        public abstract Object executeGetIndex(VirtualFrame frame, Object matchData, Object index, Object length);
 
         @Specialization
         public Object getIndex(DynamicObject matchData, int index, NotProvided length,

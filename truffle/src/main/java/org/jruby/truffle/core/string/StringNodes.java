@@ -126,6 +126,7 @@ import org.jruby.truffle.core.rope.RopeNodes.MakeRepeatingNode;
 import org.jruby.truffle.core.rope.RopeNodesFactory;
 import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.rope.SubstringRope;
+import org.jruby.truffle.core.rubinius.RegexpPrimitiveNodes;
 import org.jruby.truffle.core.string.StringNodesFactory.StringAreComparableNodeGen;
 import org.jruby.truffle.core.string.StringNodesFactory.StringEqualNodeGen;
 import org.jruby.truffle.language.CheckLayoutNode;
@@ -578,8 +579,9 @@ public abstract class StringNodes {
                 DynamicObject string,
                 DynamicObject regexp,
                 Object capture,
-                @Cached("new()") SnippetNode snippetNode) {
-            return snippetNode.execute(frame, "match, str = subpattern(index, 0); Regexp.last_match = match; str", "index", regexp);
+                @Cached("createMethodCallIgnoreVisibility()") CallDispatchHeadNode callNode,
+                @Cached("create()") RegexpPrimitiveNodes.RegexpSetLastMatchPrimitiveNode setLastMatchNode) {
+            return sliceCapture(frame, string, regexp, 0, callNode, setLastMatchNode);
         }
 
         @Specialization(guards = {"isRubyRegexp(regexp)", "wasProvided(capture)"})
@@ -588,8 +590,20 @@ public abstract class StringNodes {
                 DynamicObject string,
                 DynamicObject regexp,
                 Object capture,
-                @Cached("new()") SnippetNode snippetNode) {
-            return snippetNode.execute(frame, "match, str = subpattern(index, other); Regexp.last_match = match; str", "index", regexp, "other", capture);
+                @Cached("createMethodCallIgnoreVisibility()") CallDispatchHeadNode callNode,
+                @Cached("create()") RegexpPrimitiveNodes.RegexpSetLastMatchPrimitiveNode setLastMatchNode) {
+            final Object matchStrPair = callNode.call(frame, string, "subpattern", regexp, capture);
+
+            if (matchStrPair == nil()) {
+                setLastMatchNode.executeSetLastMatch(nil());
+                return nil();
+            }
+
+            final Object[] array = (Object[]) Layouts.ARRAY.getStore((DynamicObject) matchStrPair);
+
+            setLastMatchNode.executeSetLastMatch(array[0]);
+
+            return array[1];
         }
 
         @Specialization(guards = {"wasNotProvided(length) || isRubiniusUndefined(length)", "isRubyString(matchStr)"})

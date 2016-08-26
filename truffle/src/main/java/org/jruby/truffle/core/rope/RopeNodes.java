@@ -731,7 +731,7 @@ public abstract class RopeNodes {
         @Specialization(guards = {
                 "rope.getEncoding() != encoding",
                 "rope.getCodeRange() != codeRange",
-                "isAsciiCompatbileChange(rope, encoding)",
+                "isAsciiCompatibleChange(rope, encoding)",
                 "rope.getClass() == cachedRopeClass"
         }, limit = "getCacheLimit()")
         public Rope withEncodingCr7Bit(Rope rope, Encoding encoding, CodeRange codeRange,
@@ -742,14 +742,14 @@ public abstract class RopeNodes {
         @Specialization(guards = {
                 "rope.getEncoding() != encoding",
                 "rope.getCodeRange() != codeRange",
-                "!isAsciiCompatbileChange(rope, encoding)"
+                "!isAsciiCompatibleChange(rope, encoding)"
         })
         public Rope withEncoding(Rope rope, Encoding encoding, CodeRange codeRange,
                                  @Cached("create()") MakeLeafRopeNode makeLeafRopeNode) {
             return makeLeafRopeNode.executeMake(rope.getBytes(), encoding, codeRange, NotProvided.INSTANCE);
         }
 
-        protected static boolean isAsciiCompatbileChange(Rope rope, Encoding encoding) {
+        protected static boolean isAsciiCompatibleChange(Rope rope, Encoding encoding) {
             return rope.getCodeRange() == CR_7BIT && encoding.isAsciiCompatible();
         }
 

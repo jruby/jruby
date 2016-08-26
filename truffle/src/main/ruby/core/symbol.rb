@@ -83,7 +83,7 @@ class Symbol
     case pattern
     when Regexp
       match_data = pattern.search_region(str, 0, str.bytesize, true)
-      Regexp.last_match = match_data
+      Truffle.invoke_primitive(:regexp_set_last_match, match_data)
       return match_data.byte_begin(0) if match_data
     when String
       raise TypeError, "type mismatch: String given"
@@ -112,13 +112,13 @@ class Symbol
     if index.kind_of?(Regexp)
       unless undefined.equal?(other)
         match, str = to_s.send(:subpattern, index, other)
-        Regexp.last_match = match
+        Truffle.invoke_primitive(:regexp_set_last_match, match)
         return str
       end
 
       str = to_s
       match_data = index.search_region(str, 0, str.bytesize, true)
-      Regexp.last_match = match_data
+      Truffle.invoke_primitive(:regexp_set_last_match, match_data)
       if match_data
         result = match_data.to_s
         Rubinius::Type.infect result, index

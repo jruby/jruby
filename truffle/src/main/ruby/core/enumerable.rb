@@ -345,14 +345,14 @@ module Enumerable
     self
   end
 
-  def grep(pattern)
+  def grep(pattern, &block)
     ary = []
 
     if block_given?
       each do
         o = Truffle.single_block_arg
         if pattern === o
-          Regexp.set_block_last_match
+          Regexp.set_block_last_match(block, $~)
           ary << yield(o)
         end
       end
@@ -360,10 +360,11 @@ module Enumerable
       each do
         o = Truffle.single_block_arg
         if pattern === o
-          Regexp.set_block_last_match
           ary << o
         end
       end
+
+      Truffle.invoke_primitive(:regexp_set_last_match, $~)
     end
 
     ary
