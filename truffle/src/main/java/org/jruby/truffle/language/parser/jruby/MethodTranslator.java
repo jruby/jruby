@@ -27,7 +27,6 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.IsNilNode;
 import org.jruby.truffle.core.cast.ArrayCastNodeGen;
 import org.jruby.truffle.core.proc.ProcType;
-import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.RubySourceSection;
@@ -59,9 +58,7 @@ import org.jruby.truffle.language.supercall.SuperCallNode;
 import org.jruby.truffle.language.supercall.ZSuperOutsideMethodNode;
 import org.jruby.truffle.tools.ChaosNodeGen;
 
-import java.util.ArrayDeque;
 import java.util.Arrays;
-import java.util.Deque;
 
 public class MethodTranslator extends BodyTranslator {
 
@@ -77,7 +74,7 @@ public class MethodTranslator extends BodyTranslator {
     public BlockDefinitionNode compileBlockNode(RubySourceSection sourceSection, String methodName, org.jruby.ast.Node bodyNode, SharedMethodInfo sharedMethodInfo, ProcType type) {
         final SourceSection fullSourceSection = sourceSection.toSourceSection();
 
-        declareArguments(sourceSection, methodName, sharedMethodInfo);
+        declareArguments();
         final Arity arity = getArity(argsNode);
         final Arity arityForCheck;
 
@@ -224,7 +221,7 @@ public class MethodTranslator extends BodyTranslator {
     }
 
     public RubyNode doCompileMethodBody(RubySourceSection sourceSection, String methodName, org.jruby.ast.Node bodyNode, SharedMethodInfo sharedMethodInfo) {
-        declareArguments(sourceSection, methodName, sharedMethodInfo);
+        declareArguments();
         final Arity arity = getArity(argsNode);
 
         final LoadArgumentsTranslator loadArgumentsTranslator = new LoadArgumentsTranslator(currentNode, context, source, false, this);
@@ -289,7 +286,7 @@ public class MethodTranslator extends BodyTranslator {
         return new MethodDefinitionNode(context, bodySourceSection, methodName, environment.getSharedMethodInfo(), callTarget);
     }
 
-    private void declareArguments(RubySourceSection sourceSection, String methodName, SharedMethodInfo sharedMethodInfo) {
+    private void declareArguments() {
         final ParameterCollector parameterCollector = new ParameterCollector();
         argsNode.accept(parameterCollector);
 
@@ -340,7 +337,7 @@ public class MethodTranslator extends BodyTranslator {
         final ArgumentsAndBlockTranslation argumentsAndBlock = translateArgumentsAndBlock(sourceSection, node.getIterNode(), node.getArgsNode(), environment.getNamedMethodName());
 
         final RubyNode arguments = new ReadSuperArgumentsNode(context, fullSourceSection, argumentsAndBlock.getArguments(), argumentsAndBlock.isSplatted());
-        final RubyNode block = executeOrInheritBlock(sourceSection, argumentsAndBlock.getBlock());
+        final RubyNode block = executeOrInheritBlock(argumentsAndBlock.getBlock());
         return new SuperCallNode(context, fullSourceSection, arguments, block);
     }
 
@@ -382,11 +379,11 @@ public class MethodTranslator extends BodyTranslator {
         final RubyNode arguments = new ReadZSuperArgumentsNode(context, fullSourceSection,
                 reloadTranslator.isSplatted(),
                 reloadSequence.getSequence());
-        final RubyNode block = executeOrInheritBlock(sourceSection, blockNode);
+        final RubyNode block = executeOrInheritBlock(blockNode);
         return new SuperCallNode(context, fullSourceSection, arguments, block);
     }
 
-    private RubyNode executeOrInheritBlock(RubySourceSection sourceSection, RubyNode blockNode) {
+    private RubyNode executeOrInheritBlock(RubyNode blockNode) {
         if (blockNode != null) {
             return blockNode;
         } else {
@@ -401,32 +398,6 @@ public class MethodTranslator extends BodyTranslator {
             return parent.createFlipFlopState(sourceSection, depth + 1);
         } else {
             return super.createFlipFlopState(sourceSection, depth);
-        }
-    }
-
-    /*
-     * The following methods allow us to save and restore enough of
-     * the current state of the Translator to allow lazy parsing. When
-     * the lazy parsing is actually performed, the state is restored
-     * to what it would have been if the method had been parsed
-     * eagerly.
-     */
-    public TranslatorState getCurrentState() {
-        return new TranslatorState(getEnvironment().getLexicalScope(), new ArrayDeque<RubySourceSection>(parentSourceSection));
-    }
-
-    public void restoreState(TranslatorState state) {
-        this.getEnvironment().getParseEnvironment().resetLexicalScope(state.scope);
-        this.parentSourceSection = state.parentSourceSection;
-    }
-
-    public static class TranslatorState {
-        private final LexicalScope scope;
-        private final Deque<RubySourceSection> parentSourceSection;
-
-        private TranslatorState(LexicalScope scope, Deque<RubySourceSection> parentSourceSection) {
-            this.scope = scope;
-            this.parentSourceSection = parentSourceSection;
         }
     }
 
