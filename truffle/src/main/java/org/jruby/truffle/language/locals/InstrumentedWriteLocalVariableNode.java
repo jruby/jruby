@@ -17,12 +17,18 @@ import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
+import org.jruby.truffle.language.RubySourceSection;
 
 public class InstrumentedWriteLocalVariableNode extends WriteLocalVariableNode {
 
     private final String name;
 
     public InstrumentedWriteLocalVariableNode(RubyContext context, SourceSection sourceSection, FrameSlot frameSlot, RubyNode valueNode) {
+        super(context, sourceSection, frameSlot, valueNode);
+        name = frameSlot.getIdentifier().toString();
+    }
+
+    public InstrumentedWriteLocalVariableNode(RubyContext context, RubySourceSection sourceSection, FrameSlot frameSlot, RubyNode valueNode) {
         super(context, sourceSection, frameSlot, valueNode);
         name = frameSlot.getIdentifier().toString();
     }

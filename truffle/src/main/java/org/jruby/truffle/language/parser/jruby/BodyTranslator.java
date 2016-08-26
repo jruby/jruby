@@ -334,7 +334,7 @@ public class BodyTranslator extends Translator {
             translatedValues[n] = values[n].accept(this);
         }
 
-        final RubyNode ret = ArrayLiteralNode.create(context, translate(node.getPosition()).toSourceSection(), translatedValues);
+        final RubyNode ret = ArrayLiteralNode.create(context, translate(node.getPosition()), translatedValues);
         return addNewlineIfNeeded(node, ret);
     }
 
@@ -649,8 +649,8 @@ public class BodyTranslator extends Translator {
 
         if (argumentsAndBlock.getBlock() instanceof BlockDefinitionNode) { // if we have a literal block, break breaks out of this call site
             BlockDefinitionNode blockDef = (BlockDefinitionNode) argumentsAndBlock.getBlock();
-            translated = new FrameOnStackNode(context, translated.getSourceSection(), translated, argumentsAndBlock.getFrameOnStackMarkerSlot());
-            translated = new CatchBreakNode(context, translated.getSourceSection(), blockDef.getBreakID(), translated);
+            translated = new FrameOnStackNode(context, translateSourceSection(translated.getRubySourceSection()), translated, argumentsAndBlock.getFrameOnStackMarkerSlot());
+            translated = new CatchBreakNode(context, translateSourceSection(translated.getRubySourceSection()), blockDef.getBreakID(), translated);
         }
 
         return addNewlineIfNeeded(node, translated);
@@ -951,7 +951,7 @@ public class BodyTranslator extends Translator {
         }
 
         final FrameSlot selfSlot = environment.getFrameDescriptor().findOrAddFrameSlot(SelfNode.SELF_IDENTIFIER);
-        final WriteLocalVariableNode writeSelfNode = WriteLocalVariableNode.createWriteLocalVariableNode(context, null, selfSlot, new ProfileArgumentNode(new ReadSelfNode()));
+        final WriteLocalVariableNode writeSelfNode = WriteLocalVariableNode.createWriteLocalVariableNode(context, (RubySourceSection) null, selfSlot, new ProfileArgumentNode(new ReadSelfNode()));
         body = sequence(context, sourceSection, Arrays.asList(writeSelfNode, body));
 
         if (context.getOptions().CHAOS) {
@@ -2129,7 +2129,7 @@ public class BodyTranslator extends Translator {
 
             final RubyNode blockNode = sequence(context, sourceSection, Arrays.asList(sequence));
 
-            final ArrayLiteralNode arrayNode = ArrayLiteralNode.create(context, fullSourceSection, tempValues);
+            final ArrayLiteralNode arrayNode = ArrayLiteralNode.create(context, sourceSection, tempValues);
 
             final ElidableResultNode elidableResult = new ElidableResultNode(context, fullSourceSection, blockNode, arrayNode);
 
@@ -2532,8 +2532,8 @@ public class BodyTranslator extends Translator {
         // I think this is only required for constants - not instance variables
 
         if (node.getFirstNode().needsDefinitionCheck() && !(node.getFirstNode() instanceof org.jruby.ast.InstVarNode)) {
-            RubyNode defined = new DefinedNode(context, lhs.getSourceSection(), lhs);
-            lhs = new AndNode(context, lhs.getSourceSection(), defined, lhs);
+            RubyNode defined = new DefinedNode(context, translateSourceSection(lhs.getRubySourceSection()), lhs);
+            lhs = new AndNode(context, translateSourceSection(lhs.getRubySourceSection()), defined, lhs);
         }
 
         final RubyNode ret = new DefinedWrapperNode(context, fullSourceSection, context.getCoreStrings().ASSIGNMENT,
@@ -3032,7 +3032,7 @@ public class BodyTranslator extends Translator {
     public RubyNode visitZArrayNode(org.jruby.ast.ZArrayNode node) {
         final RubyNode[] values = new RubyNode[0];
 
-        final RubyNode ret = ArrayLiteralNode.create(context, translate(node.getPosition()).toSourceSection(), values);
+        final RubyNode ret = ArrayLiteralNode.create(context, translate(node.getPosition()), values);
         return addNewlineIfNeeded(node, ret);
     }
 

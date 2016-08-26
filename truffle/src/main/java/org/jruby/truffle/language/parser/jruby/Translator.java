@@ -152,4 +152,12 @@ public abstract class Translator extends org.jruby.ast.visitor.AbstractNodeVisit
         }
     }
 
+    public SourceSection translateSourceSection(RubySourceSection sourceSection) {
+        if (sourceSection == null) {
+            return null;
+        } else {
+            return sourceSection.toSourceSection();
+        }
+    }
+
 }

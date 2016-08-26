@@ -148,9 +148,9 @@ public class MethodTranslator extends BodyTranslator {
         }
 
         // Procs
-        final RubyNode bodyProc = new CatchForProcNode(context, enclosing(sourceSection, body).toSourceSection(), composeBody(sourceSection, preludeProc, NodeUtil.cloneNode(body)));
+        final RubyNode bodyProc = new CatchForProcNode(context, translateSourceSection(enclosing(sourceSection, body)), composeBody(sourceSection, preludeProc, NodeUtil.cloneNode(body)));
 
-        final RubyRootNode newRootNodeForProcs = new RubyRootNode(context, considerExtendingMethodToCoverEnd(sourceSection).toSourceSection(), environment.getFrameDescriptor(), environment.getSharedMethodInfo(),
+        final RubyRootNode newRootNodeForProcs = new RubyRootNode(context, translateSourceSection(considerExtendingMethodToCoverEnd(sourceSection)), environment.getFrameDescriptor(), environment.getSharedMethodInfo(),
                 bodyProc, environment.needsDeclarationFrame());
 
         // Lambdas
@@ -158,7 +158,7 @@ public class MethodTranslator extends BodyTranslator {
         final RubyNode bodyLambda = new CatchForLambdaNode(context, sourceSection.toSourceSection(), environment.getReturnID(), composed);
 
         final RubyRootNode newRootNodeForLambdas = new RubyRootNode(
-                context, considerExtendingMethodToCoverEnd(sourceSection).toSourceSection(),
+                context, translateSourceSection(considerExtendingMethodToCoverEnd(sourceSection)),
                 environment.getFrameDescriptor(), environment.getSharedMethodInfo(),
                 bodyLambda,
                 environment.needsDeclarationFrame());
@@ -253,10 +253,10 @@ public class MethodTranslator extends BodyTranslator {
             body = sequence(context, body.getRubySourceSection(), Arrays.asList(initFlipFlopStates(sourceSection), body));
         }
 
-        body = new CatchForMethodNode(context, body.getSourceSection(), environment.getReturnID(), body);
+        body = new CatchForMethodNode(context, translateSourceSection(body.getRubySourceSection()), environment.getReturnID(), body);
 
         // TODO(CS, 10-Jan-15) why do we only translate exceptions in methods and not blocks?
-        body = new ExceptionTranslatingNode(context, body.getSourceSection(), body, UnsupportedOperationBehavior.TYPE_ERROR);
+        body = new ExceptionTranslatingNode(context, translateSourceSection(body.getRubySourceSection()), body, UnsupportedOperationBehavior.TYPE_ERROR);
 
         if (context.getOptions().CHAOS) {
             body = ChaosNodeGen.create(body);
@@ -273,14 +273,14 @@ public class MethodTranslator extends BodyTranslator {
         if (body.getRubySourceSection() == null) {
             extendedBodySourceSection = null;
         } else {
-            extendedBodySourceSection = considerExtendingMethodToCoverEnd(body.getRubySourceSection()).toSourceSection();
+            extendedBodySourceSection = translateSourceSection(considerExtendingMethodToCoverEnd(body.getRubySourceSection()));
         }
 
         final RubyRootNode rootNode = new RubyRootNode(
                 context, extendedBodySourceSection, environment.getFrameDescriptor(), environment.getSharedMethodInfo(), body, environment.needsDeclarationFrame());
 
         final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
-        return new MethodDefinitionNode(context, body.getSourceSection(), methodName, environment.getSharedMethodInfo(), callTarget);
+        return new MethodDefinitionNode(context, translateSourceSection(body.getRubySourceSection()), methodName, environment.getSharedMethodInfo(), callTarget);
     }
 
     private void declareArguments() {

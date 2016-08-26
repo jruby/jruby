@@ -18,6 +18,7 @@ import org.jruby.runtime.Visibility;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.kernel.TraceManager;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.RubySourceSection;
 import org.jruby.truffle.language.arguments.RubyArguments;
 
 /**
@@ -31,6 +32,15 @@ public class ModuleBodyDefinitionNode extends RubyNode {
     private final CallTarget callTarget;
     private final boolean captureBlock;
 
+    public ModuleBodyDefinitionNode(RubyContext context, RubySourceSection sourceSection, String name, SharedMethodInfo sharedMethodInfo,
+                                    CallTarget callTarget, boolean captureBlock) {
+        super(context, sourceSection);
+        this.name = name;
+        this.sharedMethodInfo = sharedMethodInfo;
+        this.callTarget = callTarget;
+        this.captureBlock = captureBlock;
+    }
+
     public ModuleBodyDefinitionNode(RubyContext context, SourceSection sourceSection, String name, SharedMethodInfo sharedMethodInfo,
             CallTarget callTarget, boolean captureBlock) {
         super(context, sourceSection);
@@ -41,7 +51,7 @@ public class ModuleBodyDefinitionNode extends RubyNode {
     }
 
     public ModuleBodyDefinitionNode(ModuleBodyDefinitionNode node) {
-        this(node.getContext(), node.getSourceSection(), node.name, node.sharedMethodInfo, node.callTarget, node.captureBlock);
+        this(node.getContext(), node.getRubySourceSection(), node.name, node.sharedMethodInfo, node.callTarget, node.captureBlock);
     }
 
     public InternalMethod executeMethod(VirtualFrame frame) {

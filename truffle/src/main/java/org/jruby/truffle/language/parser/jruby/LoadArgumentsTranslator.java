@@ -263,7 +263,7 @@ public class LoadArgumentsTranslator extends Translator {
 
     private RubyNode loadSelf() {
         final FrameSlot slot = methodBodyTranslator.getEnvironment().getFrameDescriptor().findOrAddFrameSlot(SelfNode.SELF_IDENTIFIER);
-        return WriteLocalVariableNode.createWriteLocalVariableNode(context, null, slot, new ProfileArgumentNode(new ReadSelfNode()));
+        return WriteLocalVariableNode.createWriteLocalVariableNode(context, (RubySourceSection) null, slot, new ProfileArgumentNode(new ReadSelfNode()));
     }
 
     @Override
@@ -574,10 +574,10 @@ public class LoadArgumentsTranslator extends Translator {
 
                 if (node.getPreCount() == 0 && node.getPostCount() == 0) {
                     nilSequence.add(methodBodyTranslator.getEnvironment().findOrAddLocalVarNodeDangerous(name, sourceSection)
-                            .makeWriteNode(ArrayLiteralNode.create(context, fullSourceSection, new RubyNode[] { new NilLiteralNode(context, fullSourceSection, true) })));
+                            .makeWriteNode(ArrayLiteralNode.create(context, sourceSection, new RubyNode[] { new NilLiteralNode(context, fullSourceSection, true) })));
                 } else {
                     nilSequence.add(methodBodyTranslator.getEnvironment().findOrAddLocalVarNodeDangerous(name, sourceSection)
-                            .makeWriteNode(ArrayLiteralNode.create(context, fullSourceSection, new RubyNode[] {})));
+                            .makeWriteNode(ArrayLiteralNode.create(context, sourceSection, new RubyNode[] {})));
                 }
             } else if (node.getRest() instanceof StarNode) {
                 // Don't think we need to do anything

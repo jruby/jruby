@@ -189,7 +189,7 @@ public class TranslatorDriver implements Parser {
         // Load arguments
 
         final FrameSlot selfSlot = environment.getFrameDescriptor().findOrAddFrameSlot(SelfNode.SELF_IDENTIFIER);
-        final WriteLocalVariableNode writeSelfNode = WriteLocalVariableNode.createWriteLocalVariableNode(context, null, selfSlot, new ProfileArgumentNode(new ReadSelfNode()));
+        final WriteLocalVariableNode writeSelfNode = WriteLocalVariableNode.createWriteLocalVariableNode(context, (RubySourceSection) null, selfSlot, new ProfileArgumentNode(new ReadSelfNode()));
         truffleNode = Translator.sequence(context, rubySourceSection, Arrays.asList(writeSelfNode, truffleNode));
 
         if (argumentNames != null && argumentNames.length > 0) {
@@ -214,17 +214,17 @@ public class TranslatorDriver implements Parser {
 
         // Catch next
 
-        truffleNode = new CatchNextNode(context, truffleNode.getSourceSection(), truffleNode);
+        truffleNode = new CatchNextNode(context, truffleNode.getRubySourceSection().toSourceSection(), truffleNode);
 
         // Catch return
 
         if (parserContext != ParserContext.INLINE) {
-            truffleNode = new CatchReturnAsErrorNode(context, truffleNode.getSourceSection(), truffleNode);
+            truffleNode = new CatchReturnAsErrorNode(context, truffleNode.getRubySourceSection().toSourceSection(), truffleNode);
         }
 
         // Catch retry
 
-        truffleNode = new CatchRetryAsErrorNode(context, truffleNode.getSourceSection(), truffleNode);
+        truffleNode = new CatchRetryAsErrorNode(context, truffleNode.getRubySourceSection().toSourceSection(), truffleNode);
 
         if (parserContext == ParserContext.TOP_LEVEL_FIRST) {
             truffleNode = Translator.sequence(context, rubySourceSection, Arrays.asList(
@@ -241,7 +241,7 @@ public class TranslatorDriver implements Parser {
             truffleNode = new TopLevelRaiseHandler(context, sourceSection, truffleNode);
         }
 
-        return new RubyRootNode(context, truffleNode.getSourceSection(), environment.getFrameDescriptor(), sharedMethodInfo, truffleNode, environment.needsDeclarationFrame());
+        return new RubyRootNode(context, truffleNode.getRubySourceSection().toSourceSection(), environment.getFrameDescriptor(), sharedMethodInfo, truffleNode, environment.needsDeclarationFrame());
     }
 
     private TranslatorEnvironment environmentForFrameDescriptor(RubyContext context, FrameDescriptor frameDescriptor) {
