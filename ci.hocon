@@ -41,7 +41,7 @@ graal-core: {
   downloads: {
     JVMCI_JAVA_HOME: {
       name: labsjdk,
-      version: "8u92-jvmci-0.19",
+      version: "8u92-jvmci-0.20",
       platformspecific: true
     }
   }
@@ -69,7 +69,7 @@ graal-enterprise: {
   downloads: {
     JVMCI_JAVA_HOME: {
       name: labsjdk,
-      version: "8u92-jvmci-0.19",
+      version: "8u92-jvmci-0.20",
       platformspecific: true
     }
   }
@@ -303,7 +303,7 @@ test-cexts: {
   downloads: {
     JVMCI_JAVA_HOME: {
       name: labsjdk,
-      version: "8u92-jvmci-0.19",
+      version: "8u92-jvmci-0.20",
       platformspecific: true
     }
   }
@@ -354,7 +354,7 @@ sulong-benchmarks: {
   downloads: {
     JVMCI_JAVA_HOME: {
       name: labsjdk,
-      version: "8u92-jvmci-0.19",
+      version: "8u92-jvmci-0.20",
       platformspecific: true
     }
   }
