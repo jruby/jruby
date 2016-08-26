@@ -638,13 +638,13 @@ public class SocketUtils {
     }
 
     static SocketOption optionFromArg(IRubyObject _opt) {
-        SocketOption opt;
         if (_opt instanceof RubyString || _opt instanceof RubySymbol) {
-            opt = SocketOption.valueOf("SO_" + _opt.toString());
-        } else {
-            opt = SocketOption.valueOf(RubyNumeric.fix2int(_opt));
+            String optString = _opt.toString();
+            if (optString.startsWith("SO_")) return SocketOption.valueOf(optString);
+            return SocketOption.valueOf("SO_" + optString);
         }
-        return opt;
+
+        return SocketOption.valueOf(RubyNumeric.fix2int(_opt));
     }
 
     public static int portToInt(IRubyObject port) {
