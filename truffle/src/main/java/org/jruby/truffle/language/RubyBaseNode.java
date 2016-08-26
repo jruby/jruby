@@ -200,6 +200,7 @@ public abstract class RubyBaseNode extends Node {
     // Source section
 
     public void unsafeSetSourceSection(RubySourceSection sourceSection) {
+        assert sourceStartLine == 0;
         sourceStartLine = sourceSection.getStartLine();
         sourceEndLine = sourceSection.getEndLine();
     }
