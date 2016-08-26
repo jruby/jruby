@@ -40,7 +40,7 @@ class Class
   #   java_signature '@Override void foo(int)'
   #   java_signature '@Override void foo(int foo, org.foo.Bar bar)'
   def java_signature(signature_source)
-    signature = JRuby::JavaSignature.parse signature_source.to_s
+    signature = JRuby::JavaSignature.parse signature_source
     add_method_signature signature.name, signature.types
 
     annotations = signature.annotations
@@ -75,13 +75,12 @@ class Class
     nil
   end if false # moved to org.jruby.java.addons.ClassJavaAddons
   
-  def _anno_class(cls)
-    if cls.kind_of? JClass
-      cls
-    elsif cls.respond_to? :java_class
-      cls.java_class.to_java :object
+  def _anno_class(type)
+    return type if type.kind_of? JClass
+    if type.respond_to? :java_class
+      type.java_class.to_java :object
     else
-      raise TypeError, "expected a Java class, got #{cls}"
+      raise TypeError, "expected a Java class, got #{type}"
     end
   end
   private :_anno_class
@@ -95,12 +94,10 @@ class Class
   #  add_method_annotation :foo, {java.lang.Override => {}}
   #
   def add_method_annotation(name, annotations = {})
-    name = name.to_s
-    self_r = JRuby.reference0(self)
-    
-    for cls, params in annotations
-      params ||= {}
-      self_r.add_method_annotation(name, _anno_class(cls), params)
+    name = name.to_s; self_r = JRuby.reference0(self)
+
+    annotations.each do |type, params|
+      self_r.add_method_annotation(name, _anno_class(type), params || {})
     end
     
     nil
@@ -111,8 +108,7 @@ class Class
   # specified as a parameter-list-length Array of Hashes from annotation classes
   # to Hashes of name/value pairs for their parameters.
   def add_parameter_annotation(name, annotations = [])
-    name = name.to_s
-    self_r = JRuby.reference0(self)
+    name = name.to_s; self_r = JRuby.reference0(self)
     
     annotations.each_with_index do |param_annos, i|
       for cls, params in param_annos
@@ -133,11 +129,9 @@ class Class
   #
   def add_class_annotations(annotations = {})
     self_r = JRuby.reference0(self)
-    
-    for cls, params in annotations
-      params ||= {}
-      
-      self_r.add_class_annotation(_anno_class(cls), params)
+
+    annotations.each do |type, params|
+      self_r.add_class_annotation(_anno_class(type), params || {})
     end
     
     nil
@@ -152,12 +146,10 @@ class Class
   # add_method_signature :foo, [:void, :int, java.lang.Thread]
   #
   def add_method_signature(name, classes)
-    name, self_r = name.to_s, JRuby.reference0(self)
-    types = classes.inject([]) {|arr, cls| arr << _anno_class(cls) }
+    name = name.to_s; self_r = JRuby.reference0(self)
+    types = classes.inject([]) { |arr, klass| arr << _anno_class(klass) }
     
     self_r.add_method_signature(name, types.to_java(JClass))
-    
-    nil
   end
 
   def java_field(signature)
@@ -175,19 +167,16 @@ class Class
   def add_field_signature(name, type)
     self_r = JRuby.reference0(self)
 
-    signature = JRuby::JavaSignature.new(nil, nil)
-    java_return_type = signature.as_java_type(type)
+    java_return_type = JRuby::JavaSignature.as_java_type(type)
 
     self_r.add_field_signature(name, java_return_type.to_java(JClass))
   end
 
   def add_field_annotation(name, annotations = {})
-    name = name.to_s
-    self_r = JRuby.reference0(self)
+    name = name.to_s; self_r = JRuby.reference0(self)
 
-    for cls, params in annotations
-      params ||= {}
-      self_r.add_field_annotation(name, _anno_class(cls), params)
+    annotations.each do |type, params|
+      self_r.add_field_annotation(name, _anno_class(type), params || {})
     end
 
     nil

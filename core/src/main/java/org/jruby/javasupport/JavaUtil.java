@@ -1028,7 +1028,7 @@ public class JavaUtil {
         PRIMITIVE_CLASSES = Collections.unmodifiableMap(primitiveClasses);
     }
 
-    static Class<?> getPrimitiveClass(final String name) {
+    public static Class<?> getPrimitiveClass(final String name) {
         switch (name) {
             case "boolean": return Boolean.TYPE;
             case "byte": return Byte.TYPE;

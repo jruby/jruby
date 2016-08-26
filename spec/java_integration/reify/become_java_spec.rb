@@ -80,6 +80,9 @@ describe "JRuby class reification" do
 
     java_class = TopRightOfTheStack.become_java!
     expect(java_class).not_to be_nil
+
+    java_class = TopRightOfTheStack.to_java.getReifiedClass
+    expect(java_class).not_to be_nil
   end
 
   it "supports reification of annotations and signatures on static methods without parameters" do
@@ -186,14 +189,10 @@ describe "JRuby class reification" do
   end
 
   describe "java fields" do
-    let(:cls) {
-      Class.new(&fields)
-    }
-    let(:fields) { proc {
-      java_field "java.lang.String foo"
-    } }
+    let(:klass) { Class.new(&fields) }
+    let(:fields) { proc { java_field "java.lang.String foo" } }
 
-    subject { cls.become_java! }
+    subject { klass.become_java! }
 
     it "adds specified fields to java_class" do
       expect(subject.get_declared_fields.map { |f| f.get_name }).to eq(%w(ruby rubyClass foo))
@@ -202,11 +201,11 @@ describe "JRuby class reification" do
     it "lets you write to the fields" do
       subject
 
-      expect(cls.new).to respond_to :foo
-      expect(cls.new).to respond_to :foo=
+      expect(klass.new).to respond_to :foo
+      expect(klass.new).to respond_to :foo=
 
       field = subject.get_declared_fields.to_a.detect { |f| f.get_name == "foo" }
-      instance = cls.new
+      instance = klass.new
       instance.foo = "String Value"
       expect(instance.foo).to eq("String Value")
       expect(field.get(instance)).to eq("String Value")
@@ -217,12 +216,18 @@ describe "JRuby class reification" do
         java_field "java.lang.String foo"
         java_field "java.lang.String bar"
         java_field "java.lang.String baz"
-        java_field "java.lang.String zot"
-        java_field "java.lang.String allegro"
+        java_field "java.lang.StringBuilder zot"
+        java_field "int intField"
+        java_field "byte[] byteField"
+        java_field "short shortField"
+        java_field "float floatField"
+        java_field "double doubleField"
       }}
       it "keeps the ordering as specified" do
-        expect(subject.get_declared_fields.map { |f| f.get_name }).to eq(%w(ruby rubyClass foo bar baz zot allegro))
+        fields = subject.get_declared_fields.map(&:name)
+        expect(fields).to eq(%w(ruby rubyClass foo bar baz zot intField byteField shortField floatField doubleField))
       end
     end
   end
+
 end
