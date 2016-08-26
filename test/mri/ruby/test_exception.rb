@@ -625,6 +625,18 @@ end.join
     assert_not_same(e, e.cause, "#{msg}: should not be recursive")
   end
 
+  def test_cause_reraised_for_encoding_error
+    msg = "ArgumentError from encoding problems"
+    e = assert_raise(ArgumentError) {
+      begin
+        "hi \255".split
+      rescue => e
+        raise e
+      end
+    }
+    assert_not_same(e, e.cause, "#{msg}: should not be recursive")
+  end
+
   def test_raise_with_cause
     msg = "[Feature #8257]"
     cause = ArgumentError.new("foobar")
