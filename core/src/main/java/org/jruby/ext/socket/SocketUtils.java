@@ -655,24 +655,44 @@ public class SocketUtils {
         }
     }
 
-    static SocketLevel levelFromArg(IRubyObject _level) {
-        if (_level instanceof RubyString || _level instanceof RubySymbol) {
-            String levelString = _level.toString();
-            if(levelString.startsWith("SOL_")) return SocketLevel.valueOf(levelString);
-            return SocketLevel.valueOf("SOL_" + levelString);
+    static SocketLevel levelFromArg(IRubyObject level) {
+        IRubyObject maybeString = TypeConverter.checkStringType(level.getRuntime(), level);
+
+        if (!maybeString.isNil()) {
+            level = maybeString;
         }
 
-        return SocketLevel.valueOf(RubyNumeric.fix2int(_level));
+        try {
+            if (level instanceof RubyString || level instanceof RubySymbol) {
+                String levelString = level.toString();
+                if(levelString.startsWith("SOL_")) return SocketLevel.valueOf(levelString);
+                return SocketLevel.valueOf("SOL_" + levelString);
+            }
+
+            return SocketLevel.valueOf(RubyNumeric.fix2int(level));
+        } catch (IllegalArgumentException iae) {
+            throw SocketUtils.sockerr(level.getRuntime(), "invalid socket level: " + level);
+        }
     }
 
-    static SocketOption optionFromArg(IRubyObject _opt) {
-        if (_opt instanceof RubyString || _opt instanceof RubySymbol) {
-            String optString = _opt.toString();
-            if (optString.startsWith("SO_")) return SocketOption.valueOf(optString);
-            return SocketOption.valueOf("SO_" + optString);
+    static SocketOption optionFromArg(IRubyObject opt) {
+        IRubyObject maybeString = TypeConverter.checkStringType(opt.getRuntime(), opt);
+
+        if (!maybeString.isNil()) {
+            opt = maybeString;
         }
 
-        return SocketOption.valueOf(RubyNumeric.fix2int(_opt));
+        try {
+            if (opt instanceof RubyString || opt instanceof RubySymbol) {
+                String optString = opt.toString();
+                if (optString.startsWith("SO_")) return SocketOption.valueOf(optString);
+                return SocketOption.valueOf("SO_" + optString);
+            }
+
+            return SocketOption.valueOf(RubyNumeric.fix2int(opt));
+        } catch (IllegalArgumentException iae) {
+            throw SocketUtils.sockerr(opt.getRuntime(), "invalid socket option: " + opt);
+        }
     }
 
     public static int portToInt(IRubyObject port) {
