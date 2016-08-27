@@ -49,7 +49,7 @@ public class SourceLoader {
             }
 
             if (canonicalPath.toLowerCase().endsWith(".su")) {
-                return Source.newBuilder(file).name(file.getPath()).build();
+                return Source.newBuilder(file).name(file.getPath()).mimeType(RubyLanguage.CEXT_MIME_TYPE).build();
             } else {
                 // We need to assume all other files are Ruby, so the file type detection isn't enough
                 return Source.newBuilder(file).name(file.getPath()).mimeType(RubyLanguage.MIME_TYPE).build();
