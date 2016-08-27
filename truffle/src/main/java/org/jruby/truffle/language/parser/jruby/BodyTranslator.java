@@ -646,14 +646,16 @@ public class BodyTranslator extends Translator {
         children.addAll(Arrays.asList(argumentsAndBlock.getArguments()));
 
         final RubySourceSection enclosingSourceSection = enclosing(sourceSection, children.toArray(new RubyNode[children.size()]));
-        RubyNode translated = new RubyCallNode(context, enclosingSourceSection.toSourceSection(source),
+        final SourceSection enclosingFullSourceSection = enclosingSourceSection.toSourceSection(source);
+
+        RubyNode translated = new RubyCallNode(context, enclosingFullSourceSection,
                 receiver, methodName, argumentsAndBlock.getBlock(), argumentsAndBlock.getArguments(), argumentsAndBlock.isSplatted(),
                 privately || ignoreVisibility, isVCall, node.isLazy(), isAttrAssign);
 
         if (argumentsAndBlock.getBlock() instanceof BlockDefinitionNode) { // if we have a literal block, break breaks out of this call site
             BlockDefinitionNode blockDef = (BlockDefinitionNode) argumentsAndBlock.getBlock();
             translated = new FrameOnStackNode(translated, argumentsAndBlock.getFrameOnStackMarkerSlot());
-            translated = new CatchBreakNode(context, translateSourceSection(source, translated.getRubySourceSection()), blockDef.getBreakID(), translated);
+            translated = new CatchBreakNode(context, enclosingFullSourceSection, blockDef.getBreakID(), translated);
         }
 
         return addNewlineIfNeeded(node, translated);
