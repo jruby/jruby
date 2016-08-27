@@ -1684,9 +1684,12 @@ public class BodyTranslator extends Translator {
         if (FRAME_LOCAL_GLOBAL_VARIABLES.contains(name)) {
             // Assignment is implicit for many of these, so we need to declare when we use
 
-            environment.declareVarWhereAllowed(name);
-
             RubyNode readNode = environment.findLocalVarNode(name, source, sourceSection);
+
+            if (readNode == null) {
+                environment.declareVarWhereAllowed(name);
+                readNode = environment.findLocalVarNode(name, source, sourceSection);
+            }
 
             if (name.equals("$_")) {
                 if (getSourcePath(sourceSection).equals(buildCorePath("regexp.rb"))) {
