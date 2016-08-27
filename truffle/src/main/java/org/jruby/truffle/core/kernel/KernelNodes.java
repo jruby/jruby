@@ -84,6 +84,8 @@ import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeNodes;
 import org.jruby.truffle.core.rope.RopeNodesFactory;
 import org.jruby.truffle.core.rope.RopeOperations;
+import org.jruby.truffle.core.rubinius.RegexpPrimitiveNodes;
+import org.jruby.truffle.core.rubinius.RegexpPrimitiveNodesFactory;
 import org.jruby.truffle.core.string.StringCachingGuards;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.core.symbol.SymbolTable;
@@ -273,15 +275,30 @@ public abstract class KernelNodes {
     public abstract static class NotMatchNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode matchNode;
+        @Child private RegexpPrimitiveNodes.RegexpSetLastMatchPrimitiveNode setLastMatchNode;
 
         public NotMatchNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             matchNode = DispatchHeadNodeFactory.createMethodCall(context);
+            setLastMatchNode = RegexpPrimitiveNodesFactory.RegexpSetLastMatchPrimitiveNodeFactory.create(null);
         }
 
         @Specialization
         public boolean notMatch(VirtualFrame frame, Object self, Object other) {
-            return !matchNode.callBoolean(frame, self, "=~", null, other);
+            final boolean ret = !matchNode.callBoolean(frame, self, "=~", null, other);
+
+            final FrameSlot matchDataSlot = frame.getFrameDescriptor().findFrameSlot("$~");
+            final Object matchData = frame.getValue(matchDataSlot);
+
+            if (matchData instanceof ThreadLocalObject) {
+                final ThreadLocalObject threadLocalObject = (ThreadLocalObject) matchData;
+
+                setLastMatchNode.executeSetLastMatch(threadLocalObject.get());
+            } else {
+                setLastMatchNode.executeSetLastMatch(nil());
+            }
+
+            return ret;
         }
 
     }
