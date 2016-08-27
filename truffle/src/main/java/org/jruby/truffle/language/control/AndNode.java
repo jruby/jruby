@@ -36,7 +36,7 @@ public class AndNode extends RubyNode {
 
         if (leftCast == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            leftCast = insert(leftCast = BooleanCastNodeGen.create(null));
+            leftCast = insert(BooleanCastNodeGen.create(null));
         }
 
         final boolean leftBoolean = leftCast.executeBoolean(frame, leftValue);
