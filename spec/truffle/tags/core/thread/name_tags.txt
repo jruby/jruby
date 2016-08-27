@@ -1,6 +1,0 @@
-fails:Thread#name is nil initially
-fails:Thread#name returns the thread name
-fails:Thread#name= can be set to a String
-fails:Thread#name= raises an ArgumentError if the name includes a null byte
-fails:Thread#name= can be reset to nil
-fails:Thread#name= calls #to_str to convert name to String

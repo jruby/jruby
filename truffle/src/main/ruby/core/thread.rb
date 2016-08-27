@@ -193,6 +193,21 @@ class Thread
     Kernel.raise ThreadError, "Thread#priority= primitive failed"
   end
 
+  def name
+    Truffle.primitive :thread_get_name
+    Kernel.raise ThreadError, "Thread#priority primitive failed"
+  end
+
+  def name=(val)
+    unless val.nil?
+      val = Rubinius::Type.check_null_safe(StringValue(val))
+      raise ArgumentError, "ASCII incompatible encoding #{val.encoding.name}" unless val.encoding.ascii_compatible?
+      # TODO BJF Aug 27, 2016 Need to rb_str_new_frozen the val here and SET_ANOTHER_THREAD_NAME
+    end
+    Truffle.invoke_primitive :thread_set_name, self, val
+    val
+  end
+
   def inspect
     stat = status()
     stat = "dead" unless stat
