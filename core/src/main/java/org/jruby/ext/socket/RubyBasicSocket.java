@@ -279,6 +279,16 @@ public class RubyBasicSocket extends RubyIO {
     }
 
     @JRubyMethod
+    public IRubyObject setsockopt(ThreadContext context, IRubyObject option) {
+        if (option instanceof Option) {
+            Option rsockopt = (Option) option;
+            return setsockopt(context, rsockopt.level(context), rsockopt.optname(context), rsockopt.data(context));
+        } else {
+            throw context.runtime.newArgumentError(option.toString() + " is not a Socket::Option");
+        }
+    }
+
+    @JRubyMethod
     public IRubyObject setsockopt(ThreadContext context, IRubyObject _level, IRubyObject _opt, IRubyObject val) {
         Ruby runtime = context.runtime;
 
