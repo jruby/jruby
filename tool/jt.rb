@@ -501,7 +501,8 @@ module Commands
       jt metrics time ...                            how long does it take to run a command, broken down into different phases
       jt tarball                                     build the and test the distribution tarball
       jt benchmark [options] args...                 run benchmark-interface (implies --graal)
-          --no-graal       don\'t imply --graal
+          --no-graal              don't imply --graal
+          JT_BENCHMARK_RUBY=ruby  benchmark some other Ruby, like MRI
           note that to run most MRI benchmarks, you should translate them first with normal Ruby and cache the result, such as
               benchmark bench/mri/bm_vm1_not.rb --cache
               jt benchmark bench/mri/bm_vm1_not.rb --use-cache
@@ -1221,15 +1222,26 @@ module Commands
         a
       end
     end
-
+    
+    benchmark_ruby = ENV['JT_BENCHMARK_RUBY']
+    
     run_args = []
-    run_args.push '--graal' unless args.delete('--no-graal') || args.include?('list')
-    run_args.push '-J-G:+TruffleCompilationExceptionsAreFatal'
+
+    unless benchmark_ruby
+      run_args.push '--graal' unless args.delete('--no-graal') || args.include?('list')
+      run_args.push '-J-G:+TruffleCompilationExceptionsAreFatal'
+    end
+    
     run_args.push "-I#{Utilities.find_gem('deep-bench')}/lib" rescue nil
     run_args.push "-I#{Utilities.find_gem('benchmark-ips')}/lib" rescue nil
     run_args.push "#{Utilities.find_gem('benchmark-interface')}/bin/benchmark"
     run_args.push *args
-    run *run_args
+    
+    if benchmark_ruby
+      sh benchmark_ruby, *run_args
+    else
+      run *run_args
+    end
   end
 
   def where(*args)
