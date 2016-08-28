@@ -1,15 +1,5 @@
 jt: [ruby, tool/jt.rb]
 
-# Allow a version mismatch with truffle to prefer the language truffle version
-clone_graal: [mx, --version-conflict-resolution, ignore, sclone, --kind, git]
-
-common-setup: [
-  [mx, sclone, --kind, git, "https://github.com/jruby/jruby-build-pack.git", jruby-build-pack],
-  [cp, bin/jruby.bash, bin/jruby],
-  [chmod, +x, bin/jruby],
-  ${jt} [build, --build-pack]
-]
-
 common: {
   packages: {
     git:        ">=1.8.3"
@@ -24,7 +14,12 @@ common: {
     JAVA_OPTS: -Xmx2G
   }
 
-  setup: ${common-setup}
+  setup: [
+    [mx, sclone, --kind, git, "https://github.com/jruby/jruby-build-pack.git", jruby-build-pack],
+    [cp, bin/jruby.bash, bin/jruby],
+    [chmod, +x, bin/jruby],
+    ${jt} [build, --build-pack]
+  ]
 
   timelimit: "01:00:00"
 }
@@ -37,7 +32,7 @@ no-graal: {
   }
 }
 
-graal-core: {
+labsjdk: {
   downloads: {
     JVMCI_JAVA_HOME: {
       name: labsjdk,
@@ -45,8 +40,13 @@ graal-core: {
       platformspecific: true
     }
   }
+}
 
-  setup: ${common-setup} [
+# Allow a version mismatch with truffle to prefer the language truffle version
+clone_graal: [mx, --version-conflict-resolution, ignore, sclone, --kind, git]
+
+graal-core: ${labsjdk} {
+  setup: ${common.setup} [
     [mv, mx.jruby, temp_mx],
     [mkdir, graal-workspace],
     [cd, graal-workspace],
@@ -65,16 +65,8 @@ graal-core: {
   }
 }
 
-graal-enterprise: {
-  downloads: {
-    JVMCI_JAVA_HOME: {
-      name: labsjdk,
-      version: "8u92-jvmci-0.20",
-      platformspecific: true
-    }
-  }
-
-  setup: ${common-setup} [
+graal-enterprise: ${labsjdk} {
+  setup: ${common.setup} [
     [mv, mx.jruby, temp_mx],
     [mkdir, graal-workspace],
     [cd, graal-workspace],
@@ -103,6 +95,36 @@ graal-enterprise-no-om: {
     HOST_VM_CONFIG: graal-enterprise-no-om,
     JRUBY_OPTS: "-J-Dtruffle.object.LayoutFactory=com.oracle.truffle.object.basic.DefaultLayoutFactory"
   }
+}
+
+sulong: ${labsjdk} {
+  packages: {
+    llvm: "==3.3"
+  }
+
+  environment: {
+    GRAAL_HOME: sulong-workspace/sulong,
+    SULONG_HOME: sulong-workspace/sulong,
+    SULONG_NO_LIBRARY: "true",
+    USE_SYSTEM_CLANG: "true",
+    LIBXML_LIB: "/usr/lib64/libxml2.so.2",
+    OPENSSL_LIB: "/usr/lib64/libssl.so.10",
+    HOST_VM: server,
+    HOST_VM_CONFIG: graal-core
+  }
+
+  setup: ${common.setup} [
+    [mv, mx.jruby, temp_mx],
+    [mkdir, sulong-workspace],
+    [cd, sulong-workspace],
+    [mx, sclone, --kind, git, "https://github.com/graalvm/sulong.git", sulong],
+    [cd, sulong],
+    [mx, sforceimports],
+    [mx, --java-home, "$JVMCI_JAVA_HOME", build],
+    [cd, ../..],
+    [mv, temp_mx, mx.jruby]
+    ${jt} [build, cexts]
+  ]
 }
 
 graal-vm: {
@@ -272,116 +294,40 @@ server-benchmarks: {
   ] ${post-process-and-upload-results}
 }
 
-jruby-truffle-gem-test-pack: {
-  setup: ${common-setup} [
+gem-test-pack: {
+  environment: {
+    GEM_HOME: jruby-truffle-gem-test-pack/gems
+  }
+  
+  setup: [
     [mx, sclone, --kind, git, "https://github.com/jruby/jruby-truffle-gem-test-pack.git", ../jruby-truffle-gem-test-pack]
   ]
 }
 
-test-gems: ${jruby-truffle-gem-test-pack} {
-  environment: {
-    GEM_HOME: ../jruby-truffle-gem-test-pack/gems
-  }
+test-gems: ${gem-test-pack} {
+  setup: ${common.setup} ${gem-test-pack.setup}
 
   run: [
     ${jt} [test, gems]
   ]
 }
 
-test-ecosystem: ${jruby-truffle-gem-test-pack} {
+test-ecosystem: {
+  setup: ${common.setup} ${gem-test-pack.setup}
+  
   run: [
     [bin/jruby, bin/gem, install, ../jruby-truffle-gem-test-pack/gems/cache/bundler-1.12.5.gem],
     ${jt} [test, ecosystem]
   ]
 }
 
-test-cexts: {
-  packages: {
-    llvm: "==3.3"
-  }
-
-  downloads: {
-    JVMCI_JAVA_HOME: {
-      name: labsjdk,
-      version: "8u92-jvmci-0.20",
-      platformspecific: true
-    }
-  }
-
-  setup: ${common-setup} [
-    [mv, mx.jruby, temp_mx],
-    [mkdir, sulong-workspace],
-    [cd, sulong-workspace],
-    [mx, sclone, --kind, git, "https://github.com/graalvm/sulong.git", sulong],
-    [cd, sulong],
-    [mx, sforceimports],
-    [mx, --java-home, "$JVMCI_JAVA_HOME", build],
-    [cd, ../..],
-    [mv, temp_mx, mx.jruby]
-    [mx, sclone, --kind, git, "https://github.com/jruby/jruby-truffle-gem-test-pack.git", jruby-truffle-gem-test-pack],
-    ${jt} [build, cexts]
-  ]
-
-  environment: {
-    GEM_HOME: jruby-truffle-gem-test-pack/gems
-    GRAAL_HOME: sulong-workspace/sulong,
-    SULONG_HOME: sulong-workspace/sulong,
-    SULONG_NO_LIBRARY: "true",
-    USE_SYSTEM_CLANG: "true",
-    HOST_VM: server,
-    HOST_VM_CONFIG: graal-core,
-    LIBXML_LIB: "/usr/lib64/libxml2.so.2",
-    OPENSSL_LIB: "/usr/lib64/libssl.so.10"
-  }
+test-cexts: ${sulong} ${gem-test-pack} {
+  setup: ${sulong.setup} ${gem-test-pack.setup}
 
   run: [
     ${jt} [test, specs, --graal, ":capi"],
     ${jt} [test, cexts]
   ]
-}
-
-chunky-benchmarks-x: {
-  run: [
-    [mx, benchmark, chunky]
-  ] ${post-process-and-upload-results}
-}
-
-sulong-benchmarks: {
-  packages: {
-    llvm: "==3.3"
-  }
-
-  downloads: {
-    JVMCI_JAVA_HOME: {
-      name: labsjdk,
-      version: "8u92-jvmci-0.20",
-      platformspecific: true
-    }
-  }
-
-  setup: ${common-setup} [
-    [mv, mx.jruby, temp_mx],
-    [mkdir, sulong-workspace],
-    [cd, sulong-workspace],
-    [mx, sclone, --kind, git, "https://github.com/graalvm/sulong.git", sulong],
-    [cd, sulong],
-    [mx, sforceimports],
-    [mx, --java-home, "$JVMCI_JAVA_HOME", build],
-    [cd, ../..],
-    [mv, temp_mx, mx.jruby],
-    ${jt} [build, cexts]
-  ] ${setup-benchmarks} [
-    ${jt} [cextc, all-ruby-benchmarks/chunky_png/oily_png]
-  ]
-
-  environment: {
-    GRAAL_HOME: sulong-workspace/sulong,
-    SULONG_HOME: sulong-workspace/sulong,
-    USE_SYSTEM_CLANG: "true",
-    HOST_VM: server,
-    HOST_VM_CONFIG: graal-core,
-    USE_CEXTS: "true"
-  }
 }
 
 builds: [
@@ -425,7 +371,6 @@ builds: [
   {name: ruby-benchmarks-chunky-graal-enterprise} ${common} ${graal-enterprise} ${bench-caps} ${jruby-truffle} ${chunky-benchmarks},
   {name: ruby-benchmarks-chunky-graal-enterprise-no-om} ${common} ${graal-enterprise-no-om} ${bench-caps} ${jruby-truffle} ${chunky-benchmarks},
   {name: ruby-benchmarks-chunky-graal-vm} ${common} ${graal-vm} ${daily-bench-caps} ${jruby-truffle} ${chunky-benchmarks},
-  //{name: ruby-benchmarks-chunky-sulong} ${common} ${sulong-benchmarks} ${gate-caps} ${jruby-truffle} ${chunky-benchmarks-x},
 
   {name: ruby-benchmarks-psd-noindy} ${common} ${no-graal} ${daily-bench-caps} ${jruby-noindy-benchmark} ${psd-benchmarks},
   {name: ruby-benchmarks-psd-indy} ${common} ${no-graal} ${daily-bench-caps} ${jruby-indy-benchmark} ${psd-benchmarks},
