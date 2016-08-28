@@ -550,6 +550,7 @@ module Commands
       unless no_openssl
         cextc "#{JRUBY_DIR}/truffle/src/main/c/openssl",
           '-DRUBY_EXTCONF_H="extconf.h"',
+          '-DHAVE_OPENSSL_110_THREADING_API',
           '-Werror=implicit-function-declaration'
       end
     when nil
