@@ -331,6 +331,10 @@ public abstract class ClassNodes {
             assert RubyGuards.isRubyClass(rubyClass);
             assert RubyGuards.isRubyClass(superclass);
 
+            if (Layouts.CLASS.getSuperclass(rubyClass) != null || rubyClass == coreLibrary().getBasicObjectClass()) {
+                throw new RaiseException(getContext().getCoreExceptions().typeErrorAlreadyInitializedClass(this));
+            }
+
             ClassNodes.initialize(getContext(), rubyClass, superclass);
             triggerInheritedHook(frame, rubyClass, superclass);
 

@@ -403,6 +403,11 @@ public class CoreExceptions {
     }
 
     @TruffleBoundary
+    public DynamicObject typeErrorAlreadyInitializedClass(Node currentNode) {
+        return typeError("already initialized class", currentNode);
+    }
+
+    @TruffleBoundary
     public DynamicObject typeError(String message, Node currentNode, Throwable javaThrowable) {
         return ExceptionOperations.createRubyException(
                 context.getCoreLibrary().getTypeErrorClass(),
