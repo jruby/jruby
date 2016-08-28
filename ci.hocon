@@ -296,7 +296,7 @@ server-benchmarks: {
 
 gem-test-pack: {
   environment: {
-    GEM_HOME: jruby-truffle-gem-test-pack/gems
+    GEM_HOME: ../jruby-truffle-gem-test-pack/gems
   }
   
   setup: [
@@ -312,11 +312,11 @@ test-gems: ${gem-test-pack} {
   ]
 }
 
-test-ecosystem: {
+test-ecosystem: ${gem-test-pack} {
   setup: ${common.setup} ${gem-test-pack.setup}
   
   run: [
-    [bin/jruby, bin/gem, install, ../jruby-truffle-gem-test-pack/gems/cache/bundler-1.12.5.gem],
+    [bin/jruby, bin/gem, install, "$GEM_HOME/cache/bundler-1.12.5.gem"],
     ${jt} [test, ecosystem]
   ]
 }
