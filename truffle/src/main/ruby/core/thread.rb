@@ -195,7 +195,7 @@ class Thread
 
   def name
     Truffle.primitive :thread_get_name
-    Kernel.raise ThreadError, "Thread#priority primitive failed"
+    Kernel.raise ThreadError, "Thread#name primitive failed"
   end
 
   def name=(val)

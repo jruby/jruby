@@ -46,7 +46,7 @@ public interface ThreadLayout extends BasicObjectLayout {
             @Nullable @Volatile Object value,
             AtomicBoolean wakeUp,
             @Volatile int priority,
-            @Nullable DynamicObject threadGroup,
+            DynamicObject threadGroup,
             DynamicObject name);
 
     boolean isThread(ObjectType objectType);
