@@ -1,12 +1,5 @@
 jt: [ruby, tool/jt.rb]
 
-common-setup: [
-  [mx, sclone, --kind, git, "https://github.com/jruby/jruby-build-pack.git", jruby-build-pack],
-  [cp, bin/jruby.bash, bin/jruby],
-  [chmod, +x, bin/jruby],
-  ${jt} [build, --offline]
-]
-
 common: {
   packages: {
     git:        ">=1.8.3"
@@ -21,7 +14,12 @@ common: {
     JAVA_OPTS: -Xmx2G
   }
 
-  setup: ${common-setup}
+  setup: [
+    [mx, sclone, --kind, git, "https://github.com/jruby/jruby-build-pack.git", jruby-build-pack],
+    [cp, bin/jruby.bash, bin/jruby],
+    [chmod, +x, bin/jruby],
+    ${jt} [build, --offline]
+  ]
 
   timelimit: "01:00:00"
 }
@@ -47,23 +45,27 @@ gate-caps: {
   targets: [gate, post-push]
 }
 
-jruby-truffle-gem-test-pack: {
-  setup: ${common-setup} [
+gem-test-pack: {
+  setup: [
     [mx, sclone, --kind, git, "https://github.com/jruby/jruby-truffle-gem-test-pack.git", ../jruby-truffle-gem-test-pack]
   ]
 }
 
-test-gems: ${jruby-truffle-gem-test-pack} {
+test-gems: {
   environment: {
     GEM_HOME: ../jruby-truffle-gem-test-pack/gems
   }
+  
+  setup: ${common.setup} ${gem-test-pack.setup}
 
   run: [
     ${jt} [test, gems]
   ]
 }
 
-test-ecosystem: ${jruby-truffle-gem-test-pack} {
+test-ecosystem: {
+  setup: ${common.setup} ${gem-test-pack.setup}
+
   run: [
     [bin/jruby, bin/gem, install, ../jruby-truffle-gem-test-pack/gems/cache/bundler-1.12.5.gem],
     ${jt} [test, ecosystem]
