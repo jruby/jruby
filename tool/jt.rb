@@ -548,10 +548,7 @@ module Commands
       no_openssl = options.delete('--no-openssl')
       cextc "#{JRUBY_DIR}/truffle/src/main/c/cext"
       unless no_openssl
-        cextc "#{JRUBY_DIR}/truffle/src/main/c/openssl",
-          '-DRUBY_EXTCONF_H="extconf.h"',
-          '-DHAVE_OPENSSL_110_THREADING_API',
-          '-Werror=implicit-function-declaration'
+        cextc "#{JRUBY_DIR}/truffle/src/main/c/openssl"
       end
     when nil
       mvn env, *maven_options, 'package'
