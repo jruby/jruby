@@ -112,6 +112,17 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
     }
 
     @Override
+    public Label[] decodeLabelArray() {
+        int size = decodeInt();
+        Label[] labels = new Label[size];
+        for (int i = 0; i < size; i++) {
+            labels[i] = decodeLabel();
+        }
+
+        return labels;
+    }
+
+    @Override
     public RubyEvent decodeRubyEvent() {
         return RubyEvent.fromOrdinal(decodeInt());
     }
@@ -150,6 +161,16 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
             array[i] = decodeString();
         }
         return array;
+    }
+
+    @Override
+    public int[] decodeIntArray() {
+        int size = decodeInt();
+        int[] ints = new int[size];
+        for (int i = 0; i < size; i++) {
+            ints[i] = decodeInt();
+        }
+        return ints;
     }
 
     private Map<String, Operand> vars = null;
@@ -192,6 +213,7 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
             case ATTR_ASSIGN: return AttrAssignInstr.decode(this);
             case B_FALSE: return BFalseInstr.decode(this);
             case B_NIL: return BNilInstr.decode(this);
+            case B_SWITCH: return BSwitchInstr.decode(this);
             case B_TRUE: return BTrueInstr.decode(this);
             case B_UNDEF: return BUndefInstr.decode(this);
             case BACKTICK_STRING: return BacktickInstr.decode(this);

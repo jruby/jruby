@@ -5,6 +5,8 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.persistence.IRReaderDecoder;
+import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
@@ -77,6 +79,22 @@ public class BSwitchInstr extends MultiBranchInstr {
     }
 
     @Override
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(jumps);
+        e.encode(operand);
+        e.encode(rubyCase);
+        e.encode(targets); // FXXXX
+        e.encode(elseTarget);
+    }
+
+    public static BSwitchInstr decode(IRReaderDecoder d) {
+        return new BSwitchInstr(d.decodeIntArray(), d.decodeOperand(), d.decodeLabel(), d.decodeLabelArray(), d.decodeLabel());
+    }
+
+
+
+    @Override
     public int interpretAndGetNewIPC(ThreadContext context, DynamicScope currDynScope, StaticScope currScope, IRubyObject self, Object[] temp, int ipc) {
         Object result = operand.retrieve(context, self, currScope, currDynScope, temp);
         if (!(result instanceof RubyFixnum)) {
@@ -104,9 +122,7 @@ public class BSwitchInstr extends MultiBranchInstr {
     public Label[] getJumpTargets() {
         Label[] jumpTargets = new Label[targets.length + 2];
         jumpTargets[0] = rubyCase;
-        for (int i = 0; i < targets.length; i++) {
-            jumpTargets[i + 1] = targets[i];
-        }
+        System.arraycopy(targets, 0, jumpTargets, 1, targets.length);
         jumpTargets[jumpTargets.length - 1] = elseTarget;
         return jumpTargets;
     }
