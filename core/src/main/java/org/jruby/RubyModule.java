@@ -4422,19 +4422,21 @@ public class RubyModule extends RubyObject {
         return autoload == null ? null : autoload.getFile();
     }
 
-    private static void define(RubyModule module, JavaMethodDescriptor desc, String simpleName, DynamicMethod dynamicMethod) {
+    private static void define(RubyModule module, JavaMethodDescriptor desc, final String simpleName, DynamicMethod dynamicMethod) {
         JRubyMethod jrubyMethod = desc.anno;
+        final String[] names = jrubyMethod.name();
+        final String[] aliases = jrubyMethod.alias();
         // check for frame field reads or writes
         CallConfiguration needs = CallConfiguration.valueOf(AnnotationHelper.getCallerCallConfigNameByAnno(jrubyMethod));
 
         if (needs.framing() == Framing.Full) {
-            Set<String> frameAwareMethods = new HashSet<String>();
-            AnnotationHelper.addMethodNamesToSet(frameAwareMethods, jrubyMethod, simpleName);
+            Collection<String> frameAwareMethods = new ArrayList<>(4); // added to a Set - thus no need for another Set
+            AnnotationHelper.addMethodNamesToSet(frameAwareMethods, simpleName, names, aliases);
             MethodIndex.FRAME_AWARE_METHODS.addAll(frameAwareMethods);
         }
         if (needs.scoping() == Scoping.Full) {
-            Set<String> scopeAwareMethods = new HashSet<String>();
-            AnnotationHelper.addMethodNamesToSet(scopeAwareMethods, jrubyMethod, simpleName);
+            Collection<String> scopeAwareMethods = new ArrayList<>(4); // added to a Set - thus no need for another Set
+            AnnotationHelper.addMethodNamesToSet(scopeAwareMethods, simpleName, names, aliases);
             MethodIndex.SCOPE_AWARE_METHODS.addAll(scopeAwareMethods);
         }
 
@@ -4444,38 +4446,30 @@ public class RubyModule extends RubyObject {
             singletonClass = module.getSingletonClass();
             dynamicMethod.setImplementationClass(singletonClass);
 
-            String baseName;
-            if (jrubyMethod.name().length == 0) {
+            final String baseName;
+            if (names.length == 0) {
                 baseName = desc.name;
                 singletonClass.addMethod(baseName, dynamicMethod);
             } else {
-                baseName = jrubyMethod.name()[0];
-                for (String name : jrubyMethod.name()) {
-                    singletonClass.addMethod(name, dynamicMethod);
-                }
+                baseName = names[0];
+                for (String name : names) singletonClass.addMethod(name, dynamicMethod);
             }
 
-            if (jrubyMethod.alias().length > 0) {
-                for (String alias : jrubyMethod.alias()) {
-                    singletonClass.defineAlias(alias, baseName);
-                }
+            if (aliases.length > 0) {
+                for (String alias : aliases) singletonClass.defineAlias(alias, baseName);
             }
         } else {
             String baseName;
-            if (jrubyMethod.name().length == 0) {
+            if (names.length == 0) {
                 baseName = desc.name;
                 module.getMethodLocation().addMethod(baseName, dynamicMethod);
             } else {
-                baseName = jrubyMethod.name()[0];
-                for (String name : jrubyMethod.name()) {
-                    module.getMethodLocation().addMethod(name, dynamicMethod);
-                }
+                baseName = names[0];
+                for (String name : names) module.getMethodLocation().addMethod(name, dynamicMethod);
             }
 
-            if (jrubyMethod.alias().length > 0) {
-                for (String alias : jrubyMethod.alias()) {
-                    module.defineAlias(alias, baseName);
-                }
+            if (aliases.length > 0) {
+                for (String alias : aliases) module.defineAlias(alias, baseName);
             }
 
             if (jrubyMethod.module()) {
@@ -4485,20 +4479,16 @@ public class RubyModule extends RubyObject {
                 moduleMethod.setImplementationClass(singletonClass);
                 moduleMethod.setVisibility(PUBLIC);
 
-                if (jrubyMethod.name().length == 0) {
+                if (names.length == 0) {
                     baseName = desc.name;
                     singletonClass.addMethod(desc.name, moduleMethod);
                 } else {
-                    baseName = jrubyMethod.name()[0];
-                    for (String name : jrubyMethod.name()) {
-                        singletonClass.addMethod(name, moduleMethod);
-                    }
+                    baseName = names[0];
+                    for (String name : names) singletonClass.addMethod(name, moduleMethod);
                 }
 
-                if (jrubyMethod.alias().length > 0) {
-                    for (String alias : jrubyMethod.alias()) {
-                        singletonClass.defineAlias(alias, baseName);
-                    }
+                if (aliases.length > 0) {
+                    for (String alias : aliases) singletonClass.defineAlias(alias, baseName);
                 }
             }
         }
