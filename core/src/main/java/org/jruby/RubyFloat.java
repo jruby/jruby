@@ -273,14 +273,14 @@ public class RubyFloat extends RubyNumeric {
         case FIXNUM:
         case BIGNUM:
         case FLOAT:
-            return RubyFloat.newFloat(getRuntime(), value + ((RubyNumeric) other).getDoubleValue());
+            return RubyFloat.newFloat(context.runtime, value + ((RubyNumeric) other).getDoubleValue());
         default:
             return coerceBin(context, sites(context).op_plus, other);
         }
     }
 
     public IRubyObject op_plus(ThreadContext context, double other) {
-        return RubyFloat.newFloat(getRuntime(), value + other);
+        return RubyFloat.newFloat(context.runtime, value + other);
     }
 
     /** flo_minus
@@ -292,14 +292,14 @@ public class RubyFloat extends RubyNumeric {
         case FIXNUM:
         case BIGNUM:
         case FLOAT:
-            return RubyFloat.newFloat(getRuntime(), value - ((RubyNumeric) other).getDoubleValue());
+            return RubyFloat.newFloat(context.runtime, value - ((RubyNumeric) other).getDoubleValue());
         default:
             return coerceBin(context, sites(context).op_minus, other);
         }
     }
 
     public IRubyObject op_minus(ThreadContext context, double other) {
-        return RubyFloat.newFloat(getRuntime(), value - other);
+        return RubyFloat.newFloat(context.runtime, value - other);
     }
 
     /** flo_mul
@@ -311,8 +311,7 @@ public class RubyFloat extends RubyNumeric {
         case FIXNUM:
         case BIGNUM:
         case FLOAT:
-            return RubyFloat.newFloat(
-                    getRuntime(), value * ((RubyNumeric) other).getDoubleValue());
+            return RubyFloat.newFloat(context.runtime, value * ((RubyNumeric) other).getDoubleValue());
         default:
             return coerceBin(context, sites(context).op_times, other);
         }
@@ -332,14 +331,14 @@ public class RubyFloat extends RubyNumeric {
         case FIXNUM:
         case BIGNUM:
         case FLOAT:
-            return RubyFloat.newFloat(getRuntime(), value / ((RubyNumeric) other).getDoubleValue());
+            return RubyFloat.newFloat(context.runtime, value / ((RubyNumeric) other).getDoubleValue());
         default:
             return coerceBin(context, sites(context).op_quo, other);
         }
     }
 
     public IRubyObject op_fdiv(ThreadContext context, double other) { // don't override Numeric#div !
-        return RubyFloat.newFloat(getRuntime(), value / other);
+        return RubyFloat.newFloat(context.runtime, value / other);
     }
 
     /** flo_quo
@@ -374,7 +373,7 @@ public class RubyFloat extends RubyNumeric {
             mod += other;
         }
 
-        return RubyFloat.newFloat(getRuntime(), mod);
+        return RubyFloat.newFloat(context.runtime, mod);
     }
 
     /** flo_mod
