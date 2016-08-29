@@ -534,7 +534,6 @@ public class RubyObject extends RubyBasicObject {
     public static IRubyObject dig(ThreadContext context, IRubyObject obj, IRubyObject[] args, int idx) {
         if ( obj.isNil() ) return context.nil;
 
-        Ruby runtime = context.runtime;
         ObjectSites sites = sites(context);
 
         if ( obj instanceof RubyArray ) {
