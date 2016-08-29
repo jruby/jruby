@@ -220,8 +220,8 @@ DO NOT MODIFIY - GENERATED CODE
         <targetPath>${jruby.complete.gems}</targetPath>
         <directory>${gem.home}</directory>
         <includes>
-          <include>gems/rake-${rake.version}/bin/r*</include>
-          <include>gems/rdoc-${rdoc.version}/bin/r*</include>
+          <include>gems/**</include>
+          <include>specifications/*.gemspec</include>
           <include>specifications/default/*.gemspec</include>
         </includes>
       </resource>
