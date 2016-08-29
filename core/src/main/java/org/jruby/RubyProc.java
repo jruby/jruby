@@ -49,6 +49,7 @@ import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.DataType;
+import org.jruby.util.ArraySupport;
 
 import java.util.Arrays;
 
@@ -279,7 +280,7 @@ public class RubyProc extends RubyObject implements DataType {
             if (newAry.isNil()) {
                 args = new IRubyObject[] { args[0] };
             } else if (newAry instanceof RubyArray){
-                args = ((RubyArray) newAry).toJavaArray();
+                args = ((RubyArray) newAry).toJavaArrayMaybeUnsafe();
             } else {
                 throw context.runtime.newTypeError(args[0].getType().getName() + "#to_ary should return Array");
             }
@@ -288,10 +289,9 @@ public class RubyProc extends RubyObject implements DataType {
 
         // fixed arity > 0 with mismatch needs a new args array
         if (isFixed && required > 0 && required != actual) {
-            IRubyObject[] newArgs = Arrays.copyOf(args, required);
+            IRubyObject[] newArgs = ArraySupport.newCopy(args, required);
 
-
-            if (required > actual) {                      // Not enough required args pad.
+            if (required > actual) { // Not enough required args pad.
                 Helpers.fillNil(newArgs, actual, required, context.runtime);
             }
 
@@ -302,7 +302,7 @@ public class RubyProc extends RubyObject implements DataType {
     }
 
     @JRubyMethod(name = {"call", "[]", "yield", "==="}, rest = true, omit = true)
-    public IRubyObject call19(ThreadContext context, IRubyObject[] args, Block blockCallArg) {
+    public final IRubyObject call19(ThreadContext context, IRubyObject[] args, Block blockCallArg) {
         IRubyObject[] preppedArgs = prepareArgs(context, type, block.getBody(), args);
 
         return call(context, preppedArgs, null, blockCallArg);
