@@ -1,3 +1,29 @@
+/*
+ ***** BEGIN LICENSE BLOCK *****
+ * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Eclipse Public
+ * License Version 1.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of
+ * the License at http://www.eclipse.org/legal/epl-v10.html
+ *
+ * Software distributed under the License is distributed on an "AS
+ * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * rights and limitations under the License.
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either of the GNU General Public License Version 2 or later (the "GPL"),
+ * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the EPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the EPL, the GPL or the LGPL.
+ ***** END LICENSE BLOCK *****/
 package org.jruby.java.invokers;
 
 import java.lang.reflect.AccessibleObject;
@@ -235,8 +261,7 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
         return convertArguments(method, args, 0); // 0 - no additional space
     }
 
-    public static Object[] convertArguments(final ParameterTypes method, final IRubyObject[] args,
-        final int addSpace) {
+    public static Object[] convertArguments(final ParameterTypes method, final IRubyObject[] args, final int addSpace) {
         final Class<?>[] paramTypes = method.getParameterTypes();
         final Object[] javaArgs; final int len = args.length;
 
@@ -253,6 +278,22 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
             for ( int i = 0; i < len; i++ ) {
                 javaArgs[i] = args[i].toJava(paramTypes[i]);
             }
+        }
+        return javaArgs;
+    }
+
+    // specialized case of above convertArguments(IRubyObject...)
+    public static Object[] convertArguments(final ParameterTypes method, final IRubyObject arg0, final int addSpace) {
+        final Class<?>[] paramTypes = method.getParameterTypes();
+        final Object[] javaArgs;
+
+        if ( method.isVarArgs() ) {
+            javaArgs = new Object[ 1 + addSpace ];
+            javaArgs[0] = convertVarArgumentsOnly(paramTypes[0], arg0);
+        }
+        else {
+            javaArgs = new Object[ 1 + addSpace ];
+            javaArgs[0] = arg0.toJava(paramTypes[0]);
         }
         return javaArgs;
     }
@@ -275,6 +316,21 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
         for ( int i = 0; i < varCount; i++ ) {
             Array.set(varArgs, i, args[varStart + i].toJava(compType));
         }
+        return varArgs;
+    }
+
+    // specialized case of above convertVarArgumentsOnly
+    private static Object convertVarArgumentsOnly(final Class<?> varArrayType,
+        /* final int varStart = 0, */ final IRubyObject arg0) {
+
+        if ( arg0 instanceof ArrayJavaProxy ) {
+            // we may have a pre-created array to pass; try that first
+            return arg0.toJava(varArrayType);
+        }
+
+        final Class<?> compType = varArrayType.getComponentType();
+        final Object varArgs = Array.newInstance(compType, 1);
+        Array.set(varArgs, 0, arg0.toJava(compType));
         return varArgs;
     }
 

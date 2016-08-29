@@ -835,5 +835,37 @@ describe "A Ruby class extending a Java class" do
     expect {cls.new}.not_to raise_error
   end
 
+  it 'resolves expected constructor' do
+    cls = Class.new(java.lang.Thread) # plenty of constructors
+
+    expect { cls.new }.not_to raise_error # Thread()
+    expect { cls.new('test') }.not_to raise_error # Thread(String)
+
+    cls = Class.new(java.io.CharArrayWriter) {} # has only 2 constructors
+    expect { cls.new }.not_to raise_error # ()
+    expect { cls.new(42) }.not_to raise_error # (int initialSize)
+    expect { cls.new('xxx') }.to raise_error(ArgumentError) # wrong number of arguments for constructor
+  end
+
+  class RubyFilterWriter < java.io.FilterWriter
+    # protected FilterWriter(Writer out)
+    def flush; end
+  end
+
+  it 'resolves expected constructor (1)' do # optimized _case_
+    writer = java.io.CharArrayWriter.new
+    # protected FilterWriter(Writer out)
+    expect { RubyFilterWriter.new(writer) }.not_to raise_error
+    expect { RubyFilterWriter.new }.to raise_error(ArgumentError)
+  end
+
+  it 'resolves expected constructor (0)' do # optimized _case_
+    klass = Class.new(java.util.concurrent.RecursiveTask) do
+      # public RecursiveTask()
+      def compute; return 42 end
+    end
+    expect { klass.new }.not_to raise_error
+  end
+
 end
 
