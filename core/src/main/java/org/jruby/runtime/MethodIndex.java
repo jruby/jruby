@@ -105,42 +105,44 @@ public class MethodIndex {
         return new NormalCachingCallSite(name);
     }
 
-    private static final Map<String, String> FIXNUM_OPS = new HashMap<String, String>();
-    private static final String[][] fastFixnumOps = {
-        {"+", "op_plus"},
-        {"-", "op_minus"},
-        {"*", "op_mul"},
-        {"==", "op_equal"},
-        {"<", "op_lt"},
-        {"<=", "op_le"},
-        {">", "op_gt"},
-        {">=", "op_ge"},
-        {"<=>", "op_cmp"},
-        {"&", "op_and"},
-        {"|", "op_or"},
-        {"^", "op_xor"},
-        {">>", "op_rshift"},
-        {"<<", "op_lshift"}
-    };
+    private static final Map<String, String> FIXNUM_OPS;
 
     static {
+        String[][] fastFixnumOps = {
+                {"+", "op_plus"},
+                {"-", "op_minus"},
+                {"*", "op_mul"},
+                {"==", "op_equal"},
+                {"<", "op_lt"},
+                {"<=", "op_le"},
+                {">", "op_gt"},
+                {">=", "op_ge"},
+                {"<=>", "op_cmp"},
+                {"&", "op_and"},
+                {"|", "op_or"},
+                {"^", "op_xor"},
+                {">>", "op_rshift"},
+                {"<<", "op_lshift"}
+        };
+        FIXNUM_OPS = new HashMap<>(fastFixnumOps.length + 1, 1);
         for (String[] fastOp : fastFixnumOps) FIXNUM_OPS.put(fastOp[0], fastOp[1]);
     }
 
-    private static final Map<String, String> FLOAT_OPS = new HashMap<String, String>();
-    private static final String[][] fastFloatOps = {
-        {"+", "op_plus"},
-        {"-", "op_minus"},
-        {"*", "op_mul"},
-        {"==", "op_equal"},
-        {"<", "op_lt"},
-        {"<=", "op_le"},
-        {">", "op_gt"},
-        {">=", "op_ge"},
-        {"<=>", "op_cmp"}
-    };
+    private static final Map<String, String> FLOAT_OPS;
 
     static {
+        final String[][] fastFloatOps = {
+                {"+", "op_plus"},
+                {"-", "op_minus"},
+                {"*", "op_mul"},
+                {"==", "op_equal"},
+                {"<", "op_lt"},
+                {"<=", "op_le"},
+                {">", "op_gt"},
+                {">=", "op_ge"},
+                {"<=>", "op_cmp"}
+        };
+        FLOAT_OPS = new HashMap<>(fastFloatOps.length + 1, 1);
         for (String[] fastOp : fastFloatOps) FLOAT_OPS.put(fastOp[0], fastOp[1]);
     }
 
@@ -153,36 +155,22 @@ public class MethodIndex {
     }
 
     public static CallSite getFastFixnumOpsCallSite(String name) {
-        if (name.equals("+")) {
-            return new PlusCallSite();
-        } else if (name.equals("-")) {
-            return new MinusCallSite();
-        } else if (name.equals("*")) {
-            return new MulCallSite();
-        } else if (name.equals("<")) {
-            return new LtCallSite();
-        } else if (name.equals("<=")) {
-            return new LeCallSite();
-        } else if (name.equals(">")) {
-            return new GtCallSite();
-        } else if (name.equals(">=")) {
-            return new GeCallSite();
-        } else if (name.equals("==")) {
-            return new EqCallSite();
-        } else if (name.equals("<=>")) {
-            return new CmpCallSite();
-        } else if (name.equals("&")) {
-            return new BitAndCallSite();
-        } else if (name.equals("|")) {
-            return new BitOrCallSite();
-        } else if (name.equals("^")) {
-            return new XorCallSite();
-        } else if (name.equals(">>")) {
-            return new ShiftRightCallSite();
-        } else if (name.equals("<<")) {
-            return new ShiftLeftCallSite();
+        switch (name) {
+            case "+" : return new PlusCallSite();
+            case "-" : return new MinusCallSite();
+            case "*" : return new MulCallSite();
+            case "<" : return new LtCallSite();
+            case "<=" : return new LeCallSite();
+            case ">" : return new GtCallSite();
+            case ">=" : return new GeCallSite();
+            case "==" : return new EqCallSite();
+            case "<=>" : return new CmpCallSite();
+            case "&" : return new BitAndCallSite();
+            case "|" : return new BitOrCallSite();
+            case "^" : return new XorCallSite();
+            case ">>" : return new ShiftRightCallSite();
+            case "<<" : return new ShiftLeftCallSite();
         }
-
         return new NormalCachingCallSite(name);
     }
 
