@@ -68,6 +68,7 @@ import org.jruby.runtime.builtin.InternalVariables;
 import org.jruby.runtime.builtin.Variable;
 import org.jruby.runtime.component.VariableEntry;
 import org.jruby.runtime.marshal.CoreObjectType;
+import org.jruby.util.ArraySupport;
 import org.jruby.util.IdUtil;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.unsafe.UnsafeHolder;
@@ -1651,17 +1652,10 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     @JRubyMethod(name = "__send__", required = 1, rest = true, omit = true)
     public IRubyObject send19(ThreadContext context, IRubyObject[] args, Block block) {
         String name = RubySymbol.objectToSymbolString(args[0]);
-        int newArgsLength = args.length - 1;
 
-        IRubyObject[] newArgs;
-        if (newArgsLength == 0) {
-            newArgs = IRubyObject.NULL_ARRAY;
-        } else {
-            newArgs = new IRubyObject[newArgsLength];
-            System.arraycopy(args, 1, newArgs, 0, newArgs.length);
-        }
-
-        return getMetaClass().finvoke(context, this, name, newArgs, block);
+        final int length = args.length - 1;
+        args = ( length == 0 ) ? IRubyObject.NULL_ARRAY : ArraySupport.newCopy(args, 1, length);
+        return getMetaClass().finvoke(context, this, name, args, block);
     }
 
     @JRubyMethod(name = "instance_eval",
@@ -2645,35 +2639,17 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         throw context.runtime.newArgumentError(0, 1);
     }
     public IRubyObject send(ThreadContext context, IRubyObject arg0, Block block) {
-        String name = RubySymbol.objectToSymbolString(arg0);
-
-        return getMetaClass().finvoke(context, this, name, block);
+        return send19(context, arg0, block);
     }
     public IRubyObject send(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
-        String name = RubySymbol.objectToSymbolString(arg0);
-
-        return getMetaClass().finvoke(context, this, name, arg1, block);
+        return send19(context, arg0, arg1, block);
     }
     public IRubyObject send(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
-        String name = RubySymbol.objectToSymbolString(arg0);
-
-        return getMetaClass().finvoke(context, this, name, arg1, arg2, block);
+        return send19(context, arg0, arg1, arg2, block);
     }
     public IRubyObject send(ThreadContext context, IRubyObject[] args, Block block) {
         if (args.length == 0) return send(context, block);
-
-        String name = RubySymbol.objectToSymbolString(args[0]);
-        int newArgsLength = args.length - 1;
-
-        IRubyObject[] newArgs;
-        if (newArgsLength == 0) {
-            newArgs = IRubyObject.NULL_ARRAY;
-        } else {
-            newArgs = new IRubyObject[newArgsLength];
-            System.arraycopy(args, 1, newArgs, 0, newArgs.length);
-        }
-
-        return getMetaClass().finvoke(context, this, name, newArgs, block);
+        return send19(context, args, block);
     }
 
     /** rb_false

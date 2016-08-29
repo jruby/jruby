@@ -36,6 +36,7 @@ import org.jruby.runtime.callsite.NormalCachingCallSite;
 import org.jruby.runtime.callsite.RefinedCachingCallSite;
 import org.jruby.runtime.callsite.VariableCachingCallSite;
 import org.jruby.runtime.ivars.VariableAccessor;
+import org.jruby.util.ArraySupport;
 import org.jruby.util.ByteList;
 import org.jruby.util.DefinedMessage;
 import org.jruby.util.RecursiveComparator;
@@ -48,7 +49,6 @@ import org.objectweb.asm.Type;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.lang.invoke.MethodHandle;
-import java.util.Arrays;
 import java.util.Map;
 
 public class IRRuntimeHelpers {
@@ -554,9 +554,6 @@ public class IRRuntimeHelpers {
         if (keywordArgs != null) argsLength -= 1;
 
         if ((blockType == null || blockType.checkArity) && (argsLength < required || (!rest && argsLength > (required + opt)))) {
-//            System.out.println("NUMARGS: " + argsLength + ", REQUIRED: " + required + ", OPT: " + opt + ", AL: " + args.length + ",RKW: " + receivesKwargs );
-//            System.out.println("ARGS[0]: " + args[0]);
-
             Arity.raiseArgumentError(context.runtime, argsLength, required, required + opt);
         }
     }
@@ -564,15 +561,11 @@ public class IRRuntimeHelpers {
     public static IRubyObject[] frobnicateKwargsArgument(ThreadContext context, IRubyObject[] args, int requiredArgsCount) {
         if (args.length <= requiredArgsCount) return args; // No kwarg because required args slurp them up.
 
-        IRubyObject kwargs = toHash(args[args.length - 1], context);
+        final IRubyObject kwargs = toHash(args[args.length - 1], context);
 
         if (kwargs != null) {
             if (kwargs.isNil()) { // nil on to_hash is supposed to keep itself as real value so we need to make kwargs hash
-                IRubyObject[] newArgs = new IRubyObject[args.length + 1];
-                System.arraycopy(args, 0, newArgs, 0, args.length);
-                args = newArgs;
-                args[args.length - 1] = RubyHash.newSmallHash(context.runtime); // opt args
-                return args;
+                return ArraySupport.newCopy(args, RubyHash.newSmallHash(context.runtime));
             }
 
             Tuple<RubyHash, RubyHash> hashes = new Tuple<>(RubyHash.newSmallHash(context.runtime), RubyHash.newSmallHash(context.runtime));
@@ -1715,15 +1708,15 @@ public class IRRuntimeHelpers {
             return args;
         }
 
-        if (sig.isFixed() && required > 0 && required+needsKwargs != actual) {
-            // Make sure we have a ruby-hash
-            IRubyObject[] newArgs = Arrays.copyOf(args, required + needsKwargs);
-            if (actual < required+needsKwargs) {
+        if (sig.isFixed() && required > 0 && required + needsKwargs != actual) {
+            final int len = required + needsKwargs; // Make sure we have a ruby-hash
+            IRubyObject[] newArgs = ArraySupport.newCopy(args, len);
+            if (actual < len) {
                 // Not enough args and we need an empty {} for kwargs processing.
-                newArgs[newArgs.length - 1] = RubyHash.newHash(context.runtime);
+                newArgs[len - 1] = RubyHash.newHash(context.runtime);
             } else {
                 // We have more args than we need and kwargs is always the last arg.
-                newArgs[newArgs.length - 1] = args[args.length - 1];
+                newArgs[len - 1] = args[args.length - 1];
             }
             args = newArgs;
         }

@@ -54,6 +54,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ArraySupport;
 import org.jruby.util.ByteList;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -375,14 +376,13 @@ public class RubyDigest {
 
         @JRubyMethod(name = "digest", required = 1, rest = true, meta = true)
         public static IRubyObject s_digest(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
-            Ruby runtime = recv.getRuntime();
+            final Ruby runtime = context.runtime;
             if (args.length < 1) {
                 throw runtime.newArgumentError("no data given");
             }
             RubyString str = args[0].convertToString();
-            IRubyObject[] newArgs = new IRubyObject[args.length - 1];
-            System.arraycopy(args, 1, newArgs, 0, args.length - 1);
-            IRubyObject obj = ((RubyClass)recv).newInstance(context, newArgs, Block.NULL_BLOCK);
+            args = ArraySupport.newCopy(args, 1, args.length - 1); // skip first arg
+            IRubyObject obj = ((RubyClass) recv).newInstance(context, args, Block.NULL_BLOCK);
             return obj.callMethod(context, "digest", str);
         }
 

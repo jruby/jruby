@@ -29,7 +29,6 @@ import org.jruby.internal.runtime.methods.*;
 import org.jruby.ir.IRScopeType;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
-import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.javasupport.proxy.InternalJavaProxy;
@@ -39,8 +38,10 @@ import org.jruby.runtime.JavaSites.HelpersSites;
 import org.jruby.runtime.backtrace.BacktraceData;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.invokedynamic.MethodNames;
+import org.jruby.util.ArraySupport;
 import org.jruby.util.ByteList;
 import org.jruby.util.DefinedMessage;
+import org.jruby.util.JavaNameMangler;
 import org.jruby.util.MurmurHash;
 import org.jruby.util.TypeConverter;
 
@@ -55,7 +56,6 @@ import static org.jruby.runtime.invokedynamic.MethodNames.OP_EQUAL;
 import static org.jruby.util.CodegenUtils.sig;
 import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
 
-import org.jruby.util.JavaNameMangler;
 import org.jruby.util.io.EncodingUtils;
 
 /**
@@ -376,11 +376,7 @@ public class Helpers {
     }
 
     private static IRubyObject[] prepareMethodMissingArgs(IRubyObject[] args, ThreadContext context, String name) {
-        IRubyObject[] newArgs = new IRubyObject[args.length + 1];
-        System.arraycopy(args, 0, newArgs, 1, args.length);
-        newArgs[0] = context.runtime.newSymbol(name);
-
-        return newArgs;
+        return ArraySupport.newCopy(context.runtime.newSymbol(name), args);
     }
 
     public static IRubyObject invoke(ThreadContext context, IRubyObject self, String name, Block block) {
@@ -723,10 +719,7 @@ public class Helpers {
     }
 
     public static IRubyObject[] appendToObjectArray(IRubyObject[] array, IRubyObject add) {
-        IRubyObject[] newArray = new IRubyObject[array.length + 1];
-        System.arraycopy(array, 0, newArray, 0, array.length);
-        newArray[array.length] = add;
-        return newArray;
+        return ArraySupport.newCopy(array, add);
     }
 
     public static IRubyObject breakLocalJumpError(Ruby runtime, IRubyObject value) {
@@ -737,34 +730,32 @@ public class Helpers {
         return toArray(array, add);
     }
 
-    public static IRubyObject[] toArray(IRubyObject[] array, IRubyObject... add) {
-        IRubyObject[] newArray = new IRubyObject[array.length + add.length];
-        System.arraycopy(array, 0, newArray, 0, array.length);
-        System.arraycopy(add, 0, newArray, array.length, add.length);
+    public static IRubyObject[] toArray(IRubyObject[] array, IRubyObject... rest) {
+        final int len = array.length;
+        IRubyObject[] newArray = new IRubyObject[len + rest.length];
+        ArraySupport.copy(array, newArray, 0, len);
+        ArraySupport.copy(rest, newArray, len, rest.length);
         return newArray;
     }
 
     public static IRubyObject[] toArray(IRubyObject obj, IRubyObject... rest) {
-        IRubyObject[] newArray = new IRubyObject[rest.length + 1];
-        newArray[0] = obj;
-        System.arraycopy(rest, 0, newArray, 1, rest.length);
-        return newArray;
+        return ArraySupport.newCopy(obj, rest);
     }
 
     public static IRubyObject[] toArray(IRubyObject obj0, IRubyObject obj1, IRubyObject... rest) {
-        IRubyObject[] newArray = new IRubyObject[rest.length + 2];
+        IRubyObject[] newArray = new IRubyObject[2 + rest.length];
         newArray[0] = obj0;
         newArray[1] = obj1;
-        System.arraycopy(rest, 0, newArray, 2, rest.length);
+        ArraySupport.copy(rest, newArray, 2, rest.length);
         return newArray;
     }
 
     public static IRubyObject[] toArray(IRubyObject obj0, IRubyObject obj1, IRubyObject obj2, IRubyObject... rest) {
-        IRubyObject[] newArray = new IRubyObject[rest.length + 3];
+        IRubyObject[] newArray = new IRubyObject[3 + rest.length];
         newArray[0] = obj0;
         newArray[1] = obj1;
         newArray[2] = obj2;
-        System.arraycopy(rest, 0, newArray, 3, rest.length);
+        ArraySupport.copy(rest, newArray, 3, rest.length);
         return newArray;
     }
 
@@ -1702,28 +1693,18 @@ public class Helpers {
         return argsResult;
     }
 
+    @Deprecated // no longer used
     public static IRubyObject[] splatToArguments(IRubyObject value) {
-        Ruby runtime = value.getRuntime();
-
-        if (value.isNil()) {
-            return runtime.getSingleNilArray();
-        }
-
-        return splatToArgumentsCommon(runtime, value);
+        return splatToArgumentsCommon(value.getRuntime(), value);
     }
 
+    @Deprecated // no longer used
     public static IRubyObject[] splatToArguments19(IRubyObject value) {
-        Ruby runtime = value.getRuntime();
-
-        if (value.isNil()) {
-            return IRubyObject.NULL_ARRAY;
-        }
-
-        return splatToArgumentsCommon(runtime, value);
+        if (value.isNil()) return IRubyObject.NULL_ARRAY;
+        return splatToArgumentsCommon(value.getRuntime(), value);
     }
 
     private static IRubyObject[] splatToArgumentsCommon(Ruby runtime, IRubyObject value) {
-
         if (value.isNil()) {
             return runtime.getSingleNilArray();
         }
@@ -1757,11 +1738,13 @@ public class Helpers {
         return ((RubyArray)avalue).toJavaArray();
     }
 
+    @SuppressWarnings("deprecation") @Deprecated // no longer used
     public static IRubyObject[] argsCatToArguments(IRubyObject[] args, IRubyObject cat) {
         IRubyObject[] ary = splatToArguments(cat);
         return argsCatToArgumentsCommon(args, ary);
     }
 
+    @SuppressWarnings("deprecation") @Deprecated // no longer used
     public static IRubyObject[] argsCatToArguments19(IRubyObject[] args, IRubyObject cat) {
         IRubyObject[] ary = splatToArguments19(cat);
         return argsCatToArgumentsCommon(args, ary);
@@ -2030,19 +2013,21 @@ public class Helpers {
         return RubyProc.newProc(context.runtime, block, Block.Type.LAMBDA);
     }
 
-    public static void fillNil(IRubyObject[]arr, int from, int to, Ruby runtime) {
+    public static void fillNil(final IRubyObject[] arr, int from, int to, Ruby runtime) {
         if (arr.length == 0) return;
         IRubyObject nils[] = runtime.getNilPrefilledArray();
         int i;
 
+        // NOTE: seems that Arrays.fill(arr, runtime.getNil()) won't do better ... on Java 8
+        // Object[] array doesn't get the same optimizations as e.g. byte[] int[]
+
         for (i = from; i + Ruby.NIL_PREFILLED_ARRAY_SIZE < to; i += Ruby.NIL_PREFILLED_ARRAY_SIZE) {
             System.arraycopy(nils, 0, arr, i, Ruby.NIL_PREFILLED_ARRAY_SIZE);
         }
-        System.arraycopy(nils, 0, arr, i, to - i);
+        ArraySupport.copy(nils, arr, i, to - i);
     }
 
-    public static void fillNil(IRubyObject[]arr, Ruby runtime) {
-        if (arr.length == 0) return;
+    public static void fillNil(IRubyObject[] arr, Ruby runtime) {
         fillNil(arr, 0, arr.length, runtime);
     }
 
@@ -2696,8 +2681,7 @@ public class Helpers {
         if (strings.length == 0) return "";
         StringBuilder sb = new StringBuilder(strings[0]);
         for (int i = 1; i < strings.length; i++) {
-            sb.append(delimiter)
-                    .append(strings[i]);
+            sb.append(delimiter).append(strings[i]);
         }
         return sb.toString();
     }

@@ -53,6 +53,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ArraySupport;
 
 import static org.jruby.javasupport.JavaCallable.inspectParameterTypes;
 
@@ -82,9 +83,8 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
         this.declaringProxyClass = proxyClass;
         this.proxyConstructor = constructor;
         Class<?>[] parameterTypes = constructor.getParameterTypes();
-        final int len = parameterTypes.length - 1; // last argument is our invocation handler
         // see JavaProxyClassFactory's generateConstructor ...
-        System.arraycopy(parameterTypes, 0, actualParameterTypes = new Class<?>[len], 0, len);
+        this.actualParameterTypes = ArraySupport.newCopy(parameterTypes, parameterTypes.length - 1);
         this.actualVarArgs = JavaProxyClassFactory.isVarArgs(proxyConstructor);
     }
 
@@ -110,12 +110,7 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
         if ( len != actualParameterTypes.length ) {
             throw new IllegalArgumentException("wrong number of parameters");
         }
-
-        final Object[] argsWithHandler = new Object[ len + 1 ];
-        System.arraycopy(args, 0, argsWithHandler, 0, len);
-        // argsWithHandler[ len ] = handler;
-
-        return newInstanceImpl(argsWithHandler, handler);
+        return newInstanceImpl(ArraySupport.newCopy(args, len + 1), handler); // does args[ len ] = handler;
     }
 
     final Object newInstanceImpl(Object[] argsPlus1, JavaProxyInvocationHandler handler)

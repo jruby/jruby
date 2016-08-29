@@ -47,6 +47,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.jruby.Ruby;
 import org.jruby.javasupport.JavaSupport;
 import org.jruby.javasupport.JavaSupportImpl;
+import org.jruby.runtime.Helpers;
+import org.jruby.util.ArraySupport;
 import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -461,9 +463,7 @@ public class JavaProxyClassFactory {
     private static Class[] generateConstructor(Type selfType, Constructor constructor, ClassVisitor cw) {
         Class[] superConstructorParameterTypes = constructor.getParameterTypes();
         Class[] newConstructorParameterTypes = new Class[superConstructorParameterTypes.length + 1];
-        System.arraycopy(superConstructorParameterTypes, 0,
-                newConstructorParameterTypes, 0,
-                superConstructorParameterTypes.length);
+        ArraySupport.copy(superConstructorParameterTypes, newConstructorParameterTypes, 0, superConstructorParameterTypes.length);
         newConstructorParameterTypes[superConstructorParameterTypes.length] = JavaProxyInvocationHandler.class;
 
         int access = Opcodes.ACC_PUBLIC;

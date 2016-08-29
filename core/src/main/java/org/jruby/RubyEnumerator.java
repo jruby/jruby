@@ -40,6 +40,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ArraySupport;
 import org.jruby.util.ByteList;
 import org.jruby.util.cli.Options;
 
@@ -328,9 +329,10 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
             return each(context, block);
         }
 
-        IRubyObject[] newArgs = new IRubyObject[methodArgs.length + args.length];
-        System.arraycopy(methodArgs, 0, newArgs, 0, methodArgs.length);
-        System.arraycopy(args, 0, newArgs, methodArgs.length, args.length);
+        final int mlen = methodArgs.length;
+        IRubyObject[] newArgs = new IRubyObject[mlen + args.length];
+        ArraySupport.copy(methodArgs, newArgs, 0, mlen);
+        ArraySupport.copy(args, newArgs, mlen, args.length);
 
         return new RubyEnumerator(context.runtime, getType(), object, context.runtime.newSymbol("each"), newArgs);
     }

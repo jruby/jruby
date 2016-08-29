@@ -47,6 +47,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Unrescuable;
+import org.jruby.util.ArraySupport;
 import org.jruby.util.Loader;
 import org.jruby.util.collections.ClassValue;
 import org.jruby.javasupport.binding.AssignedName;
@@ -463,10 +464,8 @@ public class JavaSupportImpl extends JavaSupport {
                 variables.put(o, vars);
             }
             else if (vars.length <= i) {
-                Object[] newVars = new Object[i + 1];
-                System.arraycopy(vars, 0, newVars, 0, vars.length);
-                variables.put(o, newVars);
-                vars = newVars;
+                vars = ArraySupport.newCopy(vars, i + 1);
+                variables.put(o, vars);
             }
             vars[i] = v;
         }

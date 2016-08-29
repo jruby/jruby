@@ -61,6 +61,7 @@ import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.specialized.RubyArrayOneObject;
 import org.jruby.specialized.RubyArrayTwoObject;
+import org.jruby.util.ArraySupport;
 import org.jruby.util.ByteList;
 import org.jruby.util.Pack;
 import org.jruby.util.RecursiveComparator;
@@ -4072,9 +4073,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
                     if (argRandgen != null) {
                         randgen = argRandgen;
                     }
-                    IRubyObject[] newargs = new IRubyObject[args.length - 1];
-                    System.arraycopy(args, 0, newargs, 0, args.length - 1);
-                    args = newargs;
+                    args = ArraySupport.newCopy(args, args.length - 1);
                 }
             }
             if (args.length == 0) {
