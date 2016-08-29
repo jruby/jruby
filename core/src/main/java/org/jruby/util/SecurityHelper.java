@@ -14,9 +14,9 @@ public abstract class SecurityHelper {
 
     // attempt to enable unlimited-strength crypto on OracleJDK
     public static void checkCryptoRestrictions(final Ruby runtime) {
-        if ( isOracleJRE() && !attempted) {
-            setNonRestricted();
+        if ( !attempted) {
             attempted = true;
+            setNonRestricted();
             // NOTE: this is not 'really' enough and there's more to be done :
             // JceSecurity#defaultPolicy should add: javax.crypto.CryptoAllPermission
             //
@@ -49,19 +49,6 @@ public abstract class SecurityHelper {
             LOG.debug("unable un-restrict jce security: ", e);
         }
         return false;
-    }
-
-    private static boolean isOracleJRE() {
-        try {
-            String name = System.getProperty("java.vendor"); // "Oracle Corporation"
-            if ( name == null || ! name.contains("Oracle") ) return false;
-            name = System.getProperty("java.runtime.name"); // make sure we're not OpenJDK
-            if ( name == null || name.contains("OpenJDK") ) return false;
-            return true;
-        }
-        catch (SecurityException e) {
-            return false;
-        }
     }
 
 }
