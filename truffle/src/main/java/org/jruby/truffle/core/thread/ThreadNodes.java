@@ -435,7 +435,8 @@ public abstract class ThreadNodes {
                     new AtomicReference<>(null),
                     new AtomicBoolean(false),
                     new AtomicInteger(0),
-                    currentGroup);
+                    currentGroup,
+                    nil());
 
             Layouts.THREAD.setFiberManagerUnsafe(object, new FiberManager(getContext(), object)); // Because it is cyclic
 
@@ -483,6 +484,31 @@ public abstract class ThreadNodes {
             });
         }
 
+    }
+
+    @Primitive(name = "thread_get_name")
+    public static abstract class ThreadGetNamePrimitiveNode extends PrimitiveArrayArgumentsNode {
+        public ThreadGetNamePrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization(guards = "isRubyThread(thread)")
+        public DynamicObject getName(DynamicObject thread) {
+            return Layouts.THREAD.getName(thread);
+        }
+    }
+
+    @Primitive(name = "thread_set_name")
+    public static abstract class ThreadSetNamePrimitiveNode extends PrimitiveArrayArgumentsNode {
+        public ThreadSetNamePrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization(guards = "isRubyThread(thread)")
+        public DynamicObject setName(DynamicObject thread, DynamicObject name) {
+            Layouts.THREAD.setName(thread, name);
+            return name;
+        }
     }
 
     @Primitive(name = "thread_get_priority", unsafe = UnsafeGroup.THREADS)
