@@ -86,12 +86,7 @@ import org.jruby.java.proxies.JavaProxy;
 import org.jruby.java.proxies.RubyObjectHolderProxy;
 import org.jruby.java.util.SystemPropertiesMap;
 import org.jruby.javasupport.proxy.JavaProxyClassFactory;
-import org.jruby.util.OneShotClassLoader;
-import org.jruby.util.ByteList;
-import org.jruby.util.ClassDefiningClassLoader;
-import org.jruby.util.IdUtil;
-import org.jruby.util.JRubyClassLoader;
-import org.jruby.util.SafePropertyAccessor;
+import org.jruby.util.*;
 import org.jruby.util.cli.Options;
 import org.jruby.util.collections.NonBlockingHashMapLong;
 
@@ -1300,9 +1295,7 @@ public class Java implements Library {
             case 2 :
                 interfaces = new Class[] { interfaces[0], interfaces[1], RubyObjectHolderProxy.class };
             default :
-                final Class[] tmp_interfaces = interfaces;
-                interfaces = new Class[length + 1];
-                System.arraycopy(tmp_interfaces, 0, interfaces, 0, length);
+                interfaces = ArraySupport.newCopy(interfaces, length + 1);
                 interfaces[length] = RubyObjectHolderProxy.class;
         }
 

@@ -1612,7 +1612,7 @@ public class RubyClass extends RubyModule {
 
                     // indices for temp values
                     Class[] params = new Class[methodSignature.length - 1];
-                    System.arraycopy(methodSignature, 1, params, 0, params.length);
+                    ArraySupport.copy(methodSignature, 1, params, 0, params.length);
                     final int baseIndex = RealClassGenerator.calcBaseIndex(params, 1);
                     final int rubyIndex = baseIndex;
 
