@@ -1548,7 +1548,7 @@ public abstract class KernelNodes {
             if (ret) {
                 return true;
             } else if (dispatchRespondToMissing.doesRespondTo(frame, "respond_to_missing?", object)) {
-                return respondToMissing(frame, object, name, includeProtectedAndPrivate);
+                return respondToMissing(frame, object, getSymbol(StringOperations.rope(name)), includeProtectedAndPrivate);
             } else {
                 return false;
             }
