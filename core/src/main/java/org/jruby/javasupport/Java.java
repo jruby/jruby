@@ -568,7 +568,7 @@ public class Java implements Library {
     // called for Ruby sub-classes of a Java class
     private static void setupJavaSubclass(final ThreadContext context, final RubyClass subclass) {
 
-        subclass.getInstanceVariables().setInstanceVariable("@java_proxy_class", context.nil);
+        subclass.setInstanceVariable("@java_proxy_class", context.nil);
 
         // Subclasses of Java classes can safely use ivars, so we set this to silence warnings
         subclass.setCacheProxy(true);
@@ -599,7 +599,7 @@ public class Java implements Library {
             final RubyClass metaClass = self.getMetaClass();
             IRubyObject proxyClass = metaClass.getInstanceVariable("@java_proxy_class");
             if (proxyClass == null || proxyClass.isNil()) { // lazy (proxy) class generation ... on JavaSubClass.new
-                proxyClass = JavaProxyClass.get_with_class(self, metaClass);
+                proxyClass = JavaProxyClass.getProxyClass(self.getRuntime(), metaClass);
                 metaClass.setInstanceVariable("@java_proxy_class", proxyClass);
             }
             return (JavaProxyClass) proxyClass;
