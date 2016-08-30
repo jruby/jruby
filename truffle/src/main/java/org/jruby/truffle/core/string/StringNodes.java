@@ -1348,8 +1348,15 @@ public abstract class StringNodes {
 
 
         @Specialization(guards = { "self != from", "isRubyString(from)" })
-        public Object initializeCopy(DynamicObject self, DynamicObject from) {
-            StringOperations.setRope(self, rope(from));
+        public Object initializeCopy(DynamicObject self, DynamicObject from,
+                                     @Cached("createBinaryProfile()") ConditionProfile ropeBufferProfile) {
+            final Rope rope = rope(from);
+
+            if (ropeBufferProfile.profile(rope instanceof RopeBuffer)) {
+                StringOperations.setRope(self, ((RopeBuffer) rope).dup());
+            } else {
+                StringOperations.setRope(self, rope);
+            }
 
             return self;
         }
