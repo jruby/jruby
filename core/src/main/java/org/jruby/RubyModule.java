@@ -1038,8 +1038,7 @@ public class RubyModule extends RubyObject {
                 if (Ruby.getClassLoader().getResource(fullPath) == null) {
                     LOG.debug("could not find it, using default populator");
                 } else {
-                    Class populatorClass = Class.forName(qualifiedName + AnnotationBinder.POPULATOR_SUFFIX);
-                    return (TypePopulator) populatorClass.newInstance();
+                    return (TypePopulator) Class.forName(fullName).newInstance();
                 }
             } catch (Throwable ex) {
                 if (LOG.isDebugEnabled()) LOG.debug("could not find populator, using default (" + ex + ')');
