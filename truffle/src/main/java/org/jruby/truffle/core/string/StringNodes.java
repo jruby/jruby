@@ -183,6 +183,7 @@ public abstract class StringNodes {
         @NodeChild(type = RubyNode.class, value = "string"),
         @NodeChild(type = RubyNode.class, value = "other")
     })
+    @ImportStatic(StringGuards.class)
     public abstract static class AddNode extends CoreMethodNode {
 
         @Child private EncodingNodes.CheckEncodingNode checkEncodingNode;
@@ -200,32 +201,58 @@ public abstract class StringNodes {
             return ToStrNodeGen.create(null, null, other);
         }
 
-        @Specialization(guards = {"isRubyString(other)", "getEncoding(string) == getEncoding(other)"})
-        public DynamicObject addSameEncoding(DynamicObject string, DynamicObject other,
-                                             @Cached("createBinaryProfile()") ConditionProfile ropeBufferProfile) {
-            return add(string, other, getEncoding(string), ropeBufferProfile);
+        @Specialization(guards = { "!isRopeBuffer(string)", "isRubyString(other)", "getEncoding(string) == getEncoding(other)" })
+        public DynamicObject addSameEncoding(DynamicObject string, DynamicObject other) {
+            return add(string, other, getEncoding(string));
         }
 
-        @Specialization(guards = {"isRubyString(other)", "getEncoding(string) != getEncoding(other)", "isUTF8AndUSASCII(string, other)"})
-        public DynamicObject addUTF8AndUSASCII(DynamicObject string, DynamicObject other,
-                                               @Cached("createBinaryProfile()") ConditionProfile ropeBufferProfile) {
-            return add(string, other, UTF8Encoding.INSTANCE, ropeBufferProfile);
+        @Specialization(guards = { "!isRopeBuffer(string)", "isRubyString(other)", "getEncoding(string) != getEncoding(other)", "isUTF8AndUSASCII(string, other)" })
+        public DynamicObject addUTF8AndUSASCII(DynamicObject string, DynamicObject other) {
+            return add(string, other, UTF8Encoding.INSTANCE);
         }
 
-        @Specialization(guards = {"isRubyString(other)", "getEncoding(string) != getEncoding(other)", "!isUTF8AndUSASCII(string, other)"})
-        public DynamicObject addDifferentEncodings(DynamicObject string, DynamicObject other,
-                                                   @Cached("createBinaryProfile()") ConditionProfile ropeBufferProfile) {
+        @Specialization(guards = { "!isRopeBuffer(string)", "isRubyString(other)", "getEncoding(string) != getEncoding(other)", "!isUTF8AndUSASCII(string, other)" })
+        public DynamicObject addDifferentEncodings(DynamicObject string, DynamicObject other) {
             final Encoding enc = checkEncodingNode.executeCheckEncoding(string, other);
-            return add(string, other, enc, ropeBufferProfile);
+            return add(string, other, enc);
         }
 
-        private DynamicObject add(DynamicObject string, DynamicObject other, Encoding encoding, ConditionProfile ropeBufferProfile) {
-            Rope left = rope(string);
+        @Specialization(guards = { "isRopeBuffer(string)", "is7Bit(string)", "is7Bit(other)" })
+        public DynamicObject addRopeBuffer(DynamicObject string, DynamicObject other,
+                                           @Cached("createBinaryProfile()") ConditionProfile ropeBufferProfile) {
+            final Encoding enc = checkEncodingNode.executeCheckEncoding(string, other);
+
+            final RopeBuffer left = (RopeBuffer) rope(string);
+            final ByteList leftByteList = left.getByteList();
             final Rope right = rope(other);
 
-            if (ropeBufferProfile.profile(left instanceof RopeBuffer)) {
-                left = ((RopeBuffer) left).dup();
+            final ByteList concatByteList;
+            if (ropeBufferProfile.profile(right instanceof RopeBuffer)) {
+                concatByteList = StringSupport.addByteLists(leftByteList, ((RopeBuffer) right).getByteList());
+            } else {
+                // Taken from org.jruby.util.StringSupport.addByteLists.
+
+                final int newLength = leftByteList.realSize() + right.byteLength();
+                concatByteList = new ByteList(newLength);
+                concatByteList.realSize(newLength);
+                System.arraycopy(leftByteList.unsafeBytes(), leftByteList.begin(), concatByteList.unsafeBytes(), 0, leftByteList.realSize());
+                System.arraycopy(right.getBytes(), 0, concatByteList.unsafeBytes(), leftByteList.realSize(), right.byteLength());
             }
+
+            concatByteList.setEncoding(enc);
+
+            final RopeBuffer concatRope = new RopeBuffer(concatByteList, left.getCodeRange(), left.isSingleByteOptimizable(), concatByteList.realSize());
+            final DynamicObject ret = Layouts.STRING.createString(coreLibrary().getStringFactory(), concatRope);
+
+            taintResultNode.maybeTaint(string, ret);
+            taintResultNode.maybeTaint(other, ret);
+
+            return ret;
+        }
+
+        private DynamicObject add(DynamicObject string, DynamicObject other, Encoding encoding) {
+            Rope left = rope(string);
+            final Rope right = rope(other);
 
             final Rope concatRope = makeConcatNode.executeMake(left, right, encoding);
 
@@ -1789,6 +1816,7 @@ public abstract class StringNodes {
         @NodeChild(type = RubyNode.class, value = "index"),
         @NodeChild(type = RubyNode.class, value = "value")
     })
+    @ImportStatic(StringGuards.class)
     public abstract static class SetByteNode extends CoreMethodNode {
 
         @Child private RopeNodes.MakeConcatNode composedMakeConcatNode;
@@ -1843,11 +1871,6 @@ public abstract class StringNodes {
             return value;
         }
 
-        protected boolean isRopeBuffer(DynamicObject string) {
-            assert RubyGuards.isRubyString(string);
-
-            return rope(string) instanceof RopeBuffer;
-        }
     }
 
     @CoreMethod(names = {"size", "length"})
