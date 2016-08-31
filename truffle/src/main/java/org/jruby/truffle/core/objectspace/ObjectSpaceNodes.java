@@ -122,8 +122,7 @@ public abstract class ObjectSpaceNodes {
             int count = 0;
 
             for (DynamicObject object : ObjectGraph.stopAndGetAllObjects(this, getContext())) {
-                final DynamicObject metaClass = Layouts.BASIC_OBJECT.getMetaClass(object);
-                if (!isHidden(object) && ModuleOperations.assignableTo(metaClass, ofClass)) {
+                if (!isHidden(object) && ModuleOperations.assignableTo(Layouts.BASIC_OBJECT.getMetaClass(object), ofClass)) {
                     yield(frame, block, object);
                     count++;
                 }
@@ -133,7 +132,7 @@ public abstract class ObjectSpaceNodes {
         }
 
         private boolean isHidden(DynamicObject object) {
-            return RubyGuards.isRubyClass(object) && Layouts.CLASS.getIsSingleton(object);
+            return !RubyGuards.isRubyBasicObject(object) || (RubyGuards.isRubyClass(object) && Layouts.CLASS.getIsSingleton(object));
         }
 
     }
