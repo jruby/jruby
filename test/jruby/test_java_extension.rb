@@ -57,8 +57,14 @@ class TestJavaExtension < Test::Unit::TestCase
       [ java.lang.Short.new(1), java.lang.Integer.new(0) ].sort!
     rescue => e
       assert_instance_of TypeError, e
-      assert 'java.lang.Short cannot be cast to java.lang.Integer' == e.message ||
-                 'java.lang.Integer cannot be cast to java.lang.Short' == e.message
+      msg = 'java.lang.Short cannot be cast to java.lang.Integer'
+      unless msg.eql? e.message
+        msg = 'java.lang.Integer cannot be cast to java.lang.Short'
+        unless msg.eql? e.message
+          # IBM Java: #<TypeError: java.lang.Integer incompatible with java.lang.Short>
+          assert_match /java.lang.Integer.*java.lang.Short/, e.message
+        end
+      end
     end
   end
 
