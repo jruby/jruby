@@ -252,7 +252,7 @@ public class RubyArrayTwoObject extends RubyArraySpecialized {
 
         if (origArr.size() == 2) {
             car = origArr.eltInternal(0);
-            cdr = origArr.eltInternal(0);
+            cdr = origArr.eltInternal(1);
             return this;
         }
 
