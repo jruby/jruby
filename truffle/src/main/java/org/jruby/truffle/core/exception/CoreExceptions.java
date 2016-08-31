@@ -408,6 +408,26 @@ public class CoreExceptions {
     }
 
     @TruffleBoundary
+    public DynamicObject typeErrorSubclassSingletonClass(Node currentNode) {
+        return typeError("can't make subclass of singleton class", currentNode);
+    }
+
+    @TruffleBoundary
+    public DynamicObject typeErrorSubclassClass(Node currentNode) {
+        return typeError("can't make subclass of Class", currentNode);
+    }
+
+    @TruffleBoundary
+    public DynamicObject typeErrorSuperclassMustBeClass(Node currentNode) {
+        return typeError("superclass must be a Class", currentNode);
+    }
+
+    @TruffleBoundary
+    public DynamicObject typeErrorInheritUninitializedClass(Node currentNode) {
+        return typeError("can't inherit uninitialized class", currentNode);
+    }
+
+    @TruffleBoundary
     public DynamicObject typeError(String message, Node currentNode, Throwable javaThrowable) {
         return ExceptionOperations.createRubyException(
                 context.getCoreLibrary().getTypeErrorClass(),
