@@ -868,7 +868,7 @@ module Commands
         ['oily_png', ['chunky_png-1.3.6', 'oily_png-1.2.0'], ['oily_png']],
         ['psd_native', ['chunky_png-1.3.6', 'oily_png-1.2.0', 'bindata-2.3.1', 'hashie-3.4.4', 'psd-enginedata-1.1.1', 'psd-2.1.2', 'psd_native-1.1.3'], ['oily_png', 'psd_native']],
         ['nokogiri', [], ['nokogiri']],
-        ['ruby-argon2', [], [], "#{ENV['GEM_HOME']}/bundler/gems/ruby-argon2-5a527075e88b"]
+        ['ruby-argon2', [], [], "#{ENV['GEM_HOME']}/bundler/gems/ruby-argon2-bd3fb1e056cf"]
     ].each do |gem_name, dependencies, libs, gem_root|
       next if gem_name == 'nokogiri' # nokogiri totally excluded
       next if gem_name == 'nokogiri' && no_libxml
