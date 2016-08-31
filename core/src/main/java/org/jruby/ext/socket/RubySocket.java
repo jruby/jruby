@@ -111,8 +111,17 @@ public class RubySocket extends RubyBasicSocket {
         rb_mConstants.setConstant("MSG_DONTROUTE", runtime.newFixnum(MSG_DONTROUTE));
         rb_mConstants.setConstant("MSG_WAITALL", runtime.newFixnum(MSG_WAITALL));
 
-        // constants webrick crashes without
         rb_mConstants.setConstant("AI_PASSIVE", runtime.newFixnum(1));
+        rb_mConstants.setConstant("AI_CANONNAME", runtime.newFixnum(2));
+        rb_mConstants.setConstant("AI_NUMERICHOST", runtime.newFixnum(4));
+        rb_mConstants.setConstant("AI_ALL", runtime.newFixnum(256));
+        rb_mConstants.setConstant("AI_V4MAPPED_CFG", runtime.newFixnum(512));
+        rb_mConstants.setConstant("AI_ADDRCONFIG", runtime.newFixnum(1024));
+        rb_mConstants.setConstant("AI_V4MAPPED", runtime.newFixnum(2048));
+        rb_mConstants.setConstant("AI_NUMERICSERV", runtime.newFixnum(4096));
+
+        rb_mConstants.setConstant("AI_DEFAULT", runtime.newFixnum(1536));
+        rb_mConstants.setConstant("AI_MASK", runtime.newFixnum(5127));
 
         // More constants needed by specs
         rb_mConstants.setConstant("IP_MULTICAST_TTL", runtime.newFixnum(10));
@@ -359,7 +368,33 @@ public class RubySocket extends RubyBasicSocket {
             throw context.runtime.newErrnoEOPNOTSUPPError("Socket.socketpair only supports streaming UNIX sockets");
         }
 
-        return RubyUNIXSocket.socketpair(context, recv, arrayOf(domain, type));
+        final Ruby runtime = context.runtime;
+
+        // TODO: type and protocol
+
+        UnixSocketChannel[] sp;
+
+        try {
+            sp = UnixSocketChannel.pair();
+
+            final RubyClass socketClass = runtime.getClass("Socket");
+            RubySocket sock = new RubySocket(runtime, socketClass);
+            sock.soDomain = AddressFamily.AF_UNIX;
+            sock.soType = Sock.SOCK_STREAM;
+            sock.soProtocolFamily = ProtocolFamily.PF_UNIX;
+            sock.initSocket(newChannelFD(runtime, sp[0]));
+
+            RubySocket sock2 = new RubySocket(runtime, socketClass);
+            sock2.soDomain = AddressFamily.AF_UNIX;
+            sock2.soType = Sock.SOCK_STREAM;
+            sock2.soProtocolFamily = ProtocolFamily.PF_UNIX;
+            sock.initSocket(newChannelFD(runtime, sp[1]));
+
+            return runtime.newArray(sock, sock2);
+
+        } catch (IOException ioe) {
+            throw runtime.newIOErrorFromException(ioe);
+        }
     }
 
     @Override
