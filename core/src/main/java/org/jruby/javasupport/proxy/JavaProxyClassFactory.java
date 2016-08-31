@@ -133,32 +133,32 @@ public class JavaProxyClassFactory {
         return factory != null ? factory : new JavaProxyClassFactory();
     }
 
-    public JavaProxyClass newProxyClass(final Ruby runtime, ClassLoader loader,
-            String targetClassName, Class superClass, Class[] interfaces, Set<String> names)
-            throws InvocationTargetException {
-        if (loader == null) loader = JavaProxyClassFactory.class.getClassLoader();
-        if (superClass == null) superClass = Object.class;
-        if (interfaces == null) interfaces = EMPTY_CLASS_ARRAY;
-        if (names == null) names = Collections.EMPTY_SET; // so we can assume names != null
+    static ThreadLocal<Ruby> runtimeTLS = new ThreadLocal<>();
 
-        // TODO could we possibly avoid **names** gathering and keying ?!?
-        //  ... currently this causes to regenerate proxy classes when a Ruby method is added on the type
-        JavaSupport.ProxyClassKey classKey = JavaSupport.ProxyClassKey.getInstance(superClass, interfaces, names);
-        JavaProxyClass proxyClass = JavaSupportImpl.fetchJavaProxyClass(runtime, classKey);
-        if (proxyClass == null) {
-            if (targetClassName == null) {
-                targetClassName = targetClassName(superClass);
-            }
-            validateArgs(runtime, targetClassName, superClass);
-
-            Type selfType = Type.getType('L' + toInternalClassName(targetClassName) + ';');
-            Map<MethodKey, MethodData> methods = collectMethods(superClass, interfaces, names);
-            proxyClass = generate(loader, targetClassName, superClass, interfaces, methods, selfType);
-
-            proxyClass = JavaSupportImpl.saveJavaProxyClass(runtime, classKey, proxyClass);
+    public final JavaProxyClass genProxyClass(final Ruby runtime, ClassLoader loader,
+        String targetClassName, Class superClass, Class[] interfaces, Set<String> names)
+        throws InvocationTargetException {
+        final Ruby prev = runtimeTLS.get();
+        runtimeTLS.set(runtime);
+        try {
+            return newProxyClass(runtime, loader, targetClassName, superClass, interfaces, names);
         }
+        finally { runtimeTLS.set(prev); }
+    }
 
-        return proxyClass;
+    public JavaProxyClass newProxyClass(final Ruby runtime, ClassLoader loader,
+        String targetClassName, Class superClass, Class[] interfaces, Set<String> names)
+        throws InvocationTargetException {
+
+        if (loader == null) loader = JavaProxyClassFactory.class.getClassLoader();
+        if (targetClassName == null) {
+            targetClassName = targetClassName(superClass);
+        }
+        validateArgs(runtime, targetClassName, superClass);
+
+        Type selfType = Type.getType('L' + toInternalClassName(targetClassName) + ';');
+        Map<MethodKey, MethodData> methods = collectMethods(superClass, interfaces, names);
+        return generate(loader, targetClassName, superClass, interfaces, methods, selfType);
     }
 
     private JavaProxyClass generate(ClassLoader loader, String targetClassName,
@@ -188,10 +188,8 @@ public class JavaProxyClassFactory {
             // proxy_class.setAccessible(true); // field is public
             return (JavaProxyClass) proxy_class.get(clazz);
         }
-        catch (Exception ex) {
-            InternalError ie = new InternalError();
-            ie.initCause(ex);
-            throw ie;
+        catch (NoSuchFieldException|IllegalAccessException ex) {
+            Helpers.throwException(ex); return null; // re-throws (although unexpected)
         }
     }
 

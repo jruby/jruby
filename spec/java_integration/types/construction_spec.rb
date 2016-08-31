@@ -802,7 +802,11 @@ describe "A Ruby class extending a Java class" do
       end
     end
 
-    expect {cls.new}.to raise_error(TypeError)
+    begin
+      cls.new
+    rescue TypeError => e
+      expect( e.message ).to match /class .*PrivateConstructor doesn't have .* constructor/
+    end
   end
 
   it "should fail when constructing through package superclass constructor" do
