@@ -66,6 +66,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.Pack;
 import org.jruby.util.RecursiveComparator;
 import org.jruby.util.TypeConverter;
+import org.jruby.util.cli.Options;
 import org.jruby.util.io.EncodingUtils;
 
 import java.io.IOException;
@@ -81,6 +82,7 @@ import java.util.RandomAccess;
 
 import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
+import static org.jruby.runtime.Helpers.arrayOf;
 import static org.jruby.runtime.Helpers.hashEnd;
 import static org.jruby.runtime.Helpers.murmurCombine;
 import static org.jruby.runtime.Visibility.PRIVATE;
@@ -96,6 +98,8 @@ import static org.jruby.RubyEnumerator.SizeFn;
 @JRubyClass(name="Array")
 public class RubyArray extends RubyObject implements List, RandomAccess {
     public static final int DEFAULT_INSPECT_STR_SIZE = 10;
+
+    private static final boolean USE_PACKED_ARRAYS = Options.PACKED_ARRAYS.load();
 
     public static RubyClass createArrayClass(Ruby runtime) {
         RubyClass arrayc = runtime.defineClass("Array", runtime.getObject(), ARRAY_ALLOCATOR);
@@ -202,15 +206,15 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     }
 
     public static RubyArray newArray(Ruby runtime, IRubyObject obj) {
-        return new RubyArrayOneObject(runtime, obj);
+        return USE_PACKED_ARRAYS ? new RubyArrayOneObject(runtime, obj) : new RubyArray(runtime, arrayOf(obj));
     }
 
     public static RubyArray newArrayLight(Ruby runtime, IRubyObject obj) {
-        return new RubyArrayOneObject(runtime, obj);
+        return USE_PACKED_ARRAYS ? new RubyArrayOneObject(runtime, obj) : new RubyArray(runtime, arrayOf(obj));
     }
 
     public static RubyArray newArrayLight(Ruby runtime, IRubyObject car, IRubyObject cdr) {
-        return new RubyArrayTwoObject(runtime, car, cdr);
+        return USE_PACKED_ARRAYS ? new RubyArrayTwoObject(runtime, car, cdr) : new RubyArray(runtime, arrayOf(car, cdr));
     }
 
     public static RubyArray newArrayLight(Ruby runtime, IRubyObject... objs) {
@@ -221,15 +225,15 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
      *
      */
     public static RubyArray newArray(Ruby runtime, IRubyObject car, IRubyObject cdr) {
-        return new RubyArrayTwoObject(runtime, car, cdr);
+        return USE_PACKED_ARRAYS ? new RubyArrayTwoObject(runtime, car, cdr) : new RubyArray(runtime, arrayOf(car, cdr));
     }
 
     public static RubyArray newArray(Ruby runtime, IRubyObject first, IRubyObject second, IRubyObject third) {
-        return new RubyArray(runtime, new IRubyObject[] {first, second, third});
+        return new RubyArray(runtime, arrayOf(first, second, third));
     }
 
     public static RubyArray newArray(Ruby runtime, IRubyObject first, IRubyObject second, IRubyObject third, IRubyObject fourth) {
-        return new RubyArray(runtime, new IRubyObject[] {first, second, third, fourth});
+        return new RubyArray(runtime, arrayOf(first, second, third, fourth));
     }
 
     public static RubyArray newEmptyArray(Ruby runtime) {
@@ -244,9 +248,11 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
             case 0:
                 return newEmptyArray(runtime);
             case 1:
-                return new RubyArrayOneObject(runtime, args[0]);
+                if (USE_PACKED_ARRAYS) return new RubyArrayOneObject(runtime, args[0]);
+                break;
             case 2:
-                return new RubyArrayTwoObject(runtime, args[0], args[1]);
+                if (USE_PACKED_ARRAYS) return new RubyArrayTwoObject(runtime, args[0], args[1]);
+                break;
         }
         RubyArray arr = new RubyArray(runtime, new IRubyObject[args.length]);
         System.arraycopy(args, 0, arr.values, 0, args.length);
@@ -262,9 +268,11 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
             case 0:
                 return newEmptyArray(runtime);
             case 1:
-                return new RubyArrayOneObject(runtime, args[0]);
+                if (USE_PACKED_ARRAYS) return new RubyArrayOneObject(runtime, args[0]);
+                break;
             case 2:
-                return new RubyArrayTwoObject(runtime, args[0], args[1]);
+                if (USE_PACKED_ARRAYS) return new RubyArrayTwoObject(runtime, args[0], args[1]);
+                break;
         }
         return newArrayNoCopy(runtime, args, 0, args.length);
     }
@@ -293,9 +301,11 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
             case 0:
                 return newEmptyArray(runtime);
             case 1:
-                return new RubyArrayOneObject(runtime, args[start]);
+                if (USE_PACKED_ARRAYS) return new RubyArrayOneObject(runtime, args[start]);
+                break;
             case 2:
-                return new RubyArrayTwoObject(runtime, args[start], args[start + 1]);
+                if (USE_PACKED_ARRAYS) return new RubyArrayTwoObject(runtime, args[start], args[start + 1]);
+                break;
         }
         return newArrayNoCopy(runtime, args, start, length);
     }
@@ -328,8 +338,12 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         IRubyObject[] values = collection.toArray(new IRubyObject[collection.size()]);
         switch (values.length) {
             case 0: return newEmptyArray(runtime);
-            case 1: return new RubyArrayOneObject(runtime, values[0]);
-            case 2: return new RubyArrayTwoObject(runtime, values[0], values[1]);
+            case 1:
+                if (USE_PACKED_ARRAYS) return new RubyArrayOneObject(runtime, values[0]);
+                break;
+            case 2:
+                if (USE_PACKED_ARRAYS) return new RubyArrayTwoObject(runtime, values[0], values[1]);
+                break;
         }
         return new RubyArray(runtime, values);
     }
@@ -337,8 +351,12 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     public static RubyArray newArray(Ruby runtime, List<? extends IRubyObject> list) {
         switch (list.size()) {
             case 0: return newEmptyArray(runtime);
-            case 1: return new RubyArrayOneObject(runtime, list.get(0));
-            case 2: return new RubyArrayTwoObject(runtime, list.get(0), list.get(1));
+            case 1:
+                if (USE_PACKED_ARRAYS) return new RubyArrayOneObject(runtime, list.get(0));
+                break;
+            case 2:
+                if (USE_PACKED_ARRAYS) return new RubyArrayTwoObject(runtime, list.get(0), list.get(1));
+                break;
         }
         return new RubyArray(runtime, list.toArray(new IRubyObject[list.size()]));
     }
@@ -4372,17 +4390,18 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
      * @return a RubyArray shaped for the given size
      */
     public static RubyArray newBlankArray(Ruby runtime, int size) {
-        RubyArray result;
         switch (size) {
             case 0:
                 return newEmptyArray(runtime);
             case 1:
-                return new RubyArrayOneObject(runtime, runtime.getNil());
+                if (USE_PACKED_ARRAYS) return new RubyArrayOneObject(runtime, runtime.getNil());
+                break;
             case 2:
-                return new RubyArrayTwoObject(runtime, runtime.getNil(), runtime.getNil());
-            default:
-                return newArray(runtime, size);
+                if (USE_PACKED_ARRAYS) return new RubyArrayTwoObject(runtime, runtime.getNil(), runtime.getNil());
+                break;
         }
+
+        return newArray(runtime, size);
     }
 
     @JRubyMethod(name = "try_convert", meta = true)
