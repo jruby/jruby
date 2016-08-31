@@ -63,6 +63,7 @@ import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.RubySourceSection;
+import org.jruby.truffle.language.SnippetNode;
 import org.jruby.truffle.language.arguments.MissingArgumentBehavior;
 import org.jruby.truffle.language.arguments.ProfileArgumentNode;
 import org.jruby.truffle.language.arguments.ReadPreArgumentNode;
@@ -1756,11 +1757,34 @@ public abstract class ModuleNodes {
     @CoreMethod(names = { "to_s", "inspect" })
     public abstract static class ToSNode extends CoreMethodArrayArgumentsNode {
 
-        @TruffleBoundary
+        @Child private SnippetNode snippetNode;
+
         @Specialization
-        public DynamicObject toS(DynamicObject module) {
-            final String name = Layouts.MODULE.getFields(module).getName();
-            return createString(StringOperations.encodeRope(name, UTF8Encoding.INSTANCE));
+        public DynamicObject toS(VirtualFrame frame, DynamicObject module) {
+
+            final String moduleName;
+            if (Layouts.CLASS.isClass(module) && Layouts.CLASS.getIsSingleton(module)) {
+                final DynamicObject attached = Layouts.CLASS.getAttached(module);
+                final String name;
+                if (Layouts.CLASS.isClass(attached) || Layouts.MODULE.isModule(attached)) {
+                    if (snippetNode == null) {
+                        CompilerDirectives.transferToInterpreterAndInvalidate();
+                        snippetNode = insert(new SnippetNode());
+                    }
+                    DynamicObject inspectResult = (DynamicObject) snippetNode.execute(frame,
+                        "Rubinius::Type.inspect(val)", "val", attached);
+                    name = StringOperations.getString(inspectResult);
+                } else {
+                    name = Layouts.MODULE.getFields(module).getName();
+                }
+                moduleName = "#<Class:" + name + ">";
+            } else {
+                moduleName = Layouts.MODULE.getFields(module).getName();
+            }
+
+            // TODO BJF Aug 31, 2016 Add refinements to_s
+
+            return createString(StringOperations.encodeRope(moduleName, UTF8Encoding.INSTANCE));
         }
 
     }
