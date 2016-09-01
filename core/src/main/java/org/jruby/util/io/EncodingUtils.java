@@ -1654,6 +1654,9 @@ public class EncodingUtils {
     public static void encStrBufCat(Ruby runtime, RubyString str, byte[] ptrBytes) {
         encCrStrBufCat(runtime, str, ptrBytes, 0, ptrBytes.length, USASCIIEncoding.INSTANCE, StringSupport.CR_UNKNOWN, null);
     }
+    public static void encStrBufCat(Ruby runtime, RubyString str, byte[] ptrBytes, Encoding enc) {
+        encCrStrBufCat(runtime, str, ptrBytes, 0, ptrBytes.length, enc, StringSupport.CR_UNKNOWN, null);
+    }
     public static void encStrBufCat(Ruby runtime, RubyString str, byte[] ptrBytes, int ptr, int len, Encoding enc) {
         encCrStrBufCat(runtime, str, ptrBytes, ptr, len,
                 enc, StringSupport.CR_UNKNOWN, null);

@@ -28,6 +28,7 @@
 package org.jruby;
 
 import org.jcodings.Encoding;
+import org.jcodings.specific.UTF8Encoding;
 import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.JavaSites;
@@ -1110,10 +1111,10 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
     public final IRubyObject hashyInspect() {
         final Ruby runtime = getRuntime();
-        RubyString name = (RubyString) getMetaClass().getRealClass().name();
-        RubyString part = RubyString.newStringLight(runtime, 2 + name.size() + 3 + 8 + 1); // #<Object:0x5a1c0542>
+        byte[] name = getMetaClass().getRealClass().getName().getBytes(RubyEncoding.UTF8);
+        RubyString part = RubyString.newStringLight(runtime, 2 + name.length + 3 + 8 + 1); // #<Object:0x5a1c0542>
         encStrBufCat(runtime, part, INSPECT_POUND_LT);
-        encStrBufCat(runtime, part, name.getByteList());
+        encStrBufCat(runtime, part, name, UTF8Encoding.INSTANCE);
         encStrBufCat(runtime, part, INSPECT_COLON_ZERO_X);
         encStrBufCat(runtime, part, ConvertBytes.longToHexBytes(inspectHashCode()));
 
