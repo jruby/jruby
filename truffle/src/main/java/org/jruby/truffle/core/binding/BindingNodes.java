@@ -131,6 +131,38 @@ public abstract class BindingNodes {
     }
 
     @ImportStatic(BindingNodes.class)
+    @CoreMethod(names = "local_variable_defined?", required = 1)
+    public abstract static class LocalVariableDefinedNode extends CoreMethodArrayArgumentsNode {
+
+        private final DynamicObject dollarUnderscore;
+
+        public LocalVariableDefinedNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            dollarUnderscore = getSymbol("$_");
+        }
+
+        @TruffleBoundary
+        @Specialization(guards = {"isRubySymbol(symbol)", "!isLastLine(symbol)"})
+        public boolean localVariableDefinedUncached(DynamicObject binding, DynamicObject symbol) {
+            final FrameSlotAndDepth frameSlot = findFrameSlotOrNull(binding, symbol);
+            return frameSlot != null;
+        }
+
+        @TruffleBoundary
+        @Specialization(guards = {"isRubySymbol(symbol)", "isLastLine(symbol)"})
+        public Object localVariableDefinedLastLine(DynamicObject binding, DynamicObject symbol) {
+            final MaterializedFrame frame = Layouts.BINDING.getFrame(binding);
+            final FrameSlot frameSlot = frame.getFrameDescriptor().findFrameSlot(Layouts.SYMBOL.getString(symbol));
+            return frameSlot != null;
+        }
+
+        protected boolean isLastLine(DynamicObject symbol) {
+            return symbol == dollarUnderscore;
+        }
+
+    }
+
+    @ImportStatic(BindingNodes.class)
     @CoreMethod(names = "local_variable_get", required = 1)
     public abstract static class LocalVariableGetNode extends CoreMethodArrayArgumentsNode {
 
