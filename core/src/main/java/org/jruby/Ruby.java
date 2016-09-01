@@ -1610,8 +1610,10 @@ public final class Ruby implements Constantizable {
         ioError = defineClassIfAllowed("IOError", standardError);
         scriptError = defineClassIfAllowed("ScriptError", exceptionClass);
         rangeError = defineClassIfAllowed("RangeError", standardError);
-        signalException = defineClassIfAllowed("SignalException", exceptionClass);
 
+        if (profile.allowClass("SignalException")) {
+            signalException = RubySignalException.createSignalExceptionClass(this, exceptionClass);
+        }
         if (profile.allowClass("NameError")) {
             nameError = RubyNameError.createNameErrorClass(this, standardError);
             nameErrorMessage = RubyNameError.createNameErrorMessageClass(this, nameError);

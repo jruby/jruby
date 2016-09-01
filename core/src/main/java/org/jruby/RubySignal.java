@@ -148,7 +148,15 @@ public class RubySignal {
         }
         return null;
     }
-    
+
+    // MRI: signm2signo
+    public static long signm2signo(String nm) {
+        for (Signal s : Signal.values()) {
+            if (s.name().substring(3).equals(nm)) return s.longValue();
+        }
+        return 0;
+    }
+
     private static final Set<String> RUBY_18_SIGNALS;
     static {
         RUBY_18_SIGNALS = new HashSet<String>();
