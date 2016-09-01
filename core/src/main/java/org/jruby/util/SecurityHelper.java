@@ -43,10 +43,10 @@ public abstract class SecurityHelper {
             return true;
         }
         catch (ClassNotFoundException e) {
-            LOG.info("unable un-restrict jce security: " + e);
+            if (LOG.isDebugEnabled()) LOG.debug("unable un-restrict jce security: " + e);
         }
         catch (Exception e) {
-            LOG.debug("unable un-restrict jce security: ", e);
+            if (LOG.isDebugEnabled()) LOG.debug("unable un-restrict jce security: ", e);
         }
         return false;
     }
