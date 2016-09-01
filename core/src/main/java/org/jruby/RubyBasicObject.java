@@ -1158,8 +1158,10 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
             Object value = entry.getValue().get(this);
             if (!(value instanceof IRubyObject) || !IdUtil.isInstanceVariable(entry.getKey())) continue;
 
+            IRubyObject obj = (IRubyObject) value;
+
             part.append(sep).append(' ').append(entry.getKey()).append('=');
-            part.append(invokedynamic(context, (IRubyObject)value, INSPECT));
+            part.append(sites(context).inspect.call(context, obj, obj));
             sep = ",";
         }
         part.append('>');
