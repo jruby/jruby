@@ -91,12 +91,7 @@ module Utilities
       options = []
     elsif graal_home
       graal_home = File.expand_path(graal_home)
-      if ENV['JVMCI_JAVA_HOME']
-        mx_options = "--java-home #{ENV['JVMCI_JAVA_HOME']}"
-      else
-        mx_options = ''
-      end
-      command_line = `mx -v #{mx_options} -p #{graal_home} vm -version`.lines.to_a.last
+      command_line = `mx -v -p #{graal_home} vm -version`.lines.to_a.last
       vm_args = command_line.split
       vm_args.pop # Drop "-version"
       javacmd = vm_args.shift
@@ -386,7 +381,6 @@ module ShellUtils
 
   def mx(dir, *args)
     command = ['mx', '-p', dir]
-    command.push *['--java-home', ENV['JVMCI_JAVA_HOME']] if ENV['JVMCI_JAVA_HOME']
     command.push *args
     sh *command
   end
@@ -459,7 +453,7 @@ module Commands
       jt irb                                         irb
       jt rebuild                                     clean and build
       jt run [options] args...                       run JRuby with -X+T and args
-          --graal         use Graal (set either GRAALVM_BIN or GRAAL_HOME and maybe JVMCI_JAVA_HOME)
+          --graal         use Graal (set either GRAALVM_BIN or GRAAL_HOME)
           --js            add Graal.js to the classpath (set GRAAL_JS_JAR)
           --asm           show assembly (implies --graal)
           --server        run an instrumentation server on port 8080
@@ -514,9 +508,7 @@ module Commands
 
         RUBY_BIN                                     The JRuby+Truffle executable to use (normally just bin/jruby)
         GRAALVM_BIN                                  GraalVM executable (java command) to use
-        GRAAL_HOME                                   Directory where there is a built checkout of the Graal compiler
-                                                     (make sure mx is on your path and maybe set JVMCI_JAVA_HOME)
-        JVMCI_JAVA_HOME                              The Java with JVMCI to use with GRAAL_HOME
+        GRAAL_HOME                                   Directory where there is a built checkout of the Graal compiler (make sure mx is on your path)
         GRAALVM_RELEASE_BIN                          Default GraalVM executable when using a released version of Truffle (such as on master)
         GRAAL_HOME_TRUFFLE_HEAD                      Default Graal directory when using a snapshot version of Truffle (such as on truffle-head)
         SULONG_HOME                                  The Sulong source repository, if you want to run cextc
