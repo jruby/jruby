@@ -132,6 +132,10 @@ public class FeatureLoader {
                 return;
             }
 
+            if (!context.getEnv().isMimeTypeSupported(RubyLanguage.CEXT_MIME_TYPE)) {
+                throw new RaiseException(context.getCoreExceptions().internalError("Sulong is required to support C extensions, and it doesn't appear to be available", null));
+            }
+
             final CallTarget callTarget = getCExtLibRuby();
             callNode.call(frame, callTarget, new Object[] {});
 
