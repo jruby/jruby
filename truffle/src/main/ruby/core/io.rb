@@ -2104,7 +2104,9 @@ class IO
   #
   # If the read buffer is not empty, read_nonblock reads from the
   # buffer like readpartial. In this case, read(2) is not called.
-  def read_nonblock(size, buffer=nil)
+  def read_nonblock(size, buffer = undefined, exception: true)
+    buffer = nil if undefined.equal?(buffer)
+
     raise ArgumentError, "illegal read size" if size < 0
     ensure_open
 
@@ -2118,7 +2120,18 @@ class IO
       buffer.replace(str) if buffer
       return str
     else
-      raise EOFError, "stream closed"
+      if exception
+        raise EOFError, "stream closed"
+      else
+        return nil
+      end
+    end
+
+  rescue EAGAINWaitReadable, Errno::EWOULDBLOCK, Errno::EAGAIN
+    if exception
+      raise EAGAINWaitReadable, "read would block"
+    else
+      return :wait_readable
     end
   end
 
