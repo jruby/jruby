@@ -121,4 +121,25 @@ describe "Rescuing a Java exception using Exception" do
     end
     expect(i).to eq 2
   end
+
+  describe 'Ruby sub-class' do
+
+    class RubyThrowable < java.lang.Exception
+
+      def initialize(msg) super(); @msg = msg end
+
+      def getMessage; @msg end
+    end
+
+    it 'has Throwable extensions' do
+      throwable = RubyThrowable.new 'foo'
+      expect( throwable.backtrace ).to_not be nil
+      expect( throwable.backtrace ).to_not be_empty
+
+      expect( throwable.message ).to eql 'foo'
+      expect( throwable.to_s ).to eql 'foo'
+    end
+
+  end
+
 end

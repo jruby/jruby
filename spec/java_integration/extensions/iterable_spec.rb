@@ -92,4 +92,27 @@ describe 'java.lang.Iterable' do
     res
   end
 
+  describe 'Ruby class' do
+
+    class RubyIterableWrapper
+      include java.lang.Iterable
+
+      def initialize(coll) @coll = coll end
+
+      def iterator; @coll.iterator end
+
+    end
+
+    it 'iterates as an Enumerable' do
+      wrapper = RubyIterableWrapper.new coll = java.util.ArrayList.new([1, 2, 3])
+      elems = [] ; wrapper.map { |el| elems << el + 1 }
+      expect( elems ).to eql [2, 3, 4]
+      expect( wrapper.to_a ).to eql [1, 2, 3]
+
+      elems = [] ; wrapper.each_with_index { |el, i| elems << [el, i] }
+      expect( elems ).to eql [[1, 0], [2, 1], [3, 2]]
+    end
+
+  end
+
 end
