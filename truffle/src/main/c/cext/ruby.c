@@ -19,6 +19,7 @@
 #include <truffle.h>
 
 #include <ruby.h>
+
 // Helpers
 
 VALUE rb_f_notimplement(int args_count, const VALUE *args, VALUE object) {
