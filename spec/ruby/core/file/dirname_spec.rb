@@ -53,6 +53,9 @@ describe "File.dirname" do
     it "returns all the components of filename except the last one (edge cases on non-windows)" do
       File.dirname('/////').should == '/'
       File.dirname("//foo//").should == "/"
+      File.dirname('foo\bar').should == '.'
+      File.dirname('/foo\bar').should == '/'
+      File.dirname('foo/bar\baz').should == 'foo'
     end
   end
 

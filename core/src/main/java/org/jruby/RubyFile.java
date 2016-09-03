@@ -645,7 +645,17 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
     static Pattern PROTOCOL_PATTERN = Pattern.compile(URI_PREFIX_STRING + ".*");
     public static String dirname(ThreadContext context, String jfilename) {
-        String name = jfilename.replace('\\', '/');
+        final Ruby runtime = context.runtime;
+        final String separator = runtime.getClass("File").getConstant("SEPARATOR").toString();
+        String altSeparator = null;
+        final IRubyObject rbAltSeparator = runtime.getClass("File").getConstant("ALT_SEPARATOR");
+        if (rbAltSeparator != context.nil) {
+          altSeparator = rbAltSeparator.toString();
+        }
+        String name = jfilename;
+        if (altSeparator != null) {
+          name = jfilename.replace(altSeparator, separator);
+        }
         int minPathLength = 1;
         boolean trimmedSlashes = false;
 
@@ -656,21 +666,21 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         }
 
         // jar like paths
-        if (name.contains(".jar!/")) {
-            int start = name.indexOf("!/") + 1;
+        if (name.contains(".jar!" + separator)) {
+            int start = name.indexOf("!" + separator) + 1;
             String path = dirname(context, name.substring(start));
-            if (path.equals(".") || path.equals("/")) path = "";
+            if (path.equals(".") || path.equals(separator)) path = "";
             return name.substring(0, start) + path;
         }
         // address all the url like paths first
         if (PROTOCOL_PATTERN.matcher(name).matches()) {
-            int start = name.indexOf(":/") + 2;
+            int start = name.indexOf(":" + separator) + 2;
             String path = dirname(context, name.substring(start));
             if (path.equals(".")) path = "";
             return name.substring(0, start) + path;
         }
 
-        while (name.length() > minPathLength && name.charAt(name.length() - 1) == '/') {
+        while (name.length() > minPathLength && name.charAt(name.length() - 1) == separator.charAt(0)) {
             trimmedSlashes = true;
             name = name.substring(0, name.length() - 1);
         }
@@ -685,7 +695,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             }
         } else {
             //TODO deal with UNC names
-            int index = name.lastIndexOf('/');
+            int index = name.lastIndexOf(separator);
 
             if (index == -1) {
                 if (startsWithDriveLetterOnWindows) {
@@ -695,7 +705,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 }
             }
             if (index == 0) {
-                return "/";
+                return separator;
             }
 
             if (startsWithDriveLetterOnWindows && index == 2) {
@@ -704,13 +714,15 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 index++;
             }
 
-            if (startsWith(jfilename, '\\', '\\')) {
-                index = jfilename.length();
-                String[] split = jfilename.split(Pattern.quote("\\"));
-                if (split[ split.length - 1 ].indexOf('.') > -1) {
-                    index = jfilename.lastIndexOf('\\');
-                }
+            if (Platform.IS_WINDOWS) {
+              if (startsWith(jfilename, separator.charAt(0), separator.charAt(0))) {
+                  index = jfilename.length();
+                  String[] split = jfilename.split(Pattern.quote(separator));
+                  if (split[ split.length - 1 ].indexOf('.') > -1) {
+                      index = jfilename.lastIndexOf(separator);
+                  }
 
+              }
             }
 
             result = jfilename.substring(0, index);
@@ -721,7 +733,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         // trim trailing slashes
         while (result.length() > minPathLength) {
             endChar = result.charAt(result.length() - 1);
-            if (endChar == '/' || endChar == '\\') {
+            if (endChar == separator.charAt(0)) {
                 result = result.substring(0, result.length() - 1);
             } else {
                 break;
