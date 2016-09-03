@@ -23,24 +23,24 @@
 // Helpers
 
 VALUE rb_f_notimplement(int args_count, const VALUE *args, VALUE object) {
-  fprintf(stderr, "rb_f_notimplement\n");
+  rb_jt_error("rb_f_notimplement");
   abort();
 }
 
 // Memory
 
 void *rb_alloc_tmp_buffer(volatile VALUE *buffer_pointer, long length) {
-  fprintf(stderr, "rb_alloc_tmp_buffer not implemented\n");
+  rb_jt_error("rb_alloc_tmp_buffer not implemented");
   abort();
 }
 
 void *rb_alloc_tmp_buffer2(volatile VALUE *buffer_pointer, long count, size_t size) {
-  fprintf(stderr, "rb_alloc_tmp_buffer2 not implemented\n");
+  rb_jt_error("rb_alloc_tmp_buffer2 not implemented");
   abort();
 }
 
 void rb_free_tmp_buffer(volatile VALUE *buffer_pointer) {
-  fprintf(stderr, "rb_free_tmp_buffer not implemented\n");
+  rb_jt_error("rb_free_tmp_buffer not implemented");
   abort();
 }
 
@@ -67,12 +67,12 @@ VALUE rb_obj_is_kind_of(VALUE object, VALUE ruby_class) {
 }
 
 void rb_check_frozen(VALUE object) {
-  fprintf(stderr, "rb_check_frozen not implemented\n");
+  rb_jt_error("rb_check_frozen not implemented");
   abort();
 }
 
 void rb_check_safe_obj(VALUE object) {
-  fprintf(stderr, "rb_check_safe_obj not implemented\n");
+  rb_jt_error("rb_check_safe_obj not implemented");
   abort();
 }
 
@@ -270,7 +270,7 @@ int RTEST(VALUE value) {
 // Kernel
 
 VALUE rb_require(const char *feature) {
-  fprintf(stderr, "rb_require not implemented\n");
+  rb_jt_error("rb_require not implemented");
   abort();
 }
 
@@ -307,22 +307,22 @@ VALUE rb_Integer(VALUE value) {
 }
 
 int rb_integer_pack(VALUE value, void *words, size_t numwords, size_t wordsize, size_t nails, int flags) {
-  fprintf(stderr, "rb_integer_pack not implemented\n");
+  rb_jt_error("rb_integer_pack not implemented");
   abort();
 }
 
 VALUE rb_integer_unpack(const void *words, size_t numwords, size_t wordsize, size_t nails, int flags) {
-  fprintf(stderr, "rb_integer_unpack not implemented\n");
+  rb_jt_error("rb_integer_unpack not implemented");
   abort();
 }
 
 size_t rb_absint_size(VALUE value, int *nlz_bits_ret) {
-  fprintf(stderr, "rb_absint_size not implemented\n");
+  rb_jt_error("rb_absint_size not implemented");
   abort();
 }
 
 VALUE rb_cstr_to_inum(const char* string, int base, int raise) {
-  fprintf(stderr, "rb_cstr_to_inum not implemented\n");
+  rb_jt_error("rb_cstr_to_inum not implemented");
   abort();
 }
 
@@ -401,7 +401,7 @@ char *rb_string_value_ptr(volatile VALUE* value_pointer) {
 }
 
 char *rb_string_value_cstr(volatile VALUE* value_pointer) {
-  fprintf(stderr, "rb_string_value_cstr not implemented\n");
+  rb_jt_error("rb_string_value_cstr not implemented");
   abort();
 }
 
@@ -418,17 +418,17 @@ VALUE rb_sprintf(const char *format, ...) {
 }
 
 VALUE rb_vsprintf(const char *format, va_list args) {
-  fprintf(stderr, "rb_vsprintf not implemented\n");
+  rb_jt_error("rb_vsprintf not implemented");
   abort();
 }
 
 VALUE rb_str_append(VALUE string, VALUE to_append) {
-  fprintf(stderr, "rb_str_append not implemented\n");
+  rb_jt_error("rb_str_append not implemented");
   abort();
 }
 
 void rb_str_set_len(VALUE string, long length) {
-  fprintf(stderr, "rb_str_set_len not implemented\n");
+  rb_jt_error("rb_str_set_len not implemented");
   abort();
 }
 
@@ -441,7 +441,7 @@ VALUE rb_String(VALUE value) {
 }
 
 VALUE rb_str_resize(VALUE string, long length) {
-  fprintf(stderr, "rb_str_resize not implemented\n");
+  rb_jt_error("rb_str_resize not implemented");
   abort();
 }
 
@@ -532,12 +532,12 @@ VALUE rb_ary_dup(VALUE array) {
 }
 
 VALUE rb_ary_each(VALUE array) {
-  fprintf(stderr, "rb_ary_each not implemented\n");
+  rb_jt_error("rb_ary_each not implemented");
   abort();
 }
 
 VALUE rb_check_array_type(VALUE array) {
-  fprintf(stderr, "rb_check_array_type not implemented\n");
+  rb_jt_error("rb_check_array_type not implemented");
   abort();
 }
 
@@ -565,7 +565,7 @@ VALUE rb_hash_lookup2(VALUE hash, VALUE key, VALUE default_value) {
 }
 
 VALUE rb_hash_set_ifnone(VALUE hash, VALUE if_none) {
-  fprintf(stderr, "rb_hash_set_ifnone not implemented\n");
+  rb_jt_error("rb_hash_set_ifnone not implemented");
   abort();
 }
 
@@ -608,12 +608,12 @@ VALUE rb_obj_alloc(VALUE ruby_class) {
 }
 
 VALUE rb_class_path(VALUE ruby_class) {
-  fprintf(stderr, "rb_class_path not implemented\n");
+  rb_jt_error("rb_class_path not implemented");
   abort();
 }
 
 VALUE rb_path2class(const char *string) {
-  fprintf(stderr, "rb_path2class not implemented\n");
+  rb_jt_error("rb_path2class not implemented");
   abort();
 }
 
@@ -654,27 +654,27 @@ int rb_respond_to(VALUE object, ID name) {
 }
 
 VALUE rb_funcallv(VALUE object, ID name, int args_count, const VALUE *args) {
-  fprintf(stderr, "rb_funcallv not implemented\n");
+  rb_jt_error("rb_funcallv not implemented");
   abort();
 }
 
 VALUE rb_funcallv_public(VALUE object, ID name, int args_count, const VALUE *args) {
-  fprintf(stderr, "rb_funcallv_public not implemented\n");
+  rb_jt_error("rb_funcallv_public not implemented");
   abort();
 }
 
 VALUE rb_apply(VALUE object, ID name, VALUE args) {
-  fprintf(stderr, "rb_apply not implemented\n");
+  rb_jt_error("rb_apply not implemented");
   abort();
 }
 
 VALUE rb_block_call(VALUE object, ID name, int args_count, const VALUE *args, rb_block_call_func_t block_call_func, VALUE data) {
-  fprintf(stderr, "rb_block_call not implemented\n");
+  rb_jt_error("rb_block_call not implemented");
   abort();
 }
 
 VALUE rb_call_super(int args_count, const VALUE *args) {
-  fprintf(stderr, "rb_call_super not implemented\n");
+  rb_jt_error("rb_call_super not implemented");
   abort();
 }
 
@@ -683,7 +683,7 @@ int rb_block_given_p() {
 }
 
 VALUE rb_block_proc(void) {
-  fprintf(stderr, "rb_block_proc not implemented\n");
+  rb_jt_error("rb_block_proc not implemented");
   abort();
 }
 
@@ -765,7 +765,7 @@ void rb_exc_raise(VALUE exception) {
 }
 
 void rb_raise(VALUE exception, const char *format, ...) {
-  fprintf(stderr, "rb_raise not implemented\n");
+  rb_jt_error("rb_raise not implemented");
   truffle_invoke(RUBY_CEXT, "rb_raise", format /*, where to get args? */);
   abort();
 }
@@ -777,25 +777,23 @@ VALUE rb_protect(VALUE (*function)(VALUE), VALUE data, int *status) {
 
 void rb_jump_tag(int status) {
   if (status) {
-    // TODO CS 23-Jul-16
-    fprintf(stderr, "rb_jump_tag not implemented\n");
+    rb_jt_error("rb_jump_tag not implemented");
     abort();
   }
 }
 
 void rb_set_errinfo(VALUE error) {
-  // TODO CS 23-Jul-16
-  fprintf(stderr, "rb_set_errinfo not implemented\n");
+  rb_jt_error("rb_set_errinfo not implemented");
   abort();
 }
 
 void rb_syserr_fail(int errno, const char *message) {
-  fprintf(stderr, "rb_syserr_fail: %d %s\n", errno, message);
+  rb_jt_error(message);
   abort();
 }
 
 void rb_sys_fail(const char *message) {
-  fprintf(stderr, "rb_sys_fail: %s\n", message);
+  rb_jt_error(message);
   abort();
 }
 
@@ -866,12 +864,12 @@ void rb_undef(VALUE module, ID name) {
 }
 
 void rb_attr(VALUE ruby_class, ID name, int read, int write, int ex) {
-  fprintf(stderr, "rb_attr not implemented\n");
+  rb_jt_error("rb_attr not implemented");
   abort();
 }
 
 void rb_define_alloc_func(VALUE ruby_class, rb_alloc_func_t alloc_function) {
-  fprintf(stderr, "rb_define_alloc_func not implemented\n");
+  rb_jt_error("rb_define_alloc_func not implemented");
   abort();
 }
 
@@ -1025,12 +1023,12 @@ void rb_io_check_readable(rb_io_t *io) {
 }
 
 int rb_cloexec_dup(int oldfd) {
-  fprintf(stderr, "rb_cloexec_dup not implemented\n");
+  rb_jt_error("rb_cloexec_dup not implemented");
   abort();
 }
 
 void rb_fd_fix_cloexec(int fd) {
-  fprintf(stderr, "rb_fd_fix_cloexec not implemented\n");
+  rb_jt_error("rb_fd_fix_cloexec not implemented");
   abort();
 }
 
@@ -1039,29 +1037,29 @@ int rb_jt_io_handle(VALUE io) {
 }
 
 int rb_io_wait_readable(int fd) {
-  fprintf(stderr, "rb_io_wait_readable not implemented\n");
+  rb_jt_error("rb_io_wait_readable not implemented");
   abort();
 }
 
 int rb_io_wait_writable(int fd) {
-  fprintf(stderr, "rb_io_wait_writable not implemented\n");
+  rb_jt_error("rb_io_wait_writable not implemented");
   abort();
 }
 
 void rb_thread_wait_fd(int fd) {
-  fprintf(stderr, "rb_thread_wait_fd not implemented\n");
+  rb_jt_error("rb_thread_wait_fd not implemented");
   abort();
 }
 
 NORETURN(void rb_eof_error(void)) {
-  fprintf(stderr, "rb_eof_error not implemented\n");
+  rb_jt_error("rb_eof_error not implemented");
   abort();
 }
 
 // Data
 
 struct RData *rb_jt_wrap_rdata(VALUE value) {
-  fprintf(stderr, "RDATA not implemented\n");
+  rb_jt_error("RDATA not implemented");
   abort();
 }
 
@@ -1083,7 +1081,7 @@ VALUE rb_data_typed_object_make(VALUE ruby_class, const rb_data_type_t *type, vo
 }
 
 void *rb_check_typeddata(VALUE value, const rb_data_type_t *data_type) {
-  fprintf(stderr, "rb_check_typeddata not implemented\n");
+  rb_jt_error("rb_check_typeddata not implemented");
   abort();
 }
 
