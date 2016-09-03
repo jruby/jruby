@@ -1102,3 +1102,9 @@ VALUE *rb_ruby_debug_ptr(void) {
   rb_jt_ruby_debug_ptr = truffle_invoke(RUBY_CEXT, "rb_ruby_debug_ptr");
   return &rb_jt_ruby_debug_ptr;
 }
+
+// Non-standard
+
+void rb_jt_error(const char *message) {
+  truffle_invoke(RUBY_CEXT, "rb_jt_error", rb_str_new_cstr(message));
+}

@@ -533,6 +533,10 @@ module Truffle::CExt
     $DEBUG
   end
 
+  def rb_jt_error(message)
+    raise RubyTruffleError.new(message)
+  end
+
 end
 
 Truffle::Interop.export(:ruby_cext, Truffle::CExt)

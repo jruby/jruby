@@ -676,6 +676,10 @@ VALUE *rb_ruby_verbose_ptr(void);
 VALUE *rb_ruby_debug_ptr(void);
 #define ruby_debug (*rb_ruby_debug_ptr())
 
+// Non-standard
+
+NORETURN(void rb_jt_error(const char *message));
+
 #if defined(__cplusplus)
 }
 #endif
