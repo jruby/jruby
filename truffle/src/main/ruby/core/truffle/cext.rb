@@ -167,7 +167,7 @@ module Truffle::CExt
   end
 
   def rb_mWaitReadable
-    WaitReadable
+    IO::WaitReadable
   end
 
   def rb_mComparable
@@ -175,7 +175,7 @@ module Truffle::CExt
   end
 
   def rb_mWaitWritable
-    WaitWritable
+    IO::WaitWritable
   end
 
   def rb_eException
