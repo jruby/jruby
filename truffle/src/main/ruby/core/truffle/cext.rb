@@ -417,6 +417,12 @@ module Truffle::CExt
     rb_define_method(object.singleton_class, name, function, argc)
   end
 
+  def rb_define_alloc_func(ruby_class, function)
+    ruby_class.send(:define_method, :allocate) do
+      function.call(self)
+    end
+  end
+
   def rb_alias(mod, new_name, old_name)
     mod.send(:alias_method, new_name, old_name)
   end

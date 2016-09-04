@@ -518,7 +518,7 @@ void rb_undef(VALUE module, ID name);
 
 void rb_attr(VALUE ruby_class, ID name, int read, int write, int ex);
 
-typedef VALUE (*rb_alloc_func_t)(VALUE);
+typedef VALUE (*rb_alloc_func_t)(VALUE ruby_class);
 void rb_define_alloc_func(VALUE ruby_class, rb_alloc_func_t alloc_function);
 
 // Mutexes

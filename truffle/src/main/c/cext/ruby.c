@@ -869,8 +869,7 @@ void rb_attr(VALUE ruby_class, ID name, int read, int write, int ex) {
 }
 
 void rb_define_alloc_func(VALUE ruby_class, rb_alloc_func_t alloc_function) {
-  rb_jt_error("rb_define_alloc_func not implemented");
-  abort();
+  truffle_invoke(RUBY_CEXT, "rb_define_alloc_func", ruby_class, truffle_address_to_function(alloc_function));
 }
 
 // Rational
