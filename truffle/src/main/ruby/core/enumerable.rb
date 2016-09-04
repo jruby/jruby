@@ -647,7 +647,8 @@ module Enumerable
     nil
   end
 
-  def min
+  def min(n = undefined, &block)
+    return min_n(n, &block) if !undefined.equal?(n) && !n.nil?
     min = undefined
     each do
       o = Truffle.single_block_arg
@@ -667,10 +668,23 @@ module Enumerable
 
     undefined.equal?(min) ? nil : min
   end
+
+  def min_n(n, &block)
+    raise ArgumentError, "negative size #{n}" if n < 0
+    return [] if n == 0
+
+    if block_given?
+      self.sort(&block).first(n)
+    else
+      self.sort.first(n)
+    end
+  end
+  private :min_n
   
   alias_method :min_internal, :min
 
-  def max
+  def max(n = undefined, &block)
+    return max_n(n, &block) if !undefined.equal?(n) && !n.nil?
     max = undefined
     each do
       o = Truffle.single_block_arg
@@ -690,6 +704,18 @@ module Enumerable
 
     undefined.equal?(max) ? nil : max
   end
+
+  def max_n(n, &block)
+    raise ArgumentError, "negative size #{n}" if n < 0
+    return [] if n == 0
+
+    if block_given?
+      self.sort(&block).reverse.first(n)
+    else
+      self.sort.reverse.first(n)
+    end
+  end
+  private :max_n
   
   alias_method :max_internal, :max
 
