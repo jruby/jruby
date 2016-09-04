@@ -192,7 +192,7 @@ public class CExtNodes {
     public abstract static class ULONG2NUMNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
-        public int ulong2num(int num) {
+        public long ulong2num(long num) {
             // TODO CS 2-May-16 what to do about the fact it's unsigned?
             return num;
         }
