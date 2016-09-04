@@ -969,7 +969,7 @@ public abstract class KernelNodes {
             classNode = LogicalClassNodeGen.create(context, sourceSection, null);
         }
 
-        @Specialization(guards = "isRubyClass(rubyClass)")
+        @Specialization(guards = "isRubyClass(rubyClass) || isRubyModule(rubyClass)")
         public boolean instanceOf(VirtualFrame frame, Object self, DynamicObject rubyClass) {
             return classNode.executeLogicalClass(self) == rubyClass;
         }
