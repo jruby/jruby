@@ -365,29 +365,29 @@ module Truffle::CExt
   end
 
   def rb_define_class_under(mod, name, superclass)
-    if mod.const_defined?(name)
-      klass = mod.const_get(name)
-      unless klass.class == Class
+    if mod.const_defined?(name, false)
+      current_class = mod.const_get(name, false)
+      unless current_class.class == Class
         raise TypeError, "#{mod}::#{name} is not a class"
       end
-      if superclass != klass.superclass
+      if superclass != current_class.superclass
         raise TypeError, "superclass mismatch for class #{name}"
       end
       klass
     else
-      mod.const_set(name, Class.new(superclass))
+      mod.const_set name, Class.new(superclass)
     end
   end
 
   def rb_define_module_under(mod, name)
-    if mod.const_defined?(name)
-      val = mod.const_get(name)
+    if mod.const_defined?(name, false)
+      val = mod.const_get(name, false)
       unless val.class == Module
         raise TypeError, "#{mod}::#{name} is not a module"
       end
       val
     else
-      mod.const_set(name, Module.new)
+      mod.const_set name, Module.new
     end
   end
 
