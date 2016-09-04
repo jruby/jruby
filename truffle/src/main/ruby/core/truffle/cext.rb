@@ -445,20 +445,16 @@ module Truffle::CExt
   def rb_attr(ruby_class, name, read, write, ex)
     raise 'rb_attr with ex not supported' unless ex.zero?
 
-    ruby_class.instance_eval do
-
-      if read
-        define_method :name do
-          instance_variable_get(:name)
-        end
+    if read
+      ruby_class.send :define_method, name do
+        instance_variable_get(name)
       end
+    end
 
-      if write
-        define_method :"#{name}=" do |value|
-          instance_variable_set(:name, value)
-        end
+    if write
+      ruby_class.send :define_method, :"#{name}=" do |value|
+        instance_variable_set(name, value)
       end
-
     end
   end
 
