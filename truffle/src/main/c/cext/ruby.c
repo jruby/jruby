@@ -270,8 +270,7 @@ int RTEST(VALUE value) {
 // Kernel
 
 VALUE rb_require(const char *feature) {
-  rb_jt_error("rb_require not implemented");
-  abort();
+  return (VALUE) truffle_invoke(RUBY_CEXT, "rb_require", rb_str_new_cstr(feature));
 }
 
 // Object
