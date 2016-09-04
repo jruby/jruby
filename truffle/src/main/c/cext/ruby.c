@@ -862,8 +862,7 @@ void rb_undef(VALUE module, ID name) {
 }
 
 void rb_attr(VALUE ruby_class, ID name, int read, int write, int ex) {
-  rb_jt_error("rb_attr not implemented");
-  abort();
+  truffle_invoke(RUBY_CEXT, "rb_attr", ruby_class, name, read, write, ex);
 }
 
 void rb_define_alloc_func(VALUE ruby_class, rb_alloc_func_t alloc_function) {
