@@ -612,8 +612,7 @@ VALUE rb_class_path(VALUE ruby_class) {
 }
 
 VALUE rb_path2class(const char *string) {
-  rb_jt_error("rb_path2class not implemented");
-  abort();
+  return (VALUE) truffle_invoke(RUBY_CEXT, "rb_path2class", rb_str_new_cstr(string));
 }
 
 // Proc

@@ -332,6 +332,11 @@ module Truffle::CExt
     raise 'not implemented'
   end
 
+  def rb_path2class(path)
+    # More than a bit of a hack
+    eval(path)
+  end
+
   def rb_proc_new(function, value)
     proc { |*args|
       Truffle::Interop.execute(function, *args)
