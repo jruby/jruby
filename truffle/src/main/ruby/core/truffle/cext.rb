@@ -410,7 +410,7 @@ module Truffle::CExt
 
   def rb_define_module_function(mod, name, function, argc)
     rb_define_method(mod, name, function, argc)
-    mod.send :module_function, name
+    cext_module_function mod, name.to_sym
   end
 
   def rb_define_singleton_method(object, name, function, argc)

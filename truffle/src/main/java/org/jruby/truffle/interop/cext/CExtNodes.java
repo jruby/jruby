@@ -24,13 +24,19 @@ import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
+import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.runtime.Visibility;
 import org.jruby.truffle.Layouts;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.builtins.CoreMethodNode;
+import org.jruby.truffle.builtins.NonStandard;
 import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.truffle.core.cast.NameToJavaStringNodeGen;
+import org.jruby.truffle.core.module.ModuleNodes;
+import org.jruby.truffle.core.module.ModuleNodesFactory;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyConstant;
 import org.jruby.truffle.language.RubyNode;
@@ -315,6 +321,24 @@ public class CExtNodes {
         @Specialization(guards = "isRubyIO(io)")
         public int ioHandle(DynamicObject io) {
             return Layouts.IO.getDescriptor(io);
+        }
+
+    }
+
+    @CoreMethod(names = "cext_module_function", isModuleFunction = true, required = 2)
+    public abstract static class CextModuleFunctionNode extends CoreMethodArrayArgumentsNode {
+
+        @Child
+        ModuleNodes.SetVisibilityNode setVisibilityNode;
+
+        public CextModuleFunctionNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            setVisibilityNode = ModuleNodesFactory.SetVisibilityNodeGen.create(context, sourceSection, Visibility.MODULE_FUNCTION, null, null);
+        }
+
+        @Specialization(guards = {"isRubyModule(module)", "isRubySymbol(name)"})
+        public DynamicObject cextModuleFunction(VirtualFrame frame, DynamicObject module, DynamicObject name) {
+            return setVisibilityNode.executeSetVisibility(frame, module, new Object[]{name});
         }
 
     }
