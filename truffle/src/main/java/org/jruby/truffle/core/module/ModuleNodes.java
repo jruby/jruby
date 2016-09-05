@@ -1820,7 +1820,12 @@ public abstract class ModuleNodes {
             raiseIfFrozenNode.execute(frame);
 
             Layouts.MODULE.getFields(module).undefMethod(getContext(), this, name);
-            methodUndefinedNode.call(frame, module, "method_undefined", getSymbol(name));
+            if (Layouts.CLASS.isClass(module) && Layouts.CLASS.getIsSingleton(module)) {
+                final DynamicObject receiver = Layouts.CLASS.getAttached(module);
+                methodUndefinedNode.call(frame, receiver, "singleton_method_undefined", getSymbol(name));
+            } else {
+                methodUndefinedNode.call(frame, module, "method_undefined", getSymbol(name));
+            }
         }
 
     }
