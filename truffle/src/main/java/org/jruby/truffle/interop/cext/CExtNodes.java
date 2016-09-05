@@ -182,7 +182,7 @@ public class CExtNodes {
     public abstract static class LONG2NUMNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
-        public int long2num(int num) {
+        public long long2num(long num) {
             return num;
         }
 
@@ -203,7 +203,7 @@ public class CExtNodes {
     public abstract static class LONG2FIXNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
-        public int long2fix(int num) {
+        public long long2fix(long num) {
             return num;
         }
 
