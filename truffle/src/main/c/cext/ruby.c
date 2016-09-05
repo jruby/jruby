@@ -551,12 +551,12 @@ VALUE rb_hash_aref(VALUE hash, VALUE key) {
 }
 
 VALUE rb_hash_aset(VALUE hash, VALUE key, VALUE value) {
-  truffle_write(hash, key, value);
+  return (VALUE) truffle_invoke((void *)hash, "[]=", key, value);
   return value;
 }
 
 VALUE rb_hash_lookup(VALUE hash, VALUE key) {
-  return truffle_read(hash, key);
+  return (VALUE) truffle_invoke((void *)hash, "[]", key);
 }
 
 VALUE rb_hash_lookup2(VALUE hash, VALUE key, VALUE default_value) {
