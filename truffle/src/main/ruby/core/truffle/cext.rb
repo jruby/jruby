@@ -386,7 +386,7 @@ module Truffle::CExt
       if superclass != current_class.superclass
         raise TypeError, "superclass mismatch for class #{name}"
       end
-      klass
+      current_class
     else
       mod.const_set name, Class.new(superclass)
     end
