@@ -1745,7 +1745,12 @@ public abstract class ModuleNodes {
 
             if (Layouts.MODULE.getFields(module).getMethod(name) != null) {
                 Layouts.MODULE.getFields(module).removeMethod(name);
-                methodRemovedNode.call(frame, module, "method_removed", getSymbol(name));
+                if(Layouts.CLASS.isClass(module) && Layouts.CLASS.getIsSingleton(module)){
+                    final DynamicObject receiver = Layouts.CLASS.getAttached(module);
+                    methodRemovedNode.call(frame, receiver, "singleton_method_removed", getSymbol(name));
+                } else {
+                    methodRemovedNode.call(frame, module, "method_removed", getSymbol(name));
+                }
             } else {
                 errorProfile.enter();
                 throw new RaiseException(coreExceptions().nameErrorMethodNotDefinedIn(module, name, this));
