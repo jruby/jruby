@@ -564,8 +564,7 @@ VALUE rb_hash_lookup2(VALUE hash, VALUE key, VALUE default_value) {
 }
 
 VALUE rb_hash_set_ifnone(VALUE hash, VALUE if_none) {
-  rb_jt_error("rb_hash_set_ifnone not implemented");
-  abort();
+  return (VALUE) truffle_invoke(RUBY_CEXT, "rb_hash_set_ifnone", hash, if_none);
 }
 
 st_index_t rb_memhash(const void *data, long length) {

@@ -328,6 +328,10 @@ module Truffle::CExt
     {}
   end
 
+  def rb_hash_set_ifnone(hash, value)
+    hash.default = value
+  end
+
   def rb_class_real(ruby_class)
     raise 'not implemented'
   end
