@@ -23,9 +23,8 @@ public class OneArgOperandAttrAssignInstr extends AttrAssignInstr {
         IRubyObject object = (IRubyObject) getReceiver().retrieve(context, self, currScope, dynamicScope, temp);
         IRubyObject value = (IRubyObject) getArg1().retrieve(context, self, currScope, dynamicScope, temp);
 
-        CallSite callSite = self == object ? this.functionalSite : this.callSite;
         callSite.call(context, self, object, value);
-        
+
         return null;
     }
 }

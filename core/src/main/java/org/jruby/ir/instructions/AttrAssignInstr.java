@@ -6,6 +6,7 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.specialized.OneArgOperandAttrAssignInstr;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.operands.Self;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
@@ -18,8 +19,6 @@ import static org.jruby.ir.IRFlags.*;
 // Instruction representing Ruby code of the form: "a[i] = 5"
 // which is equivalent to: a.[]=(i,5)
 public class AttrAssignInstr extends NoResultCallInstr {
-    protected transient final CallSite functionalSite;
-
     public static AttrAssignInstr create(Operand obj, String attr, Operand[] args, boolean isPotentiallyRefined) {
         if (!containsArgSplat(args) && args.length == 1) {
             return new OneArgOperandAttrAssignInstr(obj, attr, args, isPotentiallyRefined);
@@ -29,8 +28,7 @@ public class AttrAssignInstr extends NoResultCallInstr {
     }
 
     public AttrAssignInstr(Operand obj, String attr, Operand[] args, boolean isPotentiallyRefined) {
-        super(Operation.ATTR_ASSIGN, CallType.NORMAL, attr, obj, args, null, isPotentiallyRefined);
-        functionalSite = getCallSiteFor(CallType.FUNCTIONAL, attr, isPotentiallyRefined);
+        super(Operation.ATTR_ASSIGN, obj instanceof Self ? CallType.FUNCTIONAL : CallType.NORMAL, attr, obj, args, null, isPotentiallyRefined);
     }
 
     @Override
@@ -70,7 +68,6 @@ public class AttrAssignInstr extends NoResultCallInstr {
         IRubyObject object = (IRubyObject) getReceiver().retrieve(context, self, currScope, dynamicScope, temp);
         IRubyObject[] values = prepareArguments(context, self, currScope, dynamicScope, temp);
 
-        CallSite callSite = self == object ? this.functionalSite : this.callSite;
         callSite.call(context, self, object, values);
 
         return null;
