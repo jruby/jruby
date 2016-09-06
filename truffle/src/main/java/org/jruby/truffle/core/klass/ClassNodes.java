@@ -331,12 +331,12 @@ public abstract class ClassNodes {
             assert RubyGuards.isRubyClass(rubyClass);
             assert RubyGuards.isRubyClass(superclass);
 
-            if (Layouts.CLASS.getSuperclass(rubyClass) != null || rubyClass == coreLibrary().getBasicObjectClass()) {
+            if (isInitialized(rubyClass)) {
                 throw new RaiseException(getContext().getCoreExceptions().typeErrorAlreadyInitializedClass(this));
             }
             if (superClassProvided) {
                 checkInheritable(superclass);
-                if (superclass != coreLibrary().getBasicObjectClass() && Layouts.CLASS.getSuperclass(superclass) == null) {
+                if (!isInitialized(superclass)) {
                     throw new RaiseException(getContext().getCoreExceptions().typeErrorInheritUninitializedClass(this));
                 }
             }
@@ -350,12 +350,12 @@ public abstract class ClassNodes {
         private DynamicObject initializeGeneralWithBlock(VirtualFrame frame, DynamicObject rubyClass, DynamicObject superclass, DynamicObject block, boolean superClassProvided) {
             assert RubyGuards.isRubyClass(superclass);
 
-            if (Layouts.CLASS.getSuperclass(rubyClass) != null || rubyClass == coreLibrary().getBasicObjectClass()) {
+            if (isInitialized(rubyClass)) {
                 throw new RaiseException(getContext().getCoreExceptions().typeErrorAlreadyInitializedClass(this));
             }
             if (superClassProvided) {
                 checkInheritable(superclass);
-                if (superclass != coreLibrary().getBasicObjectClass() && Layouts.CLASS.getSuperclass(superclass) == null) {
+                if (!isInitialized(superclass)) {
                     throw new RaiseException(getContext().getCoreExceptions().typeErrorInheritUninitializedClass(this));
                 }
             }
@@ -365,6 +365,10 @@ public abstract class ClassNodes {
             moduleInitialize(frame, rubyClass, block);
 
             return rubyClass;
+        }
+
+        private boolean isInitialized(DynamicObject rubyClass) {
+            return Layouts.CLASS.getSuperclass(rubyClass) != null || rubyClass == coreLibrary().getBasicObjectClass();
         }
 
         // rb_check_inheritable
