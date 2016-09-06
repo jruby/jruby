@@ -36,7 +36,9 @@ import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
+
 import jnr.constants.platform.Errno;
+
 import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.common.IRubyWarnings;
@@ -100,6 +102,8 @@ import org.jruby.truffle.language.backtrace.Backtrace;
 import org.jruby.truffle.language.control.JavaException;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
+import org.jruby.truffle.language.dispatch.DispatchAction;
+import org.jruby.truffle.language.dispatch.DispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.dispatch.DoesRespondDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.MissingBehavior;
@@ -1398,13 +1402,11 @@ public abstract class KernelNodes {
     @CoreMethod(names = "public_send", needsBlock = true, required = 1, rest = true)
     public abstract static class PublicSendNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private CallDispatchHeadNode dispatchNode;
+        @Child private DispatchHeadNode dispatchNode;
 
         public PublicSendNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-
-            dispatchNode = new CallDispatchHeadNode(context, false,
-                    MissingBehavior.CALL_METHOD_MISSING);
+            dispatchNode = new DispatchHeadNode(context, false, true, MissingBehavior.CALL_METHOD_MISSING, DispatchAction.CALL_METHOD);
         }
 
         @Specialization
@@ -1414,7 +1416,7 @@ public abstract class KernelNodes {
 
         @Specialization
         public Object send(VirtualFrame frame, Object self, Object name, Object[] args, DynamicObject block) {
-            return dispatchNode.callWithBlock(frame, self, name, block, args);
+            return dispatchNode.dispatch(frame, self, name, block, args);
         }
 
     }

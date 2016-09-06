@@ -282,7 +282,6 @@ public class CoreLibrary {
     private final Map<Errno, DynamicObject> errnoClasses = new HashMap<>();
 
     @CompilationFinal private InternalMethod basicObjectSendMethod;
-    @CompilationFinal private InternalMethod kernelPublicSendMethod;
 
     @CompilationFinal private GlobalVariableStorage loadPathStorage;
     @CompilationFinal private GlobalVariableStorage loadedFeaturesStorage;
@@ -803,7 +802,6 @@ public class CoreLibrary {
         coreMethodNodeManager.allMethodInstalled();
 
         basicObjectSendMethod = getMethod(basicObjectClass, "__send__");
-        kernelPublicSendMethod = getMethod(kernelModule, "public_send");
     }
 
     private InternalMethod getMethod(DynamicObject module, String name) {
@@ -1430,8 +1428,7 @@ public class CoreLibrary {
 
     public boolean isSend(InternalMethod method) {
         CallTarget callTarget = method.getCallTarget();
-        return callTarget == basicObjectSendMethod.getCallTarget() ||
-                callTarget == kernelPublicSendMethod.getCallTarget();
+        return callTarget == basicObjectSendMethod.getCallTarget();
     }
 
     public DynamicObjectFactory getIntRangeFactory() {

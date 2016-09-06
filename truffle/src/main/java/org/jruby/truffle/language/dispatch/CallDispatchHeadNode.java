@@ -39,7 +39,7 @@ public class CallDispatchHeadNode extends DispatchHeadNode {
     }
 
     public CallDispatchHeadNode(RubyContext context, boolean ignoreVisibility, MissingBehavior missingBehavior) {
-        super(context, ignoreVisibility, missingBehavior, DispatchAction.CALL_METHOD);
+        super(context, ignoreVisibility, false, missingBehavior, DispatchAction.CALL_METHOD);
     }
 
     public Object call(VirtualFrame frame, Object receiver, Object method, Object... arguments) {

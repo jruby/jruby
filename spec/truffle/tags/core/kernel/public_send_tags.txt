@@ -1,1 +1,0 @@
-fails:Kernel#public_send called from own public method raises a NoMethodError if the method is protected

@@ -53,8 +53,6 @@ public abstract class DispatchNode extends RubyNode {
             Object receiver,
             String name,
             boolean ignoreVisibility) {
-        assert ignoreVisibility || RubyGuards.isRubyClass(callerClass);
-
         final InternalMethod method = ModuleOperations.lookupMethod(coreLibrary().getMetaClass(receiver), name);
 
         // If no method was found, use #method_missing
@@ -68,9 +66,16 @@ public abstract class DispatchNode extends RubyNode {
         }
 
         // Check visibility
-        if (!ignoreVisibility && !method.isVisibleTo(callerClass)) {
-            return null;
+        if (!ignoreVisibility) {
+            if (getHeadNode().onlyCallPublic) {
+                if (!method.getVisibility().isPublic()) {
+                    return null;
+                }
+            } else if (!method.isVisibleTo(callerClass)) {
+                return null;
+            }
         }
+
 
         return method;
     }

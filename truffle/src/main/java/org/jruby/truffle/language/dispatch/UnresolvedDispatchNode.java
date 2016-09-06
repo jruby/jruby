@@ -108,7 +108,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             Object methodName) {
         final DynamicObject callerClass;
 
-        if (ignoreVisibility) {
+        if (ignoreVisibility || getHeadNode().onlyCallPublic) {
             callerClass = null;
         } else {
             callerClass = coreLibrary().getMetaClass(RubyArguments.getSelf(frame));
@@ -149,7 +149,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             Object[] argumentsObjects) {
         final DynamicObject callerClass;
 
-        if (ignoreVisibility) {
+        if (ignoreVisibility || getHeadNode().onlyCallPublic) {
             callerClass = null;
         } else if (getDispatchAction() == DispatchAction.RESPOND_TO_METHOD) {
             final FrameInstance instance = getContext().getCallStack().getCallerFrameIgnoringSend();
