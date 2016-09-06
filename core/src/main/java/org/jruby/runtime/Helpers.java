@@ -411,17 +411,6 @@ public class Helpers {
         return self.getMetaClass().finvoke(context, self, name, args);
     }
 
-    public static IRubyObject invoke(ThreadContext context, IRubyObject self, String name, CallType callType) {
-        return Helpers.invoke(context, self, name, IRubyObject.NULL_ARRAY, callType, Block.NULL_BLOCK);
-    }
-    public static IRubyObject invoke(ThreadContext context, IRubyObject self, String name, IRubyObject[] args, CallType callType, Block block) {
-        return self.getMetaClass().invoke(context, self, name, args, callType, block);
-    }
-
-    public static IRubyObject invoke(ThreadContext context, IRubyObject self, String name, IRubyObject arg, CallType callType, Block block) {
-        return self.getMetaClass().invoke(context, self, name, arg, callType, block);
-    }
-
     public static IRubyObject invokeAs(ThreadContext context, RubyClass asClass, IRubyObject self, String name, IRubyObject[] args, Block block) {
         return asClass.finvoke(context, self, name, args, block);
     }
@@ -440,6 +429,27 @@ public class Helpers {
 
     public static IRubyObject invokeAs(ThreadContext context, RubyClass asClass, IRubyObject self, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
         return asClass.finvoke(context, self, name, arg0, arg1, arg2, block);
+    }
+
+    /**
+     * Same behavior as invoke, but uses the given caller object to check visibility if callType demands it.
+     */
+    public static IRubyObject invokeFrom(ThreadContext context, IRubyObject caller, IRubyObject self, String name, IRubyObject[] args, CallType callType, Block block) {
+        return self.getMetaClass().invokeFrom(context, callType, caller, self, name, args, block);
+    }
+
+    /**
+     * Same behavior as invoke, but uses the given caller object to check visibility if callType demands it.
+     */
+    public static IRubyObject invokeFrom(ThreadContext context, IRubyObject caller, IRubyObject self, String name, IRubyObject arg, CallType callType, Block block) {
+        return self.getMetaClass().invokeFrom(context, callType, caller, self, name, arg, block);
+    }
+
+    /**
+     * Same behavior as invoke, but uses the given caller object to check visibility if callType demands it.
+     */
+    public static IRubyObject invokeFrom(ThreadContext context, IRubyObject caller, IRubyObject self, String name, CallType callType) {
+        return self.getMetaClass().invokeFrom(context, callType, caller, self, name, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
     }
 
     // MRI: rb_check_funcall
@@ -2789,6 +2799,42 @@ public class Helpers {
         }
 
         return builder.toString();
+    }
+
+    /**
+     * This method is deprecated because it depends on having a Ruby frame pushed for checking method visibility,
+     * and there's no way to enforce that. Most users of this method probably don't need to check visibility.
+     *
+     * See https://github.com/jruby/jruby/issues/4134
+     *
+     * @deprecated Use finvoke if you do not want visibility-checking or invokeFrom if you do.
+     */
+    public static IRubyObject invoke(ThreadContext context, IRubyObject self, String name, IRubyObject[] args, CallType callType, Block block) {
+        return self.getMetaClass().invoke(context, self, name, args, callType, block);
+    }
+
+    /**
+     * This method is deprecated because it depends on having a Ruby frame pushed for checking method visibility,
+     * and there's no way to enforce that. Most users of this method probably don't need to check visibility.
+     *
+     * See https://github.com/jruby/jruby/issues/4134
+     *
+     * @deprecated Use finvoke if you do not want visibility-checking or invokeFrom if you do.
+     */
+    public static IRubyObject invoke(ThreadContext context, IRubyObject self, String name, IRubyObject arg, CallType callType, Block block) {
+        return self.getMetaClass().invoke(context, self, name, arg, callType, block);
+    }
+
+    /**
+     * This method is deprecated because it depends on having a Ruby frame pushed for checking method visibility,
+     * and there's no way to enforce that. Most users of this method probably don't need to check visibility.
+     *
+     * See https://github.com/jruby/jruby/issues/4134
+     *
+     * @deprecated Use finvoke if you do not want visibility-checking or invokeFrom if you do.
+     */
+    public static IRubyObject invoke(ThreadContext context, IRubyObject self, String name, CallType callType) {
+        return Helpers.invoke(context, self, name, IRubyObject.NULL_ARRAY, callType, Block.NULL_BLOCK);
     }
 
 }
