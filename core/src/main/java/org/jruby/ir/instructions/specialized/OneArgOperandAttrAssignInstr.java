@@ -23,8 +23,9 @@ public class OneArgOperandAttrAssignInstr extends AttrAssignInstr {
         IRubyObject object = (IRubyObject) getReceiver().retrieve(context, self, currScope, dynamicScope, temp);
         IRubyObject value = (IRubyObject) getArg1().retrieve(context, self, currScope, dynamicScope, temp);
 
-        CallType callType = self == object ? CallType.FUNCTIONAL : CallType.NORMAL;
-        Helpers.invoke(context, object, getName(), value, callType, Block.NULL_BLOCK);
+        CallSite callSite = self == object ? this.functionalSite : this.callSite;
+        callSite.call(context, self, object, value);
+        
         return null;
     }
 }

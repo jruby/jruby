@@ -18,7 +18,7 @@ import static org.jruby.ir.IRFlags.*;
 // Instruction representing Ruby code of the form: "a[i] = 5"
 // which is equivalent to: a.[]=(i,5)
 public class AttrAssignInstr extends NoResultCallInstr {
-    private transient CallSite functionalSite;
+    protected transient final CallSite functionalSite;
 
     public static AttrAssignInstr create(Operand obj, String attr, Operand[] args, boolean isPotentiallyRefined) {
         if (!containsArgSplat(args) && args.length == 1) {
