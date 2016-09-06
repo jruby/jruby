@@ -370,7 +370,7 @@ module Rubinius
         output = default_value
       else
         output = StringValue(output)
-        output.delete!("^*") # rb_str_resize(str,0);
+        output.clear
       end
 
       if bytes
