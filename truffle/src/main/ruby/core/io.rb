@@ -2104,8 +2104,7 @@ class IO
   #
   # If the read buffer is not empty, read_nonblock reads from the
   # buffer like readpartial. In this case, read(2) is not called.
-  def read_nonblock(size, buffer = undefined, exception: true)
-    buffer = nil if undefined.equal?(buffer)
+  def read_nonblock(size, buffer = nil, exception: true)
 
     raise ArgumentError, "illegal read size" if size < 0
     ensure_open
