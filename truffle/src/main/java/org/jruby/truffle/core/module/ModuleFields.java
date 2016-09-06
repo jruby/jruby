@@ -353,7 +353,7 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
         }
 
         if (context.getCoreLibrary().isLoaded() && !method.isUndefined()) {
-            if (Layouts.CLASS.isClass(rubyModuleObject) && Layouts.CLASS.getIsSingleton(rubyModuleObject)) {
+            if (RubyGuards.isSingletonClass(rubyModuleObject)) {
                 DynamicObject receiver = Layouts.CLASS.getAttached(rubyModuleObject);
                 context.send(
                         receiver,

@@ -1026,7 +1026,7 @@ public abstract class ModuleNodes {
 
             if (!canBindMethodToModuleNode.executeCanBindMethodToModule(method, module)) {
                 final DynamicObject declaringModule = method.getDeclaringModule();
-                if (RubyGuards.isRubyClass(declaringModule) && Layouts.CLASS.getIsSingleton(declaringModule)) {
+                if (RubyGuards.isSingletonClass(declaringModule)) {
                     throw new RaiseException(coreExceptions().typeError(
                             "can't bind singleton method to a different class", this));
                 } else {
@@ -1745,7 +1745,7 @@ public abstract class ModuleNodes {
 
             if (Layouts.MODULE.getFields(module).getMethod(name) != null) {
                 Layouts.MODULE.getFields(module).removeMethod(name);
-                if(Layouts.CLASS.isClass(module) && Layouts.CLASS.getIsSingleton(module)){
+                if (RubyGuards.isSingletonClass(module)) {
                     final DynamicObject receiver = Layouts.CLASS.getAttached(module);
                     methodRemovedNode.call(frame, receiver, "singleton_method_removed", getSymbol(name));
                 } else {
@@ -1768,7 +1768,7 @@ public abstract class ModuleNodes {
         public DynamicObject toS(VirtualFrame frame, DynamicObject module) {
 
             final String moduleName;
-            if (Layouts.CLASS.isClass(module) && Layouts.CLASS.getIsSingleton(module)) {
+            if (RubyGuards.isSingletonClass(module)) {
                 final DynamicObject attached = Layouts.CLASS.getAttached(module);
                 final String name;
                 if (Layouts.CLASS.isClass(attached) || Layouts.MODULE.isModule(attached)) {
@@ -1820,7 +1820,7 @@ public abstract class ModuleNodes {
             raiseIfFrozenNode.execute(frame);
 
             Layouts.MODULE.getFields(module).undefMethod(getContext(), this, name);
-            if (Layouts.CLASS.isClass(module) && Layouts.CLASS.getIsSingleton(module)) {
+            if (RubyGuards.isSingletonClass(module)) {
                 final DynamicObject receiver = Layouts.CLASS.getAttached(module);
                 methodUndefinedNode.call(frame, receiver, "singleton_method_undefined", getSymbol(name));
             } else {

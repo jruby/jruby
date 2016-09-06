@@ -81,7 +81,7 @@ public abstract class UnboundMethodNodes {
             if (!canBindMethodToModuleNode.executeCanBindMethodToModule(Layouts.UNBOUND_METHOD.getMethod(unboundMethod), objectMetaClass)) {
                 errorProfile.enter();
                 final DynamicObject declaringModule = Layouts.UNBOUND_METHOD.getMethod(unboundMethod).getDeclaringModule();
-                if (RubyGuards.isRubyClass(declaringModule) && Layouts.CLASS.getIsSingleton(declaringModule)) {
+                if (RubyGuards.isSingletonClass(declaringModule)) {
                     throw new RaiseException(coreExceptions().typeError(
                             "singleton method called for a different object", this));
                 } else {
