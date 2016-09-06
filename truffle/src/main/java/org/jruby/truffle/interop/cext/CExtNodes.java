@@ -44,6 +44,7 @@ import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.constants.GetConstantNode;
 import org.jruby.truffle.language.constants.LookupConstantNode;
 import org.jruby.truffle.language.control.RaiseException;
+import org.jruby.truffle.language.objects.MetaClassNode;
 
 @CoreClass("Truffle::CExt")
 public class CExtNodes {
@@ -205,6 +206,17 @@ public class CExtNodes {
         @Specialization
         public long long2fix(long num) {
             return num;
+        }
+
+    }
+
+    @CoreMethod(names = "CLASS_OF", isModuleFunction = true, required = 1)
+    public abstract static class CLASSOFNode extends CoreMethodArrayArgumentsNode {
+
+        @Specialization
+        public DynamicObject class_of(DynamicObject object,
+                                      @Cached("create()") MetaClassNode metaClassNode) {
+            return metaClassNode.executeMetaClass(object);
         }
 
     }

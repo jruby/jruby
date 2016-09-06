@@ -416,7 +416,7 @@ VALUE rb_class_real(VALUE ruby_class);
 VALUE rb_class_superclass(VALUE ruby_class);
 VALUE rb_class_of(VALUE object);
 VALUE rb_obj_class(VALUE object);
-#define CLASS_OF(object) rb_class_of((VALUE) (object))
+VALUE CLASS_OF(VALUE object);
 VALUE rb_obj_alloc(VALUE ruby_class);
 VALUE rb_class_path(VALUE ruby_class);
 VALUE rb_path2class(const char *string);
