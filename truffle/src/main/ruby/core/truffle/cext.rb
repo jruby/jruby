@@ -292,6 +292,10 @@ module Truffle::CExt
     to_ruby_string(cext_str)[0, length].b
   end
 
+  def rb_str_new_nul(length)
+    '\0' * length
+  end
+
   def rb_str_new_cstr(java_string)
     String.new(java_string)
   end

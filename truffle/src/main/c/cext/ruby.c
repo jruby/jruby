@@ -350,7 +350,9 @@ int rb_str_len(VALUE string) {
 }
 
 VALUE rb_str_new(const char *string, long length) {
-  if (truffle_is_truffle_object((VALUE) string)) {
+  if (string == NULL) {
+    return (VALUE) truffle_invoke(RUBY_CEXT, "rb_str_new_nul", length);
+  } else if (truffle_is_truffle_object((VALUE) string)) {
     return (VALUE) truffle_invoke(RUBY_CEXT, "rb_str_new", string, length);
   } else {
     return (VALUE) truffle_invoke(RUBY_CEXT, "rb_str_new_cstr", truffle_read_n_string(string, length));
