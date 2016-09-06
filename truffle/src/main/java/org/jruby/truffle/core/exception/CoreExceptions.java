@@ -583,6 +583,12 @@ public class CoreExceptions {
         return noMethodError(StringUtils.format("private method `%s' called for %s", name, className), self, name, args, currentNode);
     }
 
+    @TruffleBoundary
+    public DynamicObject protectedMethodError(String name, Object self, Object[] args, Node currentNode) {
+        String className = Layouts.MODULE.getFields(context.getCoreLibrary().getLogicalClass(self)).getName();
+        return noMethodError(StringUtils.format("protected method `%s' called for %s", name, className), self, name, args, currentNode);
+    }
+
     // LoadError
 
     @TruffleBoundary

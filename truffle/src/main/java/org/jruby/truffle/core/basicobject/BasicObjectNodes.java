@@ -315,11 +315,16 @@ public abstract class BasicObjectNodes {
         private DynamicObject buildMethodMissingException(Object self, DynamicObject nameObject, Object[] args, DynamicObject block) {
             final String name = nameObject.toString();
             final FrameInstance relevantCallerFrame = getRelevantCallerFrame();
+            Visibility visibility;
 
             if (lastCallWasSuper(relevantCallerFrame)) {
                 return coreExceptions().noSuperMethodError(name, self, args, this);
-            } else if (lastCallWasCallingPrivateMethod(self, name)) {
-                return coreExceptions().privateMethodError(name, self, args, this);
+            } else if ((visibility = lastCallWasCallingPrivateOrProtectedMethod(self, name)) != null) {
+                if (visibility.isPrivate()) {
+                    return coreExceptions().privateMethodError(name, self, args, this);
+                } else {
+                    return coreExceptions().protectedMethodError(name, self, args, this);
+                }
             } else if (lastCallWasVCall(relevantCallerFrame)) {
                 return coreExceptions().nameErrorUndefinedLocalVariableOrMethod(name, self, this);
             } else {
@@ -360,13 +365,13 @@ public abstract class BasicObjectNodes {
          * See {@link org.jruby.truffle.language.dispatch.DispatchNode#lookup}.
          * The only way to fail if method is not null and not undefined is visibility.
          */
-        private boolean lastCallWasCallingPrivateMethod(Object self, String name) {
+        private Visibility lastCallWasCallingPrivateOrProtectedMethod(Object self, String name) {
             final InternalMethod method = ModuleOperations.lookupMethod(coreLibrary().getMetaClass(self), name);
             if (method != null && !method.isUndefined()) {
                 assert method.getVisibility().isPrivate() || method.getVisibility().isProtected();
-                return true;
+                return method.getVisibility();
             }
-            return false;
+            return null;
         }
 
         private boolean lastCallWasVCall(FrameInstance callerFrame) {
