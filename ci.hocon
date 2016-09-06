@@ -34,7 +34,7 @@ no-graal: {
 
 labsjdk: {
   downloads: {
-    JVMCI_JAVA_HOME: {
+    JAVA_HOME: {
       name: labsjdk,
       version: "8u92-jvmci-0.20",
       platformspecific: true
@@ -53,7 +53,7 @@ graal-core: ${labsjdk} {
     ${clone_graal} ["https://github.com/graalvm/graal-core.git", graal-core],
     [cd, graal-core],
     [mx, sforceimports],
-    [mx, --java-home, "$JVMCI_JAVA_HOME", build],
+    [mx, build],
     [cd, ../..],
     [mv, temp_mx, mx.jruby]
   ]
@@ -73,7 +73,7 @@ graal-enterprise: ${labsjdk} {
     ${clone_graal} ["https://github.com/graalvm/graal-enterprise.git", graal-enterprise],
     [cd, graal-enterprise/graal-enterprise],
     [mx, sforceimports],
-    [mx, --java-home, "$JVMCI_JAVA_HOME", build],
+    [mx, build],
     [cd, ../../..],
     [mv, temp_mx, mx.jruby]
   ]
@@ -120,7 +120,7 @@ sulong: ${labsjdk} {
     [mx, sclone, --kind, git, "https://github.com/graalvm/sulong.git", sulong],
     [cd, sulong],
     [mx, sforceimports],
-    [mx, --java-home, "$JVMCI_JAVA_HOME", build],
+    [mx, build],
     [cd, ../..],
     [mv, temp_mx, mx.jruby]
     ${jt} [build, cexts]
