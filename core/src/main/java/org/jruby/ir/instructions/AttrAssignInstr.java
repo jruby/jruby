@@ -18,6 +18,8 @@ import static org.jruby.ir.IRFlags.*;
 // Instruction representing Ruby code of the form: "a[i] = 5"
 // which is equivalent to: a.[]=(i,5)
 public class AttrAssignInstr extends NoResultCallInstr {
+    private transient CallSite functionalSite;
+
     public static AttrAssignInstr create(Operand obj, String attr, Operand[] args, boolean isPotentiallyRefined) {
         if (!containsArgSplat(args) && args.length == 1) {
             return new OneArgOperandAttrAssignInstr(obj, attr, args, isPotentiallyRefined);
@@ -27,7 +29,8 @@ public class AttrAssignInstr extends NoResultCallInstr {
     }
 
     public AttrAssignInstr(Operand obj, String attr, Operand[] args, boolean isPotentiallyRefined) {
-        super(Operation.ATTR_ASSIGN, CallType.UNKNOWN, attr, obj, args, null, isPotentiallyRefined);
+        super(Operation.ATTR_ASSIGN, CallType.NORMAL, attr, obj, args, null, isPotentiallyRefined);
+        functionalSite = getCallSiteFor(CallType.FUNCTIONAL, attr, isPotentiallyRefined);
     }
 
     @Override
@@ -67,8 +70,9 @@ public class AttrAssignInstr extends NoResultCallInstr {
         IRubyObject object = (IRubyObject) getReceiver().retrieve(context, self, currScope, dynamicScope, temp);
         IRubyObject[] values = prepareArguments(context, self, currScope, dynamicScope, temp);
 
-        CallType callType = self == object ? CallType.FUNCTIONAL : CallType.NORMAL;
-        Helpers.invoke(context, object, getName(), values, callType, Block.NULL_BLOCK);
+        CallSite callSite = self == object ? this.functionalSite : this.callSite;
+        callSite.call(context, self, object, values);
+
         return null;
     }
 
