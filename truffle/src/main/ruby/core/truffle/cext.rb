@@ -337,8 +337,7 @@ module Truffle::CExt
   end
 
   def rb_path2class(path)
-    # More than a bit of a hack
-    eval(path)
+    Object.const_get(path)
   end
 
   def rb_proc_new(function, value)
