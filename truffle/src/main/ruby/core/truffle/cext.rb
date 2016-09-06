@@ -457,22 +457,15 @@ module Truffle::CExt
     end
 
     if read
-      ruby_class.send :define_method, name do
-        instance_variable_get(name)
-      end
-
+      ruby_class.send :attr_reader, name
       ruby_class.send :private, name if private
       ruby_class.send :protected, name if protected
       ruby_class.send :module_function, name if module_function
     end
 
     if write
+      ruby_class.send :attr_writer, name
       setter_name = :"#{name}="
-
-      ruby_class.send :define_method, setter_name do |value|
-        instance_variable_set(name, value)
-      end
-
       ruby_class.send :private, setter_name if private
       ruby_class.send :protected, setter_name if protected
       ruby_class.send :module_function, setter_name if module_function
