@@ -447,18 +447,36 @@ module Truffle::CExt
   end
 
   def rb_attr(ruby_class, name, read, write, ex)
-    raise 'rb_attr with ex not supported' unless ex.zero?
+    if ex.zero?
+      private = false
+      protected = false
+      module_function = false
+    else
+      private = caller_frame_visibility(:private)
+      protected = caller_frame_visibility(:protected)
+      module_function = caller_frame_visibility(:module_function)
+    end
 
     if read
       ruby_class.send :define_method, name do
         instance_variable_get(name)
       end
+
+      ruby_class.send :private, name if private
+      ruby_class.send :protected, name if protected
+      ruby_class.send :module_function, name if module_function
     end
 
     if write
-      ruby_class.send :define_method, :"#{name}=" do |value|
+      setter_name = :"#{name}="
+
+      ruby_class.send :define_method, setter_name do |value|
         instance_variable_set(name, value)
       end
+
+      ruby_class.send :private, setter_name if private
+      ruby_class.send :protected, setter_name if protected
+      ruby_class.send :module_function, setter_name if module_function
     end
   end
 

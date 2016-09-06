@@ -37,6 +37,7 @@ import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.truffle.core.cast.NameToJavaStringNodeGen;
 import org.jruby.truffle.core.module.ModuleNodes;
 import org.jruby.truffle.core.module.ModuleNodesFactory;
+import org.jruby.truffle.language.CallStackManager;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyConstant;
 import org.jruby.truffle.language.RubyNode;
@@ -44,6 +45,7 @@ import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.constants.GetConstantNode;
 import org.jruby.truffle.language.constants.LookupConstantNode;
 import org.jruby.truffle.language.control.RaiseException;
+import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.objects.MetaClassNode;
 
 @CoreClass("Truffle::CExt")
@@ -351,6 +353,29 @@ public class CExtNodes {
         @Specialization(guards = {"isRubyModule(module)", "isRubySymbol(name)"})
         public DynamicObject cextModuleFunction(VirtualFrame frame, DynamicObject module, DynamicObject name) {
             return setVisibilityNode.executeSetVisibility(frame, module, new Object[]{name});
+        }
+
+    }
+
+    @CoreMethod(names = "caller_frame_visibility", isModuleFunction = true, required = 1)
+    public abstract static class CallerFrameVisibilityNode extends CoreMethodArrayArgumentsNode {
+
+        @TruffleBoundary
+        @Specialization(guards = "isRubySymbol(visibility)")
+        public boolean toRubyString(DynamicObject visibility) {
+            final Frame callerFrame = getContext().getCallStack().getCallerFrameIgnoringSend().getFrame(FrameAccess.MATERIALIZE, true);
+            final Visibility callerVisibility = DeclarationContext.findVisibility(callerFrame);
+
+            switch (visibility.toString()) {
+                case "private":
+                    return callerVisibility.isPrivate();
+                case "protected":
+                    return callerVisibility.isProtected();
+                case "module_function":
+                    return callerVisibility.isModuleFunction();
+                default:
+                    throw new UnsupportedOperationException();
+            }
         }
 
     }

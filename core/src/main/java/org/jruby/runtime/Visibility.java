@@ -38,6 +38,10 @@ public enum Visibility {
         return this == PROTECTED;
     }
 
+    public boolean isModuleFunction() {
+        return this == MODULE_FUNCTION;
+    }
+
     public static Visibility[] getValues() {
         return VALUES;
     }
