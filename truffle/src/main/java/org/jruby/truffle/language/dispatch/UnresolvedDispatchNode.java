@@ -161,7 +161,14 @@ public final class UnresolvedDispatchNode extends DispatchNode {
                 callerClass = coreLibrary().getMetaClass(RubyArguments.getSelf(callerFrame));
             }
         } else {
-            callerClass = coreLibrary().getMetaClass(RubyArguments.getSelf(frame));
+            InternalMethod method = RubyArguments.getMethod(frame);
+            if (!coreLibrary().isSend(method)) {
+                callerClass = coreLibrary().getMetaClass(RubyArguments.getSelf(frame));
+            } else {
+                FrameInstance instance = getContext().getCallStack().getCallerFrameIgnoringSend();
+                Frame callerFrame = instance.getFrame(FrameInstance.FrameAccess.READ_ONLY, true);
+                callerClass = coreLibrary().getMetaClass(RubyArguments.getSelf(callerFrame));
+            }
         }
 
         final InternalMethod method = lookup(callerClass, receiverObject, toString(methodName), ignoreVisibility);

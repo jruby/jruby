@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.core;
 
+import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
@@ -20,7 +21,9 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.object.Layout;
 import com.oracle.truffle.api.object.Property;
+
 import jnr.constants.platform.Errno;
+
 import org.jcodings.EncodingDB;
 import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.transcode.EConvFlags;
@@ -279,6 +282,7 @@ public class CoreLibrary {
     private final Map<Errno, DynamicObject> errnoClasses = new HashMap<>();
 
     @CompilationFinal private InternalMethod basicObjectSendMethod;
+    @CompilationFinal private InternalMethod kernelPublicSendMethod;
 
     @CompilationFinal private GlobalVariableStorage loadPathStorage;
     @CompilationFinal private GlobalVariableStorage loadedFeaturesStorage;
@@ -798,8 +802,16 @@ public class CoreLibrary {
 
         coreMethodNodeManager.allMethodInstalled();
 
-        basicObjectSendMethod = Layouts.MODULE.getFields(basicObjectClass).getMethod("__send__");
-        assert basicObjectSendMethod != null;
+        basicObjectSendMethod = getMethod(basicObjectClass, "__send__");
+        kernelPublicSendMethod = getMethod(kernelModule, "public_send");
+    }
+
+    private InternalMethod getMethod(DynamicObject module, String name) {
+        InternalMethod method = Layouts.MODULE.getFields(module).getMethod(name);
+        if (method == null) {
+            throw new AssertionError();
+        }
+        return method;
     }
 
     private void initializeGlobalVariables() {
@@ -1417,7 +1429,9 @@ public class CoreLibrary {
     }
 
     public boolean isSend(InternalMethod method) {
-        return method.getCallTarget() == basicObjectSendMethod.getCallTarget();
+        CallTarget callTarget = method.getCallTarget();
+        return callTarget == basicObjectSendMethod.getCallTarget() ||
+                callTarget == kernelPublicSendMethod.getCallTarget();
     }
 
     public DynamicObjectFactory getIntRangeFactory() {
