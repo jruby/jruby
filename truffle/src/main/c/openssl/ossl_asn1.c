@@ -504,48 +504,49 @@ decode_eoc(unsigned char *der, long length)
 
 /********/
 
-typedef struct {
-    const char *name;
-    VALUE *klass;
-} ossl_asn1_info_t;
+/*
+ * Modified for Sulong to flatten the array of ossl_asn1_info_t structures,
+ * into an array of names and array of classes, because the classes are
+ * managed and can't be stored in a static array of structures like that.
+ */
 
-// TODO CS 06-09-16 Removed the address of the classes for now as it causes problems in Sulong
-
-static const ossl_asn1_info_t ossl_asn1_info[] = {
-    { "EOC",               NULL /*&cASN1EndOfContent*/,    },  /*  0 */
-    { "BOOLEAN",           NULL /*&cASN1Boolean*/,         },  /*  1 */
-    { "INTEGER",           NULL /*&cASN1Integer*/,         },  /*  2 */
-    { "BIT_STRING",        NULL /*&cASN1BitString*/,       },  /*  3 */
-    { "OCTET_STRING",      NULL /*&cASN1OctetString*/,     },  /*  4 */
-    { "NULL",              NULL /*&cASN1Null*/,            },  /*  5 */
-    { "OBJECT",            NULL /*&cASN1ObjectId*/,        },  /*  6 */
-    { "OBJECT_DESCRIPTOR", NULL,                           },  /*  7 */
-    { "EXTERNAL",          NULL,                           },  /*  8 */
-    { "REAL",              NULL,                           },  /*  9 */
-    { "ENUMERATED",        NULL /*&cASN1Enumerated*/,      },  /* 10 */
-    { "EMBEDDED_PDV",      NULL,                           },  /* 11 */
-    { "UTF8STRING",        NULL /*&cASN1UTF8String*/,      },  /* 12 */
-    { "RELATIVE_OID",      NULL,                           },  /* 13 */
-    { "[UNIVERSAL 14]",    NULL,                           },  /* 14 */
-    { "[UNIVERSAL 15]",    NULL,                           },  /* 15 */
-    { "SEQUENCE",          NULL /*&cASN1Sequence*/,        },  /* 16 */
-    { "SET",               NULL /*&cASN1Set*/,             },  /* 17 */
-    { "NUMERICSTRING",     NULL /*&cASN1NumericString*/,   },  /* 18 */
-    { "PRINTABLESTRING",   NULL /*&cASN1PrintableString*/, },  /* 19 */
-    { "T61STRING",         NULL /*&cASN1T61String*/,       },  /* 20 */
-    { "VIDEOTEXSTRING",    NULL /*&cASN1VideotexString*/,  },  /* 21 */
-    { "IA5STRING",         NULL /*&cASN1IA5String*/,       },  /* 22 */
-    { "UTCTIME",           NULL /*&cASN1UTCTime*/,         },  /* 23 */
-    { "GENERALIZEDTIME",   NULL /*&cASN1GeneralizedTime*/, },  /* 24 */
-    { "GRAPHICSTRING",     NULL /*&cASN1GraphicString*/,   },  /* 25 */
-    { "ISO64STRING",       NULL /*&cASN1ISO64String*/,     },  /* 26 */
-    { "GENERALSTRING",     NULL /*&cASN1GeneralString*/,   },  /* 27 */
-    { "UNIVERSALSTRING",   NULL /*&cASN1UniversalString*/, },  /* 28 */
-    { "CHARACTER_STRING",  NULL,                           },  /* 29 */
-    { "BMPSTRING",         NULL /*&cASN1BMPString*/,       },  /* 30 */
+static const char *ossl_asn1_info_names[] = {
+    "EOC",
+    "BOOLEAN",
+    "INTEGER",
+    "BIT_STRING",
+    "OCTET_STRING",
+    "NULL",
+    "OBJECT",
+    "OBJECT_DESCRIPTOR",
+    "EXTERNAL",
+    "REAL",
+    "ENUMERATED",
+    "EMBEDDED_PDV",
+    "UTF8STRING",
+    "RELATIVE_OID",
+    "[UNIVERSAL 14]",
+    "[UNIVERSAL 15]",
+    "SEQUENCE",
+    "SET",
+    "NUMERICSTRING",
+    "PRINTABLESTRING",
+    "T61STRING",
+    "VIDEOTEXSTRING",
+    "IA5STRING",
+    "UTCTIME",
+    "GENERALIZEDTIME",
+    "GRAPHICSTRING",
+    "ISO64STRING",
+    "GENERALSTRING",
+    "UNIVERSALSTRING",
+    "CHARACTER_STRING",
+    "BMPSTRING"
 };
 
-enum {ossl_asn1_info_size = (sizeof(ossl_asn1_info)/sizeof(ossl_asn1_info[0]))};
+static VALUE *ossl_asn1_info_klasses;
+
+enum {ossl_asn1_info_size = (sizeof(ossl_asn1_info_names)/sizeof(ossl_asn1_info_names[0]))};
 
 static VALUE class_tag_map;
 
@@ -859,8 +860,8 @@ int_ossl_asn1_decode0_prim(unsigned char **pp, long length, long hlen, int tag,
     *pp += hlen + length;
     *num_read = hlen + length;
 
-    if (tc == sUNIVERSAL && tag < ossl_asn1_info_size && ossl_asn1_info[tag].klass) {
-	VALUE klass = *ossl_asn1_info[tag].klass;
+    if (tc == sUNIVERSAL && tag < ossl_asn1_info_size && ossl_asn1_info_klasses[tag]) {
+	VALUE klass = ossl_asn1_info_klasses[tag];
 	VALUE args[4];
 	args[0] = value;
 	args[1] = INT2NUM(tag);
@@ -924,7 +925,7 @@ int_ossl_asn1_decode0_cons(unsigned char **pp, long max_len, long length,
 	    }
 	}
 	else {
-	    VALUE klass = *ossl_asn1_info[tag].klass;
+	    VALUE klass = ossl_asn1_info_klasses[tag];
 	    asn1data = rb_obj_alloc(klass);
 	}
 	args[0] = ary;
@@ -1634,9 +1635,9 @@ Init_ossl_asn1(void)
      */
     rb_define_const(mASN1, "UNIVERSAL_TAG_NAME", ary);
     for(i = 0; i < ossl_asn1_info_size; i++){
-	if(ossl_asn1_info[i].name[0] == '[') continue;
-	rb_define_const(mASN1, ossl_asn1_info[i].name, INT2NUM(i));
-	rb_ary_store(ary, i, rb_str_new2(ossl_asn1_info[i].name));
+	if(ossl_asn1_info_names[i][0] == '[') continue;
+	rb_define_const(mASN1, ossl_asn1_info_names[i], INT2NUM(i));
+	rb_ary_store(ary, i, rb_str_new2(ossl_asn1_info_names[i]));
     }
 
     /* Document-class: OpenSSL::ASN1::ASN1Data
@@ -1950,6 +1951,38 @@ do{\
 
     OSSL_ASN1_DEFINE_CLASS(EndOfContent, Data);
 
+    ossl_asn1_info_klasses = (VALUE *) truffle_managed_malloc(ossl_asn1_info_size * sizeof(VALUE));
+    ossl_asn1_info_klasses[0]  = cASN1EndOfContent;
+    ossl_asn1_info_klasses[1]  = cASN1Boolean;
+    ossl_asn1_info_klasses[2]  = cASN1Integer;
+    ossl_asn1_info_klasses[3]  = cASN1BitString;
+    ossl_asn1_info_klasses[4]  = cASN1OctetString;
+    ossl_asn1_info_klasses[5]  = cASN1Null;
+    ossl_asn1_info_klasses[6]  = cASN1ObjectId;
+    ossl_asn1_info_klasses[7]  = NULL;
+    ossl_asn1_info_klasses[8]  = NULL;
+    ossl_asn1_info_klasses[9]  = NULL;
+    ossl_asn1_info_klasses[10] = cASN1Enumerated;
+    ossl_asn1_info_klasses[11] = NULL;
+    ossl_asn1_info_klasses[12] = cASN1UTF8String;
+    ossl_asn1_info_klasses[13] = NULL;
+    ossl_asn1_info_klasses[14] = NULL;
+    ossl_asn1_info_klasses[15] = NULL;
+    ossl_asn1_info_klasses[16] = cASN1Sequence;
+    ossl_asn1_info_klasses[17] = cASN1Set;
+    ossl_asn1_info_klasses[18] = cASN1NumericString;
+    ossl_asn1_info_klasses[19] = cASN1PrintableString;
+    ossl_asn1_info_klasses[20] = cASN1T61String;
+    ossl_asn1_info_klasses[21] = cASN1VideotexString;
+    ossl_asn1_info_klasses[22] = cASN1IA5String;
+    ossl_asn1_info_klasses[23] = cASN1UTCTime;
+    ossl_asn1_info_klasses[24] = cASN1GeneralizedTime;
+    ossl_asn1_info_klasses[25] = cASN1GraphicString;
+    ossl_asn1_info_klasses[26] = cASN1ISO64String;
+    ossl_asn1_info_klasses[27] = cASN1GeneralString;
+    ossl_asn1_info_klasses[28] = cASN1UniversalString;
+    ossl_asn1_info_klasses[29] = NULL;
+    ossl_asn1_info_klasses[30] = cASN1BMPString;
 
     /* Document-class: OpenSSL::ASN1::ObjectId
      *
