@@ -89,18 +89,17 @@ public class RubySignalException extends RubyException {
             if (argc > 1) {
                 sig = args[1];
             } else {
-                sig = runtime.newString("SIG" + RubySignal.signo2signm(_signo));
+                sig = runtime.newString(RubySignal.signmWithPrefix(RubySignal.signo2signm(_signo)));
             }
         } else {
             String signm = sig.toString();
-            signm = signm.startsWith("SIG") ? signm.substring("SIG".length()) : signm;
-            _signo = RubySignal.signm2signo(signm);
+            _signo = RubySignal.signm2signo(RubySignal.signmWithoutPrefix(signm));
 
             if (_signo == 0) {
                 throw runtime.newArgumentError("unsupported name " + sig);
             }
 
-            sig = runtime.newString("SIG" + signm);
+            sig = runtime.newString(RubySignal.signmWithPrefix(signm));
         }
 
         super.initialize(new IRubyObject[]{sig}, block);
