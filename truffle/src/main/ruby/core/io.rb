@@ -2672,6 +2672,8 @@ class IO
   end
 
   def close
+    return nil if closed?
+
     begin
       flush
     ensure
