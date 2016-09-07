@@ -190,14 +190,6 @@ public class SunSignalFacade implements SignalFacade {
         }
 
         if (callback == null) {
-            new BlockCallback() {
-                public IRubyObject call(ThreadContext context, IRubyObject[] args, Block block) {
-                    if(signal != null) {
-                        oldHandler.handle(signal);
-                    }
-                    return runtime.getNil();
-                }
-            };
             if (oldHandler == SignalHandler.SIG_DFL) {
                 retVals[0] = runtime.newString("SYSTEM_DEFAULT");
             } else if (oldHandler == SignalHandler.SIG_IGN) {
