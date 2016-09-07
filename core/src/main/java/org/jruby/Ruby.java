@@ -1635,7 +1635,9 @@ public final class Ruby implements Constantizable {
         }
 
         fatal = defineClassIfAllowed("Fatal", exceptionClass);
-        interrupt = defineClassIfAllowed("Interrupt", signalException);
+        if (profile.allowClass("Interrupt")) {
+            interrupt = RubyInterrupt.createInterruptClass(this, signalException);
+        }
         typeError = defineClassIfAllowed("TypeError", standardError);
         argumentError = defineClassIfAllowed("ArgumentError", standardError);
         if (profile.allowClass("UncaughtThrowError")) {
