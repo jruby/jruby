@@ -10,23 +10,25 @@
 package org.jruby.truffle.language.objects;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.frame.FrameDescriptor;
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.HiddenKey;
+
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.locals.ReadFrameSlotNode;
 import org.jruby.truffle.language.locals.ReadFrameSlotNodeGen;
 
 public class SelfNode extends RubyNode {
 
-    public static HiddenKey SELF_IDENTIFIER = new HiddenKey("(self)");
+    public static final HiddenKey SELF_IDENTIFIER = new HiddenKey("(self)");
 
     private final FrameSlot selfSlot;
 
     @Child private ReadFrameSlotNode readSelfSlotNode;
 
-    public SelfNode(FrameSlot selfSlot) {
-        this.selfSlot = selfSlot;
+    public SelfNode(FrameDescriptor frameDescriptor) {
+        this.selfSlot = frameDescriptor.findOrAddFrameSlot(SelfNode.SELF_IDENTIFIER);
     }
 
     @Override

@@ -618,7 +618,7 @@ public class BodyTranslator extends Translator {
     }
 
     private RubyNode translateCheckFrozen(SourceSection sourceSection) {
-        return new RaiseIfFrozenNode(context, sourceSection, new SelfNode(environment.getFrameDescriptor().findOrAddFrameSlot(SelfNode.SELF_IDENTIFIER)));
+        return new RaiseIfFrozenNode(context, sourceSection, new SelfNode(environment.getFrameDescriptor()));
     }
 
     private RubyNode translateCallNode(org.jruby.ast.CallNode node, boolean ignoreVisibility, boolean isVCall, boolean isAttrAssign) {
@@ -1804,7 +1804,7 @@ public class BodyTranslator extends Translator {
 
         // Every case will use a SelfNode, just don't it use more than once.
         // Also note the check for frozen.
-        final RubyNode self = new RaiseIfFrozenNode(context, fullSourceSection, new SelfNode(environment.getFrameDescriptor().findOrAddFrameSlot(SelfNode.SELF_IDENTIFIER)));
+        final RubyNode self = new RaiseIfFrozenNode(context, fullSourceSection, new SelfNode(environment.getFrameDescriptor()));
 
         final String path = getSourcePath(sourceSection);
         final String corePath = buildCorePath("");
@@ -1852,7 +1852,7 @@ public class BodyTranslator extends Translator {
         final String name = node.getName();
 
         // About every case will use a SelfNode, just don't it use more than once.
-        final SelfNode self = new SelfNode(environment.getFrameDescriptor().findOrAddFrameSlot(SelfNode.SELF_IDENTIFIER));
+        final SelfNode self = new SelfNode(environment.getFrameDescriptor());
 
         final String path = getSourcePath(sourceSection);
         final String corePath = buildCorePath("");
@@ -2890,7 +2890,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitSelfNode(org.jruby.ast.SelfNode node) {
-        final RubyNode ret = new SelfNode(environment.getFrameDescriptor().findOrAddFrameSlot(SelfNode.SELF_IDENTIFIER));
+        final RubyNode ret = new SelfNode(environment.getFrameDescriptor());
         return addNewlineIfNeeded(node, ret);
     }
 
