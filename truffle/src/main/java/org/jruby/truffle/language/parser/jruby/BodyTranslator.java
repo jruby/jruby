@@ -1588,7 +1588,7 @@ public class BodyTranslator extends Translator {
             rhs = new CheckMatchVariableTypeNode(context, sourceSection.toSourceSection(source), rhs);
             rhs = WrapInThreadLocalNodeGen.create(context, sourceSection.toSourceSection(source), rhs);
 
-            environment.declareVarWhereAllowed("$~");
+            environment.declareVarInMethodScope("$~");
         } else if (name.equals("$0")) {
             rhs = new CheckProgramNameVariableTypeNode(context, sourceSection.toSourceSection(source), rhs);
         } else if (name.equals("$/")) {
@@ -1689,7 +1689,7 @@ public class BodyTranslator extends Translator {
             RubyNode readNode = environment.findLocalVarNode(name, source, sourceSection);
 
             if (readNode == null) {
-                environment.declareVarWhereAllowed(name);
+                environment.declareVarInMethodScope(name);
                 readNode = environment.findLocalVarNode(name, source, sourceSection);
             }
 
@@ -2447,7 +2447,7 @@ public class BodyTranslator extends Translator {
         final RubySourceSection sourceSection = translate(node.getPosition());
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
-        environment.declareVarWhereAllowed("$~");
+        environment.declareVarInMethodScope("$~");
 
         final GetFromThreadLocalNode readMatchNode = new GetFromThreadLocalNode(context, fullSourceSection, environment.findLocalVarNode("$~", source, sourceSection));
         final RubyNode ret = new ReadMatchReferenceNode(context, fullSourceSection, readMatchNode, node.getMatchNumber());
@@ -3091,7 +3091,7 @@ public class BodyTranslator extends Translator {
         final RubySourceSection sourceSection = translate(node.getPosition());
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
-        environment.declareVarWhereAllowed("$~");
+        environment.declareVarInMethodScope("$~");
 
         final GetFromThreadLocalNode readMatchNode = new GetFromThreadLocalNode(context, fullSourceSection, environment.findLocalVarNode("$~", source, sourceSection));
         final RubyNode ret = new ReadMatchReferenceNode(context, fullSourceSection, readMatchNode, index);

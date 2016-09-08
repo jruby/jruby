@@ -98,9 +98,9 @@ public class TranslatorEnvironment {
         return getFrameDescriptor().findOrAddFrameSlot(name);
     }
 
-    public FrameSlot declareVarWhereAllowed(String name) {
+    public FrameSlot declareVarInMethodScope(String name) {
         if (isBlock()) {
-            return parent.declareVarWhereAllowed(name);
+            return parent.declareVarInMethodScope(name);
         } else {
             return declareVar(name);
         }
