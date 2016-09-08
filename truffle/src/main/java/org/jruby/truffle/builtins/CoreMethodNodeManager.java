@@ -188,24 +188,49 @@ public class CoreMethodNodeManager {
         final SourceSection sourceSection = sharedMethodInfo.getSourceSection();
         final RubySourceSection rubySourceSection = new RubySourceSection(sourceSection);
 
-        final int required = method.required();
-        final int optional = method.optional();
+        final RubyNode methodNode = createCoreMethodNode(context, sourceSection, methodDetails.getNodeFactory(), method);
 
+        if (CHECK_AMBIGUOUS_OPTIONAL_ARGS) {
+            AmbiguousOptionalArgumentChecker.verifyNoAmbiguousOptionalArguments(methodDetails);
+        }
+
+        final RubyNode checkArity = Translator.createCheckArityNode(context, sourceSection.getSource(), rubySourceSection, sharedMethodInfo.getArity());
+
+        RubyNode node;
+        if (!isSafe(context, method.unsafe())) {
+            node = new UnsafeNode(context, sourceSection);
+        } else {
+            node = Translator.sequence(context, sourceSection.getSource(), rubySourceSection, Arrays.asList(checkArity, methodNode));
+            node = transformResult(method, node);
+        }
+
+        RubyNode bodyNode = new ExceptionTranslatingNode(context, sourceSection, node, method.unsupportedOperationBehavior());
+
+        if (context.getOptions().CHAOS) {
+            bodyNode = ChaosNodeGen.create(bodyNode);
+        }
+
+        final RubyRootNode rootNode = new RubyRootNode(context, sourceSection, null, sharedMethodInfo, bodyNode, false);
+
+        return Truffle.getRuntime().createCallTarget(rootNode);
+    }
+
+    public static RubyNode createCoreMethodNode(RubyContext context, SourceSection sourceSection, NodeFactory<? extends RubyNode> nodeFactory, CoreMethod method) {
         final List<RubyNode> argumentsNodes = new ArrayList<>();
 
         if (method.needsCallerFrame()) {
             argumentsNodes.add(new ReadCallerFrameNode());
         }
 
-        // Do not use needsSelf=true in module functions, it is either the module/class or the instance.
-        // Usage of needsSelf is quite rare for singleton methods (except constructors).
-        final boolean needsSelf = method.constructor() || (!method.isModuleFunction() && !method.onSingleton() && method.needsSelf());
+        final boolean needsSelf = needsSelf(method);
 
         if (needsSelf) {
             RubyNode readSelfNode = new ProfileArgumentNode(new ReadSelfNode());
             argumentsNodes.add(transformArgument(context, sourceSection, method, readSelfNode, 0));
         }
 
+        final int required = method.required();
+        final int optional = method.optional();
         final int nArgs = required + optional;
 
         for (int n = 0; n < nArgs; n++) {
@@ -220,8 +245,11 @@ public class CoreMethodNodeManager {
             argumentsNodes.add(new ReadBlockNode(NotProvided.INSTANCE));
         }
 
-        final RubyNode methodNode;
-        final NodeFactory<? extends RubyNode> nodeFactory = methodDetails.getNodeFactory();
+        return createNodeFromFactory(context, sourceSection, nodeFactory, argumentsNodes);
+    }
+
+    public static <T> T createNodeFromFactory(RubyContext context, SourceSection sourceSection, NodeFactory<? extends T> nodeFactory, List<RubyNode> argumentsNodes) {
+        final T methodNode;
         List<List<Class<?>>> signatures = nodeFactory.getNodeSignatures();
 
         assert signatures.size() == 1;
@@ -247,29 +275,13 @@ public class CoreMethodNodeManager {
             }
         }
 
-        if (CHECK_AMBIGUOUS_OPTIONAL_ARGS) {
-            AmbiguousOptionalArgumentChecker.verifyNoAmbiguousOptionalArguments(methodDetails);
-        }
+        return methodNode;
+    }
 
-        final RubyNode checkArity = Translator.createCheckArityNode(context, sourceSection.getSource(), rubySourceSection, sharedMethodInfo.getArity());
-
-        RubyNode node;
-        if (!isSafe(context, method.unsafe())) {
-            node = new UnsafeNode(context, sourceSection);
-        } else {
-            node = Translator.sequence(context, sourceSection.getSource(), rubySourceSection, Arrays.asList(checkArity, methodNode));
-            node = transformResult(method, node);
-        }
-
-        RubyNode bodyNode = new ExceptionTranslatingNode(context, sourceSection, node, method.unsupportedOperationBehavior());
-
-        if (context.getOptions().CHAOS) {
-            bodyNode = ChaosNodeGen.create(bodyNode);
-        }
-
-        final RubyRootNode rootNode = new RubyRootNode(context, sourceSection, null, sharedMethodInfo, bodyNode, false);
-
-        return Truffle.getRuntime().createCallTarget(rootNode);
+    public static boolean needsSelf(CoreMethod method) {
+        // Do not use needsSelf=true in module functions, it is either the module/class or the instance.
+        // Usage of needsSelf is quite rare for singleton methods (except constructors).
+        return method.constructor() || (!method.isModuleFunction() && !method.onSingleton() && method.needsSelf());
     }
 
     private static RubyNode transformArgument(RubyContext context, SourceSection sourceSection, CoreMethod method, RubyNode argument, int n) {
