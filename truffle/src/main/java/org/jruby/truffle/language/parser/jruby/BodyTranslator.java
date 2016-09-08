@@ -15,10 +15,12 @@ import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jcodings.specific.UTF8Encoding;
 import org.joni.NameEntry;
 import org.joni.Regex;
 import org.joni.Syntax;
+import org.jruby.ast.CallNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.SideEffectFree;
 import org.jruby.ast.visitor.NodeVisitor;
@@ -101,6 +103,7 @@ import org.jruby.truffle.language.control.WhileNode;
 import org.jruby.truffle.language.defined.DefinedNode;
 import org.jruby.truffle.language.defined.DefinedWrapperNode;
 import org.jruby.truffle.language.dispatch.RubyCallNode;
+import org.jruby.truffle.language.dispatch.RubyCallNodeParameters;
 import org.jruby.truffle.language.exceptions.DisablingBacktracesNode;
 import org.jruby.truffle.language.exceptions.EnsureNode;
 import org.jruby.truffle.language.exceptions.RescueAnyNode;
@@ -648,9 +651,8 @@ public class BodyTranslator extends Translator {
         final RubySourceSection enclosingSourceSection = enclosing(sourceSection, children.toArray(new RubyNode[children.size()]));
         final SourceSection enclosingFullSourceSection = enclosingSourceSection.toSourceSection(source);
 
-        RubyNode translated = new RubyCallNode(context, enclosingFullSourceSection,
-                receiver, methodName, argumentsAndBlock.getBlock(), argumentsAndBlock.getArguments(), argumentsAndBlock.isSplatted(),
-                privately || ignoreVisibility, isVCall, node.isLazy(), isAttrAssign);
+        RubyCallNodeParameters callParameters = new RubyCallNodeParameters(context, enclosingFullSourceSection, receiver, methodName, argumentsAndBlock.getBlock(), argumentsAndBlock.getArguments(), argumentsAndBlock.isSplatted(), privately || ignoreVisibility, isVCall, node.isLazy(), isAttrAssign);
+        RubyNode translated = new RubyCallNode(callParameters);
 
         if (argumentsAndBlock.getBlock() instanceof BlockDefinitionNode) { // if we have a literal block, break breaks out of this call site
             BlockDefinitionNode blockDef = (BlockDefinitionNode) argumentsAndBlock.getBlock();
@@ -831,7 +833,8 @@ public class BodyTranslator extends Translator {
                         method = "===";
                         arguments = new RubyNode[] { NodeUtil.cloneNode(readTemp) };
                     }
-                    comparisons.add(new RubyCallNode(context, fullSourceSection, receiver, method, null, arguments, false, true));
+                    RubyCallNodeParameters callParameters = new RubyCallNodeParameters(context, fullSourceSection, receiver, method, null, arguments, false, true);
+                    comparisons.add(new RubyCallNode(callParameters));
                 }
 
                 RubyNode conditionNode = comparisons.get(comparisons.size() - 1);
@@ -2672,13 +2675,10 @@ public class BodyTranslator extends Translator {
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
         final RubyNode moduleNode = new ObjectLiteralNode(context, fullSourceSection, context.getCoreLibrary().getObjectClass());
-        return new RubyCallNode(
-                context, fullSourceSection,
-                new ReadConstantNode(context, fullSourceSection, moduleNode, name),
-                "convert",
-                null,
-                new RubyNode[] { a, b },
-                false, true);
+        ReadConstantNode receiver = new ReadConstantNode(context, fullSourceSection, moduleNode, name);
+        RubyNode[] arguments = new RubyNode[] { a, b };
+        RubyCallNodeParameters parameters = new RubyCallNodeParameters(context, fullSourceSection, receiver, "convert", null, arguments, false, true);
+        return new RubyCallNode(parameters);
     }
 
     @Override
