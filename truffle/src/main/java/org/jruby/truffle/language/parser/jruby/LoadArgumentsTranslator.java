@@ -112,7 +112,7 @@ public class LoadArgumentsTranslator extends Translator {
         final List<RubyNode> sequence = new ArrayList<>();
 
         //if (!arraySlotStack.isEmpty()) {
-            sequence.add(loadSelf());
+        sequence.add(loadSelf(context, methodBodyTranslator.getEnvironment()));
         //}
 
         final org.jruby.ast.Node[] args = node.getArgs();
@@ -259,11 +259,6 @@ public class LoadArgumentsTranslator extends Translator {
         }
 
         return sequence(context, source, sourceSection, sequence);
-    }
-
-    private RubyNode loadSelf() {
-        final FrameSlot slot = methodBodyTranslator.getEnvironment().getFrameDescriptor().findOrAddFrameSlot(SelfNode.SELF_IDENTIFIER);
-        return WriteLocalVariableNode.createWriteLocalVariableNode(context, (RubySourceSection) null, slot, new ProfileArgumentNode(new ReadSelfNode()));
     }
 
     @Override

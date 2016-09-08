@@ -9,9 +9,11 @@
  */
 package org.jruby.truffle.language.parser.jruby;
 
+import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.InvalidSourcePosition;
 import org.jruby.truffle.RubyContext;
@@ -19,9 +21,13 @@ import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubySourceSection;
 import org.jruby.truffle.language.arguments.CheckArityNode;
 import org.jruby.truffle.language.arguments.CheckKeywordArityNode;
+import org.jruby.truffle.language.arguments.ProfileArgumentNode;
+import org.jruby.truffle.language.arguments.ReadSelfNode;
 import org.jruby.truffle.language.control.SequenceNode;
 import org.jruby.truffle.language.literal.NilLiteralNode;
+import org.jruby.truffle.language.locals.WriteLocalVariableNode;
 import org.jruby.truffle.language.methods.Arity;
+import org.jruby.truffle.language.objects.SelfNode;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -157,6 +163,12 @@ public abstract class Translator extends org.jruby.ast.visitor.AbstractNodeVisit
         } else {
             return sourceSection.toSourceSection(source);
         }
+    }
+
+    public static RubyNode loadSelf(RubyContext context, TranslatorEnvironment environment) {
+        final FrameSlot slot = environment.getFrameDescriptor().findOrAddFrameSlot(SelfNode.SELF_IDENTIFIER);
+        RubySourceSection sourceSection = null;
+        return WriteLocalVariableNode.createWriteLocalVariableNode(context, sourceSection, slot, new ProfileArgumentNode(new ReadSelfNode()));
     }
 
 }

@@ -955,8 +955,7 @@ public class BodyTranslator extends Translator {
             body = sequence(context, source, sourceSection, Arrays.asList(initFlipFlopStates(sourceSection), body));
         }
 
-        final FrameSlot selfSlot = environment.getFrameDescriptor().findOrAddFrameSlot(SelfNode.SELF_IDENTIFIER);
-        final WriteLocalVariableNode writeSelfNode = WriteLocalVariableNode.createWriteLocalVariableNode(context, (RubySourceSection) null, selfSlot, new ProfileArgumentNode(new ReadSelfNode()));
+        final RubyNode writeSelfNode = loadSelf(context, environment);
         body = sequence(context, source, sourceSection, Arrays.asList(writeSelfNode, body));
 
         if (context.getOptions().CHAOS) {

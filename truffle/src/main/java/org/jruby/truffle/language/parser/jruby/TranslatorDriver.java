@@ -188,8 +188,7 @@ public class TranslatorDriver implements Parser {
 
         // Load arguments
 
-        final FrameSlot selfSlot = environment.getFrameDescriptor().findOrAddFrameSlot(SelfNode.SELF_IDENTIFIER);
-        final WriteLocalVariableNode writeSelfNode = WriteLocalVariableNode.createWriteLocalVariableNode(context, (RubySourceSection) null, selfSlot, new ProfileArgumentNode(new ReadSelfNode()));
+        final RubyNode writeSelfNode = Translator.loadSelf(context, environment);
         truffleNode = Translator.sequence(context, source, rubySourceSection, Arrays.asList(writeSelfNode, truffleNode));
 
         if (argumentNames != null && argumentNames.length > 0) {
