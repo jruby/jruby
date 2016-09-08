@@ -42,6 +42,7 @@ public interface TrufflePosix {
     int seteuid(int euid);
     int getgid();
     int getpgid(int pid);
+    int setpgid(int pid, int pgid);
     int getpgrp();
     int getpid();
     int getppid();

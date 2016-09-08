@@ -423,6 +423,16 @@ public abstract class TrufflePosixNodes {
 
     }
 
+    @CoreMethod(names = "setpgid", isModuleFunction = true, required = 2, lowerFixnum = {1, 2}, unsafe = UnsafeGroup.PROCESSES)
+    public abstract static class SetpgidNode extends CoreMethodArrayArgumentsNode {
+
+        @Specialization
+        public int setpgid(int pid, int pgid) {
+            return posix().setpgid(pid, pgid);
+        }
+
+    }
+
     @CoreMethod(names = "setpriority", isModuleFunction = true, required = 3, lowerFixnum = { 1, 2, 3 }, unsafe = UnsafeGroup.PROCESSES)
     public abstract static class SetPriorityNode extends CoreMethodArrayArgumentsNode {
 

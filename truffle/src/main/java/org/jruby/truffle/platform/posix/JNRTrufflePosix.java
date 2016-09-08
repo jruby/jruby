@@ -123,6 +123,11 @@ public class JNRTrufflePosix implements TrufflePosix {
     }
 
     @Override
+    public int setpgid(int pid, int pgid) {
+        return posix.setpgid(pid, pgid);
+    }
+
+    @Override
     public int getpgrp() {
         return posix.getpgrp();
     }
