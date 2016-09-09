@@ -293,7 +293,7 @@ module Truffle::CExt
   end
 
   def rb_str_new_nul(length)
-    '\0' * length
+    "\0" * length
   end
 
   def rb_str_new_cstr(java_string)
