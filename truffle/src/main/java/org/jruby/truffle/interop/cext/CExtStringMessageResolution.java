@@ -10,13 +10,18 @@
 package org.jruby.truffle.interop.cext;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.interop.CanResolve;
 import com.oracle.truffle.api.interop.MessageResolution;
 import com.oracle.truffle.api.interop.Resolve;
 import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.profiles.ConditionProfile;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.RubyLanguage;
+import org.jruby.truffle.core.rope.NativeRope;
+import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeNodes.GetByteNode;
 import org.jruby.truffle.core.rope.RopeNodesFactory.GetByteNodeGen;
 import org.jruby.truffle.core.string.StringNodes.SetByteNode;
@@ -94,6 +99,38 @@ public class CExtStringMessageResolution {
                 setByteNode = insert(SetByteNodeFactory.create(context, null, null, null, null));
             }
             return setByteNode;
+        }
+
+    }
+
+    @Resolve(message = "UNBOX")
+    public static abstract class ForeignUnboxNode extends Node {
+
+        @Child private Node findContextNode;
+
+        private final ConditionProfile convertProfile = ConditionProfile.createBinaryProfile();
+
+        @CompilationFinal private RubyContext context;
+
+        protected Object access(CExtString cExtString) {
+            final Rope currentRope = Layouts.STRING.getRope(cExtString.getString());
+
+            final NativeRope nativeRope;
+
+            if (convertProfile.profile(currentRope instanceof NativeRope)) {
+                nativeRope = (NativeRope) currentRope;
+            } else {
+                if (findContextNode == null) {
+                    CompilerDirectives.transferToInterpreterAndInvalidate();
+                    findContextNode = insert(RubyLanguage.INSTANCE.unprotectedCreateFindContextNode());
+                    context = RubyLanguage.INSTANCE.unprotectedFindContext(findContextNode);
+                }
+
+                nativeRope = new NativeRope(context.getNativePlatform().getSimpleNativeMemoryManager(), currentRope.getBytes(), currentRope.getEncoding(), currentRope.characterLength());
+                Layouts.STRING.setRope(cExtString.getString(), nativeRope);
+            }
+
+            return nativeRope.getNativePointer().getAddress();
         }
 
     }
