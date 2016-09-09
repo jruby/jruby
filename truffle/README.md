@@ -16,12 +16,12 @@ University Linz](http://ssw.jku.at).
 * Benoit Daloze
 * Kevin Menard
 * Petr Chalupa
+* Brandon Fish
 * Thomas Würthinger
 * Matthias Grimmer
 * Josef Haider
 * Fabio Niephaus
 * Matthias Springer
-* Brandon Fish
 * Lucas Allan Amorim
 * Aditya Bhardwaj
 
@@ -44,13 +44,6 @@ But you can also build it yourself, which you will need to do if you are on the
 
 https://github.com/jruby/jruby/wiki/Building-Graal
 
-You then need to set the `JAVACMD` environment variable as described on those
-pages, and tell the JVM to use the Graal compiler.
-
-```
-$ JAVACMD=... bin/jruby -X+T -J-Djvmci.Compiler=graal ...
-```
-
 ### What to expect
 
 JRuby+Truffle is a research project and is not yet a finished product. Arbitrary
@@ -60,14 +53,6 @@ tuned. We are at least a year away from being able to run significant programs
 without needing new methods to be implemented.
 
 Windows is currently not supported.
-
-### How we benchmark
-
-We use the [bench9000](https://github.com/jruby/bench9000) benchmarking tool.
-This includes classic synthetic benchmarks such as mandelbrot, n-body and
-fannkuch, and also kernels from two real-word Ruby gems,
-[chunky_png](https://github.com/wvanbergen/chunky_png) and
-[psd.rb](https://github.com/layervault/psd.rb).
 
 ## Research
 
@@ -92,15 +77,13 @@ There are runtime configuration options that can be set on the command line with
 
 ### Truffle Module
 
-The `Truffle`, `Truffle::Debug` and `Truffle::Interop` modules include
-Truffle-specific functionality. They're documented for the current development
-version at http://lafo.ssw.uni-linz.ac.at/graalvm/jruby/doc/.
+The `Truffle`, `Truffle::Graal`, `Truffle::Debug` and `Truffle::Interop` modules include
+Truffle-specific functionality. They aren't documented yet, so you'll need to read the
+source to know what you can do.
 
 ### Debugger
 
-See the documentation of the `Truffle::Debug` module at
-http://lafo.ssw.uni-linz.ac.at/graalvm/jruby/doc/. `Truffle::Debug.break` will
-enter a shell and allow to introspect the program.
+`Truffle::Debug.break` will enter a shell and allow to introspect the program.
 
 If you don't want to modify the program to include a call to
 `Truffle::Debug.break` you can break the main thread externally. Run with the
@@ -122,7 +105,7 @@ dump the current call stack of all threads:
 
 Truffle is built as part of JRuby, but if you are working on the Truffle code
 base you may appreciate the `jt` tool. To use it alias it in your shell
-`function jt { ruby tool/jt.rb $@; }`, then run `jt --help` to see the commands
+`function jt { ruby tool/jt.rb "$@"; }`, then run `jt --help` to see the commands
 available. You need a standard `ruby` from your system to run the tool.
 
 For example:
