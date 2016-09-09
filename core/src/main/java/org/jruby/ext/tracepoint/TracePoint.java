@@ -86,27 +86,38 @@ public class TracePoint extends RubyObject {
         final EnumSet<RubyEvent> eventSet = _eventSet;
         hook = new EventHook() {
             @Override
-            public synchronized void eventHandler(ThreadContext context, String eventName, String file, int line, String name, IRubyObject type) {
+            public synchronized void event(ThreadContext context, RubyEvent event, String file, int line, String name, IRubyObject type) {
                 if (!enabled || context.isWithinTrace()) return;
                 
                 inside = true;
+
+                if (file == null) file = "(ruby)";
+                if (type == null) type = context.runtime.getFalse();
+
+                IRubyObject binding;
+                if (event == RubyEvent.THREAD_BEGIN || event == RubyEvent.THREAD_END) {
+                    binding = context.nil;
+                } else {
+                    binding = RubyBinding.newBinding(context.runtime, context.currentBinding());
+                }
+
+                context.preTrace();
+
+                // FIXME: get return value
+                update(eventName, file, line, name, type, context.getErrorInfo(), context.nil, binding);
+
                 try {
-                    if (file == null) file = "(ruby)";
-                    if (type == null) type = context.runtime.getFalse();
-
-                    RubyBinding binding = RubyBinding.newBinding(context.runtime, context.currentBinding());
-
-                    context.preTrace();
-                    
-                    // FIXME: get return value
-                    update(eventName, file, line, name, type, context.getErrorInfo(), context.nil, binding);
-                
                     block.yieldSpecific(context, TracePoint.this);
                 } finally {
                     update(null, null, line, null, context.nil, context.nil, context.nil, context.nil);
                     context.postTrace();
                     inside = false;
                 }
+            }
+
+            @Override
+            public void eventHandler(ThreadContext context, String eventName, String file, int line, String name, IRubyObject type) {
+                event(context, RubyEvent.fromName(eventName), file, line, name, type);
             }
 
             @Override

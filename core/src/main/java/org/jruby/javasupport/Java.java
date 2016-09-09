@@ -52,16 +52,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.jcodings.Encoding;
 
-import org.jruby.Ruby;
-import org.jruby.RubyArray;
-import org.jruby.RubyBasicObject;
-import org.jruby.RubyClass;
-import org.jruby.RubyClassPathVariable;
-import org.jruby.RubyInstanceConfig;
-import org.jruby.RubyModule;
-import org.jruby.RubyObject;
-import org.jruby.RubyProc;
-import org.jruby.RubyString;
+import org.jruby.*;
 import org.jruby.javasupport.binding.Initializer;
 import org.jruby.javasupport.proxy.JavaProxyClass;
 import org.jruby.javasupport.proxy.JavaProxyConstructor;
@@ -95,12 +86,7 @@ import org.jruby.java.proxies.JavaProxy;
 import org.jruby.java.proxies.RubyObjectHolderProxy;
 import org.jruby.java.util.SystemPropertiesMap;
 import org.jruby.javasupport.proxy.JavaProxyClassFactory;
-import org.jruby.util.OneShotClassLoader;
-import org.jruby.util.ByteList;
-import org.jruby.util.ClassDefiningClassLoader;
-import org.jruby.util.IdUtil;
-import org.jruby.util.JRubyClassLoader;
-import org.jruby.util.SafePropertyAccessor;
+import org.jruby.util.*;
 import org.jruby.util.cli.Options;
 import org.jruby.util.collections.NonBlockingHashMapLong;
 
@@ -577,7 +563,7 @@ public class Java implements Library {
     // called for Ruby sub-classes of a Java class
     private static void setupJavaSubclass(final ThreadContext context, final RubyClass subclass) {
 
-        subclass.getInstanceVariables().setInstanceVariable("@java_proxy_class", context.nil);
+        subclass.setInstanceVariable("@java_proxy_class", context.nil);
 
         // Subclasses of Java classes can safely use ivars, so we set this to silence warnings
         subclass.setCacheProxy(true);
@@ -598,41 +584,129 @@ public class Java implements Library {
 
     public static class JCreateMethod extends JavaMethodN implements CallableSelector.CallableCache<JavaProxyConstructor> {
 
-        private final NonBlockingHashMapLong<JavaProxyConstructor> cache = new NonBlockingHashMapLong<JavaProxyConstructor>(8);
+        private final NonBlockingHashMapLong<JavaProxyConstructor> cache = new NonBlockingHashMapLong<>(8);
 
         JCreateMethod(RubyModule cls) {
             super(cls, PUBLIC);
         }
 
+        private static JavaProxyClass getProxyClass(final IRubyObject self) {
+            final RubyClass metaClass = self.getMetaClass();
+            IRubyObject proxyClass = metaClass.getInstanceVariable("@java_proxy_class");
+            if (proxyClass == null || proxyClass.isNil()) { // lazy (proxy) class generation ... on JavaSubClass.new
+                proxyClass = JavaProxyClass.getProxyClass(self.getRuntime(), metaClass);
+                metaClass.setInstanceVariable("@java_proxy_class", proxyClass);
+            }
+            return (JavaProxyClass) proxyClass;
+        }
+
         @Override
-        public IRubyObject call(final ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
-            IRubyObject proxyClass = self.getMetaClass().getInstanceVariables().getInstanceVariable("@java_proxy_class");
-            if (proxyClass == null || proxyClass.isNil()) {
-                proxyClass = JavaProxyClass.get_with_class(self, self.getMetaClass());
-                self.getMetaClass().getInstanceVariables().setInstanceVariable("@java_proxy_class", proxyClass);
+        public final IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
+            return call(context, self, clazz, name, IRubyObject.NULL_ARRAY);
+        }
+
+        @Override
+        public final IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, Block block) {
+            final JavaProxyConstructor[] constructors = getProxyClass(self).getConstructors();
+
+            final JavaProxyConstructor matching;
+            switch (constructors.length) {
+                case 1: matching = matchConstructor0ArityOne(context, constructors, arg0); break;
+                default: matching = matchConstructorArityOne(context, constructors, arg0);
             }
 
-            final int argsLength = args.length;
-            final JavaProxyConstructor[] constructors = ((JavaProxyClass) proxyClass).getConstructors();
-            ArrayList<JavaProxyConstructor> forArity = findCallablesForArity(argsLength, constructors);
+            JavaObject newObject = matching.newInstance(self, arg0);
+            return JavaUtilities.set_java_object(self, self, newObject);
+        }
+
+        @Override
+        public final IRubyObject call(final ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
+            final int arity = args.length;
+            final JavaProxyConstructor[] constructors = getProxyClass(self).getConstructors();
+
+            final JavaProxyConstructor matching;
+            switch (constructors.length) {
+                case 1: matching = matchConstructor0(context, constructors, arity, args); break;
+                default: matching = matchConstructor(context, constructors, arity, args);
+            }
+
+            JavaObject newObject = matching.newInstance(self, args);
+            return JavaUtilities.set_java_object(self, self, newObject);
+        }
+
+        // assumes only 1 constructor exists!
+        private JavaProxyConstructor matchConstructor0ArityOne(final ThreadContext context,
+            final JavaProxyConstructor[] constructors, final IRubyObject arg0) {
+            JavaProxyConstructor forArity = checkCallableForArity(1, constructors, 0);
+
+            if ( forArity == null ) {
+                throw context.runtime.newArgumentError("wrong number of arguments for constructor");
+            }
+
+            final JavaProxyConstructor matching = CallableSelector.matchingCallableArityOne(
+                context.runtime, this, new JavaProxyConstructor[] { forArity }, arg0
+            );
+
+            if ( matching == null ) {
+                throw context.runtime.newArgumentError("wrong number of arguments for constructor");
+            }
+            return matching;
+        }
+
+        // assumes only 1 constructor exists!
+        private JavaProxyConstructor matchConstructor0(final ThreadContext context,
+            final JavaProxyConstructor[] constructors, final int arity, final IRubyObject[] args) {
+            JavaProxyConstructor forArity = checkCallableForArity(arity, constructors, 0);
+
+            if ( forArity == null ) {
+                throw context.runtime.newArgumentError("wrong number of arguments for constructor");
+            }
+
+            final JavaProxyConstructor matching = CallableSelector.matchingCallableArityN(
+                context.runtime, this, new JavaProxyConstructor[] { forArity }, args
+            );
+
+            if ( matching == null ) {
+                throw context.runtime.newArgumentError("wrong number of arguments for constructor");
+            }
+            return matching;
+        }
+
+        private JavaProxyConstructor matchConstructorArityOne(final ThreadContext context,
+            final JavaProxyConstructor[] constructors, final IRubyObject arg0) {
+            ArrayList<JavaProxyConstructor> forArity = findCallablesForArity(1, constructors);
+
+            if ( forArity.size() == 0 ) {
+                throw context.runtime.newArgumentError("wrong number of arguments for constructor");
+            }
+
+            final JavaProxyConstructor matching = CallableSelector.matchingCallableArityOne(
+                    context.runtime, this, forArity.toArray(new JavaProxyConstructor[forArity.size()]), arg0
+            );
+
+            if ( matching == null ) {
+                throw context.runtime.newArgumentError("wrong number of arguments for constructor");
+            }
+            return matching;
+        }
+
+        // generic (slowest) path
+        private JavaProxyConstructor matchConstructor(final ThreadContext context,
+            final JavaProxyConstructor[] constructors, final int arity, final IRubyObject... args) {
+            ArrayList<JavaProxyConstructor> forArity = findCallablesForArity(arity, constructors);
 
             if ( forArity.size() == 0 ) {
                 throw context.runtime.newArgumentError("wrong number of arguments for constructor");
             }
 
             final JavaProxyConstructor matching = CallableSelector.matchingCallableArityN(
-                    context.runtime, this,
-                    forArity.toArray(new JavaProxyConstructor[forArity.size()]), args
+                context.runtime, this, forArity.toArray(new JavaProxyConstructor[forArity.size()]), args
             );
 
             if ( matching == null ) {
                 throw context.runtime.newArgumentError("wrong number of arguments for constructor");
             }
-
-            final Object[] javaArgs = convertArguments(matching, args);
-            JavaObject newObject = matching.newInstance(self, javaArgs);
-
-            return JavaUtilities.set_java_object(self, self, newObject);
+            return matching;
         }
 
         public final JavaProxyConstructor getSignature(int signatureCode) {
@@ -644,23 +718,28 @@ public class Java implements Library {
         }
     }
 
-    // NOTE: move to RubyToJavaInvoker for re-use ?!
     static <T extends ParameterTypes> ArrayList<T> findCallablesForArity(final int arity, final T[] callables) {
-        final ArrayList<T> forArity = new ArrayList<T>(callables.length);
+        final ArrayList<T> forArity = new ArrayList<>(callables.length);
         for ( int i = 0; i < callables.length; i++ ) {
-            final T callable = callables[i];
-            final int callableArity = callable.getArity();
-
-            if ( callableArity == arity ) forArity.add(callable);
-            // for arity 2 :
-            // - callable arity 1 ([]...) is OK
-            // - callable arity 2 (arg1, []...) is OK
-            // - callable arity 3 (arg1, arg2, []...) is OK
-            else if ( callable.isVarArgs() && callableArity - 1 <= arity ) {
-                forArity.add(callable);
-            }
+            final T found = checkCallableForArity(arity, callables, i);
+            if ( found != null ) forArity.add(found);
         }
         return forArity;
+    }
+
+    private static <T extends ParameterTypes> T checkCallableForArity(final int arity, final T[] callables, final int index) {
+        final T callable = callables[index];
+        final int callableArity = callable.getArity();
+
+        if ( callableArity == arity ) return callable;
+        // for arity 2 :
+        // - callable arity 1 ([]...) is OK
+        // - callable arity 2 (arg1, []...) is OK
+        // - callable arity 3 (arg1, arg2, []...) is OK
+        if ( callable.isVarArgs() && callableArity - 1 <= arity ) {
+            return callable;
+        }
+        return null;
     }
 
     // package scheme 2: separate module for each full package name, constructed
@@ -1026,7 +1105,7 @@ public class Java implements Library {
             return callProc(context, self, newArgs);
         }
 
-        private IRubyObject callProc(ThreadContext context, IRubyObject self, IRubyObject[] procArgs) {
+        private static IRubyObject callProc(ThreadContext context, IRubyObject self, IRubyObject[] procArgs) {
             if ( ! ( self instanceof RubyProc ) ) {
                 throw context.runtime.newTypeError("interface impl method_missing for block used with non-Proc object");
             }
@@ -1216,9 +1295,7 @@ public class Java implements Library {
             case 2 :
                 interfaces = new Class[] { interfaces[0], interfaces[1], RubyObjectHolderProxy.class };
             default :
-                final Class[] tmp_interfaces = interfaces;
-                interfaces = new Class[length + 1];
-                System.arraycopy(tmp_interfaces, 0, interfaces, 0, length);
+                interfaces = ArraySupport.newCopy(interfaces, length + 1);
                 interfaces[length] = RubyObjectHolderProxy.class;
         }
 

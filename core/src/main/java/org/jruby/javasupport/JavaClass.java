@@ -215,7 +215,7 @@ public class JavaClass extends JavaObject {
     }
 
     /*
-    public static Class<?> gerJavaClass(final ThreadContext context, final RubyModule type) {
+    public static Class<?> getJavaClass(final ThreadContext context, final RubyModule type) {
         IRubyObject java_class = java_class(context, type);
         if ( java_class == context.nil ) return null;
         return resolveClassType(context, java_class).javaClass();

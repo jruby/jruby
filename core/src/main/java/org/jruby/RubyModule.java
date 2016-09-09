@@ -82,7 +82,6 @@ import org.jruby.internal.runtime.methods.ProcMethod;
 import org.jruby.internal.runtime.methods.Scoping;
 import org.jruby.internal.runtime.methods.SynchronizedDynamicMethod;
 import org.jruby.internal.runtime.methods.UndefinedMethod;
-import org.jruby.internal.runtime.methods.WrapperMethod;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
@@ -454,7 +453,11 @@ public class RubyModule extends RubyObject {
     // note that addMethod now does its own put, so any change made to
     // functionality here should be made there as well
     private void putMethod(String name, DynamicMethod method) {
-        if (hasPrepends()) method = new WrapperMethod(methodLocation, method, method.getVisibility());
+        if (hasPrepends()) {
+            method = method.dup();
+            method.setImplementationClass(methodLocation);
+        }
+
         methodLocation.getMethodsForWrite().put(name, method);
 
         getRuntime().addProfiledMethod(name, method);
@@ -1035,8 +1038,7 @@ public class RubyModule extends RubyObject {
                 if (Ruby.getClassLoader().getResource(fullPath) == null) {
                     LOG.debug("could not find it, using default populator");
                 } else {
-                    Class populatorClass = Class.forName(qualifiedName + AnnotationBinder.POPULATOR_SUFFIX);
-                    return (TypePopulator) populatorClass.newInstance();
+                    return (TypePopulator) Class.forName(fullName).newInstance();
                 }
             } catch (Throwable ex) {
                 if (LOG.isDebugEnabled()) LOG.debug("could not find populator, using default (" + ex + ')');
@@ -1194,7 +1196,10 @@ public class RubyModule extends RubyObject {
      * @param method The method to bind
      */
     public final void addMethodAtBootTimeOnly(String name, DynamicMethod method) {
-        if (hasPrepends()) method = new WrapperMethod(methodLocation, method, method.getVisibility());
+        if (hasPrepends()) {
+            method = method.dup();
+            method.setImplementationClass(methodLocation);
+        }
 
         methodLocation.getMethodsForWrite().put(name, method);
 
@@ -1776,7 +1781,11 @@ public class RubyModule extends RubyObject {
                 method.setVisibility(visibility);
             } else {
                 // FIXME: Why was this using a FullFunctionCallbackMethod before that did callSuper?
-                methodLocation.addMethod(name, new WrapperMethod(this, method, visibility));
+                DynamicMethod newMethod = method.dup();
+                newMethod.setImplementationClass(this);
+                newMethod.setVisibility(visibility);
+
+                methodLocation.addMethod(name, newMethod);
             }
 
             invalidateCoreClasses();
@@ -1971,7 +1980,9 @@ public class RubyModule extends RubyObject {
 
             checkValidBindTargetFrom(context, (RubyModule)method.owner(context));
 
-            newMethod = new WrapperMethod(this, method.getMethod(), visibility);
+            newMethod = method.getMethod().dup();
+            newMethod.setImplementationClass(this);
+            newMethod.setVisibility(visibility);
         } else {
             throw runtime.newTypeError("wrong argument type " + arg1.getType().getName() + " (expected Proc/Method)");
         }
@@ -2728,7 +2739,10 @@ public class RubyModule extends RubyObject {
             for (int i = 0; i < args.length; i++) {
                 String name = args[i].asJavaString().intern();
                 DynamicMethod method = deepMethodSearch(name, runtime);
-                getSingletonClass().addMethod(name, new WrapperMethod(getSingletonClass(), method, PUBLIC));
+                DynamicMethod newMethod = method.dup();
+                newMethod.setImplementationClass(getSingletonClass());
+                newMethod.setVisibility(PUBLIC);
+                getSingletonClass().addMethod(name, newMethod);
                 callMethod(context, "singleton_method_added", context.runtime.fastNewSymbol(name));
             }
         }
@@ -4407,19 +4421,21 @@ public class RubyModule extends RubyObject {
         return autoload == null ? null : autoload.getFile();
     }
 
-    private static void define(RubyModule module, JavaMethodDescriptor desc, String simpleName, DynamicMethod dynamicMethod) {
+    private static void define(RubyModule module, JavaMethodDescriptor desc, final String simpleName, DynamicMethod dynamicMethod) {
         JRubyMethod jrubyMethod = desc.anno;
+        final String[] names = jrubyMethod.name();
+        final String[] aliases = jrubyMethod.alias();
         // check for frame field reads or writes
         CallConfiguration needs = CallConfiguration.valueOf(AnnotationHelper.getCallerCallConfigNameByAnno(jrubyMethod));
 
         if (needs.framing() == Framing.Full) {
-            Set<String> frameAwareMethods = new HashSet<String>();
-            AnnotationHelper.addMethodNamesToSet(frameAwareMethods, jrubyMethod, simpleName);
+            Collection<String> frameAwareMethods = new ArrayList<>(4); // added to a Set - thus no need for another Set
+            AnnotationHelper.addMethodNamesToSet(frameAwareMethods, simpleName, names, aliases);
             MethodIndex.FRAME_AWARE_METHODS.addAll(frameAwareMethods);
         }
         if (needs.scoping() == Scoping.Full) {
-            Set<String> scopeAwareMethods = new HashSet<String>();
-            AnnotationHelper.addMethodNamesToSet(scopeAwareMethods, jrubyMethod, simpleName);
+            Collection<String> scopeAwareMethods = new ArrayList<>(4); // added to a Set - thus no need for another Set
+            AnnotationHelper.addMethodNamesToSet(scopeAwareMethods, simpleName, names, aliases);
             MethodIndex.SCOPE_AWARE_METHODS.addAll(scopeAwareMethods);
         }
 
@@ -4429,38 +4445,30 @@ public class RubyModule extends RubyObject {
             singletonClass = module.getSingletonClass();
             dynamicMethod.setImplementationClass(singletonClass);
 
-            String baseName;
-            if (jrubyMethod.name().length == 0) {
+            final String baseName;
+            if (names.length == 0) {
                 baseName = desc.name;
                 singletonClass.addMethod(baseName, dynamicMethod);
             } else {
-                baseName = jrubyMethod.name()[0];
-                for (String name : jrubyMethod.name()) {
-                    singletonClass.addMethod(name, dynamicMethod);
-                }
+                baseName = names[0];
+                for (String name : names) singletonClass.addMethod(name, dynamicMethod);
             }
 
-            if (jrubyMethod.alias().length > 0) {
-                for (String alias : jrubyMethod.alias()) {
-                    singletonClass.defineAlias(alias, baseName);
-                }
+            if (aliases.length > 0) {
+                for (String alias : aliases) singletonClass.defineAlias(alias, baseName);
             }
         } else {
             String baseName;
-            if (jrubyMethod.name().length == 0) {
+            if (names.length == 0) {
                 baseName = desc.name;
                 module.getMethodLocation().addMethod(baseName, dynamicMethod);
             } else {
-                baseName = jrubyMethod.name()[0];
-                for (String name : jrubyMethod.name()) {
-                    module.getMethodLocation().addMethod(name, dynamicMethod);
-                }
+                baseName = names[0];
+                for (String name : names) module.getMethodLocation().addMethod(name, dynamicMethod);
             }
 
-            if (jrubyMethod.alias().length > 0) {
-                for (String alias : jrubyMethod.alias()) {
-                    module.defineAlias(alias, baseName);
-                }
+            if (aliases.length > 0) {
+                for (String alias : aliases) module.defineAlias(alias, baseName);
             }
 
             if (jrubyMethod.module()) {
@@ -4470,20 +4478,16 @@ public class RubyModule extends RubyObject {
                 moduleMethod.setImplementationClass(singletonClass);
                 moduleMethod.setVisibility(PUBLIC);
 
-                if (jrubyMethod.name().length == 0) {
+                if (names.length == 0) {
                     baseName = desc.name;
                     singletonClass.addMethod(desc.name, moduleMethod);
                 } else {
-                    baseName = jrubyMethod.name()[0];
-                    for (String name : jrubyMethod.name()) {
-                        singletonClass.addMethod(name, moduleMethod);
-                    }
+                    baseName = names[0];
+                    for (String name : names) singletonClass.addMethod(name, moduleMethod);
                 }
 
-                if (jrubyMethod.alias().length > 0) {
-                    for (String alias : jrubyMethod.alias()) {
-                        singletonClass.defineAlias(alias, baseName);
-                    }
+                if (aliases.length > 0) {
+                    for (String alias : aliases) singletonClass.defineAlias(alias, baseName);
                 }
             }
         }

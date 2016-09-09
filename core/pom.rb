@@ -190,6 +190,7 @@ project 'JRuby Core' do
                                        '-J-Duser.language=en',
                                        '-J-Dfile.encoding=UTF-8',
                                        '-J-Xbootclasspath/p:${unsafe.jar}',
+                                       '-Xbootclasspath/p:${unsafe.jar}',
                                        '-J-Xmx${jruby.compile.memory}' ] )
     execute_goals( 'compile',
                    :id => 'populators',
@@ -198,6 +199,7 @@ project 'JRuby Core' do
                                        '-J-Duser.language=en',
                                        '-J-Dfile.encoding=UTF-8',
                                        '-J-Xbootclasspath/p:${unsafe.jar}',
+                                       '-Xbootclasspath/p:${unsafe.jar}',
                                        '-J-Xmx${jruby.compile.memory}' ],
                    'includes' => [ 'org/jruby/gen/**/*.java' ] )
     execute_goals( 'compile',
@@ -271,7 +273,7 @@ project 'JRuby Core' do
                                          'mainClass' => 'org.jruby.Main' } ] )
   end
 
-  [:release, :main, :osgi, :j2ee, :complete, :dist, :'jruby_complete_jar_extended', :'jruby-jars' ].each do |name|
+  [:all, :release, :main, :osgi, :j2ee, :complete, :dist, :'jruby_complete_jar_extended', :'jruby-jars' ].each do |name|
     profile name do
       plugin :shade do
         execute_goals( 'shade',

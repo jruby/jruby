@@ -3,6 +3,7 @@ package org.jruby.runtime.scope;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ArraySupport;
 
 /**
  * Represents the the dynamic portion of scoping information.  The variableValues are the
@@ -180,7 +181,7 @@ public class ManyVarsDynamicScope extends DynamicScope {
             IRubyObject values[] = new IRubyObject[staticScope.getNumberOfVariables()];
             
             if (dynamicSize > 0) {
-                System.arraycopy(variableValues, 0, values, 0, dynamicSize);
+                ArraySupport.copy(variableValues, 0, values, 0, dynamicSize);
             }
             
             variableValues = values;

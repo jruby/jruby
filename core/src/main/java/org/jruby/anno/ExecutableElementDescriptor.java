@@ -60,7 +60,8 @@ public class ExecutableElementDescriptor extends MethodDescriptor<ExecutableElem
             for (javax.lang.model.element.Modifier mod : mods) {
                 modifierTmp |= (Integer) Modifier.class.getField(mod.name()).get(null);
             }
-        } catch (Exception e) {
+        }
+        catch (NoSuchFieldException|IllegalAccessException e) {
             throw new RuntimeException(e);
         }
         return modifierTmp;

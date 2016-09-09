@@ -64,6 +64,7 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ArraySupport;
 import org.jruby.util.ByteList;
 import org.jruby.util.ConvertBytes;
 import org.jruby.util.IdUtil;
@@ -1571,9 +1572,7 @@ public class RubyKernel {
                 runtime.getENV().merge_bang(context, env, Block.NULL_BLOCK);
             }
             // drop the first element for calling systemCommon()
-            IRubyObject[] rest = new IRubyObject[args.length - 1];
-            System.arraycopy(args, 1, rest, 0, args.length - 1);
-            args = rest;
+            args = ArraySupport.newCopy(args, 1, args.length - 1);
         }
         int resultCode = systemCommon(context, recv, args);
         switch (resultCode) {
@@ -1796,23 +1795,17 @@ public class RubyKernel {
         }
 
         String name = RubySymbol.objectToSymbolString(args[0]);
-        int newArgsLength = args.length - 1;
 
-        IRubyObject[] newArgs;
-        if (newArgsLength == 0) {
-            newArgs = IRubyObject.NULL_ARRAY;
-        } else {
-            newArgs = new IRubyObject[newArgsLength];
-            System.arraycopy(args, 1, newArgs, 0, newArgs.length);
-        }
+        final int length = args.length - 1;
+        args = ( length == 0 ) ? IRubyObject.NULL_ARRAY : ArraySupport.newCopy(args, 1, length);
 
         DynamicMethod method = recv.getMetaClass().searchMethod(name);
 
         if (method.isUndefined() || method.getVisibility() != PUBLIC) {
-            return Helpers.callMethodMissing(context, recv, method.getVisibility(), name, CallType.NORMAL, newArgs, block);
+            return Helpers.callMethodMissing(context, recv, method.getVisibility(), name, CallType.NORMAL, args, block);
         }
 
-        return method.call(context, recv, recv.getMetaClass(), name, newArgs, block);
+        return method.call(context, recv, recv.getMetaClass(), name, args, block);
     }
 
     /*
@@ -1828,17 +1821,17 @@ public class RubyKernel {
 
     @JRubyMethod(name = "===", required = 1)
     public static IRubyObject op_eqq(ThreadContext context, IRubyObject self, IRubyObject other) {
-        return ((RubyBasicObject)self).op_eqq(context, other);
+        return ((RubyBasicObject) self).op_eqq(context, other);
     }
 
     @JRubyMethod(name = "<=>", required = 1)
     public static IRubyObject op_cmp(ThreadContext context, IRubyObject self, IRubyObject other) {
-        return ((RubyBasicObject)self).op_cmp(context, other);
+        return ((RubyBasicObject) self).op_cmp(context, other);
     }
 
     @JRubyMethod(name = "initialize_copy", required = 1, visibility = PRIVATE)
     public static IRubyObject initialize_copy(IRubyObject self, IRubyObject original) {
-        return ((RubyBasicObject)self).initialize_copy(original);
+        return ((RubyBasicObject) self).initialize_copy(original);
     }
 
     // Replaced in jruby/kernel/kernel.rb with Ruby for better caching

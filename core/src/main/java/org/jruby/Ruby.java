@@ -61,7 +61,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.invokedynamic.InvokeDynamicSupport;
-import org.jruby.util.ClassDefiningClassLoader;
 import org.objectweb.asm.util.TraceClassVisitor;
 
 import jnr.constants.Constant;
@@ -142,8 +141,10 @@ import org.jruby.runtime.profile.builtin.ProfiledMethods;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
 import org.jruby.threading.DaemonThreadFactory;
 import org.jruby.util.ByteList;
+import org.jruby.util.ClassDefiningClassLoader;
 import org.jruby.util.DefinedMessage;
 import org.jruby.util.JRubyClassLoader;
+import org.jruby.util.SecurityHelper;
 import org.jruby.util.SelfFirstJRubyClassLoader;
 import org.jruby.util.IOInputStream;
 import org.jruby.util.IOOutputStream;
@@ -169,7 +170,6 @@ import java.io.PrintWriter;
 import java.lang.invoke.MethodHandle;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
 import java.net.BindException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -1284,18 +1284,7 @@ public final class Ruby implements Constantizable {
             loadService.require("jruby");
         }
 
-        // attempt to enable unlimited-strength crypto on OpenJDK
-        try {
-            Class jceSecurity = Class.forName("javax.crypto.JceSecurity");
-            Field isRestricted = jceSecurity.getDeclaredField("isRestricted");
-            isRestricted.setAccessible(true);
-            isRestricted.set(null, false);
-            isRestricted.setAccessible(false);
-        } catch (Exception e) {
-            if (isDebug() || LOG.isDebugEnabled()) {
-                LOG.debug("unable to enable unlimited-strength crypto", e);
-            }
-        }
+        SecurityHelper.checkCryptoRestrictions(this);
 
         // out of base boot mode
         bootingCore = false;

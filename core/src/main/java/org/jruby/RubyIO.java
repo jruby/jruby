@@ -187,6 +187,14 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
         fptr = io.getOpenFileChecked();
 
+        // If we can't use native IO, always force stdio to expected fileno.
+        if (!runtime.getPosix().isNative() || Platform.IS_WINDOWS) {
+            // Use standard stdio filenos if we're using System.in et al.
+            if (f == System.in) {
+                fptr.fd().realFileno = 0;
+            }
+        }
+
         prepStdioEcflags(fptr, fmode);
         fptr.stdio_file = f;
 
@@ -200,6 +208,16 @@ public class RubyIO extends RubyObject implements IOEncodable {
         RubyIO io = prepIO(runtime, c, fmode | OpenFile.PREP | EncodingUtils.DEFAULT_TEXTMODE, klass, path);
 
         fptr = io.getOpenFileChecked();
+
+        // If we can't use native IO, always force stdio to expected fileno.
+        if (!runtime.getPosix().isNative() || Platform.IS_WINDOWS) {
+            // Use standard stdio filenos if we're using System.in et al.
+            if (f == System.out) {
+                fptr.fd().realFileno = 1;
+            } else if (f == System.err) {
+                fptr.fd().realFileno = 2;
+            }
+        }
 
         prepStdioEcflags(fptr, fmode);
         fptr.stdio_file = f;
@@ -1754,10 +1772,18 @@ public class RubyIO extends RubyObject implements IOEncodable {
         if (fptr.io_fflush(context) < 0)
             throw runtime.newSystemCallError("");
 
-//        # ifndef _WIN32	/* already called in io_fflush() */
-//        if ((int)rb_thread_io_blocking_region(nogvl_fsync, fptr, fptr->fd) < 0)
-//            rb_sys_fail_path(fptr->pathv);
-//        # endif
+        if (!Platform.IS_WINDOWS) { /* already called in io_fflush() */
+            try {
+                if (fptr.fileChannel() != null) fptr.fileChannel().force(true);
+                if (fptr.fd().chNative != null) {
+                    int ret = runtime.getPosix().fsync(fptr.fd().chNative.getFD());
+                    if (ret < 0) throw runtime.newErrnoFromInt(runtime.getPosix().errno());
+                }
+            } catch (IOException ioe) {
+                throw runtime.newIOErrorFromException(ioe);
+            }
+        }
+
         return RubyFixnum.zero(runtime);
     }
 

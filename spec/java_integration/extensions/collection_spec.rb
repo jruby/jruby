@@ -222,4 +222,53 @@ describe "Collection Ruby extensions" do
       expect(cdr).to eq(:y)
     end
   end
+
+  describe 'Ruby class' do
+
+    require 'delegate'
+
+    class RubyCollectionWrapper < Delegator
+      include java.util.Collection
+
+      def initialize(coll) @coll = coll end
+
+      def size; @coll.empty? ? -1 : @coll.size end
+
+      def __getobj__ ; @coll  end
+    end
+
+    it 'reports expected size' do
+      obj = Object.new
+      def obj.empty?; true end
+
+      wrapper = RubyCollectionWrapper.new(obj)
+      expect( wrapper.size ).to eql -1
+
+      wrapper = RubyCollectionWrapper.new java.util.Collections::EMPTY_SET
+      expect( wrapper.size ).to eql -1
+
+      wrapper = RubyCollectionWrapper.new coll = java.util.LinkedList.new
+      coll.add 1; coll.add 2
+      wrapper.add 3
+      expect( wrapper.size ).to eql 3
+    end
+
+    it 'is usable as a Collection' do
+      wrapper = RubyCollectionWrapper.new coll = java.util.LinkedHashSet.new([1, 2])
+      java.util.Collections.addAll wrapper, 1, 2, 3
+      expect( wrapper.size ).to eql 3
+      expect( wrapper.toString ).to eql '[1, 2, 3]'
+    end
+
+    it 'iterates as an Enumerable' do
+      wrapper = RubyCollectionWrapper.new coll = java.util.LinkedHashSet.new([1, 2])
+      elems = [] ; wrapper.map { |el| elems << el * 3 }
+      expect( elems ).to eql [3, 6]
+
+      elems = [] ; wrapper.each_with_index { |el, i| elems << [el, i] }
+      expect( elems ).to eql [[1, 0], [2, 1]]
+    end
+
+  end
+
 end

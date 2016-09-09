@@ -10,6 +10,13 @@ describe "Enumerator::Yielder#<<" do
     ary.should == [1]
   end
 
+  it "doesn't double-wrap Arrays" do
+    yields = []
+    y = enumerator_class::Yielder.new {|args| yields << args }
+    y << [1]
+    yields.should == [[1]]
+  end
+
   it "returns self" do
     y = enumerator_class::Yielder.new {|x| x + 1}
     (y << 1).should equal(y)

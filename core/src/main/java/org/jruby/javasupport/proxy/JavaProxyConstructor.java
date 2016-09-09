@@ -43,6 +43,7 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.java.invokers.RubyToJavaInvoker;
 import org.jruby.javasupport.JavaObject;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.javasupport.ParameterTypes;
@@ -52,6 +53,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ArraySupport;
 
 import static org.jruby.javasupport.JavaCallable.inspectParameterTypes;
 
@@ -81,9 +83,8 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
         this.declaringProxyClass = proxyClass;
         this.proxyConstructor = constructor;
         Class<?>[] parameterTypes = constructor.getParameterTypes();
-        final int len = parameterTypes.length - 1; // last argument is our invocation handler
         // see JavaProxyClassFactory's generateConstructor ...
-        System.arraycopy(parameterTypes, 0, actualParameterTypes = new Class<?>[len], 0, len);
+        this.actualParameterTypes = ArraySupport.newCopy(parameterTypes, parameterTypes.length - 1);
         this.actualVarArgs = JavaProxyClassFactory.isVarArgs(proxyConstructor);
     }
 
@@ -109,12 +110,13 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
         if ( len != actualParameterTypes.length ) {
             throw new IllegalArgumentException("wrong number of parameters");
         }
+        return newInstanceImpl(ArraySupport.newCopy(args, len + 1), handler); // does args[ len ] = handler;
+    }
 
-        final Object[] argsWithHandler = new Object[ len + 1 ];
-        System.arraycopy(args, 0, argsWithHandler, 0, len);
-        argsWithHandler[ len ] = handler;
-
-        return proxyConstructor.newInstance(argsWithHandler);
+    final Object newInstanceImpl(Object[] argsPlus1, JavaProxyInvocationHandler handler)
+        throws IllegalArgumentException, InstantiationException, IllegalAccessException, InvocationTargetException {
+        argsPlus1[ argsPlus1.length - 1 ] = handler;
+        return proxyConstructor.newInstance(argsPlus1);
     }
 
     @JRubyMethod
@@ -170,11 +172,7 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
         try {
             return JavaObject.wrap(runtime, newInstance(convertedArgs, handler));
         }
-        catch (Exception e) {
-            RaiseException ex = runtime.newArgumentError("Constructor invocation failed: " + e.getMessage());
-            ex.initCause(e);
-            throw ex;
-        }
+        catch (Exception ex) { throw mapInstantiationException(runtime, ex); }
     }
 
     public JavaObject newInstance(final IRubyObject self, Object[] args) throws RaiseException {
@@ -184,12 +182,40 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
         try {
             return JavaObject.wrap(runtime, newInstance(args, handler));
         }
-        catch (Throwable t) {
-            while ( t.getCause() != null ) t = t.getCause();
-            RaiseException ex = runtime.newArgumentError("Constructor invocation failed: " + t.getMessage());
-            ex.initCause(t);
-            throw ex;
+        catch (Throwable ex) { throw mapInstantiationException(runtime, ex); }
+    }
+
+    public final JavaObject newInstance(final IRubyObject self, IRubyObject[] args) throws RaiseException {
+        final Ruby runtime = getRuntime();
+
+        final Object[] javaArgsPlus1 = RubyToJavaInvoker.convertArguments(this, args, +1);
+        JavaProxyInvocationHandler handler = new MethodInvocationHandler(runtime, self);
+        try {
+            return JavaObject.wrap(runtime, newInstanceImpl(javaArgsPlus1, handler));
         }
+        catch (Throwable ex) { throw mapInstantiationException(runtime, ex); }
+    }
+
+    public final JavaObject newInstance(final IRubyObject self, IRubyObject arg0) throws RaiseException {
+        final Ruby runtime = getRuntime();
+
+        final Object[] javaArgsPlus1 = RubyToJavaInvoker.convertArguments(this, arg0, +1);
+        JavaProxyInvocationHandler handler = new MethodInvocationHandler(runtime, self);
+        try {
+            return JavaObject.wrap(runtime, newInstanceImpl(javaArgsPlus1, handler));
+        }
+        catch (Throwable ex) { throw mapInstantiationException(runtime, ex); }
+    }
+
+    private static RaiseException mapInstantiationException(final Ruby runtime, final Throwable e) {
+        Throwable cause = e;
+        while ( cause.getCause() != null ) cause = cause.getCause();
+        final String MSG = "Constructor invocation failed: ";
+        String msg = cause.getLocalizedMessage();
+        msg = msg == null ? ( MSG + e.getClass().getName() ) : ( MSG + msg );
+        RaiseException ex = runtime.newArgumentError(msg);
+        ex.initCause(e);
+        throw ex;
     }
 
     private static final class MethodInvocationHandler implements JavaProxyInvocationHandler {

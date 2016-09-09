@@ -616,7 +616,7 @@ public class IRBuilder {
         switch (args.getNodeType()) {
             case ARGSCATNODE:
             case ARGSPUSHNODE:
-                return new Operand[] { new Splat(build(args)) };
+                return new Operand[] { new Splat(addResultInstr(new BuildSplatInstr(createTemporaryVariable(), build(args), false))) };
             case ARRAYNODE: {
                 Node[] children = ((ListNode) args).children();
                 int numberOfArgs = children.length;
@@ -629,7 +629,7 @@ public class IRBuilder {
                 return builtArgs;
             }
             case SPLATNODE:
-                return new Operand[] { new Splat(buildSplat((SplatNode)args)) };
+                return new Operand[] { new Splat(addResultInstr(new BuildSplatInstr(createTemporaryVariable(), build(args), false))) };
         }
 
         throw new NotCompilableException("Invalid node for call args: " + args.getClass().getSimpleName() + ":" +
@@ -3605,7 +3605,7 @@ public class IRBuilder {
     }
 
     public Operand buildSplat(SplatNode splatNode) {
-        return addResultInstr(new BuildSplatInstr(createTemporaryVariable(), build(splatNode.getValue())));
+        return addResultInstr(new BuildSplatInstr(createTemporaryVariable(), build(splatNode.getValue()), true));
     }
 
     public Operand buildStr(StrNode strNode) {

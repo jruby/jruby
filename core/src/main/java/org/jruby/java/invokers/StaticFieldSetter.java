@@ -13,14 +13,13 @@ public class StaticFieldSetter extends FieldMethodOne {
     }
 
     @Override
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg) {
+    public final IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg) {
         try {
             field.set(null, arg.toJava(field.getType()));
-        } catch (IllegalAccessException iae) {
-            throw context.runtime.newSecurityError(iae.getMessage());
-        } catch (IllegalArgumentException iae) {
-            throw context.runtime.newTypeError(iae.getMessage());
         }
+        catch (IllegalAccessException ex) { return handleSetException(context.runtime, ex); }
+        catch (IllegalArgumentException ex) { return handleSetException(context.runtime, ex); }
         return arg;
     }
+
 }

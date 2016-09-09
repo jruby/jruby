@@ -34,7 +34,7 @@ import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-public abstract class AbstractIRMethod extends DynamicMethod implements IRMethodArgs, PositionAware {
+public abstract class AbstractIRMethod extends DynamicMethod implements IRMethodArgs, PositionAware, Cloneable {
 
     private Signature signature;
     protected final IRScope method;
@@ -88,7 +88,18 @@ public abstract class AbstractIRMethod extends DynamicMethod implements IRMethod
     }
 
     @Override
-    public abstract DynamicMethod dup();
+    public DynamicMethod dup() {
+        return (DynamicMethod) clone();
+    }
+
+    @Override
+    public Object clone() {
+        try {
+            return super.clone();
+        } catch (CloneNotSupportedException cnse) {
+            throw new RuntimeException("not cloneable: " + this);
+        }
+    }
 
     public String getClassName(ThreadContext context) {
         return null;

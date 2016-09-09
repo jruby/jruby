@@ -13,6 +13,7 @@ import org.jruby.javasupport.JavaConstructor;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ArraySupport;
 
 public final class ConstructorInvoker extends RubyToJavaInvoker {
 
@@ -119,17 +120,15 @@ public final class ConstructorInvoker extends RubyToJavaInvoker {
         if (block.isGiven()) {
             JavaProxy proxy = castJavaProxy(self);
 
-            int len = args.length;
-            // too much array creation!
-            Object[] convertedArgs = new Object[len + 1];
-            IRubyObject[] intermediate = new IRubyObject[len + 1];
-            System.arraycopy(args, 0, intermediate, 0, len);
-            intermediate[len] = RubyProc.newProc(context.runtime, block, block.type);
+            final int len = args.length;
 
-            JavaConstructor constructor = (JavaConstructor) findCallable(self, name, intermediate, len + 1);
+            IRubyObject[] newArgs = ArraySupport.newCopy(args, RubyProc.newProc(context.runtime, block, block.type));
+            JavaConstructor constructor = (JavaConstructor) findCallable(self, name, newArgs, len + 1);
             final Class<?>[] paramTypes = constructor.getParameterTypes();
-            for (int i = 0; i < len + 1; i++) {
-                convertedArgs[i] = intermediate[i].toJava(paramTypes[i]);
+
+            Object[] convertedArgs = new Object[len + 1];
+            for (int i = 0; i <= len; i++) {
+                convertedArgs[i] = newArgs[i].toJava(paramTypes[i]);
             }
 
             setAndCacheProxyObject(context, clazz, proxy, constructor.newInstanceDirect(context, convertedArgs));

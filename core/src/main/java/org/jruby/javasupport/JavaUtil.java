@@ -293,15 +293,15 @@ public class JavaUtil {
      * @return java object or passed object
      * @see JavaUtil#isJavaObject(IRubyObject)
      */
-    public static Object unwrapIfJavaObject(final IRubyObject object) {
+    public static <T> T unwrapIfJavaObject(final IRubyObject object) {
         if ( object instanceof JavaProxy ) {
-            return ((JavaProxy) object).getObject();
+            return (T) ((JavaProxy) object).getObject();
         }
         final Object unwrap = object.dataGetStruct();
         if ( unwrap instanceof JavaObject ) {
-            return ((JavaObject) unwrap).getValue();
+            return (T) ((JavaObject) unwrap).getValue();
         }
-        return object;
+        return (T) object; // assume correct instance
     }
 
     @Deprecated // no longer used
@@ -1028,7 +1028,7 @@ public class JavaUtil {
         PRIMITIVE_CLASSES = Collections.unmodifiableMap(primitiveClasses);
     }
 
-    static Class<?> getPrimitiveClass(final String name) {
+    public static Class<?> getPrimitiveClass(final String name) {
         switch (name) {
             case "boolean": return Boolean.TYPE;
             case "byte": return Byte.TYPE;

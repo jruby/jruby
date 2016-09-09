@@ -2,6 +2,14 @@ require 'java'
 
 module JRuby
   class JavaSignature
+
+    def self.parse(signature)
+      string = signature.to_s
+      stream = java.io.ByteArrayInputStream.new(string.to_java_bytes)
+      ast = org.jruby.parser.JavaSignatureParser.parse(stream)
+      new string, ast
+    end
+
     def initialize(string, ast)
       @string, @ast = string, ast
     end
@@ -10,22 +18,19 @@ module JRuby
       @ast.name
     end
 
+    def as_java_type(string); self.class.as_java_type(string)  end
+
     # FIXME: Can make this accept whole list too if that is actual contract
     # FIXME: Can be literals too
-    def as_java_type(string)
-      type = primitive? string
-      return type if type
-
-      if string.is_a?(Java::OrgJrubyAstJava_signature::ReferenceTypeNode)
-        return eval make_class_jiable(string.getFullyTypedName())
-      end
+    def self.as_java_type(type)
+      type = type.to_s # toString for org.jruby.ast.java_signature.TypeNode
+      prim = primitive_type(type); return prim if prim
 
       # If annotation makes it in strip @ before we try and match it.
-      string = string[1..-1] if string.start_with? '@'
+      type = type[1..-1] if type.start_with? '@'
 
-      eval make_class_jiable(string)
+      eval make_class_jiable(type)
     end
-
 
     ##
     # return live JI proxy for return type
@@ -77,11 +82,7 @@ return_type: #{return_type}
     EOS
     end
 
-    def self.parse(signature)
-      stream = java.io.ByteArrayInputStream.new(signature.to_s.to_java_bytes)
-      ast = org.jruby.parser.JavaSignatureParser.parse(stream)
-      new signature, ast
-    end
+    private
 
     def process_annotation_params(anno_node)
       anno_node.parameters.inject({}) do |hash, param|
@@ -90,38 +91,30 @@ return_type: #{return_type}
         hash
       end
     end
-    private :process_annotation_params
 
-    # FIXME: Somewhere must have this already?
-    PRIMITIVES = {
-      "void" => Java::java.lang.Void::TYPE,
-       "int" => Java::java.lang.Integer::TYPE, 
-      "long" => Java::java.lang.Long::TYPE,
-      "double" => Java::java.lang.Double::TYPE,
-      "float" => Java::java.lang.Float::TYPE,
-      "boolean" => Java::java.lang.Boolean::TYPE
-    }
+    # @deprecated
+    def primitive?(str); self.class.primitive_type(str) end
 
-    def primitive?(string)
-      PRIMITIVES[string.to_s]
+    class << self; private end
+
+    def self.primitive_type(type)
+      org.jruby.javasupport.JavaUtil.getPrimitiveClass(type) # null if not
     end
 
-    def make_class_jiable(string)
-      new_list = []
-      string.split(/\./).inject(false) do |last_cap, segment|
+    def self.make_class_jiable(string)
+      list = []
+      string.split('.').inject(false) do |last_cap, segment|
         if segment =~ /[A-Z]/
-          if last_cap
-            new_list << "::" + segment
-          else
-            new_list << "." + segment
-          end
-          last_cap = true
+          list << ( last_cap ? "::#{segment}" : ".#{segment}" )
+          true # last_cap
         else
-          new_list << "." + segment
-          last_cap = false
+          list << ".#{segment}"
+          false # last_cap
         end
       end
-      "Java::#{new_list.join("")[1..-1]}"
+      # e.g. [".java", ".lang", ".String"] or [".byte[]"]
+      "Java::#{list.join('')[1..-1]}"
     end
+
   end
 end

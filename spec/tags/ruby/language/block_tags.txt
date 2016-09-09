@@ -1,9 +1,2 @@
 fails:A block yielded a single Array assigns elements to optional arguments
-fails:A block yielded a single Array assigns the last element to a non-keyword argument if #to_hash returns nil
-fails:A block yielded a single Array raises a TypeError if #to_hash does not return a Hash
-fails:A block yielded a single Array does not treat hashes with string keys as keyword arguments
 fails:A block yielded a single Array calls #to_hash on the last element when there are more arguments than parameters
-fails:A block yielded a single Array assigns symbol keys from a Hash to keyword arguments
-fails:A block yielded a single Array assigns symbol keys from a Hash returned by #to_hash to keyword arguments
-fails:A block yielded a single Array calls #to_hash on the argument but does not use the result when no keywords are present
-fails:A block yielded a single Array assigns non-symbol keys to non-keyword arguments

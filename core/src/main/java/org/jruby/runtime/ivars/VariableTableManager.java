@@ -37,6 +37,7 @@ import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
 import org.jruby.runtime.ObjectSpace;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ArraySupport;
 import org.jruby.util.cli.Options;
 import org.jruby.util.unsafe.UnsafeHolder;
 import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
@@ -344,10 +345,7 @@ public class VariableTableManager {
      * @return a copy of the array of known instance variable names
      */
     public String[] getVariableNames() {
-        String[] original = variableNames;
-        String[] copy = new String[original.length];
-        System.arraycopy(original, 0, copy, 0, original.length);
-        return copy;
+        return variableNames.clone();
     }
 
     /**
@@ -518,10 +516,10 @@ public class VariableTableManager {
      * @return a new table formed by combining the given tables
      */
     private static Object[] makeSyncedTable(Object[] currentTable, Object[] otherTable, int objectIdIdx) {
-        if(currentTable == null || currentTable.length < otherTable.length) {
+        if (currentTable == null || currentTable.length < otherTable.length) {
             currentTable = otherTable.clone();
         } else {
-            System.arraycopy(otherTable, 0, currentTable, 0, otherTable.length);
+            ArraySupport.copy(otherTable, currentTable, 0, otherTable.length);
         }
 
         // null out object ID so we don't share it
@@ -540,10 +538,9 @@ public class VariableTableManager {
      */
     synchronized final VariableAccessor allocateVariableAccessor(String name) {
         int id = realClass.id;
-        String[] myVariableNames = variableNames;
 
-        int newIndex = myVariableNames.length;
-        String[] newVariableNames = new String[newIndex + 1];
+        final String[] myVariableNames = variableNames;
+        final int newIndex = myVariableNames.length;
 
         VariableAccessor newVariableAccessor;
         if (Options.VOLATILE_VARIABLES.load()) {
@@ -561,8 +558,8 @@ public class VariableTableManager {
             }
         }
 
-        System.arraycopy(myVariableNames, 0, newVariableNames, 0, newIndex);
-
+        final String[] newVariableNames = new String[newIndex + 1];
+        ArraySupport.copy(myVariableNames, 0, newVariableNames, 0, newIndex);
         newVariableNames[newIndex] = name;
         variableNames = newVariableNames;
 
@@ -571,10 +568,9 @@ public class VariableTableManager {
 
     synchronized final VariableAccessor allocateVariableAccessorForVar(String name, int index) {
         int id = realClass.id;
-        String[] myVariableNames = variableNames;
 
-        int newIndex = myVariableNames.length;
-        String[] newVariableNames = new String[newIndex + 1];
+        final String[] myVariableNames = variableNames;
+        final int newIndex = myVariableNames.length;
 
         fieldVariables += 1;
 
@@ -614,8 +610,8 @@ public class VariableTableManager {
                 throw new RuntimeException("unsupported var index in " + realClass + ": " + index);
         }
 
-        System.arraycopy(myVariableNames, 0, newVariableNames, 0, newIndex);
-
+        final String[] newVariableNames = new String[newIndex + 1];
+        ArraySupport.copy(myVariableNames, 0, newVariableNames, 0, newIndex);
         newVariableNames[newIndex] = name;
         variableNames = newVariableNames;
 
