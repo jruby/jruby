@@ -1,18 +1,4 @@
-fails:IO.popen returns an open IO
-fails:IO.popen reads a read-only pipe
-fails:IO.popen raises IOError when writing a read-only pipe
-fails:IO.popen writes to a write-only pipe
-fails:IO.popen raises IOError when reading a write-only pipe
-fails:IO.popen reads and writes a read/write pipe
-fails:IO.popen waits for the child to finish
-fails:IO.popen does not throw an exception if child exited and has been waited for
-fails:IO.popen returns an instance of a subclass when called on a subclass
-fails:IO.popen coerces mode argument with #to_str
 fails:IO.popen starts returns a forked process if the command is -
-fails:IO.popen has the given external encoding
-fails:IO.popen has the given internal encoding
-fails:IO.popen sets the internal encoding to nil if it's the same as the external encoding
-fails:IO.popen with a block yields an open IO to the block
 fails:IO.popen with a block yields an instance of a subclass when called on a subclass
 fails:IO.popen with a block closes the IO after yielding
 fails:IO.popen with a block allows the IO to be closed inside the block

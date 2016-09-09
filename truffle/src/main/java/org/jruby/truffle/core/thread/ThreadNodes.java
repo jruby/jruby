@@ -39,8 +39,6 @@ import org.jruby.truffle.language.SafepointAction;
 import org.jruby.truffle.language.backtrace.Backtrace;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
-import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
-import org.jruby.truffle.language.objects.ReadInstanceVariableNode;
 import org.jruby.truffle.language.objects.ReadObjectFieldNode;
 import org.jruby.truffle.language.objects.ReadObjectFieldNodeGen;
 import org.jruby.truffle.platform.UnsafeGroup;
@@ -109,6 +107,16 @@ public abstract class ThreadNodes {
         @Specialization
         public DynamicObject current() {
             return getContext().getThreadManager().getCurrentThread();
+        }
+
+    }
+
+    @CoreMethod(names = "group")
+    public abstract static class GroupNode extends CoreMethodArrayArgumentsNode {
+
+        @Specialization
+        public DynamicObject group(DynamicObject thread) {
+            return Layouts.THREAD.getThreadGroup(thread);
         }
 
     }
@@ -412,6 +420,7 @@ public abstract class ThreadNodes {
                 DynamicObject rubyClass,
                 @Cached("create()") AllocateObjectNode allocateObjectNode,
                 @Cached("createReadAbortOnExceptionNode()") ReadObjectFieldNode readAbortOnException ) {
+            final DynamicObject currentGroup = Layouts.THREAD.getThreadGroup(getContext().getThreadManager().getCurrentThread());
             final DynamicObject object = allocateObjectNode.allocate(
                     rubyClass,
                     ThreadManager.createThreadLocals(getContext()),
@@ -425,7 +434,9 @@ public abstract class ThreadNodes {
                     new AtomicReference<>(null),
                     new AtomicReference<>(null),
                     new AtomicBoolean(false),
-                    new AtomicInteger(0));
+                    new AtomicInteger(0),
+                    currentGroup,
+                    nil());
 
             Layouts.THREAD.setFiberManagerUnsafe(object, new FiberManager(getContext(), object)); // Because it is cyclic
 
@@ -444,7 +455,7 @@ public abstract class ThreadNodes {
         @Specialization
         public DynamicObject list() {
             final Object[] threads = getContext().getThreadManager().getThreadList();
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), threads, threads.length);
+            return createArray(threads, threads.length);
         }
     }
 
@@ -473,6 +484,31 @@ public abstract class ThreadNodes {
             });
         }
 
+    }
+
+    @Primitive(name = "thread_get_name")
+    public static abstract class ThreadGetNamePrimitiveNode extends PrimitiveArrayArgumentsNode {
+        public ThreadGetNamePrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization(guards = "isRubyThread(thread)")
+        public DynamicObject getName(DynamicObject thread) {
+            return Layouts.THREAD.getName(thread);
+        }
+    }
+
+    @Primitive(name = "thread_set_name")
+    public static abstract class ThreadSetNamePrimitiveNode extends PrimitiveArrayArgumentsNode {
+        public ThreadSetNamePrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization(guards = "isRubyThread(thread)")
+        public DynamicObject setName(DynamicObject thread, DynamicObject name) {
+            Layouts.THREAD.setName(thread, name);
+            return name;
+        }
     }
 
     @Primitive(name = "thread_get_priority", unsafe = UnsafeGroup.THREADS)
@@ -514,6 +550,19 @@ public abstract class ThreadNodes {
             }
             Layouts.THREAD.setPriority(thread, rubyPriority);
             return rubyPriority;
+        }
+    }
+
+    @Primitive(name = "thread_set_group")
+    public static abstract class ThreadSetGroupPrimitiveNode extends PrimitiveArrayArgumentsNode {
+        public ThreadSetGroupPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization(guards = "isRubyThread(thread)")
+        public DynamicObject setGroup(DynamicObject thread, DynamicObject threadGroup) {
+            Layouts.THREAD.setThreadGroup(thread, threadGroup);
+            return threadGroup;
         }
     }
 

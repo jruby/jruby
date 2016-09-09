@@ -114,7 +114,7 @@ module Rubinius
     end
 
     def self.coerce_string_to_float(string, strict)
-      value = Truffle.invoke_primitive :string_to_f, string, strict
+      value = Truffle.invoke_primitive :string_to_f, StringValue(string), strict
       raise ArgumentError, "invalid string for Float" if value.nil?
       value
     end

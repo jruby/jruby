@@ -14,6 +14,8 @@ import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.proc.ProcOperations;
+import org.jruby.truffle.debug.DebugHelpers;
+import org.jruby.truffle.language.backtrace.Backtrace;
 import org.jruby.truffle.language.backtrace.BacktraceFormatter;
 import org.jruby.truffle.language.control.RaiseException;
 
@@ -84,7 +86,15 @@ public class AtExitManager {
         if (Layouts.BASIC_OBJECT.getLogicalClass(rubyException) == context.getCoreLibrary().getSystemExitClass()) {
             // Do not show SystemExit errors, just track them for the exit status
         } else {
-            BacktraceFormatter.createDefaultFormatter(context).printBacktrace(context, rubyException, Layouts.EXCEPTION.getBacktrace(rubyException));
+            // can be null, if @custom_backtrace is used
+            final Backtrace backtrace = Layouts.EXCEPTION.getBacktrace(rubyException);
+            if (backtrace != null) {
+                BacktraceFormatter.createDefaultFormatter(context).printBacktrace(context, rubyException, backtrace);
+            } else {
+                // TODO (pitr-ch 10-Aug-2016): replace temporary duplication, BacktraceFormatter works only with Backtrace
+                final String code = "puts format \"%s: %s (%s)\\n%s\", e.backtrace[0], e.message, e.class, e.backtrace[1..-1].map { |l| \"\\tfrom \" + l }.join(\"\\n\")";
+                DebugHelpers.eval(context, code, "e", rubyException);
+            }
         }
         return rubyException;
     }

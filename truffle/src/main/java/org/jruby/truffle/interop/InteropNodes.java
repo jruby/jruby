@@ -47,7 +47,6 @@ import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.JavaException;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.util.ByteListUtils;
-import org.jruby.util.ByteList;
 
 import java.io.File;
 import java.io.IOException;
@@ -647,13 +646,7 @@ public abstract class InteropNodes {
         protected CallTarget parse(DynamicObject mimeType, DynamicObject source) {
             final String mimeTypeString = mimeType.toString();
             final Source sourceObject = Source.newBuilder(source.toString()).name("(eval)").mimeType(mimeTypeString).build();
-
-            try {
-                return getContext().getEnv().parse(sourceObject);
-            } catch (IOException e) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                throw new JavaException(e);
-            }
+            return getContext().getEnv().parse(sourceObject);
         }
 
         protected int getCacheLimit() {

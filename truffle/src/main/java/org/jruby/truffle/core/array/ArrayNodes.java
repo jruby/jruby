@@ -67,6 +67,7 @@ import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.SnippetNode;
 import org.jruby.truffle.language.arguments.MissingArgumentBehavior;
+import org.jruby.truffle.language.arguments.ProfileArgumentNode;
 import org.jruby.truffle.language.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.control.RaiseException;
@@ -80,7 +81,6 @@ import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.methods.SharedMethodInfo;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
-import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.language.objects.IsFrozenNode;
 import org.jruby.truffle.language.objects.IsFrozenNodeGen;
 import org.jruby.truffle.language.objects.TaintNode;
@@ -91,7 +91,6 @@ import org.jruby.util.Memo;
 import java.util.Arrays;
 import java.util.Comparator;
 
-import static org.jruby.truffle.core.array.ArrayHelpers.createArray;
 import static org.jruby.truffle.core.array.ArrayHelpers.getSize;
 import static org.jruby.truffle.core.array.ArrayHelpers.getStore;
 import static org.jruby.truffle.core.array.ArrayHelpers.setSize;
@@ -133,7 +132,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = { "isNullArray(a)", "isNullArray(b)" })
         public DynamicObject addNullNull(DynamicObject a, DynamicObject b) {
-            return createArray(getContext(), null, 0);
+            return createArray(null, 0);
         }
 
         @Specialization(guards = { "isNullArray(a)", "!isNullArray(b)", "strategy.matches(b)" }, limit = "ARRAY_STRATEGIES")
@@ -141,7 +140,7 @@ public abstract class ArrayNodes {
                 @Cached("of(b)") ArrayStrategy strategy) {
             final int size = getSize(b);
             final ArrayMirror mirror = strategy.newMirror(b).extractRange(0, size);
-            return createArray(getContext(), mirror.getArray(), size);
+            return createArray(mirror.getArray(), size);
         }
 
         @Specialization(guards = { "!isNullArray(a)", "isNullArray(b)", "strategy.matches(a)" }, limit = "ARRAY_STRATEGIES")
@@ -149,7 +148,7 @@ public abstract class ArrayNodes {
                 @Cached("of(a)") ArrayStrategy strategy) {
             final int size = getSize(a);
             final ArrayMirror mirror = strategy.newMirror(a).extractRange(0, size);
-            return createArray(getContext(), mirror.getArray(), size);
+            return createArray(mirror.getArray(), size);
         }
 
         // Same storage
@@ -163,7 +162,7 @@ public abstract class ArrayNodes {
             final ArrayMirror mirror = strategy.newArray(combinedSize);
             strategy.newMirror(a).copyTo(mirror, 0, 0, aSize);
             strategy.newMirror(b).copyTo(mirror, 0, aSize, bSize);
-            return createArray(getContext(), mirror.getArray(), combinedSize);
+            return createArray(mirror.getArray(), combinedSize);
         }
 
         // Generalizations
@@ -179,7 +178,7 @@ public abstract class ArrayNodes {
             final ArrayMirror mirror = generalized.newArray(combinedSize);
             aStrategy.newMirror(a).copyTo(mirror, 0, 0, aSize);
             bStrategy.newMirror(b).copyTo(mirror, 0, aSize, bSize);
-            return createArray(getContext(), mirror.getArray(), combinedSize);
+            return createArray(mirror.getArray(), combinedSize);
         }
 
     }
@@ -257,7 +256,7 @@ public abstract class ArrayNodes {
         public boolean respondToToStr(VirtualFrame frame, Object object) {
             if (respondToToStrNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                respondToToStrNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), null, null, null));
+                respondToToStrNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), null, null, null, null));
             }
             return respondToToStrNode.doesRespondToString(frame, object, create7BitString("to_str", UTF8Encoding.INSTANCE), false);
         }
@@ -282,7 +281,7 @@ public abstract class ArrayNodes {
         public Object index(DynamicObject array, int index, NotProvided length) {
             if (readNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                readNode = insert(ArrayReadDenormalizedNodeGen.create(getContext(), getSourceSection(), null, null));
+                readNode = insert(ArrayReadDenormalizedNodeGen.create(getContext(), null, null, null));
             }
             return readNode.executeRead(array, index);
         }
@@ -295,7 +294,7 @@ public abstract class ArrayNodes {
 
             if (readSliceNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                readSliceNode = insert(ArrayReadSliceDenormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null));
+                readSliceNode = insert(ArrayReadSliceDenormalizedNodeGen.create(getContext(), null, null, null, null));
             }
 
             return readSliceNode.executeReadSlice(array, start, length);
@@ -322,7 +321,7 @@ public abstract class ArrayNodes {
 
                 if (readNormalizedSliceNode == null) {
                     CompilerDirectives.transferToInterpreterAndInvalidate();
-                    readNormalizedSliceNode = insert(ArrayReadSliceNormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null));
+                    readNormalizedSliceNode = insert(ArrayReadSliceNormalizedNodeGen.create(getContext(), null, null, null, null));
                 }
 
                 return readNormalizedSliceNode.executeReadSlice(array, normalizedIndex, length);
@@ -332,13 +331,13 @@ public abstract class ArrayNodes {
         @Specialization(guards = { "!isInteger(a)", "!isIntRange(a)" })
         public Object fallbackIndex(VirtualFrame frame, DynamicObject array, Object a, NotProvided length) {
             Object[] objects = new Object[] { a };
-            return fallback(frame, array, createArray(getContext(), objects, objects.length));
+            return fallback(frame, array, createArray(objects, objects.length));
         }
 
         @Specialization(guards = { "!isIntRange(a)", "wasProvided(b)" })
         public Object fallbackSlice(VirtualFrame frame, DynamicObject array, Object a, Object b) {
             Object[] objects = new Object[] { a, b };
-            return fallback(frame, array, createArray(getContext(), objects, objects.length));
+            return fallback(frame, array, createArray(objects, objects.length));
         }
 
         public Object fallback(VirtualFrame frame, DynamicObject array, DynamicObject args) {
@@ -407,7 +406,7 @@ public abstract class ArrayNodes {
                 // Passing a non-array as value is the same as assigning a single-element array
                 ArrayMirror mirror = strategy.newArray(1);
                 mirror.set(0, value);
-                ary = createArray(getContext(), mirror.getArray(), 1);
+                ary = createArray(mirror.getArray(), 1);
             }
 
             return executeSet(frame, array, start, length, ary);
@@ -559,7 +558,7 @@ public abstract class ArrayNodes {
         private Object read(DynamicObject array, int index) {
             if (readNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                readNode = insert(ArrayReadNormalizedNodeGen.create(getContext(), getSourceSection(), null, null));
+                readNode = insert(ArrayReadNormalizedNodeGen.create(getContext(), null, null, null));
             }
             return readNode.executeRead(array, index);
         }
@@ -567,7 +566,7 @@ public abstract class ArrayNodes {
         private Object write(DynamicObject array, int index, Object value) {
             if (writeNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                writeNode = insert(ArrayWriteNormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null));
+                writeNode = insert(ArrayWriteNormalizedNodeGen.create(getContext(), null, null, null, null));
             }
             return writeNode.executeWrite(array, index, value);
         }
@@ -575,7 +574,7 @@ public abstract class ArrayNodes {
         private DynamicObject readSlice(DynamicObject array, int start, int length) {
             if (readSliceNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                readSliceNode = insert(ArrayReadSliceNormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null));
+                readSliceNode = insert(ArrayReadSliceNormalizedNodeGen.create(getContext(), null, null, null, null));
             }
             return readSliceNode.executeReadSlice(array, start, length);
         }
@@ -607,7 +606,7 @@ public abstract class ArrayNodes {
         public Object at(DynamicObject array, int index) {
             if (readNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                readNode = insert(ArrayReadDenormalizedNodeGen.create(getContext(), getSourceSection(), null, null));
+                readNode = insert(ArrayReadDenormalizedNodeGen.create(getContext(), null, null, null));
             }
             return readNode.executeRead(array, index);
         }
@@ -631,7 +630,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isNullArray(array)")
         public Object compactNull(DynamicObject array) {
-            return createArray(getContext(), null, 0);
+            return createArray(null, 0);
         }
 
         @Specialization(guards = { "!isObjectArray(array)", "strategy.matches(array)" }, limit = "ARRAY_STRATEGIES")
@@ -639,7 +638,7 @@ public abstract class ArrayNodes {
                 @Cached("of(array)") ArrayStrategy strategy) {
             final int size = getSize(array);
             Object store = strategy.newMirror(array).extractRange(0, size).getArray();
-            return createArray(getContext(), store, size);
+            return createArray(store, size);
         }
 
         @Specialization(guards = "isObjectArray(array)")
@@ -659,7 +658,7 @@ public abstract class ArrayNodes {
                 }
             }
 
-            return createArray(getContext(), newStore, m);
+            return createArray(newStore, m);
         }
 
     }
@@ -787,7 +786,7 @@ public abstract class ArrayNodes {
         public void checkFrozen(Object object) {
             if (isFrozenNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                isFrozenNode = insert(IsFrozenNodeGen.create(getContext(), getSourceSection(), null));
+                isFrozenNode = insert(IsFrozenNodeGen.create(getContext(), null, null));
             }
             isFrozenNode.raiseIfFrozen(object);
         }
@@ -1134,7 +1133,7 @@ public abstract class ArrayNodes {
         public boolean respondToToAry(VirtualFrame frame, Object object) {
             if (respondToToAryNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                respondToToAryNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), null, null, null));
+                respondToToAryNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), null, null, null, null));
             }
             return respondToToAryNode.doesRespondToString(frame, object, create7BitString("to_ary", UTF8Encoding.INSTANCE), true);
         }
@@ -1292,7 +1291,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isNullArray(array)")
         public DynamicObject mapNull(DynamicObject array, DynamicObject block) {
-            return createArray(getContext(), null, 0);
+            return createArray(null, 0);
         }
 
         @Specialization(guards = "strategy.matches(array)", limit = "ARRAY_STRATEGIES")
@@ -1315,7 +1314,7 @@ public abstract class ArrayNodes {
                 }
             }
 
-            return createArray(getContext(), arrayBuilder.finish(mappedStore, size), size);
+            return createArray(arrayBuilder.finish(mappedStore, size), size);
         }
 
     }
@@ -1352,7 +1351,7 @@ public abstract class ArrayNodes {
         }
 
         protected ArrayWriteNormalizedNode createWriteNode() {
-            return ArrayWriteNormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null);
+            return ArrayWriteNormalizedNodeGen.create(getContext(), null, null, null, null);
         }
 
     }
@@ -1458,9 +1457,9 @@ public abstract class ArrayNodes {
 
             sharedMethodInfo = new SharedMethodInfo(SourceSection.createUnavailable(null, "Array#max block"), null, Arity.NO_ARGUMENTS, "max", false, null, false, false, false);
 
-            callTarget = Truffle.getRuntime().createCallTarget(new RubyRootNode(context, null, null, sharedMethodInfo, MaxBlockNodeFactory.create(context, null, new RubyNode[]{
+            callTarget = Truffle.getRuntime().createCallTarget(new RubyRootNode(context, sharedMethodInfo.getSourceSection(), null, sharedMethodInfo, MaxBlockNodeFactory.create(context, null, new RubyNode[]{
                                         new ReadDeclarationVariableNode(context, null, LocalVariableType.FRAME_LOCAL, 1, frameSlot),
-                                        new ReadPreArgumentNode(0, MissingArgumentBehavior.RUNTIME_ERROR)
+                                        new ProfileArgumentNode(new ReadPreArgumentNode(0, MissingArgumentBehavior.RUNTIME_ERROR))
                                 }), false));
         }
 
@@ -1580,9 +1579,9 @@ public abstract class ArrayNodes {
 
             sharedMethodInfo = new SharedMethodInfo(SourceSection.createUnavailable(null, "Array#min block"), null, Arity.NO_ARGUMENTS, "min", false, null, false, false, false);
 
-            callTarget = Truffle.getRuntime().createCallTarget(new RubyRootNode(context, null, null, sharedMethodInfo, MinBlockNodeFactory.create(context, null, new RubyNode[]{
+            callTarget = Truffle.getRuntime().createCallTarget(new RubyRootNode(context, sharedMethodInfo.getSourceSection(), null, sharedMethodInfo, MinBlockNodeFactory.create(context, null, new RubyNode[]{
                                         new ReadDeclarationVariableNode(context, null, LocalVariableType.FRAME_LOCAL, 1, frameSlot),
-                                        new ReadPreArgumentNode(0, MissingArgumentBehavior.RUNTIME_ERROR)
+                                        new ProfileArgumentNode(new ReadPreArgumentNode(0, MissingArgumentBehavior.RUNTIME_ERROR))
                                 }), false));
         }
 
@@ -1680,7 +1679,7 @@ public abstract class ArrayNodes {
             if (result.isTainted()) {
                 if (taintNode == null) {
                     CompilerDirectives.transferToInterpreterAndInvalidate();
-                    taintNode = insert(TaintNodeGen.create(getContext(), getEncapsulatingSourceSection(), null));
+                    taintNode = insert(TaintNodeGen.create(getContext(), null, null));
                 }
 
                 taintNode.executeTaint(string);
@@ -1727,7 +1726,7 @@ public abstract class ArrayNodes {
         public Object pop(DynamicObject array, NotProvided n) {
             if (popOneNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                popOneNode = insert(ArrayPopOneNodeGen.create(getContext(), getEncapsulatingSourceSection(), null));
+                popOneNode = insert(ArrayPopOneNodeGen.create(getContext(), null, null));
             }
 
             return popOneNode.executePopOne(array);
@@ -1740,12 +1739,12 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = { "n >= 0", "isEmptyArray(array)" })
         public Object popEmpty(VirtualFrame frame, DynamicObject array, int n) {
-            return createArray(getContext(), null, 0);
+            return createArray(null, 0);
         }
 
         @Specialization(guards = { "n == 0", "!isEmptyArray(array)" })
         public Object popZeroNotEmpty(DynamicObject array, int n) {
-            return createArray(getContext(), null, 0);
+            return createArray(null, 0);
         }
 
         @Specialization(guards = { "n > 0", "!isEmptyArray(array)", "strategy.matches(array)" }, limit = "ARRAY_STRATEGIES")
@@ -1764,7 +1763,7 @@ public abstract class ArrayNodes {
             filler.copyTo(store, 0, size - numPop, numPop);
             setSize(array, size - numPop);
 
-            return createArray(getContext(), popped.getArray(), numPop);
+            return createArray(popped.getArray(), numPop);
         }
 
         @Specialization(guards = { "wasProvided(n)", "!isInteger(n)", "!isLong(n)" })
@@ -1838,7 +1837,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isNullArray(array)")
         public Object rejectNull(DynamicObject array, DynamicObject block) {
-            return createArray(getContext(), null, 0);
+            return createArray(null, 0);
         }
 
         @Specialization(guards = "strategy.matches(array)", limit = "ARRAY_STRATEGIES")
@@ -1866,7 +1865,7 @@ public abstract class ArrayNodes {
                 }
             }
 
-            return createArray(getContext(), arrayBuilder.finish(selectedStore, selectedSize), selectedSize);
+            return createArray(arrayBuilder.finish(selectedStore, selectedSize), selectedSize);
         }
 
     }
@@ -1977,7 +1976,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isNullArray(array)")
         public Object selectNull(DynamicObject array, DynamicObject block) {
-            return createArray(getContext(), null, 0);
+            return createArray(null, 0);
         }
 
         @Specialization(guards = "strategy.matches(array)", limit = "ARRAY_STRATEGIES")
@@ -2005,7 +2004,7 @@ public abstract class ArrayNodes {
                 }
             }
 
-            return createArray(getContext(), arrayBuilder.finish(selectedStore, selectedSize), selectedSize);
+            return createArray(arrayBuilder.finish(selectedStore, selectedSize), selectedSize);
         }
 
     }
@@ -2054,12 +2053,12 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "n == 0")
         public Object shiftZero(DynamicObject array, int n) {
-            return createArray(getContext(), null, 0);
+            return createArray(null, 0);
         }
 
         @Specialization(guards = { "n > 0", "isEmptyArray(array)" })
         public Object shiftManyEmpty(DynamicObject array, int n) {
-            return createArray(getContext(), null, 0);
+            return createArray(null, 0);
         }
 
         @Specialization(guards = { "n > 0", "strategy.matches(array)", "!isEmptyArray(array)" }, limit = "ARRAY_STRATEGIES")
@@ -2081,7 +2080,7 @@ public abstract class ArrayNodes {
             filler.copyTo(store, 0, size - numShift, numShift);
             setSize(array, size - numShift);
 
-            return createArray(getContext(), result.getArray(), numShift);
+            return createArray(result.getArray(), numShift);
         }
 
         @Specialization(guards = { "wasProvided(n)", "!isInteger(n)", "!isLong(n)" })
@@ -2125,7 +2124,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isNullArray(array)")
         public DynamicObject sortNull(DynamicObject array, Object unusedBlock) {
-            return createArray(getContext(), null, 0);
+            return createArray(null, 0);
         }
 
         @ExplodeLoop
@@ -2161,7 +2160,7 @@ public abstract class ArrayNodes {
                 }
             }
 
-            return createArray(getContext(), store.getArray(), size);
+            return createArray(store.getArray(), size);
         }
 
         @Specialization(guards = { "!isNullArray(array)", "!isSmall(array)" })
@@ -2176,7 +2175,7 @@ public abstract class ArrayNodes {
             final int size = getSize(array);
             Object[] copy = ((Object[]) getStore(array)).clone();
             doSort(copy, size, block);
-            return createArray(getContext(), copy, size);
+            return createArray(copy, size);
         }
 
         @TruffleBoundary
@@ -2238,13 +2237,13 @@ public abstract class ArrayNodes {
                     final ArrayMirror pair = generalized.newArray(2);
                     pair.set(0, a.get(n));
                     pair.set(1, b.get(n));
-                    zipped[n] = createArray(getContext(), pair.getArray(), 2);
+                    zipped[n] = createArray(pair.getArray(), 2);
                 } else {
-                    zipped[n] = createArray(getContext(), new Object[] { a.get(n), nil() }, 2);
+                    zipped[n] = createArray(new Object[] { a.get(n), nil() }, 2);
                 }
             }
 
-            return createArray(getContext(), zipped, zippedLength);
+            return createArray(zipped, zippedLength);
         }
 
         @Specialization(guards = { "isRubyArray(other)", "fallback(array, other, others)" })

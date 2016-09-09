@@ -9,11 +9,8 @@
  */
 package org.jruby.truffle.core.string;
 
-import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jcodings.Encoding;
-import org.jruby.truffle.Layouts;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.encoding.EncodingNodes;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.util.ByteList;

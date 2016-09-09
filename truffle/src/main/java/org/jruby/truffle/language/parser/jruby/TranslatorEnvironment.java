@@ -11,9 +11,10 @@ package org.jruby.truffle.language.parser.jruby;
 
 import com.oracle.truffle.api.frame.FrameDescriptor;
 import com.oracle.truffle.api.frame.FrameSlot;
-import com.oracle.truffle.api.source.SourceSection;
+import com.oracle.truffle.api.source.Source;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.LexicalScope;
+import org.jruby.truffle.language.RubySourceSection;
 import org.jruby.truffle.language.control.BreakID;
 import org.jruby.truffle.language.control.ReturnID;
 import org.jruby.truffle.language.locals.LocalVariableType;
@@ -93,53 +94,30 @@ public class TranslatorEnvironment {
         return parent;
     }
 
-    public TranslatorEnvironment getParent(int level) {
-        assert level >= 0;
-        if (level == 0) {
-            return this;
-        } else {
-            return parent.getParent(level - 1);
-        }
-    }
-
     public FrameSlot declareVar(String name) {
         return getFrameDescriptor().findOrAddFrameSlot(name);
     }
 
-    public FrameSlot declareVarWhereAllowed(String name) {
+    public FrameSlot declareVarInMethodScope(String name) {
         if (isBlock()) {
-            return parent.declareVarWhereAllowed(name);
+            return parent.declareVarInMethodScope(name);
         } else {
             return declareVar(name);
         }
     }
 
-    public SharedMethodInfo findMethodForLocalVar(String name) {
-        TranslatorEnvironment current = this;
-        do {
-            FrameSlot slot = current.getFrameDescriptor().findFrameSlot(name);
-            if (slot != null) {
-                return current.sharedMethodInfo;
-            }
-
-            current = current.parent;
-        } while (current != null);
-
-        return null;
-    }
-
-    public ReadLocalNode findOrAddLocalVarNodeDangerous(String name, SourceSection sourceSection) {
-        ReadLocalNode localVar = findLocalVarNode(name, sourceSection);
+    public ReadLocalNode findOrAddLocalVarNodeDangerous(String name, Source source, RubySourceSection sourceSection) {
+        ReadLocalNode localVar = findLocalVarNode(name, source, sourceSection);
 
         if (localVar == null) {
             declareVar(name);
-            localVar = findLocalVarNode(name, sourceSection);
+            localVar = findLocalVarNode(name, source, sourceSection);
         }
 
         return localVar;
     }
 
-    public ReadLocalNode findLocalVarNode(String name, SourceSection sourceSection) {
+    public ReadLocalNode findLocalVarNode(String name, Source source, RubySourceSection sourceSection) {
         TranslatorEnvironment current = this;
         int level = -1;
         try {
@@ -160,9 +138,9 @@ public class TranslatorEnvironment {
                     }
 
                     if (level == 0) {
-                        return new ReadLocalVariableNode(context, sourceSection, type, slot);
+                        return new ReadLocalVariableNode(context, sourceSection.toSourceSection(source), type, slot);
                     } else {
-                        return new ReadDeclarationVariableNode(context, sourceSection, type, level, slot);
+                        return new ReadDeclarationVariableNode(context, sourceSection.toSourceSection(source), type, level, slot);
                     }
                 }
 

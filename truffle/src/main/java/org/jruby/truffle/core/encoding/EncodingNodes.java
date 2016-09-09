@@ -358,7 +358,7 @@ public abstract class EncodingNodes {
         public DynamicObject defaultExternal(VirtualFrame frame, Object encoding) {
             if (toStrNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                toStrNode = insert(ToStrNodeGen.create(getContext(), getSourceSection(), null));
+                toStrNode = insert(ToStrNodeGen.create(getContext(), null, null));
             }
 
             return defaultExternal(toStrNode.executeToStr(frame, encoding));
@@ -392,7 +392,7 @@ public abstract class EncodingNodes {
         public DynamicObject defaultInternal(VirtualFrame frame, Object encoding) {
             if (toStrNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                toStrNode = insert(ToStrNodeGen.create(getContext(), getSourceSection(), null));
+                toStrNode = insert(ToStrNodeGen.create(getContext(), null, null));
             }
 
             final DynamicObject encodingName = toStrNode.executeToStr(frame, encoding);
@@ -414,7 +414,7 @@ public abstract class EncodingNodes {
 
             System.arraycopy(encodings, 0, arrayStore, 0, encodings.length);
 
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), arrayStore, arrayStore.length);
+            return createArray(arrayStore, arrayStore.length);
         }
     }
 

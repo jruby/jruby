@@ -19,7 +19,7 @@ require 'timeout'
 require 'yaml'
 require 'open3'
 
-GRAALVM_VERSION = '0.15'
+GRAALVM_VERSION = '0.16'
 
 JRUBY_DIR = File.expand_path('../..', __FILE__)
 M2_REPO = File.expand_path('~/.m2/repository')
@@ -91,12 +91,7 @@ module Utilities
       options = []
     elsif graal_home
       graal_home = File.expand_path(graal_home)
-      if ENV['JVMCI_JAVA_HOME']
-        mx_options = "--java-home #{ENV['JVMCI_JAVA_HOME']}"
-      else
-        mx_options = ''
-      end
-      command_line = `mx -v #{mx_options} -p #{graal_home} vm -version`.lines.to_a.last
+      command_line = `mx -v -p #{graal_home} vm -version`.lines.to_a.last
       vm_args = command_line.split
       vm_args.pop # Drop "-version"
       javacmd = vm_args.shift
@@ -152,12 +147,12 @@ module Utilities
   end
 
   def self.find_jruby
-    if mx?
+    if ENV['RUBY_BIN']
+      ENV['RUBY_BIN']
+    elsif mx?
       "#{JRUBY_DIR}/tool/jruby_mx"
     elsif jruby_eclipse?
       "#{JRUBY_DIR}/tool/jruby_eclipse"
-    elsif ENV['RUBY_BIN']
-      ENV['RUBY_BIN']
     else
       "#{JRUBY_DIR}/bin/jruby"
     end
@@ -166,10 +161,15 @@ module Utilities
   def self.find_jruby_bin_dir
     # Make sure bin/ruby points to the right launcher
     ruby_symlink = "#{JRUBY_DIR}/bin/ruby"
-    FileUtils.rm_f ruby_symlink
-    File.symlink Utilities.find_jruby, ruby_symlink
+    jruby_bin = Utilities.find_jruby
+    if File.symlink?(ruby_symlink) && File.expand_path(File.readlink(ruby_symlink), File.dirname(ruby_symlink)) != jruby_bin
+      FileUtils.rm_f ruby_symlink
+      File.symlink jruby_bin, ruby_symlink
+    end
 
-    if jruby_eclipse? or mx?
+    if ENV['RUBY_BIN']
+      File.dirname(ENV['RUBY_BIN'])
+    elsif jruby_eclipse? or mx?
       JRUBY_DIR + "/bin"
     else
       File.dirname(find_jruby)
@@ -368,9 +368,12 @@ module ShellUtils
 
   def maven_options(*options)
     maven_options = []
+    build_pack = options.delete('--build-pack')
     offline = options.delete('--offline')
-    if offline
+    if build_pack || offline
       maven_options.push "-Dmaven.repo.local=#{Utilities.find_repo('jruby-build-pack')}/maven"
+    end
+    if offline
       maven_options.push '--offline'
     end
     return [maven_options, options]
@@ -378,7 +381,6 @@ module ShellUtils
 
   def mx(dir, *args)
     command = ['mx', '-p', dir]
-    command.push *['--java-home', ENV['JVMCI_JAVA_HOME']] if ENV['JVMCI_JAVA_HOME']
     command.push *args
     sh *command
   end
@@ -445,12 +447,13 @@ module Commands
       jt rebuild [options]                           clean and build
           truffle                                    build only the Truffle part, assumes the rest is up-to-date
           cexts [--no-openssl]                       build the cext backend (set SULONG_HOME and maybe USE_SYSTEM_CLANG)
+          --build-pack                               use the build pack
           --offline                                  use the build pack to build offline
       jt clean                                       clean
       jt irb                                         irb
       jt rebuild                                     clean and build
       jt run [options] args...                       run JRuby with -X+T and args
-          --graal         use Graal (set either GRAALVM_BIN or GRAAL_HOME and maybe JVMCI_JAVA_HOME)
+          --graal         use Graal (set either GRAALVM_BIN or GRAAL_HOME)
           --js            add Graal.js to the classpath (set GRAAL_JS_JAR)
           --asm           show assembly (implies --graal)
           --server        run an instrumentation server on port 8080
@@ -492,7 +495,8 @@ module Commands
       jt metrics time ...                            how long does it take to run a command, broken down into different phases
       jt tarball                                     build the and test the distribution tarball
       jt benchmark [options] args...                 run benchmark-interface (implies --graal)
-          --no-graal       don\'t imply --graal
+          --no-graal              don't imply --graal
+          JT_BENCHMARK_RUBY=ruby  benchmark some other Ruby, like MRI
           note that to run most MRI benchmarks, you should translate them first with normal Ruby and cache the result, such as
               benchmark bench/mri/bm_vm1_not.rb --cache
               jt benchmark bench/mri/bm_vm1_not.rb --use-cache
@@ -504,9 +508,7 @@ module Commands
 
         RUBY_BIN                                     The JRuby+Truffle executable to use (normally just bin/jruby)
         GRAALVM_BIN                                  GraalVM executable (java command) to use
-        GRAAL_HOME                                   Directory where there is a built checkout of the Graal compiler
-                                                     (make sure mx is on your path and maybe set JVMCI_JAVA_HOME)
-        JVMCI_JAVA_HOME                              The Java with JVMCI to use with GRAAL_HOME
+        GRAAL_HOME                                   Directory where there is a built checkout of the Graal compiler (make sure mx is on your path)
         GRAALVM_RELEASE_BIN                          Default GraalVM executable when using a released version of Truffle (such as on master)
         GRAAL_HOME_TRUFFLE_HEAD                      Default Graal directory when using a snapshot version of Truffle (such as on truffle-head)
         SULONG_HOME                                  The Sulong source repository, if you want to run cextc
@@ -539,10 +541,7 @@ module Commands
       no_openssl = options.delete('--no-openssl')
       cextc "#{JRUBY_DIR}/truffle/src/main/c/cext"
       unless no_openssl
-        cextc "#{JRUBY_DIR}/truffle/src/main/c/openssl",
-          '-DRUBY_EXTCONF_H="extconf.h"',
-          '-DJT_INT_VALUE=true',
-          '-Werror=implicit-function-declaration'
+        cextc "#{JRUBY_DIR}/truffle/src/main/c/openssl"
       end
     when nil
       mvn env, *maven_options, 'package'
@@ -861,7 +860,7 @@ module Commands
         ['oily_png', ['chunky_png-1.3.6', 'oily_png-1.2.0'], ['oily_png']],
         ['psd_native', ['chunky_png-1.3.6', 'oily_png-1.2.0', 'bindata-2.3.1', 'hashie-3.4.4', 'psd-enginedata-1.1.1', 'psd-2.1.2', 'psd_native-1.1.3'], ['oily_png', 'psd_native']],
         ['nokogiri', [], ['nokogiri']],
-        ['ruby-argon2', [], [], "#{ENV['GEM_HOME']}/bundler/gems/ruby-argon2-5a527075e88b"]
+        ['ruby-argon2', [], [], "#{ENV['GEM_HOME']}/bundler/gems/ruby-argon2-bd3fb1e056cf"]
     ].each do |gem_name, dependencies, libs, gem_root|
       next if gem_name == 'nokogiri' # nokogiri totally excluded
       next if gem_name == 'nokogiri' && no_libxml
@@ -1215,15 +1214,26 @@ module Commands
         a
       end
     end
-
+    
+    benchmark_ruby = ENV['JT_BENCHMARK_RUBY']
+    
     run_args = []
-    run_args.push '--graal' unless args.delete('--no-graal') || args.include?('list')
-    run_args.push '-J-G:+TruffleCompilationExceptionsAreFatal'
+
+    unless benchmark_ruby
+      run_args.push '--graal' unless args.delete('--no-graal') || args.include?('list')
+      run_args.push '-J-G:+TruffleCompilationExceptionsAreFatal'
+    end
+    
     run_args.push "-I#{Utilities.find_gem('deep-bench')}/lib" rescue nil
     run_args.push "-I#{Utilities.find_gem('benchmark-ips')}/lib" rescue nil
     run_args.push "#{Utilities.find_gem('benchmark-interface')}/bin/benchmark"
     run_args.push *args
-    run *run_args
+    
+    if benchmark_ruby
+      sh benchmark_ruby, *run_args
+    else
+      run *run_args
+    end
   end
 
   def where(*args)
@@ -1272,7 +1282,7 @@ class JT
       send(args.shift)
     when "build"
       command = [args.shift]
-      while ['truffle', 'cexts', '--offline', '--no-openssl'].include?(args.first)
+      while ['truffle', 'cexts', '--offline', '--build-pack', '--no-openssl'].include?(args.first)
         command << args.shift
       end
       send(*command)

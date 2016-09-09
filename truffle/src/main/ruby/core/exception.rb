@@ -165,6 +165,9 @@ class ArgumentError < StandardError
   end
 end
 
+class UncaughtThrowError < ArgumentError
+end
+
 class IndexError < StandardError
 end
 

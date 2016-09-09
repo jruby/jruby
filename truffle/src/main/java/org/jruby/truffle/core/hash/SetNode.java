@@ -207,7 +207,7 @@ public abstract class SetNode extends RubyNode {
     private HashLookupResult lookup(VirtualFrame frame, DynamicObject hash, Object key) {
         if (lookupEntryNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            lookupEntryNode = insert(new LookupEntryNode(getContext(), getEncapsulatingSourceSection()));
+            lookupEntryNode = insert(new LookupEntryNode(getContext(), null));
         }
         return lookupEntryNode.lookup(frame, hash, key);
     }
@@ -233,7 +233,7 @@ public abstract class SetNode extends RubyNode {
     private boolean isFrozen(Object value) {
         if (isFrozenNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            isFrozenNode = insert(IsFrozenNodeGen.create(getContext(), getSourceSection(), null));
+            isFrozenNode = insert(IsFrozenNodeGen.create(getContext(), null, null));
         }
         return isFrozenNode.executeIsFrozen(value);
     }

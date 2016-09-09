@@ -24,8 +24,15 @@ import org.jruby.truffle.language.RubyNode;
 @NodeChild(value="object", type=RubyNode.class)
 public abstract class MetaClassNode extends RubyNode {
 
+    public MetaClassNode() {
+    }
+
     public MetaClassNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
+    }
+
+    public static MetaClassNode create() {
+        return MetaClassNodeGen.create(null, null, null);
     }
 
     public abstract DynamicObject executeMetaClass(Object value);

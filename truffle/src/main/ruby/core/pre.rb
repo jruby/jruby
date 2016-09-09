@@ -42,7 +42,7 @@ class Module
   #
   def include(mod)
     Truffle.privately do
-      mod.append_features self # Truffle: moved the append_features inside the privately
+      mod.append_features self
       mod.included self
     end
     self
@@ -60,7 +60,6 @@ module Kernel
 
   alias_method :eql?, :equal?
 
-  # Truffle: no extra indirection for Kernel#send.
   alias_method :send, :__send__ # from BasicObject
 
 end

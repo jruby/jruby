@@ -1,4 +1,1 @@
-fails:File.grpowned? takes non primary groups into account
 fails(windows):File.grpowned? returns false if the file exist
-fails:File.grpowned? accepts an object that has a #to_path method
-fails:File.grpowned? returns true if the file exist

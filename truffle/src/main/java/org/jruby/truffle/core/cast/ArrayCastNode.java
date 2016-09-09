@@ -16,7 +16,6 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
@@ -82,10 +81,10 @@ public abstract class ArrayCastNode extends RubyNode {
     public Object cast(Object nil) {
         switch (nilBehavior) {
             case EMPTY_ARRAY:
-                return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), null, 0);
+                return createArray(null, 0);
 
             case ARRAY_WITH_NIL:
-                return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), new Object[]{nil()}, 1);
+                return createArray(new Object[]{nil()}, 1);
 
             case NIL:
                 return nil;

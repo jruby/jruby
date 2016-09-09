@@ -1,1 +1,0 @@
-fails:Numeric#div calls self#/ with other, then returns the #floor'ed result

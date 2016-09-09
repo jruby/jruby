@@ -5,3 +5,4 @@ slow:The DATA constant does not change when an included files also has a __END__
 slow:The DATA constant is included in an otherwise empty file
 slow:The DATA constant succeeds in locking the file DATA came from
 slow:The DATA constant rewinds to the head of the main script
+fails(travis):The DATA constant exists when the main script contains __END__

@@ -30,7 +30,8 @@
 # these methods can be written *in those classes* to override these.
 
 module Enumerable
-  def chunk(initial_state = nil, &original_block)
+  def chunk(&original_block)
+    initial_state = nil
     raise ArgumentError, "no block given" unless block_given?
     ::Enumerator.new do |yielder|
       previous = nil
@@ -65,6 +66,31 @@ module Enumerable
         end
       end
       yielder.yield [previous, accumulate] unless accumulate.empty?
+    end
+  end
+
+  def chunk_while(&block)
+    block = Proc.new(block)
+    Enumerator.new do |yielder|
+      accumulator = nil
+      prev = nil
+      each do |*elem|
+        elem = elem[0] if elem.size == 1
+        if accumulator.nil?
+          accumulator = [elem]
+          prev = elem
+        else
+          start_new = block.yield(prev, elem)
+          if !start_new
+            yielder.yield accumulator if accumulator
+            accumulator = [elem]
+          else
+            accumulator << elem
+          end
+          prev = elem
+        end
+      end
+      yielder.yield accumulator if accumulator
     end
   end
 
@@ -216,6 +242,31 @@ module Enumerable
     end
   end
 
+  def slice_when(&block)
+    block = Proc.new(block)
+    Enumerator.new do |yielder|
+      accumulator = nil
+      prev = nil
+      each do |*elem|
+        elem = elem[0] if elem.size == 1
+        if accumulator.nil?
+          accumulator = [elem]
+          prev = elem
+        else
+          start_new = block.yield(prev, elem)
+          if start_new
+            yielder.yield accumulator if accumulator
+            accumulator = [elem]
+          else
+            accumulator << elem
+          end
+          prev = elem
+        end
+      end
+      yielder.yield accumulator if accumulator
+    end
+  end
+
   def to_a(*arg)
     ary = []
     each(*arg) do
@@ -294,14 +345,14 @@ module Enumerable
     self
   end
 
-  def grep(pattern)
+  def grep(pattern, &block)
     ary = []
 
     if block_given?
       each do
         o = Truffle.single_block_arg
         if pattern === o
-          Regexp.set_block_last_match
+          Regexp.set_block_last_match(block, $~)
           ary << yield(o)
         end
       end
@@ -309,10 +360,11 @@ module Enumerable
       each do
         o = Truffle.single_block_arg
         if pattern === o
-          Regexp.set_block_last_match
           ary << o
         end
       end
+
+      Truffle.invoke_primitive(:regexp_set_last_match, $~)
     end
 
     ary
@@ -595,7 +647,8 @@ module Enumerable
     nil
   end
 
-  def min
+  def min(n = undefined, &block)
+    return min_n(n, &block) if !undefined.equal?(n) && !n.nil?
     min = undefined
     each do
       o = Truffle.single_block_arg
@@ -615,10 +668,19 @@ module Enumerable
 
     undefined.equal?(min) ? nil : min
   end
+
+  def min_n(n, &block)
+    raise ArgumentError, "negative size #{n}" if n < 0
+    return [] if n == 0
+
+    self.sort(&block).first(n)
+  end
+  private :min_n
   
   alias_method :min_internal, :min
 
-  def max
+  def max(n = undefined, &block)
+    return max_n(n, &block) if !undefined.equal?(n) && !n.nil?
     max = undefined
     each do
       o = Truffle.single_block_arg
@@ -638,6 +700,14 @@ module Enumerable
 
     undefined.equal?(max) ? nil : max
   end
+
+  def max_n(n, &block)
+    raise ArgumentError, "negative size #{n}" if n < 0
+    return [] if n == 0
+
+    self.sort(&block).reverse.first(n)
+  end
+  private :max_n
   
   alias_method :max_internal, :max
 

@@ -10,9 +10,10 @@
 package org.jruby.truffle.language;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import org.jruby.util.cli.Options;
+
 import java.util.HashSet;
 import java.util.Set;
-import org.jruby.util.cli.Options;
 
 public class PerformanceWarnings {
 

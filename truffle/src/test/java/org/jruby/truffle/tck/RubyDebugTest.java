@@ -28,6 +28,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.Objects;
@@ -75,7 +76,7 @@ public class RubyDebugTest {
 
         }).build();
 
-        engine.eval(Source.fromFileName("src/test/ruby/init.rb"));
+        engine.eval(Source.newBuilder(new File("src/test/ruby/init.rb")).build());
 
         run.clear();
     }
@@ -91,34 +92,24 @@ public class RubyDebugTest {
     public void testBreakpoint() throws Throwable {
         final Source factorial = createFactorial();
 
-        run.addLast(new Runnable() {
-
-            @Override
-            public void run() {
-                try {
-                    assertNull(suspendedEvent);
-                    assertNotNull(executionEvent);
-                    LineLocation returnOne = factorial.createLineLocation(3);
-                    debugger.setLineBreakpoint(0, returnOne, false);
-                    executionEvent.prepareContinue();
-                } catch (IOException e) {
-                    throw new JavaException(e);
-                }
+        run.addLast(() -> {
+            try {
+                assertNull(suspendedEvent);
+                assertNotNull(executionEvent);
+                LineLocation returnOne = factorial.createLineLocation(3);
+                debugger.setLineBreakpoint(0, returnOne, false);
+                executionEvent.prepareContinue();
+            } catch (IOException e) {
+                throw new JavaException(e);
             }
-
         });
 
         engine.eval(factorial);
 
         assertExecutedOK("Algorithm loaded");
 
-        run.addLast(new Runnable() {
-
-            @Override
-            public void run() {
-                //fail("the breakpoint should hit instead");
-            }
-
+        run.addLast(() -> {
+            //fail("the breakpoint should hit instead");
         });
 
         assertLocation(3, "1",
@@ -143,15 +134,10 @@ public class RubyDebugTest {
         final Source factorial = createFactorial();
         engine.eval(factorial);
 
-        run.addLast(new Runnable() {
-
-            @Override
-            public void run() {
-                assertNull(suspendedEvent);
-                assertNotNull(executionEvent);
-                executionEvent.prepareStepInto();
-            }
-
+        run.addLast(() -> {
+            assertNull(suspendedEvent);
+            assertNotNull(executionEvent);
+            executionEvent.prepareStepInto();
         });
 
         assertLocation(13, "res = fac(2)", "res", null);
@@ -207,82 +193,54 @@ public class RubyDebugTest {
     }
 
     private void stepOver(final int size) {
-        run.addLast(new Runnable() {
-
-            public void run() {
-                suspendedEvent.prepareStepOver(size);
-            }
-
-        });
+        run.addLast(() -> suspendedEvent.prepareStepOver(size));
     }
 
     private void stepOut() {
-        run.addLast(new Runnable() {
-
-            public void run() {
-                suspendedEvent.prepareStepOut();
-            }
-
-        });
+        run.addLast(() -> suspendedEvent.prepareStepOut());
     }
 
     private void continueExecution() {
-        run.addLast(new Runnable() {
-
-            public void run() {
-                suspendedEvent.prepareContinue();
-            }
-
-        });
+        run.addLast(() -> suspendedEvent.prepareContinue());
     }
 
     private void stepInto(final int size) {
-        run.addLast(new Runnable() {
-
-            public void run() {
-                suspendedEvent.prepareStepInto(size);
-            }
-
-        });
+        run.addLast(() -> suspendedEvent.prepareStepInto(size));
     }
 
     private void assertLocation(final int line, final String code, final Object... expectedFrame) {
-        run.addLast(new Runnable() {
+        run.addLast(() -> {
+            assertNotNull(suspendedEvent);
+            final int currentLine = suspendedEvent.getNode().getSourceSection().getLineLocation().getLineNumber();
+            assertEquals(line, currentLine);
+            final String currentCode = suspendedEvent.getNode().getSourceSection().getCode().trim();
+            assertEquals(code, currentCode);
+            final MaterializedFrame frame = suspendedEvent.getFrame();
 
-            public void run() {
-                assertNotNull(suspendedEvent);
-                final int currentLine = suspendedEvent.getNode().getSourceSection().getLineLocation().getLineNumber();
-                assertEquals(line, currentLine);
-                final String currentCode = suspendedEvent.getNode().getSourceSection().getCode().trim();
-                assertEquals(code, currentCode);
-                final MaterializedFrame frame = suspendedEvent.getFrame();
+            assertEquals(expectedFrame.length / 2, frame.getFrameDescriptor().getSize() - 1);
 
-                assertEquals(expectedFrame.length / 2, frame.getFrameDescriptor().getSize());
+            for (int i = 0; i < expectedFrame.length; i = i + 2) {
+                String expectedIdentifier = (String) expectedFrame[i];
+                Object expectedValue = expectedFrame[i + 1];
+                FrameSlot slot = frame.getFrameDescriptor().findFrameSlot(expectedIdentifier);
+                assertNotNull(slot);
+                Object value = frame.getValue(slot);
 
-                for (int i = 0; i < expectedFrame.length; i = i + 2) {
-                    String expectedIdentifier = (String) expectedFrame[i];
-                    Object expectedValue = expectedFrame[i + 1];
-                    FrameSlot slot = frame.getFrameDescriptor().findFrameSlot(expectedIdentifier);
-                    assertNotNull(slot);
-                    Object value = frame.getValue(slot);
-
-                    if (Objects.equals(expectedValue, value)) {
-                        continue;
-                    }
-
-                    Node findContextNode = RubyLanguage.INSTANCE.unprotectedCreateFindContextNode();
-                    RubyContext context = RubyLanguage.INSTANCE.unprotectedFindContext(findContextNode);
-
-                    if (value == context.getCoreLibrary().getNilObject()) {
-                        value = null;
-                    }
-
-                    assertEquals(expectedValue, value);
+                if (Objects.equals(expectedValue, value)) {
+                    continue;
                 }
 
-                run.removeFirst().run();
+                Node findContextNode = RubyLanguage.INSTANCE.unprotectedCreateFindContextNode();
+                RubyContext context = RubyLanguage.INSTANCE.unprotectedFindContext(findContextNode);
+
+                if (value == context.getCoreLibrary().getNilObject()) {
+                    value = null;
+                }
+
+                assertEquals(expectedValue, value);
             }
 
+            run.removeFirst().run();
         });
     }
 
@@ -301,7 +259,7 @@ public class RubyDebugTest {
     }
 
     private static Source createFactorial() throws IOException {
-        return Source.fromFileName("src/test/ruby/factorial.rb");
+        return Source.newBuilder(new File("src/test/ruby/factorial.rb")).build();
     }
 
     private final String getErr() {

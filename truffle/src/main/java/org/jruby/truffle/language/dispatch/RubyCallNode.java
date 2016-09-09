@@ -15,10 +15,9 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
-import com.oracle.truffle.api.source.SourceSection;
+
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.Layouts;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.array.ArrayUtils;
 import org.jruby.truffle.core.cast.BooleanCastNode;
 import org.jruby.truffle.core.cast.BooleanCastNodeGen;
@@ -57,32 +56,26 @@ public class RubyCallNode extends RubyNode {
 
     private final ConditionProfile nilProfile;
 
-    public RubyCallNode(RubyContext context, SourceSection section, RubyNode receiver, String methodName, RubyNode block, RubyNode[] arguments,
-            boolean isSplatted, boolean ignoreVisibility) {
-        this(context, section, receiver, methodName, block, arguments, isSplatted, ignoreVisibility, false, false, false);
-    }
+    public RubyCallNode(RubyCallNodeParameters parameters) {
+        super(parameters.getContext(), parameters.getSection());
 
-    public RubyCallNode(RubyContext context, SourceSection section, RubyNode receiver, String methodName, RubyNode block, RubyNode[] arguments,
-            boolean isSplatted, boolean ignoreVisibility, boolean isVCall, boolean isSafeNavigation, boolean isAttrAssign) {
-        super(context, section);
+        this.methodName = parameters.getMethodName();
+        this.receiver = parameters.getReceiver();
+        this.arguments = parameters.getArguments();
 
-        this.methodName = methodName;
-        this.receiver = receiver;
-        this.arguments = arguments;
-
-        if (block == null) {
+        if (parameters.getBlock() == null) {
             this.block = null;
         } else {
-            this.block = ProcOrNullNodeGen.create(context, section, block);
+            this.block = ProcOrNullNodeGen.create(parameters.getContext(), parameters.getSection(), parameters.getBlock());
         }
 
-        this.isSplatted = isSplatted;
-        this.ignoreVisibility = ignoreVisibility;
-        this.isVCall = isVCall;
-        this.isSafeNavigation = isSafeNavigation;
-        this.isAttrAssign = isAttrAssign;
+        this.isSplatted = parameters.isSplatted();
+        this.ignoreVisibility = parameters.isIgnoreVisibility();
+        this.isVCall = parameters.isVCall();
+        this.isSafeNavigation = parameters.isSafeNavigation();
+        this.isAttrAssign = parameters.isAttrAssign();
 
-        if (isSafeNavigation) {
+        if (parameters.isSafeNavigation()) {
             nilProfile = ConditionProfile.createCountingProfile();
         } else {
             nilProfile = null;

@@ -36,7 +36,9 @@ import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
+
 import jnr.constants.platform.Errno;
+
 import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.common.IRubyWarnings;
@@ -52,8 +54,8 @@ import org.jruby.truffle.core.ObjectNodes;
 import org.jruby.truffle.core.ObjectNodesFactory;
 import org.jruby.truffle.core.array.ArrayUtils;
 import org.jruby.truffle.core.basicobject.BasicObjectNodes;
-import org.jruby.truffle.core.basicobject.BasicObjectNodesFactory;
 import org.jruby.truffle.core.basicobject.BasicObjectNodes.ReferenceEqualNode;
+import org.jruby.truffle.core.basicobject.BasicObjectNodesFactory;
 import org.jruby.truffle.core.binding.BindingNodes;
 import org.jruby.truffle.core.cast.BooleanCastWithDefaultNodeGen;
 import org.jruby.truffle.core.cast.DurationToMillisecondsNodeGen;
@@ -70,8 +72,8 @@ import org.jruby.truffle.core.format.FormatExceptionTranslator;
 import org.jruby.truffle.core.format.exceptions.FormatException;
 import org.jruby.truffle.core.format.exceptions.InvalidFormatException;
 import org.jruby.truffle.core.format.printf.PrintfCompiler;
-import org.jruby.truffle.core.hash.KeyValue;
 import org.jruby.truffle.core.hash.HashOperations;
+import org.jruby.truffle.core.hash.KeyValue;
 import org.jruby.truffle.core.kernel.KernelNodesFactory.CopyNodeFactory;
 import org.jruby.truffle.core.kernel.KernelNodesFactory.SameOrEqualNodeFactory;
 import org.jruby.truffle.core.kernel.KernelNodesFactory.SingletonMethodsNodeFactory;
@@ -84,10 +86,11 @@ import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeNodes;
 import org.jruby.truffle.core.rope.RopeNodesFactory;
 import org.jruby.truffle.core.rope.RopeOperations;
+import org.jruby.truffle.core.rubinius.RegexpPrimitiveNodes;
+import org.jruby.truffle.core.rubinius.RegexpPrimitiveNodesFactory;
 import org.jruby.truffle.core.string.StringCachingGuards;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.core.symbol.SymbolTable;
-import org.jruby.truffle.core.thread.ThreadBacktraceLocationLayoutImpl;
 import org.jruby.truffle.core.thread.ThreadManager.BlockingAction;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
@@ -99,6 +102,8 @@ import org.jruby.truffle.language.backtrace.Backtrace;
 import org.jruby.truffle.language.control.JavaException;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
+import org.jruby.truffle.language.dispatch.DispatchAction;
+import org.jruby.truffle.language.dispatch.DispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.dispatch.DoesRespondDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.MissingBehavior;
@@ -137,15 +142,16 @@ import org.jruby.truffle.language.parser.jruby.TranslatorDriver;
 import org.jruby.truffle.language.threadlocal.ThreadLocalObject;
 import org.jruby.truffle.platform.UnsafeGroup;
 import org.jruby.truffle.util.StringUtils;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.lang.ProcessBuilder.Redirect;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
+import java.util.Map;
 
 @CoreClass("Kernel")
 public abstract class KernelNodes {
@@ -161,7 +167,7 @@ public abstract class KernelNodes {
             // TODO BJF Aug 4, 2016 Needs SafeStringValue here
             if (toStrNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                toStrNode = insert(ToStrNodeGen.create(getContext(), getSourceSection(), null));
+                toStrNode = insert(ToStrNodeGen.create(getContext(), null, null));
             }
             return backtick(frame, toStrNode.executeToStr(frame, command));
         }
@@ -183,18 +189,21 @@ public abstract class KernelNodes {
 
         @TruffleBoundary
         private DynamicObject spawnAndCaptureOutput(DynamicObject command, final DynamicObject envAsHash) {
-            final List<String> envp = new ArrayList<>();
+            // We need to run via bash to get the variable and other expansion we expect
+            String[] cmdArray = new String[] { "bash", "-c", command.toString() };
 
-            // TODO(CS): cast
+            ProcessBuilder builder = new ProcessBuilder(cmdArray).redirectError(Redirect.INHERIT);
+
+            Map<String, String> env = builder.environment();
+            env.clear();
             for (KeyValue keyValue : HashOperations.iterableKeyValues(envAsHash)) {
-                envp.add(keyValue.getKey().toString() + "=" + keyValue.getValue().toString());
+                // TODO(CS): toString
+                env.put(keyValue.getKey().toString(), keyValue.getValue().toString());
             }
 
             final Process process;
-
             try {
-                // We need to run via bash to get the variable and other expansion we expect
-                process = Runtime.getRuntime().exec(new String[]{ "bash", "-c", command.toString() }, envp.toArray(new String[envp.size()]));
+                process = builder.start();
             } catch (IOException e) {
                 throw new JavaException(e);
             }
@@ -270,15 +279,30 @@ public abstract class KernelNodes {
     public abstract static class NotMatchNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode matchNode;
+        @Child private RegexpPrimitiveNodes.RegexpSetLastMatchPrimitiveNode setLastMatchNode;
 
         public NotMatchNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             matchNode = DispatchHeadNodeFactory.createMethodCall(context);
+            setLastMatchNode = RegexpPrimitiveNodesFactory.RegexpSetLastMatchPrimitiveNodeFactory.create(null);
         }
 
         @Specialization
         public boolean notMatch(VirtualFrame frame, Object self, Object other) {
-            return !matchNode.callBoolean(frame, self, "=~", null, other);
+            final boolean ret = !matchNode.callBoolean(frame, self, "=~", null, other);
+
+            final FrameSlot matchDataSlot = frame.getFrameDescriptor().findFrameSlot("$~");
+            final Object matchData = frame.getValue(matchDataSlot);
+
+            if (matchData instanceof ThreadLocalObject) {
+                final ThreadLocalObject threadLocalObject = (ThreadLocalObject) matchData;
+
+                setLastMatchNode.executeSetLastMatch(threadLocalObject.get());
+            } else {
+                setLastMatchNode.executeSetLastMatch(nil());
+            }
+
+            return ret;
         }
 
     }
@@ -375,7 +399,7 @@ public abstract class KernelNodes {
                 locations[n] = Layouts.THREAD_BACKTRACE_LOCATION.createThreadBacktraceLocation(coreLibrary().getThreadBacktraceLocationFactory(), activation);
             }
 
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), locations, locations.length);
+            return createArray(locations, locations.length);
         }
     }
 
@@ -815,7 +839,7 @@ public abstract class KernelNodes {
         public boolean isFrozen(Object self) {
             if (isFrozenNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                isFrozenNode = insert(IsFrozenNodeGen.create(getContext(), getEncapsulatingSourceSection(), null));
+                isFrozenNode = insert(IsFrozenNodeGen.create(getContext(), null, null));
             }
 
             return isFrozenNode.executeIsFrozen(self);
@@ -949,7 +973,7 @@ public abstract class KernelNodes {
             classNode = LogicalClassNodeGen.create(context, sourceSection, null);
         }
 
-        @Specialization(guards = "isRubyClass(rubyClass)")
+        @Specialization(guards = "isRubyModule(rubyClass)")
         public boolean instanceOf(VirtualFrame frame, Object self, DynamicObject rubyClass) {
             return classNode.executeLogicalClass(self) == rubyClass;
         }
@@ -1240,7 +1264,7 @@ public abstract class KernelNodes {
             final DynamicObject metaClass = metaClassNode.executeMetaClass(self);
 
             Object[] objects = Layouts.MODULE.getFields(metaClass).filterMethodsOnObject(getContext(), regular, MethodFilter.PUBLIC_PROTECTED).toArray();
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), objects, objects.length);
+            return createArray(objects, objects.length);
         }
 
         @Specialization(guards = "!regular")
@@ -1250,11 +1274,11 @@ public abstract class KernelNodes {
         }
 
         protected MetaClassNode createMetaClassNode() {
-            return MetaClassNodeGen.create(getContext(), getSourceSection(), null);
+            return MetaClassNodeGen.create(getContext(), null, null);
         }
 
         protected SingletonMethodsNode createSingletonMethodsNode() {
-            return SingletonMethodsNodeFactory.create(getContext(), getSourceSection(), null, null);
+            return SingletonMethodsNodeFactory.create(getContext(), null, null, null);
         }
 
     }
@@ -1293,7 +1317,7 @@ public abstract class KernelNodes {
             DynamicObject metaClass = metaClassNode.executeMetaClass(self);
 
             Object[] objects = Layouts.MODULE.getFields(metaClass).filterMethodsOnObject(getContext(), includeAncestors, MethodFilter.PRIVATE).toArray();
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), objects, objects.length);
+            return createArray(objects, objects.length);
         }
 
     }
@@ -1340,7 +1364,7 @@ public abstract class KernelNodes {
             final DynamicObject metaClass = metaClassNode.executeMetaClass(self);
 
             Object[] objects = Layouts.MODULE.getFields(metaClass).filterMethodsOnObject(getContext(), includeAncestors, MethodFilter.PROTECTED).toArray();
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), objects, objects.length);
+            return createArray(objects, objects.length);
         }
 
     }
@@ -1370,7 +1394,7 @@ public abstract class KernelNodes {
             final DynamicObject metaClass = metaClassNode.executeMetaClass(self);
 
             Object[] objects = Layouts.MODULE.getFields(metaClass).filterMethodsOnObject(getContext(), includeAncestors, MethodFilter.PUBLIC).toArray();
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), objects, objects.length);
+            return createArray(objects, objects.length);
         }
 
     }
@@ -1378,13 +1402,11 @@ public abstract class KernelNodes {
     @CoreMethod(names = "public_send", needsBlock = true, required = 1, rest = true)
     public abstract static class PublicSendNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private CallDispatchHeadNode dispatchNode;
+        @Child private DispatchHeadNode dispatchNode;
 
         public PublicSendNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-
-            dispatchNode = new CallDispatchHeadNode(context, false,
-                    MissingBehavior.CALL_METHOD_MISSING);
+            dispatchNode = new DispatchHeadNode(context, false, true, MissingBehavior.CALL_METHOD_MISSING, DispatchAction.CALL_METHOD);
         }
 
         @Specialization
@@ -1394,7 +1416,7 @@ public abstract class KernelNodes {
 
         @Specialization
         public Object send(VirtualFrame frame, Object self, Object name, Object[] args, DynamicObject block) {
-            return dispatchNode.callWithBlock(frame, self, name, block, args);
+            return dispatchNode.dispatch(frame, self, name, block, args);
         }
 
     }
@@ -1528,7 +1550,7 @@ public abstract class KernelNodes {
             if (ret) {
                 return true;
             } else if (dispatchRespondToMissing.doesRespondTo(frame, "respond_to_missing?", object)) {
-                return respondToMissing(frame, object, name, includeProtectedAndPrivate);
+                return respondToMissing(frame, object, getSymbol(StringOperations.rope(name)), includeProtectedAndPrivate);
             } else {
                 return false;
             }
@@ -1638,11 +1660,11 @@ public abstract class KernelNodes {
             final DynamicObject metaClass = metaClassNode.executeMetaClass(self);
 
             if (!Layouts.CLASS.getIsSingleton(metaClass)) {
-                return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), null, 0);
+                return createArray(null, 0);
             }
 
             Object[] objects = Layouts.MODULE.getFields(metaClass).filterSingletonMethods(getContext(), includeAncestors, MethodFilter.PUBLIC_PROTECTED).toArray();
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), objects, objects.length);
+            return createArray(objects, objects.length);
         }
 
     }
@@ -1774,7 +1796,7 @@ public abstract class KernelNodes {
             if (result.isTainted()) {
                 if (taintNode == null) {
                     CompilerDirectives.transferToInterpreterAndInvalidate();
-                    taintNode = insert(TaintNodeGen.create(getContext(), getEncapsulatingSourceSection(), null));
+                    taintNode = insert(TaintNodeGen.create(getContext(), null, null));
                 }
 
                 taintNode.executeTaint(string);
@@ -1806,7 +1828,7 @@ public abstract class KernelNodes {
         public Object taint(Object object) {
             if (taintNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                taintNode = insert(TaintNodeGen.create(getContext(), getEncapsulatingSourceSection(), null));
+                taintNode = insert(TaintNodeGen.create(getContext(), null, null));
             }
             return taintNode.executeTaint(object);
         }
@@ -1822,7 +1844,7 @@ public abstract class KernelNodes {
         public boolean isTainted(Object object) {
             if (isTaintedNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                isTaintedNode = insert(IsTaintedNodeGen.create(getContext(), getEncapsulatingSourceSection(), null));
+                isTaintedNode = insert(IsTaintedNodeGen.create(getContext(), null, null));
             }
             return isTaintedNode.executeIsTainted(object);
         }
@@ -1913,7 +1935,7 @@ public abstract class KernelNodes {
         protected void checkFrozen(Object object) {
             if (isFrozenNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                isFrozenNode = insert(IsFrozenNodeGen.create(getContext(), getSourceSection(), null));
+                isFrozenNode = insert(IsFrozenNodeGen.create(getContext(), null, null));
             }
             isFrozenNode.raiseIfFrozen(object);
         }

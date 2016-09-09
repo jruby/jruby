@@ -32,7 +32,6 @@ import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.builtins.NonStandard;
 import org.jruby.truffle.builtins.UnaryCoreMethodNode;
-import org.jruby.truffle.core.array.ArrayHelpers;
 import org.jruby.truffle.core.basicobject.BasicObjectNodesFactory.ReferenceEqualNodeFactory;
 import org.jruby.truffle.core.cast.BooleanCastNodeGen;
 import org.jruby.truffle.core.module.ModuleOperations;
@@ -260,32 +259,32 @@ public abstract class BasicObjectNodes {
                 }
             }
             final int size = names.size();
-            return ArrayHelpers.createArray(getContext(), names.toArray(new Object[size]), size);
+            return createArray(names.toArray(new Object[size]), size);
         }
 
         @Specialization
         public DynamicObject instanceVariables(int self) {
-            return ArrayHelpers.createArray(getContext(), null, 0);
+            return createArray(null, 0);
         }
 
         @Specialization
         public DynamicObject instanceVariables(long self) {
-            return ArrayHelpers.createArray(getContext(), null, 0);
+            return createArray(null, 0);
         }
 
         @Specialization
         public DynamicObject instanceVariables(boolean self) {
-            return ArrayHelpers.createArray(getContext(), null, 0);
+            return createArray(null, 0);
         }
 
         @Specialization(guards = "isNil(object)")
         public DynamicObject instanceVariablesNil(DynamicObject object) {
-            return ArrayHelpers.createArray(getContext(), null, 0);
+            return createArray(null, 0);
         }
 
         @Specialization(guards = "isRubySymbol(object)")
         public DynamicObject instanceVariablesSymbol(DynamicObject object) {
-            return ArrayHelpers.createArray(getContext(), null, 0);
+            return createArray(null, 0);
         }
 
     }
@@ -316,11 +315,16 @@ public abstract class BasicObjectNodes {
         private DynamicObject buildMethodMissingException(Object self, DynamicObject nameObject, Object[] args, DynamicObject block) {
             final String name = nameObject.toString();
             final FrameInstance relevantCallerFrame = getRelevantCallerFrame();
+            Visibility visibility;
 
             if (lastCallWasSuper(relevantCallerFrame)) {
                 return coreExceptions().noSuperMethodError(name, self, args, this);
-            } else if (lastCallWasCallingPrivateMethod(self, name)) {
-                return coreExceptions().privateMethodError(name, self, args, this);
+            } else if ((visibility = lastCallWasCallingPrivateOrProtectedMethod(self, name)) != null) {
+                if (visibility.isPrivate()) {
+                    return coreExceptions().privateMethodError(name, self, args, this);
+                } else {
+                    return coreExceptions().protectedMethodError(name, self, args, this);
+                }
             } else if (lastCallWasVCall(relevantCallerFrame)) {
                 return coreExceptions().nameErrorUndefinedLocalVariableOrMethod(name, self, this);
             } else {
@@ -361,9 +365,13 @@ public abstract class BasicObjectNodes {
          * See {@link org.jruby.truffle.language.dispatch.DispatchNode#lookup}.
          * The only way to fail if method is not null and not undefined is visibility.
          */
-        private boolean lastCallWasCallingPrivateMethod(Object self, String name) {
+        private Visibility lastCallWasCallingPrivateOrProtectedMethod(Object self, String name) {
             final InternalMethod method = ModuleOperations.lookupMethod(coreLibrary().getMetaClass(self), name);
-            return method != null && !method.isUndefined();
+            if (method != null && !method.isUndefined()) {
+                assert method.getVisibility().isPrivate() || method.getVisibility().isProtected();
+                return method.getVisibility();
+            }
+            return null;
         }
 
         private boolean lastCallWasVCall(FrameInstance callerFrame) {

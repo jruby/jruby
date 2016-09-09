@@ -13,6 +13,13 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.Frame;
+import com.oracle.truffle.api.frame.FrameDescriptor;
+import com.oracle.truffle.api.frame.FrameInstance;
+import com.oracle.truffle.api.frame.FrameSlot;
+import com.oracle.truffle.api.frame.FrameSlotKind;
+import com.oracle.truffle.api.frame.FrameSlotTypeException;
+import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.joni.Matcher;
 import org.jruby.truffle.Layouts;
@@ -23,7 +30,11 @@ import org.jruby.truffle.core.regexp.RegexpGuards;
 import org.jruby.truffle.core.regexp.RegexpNodes;
 import org.jruby.truffle.core.rope.RopeNodes;
 import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.language.RubyGuards;
+import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.control.RaiseException;
+import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
+import org.jruby.truffle.language.threadlocal.ThreadLocalObject;
 import org.jruby.truffle.util.StringUtils;
 
 /**
@@ -31,6 +42,10 @@ import org.jruby.truffle.util.StringUtils;
 
  */
 public abstract class RegexpPrimitiveNodes {
+
+    public static boolean isSuitableMatchDataType(RubyContext context, DynamicObject matchData) {
+        return matchData == context.getCoreLibrary().getNilObject() || RubyGuards.isRubyMatchData(matchData);
+    }
 
     @Primitive(name = "regexp_fixed_encoding_p")
     public static abstract class RegexpFixedEncodingPrimitiveNode extends PrimitiveArrayArgumentsNode {
@@ -80,17 +95,6 @@ public abstract class RegexpPrimitiveNodes {
 
     }
 
-    @Primitive(name = "regexp_propagate_last_match")
-    public static abstract class RegexpPropagateLastMatchPrimitiveNode extends PrimitiveArrayArgumentsNode {
-
-        @Specialization
-        public DynamicObject propagateLastMatch(DynamicObject regexpClass) {
-            // TODO (nirvdrum 08-Jun-15): This method seems to exist just to fix Rubinius's broken frame-local scoping.  This assertion needs to be verified, however.
-            return nil();
-        }
-
-    }
-
     @Primitive(name = "regexp_search_region", lowerFixnum = { 2, 3 })
     @ImportStatic(RegexpGuards.class)
     public static abstract class RegexpSearchRegionPrimitiveNode extends PrimitiveArrayArgumentsNode {
@@ -110,48 +114,114 @@ public abstract class RegexpPrimitiveNodes {
             return StringUtils.format("invalid byte sequence in %s", Layouts.STRING.getRope(string).getEncoding());
         }
 
-        @TruffleBoundary
         @Specialization(guards = {"isInitialized(regexp)", "isRubyString(string)", "isValidEncoding(string)"})
-        public Object searchRegion(DynamicObject regexp, DynamicObject string, int start, int end, boolean forward,
-                                   @Cached("createX()") RopeNodes.MakeSubstringNode makeSubstringNode) {
-            final Matcher matcher = RegexpNodes.createMatcher(getContext(), regexp, string);
+        public Object searchRegion(VirtualFrame frame, DynamicObject regexp, DynamicObject string,
+                                   int start, int end, boolean forward,
+                                   @Cached("createX()") RopeNodes.MakeSubstringNode makeSubstringNode,
+                                   @Cached("createMethodCall()") CallDispatchHeadNode dupNode) {
+            final DynamicObject dupedString = (DynamicObject) dupNode.call(frame, string, "dup");
+            final Matcher matcher = RegexpNodes.createMatcher(getContext(), regexp, dupedString);
 
             if (forward) {
                 // Search forward through the string.
-                return RegexpNodes.matchCommon(getContext(), this, makeSubstringNode, regexp, string, false, false, matcher, start, end);
+                return RegexpNodes.matchCommon(getContext(), this, makeSubstringNode, regexp, dupedString, false, matcher, start, end);
             } else {
                 // Search backward through the string.
-                return RegexpNodes.matchCommon(getContext(), this, makeSubstringNode, regexp, string, false, false, matcher, end, start);
+                return RegexpNodes.matchCommon(getContext(), this, makeSubstringNode, regexp, dupedString, false, matcher, end, start);
             }
         }
 
     }
 
-    @Primitive(name = "regexp_set_last_match")
+    @Primitive(name = "regexp_set_last_match", needsSelf = false)
+    @ImportStatic(RegexpPrimitiveNodes.class)
     public static abstract class RegexpSetLastMatchPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
-        @Specialization
-        public Object setLastMatchData(DynamicObject regexpClass, Object matchData) {
-            setLastMatch(getContext(), matchData);
-            return matchData;
+        public static RegexpSetLastMatchPrimitiveNode create() {
+            return RegexpPrimitiveNodesFactory.RegexpSetLastMatchPrimitiveNodeFactory.create(null);
         }
 
+        public abstract DynamicObject executeSetLastMatch(Object matchData);
+
         @TruffleBoundary
-        public static void setLastMatch(RubyContext context, Object matchData) {
-            final DynamicObject threadLocals = Layouts.THREAD.getThreadLocals(context.getThreadManager().getCurrentThread());
-            boolean res = threadLocals.set("$~", matchData);
-            assert res;
+        @Specialization(guards = "isSuitableMatchDataType(getContext(), matchData)")
+        public DynamicObject setLastMatchData(DynamicObject matchData) {
+            Frame frame = getContext().getCallStack().getCallerFrameIgnoringSend().getFrame(FrameInstance.FrameAccess.READ_WRITE, true);
+            FrameSlot slot = frame.getFrameDescriptor().findFrameSlot("$~");
+
+            while (slot == null) {
+                final Frame nextFrame = RubyArguments.getDeclarationFrame(frame);
+
+                if (nextFrame == null) {
+                    slot = frame.getFrameDescriptor().addFrameSlot("$~", FrameSlotKind.Object);
+                } else {
+                    slot = nextFrame.getFrameDescriptor().findFrameSlot("$~");
+                    frame = nextFrame;
+                }
+            }
+
+            final Object previousMatchData;
+            try {
+                previousMatchData = frame.getObject(slot);
+
+                if (previousMatchData instanceof ThreadLocalObject) {
+                    final ThreadLocalObject threadLocalObject = (ThreadLocalObject) previousMatchData;
+
+                    threadLocalObject.set(matchData);
+                } else {
+                    frame.setObject(slot, ThreadLocalObject.wrap(getContext(), matchData));
+                }
+            } catch (FrameSlotTypeException e) {
+                throw new IllegalStateException(e);
+            }
+
+            return matchData;
         }
 
     }
 
-    @Primitive(name = "regexp_set_block_last_match")
+    @Primitive(name = "regexp_set_block_last_match", needsSelf = false)
+    @ImportStatic(RegexpPrimitiveNodes.class)
     public static abstract class RegexpSetBlockLastMatchPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
-        @Specialization
-        public DynamicObject setBlockLastMatch(DynamicObject regexpClass) {
-            // TODO CS 7-Mar-15 what does this do?
-            return nil();
+        @TruffleBoundary
+        @Specialization(guards = { "isRubyProc(block)", "isSuitableMatchDataType(getContext(), matchData)" })
+        public Object setBlockLastMatch(DynamicObject block, DynamicObject matchData) {
+
+            Frame methodFrame = Layouts.PROC.getDeclarationFrame(block);
+
+            if (methodFrame == null) {
+                return matchData;
+            }
+
+            Frame tempFrame = RubyArguments.getDeclarationFrame(methodFrame);
+
+            while (tempFrame != null) {
+                methodFrame = tempFrame;
+                tempFrame = RubyArguments.getDeclarationFrame(methodFrame);
+            }
+
+            final FrameDescriptor callerFrameDescriptor = methodFrame.getFrameDescriptor();
+
+            try {
+                final FrameSlot frameSlot = callerFrameDescriptor.findFrameSlot("$~");
+
+                if (frameSlot == null) {
+                    return matchData;
+                }
+
+                final Object matchDataHolder = methodFrame.getObject(frameSlot);
+
+                if (matchDataHolder instanceof ThreadLocalObject) {
+                    ((ThreadLocalObject) matchDataHolder).set(matchData);
+                } else {
+                    methodFrame.setObject(frameSlot, ThreadLocalObject.wrap(getContext(), matchData));
+                }
+            } catch (FrameSlotTypeException e) {
+                throw new IllegalStateException(e);
+            }
+
+            return matchData;
         }
 
     }

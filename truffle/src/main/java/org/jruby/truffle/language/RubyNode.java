@@ -22,7 +22,23 @@ public abstract class RubyNode extends RubyBaseNode {
     public RubyNode() {
     }
 
+    public RubyNode(RubyContext context) {
+        super(context);
+    }
+
+    public RubyNode(SourceSection sourceSection) {
+        super(sourceSection);
+    }
+
+    public RubyNode(RubySourceSection sourceSection) {
+        super(sourceSection);
+    }
+
     public RubyNode(RubyContext context, SourceSection sourceSection) {
+        super(context, sourceSection);
+    }
+
+    public RubyNode(RubyContext context, RubySourceSection sourceSection) {
         super(context, sourceSection);
     }
 

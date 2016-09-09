@@ -1,4 +1,3 @@
-fails:File#size raises an IOError on a closed file
 windows:File.size? returns the size of the file if it exists and is not empty
 windows:File.size? returns nil if file_name doesn't exist or has 0 size
 windows:File.size? returns nil if file_name is empty

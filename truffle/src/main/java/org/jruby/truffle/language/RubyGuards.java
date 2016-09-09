@@ -293,4 +293,10 @@ public abstract class RubyGuards {
         return Double.isInfinite(value);
     }
 
+    // Composite
+
+    public static boolean isSingletonClass(DynamicObject value) {
+        return isRubyClass(value) && Layouts.CLASS.getIsSingleton(value);
+    }
+
 }

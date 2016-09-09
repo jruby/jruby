@@ -14,13 +14,14 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.source.Source;
-import java.io.File;
-import java.io.IOException;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.RubyLanguage;
 import org.jruby.truffle.core.array.ArrayOperations;
 import org.jruby.truffle.language.control.JavaException;
 import org.jruby.truffle.language.control.RaiseException;
+
+import java.io.File;
+import java.io.IOException;
 
 public class FeatureLoader {
 
@@ -129,6 +130,10 @@ public class FeatureLoader {
         synchronized (cextImplementationLock) {
             if (cextImplementationLoaded) {
                 return;
+            }
+
+            if (!context.getEnv().isMimeTypeSupported(RubyLanguage.CEXT_MIME_TYPE)) {
+                throw new RaiseException(context.getCoreExceptions().internalError("Sulong is required to support C extensions, and it doesn't appear to be available", null));
             }
 
             final CallTarget callTarget = getCExtLibRuby();

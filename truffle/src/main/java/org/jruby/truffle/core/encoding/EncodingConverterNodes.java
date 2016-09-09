@@ -14,7 +14,6 @@ package org.jruby.truffle.core.encoding;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.nodes.Node.Child;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.Encoding;
@@ -52,6 +51,7 @@ import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.util.StringUtils;
 import org.jruby.util.ByteList;
 import org.jruby.util.io.EncodingUtils;
+
 import static org.jruby.truffle.core.string.StringOperations.rope;
 
 @CoreClass("Encoding::Converter")
@@ -433,7 +433,7 @@ public abstract class EncodingConverterNodes {
                 ret[4] = createString(new ByteList(ec.lastError.getErrorBytes(), ec.lastError.getErrorBytesP() + ec.lastError.getErrorBytesLength(), ec.lastError.getReadAgainLength()));
             }
 
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), ret, ret.length);
+            return createArray(ret, ret.length);
         }
 
     }

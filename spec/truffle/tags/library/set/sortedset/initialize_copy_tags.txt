@@ -1,1 +1,0 @@
-fails:SortedSet#initialize_copy replaces all elements of self with the elements of the passed SortedSet

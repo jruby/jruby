@@ -29,7 +29,6 @@ import org.jruby.truffle.builtins.YieldingCoreMethodNode;
 import org.jruby.truffle.core.kernel.TraceManager;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
-import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
 
 @CoreClass("TracePoint")
 public abstract class TracePointNodes {

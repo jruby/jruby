@@ -369,7 +369,7 @@ public abstract class VMPrimitiveNodes {
             final double tutime = 0;
             final double tstime = 0;
 
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), new double[]{
+            return createArray(new double[] {
                     utime,
                     stime,
                     cutime,
@@ -465,11 +465,11 @@ public abstract class VMPrimitiveNodes {
                 Object[] objects = new Object[]{
                         createString(StringOperations.encodeRope(key, UTF8Encoding.INSTANCE)),
                         createString(StringOperations.encodeRope(stringValue, UTF8Encoding.INSTANCE)) };
-                sectionKeyValues.add(Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), objects, objects.length));
+                sectionKeyValues.add(createArray(objects, objects.length));
             }
 
             Object[] objects = sectionKeyValues.toArray();
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), objects, objects.length);
+            return createArray(objects, objects.length);
         }
 
     }
@@ -535,7 +535,7 @@ public abstract class VMPrimitiveNodes {
             }
 
             Object[] objects = new Object[]{ output, termsig, stopsig, pid };
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), objects, objects.length);
+            return createArray(objects, objects.length);
         }
 
     }

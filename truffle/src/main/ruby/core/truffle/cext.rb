@@ -167,7 +167,7 @@ module Truffle::CExt
   end
 
   def rb_mWaitReadable
-    WaitReadable
+    IO::WaitReadable
   end
 
   def rb_mComparable
@@ -175,7 +175,7 @@ module Truffle::CExt
   end
 
   def rb_mWaitWritable
-    WaitWritable
+    IO::WaitWritable
   end
 
   def rb_eException
@@ -242,6 +242,10 @@ module Truffle::CExt
     !nil.equal?(value) && !false.equal?(value)
   end
 
+  def rb_require(feature)
+    require feature
+  end
+
   def RB_OBJ_TAINTABLE(object)
     case object
       when TrueClass, FalseClass, Fixnum, Float, NilClass, Symbol
@@ -288,6 +292,10 @@ module Truffle::CExt
     to_ruby_string(cext_str)[0, length].b
   end
 
+  def rb_str_new_nul(length)
+    "\0" * length
+  end
+
   def rb_str_new_cstr(java_string)
     String.new(java_string)
   end
@@ -324,8 +332,16 @@ module Truffle::CExt
     {}
   end
 
+  def rb_hash_set_ifnone(hash, value)
+    hash.default = value
+  end
+
   def rb_class_real(ruby_class)
     raise 'not implemented'
+  end
+
+  def rb_path2class(path)
+    Object.const_get(path)
   end
 
   def rb_proc_new(function, value)
@@ -365,29 +381,29 @@ module Truffle::CExt
   end
 
   def rb_define_class_under(mod, name, superclass)
-    if mod.const_defined?(name)
-      klass = mod.const_get(name)
-      unless klass.class == Class
+    if mod.const_defined?(name, false)
+      current_class = mod.const_get(name, false)
+      unless current_class.class == Class
         raise TypeError, "#{mod}::#{name} is not a class"
       end
-      if superclass != klass.superclass
+      if superclass != current_class.superclass
         raise TypeError, "superclass mismatch for class #{name}"
       end
-      klass
+      current_class
     else
-      mod.const_set(name, Class.new(superclass))
+      mod.const_set name, Class.new(superclass)
     end
   end
 
   def rb_define_module_under(mod, name)
-    if mod.const_defined?(name)
-      val = mod.const_get(name)
+    if mod.const_defined?(name, false)
+      val = mod.const_get(name, false)
       unless val.class == Module
         raise TypeError, "#{mod}::#{name} is not a module"
       end
       val
     else
-      mod.const_set(name, Module.new)
+      mod.const_set name, Module.new
     end
   end
 
@@ -410,11 +426,17 @@ module Truffle::CExt
 
   def rb_define_module_function(mod, name, function, argc)
     rb_define_method(mod, name, function, argc)
-    mod.send :module_function, name
+    cext_module_function mod, name.to_sym
   end
 
   def rb_define_singleton_method(object, name, function, argc)
     rb_define_method(object.singleton_class, name, function, argc)
+  end
+
+  def rb_define_alloc_func(ruby_class, function)
+    ruby_class.send(:define_method, :allocate) do
+      function.call(self)
+    end
   end
 
   def rb_alias(mod, new_name, old_name)
@@ -424,6 +446,33 @@ module Truffle::CExt
   def rb_undef(mod, name)
     if mod.frozen? or mod.method_defined?(name)
       mod.send(:undef_method, name)
+    end
+  end
+
+  def rb_attr(ruby_class, name, read, write, ex)
+    if ex.zero?
+      private = false
+      protected = false
+      module_function = false
+    else
+      private = caller_frame_visibility(:private)
+      protected = caller_frame_visibility(:protected)
+      module_function = caller_frame_visibility(:module_function)
+    end
+
+    if read
+      ruby_class.send :attr_reader, name
+      ruby_class.send :private, name if private
+      ruby_class.send :protected, name if protected
+      ruby_class.send :module_function, name if module_function
+    end
+
+    if write
+      ruby_class.send :attr_writer, name
+      setter_name = :"#{name}="
+      ruby_class.send :private, setter_name if private
+      ruby_class.send :protected, setter_name if protected
+      ruby_class.send :module_function, setter_name if module_function
     end
   end
 
@@ -531,6 +580,10 @@ module Truffle::CExt
 
   def rb_ruby_debug_ptr
     $DEBUG
+  end
+
+  def rb_jt_error(message)
+    raise RubyTruffleError.new(message)
   end
 
 end

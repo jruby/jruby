@@ -70,8 +70,7 @@ class Time
   end
 
   def strftime(format)
-    Truffle.primitive :time_strftime
-    raise PrimitiveFailure, "Time#strftime primitive failed"
+    Truffle.invoke_primitive :time_strftime, self, StringValue(format)
   end
 
   MonthValue = {

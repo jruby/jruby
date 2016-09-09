@@ -11,8 +11,6 @@ package org.jruby.truffle;
 
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.vm.PolyglotEngine;
-import java.io.IOException;
-
 import org.jruby.JRubyTruffleInterface;
 import org.jruby.Ruby;
 import org.jruby.truffle.interop.JRubyContextWrapper;
@@ -20,6 +18,8 @@ import org.jruby.truffle.language.control.ExitException;
 import org.jruby.truffle.language.control.JavaException;
 import org.jruby.truffle.platform.graal.Graal;
 import org.jruby.util.cli.Options;
+
+import java.io.IOException;
 
 public class JRubyTruffleImpl implements JRubyTruffleInterface {
 
@@ -32,11 +32,7 @@ public class JRubyTruffleImpl implements JRubyTruffleInterface {
         engine = PolyglotEngine.newBuilder()
                 .globalSymbol(JRubyTruffleInterface.RUNTIME_SYMBOL, new JRubyContextWrapper(runtime))
                 .build();
-        try {
-            context = (RubyContext) engine.eval(loadSource("Truffle::Boot.context", "context")).get();
-        } catch (IOException e) {
-            throw new JavaException(e);
-        }
+        context = (RubyContext) engine.eval(loadSource("Truffle::Boot.context", "context")).get();
     }
 
     @Override
@@ -51,13 +47,8 @@ public class JRubyTruffleImpl implements JRubyTruffleInterface {
 
         try {
             return engine.eval(loadSource("Truffle::Boot.run_jruby_root", "run_jruby_root")).get();
-        } catch (IOException e) {
-            if (e.getCause() instanceof ExitException) {
-                final ExitException exit = (ExitException) e.getCause();
-                throw new org.jruby.exceptions.MainExitException(exit.getCode());
-            }
-
-            throw new JavaException(e);
+        } catch (ExitException e) {
+            throw new org.jruby.exceptions.MainExitException(e.getCode());
         }
     }
 

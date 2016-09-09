@@ -509,38 +509,40 @@ typedef struct {
     VALUE *klass;
 } ossl_asn1_info_t;
 
+// TODO CS 06-09-16 Removed the address of the classes for now as it causes problems in Sulong
+
 static const ossl_asn1_info_t ossl_asn1_info[] = {
-    { "EOC",               &cASN1EndOfContent,    },  /*  0 */
-    { "BOOLEAN",           &cASN1Boolean,         },  /*  1 */
-    { "INTEGER",           &cASN1Integer,         },  /*  2 */
-    { "BIT_STRING",        &cASN1BitString,       },  /*  3 */
-    { "OCTET_STRING",      &cASN1OctetString,     },  /*  4 */
-    { "NULL",              &cASN1Null,            },  /*  5 */
-    { "OBJECT",            &cASN1ObjectId,        },  /*  6 */
-    { "OBJECT_DESCRIPTOR", NULL,                  },  /*  7 */
-    { "EXTERNAL",          NULL,                  },  /*  8 */
-    { "REAL",              NULL,                  },  /*  9 */
-    { "ENUMERATED",        &cASN1Enumerated,      },  /* 10 */
-    { "EMBEDDED_PDV",      NULL,                  },  /* 11 */
-    { "UTF8STRING",        &cASN1UTF8String,      },  /* 12 */
-    { "RELATIVE_OID",      NULL,                  },  /* 13 */
-    { "[UNIVERSAL 14]",    NULL,                  },  /* 14 */
-    { "[UNIVERSAL 15]",    NULL,                  },  /* 15 */
-    { "SEQUENCE",          &cASN1Sequence,        },  /* 16 */
-    { "SET",               &cASN1Set,             },  /* 17 */
-    { "NUMERICSTRING",     &cASN1NumericString,   },  /* 18 */
-    { "PRINTABLESTRING",   &cASN1PrintableString, },  /* 19 */
-    { "T61STRING",         &cASN1T61String,       },  /* 20 */
-    { "VIDEOTEXSTRING",    &cASN1VideotexString,  },  /* 21 */
-    { "IA5STRING",         &cASN1IA5String,       },  /* 22 */
-    { "UTCTIME",           &cASN1UTCTime,         },  /* 23 */
-    { "GENERALIZEDTIME",   &cASN1GeneralizedTime, },  /* 24 */
-    { "GRAPHICSTRING",     &cASN1GraphicString,   },  /* 25 */
-    { "ISO64STRING",       &cASN1ISO64String,     },  /* 26 */
-    { "GENERALSTRING",     &cASN1GeneralString,   },  /* 27 */
-    { "UNIVERSALSTRING",   &cASN1UniversalString, },  /* 28 */
-    { "CHARACTER_STRING",  NULL,                  },  /* 29 */
-    { "BMPSTRING",         &cASN1BMPString,       },  /* 30 */
+    { "EOC",               NULL /*&cASN1EndOfContent*/,    },  /*  0 */
+    { "BOOLEAN",           NULL /*&cASN1Boolean*/,         },  /*  1 */
+    { "INTEGER",           NULL /*&cASN1Integer*/,         },  /*  2 */
+    { "BIT_STRING",        NULL /*&cASN1BitString*/,       },  /*  3 */
+    { "OCTET_STRING",      NULL /*&cASN1OctetString*/,     },  /*  4 */
+    { "NULL",              NULL /*&cASN1Null*/,            },  /*  5 */
+    { "OBJECT",            NULL /*&cASN1ObjectId*/,        },  /*  6 */
+    { "OBJECT_DESCRIPTOR", NULL,                           },  /*  7 */
+    { "EXTERNAL",          NULL,                           },  /*  8 */
+    { "REAL",              NULL,                           },  /*  9 */
+    { "ENUMERATED",        NULL /*&cASN1Enumerated*/,      },  /* 10 */
+    { "EMBEDDED_PDV",      NULL,                           },  /* 11 */
+    { "UTF8STRING",        NULL /*&cASN1UTF8String*/,      },  /* 12 */
+    { "RELATIVE_OID",      NULL,                           },  /* 13 */
+    { "[UNIVERSAL 14]",    NULL,                           },  /* 14 */
+    { "[UNIVERSAL 15]",    NULL,                           },  /* 15 */
+    { "SEQUENCE",          NULL /*&cASN1Sequence*/,        },  /* 16 */
+    { "SET",               NULL /*&cASN1Set*/,             },  /* 17 */
+    { "NUMERICSTRING",     NULL /*&cASN1NumericString*/,   },  /* 18 */
+    { "PRINTABLESTRING",   NULL /*&cASN1PrintableString*/, },  /* 19 */
+    { "T61STRING",         NULL /*&cASN1T61String*/,       },  /* 20 */
+    { "VIDEOTEXSTRING",    NULL /*&cASN1VideotexString*/,  },  /* 21 */
+    { "IA5STRING",         NULL /*&cASN1IA5String*/,       },  /* 22 */
+    { "UTCTIME",           NULL /*&cASN1UTCTime*/,         },  /* 23 */
+    { "GENERALIZEDTIME",   NULL /*&cASN1GeneralizedTime*/, },  /* 24 */
+    { "GRAPHICSTRING",     NULL /*&cASN1GraphicString*/,   },  /* 25 */
+    { "ISO64STRING",       NULL /*&cASN1ISO64String*/,     },  /* 26 */
+    { "GENERALSTRING",     NULL /*&cASN1GeneralString*/,   },  /* 27 */
+    { "UNIVERSALSTRING",   NULL /*&cASN1UniversalString*/, },  /* 28 */
+    { "CHARACTER_STRING",  NULL,                           },  /* 29 */
+    { "BMPSTRING",         NULL /*&cASN1BMPString*/,       },  /* 30 */
 };
 
 enum {ossl_asn1_info_size = (sizeof(ossl_asn1_info)/sizeof(ossl_asn1_info[0]))};

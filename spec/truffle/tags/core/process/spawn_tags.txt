@@ -1,28 +1,8 @@
-fails:Process.spawn executes the given command
-fails:Process.spawn returns the process ID of the new process as a Fixnum
-fails:Process.spawn returns immediately
-fails:Process.spawn sets environment variables in the child environment
-fails:Process.spawn unsets environment variables whose value is nil
-fails:Process.spawn calls #to_hash to convert the environment
-fails:Process.spawn calls #to_str to convert the environment keys
-fails:Process.spawn calls #to_str to convert the environment values
-fails:Process.spawn raises an ArgumentError if an environment key includes an equals sign
-fails:Process.spawn raises an ArgumentError if an environment key includes a null byte
-fails:Process.spawn raises an ArgumentError if an environment value includes a null byte
-fails:Process.spawn unsets other environment variables when given a true :unsetenv_others option
-fails:Process.spawn unsets other environment variables when given a non-false :unsetenv_others option
-fails:Process.spawn does not unset other environment variables when given a false :unsetenv_others option
-fails:Process.spawn does not unset other environment variables when given a nil :unsetenv_others option
-fails:Process.spawn does not unset environment variables included in the environment hash
-fails:Process.spawn joins the current process group by default
 fails:Process.spawn joins the current process if pgroup: false
 fails:Process.spawn joins the current process if pgroup: nil
 fails:Process.spawn joins a new process group if pgroup: true
 fails:Process.spawn joins a new process group if pgroup: 0
 fails:Process.spawn joins the specified process group if pgroup: pgid
-fails:Process.spawn raises an ArgumentError if given a negative :pgroup option
-fails:Process.spawn raises a TypeError if given a symbol as :pgroup option
-fails:Process.spawn uses the current working directory as its working directory
 fails:Process.spawn uses the current umask by default
 fails:Process.spawn sets the umask if given the :umask option
 fails:Process.spawn raises an ArgumentError if passed no command arguments

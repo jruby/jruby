@@ -5,7 +5,7 @@ if MORE_QUIET
     def say(message)
       if message != spec.post_install_message || !MORE_QUIET
         super
-      end 
+      end
     end
   end
 end
