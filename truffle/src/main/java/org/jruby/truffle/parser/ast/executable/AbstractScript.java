@@ -35,12 +35,12 @@ import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.truffle.parser.scope.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.truffle.parser.scope.StaticScope;
 import org.jruby.util.ByteList;
 
 import java.math.BigInteger;

@@ -28,9 +28,9 @@
 package org.jruby.truffle.parser.lexer.yacc;
 
 import org.jcodings.Encoding;
+import org.jruby.truffle.parser.ast.RegexpParseNode;
 import org.jruby.truffle.parser.lexer.yacc.SyntaxException.PID;
 import org.jruby.truffle.parser.parser.Tokens;
-import org.jruby.truffle.parser.ast.RegexpParseNode;
 import org.jruby.util.ByteList;
 import org.jruby.util.KCode;
 import org.jruby.util.RegexpOptions;

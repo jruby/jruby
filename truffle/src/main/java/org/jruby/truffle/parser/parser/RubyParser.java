@@ -31,6 +31,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.parser;
 
+import org.jruby.common.IRubyWarnings;
+import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.truffle.parser.ast.ArgsParseNode;
 import org.jruby.truffle.parser.ast.ArgumentParseNode;
 import org.jruby.truffle.parser.ast.ArrayParseNode;
@@ -78,12 +80,12 @@ import org.jruby.truffle.parser.ast.MultipleAsgnParseNode;
 import org.jruby.truffle.parser.ast.NextParseNode;
 import org.jruby.truffle.parser.ast.NilImplicitParseNode;
 import org.jruby.truffle.parser.ast.NilParseNode;
+import org.jruby.truffle.parser.ast.NonLocalControlFlowNode;
 import org.jruby.truffle.parser.ast.NumericParseNode;
+import org.jruby.truffle.parser.ast.OpAsgnAndParseNode;
 import org.jruby.truffle.parser.ast.OpAsgnOrParseNode;
 import org.jruby.truffle.parser.ast.OptArgParseNode;
 import org.jruby.truffle.parser.ast.ParseNode;
-import org.jruby.truffle.parser.ast.NonLocalControlFlowNode;
-import org.jruby.truffle.parser.ast.OpAsgnAndParseNode;
 import org.jruby.truffle.parser.ast.PostExeParseNode;
 import org.jruby.truffle.parser.ast.PreExe19ParseNode;
 import org.jruby.truffle.parser.ast.RationalParseNode;
@@ -109,8 +111,6 @@ import org.jruby.truffle.parser.ast.YieldParseNode;
 import org.jruby.truffle.parser.ast.ZArrayParseNode;
 import org.jruby.truffle.parser.ast.ZSuperParseNode;
 import org.jruby.truffle.parser.ast.types.ILiteralNode;
-import org.jruby.common.IRubyWarnings;
-import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.truffle.parser.lexer.LexerSource;
 import org.jruby.truffle.parser.lexer.yacc.ISourcePosition;
 import org.jruby.truffle.parser.lexer.yacc.ISourcePositionHolder;

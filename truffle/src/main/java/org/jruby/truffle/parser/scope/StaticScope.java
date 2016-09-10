@@ -30,6 +30,11 @@ package org.jruby.truffle.parser.scope;
 
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
+import org.jruby.ir.IRScope;
+import org.jruby.ir.IRScopeType;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.truffle.parser.Signature;
 import org.jruby.truffle.parser.ast.AssignableParseNode;
 import org.jruby.truffle.parser.ast.DAsgnParseNode;
 import org.jruby.truffle.parser.ast.DVarParseNode;
@@ -37,12 +42,7 @@ import org.jruby.truffle.parser.ast.LocalAsgnParseNode;
 import org.jruby.truffle.parser.ast.LocalVarParseNode;
 import org.jruby.truffle.parser.ast.ParseNode;
 import org.jruby.truffle.parser.ast.VCallParseNode;
-import org.jruby.ir.IRScope;
-import org.jruby.ir.IRScopeType;
 import org.jruby.truffle.parser.lexer.yacc.ISourcePosition;
-import org.jruby.truffle.parser.Signature;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 
 import java.io.Serializable;
 import java.util.Arrays;

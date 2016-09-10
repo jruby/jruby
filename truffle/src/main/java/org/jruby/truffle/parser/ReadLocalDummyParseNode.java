@@ -11,8 +11,8 @@ package org.jruby.truffle.parser;
 
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.parser.ast.ParseNode;
 import org.jruby.truffle.parser.ast.NodeType;
+import org.jruby.truffle.parser.ast.ParseNode;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
 import org.jruby.truffle.parser.lexer.yacc.ISourcePosition;
 

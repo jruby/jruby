@@ -36,14 +36,14 @@ import org.jruby.RubyArray;
 import org.jruby.RubyFile;
 import org.jruby.RubyHash;
 import org.jruby.RubyIO;
+import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.load.LoadServiceResourceInputStream;
 import org.jruby.truffle.parser.ast.ParseNode;
 import org.jruby.truffle.parser.lexer.ByteListLexerSource;
 import org.jruby.truffle.parser.lexer.GetsLexerSource;
 import org.jruby.truffle.parser.lexer.LexerSource;
 import org.jruby.truffle.parser.lexer.yacc.SyntaxException;
 import org.jruby.truffle.parser.scope.DynamicScope;
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.load.LoadServiceResourceInputStream;
 import org.jruby.util.ByteList;
 
 import java.io.FileInputStream;

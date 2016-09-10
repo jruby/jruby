@@ -1,6 +1,8 @@
 package org.jruby.truffle.parser;
 
 import org.jruby.Ruby;
+import org.jruby.runtime.Arity;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.parser.ast.ArgsParseNode;
 import org.jruby.truffle.parser.ast.ArgumentParseNode;
 import org.jruby.truffle.parser.ast.ForParseNode;
@@ -11,8 +13,6 @@ import org.jruby.truffle.parser.ast.PostExeParseNode;
 import org.jruby.truffle.parser.ast.PreExeParseNode;
 import org.jruby.truffle.parser.ast.StarParseNode;
 import org.jruby.truffle.parser.ast.UnnamedRestArgParseNode;
-import org.jruby.runtime.Arity;
-import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.TypeConverter;
 
 /**

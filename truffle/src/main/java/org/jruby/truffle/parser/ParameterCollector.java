@@ -21,8 +21,8 @@ import org.jruby.truffle.parser.ast.KeywordRestArgParseNode;
 import org.jruby.truffle.parser.ast.ListParseNode;
 import org.jruby.truffle.parser.ast.LocalAsgnParseNode;
 import org.jruby.truffle.parser.ast.MultipleAsgnParseNode;
-import org.jruby.truffle.parser.ast.ParseNode;
 import org.jruby.truffle.parser.ast.OptArgParseNode;
+import org.jruby.truffle.parser.ast.ParseNode;
 import org.jruby.truffle.parser.ast.RestArgParseNode;
 import org.jruby.truffle.parser.ast.visitor.AbstractNodeVisitor;
 
