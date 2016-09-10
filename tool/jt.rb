@@ -447,6 +447,7 @@ module Commands
       jt rebuild [options]                           clean and build
           truffle                                    build only the Truffle part, assumes the rest is up-to-date
           cexts [--no-openssl]                       build the cext backend (set SULONG_HOME and maybe USE_SYSTEM_CLANG)
+          parser                                     build the parser
           --build-pack                               use the build pack
           --offline                                  use the build pack to build offline
       jt clean                                       clean
@@ -543,6 +544,10 @@ module Commands
       unless no_openssl
         cextc "#{JRUBY_DIR}/truffle/src/main/c/openssl"
       end
+    when 'parser'
+      jay = Utilities.find_repo('jay')
+      ENV['PATH'] = "#{jay}/src:#{ENV['PATH']}"
+      sh 'sh', 'tool/truffle/generate_parser'
     when nil
       mvn env, *maven_options, 'package'
     else
@@ -1282,7 +1287,7 @@ class JT
       send(args.shift)
     when "build"
       command = [args.shift]
-      while ['truffle', 'cexts', '--offline', '--build-pack', '--no-openssl'].include?(args.first)
+      while ['truffle', 'cexts', 'parser', '--offline', '--build-pack', '--no-openssl'].include?(args.first)
         command << args.shift
       end
       send(*command)
