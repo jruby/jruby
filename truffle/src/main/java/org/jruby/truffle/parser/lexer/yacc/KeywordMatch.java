@@ -26,7 +26,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.lexer.yacc;
 
-import org.jruby.lexer.yacc.RubyLexer.Keyword;
+import org.jruby.truffle.parser.lexer.yacc.RubyLexer.Keyword;
 
 public class KeywordMatch {
     public static Keyword match(byte[] words) {

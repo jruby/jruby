@@ -30,12 +30,12 @@
 package org.jruby.truffle.parser.lexer.yacc;
 
 import org.jcodings.Encoding;
-import org.jruby.parser.Tokens;
+import org.jruby.truffle.parser.parser.Tokens;
 import org.jruby.util.ByteList;
 
-import static org.jruby.lexer.LexingCommon.EOF;
-import static org.jruby.lexer.LexingCommon.STR_FUNC_EXPAND;
-import static org.jruby.lexer.LexingCommon.STR_FUNC_INDENT;
+import static org.jruby.truffle.parser.lexer.LexingCommon.EOF;
+import static org.jruby.truffle.parser.lexer.LexingCommon.STR_FUNC_EXPAND;
+import static org.jruby.truffle.parser.lexer.LexingCommon.STR_FUNC_INDENT;
 
 /**
  * A lexing unit for scanning a heredoc element.

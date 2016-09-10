@@ -39,10 +39,10 @@ import org.jruby.RubySymbol;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.UndefinedMethod;
-import org.jruby.parser.StaticScope;
+import org.jruby.truffle.parser.scope.StaticScope;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
-import org.jruby.runtime.Helpers;
+import org.jruby.truffle.parser.Helpers;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -50,6 +50,7 @@ import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.runtime.ivars.VariableAccessor;
 import org.jruby.runtime.opto.ConstantCache;
 import org.jruby.runtime.opto.Invalidator;
+import org.jruby.truffle.parser.scope.StaticScopeFactory;
 import org.jruby.util.ByteList;
 import org.jruby.util.DefinedMessage;
 import org.jruby.util.RegexpOptions;
@@ -62,10 +63,10 @@ public class RuntimeCache {
     public RuntimeCache() {
     }
 
-    public final StaticScope getScope(ThreadContext context, StaticScope parent, String varNamesDescriptor, int index) {
+    public final StaticScope getScope(StaticScopeFactory staticScopeFactory, ThreadContext context, StaticScope parent, String varNamesDescriptor, int index) {
         StaticScope scope = scopes[index];
         if (scope == null) {
-            scopes[index] = scope = Helpers.decodeScopeAndDetermineModule(context, parent, varNamesDescriptor);
+            scopes[index] = scope = Helpers.decodeScopeAndDetermineModule(staticScopeFactory, context, parent, varNamesDescriptor);
         }
         return scope;
     }

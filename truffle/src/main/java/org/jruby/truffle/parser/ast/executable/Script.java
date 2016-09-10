@@ -26,7 +26,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.ast.executable;
 
-import org.jruby.parser.StaticScope;
+import org.jruby.truffle.parser.scope.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;

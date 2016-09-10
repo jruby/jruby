@@ -55,7 +55,7 @@ t  protected static final String [] yyRule = {
  yyRule-strings
 t    };
 t
-t  protected org.jruby.parser.YYDebug yydebug;
+t  protected org.jruby.truffle.parser.parser.YYDebug yydebug;
 t
 t  /** index-checked interface to {@link #yyNames}.
 t      @param token single character or <tt>%token</tt> value.
@@ -124,7 +124,7 @@ t
 .    */
 .  public Object yyparse (JavaSignatureLexer yyLex, Object ayydebug)
 .				throws java.io.IOException, ParserSyntaxException {
-t    this.yydebug = (org.jruby.parser.YYDebug)ayydebug;
+t    this.yydebug = (org.jruby.truffle.parser.parser.YYDebug)ayydebug;
 .    return yyparse(yyLex);
 .  }
 .

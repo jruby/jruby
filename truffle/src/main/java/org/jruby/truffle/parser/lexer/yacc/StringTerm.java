@@ -37,14 +37,14 @@ import org.jruby.util.RegexpOptions;
 
 import java.io.IOException;
 
-import static org.jruby.lexer.LexingCommon.EOF;
-import static org.jruby.lexer.LexingCommon.STR_FUNC_ESCAPE;
-import static org.jruby.lexer.LexingCommon.STR_FUNC_EXPAND;
-import static org.jruby.lexer.LexingCommon.STR_FUNC_QWORDS;
-import static org.jruby.lexer.LexingCommon.STR_FUNC_REGEXP;
-import static org.jruby.lexer.LexingCommon.STR_FUNC_SYMBOL;
-import static org.jruby.lexer.LexingCommon.isHexChar;
-import static org.jruby.lexer.LexingCommon.isOctChar;
+import static org.jruby.truffle.parser.lexer.LexingCommon.EOF;
+import static org.jruby.truffle.parser.lexer.LexingCommon.STR_FUNC_ESCAPE;
+import static org.jruby.truffle.parser.lexer.LexingCommon.STR_FUNC_EXPAND;
+import static org.jruby.truffle.parser.lexer.LexingCommon.STR_FUNC_QWORDS;
+import static org.jruby.truffle.parser.lexer.LexingCommon.STR_FUNC_REGEXP;
+import static org.jruby.truffle.parser.lexer.LexingCommon.STR_FUNC_SYMBOL;
+import static org.jruby.truffle.parser.lexer.LexingCommon.isHexChar;
+import static org.jruby.truffle.parser.lexer.LexingCommon.isOctChar;
 
 public class StringTerm extends StrTerm {
     // Expand variables, Indentation of final marker

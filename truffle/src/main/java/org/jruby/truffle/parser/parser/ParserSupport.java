@@ -140,9 +140,9 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.jruby.lexer.LexingCommon.ASCII8BIT_ENCODING;
-import static org.jruby.lexer.LexingCommon.USASCII_ENCODING;
-import static org.jruby.lexer.LexingCommon.UTF8_ENCODING;
+import static org.jruby.truffle.parser.lexer.LexingCommon.ASCII8BIT_ENCODING;
+import static org.jruby.truffle.parser.lexer.LexingCommon.USASCII_ENCODING;
+import static org.jruby.truffle.parser.lexer.LexingCommon.UTF8_ENCODING;
 
 /** 
  *

@@ -39,7 +39,7 @@ import org.jruby.ast.java_signature.ReferenceTypeNode;
 import org.jruby.ast.java_signature.SignatureNode;
 import org.jruby.ast.java_signature.StringLiteral;
 import org.jruby.ast.java_signature.TypeNode;
-import org.jruby.lexer.JavaSignatureLexer;
+import org.jruby.truffle.parser.lexer.JavaSignatureLexer;
 
 public class JavaSignatureParser {
     private static JavaSignatureParser parser = new JavaSignatureParser();

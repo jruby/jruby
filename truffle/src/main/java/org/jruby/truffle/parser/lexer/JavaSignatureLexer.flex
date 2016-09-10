@@ -1,6 +1,6 @@
 package org.jruby.truffle.parser.lexer;
 
-import org.jruby.parser.JavaSignatureParser;
+import org.jruby.truffle.parser.parser.JavaSignatureParser;
 
 %%
 %public

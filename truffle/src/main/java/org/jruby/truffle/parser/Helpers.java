@@ -77,7 +77,7 @@ import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.javasupport.proxy.InternalJavaProxy;
-import org.jruby.parser.StaticScope;
+import org.jruby.truffle.parser.scope.StaticScope;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.ArgumentType;
@@ -86,15 +86,15 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ClassIndex;
-import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.JavaSites.HelpersSites;
-import org.jruby.runtime.Signature;
+import org.jruby.truffle.parser.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.backtrace.BacktraceData;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.invokedynamic.MethodNames;
+import org.jruby.truffle.parser.scope.StaticScopeFactory;
 import org.jruby.util.ArraySupport;
 import org.jruby.util.ByteList;
 import org.jruby.util.DefinedMessage;
@@ -1482,14 +1482,14 @@ public class Helpers {
         return RubyString.newStringShared(context.runtime, value);
     }
 
-    public static StaticScope preLoad(ThreadContext context, String[] varNames) {
+    /*public static StaticScope preLoad(ThreadContext context, String[] varNames) {
         StaticScope staticScope = context.runtime.getStaticScopeFactory().newLocalScope(null, varNames);
         preLoadCommon(context, staticScope, false);
 
         return staticScope;
-    }
+    }*/
 
-    public static void preLoadCommon(ThreadContext context, StaticScope staticScope, boolean wrap) {
+    /*public static void preLoadCommon(ThreadContext context, StaticScope staticScope, boolean wrap) {
         RubyModule objectClass = context.runtime.getObject();
         if (wrap) {
             objectClass = RubyModule.newModule(context.runtime);
@@ -1502,7 +1502,7 @@ public class Helpers {
         // Each root node has a top-level scope that we need to push
         context.preScopedBody(scope);
         context.preNodeEval(context.runtime.getTopSelf());
-    }
+    }*/
 
     public static void postLoad(ThreadContext context) {
         context.postNodeEval();
@@ -1884,20 +1884,20 @@ public class Helpers {
         return namesBuilder.toString();
     }
 
-    public static StaticScope decodeScope(ThreadContext context, StaticScope parent, String scopeString) {
+    public static StaticScope decodeScope(StaticScopeFactory staticScopeFactory, ThreadContext context, StaticScope parent, String scopeString) {
         String[][] decodedScope = decodeScopeDescriptor(scopeString);
         String scopeTypeName = decodedScope[0][0];
         String[] names = decodedScope[1];
         StaticScope scope = null;
         switch (StaticScope.Type.valueOf(scopeTypeName)) {
             case BLOCK:
-                scope = context.runtime.getStaticScopeFactory().newBlockScope(parent, names);
+                scope = staticScopeFactory.newBlockScope(parent, names);
                 break;
             case EVAL:
-                scope = context.runtime.getStaticScopeFactory().newEvalScope(parent, names);
+                scope = staticScopeFactory.newEvalScope(parent, names);
                 break;
             case LOCAL:
-                scope = context.runtime.getStaticScopeFactory().newLocalScope(parent, names);
+                scope = staticScopeFactory.newLocalScope(parent, names);
                 break;
         }
         setAritiesFromDecodedScope(scope, decodedScope[0][2]);
@@ -1912,11 +1912,11 @@ public class Helpers {
     }
 
     private static void setAritiesFromDecodedScope(StaticScope scope, String encodedSignature) {
-        scope.setSignature(org.jruby.runtime.Signature.decode(Long.parseLong(encodedSignature)));
+        scope.setSignature(Signature.decode(Long.parseLong(encodedSignature)));
     }
 
-    public static StaticScope decodeScopeAndDetermineModule(ThreadContext context, StaticScope parent, String scopeString) {
-        StaticScope scope = decodeScope(context, parent, scopeString);
+    public static StaticScope decodeScopeAndDetermineModule(StaticScopeFactory staticScopeFactory, ThreadContext context, StaticScope parent, String scopeString) {
+        StaticScope scope = decodeScope(staticScopeFactory, context, parent, scopeString);
         scope.determineModule();
 
         return scope;
@@ -2555,7 +2555,7 @@ public class Helpers {
     // . Array with multiple values and NO rest should extract args if there are more than one argument
     // Note: In 1.9 alreadyArray is only relevent from our internal Java code in core libs.  We never use it
     // from interpreter or JIT.  FIXME: Change core lib consumers to stop using alreadyArray param.
-    public static IRubyObject[] restructureBlockArgs19(IRubyObject value, org.jruby.runtime.Signature signature, Block.Type type, boolean needsSplat, boolean alreadyArray) {
+    /*public static IRubyObject[] restructureBlockArgs19(IRubyObject value, org.jruby.runtime.Signature signature, Block.Type type, boolean needsSplat, boolean alreadyArray) {
         if (!type.checkArity && signature == Signature.NO_ARGUMENTS) return IRubyObject.NULL_ARRAY;
 
         if (value != null && !(value instanceof RubyArray) && needsSplat) value = Helpers.aryToAry(value);
@@ -2570,7 +2570,7 @@ public class Helpers {
         }
 
         return parameters;
-    }
+    }*/
 
     public static boolean BEQ(ThreadContext context, IRubyObject value1, IRubyObject value2) {
         return value1.op_equal(context, value2).isTrue();
