@@ -14,7 +14,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.parser.ast.NodeType;
 import org.jruby.truffle.parser.ast.ParseNode;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.yacc.ISourcePosition;
+import org.jruby.truffle.parser.lexer.ISourcePosition;
 
 import java.util.Collections;
 import java.util.List;

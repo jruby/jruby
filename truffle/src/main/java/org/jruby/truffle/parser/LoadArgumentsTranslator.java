@@ -58,7 +58,7 @@ import org.jruby.truffle.parser.ast.RestArgParseNode;
 import org.jruby.truffle.parser.ast.StarParseNode;
 import org.jruby.truffle.parser.ast.VCallParseNode;
 import org.jruby.truffle.parser.ast.types.INameNode;
-import org.jruby.truffle.parser.lexer.yacc.ISourcePosition;
+import org.jruby.truffle.parser.lexer.ISourcePosition;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;

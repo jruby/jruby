@@ -34,7 +34,7 @@ package org.jruby.truffle.parser.ast;
 import org.jcodings.Encoding;
 import org.jruby.truffle.parser.ast.types.ILiteralNode;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.yacc.ISourcePosition;
+import org.jruby.truffle.parser.lexer.ISourcePosition;
 import org.jruby.util.ByteList;
 import org.jruby.util.RegexpOptions;
 

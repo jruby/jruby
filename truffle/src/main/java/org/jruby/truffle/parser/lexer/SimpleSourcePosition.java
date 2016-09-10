@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ * **** BEGIN LICENSE BLOCK *****
  * Version: EPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
@@ -25,31 +26,29 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
-package org.jruby.truffle.parser.lexer.yacc;
+package org.jruby.truffle.parser.lexer;
 
-import org.jruby.runtime.PositionAware;
+public class SimpleSourcePosition implements ISourcePosition {
 
-/**
- * This interface is the combination of two needs:  1) A Ruby interpreter position (for warnings 
- * and errors).  The interpreter only cares about filename and endLine.  2) A IDE position (offsets
- * for showing ranges of grammatical elements).
- * 
- * The offsets represent positions 'between' characters.  So a variable 'abc' has a startOffset
- * of 0 and an endOffset of 3 ( 0a1b2c3 ).
- * 
- */
-public interface ISourcePosition extends PositionAware {
-    /**
-     * Which file does this source position live in?
-     * 
-     * @return name of the source file.
-     */
-	public String getFile();
-    
-    /**
-     * Which is the first(start) line that this source position occurs on (zero-based)
-     * @return
-     */
-	public int getLine();
+    final String filename;
+    final int line;
+
+    public SimpleSourcePosition(String filename, int line) {
+        this.filename = filename;
+        this.line = line;
+    }
+
+    public String getFile() {
+        return filename;
+    }
+
+    public int getLine() {
+        return line;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("%s:%d", filename, getLine() + 1);
+    }
 
 }

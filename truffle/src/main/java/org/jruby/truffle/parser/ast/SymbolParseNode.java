@@ -37,7 +37,7 @@ import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.truffle.parser.ast.types.ILiteralNode;
 import org.jruby.truffle.parser.ast.types.INameNode;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.yacc.ISourcePosition;
+import org.jruby.truffle.parser.lexer.ISourcePosition;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
 

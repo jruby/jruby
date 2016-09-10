@@ -1,6 +1,6 @@
 package org.jruby.truffle.parser.ast;
 
-import org.jruby.truffle.parser.lexer.yacc.ISourcePosition;
+import org.jruby.truffle.parser.lexer.ISourcePosition;
 
 public class Match2CaptureParseNode extends Match2ParseNode {
     // Allocated locals that the regexp will assign after performing a match

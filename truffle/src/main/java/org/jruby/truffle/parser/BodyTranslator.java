@@ -255,8 +255,8 @@ import org.jruby.truffle.parser.ast.XStrParseNode;
 import org.jruby.truffle.parser.ast.YieldParseNode;
 import org.jruby.truffle.parser.ast.ZArrayParseNode;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.yacc.ISourcePosition;
-import org.jruby.truffle.parser.lexer.yacc.InvalidSourcePosition;
+import org.jruby.truffle.parser.lexer.ISourcePosition;
+import org.jruby.truffle.parser.lexer.InvalidSourcePosition;
 import org.jruby.truffle.parser.parser.ParserSupport;
 import org.jruby.truffle.platform.graal.AssertConstantNodeGen;
 import org.jruby.truffle.platform.graal.AssertNotCompiledNodeGen;
@@ -2708,7 +2708,7 @@ public class BodyTranslator extends Translator {
         return addNewlineIfNeeded(node, ret);
     }
 
-    private static ArrayParseNode buildArrayNode(org.jruby.truffle.parser.lexer.yacc.ISourcePosition sourcePosition, ParseNode first, ParseNode... rest) {
+    private static ArrayParseNode buildArrayNode(ISourcePosition sourcePosition, ParseNode first, ParseNode... rest) {
         if (first == null) {
             return new ArrayParseNode(sourcePosition);
         }

@@ -34,7 +34,7 @@ package org.jruby.truffle.parser.ast;
 import org.jcodings.Encoding;
 import org.jruby.truffle.parser.ast.types.ILiteralNode;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.yacc.ISourcePosition;
+import org.jruby.truffle.parser.lexer.ISourcePosition;
 
 /**
  * Dynamic backquote string. Backquote strings are eXecuted using the shell, hence the X 

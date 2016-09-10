@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2005 Thomas E Enebo <enebo@acm.org>
- *
+ * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -25,19 +25,11 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
-package org.jruby.truffle.parser.lexer.yacc;
+package org.jruby.truffle.parser.lexer;
 
-/** For nodes which are added to the AST which are not proper syntactical elements. */
-public class InvalidSourcePosition implements ISourcePosition {
-
-    public static final ISourcePosition INSTANCE = new InvalidSourcePosition();
-
-    public String getFile() {
-        return "dummy";
-    }
-
-    public int getLine() {
-        return -1;
-    }
-
+/**
+ */
+public interface ISourcePositionHolder {
+	public ISourcePosition getPosition();
+	public void setPosition(ISourcePosition position);
 }

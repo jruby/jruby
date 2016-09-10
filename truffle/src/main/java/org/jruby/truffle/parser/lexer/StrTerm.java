@@ -11,7 +11,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2005 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -25,11 +25,9 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
-package org.jruby.truffle.parser.lexer.yacc;
+package org.jruby.truffle.parser.lexer;
 
-/**
- */
-public interface ISourcePositionHolder {
-	public ISourcePosition getPosition();
-	public void setPosition(ISourcePosition position);
+public abstract class StrTerm {
+    public abstract int getFlags();
+    public abstract int parseString(RubyLexer lexer) throws java.io.IOException;
 }

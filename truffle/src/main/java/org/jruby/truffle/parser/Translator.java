@@ -26,8 +26,8 @@ import org.jruby.truffle.language.locals.WriteLocalVariableNode;
 import org.jruby.truffle.language.methods.Arity;
 import org.jruby.truffle.language.objects.SelfNode;
 import org.jruby.truffle.parser.ast.ParseNode;
-import org.jruby.truffle.parser.lexer.yacc.ISourcePosition;
-import org.jruby.truffle.parser.lexer.yacc.InvalidSourcePosition;
+import org.jruby.truffle.parser.lexer.ISourcePosition;
+import org.jruby.truffle.parser.lexer.InvalidSourcePosition;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;

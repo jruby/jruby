@@ -28,7 +28,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.ast;
 
-import org.jruby.truffle.parser.lexer.yacc.ISourcePosition;
+import org.jruby.truffle.parser.lexer.ISourcePosition;
 
 /**
  * a bare '*' or nothing.  Name is "" if it is '*' and null if it is nothing.

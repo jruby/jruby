@@ -25,11 +25,10 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
-package org.jruby.truffle.parser.lexer.yacc;
+package org.jruby.truffle.parser.lexer;
 
 import org.jcodings.Encoding;
 import org.jruby.truffle.parser.ast.RegexpParseNode;
-import org.jruby.truffle.parser.lexer.yacc.SyntaxException.PID;
 import org.jruby.truffle.parser.parser.Tokens;
 import org.jruby.util.ByteList;
 import org.jruby.util.KCode;
@@ -254,14 +253,14 @@ public class StringTerm extends StrTerm {
         }
         lexer.pushback(c);
         if (unknownFlags.length() != 0) {
-            lexer.compile_error(PID.REGEXP_UNKNOWN_OPTION, "unknown regexp option" +
+            lexer.compile_error(SyntaxException.PID.REGEXP_UNKNOWN_OPTION, "unknown regexp option" +
                     (unknownFlags.length() > 1 ? "s" : "") + " - " + unknownFlags);
         }
         return options;
     }
 
     private void mixedEscape(RubyLexer lexer, Encoding foundEncoding, Encoding parserEncoding) {
-        lexer.compile_error(PID.MIXED_ENCODING, "" + foundEncoding + " mixed within " + parserEncoding);
+        lexer.compile_error(SyntaxException.PID.MIXED_ENCODING, "" + foundEncoding + " mixed within " + parserEncoding);
     }
 
     // mri: parser_tokadd_string
@@ -341,7 +340,7 @@ public class StringTerm extends StrTerm {
                         }
 
                         if (!lexer.tokadd_mbchar(c, buffer)) {
-                            lexer.compile_error(PID.INVALID_MULTIBYTE_CHAR, "invalid multibyte char (" + enc[0] + ")");
+                            lexer.compile_error(SyntaxException.PID.INVALID_MULTIBYTE_CHAR, "invalid multibyte char (" + enc[0] + ")");
                         }
 
                         continue;
@@ -383,7 +382,7 @@ nonascii:       hasNonAscii = true; // Label for comparison with MRI only.
                 }
 
                 if (!lexer.tokadd_mbchar(c, buffer)) {
-                    lexer.compile_error(PID.INVALID_MULTIBYTE_CHAR, "invalid multibyte char (" + enc[0] + ")");
+                    lexer.compile_error(SyntaxException.PID.INVALID_MULTIBYTE_CHAR, "invalid multibyte char (" + enc[0] + ")");
                 }
 
                 continue;

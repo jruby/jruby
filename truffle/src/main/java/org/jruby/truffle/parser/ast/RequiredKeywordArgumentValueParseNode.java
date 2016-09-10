@@ -1,7 +1,7 @@
 package org.jruby.truffle.parser.ast;
 
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.yacc.InvalidSourcePosition;
+import org.jruby.truffle.parser.lexer.InvalidSourcePosition;
 
 import java.util.List;
 

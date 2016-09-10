@@ -42,7 +42,7 @@ import org.jruby.truffle.parser.ast.LocalAsgnParseNode;
 import org.jruby.truffle.parser.ast.LocalVarParseNode;
 import org.jruby.truffle.parser.ast.ParseNode;
 import org.jruby.truffle.parser.ast.VCallParseNode;
-import org.jruby.truffle.parser.lexer.yacc.ISourcePosition;
+import org.jruby.truffle.parser.lexer.ISourcePosition;
 
 import java.io.Serializable;
 import java.util.Arrays;

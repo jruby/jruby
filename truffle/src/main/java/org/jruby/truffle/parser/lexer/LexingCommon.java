@@ -36,9 +36,6 @@ import org.joni.Regex;
 import org.jruby.Ruby;
 import org.jruby.RubyEncoding;
 import org.jruby.RubyRegexp;
-import org.jruby.truffle.parser.lexer.yacc.ISourcePosition;
-import org.jruby.truffle.parser.lexer.yacc.SimpleSourcePosition;
-import org.jruby.truffle.parser.lexer.yacc.StackState;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
 

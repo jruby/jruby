@@ -42,7 +42,7 @@ import org.jruby.truffle.parser.ast.ParseNode;
 import org.jruby.truffle.parser.lexer.ByteListLexerSource;
 import org.jruby.truffle.parser.lexer.GetsLexerSource;
 import org.jruby.truffle.parser.lexer.LexerSource;
-import org.jruby.truffle.parser.lexer.yacc.SyntaxException;
+import org.jruby.truffle.parser.lexer.SyntaxException;
 import org.jruby.truffle.parser.scope.DynamicScope;
 import org.jruby.util.ByteList;
 

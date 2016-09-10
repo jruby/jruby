@@ -29,7 +29,7 @@ package org.jruby.truffle.parser.parser;
 import org.jruby.truffle.parser.ast.BlockArgParseNode;
 import org.jruby.truffle.parser.ast.KeywordRestArgParseNode;
 import org.jruby.truffle.parser.ast.ListParseNode;
-import org.jruby.truffle.parser.lexer.yacc.ISourcePosition;
+import org.jruby.truffle.parser.lexer.ISourcePosition;
 
 /**
  * Simple struct to hold values until they can be inserted into the AST.

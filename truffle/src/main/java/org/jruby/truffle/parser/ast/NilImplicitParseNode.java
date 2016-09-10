@@ -1,6 +1,6 @@
 package org.jruby.truffle.parser.ast;
 
-import org.jruby.truffle.parser.lexer.yacc.InvalidSourcePosition;
+import org.jruby.truffle.parser.lexer.InvalidSourcePosition;
 
 /**
  * A node which behaves like a nil node, but is not actually present in the AST as a syntactical

@@ -33,7 +33,7 @@ package org.jruby.truffle.parser.ast;
  */
 
 import org.jruby.truffle.parser.ast.types.INameNode;
-import org.jruby.truffle.parser.lexer.yacc.ISourcePosition;
+import org.jruby.truffle.parser.lexer.ISourcePosition;
 import org.jruby.truffle.parser.scope.StaticScope;
 
 public abstract class MethodDefParseNode extends ParseNode implements INameNode, DefNode {
