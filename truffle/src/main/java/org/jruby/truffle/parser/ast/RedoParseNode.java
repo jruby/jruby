@@ -39,7 +39,7 @@ import java.util.List;
 /**
  * Represents a 'redo'
  */
-public class RedoParseNode extends ParseNode implements NonLocalControlFlowNode {
+public class RedoParseNode extends ParseNode implements NonLocalControlFlowParseNode {
     public RedoParseNode(ISourcePosition position) {
         super(position, false);
     }

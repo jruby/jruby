@@ -41,7 +41,7 @@ import java.util.List;
 /** 
  * Represents a method call with self as an implicit receiver.
  */
-public class FCallParseNode extends ParseNode implements INameNode, IArgumentNode, BlockAcceptingNode {
+public class FCallParseNode extends ParseNode implements INameNode, IArgumentNode, BlockAcceptingParseNode {
     private String name;
     protected ParseNode argsNode;
     protected ParseNode iterNode;

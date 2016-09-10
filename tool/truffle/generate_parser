@@ -7,7 +7,7 @@ JAY=jay
 RUBY=/usr/bin/ruby
 PARSER_BASE=RubyParser
 YYTABLE_PREFIX=
-DEBUG=false
+#DEBUG=true
 ###### Do not change below ######
 
 if [ "$1" != "" ]; then

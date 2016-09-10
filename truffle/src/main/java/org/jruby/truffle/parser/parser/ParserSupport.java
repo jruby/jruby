@@ -55,7 +55,7 @@ import org.jruby.truffle.parser.ast.AttrAssignParseNode;
 import org.jruby.truffle.parser.ast.BackRefParseNode;
 import org.jruby.truffle.parser.ast.BeginParseNode;
 import org.jruby.truffle.parser.ast.BignumParseNode;
-import org.jruby.truffle.parser.ast.BinaryOperatorNode;
+import org.jruby.truffle.parser.ast.BinaryOperatorParseNode;
 import org.jruby.truffle.parser.ast.BlockArgParseNode;
 import org.jruby.truffle.parser.ast.BlockParseNode;
 import org.jruby.truffle.parser.ast.BlockPassParseNode;
@@ -517,7 +517,7 @@ public class ParserSupport {
                 break;
             case ANDNODE: case ORNODE:
                 conditional = true;
-                node = ((BinaryOperatorNode) node).getSecondNode();
+                node = ((BinaryOperatorParseNode) node).getSecondNode();
                 break;
             default: // ParseNode
                 return true;

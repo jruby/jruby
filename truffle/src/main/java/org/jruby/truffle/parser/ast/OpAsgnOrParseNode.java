@@ -36,7 +36,7 @@ import org.jruby.truffle.parser.lexer.ISourcePosition;
 
 import java.util.List;
 
-public class OpAsgnOrParseNode extends ParseNode implements BinaryOperatorNode {
+public class OpAsgnOrParseNode extends ParseNode implements BinaryOperatorParseNode {
     private final ParseNode firstNode;
     private final ParseNode secondNode;
 

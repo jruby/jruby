@@ -39,7 +39,7 @@ import java.util.List;
 /**
  * Represents a 'break' statement.
  */
-public class BreakParseNode extends ParseNode implements NonLocalControlFlowNode {
+public class BreakParseNode extends ParseNode implements NonLocalControlFlowParseNode {
     private final ParseNode valueNode;
 
     public BreakParseNode(ISourcePosition position, ParseNode valueNode) {

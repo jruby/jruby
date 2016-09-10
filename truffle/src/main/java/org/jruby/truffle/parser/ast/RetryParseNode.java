@@ -38,7 +38,7 @@ import java.util.List;
 /** 
  * Represents a 'retry' statement.
  */
-public class RetryParseNode extends ParseNode implements NonLocalControlFlowNode {
+public class RetryParseNode extends ParseNode implements NonLocalControlFlowParseNode {
     public RetryParseNode(ISourcePosition position) {
         super(position, false);
     }

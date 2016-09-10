@@ -55,7 +55,7 @@ t  protected static final String [] yyRule = {
  yyRule-strings
 t    };
 t
-t  protected org.jruby.truffle.parser.parser.YYDebug yydebug;
+t  // protected org.jruby.truffle.parser.parser.YYDebug yydebug;
 t
 t  /** index-checked interface to {@link #yyNames}.
 t      @param token single character or <tt>%token</tt> value.
@@ -101,7 +101,6 @@ t
 .  /** the generated parser, with debugging messages.
 .      Maintains a dynamic state and value stack.
 .      @param yyLex scanner.
-.      @param yydebug debug message writer implementing <tt>yyDebug</tt>, or <tt>null</tt>.
 .      @return result of the last reduction, if any.
 .    */
 .  public Object yyparse (RubyLexer yyLex, Object ayydebug)

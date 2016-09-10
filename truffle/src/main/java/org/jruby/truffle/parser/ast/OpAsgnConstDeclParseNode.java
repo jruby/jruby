@@ -8,7 +8,7 @@ import java.util.List;
 /**
  * A::B ||= 1
  */
-public class OpAsgnConstDeclParseNode extends ParseNode implements BinaryOperatorNode {
+public class OpAsgnConstDeclParseNode extends ParseNode implements BinaryOperatorParseNode {
     private ParseNode lhs;
     private String operator;
     private ParseNode rhs;

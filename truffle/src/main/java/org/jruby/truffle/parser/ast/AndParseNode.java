@@ -39,7 +39,7 @@ import java.util.List;
 /** 
  * Represents a && (and) operator.
  */
-public class AndParseNode extends ParseNode implements BinaryOperatorNode {
+public class AndParseNode extends ParseNode implements BinaryOperatorParseNode {
     private final ParseNode firstNode;
     private final ParseNode secondNode;
 

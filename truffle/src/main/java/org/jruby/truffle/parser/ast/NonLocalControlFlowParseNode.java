@@ -8,7 +8,7 @@ package org.jruby.truffle.parser.ast;
 /**
  * Marker interface for return, break, next, redo, retry
  */
-public interface NonLocalControlFlowNode {
+public interface NonLocalControlFlowParseNode {
     public ParseNode getValueNode();
     public boolean hasValue();
 }

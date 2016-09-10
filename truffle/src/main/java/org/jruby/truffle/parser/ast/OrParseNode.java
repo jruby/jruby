@@ -39,7 +39,7 @@ import java.util.List;
 /**
  * represents '||' (or) statements
  */
-public class OrParseNode extends ParseNode implements BinaryOperatorNode {
+public class OrParseNode extends ParseNode implements BinaryOperatorParseNode {
     private final ParseNode firstNode;
     private final ParseNode secondNode;
 

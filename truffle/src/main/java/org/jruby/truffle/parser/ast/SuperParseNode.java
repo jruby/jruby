@@ -39,7 +39,7 @@ import java.util.List;
 /**
  * A call to super(...) with arguments to a method.
  */
-public class SuperParseNode extends ParseNode implements BlockAcceptingNode {
+public class SuperParseNode extends ParseNode implements BlockAcceptingParseNode {
     private final ParseNode argsNode;
     private ParseNode iterNode;
 

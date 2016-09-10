@@ -548,6 +548,8 @@ module Commands
       jay = Utilities.find_repo('jay')
       ENV['PATH'] = "#{jay}/src:#{ENV['PATH']}"
       sh 'sh', 'tool/truffle/generate_parser'
+      yytables = 'truffle/src/main/java/org/jruby/truffle/parser/parser/YyTables.java'
+      File.write(yytables, File.read(yytables).gsub('package org.jruby.parser;', 'package org.jruby.truffle.parser.parser;'))
     when nil
       mvn env, *maven_options, 'package'
     else

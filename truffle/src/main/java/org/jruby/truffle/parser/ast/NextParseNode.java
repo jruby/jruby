@@ -39,7 +39,7 @@ import java.util.List;
 /** 
  * Represents a 'next' statement.
  */
-public class NextParseNode extends ParseNode implements NonLocalControlFlowNode {
+public class NextParseNode extends ParseNode implements NonLocalControlFlowParseNode {
     private final ParseNode valueNode;
 
     public NextParseNode(ISourcePosition position, ParseNode valueNode) {

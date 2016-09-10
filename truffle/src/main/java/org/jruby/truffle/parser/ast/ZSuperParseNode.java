@@ -39,7 +39,7 @@ import java.util.List;
 /**
  * a call to 'super' with no arguments in a method.
  */
-public class ZSuperParseNode extends ParseNode implements BlockAcceptingNode {
+public class ZSuperParseNode extends ParseNode implements BlockAcceptingParseNode {
     private ParseNode iterNode;
 
     public ZSuperParseNode(ISourcePosition position) {

@@ -30,16 +30,18 @@
 package org.jruby.truffle.parser.ast;
 
 /**
- *  Any thing which implements this represents a Callable-like node which can have a block 
- *  associated with it as part of that call.  The calls which can be this are: RubyCallNode, FCallParseNode,
- *  VCallParseNode, and SuperParseNode.  Blocks (the IterParseNode that this interface refers to can be either
- *  an IterParseNode ( {...} or do ... end ) or a BlockPassParseNode (&block).
- *  
- *  It is likely we can remove this interface once the parser explicitly passes all iters into
- *  the callable node during construction.
+ * Convenience interface for operations which only have two nodes
  */
-public interface BlockAcceptingNode {
-    public ParseNode getIterNode();
+public interface BinaryOperatorParseNode {
+	/**
+	 * Gets the firstNode.
+	 * @return Returns a ParseNode
+	 */
+	public abstract ParseNode getFirstNode();
 
-    public ParseNode setIterNode(ParseNode iterNode);
+	/**
+	 * Gets the secondNode.
+	 * @return Returns a ParseNode
+	 */
+	public abstract ParseNode getSecondNode();
 }

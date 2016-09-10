@@ -31,25 +31,25 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.parser;
 
-import org.jruby.common.IRubyWarnings;
-import org.jruby.common.IRubyWarnings.ID;
+import java.io.IOException;
+
 import org.jruby.truffle.parser.ast.ArgsParseNode;
 import org.jruby.truffle.parser.ast.ArgumentParseNode;
 import org.jruby.truffle.parser.ast.ArrayParseNode;
 import org.jruby.truffle.parser.ast.AssignableParseNode;
 import org.jruby.truffle.parser.ast.BackRefParseNode;
 import org.jruby.truffle.parser.ast.BeginParseNode;
-import org.jruby.truffle.parser.ast.BlockAcceptingNode;
+import org.jruby.truffle.parser.ast.BlockAcceptingParseNode;
 import org.jruby.truffle.parser.ast.BlockArgParseNode;
 import org.jruby.truffle.parser.ast.BlockParseNode;
 import org.jruby.truffle.parser.ast.BlockPassParseNode;
 import org.jruby.truffle.parser.ast.BreakParseNode;
 import org.jruby.truffle.parser.ast.ClassParseNode;
-import org.jruby.truffle.parser.ast.ClassVarAsgnParseNode;
 import org.jruby.truffle.parser.ast.ClassVarParseNode;
+import org.jruby.truffle.parser.ast.ClassVarAsgnParseNode;
 import org.jruby.truffle.parser.ast.Colon3ParseNode;
-import org.jruby.truffle.parser.ast.ConstDeclParseNode;
 import org.jruby.truffle.parser.ast.ConstParseNode;
+import org.jruby.truffle.parser.ast.ConstDeclParseNode;
 import org.jruby.truffle.parser.ast.DStrParseNode;
 import org.jruby.truffle.parser.ast.DSymbolParseNode;
 import org.jruby.truffle.parser.ast.DXStrParseNode;
@@ -59,9 +59,9 @@ import org.jruby.truffle.parser.ast.DotParseNode;
 import org.jruby.truffle.parser.ast.EncodingParseNode;
 import org.jruby.truffle.parser.ast.EnsureParseNode;
 import org.jruby.truffle.parser.ast.EvStrParseNode;
-import org.jruby.truffle.parser.ast.FCallParseNode;
 import org.jruby.truffle.parser.ast.FalseParseNode;
 import org.jruby.truffle.parser.ast.FileParseNode;
+import org.jruby.truffle.parser.ast.FCallParseNode;
 import org.jruby.truffle.parser.ast.FixnumParseNode;
 import org.jruby.truffle.parser.ast.FloatParseNode;
 import org.jruby.truffle.parser.ast.ForParseNode;
@@ -80,12 +80,13 @@ import org.jruby.truffle.parser.ast.MultipleAsgnParseNode;
 import org.jruby.truffle.parser.ast.NextParseNode;
 import org.jruby.truffle.parser.ast.NilImplicitParseNode;
 import org.jruby.truffle.parser.ast.NilParseNode;
-import org.jruby.truffle.parser.ast.NonLocalControlFlowNode;
+import org.jruby.truffle.parser.ast.ParseNode;
+import org.jruby.truffle.parser.ast.NonLocalControlFlowParseNode;
 import org.jruby.truffle.parser.ast.NumericParseNode;
 import org.jruby.truffle.parser.ast.OpAsgnAndParseNode;
+import org.jruby.truffle.parser.ast.OpAsgnParseNode;
 import org.jruby.truffle.parser.ast.OpAsgnOrParseNode;
 import org.jruby.truffle.parser.ast.OptArgParseNode;
-import org.jruby.truffle.parser.ast.ParseNode;
 import org.jruby.truffle.parser.ast.PostExeParseNode;
 import org.jruby.truffle.parser.ast.PreExe19ParseNode;
 import org.jruby.truffle.parser.ast.RationalParseNode;
@@ -111,25 +112,26 @@ import org.jruby.truffle.parser.ast.YieldParseNode;
 import org.jruby.truffle.parser.ast.ZArrayParseNode;
 import org.jruby.truffle.parser.ast.ZSuperParseNode;
 import org.jruby.truffle.parser.ast.types.ILiteralNode;
-import org.jruby.truffle.parser.lexer.LexerSource;
+import org.jruby.common.IRubyWarnings;
+import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.truffle.parser.lexer.ISourcePosition;
 import org.jruby.truffle.parser.lexer.ISourcePositionHolder;
+import org.jruby.truffle.parser.lexer.LexerSource;
 import org.jruby.truffle.parser.lexer.RubyLexer;
 import org.jruby.truffle.parser.lexer.StrTerm;
+import org.jruby.truffle.parser.lexer.SyntaxException;
 import org.jruby.truffle.parser.lexer.SyntaxException.PID;
 import org.jruby.util.ByteList;
 import org.jruby.util.KeyValuePair;
+import org.jruby.util.cli.Options;
 import org.jruby.util.StringSupport;
-
-import java.io.IOException;
-
 import static org.jruby.truffle.parser.lexer.LexingCommon.EXPR_BEG;
-import static org.jruby.truffle.parser.lexer.LexingCommon.EXPR_END;
-import static org.jruby.truffle.parser.lexer.LexingCommon.EXPR_ENDARG;
-import static org.jruby.truffle.parser.lexer.LexingCommon.EXPR_ENDFN;
 import static org.jruby.truffle.parser.lexer.LexingCommon.EXPR_FNAME;
+import static org.jruby.truffle.parser.lexer.LexingCommon.EXPR_ENDFN;
+import static org.jruby.truffle.parser.lexer.LexingCommon.EXPR_ENDARG;
+import static org.jruby.truffle.parser.lexer.LexingCommon.EXPR_END;
 import static org.jruby.truffle.parser.lexer.LexingCommon.EXPR_LABEL;
-
+ 
 public class RubyParser {
     protected ParserSupport support;
     protected RubyLexer lexer;
@@ -863,668 +865,6 @@ public class RubyParser {
     "tLABEL_END","tLOWEST",
     };
 
-  /** printable rules for debugging.
-    */
-  protected static final String [] yyRule = {
-    "$accept : program",
-    "$$1 :",
-    "program : $$1 top_compstmt",
-    "top_compstmt : top_stmts opt_terms",
-    "top_stmts : none",
-    "top_stmts : top_stmt",
-    "top_stmts : top_stmts terms top_stmt",
-    "top_stmts : error top_stmt",
-    "top_stmt : stmt",
-    "$$2 :",
-    "top_stmt : klBEGIN $$2 tLCURLY top_compstmt tRCURLY",
-    "bodystmt : compstmt opt_rescue opt_else opt_ensure",
-    "compstmt : stmts opt_terms",
-    "stmts : none",
-    "stmts : stmt_or_begin",
-    "stmts : stmts terms stmt_or_begin",
-    "stmts : error stmt",
-    "stmt_or_begin : stmt",
-    "$$3 :",
-    "stmt_or_begin : kBEGIN $$3 tLCURLY top_compstmt tRCURLY",
-    "$$4 :",
-    "stmt : kALIAS fitem $$4 fitem",
-    "stmt : kALIAS tGVAR tGVAR",
-    "stmt : kALIAS tGVAR tBACK_REF",
-    "stmt : kALIAS tGVAR tNTH_REF",
-    "stmt : kUNDEF undef_list",
-    "stmt : stmt kIF_MOD expr_value",
-    "stmt : stmt kUNLESS_MOD expr_value",
-    "stmt : stmt kWHILE_MOD expr_value",
-    "stmt : stmt kUNTIL_MOD expr_value",
-    "stmt : stmt kRESCUE_MOD stmt",
-    "stmt : klEND tLCURLY compstmt tRCURLY",
-    "stmt : command_asgn",
-    "stmt : mlhs '=' command_call",
-    "stmt : var_lhs tOP_ASGN command_call",
-    "stmt : primary_value '[' opt_call_args rbracket tOP_ASGN command_call",
-    "stmt : primary_value call_op tIDENTIFIER tOP_ASGN command_call",
-    "stmt : primary_value call_op tCONSTANT tOP_ASGN command_call",
-    "stmt : primary_value tCOLON2 tCONSTANT tOP_ASGN command_call",
-    "stmt : primary_value tCOLON2 tIDENTIFIER tOP_ASGN command_call",
-    "stmt : backref tOP_ASGN command_call",
-    "stmt : lhs '=' mrhs",
-    "stmt : mlhs '=' mrhs_arg",
-    "stmt : expr",
-    "command_asgn : lhs '=' command_call",
-    "command_asgn : lhs '=' command_asgn",
-    "expr : command_call",
-    "expr : expr kAND expr",
-    "expr : expr kOR expr",
-    "expr : kNOT opt_nl expr",
-    "expr : tBANG command_call",
-    "expr : arg",
-    "expr_value : expr",
-    "command_call : command",
-    "command_call : block_command",
-    "block_command : block_call",
-    "block_command : block_call call_op2 operation2 command_args",
-    "$$5 :",
-    "cmd_brace_block : tLBRACE_ARG $$5 opt_block_param compstmt tRCURLY",
-    "fcall : operation",
-    "command : fcall command_args",
-    "command : fcall command_args cmd_brace_block",
-    "command : primary_value call_op operation2 command_args",
-    "command : primary_value call_op operation2 command_args cmd_brace_block",
-    "command : primary_value tCOLON2 operation2 command_args",
-    "command : primary_value tCOLON2 operation2 command_args cmd_brace_block",
-    "command : kSUPER command_args",
-    "command : kYIELD command_args",
-    "command : kRETURN call_args",
-    "command : kBREAK call_args",
-    "command : kNEXT call_args",
-    "mlhs : mlhs_basic",
-    "mlhs : tLPAREN mlhs_inner rparen",
-    "mlhs_inner : mlhs_basic",
-    "mlhs_inner : tLPAREN mlhs_inner rparen",
-    "mlhs_basic : mlhs_head",
-    "mlhs_basic : mlhs_head mlhs_item",
-    "mlhs_basic : mlhs_head tSTAR mlhs_node",
-    "mlhs_basic : mlhs_head tSTAR mlhs_node ',' mlhs_post",
-    "mlhs_basic : mlhs_head tSTAR",
-    "mlhs_basic : mlhs_head tSTAR ',' mlhs_post",
-    "mlhs_basic : tSTAR mlhs_node",
-    "mlhs_basic : tSTAR mlhs_node ',' mlhs_post",
-    "mlhs_basic : tSTAR",
-    "mlhs_basic : tSTAR ',' mlhs_post",
-    "mlhs_item : mlhs_node",
-    "mlhs_item : tLPAREN mlhs_inner rparen",
-    "mlhs_head : mlhs_item ','",
-    "mlhs_head : mlhs_head mlhs_item ','",
-    "mlhs_post : mlhs_item",
-    "mlhs_post : mlhs_post ',' mlhs_item",
-    "mlhs_node : tIDENTIFIER",
-    "mlhs_node : tIVAR",
-    "mlhs_node : tGVAR",
-    "mlhs_node : tCONSTANT",
-    "mlhs_node : tCVAR",
-    "mlhs_node : kNIL",
-    "mlhs_node : kSELF",
-    "mlhs_node : kTRUE",
-    "mlhs_node : kFALSE",
-    "mlhs_node : k__FILE__",
-    "mlhs_node : k__LINE__",
-    "mlhs_node : k__ENCODING__",
-    "mlhs_node : primary_value '[' opt_call_args rbracket",
-    "mlhs_node : primary_value call_op tIDENTIFIER",
-    "mlhs_node : primary_value tCOLON2 tIDENTIFIER",
-    "mlhs_node : primary_value call_op tCONSTANT",
-    "mlhs_node : primary_value tCOLON2 tCONSTANT",
-    "mlhs_node : tCOLON3 tCONSTANT",
-    "mlhs_node : backref",
-    "lhs : tIDENTIFIER",
-    "lhs : tIVAR",
-    "lhs : tGVAR",
-    "lhs : tCONSTANT",
-    "lhs : tCVAR",
-    "lhs : kNIL",
-    "lhs : kSELF",
-    "lhs : kTRUE",
-    "lhs : kFALSE",
-    "lhs : k__FILE__",
-    "lhs : k__LINE__",
-    "lhs : k__ENCODING__",
-    "lhs : primary_value '[' opt_call_args rbracket",
-    "lhs : primary_value call_op tIDENTIFIER",
-    "lhs : primary_value tCOLON2 tIDENTIFIER",
-    "lhs : primary_value call_op tCONSTANT",
-    "lhs : primary_value tCOLON2 tCONSTANT",
-    "lhs : tCOLON3 tCONSTANT",
-    "lhs : backref",
-    "cname : tIDENTIFIER",
-    "cname : tCONSTANT",
-    "cpath : tCOLON3 cname",
-    "cpath : cname",
-    "cpath : primary_value tCOLON2 cname",
-    "fname : tIDENTIFIER",
-    "fname : tCONSTANT",
-    "fname : tFID",
-    "fname : op",
-    "fname : reswords",
-    "fsym : fname",
-    "fsym : symbol",
-    "fitem : fsym",
-    "fitem : dsym",
-    "undef_list : fitem",
-    "$$6 :",
-    "undef_list : undef_list ',' $$6 fitem",
-    "op : tPIPE",
-    "op : tCARET",
-    "op : tAMPER2",
-    "op : tCMP",
-    "op : tEQ",
-    "op : tEQQ",
-    "op : tMATCH",
-    "op : tNMATCH",
-    "op : tGT",
-    "op : tGEQ",
-    "op : tLT",
-    "op : tLEQ",
-    "op : tNEQ",
-    "op : tLSHFT",
-    "op : tRSHFT",
-    "op : tDSTAR",
-    "op : tPLUS",
-    "op : tMINUS",
-    "op : tSTAR2",
-    "op : tSTAR",
-    "op : tDIVIDE",
-    "op : tPERCENT",
-    "op : tPOW",
-    "op : tBANG",
-    "op : tTILDE",
-    "op : tUPLUS",
-    "op : tUMINUS",
-    "op : tAREF",
-    "op : tASET",
-    "op : tBACK_REF2",
-    "reswords : k__LINE__",
-    "reswords : k__FILE__",
-    "reswords : k__ENCODING__",
-    "reswords : klBEGIN",
-    "reswords : klEND",
-    "reswords : kALIAS",
-    "reswords : kAND",
-    "reswords : kBEGIN",
-    "reswords : kBREAK",
-    "reswords : kCASE",
-    "reswords : kCLASS",
-    "reswords : kDEF",
-    "reswords : kDEFINED",
-    "reswords : kDO",
-    "reswords : kELSE",
-    "reswords : kELSIF",
-    "reswords : kEND",
-    "reswords : kENSURE",
-    "reswords : kFALSE",
-    "reswords : kFOR",
-    "reswords : kIN",
-    "reswords : kMODULE",
-    "reswords : kNEXT",
-    "reswords : kNIL",
-    "reswords : kNOT",
-    "reswords : kOR",
-    "reswords : kREDO",
-    "reswords : kRESCUE",
-    "reswords : kRETRY",
-    "reswords : kRETURN",
-    "reswords : kSELF",
-    "reswords : kSUPER",
-    "reswords : kTHEN",
-    "reswords : kTRUE",
-    "reswords : kUNDEF",
-    "reswords : kWHEN",
-    "reswords : kYIELD",
-    "reswords : kIF",
-    "reswords : kUNLESS",
-    "reswords : kWHILE",
-    "reswords : kUNTIL",
-    "reswords : kRESCUE_MOD",
-    "arg : lhs '=' arg",
-    "arg : lhs '=' arg kRESCUE_MOD arg",
-    "arg : var_lhs tOP_ASGN arg",
-    "arg : var_lhs tOP_ASGN arg kRESCUE_MOD arg",
-    "arg : primary_value '[' opt_call_args rbracket tOP_ASGN arg",
-    "arg : primary_value call_op tIDENTIFIER tOP_ASGN arg",
-    "arg : primary_value call_op tCONSTANT tOP_ASGN arg",
-    "arg : primary_value tCOLON2 tIDENTIFIER tOP_ASGN arg",
-    "arg : primary_value tCOLON2 tCONSTANT tOP_ASGN arg",
-    "arg : tCOLON3 tCONSTANT tOP_ASGN arg",
-    "arg : backref tOP_ASGN arg",
-    "arg : arg tDOT2 arg",
-    "arg : arg tDOT3 arg",
-    "arg : arg tPLUS arg",
-    "arg : arg tMINUS arg",
-    "arg : arg tSTAR2 arg",
-    "arg : arg tDIVIDE arg",
-    "arg : arg tPERCENT arg",
-    "arg : arg tPOW arg",
-    "arg : tUMINUS_NUM simple_numeric tPOW arg",
-    "arg : tUPLUS arg",
-    "arg : tUMINUS arg",
-    "arg : arg tPIPE arg",
-    "arg : arg tCARET arg",
-    "arg : arg tAMPER2 arg",
-    "arg : arg tCMP arg",
-    "arg : arg tGT arg",
-    "arg : arg tGEQ arg",
-    "arg : arg tLT arg",
-    "arg : arg tLEQ arg",
-    "arg : arg tEQ arg",
-    "arg : arg tEQQ arg",
-    "arg : arg tNEQ arg",
-    "arg : arg tMATCH arg",
-    "arg : arg tNMATCH arg",
-    "arg : tBANG arg",
-    "arg : tTILDE arg",
-    "arg : arg tLSHFT arg",
-    "arg : arg tRSHFT arg",
-    "arg : arg tANDOP arg",
-    "arg : arg tOROP arg",
-    "arg : kDEFINED opt_nl arg",
-    "arg : arg '?' arg opt_nl ':' arg",
-    "arg : primary",
-    "arg_value : arg",
-    "aref_args : none",
-    "aref_args : args trailer",
-    "aref_args : args ',' assocs trailer",
-    "aref_args : assocs trailer",
-    "paren_args : tLPAREN2 opt_call_args rparen",
-    "opt_paren_args : none",
-    "opt_paren_args : paren_args",
-    "opt_call_args : none",
-    "opt_call_args : call_args",
-    "opt_call_args : args ','",
-    "opt_call_args : args ',' assocs ','",
-    "opt_call_args : assocs ','",
-    "call_args : command",
-    "call_args : args opt_block_arg",
-    "call_args : assocs opt_block_arg",
-    "call_args : args ',' assocs opt_block_arg",
-    "call_args : block_arg",
-    "$$7 :",
-    "command_args : $$7 call_args",
-    "block_arg : tAMPER arg_value",
-    "opt_block_arg : ',' block_arg",
-    "opt_block_arg : none_block_pass",
-    "args : arg_value",
-    "args : tSTAR arg_value",
-    "args : args ',' arg_value",
-    "args : args ',' tSTAR arg_value",
-    "mrhs_arg : mrhs",
-    "mrhs_arg : arg_value",
-    "mrhs : args ',' arg_value",
-    "mrhs : args ',' tSTAR arg_value",
-    "mrhs : tSTAR arg_value",
-    "primary : literal",
-    "primary : strings",
-    "primary : xstring",
-    "primary : regexp",
-    "primary : words",
-    "primary : qwords",
-    "primary : symbols",
-    "primary : qsymbols",
-    "primary : var_ref",
-    "primary : backref",
-    "primary : tFID",
-    "$$8 :",
-    "primary : kBEGIN $$8 bodystmt kEND",
-    "$$9 :",
-    "primary : tLPAREN_ARG $$9 rparen",
-    "$$10 :",
-    "$$11 :",
-    "primary : tLPAREN_ARG $$10 expr $$11 rparen",
-    "primary : tLPAREN compstmt tRPAREN",
-    "primary : primary_value tCOLON2 tCONSTANT",
-    "primary : tCOLON3 tCONSTANT",
-    "primary : tLBRACK aref_args tRBRACK",
-    "primary : tLBRACE assoc_list tRCURLY",
-    "primary : kRETURN",
-    "primary : kYIELD tLPAREN2 call_args rparen",
-    "primary : kYIELD tLPAREN2 rparen",
-    "primary : kYIELD",
-    "primary : kDEFINED opt_nl tLPAREN2 expr rparen",
-    "primary : kNOT tLPAREN2 expr rparen",
-    "primary : kNOT tLPAREN2 rparen",
-    "primary : fcall brace_block",
-    "primary : method_call",
-    "primary : method_call brace_block",
-    "primary : tLAMBDA lambda",
-    "primary : kIF expr_value then compstmt if_tail kEND",
-    "primary : kUNLESS expr_value then compstmt opt_else kEND",
-    "$$12 :",
-    "$$13 :",
-    "primary : kWHILE $$12 expr_value do $$13 compstmt kEND",
-    "$$14 :",
-    "$$15 :",
-    "primary : kUNTIL $$14 expr_value do $$15 compstmt kEND",
-    "primary : kCASE expr_value opt_terms case_body kEND",
-    "primary : kCASE opt_terms case_body kEND",
-    "$$16 :",
-    "$$17 :",
-    "primary : kFOR for_var kIN $$16 expr_value do $$17 compstmt kEND",
-    "$$18 :",
-    "primary : kCLASS cpath superclass $$18 bodystmt kEND",
-    "$$19 :",
-    "$$20 :",
-    "primary : kCLASS tLSHFT expr $$19 term $$20 bodystmt kEND",
-    "$$21 :",
-    "primary : kMODULE cpath $$21 bodystmt kEND",
-    "$$22 :",
-    "primary : kDEF fname $$22 f_arglist bodystmt kEND",
-    "$$23 :",
-    "$$24 :",
-    "primary : kDEF singleton dot_or_colon $$23 fname $$24 f_arglist bodystmt kEND",
-    "primary : kBREAK",
-    "primary : kNEXT",
-    "primary : kREDO",
-    "primary : kRETRY",
-    "primary_value : primary",
-    "then : term",
-    "then : kTHEN",
-    "then : term kTHEN",
-    "do : term",
-    "do : kDO_COND",
-    "if_tail : opt_else",
-    "if_tail : kELSIF expr_value then compstmt if_tail",
-    "opt_else : none",
-    "opt_else : kELSE compstmt",
-    "for_var : lhs",
-    "for_var : mlhs",
-    "f_marg : f_norm_arg",
-    "f_marg : tLPAREN f_margs rparen",
-    "f_marg_list : f_marg",
-    "f_marg_list : f_marg_list ',' f_marg",
-    "f_margs : f_marg_list",
-    "f_margs : f_marg_list ',' tSTAR f_norm_arg",
-    "f_margs : f_marg_list ',' tSTAR f_norm_arg ',' f_marg_list",
-    "f_margs : f_marg_list ',' tSTAR",
-    "f_margs : f_marg_list ',' tSTAR ',' f_marg_list",
-    "f_margs : tSTAR f_norm_arg",
-    "f_margs : tSTAR f_norm_arg ',' f_marg_list",
-    "f_margs : tSTAR",
-    "f_margs : tSTAR ',' f_marg_list",
-    "block_args_tail : f_block_kwarg ',' f_kwrest opt_f_block_arg",
-    "block_args_tail : f_block_kwarg opt_f_block_arg",
-    "block_args_tail : f_kwrest opt_f_block_arg",
-    "block_args_tail : f_block_arg",
-    "opt_block_args_tail : ',' block_args_tail",
-    "opt_block_args_tail :",
-    "block_param : f_arg ',' f_block_optarg ',' f_rest_arg opt_block_args_tail",
-    "block_param : f_arg ',' f_block_optarg ',' f_rest_arg ',' f_arg opt_block_args_tail",
-    "block_param : f_arg ',' f_block_optarg opt_block_args_tail",
-    "block_param : f_arg ',' f_block_optarg ',' f_arg opt_block_args_tail",
-    "block_param : f_arg ',' f_rest_arg opt_block_args_tail",
-    "block_param : f_arg ','",
-    "block_param : f_arg ',' f_rest_arg ',' f_arg opt_block_args_tail",
-    "block_param : f_arg opt_block_args_tail",
-    "block_param : f_block_optarg ',' f_rest_arg opt_block_args_tail",
-    "block_param : f_block_optarg ',' f_rest_arg ',' f_arg opt_block_args_tail",
-    "block_param : f_block_optarg opt_block_args_tail",
-    "block_param : f_block_optarg ',' f_arg opt_block_args_tail",
-    "block_param : f_rest_arg opt_block_args_tail",
-    "block_param : f_rest_arg ',' f_arg opt_block_args_tail",
-    "block_param : block_args_tail",
-    "opt_block_param : none",
-    "opt_block_param : block_param_def",
-    "block_param_def : tPIPE opt_bv_decl tPIPE",
-    "block_param_def : tOROP",
-    "block_param_def : tPIPE block_param opt_bv_decl tPIPE",
-    "opt_bv_decl : opt_nl",
-    "opt_bv_decl : opt_nl ';' bv_decls opt_nl",
-    "bv_decls : bvar",
-    "bv_decls : bv_decls ',' bvar",
-    "bvar : tIDENTIFIER",
-    "bvar : f_bad_arg",
-    "$$25 :",
-    "lambda : $$25 f_larglist lambda_body",
-    "f_larglist : tLPAREN2 f_args opt_bv_decl tRPAREN",
-    "f_larglist : f_args",
-    "lambda_body : tLAMBEG compstmt tRCURLY",
-    "lambda_body : kDO_LAMBDA compstmt kEND",
-    "$$26 :",
-    "do_block : kDO_BLOCK $$26 opt_block_param compstmt kEND",
-    "block_call : command do_block",
-    "block_call : block_call call_op2 operation2 opt_paren_args",
-    "block_call : block_call call_op2 operation2 opt_paren_args brace_block",
-    "block_call : block_call call_op2 operation2 command_args do_block",
-    "method_call : fcall paren_args",
-    "method_call : primary_value call_op operation2 opt_paren_args",
-    "method_call : primary_value tCOLON2 operation2 paren_args",
-    "method_call : primary_value tCOLON2 operation3",
-    "method_call : primary_value call_op paren_args",
-    "method_call : primary_value tCOLON2 paren_args",
-    "method_call : kSUPER paren_args",
-    "method_call : kSUPER",
-    "method_call : primary_value '[' opt_call_args rbracket",
-    "$$27 :",
-    "brace_block : tLCURLY $$27 opt_block_param compstmt tRCURLY",
-    "$$28 :",
-    "brace_block : kDO $$28 opt_block_param compstmt kEND",
-    "case_body : kWHEN args then compstmt cases",
-    "cases : opt_else",
-    "cases : case_body",
-    "opt_rescue : kRESCUE exc_list exc_var then compstmt opt_rescue",
-    "opt_rescue :",
-    "exc_list : arg_value",
-    "exc_list : mrhs",
-    "exc_list : none",
-    "exc_var : tASSOC lhs",
-    "exc_var : none",
-    "opt_ensure : kENSURE compstmt",
-    "opt_ensure : none",
-    "literal : numeric",
-    "literal : symbol",
-    "literal : dsym",
-    "strings : string",
-    "string : tCHAR",
-    "string : string1",
-    "string : string string1",
-    "string1 : tSTRING_BEG string_contents tSTRING_END",
-    "xstring : tXSTRING_BEG xstring_contents tSTRING_END",
-    "regexp : tREGEXP_BEG regexp_contents tREGEXP_END",
-    "words : tWORDS_BEG ' ' tSTRING_END",
-    "words : tWORDS_BEG word_list tSTRING_END",
-    "word_list :",
-    "word_list : word_list word ' '",
-    "word : string_content",
-    "word : word string_content",
-    "symbols : tSYMBOLS_BEG ' ' tSTRING_END",
-    "symbols : tSYMBOLS_BEG symbol_list tSTRING_END",
-    "symbol_list :",
-    "symbol_list : symbol_list word ' '",
-    "qwords : tQWORDS_BEG ' ' tSTRING_END",
-    "qwords : tQWORDS_BEG qword_list tSTRING_END",
-    "qsymbols : tQSYMBOLS_BEG ' ' tSTRING_END",
-    "qsymbols : tQSYMBOLS_BEG qsym_list tSTRING_END",
-    "qword_list :",
-    "qword_list : qword_list tSTRING_CONTENT ' '",
-    "qsym_list :",
-    "qsym_list : qsym_list tSTRING_CONTENT ' '",
-    "string_contents :",
-    "string_contents : string_contents string_content",
-    "xstring_contents :",
-    "xstring_contents : xstring_contents string_content",
-    "regexp_contents :",
-    "regexp_contents : regexp_contents string_content",
-    "string_content : tSTRING_CONTENT",
-    "$$29 :",
-    "string_content : tSTRING_DVAR $$29 string_dvar",
-    "$$30 :",
-    "$$31 :",
-    "$$32 :",
-    "$$33 :",
-    "$$34 :",
-    "string_content : tSTRING_DBEG $$30 $$31 $$32 $$33 $$34 compstmt tSTRING_DEND",
-    "string_dvar : tGVAR",
-    "string_dvar : tIVAR",
-    "string_dvar : tCVAR",
-    "string_dvar : backref",
-    "symbol : tSYMBEG sym",
-    "sym : fname",
-    "sym : tIVAR",
-    "sym : tGVAR",
-    "sym : tCVAR",
-    "dsym : tSYMBEG xstring_contents tSTRING_END",
-    "numeric : simple_numeric",
-    "numeric : tUMINUS_NUM simple_numeric",
-    "simple_numeric : tINTEGER",
-    "simple_numeric : tFLOAT",
-    "simple_numeric : tRATIONAL",
-    "simple_numeric : tIMAGINARY",
-    "var_ref : tIDENTIFIER",
-    "var_ref : tIVAR",
-    "var_ref : tGVAR",
-    "var_ref : tCONSTANT",
-    "var_ref : tCVAR",
-    "var_ref : kNIL",
-    "var_ref : kSELF",
-    "var_ref : kTRUE",
-    "var_ref : kFALSE",
-    "var_ref : k__FILE__",
-    "var_ref : k__LINE__",
-    "var_ref : k__ENCODING__",
-    "var_lhs : tIDENTIFIER",
-    "var_lhs : tIVAR",
-    "var_lhs : tGVAR",
-    "var_lhs : tCONSTANT",
-    "var_lhs : tCVAR",
-    "var_lhs : kNIL",
-    "var_lhs : kSELF",
-    "var_lhs : kTRUE",
-    "var_lhs : kFALSE",
-    "var_lhs : k__FILE__",
-    "var_lhs : k__LINE__",
-    "var_lhs : k__ENCODING__",
-    "backref : tNTH_REF",
-    "backref : tBACK_REF",
-    "$$35 :",
-    "superclass : tLT $$35 expr_value term",
-    "superclass :",
-    "f_arglist : tLPAREN2 f_args rparen",
-    "$$36 :",
-    "f_arglist : $$36 f_args term",
-    "args_tail : f_kwarg ',' f_kwrest opt_f_block_arg",
-    "args_tail : f_kwarg opt_f_block_arg",
-    "args_tail : f_kwrest opt_f_block_arg",
-    "args_tail : f_block_arg",
-    "opt_args_tail : ',' args_tail",
-    "opt_args_tail :",
-    "f_args : f_arg ',' f_optarg ',' f_rest_arg opt_args_tail",
-    "f_args : f_arg ',' f_optarg ',' f_rest_arg ',' f_arg opt_args_tail",
-    "f_args : f_arg ',' f_optarg opt_args_tail",
-    "f_args : f_arg ',' f_optarg ',' f_arg opt_args_tail",
-    "f_args : f_arg ',' f_rest_arg opt_args_tail",
-    "f_args : f_arg ',' f_rest_arg ',' f_arg opt_args_tail",
-    "f_args : f_arg opt_args_tail",
-    "f_args : f_optarg ',' f_rest_arg opt_args_tail",
-    "f_args : f_optarg ',' f_rest_arg ',' f_arg opt_args_tail",
-    "f_args : f_optarg opt_args_tail",
-    "f_args : f_optarg ',' f_arg opt_args_tail",
-    "f_args : f_rest_arg opt_args_tail",
-    "f_args : f_rest_arg ',' f_arg opt_args_tail",
-    "f_args : args_tail",
-    "f_args :",
-    "f_bad_arg : tCONSTANT",
-    "f_bad_arg : tIVAR",
-    "f_bad_arg : tGVAR",
-    "f_bad_arg : tCVAR",
-    "f_norm_arg : f_bad_arg",
-    "f_norm_arg : tIDENTIFIER",
-    "f_arg_asgn : f_norm_arg",
-    "f_arg_item : f_arg_asgn",
-    "f_arg_item : tLPAREN f_margs rparen",
-    "f_arg : f_arg_item",
-    "f_arg : f_arg ',' f_arg_item",
-    "f_label : tLABEL",
-    "f_kw : f_label arg_value",
-    "f_kw : f_label",
-    "f_block_kw : f_label primary_value",
-    "f_block_kw : f_label",
-    "f_block_kwarg : f_block_kw",
-    "f_block_kwarg : f_block_kwarg ',' f_block_kw",
-    "f_kwarg : f_kw",
-    "f_kwarg : f_kwarg ',' f_kw",
-    "kwrest_mark : tPOW",
-    "kwrest_mark : tDSTAR",
-    "f_kwrest : kwrest_mark tIDENTIFIER",
-    "f_kwrest : kwrest_mark",
-    "f_opt : f_arg_asgn '=' arg_value",
-    "f_block_opt : f_arg_asgn '=' primary_value",
-    "f_block_optarg : f_block_opt",
-    "f_block_optarg : f_block_optarg ',' f_block_opt",
-    "f_optarg : f_opt",
-    "f_optarg : f_optarg ',' f_opt",
-    "restarg_mark : tSTAR2",
-    "restarg_mark : tSTAR",
-    "f_rest_arg : restarg_mark tIDENTIFIER",
-    "f_rest_arg : restarg_mark",
-    "blkarg_mark : tAMPER2",
-    "blkarg_mark : tAMPER",
-    "f_block_arg : blkarg_mark tIDENTIFIER",
-    "opt_f_block_arg : ',' f_block_arg",
-    "opt_f_block_arg :",
-    "singleton : var_ref",
-    "$$37 :",
-    "singleton : tLPAREN2 $$37 expr rparen",
-    "assoc_list : none",
-    "assoc_list : assocs trailer",
-    "assocs : assoc",
-    "assocs : assocs ',' assoc",
-    "assoc : arg_value tASSOC arg_value",
-    "assoc : tLABEL arg_value",
-    "assoc : tSTRING_BEG string_contents tLABEL_END arg_value",
-    "assoc : tDSTAR arg_value",
-    "operation : tIDENTIFIER",
-    "operation : tCONSTANT",
-    "operation : tFID",
-    "operation2 : tIDENTIFIER",
-    "operation2 : tCONSTANT",
-    "operation2 : tFID",
-    "operation2 : op",
-    "operation3 : tIDENTIFIER",
-    "operation3 : tFID",
-    "operation3 : op",
-    "dot_or_colon : tDOT",
-    "dot_or_colon : tCOLON2",
-    "call_op : tDOT",
-    "call_op : tANDDOT",
-    "call_op2 : call_op",
-    "call_op2 : tCOLON2",
-    "opt_terms :",
-    "opt_terms : terms",
-    "opt_nl :",
-    "opt_nl : '\\n'",
-    "rparen : opt_nl tRPAREN",
-    "rbracket : opt_nl tRBRACK",
-    "trailer :",
-    "trailer : '\\n'",
-    "trailer : ','",
-    "term : ';'",
-    "term : '\\n'",
-    "terms : term",
-    "terms : terms ';'",
-    "none :",
-    "none_block_pass :",
-    };
-
-  protected YYDebug yydebug;
-
-  /** index-checked interface to {@link #yyNames}.
-      @param token single character or <tt>%token</tt> value.
-      @return token name or <tt>[illegal]</tt> or <tt>[unknown]</tt>.
-    */
-  public static String yyName (int token) {
-    if (token < 0 || token > yyNames.length) return "[illegal]";
-    String name;
-    if ((name = yyNames[token]) != null) return name;
-    return "[unknown]";
-  }
-
 
   /** computes list of expected tokens on error by tracing the tables.
       @param state for which to compute the list.
@@ -1558,12 +898,10 @@ public class RubyParser {
   /** the generated parser, with debugging messages.
       Maintains a dynamic state and value stack.
       @param yyLex scanner.
-      @param yydebug debug message writer implementing <tt>yyDebug</tt>, or <tt>null</tt>.
       @return result of the last reduction, if any.
     */
   public Object yyparse (RubyLexer yyLex, Object ayydebug)
-				throws IOException {
-    this.yydebug = (YYDebug) ayydebug;
+				throws java.io.IOException {
     return yyparse(yyLex);
   }
 
@@ -1588,7 +926,7 @@ public class RubyParser {
       @param yyLex scanner.
       @return result of the last reduction, if any.
     */
-  public Object yyparse (RubyLexer yyLex) throws IOException {
+  public Object yyparse (RubyLexer yyLex) throws java.io.IOException {
     if (yyMax <= 0) yyMax = 256;			// initial size
     int yyState = 0, yyStates[] = new int[yyMax];	// state stack
     Object yyVal = null, yyVals[] = new Object[yyMax];	// value stack
@@ -1606,7 +944,6 @@ public class RubyParser {
       }
       yyStates[yyTop] = yyState;
       yyVals[yyTop] = yyVal;
-      if (yydebug != null) yydebug.push(yyState, yyVal);
 
       yyDiscarded: for (;;) {	// discarding a token does not change stack
         int yyN;
@@ -1614,13 +951,9 @@ public class RubyParser {
           if (yyToken < 0) {
 //            yyToken = yyLex.advance() ? yyLex.token() : 0;
             yyToken = yyLex.nextToken();
-            if (yydebug != null)
-              yydebug.lex(yyState, yyToken, yyName(yyToken), yyLex.value());
           }
           if ((yyN = yySindex[yyState]) != 0 && (yyN += yyToken) >= 0
               && yyN < yyTable.length && yyCheck[yyN] == yyToken) {
-            if (yydebug != null)
-              yydebug.shift(yyState, yyTable[yyN], yyErrorFlag-1);
             yyState = yyTable[yyN];		// shift to yyN
             yyVal = yyLex.value();
             yyToken = -1;
@@ -1635,7 +968,6 @@ public class RubyParser {
   
             case 0:
               support.yyerror("syntax error", yyExpecting(yyState), yyNames[yyToken]);
-              if (yydebug != null) yydebug.error("syntax error");
   
             case 1: case 2:
               yyErrorFlag = 3;
@@ -1643,32 +975,22 @@ public class RubyParser {
                 if ((yyN = yySindex[yyStates[yyTop]]) != 0
                     && (yyN += yyErrorCode) >= 0 && yyN < yyTable.length
                     && yyCheck[yyN] == yyErrorCode) {
-                  if (yydebug != null)
-                    yydebug.shift(yyStates[yyTop], yyTable[yyN], 3);
                   yyState = yyTable[yyN];
                   yyVal = yyLex.value();
                   continue yyLoop;
                 }
-                if (yydebug != null) yydebug.pop(yyStates[yyTop]);
               } while (-- yyTop >= 0);
-              if (yydebug != null) yydebug.reject();
               support.yyerror("irrecoverable syntax error");
   
             case 3:
               if (yyToken == 0) {
-                if (yydebug != null) yydebug.reject();
                 support.yyerror("irrecoverable syntax error at end-of-file");
               }
-              if (yydebug != null)
-                yydebug.discard(yyState, yyToken, yyName(yyToken),
-  							yyLex.value());
               yyToken = -1;
               continue yyDiscarded;		// leave stack alone
             }
         }
         int yyV = yyTop + 1-yyLen[yyN];
-        if (yydebug != null)
-          yydebug.reduce(yyState, yyStates[yyV-1], yyN, yyRule[yyN], yyLen[yyN]);
         ParserState state = states[yyN];
         if (state == null) {
             yyVal = yyDefault(yyV > yyTop ? null : yyVals[yyV]);
@@ -1682,16 +1004,12 @@ public class RubyParser {
         yyState = yyStates[yyTop];
         int yyM = yyLhs[yyN];
         if (yyState == 0 && yyM == 0) {
-          if (yydebug != null) yydebug.shift(0, yyFinal);
           yyState = yyFinal;
           if (yyToken < 0) {
             yyToken = yyLex.nextToken();
 //            yyToken = yyLex.advance() ? yyLex.token() : 0;
-            if (yydebug != null)
-               yydebug.lex(yyState, yyToken,yyName(yyToken), yyLex.value());
           }
           if (yyToken == 0) {
-            if (yydebug != null) yydebug.accept(yyVal);
             return yyVal;
           }
           continue yyLoop;
@@ -1701,7 +1019,6 @@ public class RubyParser {
           yyState = yyTable[yyN];
         else
           yyState = yyDgoto[yyM];
-        if (yydebug != null) yydebug.shift(yyStates[yyTop], yyState);
         continue yyLoop;
       }
     }
@@ -2094,7 +1411,7 @@ states[62] = new ParserState() {
 };
 states[63] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = support.new_call(((ParseNode)yyVals[-4+yyTop]), ((String)yyVals[-3+yyTop]), ((String)yyVals[-2+yyTop]), ((ParseNode)yyVals[-1+yyTop]), ((IterParseNode)yyVals[0+yyTop]));
+                    yyVal = support.new_call(((ParseNode)yyVals[-4+yyTop]), ((String)yyVals[-3+yyTop]), ((String)yyVals[-2+yyTop]), ((ParseNode)yyVals[-1+yyTop]), ((IterParseNode)yyVals[0+yyTop])); 
     return yyVal;
   }
 };
@@ -3501,17 +2818,17 @@ states[323] = new ParserState() {
 states[324] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
                     support.frobnicate_fcall_args(((FCallParseNode)yyVals[-1+yyTop]), null, ((IterParseNode)yyVals[0+yyTop]));
-                    yyVal = ((FCallParseNode)yyVals[-1+yyTop]);
+                    yyVal = ((FCallParseNode)yyVals[-1+yyTop]);                    
     return yyVal;
   }
 };
 states[326] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    if (((ParseNode)yyVals[-1+yyTop]) != null &&
-                          ((BlockAcceptingNode)yyVals[-1+yyTop]).getIterNode() instanceof BlockPassParseNode) {
+                    if (((ParseNode)yyVals[-1+yyTop]) != null && 
+                          ((BlockAcceptingParseNode)yyVals[-1+yyTop]).getIterNode() instanceof BlockPassParseNode) {
                           lexer.compile_error(PID.BLOCK_ARG_AND_BLOCK_GIVEN, "Both block arg and actual block given.");
                     }
-                    yyVal = ((BlockAcceptingNode)yyVals[-1+yyTop]).setIterNode(((IterParseNode)yyVals[0+yyTop]));
+                    yyVal = ((BlockAcceptingParseNode)yyVals[-1+yyTop]).setIterNode(((IterParseNode)yyVals[0+yyTop]));
                     ((ParseNode)yyVal).setPosition(((ParseNode)yyVals[-1+yyTop]).getPosition());
     return yyVal;
   }
@@ -4097,13 +3414,13 @@ states[422] = new ParserState() {
                     if (((ParseNode)yyVals[-1+yyTop]) instanceof YieldParseNode) {
                         lexer.compile_error(PID.BLOCK_GIVEN_TO_YIELD, "block given to yield");
                     }
-                    if (((ParseNode)yyVals[-1+yyTop]) instanceof BlockAcceptingNode && ((BlockAcceptingNode)yyVals[-1+yyTop]).getIterNode() instanceof BlockPassParseNode) {
+                    if (((ParseNode)yyVals[-1+yyTop]) instanceof BlockAcceptingParseNode && ((BlockAcceptingParseNode)yyVals[-1+yyTop]).getIterNode() instanceof BlockPassParseNode) {
                         lexer.compile_error(PID.BLOCK_ARG_AND_BLOCK_GIVEN, "Both block arg and actual block given.");
                     }
-                    if (((ParseNode)yyVals[-1+yyTop]) instanceof NonLocalControlFlowNode) {
-                        ((BlockAcceptingNode) ((NonLocalControlFlowNode)yyVals[-1+yyTop]).getValueNode()).setIterNode(((IterParseNode)yyVals[0+yyTop]));
+                    if (((ParseNode)yyVals[-1+yyTop]) instanceof NonLocalControlFlowParseNode) {
+                        ((BlockAcceptingParseNode) ((NonLocalControlFlowParseNode)yyVals[-1+yyTop]).getValueNode()).setIterNode(((IterParseNode)yyVals[0+yyTop]));
                     } else {
-                        ((BlockAcceptingNode)yyVals[-1+yyTop]).setIterNode(((IterParseNode)yyVals[0+yyTop]));
+                        ((BlockAcceptingParseNode)yyVals[-1+yyTop]).setIterNode(((IterParseNode)yyVals[0+yyTop]));
                     }
                     yyVal = ((ParseNode)yyVals[-1+yyTop]);
                     ((ParseNode)yyVal).setPosition(((ParseNode)yyVals[-1+yyTop]).getPosition());
@@ -4613,7 +3930,7 @@ states[503] = new ParserState() {
 };
 states[504] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = ((NumericParseNode)yyVals[0+yyTop]);
+                    yyVal = ((NumericParseNode)yyVals[0+yyTop]);  
     return yyVal;
   }
 };
@@ -5354,9 +4671,9 @@ states[643] = new ParserState() {
         support.setConfiguration(configuration);
         support.setResult(new RubyParserResult());
         
-        yyparse(lexer, configuration.isDebug() ? new YYDebug() : null);
+        yyparse(lexer, null);
         
         return support.getResult();
     }
 }
-					// line 10130 "-"
+					// line 10129 "-"
