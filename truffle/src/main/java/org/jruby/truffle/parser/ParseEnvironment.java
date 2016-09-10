@@ -7,7 +7,7 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.language.parser.jruby;
+package org.jruby.truffle.parser;
 
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.LexicalScope;

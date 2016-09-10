@@ -7,7 +7,7 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.language.parser.jruby;
+package org.jruby.truffle.parser;
 
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.FrameSlot;
@@ -20,7 +20,6 @@ import org.jcodings.specific.UTF8Encoding;
 import org.joni.NameEntry;
 import org.joni.Regex;
 import org.joni.Syntax;
-import org.jruby.ast.CallNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.SideEffectFree;
 import org.jruby.ast.visitor.NodeVisitor;
@@ -76,8 +75,6 @@ import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.RubySourceSection;
 import org.jruby.truffle.language.arguments.ArrayIsAtLeastAsLargeAsNode;
-import org.jruby.truffle.language.arguments.ProfileArgumentNode;
-import org.jruby.truffle.language.arguments.ReadSelfNode;
 import org.jruby.truffle.language.arguments.SingleBlockArgNode;
 import org.jruby.truffle.language.constants.ReadConstantNode;
 import org.jruby.truffle.language.constants.ReadConstantWithLexicalScopeNode;
@@ -139,7 +136,6 @@ import org.jruby.truffle.language.locals.InitFlipFlopSlotNode;
 import org.jruby.truffle.language.locals.LocalFlipFlopStateNode;
 import org.jruby.truffle.language.locals.LocalVariableType;
 import org.jruby.truffle.language.locals.ReadLocalVariableNode;
-import org.jruby.truffle.language.locals.WriteLocalVariableNode;
 import org.jruby.truffle.language.methods.AddMethodNodeGen;
 import org.jruby.truffle.language.methods.Arity;
 import org.jruby.truffle.language.methods.BlockDefinitionNode;

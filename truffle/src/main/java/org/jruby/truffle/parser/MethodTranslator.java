@@ -7,7 +7,7 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.language.parser.jruby;
+package org.jruby.truffle.parser;
 
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.Truffle;
@@ -124,7 +124,7 @@ public class MethodTranslator extends BodyTranslator {
             preludeProc = loadArguments;
         }
 
-        final RubyNode checkArity = Translator.createCheckArityNode(context, source, sourceSection, arityForCheck);
+        final RubyNode checkArity = createCheckArityNode(context, source, sourceSection, arityForCheck);
 
         final RubyNode preludeLambda = sequence(context, source, sourceSection, Arrays.asList(checkArity, NodeUtil.cloneNode(loadArguments)));
 
@@ -242,7 +242,7 @@ public class MethodTranslator extends BodyTranslator {
             // Use Truffle.primitive seems to turn off arity checking. See Time.from_array for example.
             prelude = loadArguments;
         } else {
-            final RubyNode checkArity = Translator.createCheckArityNode(context, source, sourceSection, arity);
+            final RubyNode checkArity = createCheckArityNode(context, source, sourceSection, arity);
 
             prelude = sequence(context, source, sourceSection, Arrays.asList(checkArity, loadArguments));
         }

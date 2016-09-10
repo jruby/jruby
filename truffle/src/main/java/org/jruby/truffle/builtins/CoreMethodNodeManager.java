@@ -43,7 +43,7 @@ import org.jruby.truffle.language.methods.ExceptionTranslatingNode;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.methods.SharedMethodInfo;
 import org.jruby.truffle.language.objects.SingletonClassNode;
-import org.jruby.truffle.language.parser.jruby.Translator;
+import org.jruby.truffle.parser.Translator;
 import org.jruby.truffle.platform.UnsafeGroup;
 import org.jruby.truffle.tools.ChaosNodeGen;
 import org.jruby.truffle.util.StringUtils;
