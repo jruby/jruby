@@ -28,8 +28,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.parser;
 
-import java.io.IOException;
-
+import org.jruby.common.IRubyWarnings;
+import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.truffle.parser.ast.ArgsParseNode;
 import org.jruby.truffle.parser.ast.ArgumentParseNode;
 import org.jruby.truffle.parser.ast.ArrayParseNode;
@@ -42,11 +42,11 @@ import org.jruby.truffle.parser.ast.BlockParseNode;
 import org.jruby.truffle.parser.ast.BlockPassParseNode;
 import org.jruby.truffle.parser.ast.BreakParseNode;
 import org.jruby.truffle.parser.ast.ClassParseNode;
-import org.jruby.truffle.parser.ast.ClassVarParseNode;
 import org.jruby.truffle.parser.ast.ClassVarAsgnParseNode;
+import org.jruby.truffle.parser.ast.ClassVarParseNode;
 import org.jruby.truffle.parser.ast.Colon3ParseNode;
-import org.jruby.truffle.parser.ast.ConstParseNode;
 import org.jruby.truffle.parser.ast.ConstDeclParseNode;
+import org.jruby.truffle.parser.ast.ConstParseNode;
 import org.jruby.truffle.parser.ast.DStrParseNode;
 import org.jruby.truffle.parser.ast.DSymbolParseNode;
 import org.jruby.truffle.parser.ast.DXStrParseNode;
@@ -56,9 +56,9 @@ import org.jruby.truffle.parser.ast.DotParseNode;
 import org.jruby.truffle.parser.ast.EncodingParseNode;
 import org.jruby.truffle.parser.ast.EnsureParseNode;
 import org.jruby.truffle.parser.ast.EvStrParseNode;
+import org.jruby.truffle.parser.ast.FCallParseNode;
 import org.jruby.truffle.parser.ast.FalseParseNode;
 import org.jruby.truffle.parser.ast.FileParseNode;
-import org.jruby.truffle.parser.ast.FCallParseNode;
 import org.jruby.truffle.parser.ast.FixnumParseNode;
 import org.jruby.truffle.parser.ast.FloatParseNode;
 import org.jruby.truffle.parser.ast.ForParseNode;
@@ -77,13 +77,12 @@ import org.jruby.truffle.parser.ast.MultipleAsgnParseNode;
 import org.jruby.truffle.parser.ast.NextParseNode;
 import org.jruby.truffle.parser.ast.NilImplicitParseNode;
 import org.jruby.truffle.parser.ast.NilParseNode;
-import org.jruby.truffle.parser.ast.ParseNode;
 import org.jruby.truffle.parser.ast.NonLocalControlFlowParseNode;
 import org.jruby.truffle.parser.ast.NumericParseNode;
 import org.jruby.truffle.parser.ast.OpAsgnAndParseNode;
-import org.jruby.truffle.parser.ast.OpAsgnParseNode;
 import org.jruby.truffle.parser.ast.OpAsgnOrParseNode;
 import org.jruby.truffle.parser.ast.OptArgParseNode;
+import org.jruby.truffle.parser.ast.ParseNode;
 import org.jruby.truffle.parser.ast.PostExeParseNode;
 import org.jruby.truffle.parser.ast.PreExe19ParseNode;
 import org.jruby.truffle.parser.ast.RationalParseNode;
@@ -109,24 +108,23 @@ import org.jruby.truffle.parser.ast.YieldParseNode;
 import org.jruby.truffle.parser.ast.ZArrayParseNode;
 import org.jruby.truffle.parser.ast.ZSuperParseNode;
 import org.jruby.truffle.parser.ast.types.ILiteralNode;
-import org.jruby.common.IRubyWarnings;
-import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.truffle.parser.lexer.ISourcePosition;
 import org.jruby.truffle.parser.lexer.ISourcePositionHolder;
 import org.jruby.truffle.parser.lexer.LexerSource;
 import org.jruby.truffle.parser.lexer.RubyLexer;
 import org.jruby.truffle.parser.lexer.StrTerm;
-import org.jruby.truffle.parser.lexer.SyntaxException;
 import org.jruby.truffle.parser.lexer.SyntaxException.PID;
 import org.jruby.util.ByteList;
 import org.jruby.util.KeyValuePair;
-import org.jruby.util.cli.Options;
 import org.jruby.util.StringSupport;
+
+import java.io.IOException;
+
 import static org.jruby.truffle.parser.lexer.LexingCommon.EXPR_BEG;
-import static org.jruby.truffle.parser.lexer.LexingCommon.EXPR_FNAME;
-import static org.jruby.truffle.parser.lexer.LexingCommon.EXPR_ENDFN;
-import static org.jruby.truffle.parser.lexer.LexingCommon.EXPR_ENDARG;
 import static org.jruby.truffle.parser.lexer.LexingCommon.EXPR_END;
+import static org.jruby.truffle.parser.lexer.LexingCommon.EXPR_ENDARG;
+import static org.jruby.truffle.parser.lexer.LexingCommon.EXPR_ENDFN;
+import static org.jruby.truffle.parser.lexer.LexingCommon.EXPR_FNAME;
 import static org.jruby.truffle.parser.lexer.LexingCommon.EXPR_LABEL;
  
 public class RubyParser {
