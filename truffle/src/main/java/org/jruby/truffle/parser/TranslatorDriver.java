@@ -53,7 +53,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class TranslatorDriver implements Parser {
+public class TranslatorDriver {
 
     private final ParseEnvironment parseEnvironment;
 
@@ -61,7 +61,6 @@ public class TranslatorDriver implements Parser {
         parseEnvironment = new ParseEnvironment(context);
     }
 
-    @Override
     public RubyRootNode parse(RubyContext context, Source source, Encoding defaultEncoding, ParserContext parserContext, String[] argumentNames, FrameDescriptor frameDescriptor, MaterializedFrame parentFrame, boolean ownScopeForAssignments, Node currentNode) {
         // Set up the JRuby parser
 
