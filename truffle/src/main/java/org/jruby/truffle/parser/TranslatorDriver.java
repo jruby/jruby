@@ -38,8 +38,10 @@ import org.jruby.truffle.language.methods.Arity;
 import org.jruby.truffle.language.methods.CatchNextNode;
 import org.jruby.truffle.language.methods.CatchRetryAsErrorNode;
 import org.jruby.truffle.language.methods.CatchReturnAsErrorNode;
+import org.jruby.truffle.language.methods.ExceptionTranslatingNode;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.methods.SharedMethodInfo;
+import org.jruby.truffle.language.methods.UnsupportedOperationBehavior;
 import org.jruby.truffle.parser.ast.NilParseNode;
 import org.jruby.truffle.parser.ast.RootParseNode;
 import org.jruby.truffle.parser.parser.ParserConfiguration;
@@ -237,6 +239,7 @@ public class TranslatorDriver {
                         truffleNode));
             }
 
+            truffleNode = new ExceptionTranslatingNode(context, sourceSection, truffleNode, UnsupportedOperationBehavior.TYPE_ERROR);
             truffleNode = new TopLevelRaiseHandler(context, sourceSection, truffleNode);
         }
 
