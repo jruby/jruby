@@ -16,26 +16,23 @@ import org.jruby.util.unsafe.UnsafeHolder;
 
 public class NativeRope extends Rope {
 
-    private final int length;
     private NativePointer pointer;
 
     public NativeRope(SimpleNativeMemoryManager nativeMemoryManager, byte[] bytes, Encoding encoding, int characterLength) {
         super(encoding, CodeRange.CR_UNKNOWN, false, bytes.length, characterLength, 1, null);
 
-        length = bytes.length;
+        pointer = nativeMemoryManager.allocate(bytes.length);
 
-        pointer = nativeMemoryManager.allocate(length);
-
-        for (int n = 0; n < length; n++) {
+        for (int n = 0; n < bytes.length; n++) {
             pointer.writeByte(n, bytes[n]);
         }
     }
 
     @Override
     protected byte[] getBytesSlow() {
-        final byte[] bytes = new byte[length];
+        final byte[] bytes = new byte[byteLength()];
 
-        for (int n = 0; n < length; n++) {
+        for (int n = 0; n < bytes.length; n++) {
             bytes[n] = pointer.readByte(n);
         }
 
