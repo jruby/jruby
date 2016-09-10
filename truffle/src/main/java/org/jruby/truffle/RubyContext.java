@@ -16,9 +16,11 @@ import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.TruffleLanguage;
 import com.oracle.truffle.api.instrumentation.Instrumenter;
 import com.oracle.truffle.api.object.DynamicObject;
+
 import org.jruby.Ruby;
 import org.jruby.truffle.builtins.PrimitiveManager;
 import org.jruby.truffle.core.CoreLibrary;
+import org.jruby.truffle.core.CoreMethods;
 import org.jruby.truffle.core.encoding.EncodingManager;
 import org.jruby.truffle.core.exception.CoreExceptions;
 import org.jruby.truffle.core.kernel.AtExitManager;
@@ -88,6 +90,7 @@ public class RubyContext extends ExecutionContext {
 
     private final NativePlatform nativePlatform;
     private final CoreLibrary coreLibrary;
+    private final CoreMethods coreMethods;
     private final ThreadManager threadManager;
     private final LexicalScope rootLexicalScope;
     private final InstrumentationServerManager instrumentationServerManager;
@@ -155,6 +158,10 @@ public class RubyContext extends ExecutionContext {
         org.jruby.Main.printTruffleTimeMetric("before-load-nodes");
         coreLibrary.addCoreMethods(primitiveManager);
         org.jruby.Main.printTruffleTimeMetric("after-load-nodes");
+
+        // Capture known builtin methods
+
+        coreMethods = new CoreMethods(coreLibrary);
 
         // Load the reset of the core library
 
@@ -250,6 +257,10 @@ public class RubyContext extends ExecutionContext {
 
     public CoreLibrary getCoreLibrary() {
         return coreLibrary;
+    }
+
+    public CoreMethods getCoreMethods() {
+        return coreMethods;
     }
 
     public PrintStream getDebugStandardOut() {

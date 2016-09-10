@@ -652,7 +652,7 @@ public class BodyTranslator extends Translator {
         final SourceSection enclosingFullSourceSection = enclosingSourceSection.toSourceSection(source);
 
         RubyCallNodeParameters callParameters = new RubyCallNodeParameters(context, enclosingFullSourceSection, receiver, methodName, argumentsAndBlock.getBlock(), argumentsAndBlock.getArguments(), argumentsAndBlock.isSplatted(), privately || ignoreVisibility, isVCall, node.isLazy(), isAttrAssign);
-        RubyNode translated = new RubyCallNode(callParameters);
+        RubyNode translated = context.getCoreMethods().createCallNode(callParameters);
 
         if (argumentsAndBlock.getBlock() instanceof BlockDefinitionNode) { // if we have a literal block, break breaks out of this call site
             BlockDefinitionNode blockDef = (BlockDefinitionNode) argumentsAndBlock.getBlock();

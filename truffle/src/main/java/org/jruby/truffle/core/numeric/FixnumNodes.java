@@ -28,6 +28,7 @@ import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.builtins.Primitive;
 import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.core.CoreLibrary;
+import org.jruby.truffle.core.InlinableBuiltin;
 import org.jruby.truffle.core.numeric.FixnumNodesFactory.DivNodeFactory;
 import org.jruby.truffle.core.rope.LazyIntRope;
 import org.jruby.truffle.language.NotProvided;
@@ -78,7 +79,9 @@ public abstract class FixnumNodes {
     }
 
     @CoreMethod(names = "+", required = 1)
-    public abstract static class AddNode extends BignumNodes.BignumCoreMethodNode {
+    public abstract static class AddNode extends BignumNodes.BignumCoreMethodNode implements InlinableBuiltin {
+
+        public abstract Object executeBuiltin(VirtualFrame frame, Object... arguments);
 
         @Specialization(rewriteOn = ArithmeticException.class)
         public int add(int a, int b) {
@@ -131,7 +134,9 @@ public abstract class FixnumNodes {
     }
 
     @CoreMethod(names = "-", required = 1)
-    public abstract static class SubNode extends BignumNodes.BignumCoreMethodNode {
+    public abstract static class SubNode extends BignumNodes.BignumCoreMethodNode implements InlinableBuiltin {
+
+        public abstract Object executeBuiltin(VirtualFrame frame, Object... arguments);
 
         @Specialization(rewriteOn = ArithmeticException.class)
         public int sub(int a, int b) {
@@ -184,7 +189,9 @@ public abstract class FixnumNodes {
     }
 
     @CoreMethod(names = "*", required = 1)
-    public abstract static class MulNode extends BignumNodes.BignumCoreMethodNode {
+    public abstract static class MulNode extends BignumNodes.BignumCoreMethodNode implements InlinableBuiltin {
+
+        public abstract Object executeBuiltin(VirtualFrame frame, Object... arguments);
 
         @Specialization(rewriteOn = ArithmeticException.class)
         public int mul(int a, int b) {
@@ -238,7 +245,7 @@ public abstract class FixnumNodes {
     }
 
     @CoreMethod(names = { "/", "__slash__" }, required = 1)
-    public abstract static class DivNode extends CoreMethodArrayArgumentsNode {
+    public abstract static class DivNode extends CoreMethodArrayArgumentsNode implements InlinableBuiltin {
 
         private final BranchProfile bGreaterZero = BranchProfile.create();
         private final BranchProfile bGreaterZeroAGreaterEqualZero = BranchProfile.create();
@@ -248,6 +255,8 @@ public abstract class FixnumNodes {
         private final BranchProfile bMinusOneAMinimum = BranchProfile.create();
         private final BranchProfile bMinusOneANotMinimum = BranchProfile.create();
         private final BranchProfile finalCase = BranchProfile.create();
+
+        public abstract Object executeBuiltin(VirtualFrame frame, Object... arguments);
 
         public abstract Object executeDiv(VirtualFrame frame, Object a, Object b);
 
