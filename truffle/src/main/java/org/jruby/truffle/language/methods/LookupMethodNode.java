@@ -10,17 +10,21 @@
 package org.jruby.truffle.language.methods;
 
 import com.oracle.truffle.api.Assumption;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.Frame;
+import com.oracle.truffle.api.frame.FrameInstance;
+import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.module.ModuleOperations;
-import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.objects.MetaClassNode;
 import org.jruby.truffle.language.objects.MetaClassNodeGen;
 
@@ -31,14 +35,20 @@ import org.jruby.truffle.language.objects.MetaClassNodeGen;
 @NodeChildren({ @NodeChild("self"), @NodeChild("name") })
 public abstract class LookupMethodNode extends RubyNode {
 
+    private final boolean ignoreVisibility;
+    private final boolean onlyLookupPublic;
+
     @Child MetaClassNode metaClassNode;
 
-    public LookupMethodNode(RubyContext context, SourceSection sourceSection) {
+    public LookupMethodNode(RubyContext context, SourceSection sourceSection,
+            boolean ignoreVisibility, boolean onlyLookupPublic) {
         super(context, sourceSection);
-        metaClassNode = MetaClassNodeGen.create(context, sourceSection, null);
+        this.ignoreVisibility = ignoreVisibility;
+        this.onlyLookupPublic = onlyLookupPublic;
+        this.metaClassNode = MetaClassNodeGen.create(context, sourceSection, null);
     }
 
-    public abstract InternalMethod executeLookupMethod(Object self, String name);
+    public abstract InternalMethod executeLookupMethod(VirtualFrame frame, Object self, String name);
 
     @Specialization(
             guards = {
@@ -47,35 +57,91 @@ public abstract class LookupMethodNode extends RubyNode {
             },
             assumptions = "getUnmodifiedAssumption(selfMetaClass)",
             limit = "getCacheLimit()")
-    protected InternalMethod lookupMethodCached(Object self, String name,
+    protected InternalMethod lookupMethodCached(VirtualFrame frame, Object self, String name,
             @Cached("metaClass(self)") DynamicObject selfMetaClass,
             @Cached("name") String cachedName,
-            @Cached("doLookup(selfMetaClass, name)") InternalMethod method) {
+            @Cached("doLookup(frame, self, name)") InternalMethod method) {
         return method;
     }
 
-    public Assumption getUnmodifiedAssumption(DynamicObject module) {
+    protected Assumption getUnmodifiedAssumption(DynamicObject module) {
         return Layouts.MODULE.getFields(module).getUnmodifiedAssumption();
     }
 
     @Specialization
-    protected InternalMethod lookupMethodUncached(Object self, String name) {
-        final DynamicObject selfMetaClass = metaClass(self);
-        return doLookup(selfMetaClass, name);
+    protected InternalMethod lookupMethodUncached(VirtualFrame frame, Object self, String name) {
+        return doLookup(frame, self, name);
     }
 
     protected DynamicObject metaClass(Object object) {
         return metaClassNode.executeMetaClass(object);
     }
 
-    protected InternalMethod doLookup(DynamicObject selfMetaClass, String name) {
-        assert RubyGuards.isRubyClass(selfMetaClass);
-        InternalMethod method = ModuleOperations.lookupMethod(selfMetaClass, name);
-        // TODO (eregon, 26 June 2015): Is this OK for all usages?
-        if (method != null && method.isUndefined()) {
-            method = null;
+    protected InternalMethod doLookup(VirtualFrame frame, Object self, String name) {
+        return lookupMethodWithVisibility(getContext(), frame, self, name, ignoreVisibility, onlyLookupPublic, false);
+    }
+
+    @TruffleBoundary
+    protected static InternalMethod doLookup(RubyContext context,
+            DynamicObject callerClass, Object receiver, String name,
+            boolean ignoreVisibility, boolean onlyLookupPublic) {
+
+        final InternalMethod method = ModuleOperations.lookupMethod(context.getCoreLibrary().getMetaClass(receiver), name);
+
+        // If no method was found, use #method_missing
+        if (method == null) {
+            return null;
         }
+
+        // Check for methods that are explicitly undefined
+        if (method.isUndefined()) {
+            return null;
+        }
+
+        // Check visibility
+        if (!ignoreVisibility) {
+            if (onlyLookupPublic) {
+                if (!method.getVisibility().isPublic()) {
+                    return null;
+                }
+            } else if (!method.isVisibleTo(callerClass)) {
+                return null;
+            }
+        }
+
         return method;
+    }
+
+    protected static DynamicObject getCallerClass(RubyContext context, VirtualFrame callingFrame,
+            boolean ignoreVisibility, boolean onlyLookupPublic, boolean callingFrameIsRespondTo) {
+        if (ignoreVisibility || onlyLookupPublic) {
+            return null; // No need to check visibility
+        } else if (callingFrameIsRespondTo) {
+            final FrameInstance instance = context.getCallStack().getCallerFrameIgnoringSend();
+            if (instance == null) {
+                return context.getCoreLibrary().getMetaClass(context.getCoreLibrary().getMainObject());
+            } else {
+                final Frame callerFrame = instance.getFrame(FrameInstance.FrameAccess.READ_ONLY, true);
+                return context.getCoreLibrary().getMetaClass(RubyArguments.getSelf(callerFrame));
+            }
+        } else {
+            InternalMethod method = RubyArguments.getMethod(callingFrame);
+            if (!context.getCoreLibrary().isSend(method)) {
+                return context.getCoreLibrary().getMetaClass(RubyArguments.getSelf(callingFrame));
+            } else {
+                FrameInstance instance = context.getCallStack().getCallerFrameIgnoringSend();
+                Frame callerFrame = instance.getFrame(FrameInstance.FrameAccess.READ_ONLY, true);
+                return context.getCoreLibrary().getMetaClass(RubyArguments.getSelf(callerFrame));
+            }
+        }
+    }
+
+    public static InternalMethod lookupMethodWithVisibility(RubyContext context, VirtualFrame callingFrame,
+            Object receiver, String name,
+            boolean ignoreVisibility, boolean onlyLookupPublic, boolean callingFrameIsRespondTo) {
+        DynamicObject callerClass = getCallerClass(context, callingFrame,
+                ignoreVisibility, onlyLookupPublic, callingFrameIsRespondTo);
+        return doLookup(context, callerClass, receiver, name, ignoreVisibility, onlyLookupPublic);
     }
 
     protected int getCacheLimit() {

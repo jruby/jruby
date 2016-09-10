@@ -1182,7 +1182,7 @@ public abstract class KernelNodes {
         public MethodNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             nameToJavaStringNode = NameToJavaStringNode.create();
-            lookupMethodNode = LookupMethodNodeGen.create(context, sourceSection, null, null);
+            lookupMethodNode = LookupMethodNodeGen.create(context, sourceSection, true, false, null, null);
             respondToMissingNode = DispatchHeadNodeFactory.createMethodCall(getContext(), true);
         }
 
@@ -1196,11 +1196,12 @@ public abstract class KernelNodes {
                 @Cached("createBinaryProfile()") ConditionProfile notFoundProfile,
                 @Cached("createBinaryProfile()") ConditionProfile respondToMissingProfile) {
             final String normalizedName = nameToJavaStringNode.executeToJavaString(frame, name);
-            InternalMethod method = lookupMethodNode.executeLookupMethod(self, normalizedName);
+            InternalMethod method = lookupMethodNode.executeLookupMethod(frame, self, normalizedName);
 
             if (notFoundProfile.profile(method == null)) {
                 if (respondToMissingProfile.profile(respondToMissingNode.callBoolean(frame, self, "respond_to_missing?", null, name, true))) {
-                    method = createMissingMethod(self, name, normalizedName);
+                    final InternalMethod methodMissing = lookupMethodNode.executeLookupMethod(frame, self, "method_missing").withName(normalizedName);
+                    method = createMissingMethod(self, name, normalizedName, methodMissing);
                 } else {
                     throw new RaiseException(coreExceptions().nameErrorUndefinedMethod(normalizedName, coreLibrary().getLogicalClass(self), this));
                 }
@@ -1210,9 +1211,7 @@ public abstract class KernelNodes {
         }
 
         @TruffleBoundary
-        private InternalMethod createMissingMethod(Object self, DynamicObject name, final String normalizedName) {
-            InternalMethod method;
-            final InternalMethod methodMissing = lookupMethodNode.executeLookupMethod(self, "method_missing").withName(normalizedName);
+        private InternalMethod createMissingMethod(Object self, DynamicObject name, String normalizedName, InternalMethod methodMissing) {
             final SharedMethodInfo info = methodMissing.getSharedMethodInfo().withName(normalizedName);
 
             final RubyNode newBody = new CallMethodMissingWithStaticName(getContext(), info.getSourceSection(), name);
@@ -1220,8 +1219,7 @@ public abstract class KernelNodes {
             final CallTarget newCallTarget = Truffle.getRuntime().createCallTarget(newRootNode);
 
             final DynamicObject module = coreLibrary().getMetaClass(self);
-            method = new InternalMethod(info, normalizedName, module, Visibility.PUBLIC, newCallTarget);
-            return method;
+            return new InternalMethod(info, normalizedName, module, Visibility.PUBLIC, newCallTarget);
         }
 
         private static class CallMethodMissingWithStaticName extends RubyNode {
