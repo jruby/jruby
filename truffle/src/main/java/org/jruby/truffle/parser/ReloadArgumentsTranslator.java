@@ -11,7 +11,7 @@ package org.jruby.truffle.parser;
 
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
-import org.jruby.ast.RestArgNode;
+import org.jruby.truffle.parser.ast.RestArgNode;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubySourceSection;
@@ -42,11 +42,11 @@ public class ReloadArgumentsTranslator extends Translator {
     }
 
     @Override
-    public RubyNode visitArgsNode(org.jruby.ast.ArgsNode node) {
+    public RubyNode visitArgsNode(org.jruby.truffle.parser.ast.ArgsNode node) {
         final RubySourceSection sourceSection = translate(node.getPosition());
 
         final List<RubyNode> sequence = new ArrayList<>();
-        final org.jruby.ast.Node[] args = node.getArgs();
+        final org.jruby.truffle.parser.ast.Node[] args = node.getArgs();
         final int preCount = node.getPreCount();
 
         if (preCount > 0) {
@@ -82,19 +82,19 @@ public class ReloadArgumentsTranslator extends Translator {
     }
 
     @Override
-    public RubyNode visitArgumentNode(org.jruby.ast.ArgumentNode node) {
+    public RubyNode visitArgumentNode(org.jruby.truffle.parser.ast.ArgumentNode node) {
         final RubySourceSection sourceSection = translate(node.getPosition());
         return methodBodyTranslator.getEnvironment().findLocalVarNode(node.getName(), source, sourceSection);
     }
 
     @Override
-    public RubyNode visitOptArgNode(org.jruby.ast.OptArgNode node) {
+    public RubyNode visitOptArgNode(org.jruby.truffle.parser.ast.OptArgNode node) {
         final RubySourceSection sourceSection = translate(node.getPosition());
         return methodBodyTranslator.getEnvironment().findLocalVarNode(node.getName(), source, sourceSection);
     }
 
     @Override
-    public RubyNode visitMultipleAsgnNode(org.jruby.ast.MultipleAsgnNode node) {
+    public RubyNode visitMultipleAsgnNode(org.jruby.truffle.parser.ast.MultipleAsgnNode node) {
         return new ProfileArgumentNode(new ReadPreArgumentNode(index, MissingArgumentBehavior.NIL));
     }
 
@@ -105,7 +105,7 @@ public class ReloadArgumentsTranslator extends Translator {
     }
 
     @Override
-    protected RubyNode defaultVisit(org.jruby.ast.Node node) {
+    protected RubyNode defaultVisit(org.jruby.truffle.parser.ast.Node node) {
         final RubySourceSection sourceSection = translate(node.getPosition());
         return nilNode(source, sourceSection);
     }

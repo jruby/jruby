@@ -13,8 +13,8 @@ import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.lexer.yacc.InvalidSourcePosition;
+import org.jruby.truffle.parser.lexer.yacc.ISourcePosition;
+import org.jruby.truffle.parser.lexer.yacc.InvalidSourcePosition;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubySourceSection;
@@ -36,7 +36,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public abstract class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor<RubyNode> {
+public abstract class Translator extends org.jruby.truffle.parser.ast.visitor.AbstractNodeVisitor<RubyNode> {
 
     public static final Set<String> ALWAYS_DEFINED_GLOBALS = new HashSet<>(Arrays.asList("$!", "$~"));
     public static final Set<String> FRAME_LOCAL_GLOBAL_VARIABLES = new HashSet<>(Arrays.asList("$_", "$+", "$&", "$`", "$'", "$~", "$1", "$2", "$3", "$4", "$5", "$6", "$7", "$8", "$9"));
@@ -138,7 +138,7 @@ public abstract class Translator extends org.jruby.ast.visitor.AbstractNodeVisit
         return new NilLiteralNode(context, sourceSection.toSourceSection(source), false);
     }
 
-    protected RubyNode translateNodeOrNil(RubySourceSection sourceSection, org.jruby.ast.Node node) {
+    protected RubyNode translateNodeOrNil(RubySourceSection sourceSection, org.jruby.truffle.parser.ast.Node node) {
         final RubyNode rubyNode;
         if (node != null) {
             rubyNode = node.accept(this);

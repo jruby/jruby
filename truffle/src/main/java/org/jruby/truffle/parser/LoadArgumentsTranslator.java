@@ -13,11 +13,11 @@ import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.ast.MultipleAsgnNode;
-import org.jruby.ast.RequiredKeywordArgumentValueNode;
-import org.jruby.ast.StarNode;
-import org.jruby.ast.types.INameNode;
-import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.truffle.parser.ast.MultipleAsgnNode;
+import org.jruby.truffle.parser.ast.RequiredKeywordArgumentValueNode;
+import org.jruby.truffle.parser.ast.StarNode;
+import org.jruby.truffle.parser.ast.types.INameNode;
+import org.jruby.truffle.parser.lexer.yacc.ISourcePosition;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.IsNilNode;
 import org.jruby.truffle.core.array.ArrayLiteralNode;
@@ -92,7 +92,7 @@ public class LoadArgumentsTranslator extends Translator {
     private List<String> excludedKeywords = new ArrayList<>();
     private boolean firstOpt = false;
 
-    private org.jruby.ast.ArgsNode argsNode;
+    private org.jruby.truffle.parser.ast.ArgsNode argsNode;
 
     public LoadArgumentsTranslator(Node currentNode, RubyContext context, Source source, boolean isProc, BodyTranslator methodBodyTranslator) {
         super(currentNode, context, source);
@@ -101,7 +101,7 @@ public class LoadArgumentsTranslator extends Translator {
     }
 
     @Override
-    public RubyNode visitArgsNode(org.jruby.ast.ArgsNode node) {
+    public RubyNode visitArgsNode(org.jruby.truffle.parser.ast.ArgsNode node) {
         argsNode = node;
 
         final RubySourceSection sourceSection = translate(node.getPosition());
@@ -113,7 +113,7 @@ public class LoadArgumentsTranslator extends Translator {
         sequence.add(loadSelf(context, methodBodyTranslator.getEnvironment()));
         //}
 
-        final org.jruby.ast.Node[] args = node.getArgs();
+        final org.jruby.truffle.parser.ast.Node[] args = node.getArgs();
 
         final boolean useHelper = useArray() && node.hasKeyRest();
 
@@ -175,7 +175,7 @@ public class LoadArgumentsTranslator extends Translator {
 
         if (postCount > 0) {
             state = State.POST;
-            org.jruby.ast.Node[] children = node.getPost().children();
+            org.jruby.truffle.parser.ast.Node[] children = node.getPost().children();
             index = node.getPreCount();
             for (int i = 0; i < children.length; i++) {
                 notNilSmallerSequence.add(children[i].accept(this));
@@ -191,7 +191,7 @@ public class LoadArgumentsTranslator extends Translator {
 
         if (postCount > 0) {
             state = State.POST;
-            org.jruby.ast.Node[] children = node.getPost().children();
+            org.jruby.truffle.parser.ast.Node[] children = node.getPost().children();
             index = node.getPreCount() + node.getOptionalArgsCount();
             for (int i = 0; i < children.length; i++) {
                 noRestSequence.add(children[i].accept(this));
@@ -260,7 +260,7 @@ public class LoadArgumentsTranslator extends Translator {
     }
 
     @Override
-    public RubyNode visitKeywordRestArgNode(org.jruby.ast.KeywordRestArgNode node) {
+    public RubyNode visitKeywordRestArgNode(org.jruby.truffle.parser.ast.KeywordRestArgNode node) {
         final RubySourceSection sourceSection = translate(node.getPosition());
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
@@ -271,20 +271,20 @@ public class LoadArgumentsTranslator extends Translator {
     }
 
     @Override
-    public RubyNode visitKeywordArgNode(org.jruby.ast.KeywordArgNode node) {
+    public RubyNode visitKeywordArgNode(org.jruby.truffle.parser.ast.KeywordArgNode node) {
         final RubySourceSection sourceSection = translate(node.getPosition());
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
-        final org.jruby.ast.Node firstChild = node.childNodes().get(0);
-        final org.jruby.ast.AssignableNode asgnNode;
+        final org.jruby.truffle.parser.ast.Node firstChild = node.childNodes().get(0);
+        final org.jruby.truffle.parser.ast.AssignableNode asgnNode;
         final String name;
 
-        if (firstChild instanceof org.jruby.ast.LocalAsgnNode) {
-            asgnNode = (org.jruby.ast.LocalAsgnNode) firstChild;
-            name = ((org.jruby.ast.LocalAsgnNode) firstChild).getName();
-        } else if (firstChild instanceof org.jruby.ast.DAsgnNode) {
-            asgnNode = (org.jruby.ast.DAsgnNode) firstChild;
-            name = ((org.jruby.ast.DAsgnNode) firstChild).getName();
+        if (firstChild instanceof org.jruby.truffle.parser.ast.LocalAsgnNode) {
+            asgnNode = (org.jruby.truffle.parser.ast.LocalAsgnNode) firstChild;
+            name = ((org.jruby.truffle.parser.ast.LocalAsgnNode) firstChild).getName();
+        } else if (firstChild instanceof org.jruby.truffle.parser.ast.DAsgnNode) {
+            asgnNode = (org.jruby.truffle.parser.ast.DAsgnNode) firstChild;
+            name = ((org.jruby.truffle.parser.ast.DAsgnNode) firstChild).getName();
         } else {
             throw new UnsupportedOperationException("unsupported keyword arg " + node);
         }
@@ -308,7 +308,7 @@ public class LoadArgumentsTranslator extends Translator {
     }
 
     @Override
-    public RubyNode visitArgumentNode(org.jruby.ast.ArgumentNode node) {
+    public RubyNode visitArgumentNode(org.jruby.truffle.parser.ast.ArgumentNode node) {
         final RubySourceSection sourceSection = translate(node.getPosition());
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
@@ -332,7 +332,7 @@ public class LoadArgumentsTranslator extends Translator {
     }
 
     @Override
-    public RubyNode visitRestArgNode(org.jruby.ast.RestArgNode node) {
+    public RubyNode visitRestArgNode(org.jruby.truffle.parser.ast.RestArgNode node) {
         final RubySourceSection sourceSection = translate(node.getPosition());
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
@@ -355,7 +355,7 @@ public class LoadArgumentsTranslator extends Translator {
     }
 
     @Override
-    public RubyNode visitBlockArgNode(org.jruby.ast.BlockArgNode node) {
+    public RubyNode visitBlockArgNode(org.jruby.truffle.parser.ast.BlockArgNode node) {
         final RubySourceSection sourceSection = translate(node.getPosition());
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
@@ -365,22 +365,22 @@ public class LoadArgumentsTranslator extends Translator {
     }
 
     @Override
-    public RubyNode visitOptArgNode(org.jruby.ast.OptArgNode node) {
+    public RubyNode visitOptArgNode(org.jruby.truffle.parser.ast.OptArgNode node) {
         // (OptArgNode:a 0, (LocalAsgnNode:a 0, (FixnumNode 0)))
         return node.getValue().accept(this);
     }
 
     @Override
-    public RubyNode visitLocalAsgnNode(org.jruby.ast.LocalAsgnNode node) {
+    public RubyNode visitLocalAsgnNode(org.jruby.truffle.parser.ast.LocalAsgnNode node) {
         return translateLocalAssignment(node.getPosition(), node.getName(), node.getValueNode());
     }
 
     @Override
-    public RubyNode visitDAsgnNode(org.jruby.ast.DAsgnNode node) {
+    public RubyNode visitDAsgnNode(org.jruby.truffle.parser.ast.DAsgnNode node) {
         return translateLocalAssignment(node.getPosition(), node.getName(), node.getValueNode());
     }
 
-    private RubyNode translateLocalAssignment(ISourcePosition sourcePosition, String name, org.jruby.ast.Node valueNode) {
+    private RubyNode translateLocalAssignment(ISourcePosition sourcePosition, String name, org.jruby.truffle.parser.ast.Node valueNode) {
         final RubySourceSection sourceSection = translate(sourcePosition);
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
@@ -389,7 +389,7 @@ public class LoadArgumentsTranslator extends Translator {
         final RubyNode readNode;
 
         if (indexFromEnd == 1) {
-            if (valueNode instanceof org.jruby.ast.NilImplicitNode) {
+            if (valueNode instanceof org.jruby.truffle.parser.ast.NilImplicitNode) {
                 // Multiple assignment
 
                 if (useArray()) {
@@ -403,8 +403,8 @@ public class LoadArgumentsTranslator extends Translator {
 
                 // The JRuby parser gets local variables that shadow methods with vcalls wrong - fix up here
 
-                if (valueNode instanceof org.jruby.ast.VCallNode) {
-                    final String calledName = ((org.jruby.ast.VCallNode) valueNode).getName();
+                if (valueNode instanceof org.jruby.truffle.parser.ast.VCallNode) {
+                    final String calledName = ((org.jruby.truffle.parser.ast.VCallNode) valueNode).getName();
 
                     // Just consider the circular case for now as that's all that's speced
 
@@ -458,7 +458,7 @@ public class LoadArgumentsTranslator extends Translator {
     }
 
     @Override
-    public RubyNode visitArrayNode(org.jruby.ast.ArrayNode node) {
+    public RubyNode visitArrayNode(org.jruby.truffle.parser.ast.ArrayNode node) {
         // (ArrayNode 0, (MultipleAsgn19Node 0, (ArrayNode 0, (LocalAsgnNode:a 0, ), (LocalAsgnNode:b 0, )), null, null)))
         if (node.size() == 1 && node.get(0) instanceof MultipleAsgnNode) {
             return node.children()[0].accept(this);
@@ -481,7 +481,7 @@ public class LoadArgumentsTranslator extends Translator {
 
         pushArraySlot(arraySlot);
 
-        final List<org.jruby.ast.Node> childNodes;
+        final List<org.jruby.truffle.parser.ast.Node> childNodes;
 
         if (node.childNodes() == null || node.childNodes().get(0) == null) {
             childNodes = Collections.emptyList();
@@ -495,7 +495,7 @@ public class LoadArgumentsTranslator extends Translator {
 
         if (node.getPre() != null) {
             index = 0;
-            for (org.jruby.ast.Node child : node.getPre().children()) {
+            for (org.jruby.truffle.parser.ast.Node child : node.getPre().children()) {
                 notNilSmallerSequence.add(child.accept(this));
                 index++;
             }
@@ -509,7 +509,7 @@ public class LoadArgumentsTranslator extends Translator {
         }
 
         if (node.getPost() != null) {
-            org.jruby.ast.Node[] children = node.getPost().children();
+            org.jruby.truffle.parser.ast.Node[] children = node.getPost().children();
             index = node.getPreCount();
             for (int i = 0; i < children.length; i++) {
                 notNilSmallerSequence.add(children[i].accept(this));
@@ -525,7 +525,7 @@ public class LoadArgumentsTranslator extends Translator {
 
         if (node.getPre() != null) {
             index = 0;
-            for (org.jruby.ast.Node child : node.getPre().children()) {
+            for (org.jruby.truffle.parser.ast.Node child : node.getPre().children()) {
                 notNilAtLeastAsLargeSequence.add(child.accept(this));
                 index++;
             }
@@ -539,7 +539,7 @@ public class LoadArgumentsTranslator extends Translator {
         }
 
         if (node.getPost() != null) {
-            org.jruby.ast.Node[] children = node.getPost().children();
+            org.jruby.truffle.parser.ast.Node[] children = node.getPost().children();
             index = -1;
             for (int i = children.length - 1; i >= 0; i--) {
                 notNilAtLeastAsLargeSequence.add(children[i].accept(this));
@@ -556,7 +556,7 @@ public class LoadArgumentsTranslator extends Translator {
         final ParameterCollector parametersToClearCollector = new ParameterCollector();
 
         if (node.getPre() != null) {
-            for (org.jruby.ast.Node child : node.getPre().children()) {
+            for (org.jruby.truffle.parser.ast.Node child : node.getPre().children()) {
                 child.accept(parametersToClearCollector);
             }
         }
@@ -580,7 +580,7 @@ public class LoadArgumentsTranslator extends Translator {
         }
 
         if (node.getPost() != null) {
-            for (org.jruby.ast.Node child : node.getPost().children()) {
+            for (org.jruby.truffle.parser.ast.Node child : node.getPost().children()) {
                 child.accept(parametersToClearCollector);
             }
         }
@@ -609,7 +609,7 @@ public class LoadArgumentsTranslator extends Translator {
     }
 
     @Override
-    protected RubyNode defaultVisit(org.jruby.ast.Node node) {
+    protected RubyNode defaultVisit(org.jruby.truffle.parser.ast.Node node) {
         // For normal expressions in the default value for optional arguments, use the normal body translator
         return node.accept(methodBodyTranslator);
     }

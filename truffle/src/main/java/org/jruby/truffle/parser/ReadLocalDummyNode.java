@@ -11,15 +11,15 @@ package org.jruby.truffle.parser;
 
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.ast.Node;
-import org.jruby.ast.NodeType;
-import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.truffle.parser.ast.Node;
+import org.jruby.truffle.parser.ast.NodeType;
+import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
+import org.jruby.truffle.parser.lexer.yacc.ISourcePosition;
 
 import java.util.Collections;
 import java.util.List;
 
-public class ReadLocalDummyNode extends org.jruby.ast.Node {
+public class ReadLocalDummyNode extends org.jruby.truffle.parser.ast.Node {
 
     final SourceSection sourceSection;
     final FrameSlot frameSlot;

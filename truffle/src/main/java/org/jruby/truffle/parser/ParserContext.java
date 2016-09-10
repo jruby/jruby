@@ -7,7 +7,7 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.language.parser;
+package org.jruby.truffle.parser;
 
 public enum ParserContext {
     TOP_LEVEL_FIRST, TOP_LEVEL, SHELL, MODULE, EVAL, INLINE

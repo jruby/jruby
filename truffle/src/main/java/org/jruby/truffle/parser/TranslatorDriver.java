@@ -19,9 +19,10 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.Encoding;
-import org.jruby.parser.StaticScope;
-import org.jruby.runtime.DynamicScope;
-import org.jruby.runtime.scope.ManyVarsDynamicScope;
+import org.jruby.truffle.parser.parser.ParserConfiguration;
+import org.jruby.truffle.parser.scope.StaticScope;
+import org.jruby.truffle.parser.scope.DynamicScope;
+import org.jruby.truffle.parser.scope.ManyVarsDynamicScope;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.LoadRequiredLibrariesNode;
 import org.jruby.truffle.core.SetTopLevelBindingNode;
@@ -43,8 +44,7 @@ import org.jruby.truffle.language.methods.CatchRetryAsErrorNode;
 import org.jruby.truffle.language.methods.CatchReturnAsErrorNode;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.methods.SharedMethodInfo;
-import org.jruby.truffle.language.parser.Parser;
-import org.jruby.truffle.language.parser.ParserContext;
+import org.jruby.truffle.parser.scope.StaticScopeFactory;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -63,9 +63,10 @@ public class TranslatorDriver implements Parser {
     public RubyRootNode parse(RubyContext context, Source source, Encoding defaultEncoding, ParserContext parserContext, String[] argumentNames, FrameDescriptor frameDescriptor, MaterializedFrame parentFrame, boolean ownScopeForAssignments, Node currentNode) {
         // Set up the JRuby parser
 
-        final org.jruby.parser.Parser parser = new org.jruby.parser.Parser(context.getJRubyRuntime());
+        final org.jruby.truffle.parser.parser.Parser parser = new org.jruby.truffle.parser.parser.Parser(context.getJRubyRuntime());
 
-        final StaticScope staticScope = context.getJRubyRuntime().getStaticScopeFactory().newLocalScope(null);
+        final StaticScopeFactory staticScopeFactory = new StaticScopeFactory(context.getJRubyRuntime());
+        final StaticScope staticScope = staticScopeFactory.newLocalScope(null);
 
         /*
          * Note that jruby-parser will be mistaken about how deep the existing variables are,
@@ -113,7 +114,7 @@ public class TranslatorDriver implements Parser {
 
         boolean isInlineSource = parserContext == ParserContext.SHELL;
         boolean isEvalParse = parserContext == ParserContext.EVAL || parserContext == ParserContext.INLINE || parserContext == ParserContext.MODULE;
-        final org.jruby.parser.ParserConfiguration parserConfiguration = new org.jruby.parser.ParserConfiguration(context.getJRubyRuntime(), 0, isInlineSource, !isEvalParse, false);
+        final ParserConfiguration parserConfiguration = new ParserConfiguration(context.getJRubyRuntime(), 0, isInlineSource, !isEvalParse, false);
 
         if (context.getJRubyRuntime().getInstanceConfig().isFrozenStringLiteral()) {
             parserConfiguration.setFrozenStringLiteral(true);
@@ -123,10 +124,10 @@ public class TranslatorDriver implements Parser {
 
         // Parse to the JRuby AST
 
-        org.jruby.ast.RootNode node;
+        org.jruby.truffle.parser.ast.RootNode node;
 
         try {
-            node = (org.jruby.ast.RootNode) parser.parse(source.getName(), source.getCode().getBytes(StandardCharsets.UTF_8), dynamicScope, parserConfiguration);
+            node = (org.jruby.truffle.parser.ast.RootNode) parser.parse(source.getName(), source.getCode().getBytes(StandardCharsets.UTF_8), dynamicScope, parserConfiguration);
         } catch (org.jruby.exceptions.RaiseException e) {
             String message = e.getException().getMessage().asJavaString();
 
@@ -173,7 +174,7 @@ public class TranslatorDriver implements Parser {
 
         RubyNode truffleNode;
 
-        if (node.getBodyNode() == null || node.getBodyNode() instanceof org.jruby.ast.NilNode) {
+        if (node.getBodyNode() == null || node.getBodyNode() instanceof org.jruby.truffle.parser.ast.NilNode) {
             translator.parentSourceSection.push(rubySourceSection);
             try {
                 truffleNode = translator.nilNode(source, rubySourceSection);

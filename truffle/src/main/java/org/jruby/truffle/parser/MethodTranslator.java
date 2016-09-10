@@ -16,13 +16,13 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.ast.ArgsNode;
-import org.jruby.ast.AssignableNode;
-import org.jruby.ast.DAsgnNode;
-import org.jruby.ast.KeywordArgNode;
-import org.jruby.ast.LocalAsgnNode;
-import org.jruby.ast.UnnamedRestArgNode;
-import org.jruby.ast.types.INameNode;
+import org.jruby.truffle.parser.ast.ArgsNode;
+import org.jruby.truffle.parser.ast.AssignableNode;
+import org.jruby.truffle.parser.ast.DAsgnNode;
+import org.jruby.truffle.parser.ast.KeywordArgNode;
+import org.jruby.truffle.parser.ast.LocalAsgnNode;
+import org.jruby.truffle.parser.ast.UnnamedRestArgNode;
+import org.jruby.truffle.parser.ast.types.INameNode;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.IsNilNode;
 import org.jruby.truffle.core.cast.ArrayCastNodeGen;
@@ -62,16 +62,16 @@ import java.util.Arrays;
 
 public class MethodTranslator extends BodyTranslator {
 
-    private final org.jruby.ast.ArgsNode argsNode;
+    private final org.jruby.truffle.parser.ast.ArgsNode argsNode;
     private boolean isBlock;
 
-    public MethodTranslator(Node currentNode, RubyContext context, BodyTranslator parent, TranslatorEnvironment environment, boolean isBlock, Source source, org.jruby.ast.ArgsNode argsNode) {
+    public MethodTranslator(Node currentNode, RubyContext context, BodyTranslator parent, TranslatorEnvironment environment, boolean isBlock, Source source, org.jruby.truffle.parser.ast.ArgsNode argsNode) {
         super(currentNode, context, parent, environment, source, false);
         this.isBlock = isBlock;
         this.argsNode = argsNode;
     }
 
-    public BlockDefinitionNode compileBlockNode(RubySourceSection sourceSection, String methodName, org.jruby.ast.Node bodyNode, SharedMethodInfo sharedMethodInfo, ProcType type) {
+    public BlockDefinitionNode compileBlockNode(RubySourceSection sourceSection, String methodName, org.jruby.truffle.parser.ast.Node bodyNode, SharedMethodInfo sharedMethodInfo, ProcType type) {
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
         declareArguments();
@@ -85,7 +85,7 @@ public class MethodTranslator extends BodyTranslator {
          * follow the specs for now until we see a reason to do something else.
          */
 
-        if (argsNode.getRestArgNode() instanceof org.jruby.ast.UnnamedRestArgNode && !((UnnamedRestArgNode) argsNode.getRestArgNode()).isStar()) {
+        if (argsNode.getRestArgNode() instanceof org.jruby.truffle.parser.ast.UnnamedRestArgNode && !((UnnamedRestArgNode) argsNode.getRestArgNode()).isStar()) {
             arityForCheck = arity.withRest(false);
         } else {
             arityForCheck = arity;
@@ -133,7 +133,7 @@ public class MethodTranslator extends BodyTranslator {
         parentSourceSection.push(sourceSection);
         try {
             if (argsNode.getBlockLocalVariables() != null && !argsNode.getBlockLocalVariables().isEmpty()) {
-                for (org.jruby.ast.Node var : argsNode.getBlockLocalVariables().children()) {
+                for (org.jruby.truffle.parser.ast.Node var : argsNode.getBlockLocalVariables().children()) {
                     environment.declareVar(((INameNode) var).getName());
                 }
             }
@@ -216,11 +216,11 @@ public class MethodTranslator extends BodyTranslator {
      * method parsing. The substitution returns a node which performs
      * the parsing lazily and then calls doCompileMethodBody.
      */
-    public RubyNode compileMethodBody(RubySourceSection sourceSection, String methodName, org.jruby.ast.Node bodyNode, SharedMethodInfo sharedMethodInfo) {
+    public RubyNode compileMethodBody(RubySourceSection sourceSection, String methodName, org.jruby.truffle.parser.ast.Node bodyNode, SharedMethodInfo sharedMethodInfo) {
         return doCompileMethodBody(sourceSection, methodName, bodyNode, sharedMethodInfo);
     }
 
-    public RubyNode doCompileMethodBody(RubySourceSection sourceSection, String methodName, org.jruby.ast.Node bodyNode, SharedMethodInfo sharedMethodInfo) {
+    public RubyNode doCompileMethodBody(RubySourceSection sourceSection, String methodName, org.jruby.truffle.parser.ast.Node bodyNode, SharedMethodInfo sharedMethodInfo) {
         declareArguments();
         final Arity arity = getArity(argsNode);
 
@@ -265,7 +265,7 @@ public class MethodTranslator extends BodyTranslator {
         return body;
     }
 
-    public MethodDefinitionNode compileMethodNode(RubySourceSection sourceSection, String methodName, org.jruby.ast.Node bodyNode, SharedMethodInfo sharedMethodInfo) {
+    public MethodDefinitionNode compileMethodNode(RubySourceSection sourceSection, String methodName, org.jruby.truffle.parser.ast.Node bodyNode, SharedMethodInfo sharedMethodInfo) {
         final RubyNode body = compileMethodBody(sourceSection, methodName, bodyNode, sharedMethodInfo);
 
         final SourceSection extendedBodySourceSection;
@@ -292,11 +292,11 @@ public class MethodTranslator extends BodyTranslator {
         }
     }
 
-    public static Arity getArity(org.jruby.ast.ArgsNode argsNode) {
+    public static Arity getArity(org.jruby.truffle.parser.ast.ArgsNode argsNode) {
         final String[] keywordArguments;
 
         if (argsNode.hasKwargs() && argsNode.getKeywords() != null) {
-            final org.jruby.ast.Node[] keywordNodes = argsNode.getKeywords().children();
+            final org.jruby.truffle.parser.ast.Node[] keywordNodes = argsNode.getKeywords().children();
             final int keywordsCount = keywordNodes.length;
 
             keywordArguments = new String[keywordsCount];
@@ -327,7 +327,7 @@ public class MethodTranslator extends BodyTranslator {
     }
 
     @Override
-    public RubyNode visitSuperNode(org.jruby.ast.SuperNode node) {
+    public RubyNode visitSuperNode(org.jruby.truffle.parser.ast.SuperNode node) {
         final RubySourceSection sourceSection = translate(node.getPosition());
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
@@ -339,7 +339,7 @@ public class MethodTranslator extends BodyTranslator {
     }
 
     @Override
-    public RubyNode visitZSuperNode(org.jruby.ast.ZSuperNode node) {
+    public RubyNode visitZSuperNode(org.jruby.truffle.parser.ast.ZSuperNode node) {
         final RubySourceSection sourceSection = translate(node.getPosition());
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 

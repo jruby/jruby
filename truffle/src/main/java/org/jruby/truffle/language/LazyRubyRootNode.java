@@ -29,7 +29,7 @@ import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.backtrace.InternalRootNode;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.methods.InternalMethod;
-import org.jruby.truffle.language.parser.ParserContext;
+import org.jruby.truffle.parser.ParserContext;
 import org.jruby.truffle.parser.TranslatorDriver;
 
 public class LazyRubyRootNode extends RootNode implements InternalRootNode {

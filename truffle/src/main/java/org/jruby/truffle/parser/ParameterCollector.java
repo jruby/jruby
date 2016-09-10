@@ -9,22 +9,22 @@
  */
 package org.jruby.truffle.parser;
 
-import org.jruby.ast.ArgsNode;
-import org.jruby.ast.ArgumentNode;
-import org.jruby.ast.ArrayNode;
-import org.jruby.ast.BlockArgNode;
-import org.jruby.ast.BlockNode;
-import org.jruby.ast.ClassVarAsgnNode;
-import org.jruby.ast.ClassVarDeclNode;
-import org.jruby.ast.DAsgnNode;
-import org.jruby.ast.KeywordRestArgNode;
-import org.jruby.ast.ListNode;
-import org.jruby.ast.LocalAsgnNode;
-import org.jruby.ast.MultipleAsgnNode;
-import org.jruby.ast.Node;
-import org.jruby.ast.OptArgNode;
-import org.jruby.ast.RestArgNode;
-import org.jruby.ast.visitor.AbstractNodeVisitor;
+import org.jruby.truffle.parser.ast.ArgsNode;
+import org.jruby.truffle.parser.ast.ArgumentNode;
+import org.jruby.truffle.parser.ast.ArrayNode;
+import org.jruby.truffle.parser.ast.BlockArgNode;
+import org.jruby.truffle.parser.ast.BlockNode;
+import org.jruby.truffle.parser.ast.ClassVarAsgnNode;
+import org.jruby.truffle.parser.ast.ClassVarDeclNode;
+import org.jruby.truffle.parser.ast.DAsgnNode;
+import org.jruby.truffle.parser.ast.KeywordRestArgNode;
+import org.jruby.truffle.parser.ast.ListNode;
+import org.jruby.truffle.parser.ast.LocalAsgnNode;
+import org.jruby.truffle.parser.ast.MultipleAsgnNode;
+import org.jruby.truffle.parser.ast.Node;
+import org.jruby.truffle.parser.ast.OptArgNode;
+import org.jruby.truffle.parser.ast.RestArgNode;
+import org.jruby.truffle.parser.ast.visitor.AbstractNodeVisitor;
 
 import java.util.ArrayList;
 import java.util.List;

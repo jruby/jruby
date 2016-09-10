@@ -121,7 +121,7 @@ import org.jruby.truffle.language.objects.FreezeNode;
 import org.jruby.truffle.language.objects.FreezeNodeGen;
 import org.jruby.truffle.language.objects.SingletonClassNode;
 import org.jruby.truffle.language.objects.SingletonClassNodeGen;
-import org.jruby.truffle.language.parser.ParserContext;
+import org.jruby.truffle.parser.ParserContext;
 import org.jruby.truffle.platform.RubiniusTypes;
 import org.jruby.truffle.platform.signal.SignalManager;
 import org.jruby.truffle.stdlib.CoverageNodesFactory;
