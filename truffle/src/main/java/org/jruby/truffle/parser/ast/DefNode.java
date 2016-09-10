@@ -8,9 +8,9 @@ import org.jruby.truffle.parser.scope.StaticScope;
 public interface DefNode {
     /**
      * Gets the argsNode.
-     * @return Returns a Node
+     * @return Returns a ParseNode
      */
-    ArgsNode getArgsNode();
+    ArgsParseNode getArgsNode();
 
     /**
      * Get the static scoping information.
@@ -24,7 +24,7 @@ public interface DefNode {
      *
      * @return the contents
      */
-    Node getBodyNode();
+    ParseNode getBodyNode();
 
 
     /**

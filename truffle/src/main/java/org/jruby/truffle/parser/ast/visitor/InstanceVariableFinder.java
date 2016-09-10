@@ -26,13 +26,13 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.ast.visitor;
 
-import org.jruby.truffle.parser.ast.ClassNode;
-import org.jruby.truffle.parser.ast.InstAsgnNode;
-import org.jruby.truffle.parser.ast.InstVarNode;
-import org.jruby.truffle.parser.ast.ModuleNode;
-import org.jruby.truffle.parser.ast.Node;
-import org.jruby.truffle.parser.ast.PostExeNode;
-import org.jruby.truffle.parser.ast.PreExeNode;
+import org.jruby.truffle.parser.ast.ClassParseNode;
+import org.jruby.truffle.parser.ast.InstAsgnParseNode;
+import org.jruby.truffle.parser.ast.InstVarParseNode;
+import org.jruby.truffle.parser.ast.ModuleParseNode;
+import org.jruby.truffle.parser.ast.ParseNode;
+import org.jruby.truffle.parser.ast.PostExeParseNode;
+import org.jruby.truffle.parser.ast.PreExeParseNode;
 
 import java.util.HashSet;
 import java.util.List;
@@ -46,7 +46,7 @@ import java.util.Set;
  * Example usage:
  * 
  * <code>
- * Node node = getNodeFromSomewhere();
+ * ParseNode node = getNodeFromSomewhere();
  * InstanceVariableFinder finder = new InstanceVariableFinder();
  * node.accept(finder);
  * System.out.println("found: " + finder.getFoundVariables);
@@ -55,7 +55,7 @@ import java.util.Set;
 public class InstanceVariableFinder extends AbstractNodeVisitor<Void> {
 
     @Override
-    protected Void defaultVisit(Node iVisited) {
+    protected Void defaultVisit(ParseNode iVisited) {
         visitChildren(iVisited);
         return null;
     }
@@ -70,7 +70,7 @@ public class InstanceVariableFinder extends AbstractNodeVisitor<Void> {
      * @param node the node to walk
      * @return an array of instance variable names found
      */
-    public static Set<String> findVariables(Node node) {
+    public static Set<String> findVariables(ParseNode node) {
         InstanceVariableFinder ivf = new InstanceVariableFinder();
         node.accept(ivf);
         return ivf.getFoundVariables();
@@ -86,12 +86,12 @@ public class InstanceVariableFinder extends AbstractNodeVisitor<Void> {
     }
     
     /**
-     * ClassNode creates a new scope and self, so do not search for ivars.
+     * ClassParseNode creates a new scope and self, so do not search for ivars.
      * 
      * @return null
      */
     @Override
-    public Void visitClassNode(ClassNode iVisited) {
+    public Void visitClassNode(ClassParseNode iVisited) {
         return null;
     }
 
@@ -102,11 +102,11 @@ public class InstanceVariableFinder extends AbstractNodeVisitor<Void> {
      * @return null
      */
     @Override
-    public Void visitInstAsgnNode(InstAsgnNode iVisited) {
+    public Void visitInstAsgnNode(InstAsgnParseNode iVisited) {
         foundVariables.add(iVisited.getName());
-        List<Node> nodes = iVisited.childNodes();
+        List<ParseNode> nodes = iVisited.childNodes();
         for (int i = 0; i < nodes.size(); i++) {
-            Node node = nodes.get(i);
+            ParseNode node = nodes.get(i);
             node.accept(this);
         }
         return null;
@@ -119,42 +119,42 @@ public class InstanceVariableFinder extends AbstractNodeVisitor<Void> {
      * @return null
      */
     @Override
-    public Void visitInstVarNode(InstVarNode iVisited) {
+    public Void visitInstVarNode(InstVarParseNode iVisited) {
         foundVariables.add(iVisited.getName());
-        List<Node> nodes = iVisited.childNodes();
+        List<ParseNode> nodes = iVisited.childNodes();
         for (int i = 0; i < nodes.size(); i++) {
-            Node node = nodes.get(i);
+            ParseNode node = nodes.get(i);
         }
         return null;
     }
 
     /**
-     * ModuleNode creates a new scope and self, so do not search for ivars.
+     * ModuleParseNode creates a new scope and self, so do not search for ivars.
      * 
      * @return null
      */
     @Override
-    public Void visitModuleNode(ModuleNode iVisited) {
+    public Void visitModuleNode(ModuleParseNode iVisited) {
         return null;
     }
 
     /**
-     * PreExeNode can't appear in methods, so do not search for ivars.
+     * PreExeParseNode can't appear in methods, so do not search for ivars.
      * 
      * @return null
      */
     @Override
-    public Void visitPreExeNode(PreExeNode iVisited) {
+    public Void visitPreExeNode(PreExeParseNode iVisited) {
         return null;
     }
 
     /**
-     * PostExeNode can't appear in methods, so do not search for ivars.
+     * PostExeParseNode can't appear in methods, so do not search for ivars.
      * 
      * @return null
      */
     @Override
-    public Void visitPostExeNode(PostExeNode iVisited) {
+    public Void visitPostExeNode(PostExeParseNode iVisited) {
         return null;
     }
 }

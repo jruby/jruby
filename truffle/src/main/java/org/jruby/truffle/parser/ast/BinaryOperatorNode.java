@@ -35,13 +35,13 @@ package org.jruby.truffle.parser.ast;
 public interface BinaryOperatorNode {
 	/**
 	 * Gets the firstNode.
-	 * @return Returns a Node
+	 * @return Returns a ParseNode
 	 */
-	public abstract Node getFirstNode();
+	public abstract ParseNode getFirstNode();
 
 	/**
 	 * Gets the secondNode.
-	 * @return Returns a Node
+	 * @return Returns a ParseNode
 	 */
-	public abstract Node getSecondNode();
+	public abstract ParseNode getSecondNode();
 }

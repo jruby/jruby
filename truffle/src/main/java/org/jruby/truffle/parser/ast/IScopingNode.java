@@ -30,5 +30,5 @@
 package org.jruby.truffle.parser.ast;
 
 public interface IScopingNode {
-    public Colon3Node getCPath();
+    public Colon3ParseNode getCPath();
 }

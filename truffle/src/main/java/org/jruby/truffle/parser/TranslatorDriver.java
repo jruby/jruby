@@ -19,6 +19,8 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.Encoding;
+import org.jruby.truffle.parser.ast.NilParseNode;
+import org.jruby.truffle.parser.ast.RootParseNode;
 import org.jruby.truffle.parser.parser.ParserConfiguration;
 import org.jruby.truffle.parser.scope.StaticScope;
 import org.jruby.truffle.parser.scope.DynamicScope;
@@ -124,10 +126,10 @@ public class TranslatorDriver implements Parser {
 
         // Parse to the JRuby AST
 
-        org.jruby.truffle.parser.ast.RootNode node;
+        RootParseNode node;
 
         try {
-            node = (org.jruby.truffle.parser.ast.RootNode) parser.parse(source.getName(), source.getCode().getBytes(StandardCharsets.UTF_8), dynamicScope, parserConfiguration);
+            node = (RootParseNode) parser.parse(source.getName(), source.getCode().getBytes(StandardCharsets.UTF_8), dynamicScope, parserConfiguration);
         } catch (org.jruby.exceptions.RaiseException e) {
             String message = e.getException().getMessage().asJavaString();
 
@@ -174,7 +176,7 @@ public class TranslatorDriver implements Parser {
 
         RubyNode truffleNode;
 
-        if (node.getBodyNode() == null || node.getBodyNode() instanceof org.jruby.truffle.parser.ast.NilNode) {
+        if (node.getBodyNode() == null || node.getBodyNode() instanceof NilParseNode) {
             translator.parentSourceSection.push(rubySourceSection);
             try {
                 truffleNode = translator.nilNode(source, rubySourceSection);

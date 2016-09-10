@@ -30,7 +30,7 @@ package org.jruby.truffle.parser.lexer.yacc;
 import org.jcodings.Encoding;
 import org.jruby.truffle.parser.lexer.yacc.SyntaxException.PID;
 import org.jruby.truffle.parser.parser.Tokens;
-import org.jruby.truffle.parser.ast.RegexpNode;
+import org.jruby.truffle.parser.ast.RegexpParseNode;
 import org.jruby.util.ByteList;
 import org.jruby.util.KCode;
 import org.jruby.util.RegexpOptions;
@@ -87,7 +87,7 @@ public class StringTerm extends StrTerm {
                 RegexpOptions options = parseRegexpFlags(lexer);
                 ByteList regexpBytelist = ByteList.create("");
 
-                lexer.setValue(new RegexpNode(lexer.getPosition(), regexpBytelist, options));
+                lexer.setValue(new RegexpParseNode(lexer.getPosition(), regexpBytelist, options));
                 return Tokens.tREGEXP_END;
             }
 

@@ -54,15 +54,15 @@ import org.jruby.RubyProc;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
-import org.jruby.truffle.parser.ast.ArgsNode;
-import org.jruby.truffle.parser.ast.ArgumentNode;
-import org.jruby.truffle.parser.ast.DAsgnNode;
-import org.jruby.truffle.parser.ast.LocalAsgnNode;
-import org.jruby.truffle.parser.ast.MultipleAsgnNode;
-import org.jruby.truffle.parser.ast.Node;
-import org.jruby.truffle.parser.ast.OptArgNode;
-import org.jruby.truffle.parser.ast.RequiredKeywordArgumentValueNode;
-import org.jruby.truffle.parser.ast.UnnamedRestArgNode;
+import org.jruby.truffle.parser.ast.ArgsParseNode;
+import org.jruby.truffle.parser.ast.ArgumentParseNode;
+import org.jruby.truffle.parser.ast.DAsgnParseNode;
+import org.jruby.truffle.parser.ast.LocalAsgnParseNode;
+import org.jruby.truffle.parser.ast.MultipleAsgnParseNode;
+import org.jruby.truffle.parser.ast.OptArgParseNode;
+import org.jruby.truffle.parser.ast.ParseNode;
+import org.jruby.truffle.parser.ast.RequiredKeywordArgumentValueParseNode;
+import org.jruby.truffle.parser.ast.UnnamedRestArgParseNode;
 import org.jruby.truffle.parser.ast.types.INameNode;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
@@ -88,7 +88,6 @@ import org.jruby.runtime.CallType;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.JavaSites.HelpersSites;
-import org.jruby.truffle.parser.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.backtrace.BacktraceData;
@@ -2137,11 +2136,11 @@ public class Helpers {
         return (int)str.charAt(0);
     }
 
-    public static Block getBlock(ThreadContext context, IRubyObject self, Node node) {
+    public static Block getBlock(ThreadContext context, IRubyObject self, ParseNode node) {
         throw new RuntimeException("Should not be called");
     }
 
-    public static Block getBlock(Ruby runtime, ThreadContext context, IRubyObject self, Node node, Block aBlock) {
+    public static Block getBlock(Ruby runtime, ThreadContext context, IRubyObject self, ParseNode node, Block aBlock) {
         throw new RuntimeException("Should not be called");
     }
 
@@ -2343,18 +2342,18 @@ public class Helpers {
         return argsCat(first.getRuntime().getCurrentContext(), first, second);
     }
 
-    /** Use an ArgsNode (used for blocks) to generate ArgumentDescriptors */
-    public static ArgumentDescriptor[] argsNodeToArgumentDescriptors(ArgsNode argsNode) {
+    /** Use an ArgsParseNode (used for blocks) to generate ArgumentDescriptors */
+    public static ArgumentDescriptor[] argsNodeToArgumentDescriptors(ArgsParseNode argsNode) {
         ArrayList<ArgumentDescriptor> descs = new ArrayList<>();
-        Node[] args = argsNode.getArgs();
+        ParseNode[] args = argsNode.getArgs();
         int preCount = argsNode.getPreCount();
 
         if (preCount > 0) {
             for (int i = 0; i < preCount; i++) {
-                if (args[i] instanceof MultipleAsgnNode) {
+                if (args[i] instanceof MultipleAsgnParseNode) {
                     descs.add(new ArgumentDescriptor(ArgumentType.anonreq));
                 } else {
-                    descs.add(new ArgumentDescriptor(ArgumentType.req, ((ArgumentNode) args[i]).getName()));
+                    descs.add(new ArgumentDescriptor(ArgumentType.req, ((ArgumentParseNode) args[i]).getName()));
                 }
             }
         }
@@ -2366,14 +2365,14 @@ public class Helpers {
 
             for (int i = 0; i < optCount; i++) {
                 ArgumentType type = ArgumentType.opt;
-                Node optNode = args[optIndex + i];
+                ParseNode optNode = args[optIndex + i];
                 String name = null;
-                if (optNode instanceof OptArgNode) {
-                    name = ((OptArgNode)optNode).getName();
-                } else if (optNode instanceof LocalAsgnNode) {
-                    name = ((LocalAsgnNode)optNode).getName();
-                } else if (optNode instanceof DAsgnNode) {
-                    name = ((DAsgnNode)optNode).getName();
+                if (optNode instanceof OptArgParseNode) {
+                    name = ((OptArgParseNode)optNode).getName();
+                } else if (optNode instanceof LocalAsgnParseNode) {
+                    name = ((LocalAsgnParseNode)optNode).getName();
+                } else if (optNode instanceof DAsgnParseNode) {
+                    name = ((DAsgnParseNode)optNode).getName();
                 } else {
                     type = ArgumentType.anonopt;
                 }
@@ -2381,10 +2380,10 @@ public class Helpers {
             }
         }
 
-        ArgumentNode restArg = argsNode.getRestArgNode();
+        ArgumentParseNode restArg = argsNode.getRestArgNode();
         if (restArg != null) {
-            if (restArg instanceof UnnamedRestArgNode) {
-                if (((UnnamedRestArgNode) restArg).isStar()) descs.add(new ArgumentDescriptor(ArgumentType.anonrest));
+            if (restArg instanceof UnnamedRestArgParseNode) {
+                if (((UnnamedRestArgParseNode) restArg).isStar()) descs.add(new ArgumentDescriptor(ArgumentType.anonrest));
             } else {
                 descs.add(new ArgumentDescriptor(ArgumentType.rest, restArg.getName()));
             }
@@ -2394,11 +2393,11 @@ public class Helpers {
         if (postCount > 0) {
             int postIndex = argsNode.getPostIndex();
             for (int i = 0; i < postCount; i++) {
-                Node postNode = args[postIndex + i];
-                if (postNode instanceof MultipleAsgnNode) {
+                ParseNode postNode = args[postIndex + i];
+                if (postNode instanceof MultipleAsgnParseNode) {
                     descs.add(new ArgumentDescriptor(ArgumentType.anonreq));
                 } else {
-                    descs.add(new ArgumentDescriptor(ArgumentType.req, ((ArgumentNode)postNode).getName()));
+                    descs.add(new ArgumentDescriptor(ArgumentType.req, ((ArgumentParseNode)postNode).getName()));
                 }
             }
         }
@@ -2407,8 +2406,8 @@ public class Helpers {
         if (keywordsCount > 0) {
             int keywordsIndex = argsNode.getKeywordsIndex();
             for (int i = 0; i < keywordsCount; i++) {
-                Node keyWordNode = args[keywordsIndex + i];
-                for (Node asgnNode : keyWordNode.childNodes()) {
+                ParseNode keyWordNode = args[keywordsIndex + i];
+                for (ParseNode asgnNode : keyWordNode.childNodes()) {
                     if (isRequiredKeywordArgumentValueNode(asgnNode)) {
                         descs.add(new ArgumentDescriptor(ArgumentType.keyreq, ((INameNode) asgnNode).getName()));
                     } else {
@@ -2773,8 +2772,8 @@ public class Helpers {
         return -1;
     }
 
-    public static boolean isRequiredKeywordArgumentValueNode(Node asgnNode) {
-        return asgnNode.childNodes().get(0) instanceof RequiredKeywordArgumentValueNode;
+    public static boolean isRequiredKeywordArgumentValueNode(ParseNode asgnNode) {
+        return asgnNode.childNodes().get(0) instanceof RequiredKeywordArgumentValueParseNode;
     }
 
     // MRI: rb_hash_start

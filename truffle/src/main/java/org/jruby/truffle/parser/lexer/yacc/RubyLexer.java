@@ -39,21 +39,21 @@ import org.jcodings.Encoding;
 import org.jruby.Ruby;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.common.IRubyWarnings.ID;
+import org.jruby.truffle.parser.ast.BignumParseNode;
+import org.jruby.truffle.parser.ast.ComplexParseNode;
+import org.jruby.truffle.parser.ast.FixnumParseNode;
+import org.jruby.truffle.parser.ast.FloatParseNode;
+import org.jruby.truffle.parser.ast.ListParseNode;
+import org.jruby.truffle.parser.ast.NumericParseNode;
+import org.jruby.truffle.parser.ast.ParseNode;
+import org.jruby.truffle.parser.ast.RationalParseNode;
+import org.jruby.truffle.parser.ast.StrParseNode;
 import org.jruby.truffle.parser.lexer.yacc.SyntaxException.PID;
 import org.jruby.truffle.parser.parser.ParserSupport;
 import org.jruby.truffle.parser.parser.RubyParser;
 import org.jruby.truffle.parser.parser.Tokens;
-import org.jruby.truffle.parser.ast.BackRefNode;
-import org.jruby.truffle.parser.ast.BignumNode;
-import org.jruby.truffle.parser.ast.ComplexNode;
-import org.jruby.truffle.parser.ast.FixnumNode;
-import org.jruby.truffle.parser.ast.FloatNode;
-import org.jruby.truffle.parser.ast.ListNode;
-import org.jruby.truffle.parser.ast.Node;
-import org.jruby.truffle.parser.ast.NthRefNode;
-import org.jruby.truffle.parser.ast.NumericNode;
-import org.jruby.truffle.parser.ast.RationalNode;
-import org.jruby.truffle.parser.ast.StrNode;
+import org.jruby.truffle.parser.ast.BackRefParseNode;
+import org.jruby.truffle.parser.ast.NthRefParseNode;
 import org.jruby.truffle.parser.lexer.LexerSource;
 import org.jruby.truffle.parser.lexer.LexingCommon;
 import org.jruby.util.ByteList;
@@ -118,20 +118,20 @@ public class RubyLexer extends LexingCommon {
         map.put("__ENCODING__", Keyword.__ENCODING__);
     }
 
-    private BignumNode newBignumNode(String value, int radix) {
-        return new BignumNode(getPosition(), new BigInteger(value, radix));
+    private BignumParseNode newBignumNode(String value, int radix) {
+        return new BignumParseNode(getPosition(), new BigInteger(value, radix));
     }
 
-    private FixnumNode newFixnumNode(String value, int radix) throws NumberFormatException {
-        return new FixnumNode(getPosition(), Long.parseLong(value, radix));
+    private FixnumParseNode newFixnumNode(String value, int radix) throws NumberFormatException {
+        return new FixnumParseNode(getPosition(), Long.parseLong(value, radix));
     }
     
-    private RationalNode newRationalNode(String value, int radix) throws NumberFormatException {
-        return new RationalNode(getPosition(), Long.parseLong(value, radix), 1);
+    private RationalParseNode newRationalNode(String value, int radix) throws NumberFormatException {
+        return new RationalParseNode(getPosition(), Long.parseLong(value, radix), 1);
     }
     
-    private ComplexNode newComplexNode(NumericNode number) {
-        return new ComplexNode(getPosition(), number);
+    private ComplexParseNode newComplexNode(NumericParseNode number) {
+        return new ComplexParseNode(getPosition(), number);
     }
     
     protected void ambiguousOperator(String op, String syn) {
@@ -288,26 +288,26 @@ public class RubyLexer extends LexingCommon {
         return c;
     }
 
-    public void heredoc_dedent(Node root) {
+    public void heredoc_dedent(ParseNode root) {
         int indent = heredoc_indent;
 
         if (indent <= 0 || root == null) return;
 
-        if (root instanceof StrNode) {
-            StrNode str = (StrNode) root;
+        if (root instanceof StrParseNode) {
+            StrParseNode str = (StrParseNode) root;
             dedent_string(str.getValue(), indent);
-        } else if (root instanceof ListNode) {
-            ListNode list = (ListNode) root;
+        } else if (root instanceof ListParseNode) {
+            ListParseNode list = (ListParseNode) root;
             int length = list.size();
             int currentLine = -1;
             for (int i = 0; i < length; i++) {
-                Node child = list.get(i);
+                ParseNode child = list.get(i);
                 if (currentLine == child.getLine()) continue;  // Only process first element on a line?
 
                 currentLine = child.getLine();                 // New line
 
-                if (child instanceof StrNode) {
-                    dedent_string(((StrNode) child).getValue(), indent);
+                if (child instanceof StrParseNode) {
+                    dedent_string(((StrParseNode) child).getValue(), indent);
                 }
             }
         }
@@ -418,7 +418,7 @@ public class RubyLexer extends LexingCommon {
         if ((suffix & SUFFIX_I) == 0) {
             return token;
         } else {
-            yaccValue = newComplexNode((NumericNode) yaccValue);
+            yaccValue = newComplexNode((NumericParseNode) yaccValue);
             return RubyParser.tIMAGINARY;
         }
     }
@@ -430,7 +430,7 @@ public class RubyLexer extends LexingCommon {
             BigDecimal numerator = bd.multiply(denominator);
 
             try {
-                yaccValue = new RationalNode(getPosition(), numerator.longValueExact(), denominator.longValueExact());
+                yaccValue = new RationalParseNode(getPosition(), numerator.longValueExact(), denominator.longValueExact());
             } catch (ArithmeticException ae) {
                 // FIXME: Rational supports Bignum numerator and denominator
                 compile_error(PID.RATIONAL_OUT_OF_RANGE, "Rational (" + numerator + "/" + denominator + ") out of range.");
@@ -446,12 +446,12 @@ public class RubyLexer extends LexingCommon {
 
             d = number.startsWith("-") ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
         }
-        yaccValue = new FloatNode(getPosition(), d);
+        yaccValue = new FloatParseNode(getPosition(), d);
         return considerComplex(Tokens.tFLOAT, suffix);
     }
 
     private int getIntegerToken(String value, int radix, int suffix) {
-        Node literalValue;
+        ParseNode literalValue;
 
         if ((suffix & SUFFIX_R) != 0) {
             literalValue = newRationalNode(value, radix);
@@ -469,7 +469,7 @@ public class RubyLexer extends LexingCommon {
 
 
     // STR_NEW3/parser_str_new
-    public StrNode createStr(ByteList buffer, int flags) {
+    public StrParseNode createStr(ByteList buffer, int flags) {
         Encoding bufferEncoding = buffer.getEncoding();
         int codeRange = StringSupport.codeRangeScan(bufferEncoding, buffer);
 
@@ -483,7 +483,7 @@ public class RubyLexer extends LexingCommon {
             }
         }
 
-        StrNode newStr = new StrNode(getPosition(), buffer, codeRange);
+        StrParseNode newStr = new StrParseNode(getPosition(), buffer, codeRange);
 
         if (parserSupport.getConfiguration().isFrozenStringLiteral()) newStr.setFrozen(true);
 
@@ -729,7 +729,7 @@ public class RubyLexer extends LexingCommon {
             case Tokens.tCVAR: System.err.print("tCVAR,"); break;
             case Tokens.tINTEGER: System.err.print("tINTEGER,"); break;
             case Tokens.tFLOAT: System.err.print("tFLOAT,"); break;
-            case Tokens.tSTRING_CONTENT: System.err.print("tSTRING_CONTENT[" + ((StrNode) value()).getValue() + "],"); break;
+            case Tokens.tSTRING_CONTENT: System.err.print("tSTRING_CONTENT[" + ((StrParseNode) value()).getValue() + "],"); break;
             case Tokens.tSTRING_BEG: System.err.print("tSTRING_BEG,"); break;
             case Tokens.tSTRING_END: System.err.print("tSTRING_END,"); break;
             case Tokens.tSTRING_DBEG: System.err.print("tSTRING_DBEG,"); break;
@@ -1331,7 +1331,7 @@ public class RubyLexer extends LexingCommon {
                 return Tokens.tGVAR;
             }
 
-            yaccValue = new BackRefNode(getPosition(), c);
+            yaccValue = new BackRefParseNode(getPosition(), c);
             return Tokens.tBACK_REF;
 
         case '1': case '2': case '3': case '4': case '5': case '6':
@@ -1355,7 +1355,7 @@ public class RubyLexer extends LexingCommon {
                 ref = 0;
             }
 
-            yaccValue = new NthRefNode(getPosition(), ref);
+            yaccValue = new NthRefParseNode(getPosition(), ref);
             return Tokens.tNTH_REF;
         case '0':
             setState(EXPR_END);
@@ -1863,7 +1863,7 @@ public class RubyLexer extends LexingCommon {
                 }
 
                 setState(EXPR_END);
-                yaccValue = new StrNode(getPosition(), oneCharBL);
+                yaccValue = new StrParseNode(getPosition(), oneCharBL);
 
                 return Tokens.tCHAR;
             } else {
@@ -1875,7 +1875,7 @@ public class RubyLexer extends LexingCommon {
 
         ByteList oneCharBL = new ByteList(1);
         oneCharBL.append(c);
-        yaccValue = new StrNode(getPosition(), oneCharBL);
+        yaccValue = new StrParseNode(getPosition(), oneCharBL);
         setState(EXPR_END);
         return Tokens.tCHAR;
     }

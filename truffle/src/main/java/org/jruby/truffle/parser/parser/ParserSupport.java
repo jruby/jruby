@@ -38,84 +38,84 @@ package org.jruby.truffle.parser.parser;
 import org.jcodings.Encoding;
 import org.jruby.RubyBignum;
 import org.jruby.RubyRegexp;
-import org.jruby.truffle.parser.ast.AliasNode;
-import org.jruby.truffle.parser.ast.AndNode;
-import org.jruby.truffle.parser.ast.ArgsCatNode;
-import org.jruby.truffle.parser.ast.ArgsNode;
-import org.jruby.truffle.parser.ast.ArgsPushNode;
-import org.jruby.truffle.parser.ast.ArgumentNode;
-import org.jruby.truffle.parser.ast.ArrayNode;
-import org.jruby.truffle.parser.ast.AssignableNode;
-import org.jruby.truffle.parser.ast.AttrAssignNode;
-import org.jruby.truffle.parser.ast.BackRefNode;
-import org.jruby.truffle.parser.ast.BeginNode;
-import org.jruby.truffle.parser.ast.BignumNode;
+import org.jruby.truffle.parser.ast.AliasParseNode;
+import org.jruby.truffle.parser.ast.AndParseNode;
+import org.jruby.truffle.parser.ast.ArgsCatParseNode;
+import org.jruby.truffle.parser.ast.ArgsParseNode;
+import org.jruby.truffle.parser.ast.ArgsPushParseNode;
+import org.jruby.truffle.parser.ast.ArgumentParseNode;
+import org.jruby.truffle.parser.ast.ArrayParseNode;
+import org.jruby.truffle.parser.ast.AssignableParseNode;
+import org.jruby.truffle.parser.ast.AttrAssignParseNode;
+import org.jruby.truffle.parser.ast.BackRefParseNode;
+import org.jruby.truffle.parser.ast.BeginParseNode;
+import org.jruby.truffle.parser.ast.BignumParseNode;
 import org.jruby.truffle.parser.ast.BinaryOperatorNode;
-import org.jruby.truffle.parser.ast.BlockArgNode;
-import org.jruby.truffle.parser.ast.BlockNode;
-import org.jruby.truffle.parser.ast.BlockPassNode;
-import org.jruby.truffle.parser.ast.CallNode;
-import org.jruby.truffle.parser.ast.CaseNode;
-import org.jruby.truffle.parser.ast.ClassVarNode;
-import org.jruby.truffle.parser.ast.Colon2ConstNode;
-import org.jruby.truffle.parser.ast.Colon2ImplicitNode;
-import org.jruby.truffle.parser.ast.Colon2Node;
-import org.jruby.truffle.parser.ast.Colon3Node;
-import org.jruby.truffle.parser.ast.ComplexNode;
-import org.jruby.truffle.parser.ast.ConstNode;
-import org.jruby.truffle.parser.ast.DAsgnNode;
-import org.jruby.truffle.parser.ast.DRegexpNode;
-import org.jruby.truffle.parser.ast.DStrNode;
-import org.jruby.truffle.parser.ast.DSymbolNode;
-import org.jruby.truffle.parser.ast.DefinedNode;
-import org.jruby.truffle.parser.ast.DotNode;
-import org.jruby.truffle.parser.ast.EvStrNode;
-import org.jruby.truffle.parser.ast.FCallNode;
-import org.jruby.truffle.parser.ast.FalseNode;
-import org.jruby.truffle.parser.ast.FixnumNode;
-import org.jruby.truffle.parser.ast.FlipNode;
-import org.jruby.truffle.parser.ast.FloatNode;
-import org.jruby.truffle.parser.ast.GlobalAsgnNode;
-import org.jruby.truffle.parser.ast.GlobalVarNode;
-import org.jruby.truffle.parser.ast.HashNode;
+import org.jruby.truffle.parser.ast.BlockArgParseNode;
+import org.jruby.truffle.parser.ast.BlockParseNode;
+import org.jruby.truffle.parser.ast.BlockPassParseNode;
+import org.jruby.truffle.parser.ast.CallParseNode;
+import org.jruby.truffle.parser.ast.CaseParseNode;
+import org.jruby.truffle.parser.ast.ClassVarParseNode;
+import org.jruby.truffle.parser.ast.Colon2ConstParseNode;
+import org.jruby.truffle.parser.ast.Colon2ImplicitParseNode;
+import org.jruby.truffle.parser.ast.Colon2ParseNode;
+import org.jruby.truffle.parser.ast.Colon3ParseNode;
+import org.jruby.truffle.parser.ast.ComplexParseNode;
+import org.jruby.truffle.parser.ast.ConstParseNode;
+import org.jruby.truffle.parser.ast.DAsgnParseNode;
+import org.jruby.truffle.parser.ast.DRegexpParseNode;
+import org.jruby.truffle.parser.ast.DStrParseNode;
+import org.jruby.truffle.parser.ast.DSymbolParseNode;
+import org.jruby.truffle.parser.ast.DefinedParseNode;
+import org.jruby.truffle.parser.ast.DotParseNode;
+import org.jruby.truffle.parser.ast.EvStrParseNode;
+import org.jruby.truffle.parser.ast.FCallParseNode;
+import org.jruby.truffle.parser.ast.FalseParseNode;
+import org.jruby.truffle.parser.ast.FixnumParseNode;
+import org.jruby.truffle.parser.ast.FlipParseNode;
+import org.jruby.truffle.parser.ast.FloatParseNode;
+import org.jruby.truffle.parser.ast.GlobalAsgnParseNode;
+import org.jruby.truffle.parser.ast.GlobalVarParseNode;
+import org.jruby.truffle.parser.ast.HashParseNode;
 import org.jruby.truffle.parser.ast.IArgumentNode;
-import org.jruby.truffle.parser.ast.IfNode;
-import org.jruby.truffle.parser.ast.InstAsgnNode;
-import org.jruby.truffle.parser.ast.InstVarNode;
-import org.jruby.truffle.parser.ast.KeywordArgNode;
-import org.jruby.truffle.parser.ast.KeywordRestArgNode;
-import org.jruby.truffle.parser.ast.ListNode;
-import org.jruby.truffle.parser.ast.LocalAsgnNode;
-import org.jruby.truffle.parser.ast.Match2CaptureNode;
-import org.jruby.truffle.parser.ast.Match2Node;
-import org.jruby.truffle.parser.ast.Match3Node;
-import org.jruby.truffle.parser.ast.MatchNode;
-import org.jruby.truffle.parser.ast.MultipleAsgnNode;
-import org.jruby.truffle.parser.ast.NilImplicitNode;
-import org.jruby.truffle.parser.ast.NilNode;
-import org.jruby.truffle.parser.ast.Node;
-import org.jruby.truffle.parser.ast.NthRefNode;
-import org.jruby.truffle.parser.ast.NumericNode;
-import org.jruby.truffle.parser.ast.OpAsgnConstDeclNode;
-import org.jruby.truffle.parser.ast.OpAsgnNode;
-import org.jruby.truffle.parser.ast.OpElementAsgnNode;
-import org.jruby.truffle.parser.ast.OrNode;
-import org.jruby.truffle.parser.ast.RationalNode;
-import org.jruby.truffle.parser.ast.RegexpNode;
-import org.jruby.truffle.parser.ast.RescueBodyNode;
-import org.jruby.truffle.parser.ast.RescueModNode;
-import org.jruby.truffle.parser.ast.RestArgNode;
-import org.jruby.truffle.parser.ast.RootNode;
-import org.jruby.truffle.parser.ast.SValueNode;
-import org.jruby.truffle.parser.ast.SplatNode;
-import org.jruby.truffle.parser.ast.StrNode;
-import org.jruby.truffle.parser.ast.SuperNode;
-import org.jruby.truffle.parser.ast.SymbolNode;
-import org.jruby.truffle.parser.ast.TrueNode;
-import org.jruby.truffle.parser.ast.UndefNode;
-import org.jruby.truffle.parser.ast.WhenNode;
-import org.jruby.truffle.parser.ast.WhenOneArgNode;
-import org.jruby.truffle.parser.ast.YieldNode;
+import org.jruby.truffle.parser.ast.IfParseNode;
+import org.jruby.truffle.parser.ast.InstAsgnParseNode;
+import org.jruby.truffle.parser.ast.InstVarParseNode;
+import org.jruby.truffle.parser.ast.KeywordArgParseNode;
+import org.jruby.truffle.parser.ast.KeywordRestArgParseNode;
+import org.jruby.truffle.parser.ast.ListParseNode;
+import org.jruby.truffle.parser.ast.LocalAsgnParseNode;
+import org.jruby.truffle.parser.ast.Match2CaptureParseNode;
+import org.jruby.truffle.parser.ast.Match2ParseNode;
+import org.jruby.truffle.parser.ast.Match3ParseNode;
+import org.jruby.truffle.parser.ast.MatchParseNode;
+import org.jruby.truffle.parser.ast.MultipleAsgnParseNode;
+import org.jruby.truffle.parser.ast.NilImplicitParseNode;
+import org.jruby.truffle.parser.ast.NilParseNode;
+import org.jruby.truffle.parser.ast.NthRefParseNode;
+import org.jruby.truffle.parser.ast.OpAsgnConstDeclParseNode;
+import org.jruby.truffle.parser.ast.OrParseNode;
+import org.jruby.truffle.parser.ast.ParseNode;
+import org.jruby.truffle.parser.ast.NumericParseNode;
+import org.jruby.truffle.parser.ast.OpAsgnParseNode;
+import org.jruby.truffle.parser.ast.OpElementAsgnParseNode;
+import org.jruby.truffle.parser.ast.RationalParseNode;
+import org.jruby.truffle.parser.ast.RegexpParseNode;
+import org.jruby.truffle.parser.ast.RescueBodyParseNode;
+import org.jruby.truffle.parser.ast.RescueModParseNode;
+import org.jruby.truffle.parser.ast.RestArgParseNode;
+import org.jruby.truffle.parser.ast.RootParseNode;
+import org.jruby.truffle.parser.ast.SValueParseNode;
+import org.jruby.truffle.parser.ast.SplatParseNode;
+import org.jruby.truffle.parser.ast.StrParseNode;
+import org.jruby.truffle.parser.ast.SuperParseNode;
+import org.jruby.truffle.parser.ast.SymbolParseNode;
+import org.jruby.truffle.parser.ast.TrueParseNode;
+import org.jruby.truffle.parser.ast.UndefParseNode;
+import org.jruby.truffle.parser.ast.WhenParseNode;
+import org.jruby.truffle.parser.ast.WhenOneArgParseNode;
+import org.jruby.truffle.parser.ast.YieldParseNode;
 import org.jruby.truffle.parser.ast.types.ILiteralNode;
 import org.jruby.truffle.parser.ast.types.INameNode;
 import org.jruby.common.IRubyWarnings;
@@ -129,7 +129,6 @@ import org.jruby.truffle.parser.lexer.yacc.SyntaxException.PID;
 import org.jruby.truffle.parser.scope.DynamicScope;
 import org.jruby.truffle.parser.Signature;
 import org.jruby.truffle.parser.scope.StaticScope;
-import org.jruby.truffle.parser.scope.StaticScopeFactory;
 import org.jruby.util.ByteList;
 import org.jruby.util.KeyValuePair;
 import org.jruby.util.RegexpOptions;
@@ -195,11 +194,11 @@ public class ParserSupport {
         lexer.getCmdArgumentState().reset(0);
     }
 
-    public Node arg_concat(ISourcePosition position, Node node1, Node node2) {
-        return node2 == null ? node1 : new ArgsCatNode(position, node1, node2);
+    public ParseNode arg_concat(ISourcePosition position, ParseNode node1, ParseNode node2) {
+        return node2 == null ? node1 : new ArgsCatParseNode(position, node1, node2);
     }
 
-    public Node arg_blk_pass(Node firstNode, BlockPassNode secondNode) {
+    public ParseNode arg_blk_pass(ParseNode firstNode, BlockPassParseNode secondNode) {
         if (secondNode != null) {
             secondNode.setArgsNode(firstNode);
             return secondNode;
@@ -213,7 +212,7 @@ public class ParserSupport {
      * @param node to check its variable type
      * @return an AST node representing this new variable
      */
-    public Node gettable2(Node node) {
+    public ParseNode gettable2(ParseNode node) {
         switch (node.getNodeType()) {
         case DASGNNODE: // LOCALVAR
         case LOCALASGNNODE:
@@ -223,21 +222,21 @@ public class ParserSupport {
             }
             return currentScope.declare(node.getPosition(), name);
         case CONSTDECLNODE: // CONSTANT
-            return new ConstNode(node.getPosition(), ((INameNode) node).getName());
+            return new ConstParseNode(node.getPosition(), ((INameNode) node).getName());
         case INSTASGNNODE: // INSTANCE VARIABLE
-            return new InstVarNode(node.getPosition(), ((INameNode) node).getName());
+            return new InstVarParseNode(node.getPosition(), ((INameNode) node).getName());
         case CLASSVARDECLNODE:
         case CLASSVARASGNNODE:
-            return new ClassVarNode(node.getPosition(), ((INameNode) node).getName());
+            return new ClassVarParseNode(node.getPosition(), ((INameNode) node).getName());
         case GLOBALASGNNODE:
-            return new GlobalVarNode(node.getPosition(), ((INameNode) node).getName());
+            return new GlobalVarParseNode(node.getPosition(), ((INameNode) node).getName());
         }
 
         getterIdentifierError(node.getPosition(), ((INameNode) node).getName());
         return null;
     }
 
-    public Node declareIdentifier(String name) {
+    public ParseNode declareIdentifier(String name) {
         if (name.equals(lexer.getCurrentArg())) {
             warn(ID.AMBIGUOUS_ARGUMENT, lexer.getPosition(), "circular argument reference - " + name);
         }
@@ -245,12 +244,12 @@ public class ParserSupport {
     }
 
     // We know it has to be tLABEL or tIDENTIFIER so none of the other assignable logic is needed
-    public AssignableNode assignableLabelOrIdentifier(String name, Node value) {
+    public AssignableParseNode assignableLabelOrIdentifier(String name, ParseNode value) {
         return currentScope.assign(lexer.getPosition(), name.intern(), makeNullNil(value));
     }
 
     // Only calls via f_kw so we know it has to be tLABEL
-    public AssignableNode assignableLabel(String name, Node value) {
+    public AssignableParseNode assignableLabel(String name, ParseNode value) {
         return currentScope.assign(lexer.getPosition(), name, makeNullNil(value));
     }
 
@@ -263,7 +262,7 @@ public class ParserSupport {
      *
      *@param node
      */
-    public Node newline_node(Node node, ISourcePosition position) {
+    public ParseNode newline_node(ParseNode node, ISourcePosition position) {
         if (node == null) return null;
 
         configuration.coverLine(position.getLine());
@@ -273,7 +272,7 @@ public class ParserSupport {
     }
 
     // This is the last node made in the AST unintuitively so so post-processing can occur here.
-    public Node addRootNode(Node topOfAST) {
+    public ParseNode addRootNode(ParseNode topOfAST) {
         final int endPosition;
 
         if (lexer.isEndSeen()) {
@@ -286,15 +285,15 @@ public class ParserSupport {
         CoverageData coverageData = configuration.finishCoverage(lexer.getFile(), lexer.lineno());
         if (result.getBeginNodes().isEmpty()) {
             if (topOfAST == null) {
-                topOfAST = NilImplicitNode.NIL;
+                topOfAST = NilImplicitParseNode.NIL;
                 position = lexer.getPosition();
             } else {
                 position = topOfAST.getPosition();
             }
         } else {
             position = topOfAST != null ? topOfAST.getPosition() : result.getBeginNodes().get(0).getPosition();
-            BlockNode newTopOfAST = new BlockNode(position);
-            for (Node beginNode : result.getBeginNodes()) {
+            BlockParseNode newTopOfAST = new BlockParseNode(position);
+            for (ParseNode beginNode : result.getBeginNodes()) {
                 appendToBlock(newTopOfAST, beginNode);
             }
 
@@ -303,44 +302,44 @@ public class ParserSupport {
             topOfAST = newTopOfAST;
         }
 
-        return new RootNode(position, result.getScope(), topOfAST, lexer.getFile(), endPosition, coverageData != null);
+        return new RootParseNode(position, result.getScope(), topOfAST, lexer.getFile(), endPosition, coverageData != null);
     }
 
     /* MRI: block_append */
-    public Node appendToBlock(Node head, Node tail) {
+    public ParseNode appendToBlock(ParseNode head, ParseNode tail) {
         if (tail == null) return head;
         if (head == null) return tail;
 
-        if (!(head instanceof BlockNode)) {
-            head = new BlockNode(head.getPosition()).add(head);
+        if (!(head instanceof BlockParseNode)) {
+            head = new BlockParseNode(head.getPosition()).add(head);
         }
 
-        if (warnings.isVerbose() && isBreakStatement(((ListNode) head).getLast()) && Options.PARSER_WARN_NOT_REACHED.load()) {
+        if (warnings.isVerbose() && isBreakStatement(((ListParseNode) head).getLast()) && Options.PARSER_WARN_NOT_REACHED.load()) {
             warnings.warning(ID.STATEMENT_NOT_REACHED, tail.getPosition().getFile(), tail.getPosition().getLine(), "statement not reached");
         }
 
         // Assumption: tail is never a list node
-        ((ListNode) head).addAll(tail);
+        ((ListParseNode) head).addAll(tail);
         return head;
     }
 
     // We know it has to be tLABEL or tIDENTIFIER so none of the other assignable logic is needed
-    public AssignableNode assignableInCurr(String name, Node value) {
+    public AssignableParseNode assignableInCurr(String name, ParseNode value) {
         currentScope.addVariableThisScope(name);
         return currentScope.assign(lexer.getPosition(), name, makeNullNil(value));
     }
 
-    public Node getOperatorCallNode(Node firstNode, String operator) {
+    public ParseNode getOperatorCallNode(ParseNode firstNode, String operator) {
         checkExpression(firstNode);
 
-        return new CallNode(firstNode.getPosition(), firstNode, operator, null, null);
+        return new CallParseNode(firstNode.getPosition(), firstNode, operator, null, null);
     }
 
-    public Node getOperatorCallNode(Node firstNode, String operator, Node secondNode) {
+    public ParseNode getOperatorCallNode(ParseNode firstNode, String operator, ParseNode secondNode) {
         return getOperatorCallNode(firstNode, operator, secondNode, null);
     }
 
-    public Node getOperatorCallNode(Node firstNode, String operator, Node secondNode, ISourcePosition defaultPosition) {
+    public ParseNode getOperatorCallNode(ParseNode firstNode, String operator, ParseNode secondNode, ISourcePosition defaultPosition) {
         if (defaultPosition != null) {
             firstNode = checkForNilNode(firstNode, defaultPosition);
             secondNode = checkForNilNode(secondNode, defaultPosition);
@@ -349,26 +348,26 @@ public class ParserSupport {
         checkExpression(firstNode);
         checkExpression(secondNode);
 
-        return new CallNode(firstNode.getPosition(), firstNode, operator, new ArrayNode(secondNode.getPosition(), secondNode), null);
+        return new CallParseNode(firstNode.getPosition(), firstNode, operator, new ArrayParseNode(secondNode.getPosition(), secondNode), null);
     }
 
-    public Node getMatchNode(Node firstNode, Node secondNode) {
-        if (firstNode instanceof DRegexpNode) {
-            return new Match2Node(firstNode.getPosition(), firstNode, secondNode);
-        } else if (firstNode instanceof RegexpNode) {
-            List<Integer> locals = allocateNamedLocals((RegexpNode) firstNode);
+    public ParseNode getMatchNode(ParseNode firstNode, ParseNode secondNode) {
+        if (firstNode instanceof DRegexpParseNode) {
+            return new Match2ParseNode(firstNode.getPosition(), firstNode, secondNode);
+        } else if (firstNode instanceof RegexpParseNode) {
+            List<Integer> locals = allocateNamedLocals((RegexpParseNode) firstNode);
 
             if (locals.size() > 0) {
                 int[] primitiveLocals = new int[locals.size()];
                 for (int i = 0; i < primitiveLocals.length; i++) {
                     primitiveLocals[i] = locals.get(i);
                 }
-                return new Match2CaptureNode(firstNode.getPosition(), firstNode, secondNode, primitiveLocals);
+                return new Match2CaptureParseNode(firstNode.getPosition(), firstNode, secondNode, primitiveLocals);
             } else {
-                return new Match2Node(firstNode.getPosition(), firstNode, secondNode);
+                return new Match2ParseNode(firstNode.getPosition(), firstNode, secondNode);
             }
-        } else if (secondNode instanceof DRegexpNode || secondNode instanceof RegexpNode) {
-            return new Match3Node(firstNode.getPosition(), firstNode, secondNode);
+        } else if (secondNode instanceof DRegexpParseNode || secondNode instanceof RegexpParseNode) {
+            return new Match3ParseNode(firstNode.getPosition(), firstNode, secondNode);
         }
 
         return getOperatorCallNode(firstNode, "=~", secondNode);
@@ -379,9 +378,9 @@ public class ParserSupport {
      *
      * @param receiver array being set
      * @param index node which should evalute to index of array set
-     * @return an AttrAssignNode
+     * @return an AttrAssignParseNode
      */
-    public Node aryset(Node receiver, Node index) {
+    public ParseNode aryset(ParseNode receiver, ParseNode index) {
         checkExpression(receiver);
 
         return new_attrassign(receiver.getPosition(), receiver, "[]=", index, false);
@@ -392,52 +391,52 @@ public class ParserSupport {
      *
      * @param receiver object which contains attribute
      * @param name of the attribute being set
-     * @return an AttrAssignNode
+     * @return an AttrAssignParseNode
      */
-    public Node attrset(Node receiver, String name) {
+    public ParseNode attrset(ParseNode receiver, String name) {
         return attrset(receiver, ".", name);
     }
 
-    public Node attrset(Node receiver, String callType, String name) {
+    public ParseNode attrset(ParseNode receiver, String callType, String name) {
         checkExpression(receiver);
 
         return new_attrassign(receiver.getPosition(), receiver, name + "=", null, isLazy(callType));
     }
 
-    public void backrefAssignError(Node node) {
-        if (node instanceof NthRefNode) {
-            String varName = "$" + ((NthRefNode) node).getMatchNumber();
+    public void backrefAssignError(ParseNode node) {
+        if (node instanceof NthRefParseNode) {
+            String varName = "$" + ((NthRefParseNode) node).getMatchNumber();
             lexer.compile_error(PID.INVALID_ASSIGNMENT, "Can't set variable " + varName + '.');
-        } else if (node instanceof BackRefNode) {
-            String varName = "$" + ((BackRefNode) node).getType();
+        } else if (node instanceof BackRefParseNode) {
+            String varName = "$" + ((BackRefParseNode) node).getType();
             lexer.compile_error(PID.INVALID_ASSIGNMENT, "Can't set variable " + varName + '.');
         }
     }
 
-    public Node arg_add(ISourcePosition position, Node node1, Node node2) {
+    public ParseNode arg_add(ISourcePosition position, ParseNode node1, ParseNode node2) {
         if (node1 == null) {
             if (node2 == null) {
-                return new ArrayNode(position, NilImplicitNode.NIL);
+                return new ArrayParseNode(position, NilImplicitParseNode.NIL);
             } else {
-                return new ArrayNode(node2.getPosition(), node2);
+                return new ArrayParseNode(node2.getPosition(), node2);
             }
         }
-        if (node1 instanceof ArrayNode) return ((ArrayNode) node1).add(node2);
+        if (node1 instanceof ArrayParseNode) return ((ArrayParseNode) node1).add(node2);
 
-        return new ArgsPushNode(position, node1, node2);
+        return new ArgsPushParseNode(position, node1, node2);
     }
 
 	/**
 	 * @fixme position
 	 **/
-    public Node node_assign(Node lhs, Node rhs) {
+    public ParseNode node_assign(ParseNode lhs, ParseNode rhs) {
         if (lhs == null) return null;
 
-        Node newNode = lhs;
+        ParseNode newNode = lhs;
 
         checkExpression(rhs);
-        if (lhs instanceof AssignableNode) {
-    	    ((AssignableNode) lhs).setValueNode(rhs);
+        if (lhs instanceof AssignableParseNode) {
+    	    ((AssignableParseNode) lhs).setValueNode(rhs);
         } else if (lhs instanceof IArgumentNode) {
             IArgumentNode invokableNode = (IArgumentNode) lhs;
 
@@ -447,18 +446,18 @@ public class ParserSupport {
         return newNode;
     }
 
-    public Node ret_args(Node node, ISourcePosition position) {
+    public ParseNode ret_args(ParseNode node, ISourcePosition position) {
         if (node != null) {
-            if (node instanceof BlockPassNode) {
+            if (node instanceof BlockPassParseNode) {
                 lexer.compile_error(PID.BLOCK_ARG_UNEXPECTED, "block argument should not be given");
-            } else if (node instanceof ArrayNode && ((ArrayNode)node).size() == 1) {
-                node = ((ArrayNode)node).get(0);
-            } else if (node instanceof SplatNode) {
+            } else if (node instanceof ArrayParseNode && ((ArrayParseNode)node).size() == 1) {
+                node = ((ArrayParseNode)node).get(0);
+            } else if (node instanceof SplatParseNode) {
                 node = newSValueNode(position, node);
             }
         }
 
-        if (node == null) node = NilImplicitNode.NIL;
+        if (node == null) node = NilImplicitParseNode.NIL;
 
         return node;
     }
@@ -469,7 +468,7 @@ public class ParserSupport {
      * @param node to be checked
      * @return true if a control node, false otherwise
      */
-    public boolean isBreakStatement(Node node) {
+    public boolean isBreakStatement(ParseNode node) {
         breakLoop: do {
             if (node == null) return false;
 
@@ -483,20 +482,20 @@ public class ParserSupport {
         } while (true);
     }
 
-    public void warnUnlessEOption(ID id, Node node, String message) {
+    public void warnUnlessEOption(ID id, ParseNode node, String message) {
         if (!configuration.isInlineSource()) {
             warnings.warn(id, node.getPosition().getFile(), node.getPosition().getLine(), message);
         }
     }
 
-    public void warningUnlessEOption(ID id, Node node, String message) {
+    public void warningUnlessEOption(ID id, ParseNode node, String message) {
         if (warnings.isVerbose() && !configuration.isInlineSource()) {
             warnings.warning(id, node.getPosition().getFile(), node.getPosition().getLine(), message);
         }
     }
 
     // logical equivalent to value_expr in MRI
-    public boolean checkExpression(Node node) {
+    public boolean checkExpression(ParseNode node) {
         boolean conditional = false;
 
         while (node != null) {
@@ -507,20 +506,20 @@ public class ParserSupport {
 
                 return false;
             case BLOCKNODE:
-                node = ((BlockNode) node).getLast();
+                node = ((BlockParseNode) node).getLast();
                 break;
             case BEGINNODE:
-                node = ((BeginNode) node).getBodyNode();
+                node = ((BeginParseNode) node).getBodyNode();
                 break;
             case IFNODE:
-                if (!checkExpression(((IfNode) node).getThenBody())) return false;
-                node = ((IfNode) node).getElseBody();
+                if (!checkExpression(((IfParseNode) node).getThenBody())) return false;
+                node = ((IfParseNode) node).getElseBody();
                 break;
             case ANDNODE: case ORNODE:
                 conditional = true;
                 node = ((BinaryOperatorNode) node).getSecondNode();
                 break;
-            default: // Node
+            default: // ParseNode
                 return true;
             }
         }
@@ -536,13 +535,13 @@ public class ParserSupport {
      * @param node to be tested
      * @return true if it is a literal
      */
-    public boolean isLiteral(Node node) {
-        return node != null && (node instanceof FixnumNode || node instanceof BignumNode ||
-                node instanceof FloatNode || node instanceof SymbolNode ||
-                (node instanceof RegexpNode && ((RegexpNode) node).getOptions().toJoniOptions() == 0));
+    public boolean isLiteral(ParseNode node) {
+        return node != null && (node instanceof FixnumParseNode || node instanceof BignumParseNode ||
+                node instanceof FloatParseNode || node instanceof SymbolParseNode ||
+                (node instanceof RegexpParseNode && ((RegexpParseNode) node).getOptions().toJoniOptions() == 0));
     }
 
-    private void handleUselessWarn(Node node, String useless) {
+    private void handleUselessWarn(ParseNode node, String useless) {
         if (Options.PARSER_WARN_USELESSS_USE_OF.load()) {
             warnings.warn(ID.USELESS_EXPRESSION, node.getPosition().getFile(), node.getPosition().getLine(), "Useless use of " + useless + " in void context.");
         }
@@ -553,7 +552,7 @@ public class ParserSupport {
      *
      * @param node to be checked.
      */
-    public void checkUselessStatement(Node node) {
+    public void checkUselessStatement(ParseNode node) {
         if (!warnings.isVerbose() || (!configuration.isInlineSource() && configuration.isEvalParse())) return;
 
         uselessLoop: do {
@@ -561,7 +560,7 @@ public class ParserSupport {
 
             switch (node.getNodeType()) {
             case CALLNODE: {
-                String name = ((CallNode) node).getName();
+                String name = ((CallParseNode) node).getName();
 
                 if (name == "+" || name == "-" || name == "*" || name == "/" || name == "%" ||
                     name == "**" || name == "+@" || name == "-@" || name == "|" || name == "^" ||
@@ -586,7 +585,7 @@ public class ParserSupport {
             /*case CLASSNODE: case COLON2NODE:
                 handleUselessWarn(node, "::"); return;*/
             case DOTNODE:
-                handleUselessWarn(node, ((DotNode) node).isExclusive() ? "..." : ".."); return;
+                handleUselessWarn(node, ((DotParseNode) node).isExclusive() ? "..." : ".."); return;
             case DEFINEDNODE:
                 handleUselessWarn(node, "defined?"); return;
             case FALSENODE:
@@ -604,16 +603,16 @@ public class ParserSupport {
     }
 
     /**
-     * Check all nodes but the last one in a BlockNode for useless (void context) statements.
+     * Check all nodes but the last one in a BlockParseNode for useless (void context) statements.
      *
      * @param blockNode to be checked.
      */
-    public void checkUselessStatements(BlockNode blockNode) {
+    public void checkUselessStatements(BlockParseNode blockNode) {
         if (warnings.isVerbose()) {
-            Node lastNode = blockNode.getLast();
+            ParseNode lastNode = blockNode.getLast();
 
             for (int i = 0; i < blockNode.size(); i++) {
-                Node currentNode = blockNode.get(i);
+                ParseNode currentNode = blockNode.get(i);
 
                 if (lastNode != currentNode ) {
                     checkUselessStatement(currentNode);
@@ -625,11 +624,11 @@ public class ParserSupport {
 	/**
      * assign_in_cond
 	 **/
-    private boolean checkAssignmentInCondition(Node node) {
-        if (node instanceof MultipleAsgnNode) {
+    private boolean checkAssignmentInCondition(ParseNode node) {
+        if (node instanceof MultipleAsgnParseNode) {
             lexer.compile_error(PID.MULTIPLE_ASSIGNMENT_IN_CONDITIONAL, "multiple assignment in conditional");
-        } else if (node instanceof LocalAsgnNode || node instanceof DAsgnNode || node instanceof GlobalAsgnNode || node instanceof InstAsgnNode) {
-            Node valueNode = ((AssignableNode) node).getValueNode();
+        } else if (node instanceof LocalAsgnParseNode || node instanceof DAsgnParseNode || node instanceof GlobalAsgnParseNode || node instanceof InstAsgnParseNode) {
+            ParseNode valueNode = ((AssignableParseNode) node).getValueNode();
             if (isStaticContent(valueNode)) {
                 warnings.warn(ID.ASSIGNMENT_IN_CONDITIONAL, node.getPosition().getFile(), node.getPosition().getLine(), "found = in conditional, should be ==");
             }
@@ -640,68 +639,68 @@ public class ParserSupport {
     }
 
     // Only literals or does it contain something more dynamic like variables?
-    private boolean isStaticContent(Node node) {
-        if (node instanceof HashNode) {
-            HashNode hash = (HashNode) node;
-            for (KeyValuePair<Node, Node> pair : hash.getPairs()) {
+    private boolean isStaticContent(ParseNode node) {
+        if (node instanceof HashParseNode) {
+            HashParseNode hash = (HashParseNode) node;
+            for (KeyValuePair<ParseNode, ParseNode> pair : hash.getPairs()) {
                 if (!isStaticContent(pair.getKey()) || !isStaticContent(pair.getValue())) return false;
             }
             return true;
-        } else if (node instanceof ArrayNode) {
-            ArrayNode array = (ArrayNode) node;
+        } else if (node instanceof ArrayParseNode) {
+            ArrayParseNode array = (ArrayParseNode) node;
             int size = array.size();
 
             for (int i = 0; i < size; i++) {
                 if (!isStaticContent(array.get(i))) return false;
             }
             return true;
-        } else if (node instanceof ILiteralNode || node instanceof NilNode || node instanceof TrueNode || node instanceof FalseNode) {
+        } else if (node instanceof ILiteralNode || node instanceof NilParseNode || node instanceof TrueParseNode || node instanceof FalseParseNode) {
             return true;
         }
 
         return false;
     }
 
-    protected Node makeNullNil(Node node) {
-        return node == null ? NilImplicitNode.NIL : node;
+    protected ParseNode makeNullNil(ParseNode node) {
+        return node == null ? NilImplicitParseNode.NIL : node;
     }
 
-    private Node cond0(Node node) {
+    private ParseNode cond0(ParseNode node) {
         checkAssignmentInCondition(node);
 
-        if (node == null) return new NilNode(lexer.getPosition());
+        if (node == null) return new NilParseNode(lexer.getPosition());
 
-        Node leftNode;
-        Node rightNode;
+        ParseNode leftNode;
+        ParseNode rightNode;
 
         // FIXME: DSTR,EVSTR,STR: warning "string literal in condition"
         switch(node.getNodeType()) {
         case DREGEXPNODE: {
             ISourcePosition position = node.getPosition();
 
-            return new Match2Node(position, node, new GlobalVarNode(position, "$_"));
+            return new Match2ParseNode(position, node, new GlobalVarParseNode(position, "$_"));
         }
         case ANDNODE:
-            leftNode = cond0(((AndNode) node).getFirstNode());
-            rightNode = cond0(((AndNode) node).getSecondNode());
+            leftNode = cond0(((AndParseNode) node).getFirstNode());
+            rightNode = cond0(((AndParseNode) node).getSecondNode());
 
-            return new AndNode(node.getPosition(), makeNullNil(leftNode), makeNullNil(rightNode));
+            return new AndParseNode(node.getPosition(), makeNullNil(leftNode), makeNullNil(rightNode));
         case ORNODE:
-            leftNode = cond0(((OrNode) node).getFirstNode());
-            rightNode = cond0(((OrNode) node).getSecondNode());
+            leftNode = cond0(((OrParseNode) node).getFirstNode());
+            rightNode = cond0(((OrParseNode) node).getSecondNode());
 
-            return new OrNode(node.getPosition(), makeNullNil(leftNode), makeNullNil(rightNode));
+            return new OrParseNode(node.getPosition(), makeNullNil(leftNode), makeNullNil(rightNode));
         case DOTNODE: {
-            DotNode dotNode = (DotNode) node;
+            DotParseNode dotNode = (DotParseNode) node;
             if (dotNode.isLiteral()) return node;
 
             String label = String.valueOf("FLIP" + node.hashCode());
             currentScope.getLocalScope().addVariable(label);
             int slot = currentScope.isDefined(label);
 
-            return new FlipNode(node.getPosition(),
-                    getFlipConditionNode(((DotNode) node).getBeginNode()),
-                    getFlipConditionNode(((DotNode) node).getEndNode()),
+            return new FlipParseNode(node.getPosition(),
+                    getFlipConditionNode(((DotParseNode) node).getBeginNode()),
+                    getFlipConditionNode(((DotParseNode) node).getEndNode()),
                     dotNode.isExclusive(), slot);
         }
         case REGEXPNODE:
@@ -709,14 +708,14 @@ public class ParserSupport {
                 warningUnlessEOption(ID.REGEXP_LITERAL_IN_CONDITION, node, "regex literal in condition");
             }
 
-            return new MatchNode(node.getPosition(), node);
+            return new MatchParseNode(node.getPosition(), node);
         }
 
         return node;
     }
 
-    public Node getConditionNode(Node node) {
-        Node cond = cond0(node);
+    public ParseNode getConditionNode(ParseNode node) {
+        ParseNode cond = cond0(node);
 
         cond.setNewline();
 
@@ -724,69 +723,69 @@ public class ParserSupport {
     }
 
     /* MRI: range_op */
-    private Node getFlipConditionNode(Node node) {
+    private ParseNode getFlipConditionNode(ParseNode node) {
         if (!configuration.isInlineSource()) return node;
 
         node = getConditionNode(node);
 
-        if (node instanceof FixnumNode) {
+        if (node instanceof FixnumParseNode) {
             warnUnlessEOption(ID.LITERAL_IN_CONDITIONAL_RANGE, node, "integer literal in conditional range");
-            return getOperatorCallNode(node, "==", new GlobalVarNode(node.getPosition(), "$."));
+            return getOperatorCallNode(node, "==", new GlobalVarParseNode(node.getPosition(), "$."));
         }
 
         return node;
     }
 
-    public SValueNode newSValueNode(ISourcePosition position, Node node) {
-        return new SValueNode(position, node);
+    public SValueParseNode newSValueNode(ISourcePosition position, ParseNode node) {
+        return new SValueParseNode(position, node);
     }
 
-    public SplatNode newSplatNode(ISourcePosition position, Node node) {
-        return new SplatNode(position, makeNullNil(node));
+    public SplatParseNode newSplatNode(ISourcePosition position, ParseNode node) {
+        return new SplatParseNode(position, makeNullNil(node));
     }
 
-    public ArrayNode newArrayNode(ISourcePosition position, Node firstNode) {
-        return new ArrayNode(position, makeNullNil(firstNode));
+    public ArrayParseNode newArrayNode(ISourcePosition position, ParseNode firstNode) {
+        return new ArrayParseNode(position, makeNullNil(firstNode));
     }
 
     public ISourcePosition position(ISourcePositionHolder one, ISourcePositionHolder two) {
         return one == null ? two.getPosition() : one.getPosition();
     }
 
-    public AndNode newAndNode(ISourcePosition position, Node left, Node right) {
+    public AndParseNode newAndNode(ISourcePosition position, ParseNode left, ParseNode right) {
         checkExpression(left);
 
-        if (left == null && right == null) return new AndNode(position, makeNullNil(left), makeNullNil(right));
+        if (left == null && right == null) return new AndParseNode(position, makeNullNil(left), makeNullNil(right));
 
-        return new AndNode(position(left, right), makeNullNil(left), makeNullNil(right));
+        return new AndParseNode(position(left, right), makeNullNil(left), makeNullNil(right));
     }
 
-    public OrNode newOrNode(ISourcePosition position, Node left, Node right) {
+    public OrParseNode newOrNode(ISourcePosition position, ParseNode left, ParseNode right) {
         checkExpression(left);
 
-        if (left == null && right == null) return new OrNode(position, makeNullNil(left), makeNullNil(right));
+        if (left == null && right == null) return new OrParseNode(position, makeNullNil(left), makeNullNil(right));
 
-        return new OrNode(position(left, right), makeNullNil(left), makeNullNil(right));
+        return new OrParseNode(position(left, right), makeNullNil(left), makeNullNil(right));
     }
 
     /**
      * Ok I admit that this is somewhat ugly.  We post-process a chain of when nodes and analyze
-     * them to re-insert them back into our new CaseNode the way we want.  The grammar is being
+     * them to re-insert them back into our new CaseParseNode the way we want.  The grammar is being
      * difficult and until I go back into the depths of that this is where things are.
      *
      * @param expression of the case node (e.g. case foo)
      * @param firstWhenNode first when (which could also be the else)
      * @return a new case node
      */
-    public CaseNode newCaseNode(ISourcePosition position, Node expression, Node firstWhenNode) {
-        ArrayNode cases = new ArrayNode(firstWhenNode != null ? firstWhenNode.getPosition() : position);
-        CaseNode caseNode = new CaseNode(position, expression, cases);
+    public CaseParseNode newCaseNode(ISourcePosition position, ParseNode expression, ParseNode firstWhenNode) {
+        ArrayParseNode cases = new ArrayParseNode(firstWhenNode != null ? firstWhenNode.getPosition() : position);
+        CaseParseNode caseNode = new CaseParseNode(position, expression, cases);
 
-        for (Node current = firstWhenNode; current != null; current = ((WhenNode) current).getNextCase()) {
-            if (current instanceof WhenOneArgNode) {
+        for (ParseNode current = firstWhenNode; current != null; current = ((WhenParseNode) current).getNextCase()) {
+            if (current instanceof WhenOneArgParseNode) {
                 cases.add(current);
-            } else if (current instanceof WhenNode) {
-                simplifyMultipleArgumentWhenNodes((WhenNode) current, cases);
+            } else if (current instanceof WhenParseNode) {
+                simplifyMultipleArgumentWhenNodes((WhenParseNode) current, cases);
             } else {
                 caseNode.setElseNode(current);
                 break;
@@ -805,26 +804,26 @@ public class ParserSupport {
      * Notes: This has semantic equivalence but will not be lexically equivalent.  Compiler
      * needs to detect same bodies to simplify bytecode generated.
      */
-    private void simplifyMultipleArgumentWhenNodes(WhenNode sourceWhen, ArrayNode cases) {
-        Node expressionNodes = sourceWhen.getExpressionNodes();
+    private void simplifyMultipleArgumentWhenNodes(WhenParseNode sourceWhen, ArrayParseNode cases) {
+        ParseNode expressionNodes = sourceWhen.getExpressionNodes();
 
-        if (expressionNodes instanceof SplatNode || expressionNodes instanceof ArgsCatNode) {
+        if (expressionNodes instanceof SplatParseNode || expressionNodes instanceof ArgsCatParseNode) {
             cases.add(sourceWhen);
             return;
         }
 
-        if (expressionNodes instanceof ListNode) {
-            ListNode list = (ListNode) expressionNodes;
+        if (expressionNodes instanceof ListParseNode) {
+            ListParseNode list = (ListParseNode) expressionNodes;
             ISourcePosition position = sourceWhen.getPosition();
-            Node bodyNode = sourceWhen.getBodyNode();
+            ParseNode bodyNode = sourceWhen.getBodyNode();
 
             for (int i = 0; i < list.size(); i++) {
-                Node expression = list.get(i);
+                ParseNode expression = list.get(i);
 
-                if (expression instanceof SplatNode || expression instanceof ArgsCatNode) {
-                    cases.add(new WhenNode(position, expression, bodyNode, null));
+                if (expression instanceof SplatParseNode || expression instanceof ArgsCatParseNode) {
+                    cases.add(new WhenParseNode(position, expression, bodyNode, null));
                 } else {
-                    cases.add(new WhenOneArgNode(position, expression, bodyNode, null));
+                    cases.add(new WhenOneArgParseNode(position, expression, bodyNode, null));
                 }
             }
         } else {
@@ -832,47 +831,47 @@ public class ParserSupport {
         }
     }
 
-    public WhenNode newWhenNode(ISourcePosition position, Node expressionNodes, Node bodyNode, Node nextCase) {
-        if (bodyNode == null) bodyNode = NilImplicitNode.NIL;
+    public WhenParseNode newWhenNode(ISourcePosition position, ParseNode expressionNodes, ParseNode bodyNode, ParseNode nextCase) {
+        if (bodyNode == null) bodyNode = NilImplicitParseNode.NIL;
 
-        if (expressionNodes instanceof SplatNode || expressionNodes instanceof ArgsCatNode || expressionNodes instanceof ArgsPushNode) {
-            return new WhenNode(position, expressionNodes, bodyNode, nextCase);
+        if (expressionNodes instanceof SplatParseNode || expressionNodes instanceof ArgsCatParseNode || expressionNodes instanceof ArgsPushParseNode) {
+            return new WhenParseNode(position, expressionNodes, bodyNode, nextCase);
         }
 
-        ListNode list = (ListNode) expressionNodes;
+        ListParseNode list = (ListParseNode) expressionNodes;
 
         if (list.size() == 1) {
-            Node element = list.get(0);
+            ParseNode element = list.get(0);
 
-            if (!(element instanceof SplatNode)) {
-                return new WhenOneArgNode(position, element, bodyNode, nextCase);
+            if (!(element instanceof SplatParseNode)) {
+                return new WhenOneArgParseNode(position, element, bodyNode, nextCase);
             }
         }
 
-        return new WhenNode(position, expressionNodes, bodyNode, nextCase);
+        return new WhenParseNode(position, expressionNodes, bodyNode, nextCase);
     }
 
     // FIXME: Currently this is passing in position of receiver
-    public Node new_opElementAsgnNode(Node receiverNode, String operatorName, Node argsNode, Node valueNode) {
+    public ParseNode new_opElementAsgnNode(ParseNode receiverNode, String operatorName, ParseNode argsNode, ParseNode valueNode) {
         ISourcePosition position = lexer.tokline;  // FIXME: ruby_sourceline in new lexer.
 
-        Node newNode = new OpElementAsgnNode(position, receiverNode, operatorName, argsNode, valueNode);
+        ParseNode newNode = new OpElementAsgnParseNode(position, receiverNode, operatorName, argsNode, valueNode);
 
         fixpos(newNode, receiverNode);
 
         return newNode;
     }
 
-    public Node newOpAsgn(ISourcePosition position, Node receiverNode, String callType, Node valueNode, String variableName, String operatorName) {
-        return new OpAsgnNode(position, receiverNode, valueNode, variableName, operatorName, isLazy(callType));
+    public ParseNode newOpAsgn(ISourcePosition position, ParseNode receiverNode, String callType, ParseNode valueNode, String variableName, String operatorName) {
+        return new OpAsgnParseNode(position, receiverNode, valueNode, variableName, operatorName, isLazy(callType));
     }
 
-    public Node newOpConstAsgn(ISourcePosition position, Node lhs, String operatorName, Node rhs) {
+    public ParseNode newOpConstAsgn(ISourcePosition position, ParseNode lhs, String operatorName, ParseNode rhs) {
         // FIXME: Maybe need to fixup position?
         if (lhs != null) {
-            return new OpAsgnConstDeclNode(position, lhs, operatorName, rhs);
+            return new OpAsgnConstDeclParseNode(position, lhs, operatorName, rhs);
         } else {
-            return new BeginNode(position, NilImplicitNode.NIL);
+            return new BeginParseNode(position, NilImplicitParseNode.NIL);
         }
     }
 
@@ -880,8 +879,8 @@ public class ParserSupport {
         return "&.".equals(callType);
     }
 
-    public Node new_attrassign(ISourcePosition position, Node receiver, String name, Node args, boolean isLazy) {
-        return new AttrAssignNode(position, receiver, name, args, isLazy);
+    public ParseNode new_attrassign(ISourcePosition position, ParseNode receiver, String name, ParseNode args, boolean isLazy) {
+        return new AttrAssignParseNode(position, receiver, name, args, isLazy);
     }
 
     private boolean isNumericOperator(String name) {
@@ -903,37 +902,37 @@ public class ParserSupport {
         return false;
     }
 
-    public Node new_call(Node receiver, String callType, String name, Node argsNode, Node iter) {
-        if (argsNode instanceof BlockPassNode) {
+    public ParseNode new_call(ParseNode receiver, String callType, String name, ParseNode argsNode, ParseNode iter) {
+        if (argsNode instanceof BlockPassParseNode) {
             if (iter != null) lexer.compile_error(PID.BLOCK_ARG_AND_BLOCK_GIVEN, "Both block arg and actual block given.");
 
-            BlockPassNode blockPass = (BlockPassNode) argsNode;
-            return new CallNode(position(receiver, argsNode), receiver, name, blockPass.getArgsNode(), blockPass, isLazy(callType));
+            BlockPassParseNode blockPass = (BlockPassParseNode) argsNode;
+            return new CallParseNode(position(receiver, argsNode), receiver, name, blockPass.getArgsNode(), blockPass, isLazy(callType));
         }
 
-        return new CallNode(position(receiver, argsNode), receiver, name, argsNode, iter, isLazy(callType));
+        return new CallParseNode(position(receiver, argsNode), receiver, name, argsNode, iter, isLazy(callType));
 
     }
 
-    public Node new_call(Node receiver, String name, Node argsNode, Node iter) {
+    public ParseNode new_call(ParseNode receiver, String name, ParseNode argsNode, ParseNode iter) {
         return new_call(receiver, ".", name, argsNode, iter);
     }
 
-    public Colon2Node new_colon2(ISourcePosition position, Node leftNode, String name) {
-        if (leftNode == null) return new Colon2ImplicitNode(position, name);
+    public Colon2ParseNode new_colon2(ISourcePosition position, ParseNode leftNode, String name) {
+        if (leftNode == null) return new Colon2ImplicitParseNode(position, name);
 
-        return new Colon2ConstNode(position, leftNode, name);
+        return new Colon2ConstParseNode(position, leftNode, name);
     }
 
-    public Colon3Node new_colon3(ISourcePosition position, String name) {
-        return new Colon3Node(position, name);
+    public Colon3ParseNode new_colon3(ISourcePosition position, String name) {
+        return new Colon3ParseNode(position, name);
     }
 
-    public void frobnicate_fcall_args(FCallNode fcall, Node args, Node iter) {
-        if (args instanceof BlockPassNode) {
+    public void frobnicate_fcall_args(FCallParseNode fcall, ParseNode args, ParseNode iter) {
+        if (args instanceof BlockPassParseNode) {
             if (iter != null) lexer.compile_error(PID.BLOCK_ARG_AND_BLOCK_GIVEN, "Both block arg and actual block given.");
 
-            BlockPassNode blockPass = (BlockPassNode) args;
+            BlockPassParseNode blockPass = (BlockPassParseNode) args;
             args = blockPass.getArgsNode();
             iter = blockPass;
         }
@@ -942,21 +941,21 @@ public class ParserSupport {
         fcall.setIterNode(iter);
     }
 
-    public void fixpos(Node node, Node orig) {
+    public void fixpos(ParseNode node, ParseNode orig) {
         if (node == null || orig == null) return;
 
         node.setPosition(orig.getPosition());
     }
 
-    public Node new_fcall(String operation) {
-        return new FCallNode(lexer.tokline, operation);
+    public ParseNode new_fcall(String operation) {
+        return new FCallParseNode(lexer.tokline, operation);
     }
 
-    public Node new_super(ISourcePosition position, Node args) {
-        if (args != null && args instanceof BlockPassNode) {
-            return new SuperNode(position, ((BlockPassNode) args).getArgsNode(), args);
+    public ParseNode new_super(ISourcePosition position, ParseNode args) {
+        if (args != null && args instanceof BlockPassParseNode) {
+            return new SuperParseNode(position, ((BlockPassParseNode) args).getArgsNode(), args);
         }
-        return new SuperNode(position, args);
+        return new SuperParseNode(position, args);
     }
 
     /**
@@ -1031,118 +1030,118 @@ public class ParserSupport {
         this.lexer = lexer;
     }
 
-    public DStrNode createDStrNode(ISourcePosition position) {
-        DStrNode dstr = new DStrNode(position, lexer.getEncoding());
+    public DStrParseNode createDStrNode(ISourcePosition position) {
+        DStrParseNode dstr = new DStrParseNode(position, lexer.getEncoding());
         if (getConfiguration().isFrozenStringLiteral()) dstr.setFrozen(true);
         return dstr;
     }
 
-    public KeyValuePair<Node, Node> createKeyValue(Node key, Node value) {
-        if (key != null && key instanceof StrNode) ((StrNode) key).setFrozen(true);
+    public KeyValuePair<ParseNode, ParseNode> createKeyValue(ParseNode key, ParseNode value) {
+        if (key != null && key instanceof StrParseNode) ((StrParseNode) key).setFrozen(true);
 
         return new KeyValuePair<>(key, value);
     }
 
-    public Node asSymbol(ISourcePosition position, String value) {
-        return new SymbolNode(position, value, lexer.getEncoding(), lexer.getTokenCR());
+    public ParseNode asSymbol(ISourcePosition position, String value) {
+        return new SymbolParseNode(position, value, lexer.getEncoding(), lexer.getTokenCR());
     }
 
-    public Node asSymbol(ISourcePosition position, Node value) {
-        return value instanceof StrNode ? new SymbolNode(position, ((StrNode) value).getValue()) :
-                new DSymbolNode(position, (DStrNode) value);
+    public ParseNode asSymbol(ISourcePosition position, ParseNode value) {
+        return value instanceof StrParseNode ? new SymbolParseNode(position, ((StrParseNode) value).getValue()) :
+                new DSymbolParseNode(position, (DStrParseNode) value);
     }
 
-    public Node literal_concat(ISourcePosition position, Node head, Node tail) {
+    public ParseNode literal_concat(ISourcePosition position, ParseNode head, ParseNode tail) {
         if (head == null) return tail;
         if (tail == null) return head;
 
-        if (head instanceof EvStrNode) {
+        if (head instanceof EvStrParseNode) {
             head = createDStrNode(head.getPosition()).add(head);
         }
 
         if (lexer.getHeredocIndent() > 0) {
-            if (head instanceof StrNode) {
+            if (head instanceof StrParseNode) {
                 head = createDStrNode(head.getPosition()).add(head);
                 return list_append(head, tail);
-            } else if (head instanceof DStrNode) {
+            } else if (head instanceof DStrParseNode) {
                 return list_append(head, tail);
             }
         }
 
-        if (tail instanceof StrNode) {
-            if (head instanceof StrNode) {
-                StrNode front = (StrNode) head;
+        if (tail instanceof StrParseNode) {
+            if (head instanceof StrParseNode) {
+                StrParseNode front = (StrParseNode) head;
                 // string_contents always makes an empty strnode...which is sometimes valid but
                 // never if it ever is in literal_concat.
                 if (front.getValue().getRealSize() > 0) {
-                    return new StrNode(head.getPosition(), front, (StrNode) tail);
+                    return new StrParseNode(head.getPosition(), front, (StrParseNode) tail);
                 } else {
                     return tail;
                 }
             }
             head.setPosition(head.getPosition());
-            return ((ListNode) head).add(tail);
+            return ((ListParseNode) head).add(tail);
 
-        } else if (tail instanceof DStrNode) {
-            if (head instanceof StrNode) { // Str + oDStr -> Dstr(Str, oDStr.contents)
-                DStrNode newDStr = new DStrNode(head.getPosition(), ((DStrNode) tail).getEncoding());
+        } else if (tail instanceof DStrParseNode) {
+            if (head instanceof StrParseNode) { // Str + oDStr -> Dstr(Str, oDStr.contents)
+                DStrParseNode newDStr = new DStrParseNode(head.getPosition(), ((DStrParseNode) tail).getEncoding());
                 newDStr.add(head);
                 newDStr.addAll(tail);
                 if (getConfiguration().isFrozenStringLiteral()) newDStr.setFrozen(true);
                 return newDStr;
             }
 
-            return ((ListNode) head).addAll(tail);
+            return ((ListParseNode) head).addAll(tail);
         }
 
-        // tail must be EvStrNode at this point
-        if (head instanceof StrNode) {
+        // tail must be EvStrParseNode at this point
+        if (head instanceof StrParseNode) {
 
             //Do not add an empty string node
-            if(((StrNode) head).getValue().length() == 0) {
+            if(((StrParseNode) head).getValue().length() == 0) {
                 head = createDStrNode(head.getPosition());
             } else {
                 head = createDStrNode(head.getPosition()).add(head);
             }
         }
-        return ((DStrNode) head).add(tail);
+        return ((DStrParseNode) head).add(tail);
     }
 
-    public Node newRescueModNode(Node body, Node rescueBody) {
-        if (rescueBody == null) rescueBody = NilImplicitNode.NIL; // foo rescue () can make null.
+    public ParseNode newRescueModNode(ParseNode body, ParseNode rescueBody) {
+        if (rescueBody == null) rescueBody = NilImplicitParseNode.NIL; // foo rescue () can make null.
         ISourcePosition pos = getPosition(body);
 
-        return new RescueModNode(pos, body, new RescueBodyNode(pos, null, rescueBody, null));
+        return new RescueModParseNode(pos, body, new RescueBodyParseNode(pos, null, rescueBody, null));
     }
 
-    public Node newEvStrNode(ISourcePosition position, Node node) {
-        if (node instanceof StrNode || node instanceof DStrNode || node instanceof EvStrNode) return node;
+    public ParseNode newEvStrNode(ISourcePosition position, ParseNode node) {
+        if (node instanceof StrParseNode || node instanceof DStrParseNode || node instanceof EvStrParseNode) return node;
 
-        return new EvStrNode(position, node);
+        return new EvStrParseNode(position, node);
     }
 
-    public Node new_yield(ISourcePosition position, Node node) {
-        if (node != null && node instanceof BlockPassNode) {
+    public ParseNode new_yield(ISourcePosition position, ParseNode node) {
+        if (node != null && node instanceof BlockPassParseNode) {
             lexer.compile_error(PID.BLOCK_ARG_UNEXPECTED, "Block argument should not be given.");
         }
 
-        return new YieldNode(position, node);
+        return new YieldParseNode(position, node);
     }
 
-    public NumericNode negateInteger(NumericNode integerNode) {
-        if (integerNode instanceof FixnumNode) {
-            FixnumNode fixnumNode = (FixnumNode) integerNode;
+    public NumericParseNode negateInteger(NumericParseNode integerNode) {
+        if (integerNode instanceof FixnumParseNode) {
+            FixnumParseNode fixnumNode = (FixnumParseNode) integerNode;
 
             fixnumNode.setValue(-fixnumNode.getValue());
             return fixnumNode;
-        } else if (integerNode instanceof BignumNode) {
-            BignumNode bignumNode = (BignumNode) integerNode;
+        } else if (integerNode instanceof BignumParseNode) {
+            BignumParseNode bignumNode = (BignumParseNode) integerNode;
 
             BigInteger value = bignumNode.getValue().negate();
 
             // Negating a bignum will make the last negative value of our bignum
             if (value.compareTo(RubyBignum.LONG_MIN) >= 0) {
-                return new FixnumNode(bignumNode.getPosition(), value.longValue());
+                return new FixnumParseNode(bignumNode.getPosition(), value.longValue());
             }
 
             bignumNode.setValue(value);
@@ -1151,35 +1150,35 @@ public class ParserSupport {
         return integerNode;
     }
 
-    public FloatNode negateFloat(FloatNode floatNode) {
+    public FloatParseNode negateFloat(FloatParseNode floatNode) {
         floatNode.setValue(-floatNode.getValue());
 
         return floatNode;
     }
 
-    public ComplexNode negateComplexNode(ComplexNode complexNode) {
+    public ComplexParseNode negateComplexNode(ComplexParseNode complexNode) {
         complexNode.setNumber(negateNumeric(complexNode.getNumber()));
 
         return complexNode;
     }
 
-    public RationalNode negateRational(RationalNode rationalNode) {
-        return new RationalNode(rationalNode.getPosition(),
+    public RationalParseNode negateRational(RationalParseNode rationalNode) {
+        return new RationalParseNode(rationalNode.getPosition(),
                                 -rationalNode.getNumerator(),
                                 rationalNode.getDenominator());
     }
 
-    private Node checkForNilNode(Node node, ISourcePosition defaultPosition) {
-        return (node == null) ? new NilNode(defaultPosition) : node;
+    private ParseNode checkForNilNode(ParseNode node, ISourcePosition defaultPosition) {
+        return (node == null) ? new NilParseNode(defaultPosition) : node;
     }
 
-    public Node new_args(ISourcePosition position, ListNode pre, ListNode optional, RestArgNode rest,
-            ListNode post, ArgsTailHolder tail) {
-        ArgsNode argsNode;
+    public ParseNode new_args(ISourcePosition position, ListParseNode pre, ListParseNode optional, RestArgParseNode rest,
+                              ListParseNode post, ArgsTailHolder tail) {
+        ArgsParseNode argsNode;
         if (tail == null) {
-            argsNode = new ArgsNode(position, pre, optional, rest, post, null);
+            argsNode = new ArgsParseNode(position, pre, optional, rest, post, null);
         } else {
-            argsNode = new ArgsNode(position, pre, optional, rest, post,
+            argsNode = new ArgsParseNode(position, pre, optional, rest, post,
                     tail.getKeywordArgs(), tail.getKeywordRestArgNode(), tail.getBlockArg());
         }
 
@@ -1188,8 +1187,8 @@ public class ParserSupport {
         return argsNode;
     }
 
-    public ArgsTailHolder new_args_tail(ISourcePosition position, ListNode keywordArg,
-                                        String keywordRestArgName, BlockArgNode blockArg) {
+    public ArgsTailHolder new_args_tail(ISourcePosition position, ListParseNode keywordArg,
+                                        String keywordRestArgName, BlockArgParseNode blockArg) {
         if (keywordRestArgName == null) return new ArgsTailHolder(position, keywordArg, null, blockArg);
 
         String restKwargsName = keywordRestArgName;
@@ -1197,16 +1196,16 @@ public class ParserSupport {
         int slot = currentScope.exists(restKwargsName);
         if (slot == -1) slot = currentScope.addVariable(restKwargsName);
 
-        KeywordRestArgNode keywordRestArg = new KeywordRestArgNode(position, restKwargsName, slot);
+        KeywordRestArgParseNode keywordRestArg = new KeywordRestArgParseNode(position, restKwargsName, slot);
 
         return new ArgsTailHolder(position, keywordArg, keywordRestArg, blockArg);
     }
 
-    public Node remove_duplicate_keys(HashNode hash) {
-        List<Node> encounteredKeys = new ArrayList();
+    public ParseNode remove_duplicate_keys(HashParseNode hash) {
+        List<ParseNode> encounteredKeys = new ArrayList();
 
-        for (KeyValuePair<Node,Node> pair: hash.getPairs()) {
-            Node key = pair.getKey();
+        for (KeyValuePair<ParseNode,ParseNode> pair: hash.getPairs()) {
+            ParseNode key = pair.getKey();
             if (key == null) continue;
             int index = encounteredKeys.indexOf(key);
             if (index >= 0) {
@@ -1220,12 +1219,12 @@ public class ParserSupport {
         return hash;
     }
 
-    public Node newAlias(ISourcePosition position, Node newNode, Node oldNode) {
-        return new AliasNode(position, newNode, oldNode);
+    public ParseNode newAlias(ISourcePosition position, ParseNode newNode, ParseNode oldNode) {
+        return new AliasParseNode(position, newNode, oldNode);
     }
 
-    public Node newUndef(ISourcePosition position, Node nameNode) {
-        return new UndefNode(position, nameNode);
+    public ParseNode newUndef(ISourcePosition position, ParseNode nameNode) {
+        return new UndefParseNode(position, nameNode);
     }
 
     /**
@@ -1262,15 +1261,15 @@ public class ParserSupport {
     }
 
     // 1.9
-    public ListNode list_append(Node list, Node item) {
-        if (list == null) return new ArrayNode(item.getPosition(), item);
-        if (!(list instanceof ListNode)) return new ArrayNode(list.getPosition(), list).add(item);
+    public ListParseNode list_append(ParseNode list, ParseNode item) {
+        if (list == null) return new ArrayParseNode(item.getPosition(), item);
+        if (!(list instanceof ListParseNode)) return new ArrayParseNode(list.getPosition(), list).add(item);
 
-        return ((ListNode) list).add(item);
+        return ((ListParseNode) list).add(item);
     }
 
     // 1.9
-    public Node new_bv(String identifier) {
+    public ParseNode new_bv(String identifier) {
         if (!is_local_id(identifier)) {
             getterIdentifierError(lexer.getPosition(), identifier);
         }
@@ -1280,7 +1279,7 @@ public class ParserSupport {
     }
 
     // 1.9
-    public ArgumentNode arg_var(String name) {
+    public ArgumentParseNode arg_var(String name) {
         StaticScope current = getCurrentScope();
 
         // Multiple _ arguments are allowed.  To not screw with tons of arity
@@ -1294,7 +1293,7 @@ public class ParserSupport {
             }
         }
 
-        return new ArgumentNode(lexer.getPosition(), name, current.addVariableThisScope(name));
+        return new ArgumentParseNode(lexer.getPosition(), name, current.addVariableThisScope(name));
     }
 
     public String formal_argument(String identifier) {
@@ -1326,16 +1325,16 @@ public class ParserSupport {
     }
 
     // 1.9
-    public ListNode list_concat(Node first, Node second) {
-        if (first instanceof ListNode) {
-            if (second instanceof ListNode) {
-                return ((ListNode) first).addAll((ListNode) second);
+    public ListParseNode list_concat(ParseNode first, ParseNode second) {
+        if (first instanceof ListParseNode) {
+            if (second instanceof ListParseNode) {
+                return ((ListParseNode) first).addAll((ListParseNode) second);
             } else {
-                return ((ListNode) first).addAll(second);
+                return ((ListParseNode) first).addAll(second);
             }
         }
 
-        return new ArrayNode(first.getPosition(), first).add(second);
+        return new ArrayParseNode(first.getPosition(), first).add(second);
     }
 
     // 1.9
@@ -1344,30 +1343,30 @@ public class ParserSupport {
      * Otherwise return null.  This allows grammar to not splat into a Ruby Array if splatting
      * a literal array.
      */
-    public Node splat_array(Node node) {
-        if (node instanceof SplatNode) node = ((SplatNode) node).getValue();
-        if (node instanceof ArrayNode) return node;
+    public ParseNode splat_array(ParseNode node) {
+        if (node instanceof SplatParseNode) node = ((SplatParseNode) node).getValue();
+        if (node instanceof ArrayParseNode) return node;
         return null;
     }
 
     // 1.9
-    public Node arg_append(Node node1, Node node2) {
-        if (node1 == null) return new ArrayNode(node2.getPosition(), node2);
-        if (node1 instanceof ListNode) return ((ListNode) node1).add(node2);
-        if (node1 instanceof BlockPassNode) return arg_append(((BlockPassNode) node1).getBodyNode(), node2);
-        if (node1 instanceof ArgsPushNode) {
-            ArgsPushNode pushNode = (ArgsPushNode) node1;
-            Node body = pushNode.getSecondNode();
+    public ParseNode arg_append(ParseNode node1, ParseNode node2) {
+        if (node1 == null) return new ArrayParseNode(node2.getPosition(), node2);
+        if (node1 instanceof ListParseNode) return ((ListParseNode) node1).add(node2);
+        if (node1 instanceof BlockPassParseNode) return arg_append(((BlockPassParseNode) node1).getBodyNode(), node2);
+        if (node1 instanceof ArgsPushParseNode) {
+            ArgsPushParseNode pushNode = (ArgsPushParseNode) node1;
+            ParseNode body = pushNode.getSecondNode();
 
-            return new ArgsCatNode(pushNode.getPosition(), pushNode.getFirstNode(),
-                    new ArrayNode(body.getPosition(), body).add(node2));
+            return new ArgsCatParseNode(pushNode.getPosition(), pushNode.getFirstNode(),
+                    new ArrayParseNode(body.getPosition(), body).add(node2));
         }
 
-        return new ArgsPushNode(position(node1, node2), node1, node2);
+        return new ArgsPushParseNode(position(node1, node2), node1, node2);
     }
 
     // MRI: reg_fragment_check
-    public void regexpFragmentCheck(RegexpNode end, ByteList value) {
+    public void regexpFragmentCheck(RegexpParseNode end, ByteList value) {
         setRegexpEncoding(end, value);
         try {
             RubyRegexp.preprocessCheck(configuration.getRuntime(), value);
@@ -1376,7 +1375,7 @@ public class ParserSupport {
         }
     }        // 1.9 mode overrides to do extra checking...
 
-    private List<Integer> allocateNamedLocals(RegexpNode regexpNode) {
+    private List<Integer> allocateNamedLocals(RegexpParseNode regexpNode) {
         RubyRegexp pattern = RubyRegexp.newRegexp(configuration.getRuntime(), regexpNode.getValue(), regexpNode.getOptions());
         pattern.setLiteral();
         String[] names = pattern.getNames();
@@ -1437,7 +1436,7 @@ public class ParserSupport {
     }
     
     // MRI: reg_fragment_setenc_gen
-    public void setRegexpEncoding(RegexpNode end, ByteList value) {
+    public void setRegexpEncoding(RegexpParseNode end, ByteList value) {
         RegexpOptions options = end.getOptions();
         Encoding optionsEncoding = options.setup(configuration.getRuntime()) ;
 
@@ -1476,7 +1475,7 @@ public class ParserSupport {
         }
     }
 
-    public Node newRegexpNode(ISourcePosition position, Node contents, RegexpNode end) {
+    public ParseNode newRegexpNode(ISourcePosition position, ParseNode contents, RegexpParseNode end) {
         RegexpOptions options = end.getOptions();
         Encoding encoding = lexer.getEncoding();
 
@@ -1487,36 +1486,36 @@ public class ParserSupport {
             }
 
             regexpFragmentCheck(end, newValue);
-            return new RegexpNode(position, newValue, options.withoutOnce());
-        } else if (contents instanceof StrNode) {
-            ByteList meat = (ByteList) ((StrNode) contents).getValue().clone();
+            return new RegexpParseNode(position, newValue, options.withoutOnce());
+        } else if (contents instanceof StrParseNode) {
+            ByteList meat = (ByteList) ((StrParseNode) contents).getValue().clone();
             regexpFragmentCheck(end, meat);
             checkRegexpSyntax(meat, options.withoutOnce());
-            return new RegexpNode(contents.getPosition(), meat, options.withoutOnce());
-        } else if (contents instanceof DStrNode) {
-            DStrNode dStrNode = (DStrNode) contents;
+            return new RegexpParseNode(contents.getPosition(), meat, options.withoutOnce());
+        } else if (contents instanceof DStrParseNode) {
+            DStrParseNode dStrNode = (DStrParseNode) contents;
             
             for (int i = 0; i < dStrNode.size(); i++) {
-                Node fragment = dStrNode.get(i);
-                if (fragment instanceof StrNode) {
-                    ByteList frag = ((StrNode) fragment).getValue();
+                ParseNode fragment = dStrNode.get(i);
+                if (fragment instanceof StrParseNode) {
+                    ByteList frag = ((StrParseNode) fragment).getValue();
                     regexpFragmentCheck(end, frag);
 //                    if (!lexer.isOneEight()) encoding = frag.getEncoding();
                 }
             }
             
-            DRegexpNode dRegexpNode = new DRegexpNode(position, options, encoding);
-            dRegexpNode.add(new StrNode(contents.getPosition(), createMaster(options)));
+            DRegexpParseNode dRegexpNode = new DRegexpParseNode(position, options, encoding);
+            dRegexpNode.add(new StrParseNode(contents.getPosition(), createMaster(options)));
             dRegexpNode.addAll(dStrNode);
             return dRegexpNode;
         }
 
-        // EvStrNode: #{val}: no fragment check, but at least set encoding
+        // EvStrParseNode: #{val}: no fragment check, but at least set encoding
         ByteList master = createMaster(options);
         regexpFragmentCheck(end, master);
         encoding = master.getEncoding();
-        DRegexpNode node = new DRegexpNode(position, options, encoding);
-        node.add(new StrNode(contents.getPosition(), master));
+        DRegexpParseNode node = new DRegexpParseNode(position, options, encoding);
+        node.add(new StrParseNode(contents.getPosition(), master));
         node.add(contents);
         return node;
     }
@@ -1548,29 +1547,29 @@ public class ParserSupport {
         return codeRange;
     }
     
-    public KeywordArgNode keyword_arg(ISourcePosition position, AssignableNode assignable) {
-        return new KeywordArgNode(position, assignable);
+    public KeywordArgParseNode keyword_arg(ISourcePosition position, AssignableParseNode assignable) {
+        return new KeywordArgParseNode(position, assignable);
     }
     
-    public NumericNode negateNumeric(NumericNode node) {
+    public NumericParseNode negateNumeric(NumericParseNode node) {
         switch (node.getNodeType()) {
             case FIXNUMNODE:
             case BIGNUMNODE:
                 return negateInteger(node);
             case COMPLEXNODE:
-                return negateComplexNode((ComplexNode) node);
+                return negateComplexNode((ComplexParseNode) node);
             case FLOATNODE:
-                return negateFloat((FloatNode) node);
+                return negateFloat((FloatParseNode) node);
             case RATIONALNODE:
-                return negateRational((RationalNode) node);
+                return negateRational((RationalParseNode) node);
         }
         
         yyerror("Invalid or unimplemented numeric to negate: " + node.toString());
         return null;
     }
     
-    public Node new_defined(ISourcePosition position, Node something) {
-        return new DefinedNode(position, something);
+    public ParseNode new_defined(ISourcePosition position, ParseNode something) {
+        return new DefinedParseNode(position, something);
     }
 
     public String internalId() {

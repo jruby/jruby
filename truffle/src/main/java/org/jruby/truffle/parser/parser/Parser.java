@@ -36,7 +36,7 @@ import org.jruby.RubyArray;
 import org.jruby.RubyFile;
 import org.jruby.RubyHash;
 import org.jruby.RubyIO;
-import org.jruby.truffle.parser.ast.Node;
+import org.jruby.truffle.parser.ast.ParseNode;
 import org.jruby.truffle.parser.lexer.ByteListLexerSource;
 import org.jruby.truffle.parser.lexer.GetsLexerSource;
 import org.jruby.truffle.parser.lexer.LexerSource;
@@ -72,8 +72,8 @@ public class Parser {
     }
     
     @SuppressWarnings("unchecked")
-    public Node parse(String file, ByteList content, DynamicScope blockScope,
-            ParserConfiguration configuration) {
+    public ParseNode parse(String file, ByteList content, DynamicScope blockScope,
+                           ParserConfiguration configuration) {
         configuration.setDefaultEncoding(content.getEncoding());
         RubyArray list = getLines(configuration, runtime, file);
         LexerSource lexerSource = new ByteListLexerSource(file, configuration.getLineNumber(), content, list);
@@ -81,8 +81,8 @@ public class Parser {
     }
 
     @SuppressWarnings("unchecked")
-    public Node parse(String file, byte[] content, DynamicScope blockScope,
-            ParserConfiguration configuration) {
+    public ParseNode parse(String file, byte[] content, DynamicScope blockScope,
+                           ParserConfiguration configuration) {
         RubyArray list = getLines(configuration, runtime, file);
         ByteList in = new ByteList(content, configuration.getDefaultEncoding());
         LexerSource lexerSource = new ByteListLexerSource(file, configuration.getLineNumber(), in,  list);
@@ -90,8 +90,8 @@ public class Parser {
     }
 
     @SuppressWarnings("unchecked")
-    public Node parse(String file, InputStream content, DynamicScope blockScope,
-            ParserConfiguration configuration) {
+    public ParseNode parse(String file, InputStream content, DynamicScope blockScope,
+                           ParserConfiguration configuration) {
         if (content instanceof LoadServiceResourceInputStream) {
             return parse(file, ((LoadServiceResourceInputStream) content).getBytes(), blockScope, configuration);
         } else {
@@ -108,8 +108,8 @@ public class Parser {
     }
 
     @SuppressWarnings("unchecked")
-    public Node parse(String file, LexerSource lexerSource, DynamicScope blockScope,
-            ParserConfiguration configuration) {
+    public ParseNode parse(String file, LexerSource lexerSource, DynamicScope blockScope,
+                           ParserConfiguration configuration) {
         // We only need to pass in current scope if we are evaluating as a block (which
         // is only done for evals).  We need to pass this in so that we can appropriately scope
         // down to captured scopes when we are parsing.
@@ -156,7 +156,7 @@ public class Parser {
             result.getScope().growIfNeeded();
         }
 
-        Node ast = result.getAST();
+        ParseNode ast = result.getAST();
         
         totalTime += System.nanoTime() - startTime;
         totalBytes += lexerSource.getOffset();

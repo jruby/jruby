@@ -13,6 +13,7 @@ import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.parser.ast.ParseNode;
 import org.jruby.truffle.parser.lexer.yacc.ISourcePosition;
 import org.jruby.truffle.parser.lexer.yacc.InvalidSourcePosition;
 import org.jruby.truffle.RubyContext;
@@ -138,7 +139,7 @@ public abstract class Translator extends org.jruby.truffle.parser.ast.visitor.Ab
         return new NilLiteralNode(context, sourceSection.toSourceSection(source), false);
     }
 
-    protected RubyNode translateNodeOrNil(RubySourceSection sourceSection, org.jruby.truffle.parser.ast.Node node) {
+    protected RubyNode translateNodeOrNil(RubySourceSection sourceSection, ParseNode node) {
         final RubyNode rubyNode;
         if (node != null) {
             rubyNode = node.accept(this);

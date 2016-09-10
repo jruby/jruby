@@ -9,21 +9,21 @@
  */
 package org.jruby.truffle.parser;
 
-import org.jruby.truffle.parser.ast.ArgsNode;
-import org.jruby.truffle.parser.ast.ArgumentNode;
-import org.jruby.truffle.parser.ast.ArrayNode;
-import org.jruby.truffle.parser.ast.BlockArgNode;
-import org.jruby.truffle.parser.ast.BlockNode;
-import org.jruby.truffle.parser.ast.ClassVarAsgnNode;
-import org.jruby.truffle.parser.ast.ClassVarDeclNode;
-import org.jruby.truffle.parser.ast.DAsgnNode;
-import org.jruby.truffle.parser.ast.KeywordRestArgNode;
-import org.jruby.truffle.parser.ast.ListNode;
-import org.jruby.truffle.parser.ast.LocalAsgnNode;
-import org.jruby.truffle.parser.ast.MultipleAsgnNode;
-import org.jruby.truffle.parser.ast.Node;
-import org.jruby.truffle.parser.ast.OptArgNode;
-import org.jruby.truffle.parser.ast.RestArgNode;
+import org.jruby.truffle.parser.ast.ArgsParseNode;
+import org.jruby.truffle.parser.ast.ArgumentParseNode;
+import org.jruby.truffle.parser.ast.ArrayParseNode;
+import org.jruby.truffle.parser.ast.BlockArgParseNode;
+import org.jruby.truffle.parser.ast.BlockParseNode;
+import org.jruby.truffle.parser.ast.ClassVarAsgnParseNode;
+import org.jruby.truffle.parser.ast.ClassVarDeclParseNode;
+import org.jruby.truffle.parser.ast.DAsgnParseNode;
+import org.jruby.truffle.parser.ast.KeywordRestArgParseNode;
+import org.jruby.truffle.parser.ast.ListParseNode;
+import org.jruby.truffle.parser.ast.LocalAsgnParseNode;
+import org.jruby.truffle.parser.ast.MultipleAsgnParseNode;
+import org.jruby.truffle.parser.ast.ParseNode;
+import org.jruby.truffle.parser.ast.OptArgParseNode;
+import org.jruby.truffle.parser.ast.RestArgParseNode;
 import org.jruby.truffle.parser.ast.visitor.AbstractNodeVisitor;
 
 import java.util.ArrayList;
@@ -41,89 +41,89 @@ public class ParameterCollector extends AbstractNodeVisitor<Object> {
     }
 
     @Override
-    protected Object defaultVisit(Node node) {
+    protected Object defaultVisit(ParseNode node) {
        return null;
     }
 
     @Override
-    public Object visitArgsNode(ArgsNode node) {
+    public Object visitArgsNode(ArgsParseNode node) {
         visitChildren(node);
         return null;
     }
 
     @Override
-    public Object visitArgumentNode(ArgumentNode node) {
+    public Object visitArgumentNode(ArgumentParseNode node) {
         parameters.add(node.getName());
         return null;
     }
 
     @Override
-    public Object visitArrayNode(ArrayNode node) {
+    public Object visitArrayNode(ArrayParseNode node) {
         visitChildren(node);
         return null;
     }
     @Override
-    public Object visitBlockArgNode(BlockArgNode node) {
+    public Object visitBlockArgNode(BlockArgParseNode node) {
         parameters.add(node.getName());
         return null;
     }
 
     @Override
-    public Object visitBlockNode(BlockNode node) {
+    public Object visitBlockNode(BlockParseNode node) {
         visitChildren(node);
         return null;
     }
 
     @Override
-    public Object visitClassVarAsgnNode(ClassVarAsgnNode node) {
+    public Object visitClassVarAsgnNode(ClassVarAsgnParseNode node) {
         throw new UnsupportedOperationException(node.toString());
     }
 
     @Override
-    public Object visitClassVarDeclNode(ClassVarDeclNode node) {
+    public Object visitClassVarDeclNode(ClassVarDeclParseNode node) {
         throw new UnsupportedOperationException(node.toString());
     }
 
     @Override
-    public Object visitDAsgnNode(DAsgnNode node) {
+    public Object visitDAsgnNode(DAsgnParseNode node) {
         parameters.add(node.getName());
         return null;
     }
 
     @Override
-    public Object visitListNode(ListNode node) {
+    public Object visitListNode(ListParseNode node) {
         visitChildren(node);
         return null;
     }
 
     @Override
-    public Object visitMultipleAsgnNode(MultipleAsgnNode node) {
+    public Object visitMultipleAsgnNode(MultipleAsgnParseNode node) {
         visitChildren(node);
         return null;
     }
 
     @Override
-    public Object visitOptArgNode(OptArgNode node) {
+    public Object visitOptArgNode(OptArgParseNode node) {
         parameters.add(node.getName());
         node.getValue().accept(this);
         return null;
     }
 
     @Override
-    public Object visitLocalAsgnNode(LocalAsgnNode node) {
+    public Object visitLocalAsgnNode(LocalAsgnParseNode node) {
         parameters.add(node.getName());
         node.getValueNode().accept(this);
         return null;
     }
 
     @Override
-    public Object visitRestArgNode(RestArgNode node) {
+    public Object visitRestArgNode(RestArgParseNode node) {
         parameters.add(node.getName());
         return null;
     }
 
     @Override
-    public Object visitKeywordRestArgNode(KeywordRestArgNode node) {
+    public Object visitKeywordRestArgNode(KeywordRestArgParseNode node) {
         parameters.add(node.getName());
         return null;
     }

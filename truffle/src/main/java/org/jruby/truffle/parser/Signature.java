@@ -1,16 +1,16 @@
 package org.jruby.truffle.parser;
 
 import org.jruby.Ruby;
-import org.jruby.truffle.parser.ast.ArgsNode;
-import org.jruby.truffle.parser.ast.ArgumentNode;
-import org.jruby.truffle.parser.ast.ForNode;
-import org.jruby.truffle.parser.ast.IterNode;
-import org.jruby.truffle.parser.ast.MultipleAsgnNode;
-import org.jruby.truffle.parser.ast.Node;
-import org.jruby.truffle.parser.ast.PostExeNode;
-import org.jruby.truffle.parser.ast.PreExeNode;
-import org.jruby.truffle.parser.ast.StarNode;
-import org.jruby.truffle.parser.ast.UnnamedRestArgNode;
+import org.jruby.truffle.parser.ast.ArgsParseNode;
+import org.jruby.truffle.parser.ast.ArgumentParseNode;
+import org.jruby.truffle.parser.ast.ForParseNode;
+import org.jruby.truffle.parser.ast.IterParseNode;
+import org.jruby.truffle.parser.ast.MultipleAsgnParseNode;
+import org.jruby.truffle.parser.ast.ParseNode;
+import org.jruby.truffle.parser.ast.PostExeParseNode;
+import org.jruby.truffle.parser.ast.PreExeParseNode;
+import org.jruby.truffle.parser.ast.StarParseNode;
+import org.jruby.truffle.parser.ast.UnnamedRestArgParseNode;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.TypeConverter;
@@ -169,32 +169,32 @@ public class Signature {
         return new Signature(pre, opt, post, rest, kwargs, requiredKwargs, restKwargs);
     }
 
-    public static Signature from(ArgsNode args) {
-        ArgumentNode restArg = args.getRestArgNode();
+    public static Signature from(ArgsParseNode args) {
+        ArgumentParseNode restArg = args.getRestArgNode();
         Rest rest = restArg != null ? restFromArg(restArg) : Rest.NONE;
 
         return Signature.from(args.getPreCount(), args.getOptionalArgsCount(), args.getPostCount(),
                 args.getKeywordCount(), args.getRequiredKeywordCount(),rest,args.hasKeyRest());
     }
 
-    public static Signature from(IterNode iter) {
-        if (iter instanceof ForNode) return from((ForNode)iter);
-        if (iter instanceof PreExeNode) return from((PreExeNode)iter);
-        if (iter instanceof PostExeNode) return from((PostExeNode)iter);
+    public static Signature from(IterParseNode iter) {
+        if (iter instanceof ForParseNode) return from((ForParseNode)iter);
+        if (iter instanceof PreExeParseNode) return from((PreExeParseNode)iter);
+        if (iter instanceof PostExeParseNode) return from((PostExeParseNode)iter);
 
-        return from((ArgsNode) iter.getVarNode());
+        return from((ArgsParseNode) iter.getVarNode());
     }
 
-    private static Rest restFromArg(Node restArg) {
+    private static Rest restFromArg(ParseNode restArg) {
         Rest rest;
-        if (restArg instanceof UnnamedRestArgNode) {
-            UnnamedRestArgNode anonRest = (UnnamedRestArgNode) restArg;
+        if (restArg instanceof UnnamedRestArgParseNode) {
+            UnnamedRestArgParseNode anonRest = (UnnamedRestArgParseNode) restArg;
             if (anonRest.isStar()) {
                 rest = Rest.STAR;
             } else {
                 rest = Rest.ANON;
             }
-        } else if (restArg instanceof StarNode) {
+        } else if (restArg instanceof StarParseNode) {
             rest = Rest.STAR;
         } else {
             rest = Rest.NORM;
@@ -202,16 +202,16 @@ public class Signature {
         return rest;
     }
 
-    public static Signature from(ForNode iter) {
-        Node var = iter.getVarNode();
+    public static Signature from(ForParseNode iter) {
+        ParseNode var = iter.getVarNode();
 
-        // ForNode can aggregate either a single node (required = 1) or masgn
-        if (var instanceof MultipleAsgnNode) {
-            MultipleAsgnNode masgn = (MultipleAsgnNode)var;
+        // ForParseNode can aggregate either a single node (required = 1) or masgn
+        if (var instanceof MultipleAsgnParseNode) {
+            MultipleAsgnParseNode masgn = (MultipleAsgnParseNode)var;
 
             Rest rest = Rest.NONE;
             if (masgn.getRest() != null) {
-                Node restArg = masgn.getRest();
+                ParseNode restArg = masgn.getRest();
                 rest = restFromArg(restArg);
             }
             return Signature.from(masgn.getPreCount(), 0, masgn.getPostCount(), 0, 0, rest, false);
@@ -219,11 +219,11 @@ public class Signature {
         return Signature.ONE_ARGUMENT;
     }
 
-    public static Signature from(PreExeNode iter) {
+    public static Signature from(PreExeParseNode iter) {
         return Signature.NO_ARGUMENTS;
     }
 
-    public static Signature from(PostExeNode iter) {
+    public static Signature from(PostExeParseNode iter) {
         return Signature.NO_ARGUMENTS;
     }
 

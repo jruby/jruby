@@ -26,9 +26,9 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.parser;
 
-import org.jruby.truffle.parser.ast.BlockArgNode;
-import org.jruby.truffle.parser.ast.KeywordRestArgNode;
-import org.jruby.truffle.parser.ast.ListNode;
+import org.jruby.truffle.parser.ast.BlockArgParseNode;
+import org.jruby.truffle.parser.ast.KeywordRestArgParseNode;
+import org.jruby.truffle.parser.ast.ListParseNode;
 import org.jruby.truffle.parser.lexer.yacc.ISourcePosition;
 
 /**
@@ -36,12 +36,12 @@ import org.jruby.truffle.parser.lexer.yacc.ISourcePosition;
  */
 public class ArgsTailHolder {
     private ISourcePosition position;
-    private BlockArgNode blockArg;
-    private ListNode keywordArgs;
-    private KeywordRestArgNode keywordRestArg;
+    private BlockArgParseNode blockArg;
+    private ListParseNode keywordArgs;
+    private KeywordRestArgParseNode keywordRestArg;
     
-    public ArgsTailHolder(ISourcePosition position, ListNode keywordArgs,
-            KeywordRestArgNode keywordRestArg, BlockArgNode blockArg) {
+    public ArgsTailHolder(ISourcePosition position, ListParseNode keywordArgs,
+                          KeywordRestArgParseNode keywordRestArg, BlockArgParseNode blockArg) {
         this.position = position;
         this.blockArg = blockArg;
         this.keywordArgs = keywordArgs;
@@ -52,15 +52,15 @@ public class ArgsTailHolder {
         return position;
     }
     
-    public BlockArgNode getBlockArg() {
+    public BlockArgParseNode getBlockArg() {
         return blockArg;
     }
     
-    public ListNode getKeywordArgs() {
+    public ListParseNode getKeywordArgs() {
         return keywordArgs;
     }
     
-    public KeywordRestArgNode getKeywordRestArgNode() {
+    public KeywordRestArgParseNode getKeywordRestArgNode() {
         return keywordRestArg;
     }
     

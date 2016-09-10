@@ -32,6 +32,6 @@ package org.jruby.truffle.parser.ast;
  * Does the node contain an argument list?
  */
 public interface IArgumentNode {
-    public Node getArgsNode();
-    public Node setArgsNode(Node argsNode);
+    public ParseNode getArgsNode();
+    public ParseNode setArgsNode(ParseNode argsNode);
 }

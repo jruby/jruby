@@ -30,13 +30,13 @@ package org.jruby.truffle.parser.scope;
 
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
-import org.jruby.truffle.parser.ast.AssignableNode;
-import org.jruby.truffle.parser.ast.DAsgnNode;
-import org.jruby.truffle.parser.ast.DVarNode;
-import org.jruby.truffle.parser.ast.LocalAsgnNode;
-import org.jruby.truffle.parser.ast.LocalVarNode;
-import org.jruby.truffle.parser.ast.Node;
-import org.jruby.truffle.parser.ast.VCallNode;
+import org.jruby.truffle.parser.ast.AssignableParseNode;
+import org.jruby.truffle.parser.ast.DAsgnParseNode;
+import org.jruby.truffle.parser.ast.DVarParseNode;
+import org.jruby.truffle.parser.ast.LocalAsgnParseNode;
+import org.jruby.truffle.parser.ast.LocalVarParseNode;
+import org.jruby.truffle.parser.ast.ParseNode;
+import org.jruby.truffle.parser.ast.VCallParseNode;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
 import org.jruby.truffle.parser.lexer.yacc.ISourcePosition;
@@ -347,7 +347,7 @@ public class StaticScope implements Serializable {
      * @param value
      * @return
      */
-    public AssignableNode assign(ISourcePosition position, String name, Node value) {
+    public AssignableParseNode assign(ISourcePosition position, String name, ParseNode value) {
         return assign(position, name, value, this, 0);
     }
 
@@ -384,42 +384,42 @@ public class StaticScope implements Serializable {
         }
     }
 
-    public AssignableNode addAssign(ISourcePosition position, String name, Node value) {
+    public AssignableParseNode addAssign(ISourcePosition position, String name, ParseNode value) {
         int slot = addVariable(name);
         // No bit math to store level since we know level is zero for this case
-        return new DAsgnNode(position, name, slot, value);
+        return new DAsgnParseNode(position, name, slot, value);
     }
 
-    public AssignableNode assign(ISourcePosition position, String name, Node value,
-                                 StaticScope topScope, int depth) {
+    public AssignableParseNode assign(ISourcePosition position, String name, ParseNode value,
+                                      StaticScope topScope, int depth) {
         int slot = exists(name);
 
         // We can assign if we already have variable of that name here or we are the only
         // scope in the chain (which Local scopes always are).
         if (slot >= 0) {
-            return isBlockOrEval ? new DAsgnNode(position, name, ((depth << 16) | slot), value)
-                    : new LocalAsgnNode(position, name, ((depth << 16) | slot), value);
+            return isBlockOrEval ? new DAsgnParseNode(position, name, ((depth << 16) | slot), value)
+                    : new LocalAsgnParseNode(position, name, ((depth << 16) | slot), value);
         } else if (!isBlockOrEval && (topScope == this)) {
             slot = addVariable(name);
 
-            return new LocalAsgnNode(position, name, slot, value);
+            return new LocalAsgnParseNode(position, name, slot, value);
         }
 
         // If we are not a block-scope and we go there, we know that 'topScope' is a block scope
         // because a local scope cannot be within a local scope
-        // If topScope was itself it would have created a LocalAsgnNode above.
+        // If topScope was itself it would have created a LocalAsgnParseNode above.
         return isBlockOrEval ? enclosingScope.assign(position, name, value, topScope, depth + 1)
                 : topScope.addAssign(position, name, value);
     }
 
-    public Node declare(ISourcePosition position, String name, int depth) {
+    public ParseNode declare(ISourcePosition position, String name, int depth) {
         int slot = exists(name);
 
         if (slot >= 0) {
-            return isBlockOrEval ? new DVarNode(position, ((depth << 16) | slot), name) : new LocalVarNode(position, ((depth << 16) | slot), name);
+            return isBlockOrEval ? new DVarParseNode(position, ((depth << 16) | slot), name) : new LocalVarParseNode(position, ((depth << 16) | slot), name);
         }
 
-        return isBlockOrEval ? enclosingScope.declare(position, name, depth + 1) : new VCallNode(position, name);
+        return isBlockOrEval ? enclosingScope.declare(position, name, depth + 1) : new VCallParseNode(position, name);
     }
 
     /**
@@ -427,9 +427,9 @@ public class StaticScope implements Serializable {
      *
      * @param position the location that in the source that the new node will come from
      * @param name     of the variable to be created is named
-     * @return a DVarNode or LocalVarNode
+     * @return a DVarParseNode or LocalVarParseNode
      */
-    public Node declare(ISourcePosition position, String name) {
+    public ParseNode declare(ISourcePosition position, String name) {
         return declare(position, name, 0);
     }
 

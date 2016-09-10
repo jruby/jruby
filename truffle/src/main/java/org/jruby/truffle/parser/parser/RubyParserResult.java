@@ -31,8 +31,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.parser;
 
-import org.jruby.truffle.parser.ast.Node;
-import org.jruby.truffle.parser.ast.PreExeNode;
+import org.jruby.truffle.parser.ast.ParseNode;
+import org.jruby.truffle.parser.ast.PreExeParseNode;
 import org.jruby.truffle.parser.scope.DynamicScope;
 
 import java.util.ArrayList;
@@ -41,15 +41,15 @@ import java.util.List;
 /**
  */
 public class RubyParserResult {
-    final public static List<Node> EMPTY_BEGIN_LIST = new ArrayList<Node>();
+    final public static List<ParseNode> EMPTY_BEGIN_LIST = new ArrayList<ParseNode>();
 
-    private List<Node> beginNodes;
-    private Node ast;
+    private List<ParseNode> beginNodes;
+    private ParseNode ast;
     // __END__ marker offset (-1 means none present)
     private int endOffset = -1;
     private DynamicScope scope;
     
-    public Node getAST() {
+    public ParseNode getAST() {
         return ast;
     }
     
@@ -65,16 +65,16 @@ public class RubyParserResult {
      * Sets the ast.
      * @param ast The ast to set
      */
-    public void setAST(Node ast) {
+    public void setAST(ParseNode ast) {
         this.ast = ast;
     }
     
-    public void addBeginNode(PreExeNode node) {
-        if (beginNodes == null) beginNodes = new ArrayList<Node>();
+    public void addBeginNode(PreExeParseNode node) {
+        if (beginNodes == null) beginNodes = new ArrayList<ParseNode>();
     	beginNodes.add(node);
     }
     
-    public List<Node> getBeginNodes() {
+    public List<ParseNode> getBeginNodes() {
         return beginNodes == null ? EMPTY_BEGIN_LIST : beginNodes;
     }
     
