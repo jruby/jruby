@@ -15,11 +15,8 @@ import org.jruby.JRubyTruffleInterface;
 import org.jruby.Ruby;
 import org.jruby.truffle.interop.JRubyContextWrapper;
 import org.jruby.truffle.language.control.ExitException;
-import org.jruby.truffle.language.control.JavaException;
 import org.jruby.truffle.platform.graal.Graal;
 import org.jruby.util.cli.Options;
-
-import java.io.IOException;
 
 public class JRubyTruffleImpl implements JRubyTruffleInterface {
 

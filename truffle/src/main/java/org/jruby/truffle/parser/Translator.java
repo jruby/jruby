@@ -13,7 +13,6 @@ import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
-
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.InvalidSourcePosition;
 import org.jruby.truffle.RubyContext;

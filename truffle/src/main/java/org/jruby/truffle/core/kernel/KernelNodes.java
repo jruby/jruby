@@ -36,9 +36,7 @@ import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
-
 import jnr.constants.platform.Errno;
-
 import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.common.IRubyWarnings;
@@ -138,8 +136,8 @@ import org.jruby.truffle.language.objects.TaintNodeGen;
 import org.jruby.truffle.language.objects.WriteObjectFieldNode;
 import org.jruby.truffle.language.objects.WriteObjectFieldNodeGen;
 import org.jruby.truffle.language.parser.ParserContext;
-import org.jruby.truffle.parser.TranslatorDriver;
 import org.jruby.truffle.language.threadlocal.ThreadLocalObject;
+import org.jruby.truffle.parser.TranslatorDriver;
 import org.jruby.truffle.platform.UnsafeGroup;
 import org.jruby.truffle.util.StringUtils;
 

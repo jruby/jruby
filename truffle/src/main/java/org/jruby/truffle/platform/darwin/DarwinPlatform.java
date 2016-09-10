@@ -33,7 +33,6 @@ import org.jruby.truffle.platform.signal.SignalManager;
 import org.jruby.truffle.platform.sunmisc.SunMiscSignalManager;
 import org.jruby.truffle.platform.sunmisc.SunMiscUnsafeSimpleNativeMemoryManager;
 import org.jruby.util.unsafe.UnsafeHolder;
-import sun.misc.Unsafe;
 
 public class DarwinPlatform implements NativePlatform {
 

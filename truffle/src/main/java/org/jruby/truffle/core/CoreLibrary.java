@@ -21,9 +21,7 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.object.Layout;
 import com.oracle.truffle.api.object.Property;
-
 import jnr.constants.platform.Errno;
-
 import org.jcodings.EncodingDB;
 import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.transcode.EConvFlags;

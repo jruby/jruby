@@ -33,7 +33,6 @@ import org.jruby.truffle.language.RubySourceSection;
 import org.jruby.truffle.language.arguments.MissingArgumentBehavior;
 import org.jruby.truffle.language.arguments.ProfileArgumentNode;
 import org.jruby.truffle.language.arguments.ReadPreArgumentNode;
-import org.jruby.truffle.language.arguments.ReadSelfNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.exceptions.TopLevelRaiseHandler;
@@ -44,7 +43,6 @@ import org.jruby.truffle.language.methods.CatchRetryAsErrorNode;
 import org.jruby.truffle.language.methods.CatchReturnAsErrorNode;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.methods.SharedMethodInfo;
-import org.jruby.truffle.language.objects.SelfNode;
 import org.jruby.truffle.language.parser.Parser;
 import org.jruby.truffle.language.parser.ParserContext;
 

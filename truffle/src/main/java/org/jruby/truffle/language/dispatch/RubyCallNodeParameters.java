@@ -9,10 +9,9 @@
  */
 package org.jruby.truffle.language.dispatch;
 
+import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
-
-import com.oracle.truffle.api.source.SourceSection;
 
 public class RubyCallNodeParameters {
 

@@ -9,9 +9,10 @@
  */
 package org.jruby.truffle.core;
 
-import java.util.Arrays;
-import java.util.List;
-
+import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.dsl.NodeFactory;
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.ExplodeLoop;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreMethodNodeManager;
 import org.jruby.truffle.core.array.ArrayUtils;
@@ -22,10 +23,8 @@ import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.methods.LookupMethodNode;
 import org.jruby.truffle.language.methods.LookupMethodNodeGen;
 
-import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.dsl.NodeFactory;
-import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.nodes.ExplodeLoop;
+import java.util.Arrays;
+import java.util.List;
 
 public class InlinedCoreMethodNode extends RubyNode {
 

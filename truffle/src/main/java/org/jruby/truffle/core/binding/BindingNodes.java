@@ -35,8 +35,8 @@ import org.jruby.truffle.language.locals.ReadFrameSlotNodeGen;
 import org.jruby.truffle.language.locals.WriteFrameSlotNode;
 import org.jruby.truffle.language.locals.WriteFrameSlotNodeGen;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
-import org.jruby.truffle.parser.Translator;
 import org.jruby.truffle.language.threadlocal.ThreadLocalObject;
+import org.jruby.truffle.parser.Translator;
 
 import java.util.ArrayList;
 import java.util.List;

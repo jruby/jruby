@@ -38,7 +38,6 @@ import org.jruby.truffle.language.arguments.ReadOptionalArgumentNode;
 import org.jruby.truffle.language.arguments.ReadPostArgumentNode;
 import org.jruby.truffle.language.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.language.arguments.ReadRestArgumentNode;
-import org.jruby.truffle.language.arguments.ReadSelfNode;
 import org.jruby.truffle.language.arguments.RunBlockKWArgsHelperNode;
 import org.jruby.truffle.language.control.IfElseNode;
 import org.jruby.truffle.language.control.IfNode;
@@ -46,7 +45,6 @@ import org.jruby.truffle.language.literal.NilLiteralNode;
 import org.jruby.truffle.language.locals.LocalVariableType;
 import org.jruby.truffle.language.locals.ReadLocalVariableNode;
 import org.jruby.truffle.language.locals.WriteLocalVariableNode;
-import org.jruby.truffle.language.objects.SelfNode;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;

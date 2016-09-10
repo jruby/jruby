@@ -11,17 +11,13 @@ package org.jruby.truffle.language.dispatch;
 
 import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.frame.Frame;
-import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyGuards;
-import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.methods.InternalMethod;
-import org.jruby.truffle.language.methods.LookupMethodNode;
 
 import java.util.concurrent.Callable;
 

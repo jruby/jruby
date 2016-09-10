@@ -15,7 +15,6 @@ import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
-
 import org.jcodings.specific.UTF8Encoding;
 import org.joni.NameEntry;
 import org.joni.Regex;

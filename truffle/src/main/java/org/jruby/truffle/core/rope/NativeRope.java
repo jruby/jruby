@@ -12,7 +12,6 @@ package org.jruby.truffle.core.rope;
 import org.jcodings.Encoding;
 import org.jruby.truffle.platform.NativePointer;
 import org.jruby.truffle.platform.SimpleNativeMemoryManager;
-import org.jruby.util.unsafe.UnsafeHolder;
 
 public class NativeRope extends Rope {
 
