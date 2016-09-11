@@ -246,6 +246,7 @@ import org.jruby.truffle.parser.ast.StarParseNode;
 import org.jruby.truffle.parser.ast.StrParseNode;
 import org.jruby.truffle.parser.ast.SymbolParseNode;
 import org.jruby.truffle.parser.ast.TrueParseNode;
+import org.jruby.truffle.parser.ast.TruffleFragmentParseNode;
 import org.jruby.truffle.parser.ast.UndefParseNode;
 import org.jruby.truffle.parser.ast.UntilParseNode;
 import org.jruby.truffle.parser.ast.VCallParseNode;
@@ -3235,6 +3236,11 @@ public class BodyTranslator extends Translator {
         } else {
             return namedMethodName;
         }
+    }
+
+    @Override
+    public RubyNode visitTruffleFragmentNode(TruffleFragmentParseNode node) {
+        return addNewlineIfNeeded(node, node.getFragment());
     }
 
     @Override

@@ -123,6 +123,7 @@ import org.jruby.truffle.parser.ast.StrParseNode;
 import org.jruby.truffle.parser.ast.SuperParseNode;
 import org.jruby.truffle.parser.ast.SymbolParseNode;
 import org.jruby.truffle.parser.ast.TrueParseNode;
+import org.jruby.truffle.parser.ast.TruffleFragmentParseNode;
 import org.jruby.truffle.parser.ast.UndefParseNode;
 import org.jruby.truffle.parser.ast.UntilParseNode;
 import org.jruby.truffle.parser.ast.VAliasParseNode;
@@ -691,6 +692,11 @@ public abstract class AbstractNodeVisitor<T> implements NodeVisitor<T> {
 
     @Override
     public T visitZSuperNode(ZSuperParseNode node) {
+        return defaultVisit(node);
+    }
+
+    @Override
+    public T visitTruffleFragmentNode(TruffleFragmentParseNode node) {
         return defaultVisit(node);
     }
 

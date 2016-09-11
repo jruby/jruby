@@ -128,6 +128,7 @@ import org.jruby.truffle.parser.ast.StrParseNode;
 import org.jruby.truffle.parser.ast.SuperParseNode;
 import org.jruby.truffle.parser.ast.SymbolParseNode;
 import org.jruby.truffle.parser.ast.TrueParseNode;
+import org.jruby.truffle.parser.ast.TruffleFragmentParseNode;
 import org.jruby.truffle.parser.ast.UndefParseNode;
 import org.jruby.truffle.parser.ast.UntilParseNode;
 import org.jruby.truffle.parser.ast.VAliasParseNode;
@@ -253,5 +254,6 @@ public interface NodeVisitor<T> {
     T visitYieldNode(YieldParseNode iVisited);
     T visitZArrayNode(ZArrayParseNode iVisited);
     T visitZSuperNode(ZSuperParseNode iVisited);
+    T visitTruffleFragmentNode(TruffleFragmentParseNode iVisited);
     T visitOther(ParseNode iVisited);
 }
