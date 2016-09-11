@@ -30,20 +30,21 @@ import org.jruby.RubyInstanceConfig;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.common.RubyWarnings;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.util.collections.NonBlockingHashMapLong;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
  * This is a collection af all methods which will be profiled.
- * Current it's just a wrapper for a {@link java.util.concurrent.ConcurrentMap},
+ * Current it's just a wrapper for a {@link NonBlockingHashMapLong},
  * but the implementation can be changed in the future without changing the interface.
  *
  * @author Andre Kullmann
  */
 public class ProfiledMethods {
 
-    private final ConcurrentMap<Long,ProfiledMethod> methods;
+    private final NonBlockingHashMapLong<ProfiledMethod> methods;
 
     private final Ruby runtime;
 
@@ -54,7 +55,7 @@ public class ProfiledMethods {
 
         this.runtime = runtime;
         // TODO is 10000 a good value ?
-        this.methods = new ConcurrentHashMap<Long,ProfiledMethod>(10000);
+        this.methods = new NonBlockingHashMapLong<>(10000);
     }
 
     private Ruby getRuntime() {
