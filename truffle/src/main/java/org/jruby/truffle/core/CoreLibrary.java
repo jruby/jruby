@@ -274,6 +274,9 @@ public class CoreLibrary {
     @CompilationFinal private DynamicObject eagainWaitReadable;
     @CompilationFinal private DynamicObject eagainWaitWritable;
 
+    @CompilationFinal private ArrayNodes.MinBlock arrayMinBlock;
+    @CompilationFinal private ArrayNodes.MaxBlock arrayMaxBlock;
+
     private final Map<Errno, DynamicObject> errnoClasses = new HashMap<>();
 
     @CompilationFinal private InternalMethod basicObjectSendMethod;
@@ -677,6 +680,9 @@ public class CoreLibrary {
     }
 
     public void addCoreMethods(PrimitiveManager primitiveManager) {
+        arrayMinBlock = new ArrayNodes.MinBlock(context);
+        arrayMaxBlock = new ArrayNodes.MaxBlock(context);
+
         final CoreMethodNodeManager coreMethodNodeManager =
                 new CoreMethodNodeManager(context, node.getSingletonClassNode(), primitiveManager);
 
@@ -1331,6 +1337,14 @@ public class CoreLibrary {
 
     public DynamicObject getENV() {
         return (DynamicObject) Layouts.MODULE.getFields(objectClass).getConstant("ENV").getValue();
+    }
+
+    public ArrayNodes.MinBlock getArrayMinBlock() {
+        return arrayMinBlock;
+    }
+
+    public ArrayNodes.MaxBlock getArrayMaxBlock() {
+        return arrayMaxBlock;
     }
 
     public DynamicObject getNumericClass() {
