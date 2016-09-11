@@ -165,6 +165,8 @@ public interface Tokens {
     int tSTRING_DEND = RubyParser.tSTRING_DEND;
     int tCHAR = RubyParser.tCHAR;
     int tANDDOT = RubyParser.tANDDOT;
+
+    int tJAVASCRIPT = RubyParser.tJAVASCRIPT;
     
     String[] operators = {"+@", "-@", "**", "<=>", "==", "===", "!=", ">=", "<=", "&&",
                           "||", "=~", "!~", "..", "...", "[]", "[]=", "<<", ">>", "::"};

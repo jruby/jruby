@@ -35,6 +35,7 @@ import static org.jruby.util.cli.Options.TRUFFLE_EXCEPTIONS_PRINT_JAVA;
 import static org.jruby.util.cli.Options.TRUFFLE_EXCEPTIONS_PRINT_UNCAUGHT_JAVA;
 import static org.jruby.util.cli.Options.TRUFFLE_EXCEPTIONS_STORE_JAVA;
 import static org.jruby.util.cli.Options.TRUFFLE_HASH_PACKED_ARRAY_MAX;
+import static org.jruby.util.cli.Options.TRUFFLE_INLINE_JS;
 import static org.jruby.util.cli.Options.TRUFFLE_INLINE_NEEDS_CALLER_FRAME;
 import static org.jruby.util.cli.Options.TRUFFLE_INSTANCE_VARIABLE_CACHE;
 import static org.jruby.util.cli.Options.TRUFFLE_INSTRUMENTATION_SERVER_PORT;
@@ -89,6 +90,7 @@ public class Options {
     // Features
 
     public final boolean COVERAGE_GLOBAL = TRUFFLE_COVERAGE_GLOBAL.load();
+    public final boolean INLINE_JS = TRUFFLE_INLINE_JS.load();
 
     // Resources
 

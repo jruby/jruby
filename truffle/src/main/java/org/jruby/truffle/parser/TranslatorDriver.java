@@ -66,7 +66,7 @@ public class TranslatorDriver {
     public RubyRootNode parse(RubyContext context, Source source, Encoding defaultEncoding, ParserContext parserContext, String[] argumentNames, FrameDescriptor frameDescriptor, MaterializedFrame parentFrame, boolean ownScopeForAssignments, Node currentNode) {
         // Set up the JRuby parser
 
-        final org.jruby.truffle.parser.parser.Parser parser = new org.jruby.truffle.parser.parser.Parser(context.getJRubyRuntime());
+        final org.jruby.truffle.parser.parser.Parser parser = new org.jruby.truffle.parser.parser.Parser(context);
 
         final StaticScopeFactory staticScopeFactory = new StaticScopeFactory(context.getJRubyRuntime());
         final StaticScope staticScope = staticScopeFactory.newLocalScope(null);

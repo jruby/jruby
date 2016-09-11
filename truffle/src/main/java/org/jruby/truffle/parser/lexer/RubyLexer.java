@@ -32,6 +32,14 @@
  * and other provisions required by the GPL or the LGPL. If you do not delete
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
+ *
+ * Copyright (c) 2016 Oracle and/or its affiliates. All rights reserved. This
+ * code is released under a tri EPL/GPL/LGPL license. You can use it,
+ * redistribute it and/or modify it under the terms of the:
+ *
+ * Eclipse Public License version 1.0
+ * GNU General Public License version 2
+ * GNU Lesser General Public License version 2.1
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.lexer;
 
@@ -1536,7 +1544,65 @@ public class RubyLexer extends LexingCommon {
             setState(EXPR_END);
         }
 
-        return identifierToken(result, tempVal.intern());
+        tempVal = tempVal.intern();
+
+        if (tempVal.equals("function") && parserSupport.getContext().getOptions().INLINE_JS) {
+            return javaScript(tempVal);
+        }
+
+        return identifierToken(result, tempVal);
+    }
+
+    private int javaScript(String keyword) {
+        if (!Character.isWhitespace(p(lex_p))) {
+            return identifierToken(Tokens.tIDENTIFIER, keyword);
+        }
+
+        int length = 0;
+
+        while (Character.isWhitespace(p(lex_p + length))) {
+            length++;
+        }
+
+        if (!Character.isJavaIdentifierStart(p(lex_p + length))) {
+            return identifierToken(Tokens.tIDENTIFIER, keyword);
+        }
+
+        length++;
+
+        while (Character.isJavaIdentifierPart(p(lex_p + length))) {
+            length++;
+        }
+
+        if (p(lex_p + length) != '(') {
+            return identifierToken(Tokens.tIDENTIFIER, keyword);
+        }
+
+        length++;
+
+        // Commmit
+
+        // TODO CS 11-09-16 nesting, strings, escaping etc
+
+        while (p(lex_p + length) != '{') {
+            length++;
+        }
+
+        while (p(lex_p + length) != '}') {
+            length++;
+        }
+
+        length++;
+
+        final StringBuilder builder = new StringBuilder();
+        builder.append(keyword);
+
+        for (int n = 0; n < length; n++) {
+            builder.append((char) nextc());
+        }
+
+        yaccValue = builder.toString();
+        return Tokens.tJAVASCRIPT;
     }
 
     private int leftBracket(boolean spaceSeen) throws IOException {

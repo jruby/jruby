@@ -42,6 +42,7 @@ import org.jruby.common.IRubyWarnings;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.ext.coverage.CoverageData;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.parser.Signature;
 import org.jruby.truffle.parser.ast.AliasParseNode;
 import org.jruby.truffle.parser.ast.AndParseNode;
@@ -162,6 +163,16 @@ public class ParserSupport {
 
     protected ParserConfiguration configuration;
     private RubyParserResult result;
+
+    private final RubyContext context;
+
+    public ParserSupport(RubyContext context) {
+        this.context = context;
+    }
+
+    public RubyContext getContext() {
+        return context;
+    }
 
     public void reset() {
         inSingleton = 0;

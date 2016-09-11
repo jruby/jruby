@@ -324,6 +324,7 @@ public class BodyTranslator extends Translator {
 
     public BodyTranslator(com.oracle.truffle.api.nodes.Node currentNode, RubyContext context, BodyTranslator parent, TranslatorEnvironment environment, Source source, boolean topLevel) {
         super(currentNode, context, source);
+        parserSupport = new ParserSupport(context);
         this.parent = parent;
         this.environment = environment;
     }
@@ -1622,11 +1623,11 @@ public class BodyTranslator extends Translator {
         return addNewlineIfNeeded(node, translated);
     }
 
-    private static final ParserSupport PARSER_SUPPORT = new ParserSupport();
+    private final ParserSupport parserSupport;
 
-    private static ParseNode setRHS(ParseNode node, ParseNode rhs) {
+    private ParseNode setRHS(ParseNode node, ParseNode rhs) {
         if (node instanceof AssignableParseNode || node instanceof org.jruby.truffle.parser.ast.IArgumentNode) {
-            return PARSER_SUPPORT.node_assign(node, rhs);
+            return parserSupport.node_assign(node, rhs);
         } else {
             throw new UnsupportedOperationException("Don't know how to set the RHS of a " + node.getClass().getName());
         }

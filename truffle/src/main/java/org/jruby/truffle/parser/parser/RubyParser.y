@@ -25,11 +25,21 @@
  * and other provisions required by the GPL or the LGPL. If you do not delete
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
+ *
+ * Copyright (c) 2016 Oracle and/or its affiliates. All rights reserved. This
+ * code is released under a tri EPL/GPL/LGPL license. You can use it,
+ * redistribute it and/or modify it under the terms of the:
+ *
+ * Eclipse Public License version 1.0
+ * GNU General Public License version 2
+ * GNU Lesser General Public License version 2.1
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.parser;
 
 import org.jruby.common.IRubyWarnings;
 import org.jruby.common.IRubyWarnings.ID;
+import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.interop.ForeignCodeNode;
 import org.jruby.truffle.parser.ast.ArgsParseNode;
 import org.jruby.truffle.parser.ast.ArgumentParseNode;
 import org.jruby.truffle.parser.ast.ArrayParseNode;
@@ -99,6 +109,7 @@ import org.jruby.truffle.parser.ast.SelfParseNode;
 import org.jruby.truffle.parser.ast.StarParseNode;
 import org.jruby.truffle.parser.ast.StrParseNode;
 import org.jruby.truffle.parser.ast.TrueParseNode;
+import org.jruby.truffle.parser.ast.TruffleFragmentParseNode;
 import org.jruby.truffle.parser.ast.UnnamedRestArgParseNode;
 import org.jruby.truffle.parser.ast.UntilParseNode;
 import org.jruby.truffle.parser.ast.VAliasParseNode;
@@ -128,26 +139,14 @@ import static org.jruby.truffle.parser.lexer.LexingCommon.EXPR_FNAME;
 import static org.jruby.truffle.parser.lexer.LexingCommon.EXPR_LABEL;
  
 public class RubyParser {
-    protected ParserSupport support;
-    protected RubyLexer lexer;
+    protected final ParserSupport support;
+    protected final RubyLexer lexer;
 
-    public RubyParser(LexerSource source, IRubyWarnings warnings) {
-        this.support = new ParserSupport();
+    public RubyParser(RubyContext context, LexerSource source, IRubyWarnings warnings) {
+        this.support = new ParserSupport(context);
         this.lexer = new RubyLexer(support, source, warnings);
         support.setLexer(lexer);
         support.setWarnings(warnings);
-    }
-
-    @Deprecated
-    public RubyParser(LexerSource source) {
-        this(new ParserSupport(), source);
-    }
-
-    @Deprecated
-    public RubyParser(ParserSupport support, LexerSource source) {
-        this.support = support;
-        lexer = new RubyLexer(support, source);
-        support.setLexer(lexer);
     }
 
     public void setWarnings(IRubyWarnings warnings) {
@@ -220,6 +219,8 @@ public class RubyParser {
 %token <FloatParseNode> tFLOAT  
 %token <RationalParseNode> tRATIONAL
 %token <RegexpParseNode>  tREGEXP_END
+%token <String> tJAVASCRIPT
+
 %type <RestArgParseNode> f_rest_arg
 %type <ParseNode> singleton strings string string1 xstring regexp
 %type <ParseNode> string_contents xstring_contents method_call
@@ -507,6 +508,9 @@ stmt            : kALIAS fitem {
                     $<AssignableParseNode>1.setValueNode($3);
                     $$ = $1;
                     $1.setPosition(support.getPosition($1));
+                }
+                | tJAVASCRIPT {
+                    $$ = new TruffleFragmentParseNode(lexer.getPosition(), false, new ForeignCodeNode(support.getContext(), "application/javascript", $1));
                 }
                 | expr
 
