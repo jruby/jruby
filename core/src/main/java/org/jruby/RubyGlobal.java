@@ -121,7 +121,7 @@ public class RubyGlobal {
         IRubyObject engine = runtime.newString(Constants.ENGINE).freeze(context);
 
         version = runtime.newString(Constants.RUBY_VERSION).freeze(context);
-        patchlevel = runtime.newFixnum(Constants.RUBY_PATCHLEVEL);
+        patchlevel = runtime.newFixnum(0);
         runtime.defineGlobalConstant("RUBY_VERSION", version);
         runtime.defineGlobalConstant("RUBY_PATCHLEVEL", patchlevel);
         runtime.defineGlobalConstant("RUBY_RELEASE_DATE", release);

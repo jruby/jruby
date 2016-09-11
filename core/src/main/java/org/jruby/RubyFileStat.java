@@ -50,7 +50,6 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.FileResource;
 import org.jruby.util.JRubyFile;
-import org.jruby.util.JRubyNonExistentFile;
 import org.jruby.util.StringSupport;
 
 /**

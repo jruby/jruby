@@ -3471,7 +3471,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
             RubyArray args = runtime.newArray( ((RubyArray) v).size() + 1 );
             args.push(path);
-            args.concat19(v);
+            args.concat(v);
 
             return RubyKernel.open19(context, recv, args.toJavaArray(), Block.NULL_BLOCK);
         }

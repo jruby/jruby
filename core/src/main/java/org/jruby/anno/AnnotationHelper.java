@@ -42,7 +42,7 @@ public class AnnotationHelper {
      * Produce a CallConfiguration name that represents what *caller* methods must prepare for
      * the method with this annotation.
      *
-     * @see org.jruby.internal.runtime.methods.CallConfiguration#getCallerCallConfigNameByAnno(JRubyMethod)
+     * @see org.jruby.internal.runtime.methods.CallConfiguration#getCallerCallConfigByAnno(JRubyMethod)
      */
     public static String getCallerCallConfigNameByAnno(JRubyMethod jrubyMethod) {
         boolean frame = false;
@@ -58,16 +58,6 @@ public class AnnotationHelper {
         }
         return getCallConfigName(frame, scope);
     }
-
-    /**
-     * Produce a CallConfiguration name that represents what must be prepared around calls to
-     * the method with this annotation.
-     *
-     * @see org.jruby.internal.runtime.methods.CallConfiguration#getCallConfigByAnno(JRubyMethod)
-     */
-	public static String getCallConfigNameByAnno(JRubyMethod jrubyMethod) {
-        return getCallConfigName(jrubyMethod.frame(), jrubyMethod.scope());
-	}
 
     /**
      * Given a frame and scope requirement, return the name of the appropriate CallConfiguration.

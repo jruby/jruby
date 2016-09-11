@@ -629,6 +629,7 @@ public class RubyRandom extends RubyObject {
     }
 
     // c: random_equal
+    @Deprecated
     @Override
     @JRubyMethod(name = "==", required = 1)
     public IRubyObject op_equal_19(ThreadContext context, IRubyObject obj) {

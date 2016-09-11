@@ -149,10 +149,12 @@ public class RaiseException extends JumpException {
         setStackTrace(RaiseException.javaTraceFromRubyTrace(exception.getBacktraceElements()));
     }
 
+    @Deprecated
     public static RaiseException createNativeRaiseException(Ruby runtime, Throwable cause) {
         return createNativeRaiseException(runtime, cause, null);
     }
 
+    @Deprecated
     public static RaiseException createNativeRaiseException(Ruby runtime, Throwable cause, Member target) {
         NativeException nativeException = new NativeException(runtime, runtime.getNativeException(), cause);
 

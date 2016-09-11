@@ -337,6 +337,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
             return method.toString();
         }
 
+        @Deprecated
         public Object defaultResult() {
             final Class returnType = method.getReturnType();
 
