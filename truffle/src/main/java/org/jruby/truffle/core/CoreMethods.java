@@ -12,6 +12,7 @@ package org.jruby.truffle.core;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.core.numeric.FixnumNodesFactory;
+import org.jruby.truffle.language.Options;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.dispatch.RubyCallNode;
 import org.jruby.truffle.language.dispatch.RubyCallNodeParameters;
@@ -40,7 +41,7 @@ public class CoreMethods {
     }
 
     public RubyNode createCallNode(RubyCallNodeParameters callParameters) {
-        if (callParameters.getBlock() != null || callParameters.isSplatted() || callParameters.isSafeNavigation()) {
+        if (!Options.BASICOPS_INLINE || callParameters.getBlock() != null || callParameters.isSplatted() || callParameters.isSafeNavigation()) {
             return new RubyCallNode(callParameters);
         }
 

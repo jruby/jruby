@@ -71,6 +71,7 @@ import static org.jruby.util.cli.Options.TRUFFLE_UNPACK_CACHE;
 import static org.jruby.util.cli.Options.TRUFFLE_YIELD_ALWAYS_CLONE;
 import static org.jruby.util.cli.Options.TRUFFLE_YIELD_ALWAYS_INLINE;
 import static org.jruby.util.cli.Options.TRUFFLE_YIELD_CACHE;
+import static org.jruby.util.cli.Options.TRUFFLE_BASICOPS_INLINE;
 
 public class Options {
 
@@ -158,6 +159,7 @@ public class Options {
     public final boolean BACKTRACES_INTERLEAVE_JAVA = TRUFFLE_BACKTRACES_INTERLEAVE_JAVA.load();
     public final int BACKTRACES_LIMIT = TRUFFLE_BACKTRACES_LIMIT.load();
     public final boolean BACKTRACES_OMIT_UNUSED = TRUFFLE_BACKTRACES_OMIT_UNUSED.load();
+    public static final boolean BASICOPS_INLINE = TRUFFLE_BASICOPS_INLINE.load();
 
     // Call graph
 
