@@ -2,7 +2,6 @@ package org.jruby.util;
 
 import jnr.constants.platform.Errno;
 import jnr.posix.FileStat;
-import jnr.posix.POSIX;
 import org.jruby.util.io.ModeFlags;
 import java.io.InputStream;
 
