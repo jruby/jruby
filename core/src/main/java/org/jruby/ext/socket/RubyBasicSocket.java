@@ -266,8 +266,21 @@ public class RubyBasicSocket extends RubyIO {
                 }
 
                 int value = SocketType.forChannel(channel).getSocketOption(channel, opt);
+                ByteList packedValue;
 
-                return new Option(runtime, ProtocolFamily.PF_INET, level, opt, value);
+                if (opt == SocketOption.SO_LINGER) {
+                    if (value == -1) {
+                        // Hardcode to 0, because Java Socket API drops actual value
+                        // if lingering is disabled
+                        packedValue = Option.packLinger(0, 0);
+                    } else {
+                        packedValue = Option.packLinger(1, value);
+                    }
+                } else {
+                    packedValue = Option.packInt(value);
+                }
+
+                return new Option(runtime, ProtocolFamily.PF_INET, level, opt, packedValue);
 
             default:
                 throw runtime.newErrnoENOPROTOOPTError();
@@ -275,6 +288,16 @@ public class RubyBasicSocket extends RubyIO {
         }
         catch (IOException e) {
             throw runtime.newErrnoENOPROTOOPTError();
+        }
+    }
+
+    @JRubyMethod
+    public IRubyObject setsockopt(ThreadContext context, IRubyObject option) {
+        if (option instanceof Option) {
+            Option rsockopt = (Option) option;
+            return setsockopt(context, rsockopt.level(context), rsockopt.optname(context), rsockopt.data(context));
+        } else {
+            throw context.runtime.newArgumentError(option.toString() + " is not a Socket::Option");
         }
     }
 
@@ -297,17 +320,12 @@ public class RubyBasicSocket extends RubyIO {
             case SOL_UDP:
 
                 if (opt == SocketOption.SO_LINGER) {
-                    if(val instanceof RubyBoolean && !val.isTrue()) {
-                        socketType.setSoLinger(channel, false, 0);
+                    if (val instanceof RubyString) {
+                        int[] linger = Option.unpackLinger(val.convertToString().getByteList());
+                        socketType.setSoLinger(channel, linger[0] != 0, linger[1]);
                     } else {
-                        int num = asNumber(val);
-                        if(num == -1) {
-                            socketType.setSoLinger(channel, false, 0);
-                        } else {
-                            socketType.setSoLinger(channel, true, num);
-                        }
+                        throw runtime.newErrnoEINVALError("setsockopt(2)");
                     }
-
                 } else {
                     socketType.setSocketOption(channel, opt, asNumber(val));
                 }

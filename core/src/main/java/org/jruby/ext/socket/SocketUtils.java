@@ -46,6 +46,7 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.TypeConverter;
 import org.jruby.util.io.Sockaddr;
 
 import java.net.Inet6Address;
@@ -569,82 +570,129 @@ public class SocketUtils {
     private static final byte[] INADDR_ANY = new byte[] {0,0,0,0}; // 0.0.0.0
 
     static AddressFamily addressFamilyFromArg(IRubyObject domain) {
-        AddressFamily addressFamily = null;
+        IRubyObject maybeString = TypeConverter.checkStringType(domain.getRuntime(), domain);
 
-        if(domain instanceof RubyString || domain instanceof RubySymbol) {
-            String domainString = domain.toString();
-            if (!domainString.startsWith("AF_")) domainString = "AF_" + domainString;
-            addressFamily = AddressFamily.valueOf(domainString);
-        } else {
-            int domainInt = RubyNumeric.fix2int(domain);
-            addressFamily = AddressFamily.valueOf(domainInt);
+        if (!maybeString.isNil()) {
+            domain = maybeString;
         }
 
-        return addressFamily;
+        try {
+            if (domain instanceof RubyString || domain instanceof RubySymbol) {
+                String domainString = domain.toString();
+                if (domainString.startsWith("AF_")) return AddressFamily.valueOf(domainString);
+                if (domainString.startsWith("PF_"))
+                    return AddressFamily.valueOf(ProtocolFamily.valueOf(domainString).intValue());
+                return AddressFamily.valueOf("AF_" + domainString);
+            }
+
+            int domainInt = RubyNumeric.fix2int(domain);
+            return AddressFamily.valueOf(domainInt);
+        } catch (IllegalArgumentException iae) {
+            throw SocketUtils.sockerr(domain.getRuntime(), "invalid address family: " + domain);
+        }
     }
 
     static Sock sockFromArg(IRubyObject type) {
-        Sock sockType = null;
+        IRubyObject maybeString = TypeConverter.checkStringType(type.getRuntime(), type);
 
-        if(type instanceof RubyString || type instanceof RubySymbol) {
-            String typeString = type.toString();
-            if (!typeString.startsWith("SOCK_")) typeString = "SOCK_" + typeString;
-            sockType = Sock.valueOf(typeString);
-        } else {
-            int typeInt = RubyNumeric.fix2int(type);
-            sockType = Sock.valueOf(typeInt);
+        if (!maybeString.isNil()) {
+            type = maybeString;
         }
 
-        return sockType;
+        try {
+            if(type instanceof RubyString || type instanceof RubySymbol) {
+                String typeString = type.toString();
+                if (typeString.startsWith("SOCK_")) return Sock.valueOf(typeString.toString());
+                return Sock.valueOf("SOCK_" + typeString);
+            }
+
+            int typeInt = RubyNumeric.fix2int(type);
+            return Sock.valueOf(typeInt);
+        } catch (IllegalArgumentException iae) {
+            throw SocketUtils.sockerr(type.getRuntime(), "invalid socket type: " + type);
+        }
     }
 
     static ProtocolFamily protocolFamilyFromArg(IRubyObject protocol) {
-        ProtocolFamily protocolFamily = null;
+        IRubyObject maybeString = TypeConverter.checkStringType(protocol.getRuntime(), protocol);
 
-        if(protocol instanceof RubyString || protocol instanceof RubySymbol) {
-            String protocolString = protocol.toString();
-            protocolFamily = ProtocolFamily.valueOf("PF_" + protocolString);
-        } else {
-            int protocolInt = RubyNumeric.fix2int(protocol);
-            if (protocolInt == 0) return null;
-            protocolFamily = ProtocolFamily.valueOf(protocolInt);
+        if (!maybeString.isNil()) {
+            protocol = maybeString;
         }
 
-        return protocolFamily;
+        try {
+            if (protocol instanceof RubyString || protocol instanceof RubySymbol) {
+                String protocolString = protocol.toString();
+                if (protocolString.startsWith("PF_")) return ProtocolFamily.valueOf(protocolString);
+                if (protocolString.startsWith("AF_")) return ProtocolFamily.valueOf(AddressFamily.valueOf(protocolString).intValue());
+                return ProtocolFamily.valueOf("PF_" + protocolString);
+            }
+
+            int protocolInt = RubyNumeric.fix2int(protocol);
+            return ProtocolFamily.valueOf(protocolInt);
+        } catch (IllegalArgumentException iae) {
+            throw SocketUtils.sockerr(protocol.getRuntime(), "invalid protocol family: " + protocol);
+        }
     }
 
     static Protocol protocolFromArg(IRubyObject protocol) {
-        Protocol proto;
+        IRubyObject maybeString = TypeConverter.checkStringType(protocol.getRuntime(), protocol);
 
-        if(protocol instanceof RubyString || protocol instanceof RubySymbol) {
-            String protocolString = protocol.toString();
-            proto = Protocol.getProtocolByName(protocolString);
-        } else {
+        if (!maybeString.isNil()) {
+            protocol = maybeString;
+        }
+
+        try {
+            if(protocol instanceof RubyString || protocol instanceof RubySymbol) {
+                String protocolString = protocol.toString();
+                return Protocol.getProtocolByName(protocolString);
+            }
+
             int protocolInt = RubyNumeric.fix2int(protocol);
-            proto = Protocol.getProtocolByNumber(protocolInt);
+            return Protocol.getProtocolByNumber(protocolInt);
+        } catch (IllegalArgumentException iae) {
+            throw SocketUtils.sockerr(protocol.getRuntime(), "invalid protocol: " + protocol);
         }
-
-        return proto;
     }
 
-    static SocketLevel levelFromArg(IRubyObject _level) {
-        SocketLevel level;
-        if (_level instanceof RubyString || _level instanceof RubySymbol) {
-            level = SocketLevel.valueOf("SOL_" + _level.toString());
-        } else {
-            level = SocketLevel.valueOf(RubyNumeric.fix2int(_level));
+    static SocketLevel levelFromArg(IRubyObject level) {
+        IRubyObject maybeString = TypeConverter.checkStringType(level.getRuntime(), level);
+
+        if (!maybeString.isNil()) {
+            level = maybeString;
         }
-        return level;
+
+        try {
+            if (level instanceof RubyString || level instanceof RubySymbol) {
+                String levelString = level.toString();
+                if(levelString.startsWith("SOL_")) return SocketLevel.valueOf(levelString);
+                return SocketLevel.valueOf("SOL_" + levelString);
+            }
+
+            return SocketLevel.valueOf(RubyNumeric.fix2int(level));
+        } catch (IllegalArgumentException iae) {
+            throw SocketUtils.sockerr(level.getRuntime(), "invalid socket level: " + level);
+        }
     }
 
-    static SocketOption optionFromArg(IRubyObject _opt) {
-        SocketOption opt;
-        if (_opt instanceof RubyString || _opt instanceof RubySymbol) {
-            opt = SocketOption.valueOf("SO_" + _opt.toString());
-        } else {
-            opt = SocketOption.valueOf(RubyNumeric.fix2int(_opt));
+    static SocketOption optionFromArg(IRubyObject opt) {
+        IRubyObject maybeString = TypeConverter.checkStringType(opt.getRuntime(), opt);
+
+        if (!maybeString.isNil()) {
+            opt = maybeString;
         }
-        return opt;
+
+        try {
+            if (opt instanceof RubyString || opt instanceof RubySymbol) {
+                String optString = opt.toString();
+                if (optString.startsWith("SO_")) return SocketOption.valueOf(optString);
+                return SocketOption.valueOf("SO_" + optString);
+            }
+
+            return SocketOption.valueOf(RubyNumeric.fix2int(opt));
+        } catch (IllegalArgumentException iae) {
+            throw SocketUtils.sockerr(opt.getRuntime(), "invalid socket option: " + opt);
+        }
     }
 
     public static int portToInt(IRubyObject port) {

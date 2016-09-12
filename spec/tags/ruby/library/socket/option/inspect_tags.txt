@@ -1,1 +1,0 @@
-fails:Socket::Option#inspect correctly returns SO_LINGER value

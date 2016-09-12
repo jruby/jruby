@@ -177,7 +177,7 @@ public enum SocketType {
         private DatagramSocket toSocket(Channel channel) {
             return ((DatagramChannel)channel).socket();
         }
-        
+
         public int getSoTimeout(Channel channel) throws IOException {
             return toSocket(channel).getSoTimeout();
         }
@@ -241,14 +241,14 @@ public enum SocketType {
     },
 
     UNKNOWN(Sock.SOCK_STREAM);
-    
+
     public static SocketType forChannel(Channel channel) {
         if (channel instanceof SocketChannel) {
             return SOCKET;
-            
+
         } else if (channel instanceof ServerSocketChannel) {
             return SERVER;
-        
+
         } else if (channel instanceof DatagramChannel) {
             return DATAGRAM;
 
@@ -301,7 +301,7 @@ public enum SocketType {
     public Sock getSocketType() {
         return sock;
     }
-    
+
     public int getSocketOption(Channel channel, SocketOption option) throws IOException {
         switch (option) {
 
@@ -312,8 +312,7 @@ public enum SocketType {
                 return getKeepAlive(channel) ? 1 : 0;
 
             case SO_LINGER: {
-                int linger = getSoLinger(channel);
-                return linger < 0 ? 0 : linger;
+                return getSoLinger(channel);
             }
 
             case SO_OOBINLINE:
