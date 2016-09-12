@@ -64,9 +64,8 @@ public class InlinedCoreMethodNode extends RubyNode {
             return builtin.executeBuiltin(frame, arguments);
         } else {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            RubyCallNode callNode = rewriteToCallNode();
             Object[] argumentsObjects = ArrayUtils.extractRange(arguments, 1, arguments.length);
-            return callNode.executeWithArgumentEvaluated(frame, arguments[0], argumentsObjects);
+            return rewriteToCallNode().executeWithArgumentsEvaluated(frame, arguments[0], argumentsObjects);
         }
     }
 
