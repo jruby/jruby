@@ -77,12 +77,13 @@ public class CodeLoader {
         } else {
             declaringModule = context.getCoreLibrary().getObjectClass();
         }
-
+        final boolean builtIn = !context.isRunning();
         final InternalMethod method = new InternalMethod(
                 rootNode.getSharedMethodInfo(),
                 rootNode.getSharedMethodInfo().getName(),
                 declaringModule,
                 Visibility.PUBLIC,
+                builtIn,
                 callTarget);
 
         return new DeferredCall(callTarget, RubyArguments.pack(

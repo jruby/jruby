@@ -64,6 +64,7 @@ public class RubyContext extends ExecutionContext {
 
     private final TruffleLanguage.Env env;
     private final Ruby jrubyRuntime;
+    private boolean running = false;
 
     private final Options options = new Options();
     private final RopeTable ropeTable = new RopeTable();
@@ -182,6 +183,8 @@ public class RubyContext extends ExecutionContext {
         attachmentsManager = new AttachmentsManager(this, instrumenter);
         traceManager = new TraceManager(this, instrumenter);
         coverageManager = new CoverageManager(this, instrumenter);
+
+        this.setRunning(true);
 
         coreLibrary.initializePostBoot();
     }
@@ -313,6 +316,14 @@ public class RubyContext extends ExecutionContext {
 
     public AttachmentsManager getAttachmentsManager() {
         return attachmentsManager;
+    }
+
+    public boolean isRunning() {
+        return running;
+    }
+
+    public void setRunning(boolean running) {
+        this.running = running;
     }
 
     public SourceLoader getSourceLoader() {

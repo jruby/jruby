@@ -398,7 +398,8 @@ public abstract class ModuleNodes {
             final RubyNode sequence = Translator.sequence(getContext(), sourceSection.getSource(), rubySourceSection, Arrays.asList(checkArity, accessInstanceVariable));
             final RubyRootNode rootNode = new RubyRootNode(getContext(), sourceSection, null, sharedMethodInfo, sequence, false);
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
-            final InternalMethod method = new InternalMethod(sharedMethodInfo, accessorName, module, visibility, callTarget);
+            final boolean builtIn = !getContext().isRunning();
+            final InternalMethod method = new InternalMethod(sharedMethodInfo, accessorName, module, visibility, builtIn, callTarget);
 
             Layouts.MODULE.getFields(module).addMethod(getContext(), this, method);
         }
@@ -1062,8 +1063,9 @@ public abstract class ModuleNodes {
             final RubyNode newBody = new CallMethodWithProcBody(getContext(), info.getSourceSection(), Layouts.PROC.getDeclarationFrame(proc), body);
             final RubyRootNode newRootNode = new RubyRootNode(getContext(), info.getSourceSection(), rootNode.getFrameDescriptor(), info, newBody, false);
             final CallTarget newCallTarget = Truffle.getRuntime().createCallTarget(newRootNode);
+            final boolean builtIn = !getContext().isRunning();
 
-            final InternalMethod method = InternalMethod.fromProc(info, name, module, Visibility.PUBLIC, proc, newCallTarget);
+            final InternalMethod method = InternalMethod.fromProc(info, name, module, Visibility.PUBLIC, builtIn, proc, newCallTarget);
             return addMethod(module, name, method);
         }
 

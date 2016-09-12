@@ -53,8 +53,8 @@ public class MethodDefinitionNode extends RubyNode {
         } else {
             capturedDefaultDefinee = null;
         }
-
-        return new InternalMethod(sharedMethodInfo, name, dummyModule, dummyVisibility, false, null, callTarget, null,
+        final boolean builtIn = !getContext().isRunning();
+        return new InternalMethod(sharedMethodInfo, name, dummyModule, dummyVisibility, false, builtIn, null, callTarget, null,
                 capturedDefaultDefinee);
     }
 

@@ -33,6 +33,7 @@ public class InternalMethod implements ObjectGraphNode {
     private final DynamicObject declaringModule;
     private final Visibility visibility;
     private final boolean undefined;
+    private final boolean builtIn;
     private final DynamicObject proc; // only if method is created from a Proc
 
     private final CallTarget callTarget;
@@ -44,6 +45,7 @@ public class InternalMethod implements ObjectGraphNode {
             String name,
             DynamicObject declaringModule,
             Visibility visibility,
+            boolean builtIn,
             DynamicObject proc,
             CallTarget callTarget) {
         return new InternalMethod(
@@ -52,6 +54,7 @@ public class InternalMethod implements ObjectGraphNode {
                 declaringModule,
                 visibility,
                 false,
+                builtIn,
                 proc,
                 callTarget,
                 Layouts.PROC.getBlock(proc),
@@ -63,8 +66,9 @@ public class InternalMethod implements ObjectGraphNode {
             String name,
             DynamicObject declaringModule,
             Visibility visibility,
+            boolean builtIn,
             CallTarget callTarget) {
-        this(sharedMethodInfo, name, declaringModule, visibility, false, null, callTarget, null, null);
+        this(sharedMethodInfo, name, declaringModule, visibility, false, builtIn, null, callTarget, null, null);
     }
 
     public InternalMethod(
@@ -73,9 +77,10 @@ public class InternalMethod implements ObjectGraphNode {
             DynamicObject declaringModule,
             Visibility visibility,
             boolean undefined,
+            boolean builtIn,
             DynamicObject proc,
             CallTarget callTarget) {
-        this(sharedMethodInfo, name, declaringModule, visibility, undefined, proc, callTarget, null, null);
+        this(sharedMethodInfo, name, declaringModule, visibility, undefined, builtIn, proc, callTarget, null, null);
     }
 
     public InternalMethod(
@@ -84,6 +89,7 @@ public class InternalMethod implements ObjectGraphNode {
             DynamicObject declaringModule,
             Visibility visibility,
             boolean undefined,
+            boolean builtIn,
             DynamicObject proc,
             CallTarget callTarget,
             DynamicObject capturedBlock,
@@ -94,6 +100,7 @@ public class InternalMethod implements ObjectGraphNode {
         this.name = name;
         this.visibility = visibility;
         this.undefined = undefined;
+        this.builtIn = builtIn;
         this.proc = proc;
         this.callTarget = callTarget;
         this.capturedBlock = capturedBlock;
@@ -120,6 +127,10 @@ public class InternalMethod implements ObjectGraphNode {
         return undefined;
     }
 
+    public boolean isBuiltIn() {
+        return builtIn;
+    }
+
     public CallTarget getCallTarget() {
         return callTarget;
     }
@@ -136,6 +147,7 @@ public class InternalMethod implements ObjectGraphNode {
                     newDeclaringModule,
                     visibility,
                     undefined,
+                    builtIn,
                     proc,
                     callTarget,
                     capturedBlock,
@@ -153,6 +165,7 @@ public class InternalMethod implements ObjectGraphNode {
                     declaringModule,
                     visibility,
                     undefined,
+                    builtIn,
                     proc,
                     callTarget,
                     capturedBlock,
@@ -170,6 +183,7 @@ public class InternalMethod implements ObjectGraphNode {
                     declaringModule,
                     newVisibility,
                     undefined,
+                    builtIn,
                     proc,
                     callTarget,
                     capturedBlock,
@@ -184,6 +198,7 @@ public class InternalMethod implements ObjectGraphNode {
                 declaringModule,
                 visibility,
                 true,
+                builtIn,
                 proc,
                 callTarget,
                 capturedBlock,
