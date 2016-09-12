@@ -31,7 +31,7 @@ suite = {
             {
                 "name": "truffle",
                 # Must be the same as in truffle/pom.rb and ci.hocon
-                "version": "387cbe478688e84d211aa534b7b93d47709cadd9",
+                "version": "60fde6f5778d478411632077154bea1679839780",
                 "urls": [
                     {"url": "https://github.com/graalvm/truffle.git", "kind": "git"},
                     {"url": "https://curio.ssw.jku.at/nexus/content/repositories/snapshots", "kind": "binary"},
