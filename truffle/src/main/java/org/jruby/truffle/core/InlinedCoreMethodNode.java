@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.core;
 
+import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.NodeFactory;
 import com.oracle.truffle.api.frame.VirtualFrame;
@@ -30,6 +31,7 @@ public class InlinedCoreMethodNode extends RubyNode {
 
     private final RubyCallNodeParameters callNodeParameters;
     private final InternalMethod method;
+    private final Assumption tracingUnused;
 
     @Child InlinableBuiltin builtin;
     @Child LookupMethodNode lookupMethodNode;
@@ -40,6 +42,7 @@ public class InlinedCoreMethodNode extends RubyNode {
         super(callNodeParameters.getContext(), callNodeParameters.getSection());
         this.callNodeParameters = callNodeParameters;
         this.method = method;
+        this.tracingUnused = callNodeParameters.getContext().getTraceManager().getUnusedAssumption();
         this.builtin = builtin;
         this.lookupMethodNode = LookupMethodNodeGen.create(callNodeParameters.getContext(), callNodeParameters.getSection(), false, false, null, null);
         this.receiverNode = callNodeParameters.getReceiver();
@@ -57,7 +60,7 @@ public class InlinedCoreMethodNode extends RubyNode {
         final InternalMethod lookedUpMethod = lookupMethodNode.executeLookupMethod(frame, self, method.getName());
         final Object[] arguments = executeArguments(frame, self);
 
-        if (lookedUpMethod == method && guard(arguments)) {
+        if (lookedUpMethod == method && guard(arguments) && tracingUnused.isValid()) {
             return builtin.executeBuiltin(frame, arguments);
         } else {
             CompilerDirectives.transferToInterpreterAndInvalidate();
