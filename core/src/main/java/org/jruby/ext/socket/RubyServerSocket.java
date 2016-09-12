@@ -146,6 +146,7 @@ public class RubyServerSocket extends RubySocket {
         return doAcceptNonblock(this, context, ArgsUtil.extractKeywordArg(context, "exception", opts) != context.runtime.getFalse());
     }
 
+    @Override
     protected ChannelFD initChannelFD(Ruby runtime) {
         Channel channel;
 

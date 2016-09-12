@@ -176,7 +176,7 @@ public class RubySocket extends RubyBasicSocket {
     public IRubyObject initialize(ThreadContext context, IRubyObject domain, IRubyObject type) {
         Ruby runtime = context.runtime;
 
-        initFieldsFromArgs(runtime, domain, type);
+        initFromArgs(runtime, domain, type);
 
         return this;
     }
@@ -185,7 +185,7 @@ public class RubySocket extends RubyBasicSocket {
     public IRubyObject initialize(ThreadContext context, IRubyObject domain, IRubyObject type, IRubyObject protocol) {
         Ruby runtime = context.runtime;
 
-        initFieldsFromArgs(runtime, domain, type, protocol);
+        initFromArgs(runtime, domain, type, protocol);
 
         return this;
     }
@@ -228,7 +228,6 @@ public class RubySocket extends RubyBasicSocket {
              iaddr = Sockaddr.addressFromSockaddr_in(context, arg);
         }
 
-        // We will lazily bind later once we know what kind of channel to create
         doBind(context, iaddr);
 
         return RubyFixnum.zero(context.runtime);
@@ -236,9 +235,6 @@ public class RubySocket extends RubyBasicSocket {
 
     @JRubyMethod
     public IRubyObject recvfrom(ThreadContext context, IRubyObject _length) {
-        if (getOpenFile() == null) {
-            throw context.runtime.newErrnoENOTCONNError("socket is not connected");
-        }
         return RubyUDPSocket.recvfrom(this, context, _length);
     }
 
@@ -259,46 +255,19 @@ public class RubySocket extends RubyBasicSocket {
         return RubyUDPSocket.recvfrom_nonblock(this, context, args);
     }
 
-    private int backlog = -1;
-
-    @JRubyMethod
+    @JRubyMethod(notImplemented = true)
     public IRubyObject listen(ThreadContext context, IRubyObject backlog) {
-        this.backlog = backlog.convertToInteger().getIntValue();
-
-        lazyInit(context, true);
-
-        return context.nil;
+        throw SocketUtils.sockerr(context.runtime, JRUBY_SERVER_SOCKET_ERROR);
     }
 
-    @JRubyMethod()
+    @JRubyMethod(notImplemented = true)
     public IRubyObject accept(ThreadContext context) {
-        if (getOpenFile() != null) {
-            getOpenFile().checkClosed();
-        }
-
-        if (backlog == -1) {
-            throw context.runtime.newErrnoEINVALError();
-        }
-
-        return RubyServerSocket.doAccept(this, context, true);
+        throw SocketUtils.sockerr(context.runtime, JRUBY_SERVER_SOCKET_ERROR);
     }
 
-    @JRubyMethod()
-    public IRubyObject accept_nonblock(ThreadContext context) {
-        return accept_nonblock(context, context.nil);
-    }
-
-    @JRubyMethod()
-    public IRubyObject accept_nonblock(ThreadContext context, IRubyObject opts) {
-        if (getOpenFile() != null) {
-            getOpenFile().checkClosed();
-        }
-
-        if (backlog == -1) {
-            throw context.runtime.newErrnoEINVALError();
-        }
-
-        return RubyServerSocket.doAcceptNonblock(this, context, ArgsUtil.extractKeywordArg(context, "exception", opts) != context.runtime.getFalse());
+    @JRubyMethod(notImplemented = true, optional = 1)
+    public IRubyObject accept_nonblock(ThreadContext context, IRubyObject[] args) {
+        throw SocketUtils.sockerr(context.runtime, JRUBY_SERVER_SOCKET_ERROR);
     }
 
     @JRubyMethod(meta = true)
@@ -427,18 +396,17 @@ public class RubySocket extends RubyBasicSocket {
         }
     }
 
-    private void initFieldsFromArgs(Ruby runtime, IRubyObject domain, IRubyObject type, IRubyObject protocol) {
-        initDomain(runtime, domain);
-
-        initType(runtime, type);
-
-        initProtocol(protocol);
+    private void initFromArgs(Ruby runtime, IRubyObject domain, IRubyObject type, IRubyObject protocol) {
+        setProtocol(protocol);
+        initFromArgs(runtime, domain, type);
     }
 
-    private void initFieldsFromArgs(Ruby runtime, IRubyObject domain, IRubyObject type) {
-        initDomain(runtime, domain);
+    private void initFromArgs(Ruby runtime, IRubyObject domain, IRubyObject type) {
+        setDomain(runtime, domain);
+        setType(runtime, type);
 
-        initType(runtime, type);
+        ChannelFD fd = initChannelFD(runtime);
+        initSocket(fd);
     }
 
     protected void initFromServer(Ruby runtime, RubySocket serverSocket, SocketChannel socketChannel) {
@@ -449,29 +417,19 @@ public class RubySocket extends RubyBasicSocket {
         initSocket(newChannelFD(runtime, socketChannel));
     }
 
-    protected ChannelFD initChannelFD(ThreadContext context, boolean server) {
-        Ruby runtime = context.runtime;
-
+    protected ChannelFD initChannelFD(Ruby runtime) {
         try {
             Channel channel;
             switch (soType) {
                 case SOCK_STREAM:
                     if ( soProtocolFamily == ProtocolFamily.PF_UNIX ||
                          soProtocolFamily == ProtocolFamily.PF_LOCAL ) {
-                        if (server) {
-                            channel = UnixServerSocketChannel.open();
-                        } else {
-                            channel = UnixSocketChannel.open();
-                        }
+                        channel = UnixSocketChannel.open();
                     }
                     else if ( soProtocolFamily == ProtocolFamily.PF_INET ||
                               soProtocolFamily == ProtocolFamily.PF_INET6 ||
                               soProtocolFamily == ProtocolFamily.PF_UNSPEC ) {
-                        if (server) {
-                            channel = ServerSocketChannel.open();
-                        } else {
-                            channel = SocketChannel.open();
-                        }
+                        channel = SocketChannel.open();
                     }
                     else {
                         throw runtime.newArgumentError("unsupported protocol family `" + soProtocolFamily + "'");
@@ -491,11 +449,11 @@ public class RubySocket extends RubyBasicSocket {
         }
     }
 
-    private void initProtocol(IRubyObject protocol) {
+    private void setProtocol(IRubyObject protocol) {
         soProtocol = SocketUtils.protocolFromArg(protocol);
     }
 
-    private void initType(Ruby runtime, IRubyObject type) {
+    private void setType(Ruby runtime, IRubyObject type) {
         Sock sockType = SocketUtils.sockFromArg(type);
 
         if (sockType == null) {
@@ -505,7 +463,7 @@ public class RubySocket extends RubyBasicSocket {
         soType = sockType;
     }
 
-    private void initDomain(Ruby runtime, IRubyObject domain) {
+    private void setDomain(Ruby runtime, IRubyObject domain) {
         AddressFamily family = SocketUtils.addressFamilyFromArg(domain);
 
         if (family == null) {
@@ -519,8 +477,6 @@ public class RubySocket extends RubyBasicSocket {
     }
 
     private IRubyObject doConnectNonblock(ThreadContext context, SocketAddress addr, boolean ex) {
-        lazyInit(context, false);
-
         Channel channel = getChannel();
 
         if ( ! (channel instanceof SelectableChannel) ) {
@@ -550,21 +506,8 @@ public class RubySocket extends RubyBasicSocket {
         }
     }
 
-    private void lazyInit(ThreadContext context, boolean server) {
-        if (getOpenFile() == null) {
-            ChannelFD fd = initChannelFD(context, server);
-
-            initSocket(fd);
-
-            lazyBind(context);
-        }
-    }
-
     protected IRubyObject doConnect(ThreadContext context, SocketAddress addr, boolean ex) {
         Ruby runtime = context.runtime;
-
-        lazyInit(context, false);
-
         Channel channel = getChannel();
 
         try {
@@ -618,20 +561,7 @@ public class RubySocket extends RubyBasicSocket {
         return runtime.newFixnum(0);
     }
 
-    private SocketAddress bindAddress;
-
     protected void doBind(ThreadContext context, SocketAddress iaddr) {
-        bindAddress = iaddr;
-
-        if ((soProtocolFamily == ProtocolFamily.PF_INET || soProtocolFamily == ProtocolFamily.PF_INET6) && soType == Sock.SOCK_DGRAM) {
-            // datagram sockets can be initialized immediately after bind
-            lazyInit(context, false);
-        }
-    }
-
-    protected void lazyBind(ThreadContext context) {
-        if (bindAddress == null) return;
-
         Ruby runtime = context.runtime;
 
         Channel channel = getChannel();
@@ -639,22 +569,14 @@ public class RubySocket extends RubyBasicSocket {
         try {
             if (channel instanceof SocketChannel) {
                 Socket socket = ((SocketChannel) channel).socket();
-                socket.bind(bindAddress);
-            }
-            else if (channel instanceof ServerSocketChannel) {
-                ServerSocket socket = ((ServerSocketChannel) channel).socket();
-                if (backlog == -1) {
-                    socket.bind(bindAddress);
-                } else {
-                    socket.bind(bindAddress, backlog);
-                }
+                socket.bind(iaddr);
             }
             else if (channel instanceof UnixSocketChannel) {
                 // do nothing
             }
             else if (channel instanceof DatagramChannel) {
                 DatagramSocket socket = ((DatagramChannel) channel).socket();
-                socket.bind(bindAddress);
+                socket.bind(iaddr);
             }
             else {
                 throw runtime.newErrnoENOPROTOOPTError();
@@ -664,15 +586,13 @@ public class RubySocket extends RubyBasicSocket {
             throw SocketUtils.sockerr(runtime, "bind(2): unknown host");
         }
         catch (SocketException e) {
-            handleSocketException(runtime, e, "bind(2)", bindAddress); // throws
+            handleSocketException(runtime, e, "bind(2)", iaddr); // throws
         }
         catch (IOException e) {
             throw sockerr(runtime, "bind(2): name or service not known", e);
         }
         catch (IllegalArgumentException e) {
             throw sockerr(runtime, e.getMessage(), e);
-        } finally {
-            bindAddress = null;
         }
     }
 
@@ -761,11 +681,6 @@ public class RubySocket extends RubyBasicSocket {
     }
 
     protected SocketAddress getSocketAddress() {
-        if (getOpenFile() == null) {
-            if (bindAddress != null) return bindAddress;
-            return null;
-        }
-
         Channel channel = getChannel();
 
         return SocketType.forChannel(channel).getLocalSocketAddress(channel);
