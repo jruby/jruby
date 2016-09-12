@@ -57,14 +57,14 @@ public class InlinedCoreMethodNode extends RubyNode {
         final InternalMethod lookedUpMethod = lookupMethodNode.executeLookupMethod(frame, self, method.getName());
         final Object[] arguments = executeArguments(frame, self);
 
-        if (lookedUpMethod != method || !guard(arguments)) {
+        if (lookedUpMethod == method && guard(arguments)) {
+            return builtin.executeBuiltin(frame, arguments);
+        } else {
             CompilerDirectives.transferToInterpreterAndInvalidate();
             RubyCallNode callNode = rewriteToCallNode();
             Object[] argumentsObjects = ArrayUtils.extractRange(arguments, 1, arguments.length);
             return callNode.executeWithArgumentEvaluated(frame, arguments[0], argumentsObjects);
         }
-
-        return builtin.executeBuiltin(frame, arguments);
     }
 
     @ExplodeLoop
