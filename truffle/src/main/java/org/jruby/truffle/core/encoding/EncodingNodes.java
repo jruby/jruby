@@ -465,7 +465,7 @@ public abstract class EncodingNodes {
             CompilerAsserts.neverPartOfCompilation();
             for (HashEntry<Entry> entry : EncodingDB.getAliases().entryIterator()) {
                 final CaseInsensitiveBytesHashEntry<Entry> e = (CaseInsensitiveBytesHashEntry<Entry>) entry;
-                final ByteList aliasName = new ByteList(e.bytes, e.p, e.end - e.p);
+                final ByteList aliasName = new ByteList(e.bytes, e.p, e.end - e.p, USASCIIEncoding.INSTANCE, false);
                 yield(frame, block, createString(aliasName), entry.value.getIndex());
             }
             return nil();
