@@ -9,32 +9,25 @@
  */
 package org.jruby.truffle.core.rope;
 
+import jnr.ffi.Pointer;
+import jnr.ffi.provider.MemoryManager;
 import org.jcodings.Encoding;
-import org.jruby.truffle.platform.NativePointer;
-import org.jruby.truffle.platform.SimpleNativeMemoryManager;
 
 public class NativeRope extends Rope {
 
-    private NativePointer pointer;
+    private Pointer pointer;
 
-    public NativeRope(SimpleNativeMemoryManager nativeMemoryManager, byte[] bytes, Encoding encoding, int characterLength) {
+    public NativeRope(MemoryManager memoryManager, byte[] bytes, Encoding encoding, int characterLength) {
         super(encoding, CodeRange.CR_UNKNOWN, false, bytes.length, characterLength, 1, null);
 
-        pointer = nativeMemoryManager.allocate(bytes.length);
-
-        for (int n = 0; n < bytes.length; n++) {
-            pointer.writeByte(n, bytes[n]);
-        }
+        pointer = memoryManager.allocateDirect(bytes.length, false);
+        pointer.put(0, bytes, 0, bytes.length);
     }
 
     @Override
     protected byte[] getBytesSlow() {
         final byte[] bytes = new byte[byteLength()];
-
-        for (int n = 0; n < bytes.length; n++) {
-            bytes[n] = pointer.readByte(n);
-        }
-
+        pointer.get(0, bytes, 0, bytes.length);
         return bytes;
     }
 
@@ -45,7 +38,7 @@ public class NativeRope extends Rope {
 
     @Override
     public byte get(int index) {
-        return pointer.readByte(index);
+        return pointer.getByte(index);
     }
 
     @Override
@@ -58,7 +51,7 @@ public class NativeRope extends Rope {
         throw new UnsupportedOperationException();
     }
 
-    public NativePointer getNativePointer() {
+    public Pointer getNativePointer() {
         return pointer;
     }
 
