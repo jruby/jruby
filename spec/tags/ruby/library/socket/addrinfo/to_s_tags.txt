@@ -1,1 +1,0 @@
-fails:Addrinfo#to_s for a unix socket returns a sockaddr packed structure

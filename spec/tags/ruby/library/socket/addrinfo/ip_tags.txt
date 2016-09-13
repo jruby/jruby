@@ -1,1 +1,0 @@
-fails:Addrinfo#ip? for a unix socket returns Socket::AF_INET6
