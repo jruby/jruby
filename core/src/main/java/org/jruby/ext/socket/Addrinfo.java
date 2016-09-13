@@ -469,7 +469,10 @@ public class Addrinfo extends RubyObject {
 
     @JRubyMethod(name = "ipv4_multicast?")
     public IRubyObject ipv4_multicast_p(ThreadContext context) {
-        return context.runtime.newBoolean(getInetSocketAddress().getAddress().isMulticastAddress());
+        if (getAddressFamily() == AF_INET) {
+            return context.runtime.newBoolean(getInet4Address().isMulticastAddress());
+        }
+        return context.runtime.getFalse();
     }
 
     @JRubyMethod(name = "ipv6_unspecified?")
@@ -490,7 +493,10 @@ public class Addrinfo extends RubyObject {
 
     @JRubyMethod(name = "ipv6_multicast?")
     public IRubyObject ipv6_multicast_p(ThreadContext context) {
-        return context.runtime.newBoolean(getInetSocketAddress().getAddress().isMulticastAddress());
+        if (getAddressFamily() == AF_INET6) {
+            return context.runtime.newBoolean(getInet6Address().isMulticastAddress());
+        }
+        return context.runtime.getFalse();
     }
 
     @JRubyMethod(name = "ipv6_linklocal?")
