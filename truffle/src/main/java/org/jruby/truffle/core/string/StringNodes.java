@@ -773,6 +773,13 @@ public abstract class StringNodes {
     })
     public abstract static class CaseCmpNode extends CoreMethodNode {
 
+        @Child private EncodingNodes.CompatibleQueryNode compatibleQueryNode;
+
+        public CaseCmpNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            compatibleQueryNode = EncodingNodesFactory.CompatibleQueryNodeFactory.create(context, sourceSection, new RubyNode[] {});
+        }
+
         @CreateCast("other") public RubyNode coerceOtherToString(RubyNode other) {
             return ToStrNodeGen.create(null, null, other);
         }
@@ -782,7 +789,7 @@ public abstract class StringNodes {
         public Object caseCmpSingleByte(DynamicObject string, DynamicObject other) {
             // Taken from org.jruby.RubyString#casecmp19.
 
-            if (RopeOperations.areCompatible(rope(string), rope(other)) == null) {
+            if (compatibleQueryNode.executeCompatibleQuery(string, other) == nil()) {
                 return nil();
             }
 
@@ -794,13 +801,13 @@ public abstract class StringNodes {
         public Object caseCmp(DynamicObject string, DynamicObject other) {
             // Taken from org.jruby.RubyString#casecmp19 and
 
-            final Encoding encoding = RopeOperations.areCompatible(rope(string), rope(other));
+            final DynamicObject encoding = compatibleQueryNode.executeCompatibleQuery(string, other);
 
-            if (encoding == null) {
+            if (encoding == nil()) {
                 return nil();
             }
 
-            return multiByteCasecmp(encoding, StringOperations.getByteListReadOnly(string), StringOperations.getByteListReadOnly(other));
+            return multiByteCasecmp(Layouts.ENCODING.getEncoding(encoding), StringOperations.getByteListReadOnly(string), StringOperations.getByteListReadOnly(other));
         }
 
         @TruffleBoundary
