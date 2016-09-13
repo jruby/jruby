@@ -227,7 +227,7 @@ public class Addrinfo extends RubyObject {
 
                     int _port;
                     if (port != null) {
-                        _port = port.convertToInteger().getIntValue();
+                        _port = SocketUtils.portToInt(port);
                     } else {
                         _port = 0;
                     }

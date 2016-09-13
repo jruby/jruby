@@ -656,7 +656,14 @@ public class SocketUtils {
         Ruby runtime = port.getRuntime();
 
         IRubyObject maybeStr = TypeConverter.checkStringType(runtime, port);
-        if (!maybeStr.isNil()) return RubyNumeric.fix2int(maybeStr.convertToString().to_i());
+        if (!maybeStr.isNil()) {
+            RubyString portStr = maybeStr.convertToString();
+            jnr.netdb.Service serv = jnr.netdb.Service.getServiceByName(portStr.toString(), null);
+
+            if (serv != null) return serv.getPort();
+
+            return RubyNumeric.fix2int(portStr.to_i());
+        }
         return RubyNumeric.fix2int(port);
     }
 }
