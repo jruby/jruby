@@ -142,6 +142,10 @@ class String
     end
   end
 
+  def empty?
+    bytesize == 0
+  end
+
   def chomp(separator=$/)
     str = dup
     str.chomp!(separator) || str

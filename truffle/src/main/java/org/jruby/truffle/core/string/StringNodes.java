@@ -1205,17 +1205,6 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "empty?")
-    public abstract static class IsEmptyNode extends CoreMethodArrayArgumentsNode {
-
-        public abstract boolean executeIsEmpty(DynamicObject string);
-
-        @Specialization
-        public boolean empty(DynamicObject string) {
-            return rope(string).isEmpty();
-        }
-    }
-
     @CoreMethod(names = "encoding")
     public abstract static class EncodingNode extends CoreMethodArrayArgumentsNode {
 
