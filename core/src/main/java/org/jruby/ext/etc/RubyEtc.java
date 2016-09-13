@@ -4,7 +4,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.jruby.RubyFixnum;
+import org.jruby.RubyArray;
 import org.jruby.RubyHash;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
@@ -14,8 +14,8 @@ import jnr.posix.Passwd;
 import jnr.posix.Group;
 import jnr.posix.POSIX;
 import jnr.posix.util.Platform;
-import org.jruby.CompatVersion;
 import org.jruby.Ruby;
+import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
@@ -25,7 +25,6 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
-import org.jruby.util.NormalizedFile;
 import org.jruby.util.SafePropertyAccessor;
 
 @JRubyModule(name="Etc")
@@ -34,15 +33,15 @@ public class RubyEtc {
         RubyModule etcModule = runtime.defineModule("Etc");
 
         runtime.setEtc(etcModule);
-        
+
         etcModule.defineAnnotatedMethods(RubyEtc.class);
-        
+
         definePasswdStruct(runtime);
         defineGroupStruct(runtime);
-        
+
         return etcModule;
     }
-    
+
     private static void definePasswdStruct(Ruby runtime) {
         IRubyObject[] args = new IRubyObject[] {
                 runtime.newString("Passwd"),
@@ -57,11 +56,9 @@ public class RubyEtc {
                 runtime.newSymbol("uclass"),
                 runtime.newSymbol("expire")
         };
-        
+
         runtime.setPasswdStruct(RubyStruct.newInstance(runtime.getStructClass(), args, Block.NULL_BLOCK));
-        if (runtime.is1_9()) {
-            runtime.getEtc().defineConstant("Passwd", runtime.getPasswdStruct());
-        }
+        runtime.getEtc().defineConstant("Passwd", runtime.getPasswdStruct());
     }
 
     private static void defineGroupStruct(Ruby runtime) {
@@ -72,13 +69,11 @@ public class RubyEtc {
                 runtime.newSymbol("gid"),
                 runtime.newSymbol("mem")
         };
-        
+
         runtime.setGroupStruct(RubyStruct.newInstance(runtime.getStructClass(), args, Block.NULL_BLOCK));
-        if (runtime.is1_9()) {
-            runtime.getEtc().defineConstant("Group", runtime.getGroupStruct());
-        }
+        runtime.getEtc().defineConstant("Group", runtime.getGroupStruct());
     }
-    
+
     private static IRubyObject setupPasswd(Ruby runtime, Passwd passwd) {
         IRubyObject[] args = new IRubyObject[] {
                 runtime.newString(passwd.getLoginName()),
@@ -93,11 +88,11 @@ public class RubyEtc {
                 runtime.newFixnum(passwd.getExpire())
 
         };
-        
+
         return RubyStruct.newStruct(runtime.getPasswdStruct(), args, Block.NULL_BLOCK);
     }
 
-    
+
     private static IRubyObject setupGroup(Ruby runtime, Group group) {
         IRubyObject[] args = new IRubyObject[] {
                 runtime.newString(group.getName()),
@@ -105,7 +100,7 @@ public class RubyEtc {
                 runtime.newFixnum(group.getGID()),
                 intoStringArray(runtime, group.getMembers())
         };
-        
+
         return RubyStruct.newStruct(runtime.getGroupStruct(), args, Block.NULL_BLOCK);
     }
 
@@ -114,7 +109,7 @@ public class RubyEtc {
         for(int i = 0; i<arr.length; i++) {
             arr[i] = runtime.newString(members[i]);
         }
-        return runtime.newArrayNoCopy(arr);
+        return RubyArray.newArrayNoCopy(runtime, arr);
     }
 
 
@@ -122,6 +117,7 @@ public class RubyEtc {
     public static synchronized IRubyObject getpwuid(IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = recv.getRuntime();
         POSIX posix = runtime.getPosix();
+        IRubyObject oldExc = runtime.getGlobalVariables().get("$!"); // Save $!
         try {
             int uid = args.length == 0 ? posix.getuid() : RubyNumeric.fix2int(args[0]);
             Passwd pwd = posix.getpwuid(uid);
@@ -134,6 +130,7 @@ public class RubyEtc {
             return setupPasswd(runtime, pwd);
         } catch (RaiseException re) {
             if (runtime.getNotImplementedError().isInstance(re.getException())) {
+                runtime.getGlobalVariables().set("$!", oldExc); // Restore $!
                 return runtime.getNil();
             }
             throw re;
@@ -151,13 +148,15 @@ public class RubyEtc {
         String nam = name.convertToString().toString();
         try {
             Passwd pwd = runtime.getPosix().getpwnam(nam);
-            if(pwd == null) {
+            if (pwd == null) {
                 if (Platform.IS_WINDOWS) {  // MRI behavior
                     return runtime.getNil();
                 }
                 throw runtime.newArgumentError("can't find user for " + nam);
             }
             return setupPasswd(recv.getRuntime(), pwd);
+        } catch (RaiseException e) {
+            throw e;
         } catch (Exception e) {
             if (runtime.getDebug().isTrue()) {
                 runtime.getWarnings().warn(ID.NOT_IMPLEMENTED, "Etc.getpwnam is not supported by JRuby on this platform");
@@ -175,11 +174,11 @@ public class RubyEtc {
             posix.getpwent();
             if(block.isGiven()) {
                 ThreadContext context = runtime.getCurrentContext();
-                
+
                 if (!iteratingPasswd.compareAndSet(false, true)) {
                     throw runtime.newRuntimeError("parallel passwd iteration");
                 }
-                
+
                 posix.setpwent();
                 try {
                     Passwd pw;
@@ -220,7 +219,7 @@ public class RubyEtc {
             if (login != null) {
                 return runtime.newString(login);
             }
-            
+
             return runtime.getNil();
         } catch (Exception e) {
             // fall back on env entry for USER
@@ -278,13 +277,15 @@ public class RubyEtc {
         String nam = name.convertToString().toString();
         try {
             Group grp = runtime.getPosix().getgrnam(nam);
-            if(grp == null) {
+            if (grp == null) {
                 if (Platform.IS_WINDOWS) {  // MRI behavior
                     return runtime.getNil();
                 }
                 throw runtime.newArgumentError("can't find group for " + nam);
             }
             return setupGroup(runtime, grp);
+        } catch (RaiseException e) {
+            throw e;
         } catch (Exception e) {
             if (runtime.getDebug().isTrue()) {
                 runtime.getWarnings().warn(ID.NOT_IMPLEMENTED, "Etc.getgrnam is not supported by JRuby on this platform");
@@ -413,29 +414,26 @@ public class RubyEtc {
             return runtime.getNil();
         }
     }
-    
+
     @JRubyMethod(module = true)
     public static synchronized IRubyObject systmpdir(ThreadContext context, IRubyObject recv) {
         Ruby runtime = context.getRuntime();
         ByteList tmp = ByteList.create(System.getProperty("java.io.tmpdir")); // default for all platforms except Windows
-        
         if (Platform.IS_WINDOWS) {
             String commonAppData = System.getenv("CSIDL_COMMON_APPDATA");
-            // TODO: need fallback mechanism
             if (commonAppData != null) tmp = ByteList.create(commonAppData);
         }
         RubyString ret = RubyString.newString(runtime, tmp, runtime.getDefaultExternalEncoding());
         ret.untaint(context);
-        ret.trust(context);
-        
+
         return ret;
     }
-    
+
     @JRubyMethod(module = true)
     public static synchronized IRubyObject sysconfdir(ThreadContext context, IRubyObject recv) {
         Ruby runtime = context.getRuntime();
         ByteList tmp = ByteList.create(RbConfigLibrary.getSysConfDir(runtime)); // default for all platforms except Windows
-        
+
         if (Platform.IS_WINDOWS) {
             String localAppData = System.getenv("CSIDL_LOCAL_APPDATA");
             // TODO: need fallback mechanism
@@ -443,8 +441,7 @@ public class RubyEtc {
         }
         RubyString ret = RubyString.newString(runtime, tmp, runtime.getDefaultExternalEncoding());
         ret.untaint(context);
-        ret.trust(context);
-        
+
         return ret;
     }
 
@@ -477,6 +474,6 @@ public class RubyEtc {
 
         return uname;
     }
-    
+
     private static final AtomicBoolean iteratingPasswd = new AtomicBoolean(false);
 }
