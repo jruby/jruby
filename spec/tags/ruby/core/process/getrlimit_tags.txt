@@ -1,6 +1,0 @@
-fails:Process.getrlimit when passed a Symbol coerces :LOCKS into RLIMIT_LOCKS
-fails:Process.getrlimit when passed a Symbol coerces :NLIMITS into RLIMIT_NLIMITS
-fails:Process.getrlimit when passed a Symbol coerces :OFILE into RLIMIT_OFILE
-fails:Process.getrlimit when passed a String coerces 'LOCKS' into RLIMIT_LOCKS
-fails:Process.getrlimit when passed a String coerces 'NLIMITS' into RLIMIT_NLIMITS
-fails:Process.getrlimit when passed a String coerces 'OFILE' into RLIMIT_OFILE
