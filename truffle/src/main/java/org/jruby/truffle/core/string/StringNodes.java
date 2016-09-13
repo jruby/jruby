@@ -683,18 +683,13 @@ public abstract class StringNodes {
     @ImportStatic(StringGuards.class)
     public abstract static class ASCIIOnlyNode extends CoreMethodArrayArgumentsNode {
 
-        @Specialization(guards = { "isAsciiCompatible(string)", "is7Bit(string)" })
+        @Specialization(guards = { "is7Bit(string)" })
         public boolean asciiOnlyAsciiCompatible7BitCR(DynamicObject string) {
             return true;
         }
 
-        @Specialization(guards = { "isAsciiCompatible(string)", "!is7Bit(string)" })
+        @Specialization(guards = { "!is7Bit(string)" })
         public boolean asciiOnlyAsciiCompatible(DynamicObject string) {
-            return false;
-        }
-
-        @Specialization(guards = "!isAsciiCompatible(string)")
-        public boolean asciiOnly(DynamicObject string) {
             return false;
         }
 
