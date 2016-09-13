@@ -1116,7 +1116,7 @@ public abstract class StringNodes {
             makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
         }
 
-        @Specialization(guards = "isValidOr7BitEncoding(string)")
+        @Specialization(guards = "!isBrokenCodeRange(string)")
         public DynamicObject eachChar(VirtualFrame frame, DynamicObject string, DynamicObject block) {
             final Rope rope = rope(string);
             final byte[] ptrBytes = rope.getBytes();
@@ -1134,7 +1134,7 @@ public abstract class StringNodes {
             return string;
         }
 
-        @Specialization(guards = "!isValidOr7BitEncoding(string)")
+        @Specialization(guards = "isBrokenCodeRange(string)")
         public DynamicObject eachCharMultiByteEncoding(VirtualFrame frame, DynamicObject string, DynamicObject block) {
             final Rope rope = rope(string);
             final byte[] ptrBytes = rope.getBytes();

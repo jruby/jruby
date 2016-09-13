@@ -37,13 +37,6 @@ public class StringGuards {
         return Layouts.STRING.getRope(string).getEncoding().isAsciiCompatible();
     }
 
-    public static boolean isValidOr7BitEncoding(DynamicObject string) {
-        assert RubyGuards.isRubyString(string);
-        final Rope rope = StringOperations.rope(string);
-
-        return (rope.getCodeRange() == CodeRange.CR_VALID) || (rope.getCodeRange() == CodeRange.CR_7BIT);
-    }
-
     public static boolean isFixedWidthEncoding(DynamicObject string) {
         assert RubyGuards.isRubyString(string);
         return Layouts.STRING.getRope(string).getEncoding().isFixedWidth();
