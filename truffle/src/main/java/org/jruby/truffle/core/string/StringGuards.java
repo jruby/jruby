@@ -64,11 +64,6 @@ public class StringGuards {
         return StringOperations.codeRange(string) == CodeRange.CR_BROKEN;
     }
 
-    public static boolean isBinaryString(DynamicObject string) {
-        assert RubyGuards.isRubyString(string);
-        return StringOperations.encoding(string) == ASCIIEncoding.INSTANCE;
-    }
-
     public static boolean isRopeBuffer(DynamicObject string) {
         assert RubyGuards.isRubyString(string);
 
