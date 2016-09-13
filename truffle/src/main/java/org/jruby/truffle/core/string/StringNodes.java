@@ -712,7 +712,12 @@ public abstract class StringNodes {
 
         @Specialization
         public DynamicObject b(DynamicObject string) {
-            final Rope newRope = withEncodingNode.executeWithEncoding(rope(string), ASCIIEncoding.INSTANCE, CodeRange.CR_UNKNOWN);
+            final Rope rope = rope(string);
+
+            // If the rope is already known to be 7-bit, it'll continue to be 7-bit in ASCII 8-bit. Otherwise, it must
+            // be valid since there's no way to have a broken code range in ASCII 8-bit (all byte values are valid).
+            final CodeRange newCodeRange = rope.getCodeRange() == CodeRange.CR_7BIT ? CodeRange.CR_7BIT : CodeRange.CR_VALID;
+            final Rope newRope = withEncodingNode.executeWithEncoding(rope, ASCIIEncoding.INSTANCE, newCodeRange);
 
             return createString(newRope);
         }
