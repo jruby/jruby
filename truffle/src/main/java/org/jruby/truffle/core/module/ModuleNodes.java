@@ -52,8 +52,6 @@ import org.jruby.truffle.core.cast.ToStrNode;
 import org.jruby.truffle.core.cast.ToStrNodeGen;
 import org.jruby.truffle.core.method.MethodFilter;
 import org.jruby.truffle.core.rope.Rope;
-import org.jruby.truffle.core.string.StringNodes;
-import org.jruby.truffle.core.string.StringNodesFactory;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.core.symbol.SymbolTable;
 import org.jruby.truffle.language.LexicalScope;
@@ -508,11 +506,8 @@ public abstract class ModuleNodes {
     })
     public abstract static class AutoloadNode extends CoreMethodNode {
 
-        @Child private StringNodes.IsEmptyNode isEmptyNode;
-
         public AutoloadNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            isEmptyNode = StringNodesFactory.IsEmptyNodeFactory.create(new RubyNode[] {});
         }
 
         @CreateCast("name") public RubyNode coerceNameToString(RubyNode name) {
@@ -530,7 +525,7 @@ public abstract class ModuleNodes {
                 throw new RaiseException(coreExceptions().nameError(StringUtils.format("autoload must be constant name: %s", name), module, name, this));
             }
 
-            if (isEmptyNode.executeIsEmpty(filename)) {
+            if (StringOperations.rope(filename).isEmpty()) {
                 throw new RaiseException(coreExceptions().argumentError("empty file name", this));
             }
 
