@@ -302,10 +302,18 @@ public class SocketUtils {
         // TODO: implement flags
         int flag = flags.isNil() ? 0 : RubyNumeric.fix2int(flags);
 
-        try {
-            // get the addresses for the given host name
-            String hostString = emptyHost ? "localhost" : host.convertToString().toString();
+        String hostString = null;
 
+        // The value of 1 is for Socket::AI_PASSIVE.
+        if ((flag == 1) && emptyHost) {
+            // use RFC 2732 style string to ensure that we get Inet6Address
+            hostString = (addressFamily == AddressFamily.AF_INET6) ? "[::]" : "0.0.0.0";
+        } else {
+            // get the addresses for the given host name
+            hostString = emptyHost ? "localhost" : host.convertToString().toString();
+        }
+
+        try {
             InetAddress[] addrs = InetAddress.getAllByName(hostString);
 
             for(int i = 0; i < addrs.length; i++) {
