@@ -1,6 +1,11 @@
 package org.jruby.ext.etc;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import org.jruby.RubyFixnum;
+import org.jruby.RubyHash;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.common.IRubyWarnings.ID;
@@ -21,6 +26,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.NormalizedFile;
+import org.jruby.util.SafePropertyAccessor;
 
 @JRubyModule(name="Etc")
 public class RubyEtc {
@@ -112,8 +118,8 @@ public class RubyEtc {
     }
 
 
-    @JRubyMethod(name = "getpwuid", optional=1, module = true)
-    public static IRubyObject getpwuid(IRubyObject recv, IRubyObject[] args) {
+    @JRubyMethod(optional=1, module = true)
+    public static synchronized IRubyObject getpwuid(IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = recv.getRuntime();
         POSIX posix = runtime.getPosix();
         try {
@@ -139,8 +145,8 @@ public class RubyEtc {
         }
     }
 
-    @JRubyMethod(name = "getpwnam", required=1, module = true)
-    public static IRubyObject getpwnam(IRubyObject recv, IRubyObject name) {
+    @JRubyMethod(required=1, module = true)
+    public static synchronized IRubyObject getpwnam(IRubyObject recv, IRubyObject name) {
         Ruby runtime = recv.getRuntime();
         String nam = name.convertToString().toString();
         try {
@@ -161,7 +167,7 @@ public class RubyEtc {
     }
 
     @JRubyMethod(module = true)
-    public static IRubyObject passwd(IRubyObject recv, Block block) {
+    public static synchronized IRubyObject passwd(IRubyObject recv, Block block) {
         Ruby runtime = recv.getRuntime();
         POSIX posix = runtime.getPosix();
         try {
@@ -200,8 +206,8 @@ public class RubyEtc {
         }
     }
 
-    @JRubyMethod(name = "getlogin", module = true)
-    public static IRubyObject getlogin(IRubyObject recv) {
+    @JRubyMethod(module = true)
+    public static synchronized IRubyObject getlogin(IRubyObject recv) {
         Ruby runtime = recv.getRuntime();
 
         try {
@@ -222,8 +228,8 @@ public class RubyEtc {
         }
     }
 
-    @JRubyMethod(name = "endpwent", module = true)
-    public static IRubyObject endpwent(IRubyObject recv) {
+    @JRubyMethod(module = true)
+    public static synchronized IRubyObject endpwent(IRubyObject recv) {
         Ruby runtime = recv.getRuntime();
         try {
             runtime.getPosix().endpwent();
@@ -235,8 +241,8 @@ public class RubyEtc {
         return runtime.getNil();
     }
 
-    @JRubyMethod(name = "setpwent", module = true)
-    public static IRubyObject setpwent(IRubyObject recv) {
+    @JRubyMethod(module = true)
+    public static synchronized IRubyObject setpwent(IRubyObject recv) {
         Ruby runtime = recv.getRuntime();
         try {
             runtime.getPosix().setpwent();
@@ -248,8 +254,8 @@ public class RubyEtc {
         return runtime.getNil();
     }
 
-    @JRubyMethod(name = "getpwent", module = true)
-    public static IRubyObject getpwent(IRubyObject recv) {
+    @JRubyMethod(module = true)
+    public static synchronized IRubyObject getpwent(IRubyObject recv) {
         Ruby runtime = recv.getRuntime();
         try {
             Passwd passwd = runtime.getPosix().getpwent();
@@ -266,8 +272,8 @@ public class RubyEtc {
         }
     }
 
-    @JRubyMethod(name = "getgrnam", required=1, module = true)
-    public static IRubyObject getgrnam(IRubyObject recv, IRubyObject name) {
+    @JRubyMethod(required=1, module = true)
+    public static synchronized IRubyObject getgrnam(IRubyObject recv, IRubyObject name) {
         Ruby runtime = recv.getRuntime();
         String nam = name.convertToString().toString();
         try {
@@ -287,8 +293,8 @@ public class RubyEtc {
         }
     }
 
-    @JRubyMethod(name = "getgrgid", optional=1, module = true)
-    public static IRubyObject getgrgid(IRubyObject recv, IRubyObject[] args) {
+    @JRubyMethod(optional=1, module = true)
+    public static synchronized IRubyObject getgrgid(IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = recv.getRuntime();
         POSIX posix = runtime.getPosix();
 
@@ -312,8 +318,8 @@ public class RubyEtc {
         }
     }
 
-    @JRubyMethod(name = "endgrent", module = true)
-    public static IRubyObject endgrent(IRubyObject recv) {
+    @JRubyMethod(module = true)
+    public static synchronized IRubyObject endgrent(IRubyObject recv) {
         Ruby runtime = recv.getRuntime();
         try {
             runtime.getPosix().endgrent();
@@ -326,7 +332,7 @@ public class RubyEtc {
     }
 
     @JRubyMethod(module = true)
-    public static IRubyObject setgrent(IRubyObject recv) {
+    public static synchronized IRubyObject setgrent(IRubyObject recv) {
         Ruby runtime = recv.getRuntime();
         try {
             runtime.getPosix().setgrent();
@@ -339,7 +345,7 @@ public class RubyEtc {
     }
 
     @JRubyMethod(module = true)
-    public static IRubyObject group(IRubyObject recv, Block block) {
+    public static synchronized IRubyObject group(IRubyObject recv, Block block) {
         Ruby runtime = recv.getRuntime();
         POSIX posix = runtime.getPosix();
 
@@ -383,8 +389,8 @@ public class RubyEtc {
         return runtime.getNil();
     }
 
-    @JRubyMethod(name = "getgrent", module = true)
-    public static IRubyObject getgrent(IRubyObject recv) {
+    @JRubyMethod(module = true)
+    public static synchronized IRubyObject getgrent(IRubyObject recv) {
         Ruby runtime = recv.getRuntime();
         try {
             Group gr;
@@ -408,8 +414,8 @@ public class RubyEtc {
         }
     }
     
-    @JRubyMethod(name = "systmpdir", module = true, compat = CompatVersion.RUBY1_9)
-    public static IRubyObject systmpdir(ThreadContext context, IRubyObject recv) {
+    @JRubyMethod(module = true)
+    public static synchronized IRubyObject systmpdir(ThreadContext context, IRubyObject recv) {
         Ruby runtime = context.getRuntime();
         ByteList tmp = ByteList.create(System.getProperty("java.io.tmpdir")); // default for all platforms except Windows
         
@@ -425,8 +431,8 @@ public class RubyEtc {
         return ret;
     }
     
-    @JRubyMethod(name = "sysconfdir", module = true, compat = CompatVersion.RUBY1_9)
-    public static IRubyObject sysconfdir(ThreadContext context, IRubyObject recv) {
+    @JRubyMethod(module = true)
+    public static synchronized IRubyObject sysconfdir(ThreadContext context, IRubyObject recv) {
         Ruby runtime = context.getRuntime();
         ByteList tmp = ByteList.create(RbConfigLibrary.getSysConfDir(runtime)); // default for all platforms except Windows
         
@@ -440,6 +446,36 @@ public class RubyEtc {
         ret.trust(context);
         
         return ret;
+    }
+
+    @JRubyMethod(module = true)
+    public static synchronized IRubyObject nprocessors(ThreadContext context, IRubyObject recv) {
+        int nprocs = Runtime.getRuntime().availableProcessors();
+        return RubyFixnum.newFixnum(context.getRuntime(), nprocs);
+    }
+
+    @JRubyMethod(module = true)
+    public static synchronized IRubyObject uname(ThreadContext context, IRubyObject self) {
+        Ruby runtime = context.runtime;
+        RubyHash uname = RubyHash.newHash(runtime);
+
+        uname.op_aset(context,
+                runtime.newSymbol("sysname"),
+                runtime.newString(SafePropertyAccessor.getProperty("os.name", "unknown")));
+        try {
+            uname.op_aset(context,
+                    runtime.newSymbol("nodename"),
+                    runtime.newString(InetAddress.getLocalHost().getHostName()));
+        } catch (UnknownHostException uhe) {
+            uname.op_aset(context,
+                    runtime.newSymbol("nodename"),
+                    runtime.newString("unknown"));
+        }
+        uname.put(runtime.newSymbol("release"), runtime.newString("unknown"));
+        uname.put(runtime.newSymbol("version"), runtime.newString(SafePropertyAccessor.getProperty("os.version")));
+        uname.put(runtime.newSymbol("machine"), runtime.newString(SafePropertyAccessor.getProperty("os.arch")));
+
+        return uname;
     }
     
     private static final AtomicBoolean iteratingPasswd = new AtomicBoolean(false);
