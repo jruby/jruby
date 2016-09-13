@@ -362,7 +362,7 @@ public class Bootstrap {
     }
 
     static MethodHandle buildAttrHandle(InvokeSite site, DynamicMethod method, IRubyObject self, RubyClass dispatchClass) {
-        if (method instanceof AttrReaderMethod) {
+        if (method instanceof AttrReaderMethod && site.arity == 0) {
             AttrReaderMethod attrReader = (AttrReaderMethod) method;
             String varName = attrReader.getVariableName();
 
@@ -379,7 +379,7 @@ public class Bootstrap {
             }
 
             return createAttrReaderHandle(site, self, dispatchClass.getRealClass(), accessor);
-        } else if (method instanceof AttrWriterMethod) {
+        } else if (method instanceof AttrWriterMethod && site.arity == 1) {
             AttrWriterMethod attrReader = (AttrWriterMethod)method;
             String varName = attrReader.getVariableName();
 
