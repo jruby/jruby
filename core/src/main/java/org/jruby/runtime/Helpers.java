@@ -2010,8 +2010,12 @@ public class Helpers {
         callNormalMethodHook(containingClass, context, sym);
     }
 
-    private static void addModuleMethod(RubyModule containingClass, String name, DynamicMethod method, ThreadContext context, RubySymbol sym) {
-        containingClass.getSingletonClass().addMethod(name, new WrapperMethod(containingClass.getSingletonClass(), method, Visibility.PUBLIC));
+    public static void addModuleMethod(RubyModule containingClass, String name, DynamicMethod method, ThreadContext context, RubySymbol sym) {
+        RubyClass singletonClass = containingClass.getSingletonClass();
+        DynamicMethod modMethod = method.dup();
+        modMethod.setImplementationClass(singletonClass);
+        modMethod.setVisibility(Visibility.PUBLIC);
+        singletonClass.addMethod(name, modMethod);
         containingClass.callMethod(context, "singleton_method_added", sym);
     }
 

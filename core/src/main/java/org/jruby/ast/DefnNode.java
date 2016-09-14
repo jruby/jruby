@@ -36,6 +36,7 @@ import java.util.List;
 
 import org.jruby.MetaClass;
 import org.jruby.Ruby;
+import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
@@ -46,6 +47,7 @@ import org.jruby.internal.runtime.methods.WrapperMethod;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -116,10 +118,7 @@ public class DefnNode extends MethodDefNode implements INameNode {
         containingClass.addMethod(name, newMethod);
    
         if (context.getCurrentVisibility() == Visibility.MODULE_FUNCTION) {
-            containingClass.getSingletonClass().addMethod(name,
-                    new WrapperMethod(containingClass.getSingletonClass(), newMethod, Visibility.PUBLIC));
-            
-            containingClass.callMethod(context, "singleton_method_added", runtime.fastNewSymbol(name));
+            Helpers.addModuleMethod(containingClass, name, newMethod, context, runtime.fastNewSymbol(name));
         }
    
         // 'class << state.self' and 'class << obj' uses defn as opposed to defs

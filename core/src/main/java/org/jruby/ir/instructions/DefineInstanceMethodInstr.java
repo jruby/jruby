@@ -2,6 +2,7 @@ package org.jruby.ir.instructions;
 
 import org.jruby.MetaClass;
 import org.jruby.Ruby;
+import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.internal.runtime.methods.DynamicMethod;
@@ -14,6 +15,7 @@ import org.jruby.ir.operands.Operand;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -80,8 +82,7 @@ public class DefineInstanceMethodInstr extends Instr {
         //System.out.println("Added " + name + " to " + clazz + "; self is " + self);
 
         if (context.getCurrentVisibility() == Visibility.MODULE_FUNCTION) {
-            clazz.getSingletonClass().addMethod(name, new WrapperMethod(clazz.getSingletonClass(), newMethod, Visibility.PUBLIC));
-            clazz.callMethod(context, "singleton_method_added", runtime.fastNewSymbol(name));
+            Helpers.addModuleMethod(clazz, name, newMethod, context, runtime.fastNewSymbol(name));
         }
 
         // 'class << state.self' and 'class << obj' uses defn as opposed to defs
