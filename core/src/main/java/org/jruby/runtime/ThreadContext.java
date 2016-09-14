@@ -59,6 +59,7 @@ import org.jruby.runtime.profile.ProfileCollection;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
 import org.jruby.util.RecursiveComparator;
 import org.jruby.util.RubyDateFormatter;
+import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
@@ -135,21 +136,47 @@ public final class ThreadContext {
 
     IRubyObject lastExitStatus;
 
-    public final SecureRandom secureRandom;
+    /**
+     * This fields is no longer initialized, is null by default!
+     * Use {@link #getSecureRandom()} instead.
+     * @deprecated
+     */
+    @Deprecated
+    public transient SecureRandom secureRandom;
 
+    private static boolean tryPreferredPRNG = true;
     private static boolean trySHA1PRNG = true;
 
-    {
-        SecureRandom sr;
-        try {
-            sr = trySHA1PRNG ?
-                    SecureRandom.getInstance("SHA1PRNG") :
-                    new SecureRandom();
-        } catch (Exception e) {
-            trySHA1PRNG = false;
-            sr = new SecureRandom();
+    @SuppressWarnings("deprecation")
+    public SecureRandom getSecureRandom() {
+        SecureRandom secureRandom = this.secureRandom;
+
+        // Try preferred PRNG, which defaults to NativePRNGNonBlocking
+        if (secureRandom == null && tryPreferredPRNG) {
+            try {
+                secureRandom = SecureRandom.getInstance(Options.PREFERRED_PRNG.load());
+            } catch (Exception e) {
+                tryPreferredPRNG = false;
+            }
         }
-        secureRandom = sr;
+
+        // Try SHA1PRNG
+        if (secureRandom == null && trySHA1PRNG) {
+            try {
+                secureRandom = SecureRandom.getInstance("SHA1PRNG");
+            } catch (Exception e) {
+                trySHA1PRNG = false;
+            }
+        }
+
+        // Just let JDK do whatever it does
+        if (secureRandom == null) {
+            secureRandom = new SecureRandom();
+        }
+
+        this.secureRandom = secureRandom;
+
+        return secureRandom;
     }
     
     /**
