@@ -13,6 +13,7 @@ import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.Layouts;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.objects.ObjectGraphNode;
 
@@ -41,20 +42,20 @@ public class InternalMethod implements ObjectGraphNode {
     private final DynamicObject capturedDefaultDefinee;
 
     public static InternalMethod fromProc(
+            RubyContext context,
             SharedMethodInfo sharedMethodInfo,
             String name,
             DynamicObject declaringModule,
             Visibility visibility,
-            boolean builtIn,
             DynamicObject proc,
             CallTarget callTarget) {
         return new InternalMethod(
+                context,
                 sharedMethodInfo,
                 name,
                 declaringModule,
                 visibility,
                 false,
-                builtIn,
                 proc,
                 callTarget,
                 Layouts.PROC.getBlock(proc),
@@ -62,25 +63,40 @@ public class InternalMethod implements ObjectGraphNode {
     }
 
     public InternalMethod(
+            RubyContext context,
             SharedMethodInfo sharedMethodInfo,
             String name,
             DynamicObject declaringModule,
             Visibility visibility,
-            boolean builtIn,
             CallTarget callTarget) {
-        this(sharedMethodInfo, name, declaringModule, visibility, false, builtIn, null, callTarget, null, null);
+        this(context, sharedMethodInfo, name, declaringModule, visibility, false, null, callTarget, null, null);
     }
 
     public InternalMethod(
+            RubyContext context,
             SharedMethodInfo sharedMethodInfo,
             String name,
             DynamicObject declaringModule,
             Visibility visibility,
             boolean undefined,
-            boolean builtIn,
             DynamicObject proc,
             CallTarget callTarget) {
-        this(sharedMethodInfo, name, declaringModule, visibility, undefined, builtIn, proc, callTarget, null, null);
+        this(context, sharedMethodInfo, name, declaringModule, visibility, undefined, proc, callTarget, null, null);
+    }
+
+    public InternalMethod(
+        RubyContext context,
+        SharedMethodInfo sharedMethodInfo,
+        String name,
+        DynamicObject declaringModule,
+        Visibility visibility,
+        boolean undefined,
+        DynamicObject proc,
+        CallTarget callTarget,
+        DynamicObject capturedBlock,
+        DynamicObject capturedDefaultDefinee) {
+        this(sharedMethodInfo, name, declaringModule, visibility, undefined, !context.getCoreLibrary().isLoaded(),
+            proc, callTarget, capturedBlock, capturedDefaultDefinee);
     }
 
     public InternalMethod(

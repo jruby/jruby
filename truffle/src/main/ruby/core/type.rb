@@ -86,9 +86,9 @@ module Rubinius
       Truffle.invoke_primitive :vm_object_respond_to_no_built_in, obj, name, include_private
     end
 
-    def self.check_funcall_callable(obj, me)
+    def self.check_funcall_callable(obj, meth)
       # TODO BJF Review rb_method_call_status
-      Truffle.invoke_primitive :vm_check_funcall_callable, obj, me
+      Truffle.invoke_primitive :vm_check_funcall_callable, obj, meth
     end
 
     def self.object_equal(a, b)
@@ -252,10 +252,10 @@ module Rubinius
       recv.__send__(meth)
     end
 
-    def self.check_funcall_respond_to(obj, me, priv)
+    def self.check_funcall_respond_to(obj, meth, priv)
       # TODO Review BJF vm_respond_to
       return true unless object_respond_to_no_built_in?(obj, :respond_to?, true)
-      !!obj.__send__(:respond_to?, me, true)
+      !!obj.__send__(:respond_to?, meth, true)
     end
 
     def self.check_funcall_missing(recv, meth, args, respond, default)

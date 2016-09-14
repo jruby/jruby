@@ -160,8 +160,7 @@ public class CoreMethodNodeManager {
             if (ModuleOperations.isMethodPrivateFromName(name)) {
                 visibility = Visibility.PRIVATE;
             }
-            final boolean builtIn = !context.isRunning();
-            final InternalMethod method = new InternalMethod(sharedMethodInfo, name, module, visibility, builtIn, callTarget);
+            final InternalMethod method = new InternalMethod(context, sharedMethodInfo, name, module, visibility, callTarget);
 
             Layouts.MODULE.getFields(module).addMethod(context, null, method);
         }
