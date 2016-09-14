@@ -4,6 +4,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.jruby.CompatVersion;
 import org.jruby.RubyArray;
 import org.jruby.RubyHash;
 import org.jruby.anno.JRubyMethod;
@@ -58,7 +59,9 @@ public class RubyEtc {
         };
 
         runtime.setPasswdStruct(RubyStruct.newInstance(runtime.getStructClass(), args, Block.NULL_BLOCK));
-        runtime.getEtc().defineConstant("Passwd", runtime.getPasswdStruct());
+        if (runtime.is1_9()) {
+            runtime.getEtc().defineConstant("Passwd", runtime.getPasswdStruct());
+        }
     }
 
     private static void defineGroupStruct(Ruby runtime) {
@@ -71,7 +74,9 @@ public class RubyEtc {
         };
 
         runtime.setGroupStruct(RubyStruct.newInstance(runtime.getStructClass(), args, Block.NULL_BLOCK));
-        runtime.getEtc().defineConstant("Group", runtime.getGroupStruct());
+        if (runtime.is1_9()) {
+            runtime.getEtc().defineConstant("Group", runtime.getGroupStruct());
+        }
     }
 
     private static IRubyObject setupPasswd(Ruby runtime, Passwd passwd) {
@@ -415,7 +420,7 @@ public class RubyEtc {
         }
     }
 
-    @JRubyMethod(module = true)
+    @JRubyMethod(module = true, compat = CompatVersion.RUBY1_9)
     public static synchronized IRubyObject systmpdir(ThreadContext context, IRubyObject recv) {
         Ruby runtime = context.getRuntime();
         ByteList tmp = ByteList.create(System.getProperty("java.io.tmpdir")); // default for all platforms except Windows
@@ -429,7 +434,7 @@ public class RubyEtc {
         return ret;
     }
 
-    @JRubyMethod(module = true)
+    @JRubyMethod(module = true, compat = CompatVersion.RUBY1_9)
     public static synchronized IRubyObject sysconfdir(ThreadContext context, IRubyObject recv) {
         Ruby runtime = context.getRuntime();
         ByteList tmp = ByteList.create(RbConfigLibrary.getSysConfDir(runtime)); // default for all platforms except Windows
@@ -443,36 +448,6 @@ public class RubyEtc {
         ret.untaint(context);
 
         return ret;
-    }
-
-    @JRubyMethod(module = true)
-    public static synchronized IRubyObject nprocessors(ThreadContext context, IRubyObject recv) {
-        int nprocs = Runtime.getRuntime().availableProcessors();
-        return RubyFixnum.newFixnum(context.getRuntime(), nprocs);
-    }
-
-    @JRubyMethod(module = true)
-    public static synchronized IRubyObject uname(ThreadContext context, IRubyObject self) {
-        Ruby runtime = context.runtime;
-        RubyHash uname = RubyHash.newHash(runtime);
-
-        uname.op_aset(context,
-                runtime.newSymbol("sysname"),
-                runtime.newString(SafePropertyAccessor.getProperty("os.name", "unknown")));
-        try {
-            uname.op_aset(context,
-                    runtime.newSymbol("nodename"),
-                    runtime.newString(InetAddress.getLocalHost().getHostName()));
-        } catch (UnknownHostException uhe) {
-            uname.op_aset(context,
-                    runtime.newSymbol("nodename"),
-                    runtime.newString("unknown"));
-        }
-        uname.put(runtime.newSymbol("release"), runtime.newString("unknown"));
-        uname.put(runtime.newSymbol("version"), runtime.newString(SafePropertyAccessor.getProperty("os.version")));
-        uname.put(runtime.newSymbol("machine"), runtime.newString(SafePropertyAccessor.getProperty("os.arch")));
-
-        return uname;
     }
 
     private static final AtomicBoolean iteratingPasswd = new AtomicBoolean(false);
