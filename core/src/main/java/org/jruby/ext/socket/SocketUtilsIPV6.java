@@ -25,6 +25,11 @@ import org.jruby.ext.socket.SocketUtilsIPV6.IPv6Network;
  */
 public class SocketUtilsIPV6 {
 
+    public String getIPV6Address(String ip) {
+        IPv6Address ipAddress = new IPv6Address().fromString(ip);
+        return ipAddress.toString();
+    }
+
     public String getIPV6NetMask(String ip) {
         IPv6Network strangeNetwork = new IPv6Network().fromString(ip);
         return strangeNetwork.getNetmask().asAddress().toString();

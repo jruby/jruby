@@ -38,7 +38,6 @@ import java.net.SocketAddress;
 import java.net.UnknownHostException;
 import java.net.SocketException;
 
-import java.util.regex.Pattern;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.io.Sockaddr;
 
@@ -294,7 +293,6 @@ public class Addrinfo extends RubyObject {
 
         int port = getInetSocketAddress().getPort();
 
-        // getHostAddress() returns ip in the full form, but MRI uses short;
         if (getInetAddress() instanceof Inet6Address) {
             String host = ipv6_ip();
             String hostPort = port == 0 ? host : "[" + host + "]:" + port;
@@ -669,11 +667,7 @@ public class Addrinfo extends RubyObject {
         InetAddress in = getInetAddress();
 
         if (in.isLoopbackAddress()) return "::1";
-        return ipv6Compact(in.getHostAddress());
-    }
-
-    private static String ipv6Compact(String fullHost) {
-        return IPV6_COMPACT.matcher(fullHost).replaceAll("::$2");
+        return new SocketUtilsIPV6().getIPV6Address(in.getHostAddress());
     }
 
     @JRubyMethod(optional = 1)
@@ -788,5 +782,4 @@ public class Addrinfo extends RubyObject {
     private NetworkInterface networkInterface;
     private boolean isBroadcast;
     private Protocol protocol = Protocol.getProtocolByNumber(0);
-    private static final Pattern IPV6_COMPACT = Pattern.compile("((?::0\\b){2,}):?(?!\\S*\\b\\1:0\\b)(\\S*)");
 }
