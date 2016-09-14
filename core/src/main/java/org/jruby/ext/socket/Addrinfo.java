@@ -667,7 +667,7 @@ public class Addrinfo extends RubyObject {
         InetAddress in = getInetAddress();
 
         if (in.isLoopbackAddress()) return "::1";
-        return new SocketUtilsIPV6().getIPV6Address(in.getHostAddress());
+        return SocketUtilsIPV6.getIPV6Address(in.getHostAddress());
     }
 
     @JRubyMethod(optional = 1)

@@ -4,7 +4,6 @@ import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.regex.Pattern;
-import org.jruby.ext.socket.SocketUtilsIPV6.IPv6Network;
 
 /*
  * Copyright 2013 Jan Van Besien
@@ -25,17 +24,16 @@ import org.jruby.ext.socket.SocketUtilsIPV6.IPv6Network;
  */
 public class SocketUtilsIPV6 {
 
-    public String getIPV6Address(String ip) {
-        IPv6Address ipAddress = new IPv6Address().fromString(ip);
-        return ipAddress.toString();
+    public static String getIPV6Address(String ip) {
+        return new IPv6Address().fromString(ip).toString();
     }
 
-    public String getIPV6NetMask(String ip) {
+    public static String getIPV6NetMask(String ip) {
         IPv6Network strangeNetwork = new IPv6Network().fromString(ip);
         return strangeNetwork.getNetmask().asAddress().toString();
     }
 
-    public class IPv6Address {
+    public static class IPv6Address {
 
         private static final int N_SHORTS = 8;
         private long highBits;
@@ -451,7 +449,7 @@ public class SocketUtilsIPV6 {
 
     }
 
-    public class IPv6NetworkMask {
+    public static class IPv6NetworkMask {
 
         private final int prefixLength;
 
@@ -481,7 +479,7 @@ public class SocketUtilsIPV6 {
         }
     }
 
-    public class IPv6Network {
+    public static class IPv6Network {
 
         private IPv6NetworkMask networkMask;
         private IPv6Address first;

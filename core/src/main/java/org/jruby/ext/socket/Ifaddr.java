@@ -154,7 +154,7 @@ public class Ifaddr extends RubyObject {
         SubnetUtils utils = new SubnetUtils(subnet);
         netmask = utils.getInfo().getNetmask();
       } else if ( (it.getNetworkPrefixLength() != 0 ) && ( address instanceof Inet6Address) ) {
-        netmask = new SocketUtilsIPV6().getIPV6NetMask(ipAddress() + "/" + it.getNetworkPrefixLength());
+        netmask = SocketUtilsIPV6.getIPV6NetMask(ipAddress() + "/" + it.getNetworkPrefixLength());
       }
     }
 
