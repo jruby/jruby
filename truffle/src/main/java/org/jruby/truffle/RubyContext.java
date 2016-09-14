@@ -161,6 +161,9 @@ public class RubyContext extends ExecutionContext {
 
         // Capture known builtin methods
 
+        final Instrumenter instrumenter = env.lookup(Instrumenter.class);
+        attachmentsManager = new AttachmentsManager(this, instrumenter);
+        traceManager = new TraceManager(this, instrumenter);
         coreMethods = new CoreMethods(coreLibrary);
 
         // Load the reset of the core library
@@ -179,9 +182,6 @@ public class RubyContext extends ExecutionContext {
             instrumentationServerManager = null;
         }
 
-        final Instrumenter instrumenter = env.lookup(Instrumenter.class);
-        attachmentsManager = new AttachmentsManager(this, instrumenter);
-        traceManager = new TraceManager(this, instrumenter);
         coverageManager = new CoverageManager(this, instrumenter);
 
         this.setRunning(true);

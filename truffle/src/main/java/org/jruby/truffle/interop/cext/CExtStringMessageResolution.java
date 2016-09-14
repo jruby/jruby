@@ -126,11 +126,11 @@ public class CExtStringMessageResolution {
                     context = RubyLanguage.INSTANCE.unprotectedFindContext(findContextNode);
                 }
 
-                nativeRope = new NativeRope(context.getNativePlatform().getSimpleNativeMemoryManager(), currentRope.getBytes(), currentRope.getEncoding(), currentRope.characterLength());
+                nativeRope = new NativeRope(context.getNativePlatform().getMemoryManager(), currentRope.getBytes(), currentRope.getEncoding(), currentRope.characterLength());
                 Layouts.STRING.setRope(cExtString.getString(), nativeRope);
             }
 
-            return nativeRope.getNativePointer().getAddress();
+            return nativeRope.getNativePointer().address();
         }
 
     }

@@ -37,13 +37,6 @@ public class StringGuards {
         return Layouts.STRING.getRope(string).getEncoding().isAsciiCompatible();
     }
 
-    public static boolean isValidOr7BitEncoding(DynamicObject string) {
-        assert RubyGuards.isRubyString(string);
-        final Rope rope = StringOperations.rope(string);
-
-        return (rope.getCodeRange() == CodeRange.CR_VALID) || (rope.getCodeRange() == CodeRange.CR_7BIT);
-    }
-
     public static boolean isFixedWidthEncoding(DynamicObject string) {
         assert RubyGuards.isRubyString(string);
         return Layouts.STRING.getRope(string).getEncoding().isFixedWidth();
@@ -62,11 +55,6 @@ public class StringGuards {
     public static boolean isBrokenCodeRange(DynamicObject string) {
         assert RubyGuards.isRubyString(string);
         return StringOperations.codeRange(string) == CodeRange.CR_BROKEN;
-    }
-
-    public static boolean isBinaryString(DynamicObject string) {
-        assert RubyGuards.isRubyString(string);
-        return StringOperations.encoding(string) == ASCIIEncoding.INSTANCE;
     }
 
     public static boolean isRopeBuffer(DynamicObject string) {

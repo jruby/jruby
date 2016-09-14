@@ -18,7 +18,6 @@ import org.jruby.truffle.platform.DefaultRubiniusConfiguration;
 import org.jruby.truffle.platform.NativePlatform;
 import org.jruby.truffle.platform.ProcessName;
 import org.jruby.truffle.platform.RubiniusConfiguration;
-import org.jruby.truffle.platform.SimpleNativeMemoryManager;
 import org.jruby.truffle.platform.linux.LinuxRubiniusConfiguration;
 import org.jruby.truffle.platform.openjdk.OpenJDKArrayBlockingQueueLocksConditions;
 import org.jruby.truffle.platform.openjdk.OpenJDKLinkedBlockingQueueLocksConditions;
@@ -28,14 +27,11 @@ import org.jruby.truffle.platform.posix.TrufflePosix;
 import org.jruby.truffle.platform.posix.TrufflePosixHandler;
 import org.jruby.truffle.platform.signal.SignalManager;
 import org.jruby.truffle.platform.sunmisc.SunMiscSignalManager;
-import org.jruby.truffle.platform.sunmisc.SunMiscUnsafeSimpleNativeMemoryManager;
-import org.jruby.util.unsafe.UnsafeHolder;
 
 public class JavaPlatform implements NativePlatform {
 
     private final TrufflePosix posix;
     private final MemoryManager memoryManager;
-    private final SimpleNativeMemoryManager simpleNativeMemoryManager;
     private final SignalManager signalManager;
     private final ProcessName processName;
     private final Sockets sockets;
@@ -45,7 +41,6 @@ public class JavaPlatform implements NativePlatform {
     public JavaPlatform(RubyContext context) {
         posix = new JavaTrufflePosix(POSIXFactory.getJavaPOSIX(new TrufflePosixHandler(context)));
         memoryManager = new JavaMemoryManager();
-        simpleNativeMemoryManager = new SunMiscUnsafeSimpleNativeMemoryManager(UnsafeHolder.U);
         signalManager = new SunMiscSignalManager();
         processName = new JavaProcessName();
         sockets = new JavaSockets();
@@ -63,11 +58,6 @@ public class JavaPlatform implements NativePlatform {
     @Override
     public MemoryManager getMemoryManager() {
         return memoryManager;
-    }
-
-    @Override
-    public SimpleNativeMemoryManager getSimpleNativeMemoryManager() {
-        return simpleNativeMemoryManager;
     }
 
     @Override

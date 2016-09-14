@@ -683,18 +683,13 @@ public abstract class StringNodes {
     @ImportStatic(StringGuards.class)
     public abstract static class ASCIIOnlyNode extends CoreMethodArrayArgumentsNode {
 
-        @Specialization(guards = { "isAsciiCompatible(string)", "is7Bit(string)" })
+        @Specialization(guards = { "is7Bit(string)" })
         public boolean asciiOnlyAsciiCompatible7BitCR(DynamicObject string) {
             return true;
         }
 
-        @Specialization(guards = { "isAsciiCompatible(string)", "!is7Bit(string)" })
+        @Specialization(guards = { "!is7Bit(string)" })
         public boolean asciiOnlyAsciiCompatible(DynamicObject string) {
-            return false;
-        }
-
-        @Specialization(guards = "!isAsciiCompatible(string)")
-        public boolean asciiOnly(DynamicObject string) {
             return false;
         }
 
@@ -712,7 +707,12 @@ public abstract class StringNodes {
 
         @Specialization
         public DynamicObject b(DynamicObject string) {
-            final Rope newRope = withEncodingNode.executeWithEncoding(rope(string), ASCIIEncoding.INSTANCE, CodeRange.CR_UNKNOWN);
+            final Rope rope = rope(string);
+
+            // If the rope is already known to be 7-bit, it'll continue to be 7-bit in ASCII 8-bit. Otherwise, it must
+            // be valid since there's no way to have a broken code range in ASCII 8-bit (all byte values are valid).
+            final CodeRange newCodeRange = rope.getCodeRange() == CodeRange.CR_7BIT ? CodeRange.CR_7BIT : CodeRange.CR_VALID;
+            final Rope newRope = withEncodingNode.executeWithEncoding(rope, ASCIIEncoding.INSTANCE, newCodeRange);
 
             return createString(newRope);
         }
@@ -773,6 +773,13 @@ public abstract class StringNodes {
     })
     public abstract static class CaseCmpNode extends CoreMethodNode {
 
+        @Child private EncodingNodes.CompatibleQueryNode compatibleQueryNode;
+
+        public CaseCmpNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            compatibleQueryNode = EncodingNodesFactory.CompatibleQueryNodeFactory.create(context, sourceSection, new RubyNode[] {});
+        }
+
         @CreateCast("other") public RubyNode coerceOtherToString(RubyNode other) {
             return ToStrNodeGen.create(null, null, other);
         }
@@ -782,7 +789,7 @@ public abstract class StringNodes {
         public Object caseCmpSingleByte(DynamicObject string, DynamicObject other) {
             // Taken from org.jruby.RubyString#casecmp19.
 
-            if (RopeOperations.areCompatible(rope(string), rope(other)) == null) {
+            if (compatibleQueryNode.executeCompatibleQuery(string, other) == nil()) {
                 return nil();
             }
 
@@ -794,13 +801,13 @@ public abstract class StringNodes {
         public Object caseCmp(DynamicObject string, DynamicObject other) {
             // Taken from org.jruby.RubyString#casecmp19 and
 
-            final Encoding encoding = RopeOperations.areCompatible(rope(string), rope(other));
+            final DynamicObject encoding = compatibleQueryNode.executeCompatibleQuery(string, other);
 
-            if (encoding == null) {
+            if (encoding == nil()) {
                 return nil();
             }
 
-            return multiByteCasecmp(encoding, StringOperations.getByteListReadOnly(string), StringOperations.getByteListReadOnly(other));
+            return multiByteCasecmp(Layouts.ENCODING.getEncoding(encoding), StringOperations.getByteListReadOnly(string), StringOperations.getByteListReadOnly(other));
         }
 
         @TruffleBoundary
@@ -1116,7 +1123,7 @@ public abstract class StringNodes {
             makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
         }
 
-        @Specialization(guards = "isValidOr7BitEncoding(string)")
+        @Specialization(guards = "!isBrokenCodeRange(string)")
         public DynamicObject eachChar(VirtualFrame frame, DynamicObject string, DynamicObject block) {
             final Rope rope = rope(string);
             final byte[] ptrBytes = rope.getBytes();
@@ -1134,7 +1141,7 @@ public abstract class StringNodes {
             return string;
         }
 
-        @Specialization(guards = "!isValidOr7BitEncoding(string)")
+        @Specialization(guards = "isBrokenCodeRange(string)")
         public DynamicObject eachCharMultiByteEncoding(VirtualFrame frame, DynamicObject string, DynamicObject block) {
             final Rope rope = rope(string);
             final byte[] ptrBytes = rope.getBytes();
@@ -1202,17 +1209,6 @@ public abstract class StringNodes {
             DynamicObject result = createString(org.jruby.RubyString.inspect(getContext().getJRubyRuntime(),
                 StringOperations.getByteListReadOnly(string)).getByteList());
             return taintResultNode.maybeTaint(string, result);
-        }
-    }
-
-    @CoreMethod(names = "empty?")
-    public abstract static class IsEmptyNode extends CoreMethodArrayArgumentsNode {
-
-        public abstract boolean executeIsEmpty(DynamicObject string);
-
-        @Specialization
-        public boolean empty(DynamicObject string) {
-            return rope(string).isEmpty();
         }
     }
 

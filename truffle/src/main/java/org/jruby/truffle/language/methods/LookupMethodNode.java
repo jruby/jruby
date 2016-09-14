@@ -78,7 +78,7 @@ public abstract class LookupMethodNode extends RubyNode {
     }
 
     protected InternalMethod doLookup(VirtualFrame frame, Object self, String name) {
-        return lookupMethodWithVisibility(getContext(), frame, self, name, ignoreVisibility, onlyLookupPublic, false);
+        return lookupMethodWithVisibility(getContext(), frame, self, name, ignoreVisibility, onlyLookupPublic);
     }
 
     @TruffleBoundary
@@ -113,17 +113,9 @@ public abstract class LookupMethodNode extends RubyNode {
     }
 
     protected static DynamicObject getCallerClass(RubyContext context, VirtualFrame callingFrame,
-            boolean ignoreVisibility, boolean onlyLookupPublic, boolean callingFrameIsRespondTo) {
+            boolean ignoreVisibility, boolean onlyLookupPublic) {
         if (ignoreVisibility || onlyLookupPublic) {
             return null; // No need to check visibility
-        } else if (callingFrameIsRespondTo) {
-            final FrameInstance instance = context.getCallStack().getCallerFrameIgnoringSend();
-            if (instance == null) {
-                return context.getCoreLibrary().getMetaClass(context.getCoreLibrary().getMainObject());
-            } else {
-                final Frame callerFrame = instance.getFrame(FrameInstance.FrameAccess.READ_ONLY, true);
-                return context.getCoreLibrary().getMetaClass(RubyArguments.getSelf(callerFrame));
-            }
         } else {
             InternalMethod method = RubyArguments.getMethod(callingFrame);
             if (!context.getCoreLibrary().isSend(method)) {
@@ -138,9 +130,9 @@ public abstract class LookupMethodNode extends RubyNode {
 
     public static InternalMethod lookupMethodWithVisibility(RubyContext context, VirtualFrame callingFrame,
             Object receiver, String name,
-            boolean ignoreVisibility, boolean onlyLookupPublic, boolean callingFrameIsRespondTo) {
+            boolean ignoreVisibility, boolean onlyLookupPublic) {
         DynamicObject callerClass = getCallerClass(context, callingFrame,
-                ignoreVisibility, onlyLookupPublic, callingFrameIsRespondTo);
+                ignoreVisibility, onlyLookupPublic);
         return doLookup(context, callerClass, receiver, name, ignoreVisibility, onlyLookupPublic);
     }
 

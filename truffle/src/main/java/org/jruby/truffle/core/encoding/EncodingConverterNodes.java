@@ -19,6 +19,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
 import org.jcodings.Ptr;
+import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.transcode.EConv;
 import org.jcodings.transcode.EConvFlags;
 import org.jcodings.transcode.EConvResult;
@@ -167,11 +168,11 @@ public abstract class EncodingConverterNodes {
                     final TranscoderDB.Entry e = destinationEntry.value;
 
                     if (key == null) {
-                        final Object upcased = upcaseNode.call(frame, createString(new ByteList(e.getSource())), "upcase");
+                        final Object upcased = upcaseNode.call(frame, createString(e.getSource(), USASCIIEncoding.INSTANCE), "upcase");
                         key = toSymNode.call(frame, upcased, "to_sym");
                     }
 
-                    final Object upcasedLookupTableKey = upcaseNode.call(frame, createString(new ByteList(e.getDestination())), "upcase");
+                    final Object upcasedLookupTableKey = upcaseNode.call(frame, createString(e.getDestination(), USASCIIEncoding.INSTANCE), "upcase");
                     final Object lookupTableKey = toSymNode.call(frame, upcasedLookupTableKey, "to_sym");
                     final Object lookupTableValue = newTranscodingNode.call(frame, coreLibrary().getTranscodingClass(), "create", key, lookupTableKey);
                     lookupTableWriteNode.call(frame, value, "[]=", lookupTableKey, lookupTableValue);

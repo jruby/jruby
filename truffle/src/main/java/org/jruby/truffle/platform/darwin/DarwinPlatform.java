@@ -20,7 +20,6 @@ import org.jruby.truffle.platform.DefaultRubiniusConfiguration;
 import org.jruby.truffle.platform.NativePlatform;
 import org.jruby.truffle.platform.ProcessName;
 import org.jruby.truffle.platform.RubiniusConfiguration;
-import org.jruby.truffle.platform.SimpleNativeMemoryManager;
 import org.jruby.truffle.platform.java.JavaClockGetTime;
 import org.jruby.truffle.platform.openjdk.OpenJDKArrayBlockingQueueLocksConditions;
 import org.jruby.truffle.platform.openjdk.OpenJDKLinkedBlockingQueueLocksConditions;
@@ -31,14 +30,11 @@ import org.jruby.truffle.platform.posix.TrufflePosix;
 import org.jruby.truffle.platform.posix.TrufflePosixHandler;
 import org.jruby.truffle.platform.signal.SignalManager;
 import org.jruby.truffle.platform.sunmisc.SunMiscSignalManager;
-import org.jruby.truffle.platform.sunmisc.SunMiscUnsafeSimpleNativeMemoryManager;
-import org.jruby.util.unsafe.UnsafeHolder;
 
 public class DarwinPlatform implements NativePlatform {
 
     private final TrufflePosix posix;
     private final MemoryManager memoryManager;
-    private final SimpleNativeMemoryManager simpleNativeMemoryManager;
     private final SignalManager signalManager;
     private final ProcessName processName;
     private final Sockets sockets;
@@ -48,7 +44,6 @@ public class DarwinPlatform implements NativePlatform {
     public DarwinPlatform(RubyContext context) {
         posix = new JNRTrufflePosix(POSIXFactory.getNativePOSIX(new TrufflePosixHandler(context)));
         memoryManager = Runtime.getSystemRuntime().getMemoryManager();
-        simpleNativeMemoryManager = new SunMiscUnsafeSimpleNativeMemoryManager(UnsafeHolder.U);
         signalManager = new SunMiscSignalManager();
         processName = new DarwinProcessName();
         sockets = LibraryLoader.create(Sockets.class).library("c").load();
@@ -66,11 +61,6 @@ public class DarwinPlatform implements NativePlatform {
     @Override
     public MemoryManager getMemoryManager() {
         return memoryManager;
-    }
-
-    @Override
-    public SimpleNativeMemoryManager getSimpleNativeMemoryManager() {
-        return simpleNativeMemoryManager;
     }
 
     @Override

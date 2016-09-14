@@ -1,3 +1,6 @@
+// Must be the same as in truffle/pom.rb and mx.jruby/suite.py
+truffle-version: 60fde6f5778d478411632077154bea1679839780
+
 jt: [ruby, tool/jt.rb]
 
 common: {
@@ -42,8 +45,11 @@ labsjdk: {
   }
 }
 
-# Allow a version mismatch with truffle to prefer the language truffle version
+// Allow a version mismatch with truffle to prefer the language truffle version
 clone_graal: [mx, --version-conflict-resolution, ignore, sclone, --kind, git]
+
+// Use Truffle version of the language
+use-language-truffle: ["&&", git, fetch, "&&", git, reset, --hard, ${truffle-version}, "&&"]
 
 graal-core: ${labsjdk} {
   setup: ${common.setup} [
@@ -53,7 +59,8 @@ graal-core: ${labsjdk} {
     ${clone_graal} ["https://github.com/graalvm/graal-core.git", graal-core],
     [cd, graal-core],
     [mx, sforceimports],
-    [mx, build],
+    [cd, ../truffle] ${use-language-truffle} [cd, ../graal-core],
+    [mx, --java-home, "$JVMCI_JAVA_HOME", build],
     [cd, ../..],
     [mv, temp_mx, mx.jruby]
   ]
@@ -73,7 +80,8 @@ graal-enterprise: ${labsjdk} {
     ${clone_graal} ["https://github.com/graalvm/graal-enterprise.git", graal-enterprise],
     [cd, graal-enterprise/graal-enterprise],
     [mx, sforceimports],
-    [mx, build],
+    [cd, ../../truffle] ${use-language-truffle} [cd, ../graal-enterprise/graal-enterprise],
+    [mx, --java-home, "$JVMCI_JAVA_HOME", build],
     [cd, ../../..],
     [mv, temp_mx, mx.jruby]
   ]
@@ -353,7 +361,7 @@ builds: [
   {name: ruby-test-integration} ${common} ${gate-caps} {run: [${jt} [test, integration]]},
   {name: ruby-test-cexts} ${common} ${gate-caps} ${test-cexts},
   {name: ruby-test-gems} ${common} ${gate-caps} ${test-gems},
-  // {name: ruby-test-ecosystem} ${common} ${gate-caps} ${test-ecosystem},
+  {name: ruby-test-ecosystem} ${common} ${gate-caps} ${test-ecosystem},
   {name: ruby-test-tarball} ${common} ${gate-caps} {run: [${jt} [tarball]]},
 
   {name: ruby-test-compiler-graal-core} ${common} ${graal-core} ${gate-caps} {run: [${jt} [test, compiler]]},

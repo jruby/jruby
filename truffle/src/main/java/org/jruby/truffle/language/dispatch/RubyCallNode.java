@@ -93,10 +93,10 @@ public class RubyCallNode extends RubyNode {
 
         final Object[] argumentsObjects = executeArguments(frame);
 
-        return executeWithArgumentEvaluated(frame, receiverObject, argumentsObjects);
+        return executeWithArgumentsEvaluated(frame, receiverObject, argumentsObjects);
     }
 
-    public Object executeWithArgumentEvaluated(VirtualFrame frame, Object receiverObject, Object[] argumentsObjects) {
+    public Object executeWithArgumentsEvaluated(VirtualFrame frame, Object receiverObject, Object[] argumentsObjects) {
         final DynamicObject blockObject = executeBlock(frame);
 
         if (dispatchHead == null) {
