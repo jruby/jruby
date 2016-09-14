@@ -78,13 +78,19 @@ import static jnr.constants.platform.TCP.TCP_NODELAY;
  * Implementation of the BasicSocket class from Ruby.
  */
 @JRubyClass(name="BasicSocket", parent="IO")
-public abstract class RubyBasicSocket extends RubyIO {
+public class RubyBasicSocket extends RubyIO {
     static void createBasicSocket(Ruby runtime) {
-        RubyClass rb_cBasicSocket = runtime.defineClass("BasicSocket", runtime.getIO(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+        RubyClass rb_cBasicSocket = runtime.defineClass("BasicSocket", runtime.getIO(), BASICSOCKET_ALLOCATOR);
 
         rb_cBasicSocket.defineAnnotatedMethods(RubyBasicSocket.class);
         rb_cBasicSocket.undefineMethod("initialize");
     }
+
+    private static ObjectAllocator BASICSOCKET_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
+            return new RubyBasicSocket(runtime, klass);
+        }
+    };
 
     public RubyBasicSocket(Ruby runtime, RubyClass type) {
         super(runtime, type);

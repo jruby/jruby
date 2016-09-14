@@ -48,14 +48,21 @@ import java.net.InetSocketAddress;
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
 @JRubyClass(name="IPSocket", parent="BasicSocket")
-public abstract class RubyIPSocket extends RubyBasicSocket {
+public class RubyIPSocket extends RubyBasicSocket {
     static void createIPSocket(Ruby runtime) {
-        RubyClass rb_cIPSocket = runtime.defineClass("IPSocket", runtime.getClass("BasicSocket"), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+        RubyClass rb_cIPSocket = runtime.defineClass("IPSocket", runtime.getClass("BasicSocket"), IPSOCKET_ALLOCATOR);
 
         rb_cIPSocket.defineAnnotatedMethods(RubyIPSocket.class);
+        rb_cIPSocket.undefineMethod("initialize");
 
         runtime.getObject().setConstant("IPsocket",rb_cIPSocket);
     }
+
+    private static ObjectAllocator IPSOCKET_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
+            return new RubyIPSocket(runtime, klass);
+        }
+    };
 
     public RubyIPSocket(Ruby runtime, RubyClass type) {
         super(runtime, type);
