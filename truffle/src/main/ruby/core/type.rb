@@ -83,12 +83,13 @@ module Rubinius
     end
 
     def self.object_respond_to_no_built_in?(obj, name, include_private = false)
-      Truffle.invoke_primitive :vm_object_respond_to_no_built_in, obj, name, include_private
+      meth = Truffle.invoke_primitive :vm_method_lookup, obj, name
+      !meth.nil? && !(Truffle.invoke_primitive :vm_method_is_basic, meth)
     end
 
-    def self.check_funcall_callable(obj, meth)
+    def self.check_funcall_callable(obj, name)
       # TODO BJF Review rb_method_call_status
-      Truffle.invoke_primitive :vm_check_funcall_callable, obj, meth
+      !(Truffle.invoke_primitive :vm_method_lookup, obj, name).nil?
     end
 
     def self.object_equal(a, b)
@@ -229,10 +230,10 @@ module Rubinius
       v
     end
 
-    def self.convert_type(obj, cls, meth, raise)
+    def self.convert_type(obj, cls, meth, raise_on_error)
       r = check_funcall(obj, meth)
       if undefined.equal?(r)
-        if raise
+        if raise_on_error
           raise TypeError, "can't convert #{obj} into #{cls} with #{meth}"
         end
         return nil

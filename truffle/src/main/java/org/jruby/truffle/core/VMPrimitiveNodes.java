@@ -256,6 +256,45 @@ public abstract class VMPrimitiveNodes {
 
     }
 
+    @Primitive(name = "vm_method_is_basic", needsSelf = false)
+    public static abstract class VMMethodIsBasicNode extends PrimitiveArrayArgumentsNode {
+
+        public VMMethodIsBasicNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public boolean vmMethodIsBasic(VirtualFrame frame, DynamicObject method) {
+            return Layouts.METHOD.getMethod(method).isBuiltIn();
+        }
+
+    }
+
+    @Primitive(name = "vm_method_lookup", needsSelf = false)
+    public static abstract class VMMethodLookupNode extends PrimitiveArrayArgumentsNode {
+
+        @Child NameToJavaStringNode nameToJavaStringNode;
+        @Child LookupMethodNode lookupMethodNode;
+
+        public VMMethodLookupNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            nameToJavaStringNode = NameToJavaStringNode.create();
+            lookupMethodNode = LookupMethodNodeGen.create(context, sourceSection, true, false, null, null);
+        }
+
+        @Specialization
+        public DynamicObject vmMethodLookup(VirtualFrame frame, Object self, Object name) {
+            // TODO BJF Sep 14, 2016 Handle private
+            final String normalizedName = nameToJavaStringNode.executeToJavaString(frame, name);
+            InternalMethod method = lookupMethodNode.executeLookupMethod(frame, self, normalizedName);
+            if (method == null) {
+                return nil();
+            }
+            return Layouts.METHOD.createMethod(coreLibrary().getMethodFactory(), self, method);
+        }
+
+    }
+
     @Primitive(name = "vm_object_respond_to", needsSelf = false)
     public static abstract class VMObjectRespondToPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
@@ -269,65 +308,6 @@ public abstract class VMPrimitiveNodes {
         @Specialization
         public boolean vmObjectRespondTo(VirtualFrame frame, Object object, Object name, boolean includePrivate) {
             return respondToNode.executeDoesRespondTo(frame, object, name, includePrivate);
-        }
-
-    }
-
-    @Primitive(name = "vm_object_respond_to_no_built_in", needsSelf = false)
-    public static abstract class VMObjectRespondToNoBuiltInPrimitiveNode extends PrimitiveArrayArgumentsNode {
-
-        @Child NameToJavaStringNode nameToJavaStringNode;
-
-        public VMObjectRespondToNoBuiltInPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            nameToJavaStringNode = NameToJavaStringNode.create();
-        }
-
-        @Specialization
-        public boolean vmObjectRespondToNoBuiltIn(VirtualFrame frame, Object object, Object name, boolean includePrivate) {
-            // Used in place for this pattern:
-            // method_entry_get(klass, mid, &defined_class);
-            // if (!me || METHOD_ENTRY_BASIC(me))
-
-            final String nameString = nameToJavaStringNode.executeToJavaString(frame, name);
-            final InternalMethod method = ModuleOperations.lookupMethod(coreLibrary().getMetaClass(object), nameString);
-
-            // If no method was found, use #method_missing
-            if (method == null) {
-                return false;
-            }
-
-            // Check for methods that are explicitly undefined
-            if (method.isUndefined()) {
-                return false;
-            }
-
-            if(method.isBuiltIn()){
-                return false;
-            }
-
-            return true;
-        }
-
-    }
-
-    @Primitive(name = "vm_check_funcall_callable", needsSelf = false)
-    public static abstract class VMObjectFuncallCallablePrimitiveNode extends PrimitiveArrayArgumentsNode {
-
-        @Child NameToJavaStringNode nameToJavaStringNode;
-        @Child LookupMethodNode lookupMethodNode;
-
-        public VMObjectFuncallCallablePrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            nameToJavaStringNode = NameToJavaStringNode.create();
-            lookupMethodNode = LookupMethodNodeGen.create(context, sourceSection, true, false, null, null);
-        }
-
-        @Specialization
-        public boolean vmCheckFuncallCallable(VirtualFrame frame, Object self, Object name) {
-            final String nameString = nameToJavaStringNode.executeToJavaString(frame, name);
-            final InternalMethod method = lookupMethodNode.executeLookupMethod(frame, self, nameString);
-            return method != null;
         }
 
     }
