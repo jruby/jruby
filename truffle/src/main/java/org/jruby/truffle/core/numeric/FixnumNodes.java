@@ -37,8 +37,10 @@ import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.methods.UnsupportedOperationBehavior;
+import org.jruby.util.SipHashInline;
 
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
 
 @CoreClass("Fixnum")
 public abstract class FixnumNodes {
@@ -1179,6 +1181,40 @@ public abstract class FixnumNodes {
         public DynamicObject coerce(int a, Object b) {
             return null; // Primitive failure
         }
+
+    }
+
+
+    @Primitive(name = "fixnum_memhash")
+    public static abstract class FixnumMemhashPrimitiveNode extends PrimitiveArrayArgumentsNode {
+
+
+        @Specialization
+        public long memhashIntInt(int a, int b) {
+            return memhashLongLong((long) a, (long) b);
+        }
+
+        @Specialization
+        public long memhashLongInt(long a, int b) {
+            return memhashLongLong(a, (long) b);
+        }
+
+        @Specialization
+        public long memhash(int a, long b) {
+            return memhashLongLong((long) a, b);
+        }
+
+
+        @Specialization
+        public long memhashLongLong(long a, long b) {
+            final ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES * 2);
+            buffer.putLong(a);
+            buffer.putLong(b);
+            return SipHashInline.hash24(getContext().getJRubyRuntime().getHashSeedK0(),
+                getContext().getJRubyRuntime().getHashSeedK1(), buffer.array());
+        }
+
+
 
     }
 

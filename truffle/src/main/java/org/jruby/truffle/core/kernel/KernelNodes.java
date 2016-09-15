@@ -40,6 +40,7 @@ import jnr.constants.platform.Errno;
 import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.common.IRubyWarnings;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
@@ -894,16 +895,20 @@ public abstract class KernelNodes {
     @CoreMethod(names = "hash")
     public abstract static class HashNode extends CoreMethodArrayArgumentsNode {
 
+        private static final int MURMUR_ARRAY_SEED = System.identityHashCode(HashNode.class);
+
         @Specialization
-        public int hash(int value) {
-            // TODO(CS): should check this matches MRI
-            return value;
+        public long hash(int value) {
+            long h = Helpers.hashStart(getContext().getJRubyRuntime(), value);
+            h = Helpers.murmurCombine(h, MURMUR_ARRAY_SEED);
+            return Helpers.hashEnd(h);
         }
 
         @Specialization
-        public int hash(long value) {
-            // TODO(CS): should check this matches MRI
-            return Long.valueOf(value).hashCode();
+        public long hash(long value) {
+            long h = Helpers.hashStart(getContext().getJRubyRuntime(), value);
+            h = Helpers.murmurCombine(h, MURMUR_ARRAY_SEED);
+            return Helpers.hashEnd(h);
         }
 
         @Specialization
