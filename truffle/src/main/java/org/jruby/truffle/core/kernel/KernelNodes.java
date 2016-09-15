@@ -899,15 +899,15 @@ public abstract class KernelNodes {
 
         @Specialization
         public long hash(int value) {
-            long h = Helpers.hashStart(getContext().getJRubyRuntime(), value);
-            h = Helpers.murmurCombine(h, MURMUR_ARRAY_SEED);
+            long h = Helpers.hashStart(getContext().getJRubyRuntime(), MURMUR_ARRAY_SEED);
+            h = Helpers.murmurCombine(h, value);
             return Helpers.hashEnd(h);
         }
 
         @Specialization
         public long hash(long value) {
-            long h = Helpers.hashStart(getContext().getJRubyRuntime(), value);
-            h = Helpers.murmurCombine(h, MURMUR_ARRAY_SEED);
+            long h = Helpers.hashStart(getContext().getJRubyRuntime(), MURMUR_ARRAY_SEED);
+            h = Helpers.murmurCombine(h, value);
             return Helpers.hashEnd(h);
         }
 

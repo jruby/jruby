@@ -1188,23 +1188,6 @@ public abstract class FixnumNodes {
     @Primitive(name = "fixnum_memhash")
     public static abstract class FixnumMemhashPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
-
-        @Specialization
-        public long memhashIntInt(int a, int b) {
-            return memhashLongLong((long) a, (long) b);
-        }
-
-        @Specialization
-        public long memhashLongInt(long a, int b) {
-            return memhashLongLong(a, (long) b);
-        }
-
-        @Specialization
-        public long memhash(int a, long b) {
-            return memhashLongLong((long) a, b);
-        }
-
-
         @Specialization
         public long memhashLongLong(long a, long b) {
             final ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES * 2);
