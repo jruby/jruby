@@ -895,18 +895,18 @@ public abstract class KernelNodes {
     @CoreMethod(names = "hash")
     public abstract static class HashNode extends CoreMethodArrayArgumentsNode {
 
-        private static final int MURMUR_ARRAY_SEED = System.identityHashCode(HashNode.class);
+        private static final int MURMUR_SEED = System.identityHashCode(HashNode.class);
 
         @Specialization
         public long hash(int value) {
-            long h = Helpers.hashStart(getContext().getJRubyRuntime(), MURMUR_ARRAY_SEED);
+            long h = Helpers.hashStart(getContext().getJRubyRuntime(), MURMUR_SEED);
             h = Helpers.murmurCombine(h, value);
             return Helpers.hashEnd(h);
         }
 
         @Specialization
         public long hash(long value) {
-            long h = Helpers.hashStart(getContext().getJRubyRuntime(), MURMUR_ARRAY_SEED);
+            long h = Helpers.hashStart(getContext().getJRubyRuntime(), MURMUR_SEED);
             h = Helpers.murmurCombine(h, value);
             return Helpers.hashEnd(h);
         }
