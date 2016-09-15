@@ -84,7 +84,7 @@ module Rubinius
 
     def self.object_respond_to_no_built_in?(obj, name, include_private = false)
       meth = Truffle.invoke_primitive :vm_method_lookup, obj, name
-      !meth.nil? && !(Truffle.invoke_primitive :vm_method_is_basic, meth)
+      !meth.nil? && !Truffle.invoke_primitive(:vm_method_is_basic, meth)
     end
 
     def self.check_funcall_callable(obj, name)
@@ -241,7 +241,7 @@ module Rubinius
       r
     end
 
-    def self.check_funcall(recv, meth, args = undefined)
+    def self.check_funcall(recv, meth, args = [])
       check_funcall_default(recv, meth, args, undefined)
     end
 
@@ -260,10 +260,11 @@ module Rubinius
     end
 
     def self.check_funcall_missing(recv, meth, args, respond, default)
-      return default unless basic_obj_respond_to_missing(recv, meth, false) #PRIV false
+      res = basic_obj_respond_to_missing(recv, meth, false) #PRIV false
+      return default unless res
       if object_respond_to_no_built_in?(recv, :method_missing, true)
         begin
-          return recv.__send__(:method_missing, meth)    # , args
+          return recv.__send__(:method_missing, meth, *args)
         rescue NoMethodError
           # TODO BJF usually more is done here
           raise
