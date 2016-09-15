@@ -260,8 +260,7 @@ module Rubinius
     end
 
     def self.check_funcall_missing(recv, meth, args, respond, default)
-      ret = basic_obj_respond_to_missing(recv, meth, false) #PRIV false
-      return default unless undefined.equal?(ret) || ret
+      return default unless basic_obj_respond_to_missing(recv, meth, false) #PRIV false
       if object_respond_to_no_built_in?(recv, :method_missing, true)
         begin
           return recv.__send__(:method_missing, meth)    # , args
