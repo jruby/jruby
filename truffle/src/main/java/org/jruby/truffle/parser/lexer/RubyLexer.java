@@ -1580,15 +1580,30 @@ public class RubyLexer extends LexingCommon {
 
         length++;
 
-        // Commmit
+        // Commit to parsing this as JavaScript
 
-        // TODO CS 11-09-16 nesting, strings, escaping etc
+        // TODO CS 11-09-16 strings, escaping etc
 
         while (p(lex_p + length) != '{') {
             length++;
         }
 
-        while (p(lex_p + length) != '}') {
+        length++;
+
+        int depth = 0;
+
+        int c;
+
+        while ((c = p(lex_p + length)) != '}' || depth > 0) {
+            switch (c) {
+                case '{':
+                    depth++;
+                    break;
+                case '}':
+                    depth--;
+                    break;
+            }
+
             length++;
         }
 
