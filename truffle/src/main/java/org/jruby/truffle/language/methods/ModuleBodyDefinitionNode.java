@@ -65,8 +65,7 @@ public class ModuleBodyDefinitionNode extends RubyNode {
         } else {
             capturedBlock = null;
         }
-
-        return new InternalMethod(sharedMethodInfo, name, dummyModule, dummyVisibility, false, null, callTarget, capturedBlock, null);
+        return new InternalMethod(getContext(), sharedMethodInfo, name, dummyModule, dummyVisibility, false, null, callTarget, capturedBlock, null);
     }
 
     @Override

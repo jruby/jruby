@@ -75,7 +75,7 @@ public class LazyRubyRootNode extends RootNode implements InternalRootNode {
             callNode.forceInlining();
 
             mainObject = context.getCoreLibrary().getMainObject();
-            method = new InternalMethod(rootNode.getSharedMethodInfo(), rootNode.getSharedMethodInfo().getName(),
+            method = new InternalMethod(context, rootNode.getSharedMethodInfo(), rootNode.getSharedMethodInfo().getName(),
                     context.getCoreLibrary().getObjectClass(), Visibility.PUBLIC, callTarget);
         }
 

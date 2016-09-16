@@ -77,8 +77,8 @@ public class CodeLoader {
         } else {
             declaringModule = context.getCoreLibrary().getObjectClass();
         }
-
         final InternalMethod method = new InternalMethod(
+                context,
                 rootNode.getSharedMethodInfo(),
                 rootNode.getSharedMethodInfo().getName(),
                 declaringModule,

@@ -39,7 +39,10 @@ package org.jruby.truffle.core;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Cached;
+import com.oracle.truffle.api.dsl.CreateCast;
 import com.oracle.truffle.api.dsl.Fallback;
+import com.oracle.truffle.api.dsl.NodeChild;
+import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
@@ -55,17 +58,24 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.Primitive;
 import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.core.basicobject.BasicObjectNodes.ReferenceEqualNode;
+import org.jruby.truffle.core.cast.NameToJavaStringNode;
+import org.jruby.truffle.core.cast.NameToSymbolOrStringNodeGen;
 import org.jruby.truffle.core.kernel.KernelNodes;
 import org.jruby.truffle.core.kernel.KernelNodesFactory;
+import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.core.proc.ProcSignalHandler;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.core.thread.ThreadManager;
 import org.jruby.truffle.language.RubyGuards;
+import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.ExitException;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.control.ThrowException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
+import org.jruby.truffle.language.methods.InternalMethod;
+import org.jruby.truffle.language.methods.LookupMethodNode;
+import org.jruby.truffle.language.methods.LookupMethodNodeGen;
 import org.jruby.truffle.language.objects.IsANode;
 import org.jruby.truffle.language.objects.IsANodeGen;
 import org.jruby.truffle.language.objects.LogicalClassNode;
@@ -246,6 +256,45 @@ public abstract class VMPrimitiveNodes {
 
     }
 
+    @Primitive(name = "vm_method_is_basic", needsSelf = false)
+    public static abstract class VMMethodIsBasicNode extends PrimitiveArrayArgumentsNode {
+
+        public VMMethodIsBasicNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public boolean vmMethodIsBasic(VirtualFrame frame, DynamicObject method) {
+            return Layouts.METHOD.getMethod(method).isBuiltIn();
+        }
+
+    }
+
+    @Primitive(name = "vm_method_lookup", needsSelf = false)
+    public static abstract class VMMethodLookupNode extends PrimitiveArrayArgumentsNode {
+
+        @Child NameToJavaStringNode nameToJavaStringNode;
+        @Child LookupMethodNode lookupMethodNode;
+
+        public VMMethodLookupNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            nameToJavaStringNode = NameToJavaStringNode.create();
+            lookupMethodNode = LookupMethodNodeGen.create(context, sourceSection, true, false, null, null);
+        }
+
+        @Specialization
+        public DynamicObject vmMethodLookup(VirtualFrame frame, Object self, Object name) {
+            // TODO BJF Sep 14, 2016 Handle private
+            final String normalizedName = nameToJavaStringNode.executeToJavaString(frame, name);
+            InternalMethod method = lookupMethodNode.executeLookupMethod(frame, self, normalizedName);
+            if (method == null) {
+                return nil();
+            }
+            return Layouts.METHOD.createMethod(coreLibrary().getMethodFactory(), self, method);
+        }
+
+    }
+
     @Primitive(name = "vm_object_respond_to", needsSelf = false)
     public static abstract class VMObjectRespondToPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
@@ -262,6 +311,7 @@ public abstract class VMPrimitiveNodes {
         }
 
     }
+
 
     @Primitive(name = "vm_object_singleton_class", needsSelf = false)
     public static abstract class VMObjectSingletonClassPrimitiveNode extends PrimitiveArrayArgumentsNode {
