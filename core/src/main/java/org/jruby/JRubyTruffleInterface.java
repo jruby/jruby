@@ -13,7 +13,7 @@ public interface JRubyTruffleInterface {
 
     String RUNTIME_SYMBOL = "org.jruby.truffle.runtime";
 
-    Object execute(org.jruby.ast.RootNode rootNode);
+    Object execute(String path);
 
     void dispose();
     

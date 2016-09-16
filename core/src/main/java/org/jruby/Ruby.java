@@ -556,6 +556,17 @@ public final class Ruby implements Constantizable {
             return;
         }
 
+        if (getInstanceConfig().getCompileMode() == CompileMode.TRUFFLE) {
+            final JRubyTruffleInterface truffleContext = getTruffleContext();
+            Main.printTruffleTimeMetric("before-run");
+            try {
+                truffleContext.execute(filename);
+            } finally {
+                Main.printTruffleTimeMetric("after-run");
+                shutdownTruffleContextIfRunning();
+            }
+        }
+
         ParseResult parseResult = parseFromMain(filename, inputStream);
 
         // if no DATA, we're done with the stream, shut it down
@@ -850,24 +861,9 @@ public final class Ruby implements Constantizable {
         return interpreter.execute(this, parseResult, self);
    }
 
-    public IRubyObject runInterpreter(ThreadContext context, Node rootNode, IRubyObject self) {
+    public IRubyObject runInterpreter(ThreadContext context,  Node rootNode, IRubyObject self) {
         assert rootNode != null : "scriptNode is not null";
-
-        if (getInstanceConfig().getCompileMode() == CompileMode.TRUFFLE) {
-            assert rootNode instanceof RootNode;
-            assert self == getTopSelf();
-            final JRubyTruffleInterface truffleContext = getTruffleContext();
-            Main.printTruffleTimeMetric("before-run");
-            try {
-                truffleContext.execute((RootNode) rootNode);
-            } finally {
-                Main.printTruffleTimeMetric("after-run");
-                shutdownTruffleContextIfRunning();
-            }
-            return getNil();
-        } else {
-            return interpreter.execute(this, rootNode, self);
-        }
+        return interpreter.execute(this, rootNode, self);
     }
 
     public IRubyObject runInterpreter(Node scriptNode) {

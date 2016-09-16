@@ -52,19 +52,7 @@ public class Main {
                 runtime.getGlobalVariables().set("$" + entry.getKey(), varvalue);
             }
 
-            RootNode scriptNode = (RootNode) runtime.parseFromMain(filename, in);
-
-            ThreadContext context = runtime.getCurrentContext();
-
-            String oldFile = context.getFile();
-            int oldLine = context.getLine();
-
-            try {
-                context.setFileAndLine(scriptNode.getPosition());
-                runtime.getTruffleContext().execute(scriptNode);
-            } finally {
-                context.setFileAndLine(oldFile, oldLine);
-            }
+            runtime.getTruffleContext().execute(filename);
         }
 
     }

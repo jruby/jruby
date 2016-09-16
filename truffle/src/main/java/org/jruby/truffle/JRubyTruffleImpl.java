@@ -33,14 +33,14 @@ public class JRubyTruffleImpl implements JRubyTruffleInterface {
     }
 
     @Override
-    public Object execute(org.jruby.ast.RootNode rootNode) {
+    public Object execute(String path) {
         if (!Graal.isGraal() && Options.TRUFFLE_GRAAL_WARNING_UNLESS.load()) {
             System.err.println("WARNING: This JVM does not have the Graal compiler. " +
                     "JRuby+Truffle's performance without it will be limited. " +
                     "See https://github.com/jruby/jruby/wiki/Truffle-FAQ#how-do-i-get-jrubytruffle");
         }
 
-        context.getJRubyInterop().setOriginalInputFile(rootNode.getPosition().getFile());
+        context.getJRubyInterop().setOriginalInputFile(path);
 
         try {
             return engine.eval(loadSource("Truffle::Boot.run_jruby_root", "run_jruby_root")).get();
