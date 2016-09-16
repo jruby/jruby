@@ -17,6 +17,7 @@ import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.runtime.ArgumentDescriptor;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
@@ -30,6 +31,7 @@ import org.jruby.truffle.language.arguments.ArgumentDescriptorUtils;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.methods.CanBindMethodToModuleNode;
 import org.jruby.truffle.language.methods.CanBindMethodToModuleNodeGen;
+import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.objects.MetaClassNode;
 import org.jruby.truffle.language.objects.MetaClassNodeGen;
 
@@ -95,6 +97,20 @@ public abstract class UnboundMethodNodes {
 
         protected DynamicObject metaClass(Object object) {
             return metaClassNode.executeMetaClass(object);
+        }
+
+    }
+
+    @CoreMethod(names = "hash")
+    public abstract static class HashNode extends CoreMethodArrayArgumentsNode {
+
+        @Specialization
+        public long hash(DynamicObject rubyMethod) {
+            final InternalMethod method = Layouts.UNBOUND_METHOD.getMethod(rubyMethod);
+            long h = Helpers.hashStart(getContext().getJRubyRuntime(), method.getDeclaringModule().hashCode());
+            h = Helpers.murmurCombine(h, Layouts.UNBOUND_METHOD.getOrigin(rubyMethod).hashCode());
+            h = Helpers.murmurCombine(h, method.getSharedMethodInfo().hashCode());
+            return Helpers.hashEnd(h);
         }
 
     }
