@@ -1201,6 +1201,46 @@ public abstract class FixnumNodes {
 
     }
 
+    @Primitive(name = "fixnum_fits_into_int")
+    public static abstract class FixnumFitsIntoIntPrimitiveNode extends PrimitiveArrayArgumentsNode {
+
+        @Specialization
+        public boolean fitsIntoIntInt(int a) {
+            return true;
+        }
+
+        @Specialization
+        public boolean fitsIntoIntLong(long a) {
+            return CoreLibrary.fitsIntoInteger(a);
+        }
+
+        @Specialization(guards = "isRubyBignum(b)")
+        public boolean fitsIntoIntBignum(DynamicObject b) {
+            return false;
+        }
+
+    }
+
+    @Primitive(name = "fixnum_fits_into_long")
+    public static abstract class FixnumFitsIntoLongPrimitiveNode extends PrimitiveArrayArgumentsNode {
+
+        @Specialization
+        public boolean fitsIntoLongInt(int a) {
+            return true;
+        }
+
+        @Specialization
+        public boolean fitsIntoLongLong(long a) {
+            return true;
+        }
+
+        @Specialization(guards = "isRubyBignum(b)")
+        public boolean fitsIntoLongBignum(DynamicObject b) {
+            return false;
+        }
+
+    }
+
     @Primitive(name = "fixnum_pow")
     public abstract static class FixnumPowPrimitiveNode extends BignumNodes.BignumCoreMethodNode {
 

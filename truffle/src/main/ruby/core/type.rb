@@ -220,6 +220,58 @@ module Rubinius
       raise TypeError, msg
     end
 
+    def self.rb_num2int(val)
+      num = rb_num2long(val)
+      check_int(num)
+      num
+    end
+
+    def self.rb_num2long(val)
+      raise TypeError, "no implicit conversion from nil to integer" if val.nil?
+
+      if object_kind_of?(val, Fixnum)
+        return val
+      elsif object_kind_of?(val, Float)
+        fval = val.to_int
+        check_long(fval)
+        return fval
+      elsif object_kind_of?(val, Bignum)
+        raise TypeError, "rb_num2long Bignum conversion not yet implemented"
+      else
+         return rb_num2long(rb_to_int(val))
+      end
+    end
+
+    def self.rb_to_int(val)
+      rb_to_integer(val, :to_int);
+    end
+
+    def self.rb_to_integer(val, meth)
+      return val if object_kind_of?(val, Fixnum) || object_kind_of?(val, Bignum)
+      res = convert_type(val, Integer, meth, true)
+      unless object_kind_of?(res, Integer)
+        conversion_mismatch(val, Integer, meth, res)
+      end
+      res
+    end
+
+    def self.conversion_mismatch(val, cls, meth, res)
+      raise TypeError, "can't convert #{val.class} to #{cls} (#{val.class}##{meth} gives #{res.class})"
+    end
+
+    def self.check_int(val)
+      unless Truffle.invoke_primitive(:fixnum_fits_into_int, val)
+        raise RangeError, "integer #{val} too #{val < 0 ? 'small' : 'big'} to convert to `int"
+      end
+    end
+
+    def self.check_long(val)
+      unless Truffle.invoke_primitive(:fixnum_fits_into_long, val)
+        raise RangeError, "integer #{val} too #{val < 0 ? 'small' : 'big'} to convert to `long"
+      end
+    end
+
+
     def self.rb_check_convert_type(obj, cls, meth)
       return obj if object_kind_of?(obj, cls)
       v = convert_type(obj, cls, meth, false)

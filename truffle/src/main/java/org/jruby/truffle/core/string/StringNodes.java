@@ -503,7 +503,6 @@ public abstract class StringNodes {
     @CoreMethod(names = { "[]", "slice" }, required = 1, optional = 1, lowerFixnum = { 1, 2 }, taintFrom = 0)
     public abstract static class GetIndexNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private ToIntNode toIntNode;
         @Child private CallDispatchHeadNode includeNode;
         @Child private CallDispatchHeadNode dupNode;
         @Child private StringSubstringPrimitiveNode substringNode;
@@ -527,8 +526,8 @@ public abstract class StringNodes {
         }
 
         @Specialization(guards = { "!isRubyRange(index)", "!isRubyRegexp(index)", "!isRubyString(index)", "wasNotProvided(length) || isRubiniusUndefined(length)" })
-        public Object getIndex(VirtualFrame frame, DynamicObject string, Object index, Object length) {
-            return getIndex(frame, string, getToIntNode().doInt(frame, index), length);
+        public Object getIndex(VirtualFrame frame, DynamicObject string, Object index, Object length, @Cached("new()") SnippetNode snippetNode) {
+            return getIndex(frame, string, (int)snippetNode.execute(frame, "Rubinius::Type.rb_num2int(v)", "v", index), length);
         }
 
         @Specialization(guards = { "isIntRange(range)", "wasNotProvided(length) || isRubiniusUndefined(length)" })
@@ -543,10 +542,10 @@ public abstract class StringNodes {
         }
 
         @Specialization(guards = {"isObjectRange(range)", "wasNotProvided(length) || isRubiniusUndefined(length)"})
-        public Object sliceObjectRange(VirtualFrame frame, DynamicObject string, DynamicObject range, Object length) {
+        public Object sliceObjectRange(VirtualFrame frame, DynamicObject string, DynamicObject range, Object length, @Cached("new()") SnippetNode snippetNode1, @Cached("new()") SnippetNode snippetNode2) {
             // TODO (nirvdrum 31-Mar-15) The begin and end values may return Fixnums beyond int boundaries and we should handle that -- Bignums are always errors.
-            final int coercedBegin = getToIntNode().doInt(frame, Layouts.OBJECT_RANGE.getBegin(range));
-            final int coercedEnd = getToIntNode().doInt(frame, Layouts.OBJECT_RANGE.getEnd(range));
+            final int coercedBegin = (int)snippetNode1.execute(frame, "Rubinius::Type.rb_num2int(v)", "v", Layouts.OBJECT_RANGE.getBegin(range));
+            final int coercedEnd = (int)snippetNode2.execute(frame, "Rubinius::Type.rb_num2int(v)", "v", Layouts.OBJECT_RANGE.getEnd(range));
 
             return sliceRange(frame, string, coercedBegin, coercedEnd, Layouts.OBJECT_RANGE.getExcludedEnd(range));
         }
@@ -591,13 +590,13 @@ public abstract class StringNodes {
         }
 
         @Specialization(guards = "wasProvided(length)")
-        public Object slice(VirtualFrame frame, DynamicObject string, int start, Object length) {
-            return slice(frame, string, start, getToIntNode().doInt(frame, length));
+        public Object slice(VirtualFrame frame, DynamicObject string, int start, Object length, @Cached("new()") SnippetNode snippetNode) {
+            return slice(frame, string, start, (int)snippetNode.execute(frame, "Rubinius::Type.rb_num2int(v)", "v", length));
         }
 
         @Specialization(guards = { "!isRubyRange(start)", "!isRubyRegexp(start)", "!isRubyString(start)", "wasProvided(length)" })
-        public Object slice(VirtualFrame frame, DynamicObject string, Object start, Object length) {
-            return slice(frame, string, getToIntNode().doInt(frame, start), getToIntNode().doInt(frame, length));
+        public Object slice(VirtualFrame frame, DynamicObject string, Object start, Object length, @Cached("new()") SnippetNode snippetNode1, @Cached("new()") SnippetNode snippetNode2) {
+            return slice(frame, string, (int)snippetNode1.execute(frame, "Rubinius::Type.rb_num2int(v)", "v", start), (int)snippetNode2.execute(frame, "Rubinius::Type.rb_num2int(v)", "v", length));
         }
 
         @Specialization(guards = {"isRubyRegexp(regexp)", "wasNotProvided(capture) || isRubiniusUndefined(capture)"})
@@ -652,15 +651,6 @@ public abstract class StringNodes {
             }
 
             return nil();
-        }
-
-        private ToIntNode getToIntNode() {
-            if (toIntNode == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                toIntNode = insert(ToIntNode.create());
-            }
-
-            return toIntNode;
         }
 
         private StringSubstringPrimitiveNode getSubstringNode() {
