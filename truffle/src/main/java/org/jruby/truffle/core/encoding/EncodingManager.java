@@ -29,14 +29,16 @@ import org.jruby.util.encoding.ISO_8859_16;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.charset.UnsupportedCharsetException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
 public class EncodingManager {
 
-    private final DynamicObject[] ENCODING_LIST_BY_ENCODING_LIST_INDEX = new DynamicObject[EncodingDB.getEncodings().size()];
-    private final DynamicObject[] ENCODING_LIST_BY_ENCODING_INDEX = new DynamicObject[EncodingDB.getEncodings().size()];
+    private final List<DynamicObject> ENCODING_LIST_BY_ENCODING_LIST_INDEX = new ArrayList<DynamicObject>(EncodingDB.getEncodings().size());
+    private final Map<Integer, DynamicObject> ENCODING_LIST_BY_ENCODING_INDEX = new HashMap<Integer,DynamicObject>(EncodingDB.getEncodings().size());
     private final Map<String, DynamicObject> LOOKUP = new HashMap<>();
 
     private final RubyContext context;
@@ -55,19 +57,19 @@ public class EncodingManager {
         return Layouts.ENCODING.createEncoding(context.getCoreLibrary().getEncodingFactory(), encoding, string, dummy);
     }
 
-    public DynamicObject[] getUnsafeEncodingList() {
+    public List<DynamicObject> getUnsafeEncodingList() {
         return ENCODING_LIST_BY_ENCODING_LIST_INDEX;
     }
 
     public DynamicObject getRubyEncoding(Encoding encoding) {
-        DynamicObject rubyEncoding = ENCODING_LIST_BY_ENCODING_INDEX[encoding.getIndex()];
+        DynamicObject rubyEncoding = ENCODING_LIST_BY_ENCODING_INDEX.get(encoding.getIndex());
 
         if (rubyEncoding == null) {
             // Bounded by the number of encodings
             CompilerDirectives.transferToInterpreterAndInvalidate();
 
             rubyEncoding = LOOKUP.get(new String(encoding.getName(), StandardCharsets.UTF_8).toLowerCase(Locale.ENGLISH));
-            ENCODING_LIST_BY_ENCODING_INDEX[encoding.getIndex()] = rubyEncoding;
+            ENCODING_LIST_BY_ENCODING_INDEX.put(encoding.getIndex(),rubyEncoding);
         }
 
         return rubyEncoding;
@@ -80,14 +82,15 @@ public class EncodingManager {
 
     @TruffleBoundary
     public DynamicObject getRubyEncoding(int encodingListIndex) {
-        return ENCODING_LIST_BY_ENCODING_LIST_INDEX[encodingListIndex];
+        return ENCODING_LIST_BY_ENCODING_LIST_INDEX.get(encodingListIndex);
     }
 
     @TruffleBoundary
     public void defineEncoding(EncodingDB.Entry encodingEntry, byte[] name, int p, int end) {
         final DynamicObject rubyEncoding = newRubyEncoding(context, null, name, p, end, encodingEntry.isDummy());
 
-        ENCODING_LIST_BY_ENCODING_LIST_INDEX[encodingEntry.getIndex()] = rubyEncoding;
+        assert ENCODING_LIST_BY_ENCODING_LIST_INDEX.size() == encodingEntry.getIndex();
+        ENCODING_LIST_BY_ENCODING_LIST_INDEX.add(encodingEntry.getIndex(), rubyEncoding);
         LOOKUP.put(Layouts.ENCODING.getName(rubyEncoding).toString().toLowerCase(Locale.ENGLISH), rubyEncoding);
     }
 

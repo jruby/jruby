@@ -631,6 +631,10 @@ class Encoding
     names
   end
 
+  def replicate(name)
+    Truffle.invoke_primitive(:encoding_replicate, self, StringValue(name))
+  end
+
   def _dump(depth)
     name
   end
