@@ -55,9 +55,9 @@ class Encoding
   end
 
   class << self
-    def build_encoding_map
+    def encoding_map
       map = Rubinius::LookupTable.new
-      EncodingList.each_with_index { |encoding, index|
+      Encoding.list.each_with_index { |encoding, index|
         key = encoding.name.upcase.to_sym
         map[key] = [nil, index]
       }
@@ -75,12 +75,9 @@ class Encoding
       }
       map
     end
-    private :build_encoding_map
   end
 
   TranscodingMap = Encoding::Converter.transcoding_map
-  EncodingList = Encoding.list.freeze
-  EncodingMap = build_encoding_map
 
   @default_external = undefined
   @default_internal = undefined
@@ -544,12 +541,12 @@ class Encoding
 
   def self.aliases
     aliases = {}
-    EncodingMap.each do |n, r|
+    Encoding.encoding_map.each do |n, r|
       index = r.last
       next unless index
 
       aname = r.first
-      aliases[aname] = EncodingList[index].name if aname
+      aliases[aname] = Truffle.invoke_primitive(:encoding_get_object_encoding_by_index, index).name if aname
     end
 
     aliases
@@ -562,17 +559,17 @@ class Encoding
     when Encoding
       source_name = obj.name
     when nil
-      EncodingMap[key][1] = nil
+      Encoding.encoding_map[key][1] = nil
       return
     else
       source_name = StringValue(obj)
     end
 
-    entry = EncodingMap[source_name.upcase.to_sym]
+    entry = Encoding.encoding_map[source_name.upcase.to_sym]
     raise ArgumentError, "unknown encoding name - #{source_name}" unless entry
     index = entry.last
 
-    EncodingMap[key][1] = index
+    Encoding.encoding_map[key][1] = index
   end
   private_class_method :set_alias_index
 
@@ -611,9 +608,9 @@ class Encoding
   end
 
   def self.name_list
-    EncodingMap.map do |n, r|
+    Encoding.encoding_map.map do |n, r|
       index = r.last
-      r.first or (index and EncodingList[index].name)
+      r.first or (index and Truffle.invoke_primitive(:encoding_get_object_encoding_by_index, index).name)
     end
   end
 
@@ -622,9 +619,9 @@ class Encoding
   end
 
   def names
-    entry = EncodingMap[name.upcase.to_sym]
+    entry = Encoding.encoding_map[name.upcase.to_sym]
     names = [name]
-    EncodingMap.each do |k, r|
+    Encoding.encoding_map.each do |k, r|
       aname = r.first
       names << aname if aname and r.last == entry.last
     end

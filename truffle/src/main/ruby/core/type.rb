@@ -459,10 +459,10 @@ module Rubinius
 
       key = str.upcase.to_sym
 
-      pair = Encoding::EncodingMap[key]
+      pair = Encoding.encoding_map[key]
       if pair
         index = pair.last
-        return index && Encoding::EncodingList[index]
+        return index && Truffle.invoke_primitive(:encoding_get_object_encoding_by_index, index)
       end
 
       return undefined
