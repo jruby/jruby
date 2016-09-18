@@ -559,16 +559,6 @@ public abstract class EncodingNodes {
 
     }
 
-    @Primitive(name = "encoding_get_object_encoding_by_index", needsSelf = false)
-    public static abstract class EncodingGetObjectEncodingByIndexNode extends PrimitiveArrayArgumentsNode {
-
-        @Specialization
-        public DynamicObject encodingGetObjectEncodingByIndex(int index) {
-            return getContext().getEncodingManager().getRubyEncoding(index);
-        }
-
-    }
-
     @Primitive(name = "encoding_replicate")
     public static abstract class EncodingReplicateNode extends PrimitiveArrayArgumentsNode {
 
