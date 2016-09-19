@@ -48,6 +48,7 @@ import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SnippetNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.util.ByteList;
 
@@ -563,8 +564,7 @@ public abstract class EncodingNodes {
     public static abstract class EncodingReplicateNode extends PrimitiveArrayArgumentsNode {
 
         @Specialization(guards = "isRubyString(name)")
-        @TruffleBoundary
-        public DynamicObject encodingReplicate(DynamicObject self, DynamicObject name) {
+        public DynamicObject encodingReplicate(VirtualFrame frame, DynamicObject self, DynamicObject name, @Cached("new()") SnippetNode snippetNode) {
             final String nameString = StringOperations.getString(name);
             final DynamicObject existing = getContext().getEncodingManager().getRubyEncoding(nameString);
             if (existing != null) {
@@ -574,7 +574,19 @@ public abstract class EncodingNodes {
             EncodingDB.replicate(nameString, new String(base.getName()));
             final Entry entry = EncodingDB.getEncodings().get(nameString.getBytes());
             getContext().getEncodingManager().defineEncoding(entry, nameString.getBytes(), 0, nameString.getBytes().length);
-            return getContext().getEncodingManager().getRubyEncoding(nameString.toLowerCase(Locale.ENGLISH));
+            final DynamicObject newEncoding = getContext().getEncodingManager().getRubyEncoding(nameString.toLowerCase(Locale.ENGLISH));
+            snippetNode.execute(frame, "Encoding::EncodingMap[enc.name.upcase.to_sym] = [nil, index]", "enc", newEncoding, "index", entry.getIndex());
+            return newEncoding;
+        }
+
+    }
+
+    @Primitive(name = "encoding_get_object_encoding_by_index", needsSelf = false)
+    public static abstract class EncodingGetObjectEncodingByIndexNode extends PrimitiveArrayArgumentsNode {
+
+        @Specialization
+        public DynamicObject encodingGetObjectEncodingByIndex(int index) {
+            return getContext().getEncodingManager().getRubyEncoding(index);
         }
 
     }

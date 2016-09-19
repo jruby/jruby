@@ -57,7 +57,7 @@ class Encoding
   class << self
     def build_encoding_map
       map = Rubinius::LookupTable.new
-      EncodingList.each_with_index { |encoding, index|
+      Encoding.list.each_with_index { |encoding, index|
         key = encoding.name.upcase.to_sym
         map[key] = [nil, index]
       }
@@ -79,7 +79,6 @@ class Encoding
   end
 
   TranscodingMap = Encoding::Converter.transcoding_map
-  EncodingList = Encoding.list.freeze
   EncodingMap = build_encoding_map
 
   @default_external = undefined
@@ -549,7 +548,7 @@ class Encoding
       next unless index
 
       aname = r.first
-      aliases[aname] = EncodingList[index].name if aname
+      aliases[aname] = Truffle.invoke_primitive(:encoding_get_object_encoding_by_index, index).name if aname
     end
 
     aliases
@@ -613,7 +612,7 @@ class Encoding
   def self.name_list
     EncodingMap.map do |n, r|
       index = r.last
-      r.first or (index and EncodingList[index].name)
+      r.first or (index and Truffle.invoke_primitive(:encoding_get_object_encoding_by_index, index).name)
     end
   end
 
