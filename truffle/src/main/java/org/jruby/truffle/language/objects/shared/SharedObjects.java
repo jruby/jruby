@@ -12,10 +12,6 @@ package org.jruby.truffle.language.objects.shared;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.object.HiddenKey;
-import com.oracle.truffle.api.object.Layout;
-import com.oracle.truffle.api.object.Location;
-import com.oracle.truffle.api.object.Property;
 import com.oracle.truffle.api.object.Shape;
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -25,11 +21,6 @@ import org.jruby.truffle.language.Options;
 import org.jruby.truffle.language.objects.ObjectGraph;
 
 public abstract class SharedObjects {
-
-    private static final HiddenKey SHARED = new HiddenKey("shared");
-    private static final Object SHARED_VALUE = true;
-    private static final Location SHARED_LOCATION = Layout.createLayout().createAllocator().constantLocation(SHARED_VALUE);
-    public static final Property SHARED_PROPERTY = Property.create(SHARED, SHARED_LOCATION, 0);
 
     public static void startSharing(RubyContext context) {
         shareContextRoots(context);
@@ -93,7 +84,7 @@ public abstract class SharedObjects {
     }
 
     public static boolean isShared(Shape shape) {
-        return Options.SHARED_OBJECTS && (Options.SHARED_OBJECTS_SHARE_ALL || shape.hasProperty(SHARED));
+        return Options.SHARED_OBJECTS && (Options.SHARED_OBJECTS_SHARE_ALL || shape.isShared());
     }
 
     public static void writeBarrier(Object value) {
@@ -115,7 +106,7 @@ public abstract class SharedObjects {
 
         object.updateShape();
         final Shape oldShape = object.getShape();
-        final Shape newShape = oldShape.addProperty(SHARED_PROPERTY);
+        final Shape newShape = oldShape.makeSharedShape();
         object.setShapeAndGrow(oldShape, newShape);
         return true;
     }

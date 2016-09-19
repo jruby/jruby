@@ -108,7 +108,7 @@ public abstract class ShareObjectNode extends Node {
     protected static Shape createSharedShape(DynamicObject object) {
         object.updateShape();
         final Shape oldShape = object.getShape();
-        return oldShape.addProperty(SharedObjects.SHARED_PROPERTY);
+        return oldShape.makeSharedShape();
     }
 
 }
