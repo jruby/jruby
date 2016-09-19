@@ -44,11 +44,17 @@ import org.jruby.truffle.core.cast.ToStrNode;
 import org.jruby.truffle.core.cast.ToStrNodeGen;
 import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.rope.Rope;
+import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SnippetNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.util.ByteList;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.Locale;
 
 @CoreClass("Encoding")
 public abstract class EncodingNodes {
@@ -409,10 +415,10 @@ public abstract class EncodingNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject list() {
-            final DynamicObject[] encodings = getContext().getEncodingManager().getUnsafeEncodingList();
-            final Object[] arrayStore = new Object[encodings.length];
+            final List<DynamicObject> encodingsList = getContext().getEncodingManager().getUnsafeEncodingList();
 
-            System.arraycopy(encodings, 0, arrayStore, 0, encodings.length);
+            final Object[] arrayStore = new Object[encodingsList.size()];
+            getContext().getEncodingManager().getUnsafeEncodingList().toArray(arrayStore);
 
             return createArray(arrayStore, arrayStore.length);
         }
@@ -550,6 +556,37 @@ public abstract class EncodingNodes {
         public DynamicObject encodingGetObjectEncodingNil(DynamicObject object) {
             // TODO(CS, 26 Jan 15) something to do with __encoding__ here?
             return nil();
+        }
+
+    }
+
+    @Primitive(name = "encoding_replicate")
+    public static abstract class EncodingReplicateNode extends PrimitiveArrayArgumentsNode {
+
+        @Specialization(guards = "isRubyString(name)")
+        public DynamicObject encodingReplicate(VirtualFrame frame, DynamicObject self, DynamicObject name, @Cached("new()") SnippetNode snippetNode) {
+            final String nameString = StringOperations.getString(name);
+            final DynamicObject existing = getContext().getEncodingManager().getRubyEncoding(nameString);
+            if (existing != null) {
+                throw new RaiseException(coreExceptions().argumentErrorEncodingAlreadyRegistered(nameString, this));
+            }
+            final Encoding base = EncodingOperations.getEncoding(self);
+            EncodingDB.replicate(nameString, new String(base.getName()));
+            final Entry entry = EncodingDB.getEncodings().get(nameString.getBytes());
+            getContext().getEncodingManager().defineEncoding(entry, nameString.getBytes(), 0, nameString.getBytes().length);
+            final DynamicObject newEncoding = getContext().getEncodingManager().getRubyEncoding(nameString.toLowerCase(Locale.ENGLISH));
+            snippetNode.execute(frame, "Encoding::EncodingMap[enc.name.upcase.to_sym] = [nil, index]", "enc", newEncoding, "index", entry.getIndex());
+            return newEncoding;
+        }
+
+    }
+
+    @Primitive(name = "encoding_get_encoding_by_index", needsSelf = false)
+    public static abstract class EncodingGetObjectEncodingByIndexNode extends PrimitiveArrayArgumentsNode {
+
+        @Specialization
+        public DynamicObject encodingGetObjectEncodingByIndex(int index) {
+            return getContext().getEncodingManager().getRubyEncoding(index);
         }
 
     }

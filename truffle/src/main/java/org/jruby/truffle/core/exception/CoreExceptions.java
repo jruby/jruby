@@ -129,6 +129,11 @@ public class CoreExceptions {
     }
 
     @TruffleBoundary
+    public DynamicObject argumentErrorEncodingAlreadyRegistered(String nameString, Node currentNode) {
+        return argumentError(StringUtils.format("encoding %s is already registered", nameString), currentNode);
+    }
+
+    @TruffleBoundary
     public DynamicObject argumentError(String message, Node currentNode, Throwable javaThrowable) {
         return argumentError(StringOperations.encodeRope(message, UTF8Encoding.INSTANCE), currentNode, javaThrowable);
     }
