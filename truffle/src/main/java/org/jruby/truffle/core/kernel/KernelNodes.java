@@ -290,7 +290,7 @@ public abstract class KernelNodes {
         public boolean notMatch(VirtualFrame frame, Object self, Object other) {
             final boolean ret = !matchNode.callBoolean(frame, self, "=~", null, other);
 
-            final FrameSlot matchDataSlot = frame.getFrameDescriptor().findFrameSlot("$~");
+            final FrameSlot matchDataSlot = getMatchDataSlot(frame.getFrameDescriptor());
             final Object matchData = frame.getValue(matchDataSlot);
 
             if (matchData instanceof ThreadLocalObject) {
@@ -302,6 +302,11 @@ public abstract class KernelNodes {
             }
 
             return ret;
+        }
+
+        @TruffleBoundary
+        private FrameSlot getMatchDataSlot(FrameDescriptor frameDescriptor) {
+            return frameDescriptor.findFrameSlot("$~");
         }
 
     }
