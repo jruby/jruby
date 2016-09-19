@@ -3240,23 +3240,23 @@ public abstract class StringNodes {
     @Primitive(name = "string_from_codepoint", needsSelf = false, lowerFixnum = 1)
     public static abstract class StringFromCodepointPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
-        @Specialization(guards = { "isRubyEncoding(encoding)", "isSimple(longCode, encoding)", "isCodepoint(longCode)" })
-        public DynamicObject stringFromCodepointSimple(long longCode, DynamicObject encoding,
+        @Specialization(guards = { "isRubyEncoding(rubyEncoding)", "isSimple(longCode, rubyEncoding)", "isCodepoint(longCode)" })
+        public DynamicObject stringFromCodepointSimple(long longCode, DynamicObject rubyEncoding,
                                                        @Cached("createBinaryProfile()") ConditionProfile isUTF8Profile,
                                                        @Cached("createBinaryProfile()") ConditionProfile isUSAsciiProfile,
                                                        @Cached("createBinaryProfile()") ConditionProfile isAscii8BitProfile) {
             final int code = (int) longCode; // isSimple() guarantees this is OK
-            final Encoding realEncoding = EncodingOperations.getEncoding(encoding);
+            final Encoding encoding = EncodingOperations.getEncoding(rubyEncoding);
             final Rope rope;
 
-            if (isUTF8Profile.profile(realEncoding == UTF8Encoding.INSTANCE)) {
+            if (isUTF8Profile.profile(encoding == UTF8Encoding.INSTANCE)) {
                 rope = RopeConstants.UTF8_SINGLE_BYTE_ROPES[code];
-            } else if (isUSAsciiProfile.profile(realEncoding == USASCIIEncoding.INSTANCE)) {
+            } else if (isUSAsciiProfile.profile(encoding == USASCIIEncoding.INSTANCE)) {
                 rope = RopeConstants.US_ASCII_SINGLE_BYTE_ROPES[code];
-            } else if (isAscii8BitProfile.profile(realEncoding == ASCIIEncoding.INSTANCE)) {
+            } else if (isAscii8BitProfile.profile(encoding == ASCIIEncoding.INSTANCE)) {
                 rope = RopeConstants.ASCII_8BIT_SINGLE_BYTE_ROPES[code];
             } else {
-                rope = RopeOperations.create(new byte[] { (byte) code }, realEncoding, CodeRange.CR_UNKNOWN);
+                rope = RopeOperations.create(new byte[] { (byte) code }, encoding, CodeRange.CR_UNKNOWN);
             }
 
             return createString(rope);
