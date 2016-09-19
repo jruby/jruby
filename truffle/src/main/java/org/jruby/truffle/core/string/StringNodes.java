@@ -3240,11 +3240,12 @@ public abstract class StringNodes {
     @Primitive(name = "string_from_codepoint", needsSelf = false, lowerFixnum = 1)
     public static abstract class StringFromCodepointPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
-        @Specialization(guards = {"isRubyEncoding(encoding)", "isSimple(code, encoding)"})
-        public DynamicObject stringFromCodepointSimple(int code, DynamicObject encoding,
+        @Specialization(guards = { "isRubyEncoding(encoding)", "isSimple(longCode, encoding)", "isCodepoint(longCode)" })
+        public DynamicObject stringFromCodepointSimple(long longCode, DynamicObject encoding,
                                                        @Cached("createBinaryProfile()") ConditionProfile isUTF8Profile,
                                                        @Cached("createBinaryProfile()") ConditionProfile isUSAsciiProfile,
                                                        @Cached("createBinaryProfile()") ConditionProfile isAscii8BitProfile) {
+            final int code = (int) longCode; // isSimple() guarantees this is OK
             final Encoding realEncoding = EncodingOperations.getEncoding(encoding);
             final Rope rope;
 
