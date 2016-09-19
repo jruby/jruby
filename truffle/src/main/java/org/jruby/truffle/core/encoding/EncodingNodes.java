@@ -581,7 +581,7 @@ public abstract class EncodingNodes {
 
     }
 
-    @Primitive(name = "encoding_get_object_encoding_by_index", needsSelf = false)
+    @Primitive(name = "encoding_get_encoding_by_index", needsSelf = false)
     public static abstract class EncodingGetObjectEncodingByIndexNode extends PrimitiveArrayArgumentsNode {
 
         @Specialization

@@ -462,7 +462,7 @@ module Rubinius
       pair = Encoding::EncodingMap[key]
       if pair
         index = pair.last
-        return index && Truffle.invoke_primitive(:encoding_get_object_encoding_by_index, index)
+        return index && Truffle.invoke_primitive(:encoding_get_encoding_by_index, index)
       end
 
       return undefined

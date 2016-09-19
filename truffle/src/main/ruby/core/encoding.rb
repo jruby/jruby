@@ -548,7 +548,7 @@ class Encoding
       next unless index
 
       aname = r.first
-      aliases[aname] = Truffle.invoke_primitive(:encoding_get_object_encoding_by_index, index).name if aname
+      aliases[aname] = Truffle.invoke_primitive(:encoding_get_encoding_by_index, index).name if aname
     end
 
     aliases
@@ -612,7 +612,7 @@ class Encoding
   def self.name_list
     EncodingMap.map do |n, r|
       index = r.last
-      r.first or (index and Truffle.invoke_primitive(:encoding_get_object_encoding_by_index, index).name)
+      r.first or (index and Truffle.invoke_primitive(:encoding_get_encoding_by_index, index).name)
     end
   end
 
