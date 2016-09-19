@@ -61,6 +61,7 @@ public class EncodingManager {
         return ENCODING_LIST_BY_ENCODING_LIST_INDEX;
     }
 
+    @TruffleBoundary
     public DynamicObject getRubyEncoding(Encoding encoding) {
         DynamicObject rubyEncoding = ENCODING_LIST_BY_ENCODING_INDEX.get(encoding.getIndex());
 
