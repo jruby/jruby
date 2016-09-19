@@ -19,8 +19,15 @@ import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyNode;
 
+/**
+ * Only converts primitive types (including java.lang.String).
+ */
 @NodeChild(value = "value", type = RubyNode.class)
 public abstract class ForeignToRubyNode extends RubyNode {
+
+    public static ForeignToRubyNode create() {
+        return ForeignToRubyNodeGen.create(null);
+    }
 
     public abstract Object executeConvert(VirtualFrame frame, Object value);
 
