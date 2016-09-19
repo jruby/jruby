@@ -1142,5 +1142,12 @@ modes.each do |mode|
     it "compiles calls with one float arg that do not have optimized paths" do
       run('ary = []; ary.push(1.0)') {|x| expect(x).to eq([1.0]) }
     end
+
+    # jruby/jruby#4148
+    it "binds variable-arity calls to attributes properly" do
+      run('a_class = Class.new do; attr_accessor :foo; end; a = a_class.new; a.foo = 1; ary = []; a.foo(*ary)') do |x|
+        expect(x).to eq(1)
+      end
+    end
   end
 end
