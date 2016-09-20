@@ -966,7 +966,7 @@ public class CoreLibrary {
             Main.printTruffleTimeMetric("before-load-core");
             state = State.LOADING_RUBY_CORE;
 
-            @SuppressWarnings({ "rawtypes", "unchecked" })
+            @SuppressWarnings("unchecked")
             final Future<RubyRootNode>[] coreFileFutures = new Future[coreFiles.length];
 
             try {
