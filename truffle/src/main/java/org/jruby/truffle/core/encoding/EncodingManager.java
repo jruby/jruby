@@ -58,6 +58,7 @@ public class EncodingManager {
         return Layouts.ENCODING.createEncoding(context.getCoreLibrary().getEncodingFactory(), encoding, string, dummy);
     }
 
+    @TruffleBoundary
     public Object[] getEncodingList() {
         return new ArrayList<>(ENCODING_LIST_BY_ENCODING_LIST_INDEX).toArray();
     }

@@ -412,7 +412,6 @@ public abstract class EncodingNodes {
     @CoreMethod(names = "list", onSingleton = true)
     public abstract static class ListNode extends CoreMethodArrayArgumentsNode {
 
-        @TruffleBoundary
         @Specialization
         public DynamicObject list() {
             final Object[] encodingsList = getContext().getEncodingManager().getEncodingList();
