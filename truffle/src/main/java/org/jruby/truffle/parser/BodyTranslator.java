@@ -275,12 +275,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Deque;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * A JRuby parser node visitor which translates JRuby AST nodes into truffle Nodes. Therefore there is some namespace
@@ -299,28 +295,6 @@ public class BodyTranslator extends Translator {
     private boolean privately = false;
 
     protected boolean usesRubiniusPrimitive = false;
-
-    private static final Set<String> THREAD_LOCAL_GLOBAL_VARIABLES = new HashSet<>(
-            Arrays.asList("$!", "$?")); // "$_"
-
-    private static final Set<String> READ_ONLY_GLOBAL_VARIABLES = new HashSet<String>(
-            Arrays.asList("$:", "$LOAD_PATH", "$-I", "$\"", "$LOADED_FEATURES", "$<", "$FILENAME", "$?", "$-a", "$-l", "$-p", "$!"));
-
-    private static final Map<String, String> GLOBAL_VARIABLE_ALIASES = new HashMap<String, String>();
-
-    static {
-        Map<String, String> m = GLOBAL_VARIABLE_ALIASES;
-        m.put("$-I", "$LOAD_PATH");
-        m.put("$:", "$LOAD_PATH");
-        m.put("$-d", "$DEBUG");
-        m.put("$-v", "$VERBOSE");
-        m.put("$-w", "$VERBOSE");
-        m.put("$-0", "$/");
-        m.put("$RS", "$/");
-        m.put("$INPUT_RECORD_SEPARATOR", "$/");
-        m.put("$>", "$stdout");
-        m.put("$PROGRAM_NAME", "$0");
-    }
 
     public BodyTranslator(com.oracle.truffle.api.nodes.Node currentNode, RubyContext context, BodyTranslator parent, TranslatorEnvironment environment, Source source, boolean topLevel) {
         super(currentNode, context, source);
@@ -1793,9 +1767,7 @@ public class BodyTranslator extends Translator {
                 } else {
                     readNode = new GetFromThreadLocalNode(context, fullSourceSection, readNode);
                 }
-            }
-
-            if (name.equals("$~")) {
+            } else if (name.equals("$~")) {
                 readNode = new GetFromThreadLocalNode(context, fullSourceSection, readNode);
             }
 

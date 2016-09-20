@@ -33,14 +33,35 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Deque;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public abstract class Translator extends org.jruby.truffle.parser.ast.visitor.AbstractNodeVisitor<RubyNode> {
 
-    public static final Set<String> ALWAYS_DEFINED_GLOBALS = new HashSet<>(Arrays.asList("$!", "$~"));
-    public static final Set<String> FRAME_LOCAL_GLOBAL_VARIABLES = new HashSet<>(Arrays.asList("$_", "$+", "$&", "$`", "$'", "$~", "$1", "$2", "$3", "$4", "$5", "$6", "$7", "$8", "$9"));
+    public static final Set<String> FRAME_LOCAL_GLOBAL_VARIABLES = new HashSet<>(
+            Arrays.asList("$_", "$~", "$+", "$&", "$`", "$'", "$1", "$2", "$3", "$4", "$5", "$6", "$7", "$8", "$9"));
+    static final Set<String> READ_ONLY_GLOBAL_VARIABLES = new HashSet<String>(
+            Arrays.asList("$:", "$LOAD_PATH", "$-I", "$\"", "$LOADED_FEATURES", "$<", "$FILENAME", "$?", "$-a", "$-l", "$-p", "$!"));
+    static final Set<String> ALWAYS_DEFINED_GLOBALS = new HashSet<>(Arrays.asList("$!", "$~"));
+    static final Set<String> THREAD_LOCAL_GLOBAL_VARIABLES = new HashSet<>(Arrays.asList("$!", "$?")); // "$_"
+
+    static final Map<String, String> GLOBAL_VARIABLE_ALIASES = new HashMap<String, String>();
+    static {
+        Map<String, String> m = GLOBAL_VARIABLE_ALIASES;
+        m.put("$-I", "$LOAD_PATH");
+        m.put("$:", "$LOAD_PATH");
+        m.put("$-d", "$DEBUG");
+        m.put("$-v", "$VERBOSE");
+        m.put("$-w", "$VERBOSE");
+        m.put("$-0", "$/");
+        m.put("$RS", "$/");
+        m.put("$INPUT_RECORD_SEPARATOR", "$/");
+        m.put("$>", "$stdout");
+        m.put("$PROGRAM_NAME", "$0");
+    }
 
     protected final Node currentNode;
     protected final RubyContext context;
