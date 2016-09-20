@@ -26,12 +26,10 @@ import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.Frame;
-import com.oracle.truffle.api.frame.FrameDescriptor;
 import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.FrameInstance.FrameAccess;
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.FrameSlotKind;
-import com.oracle.truffle.api.frame.FrameSlotTypeException;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
@@ -561,6 +559,25 @@ public abstract class RegexpNodes {
 
     }
 
+    @Primitive(name = "regexp_set_block_last_match", needsSelf = false)
+    @ImportStatic(RegexpNodes.class)
+    public static abstract class RegexpSetBlockLastMatchPrimitiveNode extends PrimitiveArrayArgumentsNode {
+
+        @TruffleBoundary
+        @Specialization(guards = { "isRubyProc(block)", "isSuitableMatchDataType(getContext(), matchData)" })
+        public Object setBlockLastMatch(DynamicObject block, DynamicObject matchData) {
+            final Frame declarationFrame = Layouts.PROC.getDeclarationFrame(block);
+            if (declarationFrame == null) { // Symbol#to_proc currently does not have a declaration frame
+                return matchData;
+            }
+
+            ThreadLocalObject lastMatch = getMatchDataThreadLocal(getContext(), declarationFrame, true);
+            lastMatch.set(matchData);
+            return matchData;
+        }
+
+    }
+
     @TruffleBoundary
     private static ThreadLocalObject getMatchDataThreadLocal(RubyContext context, Frame topFrame, boolean add) {
         Frame frame = topFrame;
@@ -821,52 +838,6 @@ public abstract class RegexpNodes {
                 // Search backward through the string.
                 return RegexpNodes.matchCommon(getContext(), this, makeSubstringNode, regexp, dupedString, false, matcher, end, start);
             }
-        }
-
-    }
-
-    @Primitive(name = "regexp_set_block_last_match", needsSelf = false)
-    @ImportStatic(RegexpNodes.class)
-    public static abstract class RegexpSetBlockLastMatchPrimitiveNode extends PrimitiveArrayArgumentsNode {
-
-        @TruffleBoundary
-        @Specialization(guards = { "isRubyProc(block)", "isSuitableMatchDataType(getContext(), matchData)" })
-        public Object setBlockLastMatch(DynamicObject block, DynamicObject matchData) {
-
-            Frame methodFrame = Layouts.PROC.getDeclarationFrame(block);
-
-            if (methodFrame == null) {
-                return matchData;
-            }
-
-            Frame tempFrame = RubyArguments.getDeclarationFrame(methodFrame);
-
-            while (tempFrame != null) {
-                methodFrame = tempFrame;
-                tempFrame = RubyArguments.getDeclarationFrame(methodFrame);
-            }
-
-            final FrameDescriptor callerFrameDescriptor = methodFrame.getFrameDescriptor();
-
-            try {
-                final FrameSlot frameSlot = callerFrameDescriptor.findFrameSlot("$~");
-
-                if (frameSlot == null) {
-                    return matchData;
-                }
-
-                final Object matchDataHolder = methodFrame.getObject(frameSlot);
-
-                if (matchDataHolder instanceof ThreadLocalObject) {
-                    ((ThreadLocalObject) matchDataHolder).set(matchData);
-                } else {
-                    methodFrame.setObject(frameSlot, ThreadLocalObject.wrap(getContext(), matchData));
-                }
-            } catch (FrameSlotTypeException e) {
-                throw new IllegalStateException(e);
-            }
-
-            return matchData;
         }
 
     }
