@@ -572,8 +572,9 @@ public abstract class EncodingNodes {
             }
             final Encoding base = EncodingOperations.getEncoding(self);
             EncodingDB.replicate(nameString, new String(base.getName()));
-            final Entry entry = EncodingDB.getEncodings().get(nameString.getBytes());
-            getContext().getEncodingManager().defineEncoding(entry, nameString.getBytes(), 0, nameString.getBytes().length);
+            byte[] nameBytes = nameString.getBytes();
+            final Entry entry = EncodingDB.getEncodings().get(nameBytes);
+            getContext().getEncodingManager().defineEncoding(entry, nameBytes, 0, nameBytes.length);
             final DynamicObject newEncoding = getContext().getEncodingManager().getRubyEncoding(nameString);
             snippetNode.execute(frame, "Encoding::EncodingMap[enc.name.upcase.to_sym] = [nil, index]", "enc", newEncoding, "index", entry.getIndex());
             return newEncoding;
