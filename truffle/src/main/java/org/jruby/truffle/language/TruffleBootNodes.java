@@ -87,15 +87,13 @@ public abstract class TruffleBootNodes {
 
         @Specialization
         public Object runJRubyRootNode(VirtualFrame frame, @Cached("create()") IndirectCallNode callNode) {
-            coreLibrary().getGlobalVariables().put(
-                    "$0",
-                    StringOperations.createString(getContext(),
-                            ByteListUtils.create(getContext().getJRubyInterop().getArg0())));
+            String dollar0 = getContext().getJRubyInterop().getArg0();
+            coreLibrary().getGlobalVariables().put("$0", StringOperations.createString(
+                    getContext(), StringOperations.encodeRope(dollar0, UTF8Encoding.INSTANCE)));
 
             String inputFile = getContext().getJRubyInterop().getOriginalInputFile();
 
             final Source source;
-
             try {
                 source = getContext().getSourceCache().getSource(inputFile);
             } catch (IOException e) {
