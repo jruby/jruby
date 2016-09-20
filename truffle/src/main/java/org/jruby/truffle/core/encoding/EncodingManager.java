@@ -62,12 +62,6 @@ public class EncodingManager {
         return new ArrayList<>(ENCODING_LIST_BY_ENCODING_LIST_INDEX).toArray();
     }
 
-    public DynamicObject getRubyEncoding(Encoding encoding) {
-        DynamicObject rubyEncoding = ENCODING_LIST_BY_ENCODING_INDEX.get(encoding.getIndex());
-        assert rubyEncoding != null;
-        return rubyEncoding;
-    }
-
     @TruffleBoundary
     public DynamicObject getRubyEncoding(String name) {
         return LOOKUP.get(name.toLowerCase(Locale.ENGLISH));
@@ -76,6 +70,11 @@ public class EncodingManager {
     @TruffleBoundary
     public DynamicObject getRubyEncoding(int encodingListIndex) {
         return ENCODING_LIST_BY_ENCODING_LIST_INDEX.get(encodingListIndex);
+    }
+
+    @TruffleBoundary
+    public DynamicObject getRubyEncoding(Encoding encoding) {
+        return ENCODING_LIST_BY_ENCODING_INDEX.get(encoding.getIndex());
     }
 
     @TruffleBoundary
