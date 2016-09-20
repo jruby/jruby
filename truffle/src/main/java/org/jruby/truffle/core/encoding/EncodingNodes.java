@@ -563,19 +563,17 @@ public abstract class EncodingNodes {
     @Primitive(name = "encoding_replicate")
     public static abstract class EncodingReplicateNode extends PrimitiveArrayArgumentsNode {
 
-        @Specialization(guards = "isRubyString(name)")
-        public DynamicObject encodingReplicate(VirtualFrame frame, DynamicObject self, DynamicObject name, @Cached("new()") SnippetNode snippetNode) {
-            final String nameString = StringOperations.getString(name);
-            final DynamicObject existing = getContext().getEncodingManager().getRubyEncoding(nameString);
-            if (existing != null) {
-                throw new RaiseException(coreExceptions().argumentErrorEncodingAlreadyRegistered(nameString, this));
+        @Specialization(guards = "isRubyString(nameObject)")
+        public DynamicObject encodingReplicate(VirtualFrame frame, DynamicObject self, DynamicObject nameObject, @Cached("new()") SnippetNode snippetNode) {
+            final String name = StringOperations.getString(nameObject);
+            final Encoding encoding = EncodingOperations.getEncoding(self);
+
+            final DynamicObject newEncoding = getContext().getEncodingManager().replicateEncoding(encoding, name);
+            if (newEncoding == null) {
+                throw new RaiseException(coreExceptions().argumentErrorEncodingAlreadyRegistered(name, this));
             }
-            final Encoding base = EncodingOperations.getEncoding(self);
-            EncodingDB.replicate(nameString, new String(base.getName()));
-            byte[] nameBytes = nameString.getBytes();
-            final Entry entry = EncodingDB.getEncodings().get(nameBytes);
-            getContext().getEncodingManager().defineEncoding(entry, nameBytes, 0, nameBytes.length);
-            final DynamicObject newEncoding = getContext().getEncodingManager().getRubyEncoding(nameString);
+
+            final Entry entry = EncodingDB.getEncodings().get(name.getBytes());
             snippetNode.execute(frame, "Encoding::EncodingMap[enc.name.upcase.to_sym] = [nil, index]", "enc", newEncoding, "index", entry.getIndex());
             return newEncoding;
         }

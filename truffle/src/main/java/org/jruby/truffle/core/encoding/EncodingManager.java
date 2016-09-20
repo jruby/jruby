@@ -17,6 +17,7 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
+import org.jcodings.EncodingDB.Entry;
 import org.jcodings.specific.ISO8859_16Encoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.truffle.Layouts;
@@ -50,7 +51,7 @@ public class EncodingManager {
     }
 
     @TruffleBoundary
-    public static DynamicObject newRubyEncoding(RubyContext context, Encoding encoding, byte[] name, int p, int end, boolean dummy) {
+    private static DynamicObject newRubyEncoding(RubyContext context, Encoding encoding, byte[] name, int p, int end, boolean dummy) {
         // TODO (nirvdrum 21-Jun-16): We probably don't need to create a ByteList and two Ropes. Without any guarantees on the code range of the encoding name, however, we must be conservative.
         final Rope rope = StringOperations.ropeFromByteList(new ByteList(name, p, end, USASCIIEncoding.INSTANCE, false));
         final Rope cachedRope = context.getRopeTable().getRope(rope.getBytes(), rope.getEncoding(), rope.getCodeRange());
@@ -89,12 +90,13 @@ public class EncodingManager {
     }
 
     @TruffleBoundary
-    public void defineEncoding(EncodingDB.Entry encodingEntry, byte[] name, int p, int end) {
+    public DynamicObject defineEncoding(EncodingDB.Entry encodingEntry, byte[] name, int p, int end) {
         final DynamicObject rubyEncoding = newRubyEncoding(context, null, name, p, end, encodingEntry.isDummy());
 
         assert ENCODING_LIST_BY_ENCODING_LIST_INDEX.size() == encodingEntry.getIndex();
         ENCODING_LIST_BY_ENCODING_LIST_INDEX.add(encodingEntry.getIndex(), rubyEncoding);
         LOOKUP.put(Layouts.ENCODING.getName(rubyEncoding).toString().toLowerCase(Locale.ENGLISH), rubyEncoding);
+        return rubyEncoding;
     }
 
     @TruffleBoundary
@@ -102,6 +104,17 @@ public class EncodingManager {
         final DynamicObject rubyEncoding = getRubyEncoding(encodingListIndex);
 
         LOOKUP.put(name.toLowerCase(Locale.ENGLISH), rubyEncoding);
+    }
+
+    public synchronized DynamicObject replicateEncoding(Encoding encoding, String name) {
+        if (getRubyEncoding(name) != null) {
+            return null;
+        }
+
+        EncodingDB.replicate(name, new String(encoding.getName()));
+        byte[] nameBytes = name.getBytes();
+        final Entry entry = EncodingDB.getEncodings().get(nameBytes);
+        return defineEncoding(entry, nameBytes, 0, nameBytes.length);
     }
 
     @TruffleBoundary
