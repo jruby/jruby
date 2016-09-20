@@ -172,3 +172,71 @@ if org.jruby.platform.Platform::IS_WINDOWS
     end
   end
 end
+
+# flock support for Solaris
+if org.jruby.platform.Platform::IS_SOLARIS
+  begin
+    require 'ffi'
+  rescue LoadError
+    # Gracefully bail if FFI is not available
+  end
+
+  if defined?(::FFI)
+
+    require 'ffi/platform/x86_64-solaris/fcntl'
+    module Fcntl
+      extend FFI::Library
+      ffi_lib 'c'
+      attach_function :fcntl, [:short, :short, :varargs], :int
+      class Flock < FFI::Struct
+        self.size = 44
+        layout :l_type, :short, 0,
+               :l_whence, :short, 2,
+               :l_start, :off_t, 4,
+               :l_len, :off_t, 12,
+               :l_sysid, :int, 20,
+               :l_pid, :int, 24,
+               :l_pad, :int, 28
+      end
+    end
+
+    class File
+      # Adapted from MRI's missing/flock.c
+      def flock(operation)
+        type = case (operation & ~LOCK_NB)
+                 when LOCK_SH
+                   Fcntl::F_RDLCK
+                 when LOCK_EX
+                   Fcntl::F_WRLCK
+                 when LOCK_UN
+                   Fcntl::F_UNLCK
+                 else
+                   raise Errno::EINVAL
+               end
+
+        flock = Fcntl::Flock.new
+        flock[:l_type] = type
+        flock[:l_whence] = File::SEEK_SET
+        flock[:l_start] = flock[:l_len] = 0
+
+        while Fcntl.fcntl(fileno, (operation & LOCK_NB) != 0 ? Fcntl::F_SETLK : Fcntl::F_SETLKW, :pointer, flock) != 0
+          errno = FFI.errno
+          case errno
+          when Errno::EAGAIN::Errno, Errno::EWOULDBLOCK::Errno, Errno::EACCES::Errno
+            return false if operation & LOCK_NB != 0
+
+            sleep 0.1
+            next
+          when Errno::EINTR::Errno
+            # try again
+            next
+          else
+            raise SystemCallError.new('fcntl', FFI.errno)
+          end
+        end
+
+        return 0
+      end
+    end
+  end
+end
