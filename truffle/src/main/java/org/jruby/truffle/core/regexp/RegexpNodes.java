@@ -530,27 +530,11 @@ public abstract class RegexpNodes {
         @TruffleBoundary
         private Object getMatchData() {
             Frame frame = getContext().getCallStack().getCallerFrameIgnoringSend().getFrame(FrameAccess.READ_ONLY, true);
-            FrameSlot slot = frame.getFrameDescriptor().findFrameSlot("$~");
-
-            while (slot == null) {
-                final Frame nextFrame = RubyArguments.getDeclarationFrame(frame);
-
-                if (nextFrame == null) {
-                    return nil();
-                } else {
-                    slot = nextFrame.getFrameDescriptor().findFrameSlot("$~");
-                    frame = nextFrame;
-                }
-            }
-
-            final Object previousMatchData = frame.getValue(slot);
-
-            if (previousMatchData instanceof ThreadLocalObject) {
-                final ThreadLocalObject threadLocalObject = (ThreadLocalObject) previousMatchData;
-
-                return threadLocalObject.get();
+            ThreadLocalObject lastMatch = getMatchDataThreadLocal(getContext(), frame, false);
+            if (lastMatch == null) {
+                return nil();
             } else {
-                return previousMatchData;
+                return lastMatch.get();
             }
         }
 
@@ -570,37 +554,48 @@ public abstract class RegexpNodes {
         @Specialization(guards = "isSuitableMatchDataType(getContext(), matchData)")
         public DynamicObject setLastMatchData(DynamicObject matchData) {
             Frame frame = getContext().getCallStack().getCallerFrameIgnoringSend().getFrame(FrameInstance.FrameAccess.READ_WRITE, true);
-            FrameSlot slot = frame.getFrameDescriptor().findFrameSlot("$~");
-
-            while (slot == null) {
-                final Frame nextFrame = RubyArguments.getDeclarationFrame(frame);
-
-                if (nextFrame == null) {
-                    slot = frame.getFrameDescriptor().addFrameSlot("$~", FrameSlotKind.Object);
-                } else {
-                    slot = nextFrame.getFrameDescriptor().findFrameSlot("$~");
-                    frame = nextFrame;
-                }
-            }
-
-            final Object previousMatchData;
-            try {
-                previousMatchData = frame.getObject(slot);
-
-                if (previousMatchData instanceof ThreadLocalObject) {
-                    final ThreadLocalObject threadLocalObject = (ThreadLocalObject) previousMatchData;
-
-                    threadLocalObject.set(matchData);
-                } else {
-                    frame.setObject(slot, ThreadLocalObject.wrap(getContext(), matchData));
-                }
-            } catch (FrameSlotTypeException e) {
-                throw new IllegalStateException(e);
-            }
-
+            ThreadLocalObject lastMatch = getMatchDataThreadLocal(getContext(), frame, true);
+            lastMatch.set(matchData);
             return matchData;
         }
 
+    }
+
+    @TruffleBoundary
+    private static ThreadLocalObject getMatchDataThreadLocal(RubyContext context, Frame topFrame, boolean add) {
+        Frame frame = topFrame;
+        FrameSlot slot = null;
+
+        while (true) {
+            slot = frame.getFrameDescriptor().findFrameSlot("$~");
+            if (slot != null) {
+                break;
+            }
+
+            final Frame nextFrame = RubyArguments.getDeclarationFrame(frame);
+            if (nextFrame != null) {
+                frame = nextFrame;
+            } else {
+                if (add) {
+                    slot = frame.getFrameDescriptor().addFrameSlot("$~", FrameSlotKind.Object);
+                    break;
+                } else {
+                    return null;
+                }
+            }
+        }
+
+        final Object previousMatchData = frame.getValue(slot);
+        if (previousMatchData == frame.getFrameDescriptor().getDefaultValue()) { // Never written to
+            if (add) {
+                ThreadLocalObject threadLocalObject = new ThreadLocalObject(context);
+                frame.setObject(slot, threadLocalObject);
+                return threadLocalObject;
+            } else {
+                return null;
+            }
+        }
+        return (ThreadLocalObject) previousMatchData;
     }
 
     @CoreMethod(names = { "quote", "escape" }, onSingleton = true, required = 1)
