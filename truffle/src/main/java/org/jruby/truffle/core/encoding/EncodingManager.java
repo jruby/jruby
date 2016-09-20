@@ -37,8 +37,10 @@ import java.util.Map;
 
 public class EncodingManager {
 
-    private final List<DynamicObject> ENCODING_LIST_BY_ENCODING_LIST_INDEX = new ArrayList<DynamicObject>(EncodingDB.getEncodings().size());
-    private final Map<Integer, DynamicObject> ENCODING_LIST_BY_ENCODING_INDEX = new HashMap<Integer,DynamicObject>(EncodingDB.getEncodings().size());
+    private static final int INITIAL_NUMBER_OF_ENCODINGS = EncodingDB.getEncodings().size();
+
+    private final List<DynamicObject> ENCODING_LIST_BY_ENCODING_LIST_INDEX = new ArrayList<DynamicObject>(INITIAL_NUMBER_OF_ENCODINGS);
+    private final Map<Integer, DynamicObject> ENCODING_LIST_BY_ENCODING_INDEX = new HashMap<Integer,DynamicObject>(INITIAL_NUMBER_OF_ENCODINGS);
     private final Map<String, DynamicObject> LOOKUP = new HashMap<>();
 
     private final RubyContext context;
