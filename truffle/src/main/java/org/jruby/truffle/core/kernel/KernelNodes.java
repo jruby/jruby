@@ -264,53 +264,6 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "=~", required = 1, needsSelf = false)
-    public abstract static class MatchNode extends CoreMethodArrayArgumentsNode {
-
-        @Specialization
-        public DynamicObject equal(Object other) {
-            return nil();
-        }
-
-    }
-
-    @CoreMethod(names = "!~", required = 1)
-    public abstract static class NotMatchNode extends CoreMethodArrayArgumentsNode {
-
-        @Child private CallDispatchHeadNode matchNode;
-        @Child private RegexpPrimitiveNodes.RegexpSetLastMatchPrimitiveNode setLastMatchNode;
-
-        public NotMatchNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            matchNode = DispatchHeadNodeFactory.createMethodCall(context);
-            setLastMatchNode = RegexpPrimitiveNodesFactory.RegexpSetLastMatchPrimitiveNodeFactory.create(null);
-        }
-
-        @Specialization
-        public boolean notMatch(VirtualFrame frame, Object self, Object other) {
-            final boolean ret = !matchNode.callBoolean(frame, self, "=~", null, other);
-
-            final FrameSlot matchDataSlot = getMatchDataSlot(frame.getFrameDescriptor());
-            final Object matchData = frame.getValue(matchDataSlot);
-
-            if (matchData instanceof ThreadLocalObject) {
-                final ThreadLocalObject threadLocalObject = (ThreadLocalObject) matchData;
-
-                setLastMatchNode.executeSetLastMatch(threadLocalObject.get());
-            } else {
-                setLastMatchNode.executeSetLastMatch(nil());
-            }
-
-            return ret;
-        }
-
-        @TruffleBoundary
-        private FrameSlot getMatchDataSlot(FrameDescriptor frameDescriptor) {
-            return frameDescriptor.findFrameSlot("$~");
-        }
-
-    }
-
     @CoreMethod(names = { "<=>" }, required = 1)
     public abstract static class CompareNode extends CoreMethodArrayArgumentsNode {
 

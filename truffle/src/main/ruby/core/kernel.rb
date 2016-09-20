@@ -182,6 +182,16 @@ module Kernel
   end
   module_function :StringValue
 
+  def =~(other)
+    nil
+  end
+
+  def !~(other)
+    r = self =~ other ? false : true
+    Truffle.invoke_primitive(:regexp_set_last_match, $~)
+    r
+  end
+
   def itself
     self
   end
