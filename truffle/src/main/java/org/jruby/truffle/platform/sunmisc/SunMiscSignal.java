@@ -11,6 +11,7 @@ package org.jruby.truffle.platform.sunmisc;
 
 import org.jruby.truffle.platform.signal.Signal;
 
+@SuppressWarnings("restriction")
 public class SunMiscSignal implements Signal {
 
     private final sun.misc.Signal sunMiscSignal;
