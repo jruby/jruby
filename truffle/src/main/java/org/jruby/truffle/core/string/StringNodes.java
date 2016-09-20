@@ -114,6 +114,7 @@ import org.jruby.truffle.core.kernel.KernelNodes;
 import org.jruby.truffle.core.kernel.KernelNodesFactory;
 import org.jruby.truffle.core.numeric.FixnumLowerNodeGen;
 import org.jruby.truffle.core.numeric.FixnumOrBignumNode;
+import org.jruby.truffle.core.regexp.RegexpNodes.RegexpSetLastMatchPrimitiveNode;
 import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.rope.ConcatRope;
 import org.jruby.truffle.core.rope.LeafRope;
@@ -126,7 +127,6 @@ import org.jruby.truffle.core.rope.RopeNodes.MakeRepeatingNode;
 import org.jruby.truffle.core.rope.RopeNodesFactory;
 import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.rope.SubstringRope;
-import org.jruby.truffle.core.rubinius.RegexpPrimitiveNodes;
 import org.jruby.truffle.core.string.StringNodesFactory.StringAreComparableNodeGen;
 import org.jruby.truffle.core.string.StringNodesFactory.StringEqualNodeGen;
 import org.jruby.truffle.language.CheckLayoutNode;
@@ -606,7 +606,7 @@ public abstract class StringNodes {
                 DynamicObject regexp,
                 Object capture,
                 @Cached("createMethodCallIgnoreVisibility()") CallDispatchHeadNode callNode,
-                @Cached("create()") RegexpPrimitiveNodes.RegexpSetLastMatchPrimitiveNode setLastMatchNode) {
+                @Cached("create()") RegexpSetLastMatchPrimitiveNode setLastMatchNode) {
             return sliceCapture(frame, string, regexp, 0, callNode, setLastMatchNode);
         }
 
@@ -617,7 +617,7 @@ public abstract class StringNodes {
                 DynamicObject regexp,
                 Object capture,
                 @Cached("createMethodCallIgnoreVisibility()") CallDispatchHeadNode callNode,
-                @Cached("create()") RegexpPrimitiveNodes.RegexpSetLastMatchPrimitiveNode setLastMatchNode) {
+                @Cached("create()") RegexpSetLastMatchPrimitiveNode setLastMatchNode) {
             final Object matchStrPair = callNode.call(frame, string, "subpattern", regexp, capture);
 
             if (matchStrPair == nil()) {

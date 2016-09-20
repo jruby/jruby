@@ -80,7 +80,6 @@ import org.jruby.truffle.core.rubinius.IOBufferPrimitiveNodesFactory;
 import org.jruby.truffle.core.rubinius.IOPrimitiveNodesFactory;
 import org.jruby.truffle.core.rubinius.NativeFunctionPrimitiveNodesFactory;
 import org.jruby.truffle.core.rubinius.RandomizerPrimitiveNodesFactory;
-import org.jruby.truffle.core.rubinius.RegexpPrimitiveNodesFactory;
 import org.jruby.truffle.core.rubinius.RubiniusTypeNodesFactory;
 import org.jruby.truffle.core.rubinius.StatPrimitiveNodesFactory;
 import org.jruby.truffle.core.rubinius.UndefinedPrimitiveNodesFactory;
@@ -738,7 +737,6 @@ public class CoreLibrary {
                 RandomizerPrimitiveNodesFactory.getFactories(),
                 RangeNodesFactory.getFactories(),
                 RegexpNodesFactory.getFactories(),
-                RegexpPrimitiveNodesFactory.getFactories(),
                 RubiniusTypeNodesFactory.getFactories(),
                 SizedQueueNodesFactory.getFactories(),
                 StatPrimitiveNodesFactory.getFactories(),
