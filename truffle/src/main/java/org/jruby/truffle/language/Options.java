@@ -168,6 +168,6 @@ public class Options {
 
     // Other tools
 
-    public static boolean CHAOS = TRUFFLE_CHAOS.load();
+    public boolean CHAOS = TRUFFLE_CHAOS.load();
 
 }
