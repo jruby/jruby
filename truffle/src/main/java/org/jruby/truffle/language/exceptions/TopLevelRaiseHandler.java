@@ -58,9 +58,7 @@ public class TopLevelRaiseHandler extends RubyNode {
     }
 
     private int statusFromException(DynamicObject exception) {
-        if (exception == null) {
-            return 0;
-        } else if (Layouts.BASIC_OBJECT.getLogicalClass(exception) == coreLibrary().getSystemExitClass()) {
+        if (Layouts.BASIC_OBJECT.getLogicalClass(exception) == coreLibrary().getSystemExitClass()) {
             return castToInt(exception.get("@status", null));
         } else {
             return 1;
