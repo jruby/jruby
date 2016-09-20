@@ -559,14 +559,15 @@ public final class Ruby implements Constantizable {
         if (getInstanceConfig().getCompileMode() == CompileMode.TRUFFLE) {
             final JRubyTruffleInterface truffleContext = getTruffleContext();
             Main.printTruffleTimeMetric("before-run");
+            int exitCode;
             try {
-                truffleContext.execute(filename);
+                exitCode = truffleContext.execute(filename);
             } finally {
                 Main.printTruffleTimeMetric("after-run");
                 shutdownTruffleContextIfRunning();
             }
-            assert false : "always ends up with a MainExitException";
-            return;
+
+            throw new MainExitException(exitCode);
         }
 
         ParseResult parseResult = parseFromMain(filename, inputStream);
