@@ -415,12 +415,8 @@ public abstract class EncodingNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject list() {
-            final List<DynamicObject> encodingsList = getContext().getEncodingManager().getUnsafeEncodingList();
-
-            final Object[] arrayStore = new Object[encodingsList.size()];
-            getContext().getEncodingManager().getUnsafeEncodingList().toArray(arrayStore);
-
-            return createArray(arrayStore, arrayStore.length);
+            final Object[] encodingsList = getContext().getEncodingManager().getEncodingList();
+            return createArray(encodingsList, encodingsList.length);
         }
     }
 

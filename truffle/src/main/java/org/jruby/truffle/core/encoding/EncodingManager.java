@@ -61,8 +61,8 @@ public class EncodingManager {
         return Layouts.ENCODING.createEncoding(context.getCoreLibrary().getEncodingFactory(), encoding, string, dummy);
     }
 
-    public List<DynamicObject> getUnsafeEncodingList() {
-        return ENCODING_LIST_BY_ENCODING_LIST_INDEX;
+    public Object[] getEncodingList() {
+        return new ArrayList<>(ENCODING_LIST_BY_ENCODING_LIST_INDEX).toArray();
     }
 
     @TruffleBoundary
@@ -73,7 +73,7 @@ public class EncodingManager {
             // Bounded by the number of encodings
             CompilerDirectives.transferToInterpreterAndInvalidate();
 
-            rubyEncoding = LOOKUP.get(new String(encoding.getName(), StandardCharsets.UTF_8).toLowerCase(Locale.ENGLISH));
+            rubyEncoding = getRubyEncoding(new String(encoding.getName(), StandardCharsets.UTF_8));
             assert rubyEncoding != null;
             ENCODING_LIST_BY_ENCODING_INDEX.put(encoding.getIndex(), rubyEncoding);
         }
