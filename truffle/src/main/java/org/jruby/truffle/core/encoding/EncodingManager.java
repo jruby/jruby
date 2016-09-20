@@ -35,6 +35,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class EncodingManager {
 
@@ -42,7 +43,7 @@ public class EncodingManager {
 
     private final List<DynamicObject> ENCODING_LIST_BY_ENCODING_LIST_INDEX = new ArrayList<DynamicObject>(INITIAL_NUMBER_OF_ENCODINGS);
     private final Map<Integer, DynamicObject> ENCODING_LIST_BY_ENCODING_INDEX = new HashMap<Integer,DynamicObject>(INITIAL_NUMBER_OF_ENCODINGS);
-    private final Map<String, DynamicObject> LOOKUP = new HashMap<>();
+    private final Map<String, DynamicObject> LOOKUP = new ConcurrentHashMap<>();
 
     private final RubyContext context;
 
@@ -73,7 +74,8 @@ public class EncodingManager {
             CompilerDirectives.transferToInterpreterAndInvalidate();
 
             rubyEncoding = LOOKUP.get(new String(encoding.getName(), StandardCharsets.UTF_8).toLowerCase(Locale.ENGLISH));
-            ENCODING_LIST_BY_ENCODING_INDEX.put(encoding.getIndex(),rubyEncoding);
+            assert rubyEncoding != null;
+            ENCODING_LIST_BY_ENCODING_INDEX.put(encoding.getIndex(), rubyEncoding);
         }
 
         return rubyEncoding;
@@ -94,8 +96,9 @@ public class EncodingManager {
         final DynamicObject rubyEncoding = newRubyEncoding(context, null, name, p, end, encodingEntry.isDummy());
 
         assert ENCODING_LIST_BY_ENCODING_LIST_INDEX.size() == encodingEntry.getIndex();
-        ENCODING_LIST_BY_ENCODING_LIST_INDEX.add(encodingEntry.getIndex(), rubyEncoding);
+        // First write to LOOKUP, see getRubyEncoding()
         LOOKUP.put(Layouts.ENCODING.getName(rubyEncoding).toString().toLowerCase(Locale.ENGLISH), rubyEncoding);
+        ENCODING_LIST_BY_ENCODING_LIST_INDEX.add(encodingEntry.getIndex(), rubyEncoding);
         return rubyEncoding;
     }
 
