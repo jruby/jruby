@@ -556,6 +556,53 @@ public abstract class RegexpNodes {
 
     }
 
+    @Primitive(name = "regexp_set_last_match", needsSelf = false)
+    @ImportStatic(RegexpNodes.class)
+    public static abstract class RegexpSetLastMatchPrimitiveNode extends PrimitiveArrayArgumentsNode {
+
+        public static RegexpSetLastMatchPrimitiveNode create() {
+            return RegexpSetLastMatchPrimitiveNodeFactory.create(null);
+        }
+
+        public abstract DynamicObject executeSetLastMatch(Object matchData);
+
+        @TruffleBoundary
+        @Specialization(guards = "isSuitableMatchDataType(getContext(), matchData)")
+        public DynamicObject setLastMatchData(DynamicObject matchData) {
+            Frame frame = getContext().getCallStack().getCallerFrameIgnoringSend().getFrame(FrameInstance.FrameAccess.READ_WRITE, true);
+            FrameSlot slot = frame.getFrameDescriptor().findFrameSlot("$~");
+
+            while (slot == null) {
+                final Frame nextFrame = RubyArguments.getDeclarationFrame(frame);
+
+                if (nextFrame == null) {
+                    slot = frame.getFrameDescriptor().addFrameSlot("$~", FrameSlotKind.Object);
+                } else {
+                    slot = nextFrame.getFrameDescriptor().findFrameSlot("$~");
+                    frame = nextFrame;
+                }
+            }
+
+            final Object previousMatchData;
+            try {
+                previousMatchData = frame.getObject(slot);
+
+                if (previousMatchData instanceof ThreadLocalObject) {
+                    final ThreadLocalObject threadLocalObject = (ThreadLocalObject) previousMatchData;
+
+                    threadLocalObject.set(matchData);
+                } else {
+                    frame.setObject(slot, ThreadLocalObject.wrap(getContext(), matchData));
+                }
+            } catch (FrameSlotTypeException e) {
+                throw new IllegalStateException(e);
+            }
+
+            return matchData;
+        }
+
+    }
+
     @CoreMethod(names = { "quote", "escape" }, onSingleton = true, required = 1)
     public abstract static class QuoteNode extends CoreMethodArrayArgumentsNode {
 
@@ -779,53 +826,6 @@ public abstract class RegexpNodes {
                 // Search backward through the string.
                 return RegexpNodes.matchCommon(getContext(), this, makeSubstringNode, regexp, dupedString, false, matcher, end, start);
             }
-        }
-
-    }
-
-    @Primitive(name = "regexp_set_last_match", needsSelf = false)
-    @ImportStatic(RegexpNodes.class)
-    public static abstract class RegexpSetLastMatchPrimitiveNode extends PrimitiveArrayArgumentsNode {
-
-        public static RegexpSetLastMatchPrimitiveNode create() {
-            return RegexpSetLastMatchPrimitiveNodeFactory.create(null);
-        }
-
-        public abstract DynamicObject executeSetLastMatch(Object matchData);
-
-        @TruffleBoundary
-        @Specialization(guards = "isSuitableMatchDataType(getContext(), matchData)")
-        public DynamicObject setLastMatchData(DynamicObject matchData) {
-            Frame frame = getContext().getCallStack().getCallerFrameIgnoringSend().getFrame(FrameInstance.FrameAccess.READ_WRITE, true);
-            FrameSlot slot = frame.getFrameDescriptor().findFrameSlot("$~");
-
-            while (slot == null) {
-                final Frame nextFrame = RubyArguments.getDeclarationFrame(frame);
-
-                if (nextFrame == null) {
-                    slot = frame.getFrameDescriptor().addFrameSlot("$~", FrameSlotKind.Object);
-                } else {
-                    slot = nextFrame.getFrameDescriptor().findFrameSlot("$~");
-                    frame = nextFrame;
-                }
-            }
-
-            final Object previousMatchData;
-            try {
-                previousMatchData = frame.getObject(slot);
-
-                if (previousMatchData instanceof ThreadLocalObject) {
-                    final ThreadLocalObject threadLocalObject = (ThreadLocalObject) previousMatchData;
-
-                    threadLocalObject.set(matchData);
-                } else {
-                    frame.setObject(slot, ThreadLocalObject.wrap(getContext(), matchData));
-                }
-            } catch (FrameSlotTypeException e) {
-                throw new IllegalStateException(e);
-            }
-
-            return matchData;
         }
 
     }
