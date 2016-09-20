@@ -247,7 +247,7 @@ module Rubinius
     end
 
     def self.rb_to_integer(val, meth)
-      return val if object_kind_of?(val, Fixnum) || object_kind_of?(val, Bignum)
+      return val if object_kind_of?(val, Integer)
       res = convert_type(val, Integer, meth, true)
       unless object_kind_of?(res, Integer)
         conversion_mismatch(val, Integer, meth, res)
@@ -270,7 +270,6 @@ module Rubinius
         raise RangeError, "integer #{val} too #{val < 0 ? 'small' : 'big'} to convert to `long"
       end
     end
-
 
     def self.rb_check_convert_type(obj, cls, meth)
       return obj if object_kind_of?(obj, cls)
