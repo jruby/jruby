@@ -565,6 +565,8 @@ public final class Ruby implements Constantizable {
                 Main.printTruffleTimeMetric("after-run");
                 shutdownTruffleContextIfRunning();
             }
+            assert false : "always ends up with a MainExitException";
+            return;
         }
 
         ParseResult parseResult = parseFromMain(filename, inputStream);
