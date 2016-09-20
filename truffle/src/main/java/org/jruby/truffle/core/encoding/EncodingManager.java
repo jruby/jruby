@@ -80,8 +80,8 @@ public class EncodingManager {
 
     @TruffleBoundary
     public synchronized DynamicObject defineEncoding(EncodingDB.Entry encodingEntry, byte[] name, int p, int end) {
-        final DynamicObject rubyEncoding = newRubyEncoding(context, null, name, p, end, encodingEntry.isDummy());
         final Encoding encoding = encodingEntry.getEncoding();
+        final DynamicObject rubyEncoding = newRubyEncoding(context, encoding, name, p, end, encodingEntry.isDummy());
 
         assert ENCODING_LIST_BY_ENCODING_LIST_INDEX.size() == encodingEntry.getIndex();
         ENCODING_LIST_BY_ENCODING_LIST_INDEX.add(rubyEncoding);
