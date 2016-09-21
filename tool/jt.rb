@@ -159,14 +159,6 @@ module Utilities
   end
 
   def self.find_jruby_bin_dir
-    # Make sure bin/ruby points to the right launcher
-    ruby_symlink = "#{JRUBY_DIR}/bin/ruby"
-    jruby_bin = Utilities.find_jruby
-    if File.symlink?(ruby_symlink) && File.expand_path(File.readlink(ruby_symlink), File.dirname(ruby_symlink)) != jruby_bin
-      FileUtils.rm_f ruby_symlink
-      File.symlink jruby_bin, ruby_symlink
-    end
-
     if ENV['RUBY_BIN']
       File.dirname(ENV['RUBY_BIN'])
     elsif jruby_eclipse? or mx?
