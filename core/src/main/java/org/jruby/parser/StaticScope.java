@@ -325,7 +325,8 @@ public class StaticScope implements Serializable {
 
     private int findVariableName(String name) {
         for (int i = 0; i < variableNames.length; i++) {
-            if (name.equals(variableNames[i])) return i;
+            String varName = variableNames[i];
+            if (name == varName || (name != null && name.equals(varName))) return i;
         }
         return -1;
     }
