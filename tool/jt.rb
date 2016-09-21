@@ -158,16 +158,6 @@ module Utilities
     end
   end
 
-  def self.find_jruby_bin_dir
-    if ENV['RUBY_BIN']
-      File.dirname(ENV['RUBY_BIN'])
-    elsif jruby_eclipse? or mx?
-      JRUBY_DIR + "/bin"
-    else
-      File.dirname(find_jruby)
-    end
-  end
-
   def self.find_repo(name)
     [JRUBY_DIR, "#{JRUBY_DIR}/.."].each do |dir|
       found = Dir.glob("#{dir}/#{name}*").first
