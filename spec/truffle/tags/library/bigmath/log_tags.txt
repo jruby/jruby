@@ -1,0 +1,1 @@
+fails:BigDecimal#abs handles high-precision Rational arguments
