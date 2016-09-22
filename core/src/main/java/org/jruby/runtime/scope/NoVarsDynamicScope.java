@@ -52,6 +52,22 @@ public class NoVarsDynamicScope extends DynamicScope {
         assert depth != 0: SIZE_ERROR;
         return parent.getValue(offset, depth - 1);
     }
+
+    public IRubyObject getValueDepthZero(int offset) {
+        throw new RuntimeException(this.getClass().getSimpleName() + " does not support scopes with any variables");
+    }
+    public IRubyObject getValueZeroDepthZero() {
+        throw new RuntimeException(this.getClass().getSimpleName() + " does not support scopes with one or more variables");
+    }
+    public IRubyObject getValueOneDepthZero() {
+        throw new RuntimeException(this.getClass().getSimpleName() + " does not support scopes with two or more variables");
+    }
+    public IRubyObject getValueTwoDepthZero() {
+        throw new RuntimeException(this.getClass().getSimpleName() + " does not support scopes with three or more variables");
+    }
+    public IRubyObject getValueThreeDepthZero() {
+        throw new RuntimeException(this.getClass().getSimpleName() + " does not support scopes with four or more variables");
+    }
     
     /**
      * Variation of getValue that checks for nulls, returning and setting the given value (presumably nil)

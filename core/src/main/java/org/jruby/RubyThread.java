@@ -213,6 +213,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         super(runtime, type);
 
         finalResult = errorInfo = runtime.getNil();
+        threadName = runtime.getNil();
     }
 
     public RubyThread(Ruby runtime, RubyClass klass, Runnable runnable) {
