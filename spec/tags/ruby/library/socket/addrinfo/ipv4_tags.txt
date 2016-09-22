@@ -1,1 +1,0 @@
-fails:Addrinfo#ipv4? for a unix socket returns false

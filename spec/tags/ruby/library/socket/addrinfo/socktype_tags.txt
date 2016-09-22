@@ -1,1 +1,0 @@
-fails:Addrinfo#socktype for a unix socket returns Socket::SOCK_STREAM

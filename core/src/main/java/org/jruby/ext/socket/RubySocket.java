@@ -32,16 +32,20 @@ import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
 import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
+import java.net.PortUnreachableException;
+import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.nio.ByteBuffer;
 import java.nio.channels.AlreadyConnectedException;
 import java.nio.channels.Channel;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.ConnectionPendingException;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.SelectableChannel;
+import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.Enumeration;
 import java.util.regex.Pattern;
@@ -57,14 +61,18 @@ import jnr.constants.platform.SocketLevel;
 import jnr.constants.platform.SocketOption;
 import jnr.constants.platform.TCP;
 import jnr.netdb.Protocol;
+import jnr.unixsocket.UnixServerSocketChannel;
 import jnr.unixsocket.UnixSocketAddress;
 import jnr.unixsocket.UnixSocketChannel;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
+import org.jruby.RubyNumeric;
+import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
@@ -73,6 +81,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 import org.jruby.util.io.ChannelFD;
 import org.jruby.util.io.Sockaddr;
 
@@ -111,8 +120,17 @@ public class RubySocket extends RubyBasicSocket {
         rb_mConstants.setConstant("MSG_DONTROUTE", runtime.newFixnum(MSG_DONTROUTE));
         rb_mConstants.setConstant("MSG_WAITALL", runtime.newFixnum(MSG_WAITALL));
 
-        // constants webrick crashes without
         rb_mConstants.setConstant("AI_PASSIVE", runtime.newFixnum(1));
+        rb_mConstants.setConstant("AI_CANONNAME", runtime.newFixnum(2));
+        rb_mConstants.setConstant("AI_NUMERICHOST", runtime.newFixnum(4));
+        rb_mConstants.setConstant("AI_ALL", runtime.newFixnum(256));
+        rb_mConstants.setConstant("AI_V4MAPPED_CFG", runtime.newFixnum(512));
+        rb_mConstants.setConstant("AI_ADDRCONFIG", runtime.newFixnum(1024));
+        rb_mConstants.setConstant("AI_V4MAPPED", runtime.newFixnum(2048));
+        rb_mConstants.setConstant("AI_NUMERICSERV", runtime.newFixnum(4096));
+
+        rb_mConstants.setConstant("AI_DEFAULT", runtime.newFixnum(1536));
+        rb_mConstants.setConstant("AI_MASK", runtime.newFixnum(5127));
 
         // More constants needed by specs
         rb_mConstants.setConstant("IP_MULTICAST_TTL", runtime.newFixnum(10));
@@ -167,11 +185,7 @@ public class RubySocket extends RubyBasicSocket {
     public IRubyObject initialize(ThreadContext context, IRubyObject domain, IRubyObject type) {
         Ruby runtime = context.runtime;
 
-        initFieldsFromArgs(runtime, domain, type);
-
-        ChannelFD fd = initChannelFD(runtime);
-
-        initSocket(fd);
+        initFromArgs(runtime, domain, type);
 
         return this;
     }
@@ -180,11 +194,7 @@ public class RubySocket extends RubyBasicSocket {
     public IRubyObject initialize(ThreadContext context, IRubyObject domain, IRubyObject type, IRubyObject protocol) {
         Ruby runtime = context.runtime;
 
-        initFieldsFromArgs(runtime, domain, type, protocol);
-
-        ChannelFD fd = initChannelFD(runtime);
-
-        initSocket(fd);
+        initFromArgs(runtime, domain, type, protocol);
 
         return this;
     }
@@ -202,14 +212,14 @@ public class RubySocket extends RubyBasicSocket {
 
         boolean exception = ArgsUtil.extractKeywordArg(context, "exception", opts) != runtime.getFalse();
 
-        return doConnectNonblock(context, getChannel(), addr, exception);
+        return doConnectNonblock(context, addr, exception);
     }
 
     @JRubyMethod()
     public IRubyObject connect(ThreadContext context, IRubyObject arg) {
         SocketAddress addr = addressForChannel(context, arg);
 
-        return doConnect(context, getChannel(), addr, true);
+        return doConnect(context, addr, true);
     }
 
     @JRubyMethod()
@@ -218,35 +228,40 @@ public class RubySocket extends RubyBasicSocket {
 
         if (arg instanceof Addrinfo) {
             Addrinfo addr = (Addrinfo) arg;
+            if (!addr.ip_p(context).isTrue()) {
+                throw context.runtime.newTypeError("not an INET or INET6 address: " + addr);
+            }
             iaddr = new InetSocketAddress(addr.getInetAddress().getHostAddress(), addr.getPort());
         }
         else {
              iaddr = Sockaddr.addressFromSockaddr_in(context, arg);
         }
 
-        doBind(context, getChannel(), iaddr);
+        doBind(context, iaddr);
 
         return RubyFixnum.zero(context.runtime);
     }
 
     @JRubyMethod
-    public IRubyObject recvfrom(ThreadContext context, IRubyObject length) {
-        return super.recv(context, length);
+    public IRubyObject recvfrom(ThreadContext context, IRubyObject _length) {
+        return RubyUDPSocket.recvfrom(this, context, _length);
     }
 
+    /**
+     * Overrides IPSocket#recvfrom
+     */
     @JRubyMethod
-    public IRubyObject recvfrom(ThreadContext context, IRubyObject length, IRubyObject flags) {
-        return super.recv(context, length, flags);
-    }
-
-    @JRubyMethod
-    public IRubyObject recvfrom_nonblock(ThreadContext context, IRubyObject length) {
-        return super.recv_nonblock(context, length);
+    public IRubyObject recvfrom(ThreadContext context, IRubyObject _length, IRubyObject _flags) {
+        // TODO: handle flags
+        return recvfrom(context, _length);
     }
 
     @JRubyMethod(required = 1, optional = 3)
     public IRubyObject recvfrom_nonblock(ThreadContext context, IRubyObject[] args) {
-        return super.recv_nonblock(context, args);
+        if (getOpenFile() == null) {
+            throw context.runtime.newErrnoENOTCONNError("socket is not connected");
+        }
+        return RubyUDPSocket.recvfrom_nonblock(this, context, args);
     }
 
     @JRubyMethod(notImplemented = true)
@@ -303,7 +318,7 @@ public class RubySocket extends RubyBasicSocket {
 
     @JRubyMethod(name = {"pack_sockaddr_in", "sockaddr_in"}, meta = true)
     public static IRubyObject pack_sockaddr_in(ThreadContext context, IRubyObject recv, IRubyObject port, IRubyObject host) {
-        return SocketUtils.pack_sockaddr_in(context, port, host);
+        return Sockaddr.pack_sockaddr_in(context, port, host);
     }
 
     @JRubyMethod(meta = true)
@@ -313,7 +328,13 @@ public class RubySocket extends RubyBasicSocket {
 
     @JRubyMethod(name = {"pack_sockaddr_un", "sockaddr_un"}, meta = true)
     public static IRubyObject pack_sockaddr_un(ThreadContext context, IRubyObject recv, IRubyObject filename) {
-        return SocketUtils.pack_sockaddr_un(context, filename);
+        String path = filename.convertToString().asJavaString();
+        return Sockaddr.pack_sockaddr_un(context, path);
+    }
+
+    @JRubyMethod(meta = true)
+    public static IRubyObject unpack_sockaddr_un(ThreadContext context, IRubyObject recv, IRubyObject addr) {
+        return Sockaddr.unpack_sockaddr_un(context, addr);
     }
 
     @JRubyMethod(meta = true)
@@ -362,11 +383,6 @@ public class RubySocket extends RubyBasicSocket {
         return RubyUNIXSocket.socketpair(context, recv, arrayOf(domain, type));
     }
 
-    @Override
-    protected Sock getDefaultSocketType() {
-        return soType;
-    }
-
     private void initFieldsFromDescriptor(Ruby runtime, ChannelFD fd) {
         Channel mainChannel = fd.ch;
 
@@ -395,21 +411,20 @@ public class RubySocket extends RubyBasicSocket {
         }
     }
 
-    private void initFieldsFromArgs(Ruby runtime, IRubyObject domain, IRubyObject type, IRubyObject protocol) {
-        initDomain(runtime, domain);
-
-        initType(runtime, type);
-
-        initProtocol(protocol);
+    private void initFromArgs(Ruby runtime, IRubyObject domain, IRubyObject type, IRubyObject protocol) {
+        setProtocol(protocol);
+        initFromArgs(runtime, domain, type);
     }
 
-    private void initFieldsFromArgs(Ruby runtime, IRubyObject domain, IRubyObject type) {
-        initDomain(runtime, domain);
+    private void initFromArgs(Ruby runtime, IRubyObject domain, IRubyObject type) {
+        setDomain(runtime, domain);
+        setType(runtime, type);
 
-        initType(runtime, type);
+        ChannelFD fd = initChannelFD(runtime);
+        initSocket(fd);
     }
 
-    protected void initFromServer(Ruby runtime, RubyServerSocket serverSocket, SocketChannel socketChannel) {
+    protected void initFromServer(Ruby runtime, RubySocket serverSocket, SocketChannel socketChannel) {
         soDomain = serverSocket.soDomain;
         soType = serverSocket.soType;
         soProtocol = serverSocket.soProtocol;
@@ -441,6 +456,7 @@ public class RubySocket extends RubyBasicSocket {
                 default:
                     throw runtime.newArgumentError("unsupported socket type `" + soType + "'");
             }
+
             return newChannelFD(runtime, channel);
         }
         catch (IOException e) {
@@ -448,11 +464,11 @@ public class RubySocket extends RubyBasicSocket {
         }
     }
 
-    private void initProtocol(IRubyObject protocol) {
+    private void setProtocol(IRubyObject protocol) {
         soProtocol = SocketUtils.protocolFromArg(protocol);
     }
 
-    private void initType(Ruby runtime, IRubyObject type) {
+    private void setType(Ruby runtime, IRubyObject type) {
         Sock sockType = SocketUtils.sockFromArg(type);
 
         if (sockType == null) {
@@ -462,7 +478,7 @@ public class RubySocket extends RubyBasicSocket {
         soType = sockType;
     }
 
-    private void initDomain(Ruby runtime, IRubyObject domain) {
+    private void setDomain(Ruby runtime, IRubyObject domain) {
         AddressFamily family = SocketUtils.addressFamilyFromArg(domain);
 
         if (family == null) {
@@ -475,7 +491,9 @@ public class RubySocket extends RubyBasicSocket {
         soProtocolFamily = ProtocolFamily.valueOf("PF" + name.substring(2));
     }
 
-    private IRubyObject doConnectNonblock(ThreadContext context, Channel channel, SocketAddress addr, boolean ex) {
+    private IRubyObject doConnectNonblock(ThreadContext context, SocketAddress addr, boolean ex) {
+        Channel channel = getChannel();
+
         if ( ! (channel instanceof SelectableChannel) ) {
             throw context.runtime.newErrnoENOPROTOOPTError();
         }
@@ -487,7 +505,7 @@ public class RubySocket extends RubyBasicSocket {
                 selectable.configureBlocking(false);
 
                 try {
-                    return doConnect(context, channel, addr, ex);
+                    return doConnect(context, addr, ex);
 
                 } finally {
                     selectable.configureBlocking(oldBlocking);
@@ -503,8 +521,9 @@ public class RubySocket extends RubyBasicSocket {
         }
     }
 
-    protected IRubyObject doConnect(ThreadContext context, Channel channel, SocketAddress addr, boolean ex) {
+    protected IRubyObject doConnect(ThreadContext context, SocketAddress addr, boolean ex) {
         Ruby runtime = context.runtime;
+        Channel channel = getChannel();
 
         try {
             boolean result = true;
@@ -557,8 +576,10 @@ public class RubySocket extends RubyBasicSocket {
         return runtime.newFixnum(0);
     }
 
-    protected void doBind(ThreadContext context, Channel channel, InetSocketAddress iaddr) {
+    protected void doBind(ThreadContext context, SocketAddress iaddr) {
         Ruby runtime = context.runtime;
+
+        Channel channel = getChannel();
 
         try {
             if (channel instanceof SocketChannel) {
@@ -630,7 +651,7 @@ public class RubySocket extends RubyBasicSocket {
     }
 
     private SocketAddress addressForChannel(ThreadContext context, IRubyObject arg) {
-        if (arg instanceof Addrinfo) return Sockaddr.addressFromArg(context, arg);
+        if (arg instanceof Addrinfo) return ((Addrinfo) arg).getSocketAddress();
 
         switch (soProtocolFamily) {
             case PF_UNIX:
@@ -645,6 +666,39 @@ public class RubySocket extends RubyBasicSocket {
             default:
                 throw context.runtime.newArgumentError("unsupported protocol family `" + soProtocolFamily + "'");
         }
+    }
+
+    @Override
+    protected IRubyObject addrFor(ThreadContext context, InetSocketAddress addr, boolean reverse) {
+        final Ruby runtime = context.runtime;
+
+        return new Addrinfo(runtime, runtime.getClass("Addrinfo"), addr.getAddress(), addr.getPort(), Sock.SOCK_DGRAM);
+    }
+
+    @JRubyMethod
+    public IRubyObject close() {
+        if (getOpenFile() != null) {
+            Ruby runtime = getRuntime();
+            if (isClosed()) {
+                return runtime.getNil();
+            }
+            openFile.checkClosed();
+            return rbIoClose(runtime);
+        }
+        return getRuntime().getNil();
+    }
+
+    @Override
+    public RubyBoolean closed_p(ThreadContext context) {
+        if (getOpenFile() == null) return context.runtime.getFalse();
+
+        return super.closed_p(context);
+    }
+
+    protected SocketAddress getSocketAddress() {
+        Channel channel = getChannel();
+
+        return SocketType.forChannel(channel).getLocalSocketAddress(channel);
     }
 
     @Deprecated

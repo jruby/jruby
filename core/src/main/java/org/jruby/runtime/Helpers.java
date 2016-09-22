@@ -2801,6 +2801,12 @@ public class Helpers {
         return builder.toString();
     }
 
+    public static byte[] subseq(byte[] ary, int start, int len) {
+        byte[] newAry = new byte[len];
+        System.arraycopy(ary, start, newAry, 0, len);
+        return newAry;
+    }
+
     /**
      * This method is deprecated because it depends on having a Ruby frame pushed for checking method visibility,
      * and there's no way to enforce that. Most users of this method probably don't need to check visibility.

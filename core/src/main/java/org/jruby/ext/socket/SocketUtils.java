@@ -49,8 +49,10 @@ import org.jruby.util.ByteList;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.io.Sockaddr;
 
+import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
@@ -61,6 +63,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static jnr.constants.platform.AddressFamily.AF_INET;
+import static jnr.constants.platform.AddressFamily.AF_INET6;
 import static jnr.constants.platform.IPProto.IPPROTO_TCP;
 import static jnr.constants.platform.IPProto.IPPROTO_UDP;
 import static jnr.constants.platform.NameInfo.NI_NUMERICHOST;
@@ -131,42 +134,20 @@ public class SocketUtils {
         return runtime.newFixnum(port);
     }
 
+    @Deprecated
     public static IRubyObject pack_sockaddr_in(ThreadContext context, IRubyObject port, IRubyObject host) {
-        final int portNum;
-        if ( ! port.isNil() ) {
-            portNum = port instanceof RubyString ?
-                    Integer.parseInt(port.convertToString().toString()) :
-                        RubyNumeric.fix2int(port);
-        }
-        else {
-            portNum = 0;
-        }
-
-        final String hostStr = host.isNil() ? null : host.convertToString().toString();
-        return Sockaddr.pack_sockaddr_in(context, portNum, hostStr);
+        return Sockaddr.pack_sockaddr_in(context, port, host);
     }
 
+    @Deprecated
     public static RubyArray unpack_sockaddr_in(ThreadContext context, IRubyObject addr) {
         return Sockaddr.unpack_sockaddr_in(context, addr);
     }
 
+    @Deprecated
     public static IRubyObject pack_sockaddr_un(ThreadContext context, IRubyObject filename) {
-        ByteList str = filename.convertToString().getByteList();
-
-        AddressFamily af = AddressFamily.AF_UNIX;
-        int high = (af.intValue() & 0xff00) >> 8;
-        int low = af.intValue() & 0xff;
-
-        ByteList bl = new ByteList();
-        bl.append((byte)high);
-        bl.append((byte)low);
-        bl.append(str);
-
-        for(int i=str.length();i<104;i++) {
-            bl.append((byte)0);
-        }
-
-        return context.runtime.newString(bl);
+        String path = filename.convertToString().asJavaString();
+        return Sockaddr.pack_sockaddr_un(context, path);
     }
 
     public static IRubyObject gethostbyname(ThreadContext context, IRubyObject hostname) {
@@ -267,15 +248,15 @@ public class SocketUtils {
 
                 if (sock_dgram) {
                     l.add(new Addrinfo(runtime, runtime.getClass("Addrinfo"),
-                            address,
-                            port,
+                            new InetSocketAddress(address, port),
+                            Sock.SOCK_DGRAM,
                             SocketType.DATAGRAM));
                 }
 
                 if (sock_stream) {
                     l.add(new Addrinfo(runtime, runtime.getClass("Addrinfo"),
-                            address,
-                            port,
+                            new InetSocketAddress(address, port),
+                            Sock.SOCK_STREAM,
                             SocketType.SOCKET));
                 }
             }
@@ -298,75 +279,47 @@ public class SocketUtils {
         IRubyObject port = args[1];
         boolean emptyHost = host.isNil() || host.convertToString().isEmpty();
 
+        IRubyObject family = args.length > 2 ? args[2] : context.nil;
+        IRubyObject socktype = args.length > 3 ? args[3] : context.nil;
+        IRubyObject protocol = args.length > 4 ? args[4] : context.nil;
+        IRubyObject flags = args.length > 5 ? args[5] : context.nil;
+        IRubyObject reverseArg = args.length > 6 ? args[6] : context.nil;
+
+        // The Ruby Socket.getaddrinfo function supports boolean/nil/Symbol values for the
+        // reverse_lookup parameter. We need to massage all valid inputs to true/false/null.
+        Boolean reverseLookup = RubyIPSocket.doReverseLookup(context, reverseArg);
+
+        AddressFamily addressFamily = family.isNil() ? null : addressFamilyFromArg(family);
+
+        Sock sock = socktype.isNil() ? SOCK_STREAM : sockFromArg(socktype);
+
+        if(port instanceof RubyString) {
+            port = getservbyname(context, new IRubyObject[]{port});
+        }
+
+        int p = port.isNil() ? 0 : (int)port.convertToInteger().getLongValue();
+
+        // TODO: implement flags
+        int flag = flags.isNil() ? 0 : RubyNumeric.fix2int(flags);
+
+        String hostString = null;
+
+        // The value of 1 is for Socket::AI_PASSIVE.
+        if ((flag == 1) && emptyHost) {
+            // use RFC 2732 style string to ensure that we get Inet6Address
+            hostString = (addressFamily == AddressFamily.AF_INET6) ? "[::]" : "0.0.0.0";
+        } else {
+            // get the addresses for the given host name
+            hostString = emptyHost ? "localhost" : host.convertToString().toString();
+        }
+
         try {
-            if(port instanceof RubyString) {
-                port = getservbyname(context, new IRubyObject[]{port});
-            }
-
-            IRubyObject family = args.length > 2 ? args[2] : context.nil;
-            IRubyObject socktype = args.length > 3 ? args[3] : context.nil;
-            //IRubyObject protocol = args[4];
-            IRubyObject flags = args.length > 5 ? args[5] : context.nil;
-            IRubyObject reverseArg = args.length > 6 ? args[6] : context.nil;
-
-            // The Ruby Socket.getaddrinfo function supports boolean/nil/Symbol values for the
-            // reverse_lookup parameter. We need to massage all valid inputs to true/false/null.
-            Boolean reverseLookup = null;
-            if (reverseArg instanceof RubyBoolean) {
-                reverseLookup = reverseArg.isTrue();
-            } else if (reverseArg instanceof RubySymbol) {
-                String reverseString = reverseArg.toString();
-                if ("hostname".equals(reverseString)) {
-                    reverseLookup = true;
-                } else if ("numeric".equals(reverseString)) {
-                    reverseLookup = false;
-                } else {
-                    throw runtime.newArgumentError("invalid reverse_lookup flag: :" +
-                     reverseString);
-                }
-            }
-
-            AddressFamily addressFamily = AF_INET;
-            if (!family.isNil()) {
-                addressFamily = addressFamilyFromArg(family);
-            }
-            boolean is_ipv6 = addressFamily == AddressFamily.AF_INET6;
-            boolean sock_stream = true;
-            boolean sock_dgram = true;
-
-            Sock sock = SOCK_STREAM;
-            if(!socktype.isNil()) {
-                sockFromArg(socktype);
-
-                if(sock == SOCK_STREAM) {
-                    sock_dgram = false;
-
-                } else if (sock == SOCK_DGRAM) {
-                    sock_stream = false;
-
-                }
-            }
-
-            // When Socket::AI_PASSIVE and host is nil, return 'any' address.
-            InetAddress[] addrs = null;
-
-            if(!flags.isNil() && RubyFixnum.fix2int(flags) > 0) {
-                // The value of 1 is for Socket::AI_PASSIVE.
-                int flag = RubyNumeric.fix2int(flags);
-
-                if ((flag == 1) && emptyHost ) {
-                    // use RFC 2732 style string to ensure that we get Inet6Address
-                    addrs = InetAddress.getAllByName(is_ipv6 ? "[::]" : "0.0.0.0");
-                }
-
-            }
-
-            if (addrs == null) {
-                addrs = InetAddress.getAllByName(emptyHost ? (is_ipv6 ? "[::1]" : null) : host.convertToString().toString());
-            }
+            InetAddress[] addrs = InetAddress.getAllByName(hostString);
 
             for(int i = 0; i < addrs.length; i++) {
-                int p = port.isNil() ? 0 : (int)port.convertToInteger().getLongValue();
+                // filter out unrelated address families if specified
+                if (addressFamily == AF_INET6 && !(addrs[i] instanceof Inet6Address)) continue;
+                if (addressFamily == AF_INET && !(addrs[i] instanceof Inet4Address)) continue;
                 callback.addrinfo(addrs[i], p, sock, reverseLookup);
             }
 
@@ -399,7 +352,7 @@ public class SocketUtils {
             Matcher m = STRING_IPV4_ADDRESS_PATTERN.matcher(arg);
 
             if (!m.matches()) {
-                RubyArray portAndHost = unpack_sockaddr_in(context, arg0);
+                RubyArray portAndHost = Sockaddr.unpack_sockaddr_in(context, arg0);
 
                 if (portAndHost.size() != 2) {
                     throw runtime.newArgumentError("invalid address representation");
@@ -569,6 +522,7 @@ public class SocketUtils {
     private static final String ANY = "<any>";
     private static final byte[] INADDR_ANY = new byte[] {0,0,0,0}; // 0.0.0.0
 
+    // MRI: address family part of rsock_family_to_int
     static AddressFamily addressFamilyFromArg(IRubyObject domain) {
         IRubyObject maybeString = TypeConverter.checkStringType(domain.getRuntime(), domain);
 
@@ -613,6 +567,7 @@ public class SocketUtils {
         }
     }
 
+    // MRI: protocol family part of rsock_family_to_int
     static ProtocolFamily protocolFamilyFromArg(IRubyObject protocol) {
         IRubyObject maybeString = TypeConverter.checkStringType(protocol.getRuntime(), protocol);
 
@@ -696,6 +651,19 @@ public class SocketUtils {
     }
 
     public static int portToInt(IRubyObject port) {
-        return port.isNil() ? 0 : RubyNumeric.fix2int(port);
+        if (port.isNil()) return 0;
+
+        Ruby runtime = port.getRuntime();
+
+        IRubyObject maybeStr = TypeConverter.checkStringType(runtime, port);
+        if (!maybeStr.isNil()) {
+            RubyString portStr = maybeStr.convertToString();
+            jnr.netdb.Service serv = jnr.netdb.Service.getServiceByName(portStr.toString(), null);
+
+            if (serv != null) return serv.getPort();
+
+            return RubyNumeric.fix2int(portStr.to_i());
+        }
+        return RubyNumeric.fix2int(port);
     }
 }
