@@ -160,14 +160,36 @@ public abstract class DynamicScope {
     /**
      * Get value from current scope or one of its captured scopes.
      *
-     * FIXME: block variables are not getting primed to nil so we need to null check those
-     *  until we prime them properly.  Also add assert back in.
-     *
      * @param offset zero-indexed value that represents where variable lives
      * @param depth how many captured scopes down this variable should be set
      * @return the value here
      */
     public abstract IRubyObject getValue(int offset, int depth);
+
+    /**
+     * Variation of getValue for depth 0
+     */
+    public abstract IRubyObject getValueDepthZero(int offset);
+
+    /**
+     * getValue for index 0, depth 0
+     */
+    public abstract IRubyObject getValueZeroDepthZero();
+
+    /**
+     * getValue for index 1, depth 0
+     */
+    public abstract IRubyObject getValueOneDepthZero();
+
+    /**
+     * getValue for index 2, depth 0
+     */
+    public abstract IRubyObject getValueTwoDepthZero();
+
+    /**
+     * getValue for index 3, depth 0
+     */
+    public abstract IRubyObject getValueThreeDepthZero();
 
     /**
      * Variation of getValue that checks for nulls, returning and setting the given value (presumably nil)

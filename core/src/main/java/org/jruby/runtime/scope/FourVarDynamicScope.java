@@ -78,6 +78,23 @@ public class FourVarDynamicScope extends ThreeVarDynamicScope {
             return getValueDepthZeroOrNil(offset, nil);
         }
     }
+
+    @Override
+    public IRubyObject getValueDepthZero(int offset) {
+        assert offset < SIZE : SIZE_ERROR;
+        switch (offset) {
+            case 0:
+                return variableValueZero;
+            case 1:
+                return variableValueOne;
+            case 2:
+                return variableValueTwo;
+            case 3:
+                return variableValueThree;
+            default:
+                throw new RuntimeException(SIZE_ERROR);
+        }
+    }
     
     @Override
     public IRubyObject getValueDepthZeroOrNil(int offset, IRubyObject nil) {
@@ -99,6 +116,12 @@ public class FourVarDynamicScope extends ThreeVarDynamicScope {
             throw new RuntimeException(SIZE_ERROR);
         }
     }
+
+    @Override
+    public IRubyObject getValueThreeDepthZero() {
+        return variableValueThree;
+    }
+
     @Override
     public IRubyObject getValueThreeDepthZeroOrNil(IRubyObject nil) {
         if (variableValueThree == null) return variableValueThree = nil;

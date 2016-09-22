@@ -69,11 +69,22 @@ public class OneVarDynamicScope extends NoVarsDynamicScope {
     }
     
     @Override
+    public IRubyObject getValueDepthZero(int offset) {
+        return variableValueZero;
+    }
+
+    @Override
     public IRubyObject getValueDepthZeroOrNil(int offset, IRubyObject nil) {
         IRubyObject value = variableValueZero;
         if (value == null) return variableValueZero = nil;
         return value;
     }
+
+    @Override
+    public IRubyObject getValueZeroDepthZero() {
+        return variableValueZero;
+    }
+
     @Override
     public IRubyObject getValueZeroDepthZeroOrNil(IRubyObject nil) {
         IRubyObject value = variableValueZero;
