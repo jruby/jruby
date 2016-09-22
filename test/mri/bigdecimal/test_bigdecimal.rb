@@ -1497,6 +1497,13 @@ class TestBigDecimal < Test::Unit::TestCase
     assert_in_delta(3, log_3, 0.0000000000_0000000000_0000000000_0000000000_0000000001)
   end
 
+  def test_BigMath_log_with_rational_high_precision_case
+    # From MRI
+    result = BigDecimal('0.22314354220170971436137296411949880462556361100856391620766259404746040597133837784E0')
+    r = Rational(1_234_567_890, 987_654_321)
+    assert_in_delta(result, BigMath.log(r, 50), 0.0000000000_0000000000_0000000000_0000000000_0000000001)
+  end
+
   def test_BigMath_log_with_42
     assert_in_delta(Math.log(42), BigMath.log(42, 20))
     assert_in_delta(Math.log(42), BigMath.log(42.0, 20))
