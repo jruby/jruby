@@ -57,7 +57,7 @@ graal-core: ${labsjdk} {
     [cd, ../graal-core],
     [mx, sforceimports],
     [cd, ../truffle] ${use-language-truffle} [cd, ../graal-core],
-    [mx, --java-home, "$JVMCI_JAVA_HOME", build],
+    [mx, build],
     [cd, ../main]
   ]
 
@@ -74,7 +74,7 @@ graal-enterprise: ${labsjdk} {
     [cd, ../graal-enterprise/graal-enterprise],
     [mx, sforceimports],
     [cd, ../../truffle] ${use-language-truffle} [cd, ../graal-enterprise/graal-enterprise],
-    [mx, --java-home, "$JVMCI_JAVA_HOME", build],
+    [mx, build],
     [cd, ../../main]
   ]
 
