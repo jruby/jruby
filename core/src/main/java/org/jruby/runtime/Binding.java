@@ -34,12 +34,10 @@ package org.jruby.runtime;
 
 import org.jruby.Ruby;
 import org.jruby.RubyBasicObject;
-import org.jruby.parser.StaticScopeFactory;
 import org.jruby.runtime.backtrace.BacktraceElement;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
-import org.jruby.runtime.scope.NoVarsDynamicScope;
 
 /**
  *  Internal live representation of a block ({...} or do ... end).
@@ -51,11 +49,7 @@ public class Binding {
                     RubyBasicObject.NEVER,
                     // Can't use Frame.DUMMY because of circular static init seeing it before it's assigned
                     new Frame(),
-                    Visibility.PUBLIC,
-                    new NoVarsDynamicScope(StaticScopeFactory.newStaticScope(null, StaticScope.Type.BLOCK, null)),
-                    "<dummy>",
-                    "dummy",
-                    -1);
+                    Visibility.PUBLIC);
     
     /**
      * frame of method which defined this block

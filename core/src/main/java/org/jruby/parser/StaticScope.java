@@ -47,7 +47,6 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.scope.DummyDynamicScope;
 
 /**
  * StaticScope represents lexical scoping of variables and module/class constants.
@@ -526,7 +525,7 @@ public class StaticScope implements Serializable {
     }
 
     public DynamicScope getDummyScope() {
-        return dummyScope == null ? dummyScope = new DummyDynamicScope(this) : dummyScope;
+        return dummyScope == null ? dummyScope = DynamicScope.newDynamicScope(this) : dummyScope;
     }
 
     public void setCommandArgumentStack(long commandArgumentStack) {

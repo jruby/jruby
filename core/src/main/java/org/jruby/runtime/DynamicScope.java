@@ -34,10 +34,8 @@ import me.qmx.jitescript.internal.org.objectweb.asm.Label;
 import me.qmx.jitescript.internal.org.objectweb.asm.tree.LabelNode;
 import org.jruby.EvalType;
 import org.jruby.Ruby;
-import org.jruby.runtime.scope.NoVarsDynamicScope;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.scope.DummyDynamicScope;
 
 import static org.jruby.util.CodegenUtils.*;
 
@@ -66,12 +64,7 @@ public abstract class DynamicScope {
     }
 
     public static DynamicScope newDynamicScope(StaticScope staticScope, DynamicScope parent) {
-        switch (staticScope.getNumberOfVariables()) {
-        case 0:
-            return new NoVarsDynamicScope(staticScope, parent);
-        default:
-            return construct(staticScope, parent);
-        }
+        return construct(staticScope, parent);
     }
 
     private static final NonBlockingHashMapLong<Class<? extends DynamicScope>> prototypes = new NonBlockingHashMapLong<>();
@@ -120,15 +113,17 @@ public abstract class DynamicScope {
                             cases[i] = new LabelNode(new Label());
                         }
                         ifne(superCall);
-                        iload(1);
-                        tableswitch(0, size - 1, defaultError, cases);
-                        for (int i = 0; i < size; i++) {
-                            label(cases[i]);
-                            aload(0);
-                            getfield(name, newFields[i], ci(IRubyObject.class));
-                            areturn();
+                        if (size > 0) {
+                            iload(1);
+                            tableswitch(0, size - 1, defaultError, cases);
+                            for (int i = 0; i < size; i++) {
+                                label(cases[i]);
+                                aload(0);
+                                getfield(name, newFields[i], ci(IRubyObject.class));
+                                areturn();
+                            }
+                            label(defaultError);
                         }
-                        label(defaultError);
                         line(1);
                         newobj(p(RuntimeException.class));
                         dup();
@@ -158,17 +153,19 @@ public abstract class DynamicScope {
                             cases[i] = new LabelNode(new Label());
                         }
                         ifne(superCall);
-                        iload(1);
-                        tableswitch(0, size - 1, defaultError, cases);
-                        for (int i = 0; i < size; i++) {
-                            label(cases[i]);
-                            aload(0);
-                            aload(2);
-                            putfield(name, newFields[i], ci(IRubyObject.class));
-                            aload(2);
-                            areturn();
+                        if (size > 0) {
+                            iload(1);
+                            tableswitch(0, size - 1, defaultError, cases);
+                            for (int i = 0; i < size; i++) {
+                                label(cases[i]);
+                                aload(0);
+                                aload(2);
+                                putfield(name, newFields[i], ci(IRubyObject.class));
+                                aload(2);
+                                areturn();
+                            }
+                            label(defaultError);
                         }
-                        label(defaultError);
                         line(4);
                         newobj(p(RuntimeException.class));
                         dup();
@@ -226,7 +223,7 @@ public abstract class DynamicScope {
     }
 
     public static DynamicScope newDummyScope(StaticScope staticScope, DynamicScope parent) {
-        return new DummyDynamicScope(staticScope, parent);
+        return DynamicScope.newDynamicScope(staticScope, parent);
     }
 
     /**
