@@ -409,8 +409,14 @@ module Truffle::CExt
 
   def rb_define_method(mod, name, function, argc)
     mod.send(:define_method, name) do |*args|
+      if argc == -1
+        args = [args.size, ::Truffle::CExt::RARRAY_PTR(args), self]
+      else
+        args = [self, *args]
+      end
+
       # Using raw execute instead of #call here to avoid argument conversion
-      Truffle::Interop.execute(function, self, *args)
+      Truffle::Interop.execute(function, *args)
     end
   end
 
