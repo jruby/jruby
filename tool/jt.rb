@@ -628,7 +628,11 @@ module Commands
 
     raw_sh env_vars, Utilities.find_jruby, *jruby_args, *args
   end
-  alias ruby run
+
+  # Same as #run but uses exec()
+  def ruby(*args)
+    run(*args, '--exec')
+  end
 
   def e(*args)
     run '-e', args.join(' ')
