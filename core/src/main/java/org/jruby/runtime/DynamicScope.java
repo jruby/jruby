@@ -42,6 +42,10 @@ import static org.jruby.util.CodegenUtils.*;
 import org.jruby.util.OneShotClassLoader;
 import org.jruby.util.collections.NonBlockingHashMapLong;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
+
 public abstract class DynamicScope {
     // Static scoping information for this scope
     protected final StaticScope staticScope;
@@ -67,135 +71,142 @@ public abstract class DynamicScope {
         return construct(staticScope, parent);
     }
 
-    private static final NonBlockingHashMapLong<Class<? extends DynamicScope>> prototypes = new NonBlockingHashMapLong<>();
+    private static final NonBlockingHashMapLong<MethodHandle> prototypes = new NonBlockingHashMapLong<>();
 
-    public static Class protoClassFromProps(int size) {
+    public static MethodHandle protoClassFromProps(int size) {
         return prototypes.get(size);
     }
 
     public static DynamicScope construct(StaticScope staticScope, DynamicScope parent) {
-        Class<DynamicScope> tupleType = generate(staticScope.getNumberOfVariables());
+        MethodHandle tupleType = generate(staticScope.getNumberOfVariables());
         try {
-            return tupleType.getConstructor(StaticScope.class, DynamicScope.class).newInstance(staticScope, parent);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+            return (DynamicScope) tupleType.invokeExact(staticScope, parent);
+        } catch (Throwable e) {
+            Helpers.throwException(e);
+            return null; // not reached
         }
     }
 
-    public static Class<DynamicScope> generate(final int size) {
-        Class p = protoClassFromProps(size);
+    public static MethodHandle generate(final int size) {
+        MethodHandle h = protoClassFromProps(size);
+
+        if (h != null) return h;
+
+        Class p = null;
         final String name = "org/jruby/runtime/scopes/DynamicScope" + size;
 
         try {
-            if (p == null) {
-                // create a new one
-                final Class<DynamicScope> base = DynamicScope.class;
-                final String[] newFields = varList(size);
+            // create a new one
+            final Class<DynamicScope> base = DynamicScope.class;
+            final String[] newFields = varList(size);
 
-                JiteClass jiteClass = new JiteClass(name, p(DynamicScope.class), new String[0]) {{
-                    // parent class constructor
-                    defineMethod("<init>", ACC_PUBLIC, sig(void.class, StaticScope.class, DynamicScope.class), new CodeBlock() {{
-                        aload(0);
-                        aload(1);
-                        aload(2);
-                        invokespecial(p(base), "<init>", sig(void.class, StaticScope.class, DynamicScope.class));
-                        voidreturn();
-                    }});
+            JiteClass jiteClass = new JiteClass(name, p(DynamicScope.class), new String[0]) {{
+                // parent class constructor
+                defineMethod("<init>", ACC_PUBLIC, sig(void.class, StaticScope.class, DynamicScope.class), new CodeBlock() {{
+                    aload(0);
+                    aload(1);
+                    aload(2);
+                    invokespecial(p(base), "<init>", sig(void.class, StaticScope.class, DynamicScope.class));
+                    voidreturn();
+                }});
 
-                    // required overrides
-                    defineMethod("getValue", ACC_PUBLIC, sig(IRubyObject.class, int.class, int.class), new CodeBlock() {{
-                        line(0);
-                        iload(2); // depth
-                        LabelNode superCall = new LabelNode(new Label());
-                        LabelNode defaultError = new LabelNode(new Label());
-                        LabelNode[] cases = new LabelNode[size];
-                        for (int i = 0; i < size; i++) {
-                            cases[i] = new LabelNode(new Label());
-                        }
-                        ifne(superCall);
-                        if (size > 0) {
-                            iload(1);
-                            tableswitch(0, size - 1, defaultError, cases);
-                            for (int i = 0; i < size; i++) {
-                                label(cases[i]);
-                                aload(0);
-                                getfield(name, newFields[i], ci(IRubyObject.class));
-                                areturn();
-                            }
-                            label(defaultError);
-                        }
-                        line(1);
-                        newobj(p(RuntimeException.class));
-                        dup();
-                        ldc(name + " only supports scopes with " + size + " variables");
-                        invokespecial(p(RuntimeException.class), "<init>", sig(void.class, String.class));
-                        athrow();
-                        label(superCall);
-                        line(2);
-                        aload(0);
-                        getfield(p(DynamicScope.class), "parent", ci(DynamicScope.class));
-                        iload(1);
-                        iload(2);
-                        pushInt(1);
-                        isub();
-                        invokevirtual(p(DynamicScope.class), "getValue", sig(IRubyObject.class, int.class, int.class));
-                        areturn();
-                    }});
-
-                    // required overrides
-                    defineMethod("setValue", ACC_PUBLIC, sig(IRubyObject.class, int.class, IRubyObject.class, int.class), new CodeBlock() {{
-                        line(3);
-                        iload(3); // depth
-                        LabelNode superCall = new LabelNode(new Label());
-                        LabelNode defaultError = new LabelNode(new Label());
-                        LabelNode[] cases = new LabelNode[size];
-                        for (int i = 0; i < size; i++) {
-                            cases[i] = new LabelNode(new Label());
-                        }
-                        ifne(superCall);
-                        if (size > 0) {
-                            iload(1);
-                            tableswitch(0, size - 1, defaultError, cases);
-                            for (int i = 0; i < size; i++) {
-                                label(cases[i]);
-                                aload(0);
-                                aload(2);
-                                putfield(name, newFields[i], ci(IRubyObject.class));
-                                aload(2);
-                                areturn();
-                            }
-                            label(defaultError);
-                        }
-                        line(4);
-                        newobj(p(RuntimeException.class));
-                        dup();
-                        ldc(name + " only supports scopes with " + size + " variables");
-                        invokespecial(p(RuntimeException.class), "<init>", sig(void.class, String.class));
-                        athrow();
-                        label(superCall);
-                        line(5);
-                        aload(0);
-                        getfield(p(DynamicScope.class), "parent", ci(DynamicScope.class));
-                        iload(1);
-                        aload(2);
-                        iload(3);
-                        pushInt(1);
-                        isub();
-                        invokevirtual(p(DynamicScope.class), "setValue", sig(IRubyObject.class, int.class, IRubyObject.class, int.class));
-                        areturn();
-                    }});
-
-                    // fields
-                    for (String prop : newFields) {
-                        defineField(prop, ACC_PUBLIC, ci(IRubyObject.class), null);
+                // required overrides
+                defineMethod("getValue", ACC_PUBLIC, sig(IRubyObject.class, int.class, int.class), new CodeBlock() {{
+                    line(0);
+                    iload(2); // depth
+                    LabelNode superCall = new LabelNode(new Label());
+                    LabelNode defaultError = new LabelNode(new Label());
+                    LabelNode[] cases = new LabelNode[size];
+                    for (int i = 0; i < size; i++) {
+                        cases[i] = new LabelNode(new Label());
                     }
-                }};
+                    ifne(superCall);
+                    if (size > 0) {
+                        iload(1);
+                        tableswitch(0, size - 1, defaultError, cases);
+                        for (int i = 0; i < size; i++) {
+                            label(cases[i]);
+                            aload(0);
+                            getfield(name, newFields[i], ci(IRubyObject.class));
+                            areturn();
+                        }
+                        label(defaultError);
+                    }
+                    line(1);
+                    newobj(p(RuntimeException.class));
+                    dup();
+                    ldc(name + " only supports scopes with " + size + " variables");
+                    invokespecial(p(RuntimeException.class), "<init>", sig(void.class, String.class));
+                    athrow();
+                    label(superCall);
+                    line(2);
+                    aload(0);
+                    getfield(p(DynamicScope.class), "parent", ci(DynamicScope.class));
+                    iload(1);
+                    iload(2);
+                    pushInt(1);
+                    isub();
+                    invokevirtual(p(DynamicScope.class), "getValue", sig(IRubyObject.class, int.class, int.class));
+                    areturn();
+                }});
 
-                p = defineClass(jiteClass);
-                prototypes.put(size, p);
-            }
+                // required overrides
+                defineMethod("setValue", ACC_PUBLIC, sig(IRubyObject.class, int.class, IRubyObject.class, int.class), new CodeBlock() {{
+                    line(3);
+                    iload(3); // depth
+                    LabelNode superCall = new LabelNode(new Label());
+                    LabelNode defaultError = new LabelNode(new Label());
+                    LabelNode[] cases = new LabelNode[size];
+                    for (int i = 0; i < size; i++) {
+                        cases[i] = new LabelNode(new Label());
+                    }
+                    ifne(superCall);
+                    if (size > 0) {
+                        iload(1);
+                        tableswitch(0, size - 1, defaultError, cases);
+                        for (int i = 0; i < size; i++) {
+                            label(cases[i]);
+                            aload(0);
+                            aload(2);
+                            putfield(name, newFields[i], ci(IRubyObject.class));
+                            aload(2);
+                            areturn();
+                        }
+                        label(defaultError);
+                    }
+                    line(4);
+                    newobj(p(RuntimeException.class));
+                    dup();
+                    ldc(name + " only supports scopes with " + size + " variables");
+                    invokespecial(p(RuntimeException.class), "<init>", sig(void.class, String.class));
+                    athrow();
+                    label(superCall);
+                    line(5);
+                    aload(0);
+                    getfield(p(DynamicScope.class), "parent", ci(DynamicScope.class));
+                    iload(1);
+                    aload(2);
+                    iload(3);
+                    pushInt(1);
+                    isub();
+                    invokevirtual(p(DynamicScope.class), "setValue", sig(IRubyObject.class, int.class, IRubyObject.class, int.class));
+                    areturn();
+                }});
 
-            return p;
+                // fields
+                for (String prop : newFields) {
+                    defineField(prop, ACC_PUBLIC, ci(IRubyObject.class), null);
+                }
+            }};
+
+            p = defineClass(jiteClass);
+
+            MethodHandle mh = MethodHandles.lookup().findConstructor(p, MethodType.methodType(void.class, StaticScope.class, DynamicScope.class));
+            mh = mh.asType(MethodType.methodType(DynamicScope.class, StaticScope.class, DynamicScope.class));
+            MethodHandle previousMH = prototypes.putIfAbsent(size, mh);
+            if (previousMH != null) mh = previousMH;
+
+            return mh;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
