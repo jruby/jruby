@@ -46,14 +46,14 @@ labsjdk: {
 }
 
 // Allow a version mismatch with truffle to prefer the language truffle version
-clone_graal: [mx, --version-conflict-resolution, ignore, sclone, --kind, git]
+mx_sclone: [mx, --version-conflict-resolution, ignore, sclone, --kind, git]
 
 // Use Truffle version of the language
 use-language-truffle: ["&&", git, fetch, "&&", git, reset, --hard, ${truffle-version}, "&&"]
 
 graal-core: ${labsjdk} {
   setup: ${common.setup} [
-    ${clone_graal} ["https://github.com/graalvm/graal-core.git", ../graal-core],
+    ${mx_sclone} ["https://github.com/graalvm/graal-core.git", ../graal-core],
     [cd, ../graal-core],
     [mx, sforceimports],
     [cd, ../truffle] ${use-language-truffle} [cd, ../graal-core],
@@ -70,7 +70,7 @@ graal-core: ${labsjdk} {
 
 graal-enterprise: ${labsjdk} {
   setup: ${common.setup} [
-    ${clone_graal} ["https://github.com/graalvm/graal-enterprise.git", ../graal-enterprise],
+    ${mx_sclone} ["https://github.com/graalvm/graal-enterprise.git", ../graal-enterprise],
     [cd, ../graal-enterprise/graal-enterprise],
     [mx, sforceimports],
     [cd, ../../truffle] ${use-language-truffle} [cd, ../graal-enterprise/graal-enterprise],
@@ -103,8 +103,8 @@ sulong: ${labsjdk} {
   }
 
   environment: {
-    GRAAL_HOME: sulong-workspace/sulong,
-    SULONG_HOME: sulong-workspace/sulong,
+    GRAAL_HOME: ../sulong,
+    SULONG_HOME: ../sulong,
     SULONG_NO_LIBRARY: "true",
     USE_SYSTEM_CLANG: "true",
     LIBXML_LIB: "/usr/lib64/libxml2.so.2",
@@ -114,13 +114,11 @@ sulong: ${labsjdk} {
   }
 
   setup: ${common.setup} [
-    [mkdir, sulong-workspace],
-    [cd, sulong-workspace],
-    [mx, sclone, --kind, git, "https://github.com/graalvm/sulong.git", sulong],
-    [cd, sulong],
-    [mx, sforceimports],
+    ${mx_sclone} ["https://github.com/graalvm/sulong.git", ../sulong],
+    [cd, ../sulong],
+    [mx, sforceimports], # Use Sulong's Truffle for now
     [mx, build],
-    [cd, ../..],
+    [cd, ../main],
     ${jt} [build, cexts]
   ]
 }
