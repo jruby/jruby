@@ -311,6 +311,17 @@ public abstract class TrufflePosixNodes {
 
     }
 
+    @CoreMethod(names = "lchmod", isModuleFunction = true, required = 2, lowerFixnum = 2, unsafe = UnsafeGroup.IO)
+    public abstract static class LchmodNode extends CoreMethodArrayArgumentsNode {
+
+        @CompilerDirectives.TruffleBoundary
+        @Specialization(guards = "isRubyString(path)")
+        public int lchmod(DynamicObject path, int mode) {
+            return posix().lchmod(decodeUTF8(path), mode);
+        }
+
+    }
+
     @CoreMethod(names = "link", isModuleFunction = true, required = 2, unsafe = UnsafeGroup.IO)
     public abstract static class LinkNode extends CoreMethodArrayArgumentsNode {
 

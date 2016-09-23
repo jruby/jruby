@@ -188,6 +188,11 @@ public class JNRTrufflePosix implements TrufflePosix {
     }
 
     @Override
+    public int lchmod(String filename, int mode) {
+        return posix.lchmod(filename, mode);
+    }
+
+    @Override
     public int link(String oldpath, String newpath) {
         return posix.link(oldpath, newpath);
     }

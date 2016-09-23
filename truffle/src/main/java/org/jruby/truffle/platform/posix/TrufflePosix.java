@@ -54,6 +54,7 @@ public interface TrufflePosix {
     boolean isatty(FileDescriptor descriptor);
     int kill(int pid, int signal);
     int kill(long pid, int signal);
+    int lchmod(String filename, int mode);
     SignalHandler signal(Signal sig, SignalHandler handler);
     int link(String oldpath,String newpath);
     int lstat(String path, FileStat stat);

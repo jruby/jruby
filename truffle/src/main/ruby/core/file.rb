@@ -247,7 +247,6 @@ class File < IO
   # the link, not the file referenced by the link).
   # Often not available.
   def self.lchmod(mode, *paths)
-    raise NotImplementedError, "lchmod not implemented on this platform" unless Rubinius::HAVE_LCHMOD
 
     mode = Rubinius::Type.coerce_to(mode, Integer, :to_int)
 
