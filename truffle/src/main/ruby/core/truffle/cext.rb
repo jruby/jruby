@@ -440,7 +440,7 @@ module Truffle::CExt
   end
 
   def rb_define_alloc_func(ruby_class, function)
-    ruby_class.send(:define_method, :allocate) do
+    ruby_class.singleton_class.send(:define_method, :allocate) do
       function.call(self)
     end
   end
