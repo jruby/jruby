@@ -27,16 +27,22 @@
 
 package org.jruby.runtime;
 
+import me.qmx.jitescript.CodeBlock;
+import me.qmx.jitescript.JDKVersion;
+import me.qmx.jitescript.JiteClass;
+import me.qmx.jitescript.internal.org.objectweb.asm.Label;
+import me.qmx.jitescript.internal.org.objectweb.asm.tree.LabelNode;
 import org.jruby.EvalType;
-import org.jruby.runtime.scope.ManyVarsDynamicScope;
+import org.jruby.Ruby;
 import org.jruby.runtime.scope.NoVarsDynamicScope;
-import org.jruby.runtime.scope.OneVarDynamicScope;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.scope.DummyDynamicScope;
-import org.jruby.runtime.scope.FourVarDynamicScope;
-import org.jruby.runtime.scope.ThreeVarDynamicScope;
-import org.jruby.runtime.scope.TwoVarDynamicScope;
+
+import static org.jruby.util.CodegenUtils.*;
+
+import org.jruby.util.OneShotClassLoader;
+import org.jruby.util.collections.NonBlockingHashMapLong;
 
 public abstract class DynamicScope {
     // Static scoping information for this scope
@@ -63,17 +69,154 @@ public abstract class DynamicScope {
         switch (staticScope.getNumberOfVariables()) {
         case 0:
             return new NoVarsDynamicScope(staticScope, parent);
-        case 1:
-            return new OneVarDynamicScope(staticScope, parent);
-        case 2:
-            return new TwoVarDynamicScope(staticScope, parent);
-        case 3:
-            return new ThreeVarDynamicScope(staticScope, parent);
-        case 4:
-            return new FourVarDynamicScope(staticScope, parent);
         default:
-            return new ManyVarsDynamicScope(staticScope, parent);
+            return construct(staticScope, parent);
         }
+    }
+
+    private static final NonBlockingHashMapLong<Class<? extends DynamicScope>> prototypes = new NonBlockingHashMapLong<>();
+
+    public static Class protoClassFromProps(int size) {
+        return prototypes.get(size);
+    }
+
+    public static DynamicScope construct(StaticScope staticScope, DynamicScope parent) {
+        Class<DynamicScope> tupleType = generate(staticScope.getNumberOfVariables());
+        try {
+            return tupleType.getConstructor(StaticScope.class, DynamicScope.class).newInstance(staticScope, parent);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static Class<DynamicScope> generate(final int size) {
+        Class p = protoClassFromProps(size);
+        final String name = "org/jruby/runtime/scopes/DynamicScope" + size;
+
+        try {
+            if (p == null) {
+                // create a new one
+                final Class<DynamicScope> base = DynamicScope.class;
+                final String[] newFields = varList(size);
+
+                JiteClass jiteClass = new JiteClass(name, p(DynamicScope.class), new String[0]) {{
+                    // parent class constructor
+                    defineMethod("<init>", ACC_PUBLIC, sig(void.class, StaticScope.class, DynamicScope.class), new CodeBlock() {{
+                        aload(0);
+                        aload(1);
+                        aload(2);
+                        invokespecial(p(base), "<init>", sig(void.class, StaticScope.class, DynamicScope.class));
+                        voidreturn();
+                    }});
+
+                    // required overrides
+                    defineMethod("getValue", ACC_PUBLIC, sig(IRubyObject.class, int.class, int.class), new CodeBlock() {{
+                        line(0);
+                        iload(2); // depth
+                        LabelNode superCall = new LabelNode(new Label());
+                        LabelNode defaultError = new LabelNode(new Label());
+                        LabelNode[] cases = new LabelNode[size];
+                        for (int i = 0; i < size; i++) {
+                            cases[i] = new LabelNode(new Label());
+                        }
+                        ifne(superCall);
+                        iload(1);
+                        tableswitch(0, size - 1, defaultError, cases);
+                        for (int i = 0; i < size; i++) {
+                            label(cases[i]);
+                            aload(0);
+                            getfield(name, newFields[i], ci(IRubyObject.class));
+                            areturn();
+                        }
+                        label(defaultError);
+                        line(1);
+                        newobj(p(RuntimeException.class));
+                        dup();
+                        ldc(name + " only supports scopes with " + size + " variables");
+                        invokespecial(p(RuntimeException.class), "<init>", sig(void.class, String.class));
+                        athrow();
+                        label(superCall);
+                        line(2);
+                        aload(0);
+                        getfield(p(DynamicScope.class), "parent", ci(DynamicScope.class));
+                        iload(1);
+                        iload(2);
+                        pushInt(1);
+                        isub();
+                        invokevirtual(p(DynamicScope.class), "getValue", sig(IRubyObject.class, int.class, int.class));
+                        areturn();
+                    }});
+
+                    // required overrides
+                    defineMethod("setValue", ACC_PUBLIC, sig(IRubyObject.class, int.class, IRubyObject.class, int.class), new CodeBlock() {{
+                        line(3);
+                        iload(3); // depth
+                        LabelNode superCall = new LabelNode(new Label());
+                        LabelNode defaultError = new LabelNode(new Label());
+                        LabelNode[] cases = new LabelNode[size];
+                        for (int i = 0; i < size; i++) {
+                            cases[i] = new LabelNode(new Label());
+                        }
+                        ifne(superCall);
+                        iload(1);
+                        tableswitch(0, size - 1, defaultError, cases);
+                        for (int i = 0; i < size; i++) {
+                            label(cases[i]);
+                            aload(0);
+                            aload(2);
+                            putfield(name, newFields[i], ci(IRubyObject.class));
+                            aload(2);
+                            areturn();
+                        }
+                        label(defaultError);
+                        line(4);
+                        newobj(p(RuntimeException.class));
+                        dup();
+                        ldc(name + " only supports scopes with " + size + " variables");
+                        invokespecial(p(RuntimeException.class), "<init>", sig(void.class, String.class));
+                        athrow();
+                        label(superCall);
+                        line(5);
+                        aload(0);
+                        getfield(p(DynamicScope.class), "parent", ci(DynamicScope.class));
+                        iload(1);
+                        aload(2);
+                        iload(3);
+                        pushInt(1);
+                        isub();
+                        invokevirtual(p(DynamicScope.class), "setValue", sig(IRubyObject.class, int.class, IRubyObject.class, int.class));
+                        areturn();
+                    }});
+
+                    // fields
+                    for (String prop : newFields) {
+                        defineField(prop, ACC_PUBLIC, ci(IRubyObject.class), null);
+                    }
+                }};
+
+                p = defineClass(jiteClass);
+                prototypes.put(size, p);
+            }
+
+            return p;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static Class defineClass(JiteClass jiteClass) {
+        return new OneShotClassLoader(Ruby.getClassLoader())
+                .defineClass(jiteClass.getClassName().replaceAll("/", "."), jiteClass.toBytes(JDKVersion.V1_7));
+    }
+
+    public static String[] varList(int size) {
+        String[] vars = new String[size];
+
+        for (int i = 0; i < size; i++) {
+            vars[i] = "var" + i;
+        }
+
+        return vars;
     }
 
     public static DynamicScope newDynamicScope(StaticScope staticScope, DynamicScope parent, EvalType evalType) {
@@ -169,57 +312,88 @@ public abstract class DynamicScope {
     /**
      * Variation of getValue for depth 0
      */
-    public abstract IRubyObject getValueDepthZero(int offset);
+    public IRubyObject getValueDepthZero(int offset) {
+        return getValue(offset, 0);
+    }
 
     /**
      * getValue for index 0, depth 0
      */
-    public abstract IRubyObject getValueZeroDepthZero();
+    public IRubyObject getValueZeroDepthZero() {
+        return getValue(0, 0);
+    }
 
     /**
      * getValue for index 1, depth 0
      */
-    public abstract IRubyObject getValueOneDepthZero();
+    public IRubyObject getValueOneDepthZero() {
+        return getValue(1, 0);
+    }
 
     /**
      * getValue for index 2, depth 0
      */
-    public abstract IRubyObject getValueTwoDepthZero();
+    public IRubyObject getValueTwoDepthZero() {
+        return getValue(2, 0);
+    }
 
     /**
      * getValue for index 3, depth 0
      */
-    public abstract IRubyObject getValueThreeDepthZero();
+    public IRubyObject getValueThreeDepthZero() {
+        return getValue(3, 0);
+    }
 
     /**
      * Variation of getValue that checks for nulls, returning and setting the given value (presumably nil)
      */
-    public abstract IRubyObject getValueOrNil(int offset, int depth, IRubyObject nil);
+    public IRubyObject getValueOrNil(int offset, int depth, IRubyObject nil) {
+        if (depth > 0) {
+            return parent.getValueOrNil(offset, depth - 1, nil);
+        } else {
+            return getValueDepthZeroOrNil(offset, nil);
+        }
+    }
 
     /**
      * getValueOrNil for depth 0
      */
-    public abstract IRubyObject getValueDepthZeroOrNil(int offset, IRubyObject nil);
+    public IRubyObject getValueDepthZeroOrNil(int offset, IRubyObject nil) {
+        IRubyObject value = getValueDepthZero(offset);
+        return value == null ? setValueDepthZero(nil, offset) : value;
+    }
 
     /**
      * getValueOrNil for index 0, depth 0
      */
-    public abstract IRubyObject getValueZeroDepthZeroOrNil(IRubyObject nil);
+    public IRubyObject getValueZeroDepthZeroOrNil(IRubyObject nil) {
+        IRubyObject value = getValueDepthZero(0);
+        return value == null ? setValueDepthZero(nil, 0) : value;
+    }
 
     /**
      * getValueOrNil for index 1, depth 0
      */
-    public abstract IRubyObject getValueOneDepthZeroOrNil(IRubyObject nil);
+    public IRubyObject getValueOneDepthZeroOrNil(IRubyObject nil) {
+        IRubyObject value = getValueDepthZero(1);
+        return value == null ? setValueDepthZero(nil, 1) : value;
+    }
 
     /**
      * getValueOrNil for index 2, depth 0
      */
-    public abstract IRubyObject getValueTwoDepthZeroOrNil(IRubyObject nil);
+    public IRubyObject getValueTwoDepthZeroOrNil(IRubyObject nil) {
+        IRubyObject value = getValueDepthZero(2);
+        return value == null ? setValueDepthZero(nil, 2) : value;
+    }
 
     /**
      * getValueOrNil for index 3, depth 0
      */
-    public abstract IRubyObject getValueThreeDepthZeroOrNil(IRubyObject nil);
+    public IRubyObject getValueThreeDepthZeroOrNil(IRubyObject nil) {
+        IRubyObject value = getValueDepthZero(3);
+        return value == null ? setValueDepthZero(nil, 3) : value;
+    }
 
     /**
      * Set value in current dynamic scope or one of its captured scopes.
@@ -258,7 +432,9 @@ public abstract class DynamicScope {
      * @param value to set
      * @param offset zero-indexed value that represents where variable lives
      */
-    public abstract IRubyObject setValueDepthZero(IRubyObject value, int offset);
+    public IRubyObject setValueDepthZero(IRubyObject value, int offset) {
+        return setValue(offset, value, 0);
+    }
 
     /**
      * setValue for depth zero
@@ -273,7 +449,9 @@ public abstract class DynamicScope {
     /**
      * Set value zero in this scope;
      */
-    public abstract IRubyObject setValueZeroDepthZero(IRubyObject value);
+    public IRubyObject setValueZeroDepthZero(IRubyObject value) {
+        return setValue(0, value, 0);
+    }
 
     /**
      * Set value zero in this scope;
@@ -285,7 +463,8 @@ public abstract class DynamicScope {
     /**
      * Set value one in this scope.
      */
-    public abstract IRubyObject setValueOneDepthZero(IRubyObject value);
+    public IRubyObject setValueOneDepthZero(IRubyObject value) {
+        return setValue(1, value, 0);}
 
     /**
      * Set value one in this scope.
@@ -297,7 +476,8 @@ public abstract class DynamicScope {
     /**
      * Set value two in this scope.
      */
-    public abstract IRubyObject setValueTwoDepthZero(IRubyObject value);
+    public IRubyObject setValueTwoDepthZero(IRubyObject value) {
+        return setValue(2, value, 0);}
 
     /**
      * Set value two in this scope.
@@ -309,7 +489,9 @@ public abstract class DynamicScope {
     /**
      * Set value three in this scope.
      */
-    public abstract IRubyObject setValueThreeDepthZero(IRubyObject value);
+    public IRubyObject setValueThreeDepthZero(IRubyObject value) {
+        return setValue(3, value, 0);
+    }
 
     /**
      * Set value three in this scope.
