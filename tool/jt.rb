@@ -160,7 +160,7 @@ module Utilities
 
   def self.find_repo(name)
     [JRUBY_DIR, "#{JRUBY_DIR}/.."].each do |dir|
-      found = Dir.glob("#{dir}/#{name}*").first
+      found = Dir.glob("#{dir}/#{name}*").sort.first
       return File.expand_path(found) if found
     end
     raise "Can't find the #{name} repo - clone it into the repository directory or its parent"
@@ -176,12 +176,12 @@ module Utilities
 
   def self.find_gem(name)
     ["#{JRUBY_DIR}/lib/ruby/gems/shared/gems"].each do |dir|
-      found = Dir.glob("#{dir}/#{name}*").first
+      found = Dir.glob("#{dir}/#{name}*").sort.first
       return File.expand_path(found) if found
     end
 
     [JRUBY_DIR, "#{JRUBY_DIR}/.."].each do |dir|
-      found = Dir.glob("#{dir}/#{name}").first
+      found = Dir.glob("#{dir}/#{name}").sort.first
       return File.expand_path(found) if found
     end
     raise "Can't find the #{name} gem - gem install it in this repository, or put it in the repository directory or its parent"
@@ -666,7 +666,7 @@ module Commands
     src = replace_env_vars(config['src'])
     # Expand relative to the cext directory
     src = File.expand_path(src, cext_dir)
-    src_files = Dir[src]
+    src_files = Dir[src].sort
     raise "No source files found in #{src}!" if src_files.empty?
 
     config_cflags = config['cflags'] || ''
@@ -776,7 +776,7 @@ module Commands
 
     env = { "JRUBY_OPTS" => jruby_opts.join(' ') }
 
-    Dir["#{JRUBY_DIR}/test/truffle/compiler/*.sh"].each do |test_script|
+    Dir["#{JRUBY_DIR}/test/truffle/compiler/*.sh"].sort.each do |test_script|
       sh env, test_script
     end
   end
@@ -883,7 +883,7 @@ module Commands
     single_test            = !args.empty?
     test_names             = single_test ? '{' + args.join(',') + '}' : '*'
 
-    Dir["#{tests_path}/#{test_names}.sh"].each do |test_script|
+    Dir["#{tests_path}/#{test_names}.sh"].sort.each do |test_script|
       sh env_vars, test_script
     end
   end
@@ -904,7 +904,7 @@ module Commands
     single_test            = !args.empty?
     test_names             = single_test ? '{' + args.join(',') + '}' : '*'
 
-    Dir["#{tests_path}/#{test_names}.sh"].each do |test_script|
+    Dir["#{tests_path}/#{test_names}.sh"].sort.each do |test_script|
       next if test_script.end_with?('/install-gems.sh')
       sh env_vars, test_script
     end
@@ -925,7 +925,7 @@ module Commands
     single_test            = !args.empty?
     test_names             = single_test ? '{' + args.join(',') + '}' : '*'
 
-    Dir["#{tests_path}/#{test_names}.sh"].each do |test_script|
+    Dir["#{tests_path}/#{test_names}.sh"].sort.each do |test_script|
       sh env_vars, test_script
     end
   end
