@@ -54,6 +54,12 @@ describe "File.dirname" do
       File.dirname('/////').should == '/'
       File.dirname("//foo//").should == "/"
     end
+
+    context 'when given a path that contains both forward and backward slashes' do
+      it "returns all the components of the filename except the last one that's separated by a forward slash" do
+        File.dirname('/foo/bar\baz').should == '/foo'
+      end
+    end
   end
 
   platform_is :windows do
@@ -61,6 +67,12 @@ describe "File.dirname" do
       File.dirname("//foo").should == "//foo"
       File.dirname("//foo//").should == "//foo"
       File.dirname('/////').should == '//'
+    end
+
+    context 'when given a path that contains both forward and backward slashes' do
+      it "returns all the components of the filename except the last one that's separated by a backward slash" do
+        File.dirname('\foo\bar/baz').should == '\foo'
+      end
     end
   end
 
