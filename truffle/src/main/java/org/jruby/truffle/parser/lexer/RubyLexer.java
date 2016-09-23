@@ -1564,7 +1564,7 @@ public class RubyLexer extends LexingCommon {
             length++;
         }
 
-        if (!Character.isJavaIdentifierStart(p(lex_p + length))) {
+        if (!Character.isJavaIdentifierPart(p(lex_p + length))) {
             return identifierToken(Tokens.tIDENTIFIER, keyword);
         }
 
