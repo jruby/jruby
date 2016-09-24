@@ -13,11 +13,11 @@ import com.oracle.truffle.api.interop.ForeignAccess;
 import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.object.DynamicObject;
 
-public final class CExtString implements TruffleObject {
+public final class StringCharPointerAdapter implements TruffleObject {
 
     private final DynamicObject string;
 
-    public CExtString(DynamicObject string) {
+    public StringCharPointerAdapter(DynamicObject string) {
         this.string = string;
     }
 
@@ -27,7 +27,7 @@ public final class CExtString implements TruffleObject {
 
     @Override
     public ForeignAccess getForeignAccess() {
-        return CExtStringMessageResolutionForeign.ACCESS;
+        return StringCharPointerMessageResolutionForeign.ACCESS;
     }
 
 }

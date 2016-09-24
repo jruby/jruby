@@ -30,16 +30,16 @@ import org.jruby.truffle.core.string.StringNodesFactory.SetByteNodeFactory;
 import static org.jruby.truffle.core.string.StringOperations.rope;
 
 @MessageResolution(
-        receiverType = CExtString.class,
+        receiverType = StringCharPointerAdapter.class,
         language = RubyLanguage.class
 )
-public class CExtStringMessageResolution {
+public class StringCharPointerMessageResolution {
 
     @CanResolve
     public abstract static class Check extends Node {
 
         protected static boolean test(TruffleObject receiver) {
-            return receiver instanceof CExtString;
+            return receiver instanceof StringCharPointerAdapter;
         }
 
     }
@@ -47,7 +47,7 @@ public class CExtStringMessageResolution {
     @Resolve(message = "HAS_SIZE")
     public static abstract class ForeignHasSizeNode extends Node {
 
-        protected Object access(CExtString object) {
+        protected Object access(StringCharPointerAdapter object) {
             return true;
         }
 
@@ -56,8 +56,8 @@ public class CExtStringMessageResolution {
     @Resolve(message = "GET_SIZE")
     public static abstract class ForeignGetSizeNode extends Node {
 
-        protected Object access(CExtString cExtString) {
-            return rope(cExtString.getString()).byteLength();
+        protected Object access(StringCharPointerAdapter stringCharPointerAdapter) {
+            return rope(stringCharPointerAdapter.getString()).byteLength();
         }
 
     }
@@ -67,8 +67,8 @@ public class CExtStringMessageResolution {
 
         @Child private GetByteNode getByteNode;
 
-        protected Object access(CExtString cExtString, int index) {
-            return getHelperNode().executeGetByte(rope(cExtString.getString()), index);
+        protected Object access(StringCharPointerAdapter stringCharPointerAdapter, int index) {
+            return getHelperNode().executeGetByte(rope(stringCharPointerAdapter.getString()), index);
         }
 
         private GetByteNode getHelperNode() {
@@ -87,8 +87,8 @@ public class CExtStringMessageResolution {
         @Child private Node findContextNode;
         @Child private SetByteNode setByteNode;
 
-        protected Object access(CExtString cExtString, int index, Object value) {
-            return getHelperNode().executeSetByte(cExtString.getString(), index, value);
+        protected Object access(StringCharPointerAdapter stringCharPointerAdapter, int index, Object value) {
+            return getHelperNode().executeSetByte(stringCharPointerAdapter.getString(), index, value);
         }
 
         private SetByteNode getHelperNode() {
@@ -112,8 +112,8 @@ public class CExtStringMessageResolution {
 
         @CompilationFinal private RubyContext context;
 
-        protected Object access(CExtString cExtString) {
-            final Rope currentRope = Layouts.STRING.getRope(cExtString.getString());
+        protected Object access(StringCharPointerAdapter stringCharPointerAdapter) {
+            final Rope currentRope = Layouts.STRING.getRope(stringCharPointerAdapter.getString());
 
             final NativeRope nativeRope;
 
@@ -127,7 +127,7 @@ public class CExtStringMessageResolution {
                 }
 
                 nativeRope = new NativeRope(context.getNativePlatform().getMemoryManager(), currentRope.getBytes(), currentRope.getEncoding(), currentRope.characterLength());
-                Layouts.STRING.setRope(cExtString.getString(), nativeRope);
+                Layouts.STRING.setRope(stringCharPointerAdapter.getString(), nativeRope);
             }
 
             return nativeRope.getNativePointer().address();

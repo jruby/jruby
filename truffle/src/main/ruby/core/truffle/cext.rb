@@ -271,10 +271,6 @@ module Truffle::CExt
     value
   end
 
-  def RSTRING_PTR(string)
-    Truffle::Interop.to_java_string(string)
-  end
-
   def rb_str_new_frozen(value)
     if value.frozen?
       value
@@ -288,8 +284,8 @@ module Truffle::CExt
     str.intern
   end
 
-  def rb_str_new(cext_str, length)
-    to_ruby_string(cext_str)[0, length].b
+  def rb_str_new(string, length)
+    to_ruby_string(string)[0, length].b
   end
 
   def rb_str_new_nul(length)

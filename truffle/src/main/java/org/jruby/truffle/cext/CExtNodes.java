@@ -245,12 +245,12 @@ public class CExtNodes {
 
     }
 
-    @CoreMethod(names = "CExtString", isModuleFunction = true, required = 1)
-    public abstract static class CExtStringNode extends CoreMethodArrayArgumentsNode {
+    @CoreMethod(names = "RSTRING_PTR", isModuleFunction = true, required = 1)
+    public abstract static class StringPointerNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization(guards = "isRubyString(string)")
-        public CExtString cExtString(DynamicObject string) {
-            return new CExtString(string);
+        public StringCharPointerAdapter stringPointer(DynamicObject string) {
+            return new StringCharPointerAdapter(string);
         }
 
     }
@@ -259,8 +259,8 @@ public class CExtNodes {
     public abstract static class ToRubyStringNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
-        public DynamicObject toRubyString(CExtString cExtString) {
-            return cExtString.getString();
+        public DynamicObject toRubyString(StringCharPointerAdapter stringCharPointerAdapter) {
+            return stringCharPointerAdapter.getString();
         }
 
         @Specialization(guards = "isRubyString(string)")
