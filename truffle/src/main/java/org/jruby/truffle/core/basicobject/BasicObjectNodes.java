@@ -422,4 +422,22 @@ public abstract class BasicObjectNodes {
 
     }
 
+    @NonStandard
+    @CoreMethod(names = "internal_allocate", constructor = true)
+    public abstract static class InternalAllocateNode extends CoreMethodArrayArgumentsNode {
+
+        @Child private AllocateObjectNode allocateObjectNode;
+
+        public InternalAllocateNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            allocateObjectNode = AllocateObjectNode.create();
+        }
+
+        @Specialization
+        public DynamicObject internal_allocate(DynamicObject rubyClass) {
+            return allocateObjectNode.allocate(rubyClass);
+        }
+
+    }
+
 }
