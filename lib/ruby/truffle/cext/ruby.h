@@ -614,20 +614,26 @@ void rb_thread_wait_fd(int fd);
 
 NORETURN(void rb_eof_error(void));
 
+// Objects
+
+struct RBasic {
+  // Empty
+};
+
 // Data
 
 struct RData {
-  // No RBasic object header
+  struct RBasic basic;
   void (*dmark)(void *data);
   void (*dfree)(void *data);
   void *data;
 };
 
-struct RData *rb_jt_wrap_rdata(VALUE value);
+struct RData *rb_jt_adapt_rdata(VALUE value);
 
-#define RDATA(value) rb_jt_wrap_rdata(value)
+#define RDATA(value) rb_jt_adapt_rdata(value)
 
-#define DATA_PTR(value) *((volatile intptr_t*) 0)
+#define DATA_PTR(value) (RDATA(value)->data)
 
 // Typed data
 
@@ -646,7 +652,20 @@ struct rb_data_type_struct {
   VALUE flags;
 };
 
+struct RTypedData {
+  struct RBasic basic;
+  const rb_data_type_t *type;
+  VALUE typed_flag;
+  void *data;
+};
+
 #define RUBY_TYPED_FREE_IMMEDIATELY 1
+
+struct RTypedData *rb_jt_adapt_rtypeddata(VALUE value);
+
+#define RTYPEDDATA(value) rb_jt_adapt_rtypeddata(value)
+
+#define RTYPEDDATA_DATA(value) (RTYPEDDATA(value)->data)
 
 VALUE rb_data_typed_object_wrap(VALUE ruby_class, void *data, const rb_data_type_t *data_type);
 
@@ -665,8 +684,6 @@ VALUE rb_data_typed_object_make(VALUE ruby_class, const rb_data_type_t *type, vo
 void *rb_check_typeddata(VALUE value, const rb_data_type_t *data_type);
 
 #define TypedData_Get_Struct(value, type, data_type, variable) ((variable) = (type *)rb_check_typeddata((value), (data_type)))
-
-#define RTYPEDDATA_DATA(value) *((volatile int*) 0)
 
 // VM
 

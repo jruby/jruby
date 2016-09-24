@@ -378,4 +378,24 @@ public class CExtNodes {
 
     }
 
+    @CoreMethod(names = "rb_jt_adapt_rdata", isModuleFunction = true, required = 1)
+    public abstract static class AdaptRDataNode extends CoreMethodArrayArgumentsNode {
+
+        @Specialization
+        public Object adaptRData(DynamicObject object) {
+            throw new UnsupportedOperationException();
+        }
+
+    }
+
+    @CoreMethod(names = "rb_jt_adapt_rtypeddata", isModuleFunction = true, required = 1)
+    public abstract static class AdaptRTypedDataNode extends CoreMethodArrayArgumentsNode {
+
+        @Specialization
+        public TypedDataAdapter adaptRTypedData(DynamicObject object) {
+            return new TypedDataAdapter(object);
+        }
+
+    }
+
 }

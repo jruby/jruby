@@ -36,7 +36,7 @@ import static org.jruby.truffle.core.string.StringOperations.rope;
 public class StringCharPointerMessageResolution {
 
     @CanResolve
-    public abstract static class Check extends Node {
+    public abstract static class CharPointerCheckNode extends Node {
 
         protected static boolean test(TruffleObject receiver) {
             return receiver instanceof StringCharPointerAdapter;
@@ -45,7 +45,7 @@ public class StringCharPointerMessageResolution {
     }
 
     @Resolve(message = "HAS_SIZE")
-    public static abstract class ForeignHasSizeNode extends Node {
+    public static abstract class CharPointerHasSizeNode extends Node {
 
         protected Object access(StringCharPointerAdapter object) {
             return true;
@@ -54,7 +54,7 @@ public class StringCharPointerMessageResolution {
     }
 
     @Resolve(message = "GET_SIZE")
-    public static abstract class ForeignGetSizeNode extends Node {
+    public static abstract class CharPointerGetSizeNode extends Node {
 
         protected Object access(StringCharPointerAdapter stringCharPointerAdapter) {
             return rope(stringCharPointerAdapter.getString()).byteLength();
@@ -63,7 +63,7 @@ public class StringCharPointerMessageResolution {
     }
 
     @Resolve(message = "READ")
-    public static abstract class ForeignReadNode extends Node {
+    public static abstract class CharPointerReadNode extends Node {
 
         @Child private GetByteNode getByteNode;
 
@@ -82,7 +82,7 @@ public class StringCharPointerMessageResolution {
     }
 
     @Resolve(message = "WRITE")
-    public static abstract class ForeignWriteNode extends Node {
+    public static abstract class CharPointerWriteNode extends Node {
 
         @Child private Node findContextNode;
         @Child private SetByteNode setByteNode;
@@ -104,7 +104,7 @@ public class StringCharPointerMessageResolution {
     }
 
     @Resolve(message = "UNBOX")
-    public static abstract class ForeignUnboxNode extends Node {
+    public static abstract class CharPointerUnboxNode extends Node {
 
         @Child private Node findContextNode;
 
