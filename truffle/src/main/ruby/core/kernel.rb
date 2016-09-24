@@ -666,4 +666,11 @@ module Kernel
     Truffle::Kernel.at_exit false, &block
   end
   module_function :at_exit
+
+  def global_variables
+    Truffle.primitive :kernel_global_variables
+    raise PrimitiveFailure, "Kernel.global_variables primitive failed"
+  end
+  module_function :global_variables
+
 end

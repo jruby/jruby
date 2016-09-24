@@ -60,6 +60,10 @@ public class GlobalVariables {
         variables.put(name, storage);
     }
 
+    public Collection<String> dynamicObjectKeys() {
+        return variables.keySet();
+    }
+
     public Collection<DynamicObject> dynamicObjectValues() {
         final Collection<GlobalVariableStorage> storages = variables.values();
         final ArrayList<DynamicObject> values = new ArrayList<>(storages.size());

@@ -48,6 +48,8 @@ import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.builtins.CoreMethodNode;
+import org.jruby.truffle.builtins.Primitive;
+import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.builtins.UnaryCoreMethodNode;
 import org.jruby.truffle.core.ObjectNodes;
 import org.jruby.truffle.core.ObjectNodesFactory;
@@ -148,6 +150,7 @@ import java.io.InputStreamReader;
 import java.lang.ProcessBuilder.Redirect;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Map;
 
 @CoreClass("Kernel")
@@ -1773,6 +1776,23 @@ public abstract class KernelNodes {
             } catch (InvalidFormatException e) {
                 throw new RaiseException(coreExceptions().argumentError(e.getMessage(), this));
             }
+        }
+
+    }
+
+    @Primitive(name = "kernel_global_variables")
+    public abstract static class KernelGlobalVariablesPrimitiveNode extends PrimitiveArrayArgumentsNode {
+
+        @Specialization
+        public DynamicObject globalVariables() {
+            final Collection<String> keys = coreLibrary().getGlobalVariables().dynamicObjectKeys();
+            final Object[] store = new Object[keys.size()];
+            int i = 0;
+            for (String key : keys) {
+                store[i] = getSymbol(key);
+                i++;
+            }
+            return createArray(store, store.length);
         }
 
     }
