@@ -651,38 +651,37 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
     static Pattern PROTOCOL_PATTERN = Pattern.compile(URI_PREFIX_STRING + ".*");
     public static String dirname(ThreadContext context, String jfilename) {
-        String name = jfilename.replace('\\', '/');
         int minPathLength = 1;
         boolean trimmedSlashes = false;
 
-        boolean startsWithDriveLetterOnWindows = startsWithDriveLetterOnWindows(name);
+        boolean startsWithDriveLetterOnWindows = startsWithDriveLetterOnWindows(jfilename);
 
         if (startsWithDriveLetterOnWindows) {
             minPathLength = 3;
         }
 
         // jar like paths
-        if (name.contains(".jar!/")) {
-            int start = name.indexOf("!/") + 1;
-            String path = dirname(context, name.substring(start));
+        if (jfilename.contains(".jar!/")) {
+            int start = jfilename.indexOf("!/") + 1;
+            String path = dirname(context, jfilename.substring(start));
             if (path.equals(".") || path.equals("/")) path = "";
-            return name.substring(0, start) + path;
+            return jfilename.substring(0, start) + path;
         }
         // address all the url like paths first
-        if (PROTOCOL_PATTERN.matcher(name).matches()) {
-            int start = name.indexOf(":/") + 2;
-            String path = dirname(context, name.substring(start));
+        if (PROTOCOL_PATTERN.matcher(jfilename).matches()) {
+            int start = jfilename.indexOf(":/") + 2;
+            String path = dirname(context, jfilename.substring(start));
             if (path.equals(".")) path = "";
-            return name.substring(0, start) + path;
+            return jfilename.substring(0, start) + path;
         }
 
-        while (name.length() > minPathLength && name.charAt(name.length() - 1) == '/') {
+        while (jfilename.length() > minPathLength && jfilename.charAt(jfilename.length() - 1) == '/') {
             trimmedSlashes = true;
-            name = name.substring(0, name.length() - 1);
+            jfilename = jfilename.substring(0, jfilename.length() - 1);
         }
 
         String result;
-        if (startsWithDriveLetterOnWindows && name.length() == 2) {
+        if (startsWithDriveLetterOnWindows && jfilename.length() == 2) {
             if (trimmedSlashes) {
                 // C:\ is returned unchanged
                 result = jfilename.substring(0, 3);
@@ -691,7 +690,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             }
         } else {
             //TODO deal with UNC names
-            int index = name.lastIndexOf('/');
+            int index = jfilename.lastIndexOf('/');
 
             if (index == -1) {
                 if (startsWithDriveLetterOnWindows) {
@@ -727,7 +726,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         // trim trailing slashes
         while (result.length() > minPathLength) {
             endChar = result.charAt(result.length() - 1);
-            if (endChar == '/' || endChar == '\\') {
+            if (endChar == File.separatorChar) {
                 result = result.substring(0, result.length() - 1);
             } else {
                 break;
