@@ -577,7 +577,10 @@ module Truffle::CExt
   end
 
   def rb_data_typed_object_wrap(ruby_class, data, data_type)
-    raise 'not implemented'
+    object = ruby_class.internal_allocate
+    object.instance_variable_set :@data_type, data_type
+    object.instance_variable_set :@data, data
+    object
   end
 
   def rb_ruby_verbose_ptr
