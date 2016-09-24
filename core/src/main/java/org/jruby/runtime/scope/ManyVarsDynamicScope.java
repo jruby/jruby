@@ -69,6 +69,26 @@ public class ManyVarsDynamicScope extends DynamicScope {
         //assert variableValues[offset] != null : "Getting unassigned: " + staticScope.getVariables()[offset];
         return variableValues[offset];
     }
+
+    public IRubyObject getValueDepthZero(int offset) {
+        return variableValues[offset];
+    }
+
+    public IRubyObject getValueZeroDepthZero() {
+        return variableValues[0];
+    }
+
+    public IRubyObject getValueOneDepthZero() {
+        return variableValues[1];
+    }
+
+    public IRubyObject getValueTwoDepthZero() {
+        return variableValues[2];
+    }
+
+    public IRubyObject getValueThreeDepthZero() {
+        return variableValues[3];
+    }
     
     /**
      * Variation of getValue that checks for nulls, returning and setting the given value (presumably nil)

@@ -11,8 +11,6 @@ package org.jruby.truffle.language.control;
 
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.locals.WriteFrameSlotNode;
 import org.jruby.truffle.language.locals.WriteFrameSlotNodeGen;
@@ -22,8 +20,7 @@ public class FrameOnStackNode extends RubyNode {
     @Child private RubyNode child;
     @Child private WriteFrameSlotNode writeMarker;
 
-    public FrameOnStackNode(RubyContext context, SourceSection sourceSection, RubyNode child, FrameSlot markerSlot) {
-        super(context, sourceSection);
+    public FrameOnStackNode(RubyNode child, FrameSlot markerSlot) {
         this.child = child;
         writeMarker = WriteFrameSlotNodeGen.create(markerSlot);
     }

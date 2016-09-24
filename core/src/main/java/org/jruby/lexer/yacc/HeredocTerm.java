@@ -138,7 +138,7 @@ public class HeredocTerm extends StrTerm {
                 lexer.lex_goto_eol();
 
                 if (lexer.getHeredocIndent() > 0) {
-                    lexer.setValue(str);
+                    lexer.setValue(lexer.createStr(str, 0));
                     return Tokens.tSTRING_CONTENT;
                 }
                 // MRI null checks str in this case but it is unconditionally non-null?

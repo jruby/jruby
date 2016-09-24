@@ -40,7 +40,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import java.io.IOException;
 import java.io.InputStream;
 
-import static org.jruby.javasupport.JavaUtil.unwrapJavaObject;
+import static org.jruby.javasupport.JavaUtil.unwrapIfJavaObject;
 import static org.jruby.runtime.Visibility.PUBLIC;
 
 /**
@@ -65,7 +65,7 @@ public abstract class JavaNet {
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
-            java.net.URL url = unwrapJavaObject(self);
+            java.net.URL url = unwrapIfJavaObject(self);
             final InputStream stream; final RubyIO io;
             try {
                 stream = url.openStream();

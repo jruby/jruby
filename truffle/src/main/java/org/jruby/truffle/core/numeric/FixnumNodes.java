@@ -15,7 +15,6 @@ import com.oracle.truffle.api.ExactMath;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.profiles.ConditionProfile;
@@ -29,6 +28,7 @@ import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.builtins.Primitive;
 import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.core.CoreLibrary;
+import org.jruby.truffle.core.numeric.FixnumNodesFactory.DivNodeFactory;
 import org.jruby.truffle.core.rope.LazyIntRope;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.SnippetNode;
@@ -69,7 +69,7 @@ public abstract class FixnumNodes {
         public Object negWithOverflow(long value) {
             if (fixnumOrBignumNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                fixnumOrBignumNode = insert(new FixnumOrBignumNode(getContext(), getSourceSection()));
+                fixnumOrBignumNode = insert(new FixnumOrBignumNode(getContext(), null));
             }
 
             return fixnumOrBignumNode.fixnumOrBignum(BigInteger.valueOf(value).negate());
@@ -249,6 +249,8 @@ public abstract class FixnumNodes {
         private final BranchProfile bMinusOneANotMinimum = BranchProfile.create();
         private final BranchProfile finalCase = BranchProfile.create();
 
+        public abstract Object executeDiv(VirtualFrame frame, Object a, Object b);
+
         // int
 
         @Specialization(rewriteOn = ArithmeticException.class)
@@ -366,6 +368,29 @@ public abstract class FixnumNodes {
 
         protected static boolean isLongMinValue(long a) {
             return a == Long.MIN_VALUE;
+        }
+
+    }
+
+    // Defined in Java as we need to statically call #/
+    @CoreMethod(names = "div", required = 1)
+    public abstract static class IDivNode extends BignumNodes.BignumCoreMethodNode {
+
+        @Child DivNode divNode = DivNodeFactory.create(null);
+        @Child FloatNodes.FloorNode floorNode = FloatNodesFactory.FloorNodeFactory.create(null, null, null);
+
+        @Specialization
+        public Object idiv(VirtualFrame frame, Object a, Object b,
+                @Cached("createBinaryProfile()") ConditionProfile zeroProfile) {
+            Object quotient = divNode.executeDiv(frame, a, b);
+            if (quotient instanceof Double) {
+                if (zeroProfile.profile((double) b == 0.0)) {
+                    throw new RaiseException(coreExceptions().zeroDivisionError(this));
+                }
+                return floorNode.executeFloor((double) quotient);
+            } else {
+                return quotient;
+            }
         }
 
     }
@@ -756,9 +781,28 @@ public abstract class FixnumNodes {
         }
 
         @Specialization(guards = "isRubyBignum(b)")
+        public Object bitAndBignum(int a, DynamicObject b) {
+            return fixnumOrBignum(BigInteger.valueOf(a).and(Layouts.BIGNUM.getValue(b)));
+        }
+
+        @Specialization(guards = "isRubyBignum(b)")
         public Object bitAndBignum(long a, DynamicObject b) {
             return fixnumOrBignum(BigInteger.valueOf(a).and(Layouts.BIGNUM.getValue(b)));
         }
+
+        @Specialization(guards = "!isRubyBignum(b)")
+        public Object bitAndNotBignum(VirtualFrame frame, int a, Object b,
+                                      @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "self & bit_coerce(b)[1]", "b", b);
+        }
+
+        @Specialization(guards = "!isRubyBignum(b)")
+        public Object bitAndNotBignum(VirtualFrame frame, long a, Object b,
+                                      @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "self & bit_coerce(b)[1]", "b", b);
+        }
+
+
     }
 
     @CoreMethod(names = "|", required = 1)

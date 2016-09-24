@@ -69,7 +69,9 @@ public class ThreadManager {
                 null,
                 null,
                 new AtomicBoolean(false),
-                0);
+                0,
+                context.getCoreLibrary().getNilObject(),
+                context.getCoreLibrary().getNilObject());
 
         Layouts.THREAD.setFiberManagerUnsafe(object, new FiberManager(context, object)); // Because it is cyclic
 

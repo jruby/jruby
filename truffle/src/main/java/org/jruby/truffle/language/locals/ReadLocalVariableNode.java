@@ -68,7 +68,7 @@ public class ReadLocalVariableNode extends ReadLocalNode {
 
     @Override
     public RubyNode makeWriteNode(RubyNode rhs) {
-        return WriteLocalVariableNode.createWriteLocalVariableNode(getContext(), getSourceSection(), frameSlot, rhs);
+        return WriteLocalVariableNode.createWriteLocalVariableNode(getContext(), getRubySourceSection(), frameSlot, rhs);
     }
 
 }

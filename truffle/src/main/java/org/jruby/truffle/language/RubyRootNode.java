@@ -30,6 +30,7 @@ public class RubyRootNode extends RootNode {
     public RubyRootNode(RubyContext context, SourceSection sourceSection, FrameDescriptor frameDescriptor,
                         SharedMethodInfo sharedMethodInfo, RubyNode body, boolean needsDeclarationFrame) {
         super(RubyLanguage.class, sourceSection, frameDescriptor);
+        assert sourceSection != null;
         assert body != null;
         this.context = context;
         this.sharedMethodInfo = sharedMethodInfo;

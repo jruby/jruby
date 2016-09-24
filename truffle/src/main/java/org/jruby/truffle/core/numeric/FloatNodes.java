@@ -40,6 +40,7 @@ import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.util.DoubleUtils;
 import org.jruby.truffle.util.StringUtils;
+
 import java.util.Locale;
 
 @CoreClass("Float")
@@ -576,6 +577,8 @@ public abstract class FloatNodes {
             fixnumOrBignum = new FixnumOrBignumNode(context, sourceSection);
         }
 
+        public abstract Object executeFloor(double n);
+
         @Specialization
         public Object floor(double n) {
             return fixnumOrBignum.fixnumOrBignum(Math.floor(n));
@@ -852,7 +855,7 @@ public abstract class FloatNodes {
 
             final int sign = value < 0 ? 1 : 0;
 
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), new Object[]{create7BitString(string, UTF8Encoding.INSTANCE), decimal, sign, string.length()}, 4);
+            return createArray(new Object[] { create7BitString(string, UTF8Encoding.INSTANCE), decimal, sign, string.length() }, 4);
         }
 
     }

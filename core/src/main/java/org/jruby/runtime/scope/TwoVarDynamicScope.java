@@ -62,21 +62,40 @@ public class TwoVarDynamicScope extends OneVarDynamicScope {
             throw new RuntimeException(SIZE_ERROR);
         }
     }
-    
+
+    @Override
+    public IRubyObject getValueDepthZero(int offset) {
+        assert offset < SIZE : SIZE_ERROR;
+        switch (offset) {
+            case 0:
+                return variableValueZero;
+            case 1:
+                return variableValueOne;
+            default:
+                throw new RuntimeException(SIZE_ERROR);
+        }
+    }
+
     @Override
     public IRubyObject getValueDepthZeroOrNil(int offset, IRubyObject nil) {
         assert offset < SIZE : SIZE_ERROR;
         switch (offset) {
-        case 0:
-            if (variableValueZero == null) return variableValueZero = nil;
-            return variableValueZero;
-        case 1:
-            if (variableValueOne == null) return variableValueOne = nil;
-            return variableValueOne;
-        default:
-            throw new RuntimeException(SIZE_ERROR);
+            case 0:
+                if (variableValueZero == null) return variableValueZero = nil;
+                return variableValueZero;
+            case 1:
+                if (variableValueOne == null) return variableValueOne = nil;
+                return variableValueOne;
+            default:
+                throw new RuntimeException(SIZE_ERROR);
         }
     }
+
+    @Override
+    public IRubyObject getValueOneDepthZero() {
+        return variableValueOne;
+    }
+
     @Override
     public IRubyObject getValueOneDepthZeroOrNil(IRubyObject nil) {
         if (variableValueOne == null) return variableValueOne = nil;

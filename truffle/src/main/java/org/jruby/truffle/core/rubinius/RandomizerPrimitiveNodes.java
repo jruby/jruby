@@ -19,7 +19,6 @@ import org.jruby.truffle.builtins.Primitive;
 import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.rope.RopeOperations;
-import org.jruby.util.ByteList;
 import org.jruby.util.Random;
 
 import java.math.BigInteger;

@@ -1,1 +1,1 @@
-fails:File.pipe? returns true if the file is a pipe
+slow:File.pipe? returns true if the file is a pipe

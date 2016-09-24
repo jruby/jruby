@@ -19,7 +19,6 @@ public class NotNode extends RubyNode {
     @Child private BooleanCastNode child;
 
     public NotNode(RubyNode child) {
-        super(child.getContext(), child.getSourceSection());
         this.child = BooleanCastNodeGen.create(child);
     }
 

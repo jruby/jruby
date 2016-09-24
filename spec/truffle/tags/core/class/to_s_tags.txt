@@ -1,1 +1,0 @@
-fails:Class#to_s singleton class for modules includes module name

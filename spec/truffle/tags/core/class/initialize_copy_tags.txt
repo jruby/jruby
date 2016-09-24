@@ -1,2 +1,0 @@
-fails:Class#initialize_copy raises a TypeError when called on already initialized classes
-fails:Class#initialize_copy raises a TypeError when called on BasicObject

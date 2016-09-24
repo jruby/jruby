@@ -53,7 +53,14 @@ class Range
       self.exclude_end? == other.exclude_end?
   end
 
-  alias_method :eql?, :==
+  def eql?(other)
+    return true if equal? other
+
+    other.kind_of?(Range) and
+        self.first.eql?(other.first) and
+        self.last.eql?(other.last) and
+        self.exclude_end? == other.exclude_end?
+  end
 
   attr_reader_specific :excl, :exclude_end?
 

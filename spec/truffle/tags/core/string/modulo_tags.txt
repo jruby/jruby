@@ -1,6 +1,4 @@
 fails:String#% raises an ArgumentError for unused arguments when $DEBUG is true
-fails:String#% supports float formats using %g
-fails:String#% supports float formats using %G
 fails:String#% raises an ArgumentError for huge precisions for %s
 fails:String#% behaves as if calling Kernel#Float for %e arguments, when the passed argument does not respond to #to_ary
 fails:String#% behaves as if calling Kernel#Float for %e arguments, when the passed argument is hexadecimal string

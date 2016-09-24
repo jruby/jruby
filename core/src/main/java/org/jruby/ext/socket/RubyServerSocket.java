@@ -47,6 +47,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.SocketException;
+import java.net.StandardSocketOptions;
 import java.net.UnknownHostException;
 import java.nio.channels.Channel;
 import java.nio.channels.IllegalBlockingModeException;
@@ -100,6 +101,9 @@ public class RubyServerSocket extends RubySocket {
 
         if (addr instanceof Addrinfo) {
             Addrinfo addrInfo = (Addrinfo) addr;
+            if (!addrInfo.ip_p(context).isTrue()) {
+                throw context.runtime.newTypeError("not an INET or INET6 address: " + addrInfo);
+            }
             iaddr = new InetSocketAddress(addrInfo.getInetAddress().getHostAddress(), addrInfo.getPort());
         } else {
             iaddr = Sockaddr.addressFromSockaddr_in(context, addr);
@@ -115,6 +119,9 @@ public class RubyServerSocket extends RubySocket {
 
         if (addr instanceof Addrinfo) {
             Addrinfo addrInfo = (Addrinfo) addr;
+            if (!addrInfo.ip_p(context).isTrue()) {
+                throw context.runtime.newTypeError("not an INET or INET6 address: " + addrInfo);
+            }
             iaddr = new InetSocketAddress(addrInfo.getInetAddress().getHostAddress(), addrInfo.getPort());
         } else {
             iaddr = Sockaddr.addressFromSockaddr_in(context, addr);
@@ -126,7 +133,7 @@ public class RubyServerSocket extends RubySocket {
 
     @JRubyMethod()
     public IRubyObject accept(ThreadContext context) {
-        return doAccept(context, getChannel(), true);
+        return doAccept(this, context, true);
     }
 
     @JRubyMethod()
@@ -136,9 +143,10 @@ public class RubyServerSocket extends RubySocket {
 
     @JRubyMethod()
     public IRubyObject accept_nonblock(ThreadContext context, IRubyObject opts) {
-        return doAcceptNonblock(context, getChannel(), ArgsUtil.extractKeywordArg(context, "exception", opts) != context.runtime.getFalse());
+        return doAcceptNonblock(this, context, ArgsUtil.extractKeywordArg(context, "exception", opts) != context.runtime.getFalse());
     }
 
+    @Override
     protected ChannelFD initChannelFD(Ruby runtime) {
         Channel channel;
 
@@ -157,8 +165,9 @@ public class RubyServerSocket extends RubySocket {
         }
     }
 
-    private IRubyObject doAcceptNonblock(ThreadContext context, Channel channel, boolean ex) {
+    public static IRubyObject doAcceptNonblock(RubySocket sock, ThreadContext context, boolean ex) {
         try {
+            Channel channel = sock.getChannel();
             if (channel instanceof SelectableChannel) {
                 SelectableChannel selectable = (SelectableChannel)channel;
 
@@ -168,7 +177,7 @@ public class RubyServerSocket extends RubySocket {
                     try {
                         selectable.configureBlocking(false);
 
-                        IRubyObject socket = doAccept(context, channel, ex);
+                        IRubyObject socket = doAccept(sock, context, ex);
                         if (!(socket instanceof RubySocket)) return socket;
                         SocketChannel socketChannel = (SocketChannel)((RubySocket)socket).getChannel();
                         InetSocketAddress addr = (InetSocketAddress)socketChannel.socket().getRemoteSocketAddress();
@@ -190,12 +199,14 @@ public class RubyServerSocket extends RubySocket {
         }
     }
 
-    private IRubyObject doAccept(ThreadContext context, Channel channel, boolean ex) {
+    public static IRubyObject doAccept(RubySocket sock, ThreadContext context, boolean ex) {
         Ruby runtime = context.runtime;
+
+        Channel channel = sock.getChannel();
 
         try {
             if (channel instanceof ServerSocketChannel) {
-                ServerSocketChannel serverChannel = (ServerSocketChannel)getChannel();
+                ServerSocketChannel serverChannel = (ServerSocketChannel)sock.getChannel();
 
                 SocketChannel socket = serverChannel.accept();
 
@@ -208,9 +219,9 @@ public class RubyServerSocket extends RubySocket {
                 }
 
                 RubySocket rubySocket = new RubySocket(runtime, runtime.getClass("Socket"));
-                rubySocket.initFromServer(runtime, this, socket);
+                rubySocket.initFromServer(runtime, sock, socket);
 
-                return rubySocket;
+                return runtime.newArray(rubySocket, new Addrinfo(runtime, runtime.getClass("Addrinfo"), socket.getRemoteAddress()));
             }
             throw runtime.newErrnoENOPROTOOPTError();
         }

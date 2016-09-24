@@ -65,7 +65,7 @@ module Truffle
         cmd = Array(cmd) # wrap if it's just a string
 
         formatted_env, command = if cmd[0].is_a?(Hash)
-                                   [cmd[0].map { |k, v| "#{k}=#{v}" }, cmd[1..-1]]
+                                   [cmd[0].map { |k, v| "#{k}=\"#{v}\"" }, cmd[1..-1]]
                                  else
                                    [[], cmd]
                                  end
@@ -198,7 +198,7 @@ module Truffle
 
     begin
       apply_pattern = -> (pattern, old, options) do
-        Dir.glob(pattern) do |file|
+        Dir.glob(pattern).sort.each do |file|
           if options[:exclude_pattern].any? { |p| /#{p}/ =~ file }
             puts "skipped: #{file}"
             next
@@ -370,7 +370,7 @@ module Truffle
         @gem_name = if @options[:global][:configuration]
                       @options[:global][:configuration].to_sym
                     else
-                      candidates = Dir['*.gemspec']
+                      candidates = Dir['*.gemspec'].sort
                       if candidates.size == 1
                         gem_name, _ = candidates.first.split('.')
                         gem_name.to_sym
@@ -518,7 +518,7 @@ module Truffle
           gem_name, options = parse_gemfile_line(line)
           repo_name         = options[:git].split('/').last
           repo_match        = "#{gems_path}/bundler/gems/#{repo_name}-*"
-          repo_path         = Dir[repo_match].first
+          repo_path         = Dir[repo_match].sort.first
 
           ["# Overridden by jtr\n",
            '# ' + line,
@@ -623,7 +623,7 @@ module Truffle
       end
 
       executable = if @options[:run][:executable]
-                     executables = Dir.glob("#{@options[:global][:truffle_bundle_path]}/jruby+truffle/*/gems/*/{bin,exe}/*")
+                     executables = Dir.glob("#{@options[:global][:truffle_bundle_path]}/jruby+truffle/*/gems/*/{bin,exe}/*").sort
                      executables.find { |path| File.basename(path) == @options[:run][:executable] } or
                          raise "no executable with name '#{@options[:run][:executable]}' found"
                    end
@@ -637,19 +637,22 @@ module Truffle
           '-X+T',
           "-J-Xmx#{@options[:run][:xmx]}",
           *(%w[-J-ea -J-esa] unless @options[:run][:no_asserts]),
-          ("-Xtruffle.core.load_path=#{core_load_path}" if @options[:global][:use_fs_core] && !missing_core_load_path),
-          ('-Xtruffle.exceptions.print_java=true' if @options[:run][:jexception])
+          *("-Xtruffle.core.load_path=#{core_load_path}" if @options[:global][:use_fs_core] && !missing_core_load_path),
+          *('-Xtruffle.exceptions.print_java=true' if @options[:run][:jexception])
       ]
 
-      bundler_setup = "./#{@options[:global][:truffle_bundle_path]}/bundler/setup.rb"
-      cmd_options   = [
-          *(truffle_options unless @options[:run][:no_truffle]),
-          (format(@options[:global][:debug_option], @options[:global][:debug_port]) if @options[:run][:debug]),
+      jruby_options = [
+          *(format(@options[:global][:debug_option], @options[:global][:debug_port]) if @options[:run][:debug]),
+          *(truffle_options unless @options[:run][:no_truffle])
+      ]
+
+      bundler_setup = File.expand_path "#{@options[:global][:truffle_bundle_path]}/bundler/setup.rb"
+      env_options   = [
           *ruby_options,
           *(['-r', bundler_setup] if File.exist? bundler_setup),
           *@options[:run][:load_path].flat_map { |v| ['-I', v] },
           *@options[:run][:require].flat_map { |v| ['-r', v] }
-      ].compact
+      ]
 
       env            = @options[:run][:environment]
       env['JAVACMD'] = @options[:global][:graal_path] if @options[:run][:graal]
@@ -657,7 +660,8 @@ module Truffle
 
       cmd = [(env unless env.empty?),
              @options[:run][:interpreter_path].to_s,
-             *cmd_options,
+             *jruby_options,
+             *env_options,
              executable,
              *rest
       ].compact
@@ -688,7 +692,7 @@ module Truffle
                             File.read(Pathname(@called_from_dir).join(path))
                           end
                         end
-        cis_to_run     = YAML.load(batch_content)
+        cis_to_run    = YAML.load(batch_content)
 
         results = cis_to_run.map do |ci|
           # ci is just a name or a array of name and options

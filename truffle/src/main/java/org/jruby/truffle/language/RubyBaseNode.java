@@ -15,6 +15,7 @@ import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.TypeSystemReference;
 import com.oracle.truffle.api.instrumentation.StandardTags;
 import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.nodes.RootNode;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.ffi.provider.MemoryManager;
@@ -22,6 +23,7 @@ import org.jcodings.Encoding;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.CoreLibrary;
+import org.jruby.truffle.core.array.ArrayHelpers;
 import org.jruby.truffle.core.exception.CoreExceptions;
 import org.jruby.truffle.core.kernel.TraceManager;
 import org.jruby.truffle.core.numeric.BignumOperations;
@@ -35,6 +37,7 @@ import org.jruby.truffle.platform.posix.Sockets;
 import org.jruby.truffle.platform.posix.TrufflePosix;
 import org.jruby.truffle.stdlib.CoverageManager;
 import org.jruby.util.ByteList;
+
 import java.math.BigInteger;
 
 @TypeSystemReference(RubyTypes.class)
@@ -46,15 +49,45 @@ public abstract class RubyBaseNode extends Node {
     private static final int FLAG_ROOT = 2;
 
     @CompilationFinal private RubyContext context;
-    @CompilationFinal private SourceSection sourceSection;
-    @CompilationFinal private int flags;
+
+    private int sourceStartLine;
+    private int sourceEndLine;
+
+    private int flags;
 
     public RubyBaseNode() {
     }
 
+    public RubyBaseNode(RubyContext context) {
+        this.context = context;
+    }
+
+    public RubyBaseNode(SourceSection sourceSection) {
+        if (sourceSection != null) {
+            unsafeSetSourceSection(new RubySourceSection(sourceSection));
+        }
+    }
+
+    public RubyBaseNode(RubySourceSection sourceSection) {
+        if (sourceSection != null) {
+            unsafeSetSourceSection(sourceSection);
+        }
+    }
+
     public RubyBaseNode(RubyContext context, SourceSection sourceSection) {
         this.context = context;
-        this.sourceSection = sourceSection;
+
+        if (sourceSection != null) {
+            unsafeSetSourceSection(new RubySourceSection(sourceSection));
+        }
+    }
+
+    public RubyBaseNode(RubyContext context, RubySourceSection sourceSection) {
+        this.context = context;
+
+        if (sourceSection != null) {
+            unsafeSetSourceSection(sourceSection);
+        }
     }
 
     // Guards which use the context and so can't be static
@@ -95,6 +128,10 @@ public abstract class RubyBaseNode extends Node {
 
     protected DynamicObject createString(Rope rope) {
         return StringOperations.createString(getContext(), rope);
+    }
+
+    protected DynamicObject createArray(Object store, int size) {
+        return ArrayHelpers.createArray(getContext(), store, size);
     }
 
     protected DynamicObject createBignum(BigInteger value) {
@@ -162,13 +199,45 @@ public abstract class RubyBaseNode extends Node {
 
     // Source section
 
-    public void unsafeSetSourceSection(SourceSection sourceSection) {
-        this.sourceSection = sourceSection;
+    public void unsafeSetSourceSection(RubySourceSection sourceSection) {
+        assert sourceStartLine == 0;
+        sourceStartLine = sourceSection.getStartLine();
+        sourceEndLine = sourceSection.getEndLine();
+    }
+
+    public RubySourceSection getRubySourceSection() {
+        if (sourceStartLine == 0) {
+            return null;
+        } else {
+            return new RubySourceSection(sourceStartLine, sourceEndLine);
+        }
+    }
+
+    public RubySourceSection getEncapsulatingRubySourceSection() {
+        Node node = this;
+
+        while (node != null) {
+            if (node instanceof RubyBaseNode && ((RubyBaseNode) node).sourceStartLine != 0) {
+                return ((RubyBaseNode) node).getRubySourceSection();
+            }
+
+            if (node instanceof RootNode) {
+                return new RubySourceSection(node.getSourceSection());
+            }
+
+            node = node.getParent();
+        }
+
+        return null;
     }
 
     @Override
     public SourceSection getSourceSection() {
-        return sourceSection;
+        if (sourceStartLine == 0) {
+            return null;
+        } else {
+            return getRubySourceSection().toSourceSection(getRootNode().getSourceSection().getSource());
+        }
     }
 
     // Tags

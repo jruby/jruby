@@ -56,7 +56,7 @@ public abstract class ReinterpretAsUnsignedNode extends FormatNode {
     public Object asUnsigned(long value) {
         if (fixnumOrBignumNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            fixnumOrBignumNode = insert(FixnumOrBignumNode.create(getContext(), getSourceSection()));
+            fixnumOrBignumNode = insert(FixnumOrBignumNode.create(getContext(), null));
         }
 
         return fixnumOrBignumNode.fixnumOrBignum(asUnsignedBigInteger(value));

@@ -403,6 +403,31 @@ public class CoreExceptions {
     }
 
     @TruffleBoundary
+    public DynamicObject typeErrorAlreadyInitializedClass(Node currentNode) {
+        return typeError("already initialized class", currentNode);
+    }
+
+    @TruffleBoundary
+    public DynamicObject typeErrorSubclassSingletonClass(Node currentNode) {
+        return typeError("can't make subclass of singleton class", currentNode);
+    }
+
+    @TruffleBoundary
+    public DynamicObject typeErrorSubclassClass(Node currentNode) {
+        return typeError("can't make subclass of Class", currentNode);
+    }
+
+    @TruffleBoundary
+    public DynamicObject typeErrorSuperclassMustBeClass(Node currentNode) {
+        return typeError("superclass must be a Class", currentNode);
+    }
+
+    @TruffleBoundary
+    public DynamicObject typeErrorInheritUninitializedClass(Node currentNode) {
+        return typeError("can't inherit uninitialized class", currentNode);
+    }
+
+    @TruffleBoundary
     public DynamicObject typeError(String message, Node currentNode, Throwable javaThrowable) {
         return ExceptionOperations.createRubyException(
                 context.getCoreLibrary().getTypeErrorClass(),
@@ -556,6 +581,12 @@ public class CoreExceptions {
     public DynamicObject privateMethodError(String name, Object self, Object[] args, Node currentNode) {
         String className = Layouts.MODULE.getFields(context.getCoreLibrary().getLogicalClass(self)).getName();
         return noMethodError(StringUtils.format("private method `%s' called for %s", name, className), self, name, args, currentNode);
+    }
+
+    @TruffleBoundary
+    public DynamicObject protectedMethodError(String name, Object self, Object[] args, Node currentNode) {
+        String className = Layouts.MODULE.getFields(context.getCoreLibrary().getLogicalClass(self)).getName();
+        return noMethodError(StringUtils.format("protected method `%s' called for %s", name, className), self, name, args, currentNode);
     }
 
     // LoadError

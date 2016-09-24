@@ -1,0 +1,1 @@
+fails:BigDecimal#log handles high-precision Rational arguments

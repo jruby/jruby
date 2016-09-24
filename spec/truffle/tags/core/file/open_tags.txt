@@ -1,6 +1,3 @@
-fails:File.open opens a file for binary read-write starting at the beginning of the file
-fails:File.open raises a SystemCallError if passed an invalid Integer type
-fails:File.open with a block does not raise error when file is closed inside the block
-fails:File.open on a FIFO opens it as a normal file
 fails:File.open opens a file with a file descriptor d and a block
 fails:File.open with a block propagates StandardErrors produced by close
+slow:File.open on a FIFO opens it as a normal file

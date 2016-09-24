@@ -366,7 +366,12 @@ module Rubinius
     #
     def read(bytes=nil, output=nil)
       # The user might try to pass in nil, so we have to check here
-      output ||= default_value
+      if output.nil?
+        output = default_value
+      else
+        output = StringValue(output)
+        output.clear
+      end
 
       if bytes
         bytes_left = bytes

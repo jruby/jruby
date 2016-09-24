@@ -14,7 +14,6 @@ import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.nodes.NodeCost;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 
 @NodeInfo(cost = NodeCost.NONE)
@@ -22,8 +21,8 @@ public final class SequenceNode extends RubyNode {
 
     @Children private final RubyNode[] body;
 
-    public SequenceNode(RubyContext context, SourceSection sourceSection, RubyNode... body) {
-        super(context, sourceSection);
+    public SequenceNode(SourceSection sourceSection, RubyNode... body) {
+        super(sourceSection);
         this.body = body;
     }
 

@@ -5,7 +5,7 @@ if MORE_QUIET
     def say(message)
       if message != spec.post_install_message || !MORE_QUIET
         super
-      end 
+      end
     end
   end
 end
@@ -27,7 +27,7 @@ end
 default_gems =
   [
    ImportedGem.new( 'jruby-openssl', '0.9.17' ),
-   ImportedGem.new( 'jruby-readline', '1.1.0', false ),
+   ImportedGem.new( 'jruby-readline', '1.1.1' ),
    ImportedGem.new( 'rake', '${rake.version}' ),
    ImportedGem.new( 'rdoc', '${rdoc.version}' ),
    ImportedGem.new( 'minitest', '${minitest.version}' ),

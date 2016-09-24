@@ -70,6 +70,7 @@ lib/ruby/stdlib/readline*
 lib/ruby/stdlib/minitest*
 lib/ruby/stdlib/power_assert*
 lib/ruby/stdlib/psych*
+lib/ruby/stdlib/**/maven-metadata-local.xml
 release.properties
 share
 spaces test

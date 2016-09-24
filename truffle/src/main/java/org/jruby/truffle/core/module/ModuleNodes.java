@@ -42,7 +42,6 @@ import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.builtins.CoreMethodNode;
 import org.jruby.truffle.core.RaiseIfFrozenNode;
-import org.jruby.truffle.core.array.ArrayHelpers;
 import org.jruby.truffle.core.cast.BooleanCastWithDefaultNodeGen;
 import org.jruby.truffle.core.cast.NameToJavaStringNode;
 import org.jruby.truffle.core.cast.NameToJavaStringNodeGen;
@@ -63,8 +62,12 @@ import org.jruby.truffle.language.RubyConstant;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
+import org.jruby.truffle.language.RubySourceSection;
+import org.jruby.truffle.language.SnippetNode;
 import org.jruby.truffle.language.arguments.MissingArgumentBehavior;
+import org.jruby.truffle.language.arguments.ProfileArgumentNode;
 import org.jruby.truffle.language.arguments.ReadPreArgumentNode;
+import org.jruby.truffle.language.arguments.ReadSelfNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.constants.GetConstantNode;
 import org.jruby.truffle.language.constants.LookupConstantNode;
@@ -87,7 +90,6 @@ import org.jruby.truffle.language.objects.IsANodeGen;
 import org.jruby.truffle.language.objects.IsFrozenNode;
 import org.jruby.truffle.language.objects.IsFrozenNodeGen;
 import org.jruby.truffle.language.objects.ReadInstanceVariableNode;
-import org.jruby.truffle.language.objects.SelfNode;
 import org.jruby.truffle.language.objects.SingletonClassNode;
 import org.jruby.truffle.language.objects.SingletonClassNodeGen;
 import org.jruby.truffle.language.objects.WriteInstanceVariableNode;
@@ -97,6 +99,7 @@ import org.jruby.truffle.language.yield.YieldNode;
 import org.jruby.truffle.platform.UnsafeGroup;
 import org.jruby.truffle.util.StringUtils;
 import org.jruby.util.IdUtil;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -322,7 +325,7 @@ public abstract class ModuleNodes {
             }
 
             Object[] objects = ancestors.toArray(new Object[ancestors.size()]);
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), objects, objects.length);
+            return createArray(objects, objects.length);
         }
     }
 
@@ -374,24 +377,25 @@ public abstract class ModuleNodes {
         private void createAccesor(DynamicObject module, String name) {
             final FrameInstance callerFrame = getContext().getCallStack().getCallerFrameIgnoringSend();
             final SourceSection sourceSection = callerFrame.getCallNode().getEncapsulatingSourceSection();
+            final RubySourceSection rubySourceSection = new RubySourceSection(sourceSection);
             final Visibility visibility = DeclarationContext.findVisibility(callerFrame.getFrame(FrameAccess.READ_ONLY, true));
             final Arity arity = isGetter ? Arity.NO_ARGUMENTS : Arity.ONE_REQUIRED;
             final String ivar = "@" + name;
             final String accessorName = isGetter ? name : name + "=";
             final String indicativeName = name + "(attr_" + (isGetter ? "reader" : "writer") + ")";
 
-            final RubyNode checkArity = Translator.createCheckArityNode(getContext(), sourceSection, arity);
+            final RubyNode checkArity = Translator.createCheckArityNode(getContext(), sourceSection.getSource(), rubySourceSection, arity);
             final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, LexicalScope.NONE, arity, indicativeName, false, null, false, false, false);
 
-            final SelfNode self = new SelfNode(getContext(), sourceSection);
+            final RubyNode self = new ProfileArgumentNode(new ReadSelfNode());
             final RubyNode accessInstanceVariable;
             if (isGetter) {
                 accessInstanceVariable = new ReadInstanceVariableNode(getContext(), sourceSection, ivar, self);
             } else {
-                ReadPreArgumentNode readArgument = new ReadPreArgumentNode(0, MissingArgumentBehavior.RUNTIME_ERROR);
+                RubyNode readArgument = new ProfileArgumentNode(new ReadPreArgumentNode(0, MissingArgumentBehavior.RUNTIME_ERROR));
                 accessInstanceVariable = new WriteInstanceVariableNode(getContext(), sourceSection, ivar, self, readArgument);
             }
-            final RubyNode sequence = Translator.sequence(getContext(), name, sourceSection, Arrays.asList(checkArity, accessInstanceVariable));
+            final RubyNode sequence = Translator.sequence(getContext(), sourceSection.getSource(), rubySourceSection, Arrays.asList(checkArity, accessInstanceVariable));
             final RubyRootNode rootNode = new RubyRootNode(getContext(), sourceSection, null, sharedMethodInfo, sequence, false);
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
             final InternalMethod method = new InternalMethod(sharedMethodInfo, accessorName, module, visibility, callTarget);
@@ -578,7 +582,7 @@ public abstract class ModuleNodes {
         protected DynamicObject toStr(VirtualFrame frame, Object object) {
             if (toStrNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                toStrNode = insert(ToStrNodeGen.create(getContext(), getSourceSection(), null));
+                toStrNode = insert(ToStrNodeGen.create(getContext(), null, null));
             }
             return toStrNode.executeToStr(frame, object);
         }
@@ -764,7 +768,7 @@ public abstract class ModuleNodes {
             for (String variable : allClassVariables.keySet()) {
                 store[i++] = getSymbol(variable);
             }
-            return ArrayHelpers.createArray(getContext(), store, size);
+            return createArray(store, size);
         }
     }
 
@@ -799,7 +803,7 @@ public abstract class ModuleNodes {
             }
 
             Object[] objects = constantsArray.toArray(new Object[constantsArray.size()]);
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), objects, objects.length);
+            return createArray(objects, objects.length);
         }
 
     }
@@ -1022,7 +1026,7 @@ public abstract class ModuleNodes {
 
             if (!canBindMethodToModuleNode.executeCanBindMethodToModule(method, module)) {
                 final DynamicObject declaringModule = method.getDeclaringModule();
-                if (RubyGuards.isRubyClass(declaringModule) && Layouts.CLASS.getIsSingleton(declaringModule)) {
+                if (RubyGuards.isSingletonClass(declaringModule)) {
                     throw new RaiseException(coreExceptions().typeError(
                             "can't bind singleton method to a different class", this));
                 } else {
@@ -1092,7 +1096,7 @@ public abstract class ModuleNodes {
         }
 
         protected CanBindMethodToModuleNode createCanBindMethodToModuleNode() {
-            return CanBindMethodToModuleNodeGen.create(getContext(), getSourceSection(), null, null);
+            return CanBindMethodToModuleNodeGen.create(getContext(), null, null, null);
         }
 
     }
@@ -1131,7 +1135,7 @@ public abstract class ModuleNodes {
         void classEval(VirtualFrame frame, DynamicObject module, DynamicObject block) {
             if (classExecNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                classExecNode = insert(ModuleNodesFactory.ClassExecNodeFactory.create(getContext(), getSourceSection(), null));
+                classExecNode = insert(ModuleNodesFactory.ClassExecNodeFactory.create(getContext(), null, null));
             }
             classExecNode.executeClassExec(frame, module, new Object[]{module}, block);
         }
@@ -1187,7 +1191,7 @@ public abstract class ModuleNodes {
         protected DynamicObject getSingletonClass(DynamicObject object) {
             if (singletonClassNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                singletonClassNode = insert(SingletonClassNodeGen.create(getContext(), getSourceSection(), null));
+                singletonClassNode = insert(SingletonClassNodeGen.create(getContext(), null, null));
             }
 
             return singletonClassNode.executeSingletonClass(object);
@@ -1220,7 +1224,7 @@ public abstract class ModuleNodes {
             }
 
             Object[] objects = modules.toArray(new Object[modules.size()]);
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), objects, objects.length);
+            return createArray(objects, objects.length);
         }
     }
 
@@ -1316,7 +1320,7 @@ public abstract class ModuleNodes {
             }
 
             Object[] objects = modules.toArray(new Object[modules.size()]);
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), objects, objects.length);
+            return createArray(objects, objects.length);
         }
     }
 
@@ -1482,7 +1486,7 @@ public abstract class ModuleNodes {
         @TruffleBoundary
         public DynamicObject getInstanceMethods(DynamicObject module, boolean includeAncestors) {
             Object[] objects = Layouts.MODULE.getFields(module).filterMethods(getContext(), includeAncestors, MethodFilter.by(visibility)).toArray();
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), objects, objects.length);
+            return createArray(objects, objects.length);
         }
 
     }
@@ -1583,7 +1587,7 @@ public abstract class ModuleNodes {
         @Specialization
         public DynamicObject instanceMethods(DynamicObject module, boolean includeAncestors) {
             Object[] objects = Layouts.MODULE.getFields(module).filterMethods(getContext(), includeAncestors, MethodFilter.PUBLIC_PROTECTED).toArray();
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), objects, objects.length);
+            return createArray(objects, objects.length);
         }
     }
 
@@ -1741,7 +1745,12 @@ public abstract class ModuleNodes {
 
             if (Layouts.MODULE.getFields(module).getMethod(name) != null) {
                 Layouts.MODULE.getFields(module).removeMethod(name);
-                methodRemovedNode.call(frame, module, "method_removed", getSymbol(name));
+                if (RubyGuards.isSingletonClass(module)) {
+                    final DynamicObject receiver = Layouts.CLASS.getAttached(module);
+                    methodRemovedNode.call(frame, receiver, "singleton_method_removed", getSymbol(name));
+                } else {
+                    methodRemovedNode.call(frame, module, "method_removed", getSymbol(name));
+                }
             } else {
                 errorProfile.enter();
                 throw new RaiseException(coreExceptions().nameErrorMethodNotDefinedIn(module, name, this));
@@ -1753,11 +1762,34 @@ public abstract class ModuleNodes {
     @CoreMethod(names = { "to_s", "inspect" })
     public abstract static class ToSNode extends CoreMethodArrayArgumentsNode {
 
-        @TruffleBoundary
+        @Child private SnippetNode snippetNode;
+
         @Specialization
-        public DynamicObject toS(DynamicObject module) {
-            final String name = Layouts.MODULE.getFields(module).getName();
-            return createString(StringOperations.encodeRope(name, UTF8Encoding.INSTANCE));
+        public DynamicObject toS(VirtualFrame frame, DynamicObject module) {
+
+            final String moduleName;
+            if (RubyGuards.isSingletonClass(module)) {
+                final DynamicObject attached = Layouts.CLASS.getAttached(module);
+                final String name;
+                if (Layouts.CLASS.isClass(attached) || Layouts.MODULE.isModule(attached)) {
+                    if (snippetNode == null) {
+                        CompilerDirectives.transferToInterpreterAndInvalidate();
+                        snippetNode = insert(new SnippetNode());
+                    }
+                    DynamicObject inspectResult = (DynamicObject) snippetNode.execute(frame,
+                        "Rubinius::Type.inspect(val)", "val", attached);
+                    name = StringOperations.getString(inspectResult);
+                } else {
+                    name = Layouts.MODULE.getFields(module).getName();
+                }
+                moduleName = "#<Class:" + name + ">";
+            } else {
+                moduleName = Layouts.MODULE.getFields(module).getName();
+            }
+
+            // TODO BJF Aug 31, 2016 Add refinements to_s
+
+            return createString(StringOperations.encodeRope(moduleName, UTF8Encoding.INSTANCE));
         }
 
     }
@@ -1772,7 +1804,7 @@ public abstract class ModuleNodes {
         public UndefMethodNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             this.nameToJavaStringNode = NameToJavaStringNode.create();
-            this.raiseIfFrozenNode = new RaiseIfFrozenNode(new SelfNode(context, sourceSection));
+            this.raiseIfFrozenNode = new RaiseIfFrozenNode(context, sourceSection, new ProfileArgumentNode(new ReadSelfNode()));
             this.methodUndefinedNode = DispatchHeadNodeFactory.createMethodCallOnSelf(context);
         }
 
@@ -1788,7 +1820,12 @@ public abstract class ModuleNodes {
             raiseIfFrozenNode.execute(frame);
 
             Layouts.MODULE.getFields(module).undefMethod(getContext(), this, name);
-            methodUndefinedNode.call(frame, module, "method_undefined", getSymbol(name));
+            if (RubyGuards.isSingletonClass(module)) {
+                final DynamicObject receiver = Layouts.CLASS.getAttached(module);
+                methodUndefinedNode.call(frame, receiver, "singleton_method_undefined", getSymbol(name));
+            } else {
+                methodUndefinedNode.call(frame, module, "method_undefined", getSymbol(name));
+            }
         }
 
     }

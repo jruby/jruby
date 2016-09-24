@@ -29,6 +29,7 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.hash.Entry;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.RubySourceSection;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.control.RaiseException;
 
@@ -40,7 +41,7 @@ import org.jruby.truffle.language.control.RaiseException;
 public abstract class AllocateObjectNode extends RubyNode {
 
     public static AllocateObjectNode create() {
-        return AllocateObjectNodeGen.create(null, null, null, null);
+        return AllocateObjectNodeGen.create(null, (RubySourceSection) null, null, null);
     }
 
     private final boolean useCallerFrameForTracing;
@@ -49,13 +50,22 @@ public abstract class AllocateObjectNode extends RubyNode {
         this(context, sourceSection, true);
     }
 
+    public AllocateObjectNode(RubyContext context, RubySourceSection sourceSection) {
+        this(context, sourceSection, true);
+    }
+
     public AllocateObjectNode(RubyContext context, SourceSection sourceSection, boolean useCallerFrameForTracing) {
         super(context, sourceSection);
         this.useCallerFrameForTracing = useCallerFrameForTracing;
     }
 
+    public AllocateObjectNode(RubyContext context, RubySourceSection sourceSection, boolean useCallerFrameForTracing) {
+        super(context, sourceSection);
+        this.useCallerFrameForTracing = useCallerFrameForTracing;
+    }
+
     public AllocateObjectNode(AllocateObjectNode node) {
-        this(node.getContext(), node.getSourceSection());
+        this(node.getContext(), node.getRubySourceSection());
     }
 
     public DynamicObject allocate(DynamicObject classToAllocate, Object... values) {

@@ -271,38 +271,6 @@ public class IRRuntimeHelpers {
         }
     }
 
-    @JIT
-    public static void defCompiledIRMethod(ThreadContext context, MethodHandle handle, String rubyName, DynamicScope currDynScope, IRubyObject self, IRScope irScope) {
-        Ruby runtime = context.runtime;
-
-        RubyModule containingClass = IRRuntimeHelpers.findInstanceMethodContainer(context, currDynScope, self);
-        Visibility currVisibility = context.getCurrentVisibility();
-        Visibility newVisibility = Helpers.performNormalMethodChecksAndDetermineVisibility(runtime, containingClass, rubyName, currVisibility);
-
-        DynamicMethod method = new CompiledIRMethod(handle, irScope, newVisibility, containingClass, irScope.receivesKeywordArgs());
-
-        Helpers.addInstanceMethod(containingClass, rubyName, method, currVisibility, context, runtime);
-    }
-
-    @JIT
-    public static void defCompiledIRClassMethod(ThreadContext context, IRubyObject obj, MethodHandle handle, String rubyName, IRScope irScope) {
-        Ruby runtime = context.runtime;
-
-        if (obj instanceof RubyFixnum || obj instanceof RubySymbol) {
-            throw runtime.newTypeError("can't define singleton method \"" + rubyName + "\" for " + obj.getMetaClass().getBaseName());
-        }
-
-        if (obj.isFrozen()) throw runtime.newFrozenError("object");
-
-        RubyClass containingClass = obj.getSingletonClass();
-
-        DynamicMethod method = new CompiledIRMethod(handle, irScope, Visibility.PUBLIC, containingClass, irScope.receivesKeywordArgs());
-
-        containingClass.addMethod(rubyName, method);
-
-        obj.callMethod(context, "singleton_method_added", runtime.fastNewSymbol(rubyName));
-    }
-
     // Used by JIT
     public static IRubyObject undefMethod(ThreadContext context, Object nameArg, DynamicScope currDynScope, IRubyObject self) {
         RubyModule module = IRRuntimeHelpers.findInstanceMethodContainer(context, currDynScope, self);

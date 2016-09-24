@@ -11,3 +11,4 @@ slow:Process.kill signals the process group if the PID is zero
 slow:Process.kill signals the process group if the signal number is negative
 slow:Process.kill signals the process group if the short signal name starts with a minus sign
 slow:Process.kill signals the process group if the full signal name starts with a minus sign
+fails(flakey):Process.kill signals the process group if the short signal name starts with a minus sign

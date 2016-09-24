@@ -67,10 +67,10 @@ public abstract class SplatCastNode extends RubyNode {
     public Object splatNil(VirtualFrame frame, Object nil) {
         switch (nilBehavior) {
             case EMPTY_ARRAY:
-                return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), null, 0);
+            return createArray(null, 0);
 
             case ARRAY_WITH_NIL:
-                return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), new Object[]{nil()}, 1);
+            return createArray(new Object[] { nil() }, 1);
 
             case CONVERT:
                 return toA.call(frame, nil, "to_a");
@@ -102,14 +102,14 @@ public abstract class SplatCastNode extends RubyNode {
             if (RubyGuards.isRubyArray(array)) {
                 return (DynamicObject) array;
             } else if (array == nil() || array == DispatchNode.MISSING) {
-                return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), new Object[] { object }, 1);
+                return createArray(new Object[] { object }, 1);
             } else {
                 errorProfile.enter();
                 throw new RaiseException(coreExceptions().typeErrorCantConvertTo(object, "Array", Layouts.SYMBOL.getString(conversionMethod), array, this));
             }
         }
 
-        return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), new Object[] { object }, 1);
+        return createArray(new Object[] { object }, 1);
     }
 
 }

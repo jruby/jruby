@@ -13,7 +13,6 @@ package org.jruby.truffle.language.arguments;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 
@@ -49,7 +48,7 @@ public class SingleBlockArgNode extends RubyNode {
             } else {
                 Object[] extractedArguments = RubyArguments.getArguments(frame);
 
-                return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), extractedArguments, userArgumentCount);
+                return createArray(extractedArguments, userArgumentCount);
             }
         }
     }

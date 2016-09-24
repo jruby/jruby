@@ -81,7 +81,7 @@ public abstract class UnboundMethodNodes {
             if (!canBindMethodToModuleNode.executeCanBindMethodToModule(Layouts.UNBOUND_METHOD.getMethod(unboundMethod), objectMetaClass)) {
                 errorProfile.enter();
                 final DynamicObject declaringModule = Layouts.UNBOUND_METHOD.getMethod(unboundMethod).getDeclaringModule();
-                if (RubyGuards.isRubyClass(declaringModule) && Layouts.CLASS.getIsSingleton(declaringModule)) {
+                if (RubyGuards.isSingletonClass(declaringModule)) {
                     throw new RaiseException(coreExceptions().typeError(
                             "singleton method called for a different object", this));
                 } else {
@@ -156,7 +156,7 @@ public abstract class UnboundMethodNodes {
             } else {
                 DynamicObject file = createString(StringOperations.encodeRope(sourceSection.getSource().getName(), UTF8Encoding.INSTANCE));
                 Object[] objects = new Object[]{file, sourceSection.getStartLine()};
-                return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), objects, objects.length);
+                return createArray(objects, objects.length);
             }
         }
 

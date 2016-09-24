@@ -128,7 +128,7 @@ public abstract class BigDecimalCoreMethodNode extends CoreMethodNode {
     private IntegerCastNode getLimitIntegerCast() {
         if (limitIntegerCast == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            limitIntegerCast = insert(IntegerCastNodeGen.create(getContext(), getSourceSection(), null));
+            limitIntegerCast = insert(IntegerCastNodeGen.create(getContext(), null, null));
         }
 
         return limitIntegerCast;
@@ -146,7 +146,7 @@ public abstract class BigDecimalCoreMethodNode extends CoreMethodNode {
     private IntegerCastNode getRoundModeIntegerCast() {
         if (roundModeIntegerCast == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            roundModeIntegerCast = insert(IntegerCastNodeGen.create(getContext(), getSourceSection(), null));
+            roundModeIntegerCast = insert(IntegerCastNodeGen.create(getContext(), null, null));
         }
 
         return roundModeIntegerCast;

@@ -20,6 +20,7 @@ import static org.jruby.util.cli.Options.TRUFFLE_BINDING_LOCAL_VARIABLE_CACHE;
 import static org.jruby.util.cli.Options.TRUFFLE_BIND_CACHE;
 import static org.jruby.util.cli.Options.TRUFFLE_CALL_GRAPH;
 import static org.jruby.util.cli.Options.TRUFFLE_CALL_GRAPH_WRITE;
+import static org.jruby.util.cli.Options.TRUFFLE_CHAOS;
 import static org.jruby.util.cli.Options.TRUFFLE_CLASS_CACHE;
 import static org.jruby.util.cli.Options.TRUFFLE_CONSTANT_CACHE;
 import static org.jruby.util.cli.Options.TRUFFLE_CORE_ALWAYS_CLONE;
@@ -160,5 +161,9 @@ public class Options {
 
     public final boolean CALL_GRAPH = TRUFFLE_CALL_GRAPH.load();
     public final String CALL_GRAPH_WRITE = TRUFFLE_CALL_GRAPH_WRITE.load();
+
+    // Other tools
+
+    public static boolean CHAOS = TRUFFLE_CHAOS.load();
 
 }

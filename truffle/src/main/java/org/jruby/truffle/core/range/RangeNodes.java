@@ -39,7 +39,6 @@ import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
-import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
 
 
 @CoreClass("Range")
@@ -75,10 +74,7 @@ public abstract class RangeNodes {
                 }
             }
 
-            return Layouts.ARRAY.createArray(
-                    coreLibrary().getArrayFactory(),
-                    arrayBuilder.finish(store, length),
-                    length);
+            return createArray(arrayBuilder.finish(store, length), length);
         }
 
     }
@@ -428,7 +424,7 @@ public abstract class RangeNodes {
             final int length = result - begin;
 
             if (length < 0) {
-                return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), null, 0);
+                return createArray(null, 0);
             } else {
                 final int[] values = new int[length];
 
@@ -436,7 +432,7 @@ public abstract class RangeNodes {
                     values[n] = begin + n;
                 }
 
-                return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), values, length);
+                return createArray(values, length);
             }
         }
 

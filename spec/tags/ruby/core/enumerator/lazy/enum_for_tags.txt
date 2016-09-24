@@ -1,4 +1,3 @@
-fails:Enumerator::Lazy#enum_for sets nil to size when not given a block
 fails:Enumerator::Lazy#enum_for sets given block to size when given a block
 fails:Enumerator::Lazy#enum_for used by some parent's methods though returning Lazy
 fails:Enumerator::Lazy#enum_for sets #size to nil when not given a block

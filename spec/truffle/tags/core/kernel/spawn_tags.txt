@@ -120,3 +120,4 @@ slow:Kernel.spawn uses the current umask by default
 slow:Kernel.spawn when passed close_others: false closes file descriptors >= 3 in the child process because they are set close_on_exec by default
 slow:Kernel.spawn when passed close_others: false does not close file descriptors >= 3 in the child process if fds are set close_on_exec=false
 slow:Kernel#spawn with Integer option keys maps the key to a file descriptor in the child that inherits the file descriptor from the parent specified by the value
+fails:Kernel#spawn does not unset environment variables included in the environment hash

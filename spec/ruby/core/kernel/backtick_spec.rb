@@ -19,6 +19,13 @@ describe "Kernel#`" do
     `echo disc #{ip}`.should == "disc world\n"
   end
 
+  it "lets the standard error stream pass through to the inherited stderr" do
+    cmd = ruby_cmd('STDERR.print "error stream"')
+    lambda {
+      `#{cmd}`.should == ""
+    }.should output_to_fd("error stream", STDERR)
+  end
+
   it "produces a String in the default external encoding" do
     Encoding.default_external = Encoding::SHIFT_JIS
     `echo disc`.encoding.should equal(Encoding::SHIFT_JIS)
@@ -66,8 +73,6 @@ describe "Kernel#`" do
 end
 
 describe "Kernel.`" do
-  it "needs to be reviewed for spec completeness"
-
   it "tries to convert the given argument to String using #to_str" do
     (obj = mock('echo test')).should_receive(:to_str).and_return("echo test")
     Kernel.`(obj).should == "test\n"  #` fix vim syntax highlighting

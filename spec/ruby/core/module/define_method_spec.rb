@@ -69,6 +69,23 @@ describe "Module#define_method when given an UnboundMethod" do
       @class.another_test_method.should == :foo
     end
   end
+
+  it "sets the new method's visibility to the current frame's visibility" do
+    foo = Class.new do
+      def ziggy
+	'piggy'
+      end
+      private :ziggy
+
+      # make sure frame visibility is public
+      public
+
+      define_method :piggy, instance_method(:ziggy)
+    end
+
+    lambda { foo.new.ziggy }.should raise_error(NoMethodError)
+    foo.new.piggy.should == 'piggy'
+  end
 end
 
 describe "Module#define_method when name is not a special private name" do

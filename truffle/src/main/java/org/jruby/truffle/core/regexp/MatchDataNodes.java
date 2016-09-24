@@ -19,7 +19,6 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
-import java.util.Arrays;
 import org.jcodings.Encoding;
 import org.joni.Region;
 import org.joni.exception.ValueException;
@@ -44,6 +43,8 @@ import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.util.StringUtils;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
+
+import java.util.Arrays;
 
 @CoreClass("MatchData")
 public abstract class MatchDataNodes {
@@ -173,6 +174,12 @@ public abstract class MatchDataNodes {
 
         @Child private ToIntNode toIntNode;
 
+        public static GetIndexNode create() {
+            return MatchDataNodesFactory.GetIndexNodeFactory.create(null);
+        }
+
+        public abstract Object executeGetIndex(VirtualFrame frame, Object matchData, Object index, Object length);
+
         @Specialization
         public Object getIndex(DynamicObject matchData, int index, NotProvided length,
                                @Cached("createBinaryProfile()") ConditionProfile indexOutOfBoundsProfile) {
@@ -193,7 +200,7 @@ public abstract class MatchDataNodes {
             final Object[] values = Layouts.MATCH_DATA.getValues(matchData);
             final int normalizedIndex = ArrayOperations.normalizeIndex(values.length, index);
             final Object[] store = Arrays.copyOfRange(values, normalizedIndex, normalizedIndex + length);
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), store, length);
+            return createArray(store, length);
         }
 
         @TruffleBoundary(throwsControlFlowException = true)
@@ -249,7 +256,7 @@ public abstract class MatchDataNodes {
             final int length = exclusiveEnd - normalizedIndex;
 
             final Object[] store = Arrays.copyOfRange(values, normalizedIndex, normalizedIndex + length);
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), store, length);
+            return createArray(store, length);
         }
 
     }
@@ -281,7 +288,7 @@ public abstract class MatchDataNodes {
         @Specialization
         public DynamicObject toA(DynamicObject matchData) {
             Object[] objects = getCaptures(matchData);
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), objects, objects.length);
+            return createArray(objects, objects.length);
         }
     }
 
@@ -359,7 +366,7 @@ public abstract class MatchDataNodes {
 
         public PreMatchNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            taintResultNode = new TaintResultNode(getContext(), getSourceSection());
+            taintResultNode = new TaintResultNode(getContext(), null);
         }
 
         @Specialization
@@ -376,7 +383,7 @@ public abstract class MatchDataNodes {
 
         public PostMatchNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            taintResultNode = new TaintResultNode(getContext(), getSourceSection());
+            taintResultNode = new TaintResultNode(getContext(), null);
         }
 
         @Specialization
@@ -392,7 +399,7 @@ public abstract class MatchDataNodes {
         @Specialization
         public DynamicObject toA(DynamicObject matchData) {
             Object[] objects = ArrayUtils.copy(Layouts.MATCH_DATA.getValues(matchData));
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), objects, objects.length);
+            return createArray(objects, objects.length);
         }
     }
 

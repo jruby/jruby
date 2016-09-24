@@ -7,7 +7,7 @@ describe '#4124 Packed arrays' do
       plus_one = ary.map {|i| i+1}
       ary.replace plus_one
 
-      ary.should == plus_one
+      expect(ary).to eq plus_one
     end
   end
 end

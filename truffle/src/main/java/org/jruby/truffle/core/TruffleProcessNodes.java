@@ -18,11 +18,12 @@ import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.core.array.ArrayOperations;
-import org.jruby.truffle.core.hash.KeyValue;
 import org.jruby.truffle.core.hash.HashOperations;
+import org.jruby.truffle.core.hash.KeyValue;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.platform.UnsafeGroup;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;

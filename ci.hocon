@@ -28,7 +28,7 @@ graal-vm: {
   downloads: {
     GRAALVM_DIR: {
       name: graalvm-release,
-      version: "0.15",
+      version: "0.16",
       platformspecific: true
     }
   }

@@ -33,6 +33,8 @@ public class SubstringRope extends Rope {
         super(encoding, codeRange, singleByteOptimizable, byteLength, characterLength, child.depth() + 1, null);
         this.child = child;
         this.offset = offset;
+
+        assert byteLength <= child.byteLength();
     }
 
     @Override
@@ -43,6 +45,19 @@ public class SubstringRope extends Rope {
         }
 
         return new SubstringRope(getChild(), newEncoding, getChild().isSingleByteOptimizable(), getOffset(), byteLength(), characterLength(), newCodeRange);
+    }
+
+    @Override
+    protected byte[] getBytesSlow() {
+        if (child.getRawBytes() != null) {
+            final byte[] ret = new byte[byteLength()];
+
+            System.arraycopy(child.getRawBytes(), offset, ret, 0, byteLength());
+
+            return ret;
+        }
+
+        return RopeOperations.extractRange(child, offset, byteLength());
     }
 
     @Override

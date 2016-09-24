@@ -1,4 +1,3 @@
-fails:Enumerator::Lazy#initialize sets nil to size if given size is nil
 fails:Enumerator::Lazy#initialize sets given size to own size if the given size is Float::INFINITY
 fails:Enumerator::Lazy#initialize sets given size to own size if the given size is a Fixnum
 fails:Enumerator::Lazy#initialize sets given size to own size if the given size is a Proc

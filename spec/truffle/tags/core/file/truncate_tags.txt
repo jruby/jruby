@@ -1,1 +1,0 @@
-fails:File#truncate raises an IOError if file is closed

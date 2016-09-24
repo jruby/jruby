@@ -16,7 +16,6 @@ import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.TruffleLanguage;
 import com.oracle.truffle.api.instrumentation.Instrumenter;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.source.Source;
 import org.jruby.Ruby;
 import org.jruby.truffle.builtins.PrimitiveManager;
 import org.jruby.truffle.core.CoreLibrary;
@@ -153,12 +152,8 @@ public class RubyContext extends ExecutionContext {
 
         // Load the nodes
 
-        org.jruby.Main.printTruffleTimeMetric("before-load-primitives");
-        coreLibrary.addPrimitives();
-        org.jruby.Main.printTruffleTimeMetric("after-load-primitives");
-
         org.jruby.Main.printTruffleTimeMetric("before-load-nodes");
-        coreLibrary.addCoreMethods();
+        coreLibrary.addCoreMethods(primitiveManager);
         org.jruby.Main.printTruffleTimeMetric("after-load-nodes");
 
         // Load the reset of the core library

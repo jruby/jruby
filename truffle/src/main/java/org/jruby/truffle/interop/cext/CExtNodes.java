@@ -24,13 +24,20 @@ import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
+import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.runtime.Visibility;
 import org.jruby.truffle.Layouts;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.builtins.CoreMethodNode;
+import org.jruby.truffle.builtins.NonStandard;
 import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.truffle.core.cast.NameToJavaStringNodeGen;
+import org.jruby.truffle.core.module.ModuleNodes;
+import org.jruby.truffle.core.module.ModuleNodesFactory;
+import org.jruby.truffle.language.CallStackManager;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyConstant;
 import org.jruby.truffle.language.RubyNode;
@@ -38,6 +45,8 @@ import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.constants.GetConstantNode;
 import org.jruby.truffle.language.constants.LookupConstantNode;
 import org.jruby.truffle.language.control.RaiseException;
+import org.jruby.truffle.language.methods.DeclarationContext;
+import org.jruby.truffle.language.objects.MetaClassNode;
 
 @CoreClass("Truffle::CExt")
 public class CExtNodes {
@@ -176,7 +185,7 @@ public class CExtNodes {
     public abstract static class LONG2NUMNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
-        public int long2num(int num) {
+        public long long2num(long num) {
             return num;
         }
 
@@ -186,7 +195,7 @@ public class CExtNodes {
     public abstract static class ULONG2NUMNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
-        public int ulong2num(int num) {
+        public long ulong2num(long num) {
             // TODO CS 2-May-16 what to do about the fact it's unsigned?
             return num;
         }
@@ -197,8 +206,19 @@ public class CExtNodes {
     public abstract static class LONG2FIXNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
-        public int long2fix(int num) {
+        public long long2fix(long num) {
             return num;
+        }
+
+    }
+
+    @CoreMethod(names = "CLASS_OF", isModuleFunction = true, required = 1)
+    public abstract static class CLASSOFNode extends CoreMethodArrayArgumentsNode {
+
+        @Specialization
+        public DynamicObject class_of(DynamicObject object,
+                                      @Cached("create()") MetaClassNode metaClassNode) {
+            return metaClassNode.executeMetaClass(object);
         }
 
     }
@@ -315,6 +335,47 @@ public class CExtNodes {
         @Specialization(guards = "isRubyIO(io)")
         public int ioHandle(DynamicObject io) {
             return Layouts.IO.getDescriptor(io);
+        }
+
+    }
+
+    @CoreMethod(names = "cext_module_function", isModuleFunction = true, required = 2)
+    public abstract static class CextModuleFunctionNode extends CoreMethodArrayArgumentsNode {
+
+        @Child
+        ModuleNodes.SetVisibilityNode setVisibilityNode;
+
+        public CextModuleFunctionNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            setVisibilityNode = ModuleNodesFactory.SetVisibilityNodeGen.create(context, sourceSection, Visibility.MODULE_FUNCTION, null, null);
+        }
+
+        @Specialization(guards = {"isRubyModule(module)", "isRubySymbol(name)"})
+        public DynamicObject cextModuleFunction(VirtualFrame frame, DynamicObject module, DynamicObject name) {
+            return setVisibilityNode.executeSetVisibility(frame, module, new Object[]{name});
+        }
+
+    }
+
+    @CoreMethod(names = "caller_frame_visibility", isModuleFunction = true, required = 1)
+    public abstract static class CallerFrameVisibilityNode extends CoreMethodArrayArgumentsNode {
+
+        @TruffleBoundary
+        @Specialization(guards = "isRubySymbol(visibility)")
+        public boolean toRubyString(DynamicObject visibility) {
+            final Frame callerFrame = getContext().getCallStack().getCallerFrameIgnoringSend().getFrame(FrameAccess.MATERIALIZE, true);
+            final Visibility callerVisibility = DeclarationContext.findVisibility(callerFrame);
+
+            switch (visibility.toString()) {
+                case "private":
+                    return callerVisibility.isPrivate();
+                case "protected":
+                    return callerVisibility.isProtected();
+                case "module_function":
+                    return callerVisibility.isModuleFunction();
+                default:
+                    throw new UnsupportedOperationException();
+            }
         }
 
     }

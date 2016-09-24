@@ -20,25 +20,20 @@ import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.builtins.CoreMethodNode;
-import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.control.JavaException;
-import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.loader.CodeLoader;
 import org.jruby.truffle.language.loader.SourceLoader;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.parser.ParserContext;
 import org.jruby.truffle.util.ByteListUtils;
-import org.jruby.util.ByteList;
 import org.jruby.util.Memo;
 
-import java.io.File;
 import java.io.IOException;
 
 @CoreClass("Truffle::Boot")
@@ -139,7 +134,7 @@ public abstract class TruffleBootNodes {
                 array[n] = StringOperations.createString(getContext(), StringOperations.encodeRope(argv[n], UTF8Encoding.INSTANCE));
             }
 
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), array, array.length);
+            return createArray(array, array.length);
         }
 
     }
@@ -157,7 +152,7 @@ public abstract class TruffleBootNodes {
                 array[n] = StringOperations.createString(getContext(), StringOperations.encodeRope(path[n], UTF8Encoding.INSTANCE));
             }
 
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), array, array.length);
+            return createArray(array, array.length);
         }
 
     }

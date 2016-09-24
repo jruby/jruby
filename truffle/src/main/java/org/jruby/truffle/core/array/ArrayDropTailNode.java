@@ -21,8 +21,6 @@ import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 
-import static org.jruby.truffle.core.array.ArrayHelpers.createArray;
-
 @NodeChildren({ @NodeChild(value = "array", type = RubyNode.class) })
 @ImportStatic(ArrayGuards.class)
 public abstract class ArrayDropTailNode extends RubyNode {
@@ -36,7 +34,7 @@ public abstract class ArrayDropTailNode extends RubyNode {
 
     @Specialization(guards = "isNullArray(array)")
     public DynamicObject getHeadNull(DynamicObject array) {
-        return createArray(getContext(), null, 0);
+        return createArray(null, 0);
     }
 
     @Specialization(guards = "strategy.matches(array)", limit = "ARRAY_STRATEGIES")
@@ -45,11 +43,11 @@ public abstract class ArrayDropTailNode extends RubyNode {
             @Cached("createBinaryProfile()") ConditionProfile indexLargerThanSize) {
         final int size = Layouts.ARRAY.getSize(array);
         if (indexLargerThanSize.profile(index >= size)) {
-            return createArray(getContext(), null, 0);
+            return createArray(null, 0);
         } else {
             final int newSize = size - index;
             final Object newStore = strategy.newMirror(array).extractRange(0, newSize).getArray();
-            return createArray(getContext(), newStore, newSize);
+            return createArray(newStore, newSize);
         }
     }
 

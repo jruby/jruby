@@ -33,7 +33,7 @@ abstract class ForeignReadStringCachingHelperNode extends RubyNode {
     private @Child IsStringLikeNode isStringLikeNode;
 
     public ForeignReadStringCachingHelperNode(RubyContext context) {
-        super(context, null);
+        super(context);
     }
 
     public abstract Object executeStringCachingHelper(VirtualFrame frame, DynamicObject receiver, Object name);

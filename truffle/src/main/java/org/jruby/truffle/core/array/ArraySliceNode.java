@@ -21,8 +21,6 @@ import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 
-import static org.jruby.truffle.core.array.ArrayHelpers.createArray;
-
 @NodeChildren({@NodeChild(value = "array", type = RubyNode.class)})
 @ImportStatic(ArrayGuards.class)
 public abstract class ArraySliceNode extends RubyNode {
@@ -40,7 +38,7 @@ public abstract class ArraySliceNode extends RubyNode {
 
     @Specialization(guards = "isNullArray(array)")
     public DynamicObject sliceNull(DynamicObject array) {
-        return createArray(getContext(), null, 0);
+        return createArray(null, 0);
     }
 
     @Specialization(guards = { "strategy.matches(array)" }, limit = "ARRAY_STRATEGIES")
@@ -50,10 +48,10 @@ public abstract class ArraySliceNode extends RubyNode {
         final int to = Layouts.ARRAY.getSize(array) + this.to;
 
         if (emptyArray.profile(from >= to)) {
-            return createArray(getContext(), null, 0);
+            return createArray(null, 0);
         } else {
             final Object store = strategy.newMirror(array).extractRange(from, to).getArray();
-            return createArray(getContext(), store, to - from);
+            return createArray(store, to - from);
         }
 
     }

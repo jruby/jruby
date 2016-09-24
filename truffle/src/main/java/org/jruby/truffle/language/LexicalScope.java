@@ -12,7 +12,6 @@ package org.jruby.truffle.language;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.object.DynamicObject;
-import org.jruby.truffle.Layouts;
 
 public class LexicalScope {
 
@@ -48,7 +47,7 @@ public class LexicalScope {
         LexicalScope scope = this;
 
         // MRI logic: ignore lexical scopes (cref) referring to singleton classes
-        while (RubyGuards.isRubyClass(scope.liveModule) && Layouts.CLASS.getIsSingleton(scope.liveModule)) {
+        while (RubyGuards.isSingletonClass(scope.liveModule)) {
             scope = scope.parent;
         }
 

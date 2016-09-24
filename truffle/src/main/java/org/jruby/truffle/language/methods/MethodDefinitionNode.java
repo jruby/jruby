@@ -47,7 +47,7 @@ public class MethodDefinitionNode extends RubyNode {
         if (RubyArguments.getDeclarationContext(frame) == DeclarationContext.INSTANCE_EVAL) {
             if (getDefaultDefineeNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                getDefaultDefineeNode = insert(new GetDefaultDefineeNode(getContext(), getSourceSection()));
+                getDefaultDefineeNode = insert(new GetDefaultDefineeNode(getContext(), null));
             }
             capturedDefaultDefinee = getDefaultDefineeNode.execute(frame);
         } else {

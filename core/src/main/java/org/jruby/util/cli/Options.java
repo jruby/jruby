@@ -166,7 +166,7 @@ public class Options {
     public static final Option<Boolean> FCNTL_LOCKING = bool(MISCELLANEOUS, "file.flock.fcntl", true, "Use fcntl rather than flock for File#flock");
     public static final Option<Boolean> VOLATILE_VARIABLES = bool(MISCELLANEOUS, "volatile.variables", true, "Always ensure volatile semantics for instance variables.");
     public static final Option<Boolean> RECORD_LEXICAL_HIERARCHY = bool(MISCELLANEOUS, "record.lexical.hierarchy", false, "Maintain children static scopes to support scope dumping.");
-    public static final Option<String> PREFERRED_PRNG = string(MISCELLANEOUS, "preferred.prng", "NativePRNGNonBlocking", "Maintain children static scopes to support scope dumping.");
+    public static final Option<String> PREFERRED_PRNG = string(MISCELLANEOUS, "preferred.prng", "NativePRNGNonBlocking", "Set the preferred JDK-supported random number generator to use.");
     public static final Option<Boolean> USE_FIXNUM_CACHE = bool(MISCELLANEOUS, "fixnum.cache", true, "Use a cache of low-valued Fixnum objects.");
     public static final Option<Integer> FIXNUM_CACHE_RANGE = integer(MISCELLANEOUS, "fixnum.cache.size", 256, "Values to retrieve from Fixnum cache, in the range -X..(X-1).");
     public static final Option<Boolean> PACKED_ARRAYS = bool(MISCELLANEOUS, "packed.arrays", true, "Toggle whether to use \"packed\" arrays for small tuples.");
@@ -242,7 +242,7 @@ public class Options {
     public static final Option<Boolean> TRUFFLE_COVERAGE_GLOBAL = bool(TRUFFLE, "truffle.coverage.global", false, "Run coverage for all code and print results on exit.");
 
     public static final Option<String> TRUFFLE_CORE_LOAD_PATH = string(TRUFFLE, "truffle.core.load_path", "truffle:/jruby-truffle", "Location to load the Truffle core library from.");
-    public static final Option<Boolean> TRUFFLE_CORE_PARALLEL_LOAD = bool(TRUFFLE, "truffle.core.parallel_load", true, "Load the Truffle core library in parallel.");
+    public static final Option<Boolean> TRUFFLE_CORE_PARALLEL_LOAD = bool(TRUFFLE, "truffle.core.parallel_load", false, "Load the Truffle core library in parallel.");
 
     public static final Option<Integer> TRUFFLE_ARRAY_UNINITIALIZED_SIZE = integer(TRUFFLE, "truffle.array.uninitialized_size", 32, "How large an Array to allocate when we have no other information to go on.");
     public static final Option<Integer> TRUFFLE_ARRAY_SMALL = integer(TRUFFLE, "truffle.array.small", 3, "Maximum size of an Array to consider small for optimisations.");
@@ -306,6 +306,7 @@ public class Options {
     public static final Option<Boolean> TRUFFLE_METRICS_MEMORY_USED_ON_EXIT = bool(TRUFFLE, "truffle.metrics.memory_used_on_exit", false, "Print the size of heap memory in use on exit.");
     public static final Option<Boolean> TRUFFLE_CALL_GRAPH = bool(TRUFFLE, "truffle.callgraph", false, "Maintain a call graph.");
     public static final Option<String> TRUFFLE_CALL_GRAPH_WRITE = string(TRUFFLE, "truffle.callgraph.write", "File to write the call garph to on exit.");
+    public static final Option<Boolean> TRUFFLE_CHAOS = bool(TRUFFLE, "truffle.chaos", false, "Randomly modify the representation of objects.");
 
     public static final Option<Boolean> TRUFFLE_GRAAL_WARNING_UNLESS = bool(TRUFFLE, "truffle.graal.warn_unless", true, "Warn unless the JVM has the Graal compiler.");
     public static final Option<Boolean> TRUFFLE_PERF_WARNING = bool(TRUFFLE, "truffle.perf.warn", false, "Warn when using a fature which is not optimized yet.");

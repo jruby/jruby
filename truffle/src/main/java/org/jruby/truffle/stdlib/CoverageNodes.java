@@ -14,7 +14,6 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.truffle.Layouts;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
@@ -81,13 +80,13 @@ public abstract class CoverageNodes {
                     countsStore[n] = countObject;
                 }
 
-                results.add(Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), new Object[]{
+                results.add(createArray(new Object[] {
                         createString(StringOperations.encodeRope(source.getKey().getName(), UTF8Encoding.INSTANCE)),
-                        Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), countsStore, countsStore.length)
+                        createArray(countsStore, countsStore.length)
                 }, 2));
             }
 
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), results.toArray(), results.size());
+            return createArray(results.toArray(), results.size());
         }
 
     }

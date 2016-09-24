@@ -174,6 +174,14 @@ def exclusion_file(gem_name)
   data.pretty_inspect
 end
 
+def exclusions_for(name)
+  { setup: { file: { 'excluded-tests.rb' => format(dedent(<<-RUBY), exclusion_file(name)) } } }
+    failures = %s
+    require 'truffle/exclude_rspec_examples'
+    Truffle.exclude_rspec_examples failures
+  RUBY
+end
+
 rails_common =
     deep_merge replacements.fetch(:bundler),
                stubs.fetch(:kernel_gem),
@@ -198,12 +206,13 @@ Truffle::Runner.add_config :actionpack,
                            deep_merge(
                                rails_common,
                                stubs.fetch(:html_sanitizer),
-                               setup: { file: { 'excluded-tests.rb' => format(dedent(<<-RUBY), exclusion_file(:actionpack)),
-                                                  failures = %s
-                                                  require 'truffle/exclude_rspec_examples'
-                                                  Truffle.exclude_rspec_examples failures
-                                                RUBY
-                               } })
+                               exclusions_for(:actionpack))
+
+Truffle::Runner.add_config :railties,
+                           deep_merge(rails_common,
+                                      stubs.fetch(:activesupport_isolation),
+                                      exclusions_for(:railties),
+                                      run: { require: %w[bundler.rb] })
 
 Truffle::Runner.add_config :'concurrent-ruby',
                            setup: { file: { "stub-processor_number.rb" => dedent(<<-RUBY) } },
@@ -235,19 +244,20 @@ Truffle::Runner.add_config :psd,
 
 
 class Truffle::Runner::CIEnvironment
-  def rails_ci
-    declare_options debug:   ['--[no-]debug', 'Run tests with remote debugging enabled.',
-                              STORE_NEW_VALUE, false],
-                    exclude: ['--[no-]exclude', 'Exclude known failing tests',
-                              STORE_NEW_VALUE, true]
+  def rails_ci(has_exclusions: false, skip_test_files: [])
+    options           = {}
+    options[:debug]   = ['-d', '--[no-]debug', 'Run tests with remote debugging enabled.', STORE_NEW_VALUE, false]
+    options[:exclude] = ['--[no-]exclusion', 'Exclude known failing tests', STORE_NEW_VALUE, true] if has_exclusions
 
+    declare_options options
     repository_name 'rails'
 
     use_only_https_git_paths!
 
     has_to_succeed setup
-    set_result run([*%w[--require-pattern test/**/*_test.rb],
-                    *(%w[-r excluded-tests] if option(:exclude)),
+    set_result run([*(['--exclude-pattern', *skip_test_files.join('|')] unless skip_test_files.empty?),
+                    *%w[--require-pattern test/**/*_test.rb],
+                    *(%w[-r excluded-tests] if has_exclusions && option(:exclude)),
                     *(%w[--debug] if option(:debug)),
                     *%w[-- -I test -e nil]])
   end
@@ -255,7 +265,7 @@ end
 
 Truffle::Runner.add_ci_definition :actionpack do
   subdir 'actionpack'
-  rails_ci
+  rails_ci has_exclusions: true
 end
 
 Truffle::Runner.add_ci_definition :activemodel do
@@ -266,6 +276,56 @@ end
 Truffle::Runner.add_ci_definition :activesupport do
   subdir 'activesupport'
   rails_ci
+end
+
+Truffle::Runner.add_ci_definition :railties do
+  subdir 'railties'
+  rails_ci has_exclusions:  true,
+           skip_test_files: %w[
+              test/application/asset_debugging_test.rb
+              test/application/assets_test.rb
+              test/application/bin_setup_test.rb
+              test/application/configuration_test.rb
+              test/application/console_test.rb
+              test/application/generators_test.rb
+              test/application/loading_test.rb
+              test/application/mailer_previews_test.rb
+              test/application/middleware_test.rb
+              test/application/multiple_applications_test.rb
+              test/application/paths_test.rb
+              test/application/rackup_test.rb
+              test/application/rake_test.rb
+              test/application/rendering_test.rb
+              test/application/routing_test.rb
+              test/application/runner_test.rb
+              test/application/test_runner_test.rb
+              test/application/test_test.rb
+              test/application/url_generation_test.rb
+              test/application/configuration/base_test.rb
+              test/application/configuration/custom_test.rb
+              test/application/initializers/frameworks_test.rb
+              test/application/initializers/hooks_test.rb
+              test/application/initializers/i18n_test.rb
+              test/application/initializers/load_path_test.rb
+              test/application/initializers/notifications_test.rb
+              test/application/middleware/cache_test.rb
+              test/application/middleware/cookies_test.rb
+              test/application/middleware/exceptions_test.rb
+              test/application/middleware/remote_ip_test.rb
+              test/application/middleware/sendfile_test.rb
+              test/application/middleware/session_test.rb
+              test/application/middleware/static_test.rb
+              test/application/rack/logger_test.rb
+              test/application/rake/dbs_test.rb
+              test/application/rake/migrations_test.rb
+              test/application/rake/notes_test.rb
+              test/railties/engine_test.rb
+              test/railties/generators_test.rb
+              test/railties/mounted_engine_test.rb
+              test/railties/railtie_test.rb
+              test/fixtures
+              test/rails_info_controller_test
+              test/commands/console_test]
 end
 
 Truffle::Runner.add_ci_definition :algebrick do

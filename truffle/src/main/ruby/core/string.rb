@@ -133,7 +133,7 @@ class String
     case pattern
       when Regexp
         match_data = pattern.search_region(self, 0, bytesize, true)
-        Regexp.last_match = match_data
+        Truffle.invoke_primitive(:regexp_set_last_match, match_data)
         return match_data.begin(0) if match_data
       when String
         raise TypeError, "type mismatch: String given"
@@ -191,7 +191,7 @@ class String
 
     if pattern.kind_of? Regexp
       if m = pattern.match(self)
-        Regexp.last_match = m
+        Truffle.invoke_primitive(:regexp_set_last_match, m)
         return [m.pre_match, m.to_s, m.post_match]
       end
     else
@@ -213,7 +213,7 @@ class String
   def rpartition(pattern)
     if pattern.kind_of? Regexp
       if m = pattern.search_region(self, 0, size, false)
-        Regexp.last_match = m
+        Truffle.invoke_primitive(:regexp_set_last_match, m)
         [m.pre_match, m[0], m.post_match]
       end
     else
@@ -268,14 +268,14 @@ class String
       val.taint if taint
 
       if block_given?
-        Regexp.last_match = match
+        Truffle.invoke_primitive(:regexp_set_last_match, match)
         yield(val)
       else
         ret << val
       end
     end
 
-    Regexp.last_match = last_match
+    Truffle.invoke_primitive(:regexp_set_last_match, last_match)
     return ret
   end
 
@@ -597,75 +597,14 @@ class String
     self
   end
 
-  def sub(pattern, replacement=undefined)
-    # Because of the behavior of $~, this is duplicated from sub! because
-    # if we call sub! from sub, the last_match can't be updated properly.
-    dup = self.dup
-
-    unless valid_encoding?
-      raise ArgumentError, "invalid byte sequence in #{encoding}"
-    end
-
-    if undefined.equal? replacement
-      unless block_given?
-        raise ArgumentError, "method '#{__method__}': given 1, expected 2"
-      end
-      use_yield = true
-      tainted = false
-    else
-      tainted = replacement.tainted?
-      untrusted = replacement.untrusted?
-
-      unless replacement.kind_of?(String)
-        hash = Rubinius::Type.check_convert_type(replacement, Hash, :to_hash)
-        replacement = StringValue(replacement) unless hash
-        tainted ||= replacement.tainted?
-        untrusted ||= replacement.untrusted?
-      end
-      use_yield = false
-    end
-
-    pattern = Rubinius::Type.coerce_to_regexp(pattern, true) unless pattern.kind_of? Regexp
-    match = pattern.match_from(dup, 0)
-
-    Regexp.last_match = match
-
-    ret = byteslice(0, 0) # Empty string and string subclass
-
-    if match
-      ret.append match.pre_match
-
-      if use_yield || hash
-        Regexp.last_match = match
-
-        if use_yield
-          val = yield match.to_s
-        else
-          val = hash[match.to_s]
-        end
-        untrusted = true if val.untrusted?
-        val = val.to_s unless val.kind_of?(String)
-
-        tainted ||= val.tainted?
-
-        ret.append val
-      else
-        replacement.to_sub_replacement(ret, match)
-      end
-
-      ret.append(match.post_match)
-      tainted ||= val.tainted?
-    else
-      return dup
-    end
-
-    ret.taint if tainted
-    ret.untrust if untrusted
-
-    ret
+  def sub(pattern, replacement=undefined, &block)
+    s = dup
+    s.sub!(pattern, replacement, &block)
+    Truffle.invoke_primitive(:regexp_set_last_match, $~)
+    s
   end
 
-  def sub!(pattern, replacement=undefined)
+  def sub!(pattern, replacement=undefined, &block)
     # Because of the behavior of $~, this is duplicated from sub! because
     # if we call sub! from sub, the last_match can't be updated properly.
 
@@ -697,7 +636,8 @@ class String
     pattern = Rubinius::Type.coerce_to_regexp(pattern, true) unless pattern.kind_of? Regexp
     match = pattern.match_from(self, 0)
 
-    Regexp.last_match = match
+    Regexp.set_block_last_match(block, match) if block_given?
+    Truffle.invoke_primitive(:regexp_set_last_match, match)
 
     ret = byteslice(0, 0) # Empty string and string subclass
 
@@ -705,8 +645,6 @@ class String
       ret.append match.pre_match
 
       if use_yield || hash
-        Regexp.last_match = match
-
         duped = dup
         if use_yield
           val = yield match.to_s
@@ -750,7 +688,7 @@ class String
       if one.kind_of? Regexp
         lm = Regexp.last_match
         self[one] = '' if result
-        Regexp.last_match = lm
+        Truffle.invoke_primitive(:regexp_set_last_match, lm)
       else
         self[one] = '' if result
       end
@@ -760,7 +698,7 @@ class String
       if one.kind_of? Regexp
         lm = Regexp.last_match
         self[one, two] = '' if result
-        Regexp.last_match = lm
+        Truffle.invoke_primitive(:regexp_set_last_match, lm)
       else
         self[one, two] = '' if result
       end
@@ -978,113 +916,14 @@ class String
   end
 
 
-  def gsub(pattern, replacement=undefined)
-    # Because of the behavior of $~, this is duplicated from gsub! because
-    # if we call gsub! from gsub, the last_match can't be updated properly.
-
-    unless valid_encoding?
-      raise ArgumentError, "invalid byte sequence in #{encoding}"
-    end
-
-    if undefined.equal? replacement
-      unless block_given?
-        return to_enum(:gsub, pattern, replacement)
-      end
-      use_yield = true
-      tainted = false
-    else
-      tainted = replacement.tainted?
-      untrusted = replacement.untrusted?
-
-      unless replacement.kind_of?(String)
-        hash = Rubinius::Type.check_convert_type(replacement, Hash, :to_hash)
-        replacement = StringValue(replacement) unless hash
-        tainted ||= replacement.tainted?
-        untrusted ||= replacement.untrusted?
-      end
-      use_yield = false
-    end
-
-    pattern = Rubinius::Type.coerce_to_regexp(pattern, true) unless pattern.kind_of? Regexp
-    match = pattern.search_region(self, 0, bytesize, true)
-
-    unless match
-      Regexp.last_match = nil
-    end
-
-    duped = dup
-
-    last_end = 0
-    offset = nil
-
-    last_match = nil
-
-    ret = byteslice(0, 0) # Empty string and string subclass
-    offset = match.byte_begin(0) if match
-
-    while match
-      if str = match.pre_match_from(last_end)
-        ret.append str
-      end
-
-      if use_yield || hash
-        Regexp.last_match = match
-
-        if use_yield
-          val = yield match.to_s
-        else
-          val = hash[match.to_s]
-        end
-        untrusted = true if val.untrusted?
-        val = val.to_s unless val.kind_of?(String)
-
-        tainted ||= val.tainted?
-
-        ret.append val
-
-        if duped != self
-          raise RuntimeError, "string modified"
-        end
-      else
-        replacement.to_sub_replacement(ret, match)
-      end
-
-      tainted ||= val.tainted?
-
-      last_end = match.byte_end(0)
-
-      if match.collapsing?
-        if char = find_character(offset)
-          offset += char.bytesize
-        else
-          offset += 1
-        end
-      else
-        offset = match.byte_end(0)
-      end
-
-      last_match = match
-
-      match = pattern.match_from self, offset
-      break unless match
-
-      offset = match.byte_begin(0)
-    end
-
-    Regexp.last_match = last_match
-
-    str = byteslice(last_end, bytesize-last_end+1)
-    if str
-      ret.append str
-    end
-
-    ret.taint if tainted
-    ret.untrust if untrusted
-
-    ret
+  def gsub(pattern, replacement=undefined, &block)
+    s = dup
+    ret = s.gsub!(pattern, replacement, &block)
+    Truffle.invoke_primitive(:regexp_set_last_match, $~)
+    ret || s
   end
 
-  def gsub!(pattern, replacement=undefined)
+  def gsub!(pattern, replacement=undefined, &block)
     # Because of the behavior of $~, this is duplicated from gsub! because
     # if we call gsub! from gsub, the last_match can't be updated properly.
 
@@ -1116,8 +955,10 @@ class String
     pattern = Rubinius::Type.coerce_to_regexp(pattern, true) unless pattern.kind_of? Regexp
     match = pattern.search_region(self, 0, bytesize, true)
 
+    Regexp.set_block_last_match(block, match) if block_given?
+
     unless match
-      Regexp.last_match = nil
+      Truffle.invoke_primitive(:regexp_set_last_match, nil)
       return nil
     end
 
@@ -1137,7 +978,7 @@ class String
       end
 
       if use_yield || hash
-        Regexp.last_match = match
+        Truffle.invoke_primitive(:regexp_set_last_match, match)
 
         if use_yield
           val = yield match.to_s
@@ -1175,12 +1016,13 @@ class String
       last_match = match
 
       match = pattern.match_from self, offset
+      Regexp.set_block_last_match(block, match) if block_given?
       break unless match
 
       offset = match.byte_begin(0)
     end
 
-    Regexp.last_match = last_match
+    Truffle.invoke_primitive(:regexp_set_last_match, last_match)
 
     str = byteslice(last_end, bytesize-last_end+1)
     if str
@@ -1204,7 +1046,7 @@ class String
              else
                pattern.match self, pos
              end
-    Regexp.propagate_last_match
+    Truffle.invoke_primitive(:regexp_set_last_match, $~)
     result
   end
 
@@ -1551,10 +1393,10 @@ class String
       m = Rubinius::Mirror.reflect self
       start = m.character_to_byte_index start
       if match = str.match_from(self, start)
-        Regexp.last_match = match
+        Truffle.invoke_primitive(:regexp_set_last_match, match)
         return match.begin(0)
       else
-        Regexp.last_match = nil
+        Truffle.invoke_primitive(:regexp_set_last_match, nil)
         return
       end
     end
@@ -1604,7 +1446,7 @@ class String
         Rubinius::Type.compatible_encoding self, sub
 
         match_data = sub.search_region(self, 0, byte_finish, false)
-        Regexp.last_match = match_data
+        Truffle.invoke_primitive(:regexp_set_last_match, match_data)
         return match_data.begin(0) if match_data
 
       else

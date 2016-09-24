@@ -36,7 +36,6 @@ import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
-import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
 
 @CoreClass("Proc")
 public abstract class ProcNodes {
@@ -247,7 +246,7 @@ public abstract class ProcNodes {
                         sourceSection.getSource().getName(), UTF8Encoding.INSTANCE));
 
                 final Object[] objects = new Object[]{file, sourceSection.getStartLine()};
-                return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), objects, objects.length);
+                return createArray(objects, objects.length);
             }
         }
 

@@ -52,11 +52,7 @@ extern "C" {
 
 // Basic types
 
-#ifdef JT_INT_VALUE
-  typedef uintptr_t VALUE;
-#else
-  typedef void *VALUE;
-#endif
+typedef void *VALUE;
 
 typedef VALUE ID;
 
@@ -420,7 +416,7 @@ VALUE rb_class_real(VALUE ruby_class);
 VALUE rb_class_superclass(VALUE ruby_class);
 VALUE rb_class_of(VALUE object);
 VALUE rb_obj_class(VALUE object);
-#define CLASS_OF(object) rb_class_of((VALUE) (object))
+VALUE CLASS_OF(VALUE object);
 VALUE rb_obj_alloc(VALUE ruby_class);
 VALUE rb_class_path(VALUE ruby_class);
 VALUE rb_path2class(const char *string);
@@ -522,7 +518,7 @@ void rb_undef(VALUE module, ID name);
 
 void rb_attr(VALUE ruby_class, ID name, int read, int write, int ex);
 
-typedef VALUE (*rb_alloc_func_t)(VALUE);
+typedef VALUE (*rb_alloc_func_t)(VALUE ruby_class);
 void rb_define_alloc_func(VALUE ruby_class, rb_alloc_func_t alloc_function);
 
 // Mutexes
@@ -679,6 +675,10 @@ VALUE *rb_ruby_verbose_ptr(void);
 
 VALUE *rb_ruby_debug_ptr(void);
 #define ruby_debug (*rb_ruby_debug_ptr())
+
+// Non-standard
+
+NORETURN(void rb_jt_error(const char *message));
 
 #if defined(__cplusplus)
 }

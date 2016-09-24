@@ -85,7 +85,7 @@ public class RubyMessageResolution {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
                 findContextNode = insert(RubyLanguage.INSTANCE.unprotectedCreateFindContextNode());
                 final RubyContext context = RubyLanguage.INSTANCE.unprotectedFindContext(findContextNode);
-                dispatchNode = insert(new DispatchHeadNode(context, true, MissingBehavior.CALL_METHOD_MISSING, DispatchAction.CALL_METHOD));
+                dispatchNode = insert(new DispatchHeadNode(context, true, false, MissingBehavior.CALL_METHOD_MISSING, DispatchAction.CALL_METHOD));
             }
 
             return dispatchNode;
@@ -117,7 +117,7 @@ public class RubyMessageResolution {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
                 findContextNode = insert(RubyLanguage.INSTANCE.unprotectedCreateFindContextNode());
                 final RubyContext context = RubyLanguage.INSTANCE.unprotectedFindContext(findContextNode);
-                dispatchHeadNode = insert(new DispatchHeadNode(context, true, MissingBehavior.CALL_METHOD_MISSING, DispatchAction.CALL_METHOD));
+                dispatchHeadNode = insert(new DispatchHeadNode(context, true, false, MissingBehavior.CALL_METHOD_MISSING, DispatchAction.CALL_METHOD));
             }
 
             return dispatchHeadNode;

@@ -1,8 +1,5 @@
 fails:IO.select blocks for duration of timeout if there are no objects ready for I/O
 fails:IO.select returns immediately all objects that are ready for I/O when timeout is 0
-fails:IO.select returns nil after timeout if there are no objects ready for I/O
-fails:IO.select returns supplied objects when they are ready for I/O
-fails:IO.select leaves out IO objects for which there is no I/O ready
 fails:IO.select returns supplied objects correctly even when monitoring the same object in different arrays
 fails:IO.select invokes to_io on supplied objects that are not IO and returns the supplied objects
 fails:IO.select when passed nil for timeout sleeps forever

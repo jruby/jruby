@@ -10,16 +10,13 @@
 package org.jruby.truffle.language.control;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 
 public class NextNode extends RubyNode {
 
     @Child private RubyNode child;
 
-    public NextNode(RubyContext context, SourceSection sourceSection, RubyNode child) {
-        super(context, sourceSection);
+    public NextNode(RubyNode child) {
         this.child = child;
     }
 

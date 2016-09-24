@@ -145,29 +145,35 @@ public final class ThreadContext {
 
     public final JavaSites sites;
 
-    @SuppressWarnings("deprecated")
+    @SuppressWarnings("deprecation")
     public SecureRandom getSecureRandom() {
         SecureRandom secureRandom = this.secureRandom;
-        if (secureRandom == null) {
-            if (tryPreferredPRNG) {
-                try {
-                    secureRandom = SecureRandom.getInstance(Options.PREFERRED_PRNG.load());
-                } catch (Exception e) {
-                    tryPreferredPRNG = false;
-                }
+
+        // Try preferred PRNG, which defaults to NativePRNGNonBlocking
+        if (secureRandom == null && tryPreferredPRNG) {
+            try {
+                secureRandom = SecureRandom.getInstance(Options.PREFERRED_PRNG.load());
+            } catch (Exception e) {
+                tryPreferredPRNG = false;
             }
-            if (secureRandom == null) {
-                if (trySHA1PRNG) {
-                    try {
-                        secureRandom = SecureRandom.getInstance("SHA1PRNG");
-                    } catch (Exception e) {
-                        trySHA1PRNG = false;
-                    }
-                }
-                secureRandom = new SecureRandom();
-            }
-            this.secureRandom = secureRandom;
         }
+
+        // Try SHA1PRNG
+        if (secureRandom == null && trySHA1PRNG) {
+            try {
+                secureRandom = SecureRandom.getInstance("SHA1PRNG");
+            } catch (Exception e) {
+                trySHA1PRNG = false;
+            }
+        }
+
+        // Just let JDK do whatever it does
+        if (secureRandom == null) {
+            secureRandom = new SecureRandom();
+        }
+
+        this.secureRandom = secureRandom;
+
         return secureRandom;
     }
 

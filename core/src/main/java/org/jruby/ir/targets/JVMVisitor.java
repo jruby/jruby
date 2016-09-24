@@ -1455,42 +1455,7 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void LoadLocalVarInstr(LoadLocalVarInstr loadlocalvarinstr) {
-        IRBytecodeAdapter m = jvmMethod();
-        jvmLoadLocal(DYNAMIC_SCOPE);
-        int depth = loadlocalvarinstr.getLocalVar().getScopeDepth();
-        int location = loadlocalvarinstr.getLocalVar().getLocation();
-        // TODO if we can avoid loading nil unnecessarily, it could be a big win
-        OUTER: switch (depth) {
-            case 0:
-                switch (location) {
-                    case 0:
-                        m.pushNil();
-                        m.adapter.invokevirtual(p(DynamicScope.class), "getValueZeroDepthZeroOrNil", sig(IRubyObject.class, IRubyObject.class));
-                        break OUTER;
-                    case 1:
-                        m.pushNil();
-                        m.adapter.invokevirtual(p(DynamicScope.class), "getValueOneDepthZeroOrNil", sig(IRubyObject.class, IRubyObject.class));
-                        break OUTER;
-                    case 2:
-                        m.pushNil();
-                        m.adapter.invokevirtual(p(DynamicScope.class), "getValueTwoDepthZeroOrNil", sig(IRubyObject.class, IRubyObject.class));
-                        break OUTER;
-                    case 3:
-                        m.pushNil();
-                        m.adapter.invokevirtual(p(DynamicScope.class), "getValueThreeDepthZeroOrNil", sig(IRubyObject.class, IRubyObject.class));
-                        break OUTER;
-                    default:
-                        m.adapter.pushInt(location);
-                        m.pushNil();
-                        m.adapter.invokevirtual(p(DynamicScope.class), "getValueDepthZeroOrNil", sig(IRubyObject.class, int.class, IRubyObject.class));
-                        break OUTER;
-                }
-            default:
-                m.adapter.pushInt(location);
-                m.adapter.pushInt(depth);
-                m.pushNil();
-                m.adapter.invokevirtual(p(DynamicScope.class), "getValueOrNil", sig(IRubyObject.class, int.class, int.class, IRubyObject.class));
-        }
+        LocalVariable(loadlocalvarinstr.getLocalVar());
         jvmStoreLocal(loadlocalvarinstr.getResult());
     }
 
@@ -2397,12 +2362,35 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void LocalVariable(LocalVariable localvariable) {
-        // CON FIXME: This isn't as efficient as it could be, but we should not see these in optimized JIT scopes
+        IRBytecodeAdapter m = jvmMethod();
         jvmLoadLocal(DYNAMIC_SCOPE);
-        jvmAdapter().ldc(localvariable.getOffset());
-        jvmAdapter().ldc(localvariable.getScopeDepth());
-        jvmMethod().pushNil();
-        jvmAdapter().invokevirtual(p(DynamicScope.class), "getValueOrNil", sig(IRubyObject.class, int.class, int.class, IRubyObject.class));
+        int depth = localvariable.getScopeDepth();
+        int location = localvariable.getLocation();
+        OUTER: switch (depth) {
+            case 0:
+                switch (location) {
+                    case 0:
+                        m.adapter.invokevirtual(p(DynamicScope.class), "getValueZeroDepthZero", sig(IRubyObject.class));
+                        break OUTER;
+                    case 1:
+                        m.adapter.invokevirtual(p(DynamicScope.class), "getValueOneDepthZero", sig(IRubyObject.class));
+                        break OUTER;
+                    case 2:
+                        m.adapter.invokevirtual(p(DynamicScope.class), "getValueTwoDepthZero", sig(IRubyObject.class));
+                        break OUTER;
+                    case 3:
+                        m.adapter.invokevirtual(p(DynamicScope.class), "getValueThreeDepthZero", sig(IRubyObject.class));
+                        break OUTER;
+                    default:
+                        m.adapter.pushInt(location);
+                        m.adapter.invokevirtual(p(DynamicScope.class), "getValueDepthZero", sig(IRubyObject.class, int.class));
+                        break OUTER;
+                }
+            default:
+                m.adapter.pushInt(location);
+                m.adapter.pushInt(depth);
+                m.adapter.invokevirtual(p(DynamicScope.class), "getValue", sig(IRubyObject.class, int.class, int.class));
+        }
     }
 
     @Override
