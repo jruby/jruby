@@ -93,6 +93,8 @@ describe "File.dirname" do
       File.dirname("\\\\foo\\bar\\baz").should == "\\\\foo\\bar"
       File.dirname("\\\\foo").should =="\\\\foo"
       File.dirname("\\\\foo\\bar").should =="\\\\foo\\bar"
+      File.dirname("\\\\\\foo\\bar").should =="\\\\foo\\bar"
+      File.dirname("\\\\\\foo").should =="\\\\foo"
     end
 
     it "returns the return all the components of filename except the last one (forward_slash)" do

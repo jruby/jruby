@@ -653,10 +653,13 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     public static String dirname(ThreadContext context, String jfilename) {
         final Ruby runtime = context.runtime;
         final String separator = runtime.getClass("File").getConstant("SEPARATOR").toString();
+        final char separatorChar = separator.charAt(0);
         String altSeparator = null;
+        char altSeparatorChar = '\0';
         final IRubyObject rbAltSeparator = runtime.getClass("File").getConstant("ALT_SEPARATOR");
         if (rbAltSeparator != context.nil) {
           altSeparator = rbAltSeparator.toString();
+          altSeparatorChar = altSeparator.charAt(0);
         }
         String name = jfilename;
         if (altSeparator != null) {
@@ -664,6 +667,18 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         }
         int minPathLength = 1;
         boolean trimmedSlashes = false;
+
+        boolean startsWithSeparator = false;
+
+        if (!name.isEmpty()) {
+          startsWithSeparator = name.charAt(0) == separatorChar;
+        }
+
+        boolean startsWithUNCOnWindows = Platform.IS_WINDOWS && startsWith(name, separatorChar, separatorChar);
+
+        if (startsWithUNCOnWindows) {
+          minPathLength = 2;
+        }
 
         boolean startsWithDriveLetterOnWindows = startsWithDriveLetterOnWindows(name);
 
@@ -686,7 +701,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             return name.substring(0, start) + path;
         }
 
-        while (name.length() > minPathLength && name.charAt(name.length() - 1) == separator.charAt(0)) {
+        while (name.length() > minPathLength && name.charAt(name.length() - 1) == separatorChar) {
             trimmedSlashes = true;
             name = name.substring(0, name.length() - 1);
         }
@@ -711,7 +726,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 }
             }
             if (index == 0) {
-                return separator;
+                return jfilename.substring(0, 1);
             }
 
             if (startsWithDriveLetterOnWindows && index == 2) {
@@ -720,26 +735,38 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 index++;
             }
 
-            if (Platform.IS_WINDOWS) {
-              if (startsWith(jfilename, separator.charAt(0), separator.charAt(0))) {
-                  index = jfilename.length();
-                  String[] split = jfilename.split(Pattern.quote(separator));
-                  if (split[ split.length - 1 ].indexOf('.') > -1) {
-                      index = jfilename.lastIndexOf(separator);
-                  }
-
+            if (startsWithUNCOnWindows) {
+              index = jfilename.length();
+              String[] split = name.split(Pattern.quote(separator));
+              int pathSectionCount = 0;
+              for (int i = 0; i < split.length; i++) {
+                if (!split[i].isEmpty()) {
+                  pathSectionCount += 1;
+                }
+              }
+              if (pathSectionCount > 2) {
+                  index = name.lastIndexOf(separator);
               }
             }
-
             result = jfilename.substring(0, index);
+        }
 
+        // trim leading slashes
+        if (startsWithSeparator && result.length() > minPathLength) {
+          while (
+            result.length() > minPathLength &&
+            (result.charAt(minPathLength) == separatorChar ||
+              (altSeparator != null && result.charAt(minPathLength) == altSeparatorChar))
+          ) {
+            result = result.substring(1, result.length());
+          }
         }
 
         char endChar;
         // trim trailing slashes
         while (result.length() > minPathLength) {
             endChar = result.charAt(result.length() - 1);
-            if (endChar == separator.charAt(0)) {
+            if (endChar == separatorChar || (altSeparator != null && endChar == altSeparatorChar)) {
                 result = result.substring(0, result.length() - 1);
             } else {
                 break;
