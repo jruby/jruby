@@ -697,11 +697,11 @@ VALUE rb_yield(VALUE value) {
 // Instance variables
 
 VALUE rb_iv_get(VALUE object, const char *name) {
-  return truffle_read(object, rb_intern(name));
+  return truffle_read(object, name);
 }
 
 VALUE rb_iv_set(VALUE object, const char *name, VALUE value) {
-  truffle_write(object, rb_intern(name), value);
+  truffle_write(object, name, value);
   return value;
 }
 
