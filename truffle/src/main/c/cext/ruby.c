@@ -1110,3 +1110,11 @@ VALUE *rb_ruby_debug_ptr(void) {
 void rb_jt_error(const char *message) {
   truffle_invoke(RUBY_CEXT, "rb_jt_error", rb_str_new_cstr(message));
 }
+
+void *rb_jt_to_native_handle(VALUE managed) {
+  (void *)truffle_invoke_l(RUBY_CEXT, "rb_jt_to_native_handle", managed);
+}
+
+VALUE rb_jt_from_native_handle(void *native) {
+  return (VALUE) truffle_invoke(RUBY_CEXT, "rb_jt_from_native_handle", (long) native);
+}

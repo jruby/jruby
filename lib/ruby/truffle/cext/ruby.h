@@ -697,6 +697,9 @@ VALUE *rb_ruby_debug_ptr(void);
 
 NORETURN(void rb_jt_error(const char *message));
 
+void *rb_jt_to_native_handle(VALUE managed);
+VALUE rb_jt_from_native_handle(void *native);
+
 #if defined(__cplusplus)
 }
 #endif

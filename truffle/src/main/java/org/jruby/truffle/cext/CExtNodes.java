@@ -45,6 +45,10 @@ import org.jruby.truffle.language.constants.LookupConstantNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.objects.MetaClassNode;
+import org.jruby.util.unsafe.UnsafeHolder;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @CoreClass("Truffle::CExt")
 public class CExtNodes {
@@ -394,6 +398,48 @@ public class CExtNodes {
         @Specialization
         public TypedDataAdapter adaptRTypedData(DynamicObject object) {
             return new TypedDataAdapter(object);
+        }
+
+    }
+
+    protected static final Object handlesLock = new Object();
+    protected static final Map<DynamicObject, Long> toNative = new HashMap<>();
+    protected static final Map<Long, DynamicObject> toManaged = new HashMap<>();
+
+    @CoreMethod(names = "rb_jt_to_native_handle", isModuleFunction = true, required = 1)
+    public abstract static class ToNativeHandleNode extends CoreMethodArrayArgumentsNode {
+
+        @TruffleBoundary
+        @Specialization
+        public long toNativeHandle(DynamicObject object) {
+            synchronized (handlesLock) {
+                return toNative.computeIfAbsent(object, (k) -> {
+                    final long handle = UnsafeHolder.U.allocateMemory(Long.BYTES);
+                    UnsafeHolder.U.putLong(handle, 0xdeadbeef);
+                    System.err.printf("native handle 0x%x -> %s%n", handle, object);
+                    toManaged.put(handle, object);
+                    return handle;
+                });
+            }
+        }
+
+    }
+
+    @CoreMethod(names = "rb_jt_from_native_handle", isModuleFunction = true, required = 1)
+    public abstract static class FromNativeHandleNode extends CoreMethodArrayArgumentsNode {
+
+        @TruffleBoundary
+        @Specialization
+        public DynamicObject fromNativeHandle(long handle) {
+            synchronized (handlesLock) {
+                final DynamicObject object = toManaged.get(handle);
+
+                if (object == null) {
+                    throw new UnsupportedOperationException();
+                }
+
+                return object;
+            }
         }
 
     }
