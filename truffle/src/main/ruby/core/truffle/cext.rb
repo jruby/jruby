@@ -376,6 +376,14 @@ module Truffle::CExt
     raise 'not implemented'
   end
 
+  def rb_iv_set_hidden(object, name, value)
+    object.instance_variable_set :"@__#{name}", value
+  end
+
+  def rb_iv_get_hidden(object, name)
+    object.instance_variable_get(:"@__#{name}")
+  end
+
   def rb_define_class_under(mod, name, superclass)
     if mod.const_defined?(name, false)
       current_class = mod.const_get(name, false)
