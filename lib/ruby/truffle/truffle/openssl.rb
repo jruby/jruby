@@ -11,9 +11,10 @@ if ENV['JRUBY_TRUFFLE_SHIM_OPENSSL']
   # explicitly by loading openssl-stubs which makes it look like
   # openssl was loaded.
 
-  load_error = LoadError.new("cannot load such file -- openssl")
+  load_error = LoadError.new('cannot load such file -- openssl')
   load_error.instance_variable_set :@path, 'openssl'
   raise load_error
 else
-  require_relative '../openssl/openssl'
+  $LOAD_PATH.unshift File.expand_path('../../openssl', __FILE__)
+  require_relative '../openssl/openssl.rb'
 end
