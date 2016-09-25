@@ -700,7 +700,7 @@ VALUE rb_iv_set(VALUE object, const char *name, VALUE value) {
   if (name[0] == '@') {
     truffle_write(object, name, value);
   } else {
-    truffle_invoke(RUBY_CEXT, "rb_iv_set_hidden", rb_str_new_cstr(name), value);
+    truffle_invoke(RUBY_CEXT, "rb_iv_set_hidden", object, rb_str_new_cstr(name), value);
   }
 
   return value;
@@ -710,7 +710,7 @@ VALUE rb_iv_get(VALUE object, const char *name) {
   if (name[0] == '@') {
     return truffle_read(object, name);
   } else {
-    return truffle_invoke(RUBY_CEXT, "rb_iv_get_hidden", rb_str_new_cstr(name));
+    return truffle_invoke(RUBY_CEXT, "rb_iv_get_hidden", object, rb_str_new_cstr(name));
   }
 }
 
