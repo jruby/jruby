@@ -74,6 +74,9 @@ public abstract class LookupForExistingModuleNode extends RubyNode {
         if (constant != null && !constant.isVisibleTo(getContext(), LexicalScope.NONE, lexicalParent)) {
             throw new RaiseException(getContext().getCoreExceptions().nameErrorPrivateConstant(lexicalParent, name, this));
         }
+        if(constant != null && constant.isDeprecated()){
+            warnDeprecatedConstant(name);
+        }
         return constant;
     }
 
@@ -83,6 +86,11 @@ public abstract class LookupForExistingModuleNode extends RubyNode {
             requireNode = insert(RequireNode.create());
         }
         return requireNode;
+    }
+
+    @TruffleBoundary
+    private void warnDeprecatedConstant(String name) {
+        getContext().getJRubyRuntime().getWarnings().warn("constant " + name + " is deprecated");
     }
 
 }

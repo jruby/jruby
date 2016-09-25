@@ -50,6 +50,9 @@ public abstract class LookupConstantWithLexicalScopeNode extends RubyNode implem
         if (!isVisible) {
             throw new RaiseException(coreExceptions().nameErrorPrivateConstant(getModule(), name, this));
         }
+        if(constant != null && constant.isDeprecated()){
+            warnDeprecatedConstant(name);
+        }
         return constant;
     }
 
@@ -73,6 +76,11 @@ public abstract class LookupConstantWithLexicalScopeNode extends RubyNode implem
 
     protected boolean isVisible(RubyConstant constant) {
         return constant == null || constant.isVisibleTo(getContext(), lexicalScope, getModule());
+    }
+
+    @TruffleBoundary
+    private void warnDeprecatedConstant(String name) {
+        getContext().getJRubyRuntime().getWarnings().warn("constant " + name + " is deprecated");
     }
 
 }

@@ -74,7 +74,15 @@ public abstract class LookupConstantNode extends RubyNode implements LookupConst
         if (!isVisible) {
             throw new RaiseException(coreExceptions().nameErrorPrivateConstant(module, name, this));
         }
+        if(constant != null && constant.isDeprecated()){
+            warnDeprecatedConstant(name);
+        }
         return constant;
+    }
+
+    @TruffleBoundary
+    private void warnDeprecatedConstant(String name) {
+        getContext().getJRubyRuntime().getWarnings().warn("constant " + name + " is deprecated");
     }
 
     public Assumption getUnmodifiedAssumption(DynamicObject module) {
@@ -89,6 +97,9 @@ public abstract class LookupConstantNode extends RubyNode implements LookupConst
 
         if (!isVisible) {
             throw new RaiseException(coreExceptions().nameErrorPrivateConstant(module, name, this));
+        }
+        if(constant != null && constant.isDeprecated()){
+            warnDeprecatedConstant(name);
         }
         return constant;
     }

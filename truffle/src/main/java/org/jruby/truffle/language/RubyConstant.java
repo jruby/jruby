@@ -20,13 +20,15 @@ public class RubyConstant {
     private final Object value;
     private final boolean isPrivate;
     private final boolean autoload;
+    private final boolean isDeprecated;
 
-    public RubyConstant(DynamicObject declaringModule, Object value, boolean isPrivate, boolean autoload) {
+    public RubyConstant(DynamicObject declaringModule, Object value, boolean isPrivate, boolean autoload, boolean isDeprecated) {
         assert RubyGuards.isRubyModule(declaringModule);
         this.declaringModule = declaringModule;
         this.value = value;
         this.isPrivate = isPrivate;
         this.autoload = autoload;
+        this.isDeprecated = isDeprecated;
     }
 
     public DynamicObject getDeclaringModule() {
@@ -41,11 +43,23 @@ public class RubyConstant {
         return isPrivate;
     }
 
+    public boolean isDeprecated() {
+        return isDeprecated;
+    }
+
     public RubyConstant withPrivate(boolean isPrivate) {
         if (isPrivate == this.isPrivate) {
             return this;
         } else {
-            return new RubyConstant(declaringModule, value, isPrivate, autoload);
+            return new RubyConstant(declaringModule, value, isPrivate, autoload, isDeprecated);
+        }
+    }
+
+    public RubyConstant withDeprecated() {
+        if (this.isDeprecated()) {
+            return this;
+        } else {
+            return new RubyConstant(declaringModule, value, isPrivate, autoload, true);
         }
     }
 
