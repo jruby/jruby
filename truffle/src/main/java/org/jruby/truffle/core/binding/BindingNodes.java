@@ -45,7 +45,9 @@ import org.jruby.truffle.language.threadlocal.ThreadLocalObject;
 import org.jruby.truffle.parser.Translator;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 @CoreClass("Binding")
 public abstract class BindingNodes {
@@ -350,7 +352,7 @@ public abstract class BindingNodes {
 
         @TruffleBoundary
         public static DynamicObject listLocalVariables(RubyContext context, Frame frame) {
-            final List<Object> names = new ArrayList<>();
+            final Set<Object> names = new LinkedHashSet<>();
             while (frame != null) {
                 for (FrameSlot slot : frame.getFrameDescriptor().getSlots()) {
                     if (slot.getIdentifier() instanceof String &&
