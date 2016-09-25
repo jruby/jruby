@@ -12,7 +12,10 @@ package org.jruby.truffle.core.binding;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.Cached;
+import com.oracle.truffle.api.dsl.CreateCast;
 import com.oracle.truffle.api.dsl.ImportStatic;
+import com.oracle.truffle.api.dsl.NodeChild;
+import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.Frame;
 import com.oracle.truffle.api.frame.FrameDescriptor;
@@ -25,9 +28,12 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.builtins.CoreMethodNode;
 import org.jruby.truffle.builtins.UnaryCoreMethodNode;
 import org.jruby.truffle.core.array.ArrayHelpers;
+import org.jruby.truffle.core.cast.NameToJavaStringNodeGen;
 import org.jruby.truffle.language.RubyGuards;
+import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.locals.ReadFrameSlotNode;
@@ -86,7 +92,10 @@ public abstract class BindingNodes {
         assert RubyGuards.isRubySymbol(symbol);
 
         final String identifier = Layouts.SYMBOL.getString(symbol);
+        return findFrameSlotOrNull(binding, identifier);
+    }
 
+    public static FrameSlotAndDepth findFrameSlotOrNull(DynamicObject binding, String identifier) {
         int depth = 0;
         MaterializedFrame frame = Layouts.BINDING.getFrame(binding);
 
@@ -132,32 +141,34 @@ public abstract class BindingNodes {
 
     @ImportStatic(BindingNodes.class)
     @CoreMethod(names = "local_variable_defined?", required = 1)
-    public abstract static class LocalVariableDefinedNode extends CoreMethodArrayArgumentsNode {
+    @NodeChildren({
+        @NodeChild(type = RubyNode.class, value = "binding"),
+        @NodeChild(type = RubyNode.class, value = "name")
+    })
+    public abstract static class LocalVariableDefinedNode extends CoreMethodNode {
 
-        private final DynamicObject dollarUnderscore;
-
-        public LocalVariableDefinedNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            dollarUnderscore = getSymbol("$_");
+        @CreateCast("name")
+        public RubyNode coerceToString(RubyNode name) {
+            return NameToJavaStringNodeGen.create(name);
         }
 
         @TruffleBoundary
-        @Specialization(guards = {"isRubySymbol(symbol)", "!isLastLine(symbol)"})
-        public boolean localVariableDefinedUncached(DynamicObject binding, DynamicObject symbol) {
-            final FrameSlotAndDepth frameSlot = findFrameSlotOrNull(binding, symbol);
+        @Specialization(guards = "!isLastLine(name)")
+        public boolean localVariableDefinedUncached(DynamicObject binding, String name) {
+            final FrameSlotAndDepth frameSlot = findFrameSlotOrNull(binding, name);
             return frameSlot != null;
         }
 
         @TruffleBoundary
-        @Specialization(guards = {"isRubySymbol(symbol)", "isLastLine(symbol)"})
-        public Object localVariableDefinedLastLine(DynamicObject binding, DynamicObject symbol) {
+        @Specialization(guards = "isLastLine(name)")
+        public Object localVariableDefinedLastLine(DynamicObject binding, String name) {
             final MaterializedFrame frame = Layouts.BINDING.getFrame(binding);
-            final FrameSlot frameSlot = frame.getFrameDescriptor().findFrameSlot(Layouts.SYMBOL.getString(symbol));
+            final FrameSlot frameSlot = frame.getFrameDescriptor().findFrameSlot(name);
             return frameSlot != null;
         }
 
-        protected boolean isLastLine(DynamicObject symbol) {
-            return symbol == dollarUnderscore;
+        protected boolean isLastLine(String name) {
+            return "$_".equals(name);
         }
 
     }
