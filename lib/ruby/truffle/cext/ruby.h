@@ -32,6 +32,7 @@ extern "C" {
 // Support
 
 #define RUBY_CEXT (void *)truffle_import_cached("ruby_cext")
+#define MUST_INLINE __attribute__((always_inline))
 
 // Configuration
 
@@ -345,7 +346,18 @@ VALUE rb_str_new_cstr(const char *string);
 VALUE rb_str_cat(VALUE string, const char *to_concat, long length);
 VALUE rb_str_cat2(VALUE string, const char *to_concat);
 VALUE rb_str_to_str(VALUE string);
-VALUE rb_string_value(volatile VALUE *value_pointer);
+
+MUST_INLINE VALUE rb_string_value(VALUE *value_pointer) {
+  VALUE value = *value_pointer;
+
+  if (!RB_TYPE_P(value, T_STRING)) {
+    value = rb_str_to_str(value);
+    *value_pointer = value;
+  }
+
+  return value;
+}
+
 #define StringValue(value) rb_string_value(&(value))
 #define SafeStringValue StringValue
 char *rb_string_value_ptr(volatile VALUE* value_pointer);
@@ -432,7 +444,7 @@ void rb_warning(const char *fmt, ...);
 
 int rb_scan_args(int argc, VALUE *argv, const char *format, ...);
 
-__attribute__((always_inline)) int rb_jt_scan_args_02(int argc, VALUE *argv, VALUE *v1, VALUE *v2) {
+MUST_INLINE int rb_jt_scan_args_02(int argc, VALUE *argv, VALUE *v1, VALUE *v2) {
   if (argc >= 1) *v1 = argv[0];
   if (argc >= 2) *v2 = argv[1];
   return argc;

@@ -385,17 +385,6 @@ VALUE rb_str_to_str(VALUE string) {
   return (VALUE) truffle_invoke((void *)string, "to_str");
 }
 
-VALUE rb_string_value(volatile VALUE *value_pointer) {
-  VALUE value = *value_pointer;
-  
-  if (!RB_TYPE_P(value, T_STRING)) {
-    value = rb_str_to_str(value);
-    *value_pointer = value;
-  }
-  
-  return value;
-}
-
 char *rb_string_value_ptr(volatile VALUE* value_pointer) {
   VALUE string = rb_string_value(value_pointer);
   return RSTRING_PTR(string);
