@@ -102,6 +102,8 @@ module Truffle::CExt
     case type
       when T_STRING
         value.is_a?(String)
+      when T_FILE
+        value.is_a?(File)
       else
         raise 'unknown type'
     end
