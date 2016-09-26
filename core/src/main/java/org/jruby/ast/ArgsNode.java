@@ -61,7 +61,6 @@ public class ArgsNode extends Node {
     protected final ArgumentNode restArgNode;
     private final KeywordRestArgNode keyRest;
     private final BlockArgNode blockArgNode;
-    private ListNode blockLocalVariables = null;
 
     private static final Node[] NO_ARGS = new Node[] {};
     /**
@@ -271,13 +270,5 @@ public class ArgsNode extends Node {
             }
         }
         return count;
-    }
-
-    public ListNode getBlockLocalVariables() {
-        return blockLocalVariables;
-    }
-
-    public void setBlockLocalVariables(ListNode blockLocalVariables) {
-        this.blockLocalVariables = blockLocalVariables;
     }
 }

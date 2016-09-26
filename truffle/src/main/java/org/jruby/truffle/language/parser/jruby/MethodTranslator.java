@@ -132,12 +132,6 @@ public class MethodTranslator extends BodyTranslator {
 
         parentSourceSection.push(sourceSection);
         try {
-            if (argsNode.getBlockLocalVariables() != null && !argsNode.getBlockLocalVariables().isEmpty()) {
-                for (org.jruby.ast.Node var : argsNode.getBlockLocalVariables().children()) {
-                    environment.declareVar(((INameNode) var).getName());
-                }
-            }
-
             body = translateNodeOrNil(sourceSection, bodyNode);
 
             if (context.getOptions().CHAOS) {
