@@ -308,6 +308,10 @@ module Truffle::CExt
     raise 'not implemented'
   end
 
+  def rb_string_value_cstr_check(string)
+    !string.include?("\0")
+  end
+
   def rb_String(value)
     String(value)
   end

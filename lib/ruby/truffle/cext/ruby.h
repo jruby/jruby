@@ -371,8 +371,14 @@ MUST_INLINE char *rb_string_value_ptr(volatile VALUE* value_pointer) {
 }
 
 MUST_INLINE char *rb_string_value_cstr(volatile VALUE* value_pointer) {
-  rb_jt_error("rb_string_value_cstr not implemented");
-  abort();
+  VALUE string = rb_string_value(value_pointer);
+
+  if (!truffle_invoke_b(RUBY_CEXT, "rb_string_value_cstr_check", string)) {
+    rb_jt_error("rb_string_value_cstr failure case not implemented");
+    abort();
+  }
+
+  return RSTRING_PTR(string);
 }
 
 #define StringValue(value) rb_string_value(&(value))
