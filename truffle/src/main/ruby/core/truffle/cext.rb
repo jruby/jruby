@@ -100,6 +100,8 @@ module Truffle::CExt
     # that puts never seen cases behind a transfer
     
     case type
+      when T_SYMBOL
+        value.is_a?(Symbol)
       when T_STRING
         value.is_a?(String)
       when T_FILE
