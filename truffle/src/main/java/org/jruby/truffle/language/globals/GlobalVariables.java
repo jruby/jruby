@@ -38,14 +38,7 @@ public class GlobalVariables {
 
     @TruffleBoundary
     public GlobalVariableStorage getStorage(String key) {
-        final GlobalVariableStorage currentStorage = variables.get(key);
-        if (currentStorage == null) {
-            final GlobalVariableStorage newStorage = new GlobalVariableStorage(defaultValue);
-            final GlobalVariableStorage prevStorage = variables.putIfAbsent(key, newStorage);
-            return (prevStorage == null) ? newStorage : prevStorage;
-        } else {
-            return currentStorage;
-        }
+        return variables.computeIfAbsent(key, k -> new GlobalVariableStorage(defaultValue));
     }
 
     public GlobalVariableStorage put(String key, Object value) {
