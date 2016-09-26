@@ -350,10 +350,6 @@ module Truffle::CExt
     $VERBOSE
   end
 
-  def rb_scan_args
-    raise 'not implemented'
-  end
-
   def rb_yield(value)
     block = get_block
     block.call(value)

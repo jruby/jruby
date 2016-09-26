@@ -207,7 +207,7 @@ ossl_dh_initialize(int argc, VALUE *argv, VALUE self)
     VALUE arg, gen;
 
     GetPKey(self, pkey);
-    if(rb_scan_args(argc, argv, "02", &arg, &gen) == 0) {
+    if(rb_jt_scan_args_02(argc, argv, &arg, &gen) == 0) {
       dh = DH_new();
     }
     else if (FIXNUM_P(arg)) {

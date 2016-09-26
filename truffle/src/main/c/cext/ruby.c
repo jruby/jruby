@@ -647,7 +647,8 @@ void rb_warning(const char *format, ...) {
 }
 
 int rb_scan_args(int argc, VALUE *argv, const char *format, ...) {
-  return truffle_invoke_i(RUBY_CEXT, "rb_scan_args", argc, argv, format /*, where to get args? */);
+  rb_jt_error("generic rb_scan_args not implemented - use a specialisation such as rb_jt_scan_args_02");
+  abort();
 }
 
 // Calls

@@ -432,6 +432,14 @@ void rb_warning(const char *fmt, ...);
 
 int rb_scan_args(int argc, VALUE *argv, const char *format, ...);
 
+__attribute__((always_inline)) int rb_jt_scan_args_02(int argc, VALUE *argv, VALUE *v1, VALUE *v2) {
+  if (argc >= 1) *v1 = argv[0];
+  if (argc >= 2) *v2 = argv[1];
+  return argc;
+}
+
+int rb_scan_args(int argc, VALUE *argv, const char *format, ...);
+
 // Calls
 
 int rb_respond_to(VALUE object, ID name);

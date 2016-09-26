@@ -707,6 +707,7 @@ module Commands
       ll = File.join(File.dirname(out), File.basename(src, '.*') + '.ll')
 
       clang "-I#{SULONG_HOME}/include", '-Ilib/ruby/truffle/cext', '-S', '-emit-llvm', *config_cflags, *clang_opts, src, '-o', ll
+      llvm_opt '-S', '-always-inline', ll, '-o', ll
       llvm_opt '-S', '-mem2reg', ll, '-o', ll
 
       lls.push ll
