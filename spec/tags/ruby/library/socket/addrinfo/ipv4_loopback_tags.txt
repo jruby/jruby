@@ -1,1 +1,0 @@
-fails:Addrinfo#ipv4_loopback? for a unix socket returns false

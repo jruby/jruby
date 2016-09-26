@@ -122,6 +122,12 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     plugin :jar, '2.6'
 
     rules = { :requireMavenVersion => { :version => '[3.3.0,)' } }
+    unless model.version =~ /-SNAPSHOT/
+       rules[:requireReleaseDeps] = { :message => 'No Snapshots Allowed!' }
+    end
+    plugin :enforcer, '1.4' do
+      execute_goal :enforce, :rules => rules
+    end
 
     plugin :compiler, '3.3'
     plugin :shade, '2.4.3'
@@ -270,12 +276,6 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
   end
 
   profile 'release' do
-    plugin :enforcer, '1.4' do
-      execute_goal :enforce, :rules => {
-          requireMavenVersion: { :version => '[3.3.0,)' },
-          requireReleaseDeps: { :message => 'No Snapshots Allowed!' }
-      }
-    end
     modules [ 'truffle', 'test', 'maven' ]
     properties 'invoker.skip' => true
   end

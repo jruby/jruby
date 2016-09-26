@@ -261,6 +261,24 @@ DO NOT MODIFIY - GENERATED CODE
           <version>2.6</version>
         </plugin>
         <plugin>
+          <artifactId>maven-enforcer-plugin</artifactId>
+          <version>1.4</version>
+          <executions>
+            <execution>
+              <goals>
+                <goal>enforce</goal>
+              </goals>
+              <configuration>
+                <rules>
+                  <requireMavenVersion>
+                    <version>[3.3.0,)</version>
+                  </requireMavenVersion>
+                </rules>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
+        <plugin>
           <artifactId>maven-compiler-plugin</artifactId>
           <version>3.3</version>
         </plugin>
@@ -724,31 +742,6 @@ DO NOT MODIFIY - GENERATED CODE
     </profile>
     <profile>
       <id>release</id>
-      <build>
-        <plugins>
-          <plugin>
-            <artifactId>maven-enforcer-plugin</artifactId>
-            <version>1.4</version>
-            <executions>
-              <execution>
-                <goals>
-                  <goal>enforce</goal>
-                </goals>
-                <configuration>
-                  <rules>
-                    <requireMavenVersion>
-                      <version>[3.3.0,)</version>
-                    </requireMavenVersion>
-                    <requireReleaseDeps>
-                      <message>No Snapshots Allowed!</message>
-                    </requireReleaseDeps>
-                  </rules>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
       <modules>
         <module>truffle</module>
         <module>test</module>

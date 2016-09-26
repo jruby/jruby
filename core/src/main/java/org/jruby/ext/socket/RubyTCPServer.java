@@ -82,18 +82,27 @@ public class RubyTCPServer extends RubyTCPSocket {
     @JRubyMethod(name = "initialize", required = 1, optional = 1, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.runtime;
-        IRubyObject _host = args[0];
-        IRubyObject _port = args.length > 1 ? args[1] : context.nil;
+        IRubyObject _host;
+        IRubyObject _port = null;
+        String host = "0.0.0.0";
 
-        String host;
-        if(_host.isNil()|| ((_host instanceof RubyString) && ((RubyString) _host).isEmpty())) {
-            host = "0.0.0.0";
-        } else if (_host instanceof RubyFixnum) {
-            // numeric host, use it for port
-            _port = _host;
-            host = "0.0.0.0";
-        } else {
-            host = _host.convertToString().toString();
+        switch (args.length) {
+            case 2:
+                _host = args[0];
+                _port = args[1];
+
+                if (_host.isNil()) {
+                    break;
+                } else if (_host instanceof RubyFixnum) {
+                    throw runtime.newTypeError(_host, runtime.getString());
+                }
+
+                RubyString hostString = _host.convertToString();
+                if (hostString.size() > 0) host = hostString.toString();
+
+                break;
+            case 1:
+                _port = args[0];
         }
 
         int port = SocketUtils.getPortFrom(context, _port);

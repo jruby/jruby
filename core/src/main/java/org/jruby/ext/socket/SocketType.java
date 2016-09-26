@@ -29,8 +29,10 @@ package org.jruby.ext.socket;
 import jnr.constants.platform.Sock;
 import jnr.constants.platform.SocketOption;
 import jnr.unixsocket.UnixServerSocketChannel;
+import jnr.unixsocket.UnixSocketAddress;
 import jnr.unixsocket.UnixSocketChannel;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.DatagramSocket;
 import java.net.ServerSocket;
@@ -177,7 +179,7 @@ public enum SocketType {
         private DatagramSocket toSocket(Channel channel) {
             return ((DatagramChannel)channel).socket();
         }
-        
+
         public int getSoTimeout(Channel channel) throws IOException {
             return toSocket(channel).getSoTimeout();
         }
@@ -238,17 +240,25 @@ public enum SocketType {
         public void shutdownOutput(Channel channel) throws IOException {
             toSocket(channel).shutdownOutput();
         }
+
+        public SocketAddress getRemoteSocketAddress(Channel channel) {
+            return toSocket(channel).getRemoteSocketAddress();
+        }
+
+        public SocketAddress getLocalSocketAddress(Channel channel) {
+            return new UnixSocketAddress(new File("empty-path"));
+        }
     },
 
     UNKNOWN(Sock.SOCK_STREAM);
-    
+
     public static SocketType forChannel(Channel channel) {
         if (channel instanceof SocketChannel) {
             return SOCKET;
-            
+
         } else if (channel instanceof ServerSocketChannel) {
             return SERVER;
-        
+
         } else if (channel instanceof DatagramChannel) {
             return DATAGRAM;
 
@@ -301,7 +311,7 @@ public enum SocketType {
     public Sock getSocketType() {
         return sock;
     }
-    
+
     public int getSocketOption(Channel channel, SocketOption option) throws IOException {
         switch (option) {
 
@@ -312,8 +322,7 @@ public enum SocketType {
                 return getKeepAlive(channel) ? 1 : 0;
 
             case SO_LINGER: {
-                int linger = getSoLinger(channel);
-                return linger < 0 ? 0 : linger;
+                return getSoLinger(channel);
             }
 
             case SO_OOBINLINE:

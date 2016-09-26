@@ -1,4 +1,3 @@
-fails:Dir.mkdir when passed a block removes the tmp-dir after executing the block
 windows:Dir.mktmpdir when passed no arguments returns the path to the created tmp-dir
 windows:Dir.mkdir when passed a block yields the path to the passed block
 windows:Dir.mkdir when passed a block returns the blocks return value

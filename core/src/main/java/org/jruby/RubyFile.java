@@ -298,6 +298,12 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
     @JRubyMethod(required = 1)
     public IRubyObject flock(ThreadContext context, IRubyObject operation) {
+
+        // Solaris uses a ruby-ffi version defined in jruby/kernel/file.rb, so re-dispatch
+        if (org.jruby.platform.Platform.IS_SOLARIS) {
+            return callMethod(context, "flock", operation);
+        }
+
         Ruby runtime = context.runtime;
         OpenFile fptr;
 //        int[] op = {0,0};

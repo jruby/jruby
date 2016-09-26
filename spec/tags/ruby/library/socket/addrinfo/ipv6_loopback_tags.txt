@@ -1,1 +1,0 @@
-fails:Addrinfo#ipv6_loopback? for a unix socket returns false

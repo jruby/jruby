@@ -166,7 +166,7 @@ public class Options {
     public static final Option<Boolean> FCNTL_LOCKING = bool(MISCELLANEOUS, "file.flock.fcntl", true, "Use fcntl rather than flock for File#flock");
     public static final Option<Boolean> VOLATILE_VARIABLES = bool(MISCELLANEOUS, "volatile.variables", true, "Always ensure volatile semantics for instance variables.");
     public static final Option<Boolean> RECORD_LEXICAL_HIERARCHY = bool(MISCELLANEOUS, "record.lexical.hierarchy", false, "Maintain children static scopes to support scope dumping.");
-    public static final Option<String> PREFERRED_PRNG = string(MISCELLANEOUS, "preferred.prng", "NativePRNGNonBlocking", "Maintain children static scopes to support scope dumping.");
+    public static final Option<String> PREFERRED_PRNG = string(MISCELLANEOUS, "preferred.prng", "NativePRNGNonBlocking", "Set the preferred JDK-supported random number generator to use.");
     public static final Option<Boolean> USE_FIXNUM_CACHE = bool(MISCELLANEOUS, "fixnum.cache", true, "Use a cache of low-valued Fixnum objects.");
     public static final Option<Integer> FIXNUM_CACHE_RANGE = integer(MISCELLANEOUS, "fixnum.cache.size", 256, "Values to retrieve from Fixnum cache, in the range -X..(X-1).");
     public static final Option<Boolean> PACKED_ARRAYS = bool(MISCELLANEOUS, "packed.arrays", true, "Toggle whether to use \"packed\" arrays for small tuples.");
