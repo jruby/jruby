@@ -21,12 +21,10 @@ import java.util.concurrent.ConcurrentMap;
 public class GlobalVariables {
 
     private final DynamicObject defaultValue;
-
-    ConcurrentMap<String, GlobalVariableStorage> variables;
+    private final ConcurrentMap<String, GlobalVariableStorage> variables = new ConcurrentHashMap<>();
 
     public GlobalVariables(DynamicObject defaultValue) {
         this.defaultValue = defaultValue;
-        this.variables = new ConcurrentHashMap<>();
     }
 
     public Object getOrDefault(String key, Object defaultValue) {
