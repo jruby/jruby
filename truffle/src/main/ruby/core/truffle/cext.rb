@@ -381,11 +381,11 @@ module Truffle::CExt
   end
 
   def rb_iv_get(object, name)
-    Truffle.invoke_primitive :object_ivar_get, name.to_sym
+    Truffle.invoke_primitive :object_ivar_get, object, name.to_sym
   end
 
   def rb_iv_set(object, name, value)
-    Truffle.invoke_primitive :object_ivar_set, name.to_sym, value
+    Truffle.invoke_primitive :object_ivar_set, object, name.to_sym, value
   end
 
   def rb_define_class_under(mod, name, superclass)
