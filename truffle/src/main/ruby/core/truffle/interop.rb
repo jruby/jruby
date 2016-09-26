@@ -15,7 +15,8 @@ module Truffle
 
       Object.class_eval do
         define_method(name.to_sym) do |*args|
-          Truffle::Interop.execute(method, *args)
+          ret = Truffle::Interop.execute(method, *args)
+          Truffle::Interop.from_java_string(ret)
         end
       end
     end

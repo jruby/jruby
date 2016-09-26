@@ -11,14 +11,11 @@ package org.jruby.truffle.language.dispatch;
 
 import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.frame.Frame;
-import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyGuards;
-import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.methods.InternalMethod;
 
@@ -106,16 +103,9 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             DispatchNode first,
             Object receiverObject,
             Object methodName) {
-        final DynamicObject callerClass;
-
-        if (ignoreVisibility || getHeadNode().onlyCallPublic) {
-            callerClass = null;
-        } else {
-            callerClass = coreLibrary().getMetaClass(RubyArguments.getSelf(frame));
-        }
 
         final String methodNameString = toString(methodName);
-        final InternalMethod method = lookup(callerClass, receiverObject, methodNameString, ignoreVisibility);
+        final InternalMethod method = lookup(frame, receiverObject, methodNameString, ignoreVisibility);
 
         if (method == null) {
             return createMethodMissingNode(first, methodName, receiverObject);
@@ -123,10 +113,10 @@ public final class UnresolvedDispatchNode extends DispatchNode {
 
         if (receiverObject instanceof Boolean) {
             final Assumption falseUnmodifiedAssumption = Layouts.MODULE.getFields(coreLibrary().getFalseClass()).getUnmodifiedAssumption();
-            final InternalMethod falseMethod = lookup(callerClass, false, methodNameString, ignoreVisibility);
+            final InternalMethod falseMethod = lookup(frame, false, methodNameString, ignoreVisibility);
 
             final Assumption trueUnmodifiedAssumption = Layouts.MODULE.getFields(coreLibrary().getTrueClass()).getUnmodifiedAssumption();
-            final InternalMethod trueMethod = lookup(callerClass, true, methodNameString, ignoreVisibility);
+            final InternalMethod trueMethod = lookup(frame, true, methodNameString, ignoreVisibility);
             assert falseMethod != null || trueMethod != null;
 
             return new CachedBooleanDispatchNode(getContext(),
@@ -147,31 +137,9 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             Object receiverObject,
             Object methodName,
             Object[] argumentsObjects) {
-        final DynamicObject callerClass;
 
-        if (ignoreVisibility || getHeadNode().onlyCallPublic) {
-            callerClass = null;
-        } else if (getDispatchAction() == DispatchAction.RESPOND_TO_METHOD) {
-            final FrameInstance instance = getContext().getCallStack().getCallerFrameIgnoringSend();
-
-            if (instance == null) {
-                callerClass = coreLibrary().getMetaClass(coreLibrary().getMainObject());
-            } else {
-                final Frame callerFrame = instance.getFrame(FrameInstance.FrameAccess.READ_ONLY, true);
-                callerClass = coreLibrary().getMetaClass(RubyArguments.getSelf(callerFrame));
-            }
-        } else {
-            InternalMethod method = RubyArguments.getMethod(frame);
-            if (!coreLibrary().isSend(method)) {
-                callerClass = coreLibrary().getMetaClass(RubyArguments.getSelf(frame));
-            } else {
-                FrameInstance instance = getContext().getCallStack().getCallerFrameIgnoringSend();
-                Frame callerFrame = instance.getFrame(FrameInstance.FrameAccess.READ_ONLY, true);
-                callerClass = coreLibrary().getMetaClass(RubyArguments.getSelf(callerFrame));
-            }
-        }
-
-        final InternalMethod method = lookup(callerClass, receiverObject, toString(methodName), ignoreVisibility);
+        String methodNameString = toString(methodName);
+        final InternalMethod method = lookup(frame, receiverObject, methodNameString, ignoreVisibility);
 
         if (method == null) {
             return createMethodMissingNode(first, methodName, receiverObject);

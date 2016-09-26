@@ -36,12 +36,11 @@ import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
-
 import jnr.constants.platform.Errno;
-
 import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.common.IRubyWarnings;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
@@ -49,6 +48,8 @@ import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.builtins.CoreMethodNode;
+import org.jruby.truffle.builtins.Primitive;
+import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.builtins.UnaryCoreMethodNode;
 import org.jruby.truffle.core.ObjectNodes;
 import org.jruby.truffle.core.ObjectNodesFactory;
@@ -86,8 +87,6 @@ import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeNodes;
 import org.jruby.truffle.core.rope.RopeNodesFactory;
 import org.jruby.truffle.core.rope.RopeOperations;
-import org.jruby.truffle.core.rubinius.RegexpPrimitiveNodes;
-import org.jruby.truffle.core.rubinius.RegexpPrimitiveNodesFactory;
 import org.jruby.truffle.core.string.StringCachingGuards;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.core.symbol.SymbolTable;
@@ -137,9 +136,9 @@ import org.jruby.truffle.language.objects.TaintNode;
 import org.jruby.truffle.language.objects.TaintNodeGen;
 import org.jruby.truffle.language.objects.WriteObjectFieldNode;
 import org.jruby.truffle.language.objects.WriteObjectFieldNodeGen;
-import org.jruby.truffle.language.parser.ParserContext;
-import org.jruby.truffle.language.parser.jruby.TranslatorDriver;
 import org.jruby.truffle.language.threadlocal.ThreadLocalObject;
+import org.jruby.truffle.parser.ParserContext;
+import org.jruby.truffle.parser.TranslatorDriver;
 import org.jruby.truffle.platform.UnsafeGroup;
 import org.jruby.truffle.util.StringUtils;
 
@@ -151,6 +150,7 @@ import java.io.InputStreamReader;
 import java.lang.ProcessBuilder.Redirect;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Map;
 
 @CoreClass("Kernel")
@@ -261,48 +261,6 @@ public abstract class KernelNodes {
             }
 
             return equalNode.callBoolean(frame, left, "==", null, right);
-        }
-
-    }
-
-    @CoreMethod(names = "=~", required = 1, needsSelf = false)
-    public abstract static class MatchNode extends CoreMethodArrayArgumentsNode {
-
-        @Specialization
-        public DynamicObject equal(Object other) {
-            return nil();
-        }
-
-    }
-
-    @CoreMethod(names = "!~", required = 1)
-    public abstract static class NotMatchNode extends CoreMethodArrayArgumentsNode {
-
-        @Child private CallDispatchHeadNode matchNode;
-        @Child private RegexpPrimitiveNodes.RegexpSetLastMatchPrimitiveNode setLastMatchNode;
-
-        public NotMatchNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            matchNode = DispatchHeadNodeFactory.createMethodCall(context);
-            setLastMatchNode = RegexpPrimitiveNodesFactory.RegexpSetLastMatchPrimitiveNodeFactory.create(null);
-        }
-
-        @Specialization
-        public boolean notMatch(VirtualFrame frame, Object self, Object other) {
-            final boolean ret = !matchNode.callBoolean(frame, self, "=~", null, other);
-
-            final FrameSlot matchDataSlot = frame.getFrameDescriptor().findFrameSlot("$~");
-            final Object matchData = frame.getValue(matchDataSlot);
-
-            if (matchData instanceof ThreadLocalObject) {
-                final ThreadLocalObject threadLocalObject = (ThreadLocalObject) matchData;
-
-                setLastMatchNode.executeSetLastMatch(threadLocalObject.get());
-            } else {
-                setLastMatchNode.executeSetLastMatch(nil());
-            }
-
-            return ret;
         }
 
     }
@@ -587,6 +545,7 @@ public abstract class KernelNodes {
             final Object callerSelf = RubyArguments.getSelf(frame);
 
             final InternalMethod method = new InternalMethod(
+                    getContext(),
                     cachedRootNode.getRootNode().getSharedMethodInfo(),
                     cachedRootNode.getRootNode().getSharedMethodInfo().getName(),
                     RubyArguments.getMethod(parentFrame).getDeclaringModule(),
@@ -896,16 +855,20 @@ public abstract class KernelNodes {
     @CoreMethod(names = "hash")
     public abstract static class HashNode extends CoreMethodArrayArgumentsNode {
 
+        private static final int MURMUR_SEED = System.identityHashCode(HashNode.class);
+
         @Specialization
-        public int hash(int value) {
-            // TODO(CS): should check this matches MRI
-            return value;
+        public long hash(int value) {
+            long h = Helpers.hashStart(getContext().getJRubyRuntime(), MURMUR_SEED);
+            h = Helpers.murmurCombine(h, value);
+            return Helpers.hashEnd(h);
         }
 
         @Specialization
-        public int hash(long value) {
-            // TODO(CS): should check this matches MRI
-            return Long.valueOf(value).hashCode();
+        public long hash(long value) {
+            long h = Helpers.hashStart(getContext().getJRubyRuntime(), MURMUR_SEED);
+            h = Helpers.murmurCombine(h, value);
+            return Helpers.hashEnd(h);
         }
 
         @Specialization
@@ -1182,7 +1145,7 @@ public abstract class KernelNodes {
         public MethodNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             nameToJavaStringNode = NameToJavaStringNode.create();
-            lookupMethodNode = LookupMethodNodeGen.create(context, sourceSection, null, null);
+            lookupMethodNode = LookupMethodNodeGen.create(context, sourceSection, true, false, null, null);
             respondToMissingNode = DispatchHeadNodeFactory.createMethodCall(getContext(), true);
         }
 
@@ -1196,11 +1159,12 @@ public abstract class KernelNodes {
                 @Cached("createBinaryProfile()") ConditionProfile notFoundProfile,
                 @Cached("createBinaryProfile()") ConditionProfile respondToMissingProfile) {
             final String normalizedName = nameToJavaStringNode.executeToJavaString(frame, name);
-            InternalMethod method = lookupMethodNode.executeLookupMethod(self, normalizedName);
+            InternalMethod method = lookupMethodNode.executeLookupMethod(frame, self, normalizedName);
 
             if (notFoundProfile.profile(method == null)) {
                 if (respondToMissingProfile.profile(respondToMissingNode.callBoolean(frame, self, "respond_to_missing?", null, name, true))) {
-                    method = createMissingMethod(self, name, normalizedName);
+                    final InternalMethod methodMissing = lookupMethodNode.executeLookupMethod(frame, self, "method_missing").withName(normalizedName);
+                    method = createMissingMethod(self, name, normalizedName, methodMissing);
                 } else {
                     throw new RaiseException(coreExceptions().nameErrorUndefinedMethod(normalizedName, coreLibrary().getLogicalClass(self), this));
                 }
@@ -1210,9 +1174,7 @@ public abstract class KernelNodes {
         }
 
         @TruffleBoundary
-        private InternalMethod createMissingMethod(Object self, DynamicObject name, final String normalizedName) {
-            InternalMethod method;
-            final InternalMethod methodMissing = lookupMethodNode.executeLookupMethod(self, "method_missing").withName(normalizedName);
+        private InternalMethod createMissingMethod(Object self, DynamicObject name, String normalizedName, InternalMethod methodMissing) {
             final SharedMethodInfo info = methodMissing.getSharedMethodInfo().withName(normalizedName);
 
             final RubyNode newBody = new CallMethodMissingWithStaticName(getContext(), info.getSourceSection(), name);
@@ -1220,8 +1182,7 @@ public abstract class KernelNodes {
             final CallTarget newCallTarget = Truffle.getRuntime().createCallTarget(newRootNode);
 
             final DynamicObject module = coreLibrary().getMetaClass(self);
-            method = new InternalMethod(info, normalizedName, module, Visibility.PUBLIC, newCallTarget);
-            return method;
+            return new InternalMethod(getContext(), info, normalizedName, module, Visibility.PUBLIC, newCallTarget);
         }
 
         private static class CallMethodMissingWithStaticName extends RubyNode {
@@ -1815,6 +1776,23 @@ public abstract class KernelNodes {
             } catch (InvalidFormatException e) {
                 throw new RaiseException(coreExceptions().argumentError(e.getMessage(), this));
             }
+        }
+
+    }
+
+    @Primitive(name = "kernel_global_variables")
+    public abstract static class KernelGlobalVariablesPrimitiveNode extends PrimitiveArrayArgumentsNode {
+
+        @Specialization
+        public DynamicObject globalVariables() {
+            final Collection<String> keys = coreLibrary().getGlobalVariables().keys();
+            final Object[] store = new Object[keys.size()];
+            int i = 0;
+            for (String key : keys) {
+                store[i] = getSymbol(key);
+                i++;
+            }
+            return createArray(store, store.length);
         }
 
     }

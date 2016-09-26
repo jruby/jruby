@@ -26,8 +26,8 @@ import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.methods.InternalMethod;
-import org.jruby.truffle.language.parser.ParserContext;
-import org.jruby.truffle.language.parser.jruby.TranslatorDriver;
+import org.jruby.truffle.parser.ParserContext;
+import org.jruby.truffle.parser.TranslatorDriver;
 
 public class CodeLoader {
 
@@ -77,8 +77,8 @@ public class CodeLoader {
         } else {
             declaringModule = context.getCoreLibrary().getObjectClass();
         }
-
         final InternalMethod method = new InternalMethod(
+                context,
                 rootNode.getSharedMethodInfo(),
                 rootNode.getSharedMethodInfo().getName(),
                 declaringModule,

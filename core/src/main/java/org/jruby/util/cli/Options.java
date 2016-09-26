@@ -240,6 +240,7 @@ public class Options {
     public static final Option<Boolean> TRUFFLE_PLATFORM_USE_JAVA = bool(TRUFFLE, "truffle.platform.use_java", false, "Use a pure-Java platform, so no native POSIX.");
 
     public static final Option<Boolean> TRUFFLE_COVERAGE_GLOBAL = bool(TRUFFLE, "truffle.coverage.global", false, "Run coverage for all code and print results on exit.");
+    public static final Option<Boolean> TRUFFLE_INLINE_JS = bool(TRUFFLE, "truffle.inline_js", false, "Allow inline JavaScript.");
 
     public static final Option<String> TRUFFLE_CORE_LOAD_PATH = string(TRUFFLE, "truffle.core.load_path", "truffle:/jruby-truffle", "Location to load the Truffle core library from.");
     public static final Option<Boolean> TRUFFLE_CORE_PARALLEL_LOAD = bool(TRUFFLE, "truffle.core.parallel_load", false, "Load the Truffle core library in parallel.");
@@ -301,6 +302,7 @@ public class Options {
     public static final Option<Boolean> TRUFFLE_BACKTRACES_INTERLEAVE_JAVA = bool(TRUFFLE, "truffle.backtraces.interleave_java", false, "Interleave Java stacktraces into the Ruby backtrace.");
     public static final Option<Integer> TRUFFLE_BACKTRACES_LIMIT = integer(TRUFFLE, "truffle.backtraces.limit", 9999, "Limit the size of Ruby backtraces.");
     public static final Option<Boolean> TRUFFLE_BACKTRACES_OMIT_UNUSED = bool(TRUFFLE, "truffle.backtraces.omit_unused", true, "Omit backtraces that should be unused as they have pure rescue expressions.");
+    public static final Option<Boolean> TRUFFLE_BASICOPS_INLINE = bool(TRUFFLE, "truffle.basic_ops.inline", true, "Inline basic operations (like Fixnum operators) in the AST without a call.");
 
     public static final Option<Boolean> TRUFFLE_METRICS_TIME = bool(TRUFFLE, "truffle.metrics.time", false, "Print the time at various stages of VM operation.");
     public static final Option<Boolean> TRUFFLE_METRICS_MEMORY_USED_ON_EXIT = bool(TRUFFLE, "truffle.metrics.memory_used_on_exit", false, "Print the size of heap memory in use on exit.");

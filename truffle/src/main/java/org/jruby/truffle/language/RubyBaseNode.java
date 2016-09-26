@@ -176,7 +176,10 @@ public abstract class RubyBaseNode extends Node {
 
             while (true) {
                 if (parent == null) {
-                    throw new UnsupportedOperationException("can't get the RubyContext because the parent is null");
+                    System.err.println("warning: using global context!");
+                    context = RubyContext.getLatestInstance();
+                    break;
+                    //throw new UnsupportedOperationException("can't get the RubyContext because the parent is null");
                 }
 
                 if (parent instanceof RubyBaseNode) {

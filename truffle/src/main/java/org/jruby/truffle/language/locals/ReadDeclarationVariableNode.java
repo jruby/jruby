@@ -17,7 +17,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
-import org.jruby.truffle.language.parser.jruby.ReadLocalNode;
+import org.jruby.truffle.parser.ReadLocalNode;
 
 public class ReadDeclarationVariableNode extends ReadLocalNode {
 

@@ -467,7 +467,11 @@ class Hash
   end
 
   def to_proc
-    lambda { |key| self[key] }
+    proc_hash = self
+    Proc.new { |*args|
+      Rubinius::Type.check_arity(args.size, 1, 1)
+      proc_hash[args[0]]
+    }
   end
 
   # Implementation of a fundamental Rubinius method that allows their Hash

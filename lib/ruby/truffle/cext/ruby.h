@@ -32,6 +32,7 @@ extern "C" {
 // Support
 
 #define RUBY_CEXT (void *)truffle_import_cached("ruby_cext")
+#define MUST_INLINE __attribute__((always_inline))
 
 // Configuration
 
@@ -59,6 +60,13 @@ typedef VALUE ID;
 // Helpers
 
 NORETURN(VALUE rb_f_notimplement(int args_count, const VALUE *args, VALUE object));
+
+// Non-standard
+
+NORETURN(void rb_jt_error(const char *message));
+
+void *rb_jt_to_native_handle(VALUE managed);
+VALUE rb_jt_from_native_handle(void *native);
 
 // Memory
 
@@ -345,11 +353,36 @@ VALUE rb_str_new_cstr(const char *string);
 VALUE rb_str_cat(VALUE string, const char *to_concat, long length);
 VALUE rb_str_cat2(VALUE string, const char *to_concat);
 VALUE rb_str_to_str(VALUE string);
-VALUE rb_string_value(volatile VALUE *value_pointer);
+
+MUST_INLINE VALUE rb_string_value(VALUE *value_pointer) {
+  VALUE value = *value_pointer;
+
+  if (!RB_TYPE_P(value, T_STRING)) {
+    value = rb_str_to_str(value);
+    *value_pointer = value;
+  }
+
+  return value;
+}
+
+MUST_INLINE char *rb_string_value_ptr(volatile VALUE* value_pointer) {
+  VALUE string = rb_string_value(value_pointer);
+  return RSTRING_PTR(string);
+}
+
+MUST_INLINE char *rb_string_value_cstr(volatile VALUE* value_pointer) {
+  VALUE string = rb_string_value(value_pointer);
+
+  if (!truffle_invoke_b(RUBY_CEXT, "rb_string_value_cstr_check", string)) {
+    rb_jt_error("rb_string_value_cstr failure case not implemented");
+    abort();
+  }
+
+  return RSTRING_PTR(string);
+}
+
 #define StringValue(value) rb_string_value(&(value))
 #define SafeStringValue StringValue
-char *rb_string_value_ptr(volatile VALUE* value_pointer);
-char *rb_string_value_cstr(volatile VALUE* value_pointer);
 #define StringValuePtr(string) rb_string_value_ptr(&(string))
 #define StringValueCStr(string) rb_string_value_cstr(&(string))
 VALUE rb_str_buf_new(long capacity);
@@ -429,6 +462,14 @@ VALUE rb_proc_new(void *function, VALUE value);
 
 void rb_warn(const char *fmt, ...);
 void rb_warning(const char *fmt, ...);
+
+int rb_scan_args(int argc, VALUE *argv, const char *format, ...);
+
+MUST_INLINE int rb_jt_scan_args_02(int argc, VALUE *argv, VALUE *v1, VALUE *v2) {
+  if (argc >= 1) *v1 = argv[0];
+  if (argc >= 2) *v2 = argv[1];
+  return argc;
+}
 
 int rb_scan_args(int argc, VALUE *argv, const char *format, ...);
 
@@ -614,20 +655,26 @@ void rb_thread_wait_fd(int fd);
 
 NORETURN(void rb_eof_error(void));
 
+// Objects
+
+struct RBasic {
+  // Empty
+};
+
 // Data
 
 struct RData {
-  // No RBasic object header
+  struct RBasic basic;
   void (*dmark)(void *data);
   void (*dfree)(void *data);
   void *data;
 };
 
-struct RData *rb_jt_wrap_rdata(VALUE value);
+struct RData *rb_jt_adapt_rdata(VALUE value);
 
-#define RDATA(value) rb_jt_wrap_rdata(value)
+#define RDATA(value) rb_jt_adapt_rdata(value)
 
-#define DATA_PTR(value) *((volatile intptr_t*) 0)
+#define DATA_PTR(value) (RDATA(value)->data)
 
 // Typed data
 
@@ -646,7 +693,20 @@ struct rb_data_type_struct {
   VALUE flags;
 };
 
+struct RTypedData {
+  struct RBasic basic;
+  const rb_data_type_t *type;
+  VALUE typed_flag;
+  void *data;
+};
+
 #define RUBY_TYPED_FREE_IMMEDIATELY 1
+
+struct RTypedData *rb_jt_adapt_rtypeddata(VALUE value);
+
+#define RTYPEDDATA(value) rb_jt_adapt_rtypeddata(value)
+
+#define RTYPEDDATA_DATA(value) (RTYPEDDATA(value)->data)
 
 VALUE rb_data_typed_object_wrap(VALUE ruby_class, void *data, const rb_data_type_t *data_type);
 
@@ -666,8 +726,6 @@ void *rb_check_typeddata(VALUE value, const rb_data_type_t *data_type);
 
 #define TypedData_Get_Struct(value, type, data_type, variable) ((variable) = (type *)rb_check_typeddata((value), (data_type)))
 
-#define RTYPEDDATA_DATA(value) *((volatile int*) 0)
-
 // VM
 
 VALUE *rb_ruby_verbose_ptr(void);
@@ -675,10 +733,6 @@ VALUE *rb_ruby_verbose_ptr(void);
 
 VALUE *rb_ruby_debug_ptr(void);
 #define ruby_debug (*rb_ruby_debug_ptr())
-
-// Non-standard
-
-NORETURN(void rb_jt_error(const char *message));
 
 #if defined(__cplusplus)
 }

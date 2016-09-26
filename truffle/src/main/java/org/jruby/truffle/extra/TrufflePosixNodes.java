@@ -311,6 +311,17 @@ public abstract class TrufflePosixNodes {
 
     }
 
+    @CoreMethod(names = "lchmod", isModuleFunction = true, required = 2, lowerFixnum = 2, unsafe = UnsafeGroup.IO)
+    public abstract static class LchmodNode extends CoreMethodArrayArgumentsNode {
+
+        @CompilerDirectives.TruffleBoundary
+        @Specialization(guards = "isRubyString(path)")
+        public int lchmod(DynamicObject path, int mode) {
+            return posix().lchmod(decodeUTF8(path), mode);
+        }
+
+    }
+
     @CoreMethod(names = "link", isModuleFunction = true, required = 2, unsafe = UnsafeGroup.IO)
     public abstract static class LinkNode extends CoreMethodArrayArgumentsNode {
 
@@ -593,9 +604,8 @@ public abstract class TrufflePosixNodes {
             final String path = getContext().getJRubyRuntime().getCurrentDirectory();
             assert path.equals(cwd);
 
-            final byte[] bytes = cwd.getBytes(StandardCharsets.UTF_8);
-            final LeafRope rope = makeLeafRopeNode.executeMake(bytes, UTF8Encoding.INSTANCE, CodeRange.CR_UNKNOWN, NotProvided.INSTANCE);
-            return StringOperations.createString(getContext(), rope);
+            // TODO (nirvdrum 12-Sept-16) The rope table always returns UTF-8, but this call should be based on Encoding.default_external and reflect updates to that value.
+            return StringOperations.createString(getContext(), getContext().getRopeTable().getRope(path));
         }
 
     }

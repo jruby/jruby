@@ -263,8 +263,12 @@ public abstract class HashNodes {
                         return n;
                     }
                 } else {
-                    if (hashed == PackedArrayStrategy.getHashed(store, n) && eql(frame, key, PackedArrayStrategy.getKey(store, n))) {
-                        return n;
+                    if (hashed == PackedArrayStrategy.getHashed(store, n)) {
+                        final Object nKey = PackedArrayStrategy.getKey(store, n);
+                        if(key == nKey || eql(frame, key, nKey)){
+                            return n;
+                        }
+
                     }
                 }
             }
@@ -296,9 +300,11 @@ public abstract class HashNodes {
 
             for (int n = 0; n < getContext().getOptions().HASH_PACKED_ARRAY_MAX; n++) {
                 if (n < size) {
-                    if (hashed == PackedArrayStrategy.getHashed(store, n) &&
-                            eql(frame, key, PackedArrayStrategy.getKey(store, n))) {
-                        return PackedArrayStrategy.getValue(store, n);
+                    if (hashed == PackedArrayStrategy.getHashed(store, n)) {
+                        final Object nKey = PackedArrayStrategy.getKey(store, n);
+                        if (key == nKey || eql(frame, key, nKey)) {
+                            return PackedArrayStrategy.getValue(store, n);
+                        }
                     }
                 }
             }

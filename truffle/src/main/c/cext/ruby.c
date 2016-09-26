@@ -51,7 +51,7 @@ int rb_type(VALUE value) {
 }
 
 bool RB_TYPE_P(VALUE value, int type) {
-  return truffle_invoke_i(RUBY_CEXT, "RB_TYPE_P", value, type);
+  return truffle_invoke_b(RUBY_CEXT, "RB_TYPE_P", value, type);
 }
 
 void rb_check_type(VALUE value, int type) {
@@ -67,8 +67,10 @@ VALUE rb_obj_is_kind_of(VALUE object, VALUE ruby_class) {
 }
 
 void rb_check_frozen(VALUE object) {
-  rb_jt_error("rb_check_frozen not implemented");
-  abort();
+  if (OBJ_FROZEN(object)){
+    rb_jt_error("rb_check_frozen failure case not implemented");
+    abort();
+  }
 }
 
 void rb_check_safe_obj(VALUE object) {
@@ -342,7 +344,7 @@ double RFLOAT_VALUE(VALUE value){
 // String
 
 char *RSTRING_PTR(VALUE string) {
-  return (char *)truffle_invoke(RUBY_CEXT, "CExtString", string);
+  return (char *)truffle_invoke(RUBY_CEXT, "RSTRING_PTR", string);
 }
 
 int rb_str_len(VALUE string) {
@@ -383,27 +385,6 @@ VALUE rb_str_cat2(VALUE string, const char *to_concat) {
 
 VALUE rb_str_to_str(VALUE string) {
   return (VALUE) truffle_invoke((void *)string, "to_str");
-}
-
-VALUE rb_string_value(volatile VALUE *value_pointer) {
-  VALUE value = *value_pointer;
-  
-  if (!RB_TYPE_P(value, T_STRING)) {
-    value = rb_str_to_str(value);
-    *value_pointer = value;
-  }
-  
-  return value;
-}
-
-char *rb_string_value_ptr(volatile VALUE* value_pointer) {
-  VALUE string = rb_string_value(value_pointer);
-  return RSTRING_PTR(string);
-}
-
-char *rb_string_value_cstr(volatile VALUE* value_pointer) {
-  rb_jt_error("rb_string_value_cstr not implemented");
-  abort();
 }
 
 VALUE rb_str_buf_new(long capacity) {
@@ -647,7 +628,8 @@ void rb_warning(const char *format, ...) {
 }
 
 int rb_scan_args(int argc, VALUE *argv, const char *format, ...) {
-  return truffle_invoke_i(RUBY_CEXT, "rb_scan_args", argc, argv, format /*, where to get args? */);
+  rb_jt_error("generic rb_scan_args not implemented - use a specialisation such as rb_jt_scan_args_02");
+  abort();
 }
 
 // Calls
@@ -697,11 +679,11 @@ VALUE rb_yield(VALUE value) {
 // Instance variables
 
 VALUE rb_iv_get(VALUE object, const char *name) {
-  return truffle_read(object, rb_intern(name));
+  return truffle_invoke(RUBY_CEXT, "rb_iv_get", object, rb_str_new_cstr(name));
 }
 
 VALUE rb_iv_set(VALUE object, const char *name, VALUE value) {
-  truffle_write(object, rb_intern(name), value);
+  truffle_invoke(RUBY_CEXT, "rb_iv_set", object, rb_str_new_cstr(name), value);
   return value;
 }
 
@@ -1059,12 +1041,15 @@ NORETURN(void rb_eof_error(void)) {
 
 // Data
 
-struct RData *rb_jt_wrap_rdata(VALUE value) {
-  rb_jt_error("RDATA not implemented");
-  abort();
+struct RData *rb_jt_adapt_rdata(VALUE value) {
+  return (struct RData *)truffle_invoke(RUBY_CEXT, "rb_jt_adapt_rdata", value);
 }
 
 // Typed data
+
+struct RTypedData *rb_jt_adapt_rtypeddata(VALUE value) {
+  return (struct RTypedData *)truffle_invoke(RUBY_CEXT, "rb_jt_adapt_rtypeddata", value);
+}
 
 VALUE rb_data_typed_object_wrap(VALUE ruby_class, void *data, const rb_data_type_t *data_type) {
   return (VALUE) truffle_invoke(RUBY_CEXT, "rb_data_typed_object_wrap", ruby_class, data, data_type);
@@ -1082,8 +1067,8 @@ VALUE rb_data_typed_object_make(VALUE ruby_class, const rb_data_type_t *type, vo
 }
 
 void *rb_check_typeddata(VALUE value, const rb_data_type_t *data_type) {
-  rb_jt_error("rb_check_typeddata not implemented");
-  abort();
+  // TODO CS 24-Sep-2016 we're supposed to do some error checking here
+  return RTYPEDDATA_DATA(value);
 }
 
 // VM
@@ -1106,4 +1091,12 @@ VALUE *rb_ruby_debug_ptr(void) {
 
 void rb_jt_error(const char *message) {
   truffle_invoke(RUBY_CEXT, "rb_jt_error", rb_str_new_cstr(message));
+}
+
+void *rb_jt_to_native_handle(VALUE managed) {
+  (void *)truffle_invoke_l(RUBY_CEXT, "rb_jt_to_native_handle", managed);
+}
+
+VALUE rb_jt_from_native_handle(void *native) {
+  return (VALUE) truffle_invoke(RUBY_CEXT, "rb_jt_from_native_handle", (long) native);
 }

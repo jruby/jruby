@@ -19,6 +19,7 @@ import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.Ruby;
 import org.jruby.truffle.builtins.PrimitiveManager;
 import org.jruby.truffle.core.CoreLibrary;
+import org.jruby.truffle.core.CoreMethods;
 import org.jruby.truffle.core.encoding.EncodingManager;
 import org.jruby.truffle.core.exception.CoreExceptions;
 import org.jruby.truffle.core.kernel.AtExitManager;
@@ -88,6 +89,7 @@ public class RubyContext extends ExecutionContext {
 
     private final NativePlatform nativePlatform;
     private final CoreLibrary coreLibrary;
+    private final CoreMethods coreMethods;
     private final ThreadManager threadManager;
     private final LexicalScope rootLexicalScope;
     private final InstrumentationServerManager instrumentationServerManager;
@@ -156,6 +158,13 @@ public class RubyContext extends ExecutionContext {
         coreLibrary.addCoreMethods(primitiveManager);
         org.jruby.Main.printTruffleTimeMetric("after-load-nodes");
 
+        // Capture known builtin methods
+
+        final Instrumenter instrumenter = env.lookup(Instrumenter.class);
+        attachmentsManager = new AttachmentsManager(this, instrumenter);
+        traceManager = new TraceManager(this, instrumenter);
+        coreMethods = new CoreMethods(coreLibrary);
+
         // Load the reset of the core library
 
         coreLibrary.loadRubyCore();
@@ -172,9 +181,6 @@ public class RubyContext extends ExecutionContext {
             instrumentationServerManager = null;
         }
 
-        final Instrumenter instrumenter = env.lookup(Instrumenter.class);
-        attachmentsManager = new AttachmentsManager(this, instrumenter);
-        traceManager = new TraceManager(this, instrumenter);
         coverageManager = new CoverageManager(this, instrumenter);
 
         coreLibrary.initializePostBoot();
@@ -250,6 +256,10 @@ public class RubyContext extends ExecutionContext {
 
     public CoreLibrary getCoreLibrary() {
         return coreLibrary;
+    }
+
+    public CoreMethods getCoreMethods() {
+        return coreMethods;
     }
 
     public PrintStream getDebugStandardOut() {

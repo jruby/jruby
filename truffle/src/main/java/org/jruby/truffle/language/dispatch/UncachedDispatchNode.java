@@ -65,9 +65,7 @@ public class UncachedDispatchNode extends DispatchNode {
             Object[] argumentsObjects) {
         final DispatchAction dispatchAction = getDispatchAction();
 
-        final DynamicObject callerClass = ignoreVisibility ? null : metaClassNode.executeMetaClass(RubyArguments.getSelf(frame));
-
-        final InternalMethod method = lookup(callerClass, receiverObject, toJavaStringNode.executeToJavaString(frame, name), ignoreVisibility);
+        final InternalMethod method = lookup(frame, receiverObject, toJavaStringNode.executeToJavaString(frame, name), ignoreVisibility);
 
         if (method != null) {
             if (dispatchAction == DispatchAction.CALL_METHOD) {
@@ -85,7 +83,7 @@ public class UncachedDispatchNode extends DispatchNode {
 
         methodMissingProfile.enter();
 
-        final InternalMethod missingMethod = lookup(callerClass, receiverObject, "method_missing", true);
+        final InternalMethod missingMethod = lookup(frame, receiverObject, "method_missing", true);
 
         if (missingMethod == null) {
             if (dispatchAction == DispatchAction.RESPOND_TO_METHOD) {

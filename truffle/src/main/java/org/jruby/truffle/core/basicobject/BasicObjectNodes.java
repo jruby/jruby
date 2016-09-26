@@ -51,9 +51,9 @@ import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.methods.UnsupportedOperationBehavior;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
-import org.jruby.truffle.language.parser.ParserContext;
 import org.jruby.truffle.language.supercall.SuperCallNode;
 import org.jruby.truffle.language.yield.YieldNode;
+import org.jruby.truffle.parser.ParserContext;
 import org.jruby.truffle.util.StringUtils;
 
 import java.util.ArrayList;
@@ -417,6 +417,24 @@ public abstract class BasicObjectNodes {
 
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
+            return allocateObjectNode.allocate(rubyClass);
+        }
+
+    }
+
+    @NonStandard
+    @CoreMethod(names = "internal_allocate", constructor = true)
+    public abstract static class InternalAllocateNode extends CoreMethodArrayArgumentsNode {
+
+        @Child private AllocateObjectNode allocateObjectNode;
+
+        public InternalAllocateNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            allocateObjectNode = AllocateObjectNode.create();
+        }
+
+        @Specialization
+        public DynamicObject internal_allocate(DynamicObject rubyClass) {
             return allocateObjectNode.allocate(rubyClass);
         }
 

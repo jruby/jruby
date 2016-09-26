@@ -142,6 +142,10 @@ class String
     end
   end
 
+  def empty?
+    bytesize == 0
+  end
+
   def chomp(separator=$/)
     str = dup
     str.chomp!(separator) || str
@@ -431,7 +435,7 @@ class String
   end
 
   def shorten!(size)
-    return if bytesize == 0
+    return if empty?
     Truffle::String.truncate(self, bytesize - size)
   end
 
@@ -686,7 +690,7 @@ class String
       result = slice(one)
 
       if one.kind_of? Regexp
-        lm = Regexp.last_match
+        lm = $~
         self[one] = '' if result
         Truffle.invoke_primitive(:regexp_set_last_match, lm)
       else
@@ -696,7 +700,7 @@ class String
       result = slice(one, two)
 
       if one.kind_of? Regexp
-        lm = Regexp.last_match
+        lm = $~
         self[one, two] = '' if result
         Truffle.invoke_primitive(:regexp_set_last_match, lm)
       else
@@ -774,7 +778,7 @@ class String
           return
       end
     elsif sep.size == 0
-      return if bytesize == 0
+      return if empty?
       bytes = bytesize
 
       while i = m.previous_byte_index(bytes)

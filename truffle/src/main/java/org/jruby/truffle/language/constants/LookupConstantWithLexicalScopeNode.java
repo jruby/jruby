@@ -10,6 +10,7 @@
 package org.jruby.truffle.language.constants;
 
 import com.oracle.truffle.api.Assumption;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
@@ -43,10 +44,20 @@ public abstract class LookupConstantWithLexicalScopeNode extends RubyNode implem
     }
 
     @Specialization(assumptions = "getUnmodifiedAssumption(getModule())")
-    protected RubyConstant lookupConstant(VirtualFrame frame,
+    protected RubyConstant lookupConstant(
             @Cached("doLookup()") RubyConstant constant,
             @Cached("isVisible(constant)") boolean isVisible) {
         if (!isVisible) {
+            throw new RaiseException(coreExceptions().nameErrorPrivateConstant(getModule(), name, this));
+        }
+        return constant;
+    }
+
+    @TruffleBoundary
+    @Specialization(assumptions = "getUnmodifiedAssumption(getModule())")
+    protected RubyConstant lookupConstantUncached() {
+        RubyConstant constant = doLookup();
+        if (!isVisible(constant)) {
             throw new RaiseException(coreExceptions().nameErrorPrivateConstant(getModule(), name, this));
         }
         return constant;

@@ -14,12 +14,8 @@ import com.oracle.truffle.api.vm.PolyglotEngine;
 import org.jruby.JRubyTruffleInterface;
 import org.jruby.Ruby;
 import org.jruby.truffle.interop.JRubyContextWrapper;
-import org.jruby.truffle.language.control.ExitException;
-import org.jruby.truffle.language.control.JavaException;
 import org.jruby.truffle.platform.graal.Graal;
 import org.jruby.util.cli.Options;
-
-import java.io.IOException;
 
 public class JRubyTruffleImpl implements JRubyTruffleInterface {
 
@@ -36,20 +32,16 @@ public class JRubyTruffleImpl implements JRubyTruffleInterface {
     }
 
     @Override
-    public Object execute(org.jruby.ast.RootNode rootNode) {
+    public int execute(String path) {
         if (!Graal.isGraal() && Options.TRUFFLE_GRAAL_WARNING_UNLESS.load()) {
             System.err.println("WARNING: This JVM does not have the Graal compiler. " +
                     "JRuby+Truffle's performance without it will be limited. " +
                     "See https://github.com/jruby/jruby/wiki/Truffle-FAQ#how-do-i-get-jrubytruffle");
         }
 
-        context.getJRubyInterop().setOriginalInputFile(rootNode.getPosition().getFile());
+        context.getJRubyInterop().setOriginalInputFile(path);
 
-        try {
-            return engine.eval(loadSource("Truffle::Boot.run_jruby_root", "run_jruby_root")).get();
-        } catch (ExitException e) {
-            throw new org.jruby.exceptions.MainExitException(e.getCode());
-        }
+        return engine.eval(loadSource("Truffle::Boot.run_jruby_root", "run_jruby_root")).as(Integer.class);
     }
 
     @Override

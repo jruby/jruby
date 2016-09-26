@@ -29,8 +29,8 @@ import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.backtrace.InternalRootNode;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.methods.InternalMethod;
-import org.jruby.truffle.language.parser.ParserContext;
-import org.jruby.truffle.language.parser.jruby.TranslatorDriver;
+import org.jruby.truffle.parser.ParserContext;
+import org.jruby.truffle.parser.TranslatorDriver;
 
 public class LazyRubyRootNode extends RootNode implements InternalRootNode {
 
@@ -75,7 +75,7 @@ public class LazyRubyRootNode extends RootNode implements InternalRootNode {
             callNode.forceInlining();
 
             mainObject = context.getCoreLibrary().getMainObject();
-            method = new InternalMethod(rootNode.getSharedMethodInfo(), rootNode.getSharedMethodInfo().getName(),
+            method = new InternalMethod(context, rootNode.getSharedMethodInfo(), rootNode.getSharedMethodInfo().getName(),
                     context.getCoreLibrary().getObjectClass(), Visibility.PUBLIC, callTarget);
         }
 

@@ -20,6 +20,7 @@ import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.Primitive;
 import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
+import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.SnippetNode;
 import org.jruby.truffle.platform.UnsafeGroup;
@@ -208,7 +209,7 @@ public abstract class StatPrimitiveNodes {
         @Specialization(guards = "isRubyString(path)")
         public int lstat(DynamicObject rubyStat, DynamicObject path) {
             final FileStat stat = posix().allocateStat();
-            final int code = posix().lstat(path.toString(), stat);
+            final int code = posix().lstat(RopeOperations.decodeRope(StringOperations.rope(path)), stat);
 
             if (code == 0) {
                 Layouts.STAT.setStat(rubyStat, stat);

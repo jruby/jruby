@@ -102,16 +102,6 @@ class Regexp
     Truffle.primitive :regexp_options
     raise PrimitiveFailure, "Regexp#options primitive failed"
   end
-    
-  def self.last_match=(match)
-    Truffle.primitive :regexp_set_last_match
-
-    unless match.kind_of? MatchData
-      raise TypeError, "Expected MatchData, got #{match.inspect}"
-    end
-
-    raise PrimitiveFailure, "Regexp#set_last_match primitive failed"
-  end
 
   def self.set_block_last_match(block, match_data)
     Truffle.primitive :regexp_set_block_last_match

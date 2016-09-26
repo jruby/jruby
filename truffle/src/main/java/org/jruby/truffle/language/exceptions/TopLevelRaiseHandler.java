@@ -33,31 +33,32 @@ public class TopLevelRaiseHandler extends RubyNode {
         this.body = body;
     }
 
-    @SuppressWarnings("finally")
     @Override
     public Object execute(VirtualFrame frame) {
-        DynamicObject lastException = null;
+        int exitCode = 0;
 
         try {
             body.execute(frame);
         } catch (RaiseException e) {
-            lastException = AtExitManager.handleAtExitException(getContext(), e);
-            getSetExceptionVariableNode().setLastException(frame, lastException);
+            DynamicObject rubyException = AtExitManager.handleAtExitException(getContext(), e);
+            getSetExceptionVariableNode().setLastException(frame, rubyException);
+            exitCode = statusFromException(rubyException);
+        } catch (ExitException e) {
+            exitCode = e.getCode();
         } finally {
             final DynamicObject atExitException = getContext().getAtExitManager().runAtExitHooks();
 
             if (atExitException != null) {
-                lastException = atExitException;
+                exitCode = statusFromException(atExitException);
             }
 
-            throw new ExitException(statusFromException(lastException));
         }
+
+        return exitCode;
     }
 
     private int statusFromException(DynamicObject exception) {
-        if (exception == null) {
-            return 0;
-        } else if (Layouts.BASIC_OBJECT.getLogicalClass(exception) == coreLibrary().getSystemExitClass()) {
+        if (Layouts.BASIC_OBJECT.getLogicalClass(exception) == coreLibrary().getSystemExitClass()) {
             return castToInt(exception.get("@status", null));
         } else {
             return 1;

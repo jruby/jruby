@@ -114,6 +114,7 @@ import org.jruby.truffle.core.kernel.KernelNodes;
 import org.jruby.truffle.core.kernel.KernelNodesFactory;
 import org.jruby.truffle.core.numeric.FixnumLowerNodeGen;
 import org.jruby.truffle.core.numeric.FixnumOrBignumNode;
+import org.jruby.truffle.core.regexp.RegexpNodes.RegexpSetLastMatchPrimitiveNode;
 import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.rope.ConcatRope;
 import org.jruby.truffle.core.rope.LeafRope;
@@ -126,7 +127,6 @@ import org.jruby.truffle.core.rope.RopeNodes.MakeRepeatingNode;
 import org.jruby.truffle.core.rope.RopeNodesFactory;
 import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.rope.SubstringRope;
-import org.jruby.truffle.core.rubinius.RegexpPrimitiveNodes;
 import org.jruby.truffle.core.string.StringNodesFactory.StringAreComparableNodeGen;
 import org.jruby.truffle.core.string.StringNodesFactory.StringEqualNodeGen;
 import org.jruby.truffle.language.CheckLayoutNode;
@@ -503,7 +503,6 @@ public abstract class StringNodes {
     @CoreMethod(names = { "[]", "slice" }, required = 1, optional = 1, lowerFixnum = { 1, 2 }, taintFrom = 0)
     public abstract static class GetIndexNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private ToIntNode toIntNode;
         @Child private CallDispatchHeadNode includeNode;
         @Child private CallDispatchHeadNode dupNode;
         @Child private StringSubstringPrimitiveNode substringNode;
@@ -527,8 +526,8 @@ public abstract class StringNodes {
         }
 
         @Specialization(guards = { "!isRubyRange(index)", "!isRubyRegexp(index)", "!isRubyString(index)", "wasNotProvided(length) || isRubiniusUndefined(length)" })
-        public Object getIndex(VirtualFrame frame, DynamicObject string, Object index, Object length) {
-            return getIndex(frame, string, getToIntNode().doInt(frame, index), length);
+        public Object getIndex(VirtualFrame frame, DynamicObject string, Object index, Object length, @Cached("new()") SnippetNode snippetNode) {
+            return getIndex(frame, string, (int)snippetNode.execute(frame, "Rubinius::Type.rb_num2int(v)", "v", index), length);
         }
 
         @Specialization(guards = { "isIntRange(range)", "wasNotProvided(length) || isRubiniusUndefined(length)" })
@@ -543,10 +542,10 @@ public abstract class StringNodes {
         }
 
         @Specialization(guards = {"isObjectRange(range)", "wasNotProvided(length) || isRubiniusUndefined(length)"})
-        public Object sliceObjectRange(VirtualFrame frame, DynamicObject string, DynamicObject range, Object length) {
+        public Object sliceObjectRange(VirtualFrame frame, DynamicObject string, DynamicObject range, Object length, @Cached("new()") SnippetNode snippetNode1, @Cached("new()") SnippetNode snippetNode2) {
             // TODO (nirvdrum 31-Mar-15) The begin and end values may return Fixnums beyond int boundaries and we should handle that -- Bignums are always errors.
-            final int coercedBegin = getToIntNode().doInt(frame, Layouts.OBJECT_RANGE.getBegin(range));
-            final int coercedEnd = getToIntNode().doInt(frame, Layouts.OBJECT_RANGE.getEnd(range));
+            final int coercedBegin = (int)snippetNode1.execute(frame, "Rubinius::Type.rb_num2int(v)", "v", Layouts.OBJECT_RANGE.getBegin(range));
+            final int coercedEnd = (int)snippetNode2.execute(frame, "Rubinius::Type.rb_num2int(v)", "v", Layouts.OBJECT_RANGE.getEnd(range));
 
             return sliceRange(frame, string, coercedBegin, coercedEnd, Layouts.OBJECT_RANGE.getExcludedEnd(range));
         }
@@ -591,13 +590,13 @@ public abstract class StringNodes {
         }
 
         @Specialization(guards = "wasProvided(length)")
-        public Object slice(VirtualFrame frame, DynamicObject string, int start, Object length) {
-            return slice(frame, string, start, getToIntNode().doInt(frame, length));
+        public Object slice(VirtualFrame frame, DynamicObject string, int start, Object length, @Cached("new()") SnippetNode snippetNode) {
+            return slice(frame, string, start, (int)snippetNode.execute(frame, "Rubinius::Type.rb_num2int(v)", "v", length));
         }
 
         @Specialization(guards = { "!isRubyRange(start)", "!isRubyRegexp(start)", "!isRubyString(start)", "wasProvided(length)" })
-        public Object slice(VirtualFrame frame, DynamicObject string, Object start, Object length) {
-            return slice(frame, string, getToIntNode().doInt(frame, start), getToIntNode().doInt(frame, length));
+        public Object slice(VirtualFrame frame, DynamicObject string, Object start, Object length, @Cached("new()") SnippetNode snippetNode1, @Cached("new()") SnippetNode snippetNode2) {
+            return slice(frame, string, (int)snippetNode1.execute(frame, "Rubinius::Type.rb_num2int(v)", "v", start), (int)snippetNode2.execute(frame, "Rubinius::Type.rb_num2int(v)", "v", length));
         }
 
         @Specialization(guards = {"isRubyRegexp(regexp)", "wasNotProvided(capture) || isRubiniusUndefined(capture)"})
@@ -607,7 +606,7 @@ public abstract class StringNodes {
                 DynamicObject regexp,
                 Object capture,
                 @Cached("createMethodCallIgnoreVisibility()") CallDispatchHeadNode callNode,
-                @Cached("create()") RegexpPrimitiveNodes.RegexpSetLastMatchPrimitiveNode setLastMatchNode) {
+                @Cached("create()") RegexpSetLastMatchPrimitiveNode setLastMatchNode) {
             return sliceCapture(frame, string, regexp, 0, callNode, setLastMatchNode);
         }
 
@@ -618,7 +617,7 @@ public abstract class StringNodes {
                 DynamicObject regexp,
                 Object capture,
                 @Cached("createMethodCallIgnoreVisibility()") CallDispatchHeadNode callNode,
-                @Cached("create()") RegexpPrimitiveNodes.RegexpSetLastMatchPrimitiveNode setLastMatchNode) {
+                @Cached("create()") RegexpSetLastMatchPrimitiveNode setLastMatchNode) {
             final Object matchStrPair = callNode.call(frame, string, "subpattern", regexp, capture);
 
             if (matchStrPair == nil()) {
@@ -654,15 +653,6 @@ public abstract class StringNodes {
             return nil();
         }
 
-        private ToIntNode getToIntNode() {
-            if (toIntNode == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                toIntNode = insert(ToIntNode.create());
-            }
-
-            return toIntNode;
-        }
-
         private StringSubstringPrimitiveNode getSubstringNode() {
             if (substringNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
@@ -683,18 +673,13 @@ public abstract class StringNodes {
     @ImportStatic(StringGuards.class)
     public abstract static class ASCIIOnlyNode extends CoreMethodArrayArgumentsNode {
 
-        @Specialization(guards = { "isAsciiCompatible(string)", "is7Bit(string)" })
+        @Specialization(guards = { "is7Bit(string)" })
         public boolean asciiOnlyAsciiCompatible7BitCR(DynamicObject string) {
             return true;
         }
 
-        @Specialization(guards = { "isAsciiCompatible(string)", "!is7Bit(string)" })
+        @Specialization(guards = { "!is7Bit(string)" })
         public boolean asciiOnlyAsciiCompatible(DynamicObject string) {
-            return false;
-        }
-
-        @Specialization(guards = "!isAsciiCompatible(string)")
-        public boolean asciiOnly(DynamicObject string) {
             return false;
         }
 
@@ -712,7 +697,12 @@ public abstract class StringNodes {
 
         @Specialization
         public DynamicObject b(DynamicObject string) {
-            final Rope newRope = withEncodingNode.executeWithEncoding(rope(string), ASCIIEncoding.INSTANCE, CodeRange.CR_UNKNOWN);
+            final Rope rope = rope(string);
+
+            // If the rope is already known to be 7-bit, it'll continue to be 7-bit in ASCII 8-bit. Otherwise, it must
+            // be valid since there's no way to have a broken code range in ASCII 8-bit (all byte values are valid).
+            final CodeRange newCodeRange = rope.getCodeRange() == CodeRange.CR_7BIT ? CodeRange.CR_7BIT : CodeRange.CR_VALID;
+            final Rope newRope = withEncodingNode.executeWithEncoding(rope, ASCIIEncoding.INSTANCE, newCodeRange);
 
             return createString(newRope);
         }
@@ -773,6 +763,13 @@ public abstract class StringNodes {
     })
     public abstract static class CaseCmpNode extends CoreMethodNode {
 
+        @Child private EncodingNodes.CompatibleQueryNode compatibleQueryNode;
+
+        public CaseCmpNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            compatibleQueryNode = EncodingNodesFactory.CompatibleQueryNodeFactory.create(context, sourceSection, new RubyNode[] {});
+        }
+
         @CreateCast("other") public RubyNode coerceOtherToString(RubyNode other) {
             return ToStrNodeGen.create(null, null, other);
         }
@@ -782,7 +779,7 @@ public abstract class StringNodes {
         public Object caseCmpSingleByte(DynamicObject string, DynamicObject other) {
             // Taken from org.jruby.RubyString#casecmp19.
 
-            if (RopeOperations.areCompatible(rope(string), rope(other)) == null) {
+            if (compatibleQueryNode.executeCompatibleQuery(string, other) == nil()) {
                 return nil();
             }
 
@@ -794,13 +791,13 @@ public abstract class StringNodes {
         public Object caseCmp(DynamicObject string, DynamicObject other) {
             // Taken from org.jruby.RubyString#casecmp19 and
 
-            final Encoding encoding = RopeOperations.areCompatible(rope(string), rope(other));
+            final DynamicObject encoding = compatibleQueryNode.executeCompatibleQuery(string, other);
 
-            if (encoding == null) {
+            if (encoding == nil()) {
                 return nil();
             }
 
-            return multiByteCasecmp(encoding, StringOperations.getByteListReadOnly(string), StringOperations.getByteListReadOnly(other));
+            return multiByteCasecmp(Layouts.ENCODING.getEncoding(encoding), StringOperations.getByteListReadOnly(string), StringOperations.getByteListReadOnly(other));
         }
 
         @TruffleBoundary
@@ -1116,7 +1113,7 @@ public abstract class StringNodes {
             makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
         }
 
-        @Specialization(guards = "isValidOr7BitEncoding(string)")
+        @Specialization(guards = "!isBrokenCodeRange(string)")
         public DynamicObject eachChar(VirtualFrame frame, DynamicObject string, DynamicObject block) {
             final Rope rope = rope(string);
             final byte[] ptrBytes = rope.getBytes();
@@ -1134,7 +1131,7 @@ public abstract class StringNodes {
             return string;
         }
 
-        @Specialization(guards = "!isValidOr7BitEncoding(string)")
+        @Specialization(guards = "isBrokenCodeRange(string)")
         public DynamicObject eachCharMultiByteEncoding(VirtualFrame frame, DynamicObject string, DynamicObject block) {
             final Rope rope = rope(string);
             final byte[] ptrBytes = rope.getBytes();
@@ -1202,17 +1199,6 @@ public abstract class StringNodes {
             DynamicObject result = createString(org.jruby.RubyString.inspect(getContext().getJRubyRuntime(),
                 StringOperations.getByteListReadOnly(string)).getByteList());
             return taintResultNode.maybeTaint(string, result);
-        }
-    }
-
-    @CoreMethod(names = "empty?")
-    public abstract static class IsEmptyNode extends CoreMethodArrayArgumentsNode {
-
-        public abstract boolean executeIsEmpty(DynamicObject string);
-
-        @Specialization
-        public boolean empty(DynamicObject string) {
-            return rope(string).isEmpty();
         }
     }
 
@@ -3254,22 +3240,23 @@ public abstract class StringNodes {
     @Primitive(name = "string_from_codepoint", needsSelf = false, lowerFixnum = 1)
     public static abstract class StringFromCodepointPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
-        @Specialization(guards = {"isRubyEncoding(encoding)", "isSimple(code, encoding)"})
-        public DynamicObject stringFromCodepointSimple(int code, DynamicObject encoding,
+        @Specialization(guards = { "isRubyEncoding(rubyEncoding)", "isSimple(longCode, rubyEncoding)", "isCodepoint(longCode)" })
+        public DynamicObject stringFromCodepointSimple(long longCode, DynamicObject rubyEncoding,
                                                        @Cached("createBinaryProfile()") ConditionProfile isUTF8Profile,
                                                        @Cached("createBinaryProfile()") ConditionProfile isUSAsciiProfile,
                                                        @Cached("createBinaryProfile()") ConditionProfile isAscii8BitProfile) {
-            final Encoding realEncoding = EncodingOperations.getEncoding(encoding);
+            final int code = (int) longCode; // isSimple() guarantees this is OK
+            final Encoding encoding = EncodingOperations.getEncoding(rubyEncoding);
             final Rope rope;
 
-            if (isUTF8Profile.profile(realEncoding == UTF8Encoding.INSTANCE)) {
+            if (isUTF8Profile.profile(encoding == UTF8Encoding.INSTANCE)) {
                 rope = RopeConstants.UTF8_SINGLE_BYTE_ROPES[code];
-            } else if (isUSAsciiProfile.profile(realEncoding == USASCIIEncoding.INSTANCE)) {
+            } else if (isUSAsciiProfile.profile(encoding == USASCIIEncoding.INSTANCE)) {
                 rope = RopeConstants.US_ASCII_SINGLE_BYTE_ROPES[code];
-            } else if (isAscii8BitProfile.profile(realEncoding == ASCIIEncoding.INSTANCE)) {
+            } else if (isAscii8BitProfile.profile(encoding == ASCIIEncoding.INSTANCE)) {
                 rope = RopeConstants.ASCII_8BIT_SINGLE_BYTE_ROPES[code];
             } else {
-                rope = RopeOperations.create(new byte[] { (byte) code }, realEncoding, CodeRange.CR_UNKNOWN);
+                rope = RopeOperations.create(new byte[] { (byte) code }, encoding, CodeRange.CR_UNKNOWN);
             }
 
             return createString(rope);

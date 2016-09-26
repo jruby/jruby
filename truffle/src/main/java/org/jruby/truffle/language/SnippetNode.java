@@ -22,7 +22,7 @@ import com.oracle.truffle.api.source.Source;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.methods.DeclarationContext;
-import org.jruby.truffle.language.parser.ParserContext;
+import org.jruby.truffle.parser.ParserContext;
 
 public class SnippetNode extends RubyBaseNode {
 

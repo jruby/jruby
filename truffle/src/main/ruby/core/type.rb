@@ -82,6 +82,16 @@ module Rubinius
       Truffle.invoke_primitive :vm_object_respond_to, obj, name, include_private
     end
 
+    def self.object_respond_to_no_built_in?(obj, name, include_private = false)
+      meth = Truffle.invoke_primitive :vm_method_lookup, obj, name
+      !meth.nil? && !Truffle.invoke_primitive(:vm_method_is_basic, meth)
+    end
+
+    def self.check_funcall_callable(obj, name)
+      # TODO BJF Review rb_method_call_status
+      !(Truffle.invoke_primitive :vm_method_lookup, obj, name).nil?
+    end
+
     def self.object_equal(a, b)
       Truffle.primitive :vm_object_equal
       raise PrimitiveFailure, "Rubinius::Type.object_equal primitive failed"
@@ -210,6 +220,131 @@ module Rubinius
       raise TypeError, msg
     end
 
+    def self.rb_num2int(val)
+      num = rb_num2long(val)
+      check_int(num)
+      num
+    end
+
+    def self.rb_num2long(val)
+      raise TypeError, "no implicit conversion from nil to integer" if val.nil?
+
+      if object_kind_of?(val, Fixnum)
+        return val
+      elsif object_kind_of?(val, Float)
+        fval = val.to_int
+        check_long(fval)
+        return fval
+      elsif object_kind_of?(val, Bignum)
+        raise TypeError, "rb_num2long Bignum conversion not yet implemented"
+      else
+         return rb_num2long(rb_to_int(val))
+      end
+    end
+
+    def self.rb_to_int(val)
+      rb_to_integer(val, :to_int);
+    end
+
+    def self.rb_to_integer(val, meth)
+      return val if object_kind_of?(val, Integer)
+      res = convert_type(val, Integer, meth, true)
+      unless object_kind_of?(res, Integer)
+        conversion_mismatch(val, Integer, meth, res)
+      end
+      res
+    end
+
+    def self.conversion_mismatch(val, cls, meth, res)
+      raise TypeError, "can't convert #{val.class} to #{cls} (#{val.class}##{meth} gives #{res.class})"
+    end
+
+    def self.check_int(val)
+      unless Truffle.invoke_primitive(:fixnum_fits_into_int, val)
+        raise RangeError, "integer #{val} too #{val < 0 ? 'small' : 'big'} to convert to `int"
+      end
+    end
+
+    def self.check_long(val)
+      unless Truffle.invoke_primitive(:fixnum_fits_into_long, val)
+        raise RangeError, "integer #{val} too #{val < 0 ? 'small' : 'big'} to convert to `long"
+      end
+    end
+
+    def self.rb_check_convert_type(obj, cls, meth)
+      return obj if object_kind_of?(obj, cls)
+      v = convert_type(obj, cls, meth, false)
+      return nil if v.nil?
+      unless object_kind_of?(v, cls)
+        raise TypeError, "Coercion error: obj.#{meth} did NOT return a #{cls} (was #{object_class(v)})"
+      end
+      v
+    end
+
+    def self.convert_type(obj, cls, meth, raise_on_error)
+      r = check_funcall(obj, meth)
+      if undefined.equal?(r)
+        if raise_on_error
+          raise TypeError, "can't convert #{obj} into #{cls} with #{meth}"
+        end
+        return nil
+      end
+      r
+    end
+
+    def self.check_funcall(recv, meth, args = [])
+      check_funcall_default(recv, meth, args, undefined)
+    end
+
+    def self.check_funcall_default(recv, meth, args, default)
+      respond = check_funcall_respond_to(recv, meth, true)
+      return default if respond == 0
+      unless check_funcall_callable(recv, meth)
+        return check_funcall_missing(recv, meth, args, respond, default);
+      end
+      recv.__send__(meth)
+    end
+
+    def self.check_funcall_respond_to(obj, meth, priv)
+      # TODO Review BJF vm_respond_to
+      return -1 unless object_respond_to_no_built_in?(obj, :respond_to?, true)
+      if !!obj.__send__(:respond_to?, meth, true)
+        1
+      else
+        0
+      end
+    end
+
+    def self.check_funcall_missing(recv, meth, args, respond, default)
+      ret = respond > 0
+      ret = basic_obj_respond_to_missing(recv, meth, false) #PRIV false
+      return default unless ret
+      respond_to_missing = !undefined.equal?(ret)
+      ret = default
+      if object_respond_to_no_built_in?(recv, :method_missing, true)
+        begin
+          return recv.__send__(:method_missing, meth, *args)
+        rescue NoMethodError
+          # TODO BJF usually more is done here
+          meth = Truffle.invoke_primitive :vm_method_lookup, recv, meth
+          if meth
+            ret = false
+          else
+            ret = respond_to_missing
+          end
+          if ret
+            raise
+          end
+        end
+      end
+      return undefined
+    end
+
+    def self.basic_obj_respond_to_missing(obj, mid, priv)
+      return undefined unless object_respond_to_no_built_in?(obj, :respond_to_missing?, true)
+      obj.__send__(:respond_to_missing?, mid, priv);
+    end
+
     ##
     # Uses the logic of [Array, Hash, String].try_convert.
     #
@@ -326,7 +461,7 @@ module Rubinius
       pair = Encoding::EncodingMap[key]
       if pair
         index = pair.last
-        return index && Encoding::EncodingList[index]
+        return index && Truffle.invoke_primitive(:encoding_get_encoding_by_index, index)
       end
 
       return undefined

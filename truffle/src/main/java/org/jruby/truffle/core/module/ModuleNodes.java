@@ -52,8 +52,6 @@ import org.jruby.truffle.core.cast.ToStrNode;
 import org.jruby.truffle.core.cast.ToStrNodeGen;
 import org.jruby.truffle.core.method.MethodFilter;
 import org.jruby.truffle.core.rope.Rope;
-import org.jruby.truffle.core.string.StringNodes;
-import org.jruby.truffle.core.string.StringNodesFactory;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.core.symbol.SymbolTable;
 import org.jruby.truffle.language.LexicalScope;
@@ -93,9 +91,9 @@ import org.jruby.truffle.language.objects.ReadInstanceVariableNode;
 import org.jruby.truffle.language.objects.SingletonClassNode;
 import org.jruby.truffle.language.objects.SingletonClassNodeGen;
 import org.jruby.truffle.language.objects.WriteInstanceVariableNode;
-import org.jruby.truffle.language.parser.ParserContext;
-import org.jruby.truffle.language.parser.jruby.Translator;
 import org.jruby.truffle.language.yield.YieldNode;
+import org.jruby.truffle.parser.ParserContext;
+import org.jruby.truffle.parser.Translator;
 import org.jruby.truffle.platform.UnsafeGroup;
 import org.jruby.truffle.util.StringUtils;
 import org.jruby.util.IdUtil;
@@ -398,7 +396,7 @@ public abstract class ModuleNodes {
             final RubyNode sequence = Translator.sequence(getContext(), sourceSection.getSource(), rubySourceSection, Arrays.asList(checkArity, accessInstanceVariable));
             final RubyRootNode rootNode = new RubyRootNode(getContext(), sourceSection, null, sharedMethodInfo, sequence, false);
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
-            final InternalMethod method = new InternalMethod(sharedMethodInfo, accessorName, module, visibility, callTarget);
+            final InternalMethod method = new InternalMethod(getContext(), sharedMethodInfo, accessorName, module, visibility, callTarget);
 
             Layouts.MODULE.getFields(module).addMethod(getContext(), this, method);
         }
@@ -508,11 +506,8 @@ public abstract class ModuleNodes {
     })
     public abstract static class AutoloadNode extends CoreMethodNode {
 
-        @Child private StringNodes.IsEmptyNode isEmptyNode;
-
         public AutoloadNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            isEmptyNode = StringNodesFactory.IsEmptyNodeFactory.create(new RubyNode[] {});
         }
 
         @CreateCast("name") public RubyNode coerceNameToString(RubyNode name) {
@@ -530,7 +525,7 @@ public abstract class ModuleNodes {
                 throw new RaiseException(coreExceptions().nameError(StringUtils.format("autoload must be constant name: %s", name), module, name, this));
             }
 
-            if (isEmptyNode.executeIsEmpty(filename)) {
+            if (StringOperations.rope(filename).isEmpty()) {
                 throw new RaiseException(coreExceptions().argumentError("empty file name", this));
             }
 
@@ -1063,7 +1058,7 @@ public abstract class ModuleNodes {
             final RubyRootNode newRootNode = new RubyRootNode(getContext(), info.getSourceSection(), rootNode.getFrameDescriptor(), info, newBody, false);
             final CallTarget newCallTarget = Truffle.getRuntime().createCallTarget(newRootNode);
 
-            final InternalMethod method = InternalMethod.fromProc(info, name, module, Visibility.PUBLIC, proc, newCallTarget);
+            final InternalMethod method = InternalMethod.fromProc(getContext(), info, name, module, Visibility.PUBLIC, proc, newCallTarget);
             return addMethod(module, name, method);
         }
 
