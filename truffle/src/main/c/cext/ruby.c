@@ -387,16 +387,6 @@ VALUE rb_str_to_str(VALUE string) {
   return (VALUE) truffle_invoke((void *)string, "to_str");
 }
 
-char *rb_string_value_ptr(volatile VALUE* value_pointer) {
-  VALUE string = rb_string_value(value_pointer);
-  return RSTRING_PTR(string);
-}
-
-char *rb_string_value_cstr(volatile VALUE* value_pointer) {
-  rb_jt_error("rb_string_value_cstr not implemented");
-  abort();
-}
-
 VALUE rb_str_buf_new(long capacity) {
   return rb_str_new_cstr("");
 }

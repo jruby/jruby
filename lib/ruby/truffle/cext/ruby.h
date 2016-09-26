@@ -61,6 +61,13 @@ typedef VALUE ID;
 
 NORETURN(VALUE rb_f_notimplement(int args_count, const VALUE *args, VALUE object));
 
+// Non-standard
+
+NORETURN(void rb_jt_error(const char *message));
+
+void *rb_jt_to_native_handle(VALUE managed);
+VALUE rb_jt_from_native_handle(void *native);
+
 // Memory
 
 #define xmalloc     malloc
@@ -358,10 +365,18 @@ MUST_INLINE VALUE rb_string_value(VALUE *value_pointer) {
   return value;
 }
 
+MUST_INLINE char *rb_string_value_ptr(volatile VALUE* value_pointer) {
+  VALUE string = rb_string_value(value_pointer);
+  return RSTRING_PTR(string);
+}
+
+MUST_INLINE char *rb_string_value_cstr(volatile VALUE* value_pointer) {
+  rb_jt_error("rb_string_value_cstr not implemented");
+  abort();
+}
+
 #define StringValue(value) rb_string_value(&(value))
 #define SafeStringValue StringValue
-char *rb_string_value_ptr(volatile VALUE* value_pointer);
-char *rb_string_value_cstr(volatile VALUE* value_pointer);
 #define StringValuePtr(string) rb_string_value_ptr(&(string))
 #define StringValueCStr(string) rb_string_value_cstr(&(string))
 VALUE rb_str_buf_new(long capacity);
@@ -712,13 +727,6 @@ VALUE *rb_ruby_verbose_ptr(void);
 
 VALUE *rb_ruby_debug_ptr(void);
 #define ruby_debug (*rb_ruby_debug_ptr())
-
-// Non-standard
-
-NORETURN(void rb_jt_error(const char *message));
-
-void *rb_jt_to_native_handle(VALUE managed);
-VALUE rb_jt_from_native_handle(void *native);
 
 #if defined(__cplusplus)
 }
