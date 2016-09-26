@@ -1785,7 +1785,7 @@ public abstract class KernelNodes {
 
         @Specialization
         public DynamicObject globalVariables() {
-            final Collection<String> keys = coreLibrary().getGlobalVariables().dynamicObjectKeys();
+            final Collection<String> keys = coreLibrary().getGlobalVariables().keys();
             final Object[] store = new Object[keys.size()];
             int i = 0;
             for (String key : keys) {

@@ -60,7 +60,7 @@ public class GlobalVariables {
         variables.put(name, storage);
     }
 
-    public Collection<String> dynamicObjectKeys() {
+    public Collection<String> keys() {
         return variables.keySet();
     }
 
