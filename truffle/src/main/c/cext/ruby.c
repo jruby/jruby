@@ -67,8 +67,10 @@ VALUE rb_obj_is_kind_of(VALUE object, VALUE ruby_class) {
 }
 
 void rb_check_frozen(VALUE object) {
-  rb_jt_error("rb_check_frozen not implemented");
-  abort();
+  if (OBJ_FROZEN(object)){
+    rb_jt_error("rb_check_frozen failure case not implemented");
+    abort();
+  }
 }
 
 void rb_check_safe_obj(VALUE object) {
