@@ -82,6 +82,11 @@ public class CExtNodes {
             return num;
         }
 
+
+        @Specialization
+        public long num2long(long num) {
+            return num;
+        }
     }
 
     @CoreMethod(names = "NUM2ULONG", isModuleFunction = true, required = 1)
