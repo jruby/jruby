@@ -1990,7 +1990,7 @@ public class BodyTranslator extends Translator {
         final RubyNode definitionNode;
 
         try {
-            definitionNode = methodCompiler.compileBlockNode(sourceSection, sharedMethodInfo.getName(), node.getBodyNode(), sharedMethodInfo, type);
+            definitionNode = methodCompiler.compileBlockNode(sourceSection, sharedMethodInfo.getName(), node.getBodyNode(), sharedMethodInfo, type, node.getScope().getVariables());
         } finally {
             if (isLambda) {
                 frameOnStackMarkerSlotStack.pop();

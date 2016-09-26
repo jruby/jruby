@@ -74,7 +74,7 @@ public class MethodTranslator extends BodyTranslator {
         this.argsNode = argsNode;
     }
 
-    public BlockDefinitionNode compileBlockNode(RubySourceSection sourceSection, String methodName, ParseNode bodyNode, SharedMethodInfo sharedMethodInfo, ProcType type) {
+    public BlockDefinitionNode compileBlockNode(RubySourceSection sourceSection, String methodName, ParseNode bodyNode, SharedMethodInfo sharedMethodInfo, ProcType type, String[] variables) {
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
         declareArguments();
@@ -135,9 +135,10 @@ public class MethodTranslator extends BodyTranslator {
 
         parentSourceSection.push(sourceSection);
         try {
-            if (argsNode.getBlockLocalVariables() != null && !argsNode.getBlockLocalVariables().isEmpty()) {
-                for (ParseNode var : argsNode.getBlockLocalVariables().children()) {
-                    environment.declareVar(((INameNode) var).getName());
+            if (!translatingForStatement) {
+                // Make sure to declare block-local variables
+                for (String var : variables) {
+                    environment.declareVar(var);
                 }
             }
 
