@@ -51,7 +51,7 @@ int rb_type(VALUE value) {
 }
 
 bool RB_TYPE_P(VALUE value, int type) {
-  return truffle_invoke_i(RUBY_CEXT, "RB_TYPE_P", value, type);
+  return truffle_invoke_b(RUBY_CEXT, "RB_TYPE_P", value, type);
 }
 
 void rb_check_type(VALUE value, int type) {
