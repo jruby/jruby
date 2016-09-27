@@ -8,7 +8,7 @@
 
 if ENV['JRUBY_TRUFFLE_NATIVE_OPENSSL']
   $LOAD_PATH.unshift File.expand_path('../../openssl', __FILE__)
-  require_relative '../openssl/openssl'
+  require_relative '../openssl/openssl.rb'
 else
   # If loaded directly simulate as it was not found, it can added only
   # explicitly by loading openssl-stubs which makes it look like
