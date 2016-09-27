@@ -575,6 +575,7 @@ module Truffle
       gemfile_use_path!(target_gem_path) if @options[:setup][:offline]
 
       execute_cmd([JRUBY_BIN.to_s,
+                   '-X-C', # See https://github.com/jruby/jruby/issues/4171
                    "#{Gem.bindir}/bundle",
                    *bundle_options,
                    'install',
