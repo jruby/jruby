@@ -36,6 +36,14 @@ describe "BasicSocket#setsockopt" do
     end
   end
 
+  platform_is_not :windows do
+    it "raises EINVAL if passed wrong linger value" do
+      lambda do
+        @sock.setsockopt(Socket::SOL_SOCKET, Socket::SO_LINGER, 0)
+      end.should raise_error(Errno::EINVAL)
+    end
+  end
+
   platform_is_not :aix do
     # A known bug in AIX.  getsockopt(2) does not properly set
     # the fifth argument for SO_TYPE, SO_OOBINLINE, SO_BROADCAST, etc.
@@ -160,5 +168,35 @@ describe "BasicSocket#setsockopt" do
     @sock.setsockopt(Socket::SOL_SOCKET, Socket::SO_SNDBUF, [1000].pack('i')).should == 0
     n = @sock.getsockopt(Socket::SOL_SOCKET, Socket::SO_SNDBUF).to_s
     n.unpack('i')[0].should >= 1000
+  end
+
+  describe 'accepts Socket::Option as argument' do
+    it 'boolean' do
+      option = Socket::Option.bool(:INET, :SOCKET, :KEEPALIVE, true)
+      @sock.setsockopt(option).should == 0
+      @sock.getsockopt(Socket::SOL_SOCKET, Socket::SO_KEEPALIVE).bool.should == true
+    end
+
+    it 'int' do
+      option = Socket::Option.int(:INET, :SOCKET, :KEEPALIVE, 1)
+      @sock.setsockopt(option).should == 0
+      @sock.getsockopt(Socket::SOL_SOCKET, Socket::SO_KEEPALIVE).bool.should == true
+    end
+
+    platform_is_not :freebsd, :solaris do
+      it 'linger' do
+        option = Socket::Option.linger(true, 10)
+        @sock.setsockopt(option).should == 0
+        @sock.getsockopt(Socket::SOL_SOCKET, Socket::SO_LINGER).linger.should == [true, 10]
+      end
+    end
+
+    platform_is :freebsd, :solaris do
+      it 'linger' do
+        option = Socket::Option.linger(true, 10)
+        @sock.setsockopt(option).should == 0
+        @sock.getsockopt(Socket::SOL_SOCKET, Socket::SO_LINGER).linger.should == [Socket::SO_LINGER, 10]
+      end
+    end
   end
 end

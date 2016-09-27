@@ -405,16 +405,36 @@ describe "Module#private_constant marked constants" do
       end.should raise_error(NameError)
     end
 
-    it "cannot be reopened as a module" do
+    it "cannot be reopened as a module from scope where constant would be private" do
       lambda do
-        module ConstantVisibility::PrivConstModule::PRIVATE_CONSTANT_MODULE; end
+        module ConstantVisibility::ModuleContainer::PrivateModule; end
       end.should raise_error(NameError)
     end
 
-    it "cannot be reopened as a class" do
+    it "cannot be reopened as a class from scope where constant would be private" do
       lambda do
-        class ConstantVisibility::PrivConstModule::PRIVATE_CONSTANT_MODULE; end
+        class ConstantVisibility::ModuleContainer::PrivateClass; end
       end.should raise_error(NameError)
+    end
+
+    it "can be reopened as a module where constant is not private" do
+      module ::ConstantVisibility::ModuleContainer
+        module PrivateModule
+          X = 1
+        end
+
+        PrivateModule::X.should == 1
+      end
+    end
+
+    it "can be reopened as a class where constant is not private" do
+      module ::ConstantVisibility::ModuleContainer
+        class PrivateClass
+          X = 1
+        end
+
+        PrivateClass::X.should == 1
+      end
     end
 
     it "is not defined? with A::B form" do
@@ -455,16 +475,35 @@ describe "Module#private_constant marked constants" do
 
     it "cannot be reopened as a module" do
       lambda do
-        module ConstantVisibility::PrivConstClass::PRIVATE_CONSTANT_CLASS; end
+        module ConstantVisibility::ClassContainer::PrivateModule; end
       end.should raise_error(NameError)
     end
 
     it "cannot be reopened as a class" do
       lambda do
-        class ConstantVisibility::PrivConstClass::PRIVATE_CONSTANT_CLASS; end
+        class ConstantVisibility::ClassContainer::PrivateClass; end
       end.should raise_error(NameError)
     end
 
+    it "can be reopened as a module where constant is not private" do
+      class ::ConstantVisibility::ClassContainer
+        module PrivateModule
+          X = 1
+        end
+
+        PrivateModule::X.should == 1
+      end
+    end
+
+    it "can be reopened as a class where constant is not private" do
+      class ::ConstantVisibility::ClassContainer
+        class PrivateClass
+          X = 1
+        end
+
+        PrivateClass::X.should == 1
+      end
+    end
 
     it "is not defined? with A::B form" do
       defined?(ConstantVisibility::PrivConstClass::PRIVATE_CONSTANT_CLASS).should == nil

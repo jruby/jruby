@@ -7,8 +7,7 @@ describe :kernel_require_basic, shared: true do
     end
 
     it "loads a non-canonical absolute path" do
-      dir, file = File.split(File.expand_path("load_fixture.rb", CODE_LOADING_DIR))
-      path = File.join dir, ["..", "code"], file
+      path = File.join CODE_LOADING_DIR, "..", "code", "load_fixture.rb"
       @object.send(@method, path).should be_true
       ScratchPad.recorded.should == [:loaded]
     end
@@ -414,8 +413,7 @@ describe :kernel_require, shared: true do
     end
 
     it "canonicalizes non-unique absolute paths" do
-      dir, file = File.split(File.expand_path("load_fixture.rb", CODE_LOADING_DIR))
-      path = File.join dir, ["..", "code"], file
+      path = File.join CODE_LOADING_DIR, "..", "code", "load_fixture.rb"
       @object.require(path).should be_true
       $LOADED_FEATURES.should include(@path)
     end
