@@ -727,7 +727,7 @@ ossl_sslctx_setup(VALUE self)
     GetSSLCTX(self, ctx);
 
 #if !defined(OPENSSL_NO_DH)
-    SSL_CTX_set_tmp_dh_callback(ctx, ossl_tmp_dh_callback);
+    //SSL_CTX_set_tmp_dh_callback(ctx, ossl_tmp_dh_callback); xxxxxxxx
 #endif
 
 #if !defined(OPENSSL_NO_EC)
@@ -736,7 +736,7 @@ ossl_sslctx_setup(VALUE self)
     if (RTEST(ossl_sslctx_get_tmp_ecdh_cb(self))) {
 # if defined(HAVE_SSL_CTX_SET_TMP_ECDH_CALLBACK)
 	rb_warn("#tmp_ecdh_callback= is deprecated; use #ecdh_curves= instead");
-	SSL_CTX_set_tmp_ecdh_callback(ctx, ossl_tmp_ecdh_callback);
+	// SSL_CTX_set_tmp_ecdh_callback(ctx, ossl_tmp_ecdh_callback); xxxxxxxx
 #  if defined(HAVE_SSL_CTX_SET_ECDH_AUTO)
 	/* tmp_ecdh_callback and ecdh_auto conflict; OpenSSL ignores
 	 * tmp_ecdh_callback. So disable ecdh_auto. */
@@ -822,7 +822,7 @@ ossl_sslctx_setup(VALUE self)
 
     val = ossl_sslctx_get_verify_mode(self);
     verify_mode = NIL_P(val) ? SSL_VERIFY_NONE : NUM2INT(val);
-    SSL_CTX_set_verify(ctx, verify_mode, ossl_ssl_verify_callback);
+    /// SSL_CTX_set_verify(ctx, verify_mode, ossl_ssl_verify_callback); xxxxx
     if (RTEST(ossl_sslctx_get_client_cert_cb(self)))
 	SSL_CTX_set_client_cert_cb(ctx, ossl_client_cert_cb);
 
@@ -870,15 +870,15 @@ ossl_sslctx_setup(VALUE self)
     }
 
     if (RTEST(rb_iv_get(self, "@session_get_cb"))) {
-	SSL_CTX_sess_set_get_cb(ctx, ossl_sslctx_session_get_cb);
+	//SSL_CTX_sess_set_get_cb(ctx, ossl_sslctx_session_get_cb); xxxxx
 	OSSL_Debug("SSL SESSION get callback added");
     }
     if (RTEST(rb_iv_get(self, "@session_new_cb"))) {
-	SSL_CTX_sess_set_new_cb(ctx, ossl_sslctx_session_new_cb);
+	//SSL_CTX_sess_set_new_cb(ctx, ossl_sslctx_session_new_cb); xxxxx
 	OSSL_Debug("SSL SESSION new callback added");
     }
     if (RTEST(rb_iv_get(self, "@session_remove_cb"))) {
-	SSL_CTX_sess_set_remove_cb(ctx, ossl_sslctx_session_remove_cb);
+	//SSL_CTX_sess_set_remove_cb(ctx, ossl_sslctx_session_remove_cb); xxxxx
 	OSSL_Debug("SSL SESSION remove callback added");
     }
 
@@ -1414,12 +1414,12 @@ ossl_ssl_initialize(int argc, VALUE *argv, VALUE self)
 	ossl_raise(eSSLError, NULL);
     RTYPEDDATA_DATA(self) = ssl;
 
-    SSL_set_ex_data(ssl, ossl_ssl_ex_ptr_idx, (void *)self);
-    SSL_set_info_callback(ssl, ssl_info_cb);
+    SSL_set_ex_data(ssl, ossl_ssl_ex_ptr_idx, rb_jt_to_native_handle(self));
+    //SSL_set_info_callback(ssl, ssl_info_cb); xxxxxxx
     verify_cb = ossl_sslctx_get_verify_cb(v_ctx);
-    SSL_set_ex_data(ssl, ossl_ssl_ex_vcb_idx, (void *)verify_cb);
+    //SSL_set_ex_data(ssl, ossl_ssl_ex_vcb_idx, (void *)verify_cb); xxxxxxxx
 
-    rb_call_super(0, NULL);
+    // rb_call_super(0, NULL); xxxxxxx
 
     return self;
 }
