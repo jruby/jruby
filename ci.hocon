@@ -119,7 +119,8 @@ sulong: ${labsjdk} {
     [mx, sforceimports], # Use Sulong's Truffle for now
     [mx, build],
     [cd, ../main],
-    ${jt} [build, cexts]
+    ${jt} [build, cexts],
+    [mx, build], # copy compiled libraries to RUBY-ZIP
   ]
 }
 
