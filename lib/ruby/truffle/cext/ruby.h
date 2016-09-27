@@ -465,6 +465,16 @@ void rb_warning(const char *fmt, ...);
 
 int rb_scan_args(int argc, VALUE *argv, const char *format, ...);
 
+MUST_INLINE int rb_jt_scan_args_11(int argc, VALUE *argv, VALUE *v1, VALUE *v2) {
+  if (argc < 1) {
+    rb_jt_error("rb_jt_scan_args_11 error case not implemented");
+    abort();
+  }
+  *v1 = argv[0];
+  if (argc >= 2) *v2 = argv[1];
+  return argc - 1;
+}
+
 MUST_INLINE int rb_jt_scan_args_02(int argc, VALUE *argv, VALUE *v1, VALUE *v2) {
   if (argc >= 1) *v1 = argv[0];
   if (argc >= 2) *v2 = argv[1];

@@ -1396,7 +1396,7 @@ ossl_ssl_initialize(int argc, VALUE *argv, VALUE self)
     if (ssl)
 	ossl_raise(eSSLError, "SSL already initialized");
 
-    if (rb_scan_args(argc, argv, "11", &io, &v_ctx) == 1)
+    if (rb_jt_scan_args_11(argc, argv, &io, &v_ctx) == 1)
 	v_ctx = rb_funcall(cSSLContext, rb_intern("new"), 0);
 
     GetSSLCTX(v_ctx, ctx);
