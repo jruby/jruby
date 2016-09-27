@@ -104,6 +104,8 @@ module Truffle::CExt
         value.is_a?(Symbol)
       when T_STRING
         value.is_a?(String)
+      when T_ARRAY
+        value.is_a?(Array)
       when T_FILE
         value.is_a?(File)
       else
