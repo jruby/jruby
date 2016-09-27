@@ -1,4 +1,4 @@
 fails:Socket#unpack_sockaddr_in decodes the host name and port number of a packed sockaddr_in
-fails:Socket#unpack_sockaddr_in raises an ArgumentError when the sin_family is not AF_INET
 fails:Socket.unpack_sockaddr_in gets the hostname and port number from a passed Addrinfo
 fails:Socket.unpack_sockaddr_in raises an ArgumentError when passed addrinfo is not AF_INET/AF_INET6
+fails:Socket.unpack_sockaddr_in raises an ArgumentError when the sin_family is not AF_INET
