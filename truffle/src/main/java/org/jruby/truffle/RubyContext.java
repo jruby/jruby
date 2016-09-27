@@ -68,7 +68,7 @@ public class RubyContext extends ExecutionContext {
     private final Options options = new Options();
     private final RopeTable ropeTable = new RopeTable();
     private final PrimitiveManager primitiveManager = new PrimitiveManager();
-    private final JRubyInterop jrubyInterop = new JRubyInterop(this);
+    private final JRubyInterop jrubyInterop;
     private final SafepointManager safepointManager = new SafepointManager(this);
     private final SymbolTable symbolTable;
     private final InteropManager interopManager = new InteropManager(this);
@@ -105,6 +105,7 @@ public class RubyContext extends ExecutionContext {
         latestInstance = this;
 
         this.jrubyRuntime = jrubyRuntime;
+        this.jrubyInterop = new JRubyInterop(this, jrubyRuntime);
         this.env = env;
 
         if (options.CALL_GRAPH) {
