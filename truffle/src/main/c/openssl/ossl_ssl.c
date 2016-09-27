@@ -1567,7 +1567,7 @@ static VALUE
 ossl_ssl_connect_nonblock(int argc, VALUE *argv, VALUE self)
 {
     VALUE opts;
-    rb_scan_args(argc, argv, "0:", &opts);
+    rb_jt_scan_args_0_HASH(argc, argv, &opts);
 
     ossl_ssl_setup(self);
 
