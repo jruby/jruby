@@ -24,11 +24,13 @@ describe "File.setgid?" do
     File.setgid?(@name).should == false
   end
 
-  platform_is_not :windows do
-    it "returns true when the gid bit is set" do
-      system "chmod g+s #{@name}"
+  as_superuser do
+    platform_is_not :windows do
+      it "returns true when the gid bit is set" do
+        system "chmod g+s #{@name}"
 
-      File.setgid?(@name).should == true
+        File.setgid?(@name).should == true
+      end
     end
   end
 end

@@ -1,4 +1,24 @@
 module ConstantVisibility
+  module ModuleContainer
+    module PrivateModule
+    end
+    private_constant :PrivateModule
+
+    class PrivateClass
+    end
+    private_constant :PrivateClass
+  end
+
+  class ClassContainer
+    module PrivateModule
+    end
+    private_constant :PrivateModule
+
+    class PrivateClass
+    end
+    private_constant :PrivateClass
+  end
+
   module PrivConstModule
     PRIVATE_CONSTANT_MODULE = true
     private_constant :PRIVATE_CONSTANT_MODULE

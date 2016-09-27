@@ -1,0 +1,3 @@
+fails:Socket.unpack_sockaddr_un returns unix path from a passed Addrinfo
+fails:Socket.unpack_sockaddr_un raises an ArgumentError when the sin_family is not AF_UNIX
+fails:Socket.unpack_sockaddr_un raises an ArgumentError when passed addrinfo is not AF_UNIX
