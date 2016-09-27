@@ -13,6 +13,7 @@ import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.Layouts;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.objects.ObjectGraphNode;
 
@@ -33,6 +34,7 @@ public class InternalMethod implements ObjectGraphNode {
     private final DynamicObject declaringModule;
     private final Visibility visibility;
     private final boolean undefined;
+    private final boolean builtIn;
     private final DynamicObject proc; // only if method is created from a Proc
 
     private final CallTarget callTarget;
@@ -40,6 +42,7 @@ public class InternalMethod implements ObjectGraphNode {
     private final DynamicObject capturedDefaultDefinee;
 
     public static InternalMethod fromProc(
+            RubyContext context,
             SharedMethodInfo sharedMethodInfo,
             String name,
             DynamicObject declaringModule,
@@ -47,6 +50,7 @@ public class InternalMethod implements ObjectGraphNode {
             DynamicObject proc,
             CallTarget callTarget) {
         return new InternalMethod(
+                context,
                 sharedMethodInfo,
                 name,
                 declaringModule,
@@ -59,15 +63,17 @@ public class InternalMethod implements ObjectGraphNode {
     }
 
     public InternalMethod(
+            RubyContext context,
             SharedMethodInfo sharedMethodInfo,
             String name,
             DynamicObject declaringModule,
             Visibility visibility,
             CallTarget callTarget) {
-        this(sharedMethodInfo, name, declaringModule, visibility, false, null, callTarget, null, null);
+        this(context, sharedMethodInfo, name, declaringModule, visibility, false, null, callTarget, null, null);
     }
 
     public InternalMethod(
+            RubyContext context,
             SharedMethodInfo sharedMethodInfo,
             String name,
             DynamicObject declaringModule,
@@ -75,7 +81,22 @@ public class InternalMethod implements ObjectGraphNode {
             boolean undefined,
             DynamicObject proc,
             CallTarget callTarget) {
-        this(sharedMethodInfo, name, declaringModule, visibility, undefined, proc, callTarget, null, null);
+        this(context, sharedMethodInfo, name, declaringModule, visibility, undefined, proc, callTarget, null, null);
+    }
+
+    public InternalMethod(
+        RubyContext context,
+        SharedMethodInfo sharedMethodInfo,
+        String name,
+        DynamicObject declaringModule,
+        Visibility visibility,
+        boolean undefined,
+        DynamicObject proc,
+        CallTarget callTarget,
+        DynamicObject capturedBlock,
+        DynamicObject capturedDefaultDefinee) {
+        this(sharedMethodInfo, name, declaringModule, visibility, undefined, !context.getCoreLibrary().isLoaded(),
+            proc, callTarget, capturedBlock, capturedDefaultDefinee);
     }
 
     public InternalMethod(
@@ -84,6 +105,7 @@ public class InternalMethod implements ObjectGraphNode {
             DynamicObject declaringModule,
             Visibility visibility,
             boolean undefined,
+            boolean builtIn,
             DynamicObject proc,
             CallTarget callTarget,
             DynamicObject capturedBlock,
@@ -94,6 +116,7 @@ public class InternalMethod implements ObjectGraphNode {
         this.name = name;
         this.visibility = visibility;
         this.undefined = undefined;
+        this.builtIn = builtIn;
         this.proc = proc;
         this.callTarget = callTarget;
         this.capturedBlock = capturedBlock;
@@ -120,6 +143,10 @@ public class InternalMethod implements ObjectGraphNode {
         return undefined;
     }
 
+    public boolean isBuiltIn() {
+        return builtIn;
+    }
+
     public CallTarget getCallTarget() {
         return callTarget;
     }
@@ -136,6 +163,7 @@ public class InternalMethod implements ObjectGraphNode {
                     newDeclaringModule,
                     visibility,
                     undefined,
+                    builtIn,
                     proc,
                     callTarget,
                     capturedBlock,
@@ -153,6 +181,7 @@ public class InternalMethod implements ObjectGraphNode {
                     declaringModule,
                     visibility,
                     undefined,
+                    builtIn,
                     proc,
                     callTarget,
                     capturedBlock,
@@ -170,6 +199,7 @@ public class InternalMethod implements ObjectGraphNode {
                     declaringModule,
                     newVisibility,
                     undefined,
+                    builtIn,
                     proc,
                     callTarget,
                     capturedBlock,
@@ -184,6 +214,7 @@ public class InternalMethod implements ObjectGraphNode {
                 declaringModule,
                 visibility,
                 true,
+                builtIn,
                 proc,
                 callTarget,
                 capturedBlock,

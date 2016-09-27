@@ -79,7 +79,7 @@ public abstract class FormatIntegerNode extends FormatNode {
 
         final char fchar = this.getFormatCharacter();
         final boolean sign = this.getSign(fchar);
-        final int base = this.getBase(fchar);
+        final int base = getBase(fchar);
         final boolean zero = arg == 0;
         final boolean negative = arg < 0;
 
@@ -101,7 +101,7 @@ public abstract class FormatIntegerNode extends FormatNode {
         final boolean zero = bigInteger.equals(BigInteger.ZERO);
         final char fchar = this.getFormatCharacter();
         final boolean sign = this.getSign(fchar);
-        final int base = this.getBase(fchar);
+        final int base = getBase(fchar);
 
         final byte[] bytes;
         if (negative && fchar == 'u') {

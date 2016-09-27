@@ -1,1 +1,0 @@
-fails:String#slice! with index calls to_int on index

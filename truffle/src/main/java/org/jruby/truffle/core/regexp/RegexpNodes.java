@@ -22,11 +22,14 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Fallback;
+import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.Frame;
+import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.FrameInstance.FrameAccess;
 import com.oracle.truffle.api.frame.FrameSlot;
+import com.oracle.truffle.api.frame.FrameSlotKind;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
@@ -50,15 +53,16 @@ import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.builtins.NonStandard;
+import org.jruby.truffle.builtins.Primitive;
+import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.core.cast.ToStrNode;
 import org.jruby.truffle.core.cast.ToStrNodeGen;
+import org.jruby.truffle.core.regexp.RegexpNodesFactory.RegexpSetLastMatchPrimitiveNodeFactory;
 import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeNodes;
 import org.jruby.truffle.core.rope.RopeNodesFactory;
 import org.jruby.truffle.core.rope.RopeOperations;
-import org.jruby.truffle.core.rubinius.RegexpPrimitiveNodes.RegexpSetLastMatchPrimitiveNode;
-import org.jruby.truffle.core.rubinius.RegexpPrimitiveNodesFactory;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.core.thread.ThreadManager.BlockingAction;
 import org.jruby.truffle.language.NotProvided;
@@ -384,6 +388,10 @@ public abstract class RegexpNodes {
         return regexp;
     }
 
+    public static boolean isSuitableMatchDataType(RubyContext context, DynamicObject matchData) {
+        return matchData == context.getCoreLibrary().getNilObject() || RubyGuards.isRubyMatchData(matchData);
+    }
+
     @CoreMethod(names = "=~", required = 1)
     public abstract static class MatchOperatorNode extends CoreMethodArrayArgumentsNode {
 
@@ -397,7 +405,7 @@ public abstract class RegexpNodes {
             super(context, sourceSection);
             dupNode = DispatchHeadNodeFactory.createMethodCall(context);
             makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
-            setLastMatchNode = RegexpPrimitiveNodesFactory.RegexpSetLastMatchPrimitiveNodeFactory.create(null);
+            setLastMatchNode = RegexpSetLastMatchPrimitiveNodeFactory.create(null);
         }
 
         @Specialization(guards = "isRubyString(string)")
@@ -520,30 +528,91 @@ public abstract class RegexpNodes {
         @TruffleBoundary
         private Object getMatchData() {
             Frame frame = getContext().getCallStack().getCallerFrameIgnoringSend().getFrame(FrameAccess.READ_ONLY, true);
-            FrameSlot slot = frame.getFrameDescriptor().findFrameSlot("$~");
-
-            while (slot == null) {
-                final Frame nextFrame = RubyArguments.getDeclarationFrame(frame);
-
-                if (nextFrame == null) {
-                    return nil();
-                } else {
-                    slot = nextFrame.getFrameDescriptor().findFrameSlot("$~");
-                    frame = nextFrame;
-                }
-            }
-
-            final Object previousMatchData = frame.getValue(slot);
-
-            if (previousMatchData instanceof ThreadLocalObject) {
-                final ThreadLocalObject threadLocalObject = (ThreadLocalObject) previousMatchData;
-
-                return threadLocalObject.get();
+            ThreadLocalObject lastMatch = getMatchDataThreadLocal(getContext(), frame, false);
+            if (lastMatch == null) {
+                return nil();
             } else {
-                return previousMatchData;
+                return lastMatch.get();
             }
         }
 
+    }
+
+    @Primitive(name = "regexp_set_last_match", needsSelf = false)
+    @ImportStatic(RegexpNodes.class)
+    public static abstract class RegexpSetLastMatchPrimitiveNode extends PrimitiveArrayArgumentsNode {
+
+        public static RegexpSetLastMatchPrimitiveNode create() {
+            return RegexpSetLastMatchPrimitiveNodeFactory.create(null);
+        }
+
+        public abstract DynamicObject executeSetLastMatch(Object matchData);
+
+        @TruffleBoundary
+        @Specialization(guards = "isSuitableMatchDataType(getContext(), matchData)")
+        public DynamicObject setLastMatchData(DynamicObject matchData) {
+            Frame frame = getContext().getCallStack().getCallerFrameIgnoringSend().getFrame(FrameInstance.FrameAccess.READ_WRITE, true);
+            ThreadLocalObject lastMatch = getMatchDataThreadLocal(getContext(), frame, true);
+            lastMatch.set(matchData);
+            return matchData;
+        }
+
+    }
+
+    @Primitive(name = "regexp_set_block_last_match", needsSelf = false)
+    @ImportStatic(RegexpNodes.class)
+    public static abstract class RegexpSetBlockLastMatchPrimitiveNode extends PrimitiveArrayArgumentsNode {
+
+        @TruffleBoundary
+        @Specialization(guards = { "isRubyProc(block)", "isSuitableMatchDataType(getContext(), matchData)" })
+        public Object setBlockLastMatch(DynamicObject block, DynamicObject matchData) {
+            final Frame declarationFrame = Layouts.PROC.getDeclarationFrame(block);
+            if (declarationFrame == null) { // Symbol#to_proc currently does not have a declaration frame
+                return matchData;
+            }
+
+            ThreadLocalObject lastMatch = getMatchDataThreadLocal(getContext(), declarationFrame, true);
+            lastMatch.set(matchData);
+            return matchData;
+        }
+
+    }
+
+    @TruffleBoundary
+    private static ThreadLocalObject getMatchDataThreadLocal(RubyContext context, Frame topFrame, boolean add) {
+        Frame frame = topFrame;
+        FrameSlot slot = null;
+
+        while (true) {
+            slot = frame.getFrameDescriptor().findFrameSlot("$~");
+            if (slot != null) {
+                break;
+            }
+
+            final Frame nextFrame = RubyArguments.getDeclarationFrame(frame);
+            if (nextFrame != null) {
+                frame = nextFrame;
+            } else {
+                if (add) {
+                    slot = frame.getFrameDescriptor().addFrameSlot("$~", FrameSlotKind.Object);
+                    break;
+                } else {
+                    return null;
+                }
+            }
+        }
+
+        final Object previousMatchData = frame.getValue(slot);
+        if (previousMatchData == frame.getFrameDescriptor().getDefaultValue()) { // Never written to
+            if (add) {
+                ThreadLocalObject threadLocalObject = new ThreadLocalObject(context);
+                frame.setObject(slot, threadLocalObject);
+                return threadLocalObject;
+            } else {
+                return null;
+            }
+        }
+        return (ThreadLocalObject) previousMatchData;
     }
 
     @CoreMethod(names = { "quote", "escape" }, onSingleton = true, required = 1)
@@ -683,6 +752,92 @@ public abstract class RegexpNodes {
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
             return allocateNode.allocate(rubyClass, null, null, RegexpOptions.NULL_OPTIONS, null);
+        }
+
+    }
+
+    @Primitive(name = "regexp_fixed_encoding_p")
+    public static abstract class RegexpFixedEncodingPrimitiveNode extends PrimitiveArrayArgumentsNode {
+
+        @Specialization
+        public boolean fixedEncoding(DynamicObject regexp) {
+            return Layouts.REGEXP.getOptions(regexp).isFixed();
+        }
+
+    }
+
+    @Primitive(name = "regexp_initialize", lowerFixnum = 2)
+    @ImportStatic(RegexpGuards.class)
+    public static abstract class RegexpInitializePrimitiveNode extends PrimitiveArrayArgumentsNode {
+
+        @Specialization(guards = { "isRegexpLiteral(regexp)", "isRubyString(pattern)" })
+        public DynamicObject initializeRegexpLiteral(DynamicObject regexp, DynamicObject pattern, int options) {
+            throw new RaiseException(coreExceptions().securityError("can't modify literal regexp", this));
+        }
+
+        @Specialization(guards = { "!isRegexpLiteral(regexp)", "isInitialized(regexp)", "isRubyString(pattern)" })
+        public DynamicObject initializeAlreadyInitialized(DynamicObject regexp, DynamicObject pattern, int options) {
+            throw new RaiseException(coreExceptions().typeError("already initialized regexp", this));
+        }
+
+        @Specialization(guards = { "!isRegexpLiteral(regexp)", "!isInitialized(regexp)", "isRubyString(pattern)" })
+        public DynamicObject initialize(DynamicObject regexp, DynamicObject pattern, int options) {
+            RegexpNodes.initialize(getContext(), regexp, this, StringOperations.rope(pattern), options);
+            return regexp;
+        }
+
+    }
+
+    @Primitive(name = "regexp_options")
+    @ImportStatic(RegexpGuards.class)
+    public static abstract class RegexpOptionsPrimitiveNode extends PrimitiveArrayArgumentsNode {
+
+        @Specialization(guards = "isInitialized(regexp)")
+        public int options(DynamicObject regexp) {
+            return Layouts.REGEXP.getOptions(regexp).toOptions();
+        }
+
+        @Specialization(guards = "!isInitialized(regexp)")
+        public int optionsNotInitialized(DynamicObject regexp) {
+            throw new RaiseException(coreExceptions().typeError("uninitialized Regexp", this));
+        }
+
+    }
+
+    @Primitive(name = "regexp_search_region", lowerFixnum = { 2, 3 })
+    @ImportStatic(RegexpGuards.class)
+    public static abstract class RegexpSearchRegionPrimitiveNode extends PrimitiveArrayArgumentsNode {
+
+        @Specialization(guards = { "!isInitialized(regexp)", "isRubyString(string)" })
+        public Object searchRegionNotInitialized(DynamicObject regexp, DynamicObject string, int start, int end, boolean forward) {
+            throw new RaiseException(coreExceptions().typeError("uninitialized Regexp", this));
+        }
+
+        @Specialization(guards = { "isRubyString(string)", "!isValidEncoding(string)" })
+        public Object searchRegionInvalidEncoding(DynamicObject regexp, DynamicObject string, int start, int end, boolean forward) {
+            throw new RaiseException(coreExceptions().argumentError(formatError(string), this));
+        }
+
+        @TruffleBoundary
+        private String formatError(DynamicObject string) {
+            return StringUtils.format("invalid byte sequence in %s", Layouts.STRING.getRope(string).getEncoding());
+        }
+
+        @Specialization(guards = { "isInitialized(regexp)", "isRubyString(string)", "isValidEncoding(string)" })
+        public Object searchRegion(VirtualFrame frame, DynamicObject regexp, DynamicObject string,
+                int start, int end, boolean forward,
+                @Cached("createX()") RopeNodes.MakeSubstringNode makeSubstringNode,
+                @Cached("createMethodCall()") CallDispatchHeadNode dupNode) {
+            final DynamicObject dupedString = (DynamicObject) dupNode.call(frame, string, "dup");
+            final Matcher matcher = RegexpNodes.createMatcher(getContext(), regexp, dupedString);
+
+            if (forward) {
+                // Search forward through the string.
+                return RegexpNodes.matchCommon(getContext(), this, makeSubstringNode, regexp, dupedString, false, matcher, start, end);
+            } else {
+                // Search backward through the string.
+                return RegexpNodes.matchCommon(getContext(), this, makeSubstringNode, regexp, dupedString, false, matcher, end, start);
+            }
         }
 
     }

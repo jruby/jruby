@@ -33,11 +33,13 @@ import org.jruby.RubyClass;
 import org.jruby.RubyHash;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
+import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.lexer.ByteListLexerSource;
 import org.jruby.lexer.GetsLexerSource;
 import org.jruby.lexer.LexerSource;
+import org.jruby.lexer.LexingCommon;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -339,6 +341,20 @@ public class RubyRipper extends RubyObject {
     public IRubyObject yydebug_set(ThreadContext context, IRubyObject arg) {
         parser.setYYDebug(arg.isTrue());
         return arg;
+    }
+
+    @JRubyMethod(meta = true)
+    public static IRubyObject dedent_string(ThreadContext context, IRubyObject self, IRubyObject _input, IRubyObject _width) {
+        RubyString input = _input.convertToString();
+        int wid = _width.convertToInteger().getIntValue();
+        input.modify19();
+        int col = LexingCommon.dedent_string(input.getByteList(), wid);
+        return context.runtime.newFixnum(col);
+    }
+
+    @JRubyMethod
+    public IRubyObject dedent_string(ThreadContext context, IRubyObject _input, IRubyObject _width) {
+        return dedent_string(context, this, _input, _width);
     }
     
     private LexerSource source(ThreadContext context, IRubyObject src, String filename, int lineno) {

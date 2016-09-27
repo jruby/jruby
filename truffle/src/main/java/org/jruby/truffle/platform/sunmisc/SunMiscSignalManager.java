@@ -16,6 +16,7 @@ import org.jruby.truffle.platform.signal.SignalManager;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+@SuppressWarnings("restriction")
 public class SunMiscSignalManager implements SignalManager {
 
     private final ConcurrentMap<sun.misc.Signal, sun.misc.SignalHandler> DEFAULT_HANDLERS = new ConcurrentHashMap<>();

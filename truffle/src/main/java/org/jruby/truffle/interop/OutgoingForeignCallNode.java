@@ -59,15 +59,19 @@ public abstract class OutgoingForeignCallNode extends RubyNode {
             Object[] args,
             @Cached("args.length") int cachedArgsLength,
             @Cached("createHelperNode(cachedArgsLength)") OutgoingNode outgoingNode,
-            @Cached("createToForeignNodes(cachedArgsLength)") RubyToForeignNode[] toForeignNodes) {
-        return outgoingNode.executeCall(frame, receiver, argsToForeign(frame, toForeignNodes, args));
+            @Cached("createToForeignNodes(cachedArgsLength)") RubyToForeignNode[] toForeignNodes,
+            @Cached("create()") ForeignToRubyNode toRubyNode) {
+        Object[] foreignArgs = argsToForeign(frame, toForeignNodes, args);
+        Object foreignValue = outgoingNode.executeCall(frame, receiver, foreignArgs);
+        return toRubyNode.executeConvert(frame, foreignValue);
     }
 
     @Specialization(contains = "callCached")
     public Object callUncached(
             VirtualFrame frame,
             TruffleObject receiver,
-            Object[] args) {
+            Object[] args,
+            @Cached("create()") ForeignToRubyNode toRubyNode) {
         PerformanceWarnings.warn("megamorphic outgoing foreign call");
 
         if (megamorphicToForeignNode == null) {
@@ -81,7 +85,8 @@ public abstract class OutgoingForeignCallNode extends RubyNode {
             foreignArgs[n] = megamorphicToForeignNode.executeConvert(frame, args[n]);
         }
 
-        return createHelperNode(args.length).executeCall(frame, receiver, foreignArgs);
+        Object foreignValue = createHelperNode(args.length).executeCall(frame, receiver, foreignArgs);
+        return toRubyNode.executeConvert(frame, foreignValue);
     }
 
     @TruffleBoundary

@@ -24,7 +24,7 @@ import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
-import org.jruby.truffle.language.parser.jruby.BodyTranslator;
+import org.jruby.truffle.parser.BodyTranslator;
 import org.jruby.util.RegexpOptions;
 
 public class InterpolatedRegexpNode extends RubyNode {

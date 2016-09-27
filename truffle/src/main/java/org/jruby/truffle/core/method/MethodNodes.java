@@ -20,8 +20,10 @@ import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.RootNode;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+import jnr.ffi.annotations.In;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.runtime.ArgumentDescriptor;
+import org.jruby.runtime.Helpers;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreClass;
@@ -100,6 +102,20 @@ public abstract class MethodNodes {
         @Specialization
         public DynamicObject name(DynamicObject method) {
             return getSymbol(Layouts.METHOD.getMethod(method).getName());
+        }
+
+    }
+
+    @CoreMethod(names = "hash")
+    public abstract static class HashNode extends CoreMethodArrayArgumentsNode {
+
+        @Specialization
+        public long hash(DynamicObject rubyMethod) {
+            final InternalMethod method = Layouts.METHOD.getMethod(rubyMethod);
+            long h = Helpers.hashStart(getContext().getJRubyRuntime(), method.getDeclaringModule().hashCode());
+            h = Helpers.murmurCombine(h, Layouts.METHOD.getReceiver(rubyMethod).hashCode());
+            h = Helpers.murmurCombine(h, method.getSharedMethodInfo().hashCode());
+            return Helpers.hashEnd(h);
         }
 
     }

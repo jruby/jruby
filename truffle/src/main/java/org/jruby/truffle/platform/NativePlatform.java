@@ -23,8 +23,6 @@ public interface NativePlatform {
 
     MemoryManager getMemoryManager();
 
-    SimpleNativeMemoryManager getSimpleNativeMemoryManager();
-
     SignalManager getSignalManager();
 
     ProcessName getProcessName();

@@ -9,6 +9,7 @@ project 'JRuby Truffle' do
 
   properties( 'polyglot.dump.pom' => 'pom.xml',
               'polyglot.dump.readonly' => true,
+              # Must be the same as in mx.jruby/suite.py and ci.hocon
               'truffle.version' => '0.17',
               'jruby.basedir' => '${basedir}/..',
               'maven.test.skip' => 'true' )

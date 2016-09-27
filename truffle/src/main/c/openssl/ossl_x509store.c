@@ -130,7 +130,7 @@ ossl_x509store_set_vfy_cb(VALUE self, VALUE cb)
     X509_STORE *store;
 
     GetX509Store(self, store);
-    X509_STORE_set_ex_data(store, ossl_store_ex_verify_cb_idx, (void *)cb);
+    X509_STORE_set_ex_data(store, ossl_store_ex_verify_cb_idx, rb_jt_to_native_handle(cb));
     rb_iv_set(self, "@verify_callback", cb);
 
     return cb;

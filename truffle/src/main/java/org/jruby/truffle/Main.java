@@ -11,11 +11,9 @@ package org.jruby.truffle;
 
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
-import org.jruby.ast.RootNode;
 import org.jruby.internal.runtime.GlobalVariable;
 import org.jruby.internal.runtime.ValueAccessor;
 import org.jruby.runtime.IAccessor;
-import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import java.io.InputStream;
@@ -52,19 +50,8 @@ public class Main {
                 runtime.getGlobalVariables().set("$" + entry.getKey(), varvalue);
             }
 
-            RootNode scriptNode = (RootNode) runtime.parseFromMain(filename, in);
-
-            ThreadContext context = runtime.getCurrentContext();
-
-            String oldFile = context.getFile();
-            int oldLine = context.getLine();
-
-            try {
-                context.setFileAndLine(scriptNode.getPosition());
-                runtime.getTruffleContext().execute(scriptNode);
-            } finally {
-                context.setFileAndLine(oldFile, oldLine);
-            }
+            int exitCode = runtime.getTruffleContext().execute(filename);
+            System.exit(exitCode);
         }
 
     }

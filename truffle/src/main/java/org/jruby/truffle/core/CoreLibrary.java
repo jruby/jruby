@@ -21,9 +21,7 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.object.Layout;
 import com.oracle.truffle.api.object.Property;
-
 import jnr.constants.platform.Errno;
-
 import org.jcodings.EncodingDB;
 import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.transcode.EConvFlags;
@@ -82,7 +80,6 @@ import org.jruby.truffle.core.rubinius.IOBufferPrimitiveNodesFactory;
 import org.jruby.truffle.core.rubinius.IOPrimitiveNodesFactory;
 import org.jruby.truffle.core.rubinius.NativeFunctionPrimitiveNodesFactory;
 import org.jruby.truffle.core.rubinius.RandomizerPrimitiveNodesFactory;
-import org.jruby.truffle.core.rubinius.RegexpPrimitiveNodesFactory;
 import org.jruby.truffle.core.rubinius.RubiniusTypeNodesFactory;
 import org.jruby.truffle.core.rubinius.StatPrimitiveNodesFactory;
 import org.jruby.truffle.core.rubinius.UndefinedPrimitiveNodesFactory;
@@ -103,7 +100,7 @@ import org.jruby.truffle.extra.TrufflePosixNodesFactory;
 import org.jruby.truffle.extra.ffi.PointerPrimitiveNodesFactory;
 import org.jruby.truffle.gem.bcrypt.BCryptNodesFactory;
 import org.jruby.truffle.interop.InteropNodesFactory;
-import org.jruby.truffle.interop.cext.CExtNodesFactory;
+import org.jruby.truffle.cext.CExtNodesFactory;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
@@ -123,7 +120,7 @@ import org.jruby.truffle.language.objects.FreezeNode;
 import org.jruby.truffle.language.objects.FreezeNodeGen;
 import org.jruby.truffle.language.objects.SingletonClassNode;
 import org.jruby.truffle.language.objects.SingletonClassNodeGen;
-import org.jruby.truffle.language.parser.ParserContext;
+import org.jruby.truffle.parser.ParserContext;
 import org.jruby.truffle.platform.RubiniusTypes;
 import org.jruby.truffle.platform.signal.SignalManager;
 import org.jruby.truffle.stdlib.CoverageNodesFactory;
@@ -740,7 +737,6 @@ public class CoreLibrary {
                 RandomizerPrimitiveNodesFactory.getFactories(),
                 RangeNodesFactory.getFactories(),
                 RegexpNodesFactory.getFactories(),
-                RegexpPrimitiveNodesFactory.getFactories(),
                 RubiniusTypeNodesFactory.getFactories(),
                 SizedQueueNodesFactory.getFactories(),
                 StatPrimitiveNodesFactory.getFactories(),
@@ -970,7 +966,7 @@ public class CoreLibrary {
             Main.printTruffleTimeMetric("before-load-core");
             state = State.LOADING_RUBY_CORE;
 
-            @SuppressWarnings({ "rawtypes", "unchecked" })
+            @SuppressWarnings("unchecked")
             final Future<RubyRootNode>[] coreFileFutures = new Future[coreFiles.length];
 
             try {

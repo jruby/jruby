@@ -530,31 +530,6 @@ public class RopeOperations {
         return size == other.byteLength() ? 0 : size == len ? -1 : 1;
     }
 
-    @TruffleBoundary
-    public static Encoding areCompatible(Rope rope, Rope other) {
-        // Taken from org.jruby.util.StringSupport.areCompatible.
-
-        Encoding enc1 = rope.getEncoding();
-        Encoding enc2 = other.getEncoding();
-
-        if (enc1 == enc2) return enc1;
-
-        if (other.isEmpty()) return enc1;
-        if (rope.isEmpty()) {
-            return (enc1.isAsciiCompatible() && isAsciiOnly(other)) ? enc1 : enc2;
-        }
-
-        if (!enc1.isAsciiCompatible() || !enc2.isAsciiCompatible()) return null;
-
-        return RubyEncoding.areCompatible(enc1, rope.getCodeRange().toInt(), enc2, other.getCodeRange().toInt());
-    }
-
-    public static boolean isAsciiOnly(Rope rope) {
-        // Taken from org.jruby.util.StringSupport.isAsciiOnly.
-
-        return rope.getEncoding().isAsciiCompatible() && rope.getCodeRange() == CR_7BIT;
-    }
-
     public static boolean areComparable(Rope rope, Rope other) {
         // Taken from org.jruby.util.StringSupport.areComparable.
 

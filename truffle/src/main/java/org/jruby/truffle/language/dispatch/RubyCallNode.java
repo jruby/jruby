@@ -15,7 +15,6 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
-
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.core.array.ArrayUtils;
@@ -93,6 +92,11 @@ public class RubyCallNode extends RubyNode {
         }
 
         final Object[] argumentsObjects = executeArguments(frame);
+
+        return executeWithArgumentsEvaluated(frame, receiverObject, argumentsObjects);
+    }
+
+    public Object executeWithArgumentsEvaluated(VirtualFrame frame, Object receiverObject, Object[] argumentsObjects) {
         final DynamicObject blockObject = executeBlock(frame);
 
         if (dispatchHead == null) {

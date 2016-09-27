@@ -122,7 +122,7 @@ public abstract class LexingCommon {
         return createTokenString(tokp);
     }
 
-    protected int dedent_string(ByteList string, int width) {
+    public static int dedent_string(ByteList string, int width) {
         long len = string.realSize();
         int i, col = 0;
         byte[] str = string.unsafeBytes();

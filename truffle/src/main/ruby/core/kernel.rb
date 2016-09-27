@@ -182,6 +182,16 @@ module Kernel
   end
   module_function :StringValue
 
+  def =~(other)
+    nil
+  end
+
+  def !~(other)
+    r = self =~ other ? false : true
+    Truffle.invoke_primitive(:regexp_set_last_match, $~)
+    r
+  end
+
   def itself
     self
   end
@@ -656,4 +666,11 @@ module Kernel
     Truffle::Kernel.at_exit false, &block
   end
   module_function :at_exit
+
+  def global_variables
+    Truffle.primitive :kernel_global_variables
+    raise PrimitiveFailure, "Kernel.global_variables primitive failed"
+  end
+  module_function :global_variables
+
 end

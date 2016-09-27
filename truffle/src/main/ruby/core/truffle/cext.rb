@@ -100,8 +100,12 @@ module Truffle::CExt
     # that puts never seen cases behind a transfer
     
     case type
+      when T_SYMBOL
+        value.is_a?(Symbol)
       when T_STRING
         value.is_a?(String)
+      when T_FILE
+        value.is_a?(File)
       else
         raise 'unknown type'
     end
@@ -271,10 +275,6 @@ module Truffle::CExt
     value
   end
 
-  def RSTRING_PTR(string)
-    Truffle::Interop.to_java_string(string)
-  end
-
   def rb_str_new_frozen(value)
     if value.frozen?
       value
@@ -288,8 +288,8 @@ module Truffle::CExt
     str.intern
   end
 
-  def rb_str_new(cext_str, length)
-    to_ruby_string(cext_str)[0, length].b
+  def rb_str_new(string, length)
+    to_ruby_string(string)[0, length].b
   end
 
   def rb_str_new_nul(length)
@@ -306,6 +306,10 @@ module Truffle::CExt
 
   def rb_str_cat(string, to_concat, length)
     raise 'not implemented'
+  end
+
+  def rb_string_value_cstr_check(string)
+    !string.include?("\0")
   end
 
   def rb_String(value)
@@ -354,10 +358,6 @@ module Truffle::CExt
     $VERBOSE
   end
 
-  def rb_scan_args
-    raise 'not implemented'
-  end
-
   def rb_yield(value)
     block = get_block
     block.call(value)
@@ -378,6 +378,14 @@ module Truffle::CExt
 
   def rb_raise(object, name)
     raise 'not implemented'
+  end
+
+  def rb_iv_get(object, name)
+    Truffle.invoke_primitive :object_ivar_get, object, name.to_sym
+  end
+
+  def rb_iv_set(object, name, value)
+    Truffle.invoke_primitive :object_ivar_set, object, name.to_sym, value
   end
 
   def rb_define_class_under(mod, name, superclass)
@@ -409,8 +417,14 @@ module Truffle::CExt
 
   def rb_define_method(mod, name, function, argc)
     mod.send(:define_method, name) do |*args|
+      if argc == -1
+        args = [args.size, ::Truffle::CExt::RARRAY_PTR(args), self]
+      else
+        args = [self, *args]
+      end
+
       # Using raw execute instead of #call here to avoid argument conversion
-      Truffle::Interop.execute(function, self, *args)
+      Truffle::Interop.execute(function, *args)
     end
   end
 
@@ -434,7 +448,7 @@ module Truffle::CExt
   end
 
   def rb_define_alloc_func(ruby_class, function)
-    ruby_class.send(:define_method, :allocate) do
+    ruby_class.singleton_class.send(:define_method, :allocate) do
       function.call(self)
     end
   end
@@ -571,7 +585,10 @@ module Truffle::CExt
   end
 
   def rb_data_typed_object_wrap(ruby_class, data, data_type)
-    raise 'not implemented'
+    object = ruby_class.internal_allocate
+    object.instance_variable_set :@data_type, data_type
+    object.instance_variable_set :@data, data
+    object
   end
 
   def rb_ruby_verbose_ptr

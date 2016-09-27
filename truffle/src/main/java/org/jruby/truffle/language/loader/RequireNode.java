@@ -36,7 +36,7 @@ import org.jruby.truffle.language.control.JavaException;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.methods.DeclarationContext;
-import org.jruby.truffle.language.parser.ParserContext;
+import org.jruby.truffle.parser.ParserContext;
 import org.jruby.truffle.util.StringUtils;
 
 import java.io.File;

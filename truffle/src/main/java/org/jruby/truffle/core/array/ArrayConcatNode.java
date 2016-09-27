@@ -20,7 +20,7 @@ import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 
 /**
- * Concatenate argument arrays (translating a org.jruby.ast.ArgsCatNode).
+ * Concatenate argument arrays (translating a org.jruby.ast.ArgsCatParseNode).
  */
 public final class ArrayConcatNode extends RubyNode {
 

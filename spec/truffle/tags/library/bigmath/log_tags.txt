@@ -1,1 +1,1 @@
-fails:BigDecimal#abs handles high-precision Rational arguments
+fails:BigDecimal#log handles high-precision Rational arguments

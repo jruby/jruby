@@ -31,7 +31,7 @@ import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.loader.CodeLoader;
 import org.jruby.truffle.language.methods.DeclarationContext;
-import org.jruby.truffle.language.parser.ParserContext;
+import org.jruby.truffle.parser.ParserContext;
 import org.jruby.truffle.platform.UnsafeGroup;
 
 import java.io.IOException;

@@ -35,6 +35,7 @@ import static org.jruby.util.cli.Options.TRUFFLE_EXCEPTIONS_PRINT_JAVA;
 import static org.jruby.util.cli.Options.TRUFFLE_EXCEPTIONS_PRINT_UNCAUGHT_JAVA;
 import static org.jruby.util.cli.Options.TRUFFLE_EXCEPTIONS_STORE_JAVA;
 import static org.jruby.util.cli.Options.TRUFFLE_HASH_PACKED_ARRAY_MAX;
+import static org.jruby.util.cli.Options.TRUFFLE_INLINE_JS;
 import static org.jruby.util.cli.Options.TRUFFLE_INLINE_NEEDS_CALLER_FRAME;
 import static org.jruby.util.cli.Options.TRUFFLE_INSTANCE_VARIABLE_CACHE;
 import static org.jruby.util.cli.Options.TRUFFLE_INSTRUMENTATION_SERVER_PORT;
@@ -70,6 +71,7 @@ import static org.jruby.util.cli.Options.TRUFFLE_UNPACK_CACHE;
 import static org.jruby.util.cli.Options.TRUFFLE_YIELD_ALWAYS_CLONE;
 import static org.jruby.util.cli.Options.TRUFFLE_YIELD_ALWAYS_INLINE;
 import static org.jruby.util.cli.Options.TRUFFLE_YIELD_CACHE;
+import static org.jruby.util.cli.Options.TRUFFLE_BASICOPS_INLINE;
 
 public class Options {
 
@@ -89,6 +91,7 @@ public class Options {
     // Features
 
     public final boolean COVERAGE_GLOBAL = TRUFFLE_COVERAGE_GLOBAL.load();
+    public final boolean INLINE_JS = TRUFFLE_INLINE_JS.load();
 
     // Resources
 
@@ -156,6 +159,7 @@ public class Options {
     public final boolean BACKTRACES_INTERLEAVE_JAVA = TRUFFLE_BACKTRACES_INTERLEAVE_JAVA.load();
     public final int BACKTRACES_LIMIT = TRUFFLE_BACKTRACES_LIMIT.load();
     public final boolean BACKTRACES_OMIT_UNUSED = TRUFFLE_BACKTRACES_OMIT_UNUSED.load();
+    public static final boolean BASICOPS_INLINE = TRUFFLE_BASICOPS_INLINE.load();
 
     // Call graph
 
@@ -164,6 +168,6 @@ public class Options {
 
     // Other tools
 
-    public static boolean CHAOS = TRUFFLE_CHAOS.load();
+    public boolean CHAOS = TRUFFLE_CHAOS.load();
 
 }

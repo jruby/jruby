@@ -22,7 +22,7 @@ import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.loader.CodeLoader;
 import org.jruby.truffle.language.methods.DeclarationContext;
-import org.jruby.truffle.language.parser.ParserContext;
+import org.jruby.truffle.parser.ParserContext;
 
 @Deprecated
 public abstract class DebugHelpers {

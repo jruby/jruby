@@ -23,13 +23,13 @@ import org.jruby.truffle.language.methods.InternalMethod;
 public final class RubyArguments {
 
     private enum ArgumentIndicies {
-        DECLARATION_FRAME,
-        CALLER_FRAME,
-        METHOD,
-        DECLARATION_CONTEXT,
-        FRAME_ON_STACK_MARKER,
-        SELF,
-        BLOCK
+        DECLARATION_FRAME, // 0
+        CALLER_FRAME, // 1
+        METHOD, // 2
+        DECLARATION_CONTEXT, // 3
+        FRAME_ON_STACK_MARKER, // 4
+        SELF, // 5
+        BLOCK // 6
     }
 
     private final static int RUNTIME_ARGUMENT_COUNT = ArgumentIndicies.values().length;
