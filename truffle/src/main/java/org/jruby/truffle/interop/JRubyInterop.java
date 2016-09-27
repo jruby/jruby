@@ -16,8 +16,12 @@ import org.jruby.Ruby;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.control.JavaException;
 import org.jruby.truffle.language.loader.SourceLoader;
 
+import java.io.File;
+import java.net.URISyntaxException;
+import java.security.CodeSource;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,14 +31,40 @@ public class JRubyInterop {
     private final RubyContext context;
 
     private String originalInputFile;
+    private final String jrubyHome;
 
     public JRubyInterop(RubyContext context, Ruby jrubyRuntime) {
         this.context = context;
         this.jrubyRuntime = jrubyRuntime;
+        this.jrubyHome = findJRubyHome();
     }
 
     public String getJRubyHome() {
-        return jrubyRuntime.getJRubyHome();
+        return jrubyHome;
+    }
+
+    private String findJRubyHome() {
+        if (System.getenv("JRUBY_HOME") == null && System.getProperty("jruby.home") == null) {
+            // Set JRuby home automatically for GraalVM
+            final CodeSource codeSource = Ruby.class.getProtectionDomain().getCodeSource();
+            if (codeSource != null) {
+                final File currentJarFile;
+                try {
+                    currentJarFile = new File(codeSource.getLocation().toURI());
+                } catch (URISyntaxException e) {
+                    throw new JavaException(e);
+                }
+
+                if (currentJarFile.toString().endsWith("/ruby.jar")) {
+                    String jarDir = currentJarFile.getParent();
+                    if (new File(jarDir, "lib").isDirectory()) {
+                        return jarDir;
+                    }
+                }
+            }
+        }
+
+        return context.getJRubyRuntime().getJRubyHome();
     }
 
     @TruffleBoundary
