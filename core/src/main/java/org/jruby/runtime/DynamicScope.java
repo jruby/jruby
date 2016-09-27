@@ -87,6 +87,20 @@ public abstract class DynamicScope {
         }
     }
 
+    private static final String[] SPECIALIZED_GETS = {
+            "getValueZeroDepthZero",
+            "getValueOneDepthZero",
+            "getValueTwoDepthZero",
+            "getValueThreeDepthZero",
+    };
+
+    private static final String[] SPECIALIZED_SETS = {
+            "setValueZeroDepthZero",
+            "setValueOneDepthZero",
+            "setValueTwoDepthZero",
+            "setValueThreeDepthZero",
+    };
+
     public static MethodHandle generate(final int size) {
         MethodHandle h = protoClassFromProps(size);
 
@@ -112,11 +126,13 @@ public abstract class DynamicScope {
 
                 // required overrides
                 defineMethod("getValue", ACC_PUBLIC, sig(IRubyObject.class, int.class, int.class), new CodeBlock() {{
-                    line(0);
-                    iload(2); // depth
                     LabelNode superCall = new LabelNode(new Label());
                     LabelNode defaultError = new LabelNode(new Label());
                     LabelNode[] cases = new LabelNode[size];
+
+                    line(0);
+                    iload(2); // depth
+
                     for (int i = 0; i < size; i++) {
                         cases[i] = new LabelNode(new Label());
                     }
@@ -150,13 +166,14 @@ public abstract class DynamicScope {
                     areturn();
                 }});
 
-                // required overrides
                 defineMethod("setValue", ACC_PUBLIC, sig(IRubyObject.class, int.class, IRubyObject.class, int.class), new CodeBlock() {{
-                    line(3);
-                    iload(3); // depth
                     LabelNode superCall = new LabelNode(new Label());
                     LabelNode defaultError = new LabelNode(new Label());
                     LabelNode[] cases = new LabelNode[size];
+
+                    line(3);
+                    iload(3); // depth
+
                     for (int i = 0; i < size; i++) {
                         cases[i] = new LabelNode(new Label());
                     }
@@ -192,6 +209,79 @@ public abstract class DynamicScope {
                     invokevirtual(p(DynamicScope.class), "setValue", sig(IRubyObject.class, int.class, IRubyObject.class, int.class));
                     areturn();
                 }});
+
+                // optional overrides
+                defineMethod("getValueDepthZero", ACC_PUBLIC, sig(IRubyObject.class, int.class), new CodeBlock() {{
+                    LabelNode defaultError = new LabelNode(new Label());
+                    LabelNode[] cases = new LabelNode[size];
+
+                    line(6);
+
+                    for (int i = 0; i < size; i++) {
+                        cases[i] = new LabelNode(new Label());
+                    }
+                    if (size > 0) {
+                        iload(1);
+                        tableswitch(0, size - 1, defaultError, cases);
+                        for (int i = 0; i < size; i++) {
+                            label(cases[i]);
+                            aload(0);
+                            getfield(name, newFields[i], ci(IRubyObject.class));
+                            areturn();
+                        }
+                        label(defaultError);
+                    }
+                    line(1);
+                    newobj(p(RuntimeException.class));
+                    dup();
+                    ldc(name + " only supports scopes with " + size + " variables");
+                    invokespecial(p(RuntimeException.class), "<init>", sig(void.class, String.class));
+                    athrow();
+                }});
+
+
+                for (int i = 0; i < SPECIALIZED_GETS.length; i++) {
+                    final int offset = i;
+
+                    defineMethod(SPECIALIZED_GETS[offset], ACC_PUBLIC, sig(IRubyObject.class), new CodeBlock() {{
+                        line(6);
+
+                        if (size <= offset) {
+                            newobj(p(RuntimeException.class));
+                            dup();
+                            ldc(name + " only supports scopes with " + size + " variables");
+                            invokespecial(p(RuntimeException.class), "<init>", sig(void.class, String.class));
+                            athrow();
+                        } else {
+                            aload(0);
+                            getfield(name, newFields[offset], ci(IRubyObject.class));
+                            areturn();
+                        }
+                    }});
+                }
+
+
+                for (int i = 0; i < SPECIALIZED_SETS.length; i++) {
+                    final int offset = i;
+
+                    defineMethod(SPECIALIZED_SETS[offset], ACC_PUBLIC, sig(IRubyObject.class, IRubyObject.class), new CodeBlock() {{
+                        line(6);
+
+                        if (size <= offset) {
+                            newobj(p(RuntimeException.class));
+                            dup();
+                            ldc(name + " only supports scopes with " + size + " variables");
+                            invokespecial(p(RuntimeException.class), "<init>", sig(void.class, String.class));
+                            athrow();
+                        } else {
+                            aload(0);
+                            aload(1);
+                            putfield(name, newFields[offset], ci(IRubyObject.class));
+                            aload(1);
+                            areturn();
+                        }
+                    }});
+                }
 
                 // fields
                 for (String prop : newFields) {
