@@ -7,13 +7,21 @@
 # GNU Lesser General Public License version 2.1
 
 module RbConfig
+  jruby_home = Truffle::Boot.jruby_home_directory
+
+  bindir = if jruby_home.end_with?('/mxbuild/ruby-zip-extracted')
+    File.expand_path('../../bin', jruby_home)
+  else
+    "#{jruby_home}/bin"
+  end
+
   CONFIG = {
     'exeext' => '',
     'EXEEXT' => '',
     'host_os' => Truffle::System.host_os,
     'host_cpu' => Truffle::System.host_cpu,
-    'bindir' => "#{Truffle::Boot.jruby_home_directory}/bin",
-    'libdir' => "#{Truffle::Boot.jruby_home_directory}/lib/ruby/truffle",
+    'bindir' => bindir,
+    'libdir' => "#{jruby_home}/lib/ruby/truffle",
     'ruby_install_name' => 'jruby-truffle',
     'RUBY_INSTALL_NAME' => 'jruby-truffle',
     # 'ruby_install_name' => 'jruby',
@@ -24,6 +32,7 @@ module RbConfig
   }
 
   def self.ruby
+    # TODO (eregon, 30 Sep 2016): should be the one used by the launcher!
     File.join CONFIG['bindir'], CONFIG['ruby_install_name'], CONFIG['exeext']
   end
 end
