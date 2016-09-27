@@ -1,2 +1,0 @@
-fails:Module#deprecate_constant accepts multiple symbols and strings as constant names
-fails:Module#deprecate_constant when accessing the deprecated module warns with a message

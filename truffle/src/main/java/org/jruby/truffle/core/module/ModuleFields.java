@@ -455,11 +455,7 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
     }
 
     @TruffleBoundary
-    public void deprecateConstant(
-        final RubyContext context,
-        final Node currentNode,
-        final String name) {
-
+    public void deprecateConstant(RubyContext context, Node currentNode, String name) {
         while (true) {
             final RubyConstant previous = constants.get(name);
 

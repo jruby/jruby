@@ -10,22 +10,26 @@
 package org.jruby.truffle.language.constants;
 
 import com.oracle.truffle.api.Assumption;
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.Node.Child;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.RubyConstant;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.WarnNode;
 import org.jruby.truffle.language.control.RaiseException;
 
 public abstract class LookupConstantWithLexicalScopeNode extends RubyNode implements LookupConstantInterface {
 
     private final LexicalScope lexicalScope;
     private final String name;
+    @Child private WarnNode warnNode;
 
     public LookupConstantWithLexicalScopeNode(LexicalScope lexicalScope, String name) {
         this.lexicalScope = lexicalScope;
@@ -45,23 +49,26 @@ public abstract class LookupConstantWithLexicalScopeNode extends RubyNode implem
 
     @Specialization(assumptions = "getUnmodifiedAssumption(getModule())")
     protected RubyConstant lookupConstant(
+            VirtualFrame frame,
             @Cached("doLookup()") RubyConstant constant,
             @Cached("isVisible(constant)") boolean isVisible) {
         if (!isVisible) {
             throw new RaiseException(coreExceptions().nameErrorPrivateConstant(getModule(), name, this));
         }
-        if(constant != null && constant.isDeprecated()){
-            warnDeprecatedConstant(name);
+        if (constant != null && constant.isDeprecated()) {
+            warnDeprecatedConstant(frame, name);
         }
         return constant;
     }
 
-    @TruffleBoundary
     @Specialization(assumptions = "getUnmodifiedAssumption(getModule())")
-    protected RubyConstant lookupConstantUncached() {
+    protected RubyConstant lookupConstantUncached(VirtualFrame frame) {
         RubyConstant constant = doLookup();
         if (!isVisible(constant)) {
             throw new RaiseException(coreExceptions().nameErrorPrivateConstant(getModule(), name, this));
+        }
+        if (constant != null && constant.isDeprecated()) {
+            warnDeprecatedConstant(frame, name);
         }
         return constant;
     }
@@ -78,9 +85,12 @@ public abstract class LookupConstantWithLexicalScopeNode extends RubyNode implem
         return constant == null || constant.isVisibleTo(getContext(), lexicalScope, getModule());
     }
 
-    @TruffleBoundary
-    private void warnDeprecatedConstant(String name) {
-        getContext().getJRubyRuntime().getWarnings().warn("constant " + name + " is deprecated");
+    private void warnDeprecatedConstant(VirtualFrame frame, String name) {
+        if (warnNode == null) {
+            CompilerDirectives.transferToInterpreterAndInvalidate();
+            warnNode = insert(new WarnNode());
+        }
+        warnNode.execute(frame, "constant ", name, " is deprecated");
     }
 
 }

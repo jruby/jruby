@@ -1629,21 +1629,18 @@ public abstract class ModuleNodes {
         }
     }
 
-    @CoreMethod(names = "deprecate_constant", rest = true)
+    @CoreMethod(names = "deprecate_constant", rest = true, raiseIfFrozenSelf = true)
     public abstract static class DeprecateConstantNode extends CoreMethodArrayArgumentsNode {
 
         @Child NameToJavaStringNode nameToJavaStringNode = NameToJavaStringNode.create();
-        @Child IsFrozenNode isFrozenNode;
 
         public DeprecateConstantNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             this.nameToJavaStringNode = NameToJavaStringNode.create();
-            this.isFrozenNode = IsFrozenNodeGen.create(context, sourceSection, null);
         }
 
         @Specialization
         public DynamicObject deprecateConstant(VirtualFrame frame, DynamicObject module, Object[] args) {
-            isFrozenNode.raiseIfFrozen(module);
             for (Object arg : args) {
                 String name = nameToJavaStringNode.executeToJavaString(frame, arg);
                 Layouts.MODULE.getFields(module).deprecateConstant(getContext(), this, name);

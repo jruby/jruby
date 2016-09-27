@@ -23,6 +23,7 @@ import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.RubyConstant;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.WarnNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.loader.RequireNode;
 
@@ -30,13 +31,14 @@ import org.jruby.truffle.language.loader.RequireNode;
 public abstract class LookupForExistingModuleNode extends RubyNode {
 
     @Child private RequireNode requireNode;
+    @Child private WarnNode warnNode;
 
     public abstract RubyConstant executeLookupForExistingModule(VirtualFrame frame, String name, DynamicObject lexicalParent);
 
     @Specialization(guards = "isRubyModule(lexicalParent)")
     public RubyConstant lookupForExistingModule(VirtualFrame frame, String name, DynamicObject lexicalParent,
             @Cached("createBinaryProfile()") ConditionProfile autoloadProfile) {
-        RubyConstant constant = deepConstantSearch(name, lexicalParent);
+        RubyConstant constant = deepConstantSearch(frame, name, lexicalParent);
 
         // If a constant already exists with this class/module name and it's an autoload module, we have to trigger
         // the autoload behavior before proceeding.
@@ -49,14 +51,13 @@ public abstract class LookupForExistingModuleNode extends RubyNode {
 
             Layouts.MODULE.getFields(lexicalParent).removeConstant(getContext(), this, name);
             getRequireNode().executeRequire(frame, StringOperations.getString((DynamicObject) constant.getValue()));
-            return deepConstantSearch(name, lexicalParent);
+            return deepConstantSearch(frame, name, lexicalParent);
         }
 
         return constant;
     }
 
-    @TruffleBoundary
-    private RubyConstant deepConstantSearch(String name, DynamicObject lexicalParent) {
+    private RubyConstant deepConstantSearch(VirtualFrame frame, String name, DynamicObject lexicalParent) {
         RubyConstant constant = Layouts.MODULE.getFields(lexicalParent).getConstant(name);
 
         final DynamicObject objectClass = getContext().getCoreLibrary().getObjectClass();
@@ -74,8 +75,8 @@ public abstract class LookupForExistingModuleNode extends RubyNode {
         if (constant != null && !constant.isVisibleTo(getContext(), LexicalScope.NONE, lexicalParent)) {
             throw new RaiseException(getContext().getCoreExceptions().nameErrorPrivateConstant(lexicalParent, name, this));
         }
-        if(constant != null && constant.isDeprecated()){
-            warnDeprecatedConstant(name);
+        if (constant != null && constant.isDeprecated()) {
+            warnDeprecatedConstant(frame, name);
         }
         return constant;
     }
@@ -88,9 +89,12 @@ public abstract class LookupForExistingModuleNode extends RubyNode {
         return requireNode;
     }
 
-    @TruffleBoundary
-    private void warnDeprecatedConstant(String name) {
-        getContext().getJRubyRuntime().getWarnings().warn("constant " + name + " is deprecated");
+    private void warnDeprecatedConstant(VirtualFrame frame, String name) {
+        if (warnNode == null) {
+            CompilerDirectives.transferToInterpreterAndInvalidate();
+            warnNode = insert(new WarnNode());
+        }
+        warnNode.execute(frame, "constant ", name, " is deprecated");
     }
 
 }
