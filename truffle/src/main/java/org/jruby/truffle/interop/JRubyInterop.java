@@ -55,7 +55,7 @@ public class JRubyInterop {
                     throw new JavaException(e);
                 }
 
-                if (currentJarFile.toString().endsWith("/ruby.jar")) {
+                if (currentJarFile.getName().equals("ruby.jar")) {
                     String jarDir = currentJarFile.getParent();
                     if (new File(jarDir, "lib").isDirectory()) {
                         jrubyRuntime.setJRubyHome(jarDir);
