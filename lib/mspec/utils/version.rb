@@ -21,18 +21,17 @@ class SpecVersion
     to_s
   end
 
-  # Converts a string representation of a version major.minor.tiny.patchlevel
+  # Converts a string representation of a version major.minor.tiny
   # to an integer representation so that comparisons can be made. For example,
-  # "1.8.6.77" < "1.8.6.123" would be false if compared as strings.
+  # "2.2.10" < "2.2.2" would be false if compared as strings.
   def to_i
     unless @integer
-      major, minor, tiny, patch = @version.split "."
+      major, minor, tiny = @version.split "."
       if @ceil
         tiny = 99 unless tiny
-        patch = 9999 unless patch
       end
-      parts = [major, minor, tiny, patch].map { |x| x.to_i }
-      @integer = ("1%02d%02d%02d%04d" % parts).to_i
+      parts = [major, minor, tiny].map { |x| x.to_i }
+      @integer = ("1%02d%02d%02d" % parts).to_i
     end
     @integer
   end
