@@ -109,6 +109,8 @@ class MSpecScript
   def register
     require 'mspec/runner/formatters/dotted'
     require 'mspec/runner/formatters/spinner'
+    require 'mspec/runner/formatters/file'
+    require 'mspec/runner/filters'
 
     if config[:formatter].nil?
       config[:formatter] = STDOUT.tty? ? SpinnerFormatter : @files.size < 50 ? DottedFormatter : FileFormatter
