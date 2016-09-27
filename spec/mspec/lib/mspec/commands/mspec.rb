@@ -137,10 +137,6 @@ class MSpecMain < MSpecScript
   end
 
   def run
-    ENV['MSPEC_RUNNER'] = '1'
-    ENV['RUBY_EXE']     = config[:target]
-    ENV['RUBY_FLAGS']   = config[:flags].join " "
-
     argv = []
 
     argv.concat config[:launch]

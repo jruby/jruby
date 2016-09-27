@@ -235,7 +235,7 @@ class MSpecOptions
         config[:target] = 'topaz'
       when 'o','opal'
         mspec_lib = File.expand_path('../../../', __FILE__)
-        config[:target] = "./bin/opal -syaml -siconv -sfileutils -rnodejs -rnodejs/require -rnodejs/yaml -rprocess -Derror -I#{mspec_lib} -I./lib/ -I. "
+        config[:target] = "./bin/opal -syaml -sfileutils -rnodejs -rnodejs/require -rnodejs/yaml -rprocess -Derror -I#{mspec_lib} -I./lib/ -I. "
       else
         config[:target] = t
       end
@@ -273,6 +273,7 @@ class MSpecOptions
   def formatters
     on("-f", "--format", "FORMAT",
        "Formatter for reporting, where FORMAT is one of:") do |o|
+      require 'mspec/runner/formatters'
       case o
       when 's', 'spec', 'specdoc'
         config[:formatter] = SpecdocFormatter
@@ -301,7 +302,7 @@ class MSpecOptions
       else
         abort "Unknown format: #{o}\n#{@parser}" unless File.exist?(o)
         require File.expand_path(o)
-        if defined?(CUSTOM_MSPEC_FORMATTER)
+        if Object.const_defined?(:CUSTOM_MSPEC_FORMATTER)
           config[:formatter] = CUSTOM_MSPEC_FORMATTER
         else
           abort "You must define CUSTOM_MSPEC_FORMATTER in your custom formatter file"
