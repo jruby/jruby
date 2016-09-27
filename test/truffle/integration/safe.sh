@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 
+source test/truffle/common.sh.inc
+
 function run {
-  ruby -X+T -Xtruffle.platform.safe=false "$@"
+  jt ruby -Xtruffle.platform.safe=false "$@"
 }
 
 function safe {

@@ -21,11 +21,14 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.SafepointAction;
 import org.jruby.truffle.language.backtrace.Backtrace;
 import org.jruby.truffle.language.backtrace.BacktraceFormatter;
+import org.jruby.truffle.language.control.JavaException;
 import org.jruby.truffle.tools.simpleshell.SimpleShell;
 import org.jruby.truffle.util.StringUtils;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.BindException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.List;
 
@@ -40,12 +43,15 @@ public class InstrumentationServerManager {
     public InstrumentationServerManager(RubyContext context, int port) {
         this.context = context;
 
+        final InetAddress host = InetAddress.getLoopbackAddress();
         HttpServer server = null;
-
         try {
-            server = HttpServer.create(new InetSocketAddress(port), 0);
+            server = HttpServer.create(new InetSocketAddress(host, port), 0);
+        } catch (BindException e) {
+            System.err.println("Port " + port + " was already in use: " + e);
+            throw new JavaException(e);
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new JavaException(e);
         }
 
         this.server = server;

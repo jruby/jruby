@@ -158,24 +158,6 @@ module Utilities
     end
   end
 
-  def self.find_jruby_bin_dir
-    # Make sure bin/ruby points to the right launcher
-    ruby_symlink = "#{JRUBY_DIR}/bin/ruby"
-    jruby_bin = Utilities.find_jruby
-    if File.symlink?(ruby_symlink) && File.expand_path(File.readlink(ruby_symlink), File.dirname(ruby_symlink)) != jruby_bin
-      FileUtils.rm_f ruby_symlink
-      File.symlink jruby_bin, ruby_symlink
-    end
-
-    if ENV['RUBY_BIN']
-      File.dirname(ENV['RUBY_BIN'])
-    elsif jruby_eclipse? or mx?
-      JRUBY_DIR + "/bin"
-    else
-      File.dirname(find_jruby)
-    end
-  end
-
   def self.find_repo(name)
     [JRUBY_DIR, "#{JRUBY_DIR}/.."].each do |dir|
       found = Dir.glob("#{dir}/#{name}*").first
@@ -574,11 +556,7 @@ module Commands
   def run(*args)
     env_vars = args.first.is_a?(Hash) ? args.shift : {}
 
-    jruby_args = [
-      '-X+T',
-      "-Xtruffle.core.load_path=#{JRUBY_DIR}/truffle/src/main/ruby",
-      '-Xtruffle.graal.warn_unless=false'
-    ]
+    jruby_args = ['-X+T']
 
     if ENV['JRUBY_OPTS'] && ENV['JRUBY_OPTS'].include?('-Xclassic')
       jruby_args.delete '-X+T'
@@ -591,11 +569,16 @@ module Commands
       args.unshift dep if args.include?(arg)
     end
 
+    unless args.delete('--no-core-load-path')
+      jruby_args << "-Xtruffle.core.load_path=#{JRUBY_DIR}/truffle/src/main/ruby"
+    end
+
     if args.delete('--graal')
       javacmd, javacmd_options = Utilities.find_graal_javacmd_and_options
       env_vars["JAVACMD"] = javacmd
-      jruby_args.push *javacmd_options
-      jruby_args.delete('-Xtruffle.graal.warn_unless=false')
+      jruby_args.push(*javacmd_options)
+    else
+      jruby_args << '-Xtruffle.graal.warn_unless=false'
     end
 
     if args.delete('--js')
@@ -783,7 +766,6 @@ module Commands
 
   def test_compiler(*args)
     jruby_opts = []
-    jruby_opts << '-Xtruffle.graal.warn_unless=false'
 
     if ENV['GRAAL_JS_JAR']
       jruby_opts << '-J-cp'
@@ -792,20 +774,10 @@ module Commands
 
     jruby_opts << '-Xtruffle.exceptions.print_java=true'
 
-    no_java_cmd = args.delete('--no-java-cmd')
-
-    unless no_java_cmd
-      javacmd, javacmd_options = Utilities.find_graal_javacmd_and_options
-      jruby_opts.push *javacmd_options
-    end
-
-    env_vars = {}
-    env_vars["JAVACMD"] = javacmd unless no_java_cmd
-    env_vars["JRUBY_OPTS"] = jruby_opts.join(' ')
-    env_vars["PATH"] = "#{Utilities.find_jruby_bin_dir}:#{ENV["PATH"]}"
+    env = { "JRUBY_OPTS" => jruby_opts.join(' ') }
 
     Dir["#{JRUBY_DIR}/test/truffle/compiler/*.sh"].each do |test_script|
-      sh env_vars, test_script
+      sh env, test_script
     end
   end
   private :test_compiler
@@ -895,8 +867,6 @@ module Commands
     env_vars   = env
     jruby_opts = []
 
-    jruby_opts << '-Xtruffle.graal.warn_unless=false'
-
     if ENV['GRAAL_JS_JAR']
       jruby_opts << '-J-cp'
       jruby_opts << Utilities.find_graal_js
@@ -909,7 +879,6 @@ module Commands
 
     env_vars["JRUBY_OPTS"] = jruby_opts.join(' ')
 
-    env_vars["PATH"]       = "#{Utilities.find_jruby_bin_dir}:#{ENV["PATH"]}"
     tests_path             = "#{JRUBY_DIR}/test/truffle/integration"
     single_test            = !args.empty?
     test_names             = single_test ? '{' + args.join(',') + '}' : '*'
@@ -924,8 +893,6 @@ module Commands
     env_vars   = env
     jruby_opts = []
 
-    jruby_opts << '-Xtruffle.graal.warn_unless=false'
-
     if ENV['GRAAL_JS_JAR']
       jruby_opts << '-J-cp'
       jruby_opts << Utilities.find_graal_js
@@ -933,7 +900,6 @@ module Commands
 
     env_vars["JRUBY_OPTS"] = jruby_opts.join(' ')
 
-    env_vars["PATH"]       = "#{Utilities.find_jruby_bin_dir}:#{ENV["PATH"]}"
     tests_path             = "#{JRUBY_DIR}/test/truffle/gems"
     single_test            = !args.empty?
     test_names             = single_test ? '{' + args.join(',') + '}' : '*'
@@ -949,15 +915,12 @@ module Commands
     env_vars   = env
     jruby_opts = []
 
-    jruby_opts << '-Xtruffle.graal.warn_unless=false'
-
     env_vars["JRUBY_OPTS"] = jruby_opts.join(' ')
 
     unless File.exist? "#{JRUBY_DIR}/../jruby-truffle-gem-test-pack/gem-testing"
       raise 'missing ../jruby-truffle-gem-test-pack/gem-testing directory'
     end
 
-    env_vars["PATH"]       = "#{Utilities.find_jruby_bin_dir}:#{ENV["PATH"]}"
     tests_path             = "#{JRUBY_DIR}/test/truffle/ecosystem"
     single_test            = !args.empty?
     test_names             = single_test ? '{' + args.join(',') + '}' : '*'

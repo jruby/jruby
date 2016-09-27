@@ -186,6 +186,8 @@ module Truffle
     ROOT              = Pathname(__FILE__).dirname.parent.parent.expand_path
     JRUBY_PATH        = ROOT.join('../../../..').expand_path
     JRUBY_BIN         = JRUBY_PATH.join('bin', 'jruby')
+    JT                = JRUBY_PATH.join('tool', 'jt.rb')
+    INTERPRETER_PATH  = JT.exist? ? [JT.to_s, "ruby"] : JRUBY_BIN.to_s
 
     module OptionBlocks
       STORE_NEW_VALUE         = -> (new, old, _) { new }
@@ -248,8 +250,7 @@ module Truffle
                   }.merge(shared_offline_options),
           run:    {
               help:             ['-h', '--help', 'Show this message', STORE_NEW_VALUE, false],
-              interpreter_path: ['--interpreter-path PATH', "Path to #{BRANDING} interpreter executable", STORE_NEW_VALUE,
-                                 JRUBY_BIN],
+              interpreter_path: ['--interpreter-path PATH', "Path to #{BRANDING} interpreter executable", STORE_NEW_VALUE, INTERPRETER_PATH],
               no_truffle:       ['-n', '--no-truffle', "Use conventional JRuby instead of #{BRANDING}", STORE_NEW_NEGATED_VALUE, false],
               graal:            ['-g', '--graal', 'Run on graal', STORE_NEW_VALUE, false],
               build:            ['-b', '--build', 'Run `jt build` using conventional JRuby', STORE_NEW_VALUE, false],
@@ -417,6 +418,11 @@ module Truffle
       @options[:global][:verbose]
     end
 
+    def interpreter_path
+      # Might be an Array or just a String
+      [*@options[:run][:interpreter_path]]
+    end
+
     def build_option_parsers
       option_parsers = OPTION_DEFINITIONS.each_with_object({}) do |(name, parser_options), parsers|
         parsers[name] = build_option_parser(parser_options, @options.fetch(name))
@@ -575,6 +581,7 @@ module Truffle
       gemfile_use_path!(target_gem_path) if @options[:setup][:offline]
 
       execute_cmd([JRUBY_BIN.to_s,
+                   '-X-C', # See https://github.com/jruby/jruby/issues/4171
                    "#{Gem.bindir}/bundle",
                    *bundle_options,
                    'install',
@@ -603,7 +610,7 @@ module Truffle
     end
 
     def subcommand_run(rest)
-      jruby_path = Pathname("#{@options[:run][:interpreter_path]}/../..").expand_path
+      jruby_path = Pathname("#{interpreter_path[0]}/../..").expand_path
       raise unless jruby_path.absolute?
       ruby_options, rest = if rest.include?('--')
                              split = rest.index('--')
@@ -659,7 +666,7 @@ module Truffle
       env.each { |k, v| env[k] = v.to_s }
 
       cmd = [(env unless env.empty?),
-             @options[:run][:interpreter_path].to_s,
+             *interpreter_path,
              *jruby_options,
              *env_options,
              executable,

@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source test/truffle/common.sh.inc
+
 set -e
 
-ruby -X+T test/truffle/integration/sl/inline-exported.rb
+jt ruby test/truffle/integration/sl/inline-exported.rb
