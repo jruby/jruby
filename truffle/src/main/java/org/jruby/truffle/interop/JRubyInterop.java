@@ -33,6 +33,10 @@ public class JRubyInterop {
         this.jrubyRuntime = jrubyRuntime;
     }
 
+    public String getJRubyHome() {
+        return jrubyRuntime.getJRubyHome();
+    }
+
     @TruffleBoundary
     public DynamicObject toTruffle(org.jruby.RubyException jrubyException, RubyNode currentNode) {
         switch (jrubyException.getMetaClass().getName()) {
