@@ -346,7 +346,7 @@ test-cexts: ${sulong} ${gem-test-pack} {
 
   run: [
     ${jt} [test, specs, --graal, ":capi"],
-    ${jt} [test, cexts]
+    ${jt} [test, cexts, --no-argon2]
   ]
 }
 

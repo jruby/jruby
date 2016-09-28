@@ -462,7 +462,7 @@ module Commands
       jt test gems                                   tests using gems
       jt test ecosystem [--offline]                  tests using the wider ecosystem such as bundler, Rails, etc
                                                          (when --offline it will not use rubygems.org)
-      jt test cexts [--no-libxml --no-openssl]       run C extension tests
+      jt test cexts [--no-libxml --no-openssl --no-argon2]       run C extension tests
                                                          (implies --graal, where Graal needs to include Sulong, set SULONG_HOME to a built checkout of Sulong, and set GEM_HOME)
       jt test report :language                       build a report on language specs
                      :core                               (results go into test/target/mspec-html-report)
@@ -792,6 +792,7 @@ module Commands
   def test_cexts(*args)
     no_libxml = args.delete('--no-libxml')
     no_openssl = args.delete('--no-openssl')
+    no_argon2 = args.delete('--no-argon2')
 
     # Test that we can compile and run some basic C code that uses libxml and openssl
 
@@ -843,12 +844,17 @@ module Commands
 
     # Test that we can compile and run some real C extensions
 
-    [
+    tests = [
         ['oily_png', ['chunky_png-1.3.6', 'oily_png-1.2.0'], ['oily_png']],
         ['psd_native', ['chunky_png-1.3.6', 'oily_png-1.2.0', 'bindata-2.3.1', 'hashie-3.4.4', 'psd-enginedata-1.1.1', 'psd-2.1.2', 'psd_native-1.1.3'], ['oily_png', 'psd_native']],
-        ['nokogiri', [], ['nokogiri']],
-        ['ruby-argon2', [], [], "#{ENV['GEM_HOME']}/bundler/gems/ruby-argon2-bd3fb1e056cf"]
-    ].each do |gem_name, dependencies, libs, gem_root|
+        ['nokogiri', [], ['nokogiri']]
+    ]
+    
+    unless no_argon2
+      tests.push ['ruby-argon2', [], [], "#{ENV['GEM_HOME']}/bundler/gems/ruby-argon2-bd3fb1e056cf"]
+    end
+
+    tests.each do |gem_name, dependencies, libs, gem_root|
       next if gem_name == 'nokogiri' # nokogiri totally excluded
       next if gem_name == 'nokogiri' && no_libxml
       unless gem_root and File.exist?(File.join(gem_root, CEXTC_CONF_FILE))
