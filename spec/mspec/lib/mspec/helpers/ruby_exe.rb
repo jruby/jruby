@@ -95,9 +95,11 @@ class Object
         "ir"
       end
     when :name
+      require 'rbconfig'
       bin = RUBY_NAME + (RbConfig::CONFIG['EXEEXT'] || RbConfig::CONFIG['exeext'] || '')
       File.join(".", bin)
     when :install_name
+      require 'rbconfig'
       bin = RbConfig::CONFIG["RUBY_INSTALL_NAME"] || RbConfig::CONFIG["ruby_install_name"]
       bin << (RbConfig::CONFIG['EXEEXT'] || RbConfig::CONFIG['exeext'] || '')
       File.join(RbConfig::CONFIG['bindir'], bin)
@@ -170,7 +172,6 @@ class Object
   end
 
   unless Object.const_defined?(:RUBY_EXE) and RUBY_EXE
-    require 'rbconfig'
     RUBY_EXE = resolve_ruby_exe
   end
 end

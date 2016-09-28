@@ -98,6 +98,8 @@ class MSpecTag < MSpecScript
   end
 
   def register
+    require 'mspec/runner/actions'
+
     case config[:tagger]
     when :add, :del
       tag = SpecTag.new config[:tag]

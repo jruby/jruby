@@ -6,7 +6,10 @@
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
 
-if ENV['JRUBY_TRUFFLE_SHIM_OPENSSL']
+if ENV['JRUBY_TRUFFLE_NATIVE_OPENSSL']
+  $LOAD_PATH.unshift File.expand_path('../../openssl', __FILE__)
+  require_relative '../openssl/openssl'
+else
   # If loaded directly simulate as it was not found, it can added only
   # explicitly by loading openssl-stubs which makes it look like
   # openssl was loaded.
@@ -14,7 +17,4 @@ if ENV['JRUBY_TRUFFLE_SHIM_OPENSSL']
   load_error = LoadError.new('cannot load such file -- openssl')
   load_error.instance_variable_set :@path, 'openssl'
   raise load_error
-else
-  $LOAD_PATH.unshift File.expand_path('../../openssl', __FILE__)
-  require_relative '../openssl/openssl.rb'
 end

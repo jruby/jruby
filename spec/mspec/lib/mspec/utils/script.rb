@@ -1,5 +1,4 @@
 require 'mspec/guards/guard'
-require 'mspec/runner/formatters/dotted'
 
 # MSpecScript provides a skeleton for all the MSpec runner scripts.
 
@@ -69,10 +68,8 @@ class MSpecScript
     end
 
     names.each do |name|
-      return Kernel.load(name) if File.exist?(File.expand_path(name))
-
       config[:path].each do |dir|
-        file = File.join dir, name
+        file = File.expand_path name, dir
         return Kernel.load(file) if File.exist? file
       end
     end
@@ -98,6 +95,7 @@ class MSpecScript
       engine = 'ruby'
     end
     try_load "#{engine}.#{SpecGuard.ruby_version}.mspec"
+    try_load "#{engine}.mspec"
   end
 
   # Callback for enabling custom options. This version is a no-op.
@@ -109,6 +107,11 @@ class MSpecScript
 
   # Registers all filters and actions.
   def register
+    require 'mspec/runner/formatters/dotted'
+    require 'mspec/runner/formatters/spinner'
+    require 'mspec/runner/formatters/file'
+    require 'mspec/runner/filters'
+
     if config[:formatter].nil?
       config[:formatter] = STDOUT.tty? ? SpinnerFormatter : @files.size < 50 ? DottedFormatter : FileFormatter
     end
@@ -207,6 +210,12 @@ class MSpecScript
     end
   end
 
+  def setup_env
+    ENV['MSPEC_RUNNER'] = '1'
+    ENV['RUBY_EXE'] = config[:target] if config[:target]
+    ENV['RUBY_FLAGS'] = config[:flags].join(" ") if config[:flags]
+  end
+
   # Instantiates an instance and calls the series of methods to
   # invoke the script.
   def self.main
@@ -217,6 +226,8 @@ class MSpecScript
     script.options
     script.signals
     script.register
+    script.setup_env
+    require 'mspec'
     script.run
   end
 end

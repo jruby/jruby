@@ -102,8 +102,7 @@ abstract class AbstractVariable implements BiVariable {
         } else if (values.length > 1) {
             javaType = (Class) values[1];
         } else {
-            // When a new object comes in without a target type, clear out cached type
-            javaType = null;
+            javaType = javaObject.getClass();
         }
         irubyObject = JavaEmbedUtils.javaToRuby(runtime, javaObject);
         fromRuby = false;
@@ -112,6 +111,7 @@ abstract class AbstractVariable implements BiVariable {
     protected void updateRubyObject(final IRubyObject rubyObject) {
         if ( rubyObject == null ) return;
         this.irubyObject = rubyObject;
+        this.javaType = null;
         // NOTE: quite weird - but won't pass tests otherwise !?!
         //this.javaObject = null;
         // delays updating javaObject for performance.
@@ -142,6 +142,9 @@ abstract class AbstractVariable implements BiVariable {
         }
         else { // Ruby originated variables
             javaObject = irubyObject.toJava(Object.class);
+            if (javaObject != null) {
+                javaType = javaObject.getClass();
+            }
         }
         return javaObject;
     }

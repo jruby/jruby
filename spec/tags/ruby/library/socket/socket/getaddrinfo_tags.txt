@@ -1,2 +1,3 @@
 windows:Socket#getaddrinfo accepts empty addresses for IPv6 passive sockets
 windows:Socket#getaddrinfo accepts empty addresses for IPv6 non-passive sockets
+fails:Socket#getaddrinfo accepts empty addresses for IPv6 non-passive sockets

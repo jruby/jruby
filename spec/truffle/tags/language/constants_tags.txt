@@ -1,3 +1,7 @@
 fails:Constant resolution within a singleton class (class << obj) uses its own namespace for each object
 fails:Constant resolution within a singleton class (class << obj) uses its own namespace for nested modules
 fails:Constant resolution within a singleton class (class << obj) allows nested modules to have proper resolution
+fails:Module#private_constant marked constants in a module can be reopened as a module where constant is not private
+fails:Module#private_constant marked constants in a module can be reopened as a class where constant is not private
+fails:Module#private_constant marked constants in a class can be reopened as a module where constant is not private
+fails:Module#private_constant marked constants in a class can be reopened as a class where constant is not private
