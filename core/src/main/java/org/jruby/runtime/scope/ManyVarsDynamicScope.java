@@ -5,6 +5,10 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ArraySupport;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
+
 /**
  * Represents the the dynamic portion of scoping information.  The variableValues are the
  * values of assigned local or block variables.  The staticScope identifies which sort of
@@ -24,6 +28,17 @@ import org.jruby.util.ArraySupport;
 public class ManyVarsDynamicScope extends DynamicScope {
     // Our values holder (name of variables are kept in staticScope)
     private IRubyObject[] variableValues;
+
+    public static final MethodHandle CONSTRUCTOR;
+    static {
+        try {
+            CONSTRUCTOR = MethodHandles.publicLookup()
+                    .findConstructor(ManyVarsDynamicScope.class, MethodType.methodType(void.class, StaticScope.class, DynamicScope.class))
+                    .asType(MethodType.methodType(DynamicScope.class, StaticScope.class, DynamicScope.class));
+        } catch (Exception e) {
+            throw new RuntimeException("BUG: could not initialize constructor handle");
+        }
+    }
 
     public ManyVarsDynamicScope(StaticScope staticScope, DynamicScope parent) {
         super(staticScope, parent);

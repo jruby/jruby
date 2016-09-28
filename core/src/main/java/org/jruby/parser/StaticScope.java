@@ -29,6 +29,8 @@
 package org.jruby.parser;
 
 import java.io.Serializable;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.util.Arrays;
 
 import org.jruby.RubyModule;
@@ -44,9 +46,12 @@ import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.scope.DynamicScopeGenerator;
+import org.jruby.runtime.scope.ManyVarsDynamicScope;
 
 /**
  * StaticScope represents lexical scoping of variables and module/class constants.
@@ -60,7 +65,9 @@ import org.jruby.runtime.builtin.IRubyObject;
  * 
  */
 public class StaticScope implements Serializable {
+    private static final int MAX_SPECIALIZED_SIZE = 50;
     private static final long serialVersionUID = 3423852552352498148L;
+    private static final MethodHandles.Lookup LOOKUP = MethodHandles.publicLookup();
 
     // Next immediate scope.  Variable and constant scoping rules make use of this variable
     // in different ways.
@@ -74,6 +81,8 @@ public class StaticScope implements Serializable {
 
     // Our name holder (offsets are assigned as variables are added)
     private String[] variableNames;
+
+    private int variableNamesLength;
 
     // A list of booleans indicating which variables are named captures from regexp
     private boolean[] namedCaptures;
@@ -101,6 +110,8 @@ public class StaticScope implements Serializable {
     private IRScope irScope;
 
     private RubyModule overlayModule;
+
+    private MethodHandle constructor;
 
     public enum Type {
         LOCAL, BLOCK, EVAL;
@@ -144,10 +155,37 @@ public class StaticScope implements Serializable {
 
         this.enclosingScope = enclosingScope;
         this.variableNames = names;
+        this.variableNamesLength = names.length;
         this.type = type;
         this.irScope = null;
         this.isBlockOrEval = (type != Type.LOCAL);
         this.isArgumentScope = !isBlockOrEval;
+    }
+
+    public DynamicScope construct(DynamicScope parent) {
+        MethodHandle constructor = this.constructor;
+
+        if (constructor == null) constructor = acquireConstructor();
+
+        try {
+            return (DynamicScope) constructor.invokeExact(this, parent);
+        } catch (Throwable e) {
+            Helpers.throwException(e);
+            return null; // not reached
+        }
+    }
+
+    private MethodHandle acquireConstructor() {
+        MethodHandle constructor;
+        int numberOfVariables = getNumberOfVariables();
+
+        if (numberOfVariables > MAX_SPECIALIZED_SIZE) {
+            constructor = ManyVarsDynamicScope.CONSTRUCTOR;
+        } else {
+            constructor = DynamicScopeGenerator.generate(numberOfVariables);
+        }
+        this.constructor = constructor;
+        return constructor;
     }
 
     public IRScope getIRScope() {
@@ -246,7 +284,7 @@ public class StaticScope implements Serializable {
     }
 
     public int getNumberOfVariables() {
-        return variableNames.length;
+        return variableNamesLength;
     }
 
     public void setVariables(String[] names) {
@@ -254,6 +292,7 @@ public class StaticScope implements Serializable {
         assert namesAreInterned(names);
 
         variableNames = new String[names.length];
+        variableNamesLength = names.length;
         System.arraycopy(names, 0, variableNames, 0, names.length);
     }
 
@@ -541,6 +580,7 @@ public class StaticScope implements Serializable {
         String[] newVariableNames = new String[variableNames.length + 1];
         System.arraycopy(variableNames, 0, newVariableNames, 0, variableNames.length);
         variableNames = newVariableNames;
+        variableNamesLength = newVariableNames.length;
         variableNames[variableNames.length - 1] = name;
     }
 
