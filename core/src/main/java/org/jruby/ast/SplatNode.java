@@ -14,7 +14,7 @@
  *
  * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -39,9 +39,9 @@ public class SplatNode extends Node {
 
     public SplatNode(ISourcePosition position, Node node) {
         super(position, node.containsVariableAssignment());
-        
+
         assert node != null : "node is not null";
-        
+
         this.node = node;
     }
 
@@ -51,10 +51,10 @@ public class SplatNode extends Node {
     }
 
     @Override
-    public Object accept(NodeVisitor visitor) {
+    public <T> T accept(NodeVisitor<T> visitor) {
         return visitor.visitSplatNode(this);
     }
-    
+
     public Node getValue() {
         return node;
     }

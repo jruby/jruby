@@ -14,7 +14,7 @@
  *
  * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -35,12 +35,12 @@ import org.jruby.lexer.yacc.ISourcePosition;
 
 public class SValueNode extends Node {
     protected final Node node;
-    
+
     public SValueNode(ISourcePosition position, Node node) {
         super(position, node.containsVariableAssignment());
-        
+
         assert node != null : "node is not null";
-        
+
         this.node = node;
     }
 
@@ -50,10 +50,10 @@ public class SValueNode extends Node {
     }
 
     @Override
-    public Object accept(NodeVisitor visitor) {
+    public <T> T accept(NodeVisitor<T> visitor) {
         return visitor.visitSValueNode(this);
     }
-    
+
     public Node getValue() {
         return node;
     }

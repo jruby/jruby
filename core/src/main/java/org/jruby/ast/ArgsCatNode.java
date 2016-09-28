@@ -16,7 +16,7 @@
  * Copyright (C) 2001-2002 Benoit Cerrina <b.cerrina@wanadoo.fr>
  * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -42,7 +42,7 @@ public class ArgsCatNode extends Node {
 
     public ArgsCatNode(ISourcePosition position, Node firstNode, Node secondNode) {
         super(position, firstNode.containsVariableAssignment() || secondNode.containsVariableAssignment());
-        
+
         assert firstNode != null : "ArgsCatNode.first == null";
         assert secondNode != null : "ArgsCatNode.second == null";
 
@@ -54,18 +54,18 @@ public class ArgsCatNode extends Node {
         return NodeType.ARGSCATNODE;
     }
 
-    public Object accept(NodeVisitor visitor) {
+    public <T> T accept(NodeVisitor<T> visitor) {
         return visitor.visitArgsCatNode(this);
     }
-    
+
     public Node getFirstNode() {
         return firstNode;
     }
-    
+
     public Node getSecondNode() {
         return secondNode;
     }
-    
+
     public List<Node> childNodes() {
         return Node.createList(firstNode, secondNode);
     }

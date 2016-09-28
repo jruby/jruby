@@ -17,7 +17,7 @@
  * Copyright (C) 2002 Benoit Cerrina <b.cerrina@wanadoo.fr>
  * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -36,7 +36,7 @@ import java.util.List;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 
-/** 
+/**
  * Represents the unassignable star in a multiple assignent (e.g. a,b,* = arr).
  */
 public class StarNode extends Node {
@@ -54,10 +54,10 @@ public class StarNode extends Node {
     /**
      * @see Node#accept(NodeVisitor)
      */
-    public Object accept(NodeVisitor visitor) {
-    	return visitor.visitStarNode(this);
+    public <T> T accept(NodeVisitor<T> visitor) {
+        return visitor.visitStarNode(this);
     }
-    
+
     public List<Node> childNodes() {
         return EMPTY_LIST;
     }

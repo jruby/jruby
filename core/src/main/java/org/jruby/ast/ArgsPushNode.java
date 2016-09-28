@@ -13,7 +13,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2006-2007 Thomas E Enebo <enebo@acm.org>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -37,13 +37,13 @@ import org.jruby.lexer.yacc.ISourcePosition;
 public class ArgsPushNode extends Node {
     private Node firstNode;
     private Node secondNode;
-    
+
     public ArgsPushNode(ISourcePosition position, Node firstNode, Node secondNode) {
         super(position, firstNode.containsVariableAssignment() || secondNode.containsVariableAssignment());
-        
+
         assert firstNode != null : "ArgsPushNode.first == null";
         assert secondNode != null : "ArgsPushNode.second == null";
-        
+
         this.firstNode = firstNode;
         this.secondNode = secondNode;
     }
@@ -52,14 +52,14 @@ public class ArgsPushNode extends Node {
         return NodeType.ARGSPUSHNODE;
     }
 
-    public Object accept(NodeVisitor visitor) {
+    public <T> T accept(NodeVisitor<T> visitor) {
         return visitor.visitArgsPushNode(this);
     }
-    
+
     public Node getFirstNode() {
         return firstNode;
     }
-    
+
     public Node getSecondNode() {
         return secondNode;
     }
