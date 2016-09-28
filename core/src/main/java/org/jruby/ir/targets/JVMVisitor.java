@@ -392,41 +392,11 @@ public class JVMVisitor extends IRVisitor {
 
     private void jvmStoreLocal(Variable variable) {
         if (variable instanceof LocalVariable) {
-
-            LocalVariable localvariable = (LocalVariable) variable;
-
             jvmLoadLocal(DYNAMIC_SCOPE);
 
             jvmAdapter().swap();
 
-            if (localvariable.getScopeDepth() == 0) {
-
-                switch (localvariable.getOffset()) {
-                    case 0:
-                        jvmAdapter().invokevirtual(p(DynamicScope.class), "setValueZeroDepthZeroVoid", sig(void.class, IRubyObject.class));
-                        break;
-                    case 1:
-                        jvmAdapter().invokevirtual(p(DynamicScope.class), "setValueOneDepthZeroVoid", sig(void.class, IRubyObject.class));
-                        break;
-                    case 2:
-                        jvmAdapter().invokevirtual(p(DynamicScope.class), "setValueTwoDepthZeroVoid", sig(void.class, IRubyObject.class));
-                        break;
-                    case 3:
-                        jvmAdapter().invokevirtual(p(DynamicScope.class), "setValueThreeDepthZeroVoid", sig(void.class, IRubyObject.class));
-                        break;
-                    default:
-                        jvmAdapter().ldc(localvariable.getOffset());
-                        jvmAdapter().invokevirtual(p(DynamicScope.class), "setValueDepthZeroVoid", sig(void.class, IRubyObject.class, int.class));
-                        break;
-                }
-
-            } else {
-
-                jvmAdapter().ldc(localvariable.getOffset());
-                jvmAdapter().ldc(localvariable.getScopeDepth());
-                jvmAdapter().invokevirtual(p(DynamicScope.class), "setValueVoid", sig(void.class, IRubyObject.class, int.class, int.class));
-
-            }
+            genSetValue((LocalVariable) variable);
         } else if (variable instanceof TemporaryLocalVariable) {
             switch (((TemporaryLocalVariable)variable).getType()) {
             case FLOAT: jvmAdapter().dstore(getJVMLocalVarIndex(variable)); break;
@@ -441,44 +411,11 @@ public class JVMVisitor extends IRVisitor {
 
     private void jvmStoreLocal(Runnable source, Variable variable) {
         if (variable instanceof LocalVariable) {
-
-            LocalVariable localvariable = (LocalVariable) variable;
-
             jvmLoadLocal(DYNAMIC_SCOPE);
 
-            if (localvariable.getScopeDepth() == 0) {
+            source.run();
 
-                source.run();
-
-                switch (localvariable.getOffset()) {
-                    case 0:
-                        jvmAdapter().invokevirtual(p(DynamicScope.class), "setValueZeroDepthZeroVoid", sig(void.class, IRubyObject.class));
-                        break;
-                    case 1:
-                        jvmAdapter().invokevirtual(p(DynamicScope.class), "setValueOneDepthZeroVoid", sig(void.class, IRubyObject.class));
-                        break;
-                    case 2:
-                        jvmAdapter().invokevirtual(p(DynamicScope.class), "setValueTwoDepthZeroVoid", sig(void.class, IRubyObject.class));
-                        break;
-                    case 3:
-                        jvmAdapter().invokevirtual(p(DynamicScope.class), "setValueThreeDepthZeroVoid", sig(void.class, IRubyObject.class));
-                        break;
-                    default:
-                        jvmAdapter().ldc(localvariable.getOffset());
-                        jvmAdapter().invokevirtual(p(DynamicScope.class), "setValueDepthZeroVoid", sig(void.class, IRubyObject.class, int.class));
-                        break;
-                }
-
-            } else {
-
-                source.run();
-
-                jvmAdapter().ldc(localvariable.getOffset());
-                jvmAdapter().ldc(localvariable.getScopeDepth());
-
-                jvmAdapter().invokevirtual(p(DynamicScope.class), "setValueVoid", sig(void.class, IRubyObject.class, int.class, int.class));
-
-            }
+            genSetValue((LocalVariable) variable);
         } else if (variable instanceof TemporaryLocalVariable) {
             source.run();
 
@@ -492,6 +429,31 @@ public class JVMVisitor extends IRVisitor {
             source.run();
 
             jvmMethod().storeLocal(getJVMLocalVarIndex(variable));
+        }
+    }
+
+    private void genSetValue(LocalVariable localvariable) {
+        int depth = localvariable.getScopeDepth();
+        int location = localvariable.getLocation();
+
+        String baseName = p(DynamicScope.class);
+
+        if (depth == 0) {
+
+            if (location < DynamicScope.SPECIALIZED_SETS.size()) {
+                jvmAdapter().invokevirtual(baseName, DynamicScope.SPECIALIZED_SETS.get(location), sig(IRubyObject.class));
+            } else {
+                jvmAdapter().pushInt(location);
+                jvmAdapter().invokevirtual(baseName, "setValueDepthZeroVoid", sig(void.class, IRubyObject.class, int.class));
+            }
+
+        } else {
+
+            jvmAdapter().pushInt(location);
+            jvmAdapter().pushInt(depth);
+
+            jvmAdapter().invokevirtual(baseName, "setValueVoid", sig(void.class, IRubyObject.class, int.class, int.class));
+
         }
     }
 
@@ -2368,24 +2330,13 @@ public class JVMVisitor extends IRVisitor {
         int location = localvariable.getLocation();
         OUTER: switch (depth) {
             case 0:
-                switch (location) {
-                    case 0:
-                        m.adapter.invokevirtual(p(DynamicScope.class), "getValueZeroDepthZero", sig(IRubyObject.class));
-                        break OUTER;
-                    case 1:
-                        m.adapter.invokevirtual(p(DynamicScope.class), "getValueOneDepthZero", sig(IRubyObject.class));
-                        break OUTER;
-                    case 2:
-                        m.adapter.invokevirtual(p(DynamicScope.class), "getValueTwoDepthZero", sig(IRubyObject.class));
-                        break OUTER;
-                    case 3:
-                        m.adapter.invokevirtual(p(DynamicScope.class), "getValueThreeDepthZero", sig(IRubyObject.class));
-                        break OUTER;
-                    default:
-                        m.adapter.pushInt(location);
-                        m.adapter.invokevirtual(p(DynamicScope.class), "getValueDepthZero", sig(IRubyObject.class, int.class));
-                        break OUTER;
+                if (location < DynamicScope.SPECIALIZED_GETS.size()) {
+                    m.adapter.invokevirtual(p(DynamicScope.class), DynamicScope.SPECIALIZED_GETS.get(location), sig(IRubyObject.class));
+                } else {
+                    m.adapter.pushInt(location);
+                    m.adapter.invokevirtual(p(DynamicScope.class), "getValueDepthZero", sig(IRubyObject.class, int.class));
                 }
+                break;
             default:
                 m.adapter.pushInt(location);
                 m.adapter.pushInt(depth);

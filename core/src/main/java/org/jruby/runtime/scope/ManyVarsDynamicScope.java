@@ -30,11 +30,6 @@ public class ManyVarsDynamicScope extends DynamicScope {
         allocate();
     }
 
-    public ManyVarsDynamicScope(StaticScope staticScope) {
-        super(staticScope);
-        allocate();
-    }
-
     private void allocate() {
         if(variableValues == null) {
             int size = staticScope.getNumberOfVariables();
@@ -148,42 +143,72 @@ public class ManyVarsDynamicScope extends DynamicScope {
      * @param value to set
      * @param depth how many captured scopes down this variable should be set
      */
-    public IRubyObject setValue(int offset, IRubyObject value, int depth) {
+    public void setValueVoid(IRubyObject value, int offset, int depth) {
         if (depth > 0) {
             assertParent();
             
-            return parent.setValue(offset, value, depth - 1);
+            parent.setValueVoid(value, offset, depth - 1);
         } else {
             assertSetValue(offset, value);
             
-            return setValueDepthZero(value, offset);
+            setValueDepthZeroVoid(value, offset);
         }
     }
 
-    public IRubyObject setValueDepthZero(IRubyObject value, int offset) {
+    public void setValueDepthZeroVoid(IRubyObject value, int offset) {
         assertSetValueDepthZero(offset, value);
 
-        return variableValues[offset] = value;
+        variableValues[offset] = value;
     }
-    public IRubyObject setValueZeroDepthZero(IRubyObject value) {
+    public void setValueZeroDepthZeroVoid(IRubyObject value) {
         assertSetValueZeroDepthZero(value);
 
-        return variableValues[0] = value;
+        variableValues[0] = value;
     }
-    public IRubyObject setValueOneDepthZero(IRubyObject value) {
+    public void setValueOneDepthZeroVoid(IRubyObject value) {
         assertSetValueOneDepthZero(value);
 
-        return variableValues[1] = value;
+        variableValues[1] = value;
     }
-    public IRubyObject setValueTwoDepthZero(IRubyObject value) {
+    public void setValueTwoDepthZeroVoid(IRubyObject value) {
         assertSetValueTwoDepthZero(value);
 
-        return variableValues[2] = value;
+        variableValues[2] = value;
     }
-    public IRubyObject setValueThreeDepthZero(IRubyObject value) {
+    public void setValueThreeDepthZeroVoid(IRubyObject value) {
         assertSetValueThreeDepthZero(value);
 
-        return variableValues[3] = value;
+        variableValues[3] = value;
+    }
+    public void setValueFourDepthZeroVoid(IRubyObject value) {
+        assertSetValueThreeDepthZero(value);
+
+        variableValues[4] = value;
+    }
+    public void setValueFiveDepthZeroVoid(IRubyObject value) {
+        assertSetValueThreeDepthZero(value);
+
+        variableValues[5] = value;
+    }
+    public void setValueSixDepthZeroVoid(IRubyObject value) {
+        assertSetValueThreeDepthZero(value);
+
+        variableValues[6] = value;
+    }
+    public void setValueSevenDepthZeroVoid(IRubyObject value) {
+        assertSetValueThreeDepthZero(value);
+
+        variableValues[7] = value;
+    }
+    public void setValueEightDepthZeroVoid(IRubyObject value) {
+        assertSetValueThreeDepthZero(value);
+
+        variableValues[8] = value;
+    }
+    public void setValueNineDepthZeroVoid(IRubyObject value) {
+        assertSetValueThreeDepthZero(value);
+
+        variableValues[9] = value;
     }
 
     /**
