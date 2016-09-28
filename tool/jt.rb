@@ -457,7 +457,6 @@ module Commands
       jt test spec/ruby/language                     run specs in this directory
       jt test spec/ruby/language/while_spec.rb       run specs in this file
       jt test compiler                               run compiler tests (uses the same logic as --graal to find Graal)
-          --no-java-cmd   don\'t set JAVACMD - rely on bin/jruby or RUBY_BIN to have Graal already
       jt test integration                            runs all integration tests
       jt test integration TESTS                      runs the given integration tests
       jt test gems                                   tests using gems
