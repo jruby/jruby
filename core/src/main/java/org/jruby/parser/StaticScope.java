@@ -142,7 +142,7 @@ public class StaticScope implements Serializable {
      * @param enclosingScope the lexically containing scope.
      * @param names          The list of interned String variable names.
      */
-    protected StaticScope(Type type, StaticScope enclosingScope, String[] names) {
+    protected StaticScope(Type type, StaticScope enclosingScope, String[] names, int firstKeywordIndex) {
         assert names != null : "names is not null";
         assert namesAreInterned(names);
 
@@ -152,6 +152,16 @@ public class StaticScope implements Serializable {
         this.irScope = null;
         this.isBlockOrEval = (type != Type.LOCAL);
         this.isArgumentScope = !isBlockOrEval;
+        this.firstKeywordIndex = firstKeywordIndex;
+    }
+
+    @Deprecated
+    protected StaticScope(Type type, StaticScope enclosingScope, String[] names) {
+        this(type, enclosingScope, names, -1);
+    }
+
+    public int getFirstKeywordIndex() {
+        return firstKeywordIndex;
     }
 
     public IRScope getIRScope() {
