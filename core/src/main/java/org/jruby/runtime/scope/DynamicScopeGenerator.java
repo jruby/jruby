@@ -8,7 +8,6 @@ import me.qmx.jitescript.internal.org.objectweb.asm.tree.LabelNode;
 import org.jruby.Ruby;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
-import org.jruby.runtime.Helpers;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ClassDefiningClassLoader;
 import org.jruby.util.OneShotClassLoader;

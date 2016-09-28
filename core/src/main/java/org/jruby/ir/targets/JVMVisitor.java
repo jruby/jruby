@@ -27,6 +27,7 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.RefinedCachingCallSite;
+import org.jruby.runtime.scope.DynamicScopeGenerator;
 import org.jruby.util.ByteList;
 import org.jruby.util.ClassDefiningClassLoader;
 import org.jruby.util.JavaNameMangler;
@@ -440,8 +441,8 @@ public class JVMVisitor extends IRVisitor {
 
         if (depth == 0) {
 
-            if (location < DynamicScope.SPECIALIZED_SETS.size()) {
-                jvmAdapter().invokevirtual(baseName, DynamicScope.SPECIALIZED_SETS.get(location), sig(IRubyObject.class));
+            if (location < DynamicScopeGenerator.SPECIALIZED_SETS.size()) {
+                jvmAdapter().invokevirtual(baseName, DynamicScopeGenerator.SPECIALIZED_SETS.get(location), sig(IRubyObject.class));
             } else {
                 jvmAdapter().pushInt(location);
                 jvmAdapter().invokevirtual(baseName, "setValueDepthZeroVoid", sig(void.class, IRubyObject.class, int.class));
@@ -2330,8 +2331,8 @@ public class JVMVisitor extends IRVisitor {
         int location = localvariable.getLocation();
         OUTER: switch (depth) {
             case 0:
-                if (location < DynamicScope.SPECIALIZED_GETS.size()) {
-                    m.adapter.invokevirtual(p(DynamicScope.class), DynamicScope.SPECIALIZED_GETS.get(location), sig(IRubyObject.class));
+                if (location < DynamicScopeGenerator.SPECIALIZED_GETS.size()) {
+                    m.adapter.invokevirtual(p(DynamicScope.class), DynamicScopeGenerator.SPECIALIZED_GETS.get(location), sig(IRubyObject.class));
                 } else {
                     m.adapter.pushInt(location);
                     m.adapter.invokevirtual(p(DynamicScope.class), "getValueDepthZero", sig(IRubyObject.class, int.class));

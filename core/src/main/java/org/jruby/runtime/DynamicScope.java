@@ -27,28 +27,9 @@
 
 package org.jruby.runtime;
 
-import me.qmx.jitescript.CodeBlock;
-import me.qmx.jitescript.JDKVersion;
-import me.qmx.jitescript.JiteClass;
-import me.qmx.jitescript.internal.org.objectweb.asm.Label;
-import me.qmx.jitescript.internal.org.objectweb.asm.tree.LabelNode;
 import org.jruby.EvalType;
-import org.jruby.Ruby;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
-
-import static org.jruby.util.CodegenUtils.*;
-
-import org.jruby.runtime.scope.ManyVarsDynamicScope;
-import org.jruby.util.OneShotClassLoader;
-import org.jruby.util.collections.NonBlockingHashMapLong;
-
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 
 public abstract class DynamicScope implements Cloneable {
     // Static scoping information for this scope
