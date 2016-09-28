@@ -36,6 +36,7 @@ import org.jruby.RubyObject;
 import org.jruby.ast.AssignableNode;
 import org.jruby.ast.DAsgnNode;
 import org.jruby.ast.DVarNode;
+import org.jruby.ast.IScopedNode;
 import org.jruby.ast.LocalAsgnNode;
 import org.jruby.ast.LocalVarNode;
 import org.jruby.ast.Node;
@@ -96,6 +97,8 @@ public class StaticScope implements Serializable {
     private boolean isArgumentScope; // Is this block and argument scope of a define_method.
 
     private long commandArgumentStack;
+
+    private int firstKeywordIndex = -1;
 
     // Method/Closure that this static scope corresponds to.  This is used to tell whether this
     // scope refers to a method scope or to determined IRScope of the parent of a compiling eval.
@@ -351,6 +354,30 @@ public class StaticScope implements Serializable {
      */
     public AssignableNode assign(ISourcePosition position, String name, Node value) {
         return assign(position, name, value, this, 0);
+    }
+
+    /**
+     * Register a keyword argument with this staticScope.  It additionally will track
+     * where the first keyword argument started so we can test and tell whether we have
+     * a kwarg or an ordinary variable during live execution (See keywordExists).
+     * @param position
+     * @param name
+     * @param value
+     * @return
+     */
+    public AssignableNode assignKeyword(ISourcePosition position, String name, Node value) {
+        AssignableNode assignment = assign(position, name, value, this, 0);
+
+        // register first keyword index encountered
+        if (firstKeywordIndex == -1) firstKeywordIndex = ((IScopedNode) assignment).getIndex();
+
+        return assignment;
+    }
+
+    public boolean keywordExists(String name) {
+        int slot = exists(name);
+
+        return slot >= 0 && firstKeywordIndex != -1 && slot >= firstKeywordIndex;
     }
 
     /**

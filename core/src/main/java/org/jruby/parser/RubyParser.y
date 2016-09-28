@@ -2370,18 +2370,18 @@ f_label 	: tLABEL {
 
 f_kw            : f_label arg_value {
                     lexer.setCurrentArg(null);
-                    $$ = support.keyword_arg($2.getPosition(), support.assignableLabelOrIdentifier($1, $2));
+                    $$ = support.keyword_arg($2.getPosition(), support.assignableKeyword($1, $2));
                 }
                 | f_label {
                     lexer.setCurrentArg(null);
-                    $$ = support.keyword_arg(lexer.getPosition(), support.assignableLabelOrIdentifier($1, new RequiredKeywordArgumentValueNode()));
+                    $$ = support.keyword_arg(lexer.getPosition(), support.assignableKeyword($1, new RequiredKeywordArgumentValueNode()));
                 }
 
 f_block_kw      : f_label primary_value {
-                    $$ = support.keyword_arg(support.getPosition($2), support.assignableLabelOrIdentifier($1, $2));
+                    $$ = support.keyword_arg(support.getPosition($2), support.assignableKeyword($1, $2));
                 }
                 | f_label {
-                    $$ = support.keyword_arg(lexer.getPosition(), support.assignableLabelOrIdentifier($1, new RequiredKeywordArgumentValueNode()));
+                    $$ = support.keyword_arg(lexer.getPosition(), support.assignableKeyword($1, new RequiredKeywordArgumentValueNode()));
                 }
              
 
