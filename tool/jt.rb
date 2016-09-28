@@ -574,9 +574,14 @@ module Commands
     end
 
     if args.delete('--graal')
-      javacmd, javacmd_options = Utilities.find_graal_javacmd_and_options
-      env_vars["JAVACMD"] = javacmd
-      jruby_args.push(*javacmd_options)
+      if ENV["RUBY_BIN"]
+        # Assume that Graal is automatically set up if RUBY_BIN is set.
+        # This will also warn if it's not.
+      else
+        javacmd, javacmd_options = Utilities.find_graal_javacmd_and_options
+        env_vars["JAVACMD"] = javacmd
+        jruby_args.push(*javacmd_options)
+      end
     else
       jruby_args << '-Xtruffle.graal.warn_unless=false'
     end
