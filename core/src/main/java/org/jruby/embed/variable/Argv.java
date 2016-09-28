@@ -176,6 +176,12 @@ public class Argv extends AbstractVariable {
         }
     }
 
+    // ARGV appears to require special treatment, leaving javaType intact
+    protected void updateRubyObject(final IRubyObject rubyObject) {
+        if ( rubyObject == null ) return;
+        this.irubyObject = rubyObject;
+    }
+
     /**
      * Retrieves ARGV by key from Ruby runtime after the evaluation.
      * This method is used when eager retrieval is off.
