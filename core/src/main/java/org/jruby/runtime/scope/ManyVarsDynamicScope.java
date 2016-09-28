@@ -53,6 +53,7 @@ public class ManyVarsDynamicScope extends DynamicScope {
     }
     
     public DynamicScope cloneScope() {
+        // we construct new rather than clone to avoid sharing variableValues
         return new ManyVarsDynamicScope(staticScope, parent);
     }
 

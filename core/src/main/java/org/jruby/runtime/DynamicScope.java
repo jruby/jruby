@@ -154,7 +154,7 @@ public abstract class DynamicScope implements Cloneable {
         try {
             return (DynamicScope) clone();
         } catch (CloneNotSupportedException cnse) {
-            throw new RuntimeException("failed to clone scope type " + getClass().getName());
+            throw new RuntimeException("BUG: failed to clone scope type " + getClass().getName());
         }
     }
 
