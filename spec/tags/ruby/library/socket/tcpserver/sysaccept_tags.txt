@@ -1,2 +1,0 @@
-fails:TCPServer#sysaccept blocks if no connections
-fails:TCPServer#sysaccept returns file descriptor of an accepted connection
