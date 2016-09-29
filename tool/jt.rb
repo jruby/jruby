@@ -875,6 +875,16 @@ module Commands
     sh 'ant', '-f', 'spec/truffle/buildTestReports.xml'
   end
   private :test_cexts
+  
+  def check_test_port
+    lsof = `lsof -i :14873`
+    unless lsof.empty?
+      STDERR.puts 'Someone is already listening on port 14873 - our tests can\'t run'
+      STDERR.puts lsof
+      exit 1
+    end
+  end
+  private :check_test_port
 
   def test_integration(env={}, *args)
     env_vars   = env
@@ -897,6 +907,7 @@ module Commands
     test_names             = single_test ? '{' + args.join(',') + '}' : '*'
 
     Dir["#{tests_path}/#{test_names}.sh"].sort.each do |test_script|
+      check_test_port
       sh env_vars, test_script
     end
   end
@@ -919,6 +930,7 @@ module Commands
 
     Dir["#{tests_path}/#{test_names}.sh"].sort.each do |test_script|
       next if test_script.end_with?('/install-gems.sh')
+      check_test_port
       sh env_vars, test_script
     end
   end
