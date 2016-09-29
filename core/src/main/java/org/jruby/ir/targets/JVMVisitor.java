@@ -440,21 +440,17 @@ public class JVMVisitor extends IRVisitor {
         String baseName = p(DynamicScope.class);
 
         if (depth == 0) {
-
             if (location < DynamicScopeGenerator.SPECIALIZED_SETS.size()) {
                 jvmAdapter().invokevirtual(baseName, DynamicScopeGenerator.SPECIALIZED_SETS.get(location), sig(void.class, IRubyObject.class));
             } else {
                 jvmAdapter().pushInt(location);
                 jvmAdapter().invokevirtual(baseName, "setValueDepthZeroVoid", sig(void.class, IRubyObject.class, int.class));
             }
-
         } else {
-
             jvmAdapter().pushInt(location);
             jvmAdapter().pushInt(depth);
 
             jvmAdapter().invokevirtual(baseName, "setValueVoid", sig(void.class, IRubyObject.class, int.class, int.class));
-
         }
     }
 
