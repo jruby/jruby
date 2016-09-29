@@ -79,7 +79,7 @@ project 'JRuby Core' do
   jar 'org.slf4j:slf4j-api:1.7.12', :scope => 'provided', :optional => true
   jar 'org.slf4j:slf4j-simple:1.7.12', :scope => 'test'
 
-  jar 'me.qmx.jitescript:jitescript:0.4.0'
+  jar 'me.qmx.jitescript:jitescript:0.4.1-SNAPSHOT', :exclusions => ['org.ow2.asm:asm-all']
 
   plugin_management do
     plugin( 'org.eclipse.m2e:lifecycle-mapping:1.0.0',
