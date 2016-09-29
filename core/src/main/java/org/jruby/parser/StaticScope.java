@@ -38,6 +38,7 @@ import org.jruby.RubyObject;
 import org.jruby.ast.AssignableNode;
 import org.jruby.ast.DAsgnNode;
 import org.jruby.ast.DVarNode;
+import org.jruby.ast.IScopedNode;
 import org.jruby.ast.LocalAsgnNode;
 import org.jruby.ast.LocalVarNode;
 import org.jruby.ast.Node;
@@ -105,6 +106,8 @@ public class StaticScope implements Serializable {
 
     private long commandArgumentStack;
 
+    private int firstKeywordIndex = -1;
+
     // Method/Closure that this static scope corresponds to.  This is used to tell whether this
     // scope refers to a method scope or to determined IRScope of the parent of a compiling eval.
     private IRScope irScope;
@@ -149,7 +152,7 @@ public class StaticScope implements Serializable {
      * @param enclosingScope the lexically containing scope.
      * @param names          The list of interned String variable names.
      */
-    protected StaticScope(Type type, StaticScope enclosingScope, String[] names) {
+    protected StaticScope(Type type, StaticScope enclosingScope, String[] names, int firstKeywordIndex) {
         assert names != null : "names is not null";
         assert namesAreInterned(names);
 
@@ -160,6 +163,16 @@ public class StaticScope implements Serializable {
         this.irScope = null;
         this.isBlockOrEval = (type != Type.LOCAL);
         this.isArgumentScope = !isBlockOrEval;
+        this.firstKeywordIndex = firstKeywordIndex;
+    }
+
+    @Deprecated
+    protected StaticScope(Type type, StaticScope enclosingScope, String[] names) {
+        this(type, enclosingScope, names, -1);
+    }
+
+    public int getFirstKeywordIndex() {
+        return firstKeywordIndex;
     }
 
     public DynamicScope construct(DynamicScope parent) {
@@ -389,6 +402,30 @@ public class StaticScope implements Serializable {
      */
     public AssignableNode assign(ISourcePosition position, String name, Node value) {
         return assign(position, name, value, this, 0);
+    }
+
+    /**
+     * Register a keyword argument with this staticScope.  It additionally will track
+     * where the first keyword argument started so we can test and tell whether we have
+     * a kwarg or an ordinary variable during live execution (See keywordExists).
+     * @param position
+     * @param name
+     * @param value
+     * @return
+     */
+    public AssignableNode assignKeyword(ISourcePosition position, String name, Node value) {
+        AssignableNode assignment = assign(position, name, value, this, 0);
+
+        // register first keyword index encountered
+        if (firstKeywordIndex == -1) firstKeywordIndex = ((IScopedNode) assignment).getIndex();
+
+        return assignment;
+    }
+
+    public boolean keywordExists(String name) {
+        int slot = exists(name);
+
+        return slot >= 0 && firstKeywordIndex != -1 && slot >= firstKeywordIndex;
     }
 
     /**

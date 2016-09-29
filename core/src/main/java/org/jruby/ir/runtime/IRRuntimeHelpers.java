@@ -597,13 +597,9 @@ public class IRRuntimeHelpers {
     private static final RubyHash.VisitorWithState<StaticScope> CheckUnwantedKeywordsVisitor = new RubyHash.VisitorWithState<StaticScope>() {
         @Override
         public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, StaticScope scope) {
-            String keyAsString = key.asJavaString();
-            int slot = scope.isDefined((keyAsString));
-
-            // Found name in higher variable scope.  Therefore non for this block/method def.
-            if ((slot >> 16) > 0) throw context.runtime.newArgumentError("unknown keyword: " + keyAsString);
-            // Could not find it anywhere.
-            if (((short) (slot & 0xffff)) < 0) throw context.runtime.newArgumentError("unknown keyword: " + keyAsString);
+            if (!scope.keywordExists(key.asJavaString())) {
+                throw context.runtime.newArgumentError("unknown keyword: " + key.asJavaString());
+            }
         }
     };
 
