@@ -17,6 +17,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node.Child;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.profiles.ConditionProfile;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.language.LexicalScope;
@@ -48,14 +49,15 @@ public abstract class LookupConstantWithLexicalScopeNode extends RubyNode implem
     }
 
     @Specialization(assumptions = "getUnmodifiedAssumption(getModule())")
-    protected RubyConstant lookupConstant(
-            VirtualFrame frame,
+    protected RubyConstant lookupConstant(VirtualFrame frame,
             @Cached("doLookup()") RubyConstant constant,
-            @Cached("isVisible(constant)") boolean isVisible) {
-        if (!isVisible) {
+            @Cached("isVisible(constant)") boolean isVisible,
+            @Cached("createBinaryProfile()") ConditionProfile isVisibleProfile,
+            @Cached("createBinaryProfile()") ConditionProfile isDeprecatedProfile) {
+        if (isVisibleProfile.profile(!isVisible)) {
             throw new RaiseException(coreExceptions().nameErrorPrivateConstant(getModule(), name, this));
         }
-        if (constant != null && constant.isDeprecated()) {
+        if (isDeprecatedProfile.profile(constant != null && constant.isDeprecated())) {
             warnDeprecatedConstant(frame, name);
         }
         return constant;
@@ -77,10 +79,12 @@ public abstract class LookupConstantWithLexicalScopeNode extends RubyNode implem
         return Layouts.MODULE.getFields(module).getUnmodifiedAssumption();
     }
 
+    @TruffleBoundary
     protected RubyConstant doLookup() {
         return ModuleOperations.lookupConstantWithLexicalScope(getContext(), lexicalScope, name);
     }
 
+    @TruffleBoundary
     protected boolean isVisible(RubyConstant constant) {
         return constant == null || constant.isVisibleTo(getContext(), lexicalScope, getModule());
     }

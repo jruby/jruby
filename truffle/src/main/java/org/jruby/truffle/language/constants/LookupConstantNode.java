@@ -73,11 +73,13 @@ public abstract class LookupConstantNode extends RubyNode implements LookupConst
             @Cached("name") String cachedName,
             @Cached("doLookup(cachedModule, cachedName)") RubyConstant constant,
             @Cached("isVisible(cachedModule, constant)") boolean isVisible,
-            @Cached("createBinaryProfile()") ConditionProfile sameNameProfile) {
-        if (!isVisible) {
+            @Cached("createBinaryProfile()") ConditionProfile sameNameProfile,
+            @Cached("createBinaryProfile()") ConditionProfile isVisibleProfile,
+            @Cached("createBinaryProfile()") ConditionProfile isDeprecatedProfile) {
+        if (isVisibleProfile.profile(!isVisible)) {
             throw new RaiseException(coreExceptions().nameErrorPrivateConstant(module, name, this));
         }
-        if (constant != null && constant.isDeprecated()) {
+        if (isDeprecatedProfile.profile(constant != null && constant.isDeprecated())) {
             warnDeprecatedConstant(frame, name);
         }
         return constant;
@@ -124,6 +126,7 @@ public abstract class LookupConstantNode extends RubyNode implements LookupConst
         }
     }
 
+    @TruffleBoundary
     protected RubyConstant doLookup(DynamicObject module, String name) {
         if (lookInObject) {
             return ModuleOperations.lookupConstantAndObject(getContext(), module, name);
@@ -132,6 +135,7 @@ public abstract class LookupConstantNode extends RubyNode implements LookupConst
         }
     }
 
+    @TruffleBoundary
     protected boolean isVisible(DynamicObject module, RubyConstant constant) {
         return ignoreVisibility ||
                 constant == null ||

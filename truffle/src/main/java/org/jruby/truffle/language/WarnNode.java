@@ -10,18 +10,14 @@ public class WarnNode extends RubyBaseNode {
 
     @Child CallDispatchHeadNode warnMethod = CallDispatchHeadNode.createMethodCall();
 
-    public Object execute(VirtualFrame frame, Object... arguments) {
+    public Object execute(VirtualFrame frame, String... arguments) {
         final String warningMessage = concatArgumentsToString(arguments);
         final DynamicObject warningString = createString(warningMessage.getBytes(), UTF8Encoding.INSTANCE);
         return warnMethod.call(frame, getContext().getCoreLibrary().getKernelModule(), "warn", warningString);
     }
 
     @TruffleBoundary
-    private String concatArgumentsToString(Object... arguments) {
-        String result = "";
-        for (int i = 0; i < arguments.length; i++) {
-            result += arguments[i].toString();
-        }
-        return result;
+    private String concatArgumentsToString(String... arguments) {
+        return String.join("", arguments);
     }
 }
