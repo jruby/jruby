@@ -2326,22 +2326,23 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void LocalVariable(LocalVariable localvariable) {
         IRBytecodeAdapter m = jvmMethod();
-        jvmLoadLocal(DYNAMIC_SCOPE);
+
         int depth = localvariable.getScopeDepth();
         int location = localvariable.getLocation();
-        OUTER: switch (depth) {
-            case 0:
-                if (location < DynamicScopeGenerator.SPECIALIZED_GETS.size()) {
-                    m.adapter.invokevirtual(p(DynamicScope.class), DynamicScopeGenerator.SPECIALIZED_GETS.get(location), sig(IRubyObject.class));
-                } else {
-                    m.adapter.pushInt(location);
-                    m.adapter.invokevirtual(p(DynamicScope.class), "getValueDepthZero", sig(IRubyObject.class, int.class));
-                }
-                break;
-            default:
+
+        jvmLoadLocal(DYNAMIC_SCOPE);
+
+        if (depth == 0) {
+            if (location < DynamicScopeGenerator.SPECIALIZED_GETS.size()) {
+                m.adapter.invokevirtual(p(DynamicScope.class), DynamicScopeGenerator.SPECIALIZED_GETS.get(location), sig(IRubyObject.class));
+            } else {
                 m.adapter.pushInt(location);
-                m.adapter.pushInt(depth);
-                m.adapter.invokevirtual(p(DynamicScope.class), "getValue", sig(IRubyObject.class, int.class, int.class));
+                m.adapter.invokevirtual(p(DynamicScope.class), "getValueDepthZero", sig(IRubyObject.class, int.class));
+            }
+        } else {
+            m.adapter.pushInt(location);
+            m.adapter.pushInt(depth);
+            m.adapter.invokevirtual(p(DynamicScope.class), "getValue", sig(IRubyObject.class, int.class, int.class));
         }
     }
 
