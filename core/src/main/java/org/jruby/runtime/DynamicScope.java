@@ -132,14 +132,6 @@ public abstract class DynamicScope implements Cloneable {
         throw new RuntimeException("BUG: scopes of type " + getClass().getName() + " cannot grow");
     }
 
-    public DynamicScope cloneScope() {
-        try {
-            return (DynamicScope) clone();
-        } catch (CloneNotSupportedException cnse) {
-            throw new RuntimeException("BUG: failed to clone scope type " + getClass().getName());
-        }
-    }
-
     public IRubyObject[] getValues() {
         int numberOfVariables = staticScope.getNumberOfVariables();
         IRubyObject[] values = new IRubyObject[numberOfVariables];
@@ -543,5 +535,14 @@ public abstract class DynamicScope implements Cloneable {
 
     public boolean isLambda() {
         return lambda;
+    }
+
+    @Deprecated
+    public DynamicScope cloneScope() {
+        try {
+            return (DynamicScope) clone();
+        } catch (CloneNotSupportedException cnse) {
+            throw new RuntimeException("BUG: failed to clone scope type " + getClass().getName());
+        }
     }
 }

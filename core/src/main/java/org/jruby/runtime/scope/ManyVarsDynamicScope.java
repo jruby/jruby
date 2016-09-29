@@ -51,11 +51,6 @@ public class ManyVarsDynamicScope extends DynamicScope {
             variableValues = new IRubyObject[size];
         }
     }
-    
-    public DynamicScope cloneScope() {
-        // we construct new rather than clone to avoid sharing variableValues
-        return new ManyVarsDynamicScope(staticScope, parent);
-    }
 
     public IRubyObject[] getValues() {
         return variableValues;
@@ -305,5 +300,11 @@ public class ManyVarsDynamicScope extends DynamicScope {
 
     private void assertSetValueTwoDepthZero(IRubyObject value) {
         assert 2 < variableValues.length : "Setting " + 2 + " to " + value + ", O: " + this;
+    }
+
+    @Deprecated
+    public DynamicScope cloneScope() {
+        // we construct new rather than clone to avoid sharing variableValues
+        return new ManyVarsDynamicScope(staticScope, parent);
     }
 }
