@@ -1629,6 +1629,26 @@ public abstract class ModuleNodes {
         }
     }
 
+    @CoreMethod(names = "deprecate_constant", rest = true, raiseIfFrozenSelf = true)
+    public abstract static class DeprecateConstantNode extends CoreMethodArrayArgumentsNode {
+
+        @Child NameToJavaStringNode nameToJavaStringNode = NameToJavaStringNode.create();
+
+        public DeprecateConstantNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            this.nameToJavaStringNode = NameToJavaStringNode.create();
+        }
+
+        @Specialization
+        public DynamicObject deprecateConstant(VirtualFrame frame, DynamicObject module, Object[] args) {
+            for (Object arg : args) {
+                String name = nameToJavaStringNode.executeToJavaString(frame, arg);
+                Layouts.MODULE.getFields(module).deprecateConstant(getContext(), this, name);
+            }
+            return module;
+        }
+    }
+
     @CoreMethod(names = "public_constant", rest = true)
     public abstract static class PublicConstantNode extends CoreMethodArrayArgumentsNode {
 

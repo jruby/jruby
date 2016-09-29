@@ -312,7 +312,8 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
         while (true) {
             final RubyConstant previous = constants.get(name);
             final boolean isPrivate = previous != null && previous.isPrivate();
-            final RubyConstant newValue = new RubyConstant(rubyModuleObject, value, isPrivate, autoload);
+            final boolean isDeprecated = previous != null && previous.isDeprecated();
+            final RubyConstant newValue = new RubyConstant(rubyModuleObject, value, isPrivate, autoload, isDeprecated);
 
             if ((previous == null) ? (constants.putIfAbsent(name, newValue) == null) : constants.replace(name, previous, newValue)) {
                 newLexicalVersion();
@@ -447,6 +448,22 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
             }
 
             if (constants.replace(name, previous, previous.withPrivate(isPrivate))) {
+                newLexicalVersion();
+                break;
+            }
+        }
+    }
+
+    @TruffleBoundary
+    public void deprecateConstant(RubyContext context, Node currentNode, String name) {
+        while (true) {
+            final RubyConstant previous = constants.get(name);
+
+            if (previous == null) {
+                throw new RaiseException(context.getCoreExceptions().nameErrorUninitializedConstant(rubyModuleObject, name, currentNode));
+            }
+
+            if (constants.replace(name, previous, previous.withDeprecated())) {
                 newLexicalVersion();
                 break;
             }
