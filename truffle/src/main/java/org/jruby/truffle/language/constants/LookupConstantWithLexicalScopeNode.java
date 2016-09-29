@@ -51,25 +51,25 @@ public abstract class LookupConstantWithLexicalScopeNode extends RubyNode implem
     @Specialization(assumptions = "getUnmodifiedAssumption(getModule())")
     protected RubyConstant lookupConstant(VirtualFrame frame,
             @Cached("doLookup()") RubyConstant constant,
-            @Cached("isVisible(constant)") boolean isVisible,
-            @Cached("createBinaryProfile()") ConditionProfile isVisibleProfile,
-            @Cached("createBinaryProfile()") ConditionProfile isDeprecatedProfile) {
-        if (isVisibleProfile.profile(!isVisible)) {
+            @Cached("isVisible(constant)") boolean isVisible) {
+        if (!isVisible) {
             throw new RaiseException(coreExceptions().nameErrorPrivateConstant(getModule(), name, this));
         }
-        if (isDeprecatedProfile.profile(constant != null && constant.isDeprecated())) {
+        if (constant != null && constant.isDeprecated()) {
             warnDeprecatedConstant(frame, name);
         }
         return constant;
     }
 
     @Specialization(assumptions = "getUnmodifiedAssumption(getModule())")
-    protected RubyConstant lookupConstantUncached(VirtualFrame frame) {
+    protected RubyConstant lookupConstantUncached(VirtualFrame frame,
+            @Cached("createBinaryProfile()") ConditionProfile isVisibleProfile,
+            @Cached("createBinaryProfile()") ConditionProfile isDeprecatedProfile) {
         RubyConstant constant = doLookup();
-        if (!isVisible(constant)) {
+        if (isVisibleProfile.profile(!isVisible(constant))) {
             throw new RaiseException(coreExceptions().nameErrorPrivateConstant(getModule(), name, this));
         }
-        if (constant != null && constant.isDeprecated()) {
+        if (isDeprecatedProfile.profile(constant != null && constant.isDeprecated())) {
             warnDeprecatedConstant(frame, name);
         }
         return constant;

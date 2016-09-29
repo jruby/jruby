@@ -73,13 +73,11 @@ public abstract class LookupConstantNode extends RubyNode implements LookupConst
             @Cached("name") String cachedName,
             @Cached("doLookup(cachedModule, cachedName)") RubyConstant constant,
             @Cached("isVisible(cachedModule, constant)") boolean isVisible,
-            @Cached("createBinaryProfile()") ConditionProfile sameNameProfile,
-            @Cached("createBinaryProfile()") ConditionProfile isVisibleProfile,
-            @Cached("createBinaryProfile()") ConditionProfile isDeprecatedProfile) {
-        if (isVisibleProfile.profile(!isVisible)) {
+            @Cached("createBinaryProfile()") ConditionProfile sameNameProfile) {
+        if (!isVisible) {
             throw new RaiseException(coreExceptions().nameErrorPrivateConstant(module, name, this));
         }
-        if (isDeprecatedProfile.profile(constant != null && constant.isDeprecated())) {
+        if (constant != null && constant.isDeprecated()) {
             warnDeprecatedConstant(frame, name);
         }
         return constant;
@@ -98,14 +96,16 @@ public abstract class LookupConstantNode extends RubyNode implements LookupConst
     }
 
     @Specialization(guards = "isRubyModule(module)")
-    protected RubyConstant lookupConstantUncached(VirtualFrame frame, DynamicObject module, String name) {
+    protected RubyConstant lookupConstantUncached(VirtualFrame frame, DynamicObject module, String name,
+            @Cached("createBinaryProfile()") ConditionProfile isVisibleProfile,
+            @Cached("createBinaryProfile()") ConditionProfile isDeprecatedProfile) {
         RubyConstant constant = doLookup(module, name);
         boolean isVisible = isVisible(module, constant);
 
-        if (!isVisible) {
+        if (isVisibleProfile.profile(!isVisible)) {
             throw new RaiseException(coreExceptions().nameErrorPrivateConstant(module, name, this));
         }
-        if (constant != null && constant.isDeprecated()) {
+        if (isDeprecatedProfile.profile(constant != null && constant.isDeprecated())) {
             warnDeprecatedConstant(frame, name);
         }
         return constant;
