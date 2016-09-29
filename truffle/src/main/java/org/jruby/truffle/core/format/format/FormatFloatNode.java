@@ -131,7 +131,7 @@ public abstract class FormatFloatNode extends FormatNode {
             return buf.bytes();
         }
 
-        final Locale locale = Locale.getDefault(); // TODO BJF Aug 13, 2016 Correct locale here?
+        final Locale locale = Locale.ENGLISH;
         NumberFormat nf = Sprintf.getNumberFormat(locale);
         nf.setMaximumFractionDigits(Integer.MAX_VALUE);
         String str = nf.format(dval);
@@ -161,10 +161,8 @@ public abstract class FormatFloatNode extends FormatNode {
                 case '7':
                 case '8':
                 case '9':
-                    if (nTrailingZeroes > 0) {
-                        for (; nTrailingZeroes > 0; nTrailingZeroes--) {
-                            digits[nDigits++] = '0';
-                        }
+                    for (; nTrailingZeroes > 0; nTrailingZeroes--) {
+                        digits[nDigits++] = '0';
                     }
                     digits[nDigits++] = ival;
                     break; // switch
@@ -192,10 +190,8 @@ public abstract class FormatFloatNode extends FormatNode {
                 case '7':
                 case '8':
                 case '9':
-                    if (nTrailingZeroes > 0) {
-                        for (; nTrailingZeroes > 0; nTrailingZeroes--) {
-                            digits[nDigits++] = '0';
-                        }
+                    for (; nTrailingZeroes > 0; nTrailingZeroes--) {
+                        digits[nDigits++] = '0';
                     }
                     digits[nDigits++] = ival;
                     break; // switch

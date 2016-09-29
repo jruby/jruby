@@ -24,8 +24,6 @@ import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.methods.InternalMethod;
-import org.jruby.truffle.language.objects.MetaClassNode;
-import org.jruby.truffle.language.objects.MetaClassNodeGen;
 
 public class UncachedDispatchNode extends DispatchNode {
 
@@ -35,7 +33,6 @@ public class UncachedDispatchNode extends DispatchNode {
     @Child private IndirectCallNode indirectCallNode;
     @Child private ToSymbolNode toSymbolNode;
     @Child private NameToJavaStringNode toJavaStringNode;
-    @Child private MetaClassNode metaClassNode;
 
     private final BranchProfile methodMissingProfile = BranchProfile.create();
     private final BranchProfile methodMissingNotFoundProfile = BranchProfile.create();
@@ -48,7 +45,6 @@ public class UncachedDispatchNode extends DispatchNode {
         this.indirectCallNode = Truffle.getRuntime().createIndirectCallNode();
         this.toSymbolNode = ToSymbolNodeGen.create(context, null, null);
         this.toJavaStringNode = NameToJavaStringNode.create();
-        this.metaClassNode = MetaClassNodeGen.create(context, null, null);
     }
 
     @Override

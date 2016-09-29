@@ -299,7 +299,7 @@ public class MethodTranslator extends BodyTranslator {
     public static Arity getArity(ArgsParseNode argsNode) {
         final String[] keywordArguments;
 
-        if (argsNode.hasKwargs() && argsNode.getKeywords() != null) {
+        if (argsNode.hasKwargs() && argsNode.getKeywordCount() > 0) {
             final ParseNode[] keywordNodes = argsNode.getKeywords().children();
             final int keywordsCount = keywordNodes.length;
 

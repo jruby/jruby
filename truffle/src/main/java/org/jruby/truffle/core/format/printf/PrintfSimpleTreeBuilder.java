@@ -41,7 +41,7 @@ public class PrintfSimpleTreeBuilder {
     private final List<FormatNode> sequence = new ArrayList<>();
     private final List<SprintfConfig> configs;
 
-    public static int DEFAULT = -1;
+    public static final int DEFAULT = -1;
 
     private static final byte[] EMPTY_BYTES = new byte[]{};
 

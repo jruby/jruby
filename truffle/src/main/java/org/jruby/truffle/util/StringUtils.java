@@ -42,7 +42,7 @@ public abstract class StringUtils {
 
     @TruffleBoundary
     public static String toLowerCase(String string) {
-        return string.toLowerCase();
+        return string.toLowerCase(Locale.ENGLISH);
     }
 
 }
