@@ -28,6 +28,7 @@
 package org.jruby.runtime;
 
 import org.jruby.EvalType;
+import org.jruby.ir.JIT;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -155,11 +156,13 @@ public abstract class DynamicScope implements Cloneable {
      * @param depth how many captured scopes down this variable should be set
      * @return the value here
      */
+    @JIT
     public abstract IRubyObject getValue(int offset, int depth);
 
     /**
      * Variation of getValue for depth 0
      */
+    @JIT
     public IRubyObject getValueDepthZero(int offset) {
         return getValue(offset, 0);
     }
@@ -167,6 +170,7 @@ public abstract class DynamicScope implements Cloneable {
     /**
      * getValue for index 0, depth 0
      */
+    @JIT
     public IRubyObject getValueZeroDepthZero() {
         return getValueDepthZero(0);
     }
@@ -174,6 +178,7 @@ public abstract class DynamicScope implements Cloneable {
     /**
      * getValue for index 1, depth 0
      */
+    @JIT
     public IRubyObject getValueOneDepthZero() {
         return getValueDepthZero(1);
     }
@@ -181,6 +186,7 @@ public abstract class DynamicScope implements Cloneable {
     /**
      * getValue for index 2, depth 0
      */
+    @JIT
     public IRubyObject getValueTwoDepthZero() {
         return getValueDepthZero(2);
     }
@@ -188,6 +194,7 @@ public abstract class DynamicScope implements Cloneable {
     /**
      * getValue for index 3, depth 0
      */
+    @JIT
     public IRubyObject getValueThreeDepthZero() {
         return getValueDepthZero(3);
     }
@@ -195,6 +202,7 @@ public abstract class DynamicScope implements Cloneable {
     /**
      * getValue for index 4, depth 0
      */
+    @JIT
     public IRubyObject getValueFourDepthZero() {
         return getValueDepthZero(4);
     }
@@ -202,6 +210,7 @@ public abstract class DynamicScope implements Cloneable {
     /**
      * getValue for index 5, depth 0
      */
+    @JIT
     public IRubyObject getValueFiveDepthZero() {
         return getValueDepthZero(5);
     }
@@ -209,6 +218,7 @@ public abstract class DynamicScope implements Cloneable {
     /**
      * getValue for index 6, depth 0
      */
+    @JIT
     public IRubyObject getValueSixDepthZero() {
         return getValueDepthZero(6);
     }
@@ -216,6 +226,7 @@ public abstract class DynamicScope implements Cloneable {
     /**
      * getValue for index 7, depth 0
      */
+    @JIT
     public IRubyObject getValueSevenDepthZero() {
         return getValueDepthZero(7);
     }
@@ -223,6 +234,7 @@ public abstract class DynamicScope implements Cloneable {
     /**
      * getValue for index 8, depth 0
      */
+    @JIT
     public IRubyObject getValueEightDepthZero() {
         return getValueDepthZero(8);
     }
@@ -230,6 +242,7 @@ public abstract class DynamicScope implements Cloneable {
     /**
      * getValue for index 9, depth 0
      */
+    @JIT
     public IRubyObject getValueNineDepthZero() {
         return getValueDepthZero(9);
     }
@@ -316,6 +329,7 @@ public abstract class DynamicScope implements Cloneable {
      * @param value to set
      * @param depth how many captured scopes down this variable should be set
      */
+    @JIT
     public abstract void setValueVoid(IRubyObject value, int offset, int depth);
 
     /**
@@ -335,6 +349,7 @@ public abstract class DynamicScope implements Cloneable {
      * @param value to set
      * @param offset zero-indexed value that represents where variable lives
      */
+    @JIT
     public void setValueDepthZeroVoid(IRubyObject value, int offset) {
         setValueVoid(value, offset, 0);
     }
@@ -350,6 +365,7 @@ public abstract class DynamicScope implements Cloneable {
     /**
      * Set value zero in this scope;
      */
+    @JIT
     public void setValueZeroDepthZeroVoid(IRubyObject value) {
         setValueDepthZeroVoid(value, 0);
     }
@@ -365,6 +381,7 @@ public abstract class DynamicScope implements Cloneable {
     /**
      * Set value one in this scope.
      */
+    @JIT
     public void setValueOneDepthZeroVoid(IRubyObject value) {
         setValueDepthZeroVoid(value, 1);
     }
@@ -380,6 +397,7 @@ public abstract class DynamicScope implements Cloneable {
     /**
      * Set value two in this scope.
      */
+    @JIT
     public void setValueTwoDepthZeroVoid(IRubyObject value) {
         setValueDepthZeroVoid(value, 2);
     }
@@ -395,6 +413,7 @@ public abstract class DynamicScope implements Cloneable {
     /**
      * Set value three in this scope.
      */
+    @JIT
     public void setValueThreeDepthZeroVoid(IRubyObject value) {
         setValueDepthZeroVoid(value, 3);
     }
@@ -402,6 +421,7 @@ public abstract class DynamicScope implements Cloneable {
     /**
      * Set value four in this scope.
      */
+    @JIT
     public void setValueFourDepthZeroVoid(IRubyObject value) {
         setValueDepthZeroVoid(value, 4);
     }
@@ -409,6 +429,7 @@ public abstract class DynamicScope implements Cloneable {
     /**
      * Set value five in this scope.
      */
+    @JIT
     public void setValueFiveDepthZeroVoid(IRubyObject value) {
         setValueDepthZeroVoid(value, 5);
     }
@@ -416,6 +437,7 @@ public abstract class DynamicScope implements Cloneable {
     /**
      * Set value six in this scope.
      */
+    @JIT
     public void setValueSixDepthZeroVoid(IRubyObject value) {
         setValueDepthZeroVoid(value, 6);
     }
@@ -423,6 +445,7 @@ public abstract class DynamicScope implements Cloneable {
     /**
      * Set value seven in this scope.
      */
+    @JIT
     public void setValueSevenDepthZeroVoid(IRubyObject value) {
         setValueDepthZeroVoid(value, 7);
     }
@@ -430,6 +453,7 @@ public abstract class DynamicScope implements Cloneable {
     /**
      * Set value eight in this scope.
      */
+    @JIT
     public void setValueEightDepthZeroVoid(IRubyObject value) {
         setValueDepthZeroVoid(value, 8);
     }
@@ -437,6 +461,7 @@ public abstract class DynamicScope implements Cloneable {
     /**
      * Set value nine in this scope.
      */
+    @JIT
     public void setValueNineDepthZeroVoid(IRubyObject value) {
         setValueDepthZeroVoid(value, 9);
     }
