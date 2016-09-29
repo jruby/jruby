@@ -61,4 +61,19 @@ describe "IO#seek" do
     @io.eof?.should == false
     value[-1].should == @io.read[0]
   end
+
+  platform_is_not :windows do
+    it "supports seek offsets greater than 2^32" do
+      begin
+        zero = File.open('/dev/zero')
+        offset = 2**33
+        zero.seek(offset, File::SEEK_SET)
+        pos = zero.pos
+
+        pos.should == offset
+      ensure
+        zero.close rescue nil
+      end
+    end
+  end
 end
