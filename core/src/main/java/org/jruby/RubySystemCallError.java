@@ -146,7 +146,7 @@ public class RubySystemCallError extends RubyException {
             
             List<Variable<Object>> attrs = exc.getVariableList();
             attrs.add(new VariableEntry<Object>(
-                    "mesg", exc.message == null ? runtime.getNil() : exc.message));
+                    "mesg", exc.getMessage() == null ? runtime.getNil() : exc.getMessage()));
             attrs.add(new VariableEntry<Object>("errno", exc.errno));
             attrs.add(new VariableEntry<Object>("bt", exc.getBacktrace()));
             marshalStream.dumpVariables(attrs);
@@ -162,7 +162,7 @@ public class RubySystemCallError extends RubyException {
             // just use real vars all the time for these?
             unmarshalStream.defaultVariablesUnmarshal(exc);
             
-            exc.message = (IRubyObject)exc.removeInternalVariable("mesg");
+            exc.setMessage((IRubyObject)exc.removeInternalVariable("mesg"));
             exc.errno = (IRubyObject)exc.removeInternalVariable("errno");
             exc.set_backtrace((IRubyObject)exc.removeInternalVariable("bt"));
             
@@ -254,7 +254,7 @@ public class RubySystemCallError extends RubyException {
             val += " - " + msg.convertToString();
         }
 
-        message = runtime.newString(val);
+        setMessage(runtime.newString(val));
         return this;
     }
 

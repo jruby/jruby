@@ -168,13 +168,21 @@ public class NativeException extends RubyException {
 
     @Override
     public final IRubyObject getMessage() {
+        IRubyObject message = super.getMessage();
+
         if (message == null) {
             if (messageAsJavaString == null) {
-                return message = getRuntime().getNil();
+                message = getRuntime().getNil();
+            } else {
+                message = getRuntime().newString(messageAsJavaString);
             }
-            return message = getRuntime().newString(messageAsJavaString);
+
+            setMessage(message);
+
+            return message;
         }
-        return message;
+
+        return super.getMessage();
     }
 
     @Override
