@@ -2048,7 +2048,7 @@ public class Pack {
         switch (enc_info)
         {
             case 1:
-                output.setEncodingAndCodeRange(USASCII, RubyObject.USER8_F);
+                output.setEncodingAndCodeRange(USASCII, StringSupport.CR_7BIT);
                 break;
             case 2:
                 output.force_encoding(runtime.getCurrentContext(),
