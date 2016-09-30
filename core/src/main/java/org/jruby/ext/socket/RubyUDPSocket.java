@@ -471,15 +471,6 @@ public class RubyUDPSocket extends RubyIPSocket {
         }
     }
 
-    /**
-     * Overrides BasicSocket#recv
-     */
-    @Override
-    public IRubyObject recv(ThreadContext context, IRubyObject _length, IRubyObject _flags) {
-        // TODO: implement flags
-        return recv(context, _length);
-    }
-
     private static ReceiveTuple doReceiveTuple(RubyBasicSocket socket, final Ruby runtime, final boolean non_block, int length) throws IOException {
         ReceiveTuple tuple = new ReceiveTuple();
 
