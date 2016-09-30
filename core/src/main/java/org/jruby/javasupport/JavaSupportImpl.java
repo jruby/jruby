@@ -362,17 +362,23 @@ public class JavaSupportImpl extends JavaSupport {
         return instanceAssignedNames;
     }
 
+    @Deprecated
+    @Override
     public final void beginProxy(Class cls, RubyModule proxy) {
         UnfinishedProxy up = new UnfinishedProxy(proxy);
         up.lock();
         unfinishedProxies.put(cls, up);
     }
 
+    @Deprecated
+    @Override
     public final void endProxy(Class cls) {
         UnfinishedProxy up = unfinishedProxies.remove(cls);
         up.unlock();
     }
 
+    @Deprecated
+    @Override
     public final RubyModule getUnfinishedProxy(Class cls) {
         UnfinishedProxy up = unfinishedProxies.get(cls);
         if (up != null && up.isHeldByCurrentThread()) return up.proxy;
