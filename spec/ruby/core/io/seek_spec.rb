@@ -62,7 +62,7 @@ describe "IO#seek" do
     value[-1].should == @io.read[0]
   end
 
-  platform_is_not :windows do
+  platform_is :darwin do
     it "supports seek offsets greater than 2^32" do
       begin
         zero = File.open('/dev/zero')
