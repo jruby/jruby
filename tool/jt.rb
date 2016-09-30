@@ -884,7 +884,6 @@ module Commands
       exit 1
     end
   end
-  private :check_test_port
 
   def test_integration(env={}, *args)
     env_vars   = env
