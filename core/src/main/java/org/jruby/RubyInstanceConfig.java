@@ -1837,6 +1837,7 @@ public class RubyInstanceConfig {
 
     public static final boolean JUMPS_HAVE_BACKTRACE = Options.JUMP_BACKTRACE.load();
 
+    @Deprecated
     public static final boolean JIT_CACHE_ENABLED = Options.JIT_CACHE.load();
 
     public static final boolean REFLECTED_HANDLES = Options.REFLECTED_HANDLES.load();
