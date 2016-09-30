@@ -214,7 +214,7 @@ public class RubyTCPServer extends RubyTCPSocket {
 
                 if (!ready) {
                     // no connection immediately accepted, let them try again
-                    throw runtime.newErrnoEAGAINError("Resource temporarily unavailable");
+                    throw runtime.newErrnoEAGAINReadableError("Resource temporarily unavailable");
 
                 } else {
                     // otherwise one key has been selected (ours) so we get the channel and hand it off
