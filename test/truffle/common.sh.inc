@@ -9,7 +9,7 @@ function test_server {
     sleep 1
   done
   jobs -l
-  kill -9 $serverpid
+  pkill -P $serverpid
   wait $serverpid || true
   if [[ $response != *"Hello"* ]]
   then
