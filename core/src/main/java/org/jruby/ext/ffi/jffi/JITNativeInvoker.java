@@ -78,7 +78,7 @@ abstract public class JITNativeInvoker extends NativeInvoker {
         parameterCallSite6 = getParameterCallSite(signature, 6);
     }
 
-    @SuppressWarnings("deprecated")
+    @SuppressWarnings("deprecation")
     private static NativeDataConverter getParameterConverter(Signature signature, int i) {
         return signature.getParameterCount() > i
             ? DataConverters.getParameterConverter(signature.getParameterType(i), signature.getEnums()) : null;

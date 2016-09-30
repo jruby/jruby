@@ -171,7 +171,7 @@ public final class DefaultMethodFactory extends MethodFactory {
         }
     }
 
-    @SuppressWarnings("deprecated")
+    @SuppressWarnings("deprecation")
     private static ParameterMarshaller newConvertingMarshallerWithHash(Type type, CallingConvention convention, IRubyObject enums, MappedType ctype) {
         return new ConvertingMarshaller(
             getMarshaller(ctype.getRealType(), convention, enums.isNil() ? null : (RubyHash)enums),
