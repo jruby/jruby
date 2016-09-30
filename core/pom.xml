@@ -279,7 +279,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>me.qmx.jitescript</groupId>
       <artifactId>jitescript</artifactId>
-      <version>0.4.1-SNAPSHOT</version>
+      <version>0.4.1</version>
       <exclusions>
         <exclusion>
           <artifactId>asm-all</artifactId>
