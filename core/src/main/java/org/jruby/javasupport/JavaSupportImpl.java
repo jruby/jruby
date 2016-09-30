@@ -47,6 +47,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Unrescuable;
+import org.jruby.runtime.Helpers;
 import org.jruby.util.ArraySupport;
 import org.jruby.util.Loader;
 import org.jruby.util.collections.ClassValue;
@@ -200,27 +201,6 @@ public class JavaSupportImpl extends JavaSupport {
 
     public RubyModule getProxyClassFromCache(Class clazz) {
         return proxyClassCache.get(clazz);
-    }
-
-    public void handleNativeException(Throwable exception, Member target) {
-        if ( exception instanceof RaiseException ) {
-            // allow RaiseExceptions to propagate
-            throw (RaiseException) exception;
-        }
-        if (exception instanceof Unrescuable) {
-            // allow "unrescuable" flow-control exceptions to propagate
-            if ( exception instanceof Error ) {
-                throw (Error) exception;
-            }
-            if ( exception instanceof RuntimeException ) {
-                throw (RuntimeException) exception;
-            }
-        }
-        throw createRaiseException(exception, target);
-    }
-
-    private RaiseException createRaiseException(Throwable exception, Member target) {
-        return RaiseException.createNativeRaiseException(runtime, exception, target);
     }
 
     public ObjectProxyCache<IRubyObject,RubyClass> getObjectProxyCache() {
@@ -469,6 +449,16 @@ public class JavaSupportImpl extends JavaSupport {
             }
             vars[i] = v;
         }
+    }
+
+    @Deprecated
+    public void handleNativeException(Throwable exception, Member target) {
+        Helpers.throwException(exception);
+    }
+
+    @Deprecated
+    private RaiseException createRaiseException(Throwable exception, Member target) {
+        return RaiseException.createNativeRaiseException(runtime, exception, target);
     }
 
 }

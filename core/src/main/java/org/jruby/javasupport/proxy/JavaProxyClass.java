@@ -61,6 +61,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.javasupport.*;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -430,7 +431,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
             catch (InvocationTargetException ex) {
                 if ( runtime.getDebug().isTrue() ) ex.getTargetException().printStackTrace();
 
-                runtime.getJavaSupport().handleNativeException(ex.getTargetException(), superMethod);
+                Helpers.throwException(ex.getTargetException());
                 return runtime.getNil(); // only reached if there was an exception handler installed
             }
         }

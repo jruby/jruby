@@ -46,6 +46,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -229,7 +230,7 @@ public class JavaConstructor extends JavaCallable {
             throw getRuntime().newTypeError("illegal access");
         }
         catch (InvocationTargetException ite) {
-            getRuntime().getJavaSupport().handleNativeException(ite.getTargetException(), constructor);
+            Helpers.throwException(ite.getTargetException());
             // not reached
             assert false;
             return null;

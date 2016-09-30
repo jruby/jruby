@@ -320,7 +320,7 @@ public class Java implements Library {
             return JavaClass.for_name(self, name);
         }
         catch (Exception e) {
-            self.getRuntime().getJavaSupport().handleNativeException(e, null);
+            Helpers.throwException(e);
             return self.getRuntime().getNil();
         }
     }
