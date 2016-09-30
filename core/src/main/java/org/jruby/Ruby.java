@@ -242,10 +242,8 @@ public final class Ruby implements Constantizable {
         this.threadService      = new ThreadService(this);
 
         if( config.isProfiling() ) {
-            this.profiledMethods        = new ProfiledMethods(this);
             this.profilingServiceLookup = new ProfilingServiceLookup(this);
         } else {
-            this.profiledMethods        = null;
             this.profilingServiceLookup = null;
         }
 
@@ -4747,27 +4745,16 @@ public final class Ruby implements Constantizable {
     }
 
     /**
-     * Get the list of method holders for methods being profiled.
-     * @return all known profiled methods
-     * @deprecated This should be an implementation detail of the ProfilingService and should remove from the Ruby class.
-     */
-    @Deprecated
-    public ProfiledMethods getProfiledMethods() {
-        return profiledMethods;
-    }
-
-    /**
      * Add a method, so it can be printed out later.
      *
      * @param name the name of the method
      * @param method
      */
-    @SuppressWarnings("deprecation")
     void addProfiledMethod(final String name, final DynamicMethod method) {
         if (!config.isProfiling()) return;
         if (method.isUndefined()) return;
 
-        getProfiledMethods().addProfiledMethod( name, method );
+        getProfilingService().addProfiledMethod( name, method );
     }
 
     /**
@@ -5072,6 +5059,11 @@ public final class Ruby implements Constantizable {
         return safeRecurse(LEGACY_RECURSE, getCurrentContext(), func, obj, name, outer);
     }
 
+    @Deprecated
+    public ProfiledMethods getProfiledMethods() {
+        return new ProfiledMethods(this);
+    }
+
     private static final RecursiveFunctionEx<RecursiveFunction> LEGACY_RECURSE = new RecursiveFunctionEx<RecursiveFunction>() {
         @Override
         public IRubyObject call(ThreadContext context, RecursiveFunction func, IRubyObject obj, boolean recur) {
@@ -5279,9 +5271,6 @@ public final class Ruby implements Constantizable {
 
     // A global cache for Java-to-Ruby calls
     private final RuntimeCache runtimeCache;
-
-    // The method objects for serial numbers
-    private final ProfiledMethods profiledMethods;
 
     // Message for Errno exceptions that will not generate a backtrace
     public static final String ERRNO_BACKTRACE_MESSAGE = "errno backtraces disabled; run with -Xerrno.backtrace=true to enable";

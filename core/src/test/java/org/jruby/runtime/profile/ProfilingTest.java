@@ -43,7 +43,6 @@ public class ProfilingTest extends TestCase {
             configOne.setProfilingMode(RubyInstanceConfig.ProfilingMode.SERVICE);
             Ruby ruby = Ruby.newInstance( configOne );
 
-            assertNotNull( ruby.getProfiledMethods() );
             assertNotNull( ruby.getProfilingService() );
             assertTrue(ruby.getProfilingService() instanceof TestProfilingService);
         } catch( RaiseException e ) {

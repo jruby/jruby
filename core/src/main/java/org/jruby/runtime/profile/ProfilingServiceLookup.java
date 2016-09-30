@@ -29,6 +29,8 @@ import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.runtime.profile.builtin.BuiltinProfilingService;
 
+import java.lang.reflect.InvocationTargetException;
+
 /**
  * This helper is used to get the configured {@link org.jruby.runtime.profile.ProfilingService} for the current {@link Ruby} instance.
  * Each {@link Ruby} instance has a {@link org.jruby.runtime.profile.ProfilingServiceLookup} property.
@@ -111,7 +113,7 @@ public class ProfilingServiceLookup {
                     break;
 
                 default:
-                    service = new BuiltinProfilingService();
+                    service = new BuiltinProfilingService(runtime);
                     break;
             }
         }
@@ -127,10 +129,11 @@ public class ProfilingServiceLookup {
         Class<? extends ProfilingService> clazz = loadServiceClass();
 
         try {
-            return clazz.newInstance();
-        } catch (InstantiationException e) {
-            throw new RuntimeException( "Can't create service service. " + e.getClass().getSimpleName() + ": " + e.getMessage() );
-        } catch (IllegalAccessException e) {
+            return clazz.getConstructor(Ruby.class).newInstance(runtime);
+        } catch (InvocationTargetException
+                |NoSuchMethodException
+                |InstantiationException
+                |IllegalAccessException e) {
             throw new RuntimeException( "Can't create service service. " + e.getClass().getSimpleName() + ": " + e.getMessage() );
         }
     }
