@@ -51,9 +51,7 @@ import java.nio.channels.WritableByteChannel;
  * formats: a Java mode string and an OpenFile mode int.
  * 
  * Note: In MRI these are called oflags.
- * 
- * @see org.jruby.util.io.ChannelDescriptor
- * @see org.jruby.util.io.Stream
+ *
  * @see org.jruby.util.io.OpenFile
  */
 public class ModeFlags implements Cloneable {
