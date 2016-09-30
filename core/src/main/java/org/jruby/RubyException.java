@@ -134,6 +134,7 @@ public class RubyException extends RubyObject {
     }
 
     @JRubyMethod(name = "to_s")
+    @SuppressWarnings("deprecation")
     public IRubyObject to_s(ThreadContext context) {
         final IRubyObject msg = getMessage();
         if ( ! msg.isNil() ) return msg.asString();
@@ -277,7 +278,7 @@ public class RubyException extends RubyObject {
         RubyException exception = (RubyException)clone;
         exception.backtraceData = backtraceData;
         exception.backtrace = backtrace;
-        exception.setMessage(getMessage());
+        exception.message = message;
     }
 
     /**

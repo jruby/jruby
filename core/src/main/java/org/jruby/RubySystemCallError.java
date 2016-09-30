@@ -139,6 +139,7 @@ public class RubySystemCallError extends RubyException {
     
     private static final ObjectMarshal SYSTEM_CALL_ERROR_MARSHAL = new ObjectMarshal() {
         @Override
+        @SuppressWarnings("deprecation")
         public void marshalTo(Ruby runtime, Object obj, RubyClass type,
                               MarshalStream marshalStream) throws IOException {
             RubySystemCallError exc = (RubySystemCallError) obj;
@@ -146,7 +147,7 @@ public class RubySystemCallError extends RubyException {
             
             List<Variable<Object>> attrs = exc.getVariableList();
             attrs.add(new VariableEntry<Object>(
-                    "mesg", exc.getMessage() == null ? runtime.getNil() : exc.getMessage()));
+                    "mesg", exc.message == null ? runtime.getNil() : exc.message));
             attrs.add(new VariableEntry<Object>("errno", exc.errno));
             attrs.add(new VariableEntry<Object>("bt", exc.getBacktrace()));
             marshalStream.dumpVariables(attrs);
