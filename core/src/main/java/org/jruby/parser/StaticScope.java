@@ -166,7 +166,6 @@ public class StaticScope implements Serializable {
         this.firstKeywordIndex = firstKeywordIndex;
     }
 
-    @Deprecated
     protected StaticScope(Type type, StaticScope enclosingScope, String[] names) {
         this(type, enclosingScope, names, -1);
     }
