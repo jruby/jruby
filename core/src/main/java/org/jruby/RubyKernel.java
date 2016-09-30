@@ -865,7 +865,7 @@ public class RubyKernel {
             printExceptionSummary(context, runtime, raise.getException());
         }
 
-        if (argc > 0 && raise.getException().getCause() == UNDEF) {
+        if (argc > 0 && raise.getException().getCause() == UNDEF && cause != raise.getException()) {
             raise.getException().setCause(cause);
         }
 
