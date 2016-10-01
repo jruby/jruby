@@ -518,6 +518,10 @@ VALUE rb_ary_each(VALUE array) {
   abort();
 }
 
+VALUE rb_ary_unshift(VALUE array, VALUE value) {
+  return (VALUE) truffle_invoke((void *)array, "unshift", value);
+}
+
 VALUE rb_check_array_type(VALUE array) {
   rb_jt_error("rb_check_array_type not implemented");
   abort();
