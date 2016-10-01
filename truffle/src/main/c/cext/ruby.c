@@ -1091,6 +1091,7 @@ VALUE *rb_ruby_debug_ptr(void) {
 
 void rb_jt_error(const char *message) {
   truffle_invoke(RUBY_CEXT, "rb_jt_error", rb_str_new_cstr(message));
+  abort();
 }
 
 void *rb_jt_to_native_handle(VALUE managed) {
