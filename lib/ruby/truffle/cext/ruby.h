@@ -70,12 +70,18 @@ VALUE rb_jt_from_native_handle(void *native);
 
 // Memory
 
-#define xmalloc     malloc
-#define xfree       free
-#define ruby_xfree  free
+#define xmalloc       malloc
+#define xfree         free
+#define ruby_xfree    free
+#define ruby_xcalloc  calloc
 
 #define ALLOC_N(type, n)            ((type *)malloc(sizeof(type) * (n)))
 #define ALLOCA_N(type, n)           ((type *)alloca(sizeof(type) * (n)))
+
+#define RB_ZALLOC_N(type, n)        ((type *)ruby_xcalloc((n), sizeof(type)))
+#define RB_ZALLOC(type)             (RB_ZALLOC_N(type, 1))
+#define ZALLOC_N(type, n)           RB_ZALLOC_N(type, n)
+#define ZALLOC(type)                RB_ZALLOC(type)
 
 void *rb_alloc_tmp_buffer(VALUE *buffer_pointer, long length);
 void *rb_alloc_tmp_buffer2(VALUE *buffer_pointer, long count, size_t size);
