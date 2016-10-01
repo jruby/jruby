@@ -1057,7 +1057,7 @@ VALUE rb_data_typed_object_wrap(VALUE ruby_class, void *data, const rb_data_type
 
 VALUE rb_data_typed_object_zalloc(VALUE ruby_class, size_t size, const rb_data_type_t *data_type) {
   VALUE obj = rb_data_typed_object_wrap(ruby_class, 0, data_type);
-  DATA_PTR(obj) = (intptr_t) calloc(1, size);
+  DATA_PTR(obj) = calloc(1, size);
   return obj;
 }
 
