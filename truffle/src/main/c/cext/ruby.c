@@ -1095,7 +1095,7 @@ void rb_jt_error(const char *message) {
 }
 
 void *rb_jt_to_native_handle(VALUE managed) {
-  (void *)truffle_invoke_l(RUBY_CEXT, "rb_jt_to_native_handle", managed);
+  return (void *)truffle_invoke_l(RUBY_CEXT, "rb_jt_to_native_handle", managed);
 }
 
 VALUE rb_jt_from_native_handle(void *native) {
