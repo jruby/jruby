@@ -42,7 +42,7 @@ public class TypedDataMessageResolution {
         @Child private ReadObjectFieldNode readDataNode;
 
         protected Object access(TypedDataAdapter typedDataAdapter, long index) {
-            if (index == 16) {
+            if (index == 0) {
                 if (readDataNode == null) {
                     CompilerDirectives.transferToInterpreterAndInvalidate();
                     readDataNode = insert(ReadObjectFieldNodeGen.create("@data", 0));
@@ -63,7 +63,7 @@ public class TypedDataMessageResolution {
         @Child private WriteObjectFieldNode writeDataNode;
 
         protected Object access(TypedDataAdapter typedDataAdapter, int index, Object value) {
-            if (index == 2) {
+            if (index == 0) {
                 if (writeDataNode == null) {
                     CompilerDirectives.transferToInterpreterAndInvalidate();
                     writeDataNode = insert(WriteObjectFieldNodeGen.create("@data"));
