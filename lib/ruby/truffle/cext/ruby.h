@@ -77,9 +77,9 @@ VALUE rb_jt_from_native_handle(void *native);
 #define ALLOC_N(type, n)            ((type *)malloc(sizeof(type) * (n)))
 #define ALLOCA_N(type, n)           ((type *)alloca(sizeof(type) * (n)))
 
-void *rb_alloc_tmp_buffer(volatile VALUE *buffer_pointer, long length);
-void *rb_alloc_tmp_buffer2(volatile VALUE *buffer_pointer, long count, size_t size);
-void rb_free_tmp_buffer(volatile VALUE *buffer_pointer);
+void *rb_alloc_tmp_buffer(VALUE *buffer_pointer, long length);
+void *rb_alloc_tmp_buffer2(VALUE *buffer_pointer, long count, size_t size);
+void rb_free_tmp_buffer(VALUE *buffer_pointer);
 
 #define RB_ALLOCV(v, n)             rb_alloc_tmp_buffer(&(v), (n))
 #define RB_ALLOCV_N(type, v, n)     rb_alloc_tmp_buffer2(&(v), (n), sizeof(type))
@@ -365,12 +365,12 @@ MUST_INLINE VALUE rb_string_value(VALUE *value_pointer) {
   return value;
 }
 
-MUST_INLINE char *rb_string_value_ptr(volatile VALUE* value_pointer) {
+MUST_INLINE char *rb_string_value_ptr(VALUE *value_pointer) {
   VALUE string = rb_string_value(value_pointer);
   return RSTRING_PTR(string);
 }
 
-MUST_INLINE char *rb_string_value_cstr(volatile VALUE* value_pointer) {
+MUST_INLINE char *rb_string_value_cstr(VALUE *value_pointer) {
   VALUE string = rb_string_value(value_pointer);
 
   if (!truffle_invoke_b(RUBY_CEXT, "rb_string_value_cstr_check", string)) {

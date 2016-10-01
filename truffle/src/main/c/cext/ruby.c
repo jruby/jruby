@@ -29,17 +29,17 @@ VALUE rb_f_notimplement(int args_count, const VALUE *args, VALUE object) {
 
 // Memory
 
-void *rb_alloc_tmp_buffer(volatile VALUE *buffer_pointer, long length) {
+void *rb_alloc_tmp_buffer(VALUE *buffer_pointer, long length) {
   rb_jt_error("rb_alloc_tmp_buffer not implemented");
   abort();
 }
 
-void *rb_alloc_tmp_buffer2(volatile VALUE *buffer_pointer, long count, size_t size) {
+void *rb_alloc_tmp_buffer2(VALUE *buffer_pointer, long count, size_t size) {
   rb_jt_error("rb_alloc_tmp_buffer2 not implemented");
   abort();
 }
 
-void rb_free_tmp_buffer(volatile VALUE *buffer_pointer) {
+void rb_free_tmp_buffer(VALUE *buffer_pointer) {
   rb_jt_error("rb_free_tmp_buffer not implemented");
   abort();
 }
