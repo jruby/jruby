@@ -61,7 +61,7 @@ GetDigestPtr(VALUE obj)
 	    ASN1_OBJECT_free(oid);
 	}
 	if(!md)
-            ossl_raise(rb_eRuntimeError, "Unsupported digest algorithm (%"PRIsVALUE").", obj);
+            ossl_raise(rb_eRuntimeError, "Unsupported digest algorithm (%s).", name);
     } else {
         EVP_MD_CTX *ctx;
 
