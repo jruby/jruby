@@ -212,8 +212,14 @@ class MSpecScript
 
   def setup_env
     ENV['MSPEC_RUNNER'] = '1'
-    ENV['RUBY_EXE'] = config[:target] if config[:target]
-    ENV['RUBY_FLAGS'] = config[:flags].join(" ") if config[:flags]
+
+    unless ENV['RUBY_EXE']
+      ENV['RUBY_EXE'] = config[:target] if config[:target]
+    end
+
+    unless ENV['RUBY_FLAGS']
+      ENV['RUBY_FLAGS'] = config[:flags].join(" ") if config[:flags]
+    end
   end
 
   # Instantiates an instance and calls the series of methods to
