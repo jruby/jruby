@@ -159,7 +159,7 @@ ossl_sslctx_s_alloc(VALUE klass)
     }
     SSL_CTX_set_mode(ctx, mode);
     RTYPEDDATA_DATA(obj) = ctx;
-    SSL_CTX_set_ex_data(ctx, ossl_ssl_ex_ptr_idx, (void*)obj);
+    SSL_CTX_set_ex_data(ctx, ossl_ssl_ex_ptr_idx, WRITE_EX_DATA(obj));
 
     return obj;
 }
@@ -222,7 +222,7 @@ ossl_client_cert_cb(SSL *ssl, X509 **x509, EVP_PKEY **pkey)
 {
     VALUE obj, success;
 
-    obj = (VALUE)SSL_get_ex_data(ssl, ossl_ssl_ex_ptr_idx);
+    obj = (VALUE)READ_EX_DATA(SSL_get_ex_data(ssl, ossl_ssl_ex_ptr_idx));
     success = rb_protect(ossl_call_client_cert_cb, obj, NULL);
     if (!RTEST(success)) return 0;
     *x509 = DupX509CertPtr(ossl_ssl_get_x509(obj));
@@ -253,7 +253,7 @@ ossl_tmp_dh_callback(SSL *ssl, int is_export, int keylength)
 {
     VALUE args, dh, rb_ssl;
 
-    rb_ssl = (VALUE)SSL_get_ex_data(ssl, ossl_ssl_ex_ptr_idx);
+    rb_ssl = (VALUE)READ_EX_DATA(SSL_get_ex_data(ssl, ossl_ssl_ex_ptr_idx));
 
     args = rb_ary_new_from_args(3, rb_ssl, INT2FIX(is_export), INT2FIX(keylength));
 
@@ -287,7 +287,7 @@ ossl_tmp_ecdh_callback(SSL *ssl, int is_export, int keylength)
 {
     VALUE args, ecdh, rb_ssl;
 
-    rb_ssl = (VALUE)SSL_get_ex_data(ssl, ossl_ssl_ex_ptr_idx);
+    rb_ssl = (VALUE)READ_EX_DATA(SSL_get_ex_data(ssl, ossl_ssl_ex_ptr_idx));
 
     args = rb_ary_new_from_args(3, rb_ssl, INT2FIX(is_export), INT2FIX(keylength));
 
@@ -306,8 +306,8 @@ ossl_ssl_verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
     SSL *ssl;
 
     ssl = X509_STORE_CTX_get_ex_data(ctx, SSL_get_ex_data_X509_STORE_CTX_idx());
-    cb = (VALUE)SSL_get_ex_data(ssl, ossl_ssl_ex_vcb_idx);
-    X509_STORE_CTX_set_ex_data(ctx, ossl_verify_cb_idx, (void*)cb);
+    cb = (VALUE)READ_EX_DATA(SSL_get_ex_data(ssl, ossl_ssl_ex_vcb_idx));
+    X509_STORE_CTX_set_ex_data(ctx, ossl_verify_cb_idx, WRITE_EX_DATA(cb));
     return ossl_verify_cb(preverify_ok, ctx);
 }
 
@@ -335,7 +335,7 @@ ossl_sslctx_session_get_cb(SSL *ssl, unsigned char *buf, int len, int *copy)
     int state = 0;
 
     OSSL_Debug("SSL SESSION get callback entered");
-    if ((ptr = SSL_get_ex_data(ssl, ossl_ssl_ex_ptr_idx)) == NULL)
+    if ((ptr = READ_EX_DATA(SSL_get_ex_data(ssl, ossl_ssl_ex_ptr_idx))) == NULL)
     	return NULL;
     ssl_obj = (VALUE)ptr;
     ary = rb_ary_new2(2);
@@ -1218,9 +1218,9 @@ ossl_ssl_setup(VALUE self)
         rb_io_check_readable(fptr);
         rb_io_check_writable(fptr);
         SSL_set_fd(ssl, TO_SOCKET(FPTR_TO_FD(fptr)));
-	SSL_set_ex_data(ssl, ossl_ssl_ex_ptr_idx, (void*)self);
+	SSL_set_ex_data(ssl, ossl_ssl_ex_ptr_idx, WRITE_EX_DATA(self));
 	cb = ossl_sslctx_get_verify_cb(v_ctx);
-	SSL_set_ex_data(ssl, ossl_ssl_ex_vcb_idx, (void*)cb);
+	SSL_set_ex_data(ssl, ossl_ssl_ex_vcb_idx, WRITE_EX_DATA(cb));
 	SSL_set_info_callback(ssl, ssl_info_cb);
     }
 

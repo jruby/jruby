@@ -215,6 +215,14 @@ void ossl_debug(const char *, ...);
 #define OSSL_Warn rb_warn
 #endif
 
+#ifdef JRUBY_TRUFFLE
+#define WRITE_EX_DATA(data) rb_jt_to_native_handle(data)
+#define READ_EX_DATA(data) rb_jt_from_native_handle(data)
+#else
+#define WRITE_EX_DATA(data) ((void *)(data))
+#define READ_EX_DATA(data) (data)
+#endif
+
 /*
  * Include all parts
  */
