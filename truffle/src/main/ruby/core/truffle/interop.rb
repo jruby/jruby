@@ -50,6 +50,10 @@ module Truffle
       ForeignEnumerable.new(foreign)
     end
 
+    class Foreign
+
+    end
+
   end
 
 end

@@ -13,6 +13,7 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.CreateCast;
+import com.oracle.truffle.api.dsl.Fallback;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.Frame;
 import com.oracle.truffle.api.frame.FrameInstance;
@@ -284,6 +285,11 @@ public abstract class BasicObjectNodes {
 
         @Specialization(guards = "isRubySymbol(object)")
         public DynamicObject instanceVariablesSymbol(DynamicObject object) {
+            return createArray(null, 0);
+        }
+
+        @Fallback
+        public DynamicObject instanceVariables(Object object) {
             return createArray(null, 0);
         }
 

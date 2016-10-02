@@ -10,6 +10,7 @@
 package org.jruby.truffle.language.objects;
 
 import com.oracle.truffle.api.dsl.Cached;
+import com.oracle.truffle.api.dsl.Fallback;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
@@ -57,6 +58,11 @@ public abstract class IsTaintedNode extends RubyNode {
         DynamicObject object,
         @Cached("createReadTaintedNode()") ReadObjectFieldNode readTaintedNode) {
         return (boolean) readTaintedNode.execute(object);
+    }
+
+    @Fallback
+    public boolean isTainted(Object object) {
+        return false;
     }
 
     protected ReadObjectFieldNode createReadTaintedNode() {

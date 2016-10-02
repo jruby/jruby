@@ -10,6 +10,7 @@
 package org.jruby.truffle.language.objects;
 
 import com.oracle.truffle.api.dsl.Cached;
+import com.oracle.truffle.api.dsl.Fallback;
 import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
@@ -72,6 +73,11 @@ public abstract class LogicalClassNode extends RubyNode {
     @Specialization(contains = { "logicalClassCached", "updateShapeAndLogicalClass" })
     protected DynamicObject logicalClassUncached(DynamicObject object) {
         return Layouts.BASIC_OBJECT.getLogicalClass(object);
+    }
+
+    @Fallback
+    protected DynamicObject logicalClassFallback(Object object) {
+        return getContext().getCoreLibrary().getLogicalClass(object);
     }
 
     protected static DynamicObject getLogicalClass(Shape shape) {

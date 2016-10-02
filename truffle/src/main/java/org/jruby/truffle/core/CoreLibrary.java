@@ -272,6 +272,7 @@ public class CoreLibrary {
 
     @CompilationFinal private DynamicObject eagainWaitReadable;
     @CompilationFinal private DynamicObject eagainWaitWritable;
+    @CompilationFinal private DynamicObject interopForeignClass;
 
     @CompilationFinal private ArrayNodes.MinBlock arrayMinBlock;
     @CompilationFinal private ArrayNodes.MaxBlock arrayMaxBlock;
@@ -1016,6 +1017,9 @@ public class CoreLibrary {
 
         eagainWaitWritable = (DynamicObject) Layouts.MODULE.getFields(ioClass).getConstant("EAGAINWaitWritable").getValue();
         assert Layouts.CLASS.isClass(eagainWaitWritable);
+
+        interopForeignClass = (DynamicObject) Layouts.MODULE.getFields((DynamicObject) Layouts.MODULE.getFields(truffleModule).getConstant("Interop").getValue()).getConstant("Foreign").getValue();
+        assert Layouts.CLASS.isClass(interopForeignClass);
     }
 
     public void initializePostBoot() {
@@ -1094,10 +1098,8 @@ public class CoreLibrary {
             return floatClass;
         } else if (object instanceof Double) {
             return floatClass;
-        } else if (object == null) {
-            throw new RuntimeException("Can't get metaclass for null");
         } else {
-            throw new UnsupportedOperationException(StringUtils.format("Don't know how to get the metaclass for %s", object.getClass()));
+            return interopForeignClass;
         }
     }
 
@@ -1123,10 +1125,8 @@ public class CoreLibrary {
             return floatClass;
         } else if (object instanceof Double) {
             return floatClass;
-        } else if (object == null) {
-            throw new RuntimeException();
         } else {
-            throw new UnsupportedOperationException(StringUtils.format("Don't know how to get the logical class for %s", object.getClass()));
+            return interopForeignClass;
         }
     }
 
