@@ -1,4 +1,4 @@
 src: ./*.c
-cflags: -I$OPENSSL_INCLUDE -DRUBY_EXTCONF_H="extconf.h" -DHAVE_OPENSSL_110_THREADING_API -DHAVE_HMAC_CTX_COPY -DHAVE_EVP_CIPHER_CTX_COPY -DHAVE_BN_RAND_RANGE -DHAVE_BN_PSEUDO_RAND_RANGE -DHAVE_X509V3_EXT_NCONF_NID -Wall -Wno-int-conversion -Wno-int-to-pointer-cast -Wno-unused-variable -Wno-uninitialized -Werror
+cflags: -I$OPENSSL_INCLUDE -DRUBY_EXTCONF_H="extconf.h" -DHAVE_OPENSSL_110_THREADING_API -DHAVE_HMAC_CTX_COPY -DHAVE_EVP_CIPHER_CTX_COPY -DHAVE_BN_RAND_RANGE -DHAVE_BN_PSEUDO_RAND_RANGE -DHAVE_X509V3_EXT_NCONF_NID -Wall -Wno-int-conversion -Wno-int-to-pointer-cast -Wno-unused-variable -Wno-uninitialized -Wno-unused-function -Werror
 libs: $OPENSSL_LIB
 out: ../../../../../lib/ruby/truffle/openssl/openssl.su

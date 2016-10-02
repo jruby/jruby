@@ -546,6 +546,7 @@ static void Init_ossl_locks(void)
 	rb_nativethread_lock_initialize(&ossl_locks[i]);
     }
 
+#ifndef JRUBY_TRUFFLE // FIXME
 #ifdef HAVE_CRYPTO_THREADID_PTR
     CRYPTO_THREADID_set_callback(ossl_threadid_func);
 #else
@@ -555,6 +556,7 @@ static void Init_ossl_locks(void)
     CRYPTO_set_dynlock_create_callback(ossl_dyn_create_callback);
     CRYPTO_set_dynlock_lock_callback(ossl_dyn_lock_callback);
     CRYPTO_set_dynlock_destroy_callback(ossl_dyn_destroy_callback);
+#endif
 }
 
 /*
