@@ -436,8 +436,8 @@ public abstract class BignumNodes {
             return fixnumOrBignum(Layouts.BIGNUM.getValue(a).and(Layouts.BIGNUM.getValue(b)));
         }
 
-        @Specialization(guards = "!isRubyBignum(b)")
-        public Object bitAnd(VirtualFrame frame, DynamicObject a, DynamicObject b,
+        @Specialization(guards = { "!isInteger(b)", "!isLong(b)", "!isRubyBignum(b)" })
+        public Object bitAnd(VirtualFrame frame, DynamicObject a, Object b,
                              @Cached("new()") SnippetNode snippetNode) {
             return snippetNode.execute(frame, "self & bit_coerce(b)[1]", "b", b);
         }
@@ -455,6 +455,12 @@ public abstract class BignumNodes {
         public Object bitOr(DynamicObject a, DynamicObject b) {
             return fixnumOrBignum(Layouts.BIGNUM.getValue(a).or(Layouts.BIGNUM.getValue(b)));
         }
+
+        @Specialization(guards = { "!isInteger(b)", "!isLong(b)", "!isRubyBignum(b)" })
+        public Object bitAnd(VirtualFrame frame, DynamicObject a, Object b,
+                @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "self | bit_coerce(b)[1]", "b", b);
+        }
     }
 
     @CoreMethod(names = "^", required = 1)
@@ -469,6 +475,13 @@ public abstract class BignumNodes {
         public Object bitXOr(DynamicObject a, DynamicObject b) {
             return fixnumOrBignum(Layouts.BIGNUM.getValue(a).xor(Layouts.BIGNUM.getValue(b)));
         }
+
+        @Specialization(guards = { "!isInteger(b)", "!isLong(b)", "!isRubyBignum(b)" })
+        public Object bitAnd(VirtualFrame frame, DynamicObject a, Object b,
+                @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "self ^ bit_coerce(b)[1]", "b", b);
+        }
+
     }
 
     @CoreMethod(names = "<<", required = 1, lowerFixnum = 1)
