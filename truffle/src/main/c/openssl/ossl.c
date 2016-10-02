@@ -524,6 +524,12 @@ static unsigned long ossl_thread_id(void)
 }
 #endif
 
+#ifdef JRUBY_TRUFFLE
+#define LOCKS_MALLOC truffle_managed_malloc
+#else
+#define LOCKS_MALLOC OPENSSL_malloc
+#endif
+
 static void Init_ossl_locks(void)
 {
     int i;
@@ -532,7 +538,7 @@ static void Init_ossl_locks(void)
     if ((unsigned)num_locks >= INT_MAX / (int)sizeof(VALUE)) {
 	rb_raise(rb_eRuntimeError, "CRYPTO_num_locks() is too big: %d", num_locks);
     }
-    ossl_locks = (rb_nativethread_lock_t *) OPENSSL_malloc(num_locks * (int)sizeof(rb_nativethread_lock_t));
+    ossl_locks = (rb_nativethread_lock_t *) LOCKS_MALLOC(num_locks * (int)sizeof(rb_nativethread_lock_t));
     if (!ossl_locks) {
 	rb_raise(rb_eNoMemError, "CRYPTO_num_locks() is too big: %d", num_locks);
     }
