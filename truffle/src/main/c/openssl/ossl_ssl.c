@@ -1221,7 +1221,7 @@ ossl_ssl_setup(VALUE self)
 	SSL_set_ex_data(ssl, ossl_ssl_ex_ptr_idx, WRITE_EX_DATA(self));
 	cb = ossl_sslctx_get_verify_cb(v_ctx);
 	SSL_set_ex_data(ssl, ossl_ssl_ex_vcb_idx, WRITE_EX_DATA(cb));
-	SSL_set_info_callback(ssl, ssl_info_cb);
+	SSL_set_info_callback(ssl, CALLBACK(ssl_info_cb));
     }
 
     return Qtrue;
