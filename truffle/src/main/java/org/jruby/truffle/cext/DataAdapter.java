@@ -13,11 +13,11 @@ import com.oracle.truffle.api.interop.ForeignAccess;
 import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.object.DynamicObject;
 
-public final class TypedDataAdapter implements TruffleObject {
+public final class DataAdapter implements TruffleObject {
 
     private final DynamicObject object;
 
-    public TypedDataAdapter(DynamicObject object) {
+    public DataAdapter(DynamicObject object) {
         this.object = object;
     }
 
@@ -27,6 +27,6 @@ public final class TypedDataAdapter implements TruffleObject {
 
     @Override
     public ForeignAccess getForeignAccess() {
-        return TypedDataMessageResolutionForeign.ACCESS;
+        return DataMessageResolutionForeign.ACCESS;
     }
 }

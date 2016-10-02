@@ -722,9 +722,7 @@ struct RTypedData {
 
 #define RUBY_TYPED_FREE_IMMEDIATELY 1
 
-struct RTypedData *rb_jt_adapt_rtypeddata(VALUE value);
-
-#define RTYPEDDATA(value) rb_jt_adapt_rtypeddata(value)
+#define RTYPEDDATA(value) ((struct RTypedData *)RDATA(value))
 
 #define RTYPEDDATA_DATA(value) (RTYPEDDATA(value)->data)
 

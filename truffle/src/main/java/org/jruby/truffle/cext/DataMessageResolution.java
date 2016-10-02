@@ -22,16 +22,16 @@ import org.jruby.truffle.language.objects.WriteObjectFieldNode;
 import org.jruby.truffle.language.objects.WriteObjectFieldNodeGen;
 
 @MessageResolution(
-        receiverType = TypedDataAdapter.class,
+        receiverType = DataAdapter.class,
         language = RubyLanguage.class
 )
-public class TypedDataMessageResolution {
+public class DataMessageResolution {
 
     @CanResolve
     public abstract static class TypedDataCheckNode extends Node {
 
         protected static boolean test(TruffleObject receiver) {
-            return receiver instanceof TypedDataAdapter;
+            return receiver instanceof DataAdapter;
         }
 
     }
@@ -43,14 +43,14 @@ public class TypedDataMessageResolution {
 
         @Child private ReadObjectFieldNode readDataNode;
 
-        protected Object access(TypedDataAdapter typedDataAdapter, long index) {
+        protected Object access(DataAdapter dataAdapter, long index) {
             if (index == 16) {
                 if (readDataNode == null) {
                     CompilerDirectives.transferToInterpreterAndInvalidate();
                     readDataNode = insert(ReadObjectFieldNodeGen.create("@data", 0));
                 }
 
-                return readDataNode.execute(typedDataAdapter.getObject());
+                return readDataNode.execute(dataAdapter.getObject());
             } else {
                 CompilerDirectives.transferToInterpreter();
                 throw new UnsupportedOperationException(String.format("Don't know what to do with a read from field %s in typed data", index));
@@ -64,14 +64,14 @@ public class TypedDataMessageResolution {
 
         @Child private WriteObjectFieldNode writeDataNode;
 
-        protected Object access(TypedDataAdapter typedDataAdapter, int index, Object value) {
+        protected Object access(DataAdapter dataAdapter, int index, Object value) {
             if (index == 2) {
                 if (writeDataNode == null) {
                     CompilerDirectives.transferToInterpreterAndInvalidate();
                     writeDataNode = insert(WriteObjectFieldNodeGen.create("@data"));
                 }
 
-                writeDataNode.execute(typedDataAdapter.getObject(), value);
+                writeDataNode.execute(dataAdapter.getObject(), value);
             } else {
                 CompilerDirectives.transferToInterpreter();
                 throw new UnsupportedOperationException(String.format("Don't know what to do with a write to field %s in typed data", index));
