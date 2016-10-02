@@ -223,6 +223,16 @@ void ossl_debug(const char *, ...);
 #define READ_EX_DATA(data) (data)
 #endif
 
+#ifdef JRUBY_TRUFFLE
+#define RB_SCAN_ARGS_0_HASH     rb_jt_scan_args_0_HASH
+#define RB_SCAN_ARGS_02         rb_jt_scan_args_02
+#define RB_SCAN_ARGS_11         rb_jt_scan_args_11
+#else
+#define RB_SCAN_ARGS_0_HASH     rb_scan_args
+#define RB_SCAN_ARGS_02         rb_scan_args
+#define RB_SCAN_ARGS_11         rb_scan_args
+#endif
+
 /*
  * Include all parts
  */
