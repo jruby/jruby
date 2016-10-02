@@ -126,7 +126,7 @@ public abstract class RequireNode extends RubyNode {
 
                     deferredCall.call(frame, callNode);
                 } else if (RubyLanguage.CEXT_MIME_TYPE.equals(mimeType)) {
-                    featureLoader.ensureCExtImplementationLoaded(frame, callNode);
+                    featureLoader.ensureCExtImplementationLoaded(frame, feature, callNode);
 
                     final CallTarget callTarget = featureLoader.parseSource(source);
                     callNode.call(frame, callTarget, new Object[] {});
