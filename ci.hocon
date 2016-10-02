@@ -1,6 +1,3 @@
-// Must be the same as in truffle/pom.rb and mx.jruby/suite.py (except for the -SNAPSHOT part only in pom.rb)
-truffle-version: b2e70099cca564d81b2a9a6560fc6ad7fc815087
-
 jt: [ruby, tool/jt.rb]
 
 common: {
@@ -48,15 +45,10 @@ labsjdk: {
 // Allow a version mismatch with truffle to prefer the language truffle version
 mx_sclone: [mx, --version-conflict-resolution, ignore, sclone, --kind, git]
 
-// Use Truffle version of the language
-use-language-truffle: ["&&", git, fetch, "&&", git, reset, --hard, ${truffle-version}, "&&"]
-
 graal-core: ${labsjdk} {
   setup: ${common.setup} [
     ${mx_sclone} ["https://github.com/graalvm/graal-core.git", ../graal-core],
     [cd, ../graal-core],
-    [mx, sforceimports],
-    [cd, ../truffle] ${use-language-truffle} [cd, ../graal-core],
     [mx, build],
     [cd, ../main]
   ]
@@ -72,8 +64,6 @@ graal-enterprise: ${labsjdk} {
   setup: ${common.setup} [
     ${mx_sclone} ["https://github.com/graalvm/graal-enterprise.git", ../graal-enterprise],
     [cd, ../graal-enterprise/graal-enterprise],
-    [mx, sforceimports],
-    [cd, ../../truffle] ${use-language-truffle} [cd, ../graal-enterprise/graal-enterprise],
     [mx, build],
     [cd, ../../main]
   ]
