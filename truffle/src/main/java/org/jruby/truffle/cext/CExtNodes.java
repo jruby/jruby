@@ -61,6 +61,11 @@ public class CExtNodes {
             return num;
         }
 
+        @Specialization
+        public int num2int(long num) {
+            return (int) num;
+        }
+
     }
 
     @CoreMethod(names = "NUM2UINT", isModuleFunction = true, required = 1)
