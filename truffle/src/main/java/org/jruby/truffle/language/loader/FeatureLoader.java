@@ -81,16 +81,16 @@ public class FeatureLoader {
             }
         }
 
-        final String asSU = findFeatureWithExactPath(path + RubyLanguage.CEXT_EXTENSION);
-
-        if (asSU != null) {
-            return asSU;
-        }
-
         final String withExtension = findFeatureWithExactPath(path + RubyLanguage.EXTENSION);
 
         if (withExtension != null) {
             return withExtension;
+        }
+
+        final String asSU = findFeatureWithExactPath(path + RubyLanguage.CEXT_EXTENSION);
+
+        if (asSU != null) {
+            return asSU;
         }
 
         final String withoutExtension = findFeatureWithExactPath(path);
