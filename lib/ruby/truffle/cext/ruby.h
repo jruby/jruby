@@ -667,7 +667,7 @@ void rb_fd_fix_cloexec(int fd);
 
 int rb_jt_io_handle(VALUE file);
 
-#define GetOpenFile(file, pointer) ((pointer)->fd = rb_jt_io_handle(file))
+#define GetOpenFile(file, pointer) ((pointer) = truffle_managed_malloc(sizeof(rb_io_t)), (pointer)->fd = rb_jt_io_handle(file))
 
 int rb_io_wait_readable(int fd);
 int rb_io_wait_writable(int fd);
