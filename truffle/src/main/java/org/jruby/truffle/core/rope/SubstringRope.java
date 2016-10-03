@@ -62,7 +62,13 @@ public class SubstringRope extends Rope {
 
     @Override
     public byte getByteSlow(int index) {
-        return child.getByteSlow(index + offset);
+        int idx = index + offset;
+        Rope nextChild = child;
+        while (nextChild instanceof SubstringRope) {
+            idx += ((SubstringRope) nextChild).getOffset();
+            nextChild = ((SubstringRope) nextChild).getChild();
+        }
+        return nextChild.getByteSlow(idx);
     }
 
     public Rope getChild() {
