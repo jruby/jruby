@@ -24,10 +24,6 @@
 build
 build.properties
 build_graph.png
-/mx.jruby/*pyc
-/mx.jruby/env
-/mxbuild
-/mx.imports
 core/src/main/java/org/jruby/runtime/Constants.java
 dependency-reduced-pom.xml
 dev_null
@@ -121,6 +117,14 @@ nbproject/private
 .settings
 .factorypath
 build.eclipse
+
+# mx
+/mx.jruby/*pyc
+/mx.jruby/env
+/mx.jruby/eclipse-launches/
+/mxbuild
+/mx.imports
+/RUBY.dist
 
 # Truffle findbugs
 truffle-findbugs-report.html
