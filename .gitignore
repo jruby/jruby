@@ -119,6 +119,7 @@ nbproject/private
 .classpath
 .project
 .settings
+.factorypath
 build.eclipse
 
 # Truffle findbugs
