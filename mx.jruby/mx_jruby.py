@@ -200,6 +200,7 @@ def extractArguments(cli_args):
     rubyArgs = []
     classpath = []
     print_command = False
+    classic = False
 
     jruby_opts = os.environ.get('JRUBY_OPTS')
     if jruby_opts:
@@ -210,8 +211,8 @@ def extractArguments(cli_args):
             arg = args.pop(0)
             if arg == '-X+T':
                 pass # Just drop it
-            elif arg == '-X-T':
-                mx.abort('Can only run JRuby+Truffle with mx')
+            elif arg == '-Xclassic':
+                classic = True
             elif arg == '-J-cmd':
                 print_command = True
             elif arg.startswith('-J-G:+'):
@@ -227,13 +228,15 @@ def extractArguments(cli_args):
                 classpath.append(cp)
             elif arg.startswith('-J-'):
                 vmArgs.append(arg[2:])
+            elif arg.startswith('-X+') or arg.startswith('-X-'):
+                rubyArgs.append(arg)
             elif arg.startswith('-X'):
                 vmArgs.append('-Djruby.'+arg[2:])
             else:
                 rubyArgs.append(arg)
                 rubyArgs.extend(args)
                 break
-    return vmArgs, rubyArgs, classpath, print_command
+    return vmArgs, rubyArgs, classpath, print_command, classic
 
 def extractTarball(file, target_dir):
     if file.endswith('tar'):
@@ -266,7 +269,7 @@ def ruby_command(args):
     java = os.getenv('JAVACMD', java_home + '/bin/java')
     argv0 = java
 
-    vmArgs, rubyArgs, user_classpath, print_command = extractArguments(args)
+    vmArgs, rubyArgs, user_classpath, print_command, classic = extractArguments(args)
     classpath = mx.classpath(['TRUFFLE_API', 'RUBY']).split(':')
     truffle_api, classpath = classpath[0], classpath[1:]
     classpath += user_classpath
@@ -275,7 +278,10 @@ def ruby_command(args):
         # '-Xss2048k',
         '-Xbootclasspath/p:' + truffle_api,
         '-cp', ':'.join(classpath),
-    ] + vmArgs + ['org.jruby.Main', '-X+T']
+    ] + vmArgs
+    vmArgs = vmArgs + ['org.jruby.Main']
+    if not classic:
+        vmArgs = vmArgs + ['-X+T']
     allArgs = vmArgs + rubyArgs
 
     env = setup_jruby_home()
