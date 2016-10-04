@@ -256,6 +256,33 @@ public abstract class IOPrimitiveNodes {
 
     }
 
+
+    @Primitive(name = "io_socket_read", lowerFixnum = {1, 2, 3, 4}, unsafe = UnsafeGroup.IO)
+    public static abstract class IOSocketReadNode extends IOPrimitiveArrayArgumentsNode {
+
+        @TruffleBoundary(throwsControlFlowException = true)
+        @Specialization
+        public Object socketRead(DynamicObject io, int length, int flags, int type) {
+            final int sockfd = Layouts.IO.getDescriptor(io);
+
+            if (type != 0) {
+                throw new UnsupportedOperationException();
+            }
+
+            final ByteBuffer buffer = ByteBuffer.allocate(length);
+            final int bytesRead = getContext().getThreadManager().runUntilResult(this, new ThreadManager.BlockingAction<Integer>() {
+                @Override
+                public Integer block() throws InterruptedException {
+                    return ensureSuccessful(nativeSockets().recvfrom(sockfd, buffer, length, flags, PointerPrimitiveNodes.NULL_POINTER, PointerPrimitiveNodes.NULL_POINTER));
+                }
+            });
+            buffer.position(bytesRead);
+
+            return createString(new ByteList(buffer.array(), buffer.arrayOffset(), buffer.position(), false));
+        }
+
+    }
+
     @Primitive(name = "io_read_if_available", lowerFixnum = 1, unsafe = UnsafeGroup.IO)
     public static abstract class IOReadIfAvailableNode extends IOPrimitiveArrayArgumentsNode {
 
