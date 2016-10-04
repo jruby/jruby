@@ -129,6 +129,11 @@ class JRubyCoreMavenProject(mx.MavenProject):
     def getResults(self):
         return None
 
+    def get_source_path(self, resolve):
+        with open(join(_suite.dir, 'VERSION')) as f:
+            version = f.readline().strip()
+        return join(_suite.dir, 'core/target/jruby-core-' + version + '-shaded-sources.jar')
+
 class MavenBuildTask(mx.BuildTask):
     def __str__(self):
         return 'Building {} with Maven'.format(self.subject)
@@ -173,7 +178,7 @@ class MavenBuildTask(mx.BuildTask):
         cwd = _suite.dir
         maven_repo_arg, env = mavenSetup()
         mx.log("Building jruby-core with Maven")
-        mx.run_maven(['-q', '-DskipTests', maven_repo_arg, '-pl', 'core,lib'], cwd=cwd, env=env)
+        mx.run_maven(['-q', '-DskipTests', maven_repo_arg, '-Dcreate.sources.jar', '-pl', 'core,lib'], cwd=cwd, env=env)
         # Install Bundler
         gem_home = join(_suite.dir, 'lib', 'ruby', 'gems', 'shared')
         env['GEM_HOME'] = gem_home
