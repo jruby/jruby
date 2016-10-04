@@ -114,12 +114,12 @@ def mavenSetup():
     env = os.environ.copy()
     env['JRUBY_BUILD_MORE_QUIET'] = 'true'
     # HACK: since the maven executable plugin does not configure the
-    # java executable that is used we unfortunately need to append it to the PATH
+    # java executable that is used we unfortunately need to prepend it to the PATH
     javaHome = os.getenv('JAVA_HOME')
     if javaHome:
         env["PATH"] = javaHome + '/bin' + os.pathsep + env["PATH"]
         mx.logv('Setting PATH to {}'.format(os.environ["PATH"]))
-    mx.run(['java', '-version'])
+    mx.run(['java', '-version'], env=env)
     return maven_repo_arg, env
 
 class JRubyCoreMavenProject(mx.MavenProject):
