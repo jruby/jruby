@@ -86,6 +86,11 @@ public class JavaSockets implements Sockets {
     }
 
     @Override
+    public int send(int sockfd, Pointer buf, int len, int flags) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public int shutdown(int socket, int how) {
         throw new UnsupportedOperationException();
     }

@@ -120,6 +120,11 @@ public interface Sockets {
     int connect(int socket, Pointer address, int address_len);
 
     /**
+     * int send(int sockfd, Pointer buf, int len, int flags);
+     */
+    int send(int sockfd, Pointer buf, int len, int flags);
+
+    /**
      * int shutdown(int sockfd, int how);
      */
 

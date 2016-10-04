@@ -688,6 +688,17 @@ public abstract class TrufflePosixNodes {
 
     }
 
+    @CoreMethod(names = "send", isModuleFunction = true, required = 4, lowerFixnum = {1, 3, 4}, unsafe = UnsafeGroup.IO)
+    public abstract static class SendNode extends CoreMethodArrayArgumentsNode {
+
+        @TruffleBoundary
+        @Specialization(guards = "isRubyPointer(buffer)")
+        public int send(int descriptor, DynamicObject buffer, int bytes, int flags) {
+            return nativeSockets().send(descriptor, Layouts.POINTER.getPointer(buffer), bytes, flags);
+        }
+
+    }
+
     @CoreMethod(names = "symlink", isModuleFunction = true, required = 2, unsafe = UnsafeGroup.IO)
     public abstract static class SymlinkNode extends CoreMethodArrayArgumentsNode {
 
