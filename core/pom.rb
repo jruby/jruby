@@ -26,7 +26,9 @@ project 'JRuby Core' do
               'jruby.basedir' => '${basedir}/..',
               'jruby.test.memory' => '3G',
               'jruby.test.memory.permgen' => '2G',
-              'jruby.compile.memory' => '2G' )
+              'jruby.compile.memory' => '2G',
+
+              'create.sources.jar' => false )
 
   IO.foreach(File.join(basedir, '..', 'default.build.properties')) do |line|
     line.chomp!
@@ -270,7 +272,8 @@ project 'JRuby Core' do
                                         'shadedPattern' => 'org.jruby.org.objectweb' } ],
                    'outputFile' => '${jruby.basedir}/lib/jruby.jar',
                    'transformers' => [ { '@implementation' => 'org.apache.maven.plugins.shade.resource.ManifestResourceTransformer',
-                                         'mainClass' => 'org.jruby.Main' } ] )
+                                         'mainClass' => 'org.jruby.Main' } ],
+                   'createSourcesJar' => '${create.sources.jar}' )
   end
 
   [:all, :release, :main, :osgi, :j2ee, :complete, :dist, :'jruby_complete_jar_extended', :'jruby-jars' ].each do |name|
@@ -386,5 +389,17 @@ project 'JRuby Core' do
     properties( 'tzdata.jar.version' => '${tzdata.version}',
                 'tzdata.scope' => 'runtime' )
 
+  end
+
+  profile 'generate sources jar' do
+    activation do
+      property( :name => 'create.sources.jar', :value => 'true' )
+    end
+
+    plugin :source do
+      execute_goals( 'jar-no-fork',
+                     :id => 'pack core sources',
+                     :phase => 'prepare-package' ) # Needs to run before the shade plugin
+    end
   end
 end
