@@ -124,7 +124,7 @@ def mavenSetup():
 
 class JRubyCoreMavenProject(mx.MavenProject):
     def getBuildTask(self, args):
-        return MavenBuildTask(self, args, 1)
+        return JRubyCoreBuildTask(self, args, 1)
 
     def getResults(self):
         return None
@@ -134,7 +134,7 @@ class JRubyCoreMavenProject(mx.MavenProject):
             version = f.readline().strip()
         return join(_suite.dir, 'core/target/jruby-core-' + version + '-shaded-sources.jar')
 
-class MavenBuildTask(mx.BuildTask):
+class JRubyCoreBuildTask(mx.BuildTask):
     def __str__(self):
         return 'Building {} with Maven'.format(self.subject)
 
