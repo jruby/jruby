@@ -30,7 +30,7 @@ suite = {
         "suites": [
             {
                 "name": "truffle",
-                # Must be the same as in truffle/pom.rb and ci.hocon (except for the -SNAPSHOT part only in pom.rb)
+                # Must be the same as in truffle/pom.rb (except for the -SNAPSHOT part only in pom.rb)
                 "version": "b2e70099cca564d81b2a9a6560fc6ad7fc815087",
                 "urls": [
                     {"url": "https://github.com/graalvm/truffle.git", "kind": "git"},
