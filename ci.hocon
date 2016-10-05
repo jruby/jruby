@@ -117,10 +117,8 @@ sulong: ${labsjdk} {
 graal-vm: {
   downloads: {
     GRAALVM_DIR: {
-      // name: graalvm-snapshot,
-      // version: latest,
-      name: graalvm-release,
-      version: "0.16",
+      name: graalvm-snapshot,
+      version: latest,
       platformspecific: true
     }
   }
