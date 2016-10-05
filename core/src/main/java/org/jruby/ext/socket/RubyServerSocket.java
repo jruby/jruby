@@ -97,20 +97,7 @@ public class RubyServerSocket extends RubySocket {
 
     @JRubyMethod()
     public IRubyObject bind(ThreadContext context, IRubyObject addr) {
-        final InetSocketAddress iaddr;
-
-        if (addr instanceof Addrinfo) {
-            Addrinfo addrInfo = (Addrinfo) addr;
-            if (!addrInfo.ip_p(context).isTrue()) {
-                throw context.runtime.newTypeError("not an INET or INET6 address: " + addrInfo);
-            }
-            iaddr = new InetSocketAddress(addrInfo.getInetAddress().getHostAddress(), addrInfo.getPort());
-        } else {
-            iaddr = Sockaddr.addressFromSockaddr_in(context, addr);
-        }
-
-        doBind(context, getChannel(), iaddr, 0);
-        return RubyFixnum.zero(context.runtime);
+        return bind(context, addr, RubyFixnum.zero(context.runtime));
     }
 
     @JRubyMethod()
