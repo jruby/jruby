@@ -747,6 +747,25 @@ class MicroBenchmarkSuite(AllBenchmarksBenchmarkSuite):
     def time(self):
         return micro_benchmark_time
 
+savina_benchmarks = [
+    'savina-apsp',
+    'savina-radix-sort',
+    'savina-trapezoidal',
+]
+
+class SavinaBenchmarkSuite(AllBenchmarksBenchmarkSuite):
+    def name(self):
+        return 'savina'
+
+    def directory(self):
+        return 'parallel/savina'
+
+    def benchmarks(self):
+        return savina_benchmarks
+
+    def time(self):
+        return 120
+
 server_benchmarks = [
     'tcp-server',
     'webrick'
@@ -814,4 +833,5 @@ mx_benchmark.add_bm_suite(AsciidoctorBenchmarkSuite())
 mx_benchmark.add_bm_suite(OptcarrotBenchmarkSuite())
 mx_benchmark.add_bm_suite(SyntheticBenchmarkSuite())
 mx_benchmark.add_bm_suite(MicroBenchmarkSuite())
+mx_benchmark.add_bm_suite(SavinaBenchmarkSuite())
 mx_benchmark.add_bm_suite(ServerBenchmarkSuite())
