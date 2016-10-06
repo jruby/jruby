@@ -8,18 +8,22 @@ describe "A GzipWriter instance" do
 
   it "supports all respond_to? arities" do
     gzw = Zlib::GzipWriter.open(@tempfile.path)
-    gzw.respond_to?(:path).should == true
-    gzw.respond_to?(:path, false).should == true
+    expect(gzw.respond_to?(:path)).to be true
+    expect(gzw.respond_to?(:path, false)).to be true
   end
 end
 
 describe "A GzipReader instance" do
+  before do
+    @tempfile = Tempfile.new("GH-4202")
+  end
+
   it "supports all respond_to? arities" do
     gzw = Zlib::GzipWriter.open(@tempfile.path)
     gzw << "content"
     gzw.close
     gzr = Zlib::GzipReader.open(@tempfile.path)
-    gzr.respond_to?(:path).should == true
-    gzr.respond_to?(:path, false).should == true
+    expect(gzr.respond_to?(:path)).to be true
+    expect(gzr.respond_to?(:path, false)).to be true
   end
 end
