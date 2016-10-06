@@ -69,7 +69,7 @@ public class RubySourceSection {
         length = Math.min(length, source.getLength() - index);
         length = Math.max(0, length);
 
-        return source.createSection("(identifier)", index, length);
+        return source.createSection(index, length);
     }
 
 }

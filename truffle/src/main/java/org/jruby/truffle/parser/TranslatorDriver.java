@@ -141,7 +141,7 @@ public class TranslatorDriver {
             throw new RaiseException(context.getCoreExceptions().syntaxError(message, currentNode));
         }
 
-        final SourceSection sourceSection = source.createSection("(identifier)", 0, source.getCode().length());
+        final SourceSection sourceSection = source.createSection(0, source.getCode().length());
         final RubySourceSection rubySourceSection = new RubySourceSection(sourceSection);
 
         final InternalMethod parentMethod = parentFrame == null ? null : RubyArguments.getMethod(parentFrame);
