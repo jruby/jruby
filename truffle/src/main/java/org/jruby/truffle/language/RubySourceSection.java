@@ -54,7 +54,7 @@ public class RubySourceSection {
 
     public SourceSection toSourceSection(Source source) {
         if (source == null) {
-            return SourceSection.createUnavailable("core", "(identifier)");
+            throw new UnsupportedOperationException();
         }
 
         final int index = source.getLineStartOffset(startLine);

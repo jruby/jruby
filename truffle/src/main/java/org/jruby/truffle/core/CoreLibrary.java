@@ -21,6 +21,8 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.object.Layout;
 import com.oracle.truffle.api.object.Property;
+import com.oracle.truffle.api.source.Source;
+import com.oracle.truffle.api.source.SourceSection;
 import jnr.constants.platform.Errno;
 import org.jcodings.EncodingDB;
 import org.jcodings.specific.UTF8Encoding;
@@ -32,6 +34,7 @@ import org.jruby.runtime.Constants;
 import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.RubyLanguage;
 import org.jruby.truffle.builtins.CoreMethodNodeManager;
 import org.jruby.truffle.builtins.PrimitiveManager;
 import org.jruby.truffle.cext.CExtNodesFactory;
@@ -151,6 +154,9 @@ public class CoreLibrary {
     private static final Property ALWAYS_FROZEN_PROPERTY = Property.create(Layouts.FROZEN_IDENTIFIER, Layout.createLayout().createAllocator().constantLocation(true), 0);
 
     private final RubyContext context;
+
+    private final Source source = Source.newBuilder("").name("(core)").mimeType(RubyLanguage.MIME_TYPE).build();
+    private final SourceSection sourceSection = source.createUnavailableSection();
 
     private final DynamicObject argumentErrorClass;
     private final DynamicObject arrayClass;
@@ -1163,6 +1169,14 @@ public class CoreLibrary {
 
     public RubyContext getContext() {
         return context;
+    }
+
+    public Source getSource() {
+        return source;
+    }
+
+    public SourceSection getSourceSection() {
+        return sourceSection;
     }
 
     public String getCoreLoadPath() {
