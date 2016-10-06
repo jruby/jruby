@@ -36,6 +36,7 @@ public class JavaSites {
     public final BigDecimalSites BigDecimal = new BigDecimalSites();
     public final ComplexSites Complex = new ComplexSites();
     public final RationalSites Rational = new RationalSites();
+    public final ZlibSites Zlib = new ZlibSites();
 
     public static class BasicObjectSites {
         public final CallSite respond_to = new FunctionalCachingCallSite("respond_to?");
@@ -361,6 +362,11 @@ public class JavaSites {
         public final CallSite remainder = new FunctionalCachingCallSite("remainder");
         public final CallSite op_cmp = new FunctionalCachingCallSite("<=>");
         public final CheckedSites to_r_checked = new CheckedSites("to_r");
+    }
+
+    public static class ZlibSites {
+        public final RespondToCallSite reader_respond_to = new RespondToCallSite();
+        public final RespondToCallSite writer_respond_to = new RespondToCallSite();
     }
 
     public static class CheckedSites {
