@@ -463,7 +463,7 @@ class AllBenchmarksBenchmarkSuite(RubyBenchmarkSuite):
                 data.append(float(line))
             except ValueError:
                 log(line)
-        if data.size % 2 != 0:
+        if len(data) % 2 != 0:
             raise AssertionError("Odd number of values")
         return data
 
