@@ -38,38 +38,30 @@ public abstract class ObjectGraph {
 
         final Thread stoppingThread = Thread.currentThread();
 
-        context.getSafepointManager().pauseAllThreadsAndExecute(currentNode, false, new SafepointAction() {
-            @Override
-            public void run(DynamicObject thread, Node currentNode) {
-                synchronized (visited) {
-                    final Deque<DynamicObject> stack = new ArrayDeque<>();
+        context.getSafepointManager().pauseAllThreadsAndExecute(currentNode, false, (thread, currentNode1) -> {
+            synchronized (visited) {
+                final Deque<DynamicObject> stack = new ArrayDeque<>();
 
-                    // Thread.current
-                    stack.add(thread);
-                    // Fiber.current
-                    stack.add(Layouts.THREAD.getFiberManager(thread).getCurrentFiber());
+                // Thread.current
+                stack.add(thread);
+                // Fiber.current
+                stack.add(Layouts.THREAD.getFiberManager(thread).getCurrentFiber());
 
-                    if (Thread.currentThread() == stoppingThread) {
-                        visitContextRoots(context, stack);
-                    }
+                if (Thread.currentThread() == stoppingThread) {
+                    visitContextRoots(context, stack);
+                }
 
-                    Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<Object>() {
+                Truffle.getRuntime().iterateFrames(frameInstance -> {
+                    stack.addAll(getObjectsInFrame(frameInstance.getFrame(
+                            FrameInstance.FrameAccess.READ_ONLY, true)));
+                    return null;
+                });
 
-                        @Override
-                        public Object visitFrame(FrameInstance frameInstance) {
-                            stack.addAll(getObjectsInFrame(frameInstance.getFrame(
-                                    FrameInstance.FrameAccess.READ_ONLY, true)));
-                            return null;
-                        }
+                while (!stack.isEmpty()) {
+                    final DynamicObject object = stack.pop();
 
-                    });
-
-                    while (!stack.isEmpty()) {
-                        final DynamicObject object = stack.pop();
-
-                        if (visited.add(object)) {
-                            stack.addAll(ObjectGraph.getAdjacentObjects(object));
-                        }
+                    if (visited.add(object)) {
+                        stack.addAll(ObjectGraph.getAdjacentObjects(object));
                     }
                 }
             }
@@ -84,14 +76,11 @@ public abstract class ObjectGraph {
 
         final Thread stoppingThread = Thread.currentThread();
 
-        context.getSafepointManager().pauseAllThreadsAndExecute(currentNode, false, new SafepointAction() {
-            @Override
-            public void run(DynamicObject thread, Node currentNode) {
-                objects.add(thread);
+        context.getSafepointManager().pauseAllThreadsAndExecute(currentNode, false, (thread, currentNode1) -> {
+            objects.add(thread);
 
-                if (Thread.currentThread() == stoppingThread) {
-                    visitContextRoots(context, objects);
-                }
+            if (Thread.currentThread() == stoppingThread) {
+                visitContextRoots(context, objects);
             }
         });
 

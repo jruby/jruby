@@ -51,13 +51,7 @@ public class AttachmentsManager {
                 .tagIs(LineTag.class)
                 .build();
 
-        return instrumenter.attachFactory(filter, new ExecutionEventNodeFactory() {
-
-            public ExecutionEventNode create(EventContext eventContext) {
-                return new AttachmentEventNode(context, block);
-            }
-
-        });
+        return instrumenter.attachFactory(filter, eventContext -> new AttachmentEventNode(context, block));
     }
 
     private static class AttachmentEventNode extends ExecutionEventNode {

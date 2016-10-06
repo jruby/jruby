@@ -537,12 +537,7 @@ public abstract class VMPrimitiveNodes {
             final int finalOptions = options;
 
             // retry:
-            pid = getContext().getThreadManager().runUntilResult(this, new ThreadManager.BlockingAction<Integer>() {
-                @Override
-                public Integer block() throws InterruptedException {
-                    return posix().waitpid(input_pid, statusReference, finalOptions);
-                }
-            });
+            pid = getContext().getThreadManager().runUntilResult(this, () -> posix().waitpid(input_pid, statusReference, finalOptions));
 
             final int errno = posix().errno();
 

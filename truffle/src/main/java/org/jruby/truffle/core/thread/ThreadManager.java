@@ -92,23 +92,15 @@ public class ThreadManager {
 
     public static void initialize(final DynamicObject thread, RubyContext context, Node currentNode, final Object[] arguments, final DynamicObject block) {
         String info = Layouts.PROC.getSharedMethodInfo(block).getSourceSection().getShortDescription();
-        initialize(thread, context, currentNode, info, new Runnable() {
-            @Override
-            public void run() {
-                final Object value = ProcOperations.rootCall(block, arguments);
-                Layouts.THREAD.setValue(thread, value);
-            }
+        initialize(thread, context, currentNode, info, () -> {
+            final Object value = ProcOperations.rootCall(block, arguments);
+            Layouts.THREAD.setValue(thread, value);
         });
     }
 
     public static void initialize(final DynamicObject thread, final RubyContext context, final Node currentNode, final String info, final Runnable task) {
         assert RubyGuards.isRubyThread(thread);
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                ThreadManager.run(thread, context, currentNode, info, task);
-            }
-        }).start();
+        new Thread(() -> run(thread, context, currentNode, info, task)).start();
 
         FiberNodes.waitForInitialization(context, Layouts.THREAD.getFiberManager(thread).getRootFiber(), currentNode);
     }
@@ -270,14 +262,7 @@ public class ThreadManager {
         if (timeoutMicros == 0) {
             timeoutToUse.setTime(new long[]{0, 0});
 
-            return new ResultWithinTime<>(runUntilResult(currentNode, new BlockingAction<T>() {
-
-                @Override
-                public T block() throws InterruptedException {
-                    return action.block(timeoutToUse);
-                }
-
-            }));
+            return new ResultWithinTime<>(runUntilResult(currentNode, () -> action.block(timeoutToUse)));
         } else {
             final int pollTime = 500_000_000;
             final long requestedTimeoutAt = System.nanoTime() + timeoutMicros * 1_000L;

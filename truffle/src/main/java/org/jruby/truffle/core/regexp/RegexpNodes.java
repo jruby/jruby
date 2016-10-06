@@ -123,12 +123,7 @@ public abstract class RegexpNodes {
 
         final Rope sourceRope = StringOperations.rope(string);
 
-        int match = context.getThreadManager().runUntilResult(currentNode, new BlockingAction<Integer>() {
-            @Override
-            public Integer block() throws InterruptedException {
-                return matcher.searchInterruptible(startPos, range, Option.DEFAULT);
-            }
-        });
+        int match = context.getThreadManager().runUntilResult(currentNode, () -> matcher.searchInterruptible(startPos, range, Option.DEFAULT));
 
         final DynamicObject nil = context.getCoreLibrary().getNilObject();
 

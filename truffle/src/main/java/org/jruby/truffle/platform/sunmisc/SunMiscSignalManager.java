@@ -57,12 +57,7 @@ public class SunMiscSignalManager implements SignalManager {
 
     private sun.misc.SignalHandler wrapHandler(final Signal signal, final SignalHandler newHandler) {
         final SunMiscSignal smSignal = (SunMiscSignal) signal;
-        return new sun.misc.SignalHandler() {
-            @Override
-            public void handle(sun.misc.Signal wrappedSignal) {
-                newHandler.handle(smSignal);
-            }
-        };
+        return wrappedSignal -> newHandler.handle(smSignal);
     }
 
     @Override

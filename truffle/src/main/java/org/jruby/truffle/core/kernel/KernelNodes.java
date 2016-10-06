@@ -742,12 +742,7 @@ public abstract class KernelNodes {
                 }
             }
 
-            int exitCode = context.getThreadManager().runUntilResult(this, new BlockingAction<Integer>() {
-                @Override
-                public Integer block() throws InterruptedException {
-                    return process.waitFor();
-                }
-            });
+            int exitCode = context.getThreadManager().runUntilResult(this, () -> process.waitFor());
 
             /*
              * We really do want to just exit here as opposed to throwing a MainExitException and tidying up, as we're
@@ -819,12 +814,7 @@ public abstract class KernelNodes {
 
             final BufferedReader reader = new BufferedReader(new InputStreamReader(in, encoding.getCharset()));
 
-            final String line = getContext().getThreadManager().runUntilResult(this, new BlockingAction<String>() {
-                @Override
-                public String block() throws InterruptedException {
-                    return gets(reader);
-                }
-            });
+            final String line = getContext().getThreadManager().runUntilResult(this, () -> gets(reader));
 
             final DynamicObject rubyLine = createString(StringOperations.encodeRope(line, UTF8Encoding.INSTANCE));
 
@@ -1666,19 +1656,16 @@ public abstract class KernelNodes {
 
             final long start = System.currentTimeMillis();
 
-            long slept = context.getThreadManager().runUntilResult(currentNode, new BlockingAction<Long>() {
-                @Override
-                public Long block() throws InterruptedException {
-                    long now = System.currentTimeMillis();
-                    long slept = now - start;
+            long slept = context.getThreadManager().runUntilResult(currentNode, () -> {
+                long now = System.currentTimeMillis();
+                long slept1 = now - start;
 
-                    if (slept >= durationInMillis || Layouts.THREAD.getWakeUp(thread).getAndSet(false)) {
-                        return slept;
-                    }
-                    Thread.sleep(durationInMillis - slept);
-
-                    return System.currentTimeMillis() - start;
+                if (slept1 >= durationInMillis || Layouts.THREAD.getWakeUp(thread).getAndSet(false)) {
+                    return slept1;
                 }
+                Thread.sleep(durationInMillis - slept1);
+
+                return System.currentTimeMillis() - start;
             });
 
             return slept / 1000;

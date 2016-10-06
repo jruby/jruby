@@ -234,14 +234,7 @@ public abstract class BucketsStrategy {
     }
 
     public static Iterable<KeyValue> iterableKeyValues(final Entry firstInSequence) {
-        return new Iterable<KeyValue>() {
-
-            @Override
-            public Iterator<KeyValue> iterator() {
-                return iterateKeyValues(firstInSequence);
-            }
-
-        };
+        return () -> iterateKeyValues(firstInSequence);
     }
 
     public static void copyInto(RubyContext context, DynamicObject from, DynamicObject to) {

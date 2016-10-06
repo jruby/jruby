@@ -162,18 +162,13 @@ public abstract class TruffleBootNodes {
         public DynamicObject sourceOfCaller() {
             final Memo<Integer> frameCount = new Memo<>(0);
 
-            final String source = Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<String>() {
-
-                @Override
-                public String visitFrame(FrameInstance frameInstance) {
-                    if (frameCount.get() == 2) {
-                        return frameInstance.getCallNode().getEncapsulatingSourceSection().getSource().getName();
-                    } else {
-                        frameCount.set(frameCount.get() + 1);
-                        return null;
-                    }
+            final String source = Truffle.getRuntime().iterateFrames(frameInstance -> {
+                if (frameCount.get() == 2) {
+                    return frameInstance.getCallNode().getEncapsulatingSourceSection().getSource().getName();
+                } else {
+                    frameCount.set(frameCount.get() + 1);
+                    return null;
                 }
-
             });
 
             if (source == null) {

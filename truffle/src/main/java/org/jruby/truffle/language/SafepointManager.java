@@ -189,12 +189,9 @@ public class SafepointManager {
             final DynamicObject rubyThread = context.getThreadManager().getCurrentThread();
             action.run(rubyThread, currentNode);
         } else {
-            pauseAllThreadsAndExecute(currentNode, false, new SafepointAction() {
-                @Override
-                public void run(DynamicObject rubyThread, Node currentNode) {
-                    if (Thread.currentThread() == thread) {
-                        action.run(rubyThread, currentNode);
-                    }
+            pauseAllThreadsAndExecute(currentNode, false, (rubyThread, currentNode1) -> {
+                if (Thread.currentThread() == thread) {
+                    action.run(rubyThread, currentNode1);
                 }
             });
         }
@@ -207,12 +204,9 @@ public class SafepointManager {
             final DynamicObject rubyThread = context.getThreadManager().getCurrentThread();
             action.run(rubyThread, currentNode);
         } else {
-            pauseAllThreadsAndExecute(currentNode, true, new SafepointAction() {
-                @Override
-                public void run(DynamicObject rubyThread, Node currentNode) {
-                    if (Thread.currentThread() == thread) {
-                        action.run(rubyThread, currentNode);
-                    }
+            pauseAllThreadsAndExecute(currentNode, true, (rubyThread, currentNode1) -> {
+                if (Thread.currentThread() == thread) {
+                    action.run(rubyThread, currentNode1);
                 }
             });
         }
@@ -220,12 +214,9 @@ public class SafepointManager {
 
     @TruffleBoundary
     public void pauseThreadAndExecuteLaterFromNonRubyThread(final Thread thread, final SafepointAction action) {
-        pauseAllThreadsAndExecuteFromNonRubyThread(true, new SafepointAction() {
-            @Override
-            public void run(DynamicObject rubyThread, Node currentNode) {
-                if (Thread.currentThread() == thread) {
-                    action.run(rubyThread, currentNode);
-                }
+        pauseAllThreadsAndExecuteFromNonRubyThread(true, (rubyThread, currentNode) -> {
+            if (Thread.currentThread() == thread) {
+                action.run(rubyThread, currentNode);
             }
         });
     }
