@@ -456,6 +456,17 @@ class AllBenchmarksBenchmarkSuite(RubyBenchmarkSuite):
     def directory(self):
         return self.name()
 
+    def filterLines(self, lines):
+        data = []
+        for line in lines:
+            try:
+                data.append(float(line))
+            except ValueError:
+                log(line)
+        if data.size % 2 != 0:
+            raise AssertionError("Odd number of values")
+        return data
+
     def runBenchmark(self, benchmark, bmSuiteArgs):
         arguments = ['benchmark']
         if 'MX_NO_GRAAL' in os.environ:
@@ -478,9 +489,9 @@ class AllBenchmarksBenchmarkSuite(RubyBenchmarkSuite):
         
         if jt(arguments, out=out, nonZeroIsFatal=False) == 0:
             lines = out.data.split('\n')[1:-1]
-            
+
             if lines[-1] == 'optimised away':
-                data = [float(s) for s in lines[0:-2]]
+                data = self.filterLines(lines)
                 elapsed = [d for n, d in enumerate(data) if n % 2 == 0]
                 samples = [d for n, d in enumerate(data) if n % 2 == 1]
                 
@@ -507,7 +518,7 @@ class AllBenchmarksBenchmarkSuite(RubyBenchmarkSuite):
                     'extra.error': 'optimised away'
                 }]
             else:
-                data = [float(s) for s in lines]
+                data = self.filterLines(lines)
                 elapsed = [d for n, d in enumerate(data) if n % 2 == 0]
                 samples = [d for n, d in enumerate(data) if n % 2 == 1]
                 
