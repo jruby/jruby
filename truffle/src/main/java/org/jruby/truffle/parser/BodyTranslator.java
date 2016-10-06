@@ -3242,7 +3242,7 @@ public class BodyTranslator extends Translator {
             }
 
             if (context.getCoverageManager() != null) {
-                context.getCoverageManager().setLineHasCode(current.toSourceSection(source).getLineLocation());
+                context.getCoverageManager().setLineHasCode(source, current.getStartLine());
             }
 
             node.unsafeSetIsNewLine();
