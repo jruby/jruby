@@ -87,11 +87,7 @@ public class CoverageManager {
 
         binding = instrumenter.attachFactory(SourceSectionFilter.newBuilder()
                 .tagIs(LineTag.class)
-                .build(), new ExecutionEventNodeFactory() {
-
-            @Override
-            public ExecutionEventNode create(final EventContext eventContext) {
-                return new ExecutionEventNode() {
+                .build(), eventContext -> new ExecutionEventNode() {
 
                     @CompilationFinal private boolean configured;
                     @CompilationFinal private int lineNumber;
@@ -116,10 +112,7 @@ public class CoverageManager {
                         }
                     }
 
-                };
-            }
-
-        });
+                });
 
         enabled = true;
     }

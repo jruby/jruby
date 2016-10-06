@@ -37,18 +37,13 @@ public abstract class TruffleBindingNodes {
 
             final Memo<Integer> frameCount = new Memo<>(0);
 
-            final MaterializedFrame frame = Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<MaterializedFrame>() {
-
-                @Override
-                public MaterializedFrame visitFrame(FrameInstance frameInstance) {
-                    if (frameCount.get() == 2) {
-                        return frameInstance.getFrame(FrameInstance.FrameAccess.READ_WRITE, false).materialize();
-                    } else {
-                        frameCount.set(frameCount.get() + 1);
-                        return null;
-                    }
+            final MaterializedFrame frame = Truffle.getRuntime().iterateFrames(frameInstance -> {
+                if (frameCount.get() == 2) {
+                    return frameInstance.getFrame(FrameInstance.FrameAccess.READ_WRITE, false).materialize();
+                } else {
+                    frameCount.set(frameCount.get() + 1);
+                    return null;
                 }
-
             });
 
             if (frame == null) {

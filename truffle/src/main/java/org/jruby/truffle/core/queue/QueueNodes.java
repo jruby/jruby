@@ -96,12 +96,7 @@ public abstract class QueueNodes {
 
         @TruffleBoundary
         private Object doPop(final BlockingQueue<Object> queue) {
-            return getContext().getThreadManager().runUntilResult(this, new BlockingAction<Object>() {
-                @Override
-                public Object block() throws InterruptedException {
-                    return queue.take();
-                }
-            });
+            return getContext().getThreadManager().runUntilResult(this, () -> queue.take());
         }
 
         @Specialization(guards = "nonBlocking")
@@ -145,27 +140,24 @@ public abstract class QueueNodes {
             final long durationInMillis = (long) (duration * 1000.0);
             final long start = System.currentTimeMillis();
 
-            return getContext().getThreadManager().runUntilResult(this, new BlockingAction<Object>() {
-                @Override
-                public Object block() throws InterruptedException {
-                    long now = System.currentTimeMillis();
-                    long waited = now - start;
-                    if (waited >= durationInMillis) {
-                        // Try again to make sure we at least tried once
-                        final Object result = queue.poll();
-                        if (result == null) {
-                            return false;
-                        } else {
-                            return result;
-                        }
-                    }
-
-                    final Object result = queue.poll(durationInMillis, TimeUnit.MILLISECONDS);
+            return getContext().getThreadManager().runUntilResult(this, () -> {
+                long now = System.currentTimeMillis();
+                long waited = now - start;
+                if (waited >= durationInMillis) {
+                    // Try again to make sure we at least tried once
+                    final Object result = queue.poll();
                     if (result == null) {
                         return false;
                     } else {
                         return result;
                     }
+                }
+
+                final Object result = queue.poll(durationInMillis, TimeUnit.MILLISECONDS);
+                if (result == null) {
+                    return false;
+                } else {
+                    return result;
                 }
             });
         }

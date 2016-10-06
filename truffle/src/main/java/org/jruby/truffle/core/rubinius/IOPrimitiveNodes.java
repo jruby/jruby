@@ -270,12 +270,7 @@ public abstract class IOPrimitiveNodes {
             }
 
             final ByteBuffer buffer = ByteBuffer.allocate(length);
-            final int bytesRead = getContext().getThreadManager().runUntilResult(this, new ThreadManager.BlockingAction<Integer>() {
-                @Override
-                public Integer block() throws InterruptedException {
-                    return ensureSuccessful(nativeSockets().recvfrom(sockfd, buffer, length, flags, PointerPrimitiveNodes.NULL_POINTER, PointerPrimitiveNodes.NULL_POINTER));
-                }
-            });
+            final int bytesRead = getContext().getThreadManager().runUntilResult(this, () -> ensureSuccessful(nativeSockets().recvfrom(sockfd, buffer, length, flags, PointerPrimitiveNodes.NULL_POINTER, PointerPrimitiveNodes.NULL_POINTER)));
             buffer.position(bytesRead);
 
             return createString(new ByteList(buffer.array(), buffer.arrayOffset(), buffer.position(), false));
@@ -420,20 +415,15 @@ public abstract class IOPrimitiveNodes {
                 return rope.byteLength();
             }
 
-            RopeOperations.visitBytes(rope, new BytesVisitor() {
+            RopeOperations.visitBytes(rope, (bytes, offset, length) -> {
+                final ByteBuffer buffer = ByteBuffer.wrap(bytes, offset, length);
 
-                @Override
-                public void accept(byte[] bytes, int offset, int length) {
-                    final ByteBuffer buffer = ByteBuffer.wrap(bytes, offset, length);
+                while (buffer.hasRemaining()) {
+                    getContext().getSafepointManager().poll(IOWritePrimitiveNode.this);
 
-                    while (buffer.hasRemaining()) {
-                        getContext().getSafepointManager().poll(IOWritePrimitiveNode.this);
-
-                        int written = ensureSuccessful(posix().write(fd, buffer, buffer.remaining()));
-                        buffer.position(buffer.position() + written);
-                    }
+                    int written = ensureSuccessful(posix().write(fd, buffer, buffer.remaining()));
+                    buffer.position(buffer.position() + written);
                 }
-
             });
 
             return rope.byteLength();

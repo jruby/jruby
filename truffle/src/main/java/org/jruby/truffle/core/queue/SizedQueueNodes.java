@@ -183,12 +183,7 @@ public abstract class SizedQueueNodes {
 
         @TruffleBoundary
         private Object doPop(final BlockingQueue<Object> queue) {
-            return getContext().getThreadManager().runUntilResult(this, new BlockingAction<Object>() {
-                @Override
-                public Object block() throws InterruptedException {
-                    return queue.take();
-                }
-            });
+            return getContext().getThreadManager().runUntilResult(this, () -> queue.take());
         }
 
         @Specialization(guards = "nonBlocking")

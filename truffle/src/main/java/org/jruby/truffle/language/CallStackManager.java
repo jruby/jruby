@@ -93,24 +93,19 @@ public class CallStackManager {
     public Node getTopMostUserCallNode() {
         final Memo<Boolean> firstFrame = new Memo<>(true);
 
-        return Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<Node>() {
-
-            @Override
-            public Node visitFrame(FrameInstance frameInstance) {
-                if (firstFrame.get()) {
-                    firstFrame.set(false);
-                    return null;
-                }
-
-                final SourceSection sourceSection = frameInstance.getCallNode().getEncapsulatingSourceSection();
-
-                if (sourceSection.getSource() == null) {
-                    return null;
-                } else {
-                    return frameInstance.getCallNode();
-                }
+        return Truffle.getRuntime().iterateFrames(frameInstance -> {
+            if (firstFrame.get()) {
+                firstFrame.set(false);
+                return null;
             }
 
+            final SourceSection sourceSection = frameInstance.getCallNode().getEncapsulatingSourceSection();
+
+            if (sourceSection.getSource() == null) {
+                return null;
+            } else {
+                return frameInstance.getCallNode();
+            }
         });
     }
 

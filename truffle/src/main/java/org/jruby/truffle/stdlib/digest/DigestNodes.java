@@ -105,14 +105,7 @@ public abstract class DigestNodes {
         public DynamicObject update(DynamicObject digestObject, DynamicObject message) {
             final MessageDigest digest = Layouts.DIGEST.getDigest(digestObject);
 
-            RopeOperations.visitBytes(StringOperations.rope(message), new BytesVisitor() {
-
-                @Override
-                public void accept(byte[] bytes, int offset, int length) {
-                    digest.update(bytes, offset, length);
-                }
-
-            });
+            RopeOperations.visitBytes(StringOperations.rope(message), (bytes, offset, length) -> digest.update(bytes, offset, length));
 
             return digestObject;
         }

@@ -339,26 +339,23 @@ public abstract class BasicObjectNodes {
         }
 
         private FrameInstance getRelevantCallerFrame() {
-            return Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<FrameInstance>() {
-                @Override
-                public FrameInstance visitFrame(FrameInstance frameInstance) {
-                    final Node callNode = frameInstance.getCallNode();
-                    if (callNode == null) {
-                        // skip current frame
-                        return null;
-                    }
-
-                    final SuperCallNode superCallNode = NodeUtil.findParent(callNode, SuperCallNode.class);
-                    final Frame frame = frameInstance.getFrame(FrameInstance.FrameAccess.READ_ONLY, true);
-                    final String superMethodName = RubyArguments.getMethod(frame).getName();
-
-                    if (superCallNode != null && superMethodName.equals("method_missing")) {
-                        // skip super calls of method_missing itself
-                        return null;
-                    }
-
-                    return frameInstance;
+            return Truffle.getRuntime().iterateFrames(frameInstance -> {
+                final Node callNode = frameInstance.getCallNode();
+                if (callNode == null) {
+                    // skip current frame
+                    return null;
                 }
+
+                final SuperCallNode superCallNode = NodeUtil.findParent(callNode, SuperCallNode.class);
+                final Frame frame = frameInstance.getFrame(FrameInstance.FrameAccess.READ_ONLY, true);
+                final String superMethodName = RubyArguments.getMethod(frame).getName();
+
+                if (superCallNode != null && superMethodName.equals("method_missing")) {
+                    // skip super calls of method_missing itself
+                    return null;
+                }
+
+                return frameInstance;
             });
         }
 

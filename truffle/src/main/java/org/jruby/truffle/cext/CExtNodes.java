@@ -307,12 +307,9 @@ public class CExtNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject getBlock() {
-            return Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<DynamicObject>() {
-                @Override
-                public DynamicObject visitFrame(FrameInstance frameInstance) {
-                    Frame frame = frameInstance.getFrame(FrameAccess.READ_ONLY, true);
-                    return RubyArguments.tryGetBlock(frame);
-                }
+            return Truffle.getRuntime().iterateFrames(frameInstance -> {
+                Frame frame = frameInstance.getFrame(FrameAccess.READ_ONLY, true);
+                return RubyArguments.tryGetBlock(frame);
             });
         }
 

@@ -592,25 +592,17 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
 
     public Iterable<DynamicObject> ancestors() {
         final ModuleChain top = start;
-        return new Iterable<DynamicObject>() {
-            @Override
-            public Iterator<DynamicObject> iterator() {
-                return new AncestorIterator(top);
-            }
-        };
+        return () -> new AncestorIterator(top);
     }
 
     public Iterable<DynamicObject> parentAncestors() {
         final ModuleChain top = start;
-        return new Iterable<DynamicObject>() {
-            @Override
-            public Iterator<DynamicObject> iterator() {
-                final AncestorIterator iterator = new AncestorIterator(top);
-                if (iterator.hasNext()) {
-                    iterator.next();
-                }
-                return iterator;
+        return () -> {
+            final AncestorIterator iterator = new AncestorIterator(top);
+            if (iterator.hasNext()) {
+                iterator.next();
             }
+            return iterator;
         };
     }
 
@@ -620,12 +612,7 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
     public Iterable<DynamicObject> prependedAndIncludedModules() {
         final ModuleChain top = start;
         final ModuleFields currentModule = this;
-        return new Iterable<DynamicObject>() {
-            @Override
-            public Iterator<DynamicObject> iterator() {
-                return new IncludedModulesIterator(top, currentModule);
-            }
-        };
+        return () -> new IncludedModulesIterator(top, currentModule);
     }
 
     public Collection<DynamicObject> filterMethods(RubyContext context, boolean includeAncestors, MethodFilter filter) {

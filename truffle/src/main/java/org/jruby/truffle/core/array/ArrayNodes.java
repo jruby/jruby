@@ -1918,12 +1918,7 @@ public abstract class ArrayNodes {
 
         @TruffleBoundary
         private void doSort(Object[] copy, int size, DynamicObject block) {
-            Arrays.sort(copy, 0, size, new Comparator<Object>() {
-                @Override
-                public int compare(Object a, Object b) {
-                    return castSortValue(ProcOperations.rootCall(block, a, b));
-                }
-            });
+            Arrays.sort(copy, 0, size, (a, b) -> castSortValue(ProcOperations.rootCall(block, a, b)));
         }
 
         @Specialization(guards = { "!isNullArray(array)", "!isObjectArray(array)" })

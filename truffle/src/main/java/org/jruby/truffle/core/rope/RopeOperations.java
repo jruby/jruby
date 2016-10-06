@@ -206,15 +206,10 @@ public class RopeOperations {
 
         final Memo<Integer> resultPosition = new Memo<>(0);
 
-        visitBytes(rope, new BytesVisitor() {
-
-            @Override
-            public void accept(byte[] bytes, int offset, int length) {
-                final int resultPositionValue = resultPosition.get();
-                System.arraycopy(bytes, offset, result, resultPositionValue, length);
-                resultPosition.set(resultPositionValue + length);
-            }
-
+        visitBytes(rope, (bytes, offset1, length1) -> {
+            final int resultPositionValue = resultPosition.get();
+            System.arraycopy(bytes, offset1, result, resultPositionValue, length1);
+            resultPosition.set(resultPositionValue + length1);
         }, offset, length);
 
         return result;

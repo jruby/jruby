@@ -80,14 +80,9 @@ public abstract class ThreadNodes {
 
             final Memo<DynamicObject> result = new Memo<>(null);
 
-            getContext().getSafepointManager().pauseThreadAndExecute(thread, this, new SafepointAction() {
-
-                @Override
-                public void run(DynamicObject thread, Node currentNode) {
-                    final Backtrace backtrace = getContext().getCallStack().getBacktrace(currentNode);
-                    result.set(ExceptionOperations.backtraceAsRubyStringArray(getContext(), null, backtrace));
-                }
-
+            getContext().getSafepointManager().pauseThreadAndExecute(thread, this, (thread1, currentNode) -> {
+                final Backtrace backtrace = getContext().getCallStack().getBacktrace(currentNode);
+                result.set(ExceptionOperations.backtraceAsRubyStringArray(getContext(), null, backtrace));
             });
 
             // If the thread id dead or aborting the SafepointAction will not run
@@ -134,14 +129,7 @@ public abstract class ThreadNodes {
                 return rubyThread;
             }
 
-            getContext().getSafepointManager().pauseThreadAndExecuteLater(toKill, this, new SafepointAction() {
-
-                @Override
-                public void run(DynamicObject currentThread, Node currentNode) {
-                    ThreadManager.shutdown(getContext(), currentThread, currentNode);
-                }
-
-            });
+            getContext().getSafepointManager().pauseThreadAndExecuteLater(toKill, this, (currentThread, currentNode) -> ThreadManager.shutdown(getContext(), currentThread, currentNode));
 
             return rubyThread;
         }
@@ -279,19 +267,14 @@ public abstract class ThreadNodes {
         private boolean doJoinMillis(final DynamicObject thread, final int timeoutInMillis) {
             final long start = System.currentTimeMillis();
 
-            final boolean joined = getContext().getThreadManager().runUntilResult(this, new ThreadManager.BlockingAction<Boolean>() {
-
-                @Override
-                public Boolean block() throws InterruptedException {
-                    long now = System.currentTimeMillis();
-                    long waited = now - start;
-                    if (waited >= timeoutInMillis) {
-                        // We need to know whether countDown() was called and we do not want to block.
-                        return Layouts.THREAD.getFinishedLatch(thread).getCount() == 0;
-                    }
-                    return Layouts.THREAD.getFinishedLatch(thread).await(timeoutInMillis - waited, TimeUnit.MILLISECONDS);
+            final boolean joined = getContext().getThreadManager().runUntilResult(this, () -> {
+                long now = System.currentTimeMillis();
+                long waited = now - start;
+                if (waited >= timeoutInMillis) {
+                    // We need to know whether countDown() was called and we do not want to block.
+                    return Layouts.THREAD.getFinishedLatch(thread).getCount() == 0;
                 }
-
+                return Layouts.THREAD.getFinishedLatch(thread).await(timeoutInMillis - waited, TimeUnit.MILLISECONDS);
             });
 
             if (joined && Layouts.THREAD.getException(thread) != null) {
@@ -472,15 +455,12 @@ public abstract class ThreadNodes {
         public static void raiseInThread(final RubyContext context, DynamicObject rubyThread, final DynamicObject exception, Node currentNode) {
             final Thread javaThread = Layouts.FIBER.getThread((Layouts.THREAD.getFiberManager(rubyThread).getCurrentFiber()));
 
-            context.getSafepointManager().pauseThreadAndExecuteLater(javaThread, currentNode, new SafepointAction() {
-                @Override
-                public void run(DynamicObject currentThread, Node currentNode) {
-                    if (Layouts.EXCEPTION.getBacktrace(exception) == null) {
-                        Backtrace backtrace = context.getCallStack().getBacktrace(currentNode);
-                        Layouts.EXCEPTION.setBacktrace(exception, backtrace);
-                    }
-                    throw new RaiseException(exception);
+            context.getSafepointManager().pauseThreadAndExecuteLater(javaThread, currentNode, (currentThread, currentNode1) -> {
+                if (Layouts.EXCEPTION.getBacktrace(exception) == null) {
+                    Backtrace backtrace = context.getCallStack().getBacktrace(currentNode1);
+                    Layouts.EXCEPTION.setBacktrace(exception, backtrace);
                 }
+                throw new RaiseException(exception);
             });
         }
 
