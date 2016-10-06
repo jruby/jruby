@@ -254,7 +254,7 @@ public class CallStackManager {
     private Node getCallNode(FrameInstance frameInstance, final InternalMethod method) {
         Node callNode = frameInstance.getCallNode();
         if (callNode == null && method != null &&
-                BacktraceFormatter.isCore(method.getSharedMethodInfo().getSourceSection())) {
+                BacktraceFormatter.isCore(context, method.getSharedMethodInfo().getSourceSection())) {
             callNode = ((RootCallTarget) method.getCallTarget()).getRootNode();
         }
         return callNode;
