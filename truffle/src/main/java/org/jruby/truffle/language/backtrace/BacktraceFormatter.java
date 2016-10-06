@@ -151,7 +151,7 @@ public class BacktraceFormatter {
             if (reportedSourceSection == null) {
                 builder.append("???");
             } else if (reportedSourceSection.getSource() == null) {
-                builder.append(reportedSourceSection.getShortDescription());
+                builder.append(String.format("%s:%d", reportedSourceSection.getSource().getName(), reportedSourceSection.getStartLine()));
             } else {
                 builder.append(reportedSourceSection.getSource().getName());
                 builder.append(":");
@@ -260,12 +260,12 @@ public class BacktraceFormatter {
         final SourceSection sourceSection = callNode.getEncapsulatingSourceSection();
 
         if (sourceSection != null) {
-            final String shortDescription = sourceSection.getShortDescription();
+            final String shortDescription = String.format("%s:%d", sourceSection.getSource().getName(), sourceSection.getStartLine());
 
             if (shortDescription.trim().equals(":")) {
-                builder.append(getRootOrTopmostNode(callNode).getClass().getSimpleName());
+                throw new UnsupportedOperationException();
             } else {
-                builder.append(sourceSection.getShortDescription());
+                builder.append(shortDescription);
 
                 final RootNode rootNode = callNode.getRootNode();
                 final String identifier = rootNode.getName();

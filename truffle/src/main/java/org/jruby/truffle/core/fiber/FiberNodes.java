@@ -36,6 +36,7 @@ import org.jruby.truffle.language.control.BreakException;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.control.ReturnException;
 import org.jruby.truffle.language.methods.UnsupportedOperationBehavior;
+import org.jruby.truffle.parser.BodyTranslator;
 import org.jruby.truffle.platform.UnsafeGroup;
 
 import java.util.concurrent.CountDownLatch;
@@ -68,7 +69,8 @@ public abstract class FiberNodes {
     }
 
     public static void initialize(final RubyContext context, final DynamicObject fiber, final DynamicObject block, final Node currentNode) {
-        final String name = "Ruby Fiber@" + Layouts.PROC.getSharedMethodInfo(block).getSourceSection().getShortDescription();
+        final SourceSection sourceSection = Layouts.PROC.getSharedMethodInfo(block).getSourceSection();
+        final String name = String.format("Ruby Fiber@%s:%d", sourceSection.getSource().getName(), sourceSection.getStartLine());
         final Thread thread = new Thread(() -> handleFiberExceptions(context, fiber, block, currentNode));
         thread.setName(name);
         thread.start();

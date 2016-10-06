@@ -12,6 +12,7 @@ package org.jruby.truffle.core.thread;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.source.SourceSection;
 import jnr.posix.DefaultNativeTimeval;
 import jnr.posix.Timeval;
 import org.jruby.RubyThread.Status;
@@ -91,7 +92,8 @@ public class ThreadManager {
     }
 
     public static void initialize(final DynamicObject thread, RubyContext context, Node currentNode, final Object[] arguments, final DynamicObject block) {
-        String info = Layouts.PROC.getSharedMethodInfo(block).getSourceSection().getShortDescription();
+        final SourceSection sourceSection = Layouts.PROC.getSharedMethodInfo(block).getSourceSection();
+        final String info = String.format("%s:%d", sourceSection.getSource().getName(), sourceSection.getStartLine());
         initialize(thread, context, currentNode, info, () -> {
             final Object value = ProcOperations.rootCall(block, arguments);
             Layouts.THREAD.setValue(thread, value);

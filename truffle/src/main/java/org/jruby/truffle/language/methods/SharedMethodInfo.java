@@ -119,7 +119,7 @@ public class SharedMethodInfo {
         if (sourceSection == null) {
             suffix = name;
         } else {
-            suffix = name + " " + sourceSection.getShortDescription();
+            suffix = String.format("%s %s:%d", name, sourceSection.getSource().getName(), sourceSection.getStartLine());
         }
 
         return prefix + suffix;

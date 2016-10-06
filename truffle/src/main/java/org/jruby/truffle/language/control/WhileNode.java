@@ -66,7 +66,8 @@ public final class WhileNode extends RubyNode {
 
         @Override
         public String toString() {
-            return condition.getEncapsulatingSourceSection().getShortDescription();
+            SourceSection sourceSection = getEncapsulatingSourceSection();
+            return String.format("while loop at %s:%d", sourceSection.getSource().getName(), sourceSection.getStartLine());
         }
 
     }
