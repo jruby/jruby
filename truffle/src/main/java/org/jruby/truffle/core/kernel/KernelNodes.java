@@ -1759,7 +1759,7 @@ public abstract class KernelNodes {
 
             try {
                 return new PrintfCompiler(getContext(), this)
-                        .compile(format.toString(), Layouts.STRING.getRope(format).getBytes());
+                        .compile(Layouts.STRING.getRope(format).getBytes());
             } catch (InvalidFormatException e) {
                 throw new RaiseException(coreExceptions().argumentError(e.getMessage(), this));
             }

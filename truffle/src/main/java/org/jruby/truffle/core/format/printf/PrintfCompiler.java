@@ -12,7 +12,6 @@ package org.jruby.truffle.core.format.printf;
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.Truffle;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.format.DescriptionTruncater;
 import org.jruby.truffle.core.format.FormatEncoding;
 import org.jruby.truffle.core.format.FormatRootNode;
 import org.jruby.truffle.language.RubyNode;
@@ -29,13 +28,13 @@ public class PrintfCompiler {
         this.currentNode = currentNode;
     }
 
-    public CallTarget compile(String formatString, byte[] format) {
+    public CallTarget compile(byte[] format) {
         final PrintfSimpleParser parser = new PrintfSimpleParser(bytesToChars(format));
         final List<SprintfConfig> configs = parser.parse();
         final PrintfSimpleTreeBuilder builder = new PrintfSimpleTreeBuilder(context, configs);
 
         return Truffle.getRuntime().createCallTarget(
-            new FormatRootNode(DescriptionTruncater.trunate(formatString),
+            new FormatRootNode(currentNode.getEncapsulatingSourceSection(),
                 FormatEncoding.DEFAULT, builder.getNode()));
     }
 
