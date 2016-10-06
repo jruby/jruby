@@ -33,7 +33,7 @@ default_gems =
    ImportedGem.new( 'minitest', '${minitest.version}' ),
    ImportedGem.new( 'test-unit', '${test-unit.version}' ),
    ImportedGem.new( 'power_assert', '${power_assert.version}' ),
-   ImportedGem.new( 'psych', '2.0.17' ),
+   ImportedGem.new( 'psych', '2.1.1' ),
    ImportedGem.new( 'json', '${json.version}' ),
    ImportedGem.new( 'jar-dependencies', '${jar-dependencies.version}' ),
    ImportedGem.new( 'racc', '${racc.version}'),
