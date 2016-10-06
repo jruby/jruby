@@ -31,7 +31,6 @@ import org.jruby.truffle.language.loader.CodeLoader;
 import org.jruby.truffle.language.loader.SourceLoader;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.parser.ParserContext;
-import org.jruby.truffle.util.ByteListUtils;
 import org.jruby.util.Memo;
 
 import java.io.IOException;

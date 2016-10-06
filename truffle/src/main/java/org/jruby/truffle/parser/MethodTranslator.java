@@ -58,7 +58,6 @@ import org.jruby.truffle.parser.ast.ParseNode;
 import org.jruby.truffle.parser.ast.SuperParseNode;
 import org.jruby.truffle.parser.ast.UnnamedRestArgParseNode;
 import org.jruby.truffle.parser.ast.ZSuperParseNode;
-import org.jruby.truffle.parser.ast.types.INameNode;
 import org.jruby.truffle.tools.ChaosNodeGen;
 
 import java.util.Arrays;
