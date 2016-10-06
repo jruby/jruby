@@ -201,19 +201,19 @@ gate-caps: {
 }
 
 bench-caps: {
-  capabilities: [x52, linux, amd64]
+  capabilities: [x52, linux, amd64, no_frequency_scaling]
   targets: [bench, post-push]
   timelimit: "02:00:00"
 }
 
 daily-bench-caps: {
-  capabilities: [x52, linux]
+  capabilities: [x52, linux, amd64, no_frequency_scaling]
   targets: [daily]
   timelimit: "02:00:00"
 }
 
 weekly-bench-caps: {
-  capabilities: [x52, linux]
+  capabilities: [x52, linux, amd64, no_frequency_scaling]
   targets: [weekly]
   timelimit: "02:00:00"
 }
