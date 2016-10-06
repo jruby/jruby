@@ -297,6 +297,12 @@ micro-benchmarks: {
   ] ${post-process-and-upload-results}
 }
 
+savina-benchmarks: {
+  run: ${setup-benchmarks} [
+    [mx, benchmark, savina]
+  ] ${post-process-and-upload-results}
+}
+
 server-benchmarks: {
   packages: {
     "apache/ab": ">=2.3"
@@ -450,6 +456,16 @@ builds: [
   {name: ruby-benchmarks-micro-graal-enterprise-no-om} ${common} ${graal-enterprise-no-om} ${daily-bench-caps} ${jruby-truffle} ${micro-benchmarks},
   {name: ruby-benchmarks-micro-graal-vm-snapshot} ${common} ${graal-vm-snapshot} ${bench-caps} ${jruby-truffle} ${micro-benchmarks},
   {name: ruby-benchmarks-micro-graal-vm-release} ${common} ${graal-vm-release} ${bench-caps} ${jruby-truffle} ${micro-benchmarks},
+
+  {name: ruby-benchmarks-savina-mri} ${common} ${weekly-bench-caps} ${mri-benchmark} ${savina-benchmarks},
+  {name: ruby-benchmarks-savina-noindy} ${common} ${no-graal} ${daily-bench-caps} ${jruby-noindy-benchmark} ${savina-benchmarks},
+  {name: ruby-benchmarks-savina-indy} ${common} ${no-graal} ${daily-bench-caps} ${jruby-indy-benchmark} ${savina-benchmarks},
+  {name: ruby-benchmarks-savina-no-graal} ${common} ${no-graal} ${weekly-bench-caps} ${jruby-truffle} ${savina-benchmarks},
+  {name: ruby-benchmarks-savina-graal-core} ${common} ${graal-core} ${daily-bench-caps} ${jruby-truffle} ${savina-benchmarks},
+  {name: ruby-benchmarks-savina-graal-enterprise} ${common} ${graal-enterprise} ${daily-bench-caps} ${jruby-truffle} ${savina-benchmarks},
+  {name: ruby-benchmarks-savina-graal-enterprise-no-om} ${common} ${graal-enterprise-no-om} ${daily-bench-caps} ${jruby-truffle} ${savina-benchmarks},
+  {name: ruby-benchmarks-savina-graal-vm-snapshot} ${common} ${graal-vm-snapshot} ${bench-caps} ${jruby-truffle} ${savina-benchmarks},
+  {name: ruby-benchmarks-savina-graal-vm-release} ${common} ${graal-vm-release} ${bench-caps} ${jruby-truffle} ${savina-benchmarks},
 
   {name: ruby-benchmarks-server-noindy} ${common} ${no-graal} ${daily-bench-caps} ${jruby-noindy-benchmark} ${server-benchmarks},
   {name: ruby-benchmarks-server-indy} ${common} ${no-graal} ${daily-bench-caps} ${jruby-indy-benchmark} ${server-benchmarks},
