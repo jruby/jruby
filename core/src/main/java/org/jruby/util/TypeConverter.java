@@ -62,37 +62,11 @@ public class TypeConverter {
      * @return the converted value
      */
     public static IRubyObject convertToType(IRubyObject obj, RubyClass target, String convertMethod, boolean raise) {
-        if ( ! obj.respondsTo(convertMethod) ) {
-            switch (convertMethod) {
-                case "to_int"  :
-                case "to_ary"  :
-                case "to_str"  :
-                case "to_sym"  :
-                case "to_hash" :
-                case "to_proc" :
-                case "to_io"   : return handleImplicitlyUncoercibleObject(raise, obj, target);
-            }
-            return handleUncoercibleObject(raise, obj, target);
-        }
-
-        return obj.callMethod(obj.getRuntime().getCurrentContext(), convertMethod);
+        return convertToType19(obj, target, convertMethod, raise);
     }
 
     public static IRubyObject convertToType(ThreadContext context, IRubyObject obj, RubyClass target, JavaSites.CheckedSites sites, boolean raise) {
-        if (!sites.respond_to_X.respondsTo(context, obj, obj, true)) {
-            switch (sites.methodName) {
-                case "to_int"  :
-                case "to_ary"  :
-                case "to_str"  :
-                case "to_sym"  :
-                case "to_hash" :
-                case "to_proc" :
-                case "to_io"   : return handleImplicitlyUncoercibleObject(raise, obj, target);
-            }
-            return handleUncoercibleObject(raise, obj, target);
-        }
-
-        return sites.site.call(context, obj, obj);
+        return convertToType19(context, obj, target, sites, raise);
     }
 
     /**
@@ -134,10 +108,7 @@ public class TypeConverter {
      * @return the converted value
      */
     public static IRubyObject convertToType(IRubyObject obj, RubyClass target, String convertMethod) {
-        if (target.isInstance(obj)) return obj;
-        IRubyObject val = convertToType(obj, target, convertMethod, true);
-        if (!target.isInstance(val)) throw obj.getRuntime().newTypeError(obj.getMetaClass() + "#" + convertMethod + " should return " + target.getName());
-        return val;
+        return convertToType19(obj, target, convertMethod);
     }
 
     /**
@@ -149,10 +120,7 @@ public class TypeConverter {
      * @return the converted value
      */
     public static IRubyObject convertToType(ThreadContext context, IRubyObject obj, RubyClass target, JavaSites.CheckedSites sites) {
-        if (target.isInstance(obj)) return obj;
-        IRubyObject val = convertToType(context, obj, target, sites, true);
-        if (!target.isInstance(val)) throw obj.getRuntime().newTypeError(obj.getMetaClass() + "#" + sites.methodName + " should return " + target.getName());
-        return val;
+        return convertToType19(context, obj, target, sites);
     }
 
     /**
@@ -265,11 +233,7 @@ public class TypeConverter {
      * @return the converted value
      */
     public static IRubyObject convertToTypeWithCheck(IRubyObject obj, RubyClass target, String convertMethod) {
-        if (target.isInstance(obj)) return obj;
-        IRubyObject val = TypeConverter.convertToType(obj, target, convertMethod, false);
-        if (val.isNil()) return val;
-        if (!target.isInstance(val)) throw obj.getRuntime().newTypeError(obj.getMetaClass() + "#" + convertMethod + " should return " + target.getName());
-        return val;
+        return convertToTypeWithCheck19(obj, target, convertMethod);
     }
 
     /**
@@ -282,10 +246,25 @@ public class TypeConverter {
      * @return the converted value
      */
     public static IRubyObject convertToTypeWithCheck(ThreadContext context, IRubyObject obj, RubyClass target, JavaSites.CheckedSites sites) {
+        return convertToTypeWithCheck19(context, obj, target, sites);
+    }
+
+    /**
+     * Higher level conversion utility similar to convertToType but it can throw an
+     * additional TypeError during conversion (MRI: rb_check_convert_type).
+     *
+     * @param obj the object to convert
+     * @param target is the type we are trying to convert to
+     * @param convertMethod is the method to be called to try and convert to targeType
+     * @return the converted value
+     */
+    public static IRubyObject convertToTypeWithCheck19(IRubyObject obj, RubyClass target, String convertMethod) {
         if (target.isInstance(obj)) return obj;
-        IRubyObject val = TypeConverter.convertToType(context, obj, target, sites, false);
+        IRubyObject val = TypeConverter.convertToType19(obj, target, convertMethod, false);
         if (val.isNil()) return val;
-        if (!target.isInstance(val)) throw obj.getRuntime().newTypeError(obj.getMetaClass() + "#" + sites.methodName + " should return " + target.getName());
+        if (!target.isInstance(val)) {
+            throw newTypeError(obj, target, convertMethod, val);
+        }
         return val;
     }
 
@@ -563,26 +542,6 @@ public class TypeConverter {
         IRubyObject val = TypeConverter.convertToType(obj, target, convertMethod, true);
         if (val.isNil()) return val;
         if (!target.isInstance(val)) throw obj.getRuntime().newTypeError(obj.getMetaClass() + "#" + convertMethod + " should return " + target.getName());
-        return val;
-    }
-
-    /**
-     * Higher level conversion utility similar to convertToType but it can throw an
-     * additional TypeError during conversion (MRI: rb_check_convert_type).
-     *
-     * @param obj the object to convert
-     * @param target is the type we are trying to convert to
-     * @param convertMethod is the method to be called to try and convert to targeType
-     * @return the converted value
-     */
-    @Deprecated
-    public static IRubyObject convertToTypeWithCheck19(IRubyObject obj, RubyClass target, String convertMethod) {
-        if (target.isInstance(obj)) return obj;
-        IRubyObject val = TypeConverter.convertToType19(obj, target, convertMethod, false);
-        if (val.isNil()) return val;
-        if (!target.isInstance(val)) {
-            throw newTypeError(obj, target, convertMethod, val);
-        }
         return val;
     }
 }
