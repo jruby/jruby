@@ -37,6 +37,7 @@
  */
 package org.jruby.truffle.core;
 
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Fallback;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
@@ -51,14 +52,11 @@ import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.builtins.Primitive;
 import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
+import org.jruby.truffle.core.cast.ToFNode;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
-import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
-import org.jruby.truffle.language.dispatch.MissingBehavior;
 import org.jruby.truffle.language.objects.IsANode;
 import org.jruby.truffle.language.objects.IsANodeGen;
-import org.jruby.truffle.util.DoubleUtils;
 
 @CoreClass("Math")
 public abstract class MathNodes {
@@ -391,14 +389,14 @@ public abstract class MathNodes {
     public abstract static class LGammaNode extends CoreMethodArrayArgumentsNode {
 
         @Child private IsANode isANode;
-        @Child private CallDispatchHeadNode floatNode;
+        @Child private ToFNode toFNode;
 
         private final BranchProfile exceptionProfile = BranchProfile.create();
 
         public LGammaNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             isANode = IsANodeGen.create(context, sourceSection, null, null);
-            floatNode = DispatchHeadNodeFactory.createMethodCall(context, MissingBehavior.RETURN_MISSING);
+            toFNode = ToFNode.create();
         }
 
         @Specialization
@@ -435,7 +433,7 @@ public abstract class MathNodes {
                 throw new RaiseException(coreExceptions().typeErrorCantConvertInto(a, "Float", this));
             }
 
-            return lgamma(floatNode.callFloat(frame, a, "to_f", null));
+            return lgamma(toFNode.doDouble(frame, a));
         }
 
     }
@@ -464,13 +462,13 @@ public abstract class MathNodes {
         }
 
         @Specialization
-        public double function(VirtualFrame frame, Object a, NotProvided b) {
+        public double function(VirtualFrame frame, Object a, NotProvided b,
+                        @Cached("create()") ToFNode toFNode) {
             if (!isANode.executeIsA(a, coreLibrary().getNumericClass())) {
                 exceptionProfile.enter();
                 throw new RaiseException(coreExceptions().typeErrorCantConvertInto(a, "Float", this));
             }
-
-            return doFunction(floatANode.callFloat(frame, a, "to_f", null));
+            return doFunction(toFNode.doDouble(frame, a));
         }
 
         private double doFunction(double a) {
@@ -579,7 +577,7 @@ public abstract class MathNodes {
     protected abstract static class SimpleMonadicMathNode extends CoreMethodArrayArgumentsNode {
 
         @Child private IsANode isANode;
-        @Child private CallDispatchHeadNode floatNode;
+        @Child private ToFNode toFNode;
 
         protected final BranchProfile exceptionProfile = BranchProfile.create();
 
@@ -590,7 +588,7 @@ public abstract class MathNodes {
         protected SimpleMonadicMathNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             isANode = IsANodeGen.create(context, sourceSection, null, null);
-            floatNode = DispatchHeadNodeFactory.createMethodCall(context, MissingBehavior.RETURN_MISSING);
+            toFNode = ToFNode.create();
         }
 
         // TODO: why can't we leave this abstract?
@@ -626,7 +624,7 @@ public abstract class MathNodes {
                 throw new RaiseException(coreExceptions().typeErrorCantConvertInto(a, "Float", this));
             }
 
-            return doFunction(floatNode.callFloat(frame, a, "to_f", null));
+            return doFunction(toFNode.doDouble(frame, a));
         }
 
     }
@@ -634,8 +632,8 @@ public abstract class MathNodes {
     protected abstract static class SimpleDyadicMathNode extends CoreMethodArrayArgumentsNode {
 
         @Child protected IsANode isANode;
-        @Child protected CallDispatchHeadNode floatANode;
-        @Child protected CallDispatchHeadNode floatBNode;
+        @Child protected ToFNode floatANode;
+        @Child protected ToFNode floatBNode;
 
         protected final BranchProfile exceptionProfile = BranchProfile.create();
 
@@ -646,8 +644,8 @@ public abstract class MathNodes {
         protected SimpleDyadicMathNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             isANode = IsANodeGen.create(context, sourceSection, null, null);
-            floatANode = DispatchHeadNodeFactory.createMethodCall(context, MissingBehavior.RETURN_MISSING);
-            floatBNode = DispatchHeadNodeFactory.createMethodCall(context, MissingBehavior.RETURN_MISSING);
+            floatANode = ToFNode.create();
+            floatBNode = ToFNode.create();
         }
 
         // TODO: why can't we leave this abstract?
@@ -744,9 +742,7 @@ public abstract class MathNodes {
                 throw new RaiseException(coreExceptions().typeErrorCantConvertInto(a, "Float", this));
             }
 
-            return doFunction(
-                    floatANode.callFloat(frame, a, "to_f", null),
-                    floatBNode.callFloat(frame, b, "to_f", null));
+            return doFunction(floatANode.doDouble(frame, a), floatBNode.doDouble(frame, b));
         }
 
     }

@@ -32,8 +32,8 @@ public abstract class ToFNode extends RubyNode {
 
     private final BranchProfile errorProfile = BranchProfile.create();
 
-    public ToFNode(RubyContext context, SourceSection sourceSection) {
-        super(context, sourceSection);
+    public static ToFNode create() {
+        return ToFNodeGen.create(null);
     }
 
     public double doDouble(VirtualFrame frame, Object value) {
