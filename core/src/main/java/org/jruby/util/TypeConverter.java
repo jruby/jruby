@@ -392,13 +392,11 @@ public class TypeConverter {
         return TypeConverter.convertToTypeWithCheck19(context, self, runtime.getArray(), sites(context).to_ary_checked);
     }
 
-    public static IRubyObject handleUncoercibleObject(boolean raise, IRubyObject obj, RubyClass target) throws RaiseException {
-        if (raise) throw obj.getRuntime().newTypeError("can't convert " + typeAsString(obj) + " into " + target);
-
-        return obj.getRuntime().getNil();
+    public static IRubyObject handleUncoercibleObject(boolean raise, IRubyObject obj, RubyClass target) {
+        return handleImplicitlyUncoercibleObject(raise, obj, target);
     }
 
-    public static IRubyObject handleImplicitlyUncoercibleObject(boolean raise, IRubyObject obj, RubyClass target) throws RaiseException {
+    public static IRubyObject handleImplicitlyUncoercibleObject(boolean raise, IRubyObject obj, RubyClass target) {
         if (raise) throw obj.getRuntime().newTypeError("no implicit conversion of " + typeAsString(obj) + " into " + target);
 
         return obj.getRuntime().getNil();
