@@ -89,28 +89,4 @@ public class CallDispatchHeadNode extends DispatchHeadNode {
         }
     }
 
-    public long callLongFixnum(
-            VirtualFrame frame,
-            Object receiverObject,
-            Object methodName,
-            DynamicObject blockObject,
-            Object... argumentsObjects) {
-        final Object value = dispatch(frame, receiverObject, methodName, blockObject, argumentsObjects);
-
-        if (value instanceof Integer) {
-            return (int) value;
-        }
-
-        if (value instanceof Long) {
-            return (long) value;
-        }
-
-        errorProfile.enter();
-        if (value == DispatchNode.MISSING) {
-            throw new RaiseException(context.getCoreExceptions().typeErrorCantConvertInto(receiverObject, "Fixnum", this));
-        } else {
-            throw new RaiseException(context.getCoreExceptions().typeErrorCantConvertTo(receiverObject, "Fixnum", (String) methodName, value, this));
-        }
-    }
-
 }
