@@ -94,17 +94,21 @@ public abstract class IOPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        protected int ensureSuccessful(int result, int errno) {
+        protected int ensureSuccessful(int result, int errno, String extra) {
             assert result >= -1;
             if (result == -1) {
                 errorProfile.enter();
-                throw new RaiseException(coreExceptions().errnoError(errno, this));
+                throw new RaiseException(coreExceptions().errnoError(errno, extra, this));
             }
             return result;
         }
 
         protected int ensureSuccessful(int result) {
-            return ensureSuccessful(result, posix().errno());
+            return ensureSuccessful(result, posix().errno(), "");
+        }
+
+        protected int ensureSuccessful(int result, String extra) {
+            return ensureSuccessful(result, posix().errno(), " - " + extra);
         }
     }
 
@@ -183,13 +187,18 @@ public abstract class IOPrimitiveNodes {
 
     }
 
-    @Primitive(name = "io_open", needsSelf = false, lowerFixnum = { 2, 3 }, unsafe = UnsafeGroup.IO)
+    @Primitive(name = "io_open", needsSelf = false, lowerFixnum = {2, 3}, unsafe = UnsafeGroup.IO)
     public static abstract class IOOpenPrimitiveNode extends IOPrimitiveArrayArgumentsNode {
 
         @TruffleBoundary(throwsControlFlowException = true)
         @Specialization(guards = "isRubyString(path)")
         public int open(DynamicObject path, int mode, int permission) {
-            return ensureSuccessful(posix().open(StringOperations.getString(path), mode, permission));
+            String pathString = StringOperations.getString(path);
+            int fd = posix().open(pathString, mode, permission);
+            if (fd == -1) {
+                ensureSuccessful(fd, pathString);
+            }
+            return fd;
         }
 
     }
@@ -377,7 +386,7 @@ public abstract class IOPrimitiveNodes {
                     if (fdTarget > 0) {
                         ensureSuccessful(posix().close(fdTarget));
                     }
-                    ensureSuccessful(result, errno); // throws
+                    ensureSuccessful(result, errno, targetPathString); // throws
                     return;
                 }
             } else {

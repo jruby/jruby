@@ -235,31 +235,19 @@ public class CoreExceptions {
 
     @TruffleBoundary
     public DynamicObject errnoError(int errno, Node currentNode) {
-        Errno errnoObj = Errno.valueOf(errno);
-        if (errnoObj == null) {
-            return systemCallError(StringUtils.format("Unknown Error (%s)", errno), errno, currentNode);
-        }
-
-        return ExceptionOperations.createSystemCallError(
-                context.getCoreLibrary().getErrnoClass(errnoObj),
-                StringOperations.createString(context, StringOperations.encodeRope(errnoObj.description(), UTF8Encoding.INSTANCE)),
-                context.getCallStack().getBacktrace(currentNode), errno);
+        return errnoError(errno, "", currentNode);
     }
 
     @TruffleBoundary
-    public DynamicObject errnoError(int errno, String message, Node currentNode) {
+    public DynamicObject errnoError(int errno, String extraMessage, Node currentNode) {
         Errno errnoObj = Errno.valueOf(errno);
-        if (errnoObj == null) {
-            return systemCallError(StringUtils.format("Unknown Error (%s) - %s", errno, message), errno, currentNode);
-        }
-
         DynamicObject errnoClass = context.getCoreLibrary().getErrnoClass(errnoObj);
-        if(errnoClass == null){
-            errnoClass = context.getCoreLibrary().getSystemCallErrorClass();
-            message = "Unknown error: " + errno;
+        if (errnoObj == null || errnoClass == null) {
+            return systemCallError(StringUtils.format("Unknown Error (%s)%s", errno, extraMessage), errno, currentNode);
         }
 
-        final DynamicObject errorMessage = StringOperations.createString(context, StringOperations.encodeRope(StringUtils.format("%s%s", errnoObj.description(), message), UTF8Encoding.INSTANCE));
+        String fullMessage = StringUtils.format("%s%s", errnoObj.description(), extraMessage);
+        DynamicObject errorMessage = StringOperations.createString(context, StringOperations.encodeRope(fullMessage, UTF8Encoding.INSTANCE));
 
         return ExceptionOperations.createSystemCallError(
             errnoClass,
