@@ -144,6 +144,10 @@ public class JNRTrufflePosix implements TrufflePosix {
 
     @Override
     public int getpriority(int which, int who) {
+        // getpriority can return -1 so errno has to be cleared.
+        // it should be done as close as possible to the syscall
+        // as JVM classloading could change errno.
+        posix.errno(0);
         return posix.getpriority(which, who);
     }
 
