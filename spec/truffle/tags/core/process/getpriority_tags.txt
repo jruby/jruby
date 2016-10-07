@@ -1,1 +1,1 @@
-fails:Process.getpriority coerces arguments to Integers
+graalvm:Process.getpriority coerces arguments to Integers
