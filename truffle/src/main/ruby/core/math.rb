@@ -14,6 +14,12 @@ module Math
   DomainError = Errno::EDOM
 
   module_function
+
+  def frexp(x)
+    Truffle.primitive :math_frexp
+    frexp Rubinius::Type.coerce_to_float(x)
+  end
+
   def ldexp(fraction, exponent)
     Truffle.primitive :math_ldexp
     raise RangeError, "float NaN out of range of integer" if Float === exponent and exponent.nan?

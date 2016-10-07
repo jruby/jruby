@@ -282,34 +282,8 @@ public abstract class MathNodes {
 
     }
 
-    @CoreMethod(names = "frexp", isModuleFunction = true, required = 1)
-    public abstract static class FrExpNode extends CoreMethodArrayArgumentsNode {
-
-        private final BranchProfile errorProfile = BranchProfile.create();
-
-        @Child private IsANode isANode;
-        @Child private CallDispatchHeadNode floatNode;
-
-        public FrExpNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            isANode = IsANodeGen.create(context, sourceSection, null, null);
-            floatNode = DispatchHeadNodeFactory.createMethodCall(context, MissingBehavior.RETURN_MISSING);
-        }
-
-        @Specialization
-        public DynamicObject frexp(int a) {
-            return frexp((double) a);
-        }
-
-        @Specialization
-        public DynamicObject frexp(long a) {
-            return frexp((double) a);
-        }
-
-        @Specialization(guards = "isRubyBignum(a)")
-        public DynamicObject frexp(DynamicObject a) {
-            return frexp(Layouts.BIGNUM.getValue(a).doubleValue());
-        }
+    @Primitive(name = "math_frexp", needsSelf = false)
+    public abstract static class FrExpNode extends PrimitiveArrayArgumentsNode {
 
         @Specialization
         public DynamicObject frexp(double a) {
@@ -335,13 +309,8 @@ public abstract class MathNodes {
         }
 
         @Fallback
-        public DynamicObject frexp(VirtualFrame frame, Object a) {
-            if (isANode.executeIsA(a, coreLibrary().getNumericClass())) {
-                return frexp(floatNode.callFloat(frame, a, "to_f", null));
-            } else {
-                errorProfile.enter();
-                throw new RaiseException(coreExceptions().typeErrorCantConvertInto(a, "Float", this));
-            }
+        public Object frexp(Object a) {
+            return FAILURE;
         }
 
     }
