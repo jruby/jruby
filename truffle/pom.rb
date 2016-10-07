@@ -10,7 +10,7 @@ project 'JRuby Truffle' do
   properties( 'polyglot.dump.pom' => 'pom.xml',
               'polyglot.dump.readonly' => true,
               # Must be the same as in mx.jruby/suite.py (except for the -SNAPSHOT part only in this file)
-              'truffle.version' => 'b2e70099cca564d81b2a9a6560fc6ad7fc815087-SNAPSHOT',
+              'truffle.version' => '26a836113b25ee06102940e88da92cc6016922b5-SNAPSHOT',
               'jruby.basedir' => '${basedir}/..',
               'maven.test.skip' => 'true' )
 
