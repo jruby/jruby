@@ -413,7 +413,7 @@ public abstract class MathNodes {
 
         @Fallback
         public Object ldexp(Object a, Object b) {
-            return null;
+            return FAILURE;
         }
 
     }
