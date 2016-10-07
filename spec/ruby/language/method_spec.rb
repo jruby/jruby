@@ -1021,6 +1021,12 @@ describe "A method" do
       m({ "a" => 1 }, a: 1).should == [[{"a" => 1}], {a: 1}]
       m({a: 1}, {}).should == [[{a: 1}], {}]
       m({a: 1}, {"a" => 1}).should == [[{a: 1}, {"a" => 1}], {}]
+
+      bo = BasicObject.new
+      def bo.to_a; [1, 2, 3]; end
+      def bo.to_hash; {:b => 2, :c => 3}; end
+
+      m(*bo, **bo).should == [[1, 2, 3], {:b => 2, :c => 3}]
     end
 
     evaluate <<-ruby do
