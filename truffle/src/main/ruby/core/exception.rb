@@ -304,7 +304,7 @@ class SystemCallError < StandardError
   end
 
   # We use .new here because when errno is set, we attempt to
-  # lookup and return a subclass of SystemCallError, specificly,
+  # lookup and return a subclass of SystemCallError, specifically,
   # one of the Errno subclasses.
   def self.new(*args)
     # This method is used 2 completely different ways. One is when it's called
