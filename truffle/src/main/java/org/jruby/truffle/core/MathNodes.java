@@ -49,6 +49,8 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.builtins.Primitive;
+import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
@@ -401,102 +403,20 @@ public abstract class MathNodes {
 
     }
 
-    @CoreMethod(names = "ldexp", isModuleFunction = true, required = 2)
-    public abstract static class LdexpNode extends CoreMethodArrayArgumentsNode {
-
-        @Child private IsANode isANode;
-        @Child private CallDispatchHeadNode floatANode;
-        @Child private CallDispatchHeadNode integerBNode;
-
-        private final BranchProfile exceptionProfile = BranchProfile.create();
-
-        protected LdexpNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            isANode = IsANodeGen.create(context, sourceSection, null, null);
-            floatANode = DispatchHeadNodeFactory.createMethodCall(context, MissingBehavior.RETURN_MISSING);
-            integerBNode = DispatchHeadNodeFactory.createMethodCall(context, MissingBehavior.RETURN_MISSING);
-        }
+    @Primitive(name = "math_ldexp", needsSelf = false)
+    public abstract static class LdexpNode extends PrimitiveArrayArgumentsNode {
 
         @Specialization
-        public double function(int a, int b) {
-            return function((double) a, b);
-        }
-
-        @Specialization
-        public double function(int a, long b) {
-            return function((double) a, b);
-        }
-
-        @Specialization
-        public double function(int a, double b) {
-            return function((double) a, b);
-        }
-
-        @Specialization
-        public double function(long a, int b) {
-            return function((double) a, b);
-        }
-
-        @Specialization
-        public double function(long a, long b) {
-            return function((double) a, b);
-        }
-
-        @Specialization
-        public double function(long a, double b) {
-            return function((double) a, b);
-        }
-
-        @Specialization(guards = "isRubyBignum(a)")
-        public double function(DynamicObject a, int b) {
-            return function(Layouts.BIGNUM.getValue(a).doubleValue(), b);
-        }
-
-        @Specialization(guards = "isRubyBignum(a)")
-        public double function(DynamicObject a, long b) {
-            return function(Layouts.BIGNUM.getValue(a).doubleValue(), b);
-        }
-
-        @Specialization(guards = "isRubyBignum(a)")
-        public double function(DynamicObject a, double b) {
-            return function(Layouts.BIGNUM.getValue(a).doubleValue(), b);
-        }
-
-        @Specialization
-        public double function(double a, int b) {
-            return function(a, (double) b);
-        }
-
-        @Specialization
-        public double function(double a, long b) {
-            return function(a, (double) b);
-        }
-
-        @Specialization
-        public double function(double a, double b) {
-            if (Double.isNaN(b)) {
-                exceptionProfile.enter();
-                throw new RaiseException(coreExceptions().rangeError("float", DoubleUtils.toString(b), "integer", this));
-            }
-
+        public double ldexp(double a, int b) {
             return a * Math.pow(2, b);
         }
 
         @Fallback
-        public double function(VirtualFrame frame, Object a, Object b) {
-            if (!isANode.executeIsA(a, coreLibrary().getNumericClass())) {
-                exceptionProfile.enter();
-                throw new RaiseException(coreExceptions().typeErrorCantConvertInto(a, "Float", this));
-            }
-
-            return function(
-                    floatANode.callFloat(frame, a, "to_f", null),
-                    integerBNode.callLongFixnum(frame, b, "to_int", null));
+        public Object ldexp(Object a, Object b) {
+            return null;
         }
 
     }
-
-
 
     @CoreMethod(names = "lgamma", isModuleFunction = true, required = 1)
     public abstract static class LGammaNode extends CoreMethodArrayArgumentsNode {
