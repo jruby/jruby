@@ -119,7 +119,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     plugin :clean, '2.5'
     plugin :dependency, '2.8'
     plugin :release, '2.4.1'
-    plugin :jar, '2.6'
+    plugin :jar, '3.0.2'
 
     rules = { :requireMavenVersion => { :version => '[3.3.0,)' } }
     unless model.version =~ /-SNAPSHOT/
