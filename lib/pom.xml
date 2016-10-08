@@ -206,13 +206,23 @@ DO NOT MODIFIY - GENERATED CODE
       <id>mavengems</id>
       <url>mavengem:https://rubygems.org</url>
     </repository>
+    <repository>
+      <releases>
+        <enabled>false</enabled>
+      </releases>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+      <id>takari</id>
+      <url>https://otto.takari.io/content/repositories/snapshots</url>
+    </repository>
   </repositories>
   <build>
     <extensions>
       <extension>
         <groupId>org.torquebox.mojo</groupId>
         <artifactId>mavengem-wagon</artifactId>
-        <version>0.2.0</version>
+        <version>0.2.2-SNAPSHOT</version>
       </extension>
     </extensions>
     <resources>
@@ -312,7 +322,7 @@ DO NOT MODIFIY - GENERATED CODE
       <plugin>
         <groupId>io.takari.polyglot</groupId>
         <artifactId>polyglot-maven-plugin</artifactId>
-        <version>0.1.15</version>
+        <version>0.1.20-SNAPSHOT</version>
         <executions>
           <execution>
             <id>install_gems</id>
@@ -363,7 +373,7 @@ DO NOT MODIFIY - GENERATED CODE
           <dependency>
             <groupId>io.takari.polyglot</groupId>
             <artifactId>polyglot-ruby</artifactId>
-            <version>0.1.15</version>
+            <version>0.1.20-SNAPSHOT</version>
           </dependency>
         </dependencies>
       </plugin>
