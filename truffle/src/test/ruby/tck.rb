@@ -215,3 +215,15 @@ def object_with_value_and_add_property
 end
 
 Truffle::Interop.export_method(:object_with_value_and_add_property)
+
+def call_function(function)
+  function.call 41.0, 42.0
+end
+
+Truffle::Interop.export_method(:call_function)
+
+def call_method(object)
+  object.foo 41.0, 42.0
+end
+
+Truffle::Interop.export_method(:call_method)

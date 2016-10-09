@@ -164,6 +164,16 @@ public class RubyTckTest extends TruffleTCK {
     }
 
     @Override
+    protected String callFunction() {
+        return "call_function";
+    }
+
+    @Override
+    protected String callMethod() {
+        return "call_method";
+    }
+
+    @Override
     public void testCoExistanceOfMultipleLanguageInstances() throws Exception {
         /*
          * Not running this test as it clears the engine, but we're caching that globally to avoid creating tens of
@@ -209,16 +219,6 @@ public class RubyTckTest extends TruffleTCK {
     @Ignore
     @Override
     public void testIsExecutableOfForeign() throws Exception {
-    }
-
-    @Ignore
-    @Override
-    public void testCallFunction() throws Exception {
-    }
-
-    @Ignore
-    @Override
-    public void testCallMethod() throws Exception {
     }
 
 }
