@@ -165,3 +165,9 @@ def count_up_while(f)
 end
 
 Truffle::Interop.export_method(:count_up_while)
+
+def object_with_element
+  [1, 2, 42.0, 4]
+end
+
+Truffle::Interop.export_method(:object_with_element)
