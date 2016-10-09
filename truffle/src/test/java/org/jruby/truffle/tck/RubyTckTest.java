@@ -251,9 +251,4 @@ public class RubyTckTest extends TruffleTCK {
     public void testCallMethod() throws Exception {
     }
 
-    @Ignore
-    @Override
-    public void testPropertiesInteropMessage() throws Exception {
-    }
-
 }
