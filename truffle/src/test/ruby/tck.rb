@@ -171,3 +171,19 @@ def object_with_element
 end
 
 Truffle::Interop.export_method(:object_with_element)
+
+class ObjectWithValueProperty
+
+  attr_reader :value
+
+  def initialize
+    @value = 42.0
+  end
+
+end
+
+def object_with_value_property
+  ObjectWithValueProperty.new
+end
+
+Truffle::Interop.export_method(:object_with_value_property)

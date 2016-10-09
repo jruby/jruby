@@ -149,6 +149,11 @@ public class RubyTckTest extends TruffleTCK {
     }
 
     @Override
+    protected String objectWithValueProperty() {
+        return "object_with_value_property";
+    }
+
+    @Override
     public void testCoExistanceOfMultipleLanguageInstances() throws Exception {
         /*
          * Not running this test as it clears the engine, but we're caching that globally to avoid creating tens of
@@ -174,11 +179,6 @@ public class RubyTckTest extends TruffleTCK {
     @Ignore
     @Override
     public void testWriteToObjectWithElement() throws Exception {
-    }
-
-    @Ignore
-    @Override
-    public void testIsNotNull() throws Exception {
     }
 
     @Ignore
