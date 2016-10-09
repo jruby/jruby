@@ -174,51 +174,51 @@ public class RubyTckTest extends TruffleTCK {
     }
 
     @Override
+    protected String readValueFromForeign() {
+        return "read_value_from_foreign";
+    }
+
+    @Override
+    protected String readElementFromForeign() {
+        return "read_element_from_foreign";
+    }
+
+    @Override
+    protected String writeValueToForeign() {
+        return "write_value_to_foreign";
+    }
+
+    @Override
+    protected String writeElementToForeign() {
+        return "write_element_to_foreign";
+    }
+
+    @Override
+    protected String getSizeOfForeign() {
+        return "get_size_of_foreign";
+    }
+
+    @Override
+    protected String hasSizeOfForeign() {
+        return "has_size_of_foreign";
+    }
+
+    @Override
+    protected String isNullForeign() {
+        return "is_null_foreign";
+    }
+
+    @Override
+    protected String isExecutableOfForeign() {
+        return "is_executable_of_foreign";
+    }
+
+    @Override
     public void testCoExistanceOfMultipleLanguageInstances() throws Exception {
         /*
          * Not running this test as it clears the engine, but we're caching that globally to avoid creating tens of
          * engines concurrently.
          */
-    }
-
-    @Ignore
-    @Override
-    public void testReadValueFromForeign() throws Exception {
-    }
-
-    @Ignore
-    @Override
-    public void testReadElementFromForeign() throws Exception {
-    }
-
-    @Ignore
-    @Override
-    public void testWriteValueToForeign() throws Exception {
-    }
-
-    @Ignore
-    @Override
-    public void testWriteElementOfForeign() throws Exception {
-    }
-
-    @Ignore
-    @Override
-    public void testGetSizeOfForeign() throws Exception {
-    }
-
-    @Ignore
-    @Override
-    public void testHasSizeOfForeign() throws Exception {
-    }
-
-    @Ignore
-    @Override
-    public void testIsNullOfForeign() throws Exception {
-    }
-
-    @Ignore
-    @Override
-    public void testIsExecutableOfForeign() throws Exception {
     }
 
 }

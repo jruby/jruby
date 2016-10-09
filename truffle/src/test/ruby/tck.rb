@@ -227,3 +227,51 @@ def call_method(object)
 end
 
 Truffle::Interop.export_method(:call_method)
+
+def read_value_from_foreign(object)
+  object.value
+end
+
+Truffle::Interop.export_method(:read_value_from_foreign)
+
+def read_element_from_foreign(object)
+  object[2]
+end
+
+Truffle::Interop.export_method(:read_element_from_foreign)
+
+def write_value_to_foreign(object)
+  object.value = 42.0
+end
+
+Truffle::Interop.export_method(:write_value_to_foreign)
+
+def write_element_to_foreign(object)
+  object[2] = 42.0
+end
+
+Truffle::Interop.export_method(:write_element_to_foreign)
+
+def get_size_of_foreign(object)
+  Truffle::Interop.size(object)
+end
+
+Truffle::Interop.export_method(:get_size_of_foreign)
+
+def has_size_of_foreign(object)
+  Truffle::Interop.size?(object)
+end
+
+Truffle::Interop.export_method(:has_size_of_foreign)
+
+def is_null_foreign(object)
+  object.nil?
+end
+
+Truffle::Interop.export_method(:is_null_foreign)
+
+def is_executable_of_foreign(object)
+  Truffle::Interop.executable?(object)
+end
+
+Truffle::Interop.export_method(:is_executable_of_foreign)
