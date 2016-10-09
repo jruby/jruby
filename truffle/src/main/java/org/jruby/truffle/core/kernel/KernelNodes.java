@@ -1897,6 +1897,11 @@ public abstract class KernelNodes {
         }
 
         @Specialization
+        public boolean untaint(boolean bool) {
+            return bool;
+        }
+
+        @Specialization
         public Object taint(DynamicObject object) {
             if (!isTaintedNode.executeIsTainted(object)) {
                 return object;
