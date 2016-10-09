@@ -1887,6 +1887,16 @@ public abstract class KernelNodes {
         }
 
         @Specialization
+        public int untaint(int num) {
+            return num;
+        }
+
+        @Specialization
+        public long untaint(long num) {
+            return num;
+        }
+
+        @Specialization
         public Object taint(DynamicObject object) {
             if (!isTaintedNode.executeIsTainted(object)) {
                 return object;
