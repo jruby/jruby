@@ -168,16 +168,6 @@ public class RubyTckTest extends TruffleTCK {
 
     @Ignore
     @Override
-    public void testReadFromObjectWithElement() throws Exception {
-    }
-
-    @Ignore
-    @Override
-    public void testWriteToObjectWithElement() throws Exception {
-    }
-
-    @Ignore
-    @Override
     public void testObjectWithValueAndAddProperty() throws Exception {
     }
 
