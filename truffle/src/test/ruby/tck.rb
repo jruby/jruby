@@ -174,7 +174,7 @@ Truffle::Interop.export_method(:object_with_element)
 
 class ObjectWithValueProperty
 
-  attr_reader :value
+  attr_accessor :value
 
   def initialize
     @value = 42.0
