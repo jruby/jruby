@@ -154,6 +154,11 @@ public class RubyTckTest extends TruffleTCK {
     }
 
     @Override
+    protected String functionAddNumbers() {
+        return "function_add_numbers";
+    }
+
+    @Override
     public void testCoExistanceOfMultipleLanguageInstances() throws Exception {
         /*
          * Not running this test as it clears the engine, but we're caching that globally to avoid creating tens of
@@ -173,17 +178,7 @@ public class RubyTckTest extends TruffleTCK {
 
     @Ignore
     @Override
-    public void testIsExecutable() throws Exception {
-    }
-
-    @Ignore
-    @Override
     public void testObjectWithValueAndAddProperty() throws Exception {
-    }
-
-    @Ignore
-    @Override
-    public void testFunctionAddNumbers() throws Exception {
     }
 
     @Ignore

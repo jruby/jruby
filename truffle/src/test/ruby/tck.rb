@@ -187,3 +187,11 @@ def object_with_value_property
 end
 
 Truffle::Interop.export_method(:object_with_value_property)
+
+def function_add_numbers
+  proc do |a, b|
+    a + b
+  end
+end
+
+Truffle::Interop.export_method(:function_add_numbers)
