@@ -19,6 +19,7 @@ import jnr.posix.Passwd;
 import jnr.posix.SignalHandler;
 import jnr.posix.SpawnFileAction;
 import jnr.posix.Times;
+import org.jruby.platform.Platform;
 import org.jruby.truffle.core.CoreLibrary;
 
 import java.io.FileDescriptor;
@@ -429,5 +430,10 @@ public class JNRTrufflePosix implements TrufflePosix {
     @Override
     public int mkfifo(String path, int mode) {
         return posix.mkfifo(path, mode);
+    }
+
+    @Override
+    public long[] getgroups() {
+        return Platform.getPlatform().getGroups(null);
     }
 }

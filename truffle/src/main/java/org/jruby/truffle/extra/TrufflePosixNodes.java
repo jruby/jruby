@@ -20,7 +20,6 @@ import com.oracle.truffle.api.source.SourceSection;
 import jnr.constants.platform.Fcntl;
 import jnr.ffi.Pointer;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.platform.Platform;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreClass;
@@ -196,13 +195,13 @@ public abstract class TrufflePosixNodes {
 
         @Specialization(guards = "isNil(pointer)")
         public int getGroupsNil(int max, DynamicObject pointer) {
-            return Platform.getPlatform().getGroups(null).length;
+            return getContext().getNativePlatform().getPosix().getgroups().length;
         }
 
         @CompilerDirectives.TruffleBoundary
         @Specialization(guards = "isRubyPointer(pointer)")
         public int getGroups(int max, DynamicObject pointer) {
-            final long[] groups = Platform.getPlatform().getGroups(null);
+            final long[] groups = getContext().getNativePlatform().getPosix().getgroups();
 
             final Pointer pointerValue = Layouts.POINTER.getPointer(pointer);
 
