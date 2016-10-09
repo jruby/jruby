@@ -242,6 +242,7 @@ public class CoreLibrary {
     private final DynamicObject rubiniusFFIPointerClass;
     private final DynamicObject signalModule;
     private final DynamicObject truffleModule;
+    private final DynamicObject truffleInteropModule;
     private final DynamicObject bigDecimalClass;
     private final DynamicObject encodingCompatibilityErrorClass;
     private final DynamicObject methodClass;
@@ -566,7 +567,7 @@ public class CoreLibrary {
         Layouts.CLASS.setInstanceFactoryUnsafe(encodingConverterClass, Layouts.ENCODING_CONVERTER.createEncodingConverterShape(encodingConverterClass, encodingConverterClass));
 
         truffleModule = defineModule("Truffle");
-        defineModule(truffleModule, "Interop");
+        truffleInteropModule = defineModule(truffleModule, "Interop");
         defineModule(truffleModule, "CExt");
         defineModule(truffleModule, "Debug");
         defineModule(truffleModule, "Digest");
@@ -1563,6 +1564,10 @@ public class CoreLibrary {
 
     public DynamicObject getTruffleModule() {
         return truffleModule;
+    }
+
+    public Object getTruffleInteropModule() {
+        return truffleInteropModule;
     }
 
     private static final String[] coreFiles = {
