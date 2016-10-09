@@ -103,5 +103,6 @@ public interface TrufflePosix {
     int fsync(int fd);
     int isatty(int fd);
     int mkfifo(String path, int mode);
+    long[] getgroups();
 
 }
