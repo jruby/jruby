@@ -1,1 +1,2 @@
 fails:IO#seek does not accept Bignums that don't fit in a C long
+fails:IO#seek supports seek offsets greater than 2^32
