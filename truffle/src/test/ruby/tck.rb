@@ -195,3 +195,23 @@ def function_add_numbers
 end
 
 Truffle::Interop.export_method(:function_add_numbers)
+
+class ObjectWithValueAndAddProperty
+
+  attr_accessor :value
+
+  def initialize
+    @value = 42.0
+  end
+
+  def add(other)
+    @value + other
+  end
+
+end
+
+def object_with_value_and_add_property
+  ObjectWithValueAndAddProperty.new
+end
+
+Truffle::Interop.export_method(:object_with_value_and_add_property)

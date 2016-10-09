@@ -159,16 +159,16 @@ public class RubyTckTest extends TruffleTCK {
     }
 
     @Override
+    protected String objectWithValueAndAddProperty() {
+        return "object_with_value_and_add_property";
+    }
+
+    @Override
     public void testCoExistanceOfMultipleLanguageInstances() throws Exception {
         /*
          * Not running this test as it clears the engine, but we're caching that globally to avoid creating tens of
          * engines concurrently.
          */
-    }
-
-    @Ignore
-    @Override
-    public void testObjectWithValueAndAddProperty() throws Exception {
     }
 
     @Ignore
