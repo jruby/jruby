@@ -9,8 +9,8 @@ project 'JRuby Truffle' do
 
   properties( 'polyglot.dump.pom' => 'pom.xml',
               'polyglot.dump.readonly' => true,
-              # Must be the same as in mx.jruby/suite.py (except for the -SNAPSHOT part only in this file)
-              'truffle.version' => '26a836113b25ee06102940e88da92cc6016922b5-SNAPSHOT',
+              # Must be the same as in mx.jruby/suite.py (except for the -SNAPSHOT part only in this file, and here we can use a release name)
+              'truffle.version' => '0.18',
               'jruby.basedir' => '${basedir}/..',
               'maven.test.skip' => 'true' )
 
@@ -19,8 +19,8 @@ project 'JRuby Truffle' do
 
   jar 'org.jruby:jruby-core', '${project.version}', :scope => 'provided'
   
-  repository( :url => 'http://lafo.ssw.uni-linz.ac.at/nexus/content/repositories/snapshots/',
-              :id => 'truffle' )
+  #repository( :url => 'http://lafo.ssw.uni-linz.ac.at/nexus/content/repositories/snapshots/',
+  #            :id => 'truffle' )
   
   truffle_version = '${truffle.version}'
   jar 'com.oracle.truffle:truffle-api:' + truffle_version
