@@ -21,7 +21,6 @@ public class ReadBlockNode extends RubyNode {
     private final Object valueIfAbsent;
 
     private final ConditionProfile nullProfile = ConditionProfile.createBinaryProfile();
-    private final ConditionProfile unusualShapeProfile = ConditionProfile.createBinaryProfile();
 
     public ReadBlockNode(Object valueIfAbsent) {
         this.valueIfAbsent = valueIfAbsent;

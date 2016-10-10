@@ -21,6 +21,8 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.object.Layout;
 import com.oracle.truffle.api.object.Property;
+import com.oracle.truffle.api.source.Source;
+import com.oracle.truffle.api.source.SourceSection;
 import jnr.constants.platform.Errno;
 import org.jcodings.EncodingDB;
 import org.jcodings.specific.UTF8Encoding;
@@ -32,9 +34,10 @@ import org.jruby.runtime.Constants;
 import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.RubyLanguage;
 import org.jruby.truffle.builtins.CoreMethodNodeManager;
 import org.jruby.truffle.builtins.PrimitiveManager;
-import org.jruby.truffle.core.array.ArrayNodes;
+import org.jruby.truffle.cext.CExtNodesFactory;
 import org.jruby.truffle.core.array.ArrayNodesFactory;
 import org.jruby.truffle.core.array.TruffleArrayNodesFactory;
 import org.jruby.truffle.core.basicobject.BasicObjectNodesFactory;
@@ -100,7 +103,6 @@ import org.jruby.truffle.extra.TrufflePosixNodesFactory;
 import org.jruby.truffle.extra.ffi.PointerPrimitiveNodesFactory;
 import org.jruby.truffle.gem.bcrypt.BCryptNodesFactory;
 import org.jruby.truffle.interop.InteropNodesFactory;
-import org.jruby.truffle.cext.CExtNodesFactory;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
@@ -131,7 +133,6 @@ import org.jruby.truffle.stdlib.digest.DigestNodesFactory;
 import org.jruby.truffle.stdlib.psych.PsychEmitterNodesFactory;
 import org.jruby.truffle.stdlib.psych.PsychParserNodesFactory;
 import org.jruby.truffle.stdlib.psych.YAMLEncoding;
-import org.jruby.truffle.util.StringUtils;
 import org.jruby.util.cli.OutputStrings;
 
 import java.io.File;
@@ -153,6 +154,9 @@ public class CoreLibrary {
     private static final Property ALWAYS_FROZEN_PROPERTY = Property.create(Layouts.FROZEN_IDENTIFIER, Layout.createLayout().createAllocator().constantLocation(true), 0);
 
     private final RubyContext context;
+
+    private final Source source = Source.newBuilder("").name("(core)").mimeType(RubyLanguage.MIME_TYPE).build();
+    private final SourceSection sourceSection = source.createUnavailableSection();
 
     private final DynamicObject argumentErrorClass;
     private final DynamicObject arrayClass;
@@ -238,6 +242,7 @@ public class CoreLibrary {
     private final DynamicObject rubiniusFFIPointerClass;
     private final DynamicObject signalModule;
     private final DynamicObject truffleModule;
+    private final DynamicObject truffleInteropModule;
     private final DynamicObject bigDecimalClass;
     private final DynamicObject encodingCompatibilityErrorClass;
     private final DynamicObject methodClass;
@@ -272,9 +277,7 @@ public class CoreLibrary {
 
     @CompilationFinal private DynamicObject eagainWaitReadable;
     @CompilationFinal private DynamicObject eagainWaitWritable;
-
-    @CompilationFinal private ArrayNodes.MinBlock arrayMinBlock;
-    @CompilationFinal private ArrayNodes.MaxBlock arrayMaxBlock;
+    @CompilationFinal private DynamicObject interopForeignClass;
 
     private final Map<Errno, DynamicObject> errnoClasses = new HashMap<>();
 
@@ -564,7 +567,7 @@ public class CoreLibrary {
         Layouts.CLASS.setInstanceFactoryUnsafe(encodingConverterClass, Layouts.ENCODING_CONVERTER.createEncodingConverterShape(encodingConverterClass, encodingConverterClass));
 
         truffleModule = defineModule("Truffle");
-        defineModule(truffleModule, "Interop");
+        truffleInteropModule = defineModule(truffleModule, "Interop");
         defineModule(truffleModule, "CExt");
         defineModule(truffleModule, "Debug");
         defineModule(truffleModule, "Digest");
@@ -679,9 +682,6 @@ public class CoreLibrary {
     }
 
     public void addCoreMethods(PrimitiveManager primitiveManager) {
-        arrayMinBlock = new ArrayNodes.MinBlock(context);
-        arrayMaxBlock = new ArrayNodes.MaxBlock(context);
-
         final CoreMethodNodeManager coreMethodNodeManager =
                 new CoreMethodNodeManager(context, node.getSingletonClassNode(), primitiveManager);
 
@@ -1016,6 +1016,9 @@ public class CoreLibrary {
 
         eagainWaitWritable = (DynamicObject) Layouts.MODULE.getFields(ioClass).getConstant("EAGAINWaitWritable").getValue();
         assert Layouts.CLASS.isClass(eagainWaitWritable);
+
+        interopForeignClass = (DynamicObject) Layouts.MODULE.getFields((DynamicObject) Layouts.MODULE.getFields(truffleModule).getConstant("Interop").getValue()).getConstant("Foreign").getValue();
+        assert Layouts.CLASS.isClass(interopForeignClass);
     }
 
     public void initializePostBoot() {
@@ -1094,10 +1097,8 @@ public class CoreLibrary {
             return floatClass;
         } else if (object instanceof Double) {
             return floatClass;
-        } else if (object == null) {
-            throw new RuntimeException("Can't get metaclass for null");
         } else {
-            throw new UnsupportedOperationException(StringUtils.format("Don't know how to get the metaclass for %s", object.getClass()));
+            return interopForeignClass;
         }
     }
 
@@ -1123,10 +1124,8 @@ public class CoreLibrary {
             return floatClass;
         } else if (object instanceof Double) {
             return floatClass;
-        } else if (object == null) {
-            throw new RuntimeException();
         } else {
-            throw new UnsupportedOperationException(StringUtils.format("Don't know how to get the logical class for %s", object.getClass()));
+            return interopForeignClass;
         }
     }
 
@@ -1171,6 +1170,14 @@ public class CoreLibrary {
 
     public RubyContext getContext() {
         return context;
+    }
+
+    public Source getSource() {
+        return source;
+    }
+
+    public SourceSection getSourceSection() {
+        return sourceSection;
     }
 
     public String getCoreLoadPath() {
@@ -1335,14 +1342,6 @@ public class CoreLibrary {
 
     public DynamicObject getENV() {
         return (DynamicObject) Layouts.MODULE.getFields(objectClass).getConstant("ENV").getValue();
-    }
-
-    public ArrayNodes.MinBlock getArrayMinBlock() {
-        return arrayMinBlock;
-    }
-
-    public ArrayNodes.MaxBlock getArrayMaxBlock() {
-        return arrayMaxBlock;
     }
 
     public DynamicObject getNumericClass() {
@@ -1565,6 +1564,10 @@ public class CoreLibrary {
 
     public DynamicObject getTruffleModule() {
         return truffleModule;
+    }
+
+    public Object getTruffleInteropModule() {
+        return truffleInteropModule;
     }
 
     private static final String[] coreFiles = {

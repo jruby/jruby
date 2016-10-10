@@ -13,6 +13,7 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.CreateCast;
+import com.oracle.truffle.api.dsl.Fallback;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.Frame;
 import com.oracle.truffle.api.frame.FrameInstance;
@@ -287,6 +288,11 @@ public abstract class BasicObjectNodes {
             return createArray(null, 0);
         }
 
+        @Fallback
+        public DynamicObject instanceVariables(Object object) {
+            return createArray(null, 0);
+        }
+
     }
 
     @CoreMethod(names = "method_missing", needsBlock = true, rest = true, optional = 1, visibility = Visibility.PRIVATE)
@@ -333,26 +339,23 @@ public abstract class BasicObjectNodes {
         }
 
         private FrameInstance getRelevantCallerFrame() {
-            return Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<FrameInstance>() {
-                @Override
-                public FrameInstance visitFrame(FrameInstance frameInstance) {
-                    final Node callNode = frameInstance.getCallNode();
-                    if (callNode == null) {
-                        // skip current frame
-                        return null;
-                    }
-
-                    final SuperCallNode superCallNode = NodeUtil.findParent(callNode, SuperCallNode.class);
-                    final Frame frame = frameInstance.getFrame(FrameInstance.FrameAccess.READ_ONLY, true);
-                    final String superMethodName = RubyArguments.getMethod(frame).getName();
-
-                    if (superCallNode != null && superMethodName.equals("method_missing")) {
-                        // skip super calls of method_missing itself
-                        return null;
-                    }
-
-                    return frameInstance;
+            return Truffle.getRuntime().iterateFrames(frameInstance -> {
+                final Node callNode = frameInstance.getCallNode();
+                if (callNode == null) {
+                    // skip current frame
+                    return null;
                 }
+
+                final SuperCallNode superCallNode = NodeUtil.findParent(callNode, SuperCallNode.class);
+                final Frame frame = frameInstance.getFrame(FrameInstance.FrameAccess.READ_ONLY, true);
+                final String superMethodName = RubyArguments.getMethod(frame).getName();
+
+                if (superCallNode != null && superMethodName.equals("method_missing")) {
+                    // skip super calls of method_missing itself
+                    return null;
+                }
+
+                return frameInstance;
             });
         }
 

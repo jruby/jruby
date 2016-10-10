@@ -1949,7 +1949,7 @@ public abstract class StringNodes {
 
             if (checkEncodingNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                checkEncodingNode = insert(checkEncodingNode = EncodingNodesFactory.CheckEncodingNodeGen.create(getContext(), null, null, null));
+                checkEncodingNode = insert(EncodingNodesFactory.CheckEncodingNodeGen.create(getContext(), null, null, null));
             }
 
             final Rope rope = rope(string);
@@ -4394,7 +4394,7 @@ public abstract class StringNodes {
             return ret;
         }
 
-        private final class SearchResult {
+        private static final class SearchResult {
             public final int index;
             public final Rope rope;
 

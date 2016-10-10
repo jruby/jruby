@@ -6,13 +6,17 @@
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
 
-def mavenLib(mavenDep, sha1):
+def mavenLib(mavenDep, sha1, sourceSha1):
     groupId, artifactId, version = mavenDep.split(':')
     args = (groupId.replace('.', '/'), artifactId, version, artifactId, version)
-    url = "https://search.maven.org/remotecontent?filepath=%s/%s/%s/%s-%s.jar" % args
+    base = "https://search.maven.org/remotecontent?filepath=%s/%s/%s/%s-%s" % args
+    url = base + ".jar"
+    sourceUrl = base + '-sources.jar'
     return {
         "urls": [ url ],
         "sha1": sha1,
+        "sourceUrls": [ sourceUrl ],
+        "sourceSha1": sourceSha1,
         "maven": {
             "groupId": groupId,
             "artifactId": artifactId,
@@ -30,8 +34,8 @@ suite = {
         "suites": [
             {
                 "name": "truffle",
-                # Must be the same as in truffle/pom.rb and ci.hocon
-                "version": "60fde6f5778d478411632077154bea1679839780",
+                # Must be the same as in truffle/pom.rb (except for the -SNAPSHOT part only in pom.rb, and there we can use a release name)
+                "version": "26a836113b25ee06102940e88da92cc6016922b5",
                 "urls": [
                     {"url": "https://github.com/graalvm/truffle.git", "kind": "git"},
                     {"url": "https://curio.ssw.jku.at/nexus/content/repositories/snapshots", "kind": "binary"},
@@ -53,15 +57,18 @@ suite = {
 
         "ANTLR4_MAIN": mavenLib(
             "org.antlr:antlr4:4.5.1-1",
-            "a8867c83a73791cf30e30de4cf5d0c9a5f0dfdab"),
+            "a8867c83a73791cf30e30de4cf5d0c9a5f0dfdab",
+            "0c0dcb94d272b012b33e215d4a61bdf93a48b872"),
 
         "ANTLR4_RUNTIME": mavenLib(
             "org.antlr:antlr4-runtime:4.5.1-1",
-            "66144204f9d6d7d3f3f775622c2dd7e9bd511d97"),
+            "66144204f9d6d7d3f3f775622c2dd7e9bd511d97",
+            "e0057705e96c77719e7d49cb64dc014d023e7a9b"),
 
         "SNAKEYAML": mavenLib(
             "org.yaml:snakeyaml:1.14",
-            "c2df91929ed06a25001939929bff5120e0ea3fd4"),
+            "c2df91929ed06a25001939929bff5120e0ea3fd4",
+            "4c6bcedc3efa772a5ae1c2fd01efee8e4d15edac"),
     },
 
     "projects": {

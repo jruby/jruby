@@ -12,6 +12,7 @@ package org.jruby.truffle.core.thread;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.source.SourceSection;
 import jnr.posix.DefaultNativeTimeval;
 import jnr.posix.Timeval;
 import org.jruby.RubyThread.Status;
@@ -91,24 +92,17 @@ public class ThreadManager {
     }
 
     public static void initialize(final DynamicObject thread, RubyContext context, Node currentNode, final Object[] arguments, final DynamicObject block) {
-        String info = Layouts.PROC.getSharedMethodInfo(block).getSourceSection().getShortDescription();
-        initialize(thread, context, currentNode, info, new Runnable() {
-            @Override
-            public void run() {
-                final Object value = ProcOperations.rootCall(block, arguments);
-                Layouts.THREAD.setValue(thread, value);
-            }
+        final SourceSection sourceSection = Layouts.PROC.getSharedMethodInfo(block).getSourceSection();
+        final String info = String.format("%s:%d", sourceSection.getSource().getName(), sourceSection.getStartLine());
+        initialize(thread, context, currentNode, info, () -> {
+            final Object value = ProcOperations.rootCall(block, arguments);
+            Layouts.THREAD.setValue(thread, value);
         });
     }
 
     public static void initialize(final DynamicObject thread, final RubyContext context, final Node currentNode, final String info, final Runnable task) {
         assert RubyGuards.isRubyThread(thread);
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                ThreadManager.run(thread, context, currentNode, info, task);
-            }
-        }).start();
+        new Thread(() -> run(thread, context, currentNode, info, task)).start();
 
         FiberNodes.waitForInitialization(context, Layouts.THREAD.getFiberManager(thread).getRootFiber(), currentNode);
     }
@@ -270,14 +264,7 @@ public class ThreadManager {
         if (timeoutMicros == 0) {
             timeoutToUse.setTime(new long[]{0, 0});
 
-            return new ResultWithinTime<>(runUntilResult(currentNode, new BlockingAction<T>() {
-
-                @Override
-                public T block() throws InterruptedException {
-                    return action.block(timeoutToUse);
-                }
-
-            }));
+            return new ResultWithinTime<>(runUntilResult(currentNode, () -> action.block(timeoutToUse)));
         } else {
             final int pollTime = 500_000_000;
             final long requestedTimeoutAt = System.nanoTime() + timeoutMicros * 1_000L;

@@ -19,7 +19,6 @@ import com.oracle.truffle.api.instrumentation.ExecutionEventNode;
 import com.oracle.truffle.api.instrumentation.ExecutionEventNodeFactory;
 import com.oracle.truffle.api.instrumentation.Instrumenter;
 import com.oracle.truffle.api.instrumentation.SourceSectionFilter;
-import com.oracle.truffle.api.source.LineLocation;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
@@ -54,29 +53,29 @@ public class CoverageManager {
         }
     }
 
-    public synchronized void setLineHasCode(LineLocation line) {
+    public synchronized void setLineHasCode(Source source, int line) {
         if (!enabled) {
             return;
         }
 
-        BitSet bitmap = linesHaveCode.get(line.getSource());
+        BitSet bitmap = linesHaveCode.get(source);
 
         if (bitmap == null) {
-            bitmap = new BitSet(line.getSource().getLineCount());
-            linesHaveCode.put(line.getSource(), bitmap);
+            bitmap = new BitSet(source.getLineCount());
+            linesHaveCode.put(source, bitmap);
         }
 
-        bitmap.set(line.getLineNumber() - 1);
+        bitmap.set(line - 1);
     }
 
-    private boolean getLineHasCode(LineLocation line) {
-        final BitSet bitmap = linesHaveCode.get(line.getSource());
+    private boolean getLineHasCode(Source source, int line) {
+        final BitSet bitmap = linesHaveCode.get(source);
 
         if (bitmap == null) {
             return false;
         }
 
-        return bitmap.get(line.getLineNumber() - 1);
+        return bitmap.get(line - 1);
     }
 
     @TruffleBoundary
@@ -87,11 +86,7 @@ public class CoverageManager {
 
         binding = instrumenter.attachFactory(SourceSectionFilter.newBuilder()
                 .tagIs(LineTag.class)
-                .build(), new ExecutionEventNodeFactory() {
-
-            @Override
-            public ExecutionEventNode create(final EventContext eventContext) {
-                return new ExecutionEventNode() {
+                .build(), eventContext -> new ExecutionEventNode() {
 
                     @CompilationFinal private boolean configured;
                     @CompilationFinal private int lineNumber;
@@ -103,7 +98,7 @@ public class CoverageManager {
                             CompilerDirectives.transferToInterpreterAndInvalidate();
                             final SourceSection sourceSection = eventContext.getInstrumentedSourceSection();
 
-                            if (getLineHasCode(sourceSection.getLineLocation())) {
+                            if (getLineHasCode(sourceSection.getSource(), sourceSection.getStartLine())) {
                                 lineNumber = sourceSection.getStartLine() - 1;
                                 counters = getCounters(sourceSection.getSource());
                             }
@@ -116,10 +111,7 @@ public class CoverageManager {
                         }
                     }
 
-                };
-            }
-
-        });
+                });
 
         enabled = true;
     }

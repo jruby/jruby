@@ -169,7 +169,6 @@ public class CoreMethodNodeManager {
     private static SharedMethodInfo makeSharedMethodInfo(RubyContext context, MethodDetails methodDetails) {
         final CoreMethod method = methodDetails.getMethodAnnotation();
         final String methodName = method.names()[0];
-        final SourceSection sourceSection = SourceSection.createUnavailable("core", methodDetails.getIndicativeName());
 
         final int required = method.required();
         final int optional = method.optional();
@@ -178,7 +177,7 @@ public class CoreMethodNodeManager {
 
         final Arity arity = new Arity(required, optional, method.rest());
 
-        return new SharedMethodInfo(sourceSection, LexicalScope.NONE, arity, methodName, false, null, context.getOptions().CORE_ALWAYS_CLONE, alwaysInline, needsCallerFrame);
+        return new SharedMethodInfo(context.getCoreLibrary().getSourceSection(), LexicalScope.NONE, arity, methodName, false, null, context.getOptions().CORE_ALWAYS_CLONE, alwaysInline, needsCallerFrame);
     }
 
     private static CallTarget makeGenericMethod(RubyContext context, MethodDetails methodDetails, SharedMethodInfo sharedMethodInfo) {

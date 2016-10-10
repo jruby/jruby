@@ -11,10 +11,8 @@
 package org.jruby.truffle.core.string;
 
 import com.oracle.truffle.api.object.DynamicObject;
-import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.core.rope.CodeRange;
-import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeBuffer;
 import org.jruby.truffle.language.RubyGuards;
 

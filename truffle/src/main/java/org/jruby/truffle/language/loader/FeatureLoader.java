@@ -81,16 +81,16 @@ public class FeatureLoader {
             }
         }
 
-        final String asSU = findFeatureWithExactPath(path + RubyLanguage.CEXT_EXTENSION);
-
-        if (asSU != null) {
-            return asSU;
-        }
-
         final String withExtension = findFeatureWithExactPath(path + RubyLanguage.EXTENSION);
 
         if (withExtension != null) {
             return withExtension;
+        }
+
+        final String asSU = findFeatureWithExactPath(path + RubyLanguage.CEXT_EXTENSION);
+
+        if (asSU != null) {
+            return asSU;
         }
 
         final String withoutExtension = findFeatureWithExactPath(path);
@@ -126,17 +126,17 @@ public class FeatureLoader {
         }
     }
 
-    public void ensureCExtImplementationLoaded(VirtualFrame frame, IndirectCallNode callNode) {
+    public void ensureCExtImplementationLoaded(VirtualFrame frame, String feature, IndirectCallNode callNode) {
         synchronized (cextImplementationLock) {
             if (cextImplementationLoaded) {
                 return;
             }
 
             if (!context.getEnv().isMimeTypeSupported(RubyLanguage.CEXT_MIME_TYPE)) {
-                throw new RaiseException(context.getCoreExceptions().internalError("Sulong is required to support C extensions, and it doesn't appear to be available", null));
+                throw new RaiseException(context.getCoreExceptions().loadError("Sulong is required to support C extensions, and it doesn't appear to be available", feature, null));
             }
 
-            final CallTarget callTarget = getCExtLibRuby();
+            final CallTarget callTarget = getCExtLibRuby(feature);
             callNode.call(frame, callTarget, new Object[] {});
 
             cextImplementationLoaded = true;
@@ -144,11 +144,11 @@ public class FeatureLoader {
     }
 
     @TruffleBoundary
-    private CallTarget getCExtLibRuby() {
-        final String path = context.getJRubyRuntime().getJRubyHome() + "/lib/ruby/truffle/cext/ruby.su";
+    private CallTarget getCExtLibRuby(String feature) {
+        final String path = context.getJRubyInterop().getJRubyHome() + "/lib/ruby/truffle/cext/ruby.su";
 
         if (!new File(path).exists()) {
-            throw new RaiseException(context.getCoreExceptions().internalError("This JRuby distribution does not have the C extension implementation file ruby.su", null));
+            throw new RaiseException(context.getCoreExceptions().loadError("This JRuby distribution does not have the C extension implementation file ruby.su", feature, null));
         }
 
         try {

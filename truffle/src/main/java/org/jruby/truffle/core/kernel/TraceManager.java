@@ -26,7 +26,6 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.CyclicAssumption;
-
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.string.StringOperations;
@@ -86,26 +85,14 @@ public class TraceManager {
 
         instruments = new ArrayList<>();
 
-        instruments.add(instrumenter.attachFactory(SourceSectionFilter.newBuilder().tagIs(LineTag.class).build(), new ExecutionEventNodeFactory() {
-            @Override
-            public ExecutionEventNode create(EventContext eventContext) {
-                return new BaseEventEventNode(context, eventContext, traceFunc, context.getCoreStrings().LINE.createInstance());
-            }
-        }));
+        instruments.add(instrumenter.attachFactory(SourceSectionFilter.newBuilder().tagIs(LineTag.class).build(),
+                eventContext -> new BaseEventEventNode(context, eventContext, traceFunc, context.getCoreStrings().LINE.createInstance())));
 
-        instruments.add(instrumenter.attachFactory(SourceSectionFilter.newBuilder().tagIs(CallTag.class).build(), new ExecutionEventNodeFactory() {
-            @Override
-            public ExecutionEventNode create(EventContext eventContext) {
-                return new CallEventEventNode(context, eventContext, traceFunc, context.getCoreStrings().CALL.createInstance());
-            }
-        }));
+        instruments.add(instrumenter.attachFactory(SourceSectionFilter.newBuilder().tagIs(CallTag.class).build(),
+                eventContext -> new CallEventEventNode(context, eventContext, traceFunc, context.getCoreStrings().CALL.createInstance())));
 
-        instruments.add(instrumenter.attachFactory(SourceSectionFilter.newBuilder().tagIs(ClassTag.class).build(), new ExecutionEventNodeFactory() {
-            @Override
-            public ExecutionEventNode create(EventContext eventContext) {
-                return new BaseEventEventNode(context, eventContext, traceFunc, context.getCoreStrings().CLASS.createInstance());
-            }
-        }));
+        instruments.add(instrumenter.attachFactory(SourceSectionFilter.newBuilder().tagIs(ClassTag.class).build(),
+                eventContext -> new BaseEventEventNode(context, eventContext, traceFunc, context.getCoreStrings().CLASS.createInstance())));
 
     }
 

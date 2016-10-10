@@ -12,15 +12,12 @@ package org.jruby.truffle.core.array;
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
-import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.CreateCast;
 import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
-import com.oracle.truffle.api.frame.FrameDescriptor;
-import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
@@ -39,8 +36,6 @@ import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.builtins.CoreMethodNode;
 import org.jruby.truffle.builtins.YieldingCoreMethodNode;
-import org.jruby.truffle.core.array.ArrayNodesFactory.MaxBlockNodeFactory;
-import org.jruby.truffle.core.array.ArrayNodesFactory.MinBlockNodeFactory;
 import org.jruby.truffle.core.array.ArrayNodesFactory.RejectInPlaceNodeFactory;
 import org.jruby.truffle.core.array.ArrayNodesFactory.ReplaceNodeFactory;
 import org.jruby.truffle.core.cast.ToAryNodeGen;
@@ -55,7 +50,6 @@ import org.jruby.truffle.core.kernel.KernelNodes;
 import org.jruby.truffle.core.kernel.KernelNodesFactory;
 import org.jruby.truffle.core.numeric.FixnumLowerNodeGen;
 import org.jruby.truffle.core.proc.ProcOperations;
-import org.jruby.truffle.core.proc.ProcType;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeNodes;
 import org.jruby.truffle.core.rope.RopeNodesFactory;
@@ -64,29 +58,19 @@ import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.SnippetNode;
-import org.jruby.truffle.language.arguments.MissingArgumentBehavior;
-import org.jruby.truffle.language.arguments.ProfileArgumentNode;
-import org.jruby.truffle.language.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.dispatch.MissingBehavior;
-import org.jruby.truffle.language.locals.LocalVariableType;
-import org.jruby.truffle.language.locals.ReadDeclarationVariableNode;
-import org.jruby.truffle.language.methods.Arity;
-import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.methods.InternalMethod;
-import org.jruby.truffle.language.methods.SharedMethodInfo;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.IsFrozenNode;
 import org.jruby.truffle.language.objects.IsFrozenNodeGen;
 import org.jruby.truffle.language.objects.TaintNode;
 import org.jruby.truffle.language.objects.TaintNodeGen;
 import org.jruby.truffle.language.yield.YieldNode;
-import org.jruby.util.Memo;
 
 import java.util.Arrays;
 import java.util.Comparator;
@@ -1356,252 +1340,6 @@ public abstract class ArrayNodes {
 
     }
 
-    // TODO: move into Enumerable?
-
-    @CoreMethod(names = "max", needsBlock = true)
-    public abstract static class MaxNode extends ArrayCoreMethodNode {
-
-        @Child private CallDispatchHeadNode eachNode;
-        private final MaxBlock maxBlock;
-
-        public MaxNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            eachNode = DispatchHeadNodeFactory.createMethodCall(context);
-            maxBlock = context.getCoreLibrary().getArrayMaxBlock();
-        }
-
-        @Specialization
-        public Object max(VirtualFrame frame, DynamicObject array, NotProvided blockNotProvided) {
-            // TODO: can we just write to the frame instead of having this indirect object?
-
-            final Memo<Object> maximum = new Memo<>();
-
-            final InternalMethod method = RubyArguments.getMethod(frame);
-            final VirtualFrame maximumClosureFrame = Truffle.getRuntime().createVirtualFrame(
-                    RubyArguments.pack(null, null, method, DeclarationContext.BLOCK, null, array, null, new Object[]{}), maxBlock.getFrameDescriptor());
-            maximumClosureFrame.setObject(maxBlock.getFrameSlot(), maximum);
-
-            final DynamicObject block = ProcOperations.createRubyProc(coreLibrary().getProcFactory(), ProcType.PROC,
-                    maxBlock.getSharedMethodInfo(), maxBlock.getCallTarget(), maxBlock.getCallTarget(),
-                    maximumClosureFrame.materialize(), method, array, null);
-
-            eachNode.callWithBlock(frame, array, "each", block);
-
-            if (maximum.get() == null) {
-                return nil();
-            } else {
-                return maximum.get();
-            }
-        }
-
-        @Specialization
-        public Object max(
-                VirtualFrame frame,
-                DynamicObject array,
-                DynamicObject block,
-                @Cached("createMethodCall()") CallDispatchHeadNode callNode) {
-            return callNode.callWithBlock(frame, array, "max_internal", block);
-        }
-
-    }
-
-    public abstract static class MaxBlockNode extends CoreMethodArrayArgumentsNode {
-
-        @Child private CallDispatchHeadNode compareNode;
-
-        private final BranchProfile errorProfile = BranchProfile.create();
-
-        public MaxBlockNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            compareNode = DispatchHeadNodeFactory.createMethodCall(context);
-        }
-
-        @Specialization
-        public DynamicObject max(VirtualFrame frame, Object maximumObject, Object value) {
-            @SuppressWarnings("unchecked")
-            final Memo<Object> maximum = (Memo<Object>) maximumObject;
-
-            final Object current = maximum.get();
-
-            if (current == null) {
-                maximum.set(value);
-            } else {
-                final Object compared = compareNode.call(frame, value, "<=>", current);
-
-                if (compared instanceof Integer) {
-                    if ((int) compared > 0) {
-                        maximum.set(value);
-                    }
-                } else {
-                    errorProfile.enter();
-                    // Should be the actual type and object in this string - but this method should go away soon
-                    throw new RaiseException(coreExceptions().argumentError("comparison of X with Y failed", this));
-                }
-            }
-
-            return nil();
-        }
-
-    }
-
-    public static class MaxBlock {
-
-        private final FrameDescriptor frameDescriptor;
-        private final FrameSlot frameSlot;
-        private final SharedMethodInfo sharedMethodInfo;
-        private final CallTarget callTarget;
-
-        public MaxBlock(RubyContext context) {
-            frameDescriptor = new FrameDescriptor(context.getCoreLibrary().getNilObject());
-            frameSlot = frameDescriptor.addFrameSlot("maximum_memo");
-
-            sharedMethodInfo = new SharedMethodInfo(SourceSection.createUnavailable(null, "Array#max block"), null, Arity.NO_ARGUMENTS, "max", false, null, false, false, false);
-
-            callTarget = Truffle.getRuntime().createCallTarget(new RubyRootNode(context, sharedMethodInfo.getSourceSection(), null, sharedMethodInfo, MaxBlockNodeFactory.create(context, null, new RubyNode[]{
-                                        new ReadDeclarationVariableNode(context, null, LocalVariableType.FRAME_LOCAL, 1, frameSlot),
-                                        new ProfileArgumentNode(new ReadPreArgumentNode(0, MissingArgumentBehavior.RUNTIME_ERROR))
-                                }), false));
-        }
-
-        public FrameDescriptor getFrameDescriptor() {
-            return frameDescriptor;
-        }
-
-        public FrameSlot getFrameSlot() {
-            return frameSlot;
-        }
-
-        public SharedMethodInfo getSharedMethodInfo() {
-            return sharedMethodInfo;
-        }
-
-        public CallTarget getCallTarget() {
-            return callTarget;
-        }
-    }
-
-    @CoreMethod(names = "min", needsBlock = true)
-    public abstract static class MinNode extends ArrayCoreMethodNode {
-
-        @Child private CallDispatchHeadNode eachNode;
-        private final MinBlock minBlock;
-
-        public MinNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            eachNode = DispatchHeadNodeFactory.createMethodCall(context);
-            minBlock = context.getCoreLibrary().getArrayMinBlock();
-        }
-
-        @Specialization
-        public Object min(VirtualFrame frame, DynamicObject array, NotProvided blockNotProvided) {
-            // TODO: can we just write to the frame instead of having this indirect object?
-
-            final Memo<Object> minimum = new Memo<>();
-
-            final InternalMethod method = RubyArguments.getMethod(frame);
-            final VirtualFrame minimumClosureFrame = Truffle.getRuntime().createVirtualFrame(
-                    RubyArguments.pack(null, null, method, DeclarationContext.BLOCK, null, array, null, new Object[]{}), minBlock.getFrameDescriptor());
-            minimumClosureFrame.setObject(minBlock.getFrameSlot(), minimum);
-
-            final DynamicObject block = ProcOperations.createRubyProc(coreLibrary().getProcFactory(), ProcType.PROC,
-                    minBlock.getSharedMethodInfo(), minBlock.getCallTarget(), minBlock.getCallTarget(),
-                    minimumClosureFrame.materialize(), method, array, null);
-
-            eachNode.callWithBlock(frame, array, "each", block);
-
-            if (minimum.get() == null) {
-                return nil();
-            } else {
-                return minimum.get();
-            }
-        }
-
-        @Specialization
-        public Object min(
-                VirtualFrame frame,
-                DynamicObject array,
-                DynamicObject block,
-                @Cached("new()") SnippetNode snippetNode) {
-            return snippetNode.execute(frame, "array.min_internal(&block)", "array", array, "block", block);
-        }
-
-    }
-
-    public abstract static class MinBlockNode extends CoreMethodArrayArgumentsNode {
-
-        @Child private CallDispatchHeadNode compareNode;
-
-        private final BranchProfile errorProfile = BranchProfile.create();
-
-        public MinBlockNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            compareNode = DispatchHeadNodeFactory.createMethodCall(context);
-        }
-
-        @Specialization
-        public DynamicObject min(VirtualFrame frame, Object minimumObject, Object value) {
-            @SuppressWarnings("unchecked")
-            final Memo<Object> minimum = (Memo<Object>) minimumObject;
-
-            final Object current = minimum.get();
-
-            if (current == null) {
-                minimum.set(value);
-            } else {
-                final Object compared = compareNode.call(frame, value, "<=>", current);
-
-                if (compared instanceof Integer) {
-                    if ((int) compared < 0) {
-                        minimum.set(value);
-                    }
-                } else {
-                    errorProfile.enter();
-                    // Should be the actual type and object in this string - but this method should go away soon
-                    throw new RaiseException(coreExceptions().argumentError("comparison of X with Y failed", this));
-                }
-            }
-
-            return nil();
-        }
-
-    }
-
-    public static class MinBlock {
-
-        private final FrameDescriptor frameDescriptor;
-        private final FrameSlot frameSlot;
-        private final SharedMethodInfo sharedMethodInfo;
-        private final CallTarget callTarget;
-
-        public MinBlock(RubyContext context) {
-            frameDescriptor = new FrameDescriptor(context.getCoreLibrary().getNilObject());
-            frameSlot = frameDescriptor.addFrameSlot("minimum_memo");
-
-            sharedMethodInfo = new SharedMethodInfo(SourceSection.createUnavailable(null, "Array#min block"), null, Arity.NO_ARGUMENTS, "min", false, null, false, false, false);
-
-            callTarget = Truffle.getRuntime().createCallTarget(new RubyRootNode(context, sharedMethodInfo.getSourceSection(), null, sharedMethodInfo, MinBlockNodeFactory.create(context, null, new RubyNode[]{
-                                        new ReadDeclarationVariableNode(context, null, LocalVariableType.FRAME_LOCAL, 1, frameSlot),
-                                        new ProfileArgumentNode(new ReadPreArgumentNode(0, MissingArgumentBehavior.RUNTIME_ERROR))
-                                }), false));
-        }
-
-        public FrameDescriptor getFrameDescriptor() {
-            return frameDescriptor;
-        }
-
-        public FrameSlot getFrameSlot() {
-            return frameSlot;
-        }
-
-        public SharedMethodInfo getSharedMethodInfo() {
-            return sharedMethodInfo;
-        }
-
-        public CallTarget getCallTarget() {
-            return callTarget;
-        }
-    }
-
     @CoreMethod(names = "pack", required = 1, taintFrom = 1)
     @ImportStatic(StringCachingGuards.class)
     public abstract static class PackNode extends ArrayCoreMethodNode {
@@ -2180,12 +1918,7 @@ public abstract class ArrayNodes {
 
         @TruffleBoundary
         private void doSort(Object[] copy, int size, DynamicObject block) {
-            Arrays.sort(copy, 0, size, new Comparator<Object>() {
-                @Override
-                public int compare(Object a, Object b) {
-                    return castSortValue(ProcOperations.rootCall(block, a, b));
-                }
-            });
+            Arrays.sort(copy, 0, size, (a, b) -> castSortValue(ProcOperations.rootCall(block, a, b)));
         }
 
         @Specialization(guards = { "!isNullArray(array)", "!isObjectArray(array)" })

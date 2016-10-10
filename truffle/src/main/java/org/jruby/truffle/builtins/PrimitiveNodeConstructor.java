@@ -84,7 +84,7 @@ public class PrimitiveNodeConstructor {
     }
 
     public RubyNode createInvokePrimitiveNode(RubyContext context, SourceSection sourceSection, RubyNode[] arguments) {
-        assert arguments.length == getPrimitiveArity() : sourceSection.getShortDescription();
+        assert arguments.length == getPrimitiveArity();
 
         if (!CoreMethodNodeManager.isSafe(context, annotation.unsafe())) {
             return new UnsafeNode(context, sourceSection);

@@ -147,31 +147,6 @@ ossl_buf2str(char *buf, int len)
 /*
  * our default PEM callback
  */
-
-/*
- * OpenSSL requires passwords for PEM-encoded files to be at least four
- * characters long. See crypto/pem/pem_lib.c (as of 1.0.2h)
- */
-#define OSSL_MIN_PWD_LEN 4
-
-VALUE
-ossl_pem_passwd_value(VALUE pass)
-{
-    if (NIL_P(pass))
-	return Qnil;
-
-    StringValue(pass);
-
-    if (RSTRING_LEN(pass) < OSSL_MIN_PWD_LEN)
-	ossl_raise(eOSSLError, "password must be at least %d bytes", OSSL_MIN_PWD_LEN);
-    /* PEM_BUFSIZE is currently used as the second argument of pem_password_cb,
-     * that is +max_len+ of ossl_pem_passwd_cb() */
-    if (RSTRING_LEN(pass) > PEM_BUFSIZE)
-	ossl_raise(eOSSLError, "password must be shorter than %d bytes", PEM_BUFSIZE);
-
-    return pass;
-}
-
 static VALUE
 ossl_pem_passwd_cb0(VALUE flag)
 {
@@ -184,29 +159,13 @@ ossl_pem_passwd_cb0(VALUE flag)
 }
 
 int
-ossl_pem_passwd_cb(char *buf, int max_len, int flag, void *pwd_)
+ossl_pem_passwd_cb(char *buf, int max_len, int flag, void *pwd)
 {
-    int len, status;
-    VALUE rflag, pass = (VALUE)pwd_;
+    int len, status = 0;
+    VALUE rflag, pass;
 
-    if (RTEST(pass)) {
-	/* PEM_def_callback(buf, max_len, flag, StringValueCStr(pass)) does not
-	 * work because it does not allow NUL characters and truncates to 1024
-	 * bytes silently if the input is over 1024 bytes */
-	if (RB_TYPE_P(pass, T_STRING)) {
-	    len = RSTRING_LENINT(pass);
-	    if (len >= OSSL_MIN_PWD_LEN && len <= max_len) {
-		memcpy(buf, RSTRING_PTR(pass), len);
-		return len;
-	    }
-	}
-	OSSL_Debug("passed data is not valid String???");
-	return -1;
-    }
-
-    if (!rb_block_given_p()) {
-	return PEM_def_callback(buf, max_len, flag, NULL);
-    }
+    if (pwd || !rb_block_given_p())
+	return PEM_def_callback(buf, max_len, flag, pwd);
 
     while (1) {
 	/*
@@ -222,12 +181,12 @@ ossl_pem_passwd_cb(char *buf, int max_len, int flag, void *pwd_)
 	    return -1;
 	}
 	len = RSTRING_LENINT(pass);
-	if (len < OSSL_MIN_PWD_LEN) {
-	    rb_warning("password must be at least %d bytes", OSSL_MIN_PWD_LEN);
+	if (len < 4) { /* 4 is OpenSSL hardcoded limit */
+	    rb_warning("password must be longer than 4 bytes");
 	    continue;
 	}
 	if (len > max_len) {
-	    rb_warning("password must be shorter than %d bytes", max_len);
+	    rb_warning("password must be shorter then %d bytes", max_len-1);
 	    continue;
 	}
 	memcpy(buf, RSTRING_PTR(pass), len);
@@ -239,8 +198,7 @@ ossl_pem_passwd_cb(char *buf, int max_len, int flag, void *pwd_)
 /*
  * Verify callback
  */
-int ossl_store_ctx_ex_verify_cb_idx;
-int ossl_store_ex_verify_cb_idx;
+int ossl_verify_cb_idx;
 
 VALUE
 ossl_call_verify_cb_proc(struct ossl_verify_cb_args *args)
@@ -256,10 +214,10 @@ ossl_verify_cb(int ok, X509_STORE_CTX *ctx)
     struct ossl_verify_cb_args args;
     int state = 0;
 
-    proc = (VALUE)X509_STORE_CTX_get_ex_data(ctx, ossl_store_ctx_ex_verify_cb_idx);
-    if (!proc)
-	proc = (VALUE)X509_STORE_get_ex_data(X509_STORE_CTX_get0_store(ctx), ossl_store_ex_verify_cb_idx);
-    if (!proc)
+    proc = (VALUE)X509_STORE_CTX_get_ex_data(ctx, ossl_verify_cb_idx);
+    if ((void*)proc == 0)
+	proc = (VALUE)X509_STORE_get_ex_data(ctx->ctx, ossl_verify_cb_idx);
+    if ((void*)proc == 0)
 	return ok;
     if (!NIL_P(proc)) {
 	ret = Qfalse;
@@ -339,7 +297,11 @@ ossl_make_error(VALUE exc, const char *fmt, va_list args)
     const char *msg;
     long e;
 
+#ifdef HAVE_ERR_PEEK_LAST_ERROR
     e = ERR_peek_last_error();
+#else
+    e = ERR_peek_error();
+#endif
     if (fmt) {
 	str = rb_vsprintf(fmt, args);
     }
@@ -356,7 +318,12 @@ ossl_make_error(VALUE exc, const char *fmt, va_list args)
 	    rb_str_cat2(str, msg ? msg : "(null)");
 	}
     }
-    ossl_clear_error();
+    if (dOSSL == Qtrue){ /* show all errors on the stack */
+	while ((e = ERR_get_error()) != 0){
+	    rb_warn("error on stack: %s", ERR_error_string(e, NULL));
+	}
+    }
+    ERR_clear_error();
 
     if (NIL_P(str)) str = rb_str_new(0, 0);
     return rb_exc_new3(exc, str);
@@ -382,18 +349,6 @@ ossl_exc_new(VALUE exc, const char *fmt, ...)
     err = ossl_make_error(exc, fmt, args);
     va_end(args);
     return err;
-}
-
-void
-ossl_clear_error(void)
-{
-    if (dOSSL == Qtrue) {
-	long e;
-	while ((e = ERR_get_error())) {
-	    rb_warn("error on stack: %s", ERR_error_string(e, NULL));
-	}
-    }
-    ERR_clear_error();
 }
 
 /*
@@ -491,7 +446,7 @@ static VALUE
 ossl_fips_mode_set(VALUE self, VALUE enabled)
 {
 
-#ifdef OPENSSL_FIPS
+#ifdef HAVE_OPENSSL_FIPS
     if (RTEST(enabled)) {
 	int mode = FIPS_mode();
 	if(!mode && !FIPS_mode_set(1)) /* turning on twice leads to an error */
@@ -508,7 +463,6 @@ ossl_fips_mode_set(VALUE self, VALUE enabled)
 #endif
 }
 
-#if !defined(HAVE_OPENSSL_110_THREADING_API)
 /**
  * Stores locks needed for OpenSSL thread safety
  */
@@ -570,6 +524,12 @@ static unsigned long ossl_thread_id(void)
 }
 #endif
 
+#ifdef JRUBY_TRUFFLE
+#define LOCKS_MALLOC truffle_managed_malloc
+#else
+#define LOCKS_MALLOC OPENSSL_malloc
+#endif
+
 static void Init_ossl_locks(void)
 {
     int i;
@@ -578,7 +538,7 @@ static void Init_ossl_locks(void)
     if ((unsigned)num_locks >= INT_MAX / (int)sizeof(VALUE)) {
 	rb_raise(rb_eRuntimeError, "CRYPTO_num_locks() is too big: %d", num_locks);
     }
-    ossl_locks = (rb_nativethread_lock_t *) OPENSSL_malloc(num_locks * (int)sizeof(rb_nativethread_lock_t));
+    ossl_locks = (rb_nativethread_lock_t *) LOCKS_MALLOC(num_locks * (int)sizeof(rb_nativethread_lock_t));
     if (!ossl_locks) {
 	rb_raise(rb_eNoMemError, "CRYPTO_num_locks() is too big: %d", num_locks);
     }
@@ -586,6 +546,7 @@ static void Init_ossl_locks(void)
 	rb_nativethread_lock_initialize(&ossl_locks[i]);
     }
 
+#ifndef JRUBY_TRUFFLE // FIXME
 #ifdef HAVE_CRYPTO_THREADID_PTR
     CRYPTO_THREADID_set_callback(ossl_threadid_func);
 #else
@@ -595,8 +556,8 @@ static void Init_ossl_locks(void)
     CRYPTO_set_dynlock_create_callback(ossl_dyn_create_callback);
     CRYPTO_set_dynlock_lock_callback(ossl_dyn_lock_callback);
     CRYPTO_set_dynlock_destroy_callback(ossl_dyn_destroy_callback);
+#endif
 }
-#endif /* !HAVE_OPENSSL_110_THREADING_API */
 
 /*
  * OpenSSL provides SSL, TLS and general purpose cryptography.  It wraps the
@@ -673,7 +634,6 @@ static void Init_ossl_locks(void)
  * loading the key:
  *
  *   key4_pem = File.read 'private.secure.pem'
- *   pass_phrase = 'my secure pass phrase goes here'
  *   key4 = OpenSSL::PKey::RSA.new key4_pem, pass_phrase
  *
  * == RSA Encryption
@@ -838,7 +798,6 @@ static void Init_ossl_locks(void)
  * This example creates a self-signed certificate using an RSA key and a SHA1
  * signature.
  *
- *   key = OpenSSL::PKey::RSA.new 2048
  *   name = OpenSSL::X509::Name.parse 'CN=nobody/DC=example'
  *
  *   cert = OpenSSL::X509::Certificate.new
@@ -908,7 +867,6 @@ static void Init_ossl_locks(void)
  * not readable by other users.
  *
  *   ca_key = OpenSSL::PKey::RSA.new 2048
- *   pass_phrase = 'my secure pass phrase goes here'
  *
  *   cipher = OpenSSL::Cipher::Cipher.new 'AES-128-CBC'
  *
@@ -1065,8 +1023,8 @@ static void Init_ossl_locks(void)
  *
  *   require 'socket'
  *
- *   tcp_socket = TCPSocket.new 'localhost', 5000
- *   ssl_client = OpenSSL::SSL::SSLSocket.new tcp_socket, context
+ *   tcp_client = TCPSocket.new 'localhost', 5000
+ *   ssl_client = OpenSSL::SSL::SSLSocket.new client_socket, context
  *   ssl_client.connect
  *
  *   ssl_client.puts "hello server!"
@@ -1085,8 +1043,8 @@ static void Init_ossl_locks(void)
  *
  *   require 'socket'
  *
- *   tcp_socket = TCPSocket.new 'localhost', 5000
- *   ssl_client = OpenSSL::SSL::SSLSocket.new tcp_socket, context
+ *   tcp_client = TCPSocket.new 'localhost', 5000
+ *   ssl_client = OpenSSL::SSL::SSLSocket.new client_socket, context
  *   ssl_client.connect
  *
  *   ssl_client.puts "hello server!"
@@ -1160,7 +1118,7 @@ Init_openssl(void)
     /*
      * Boolean indicating whether OpenSSL is FIPS-enabled or not
      */
-#ifdef OPENSSL_FIPS
+#ifdef HAVE_OPENSSL_FIPS
     rb_define_const(mOSSL, "OPENSSL_FIPS", Qtrue);
 #else
     rb_define_const(mOSSL, "OPENSSL_FIPS", Qfalse);
@@ -1175,6 +1133,12 @@ Init_openssl(void)
     rb_global_variable(&eOSSLError);
 
     /*
+     * Verify callback Proc index for ext-data
+     */
+    if ((ossl_verify_cb_idx = X509_STORE_CTX_get_ex_new_index(0, (void *)"ossl_verify_cb_idx", 0, 0, 0)) < 0)
+        ossl_raise(eOSSLError, "X509_STORE_CTX_get_ex_new_index");
+
+    /*
      * Init debug core
      */
     dOSSL = Qfalse;
@@ -1185,21 +1149,11 @@ Init_openssl(void)
     rb_define_module_function(mOSSL, "errors", ossl_get_errors, 0);
 
     /*
-     * Verify callback Proc index for ext-data
-     */
-    if ((ossl_store_ctx_ex_verify_cb_idx = X509_STORE_CTX_get_ex_new_index(0, (void *)"ossl_store_ctx_ex_verify_cb_idx", 0, 0, 0)) < 0)
-        ossl_raise(eOSSLError, "X509_STORE_CTX_get_ex_new_index");
-    if ((ossl_store_ex_verify_cb_idx = X509_STORE_get_ex_new_index(0, (void *)"ossl_store_ex_verify_cb_idx", 0, 0, 0)) < 0)
-        ossl_raise(eOSSLError, "X509_STORE_get_ex_new_index");
-
-    /*
      * Get ID of to_der
      */
     ossl_s_to_der = rb_intern("to_der");
 
-#if !defined(HAVE_OPENSSL_110_THREADING_API)
     Init_ossl_locks();
-#endif
 
     /*
      * Init components

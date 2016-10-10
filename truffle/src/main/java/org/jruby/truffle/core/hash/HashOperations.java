@@ -122,14 +122,7 @@ public abstract class HashOperations {
     public static BoundaryIterable<KeyValue> iterableKeyValues(final DynamicObject hash) {
         assert RubyGuards.isRubyHash(hash);
 
-        return BoundaryIterable.wrap(new Iterable<KeyValue>() {
-
-            @Override
-            public Iterator<KeyValue> iterator() {
-                return iterateKeyValues(hash);
-            }
-
-        });
+        return BoundaryIterable.wrap(() -> iterateKeyValues(hash));
     }
 
 }

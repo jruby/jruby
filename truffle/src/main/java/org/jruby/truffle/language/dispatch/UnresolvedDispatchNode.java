@@ -57,42 +57,39 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             ((DynamicObject) receiverObject).updateShape();
         }
 
-        final DispatchNode dispatch = atomic(new Callable<DispatchNode>() {
-            @Override
-            public DispatchNode call() throws Exception {
-                final DispatchNode first = getHeadNode().getFirstDispatchNode();
+        final DispatchNode dispatch = atomic(() -> {
+            final DispatchNode first = getHeadNode().getFirstDispatchNode();
 
-                // First try to see if we did not a miss a specialization added by another thread.
+            // First try to see if we did not a miss a specialization added by another thread.
 
-                DispatchNode lookupDispatch = first;
-                while (lookupDispatch != null) {
-                    if (lookupDispatch.guard(methodName, receiverObject)) {
-                        // This one worked, no need to rewrite anything.
-                        return lookupDispatch;
-                    }
-                    lookupDispatch = lookupDispatch.getNext();
+            DispatchNode lookupDispatch = first;
+            while (lookupDispatch != null) {
+                if (lookupDispatch.guard(methodName, receiverObject)) {
+                    // This one worked, no need to rewrite anything.
+                    return lookupDispatch;
                 }
-
-                // We need a new node to handle this case.
-
-                final DispatchNode newDispathNode;
-
-                if (depth == getContext().getOptions().DISPATCH_CACHE) {
-                    newDispathNode = new UncachedDispatchNode(getContext(), ignoreVisibility, getDispatchAction(), missingBehavior);
-                } else {
-                    depth++;
-                    if (RubyGuards.isForeignObject(receiverObject)) {
-                        newDispathNode = new CachedForeignDispatchNode(getContext(), first, methodName);
-                    } else if (RubyGuards.isRubyBasicObject(receiverObject)) {
-                        newDispathNode = doDynamicObject(frame, first, receiverObject, methodName, argumentsObjects);
-                    } else {
-                        newDispathNode = doUnboxedObject(frame, first, receiverObject, methodName);
-                    }
-                }
-
-                first.replace(newDispathNode);
-                return newDispathNode;
+                lookupDispatch = lookupDispatch.getNext();
             }
+
+            // We need a new node to handle this case.
+
+            final DispatchNode newDispathNode;
+
+            if (depth == getContext().getOptions().DISPATCH_CACHE) {
+                newDispathNode = new UncachedDispatchNode(getContext(), ignoreVisibility, getDispatchAction(), missingBehavior);
+            } else {
+                depth++;
+                if (RubyGuards.isForeignObject(receiverObject)) {
+                    newDispathNode = new CachedForeignDispatchNode(getContext(), first, methodName);
+                } else if (RubyGuards.isRubyBasicObject(receiverObject)) {
+                    newDispathNode = doDynamicObject(frame, first, receiverObject, methodName, argumentsObjects);
+                } else {
+                    newDispathNode = doUnboxedObject(frame, first, receiverObject, methodName);
+                }
+            }
+
+            first.replace(newDispathNode);
+            return newDispathNode;
         });
 
         return dispatch.executeDispatch(frame, receiverObject, methodName, blockObject, argumentsObjects);

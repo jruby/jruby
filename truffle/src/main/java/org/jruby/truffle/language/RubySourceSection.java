@@ -54,7 +54,7 @@ public class RubySourceSection {
 
     public SourceSection toSourceSection(Source source) {
         if (source == null) {
-            return SourceSection.createUnavailable("core", "(identifier)");
+            throw new UnsupportedOperationException();
         }
 
         final int index = source.getLineStartOffset(startLine);
@@ -69,7 +69,7 @@ public class RubySourceSection {
         length = Math.min(length, source.getLength() - index);
         length = Math.max(0, length);
 
-        return source.createSection("(identifier)", index, length);
+        return source.createSection(index, length);
     }
 
 }

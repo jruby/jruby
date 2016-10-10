@@ -160,7 +160,7 @@ module Utilities
 
   def self.find_repo(name)
     [JRUBY_DIR, "#{JRUBY_DIR}/.."].each do |dir|
-      found = Dir.glob("#{dir}/#{name}*").first
+      found = Dir.glob("#{dir}/#{name}*").sort.first
       return File.expand_path(found) if found
     end
     raise "Can't find the #{name} repo - clone it into the repository directory or its parent"
@@ -176,12 +176,12 @@ module Utilities
 
   def self.find_gem(name)
     ["#{JRUBY_DIR}/lib/ruby/gems/shared/gems"].each do |dir|
-      found = Dir.glob("#{dir}/#{name}*").first
+      found = Dir.glob("#{dir}/#{name}*").sort.first
       return File.expand_path(found) if found
     end
 
     [JRUBY_DIR, "#{JRUBY_DIR}/.."].each do |dir|
-      found = Dir.glob("#{dir}/#{name}").first
+      found = Dir.glob("#{dir}/#{name}").sort.first
       return File.expand_path(found) if found
     end
     raise "Can't find the #{name} gem - gem install it in this repository, or put it in the repository directory or its parent"
@@ -457,13 +457,12 @@ module Commands
       jt test spec/ruby/language                     run specs in this directory
       jt test spec/ruby/language/while_spec.rb       run specs in this file
       jt test compiler                               run compiler tests (uses the same logic as --graal to find Graal)
-          --no-java-cmd   don\'t set JAVACMD - rely on bin/jruby or RUBY_BIN to have Graal already
       jt test integration                            runs all integration tests
       jt test integration TESTS                      runs the given integration tests
       jt test gems                                   tests using gems
       jt test ecosystem [--offline]                  tests using the wider ecosystem such as bundler, Rails, etc
                                                          (when --offline it will not use rubygems.org)
-      jt test cexts [--no-libxml --no-openssl]       run C extension tests
+      jt test cexts [--no-libxml --no-openssl --no-argon2]       run C extension tests
                                                          (implies --graal, where Graal needs to include Sulong, set SULONG_HOME to a built checkout of Sulong, and set GEM_HOME)
       jt test report :language                       build a report on language specs
                      :core                               (results go into test/target/mspec-html-report)
@@ -574,9 +573,14 @@ module Commands
     end
 
     if args.delete('--graal')
-      javacmd, javacmd_options = Utilities.find_graal_javacmd_and_options
-      env_vars["JAVACMD"] = javacmd
-      jruby_args.push(*javacmd_options)
+      if ENV["RUBY_BIN"]
+        # Assume that Graal is automatically set up if RUBY_BIN is set.
+        # This will also warn if it's not.
+      else
+        javacmd, javacmd_options = Utilities.find_graal_javacmd_and_options
+        env_vars["JAVACMD"] = javacmd
+        jruby_args.push(*javacmd_options)
+      end
     else
       jruby_args << '-Xtruffle.graal.warn_unless=false'
     end
@@ -628,7 +632,11 @@ module Commands
 
     raw_sh env_vars, Utilities.find_jruby, *jruby_args, *args
   end
-  alias ruby run
+
+  # Same as #run but uses exec()
+  def ruby(*args)
+    run(*args, '--exec')
+  end
 
   def e(*args)
     run '-e', args.join(' ')
@@ -666,7 +674,7 @@ module Commands
     src = replace_env_vars(config['src'])
     # Expand relative to the cext directory
     src = File.expand_path(src, cext_dir)
-    src_files = Dir[src]
+    src_files = Dir[src].sort
     raise "No source files found in #{src}!" if src_files.empty?
 
     config_cflags = config['cflags'] || ''
@@ -690,8 +698,7 @@ module Commands
       ll = File.join(File.dirname(out), File.basename(src, '.*') + '.ll')
 
       clang "-I#{SULONG_HOME}/include", '-Ilib/ruby/truffle/cext', '-S', '-emit-llvm', *config_cflags, *clang_opts, src, '-o', ll
-      llvm_opt '-S', '-always-inline', ll, '-o', ll
-      llvm_opt '-S', '-mem2reg', ll, '-o', ll
+      llvm_opt '-S', '-always-inline', '-mem2reg', ll, '-o', ll
 
       lls.push ll
     end
@@ -776,7 +783,7 @@ module Commands
 
     env = { "JRUBY_OPTS" => jruby_opts.join(' ') }
 
-    Dir["#{JRUBY_DIR}/test/truffle/compiler/*.sh"].each do |test_script|
+    Dir["#{JRUBY_DIR}/test/truffle/compiler/*.sh"].sort.each do |test_script|
       sh env, test_script
     end
   end
@@ -785,6 +792,7 @@ module Commands
   def test_cexts(*args)
     no_libxml = args.delete('--no-libxml')
     no_openssl = args.delete('--no-openssl')
+    no_argon2 = args.delete('--no-argon2')
 
     # Test that we can compile and run some basic C code that uses libxml and openssl
 
@@ -836,12 +844,17 @@ module Commands
 
     # Test that we can compile and run some real C extensions
 
-    [
+    tests = [
         ['oily_png', ['chunky_png-1.3.6', 'oily_png-1.2.0'], ['oily_png']],
         ['psd_native', ['chunky_png-1.3.6', 'oily_png-1.2.0', 'bindata-2.3.1', 'hashie-3.4.4', 'psd-enginedata-1.1.1', 'psd-2.1.2', 'psd_native-1.1.3'], ['oily_png', 'psd_native']],
-        ['nokogiri', [], ['nokogiri']],
-        ['ruby-argon2', [], [], "#{ENV['GEM_HOME']}/bundler/gems/ruby-argon2-bd3fb1e056cf"]
-    ].each do |gem_name, dependencies, libs, gem_root|
+        ['nokogiri', [], ['nokogiri']]
+    ]
+    
+    unless no_argon2
+      tests.push ['ruby-argon2', [], [], "#{ENV['GEM_HOME']}/bundler/gems/ruby-argon2-bd3fb1e056cf"]
+    end
+
+    tests.each do |gem_name, dependencies, libs, gem_root|
       next if gem_name == 'nokogiri' # nokogiri totally excluded
       next if gem_name == 'nokogiri' && no_libxml
       unless gem_root and File.exist?(File.join(gem_root, CEXTC_CONF_FILE))
@@ -862,6 +875,15 @@ module Commands
     sh 'ant', '-f', 'spec/truffle/buildTestReports.xml'
   end
   private :test_cexts
+  
+  def check_test_port
+    lsof = `lsof -i :14873`
+    unless lsof.empty?
+      STDERR.puts 'Someone is already listening on port 14873 - our tests can\'t run'
+      STDERR.puts lsof
+      exit 1
+    end
+  end
 
   def test_integration(env={}, *args)
     env_vars   = env
@@ -883,7 +905,8 @@ module Commands
     single_test            = !args.empty?
     test_names             = single_test ? '{' + args.join(',') + '}' : '*'
 
-    Dir["#{tests_path}/#{test_names}.sh"].each do |test_script|
+    Dir["#{tests_path}/#{test_names}.sh"].sort.each do |test_script|
+      check_test_port
       sh env_vars, test_script
     end
   end
@@ -904,8 +927,9 @@ module Commands
     single_test            = !args.empty?
     test_names             = single_test ? '{' + args.join(',') + '}' : '*'
 
-    Dir["#{tests_path}/#{test_names}.sh"].each do |test_script|
+    Dir["#{tests_path}/#{test_names}.sh"].sort.each do |test_script|
       next if test_script.end_with?('/install-gems.sh')
+      check_test_port
       sh env_vars, test_script
     end
   end
@@ -925,7 +949,7 @@ module Commands
     single_test            = !args.empty?
     test_names             = single_test ? '{' + args.join(',') + '}' : '*'
 
-    Dir["#{tests_path}/#{test_names}.sh"].each do |test_script|
+    Dir["#{tests_path}/#{test_names}.sh"].sort.each do |test_script|
       sh env_vars, test_script
     end
   end

@@ -138,7 +138,7 @@ public class BacktraceFormatter {
             String reportedName;
 
             if (isJavaCore(sourceSection) ||
-                    (isCore(sourceSection) && !flags.contains(FormattingFlags.INCLUDE_CORE_FILES))) {
+                    (isCore(context, sourceSection) && !flags.contains(FormattingFlags.INCLUDE_CORE_FILES))) {
                 final SourceSection nextUserSourceSection = nextUserSourceSection(activations, n);
                 // if there is no next source section use a core one to avoid ???
                 reportedSourceSection = nextUserSourceSection != null ? nextUserSourceSection : sourceSection;
@@ -151,7 +151,7 @@ public class BacktraceFormatter {
             if (reportedSourceSection == null) {
                 builder.append("???");
             } else if (reportedSourceSection.getSource() == null) {
-                builder.append(reportedSourceSection.getShortDescription());
+                builder.append(String.format("%s:%d", reportedSourceSection.getSource().getName(), reportedSourceSection.getStartLine()));
             } else {
                 builder.append(reportedSourceSection.getSource().getName());
                 builder.append(":");
@@ -203,7 +203,7 @@ public class BacktraceFormatter {
             if (callNode != null) {
                 final SourceSection sourceSection = callNode.getEncapsulatingSourceSection();
 
-                if (!isCore(sourceSection)) {
+                if (!isCore(context, sourceSection)) {
                     return sourceSection;
                 }
             }
@@ -217,8 +217,12 @@ public class BacktraceFormatter {
         return sourceSection != null && sourceSection.getSource() == null;
     }
 
-    public static boolean isCore(SourceSection sourceSection) {
+    public static boolean isCore(RubyContext context, SourceSection sourceSection) {
         if (sourceSection == null) {
+            return true;
+        }
+
+        if (sourceSection.getSource() == context.getCoreLibrary().getSource()) {
             return true;
         }
 
@@ -242,7 +246,7 @@ public class BacktraceFormatter {
 
     /** For debug purposes. */
     public static boolean isUserSourceSection(RubyContext context, SourceSection sourceSection) {
-        if (!BacktraceFormatter.isCore(sourceSection)) {
+        if (!BacktraceFormatter.isCore(context, sourceSection)) {
             return false;
         }
 
@@ -260,12 +264,12 @@ public class BacktraceFormatter {
         final SourceSection sourceSection = callNode.getEncapsulatingSourceSection();
 
         if (sourceSection != null) {
-            final String shortDescription = sourceSection.getShortDescription();
+            final String shortDescription = String.format("%s:%d", sourceSection.getSource().getName(), sourceSection.getStartLine());
 
             if (shortDescription.trim().equals(":")) {
-                builder.append(getRootOrTopmostNode(callNode).getClass().getSimpleName());
+                throw new UnsupportedOperationException();
             } else {
-                builder.append(sourceSection.getShortDescription());
+                builder.append(shortDescription);
 
                 final RootNode rootNode = callNode.getRootNode();
                 final String identifier = rootNode.getName();

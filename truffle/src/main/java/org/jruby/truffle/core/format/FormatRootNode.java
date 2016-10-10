@@ -25,16 +25,14 @@ import org.jruby.util.StringSupport;
  */
 public class FormatRootNode extends RootNode implements InternalRootNode {
 
-    private final String description;
     private final FormatEncoding encoding;
 
     @Child private FormatNode child;
 
     @CompilationFinal private int expectedLength = 0;
 
-    public FormatRootNode(String description, FormatEncoding encoding, FormatNode child) {
-        super(RubyLanguage.class, SourceSection.createUnavailable("pack", description), FormatFrameDescriptor.FRAME_DESCRIPTOR);
-        this.description = description;
+    public FormatRootNode(SourceSection sourceSection, FormatEncoding encoding, FormatNode child) {
+        super(RubyLanguage.class, sourceSection, FormatFrameDescriptor.FRAME_DESCRIPTOR);
         this.encoding = encoding;
         this.child = child;
     }
@@ -117,8 +115,13 @@ public class FormatRootNode extends RootNode implements InternalRootNode {
     }
 
     @Override
+    public String getName() {
+        return "unpack";
+    }
+
+    @Override
     public String toString() {
-        return description;
+        return getName();
     }
 
 }

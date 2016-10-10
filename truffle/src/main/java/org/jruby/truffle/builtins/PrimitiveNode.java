@@ -18,6 +18,8 @@ import org.jruby.truffle.language.RubyNode;
 @GenerateNodeFactory
 public abstract class PrimitiveNode extends RubyNode {
 
+    protected static final Object FAILURE = null;
+
     public PrimitiveNode() {
     }
 

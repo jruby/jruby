@@ -29,17 +29,17 @@ VALUE rb_f_notimplement(int args_count, const VALUE *args, VALUE object) {
 
 // Memory
 
-void *rb_alloc_tmp_buffer(volatile VALUE *buffer_pointer, long length) {
+void *rb_alloc_tmp_buffer(VALUE *buffer_pointer, long length) {
   rb_jt_error("rb_alloc_tmp_buffer not implemented");
   abort();
 }
 
-void *rb_alloc_tmp_buffer2(volatile VALUE *buffer_pointer, long count, size_t size) {
+void *rb_alloc_tmp_buffer2(VALUE *buffer_pointer, long count, size_t size) {
   rb_jt_error("rb_alloc_tmp_buffer2 not implemented");
   abort();
 }
 
-void rb_free_tmp_buffer(volatile VALUE *buffer_pointer) {
+void rb_free_tmp_buffer(VALUE *buffer_pointer) {
   rb_jt_error("rb_free_tmp_buffer not implemented");
   abort();
 }
@@ -518,6 +518,10 @@ VALUE rb_ary_each(VALUE array) {
   abort();
 }
 
+VALUE rb_ary_unshift(VALUE array, VALUE value) {
+  return (VALUE) truffle_invoke((void *)array, "unshift", value);
+}
+
 VALUE rb_check_array_type(VALUE array) {
   rb_jt_error("rb_check_array_type not implemented");
   abort();
@@ -679,20 +683,20 @@ VALUE rb_yield(VALUE value) {
 // Instance variables
 
 VALUE rb_iv_get(VALUE object, const char *name) {
-  return truffle_invoke(RUBY_CEXT, "rb_iv_get", object, rb_str_new_cstr(name));
+  return truffle_invoke(RUBY_CEXT, "rb_ivar_get", object, rb_str_new_cstr(name));
 }
 
 VALUE rb_iv_set(VALUE object, const char *name, VALUE value) {
-  truffle_invoke(RUBY_CEXT, "rb_iv_set", object, rb_str_new_cstr(name), value);
+  truffle_invoke(RUBY_CEXT, "rb_ivar_set", object, rb_str_new_cstr(name), value);
   return value;
 }
 
 VALUE rb_ivar_get(VALUE object, ID name) {
-  return truffle_read(object, name);
+  return truffle_invoke(RUBY_CEXT, "rb_ivar_get", object, name);
 }
 
 VALUE rb_ivar_set(VALUE object, ID name, VALUE value) {
-  truffle_write(object, name, value);
+  truffle_invoke(RUBY_CEXT, "rb_ivar_set", object, name, value);
   return value;
 }
 
@@ -1057,7 +1061,7 @@ VALUE rb_data_typed_object_wrap(VALUE ruby_class, void *data, const rb_data_type
 
 VALUE rb_data_typed_object_zalloc(VALUE ruby_class, size_t size, const rb_data_type_t *data_type) {
   VALUE obj = rb_data_typed_object_wrap(ruby_class, 0, data_type);
-  DATA_PTR(obj) = (intptr_t) calloc(1, size);
+  DATA_PTR(obj) = calloc(1, size);
   return obj;
 }
 
@@ -1091,10 +1095,11 @@ VALUE *rb_ruby_debug_ptr(void) {
 
 void rb_jt_error(const char *message) {
   truffle_invoke(RUBY_CEXT, "rb_jt_error", rb_str_new_cstr(message));
+  abort();
 }
 
 void *rb_jt_to_native_handle(VALUE managed) {
-  (void *)truffle_invoke_l(RUBY_CEXT, "rb_jt_to_native_handle", managed);
+  return (void *)truffle_invoke_l(RUBY_CEXT, "rb_jt_to_native_handle", managed);
 }
 
 VALUE rb_jt_from_native_handle(void *native) {

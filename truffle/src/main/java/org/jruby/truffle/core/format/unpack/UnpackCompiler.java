@@ -14,7 +14,6 @@ import com.oracle.truffle.api.Truffle;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.format.DescriptionTruncater;
 import org.jruby.truffle.core.format.FormatErrorListener;
 import org.jruby.truffle.core.format.LoopRecovery;
 import org.jruby.truffle.core.format.pack.PackLexer;
@@ -57,7 +56,7 @@ public class UnpackCompiler {
         parser.sequence();
 
         return Truffle.getRuntime().createCallTarget(
-                new UnpackRootNode(context, DescriptionTruncater.trunate(format), builder.getNode()));
+                new UnpackRootNode(context, currentNode.getEncapsulatingSourceSection(), builder.getNode()));
     }
 
 }

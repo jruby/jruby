@@ -61,6 +61,11 @@ public class CExtNodes {
             return num;
         }
 
+        @Specialization
+        public int num2int(long num) {
+            return (int) num;
+        }
+
     }
 
     @CoreMethod(names = "NUM2UINT", isModuleFunction = true, required = 1)
@@ -302,12 +307,9 @@ public class CExtNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject getBlock() {
-            return Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<DynamicObject>() {
-                @Override
-                public DynamicObject visitFrame(FrameInstance frameInstance) {
-                    Frame frame = frameInstance.getFrame(FrameAccess.READ_ONLY, true);
-                    return RubyArguments.tryGetBlock(frame);
-                }
+            return Truffle.getRuntime().iterateFrames(frameInstance -> {
+                Frame frame = frameInstance.getFrame(FrameAccess.READ_ONLY, true);
+                return RubyArguments.tryGetBlock(frame);
             });
         }
 
@@ -336,7 +338,7 @@ public class CExtNodes {
 
     }
 
-    @CoreMethod(names = "rb_jt_io_handle", isModuleFunction = true)
+    @CoreMethod(names = "rb_jt_io_handle", isModuleFunction = true, required = 1)
     public abstract static class IOHandleNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization(guards = "isRubyIO(io)")
@@ -392,17 +394,7 @@ public class CExtNodes {
 
         @Specialization
         public Object adaptRData(DynamicObject object) {
-            throw new UnsupportedOperationException();
-        }
-
-    }
-
-    @CoreMethod(names = "rb_jt_adapt_rtypeddata", isModuleFunction = true, required = 1)
-    public abstract static class AdaptRTypedDataNode extends CoreMethodArrayArgumentsNode {
-
-        @Specialization
-        public TypedDataAdapter adaptRTypedData(DynamicObject object) {
-            return new TypedDataAdapter(object);
+            return new DataAdapter(object);
         }
 
     }

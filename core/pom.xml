@@ -43,6 +43,7 @@ DO NOT MODIFIY - GENERATED CODE
     <version.ruby.major>2.3</version.ruby.major>
     <unsafe.version>8.92.1</unsafe.version>
     <release.dir>release</release.dir>
+    <create.sources.jar>false</create.sources.jar>
     <lib.dir>lib</lib.dir>
     <rails.dir>${test.dir}/rails</rails.dir>
     <parser.dir>core/src/main/java/org/jruby/parser</parser.dir>
@@ -635,6 +636,7 @@ DO NOT MODIFIY - GENERATED CODE
                   <mainClass>org.jruby.Main</mainClass>
                 </transformer>
               </transformers>
+              <createSourcesJar>${create.sources.jar}</createSourcesJar>
             </configuration>
           </execution>
         </executions>
@@ -1113,6 +1115,31 @@ DO NOT MODIFIY - GENERATED CODE
         <tzdata.jar.version>${tzdata.version}</tzdata.jar.version>
         <tzdata.scope>runtime</tzdata.scope>
       </properties>
+    </profile>
+    <profile>
+      <id>generate sources jar</id>
+      <activation>
+        <property>
+          <name>create.sources.jar</name>
+          <value>true</value>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <artifactId>maven-source-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>pack core sources</id>
+                <phase>prepare-package</phase>
+                <goals>
+                  <goal>jar-no-fork</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
     </profile>
   </profiles>
 </project>

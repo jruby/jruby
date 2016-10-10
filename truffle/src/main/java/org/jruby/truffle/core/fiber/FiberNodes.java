@@ -36,6 +36,7 @@ import org.jruby.truffle.language.control.BreakException;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.control.ReturnException;
 import org.jruby.truffle.language.methods.UnsupportedOperationBehavior;
+import org.jruby.truffle.parser.BodyTranslator;
 import org.jruby.truffle.platform.UnsafeGroup;
 
 import java.util.concurrent.CountDownLatch;
@@ -68,13 +69,9 @@ public abstract class FiberNodes {
     }
 
     public static void initialize(final RubyContext context, final DynamicObject fiber, final DynamicObject block, final Node currentNode) {
-        final String name = "Ruby Fiber@" + Layouts.PROC.getSharedMethodInfo(block).getSourceSection().getShortDescription();
-        final Thread thread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                handleFiberExceptions(context, fiber, block, currentNode);
-            }
-        });
+        final SourceSection sourceSection = Layouts.PROC.getSharedMethodInfo(block).getSourceSection();
+        final String name = String.format("Ruby Fiber@%s:%d", sourceSection.getSource().getName(), sourceSection.getStartLine());
+        final Thread thread = new Thread(() -> handleFiberExceptions(context, fiber, block, currentNode));
         thread.setName(name);
         thread.start();
 
@@ -95,29 +92,26 @@ public abstract class FiberNodes {
     }
 
     private static void handleFiberExceptions(final RubyContext context, final DynamicObject fiber, final DynamicObject block, Node currentNode) {
-        run(context, fiber, currentNode, new Runnable() {
-            @Override
-            public void run() {
+        run(context, fiber, currentNode, () -> {
+            try {
+                final Object[] args = waitForResume(context, fiber);
+                final Object result;
                 try {
-                    final Object[] args = waitForResume(context, fiber);
-                    final Object result;
-                    try {
-                        result = ProcOperations.rootCall(block, args);
-                    } finally {
-                        // Make sure that other fibers notice we are dead before they gain control back
-                        Layouts.FIBER.setAlive(fiber, false);
-                    }
-                    resume(fiber, Layouts.FIBER.getLastResumedByFiber(fiber), true, result);
-                } catch (FiberExitException e) {
-                    assert !Layouts.FIBER.getRootFiber(fiber);
-                    // Naturally exit the Java thread on catching this
-                } catch (BreakException e) {
-                    addToMessageQueue(Layouts.FIBER.getLastResumedByFiber(fiber), new FiberExceptionMessage(context.getCoreExceptions().breakFromProcClosure(null)));
-                } catch (ReturnException e) {
-                    addToMessageQueue(Layouts.FIBER.getLastResumedByFiber(fiber), new FiberExceptionMessage(context.getCoreExceptions().unexpectedReturn(null)));
-                } catch (RaiseException e) {
-                    addToMessageQueue(Layouts.FIBER.getLastResumedByFiber(fiber), new FiberExceptionMessage(e.getException()));
+                    result = ProcOperations.rootCall(block, args);
+                } finally {
+                    // Make sure that other fibers notice we are dead before they gain control back
+                    Layouts.FIBER.setAlive(fiber, false);
                 }
+                resume(fiber, Layouts.FIBER.getLastResumedByFiber(fiber), true, result);
+            } catch (FiberExitException e) {
+                assert !Layouts.FIBER.getRootFiber(fiber);
+                // Naturally exit the Java thread on catching this
+            } catch (BreakException e) {
+                addToMessageQueue(Layouts.FIBER.getLastResumedByFiber(fiber), new FiberExceptionMessage(context.getCoreExceptions().breakFromProcClosure(null)));
+            } catch (ReturnException e) {
+                addToMessageQueue(Layouts.FIBER.getLastResumedByFiber(fiber), new FiberExceptionMessage(context.getCoreExceptions().unexpectedReturn(null)));
+            } catch (RaiseException e) {
+                addToMessageQueue(Layouts.FIBER.getLastResumedByFiber(fiber), new FiberExceptionMessage(e.getException()));
             }
         });
     }
@@ -163,12 +157,7 @@ public abstract class FiberNodes {
     private static Object[] waitForResume(RubyContext context, final DynamicObject fiber) {
         assert RubyGuards.isRubyFiber(fiber);
 
-        final FiberMessage message = context.getThreadManager().runUntilResult(null, new BlockingAction<FiberMessage>() {
-            @Override
-            public FiberMessage block() throws InterruptedException {
-                return Layouts.FIBER.getMessageQueue(fiber).take();
-            }
-        });
+        final FiberMessage message = context.getThreadManager().runUntilResult(null, () -> Layouts.FIBER.getMessageQueue(fiber).take());
 
         Layouts.THREAD.getFiberManager(Layouts.FIBER.getRubyThread(fiber)).setCurrentFiber(fiber);
 

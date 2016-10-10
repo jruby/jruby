@@ -16,6 +16,7 @@ import static org.jruby.util.cli.Options.TRUFFLE_BACKTRACES_HIDE_CORE_FILES;
 import static org.jruby.util.cli.Options.TRUFFLE_BACKTRACES_INTERLEAVE_JAVA;
 import static org.jruby.util.cli.Options.TRUFFLE_BACKTRACES_LIMIT;
 import static org.jruby.util.cli.Options.TRUFFLE_BACKTRACES_OMIT_UNUSED;
+import static org.jruby.util.cli.Options.TRUFFLE_BASICOPS_INLINE;
 import static org.jruby.util.cli.Options.TRUFFLE_BINDING_LOCAL_VARIABLE_CACHE;
 import static org.jruby.util.cli.Options.TRUFFLE_BIND_CACHE;
 import static org.jruby.util.cli.Options.TRUFFLE_CALL_GRAPH;
@@ -71,7 +72,6 @@ import static org.jruby.util.cli.Options.TRUFFLE_UNPACK_CACHE;
 import static org.jruby.util.cli.Options.TRUFFLE_YIELD_ALWAYS_CLONE;
 import static org.jruby.util.cli.Options.TRUFFLE_YIELD_ALWAYS_INLINE;
 import static org.jruby.util.cli.Options.TRUFFLE_YIELD_CACHE;
-import static org.jruby.util.cli.Options.TRUFFLE_BASICOPS_INLINE;
 
 public class Options {
 

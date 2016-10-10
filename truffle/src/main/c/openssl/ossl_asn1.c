@@ -75,29 +75,16 @@ asn1time_to_time(ASN1_TIME *time)
     return rb_funcall2(rb_cTime, rb_intern("utc"), 6, argv);
 }
 
-#if defined(HAVE_ASN1_TIME_ADJ)
-void
-ossl_time_split(VALUE time, time_t *sec, int *days)
-{
-    VALUE num = rb_Integer(time);
+/*
+ * This function is not exported in Ruby's *.h
+ */
+extern struct timeval rb_time_timeval(VALUE);
 
-    if (FIXNUM_P(num)) {
-	time_t t = FIX2LONG(num);
-	*sec = t % 86400;
-	*days = rb_long2int(t / 86400);
-    }
-    else {
-	*days = NUM2INT(rb_funcall(num, rb_intern("/"), 1, INT2FIX(86400)));
-	*sec = NUM2TIMET(rb_funcall(num, rb_intern("%"), 1, INT2FIX(86400)));
-    }
-}
-#else
 time_t
 time_to_time_t(VALUE time)
 {
-    return (time_t)NUM2TIMET(rb_Integer(time));
+    return (time_t)NUM2LONG(rb_Integer(time));
 }
-#endif
 
 /*
  * STRING conversion
@@ -125,13 +112,9 @@ asn1integer_to_num(ASN1_INTEGER *ai)
     if (!ai) {
 	ossl_raise(rb_eTypeError, "ASN1_INTEGER is NULL!");
     }
-    if (ai->type == V_ASN1_ENUMERATED)
-	bn = ASN1_ENUMERATED_to_BN(ai, NULL);
-    else
-	bn = ASN1_INTEGER_to_BN(ai, NULL);
-
-    if (!bn)
+    if (!(bn = ASN1_INTEGER_to_BN(ai, NULL))) {
 	ossl_raise(eOSSLError, NULL);
+    }
 #if DO_IT_VIA_RUBY
     if (!(txt = BN_bn2dec(bn))) {
 	BN_free(bn);
@@ -157,7 +140,7 @@ num_to_asn1integer(VALUE obj, ASN1_INTEGER *ai)
 	bn = GetBNPtr(obj);
     } else {
 	obj = rb_String(obj);
-	if (!BN_dec2bn(&bn, StringValueCStr(obj))) {
+	if (!BN_dec2bn(&bn, StringValuePtr(obj))) {
 	    ossl_raise(eOSSLError, NULL);
 	}
     }
@@ -229,6 +212,19 @@ static ID sUNIVERSAL, sAPPLICATION, sCONTEXT_SPECIFIC, sPRIVATE;
 static ID sivVALUE, sivTAG, sivTAG_CLASS, sivTAGGING, sivINFINITE_LENGTH, sivUNUSED_BITS;
 
 /*
+ * We need to implement these for backward compatibility
+ * reasons, behavior of ASN1_put_object and ASN1_object_size
+ * for infinite length values is different in OpenSSL <= 0.9.7
+ */
+#if OPENSSL_VERSION_NUMBER < 0x00908000L
+#define ossl_asn1_object_size(cons, len, tag)		(cons) == 2 ? (len) + ASN1_object_size((cons), 0, (tag)) : ASN1_object_size((cons), (len), (tag))
+#define ossl_asn1_put_object(pp, cons, len, tag, xc)	(cons) == 2 ? ASN1_put_object((pp), (cons), 0, (tag), (xc)) : ASN1_put_object((pp), (cons), (len), (tag), (xc))
+#else
+#define ossl_asn1_object_size(cons, len, tag)		ASN1_object_size((cons), (len), (tag))
+#define ossl_asn1_put_object(pp, cons, len, tag, xc)	ASN1_put_object((pp), (cons), (len), (tag), (xc))
+#endif
+
+/*
  * Ruby to ASN1 converters
  */
 static ASN1_BOOLEAN
@@ -237,7 +233,11 @@ obj_to_asn1bool(VALUE obj)
     if (NIL_P(obj))
 	ossl_raise(rb_eTypeError, "Can't convert nil into Boolean");
 
+#if OPENSSL_VERSION_NUMBER < 0x00907000L
+     return RTEST(obj) ? 0xff : 0x100;
+#else
      return RTEST(obj) ? 0xff : 0x0;
+#endif
 }
 
 static ASN1_INTEGER*
@@ -293,50 +293,36 @@ obj_to_asn1obj(VALUE obj)
 {
     ASN1_OBJECT *a1obj;
 
-    StringValueCStr(obj);
+    StringValue(obj);
     a1obj = OBJ_txt2obj(RSTRING_PTR(obj), 0);
     if(!a1obj) a1obj = OBJ_txt2obj(RSTRING_PTR(obj), 1);
-    if(!a1obj) ossl_raise(eASN1Error, "invalid OBJECT ID %"PRIsVALUE, obj);
+    if(!a1obj) ossl_raise(eASN1Error, "invalid OBJECT ID");
 
     return a1obj;
 }
 
-static ASN1_UTCTIME *
+static ASN1_UTCTIME*
 obj_to_asn1utime(VALUE time)
 {
     time_t sec;
     ASN1_UTCTIME *t;
 
-#if defined(HAVE_ASN1_TIME_ADJ)
-    int off_days;
-
-    ossl_time_split(time, &sec, &off_days);
-    if (!(t = ASN1_UTCTIME_adj(NULL, sec, off_days, 0)))
-#else
     sec = time_to_time_t(time);
-    if (!(t = ASN1_UTCTIME_set(NULL, sec)))
-#endif
-	ossl_raise(eASN1Error, NULL);
+    if(!(t = ASN1_UTCTIME_set(NULL, sec)))
+        ossl_raise(eASN1Error, NULL);
 
     return t;
 }
 
-static ASN1_GENERALIZEDTIME *
+static ASN1_GENERALIZEDTIME*
 obj_to_asn1gtime(VALUE time)
 {
     time_t sec;
     ASN1_GENERALIZEDTIME *t;
 
-#if defined(HAVE_ASN1_TIME_ADJ)
-    int off_days;
-
-    ossl_time_split(time, &sec, &off_days);
-    if (!(t = ASN1_GENERALIZEDTIME_adj(NULL, sec, off_days, 0)))
-#else
     sec = time_to_time_t(time);
-    if (!(t = ASN1_GENERALIZEDTIME_set(NULL, sec)))
-#endif
-	ossl_raise(eASN1Error, NULL);
+    if(!(t =ASN1_GENERALIZEDTIME_set(NULL, sec)))
+        ossl_raise(eASN1Error, NULL);
 
     return t;
 }
@@ -361,15 +347,14 @@ obj_to_asn1derstr(VALUE obj)
 static VALUE
 decode_bool(unsigned char* der, long length)
 {
-    const unsigned char *p = der;
+    int val;
+    const unsigned char *p;
 
-    assert(length == 3);
-    if (*p++ != 1)
-	ossl_raise(eASN1Error, "not a boolean");
-    if (*p++ != 1)
-	ossl_raise(eASN1Error, "length is not 1");
+    p = der;
+    if((val = d2i_ASN1_BOOLEAN(NULL, &p, length)) < 0)
+	ossl_raise(eASN1Error, NULL);
 
-    return *p ? Qtrue : Qfalse;
+    return val ? Qtrue : Qfalse;
 }
 
 static VALUE
@@ -504,49 +489,85 @@ decode_eoc(unsigned char *der, long length)
 
 /********/
 
-/*
- * Modified for Sulong to flatten the array of ossl_asn1_info_t structures,
- * into an array of names and array of classes, because the classes are
- * managed and can't be stored in a static array of structures like that.
- */
+typedef struct {
+    const char *name;
+    VALUE *klass;
+} ossl_asn1_info_t;
 
-static const char *ossl_asn1_info_names[] = {
-    "EOC",
-    "BOOLEAN",
-    "INTEGER",
-    "BIT_STRING",
-    "OCTET_STRING",
-    "NULL",
-    "OBJECT",
-    "OBJECT_DESCRIPTOR",
-    "EXTERNAL",
-    "REAL",
-    "ENUMERATED",
-    "EMBEDDED_PDV",
-    "UTF8STRING",
-    "RELATIVE_OID",
-    "[UNIVERSAL 14]",
-    "[UNIVERSAL 15]",
-    "SEQUENCE",
-    "SET",
-    "NUMERICSTRING",
-    "PRINTABLESTRING",
-    "T61STRING",
-    "VIDEOTEXSTRING",
-    "IA5STRING",
-    "UTCTIME",
-    "GENERALIZEDTIME",
-    "GRAPHICSTRING",
-    "ISO64STRING",
-    "GENERALSTRING",
-    "UNIVERSALSTRING",
-    "CHARACTER_STRING",
-    "BMPSTRING"
+#ifdef JRUBY_TRUFFLE
+static const ossl_asn1_info_t ossl_asn1_info[] = {
+    { "EOC",               NULL,                  },  /*  0 */
+    { "BOOLEAN",           NULL,                  },  /*  1 */
+    { "INTEGER",           NULL,                  },  /*  2 */
+    { "BIT_STRING",        NULL,                  },  /*  3 */
+    { "OCTET_STRING",      NULL,                  },  /*  4 */
+    { "NULL",              NULL,                  },  /*  5 */
+    { "OBJECT",            NULL,                  },  /*  6 */
+    { "OBJECT_DESCRIPTOR", NULL,                  },  /*  7 */
+    { "EXTERNAL",          NULL,                  },  /*  8 */
+    { "REAL",              NULL,                  },  /*  9 */
+    { "ENUMERATED",        NULL,                  },  /* 10 */
+    { "EMBEDDED_PDV",      NULL,                  },  /* 11 */
+    { "UTF8STRING",        NULL,                  },  /* 12 */
+    { "RELATIVE_OID",      NULL,                  },  /* 13 */
+    { "[UNIVERSAL 14]",    NULL,                  },  /* 14 */
+    { "[UNIVERSAL 15]",    NULL,                  },  /* 15 */
+    { "SEQUENCE",          NULL,                  },  /* 16 */
+    { "SET",               NULL,                  },  /* 17 */
+    { "NUMERICSTRING",     NULL,                  },  /* 18 */
+    { "PRINTABLESTRING",   NULL,                  },  /* 19 */
+    { "T61STRING",         NULL,                  },  /* 20 */
+    { "VIDEOTEXSTRING",    NULL,                  },  /* 21 */
+    { "IA5STRING",         NULL,                  },  /* 22 */
+    { "UTCTIME",           NULL,                  },  /* 23 */
+    { "GENERALIZEDTIME",   NULL,                  },  /* 24 */
+    { "GRAPHICSTRING",     NULL,                  },  /* 25 */
+    { "ISO64STRING",       NULL,                  },  /* 26 */
+    { "GENERALSTRING",     NULL,                  },  /* 27 */
+    { "UNIVERSALSTRING",   NULL,                  },  /* 28 */
+    { "CHARACTER_STRING",  NULL,                  },  /* 29 */
+    { "BMPSTRING",         NULL,                  },  /* 30 */
 };
-
 static VALUE *ossl_asn1_info_klasses;
+#define OSSL_ASN1_KLASS(tag) (&ossl_asn1_info_klasses[(tag)])
+#else
+static const ossl_asn1_info_t ossl_asn1_info[] = {
+    { "EOC",               &cASN1EndOfContent,    },  /*  0 */
+    { "BOOLEAN",           &cASN1Boolean,         },  /*  1 */
+    { "INTEGER",           &cASN1Integer,         },  /*  2 */
+    { "BIT_STRING",        &cASN1BitString,       },  /*  3 */
+    { "OCTET_STRING",      &cASN1OctetString,     },  /*  4 */
+    { "NULL",              &cASN1Null,            },  /*  5 */
+    { "OBJECT",            &cASN1ObjectId,        },  /*  6 */
+    { "OBJECT_DESCRIPTOR", NULL,                  },  /*  7 */
+    { "EXTERNAL",          NULL,                  },  /*  8 */
+    { "REAL",              NULL,                  },  /*  9 */
+    { "ENUMERATED",        &cASN1Enumerated,      },  /* 10 */
+    { "EMBEDDED_PDV",      NULL,                  },  /* 11 */
+    { "UTF8STRING",        &cASN1UTF8String,      },  /* 12 */
+    { "RELATIVE_OID",      NULL,                  },  /* 13 */
+    { "[UNIVERSAL 14]",    NULL,                  },  /* 14 */
+    { "[UNIVERSAL 15]",    NULL,                  },  /* 15 */
+    { "SEQUENCE",          &cASN1Sequence,        },  /* 16 */
+    { "SET",               &cASN1Set,             },  /* 17 */
+    { "NUMERICSTRING",     &cASN1NumericString,   },  /* 18 */
+    { "PRINTABLESTRING",   &cASN1PrintableString, },  /* 19 */
+    { "T61STRING",         &cASN1T61String,       },  /* 20 */
+    { "VIDEOTEXSTRING",    &cASN1VideotexString,  },  /* 21 */
+    { "IA5STRING",         &cASN1IA5String,       },  /* 22 */
+    { "UTCTIME",           &cASN1UTCTime,         },  /* 23 */
+    { "GENERALIZEDTIME",   &cASN1GeneralizedTime, },  /* 24 */
+    { "GRAPHICSTRING",     &cASN1GraphicString,   },  /* 25 */
+    { "ISO64STRING",       &cASN1ISO64String,     },  /* 26 */
+    { "GENERALSTRING",     &cASN1GeneralString,   },  /* 27 */
+    { "UNIVERSALSTRING",   &cASN1UniversalString, },  /* 28 */
+    { "CHARACTER_STRING",  NULL,                  },  /* 29 */
+    { "BMPSTRING",         &cASN1BMPString,       },  /* 30 */
+};
+#define OSSL_ASN1_KLASS(tag) (ossl_asn1_info[(tag)].klass)
+#endif
 
-enum {ossl_asn1_info_size = (sizeof(ossl_asn1_info_names)/sizeof(ossl_asn1_info_names[0]))};
+enum {ossl_asn1_info_size = (sizeof(ossl_asn1_info)/sizeof(ossl_asn1_info[0]))};
 
 static VALUE class_tag_map;
 
@@ -796,11 +817,11 @@ ossl_asn1data_to_der(VALUE self)
     if (inf_length == Qtrue) {
 	is_cons = 2;
     }
-    if((length = ASN1_object_size(is_cons, RSTRING_LENINT(value), tag)) <= 0)
+    if((length = ossl_asn1_object_size(is_cons, RSTRING_LENINT(value), tag)) <= 0)
 	ossl_raise(eASN1Error, NULL);
     der = rb_str_new(0, length);
     p = (unsigned char *)RSTRING_PTR(der);
-    ASN1_put_object(&p, is_cons, RSTRING_LENINT(value), tag, tag_class);
+    ossl_asn1_put_object(&p, is_cons, RSTRING_LENINT(value), tag, tag_class);
     memcpy(p, RSTRING_PTR(value), RSTRING_LEN(value));
     p += RSTRING_LEN(value);
     ossl_str_adjust(der, p);
@@ -860,8 +881,8 @@ int_ossl_asn1_decode0_prim(unsigned char **pp, long length, long hlen, int tag,
     *pp += hlen + length;
     *num_read = hlen + length;
 
-    if (tc == sUNIVERSAL && tag < ossl_asn1_info_size && ossl_asn1_info_klasses[tag]) {
-	VALUE klass = ossl_asn1_info_klasses[tag];
+    if (tc == sUNIVERSAL && tag < ossl_asn1_info_size && OSSL_ASN1_KLASS(tag)) {
+	VALUE klass = *OSSL_ASN1_KLASS(tag);
 	VALUE args[4];
 	args[0] = value;
 	args[1] = INT2NUM(tag);
@@ -925,7 +946,7 @@ int_ossl_asn1_decode0_cons(unsigned char **pp, long max_len, long length,
 	    }
 	}
 	else {
-	    VALUE klass = ossl_asn1_info_klasses[tag];
+	    VALUE klass = *OSSL_ASN1_KLASS(tag);
 	    asn1data = rb_obj_alloc(klass);
 	}
 	args[0] = ary;
@@ -1202,6 +1223,30 @@ ossl_asn1eoc_initialize(VALUE self) {
     return self;
 }
 
+static int
+ossl_i2d_ASN1_TYPE(ASN1_TYPE *a, unsigned char **pp)
+{
+#if OPENSSL_VERSION_NUMBER < 0x00907000L
+    if(!a) return 0;
+    if(a->type == V_ASN1_BOOLEAN)
+        return i2d_ASN1_BOOLEAN(a->value.boolean, pp);
+#endif
+    return i2d_ASN1_TYPE(a, pp);
+}
+
+static void
+ossl_ASN1_TYPE_free(ASN1_TYPE *a)
+{
+#if OPENSSL_VERSION_NUMBER < 0x00907000L
+    if(!a) return;
+    if(a->type == V_ASN1_BOOLEAN){
+        OPENSSL_free(a);
+        return;
+    }
+#endif
+    ASN1_TYPE_free(a);
+}
+
 /*
  * call-seq:
  *    asn1.to_der => DER-encoded String
@@ -1222,22 +1267,22 @@ ossl_asn1prim_to_der(VALUE self)
     explicit = ossl_asn1_is_explicit(self);
     asn1 = ossl_asn1_get_asn1type(self);
 
-    len = ASN1_object_size(1, i2d_ASN1_TYPE(asn1, NULL), tn);
+    len = ossl_asn1_object_size(1, ossl_i2d_ASN1_TYPE(asn1, NULL), tn);
     if(!(buf = OPENSSL_malloc(len))){
-	ASN1_TYPE_free(asn1);
+	ossl_ASN1_TYPE_free(asn1);
 	ossl_raise(eASN1Error, "cannot alloc buffer");
     }
     p = buf;
     if (tc == V_ASN1_UNIVERSAL) {
-        i2d_ASN1_TYPE(asn1, &p);
+        ossl_i2d_ASN1_TYPE(asn1, &p);
     } else if (explicit) {
-        ASN1_put_object(&p, 1, i2d_ASN1_TYPE(asn1, NULL), tn, tc);
-        i2d_ASN1_TYPE(asn1, &p);
+        ossl_asn1_put_object(&p, 1, ossl_i2d_ASN1_TYPE(asn1, NULL), tn, tc);
+        ossl_i2d_ASN1_TYPE(asn1, &p);
     } else {
-        i2d_ASN1_TYPE(asn1, &p);
+        ossl_i2d_ASN1_TYPE(asn1, &p);
         *buf = tc | tn | (*buf & V_ASN1_CONSTRUCTED);
     }
-    ASN1_TYPE_free(asn1);
+    ossl_ASN1_TYPE_free(asn1);
     reallen = p - buf;
     assert(reallen <= len);
     str = ossl_buf2str((char *)buf, rb_long2int(reallen)); /* buf will be free in ossl_buf2str */
@@ -1303,19 +1348,19 @@ ossl_asn1cons_to_der(VALUE self)
     explicit = ossl_asn1_is_explicit(self);
     value = join_der(ossl_asn1_get_value(self));
 
-    seq_len = ASN1_object_size(constructed, RSTRING_LENINT(value), tag);
-    length = ASN1_object_size(constructed, seq_len, tn);
+    seq_len = ossl_asn1_object_size(constructed, RSTRING_LENINT(value), tag);
+    length = ossl_asn1_object_size(constructed, seq_len, tn);
     str = rb_str_new(0, length);
     p = (unsigned char *)RSTRING_PTR(str);
     if(tc == V_ASN1_UNIVERSAL)
-	ASN1_put_object(&p, constructed, RSTRING_LENINT(value), tn, tc);
+	ossl_asn1_put_object(&p, constructed, RSTRING_LENINT(value), tn, tc);
     else{
 	if(explicit){
-	    ASN1_put_object(&p, constructed, seq_len, tn, tc);
-	    ASN1_put_object(&p, constructed, RSTRING_LENINT(value), tag, V_ASN1_UNIVERSAL);
+	    ossl_asn1_put_object(&p, constructed, seq_len, tn, tc);
+	    ossl_asn1_put_object(&p, constructed, RSTRING_LENINT(value), tag, V_ASN1_UNIVERSAL);
 	}
 	else{
-	    ASN1_put_object(&p, constructed, RSTRING_LENINT(value), tn, tc);
+	    ossl_asn1_put_object(&p, constructed, RSTRING_LENINT(value), tn, tc);
 	}
     }
     memcpy(p, RSTRING_PTR(value), RSTRING_LEN(value));
@@ -1368,9 +1413,9 @@ ossl_asn1cons_each(VALUE self)
 static VALUE
 ossl_asn1obj_s_register(VALUE self, VALUE oid, VALUE sn, VALUE ln)
 {
-    StringValueCStr(oid);
-    StringValueCStr(sn);
-    StringValueCStr(ln);
+    StringValue(oid);
+    StringValue(sn);
+    StringValue(ln);
 
     if(!OBJ_create(RSTRING_PTR(oid), RSTRING_PTR(sn), RSTRING_PTR(ln)))
 	ossl_raise(eASN1Error, NULL);
@@ -1393,7 +1438,7 @@ ossl_asn1obj_get_sn(VALUE self)
     int nid;
 
     val = ossl_asn1_get_value(self);
-    if ((nid = OBJ_txt2nid(StringValueCStr(val))) != NID_undef)
+    if ((nid = OBJ_txt2nid(StringValuePtr(val))) != NID_undef)
 	ret = rb_str_new2(OBJ_nid2sn(nid));
 
     return ret;
@@ -1414,7 +1459,7 @@ ossl_asn1obj_get_ln(VALUE self)
     int nid;
 
     val = ossl_asn1_get_value(self);
-    if ((nid = OBJ_txt2nid(StringValueCStr(val))) != NID_undef)
+    if ((nid = OBJ_txt2nid(StringValuePtr(val))) != NID_undef)
 	ret = rb_str_new2(OBJ_nid2ln(nid));
 
     return ret;
@@ -1635,9 +1680,9 @@ Init_ossl_asn1(void)
      */
     rb_define_const(mASN1, "UNIVERSAL_TAG_NAME", ary);
     for(i = 0; i < ossl_asn1_info_size; i++){
-	if(ossl_asn1_info_names[i][0] == '[') continue;
-	rb_define_const(mASN1, ossl_asn1_info_names[i], INT2NUM(i));
-	rb_ary_store(ary, i, rb_str_new2(ossl_asn1_info_names[i]));
+	if(ossl_asn1_info[i].name[0] == '[') continue;
+	rb_define_const(mASN1, ossl_asn1_info[i].name, INT2NUM(i));
+	rb_ary_store(ary, i, rb_str_new2(ossl_asn1_info[i].name));
     }
 
     /* Document-class: OpenSSL::ASN1::ASN1Data
@@ -1951,7 +1996,8 @@ do{\
 
     OSSL_ASN1_DEFINE_CLASS(EndOfContent, Data);
 
-    ossl_asn1_info_klasses = (VALUE *) truffle_managed_malloc(ossl_asn1_info_size * sizeof(VALUE));
+#ifdef JRUBY_TRUFFLE
+    ossl_asn1_info_klasses = (VALUE *)truffle_managed_malloc(ossl_asn1_info_size * sizeof(VALUE));
     ossl_asn1_info_klasses[0]  = cASN1EndOfContent;
     ossl_asn1_info_klasses[1]  = cASN1Boolean;
     ossl_asn1_info_klasses[2]  = cASN1Integer;
@@ -1983,6 +2029,7 @@ do{\
     ossl_asn1_info_klasses[28] = cASN1UniversalString;
     ossl_asn1_info_klasses[29] = NULL;
     ossl_asn1_info_klasses[30] = cASN1BMPString;
+#endif
 
     /* Document-class: OpenSSL::ASN1::ObjectId
      *

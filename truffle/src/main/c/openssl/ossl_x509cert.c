@@ -78,9 +78,9 @@ ossl_x509_new_from_file(VALUE filename)
     FILE *fp;
     VALUE obj;
 
-    rb_check_safe_obj(filename);
+    SafeStringValue(filename);
     obj = NewX509(cX509Cert);
-    if (!(fp = fopen(StringValueCStr(filename), "r"))) {
+    if (!(fp = fopen(RSTRING_PTR(filename), "r"))) {
 	ossl_raise(eX509CertError, "%s", strerror(errno));
     }
     rb_fd_fix_cloexec(fileno(fp));
@@ -122,7 +122,7 @@ DupX509CertPtr(VALUE obj)
 
     SafeGetX509(obj, x509);
 
-    X509_up_ref(x509);
+    CRYPTO_add(&x509->references, 1, CRYPTO_LOCK_X509);
 
     return x509;
 }
@@ -349,7 +349,9 @@ ossl_x509_set_serial(VALUE self, VALUE num)
     X509 *x509;
 
     GetX509(self, x509);
-    X509_set_serialNumber(x509, num_to_asn1integer(num, X509_get_serialNumber(x509)));
+
+    x509->cert_info->serialNumber =
+	num_to_asn1integer(num, X509_get_serialNumber(x509));
 
     return num;
 }
@@ -369,7 +371,7 @@ ossl_x509_get_signature_algorithm(VALUE self)
     out = BIO_new(BIO_s_mem());
     if (!out) ossl_raise(eX509CertError, NULL);
 
-    if (!i2a_ASN1_OBJECT(out, X509_get0_tbs_sigalg(x509)->algorithm)) {
+    if (!i2a_ASN1_OBJECT(out, x509->cert_info->signature->algorithm)) {
 	BIO_free(out);
 	ossl_raise(eX509CertError, NULL);
     }
@@ -474,10 +476,13 @@ static VALUE
 ossl_x509_set_not_before(VALUE self, VALUE time)
 {
     X509 *x509;
+    time_t sec;
 
+    sec = time_to_time_t(time);
     GetX509(self, x509);
-    if (!ossl_x509_time_adjust(X509_get_notBefore(x509), time))
+    if (!X509_time_adj(X509_get_notBefore(x509), 0, &sec)) {
 	ossl_raise(eX509CertError, NULL);
+    }
 
     return time;
 }
@@ -508,10 +513,13 @@ static VALUE
 ossl_x509_set_not_after(VALUE self, VALUE time)
 {
     X509 *x509;
+    time_t sec;
 
+    sec = time_to_time_t(time);
     GetX509(self, x509);
-    if (!ossl_x509_time_adjust(X509_get_notAfter(x509), time))
+    if (!X509_time_adj(X509_get_notAfter(x509), 0, &sec)) {
 	ossl_raise(eX509CertError, NULL);
+    }
 
     return time;
 }
@@ -583,19 +591,18 @@ ossl_x509_verify(VALUE self, VALUE key)
 {
     X509 *x509;
     EVP_PKEY *pkey;
+    int i;
 
     pkey = GetPKeyPtr(key); /* NO NEED TO DUP */
     GetX509(self, x509);
-
-    switch (X509_verify(x509, pkey)) {
-      case 1:
-	return Qtrue;
-      case 0:
-	ossl_clear_error();
-	return Qfalse;
-      default:
+    if ((i = X509_verify(x509, pkey)) < 0) {
 	ossl_raise(eX509CertError, NULL);
     }
+    if (i > 0) {
+	return Qtrue;
+    }
+
+    return Qfalse;
 }
 
 /*
@@ -664,8 +671,8 @@ ossl_x509_set_extensions(VALUE self, VALUE ary)
 	OSSL_Check_Kind(RARRAY_AREF(ary, i), cX509Ext);
     }
     GetX509(self, x509);
-    while ((ext = X509_delete_ext(x509, 0)))
-	X509_EXTENSION_free(ext);
+    sk_X509_EXTENSION_pop_free(x509->cert_info->extensions, X509_EXTENSION_free);
+    x509->cert_info->extensions = NULL;
     for (i=0; i<RARRAY_LEN(ary); i++) {
 	ext = DupX509ExtPtr(RARRAY_AREF(ary, i));
 

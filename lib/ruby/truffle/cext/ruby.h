@@ -70,16 +70,22 @@ VALUE rb_jt_from_native_handle(void *native);
 
 // Memory
 
-#define xmalloc     malloc
-#define xfree       free
-#define ruby_xfree  free
+#define xmalloc       malloc
+#define xfree         free
+#define ruby_xfree    free
+#define ruby_xcalloc  calloc
 
 #define ALLOC_N(type, n)            ((type *)malloc(sizeof(type) * (n)))
 #define ALLOCA_N(type, n)           ((type *)alloca(sizeof(type) * (n)))
 
-void *rb_alloc_tmp_buffer(volatile VALUE *buffer_pointer, long length);
-void *rb_alloc_tmp_buffer2(volatile VALUE *buffer_pointer, long count, size_t size);
-void rb_free_tmp_buffer(volatile VALUE *buffer_pointer);
+#define RB_ZALLOC_N(type, n)        ((type *)ruby_xcalloc((n), sizeof(type)))
+#define RB_ZALLOC(type)             (RB_ZALLOC_N(type, 1))
+#define ZALLOC_N(type, n)           RB_ZALLOC_N(type, n)
+#define ZALLOC(type)                RB_ZALLOC(type)
+
+void *rb_alloc_tmp_buffer(VALUE *buffer_pointer, long length);
+void *rb_alloc_tmp_buffer2(VALUE *buffer_pointer, long count, size_t size);
+void rb_free_tmp_buffer(VALUE *buffer_pointer);
 
 #define RB_ALLOCV(v, n)             rb_alloc_tmp_buffer(&(v), (n))
 #define RB_ALLOCV_N(type, v, n)     rb_alloc_tmp_buffer2(&(v), (n), sizeof(type))
@@ -365,12 +371,12 @@ MUST_INLINE VALUE rb_string_value(VALUE *value_pointer) {
   return value;
 }
 
-MUST_INLINE char *rb_string_value_ptr(volatile VALUE* value_pointer) {
+MUST_INLINE char *rb_string_value_ptr(VALUE *value_pointer) {
   VALUE string = rb_string_value(value_pointer);
   return RSTRING_PTR(string);
 }
 
-MUST_INLINE char *rb_string_value_cstr(volatile VALUE* value_pointer) {
+MUST_INLINE char *rb_string_value_cstr(VALUE *value_pointer) {
   VALUE string = rb_string_value(value_pointer);
 
   if (!truffle_invoke_b(RUBY_CEXT, "rb_string_value_cstr_check", string)) {
@@ -424,6 +430,7 @@ void rb_ary_store(VALUE array, long index, VALUE value);
 VALUE rb_ary_entry(VALUE array, long index);
 VALUE rb_ary_dup(VALUE array);
 VALUE rb_ary_each(VALUE array);
+VALUE rb_ary_unshift(VALUE array, VALUE value);
 #define rb_assoc_new(a, b) rb_ary_new3(2, a, b)
 VALUE rb_check_array_type(VALUE array);
 
@@ -463,12 +470,25 @@ VALUE rb_proc_new(void *function, VALUE value);
 void rb_warn(const char *fmt, ...);
 void rb_warning(const char *fmt, ...);
 
-int rb_scan_args(int argc, VALUE *argv, const char *format, ...);
+MUST_INLINE int rb_jt_scan_args_0_HASH(int argc, VALUE *argv, const char *format, VALUE *v1) {
+  if (argc >= 1) *v1 = argv[0];
+  return argc;
+}
 
-MUST_INLINE int rb_jt_scan_args_02(int argc, VALUE *argv, VALUE *v1, VALUE *v2) {
+MUST_INLINE int rb_jt_scan_args_02(int argc, VALUE *argv, const char *format, VALUE *v1, VALUE *v2) {
   if (argc >= 1) *v1 = argv[0];
   if (argc >= 2) *v2 = argv[1];
   return argc;
+}
+
+MUST_INLINE int rb_jt_scan_args_11(int argc, VALUE *argv, const char *format, VALUE *v1, VALUE *v2) {
+  if (argc < 1) {
+    rb_jt_error("rb_jt_scan_args_11 error case not implemented");
+    abort();
+  }
+  *v1 = argv[0];
+  if (argc >= 2) *v2 = argv[1];
+  return argc - 1;
 }
 
 int rb_scan_args(int argc, VALUE *argv, const char *format, ...);
@@ -647,7 +667,7 @@ void rb_fd_fix_cloexec(int fd);
 
 int rb_jt_io_handle(VALUE file);
 
-#define GetOpenFile(file, pointer) ((pointer)->fd = rb_jt_io_handle(file))
+#define GetOpenFile(file, pointer) ((pointer) = truffle_managed_malloc(sizeof(rb_io_t)), (pointer)->fd = rb_jt_io_handle(file))
 
 int rb_io_wait_readable(int fd);
 int rb_io_wait_writable(int fd);
@@ -702,9 +722,7 @@ struct RTypedData {
 
 #define RUBY_TYPED_FREE_IMMEDIATELY 1
 
-struct RTypedData *rb_jt_adapt_rtypeddata(VALUE value);
-
-#define RTYPEDDATA(value) rb_jt_adapt_rtypeddata(value)
+#define RTYPEDDATA(value) ((struct RTypedData *)RDATA(value))
 
 #define RTYPEDDATA_DATA(value) (RTYPEDDATA(value)->data)
 

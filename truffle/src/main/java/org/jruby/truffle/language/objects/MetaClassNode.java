@@ -10,6 +10,7 @@
 package org.jruby.truffle.language.objects;
 
 import com.oracle.truffle.api.dsl.Cached;
+import com.oracle.truffle.api.dsl.Fallback;
 import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
@@ -79,6 +80,11 @@ public abstract class MetaClassNode extends RubyNode {
     @Specialization(contains = { "metaClassCached", "updateShapeAndMetaClass" })
     protected DynamicObject metaClassUncached(DynamicObject object) {
         return Layouts.BASIC_OBJECT.getMetaClass(object);
+    }
+
+    @Fallback
+    protected DynamicObject metaClassFallback(Object object) {
+        return getContext().getCoreLibrary().getMetaClass(object);
     }
 
     protected static DynamicObject getMetaClass(Shape shape) {

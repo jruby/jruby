@@ -11,7 +11,7 @@
 #if !defined(_OSSL_OCSP_H_)
 #define _OSSL_OCSP_H_
 
-#if !defined(OPENSSL_NO_OCSP)
+#if defined(OSSL_OCSP_ENABLED)
 extern VALUE mOCSP;
 extern VALUE cOPCSReq;
 extern VALUE cOPCSRes;

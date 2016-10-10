@@ -37,6 +37,7 @@
  */
 package org.jruby.truffle.core;
 
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Fallback;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
@@ -49,14 +50,13 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.builtins.Primitive;
+import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
+import org.jruby.truffle.core.cast.ToFNode;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
-import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
-import org.jruby.truffle.language.dispatch.MissingBehavior;
 import org.jruby.truffle.language.objects.IsANode;
 import org.jruby.truffle.language.objects.IsANodeGen;
-import org.jruby.truffle.util.DoubleUtils;
 
 @CoreClass("Math")
 public abstract class MathNodes {
@@ -280,34 +280,8 @@ public abstract class MathNodes {
 
     }
 
-    @CoreMethod(names = "frexp", isModuleFunction = true, required = 1)
-    public abstract static class FrExpNode extends CoreMethodArrayArgumentsNode {
-
-        private final BranchProfile errorProfile = BranchProfile.create();
-
-        @Child private IsANode isANode;
-        @Child private CallDispatchHeadNode floatNode;
-
-        public FrExpNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            isANode = IsANodeGen.create(context, sourceSection, null, null);
-            floatNode = DispatchHeadNodeFactory.createMethodCall(context, MissingBehavior.RETURN_MISSING);
-        }
-
-        @Specialization
-        public DynamicObject frexp(int a) {
-            return frexp((double) a);
-        }
-
-        @Specialization
-        public DynamicObject frexp(long a) {
-            return frexp((double) a);
-        }
-
-        @Specialization(guards = "isRubyBignum(a)")
-        public DynamicObject frexp(DynamicObject a) {
-            return frexp(Layouts.BIGNUM.getValue(a).doubleValue());
-        }
+    @Primitive(name = "math_frexp", needsSelf = false)
+    public abstract static class FrExpNode extends PrimitiveArrayArgumentsNode {
 
         @Specialization
         public DynamicObject frexp(double a) {
@@ -333,13 +307,8 @@ public abstract class MathNodes {
         }
 
         @Fallback
-        public DynamicObject frexp(VirtualFrame frame, Object a) {
-            if (isANode.executeIsA(a, coreLibrary().getNumericClass())) {
-                return frexp(floatNode.callFloat(frame, a, "to_f", null));
-            } else {
-                errorProfile.enter();
-                throw new RaiseException(coreExceptions().typeErrorCantConvertInto(a, "Float", this));
-            }
+        public Object frexp(Object a) {
+            return FAILURE;
         }
 
     }
@@ -401,115 +370,33 @@ public abstract class MathNodes {
 
     }
 
-    @CoreMethod(names = "ldexp", isModuleFunction = true, required = 2)
-    public abstract static class LdexpNode extends CoreMethodArrayArgumentsNode {
-
-        @Child private IsANode isANode;
-        @Child private CallDispatchHeadNode floatANode;
-        @Child private CallDispatchHeadNode integerBNode;
-
-        private final BranchProfile exceptionProfile = BranchProfile.create();
-
-        protected LdexpNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            isANode = IsANodeGen.create(context, sourceSection, null, null);
-            floatANode = DispatchHeadNodeFactory.createMethodCall(context, MissingBehavior.RETURN_MISSING);
-            integerBNode = DispatchHeadNodeFactory.createMethodCall(context, MissingBehavior.RETURN_MISSING);
-        }
+    @Primitive(name = "math_ldexp", needsSelf = false)
+    public abstract static class LdexpNode extends PrimitiveArrayArgumentsNode {
 
         @Specialization
-        public double function(int a, int b) {
-            return function((double) a, b);
-        }
-
-        @Specialization
-        public double function(int a, long b) {
-            return function((double) a, b);
-        }
-
-        @Specialization
-        public double function(int a, double b) {
-            return function((double) a, b);
-        }
-
-        @Specialization
-        public double function(long a, int b) {
-            return function((double) a, b);
-        }
-
-        @Specialization
-        public double function(long a, long b) {
-            return function((double) a, b);
-        }
-
-        @Specialization
-        public double function(long a, double b) {
-            return function((double) a, b);
-        }
-
-        @Specialization(guards = "isRubyBignum(a)")
-        public double function(DynamicObject a, int b) {
-            return function(Layouts.BIGNUM.getValue(a).doubleValue(), b);
-        }
-
-        @Specialization(guards = "isRubyBignum(a)")
-        public double function(DynamicObject a, long b) {
-            return function(Layouts.BIGNUM.getValue(a).doubleValue(), b);
-        }
-
-        @Specialization(guards = "isRubyBignum(a)")
-        public double function(DynamicObject a, double b) {
-            return function(Layouts.BIGNUM.getValue(a).doubleValue(), b);
-        }
-
-        @Specialization
-        public double function(double a, int b) {
-            return function(a, (double) b);
-        }
-
-        @Specialization
-        public double function(double a, long b) {
-            return function(a, (double) b);
-        }
-
-        @Specialization
-        public double function(double a, double b) {
-            if (Double.isNaN(b)) {
-                exceptionProfile.enter();
-                throw new RaiseException(coreExceptions().rangeError("float", DoubleUtils.toString(b), "integer", this));
-            }
-
+        public double ldexp(double a, int b) {
             return a * Math.pow(2, b);
         }
 
         @Fallback
-        public double function(VirtualFrame frame, Object a, Object b) {
-            if (!isANode.executeIsA(a, coreLibrary().getNumericClass())) {
-                exceptionProfile.enter();
-                throw new RaiseException(coreExceptions().typeErrorCantConvertInto(a, "Float", this));
-            }
-
-            return function(
-                    floatANode.callFloat(frame, a, "to_f", null),
-                    integerBNode.callLongFixnum(frame, b, "to_int", null));
+        public Object ldexp(Object a, Object b) {
+            return FAILURE;
         }
 
     }
-
-
 
     @CoreMethod(names = "lgamma", isModuleFunction = true, required = 1)
     public abstract static class LGammaNode extends CoreMethodArrayArgumentsNode {
 
         @Child private IsANode isANode;
-        @Child private CallDispatchHeadNode floatNode;
+        @Child private ToFNode toFNode;
 
         private final BranchProfile exceptionProfile = BranchProfile.create();
 
         public LGammaNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             isANode = IsANodeGen.create(context, sourceSection, null, null);
-            floatNode = DispatchHeadNodeFactory.createMethodCall(context, MissingBehavior.RETURN_MISSING);
+            toFNode = ToFNode.create();
         }
 
         @Specialization
@@ -546,7 +433,7 @@ public abstract class MathNodes {
                 throw new RaiseException(coreExceptions().typeErrorCantConvertInto(a, "Float", this));
             }
 
-            return lgamma(floatNode.callFloat(frame, a, "to_f", null));
+            return lgamma(toFNode.doDouble(frame, a));
         }
 
     }
@@ -575,13 +462,13 @@ public abstract class MathNodes {
         }
 
         @Specialization
-        public double function(VirtualFrame frame, Object a, NotProvided b) {
+        public double function(VirtualFrame frame, Object a, NotProvided b,
+                        @Cached("create()") ToFNode toFNode) {
             if (!isANode.executeIsA(a, coreLibrary().getNumericClass())) {
                 exceptionProfile.enter();
                 throw new RaiseException(coreExceptions().typeErrorCantConvertInto(a, "Float", this));
             }
-
-            return doFunction(floatANode.callFloat(frame, a, "to_f", null));
+            return doFunction(toFNode.doDouble(frame, a));
         }
 
         private double doFunction(double a) {
@@ -690,7 +577,7 @@ public abstract class MathNodes {
     protected abstract static class SimpleMonadicMathNode extends CoreMethodArrayArgumentsNode {
 
         @Child private IsANode isANode;
-        @Child private CallDispatchHeadNode floatNode;
+        @Child private ToFNode toFNode;
 
         protected final BranchProfile exceptionProfile = BranchProfile.create();
 
@@ -701,7 +588,7 @@ public abstract class MathNodes {
         protected SimpleMonadicMathNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             isANode = IsANodeGen.create(context, sourceSection, null, null);
-            floatNode = DispatchHeadNodeFactory.createMethodCall(context, MissingBehavior.RETURN_MISSING);
+            toFNode = ToFNode.create();
         }
 
         // TODO: why can't we leave this abstract?
@@ -737,7 +624,7 @@ public abstract class MathNodes {
                 throw new RaiseException(coreExceptions().typeErrorCantConvertInto(a, "Float", this));
             }
 
-            return doFunction(floatNode.callFloat(frame, a, "to_f", null));
+            return doFunction(toFNode.doDouble(frame, a));
         }
 
     }
@@ -745,8 +632,8 @@ public abstract class MathNodes {
     protected abstract static class SimpleDyadicMathNode extends CoreMethodArrayArgumentsNode {
 
         @Child protected IsANode isANode;
-        @Child protected CallDispatchHeadNode floatANode;
-        @Child protected CallDispatchHeadNode floatBNode;
+        @Child protected ToFNode floatANode;
+        @Child protected ToFNode floatBNode;
 
         protected final BranchProfile exceptionProfile = BranchProfile.create();
 
@@ -757,8 +644,8 @@ public abstract class MathNodes {
         protected SimpleDyadicMathNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             isANode = IsANodeGen.create(context, sourceSection, null, null);
-            floatANode = DispatchHeadNodeFactory.createMethodCall(context, MissingBehavior.RETURN_MISSING);
-            floatBNode = DispatchHeadNodeFactory.createMethodCall(context, MissingBehavior.RETURN_MISSING);
+            floatANode = ToFNode.create();
+            floatBNode = ToFNode.create();
         }
 
         // TODO: why can't we leave this abstract?
@@ -855,9 +742,7 @@ public abstract class MathNodes {
                 throw new RaiseException(coreExceptions().typeErrorCantConvertInto(a, "Float", this));
             }
 
-            return doFunction(
-                    floatANode.callFloat(frame, a, "to_f", null),
-                    floatBNode.callFloat(frame, b, "to_f", null));
+            return doFunction(floatANode.doDouble(frame, a), floatBNode.doDouble(frame, b));
         }
 
     }

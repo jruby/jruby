@@ -34,7 +34,7 @@ public class RubyObjectType extends ObjectType {
         } else if (RubyGuards.isRubyException(object)) {
             return Layouts.EXCEPTION.getMessage(object).toString();
         } else if (RubyGuards.isRubyModule(object)) {
-            return Layouts.MODULE.getFields(object).toString();
+            return Layouts.MODULE.getFields(object).getName();
         } else {
             return StringUtils.format("DynamicObject@%x<logicalClass=%s>", System.identityHashCode(object),
                     Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(object)).getName());

@@ -354,7 +354,6 @@ module Process
     kind = Rubinius::Type.coerce_to kind, Integer, :to_int
     id =   Rubinius::Type.coerce_to id, Integer, :to_int
 
-    Truffle::POSIX.errno = 0
     ret = Truffle::POSIX.getpriority(kind, id)
     Errno.handle
     ret

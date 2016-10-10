@@ -113,37 +113,25 @@ public class InstrumentationServerManager {
 
         });
 
-        server.createContext("/break", new HttpHandler() {
+        server.createContext("/break", httpExchange -> {
+            try {
+                final Thread mainThread = Layouts.FIBER.getThread(
+                        Layouts.THREAD.getFiberManager(context.getThreadManager().getRootThread())
+                                .getCurrentFiber());
 
-            @Override
-            public void handle(HttpExchange httpExchange) {
-                try {
-                    final Thread mainThread = Layouts.FIBER.getThread(
-                            Layouts.THREAD.getFiberManager(context.getThreadManager().getRootThread())
-                                    .getCurrentFiber());
+                context.getSafepointManager().pauseThreadAndExecuteLaterFromNonRubyThread(mainThread, (thread, currentNode) -> new SimpleShell(context).run(Truffle.getRuntime().getCurrentFrame()
+                        .getFrame(FrameInstance.FrameAccess.MATERIALIZE, true).materialize(), currentNode));
 
-                    context.getSafepointManager().pauseThreadAndExecuteLaterFromNonRubyThread(mainThread, new SafepointAction() {
-
-                        @Override
-                        public void run(DynamicObject thread, final Node currentNode) {
-                            new SimpleShell(context).run(Truffle.getRuntime().getCurrentFrame()
-                                    .getFrame(FrameInstance.FrameAccess.MATERIALIZE, true).materialize(), currentNode);
-                        }
-
-                    });
-
-                    httpExchange.getResponseHeaders().set("Content-Type", "text/plain");
-                    httpExchange.sendResponseHeaders(200, 0);
-                    httpExchange.getResponseBody().close();
-                } catch (IOException e) {
-                    if (shuttingDown) {
-                        return;
-                    }
-
-                    e.printStackTrace();
+                httpExchange.getResponseHeaders().set("Content-Type", "text/plain");
+                httpExchange.sendResponseHeaders(200, 0);
+                httpExchange.getResponseBody().close();
+            } catch (IOException e) {
+                if (shuttingDown) {
+                    return;
                 }
-            }
 
+                e.printStackTrace();
+            }
         });
 
         server.start();

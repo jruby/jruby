@@ -11,17 +11,13 @@ package org.jruby.truffle.core.format.convert;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.NodeChild;
-import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.cast.ToFNode;
-import org.jruby.truffle.core.cast.ToFNodeGen;
 import org.jruby.truffle.core.format.FormatNode;
 
-@NodeChildren({
-        @NodeChild(value = "value", type = FormatNode.class),
-})
+@NodeChild(value = "value", type = FormatNode.class)
 public abstract class ToDoubleWithCoercionNode extends FormatNode {
 
     @Child private ToFNode toFNode;
@@ -34,7 +30,7 @@ public abstract class ToDoubleWithCoercionNode extends FormatNode {
     public Object toDouble(VirtualFrame frame, Object value) {
         if (toFNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            toFNode = insert(ToFNodeGen.create(getContext(), null, null));
+            toFNode = insert(ToFNode.create());
         }
 
         return toFNode.doDouble(frame, value);

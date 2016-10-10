@@ -114,22 +114,27 @@ def mavenSetup():
     env = os.environ.copy()
     env['JRUBY_BUILD_MORE_QUIET'] = 'true'
     # HACK: since the maven executable plugin does not configure the
-    # java executable that is used we unfortunately need to append it to the PATH
+    # java executable that is used we unfortunately need to prepend it to the PATH
     javaHome = os.getenv('JAVA_HOME')
     if javaHome:
         env["PATH"] = javaHome + '/bin' + os.pathsep + env["PATH"]
         mx.logv('Setting PATH to {}'.format(os.environ["PATH"]))
-    mx.run(['java', '-version'])
+    mx.run(['java', '-version'], env=env)
     return maven_repo_arg, env
 
 class JRubyCoreMavenProject(mx.MavenProject):
     def getBuildTask(self, args):
-        return MavenBuildTask(self, args, 1)
+        return JRubyCoreBuildTask(self, args, 1)
 
     def getResults(self):
         return None
 
-class MavenBuildTask(mx.BuildTask):
+    def get_source_path(self, resolve):
+        with open(join(_suite.dir, 'VERSION')) as f:
+            version = f.readline().strip()
+        return join(_suite.dir, 'core/target/jruby-core-' + version + '-shaded-sources.jar')
+
+class JRubyCoreBuildTask(mx.BuildTask):
     def __str__(self):
         return 'Building {} with Maven'.format(self.subject)
 
@@ -173,7 +178,7 @@ class MavenBuildTask(mx.BuildTask):
         cwd = _suite.dir
         maven_repo_arg, env = mavenSetup()
         mx.log("Building jruby-core with Maven")
-        mx.run_maven(['-q', '-DskipTests', maven_repo_arg, '-pl', 'core,lib'], cwd=cwd, env=env)
+        mx.run_maven(['-q', '-DskipTests', maven_repo_arg, '-Dcreate.sources.jar', '-pl', 'core,lib'], cwd=cwd, env=env)
         # Install Bundler
         gem_home = join(_suite.dir, 'lib', 'ruby', 'gems', 'shared')
         env['GEM_HOME'] = gem_home
@@ -190,23 +195,48 @@ class MavenBuildTask(mx.BuildTask):
 
 # Commands
 
-def extractArguments(args):
+def extractArguments(cli_args):
     vmArgs = []
     rubyArgs = []
-    while args:
-        arg = args.pop(0)
-        if arg == '-J-cp' or arg == '-J-classpath':
-            vmArgs.append(arg[2:])
-            vmArgs.append(args.pop(0))
-        elif arg.startswith('-J-'):
-            vmArgs.append(arg[2:])
-        elif arg.startswith('-X'):
-            vmArgs.append('-Djruby.' + arg[2:])
-        else:
-            rubyArgs.append(arg)
-            rubyArgs.extend(args)
-            break
-    return vmArgs, rubyArgs
+    classpath = []
+    print_command = False
+    classic = False
+
+    jruby_opts = os.environ.get('JRUBY_OPTS')
+    if jruby_opts:
+        jruby_opts = jruby_opts.split(' ')
+
+    for args in [jruby_opts, cli_args]:
+        while args:
+            arg = args.pop(0)
+            if arg == '-X+T':
+                pass # Just drop it
+            elif arg == '-Xclassic':
+                classic = True
+            elif arg == '-J-cmd':
+                print_command = True
+            elif arg.startswith('-J-G:+'):
+                vmArgs.append('-Dgraal.'+arg[6:]+'=true')
+            elif arg.startswith('-J-G:-'):
+                vmArgs.append('-Dgraal.'+arg[6:]+'=false')
+            elif arg.startswith('-J-G:'):
+                vmArgs.append('-Dgraal.'+arg[5:])
+            elif arg == '-J-cp' or arg == '-J-classpath':
+                cp = args.pop(0)
+                if cp[:2] == '-J':
+                    cp = cp[2:]
+                classpath.append(cp)
+            elif arg.startswith('-J-'):
+                vmArgs.append(arg[2:])
+            elif arg.startswith('-X+') or arg.startswith('-X-'):
+                rubyArgs.append(arg)
+            elif arg.startswith('-X'):
+                vmArgs.append('-Djruby.'+arg[2:])
+            else:
+                rubyArgs.append(arg)
+                rubyArgs.extend(args)
+                break
+    return vmArgs, rubyArgs, classpath, print_command, classic
 
 def extractTarball(file, target_dir):
     if file.endswith('tar'):
@@ -230,17 +260,39 @@ def setup_jruby_home():
     env['JRUBY_HOME'] = extractPath
     return env
 
+def log(msg):
+    print >> sys.stderr, msg
+
 def ruby_command(args):
     """runs Ruby"""
-    vmArgs, rubyArgs = extractArguments(args)
+    java_home = os.getenv('JAVA_HOME', '/usr')
+    java = os.getenv('JAVACMD', java_home + '/bin/java')
+    argv0 = java
+
+    vmArgs, rubyArgs, user_classpath, print_command, classic = extractArguments(args)
     classpath = mx.classpath(['TRUFFLE_API', 'RUBY']).split(':')
     truffle_api, classpath = classpath[0], classpath[1:]
+    classpath += user_classpath
     assert os.path.basename(truffle_api) == "truffle-api.jar"
-    vmArgs += ['-Xbootclasspath/p:' + truffle_api]
-    vmArgs += ['-cp', ':'.join(classpath)]
-    vmArgs += ['org.jruby.Main', '-X+T']
+    vmArgs = [
+        # '-Xss2048k',
+        '-Xbootclasspath/p:' + truffle_api,
+        '-cp', ':'.join(classpath),
+    ] + vmArgs
+    vmArgs = vmArgs + ['org.jruby.Main']
+    if not classic:
+        vmArgs = vmArgs + ['-X+T']
+    allArgs = vmArgs + rubyArgs
+
     env = setup_jruby_home()
-    mx.run_java(vmArgs + rubyArgs, env=env)
+
+    if print_command:
+        if mx.get_opts().verbose:
+            log('Environment variables:')
+            for key in sorted(env.keys()):
+                log(key + '=' + env[key])
+        log(java + ' ' + ' '.join(map(pipes.quote, allArgs)))
+    return os.execve(java, [argv0] + allArgs, env)
 
 mx.update_commands(_suite, {
     'ruby' : [ruby_command, '[ruby args|@VM options]'],
@@ -404,6 +456,17 @@ class AllBenchmarksBenchmarkSuite(RubyBenchmarkSuite):
     def directory(self):
         return self.name()
 
+    def filterLines(self, lines):
+        data = []
+        for line in lines:
+            try:
+                data.append(float(line))
+            except ValueError:
+                log(line)
+        if len(data) % 2 != 0:
+            raise AssertionError("Odd number of values")
+        return data
+
     def runBenchmark(self, benchmark, bmSuiteArgs):
         arguments = ['benchmark']
         if 'MX_NO_GRAAL' in os.environ:
@@ -426,9 +489,9 @@ class AllBenchmarksBenchmarkSuite(RubyBenchmarkSuite):
         
         if jt(arguments, out=out, nonZeroIsFatal=False) == 0:
             lines = out.data.split('\n')[1:-1]
-            
+
             if lines[-1] == 'optimised away':
-                data = [float(s) for s in lines[0:-2]]
+                data = self.filterLines(lines)
                 elapsed = [d for n, d in enumerate(data) if n % 2 == 0]
                 samples = [d for n, d in enumerate(data) if n % 2 == 1]
                 
@@ -455,7 +518,7 @@ class AllBenchmarksBenchmarkSuite(RubyBenchmarkSuite):
                     'extra.error': 'optimised away'
                 }]
             else:
-                data = [float(s) for s in lines]
+                data = self.filterLines(lines)
                 elapsed = [d for n, d in enumerate(data) if n % 2 == 0]
                 samples = [d for n, d in enumerate(data) if n % 2 == 1]
                 
@@ -695,6 +758,25 @@ class MicroBenchmarkSuite(AllBenchmarksBenchmarkSuite):
     def time(self):
         return micro_benchmark_time
 
+savina_benchmarks = [
+    'savina-apsp',
+    'savina-radix-sort',
+    'savina-trapezoidal',
+]
+
+class SavinaBenchmarkSuite(AllBenchmarksBenchmarkSuite):
+    def name(self):
+        return 'savina'
+
+    def directory(self):
+        return 'parallel/savina'
+
+    def benchmarks(self):
+        return savina_benchmarks
+
+    def time(self):
+        return 120
+
 server_benchmarks = [
     'tcp-server',
     'webrick'
@@ -762,4 +844,5 @@ mx_benchmark.add_bm_suite(AsciidoctorBenchmarkSuite())
 mx_benchmark.add_bm_suite(OptcarrotBenchmarkSuite())
 mx_benchmark.add_bm_suite(SyntheticBenchmarkSuite())
 mx_benchmark.add_bm_suite(MicroBenchmarkSuite())
+mx_benchmark.add_bm_suite(SavinaBenchmarkSuite())
 mx_benchmark.add_bm_suite(ServerBenchmarkSuite())

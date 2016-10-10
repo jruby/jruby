@@ -42,7 +42,7 @@ public class ThreadBacktraceLocationNodes {
             final SourceSection sourceSection = activation.getCallNode().getEncapsulatingSourceSection();
 
             if (sourceSection.getSource() == null) {
-                return createString(StringOperations.encodeRope(sourceSection.getShortDescription(), UTF8Encoding.INSTANCE));
+                return createString(StringOperations.encodeRope(String.format("%s:%d", sourceSection.getSource().getName(), sourceSection.getStartLine()), UTF8Encoding.INSTANCE));
             }
 
             // TODO CS 30-Apr-15: not absolute - not sure how to solve that
@@ -93,7 +93,7 @@ public class ThreadBacktraceLocationNodes {
             final SourceSection sourceSection = callNode.getEncapsulatingSourceSection();
 
             if (sourceSection.getSource() == null) {
-                return createString(StringOperations.encodeRope(sourceSection.getShortDescription(), UTF8Encoding.INSTANCE));
+                return createString(StringOperations.encodeRope(String.format("%s:%d", sourceSection.getSource().getName(), sourceSection.getStartLine()), UTF8Encoding.INSTANCE));
             }
 
             return createString(RopeOperations.format(getContext(),

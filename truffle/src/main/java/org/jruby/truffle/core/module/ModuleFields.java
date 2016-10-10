@@ -312,7 +312,8 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
         while (true) {
             final RubyConstant previous = constants.get(name);
             final boolean isPrivate = previous != null && previous.isPrivate();
-            final RubyConstant newValue = new RubyConstant(rubyModuleObject, value, isPrivate, autoload);
+            final boolean isDeprecated = previous != null && previous.isDeprecated();
+            final RubyConstant newValue = new RubyConstant(rubyModuleObject, value, isPrivate, autoload, isDeprecated);
 
             if ((previous == null) ? (constants.putIfAbsent(name, newValue) == null) : constants.replace(name, previous, newValue)) {
                 newLexicalVersion();
@@ -453,6 +454,22 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
         }
     }
 
+    @TruffleBoundary
+    public void deprecateConstant(RubyContext context, Node currentNode, String name) {
+        while (true) {
+            final RubyConstant previous = constants.get(name);
+
+            if (previous == null) {
+                throw new RaiseException(context.getCoreExceptions().nameErrorUninitializedConstant(rubyModuleObject, name, currentNode));
+            }
+
+            if (constants.replace(name, previous, previous.withDeprecated())) {
+                newLexicalVersion();
+                break;
+            }
+        }
+    }
+
     public RubyContext getContext() {
         return context;
     }
@@ -575,25 +592,17 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
 
     public Iterable<DynamicObject> ancestors() {
         final ModuleChain top = start;
-        return new Iterable<DynamicObject>() {
-            @Override
-            public Iterator<DynamicObject> iterator() {
-                return new AncestorIterator(top);
-            }
-        };
+        return () -> new AncestorIterator(top);
     }
 
     public Iterable<DynamicObject> parentAncestors() {
         final ModuleChain top = start;
-        return new Iterable<DynamicObject>() {
-            @Override
-            public Iterator<DynamicObject> iterator() {
-                final AncestorIterator iterator = new AncestorIterator(top);
-                if (iterator.hasNext()) {
-                    iterator.next();
-                }
-                return iterator;
+        return () -> {
+            final AncestorIterator iterator = new AncestorIterator(top);
+            if (iterator.hasNext()) {
+                iterator.next();
             }
+            return iterator;
         };
     }
 
@@ -603,12 +612,7 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
     public Iterable<DynamicObject> prependedAndIncludedModules() {
         final ModuleChain top = start;
         final ModuleFields currentModule = this;
-        return new Iterable<DynamicObject>() {
-            @Override
-            public Iterator<DynamicObject> iterator() {
-                return new IncludedModulesIterator(top, currentModule);
-            }
-        };
+        return () -> new IncludedModulesIterator(top, currentModule);
     }
 
     public Collection<DynamicObject> filterMethods(RubyContext context, boolean includeAncestors, MethodFilter filter) {

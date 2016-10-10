@@ -14,7 +14,6 @@ import com.oracle.truffle.api.Truffle;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.format.DescriptionTruncater;
 import org.jruby.truffle.core.format.FormatErrorListener;
 import org.jruby.truffle.core.format.FormatRootNode;
 import org.jruby.truffle.core.format.LoopRecovery;
@@ -56,7 +55,7 @@ public class PackCompiler {
         parser.sequence();
 
         return Truffle.getRuntime().createCallTarget(
-                new FormatRootNode(DescriptionTruncater.trunate(format), builder.getEncoding(), builder.getNode()));
+                new FormatRootNode(currentNode.getEncapsulatingSourceSection(), builder.getEncoding(), builder.getNode()));
     }
 
 }

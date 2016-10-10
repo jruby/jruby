@@ -25,6 +25,18 @@ module Truffle
       export(name.to_s, Object.method(name.to_sym))
     end
 
+    def self.ruby_object_keys(object)
+      if object.is_a?(Hash)
+        object.keys.map do |key|
+          Truffle::Interop.to_java_string(key)
+        end
+      else
+        object.instance_variables.map do |key|
+          Truffle::Interop.to_java_string(key[1..-1])
+        end
+      end
+    end
+
     class ForeignEnumerable
       include Enumerable
 
@@ -48,6 +60,10 @@ module Truffle
 
     def self.enumerable(foreign)
       ForeignEnumerable.new(foreign)
+    end
+
+    class Foreign
+
     end
 
   end

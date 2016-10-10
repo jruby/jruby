@@ -28,6 +28,7 @@ import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyObjectType;
+import org.jruby.truffle.language.SnippetNode;
 import org.jruby.truffle.language.dispatch.DispatchAction;
 import org.jruby.truffle.language.dispatch.DispatchHeadNode;
 import org.jruby.truffle.language.dispatch.MissingBehavior;
@@ -229,6 +230,31 @@ public class RubyMessageResolution {
             }
 
             return helperNode;
+        }
+
+    }
+
+    @Resolve(message = "KEYS")
+    public static abstract class ForeignKeysNode extends Node {
+
+        @CompilationFinal private RubyContext context;
+
+        @Child private Node findContextNode;
+        @Child private DispatchHeadNode dispatchNode;
+
+        protected Object access(VirtualFrame frame, DynamicObject object) {
+            return getDispatchNode().dispatch(frame, context.getCoreLibrary().getTruffleInteropModule(), "ruby_object_keys", null, new Object[]{ object });
+        }
+
+        private DispatchHeadNode getDispatchNode() {
+            if (dispatchNode == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                findContextNode = insert(RubyLanguage.INSTANCE.unprotectedCreateFindContextNode());
+                context = RubyLanguage.INSTANCE.unprotectedFindContext(findContextNode);
+                dispatchNode = insert(new DispatchHeadNode(context, true, false, MissingBehavior.CALL_METHOD_MISSING, DispatchAction.CALL_METHOD));
+            }
+
+            return dispatchNode;
         }
 
     }

@@ -25,21 +25,16 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
-import org.jruby.truffle.core.rope.CodeRange;
-import org.jruby.truffle.core.rope.LeafRope;
 import org.jruby.truffle.core.rope.RopeNodes;
 import org.jruby.truffle.core.rope.RopeNodesFactory;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.core.time.GetTimeZoneNode;
 import org.jruby.truffle.extra.ffi.PointerPrimitiveNodes;
-import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.SnippetNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.platform.UnsafeGroup;
 import org.jruby.truffle.platform.signal.Signal;
-
-import java.nio.charset.StandardCharsets;
 
 import static org.jruby.truffle.core.string.StringOperations.decodeUTF8;
 
@@ -683,6 +678,17 @@ public abstract class TrufflePosixNodes {
         @Specialization
         public int getppid() {
             return posix().getppid();
+        }
+
+    }
+
+    @CoreMethod(names = "send", isModuleFunction = true, required = 4, lowerFixnum = {1, 3, 4}, unsafe = UnsafeGroup.IO)
+    public abstract static class SendNode extends CoreMethodArrayArgumentsNode {
+
+        @TruffleBoundary
+        @Specialization(guards = "isRubyPointer(buffer)")
+        public int send(int descriptor, DynamicObject buffer, int bytes, int flags) {
+            return nativeSockets().send(descriptor, Layouts.POINTER.getPointer(buffer), bytes, flags);
         }
 
     }

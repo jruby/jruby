@@ -15,10 +15,7 @@
 module OpenSSL
   class Digest
 
-    alg = %w(MD2 MD4 MD5 MDC2 RIPEMD160 SHA1)
-    if OPENSSL_VERSION_NUMBER < 0x10100000
-      alg += %w(DSS DSS1 SHA)
-    end
+    alg = %w(DSS DSS1 MD2 MD4 MD5 MDC2 RIPEMD160 SHA SHA1)
     if OPENSSL_VERSION_NUMBER > 0x00908000
       alg += %w(SHA224 SHA256 SHA384 SHA512)
     end

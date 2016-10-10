@@ -104,6 +104,8 @@ module Truffle::CExt
         value.is_a?(Symbol)
       when T_STRING
         value.is_a?(String)
+      when T_ARRAY
+        value.is_a?(Array)
       when T_FILE
         value.is_a?(File)
       else
@@ -380,11 +382,11 @@ module Truffle::CExt
     raise 'not implemented'
   end
 
-  def rb_iv_get(object, name)
+  def rb_ivar_get(object, name)
     Truffle.invoke_primitive :object_ivar_get, object, name.to_sym
   end
 
-  def rb_iv_set(object, name, value)
+  def rb_ivar_set(object, name, value)
     Truffle.invoke_primitive :object_ivar_set, object, name.to_sym, value
   end
 

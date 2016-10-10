@@ -18,11 +18,8 @@ public interface SignalManager {
 
     Map<String, Integer> SIGNALS_LIST = Collections.unmodifiableMap(RubySignal.list());
 
-    SignalHandler IGNORE_HANDLER = new SignalHandler() {
-        @Override
-        public void handle(Signal arg0) {
-            // Just ignore the signal.
-        }
+    SignalHandler IGNORE_HANDLER = signal -> {
+        // Just ignore the signal.
     };
 
     Signal createSignal(String name);

@@ -26,19 +26,16 @@ public class UnpackRootNode extends RootNode implements InternalRootNode {
 
     private final RubyContext context;
 
-    private final String description;
-
     @Child private FormatNode child;
 
     @CompilationFinal private int expectedLength;
 
-    public UnpackRootNode(RubyContext context, String description, FormatNode child) {
+    public UnpackRootNode(RubyContext context, SourceSection sourceSection, FormatNode child) {
         super(RubyLanguage.class,
-                SourceSection.createUnavailable("unpack", description),
+                sourceSection,
                 FormatFrameDescriptor.FRAME_DESCRIPTOR);
         
         this.context = context;
-        this.description = description;
         this.child = child;
         expectedLength = context.getOptions().ARRAY_UNINITIALIZED_SIZE;
     }
@@ -92,8 +89,13 @@ public class UnpackRootNode extends RootNode implements InternalRootNode {
     }
 
     @Override
+    public String getName() {
+        return "unpack";
+    }
+
+    @Override
     public String toString() {
-        return description;
+        return getName();
     }
 
 }

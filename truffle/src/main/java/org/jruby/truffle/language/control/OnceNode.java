@@ -9,19 +9,21 @@
  */
 package org.jruby.truffle.language.control;
 
-import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.utilities.AssumedValue;
 import org.jruby.truffle.language.RubyNode;
 
+import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
+import com.oracle.truffle.api.frame.VirtualFrame;
+
 /**
- * Executes a child node just once, and uses the same value each subsequent time the node is exeuted.
+ * Executes a child node just once, and uses the same value each subsequent time the node is
+ * executed.
  */
 public class OnceNode extends RubyNode {
 
     @Child private RubyNode child;
 
-    private final AssumedValue<Object> valueMemo = new AssumedValue<>(OnceNode.class.getName(), null);
+    @CompilationFinal private volatile Object cachedValue;
 
     public OnceNode(RubyNode child) {
         this.child = child;
@@ -29,12 +31,16 @@ public class OnceNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        Object value = valueMemo.get();
+        Object value = cachedValue;
 
         if (value == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            value = child.execute(frame);
-            valueMemo.set(value);
+            synchronized (this) {
+                if (cachedValue == null) {
+                    value = cachedValue = child.execute(frame);
+                    assert value != null;
+                }
+            }
         }
 
         return value;

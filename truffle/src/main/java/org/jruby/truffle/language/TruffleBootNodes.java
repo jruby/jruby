@@ -31,7 +31,6 @@ import org.jruby.truffle.language.loader.CodeLoader;
 import org.jruby.truffle.language.loader.SourceLoader;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.parser.ParserContext;
-import org.jruby.truffle.util.ByteListUtils;
 import org.jruby.util.Memo;
 
 import java.io.IOException;
@@ -45,7 +44,7 @@ public abstract class TruffleBootNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject jrubyHomeDirectory() {
-            return createString(StringOperations.encodeRope(getContext().getJRubyRuntime().getJRubyHome(), UTF8Encoding.INSTANCE));
+            return createString(StringOperations.encodeRope(getContext().getJRubyInterop().getJRubyHome(), UTF8Encoding.INSTANCE));
         }
 
     }
@@ -56,7 +55,7 @@ public abstract class TruffleBootNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject jrubyHomeDirectoryProtocol() {
-            String home = getContext().getJRubyRuntime().getJRubyHome();
+            String home = getContext().getJRubyInterop().getJRubyHome();
 
             if (home.startsWith("uri:classloader:")) {
                 home = home.substring("uri:classloader:".length());
@@ -163,18 +162,13 @@ public abstract class TruffleBootNodes {
         public DynamicObject sourceOfCaller() {
             final Memo<Integer> frameCount = new Memo<>(0);
 
-            final String source = Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<String>() {
-
-                @Override
-                public String visitFrame(FrameInstance frameInstance) {
-                    if (frameCount.get() == 2) {
-                        return frameInstance.getCallNode().getEncapsulatingSourceSection().getSource().getName();
-                    } else {
-                        frameCount.set(frameCount.get() + 1);
-                        return null;
-                    }
+            final String source = Truffle.getRuntime().iterateFrames(frameInstance -> {
+                if (frameCount.get() == 2) {
+                    return frameInstance.getCallNode().getEncapsulatingSourceSection().getSource().getName();
+                } else {
+                    frameCount.set(frameCount.get() + 1);
+                    return null;
                 }
-
             });
 
             if (source == null) {
