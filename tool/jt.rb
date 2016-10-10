@@ -458,10 +458,9 @@ module Commands
       jt test spec/ruby/language/while_spec.rb       run specs in this file
       jt test compiler                               run compiler tests (uses the same logic as --graal to find Graal)
       jt test integration                            runs all integration tests
-      jt test integration TESTS                      runs the given integration tests
+      jt test integration [TESTS]                    runs the given integration tests
       jt test gems                                   tests using gems
-      jt test ecosystem [--offline]                  tests using the wider ecosystem such as bundler, Rails, etc
-                                                         (when --offline it will not use rubygems.org)
+      jt test ecosystem [TESTS]                      tests using the wider ecosystem such as bundler, Rails, etc
       jt test cexts [--no-libxml --no-openssl --no-argon2]       run C extension tests
                                                          (implies --graal, where Graal needs to include Sulong, set SULONG_HOME to a built checkout of Sulong, and set GEM_HOME)
       jt test report :language                       build a report on language specs
