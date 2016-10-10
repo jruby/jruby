@@ -1,0 +1,1 @@
+fails:The unpacking splat operator (*) when applied to a BasicObject coerces it to Array if it respond_to?(:to_a)

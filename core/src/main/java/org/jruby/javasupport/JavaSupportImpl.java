@@ -47,6 +47,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Unrescuable;
+import org.jruby.runtime.Helpers;
 import org.jruby.util.ArraySupport;
 import org.jruby.util.Loader;
 import org.jruby.util.collections.ClassValue;
@@ -216,11 +217,8 @@ public class JavaSupportImpl extends JavaSupport {
                 throw (RuntimeException) exception;
             }
         }
-        throw createRaiseException(exception, target);
-    }
-
-    private RaiseException createRaiseException(Throwable exception, Member target) {
-        return RaiseException.createNativeRaiseException(runtime, exception, target);
+        // rethrow original
+        Helpers.throwException(exception);
     }
 
     public ObjectProxyCache<IRubyObject,RubyClass> getObjectProxyCache() {
@@ -362,17 +360,23 @@ public class JavaSupportImpl extends JavaSupport {
         return instanceAssignedNames;
     }
 
+    @Deprecated
+    @Override
     public final void beginProxy(Class cls, RubyModule proxy) {
         UnfinishedProxy up = new UnfinishedProxy(proxy);
         up.lock();
         unfinishedProxies.put(cls, up);
     }
 
+    @Deprecated
+    @Override
     public final void endProxy(Class cls) {
         UnfinishedProxy up = unfinishedProxies.remove(cls);
         up.unlock();
     }
 
+    @Deprecated
+    @Override
     public final RubyModule getUnfinishedProxy(Class cls) {
         UnfinishedProxy up = unfinishedProxies.get(cls);
         if (up != null && up.isHeldByCurrentThread()) return up.proxy;

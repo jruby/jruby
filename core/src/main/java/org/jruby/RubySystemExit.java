@@ -73,15 +73,15 @@ public class RubySystemExit extends RubyException {
             final IRubyObject arg = args[0];
             if (arg instanceof RubyFixnum) {
                 this.status = arg;
-                if (args.length > 1) this.message = args[1]; // (status, message)
+                if (args.length > 1) this.setMessage(args[1]); // (status, message)
             }
             else if (arg instanceof RubyBoolean) {
                 final Ruby runtime = getRuntime();
                 this.status = runtime.newFixnum( arg == runtime.getTrue() ? 0 : 1 );
-                if (args.length > 1) this.message = args[1]; // (status, message)
+                if (args.length > 1) this.setMessage(args[1]); // (status, message)
             }
             else {
-                this.message = arg;
+                this.setMessage(arg);
                 this.status = RubyFixnum.zero(getRuntime());
             }
         }

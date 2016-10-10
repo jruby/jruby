@@ -1244,6 +1244,18 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         return raise(new IRubyObject[]{exception}, Block.NULL_BLOCK);
     }
 
+    /**
+     * Simplified utility method for just raising an existing exception in this
+     * thread.
+     *
+     * @param exception the exception to raise
+     * @param message the message to use
+     * @return this thread
+     */
+    public final IRubyObject raise(IRubyObject exception, RubyString message) {
+        return raise(new IRubyObject[]{exception, message}, Block.NULL_BLOCK);
+    }
+
     @JRubyMethod(optional = 3)
     public IRubyObject raise(IRubyObject[] args, Block block) {
         Ruby runtime = getRuntime();

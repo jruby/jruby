@@ -122,50 +122,19 @@ public class TestJava extends junit.framework.TestCase {
             constructor.new_instance(new Object[] { -1 });
             assert false;
         }
-        catch (RaiseException ex) {
-            // ex.printStackTrace();
-            assertEquals("java.lang.IllegalStateException: param == -1", ex.getMessage());
+        catch (IllegalStateException ex) {
+            assertEquals("param == -1", ex.getMessage());
             StackTraceElement e0 = ex.getStackTrace()[0];
             assertEquals("org.jruby.test.ThrowingConstructor", e0.getClassName());
             assertEquals("<init>", e0.getMethodName());
-
-            assertNotNull(ex.getCause());
-            assert ex.getCause() instanceof IllegalStateException;
-
-            assertNotNull(ex.getException());
-            assert ex.getException() instanceof NativeException;
-            assertEquals("java.lang.IllegalStateException: param == -1", ex.getException().message(runtime.getCurrentContext()).toString());
-            assertEquals("java.lang.IllegalStateException: param == -1", ex.getException().getMessage().toString());
-            assertEquals("param == -1", ex.getCause().getMessage());
-
-            assert ex.getException().backtrace() instanceof RubyArray;
-            RubyArray backtrace = (RubyArray) ex.getException().backtrace();
-            //    org/jruby/test/ThrowingConstructor.java:8:in `<init>'
-            //    java/lang/reflect/Constructor.java:423:in `newInstance'
-            //    org/jruby/javasupport/JavaConstructor.java:222:in `new_instance'
-            //    java/lang/reflect/Method.java:498:in `invoke'
-            //    junit/framework/TestCase.java:176:in `runTest'
-            assert backtrace.get(0).toString().contains("org/jruby/test/ThrowingConstructor.java");
         }
 
         try {
             constructor.new_instance(new Object[] { null }); // new IllegalStateException() null cause message
             assert false;
         }
-        catch (RaiseException ex) {
-            // ex.printStackTrace();
-            assertEquals("java.lang.IllegalStateException: null", ex.getMessage());
-
-            assertNotNull(ex.getCause());
-            assert ex.getCause() instanceof IllegalStateException;
-
-            assertNotNull(ex.getException());
-            assert ex.getException() instanceof NativeException;
-            assertEquals("java.lang.IllegalStateException: null", ex.getException().message(runtime.getCurrentContext()).toString());
-            assertEquals("java.lang.IllegalStateException: null", ex.getException().getMessage().toString());
-            assertNull(ex.getCause().getMessage());
-
-            assert ex.getException().backtrace() instanceof RubyArray;
+        catch (IllegalStateException ex) {
+            assertEquals(null, ex.getMessage());
         }
     }
 

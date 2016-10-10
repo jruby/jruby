@@ -657,16 +657,19 @@ public class RubyKernel {
 
         final long startTime = System.currentTimeMillis();
         final RubyThread rubyThread = context.getThread();
-        // Spurious wakeup-loop
-        do {
-            long loopStartTime = System.currentTimeMillis();
-            try {
-                // We break if we know this sleep was explicitly woken up/interrupted
-                if ( ! rubyThread.sleep(milliseconds) ) break;
-            } catch (InterruptedException ex) { /* no-op */ }
-            milliseconds -= (System.currentTimeMillis() - loopStartTime);
+
+        try {
+            // Spurious wakeup-loop
+            do {
+                long loopStartTime = System.currentTimeMillis();
+
+                if (!rubyThread.sleep(milliseconds)) break;
+
+                milliseconds -= (System.currentTimeMillis() - loopStartTime);
+            } while (milliseconds > 0);
+        } catch (InterruptedException ie) {
+            // ignore; sleep gets interrupted
         }
-        while (milliseconds > 0);
 
         return context.runtime.newFixnum(Math.round((System.currentTimeMillis() - startTime) / 1000.0));
     }
@@ -865,7 +868,7 @@ public class RubyKernel {
             printExceptionSummary(context, runtime, raise.getException());
         }
 
-        if (argc > 0 && raise.getException().getCause() == UNDEF) {
+        if (argc > 0 && raise.getException().getCause() == UNDEF && cause != raise.getException()) {
             raise.getException().setCause(cause);
         }
 

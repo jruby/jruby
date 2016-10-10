@@ -257,8 +257,6 @@ class RegularFileResource extends AbstractFileResource {
             throw file.exists() ?
                     new ResourceException.PermissionDenied(absolutePath()) :
                     new ResourceException.NotFound(absolutePath());
-        } catch (IOException ioe) {
-            throw new ResourceException.IOError(ioe);
         }
 
         try {

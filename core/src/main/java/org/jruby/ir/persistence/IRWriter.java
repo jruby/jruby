@@ -123,6 +123,7 @@ public class IRWriter {
     private static void persistStaticScope(IRWriterEncoder file, StaticScope staticScope) {
         file.encode(staticScope.getType());
         file.encode(staticScope.getVariables());
+        file.encode(staticScope.getFirstKeywordIndex());
         file.encode(staticScope.getSignature());
     }
 }

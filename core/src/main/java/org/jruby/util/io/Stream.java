@@ -38,6 +38,7 @@ import org.jruby.Ruby;
 
 /**
  */
+@Deprecated
 public interface Stream {
     static final int SEEK_SET = 0;
     static final int SEEK_CUR = 1;

@@ -219,7 +219,7 @@ public class RbConfigLibrary implements Library {
         RubyModule configModule;
 
         configModule = runtime.defineModule("RbConfig");
-        RubyKernel.autoload(runtime.getObject(), runtime.newSymbol("Config"), runtime.newString("rbconfig/obsolete.rb"));
+        RubyKernel.autoload(runtime.getCurrentContext(), runtime.getObject(), runtime.newSymbol("Config"), runtime.newString("rbconfig/obsolete.rb"));
 
         configModule.defineAnnotatedMethods(RbConfigLibrary.class);
 

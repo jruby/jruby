@@ -1407,7 +1407,7 @@ public class RubyClass extends RubyModule {
 
         // calculate an appropriate name, for anonymous using inspect like format e.g. "Class:0x628fad4a"
         final String name = getBaseName() != null ? getName() :
-                ( "Class:0x" + Integer.toHexString(System.identityHashCode(this)) );
+                ( "Class_0x" + Integer.toHexString(System.identityHashCode(this)) );
 
         final String javaName = "rubyobj." + name.replaceAll("::", ".");
         final String javaPath = "rubyobj/" + name.replaceAll("::", "/");

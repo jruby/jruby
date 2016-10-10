@@ -93,7 +93,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-netdb</artifactId>
-      <version>1.1.5</version>
+      <version>1.1.6</version>
       <exclusions>
         <exclusion>
           <artifactId>jnr-ffi</artifactId>
@@ -104,7 +104,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-enxio</artifactId>
-      <version>0.12</version>
+      <version>0.13</version>
       <exclusions>
         <exclusion>
           <artifactId>jnr-ffi</artifactId>
@@ -126,7 +126,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-unixsocket</artifactId>
-      <version>0.12</version>
+      <version>0.13</version>
       <exclusions>
         <exclusion>
           <artifactId>jnr-ffi</artifactId>
@@ -137,7 +137,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-posix</artifactId>
-      <version>3.0.29</version>
+      <version>3.0.30</version>
       <exclusions>
         <exclusion>
           <artifactId>jnr-ffi</artifactId>
@@ -148,7 +148,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-constants</artifactId>
-      <version>0.9.3</version>
+      <version>0.9.4</version>
       <exclusions>
         <exclusion>
           <artifactId>jnr-ffi</artifactId>
@@ -159,7 +159,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-ffi</artifactId>
-      <version>2.0.9</version>
+      <version>2.1.0</version>
     </dependency>
     <dependency>
       <groupId>com.github.jnr</groupId>
@@ -276,6 +276,17 @@ DO NOT MODIFIY - GENERATED CODE
       <artifactId>slf4j-simple</artifactId>
       <version>1.7.12</version>
       <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>me.qmx.jitescript</groupId>
+      <artifactId>jitescript</artifactId>
+      <version>0.4.1</version>
+      <exclusions>
+        <exclusion>
+          <artifactId>asm-all</artifactId>
+          <groupId>org.ow2.asm</groupId>
+        </exclusion>
+      </exclusions>
     </dependency>
   </dependencies>
   <build>
@@ -596,6 +607,7 @@ DO NOT MODIFIY - GENERATED CODE
             <include>org/jruby/test/MainTestSuite.java</include>
             <include>org/jruby/embed/**/*Test*.java</include>
             <include>org/jruby/util/**/*Test*.java</include>
+            <include>org/jruby/runtime/**/*Test*.java</include>
           </includes>
           <additionalClasspathElements>
             <additionalClasspathElement>${basedir}/src/test/ruby</additionalClasspathElement>

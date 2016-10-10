@@ -25,8 +25,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.util;
 
-import org.jruby.util.RubyDateFormat.FieldType;
-
 /**
  * Support for GNU-C output formatters, see: http://www.gnu.org/software/libc/manual/html_node/Formatting-Calendar-Time.html
  */
@@ -152,7 +150,7 @@ public class TimeOutputFormatter {
         return padder;
     }
 
-    public String format(String sequence, long value, FieldType type) {
+    public String format(String sequence, long value, org.jruby.util.RubyDateFormat.FieldType type) {
         int width = getWidth(type.defaultWidth);
         char padder = getPadder(type.defaultPadder);
 

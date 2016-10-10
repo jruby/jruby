@@ -132,6 +132,12 @@ describe "The unpacking splat operator (*)" do
     [1, *obj].should == [1, obj]
   end
 
+  it "when applied to a BasicObject coerces it to Array if it respond_to?(:to_a)" do
+    obj = BasicObject.new
+    def obj.to_a; [2, 3, 4]; end
+    [1, *obj].should == [1, 2, 3, 4]
+  end
+
   it "can be used before other non-splat elements" do
     a = [1, 2]
     [0, *a, 3].should == [0, 1, 2, 3]

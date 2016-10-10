@@ -57,7 +57,7 @@ public class RubyUncaughtThrowError extends RubyException {
     protected RubyUncaughtThrowError(Ruby runtime, RubyClass exceptionClass) {
         super(runtime, exceptionClass, exceptionClass.getName());
         // this.tag = this.value = runtime.getNil();
-        this.message = runtime.getNil();
+        this.setMessage(runtime.getNil());
     }
 
     public static RubyUncaughtThrowError newUncaughtThrowError(final Ruby runtime,
@@ -65,7 +65,7 @@ public class RubyUncaughtThrowError extends RubyException {
         RubyUncaughtThrowError error = new RubyUncaughtThrowError(runtime, runtime.getUncaughtThrowError());
         error.tag = tag;
         error.value = value;
-        error.message = message;
+        error.setMessage(message);
         return error;
     }
 
@@ -73,7 +73,7 @@ public class RubyUncaughtThrowError extends RubyException {
     @JRubyMethod(required = 2, optional = 1, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(IRubyObject[] args, Block block) {
         this.tag = args[0]; this.value = args[1];
-        if ( args.length > 2 ) this.message = args[2];
+        if ( args.length > 2 ) this.setMessage(args[2]);
         // makes no-sense for us to have a cause or does it ?!
         // super.initialize(NULL_ARRAY, block); // already set message
         return this;
@@ -87,12 +87,12 @@ public class RubyUncaughtThrowError extends RubyException {
 
     @Override
     public RubyString to_s(ThreadContext context) {
-        if ( message.isNil() ) {
+        if ( getMessage().isNil() ) {
             return RubyString.newEmptyString(context.runtime);
         }
-        if ( tag == null ) return message.asString();
+        if ( tag == null ) return getMessage().asString();
 
-        final RubyString str = message.asString();
+        final RubyString str = getMessage().asString();
         return str.op_format(context, RubyArray.newArray(context.runtime, tag));
     }
 

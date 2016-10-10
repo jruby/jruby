@@ -136,11 +136,9 @@ public enum CallConfiguration {
     /**
      * Produce a CallConfiguration name that represents what must be prepared around calls to
      * the method with this annotation.
-     *
-     * @see org.jruby.anno.AnnotationHelper#getCallConfigNameByAnno(org.jruby.anno.JRubyMethod)
      */
     public static CallConfiguration getCallConfigByAnno(JRubyMethod anno) {
-        return getCallConfig(anno.frame(), anno.scope());
+        return getCallConfig(anno.frame());
     }
 
     /**
@@ -148,15 +146,9 @@ public enum CallConfiguration {
      *
      * @see org.jruby.anno.AnnotationHelper#getCallConfigName(boolean, boolean)
      */
-    public static CallConfiguration getCallConfig(boolean frame, boolean scope) {
+    public static CallConfiguration getCallConfig(boolean frame) {
         if (frame) {
-            if (scope) {
-                return FrameFullScopeFull;
-            } else {
-                return FrameFullScopeNone;
-            }
-        } else if (scope) {
-            return FrameNoneScopeFull;
+            return FrameFullScopeNone;
         } else {
             return FrameNoneScopeNone;
         }
@@ -180,5 +172,25 @@ public enum CallConfiguration {
     @Deprecated
     public static CallConfiguration getCallConfig(boolean frame, boolean scope, boolean backtrace) {
         return getCallConfig(frame, scope);
+    }
+
+    /**
+     * Given a frame and scope requirement, return the name of the appropriate CallConfiguration.
+     *
+     * @see org.jruby.anno.AnnotationHelper#getCallConfigName(boolean, boolean)
+     */
+    @Deprecated
+    public static CallConfiguration getCallConfig(boolean frame, boolean scope) {
+        if (frame) {
+            if (scope) {
+                return FrameFullScopeFull;
+            } else {
+                return FrameFullScopeNone;
+            }
+        } else if (scope) {
+            return FrameNoneScopeFull;
+        } else {
+            return FrameNoneScopeNone;
+        }
     }
 }

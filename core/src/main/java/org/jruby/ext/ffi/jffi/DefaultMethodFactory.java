@@ -164,13 +164,18 @@ public final class DefaultMethodFactory extends MethodFactory {
                     getMarshaller(ctype.getRealType(), convention, (Enums)enums), 
                     DataConverters.getParameterConverter(type, (Enums)enums));
             else
-                return new ConvertingMarshaller(
-                    getMarshaller(ctype.getRealType(), convention, enums.isNil() ? null : (RubyHash)enums),
-                    DataConverters.getParameterConverter(type, enums.isNil() ? null : (RubyHash)enums));
+                return newConvertingMarshallerWithHash(type, convention, enums, ctype);
 
         } else {
             return null;
         }
+    }
+
+    @SuppressWarnings("deprecation")
+    private static ParameterMarshaller newConvertingMarshallerWithHash(Type type, CallingConvention convention, IRubyObject enums, MappedType ctype) {
+        return new ConvertingMarshaller(
+            getMarshaller(ctype.getRealType(), convention, enums.isNil() ? null : (RubyHash)enums),
+            DataConverters.getParameterConverter(type, enums.isNil() ? null : (RubyHash)enums));
     }
 
     /**

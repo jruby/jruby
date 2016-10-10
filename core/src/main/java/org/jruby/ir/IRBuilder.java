@@ -1296,7 +1296,7 @@ public class IRBuilder {
                     expression = ((StringLiteral) expression).frozenString;
                 }
 
-                addInstr(new EQQInstr(eqqResult, expression, value));
+                addInstr(new EQQInstr(eqqResult, expression, value, true));
                 v1 = eqqResult;
                 v2 = manager.getTrue();
             }

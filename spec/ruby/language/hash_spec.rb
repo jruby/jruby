@@ -99,6 +99,14 @@ describe "Hash literal" do
     {a: 1, **h, c: 4}.should == {a: 1, b: 2, c: 4}
   end
 
+  it "expands a BasicObject using ** into the containing Hash literal initialization" do
+    h = BasicObject.new
+    def h.to_hash; {:b => 2, :c => 3}; end
+    {**h, a: 1}.should == {b: 2, c: 3, a: 1}
+    {a: 1, **h}.should == {a: 1, b: 2, c: 3}
+    {a: 1, **h, c: 4}.should == {a: 1, b: 2, c: 4}
+  end
+
   ruby_version_is ""..."2.2" do
     it "expands an '**{}' element with containing Hash literal keys taking precedence" do
       {a: 1, **{a: 2, b: 3, c: 1}, c: 3}.should == {a: 1, b: 3, c: 3}

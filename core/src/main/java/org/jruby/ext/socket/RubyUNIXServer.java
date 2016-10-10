@@ -129,6 +129,8 @@ public class RubyUNIXServer extends RubyUNIXSocket {
                 try {
                     UnixSocketChannel socketChannel = ((UnixServerSocketChannel) selectable).accept();
 
+                    if (socketChannel == null) throw runtime.newErrnoEAGAINReadableError("accept(2) would block");
+
                     RubyUNIXSocket sock = (RubyUNIXSocket)(Helpers.invoke(context, runtime.getClass("UNIXSocket"), "allocate"));
 
                     sock.init_sock(context.runtime, socketChannel, "");

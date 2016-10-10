@@ -167,13 +167,18 @@ public class NativeException extends RubyException {
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public final IRubyObject getMessage() {
         if (message == null) {
             if (messageAsJavaString == null) {
-                return message = getRuntime().getNil();
+                message = getRuntime().getNil();
+            } else {
+                message = getRuntime().newString(messageAsJavaString);
             }
-            return message = getRuntime().newString(messageAsJavaString);
+
+            return message;
         }
+
         return message;
     }
 

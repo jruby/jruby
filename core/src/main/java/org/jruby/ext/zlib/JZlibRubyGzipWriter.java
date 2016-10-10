@@ -124,22 +124,6 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
         return this;
     }
 
-    // These methods are here to avoid defining a singleton #path on every instance, as in MRI
-
-    @JRubyMethod
-    public IRubyObject path(ThreadContext context) {
-        return this.realIo.callMethod(context, "path");
-    }
-    
-    @JRubyMethod(name = "respond_to?", frame = true)
-    public IRubyObject respond_to(ThreadContext context, IRubyObject name) {
-        if (name.asJavaString().equals("path")) {
-            return this.realIo.callMethod(context, "respond_to?", name);
-        }
-        
-        return Helpers.invokeSuper(context, this, name, Block.NULL_BLOCK);
-    }
-
     private int processStrategy(int argc, IRubyObject[] args) {
         return argc < 3 ? JZlib.Z_DEFAULT_STRATEGY : RubyZlib.FIXNUMARG(args[2], JZlib.Z_DEFAULT_STRATEGY);
     }

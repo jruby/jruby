@@ -190,19 +190,27 @@ public final class SkinnyMethodAdapter extends MethodVisitor {
     }
     
     public void invokestatic(String arg1, String arg2, String arg3) {
-        getMethodVisitor().visitMethodInsn(INVOKESTATIC, arg1, arg2, arg3);
+        getMethodVisitor().visitMethodInsn(INVOKESTATIC, arg1, arg2, arg3, false);
+    }
+
+    public void invokestatic(String arg1, String arg2, String arg3, boolean iface) {
+        getMethodVisitor().visitMethodInsn(INVOKESTATIC, arg1, arg2, arg3, iface);
     }
     
     public void invokespecial(String arg1, String arg2, String arg3) {
-        getMethodVisitor().visitMethodInsn(INVOKESPECIAL, arg1, arg2, arg3);
+        getMethodVisitor().visitMethodInsn(INVOKESPECIAL, arg1, arg2, arg3, false);
+    }
+
+    public void invokespecial(String arg1, String arg2, String arg3, boolean iface) {
+        getMethodVisitor().visitMethodInsn(INVOKESPECIAL, arg1, arg2, arg3, iface);
     }
     
     public void invokevirtual(String arg1, String arg2, String arg3) {
-        getMethodVisitor().visitMethodInsn(INVOKEVIRTUAL, arg1, arg2, arg3);
+        getMethodVisitor().visitMethodInsn(INVOKEVIRTUAL, arg1, arg2, arg3, false);
     }
     
     public void invokeinterface(String arg1, String arg2, String arg3) {
-        getMethodVisitor().visitMethodInsn(INVOKEINTERFACE, arg1, arg2, arg3);
+        getMethodVisitor().visitMethodInsn(INVOKEINTERFACE, arg1, arg2, arg3, true);
     }
 
     public void invokedynamic(String arg0, String arg1, Handle arg2, Object... arg3) {
@@ -919,8 +927,15 @@ public final class SkinnyMethodAdapter extends MethodVisitor {
     }
 
     @Override
+    @Deprecated
     public void visitMethodInsn(int arg0, String arg1, String arg2, String arg3) {
         getMethodVisitor().visitMethodInsn(arg0, arg1, arg2, arg3);
+    }
+
+    @Override
+    @Deprecated
+    public void visitMethodInsn(int arg0, String arg1, String arg2, String arg3, boolean arg4) {
+        getMethodVisitor().visitMethodInsn(arg0, arg1, arg2, arg3, arg4);
     }
     
     @Override

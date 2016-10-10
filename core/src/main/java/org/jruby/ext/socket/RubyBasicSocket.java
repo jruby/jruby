@@ -178,11 +178,6 @@ public class RubyBasicSocket extends RubyIO {
         return recv(context, length, str, flags);
     }
 
-    @Deprecated
-    public IRubyObject recv(ThreadContext context, IRubyObject length, IRubyObject flags) {
-        return recv(context, new IRubyObject[]{length, flags});
-    }
-
     private IRubyObject recv(ThreadContext context, IRubyObject length,
         RubyString str, IRubyObject flags) {
         // TODO: implement flags

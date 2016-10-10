@@ -218,8 +218,8 @@ public class RubyNameError extends RubyException {
     @JRubyMethod(rest = true, visibility = Visibility.PRIVATE)
     @Override
     public IRubyObject initialize(IRubyObject[] args, Block block) {
-        if ( args.length > 0 ) this.message = args[0];
-        if (message instanceof RubyNameErrorMessage) this.receiver = ((RubyNameErrorMessage) message).object;
+        if ( args.length > 0 ) this.setMessage(args[0]);
+        if (getMessage() instanceof RubyNameErrorMessage) this.receiver = ((RubyNameErrorMessage) getMessage()).object;
         if ( args.length > 1 ) this.name = args[1];
         else this.name = getRuntime().getNil();
         super.initialize(NULL_ARRAY, block); // message already set
@@ -229,12 +229,12 @@ public class RubyNameError extends RubyException {
     @JRubyMethod
     @Override
     public IRubyObject to_s(ThreadContext context) {
-        if (message.isNil()) {
+        if (getMessage().isNil()) {
             return context.runtime.newString(getMetaClass().getRealClass().getName());
         }
-        RubyString str = message.convertToString();
-        if (str != message) message = str;
-        return message;
+        RubyString str = getMessage().convertToString();
+        if (str != getMessage()) setMessage(str);
+        return getMessage();
     }
 
     @JRubyMethod

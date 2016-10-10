@@ -54,7 +54,7 @@ module BigMath
     series_element = z
 
     i = 1
-    while series_element != 0 do
+    while series_element.nonzero? do
       sum_exponent = series_sum.exponent
       element_exponent = series_element.exponent
       remaining_precision = n - (sum_exponent - element_exponent).abs

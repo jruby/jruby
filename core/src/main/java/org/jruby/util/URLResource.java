@@ -151,7 +151,7 @@ public class URLResource extends AbstractFileResource {
 
     @Override
     public JRubyFile hackyGetJRubyFile() {
-        return JRubyNonExistentFile.NOT_EXIST;
+        return JRubyFile.DUMMY;
     }
 
     @Override

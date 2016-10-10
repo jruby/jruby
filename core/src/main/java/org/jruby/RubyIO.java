@@ -3471,7 +3471,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
             RubyArray args = runtime.newArray( ((RubyArray) v).size() + 1 );
             args.push(path);
-            args.concat19(v);
+            args.concat(v);
 
             return RubyKernel.open19(context, recv, args.toJavaArray(), Block.NULL_BLOCK);
         }
@@ -4095,6 +4095,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
             if (!io1.openFile.isReadable()) throw runtime.newIOError("from IO is not readable");
             if (!io2.openFile.isWritable()) throw runtime.newIOError("to IO is not writable");
+
+            io2.flush(context);
 
             // attempt to preserve position of original
             OpenFile fptr = io1.getOpenFileChecked();

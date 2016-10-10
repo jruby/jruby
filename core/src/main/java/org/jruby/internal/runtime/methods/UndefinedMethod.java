@@ -103,6 +103,7 @@ public class UndefinedMethod extends DynamicMethod {
      * @param callConfig Ignored
      */
     @Override
+    @Deprecated
     public void setCallConfig(CallConfiguration callConfig) {
         // UndefinedMethod should be immutable
     }

@@ -195,7 +195,18 @@ describe "JRuby class reification" do
     klass = Class.new(ReifiedSample)
     hexid = klass.inspect.match(/(0x[0-9a-f]+)/)[1]
     klass = klass.become_java!
-    expect( klass.getName ).to match /^rubyobj.Class.?#{hexid}/ # rubyobj.Class:0x599f1b7
+    expect( klass.getName ).to match /^rubyobj\.Class_#{hexid}/ # rubyobj.Class_0x599f1b7
+  end
+
+  it 'works when reflecting annotations' do
+    klass = Class.new(ReifiedSample)
+    klass.add_class_annotations(Java::java_integration.fixtures.ServiceAnnotation => {
+        'service' => Class.new(Java::java_integration.fixtures.Service).become_java!(false)
+    })
+    klass = klass.become_java!(false)
+    annotation = Reflector.getDeclaredAnnotation(klass, Java::java_integration.fixtures.ServiceAnnotation)
+    expect( annotation ).not_to be_nil
+    expect( annotation.service ).not_to be_nil
   end
 
   describe "java fields" do

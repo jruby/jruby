@@ -5,6 +5,10 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ArraySupport;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
+
 /**
  * Represents the the dynamic portion of scoping information.  The variableValues are the
  * values of assigned local or block variables.  The staticScope identifies which sort of
@@ -25,13 +29,19 @@ public class ManyVarsDynamicScope extends DynamicScope {
     // Our values holder (name of variables are kept in staticScope)
     private IRubyObject[] variableValues;
 
-    public ManyVarsDynamicScope(StaticScope staticScope, DynamicScope parent) {
-        super(staticScope, parent);
-        allocate();
+    public static final MethodHandle CONSTRUCTOR;
+    static {
+        try {
+            CONSTRUCTOR = MethodHandles.publicLookup()
+                    .findConstructor(ManyVarsDynamicScope.class, MethodType.methodType(void.class, StaticScope.class, DynamicScope.class))
+                    .asType(MethodType.methodType(DynamicScope.class, StaticScope.class, DynamicScope.class));
+        } catch (Exception e) {
+            throw new RuntimeException("BUG: could not initialize constructor handle");
+        }
     }
 
-    public ManyVarsDynamicScope(StaticScope staticScope) {
-        super(staticScope);
+    public ManyVarsDynamicScope(StaticScope staticScope, DynamicScope parent) {
+        super(staticScope, parent);
         allocate();
     }
 
@@ -40,10 +50,6 @@ public class ManyVarsDynamicScope extends DynamicScope {
             int size = staticScope.getNumberOfVariables();
             variableValues = new IRubyObject[size];
         }
-    }
-    
-    public DynamicScope cloneScope() {
-        return new ManyVarsDynamicScope(staticScope, parent);
     }
 
     public IRubyObject[] getValues() {
@@ -148,42 +154,72 @@ public class ManyVarsDynamicScope extends DynamicScope {
      * @param value to set
      * @param depth how many captured scopes down this variable should be set
      */
-    public IRubyObject setValue(int offset, IRubyObject value, int depth) {
+    public void setValueVoid(IRubyObject value, int offset, int depth) {
         if (depth > 0) {
             assertParent();
             
-            return parent.setValue(offset, value, depth - 1);
+            parent.setValueVoid(value, offset, depth - 1);
         } else {
             assertSetValue(offset, value);
             
-            return setValueDepthZero(value, offset);
+            setValueDepthZeroVoid(value, offset);
         }
     }
 
-    public IRubyObject setValueDepthZero(IRubyObject value, int offset) {
+    public void setValueDepthZeroVoid(IRubyObject value, int offset) {
         assertSetValueDepthZero(offset, value);
 
-        return variableValues[offset] = value;
+        variableValues[offset] = value;
     }
-    public IRubyObject setValueZeroDepthZero(IRubyObject value) {
+    public void setValueZeroDepthZeroVoid(IRubyObject value) {
         assertSetValueZeroDepthZero(value);
 
-        return variableValues[0] = value;
+        variableValues[0] = value;
     }
-    public IRubyObject setValueOneDepthZero(IRubyObject value) {
+    public void setValueOneDepthZeroVoid(IRubyObject value) {
         assertSetValueOneDepthZero(value);
 
-        return variableValues[1] = value;
+        variableValues[1] = value;
     }
-    public IRubyObject setValueTwoDepthZero(IRubyObject value) {
+    public void setValueTwoDepthZeroVoid(IRubyObject value) {
         assertSetValueTwoDepthZero(value);
 
-        return variableValues[2] = value;
+        variableValues[2] = value;
     }
-    public IRubyObject setValueThreeDepthZero(IRubyObject value) {
+    public void setValueThreeDepthZeroVoid(IRubyObject value) {
         assertSetValueThreeDepthZero(value);
 
-        return variableValues[3] = value;
+        variableValues[3] = value;
+    }
+    public void setValueFourDepthZeroVoid(IRubyObject value) {
+        assertSetValueThreeDepthZero(value);
+
+        variableValues[4] = value;
+    }
+    public void setValueFiveDepthZeroVoid(IRubyObject value) {
+        assertSetValueThreeDepthZero(value);
+
+        variableValues[5] = value;
+    }
+    public void setValueSixDepthZeroVoid(IRubyObject value) {
+        assertSetValueThreeDepthZero(value);
+
+        variableValues[6] = value;
+    }
+    public void setValueSevenDepthZeroVoid(IRubyObject value) {
+        assertSetValueThreeDepthZero(value);
+
+        variableValues[7] = value;
+    }
+    public void setValueEightDepthZeroVoid(IRubyObject value) {
+        assertSetValueThreeDepthZero(value);
+
+        variableValues[8] = value;
+    }
+    public void setValueNineDepthZeroVoid(IRubyObject value) {
+        assertSetValueThreeDepthZero(value);
+
+        variableValues[9] = value;
     }
 
     /**
@@ -264,5 +300,11 @@ public class ManyVarsDynamicScope extends DynamicScope {
 
     private void assertSetValueTwoDepthZero(IRubyObject value) {
         assert 2 < variableValues.length : "Setting " + 2 + " to " + value + ", O: " + this;
+    }
+
+    @Deprecated
+    public DynamicScope cloneScope() {
+        // we construct new rather than clone to avoid sharing variableValues
+        return new ManyVarsDynamicScope(staticScope, parent);
     }
 }

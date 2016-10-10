@@ -608,14 +608,6 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
         return getOrCreateRubyHashMap().keep_if(context, block);
     }
 
-    /** rb_hash_sort
-     *
-     */
-    @JRubyMethod(name = "sort")
-    public IRubyObject sort(ThreadContext context, Block block) {
-        return getOrCreateRubyHashMap().sort(context, block);
-    }
-
     /** rb_hash_index
      *
      */
@@ -835,6 +827,11 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
     @Deprecated
     public IRubyObject op_aset19(ThreadContext context, IRubyObject key, IRubyObject value) {
         return getOrCreateRubyHashMap().op_aset19(context, key, value);
+    }
+
+    @Deprecated
+    public IRubyObject sort(ThreadContext context, Block block) {
+        return getOrCreateRubyHashMap().sort(context, block);
     }
 
 }

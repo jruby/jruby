@@ -41,6 +41,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Helpers;
+import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -152,22 +153,6 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         ecopts(context, opt);
 
         return obj;
-    }
-
-    // These methods are here to avoid defining a singleton #path on every instance, as in MRI
-
-    @JRubyMethod
-    public IRubyObject path(ThreadContext context) {
-        return this.realIo.callMethod(context, "path");
-    }
-
-    @JRubyMethod(name = "respond_to?", frame = true)
-    public IRubyObject respond_to(ThreadContext context, IRubyObject name) {
-        if (name.asJavaString().equals("path")) {
-            return this.realIo.callMethod(context, "respond_to?", name);
-        }
-
-        return Helpers.invokeSuper(context, this, name, Block.NULL_BLOCK);
     }
 
     /**

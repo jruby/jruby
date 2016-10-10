@@ -50,6 +50,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockCallback;
 import org.jruby.runtime.CallBlock19;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.TypeConverter;
@@ -111,7 +112,7 @@ public class Tempfile extends RubyFile implements Finalizable {
         // #create and #make_tmpname come from Dir::Tmpname, included into
         // tempfile in lib/ruby/shared/tempfile.rb. We use create here to
         // match filename algorithm and allow them to be overridden.
-        callMethod(context, "create", args, CallBlock19.newCallClosure(this, this.getMetaClass(), Arity.OPTIONAL, body, context));
+        callMethod(context, "create", args, CallBlock19.newCallClosure(this, this.getMetaClass(), Signature.OPTIONAL, body, context));
 
         // GH#1905: don't use JDK's deleteOnExit because it grows a set without bounds
         context.runtime.addInternalFinalizer(Tempfile.this);

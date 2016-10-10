@@ -96,7 +96,7 @@ public class EmptyFileResource implements FileResource {
         // It is somewhat weird that we're returning the NOT_EXIST instance that this resource is
         // intending to replace. However, that should go away once we get rid of the hacky method, so
         // should be okay for now.
-        return JRubyNonExistentFile.NOT_EXIST;
+        return JRubyFile.DUMMY;
     }
 
     @Override

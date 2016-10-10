@@ -43,14 +43,21 @@ import org.jruby.runtime.profile.ProfilingService;
  */
 public class BuiltinProfilingService implements ProfilingService {
 
+    // The method objects for serial numbers
+    private final ProfiledMethods profiledMethods;
+
+    public BuiltinProfilingService(Ruby runtime) {
+        this.profiledMethods = new ProfiledMethods(runtime);
+    }
+
     @Override
     public ProfileData newProfileCollection(ThreadContext context) {
-        return new ProfileData( context );
+        return new ProfileData( context, profiledMethods );
     }
 
     @Override
     public DefaultMethodEnhancer newMethodEnhancer( final Ruby runtime ) {
-        return new DefaultMethodEnhancer( runtime );
+        return new DefaultMethodEnhancer( );
     }
 
     @Override
@@ -58,25 +65,19 @@ public class BuiltinProfilingService implements ProfilingService {
         return new DefaultProfileReporter( context );
     }
 
+    @Override
+    public void addProfiledMethod(String name, DynamicMethod method) {
+        profiledMethods.addProfiledMethod(name, method);
+    }
+
     /**
      * @author Andre Kullmann
      */
-    private static final class DefaultMethodEnhancer implements MethodEnhancer {
-
-        private final Ruby runtime;
-
-        public DefaultMethodEnhancer( Ruby runtime ) {
-            this.runtime = runtime;
-        }
-
-        private Ruby getRuntime() {
-            return runtime;
-        }
-
+    private final class DefaultMethodEnhancer implements MethodEnhancer {
         @Override
         @SuppressWarnings("deprecation")
         public DynamicMethod enhance( String name, DynamicMethod delegate ) {
-            getRuntime().getProfiledMethods().addProfiledMethod( name, delegate );
+            profiledMethods.addProfiledMethod( name, delegate );
             return new ProfilingDynamicMethod(delegate);
         }
     }

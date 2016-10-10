@@ -567,7 +567,7 @@ public class InterpreterEngine {
             temp[((TemporaryLocalVariable)resultVar).offset] = result;
         } else {
             LocalVariable lv = (LocalVariable)resultVar;
-            currDynScope.setValue((IRubyObject) result, lv.getLocation(), lv.getScopeDepth());
+            currDynScope.setValueVoid((IRubyObject) result, lv.getLocation(), lv.getScopeDepth());
         }
     }
 

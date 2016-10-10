@@ -28,17 +28,11 @@
 package org.jruby.runtime;
 
 import org.jruby.EvalType;
-import org.jruby.runtime.scope.ManyVarsDynamicScope;
-import org.jruby.runtime.scope.NoVarsDynamicScope;
-import org.jruby.runtime.scope.OneVarDynamicScope;
+import org.jruby.ir.JIT;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.scope.DummyDynamicScope;
-import org.jruby.runtime.scope.FourVarDynamicScope;
-import org.jruby.runtime.scope.ThreeVarDynamicScope;
-import org.jruby.runtime.scope.TwoVarDynamicScope;
 
-public abstract class DynamicScope {
+public abstract class DynamicScope implements Cloneable {
     // Static scoping information for this scope
     protected final StaticScope staticScope;
 
@@ -55,25 +49,8 @@ public abstract class DynamicScope {
         this.evalType = EvalType.NONE;
     }
 
-    protected DynamicScope(StaticScope staticScope) {
-        this(staticScope, null);
-    }
-
     public static DynamicScope newDynamicScope(StaticScope staticScope, DynamicScope parent) {
-        switch (staticScope.getNumberOfVariables()) {
-        case 0:
-            return new NoVarsDynamicScope(staticScope, parent);
-        case 1:
-            return new OneVarDynamicScope(staticScope, parent);
-        case 2:
-            return new TwoVarDynamicScope(staticScope, parent);
-        case 3:
-            return new ThreeVarDynamicScope(staticScope, parent);
-        case 4:
-            return new FourVarDynamicScope(staticScope, parent);
-        default:
-            return new ManyVarsDynamicScope(staticScope, parent);
-        }
+        return staticScope.construct(parent);
     }
 
     public static DynamicScope newDynamicScope(StaticScope staticScope, DynamicScope parent, EvalType evalType) {
@@ -83,7 +60,7 @@ public abstract class DynamicScope {
     }
 
     public static DynamicScope newDummyScope(StaticScope staticScope, DynamicScope parent) {
-        return new DummyDynamicScope(staticScope, parent);
+        return DynamicScope.newDynamicScope(staticScope, parent);
     }
 
     /**
@@ -151,11 +128,18 @@ public abstract class DynamicScope {
         return staticScope.getAllNamesInScope();
     }
 
-    public abstract void growIfNeeded();
+    public void growIfNeeded() {
+        throw new RuntimeException("BUG: scopes of type " + getClass().getName() + " cannot grow");
+    }
 
-    public abstract DynamicScope cloneScope();
-
-    public abstract IRubyObject[] getValues();
+    public IRubyObject[] getValues() {
+        int numberOfVariables = staticScope.getNumberOfVariables();
+        IRubyObject[] values = new IRubyObject[numberOfVariables];
+        for (int i = 0; i < numberOfVariables; i++) {
+            values[i] = getValueDepthZero(i);
+        }
+        return values;
+    };
 
     /**
      * Get value from current scope or one of its captured scopes.
@@ -164,62 +148,147 @@ public abstract class DynamicScope {
      * @param depth how many captured scopes down this variable should be set
      * @return the value here
      */
+    @JIT
     public abstract IRubyObject getValue(int offset, int depth);
 
     /**
      * Variation of getValue for depth 0
      */
-    public abstract IRubyObject getValueDepthZero(int offset);
+    @JIT
+    public IRubyObject getValueDepthZero(int offset) {
+        return getValue(offset, 0);
+    }
 
     /**
      * getValue for index 0, depth 0
      */
-    public abstract IRubyObject getValueZeroDepthZero();
+    @JIT
+    public IRubyObject getValueZeroDepthZero() {
+        return getValueDepthZero(0);
+    }
 
     /**
      * getValue for index 1, depth 0
      */
-    public abstract IRubyObject getValueOneDepthZero();
+    @JIT
+    public IRubyObject getValueOneDepthZero() {
+        return getValueDepthZero(1);
+    }
 
     /**
      * getValue for index 2, depth 0
      */
-    public abstract IRubyObject getValueTwoDepthZero();
+    @JIT
+    public IRubyObject getValueTwoDepthZero() {
+        return getValueDepthZero(2);
+    }
 
     /**
      * getValue for index 3, depth 0
      */
-    public abstract IRubyObject getValueThreeDepthZero();
+    @JIT
+    public IRubyObject getValueThreeDepthZero() {
+        return getValueDepthZero(3);
+    }
+
+    /**
+     * getValue for index 4, depth 0
+     */
+    @JIT
+    public IRubyObject getValueFourDepthZero() {
+        return getValueDepthZero(4);
+    }
+
+    /**
+     * getValue for index 5, depth 0
+     */
+    @JIT
+    public IRubyObject getValueFiveDepthZero() {
+        return getValueDepthZero(5);
+    }
+
+    /**
+     * getValue for index 6, depth 0
+     */
+    @JIT
+    public IRubyObject getValueSixDepthZero() {
+        return getValueDepthZero(6);
+    }
+
+    /**
+     * getValue for index 7, depth 0
+     */
+    @JIT
+    public IRubyObject getValueSevenDepthZero() {
+        return getValueDepthZero(7);
+    }
+
+    /**
+     * getValue for index 8, depth 0
+     */
+    @JIT
+    public IRubyObject getValueEightDepthZero() {
+        return getValueDepthZero(8);
+    }
+
+    /**
+     * getValue for index 9, depth 0
+     */
+    @JIT
+    public IRubyObject getValueNineDepthZero() {
+        return getValueDepthZero(9);
+    }
 
     /**
      * Variation of getValue that checks for nulls, returning and setting the given value (presumably nil)
      */
-    public abstract IRubyObject getValueOrNil(int offset, int depth, IRubyObject nil);
+    public IRubyObject getValueOrNil(int offset, int depth, IRubyObject nil) {
+        if (depth > 0) {
+            return parent.getValueOrNil(offset, depth - 1, nil);
+        } else {
+            return getValueDepthZeroOrNil(offset, nil);
+        }
+    }
 
     /**
      * getValueOrNil for depth 0
      */
-    public abstract IRubyObject getValueDepthZeroOrNil(int offset, IRubyObject nil);
+    public IRubyObject getValueDepthZeroOrNil(int offset, IRubyObject nil) {
+        IRubyObject value = getValueDepthZero(offset);
+        return value == null ? setValueDepthZero(nil, offset) : value;
+    }
 
     /**
      * getValueOrNil for index 0, depth 0
      */
-    public abstract IRubyObject getValueZeroDepthZeroOrNil(IRubyObject nil);
+    public IRubyObject getValueZeroDepthZeroOrNil(IRubyObject nil) {
+        IRubyObject value = getValueZeroDepthZero();
+        return value == null ? setValueDepthZero(nil, 0) : value;
+    }
 
     /**
      * getValueOrNil for index 1, depth 0
      */
-    public abstract IRubyObject getValueOneDepthZeroOrNil(IRubyObject nil);
+    public IRubyObject getValueOneDepthZeroOrNil(IRubyObject nil) {
+        IRubyObject value = getValueOneDepthZero();
+        return value == null ? setValueDepthZero(nil, 1) : value;
+    }
 
     /**
      * getValueOrNil for index 2, depth 0
      */
-    public abstract IRubyObject getValueTwoDepthZeroOrNil(IRubyObject nil);
+    public IRubyObject getValueTwoDepthZeroOrNil(IRubyObject nil) {
+        IRubyObject value = getValueTwoDepthZero();
+        return value == null ? setValueDepthZero(nil, 2) : value;
+    }
 
     /**
      * getValueOrNil for index 3, depth 0
      */
-    public abstract IRubyObject getValueThreeDepthZeroOrNil(IRubyObject nil);
+    public IRubyObject getValueThreeDepthZeroOrNil(IRubyObject nil) {
+        IRubyObject value = getValueThreeDepthZero();
+        return value == null ? setValueDepthZero(nil, 3) : value;
+    }
 
     /**
      * Set value in current dynamic scope or one of its captured scopes.
@@ -228,7 +297,10 @@ public abstract class DynamicScope {
      * @param value to set
      * @param depth how many captured scopes down this variable should be set
      */
-    public abstract IRubyObject setValue(int offset, IRubyObject value, int depth);
+    public IRubyObject setValue(int offset, IRubyObject value, int depth) {
+        setValueVoid(value, offset, depth);
+        return value;
+    }
 
     /**
      * Set value in current dynamic scope or one of its captured scopes.
@@ -238,7 +310,8 @@ public abstract class DynamicScope {
      * @param depth how many captured scopes down this variable should be set
      */
     public IRubyObject setValue(IRubyObject value, int offset, int depth) {
-        return setValue(offset, value, depth);
+        setValueVoid(value, offset, depth);
+        return value;
     }
 
     /**
@@ -248,8 +321,18 @@ public abstract class DynamicScope {
      * @param value to set
      * @param depth how many captured scopes down this variable should be set
      */
-    public void setValueVoid(IRubyObject value, int offset, int depth) {
-        setValue(offset, value, depth);
+    @JIT
+    public abstract void setValueVoid(IRubyObject value, int offset, int depth);
+
+    /**
+     * setValue for depth zero
+     *
+     * @param value to set
+     * @param offset zero-indexed value that represents where variable lives
+     */
+    public IRubyObject setValueDepthZero(IRubyObject value, int offset) {
+        setValueDepthZeroVoid(value, offset);
+        return value;
     }
 
     /**
@@ -258,64 +341,121 @@ public abstract class DynamicScope {
      * @param value to set
      * @param offset zero-indexed value that represents where variable lives
      */
-    public abstract IRubyObject setValueDepthZero(IRubyObject value, int offset);
-
-    /**
-     * setValue for depth zero
-     *
-     * @param value to set
-     * @param offset zero-indexed value that represents where variable lives
-     */
+    @JIT
     public void setValueDepthZeroVoid(IRubyObject value, int offset) {
-        setValueDepthZero(value, offset);
+        setValueVoid(value, offset, 0);
     }
 
     /**
      * Set value zero in this scope;
      */
-    public abstract IRubyObject setValueZeroDepthZero(IRubyObject value);
+    public IRubyObject setValueZeroDepthZero(IRubyObject value) {
+        setValueZeroDepthZeroVoid(value);
+        return value;
+    }
 
     /**
      * Set value zero in this scope;
      */
+    @JIT
     public void setValueZeroDepthZeroVoid(IRubyObject value) {
-        setValueZeroDepthZero(value);
+        setValueDepthZeroVoid(value, 0);
     }
 
     /**
      * Set value one in this scope.
      */
-    public abstract IRubyObject setValueOneDepthZero(IRubyObject value);
+    public IRubyObject setValueOneDepthZero(IRubyObject value) {
+        setValueOneDepthZeroVoid(value);
+        return value;
+    }
 
     /**
      * Set value one in this scope.
      */
+    @JIT
     public void setValueOneDepthZeroVoid(IRubyObject value) {
-        setValueOneDepthZero(value);
+        setValueDepthZeroVoid(value, 1);
     }
 
     /**
      * Set value two in this scope.
      */
-    public abstract IRubyObject setValueTwoDepthZero(IRubyObject value);
+    public IRubyObject setValueTwoDepthZero(IRubyObject value) {
+        setValueTwoDepthZeroVoid(value);
+        return value;
+    }
 
     /**
      * Set value two in this scope.
      */
+    @JIT
     public void setValueTwoDepthZeroVoid(IRubyObject value) {
-        setValueTwoDepthZero(value);
+        setValueDepthZeroVoid(value, 2);
     }
 
     /**
      * Set value three in this scope.
      */
-    public abstract IRubyObject setValueThreeDepthZero(IRubyObject value);
+    public IRubyObject setValueThreeDepthZero(IRubyObject value) {
+        setValueThreeDepthZeroVoid(value);
+        return value;
+    }
 
     /**
      * Set value three in this scope.
      */
+    @JIT
     public void setValueThreeDepthZeroVoid(IRubyObject value) {
-        setValueThreeDepthZero(value);
+        setValueDepthZeroVoid(value, 3);
+    }
+
+    /**
+     * Set value four in this scope.
+     */
+    @JIT
+    public void setValueFourDepthZeroVoid(IRubyObject value) {
+        setValueDepthZeroVoid(value, 4);
+    }
+
+    /**
+     * Set value five in this scope.
+     */
+    @JIT
+    public void setValueFiveDepthZeroVoid(IRubyObject value) {
+        setValueDepthZeroVoid(value, 5);
+    }
+
+    /**
+     * Set value six in this scope.
+     */
+    @JIT
+    public void setValueSixDepthZeroVoid(IRubyObject value) {
+        setValueDepthZeroVoid(value, 6);
+    }
+
+    /**
+     * Set value seven in this scope.
+     */
+    @JIT
+    public void setValueSevenDepthZeroVoid(IRubyObject value) {
+        setValueDepthZeroVoid(value, 7);
+    }
+
+    /**
+     * Set value eight in this scope.
+     */
+    @JIT
+    public void setValueEightDepthZeroVoid(IRubyObject value) {
+        setValueDepthZeroVoid(value, 8);
+    }
+
+    /**
+     * Set value nine in this scope.
+     */
+    @JIT
+    public void setValueNineDepthZeroVoid(IRubyObject value) {
+        setValueDepthZeroVoid(value, 9);
     }
 
     @Override
@@ -395,5 +535,14 @@ public abstract class DynamicScope {
 
     public boolean isLambda() {
         return lambda;
+    }
+
+    @Deprecated
+    public DynamicScope cloneScope() {
+        try {
+            return (DynamicScope) clone();
+        } catch (CloneNotSupportedException cnse) {
+            throw new RuntimeException("BUG: failed to clone scope type " + getClass().getName());
+        }
     }
 }
