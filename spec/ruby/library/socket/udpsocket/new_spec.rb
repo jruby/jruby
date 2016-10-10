@@ -25,4 +25,8 @@ describe 'UDPSocket.new' do
     @socket = UDPSocket.new('INET')
     @socket.should be_an_instance_of(UDPSocket)
   end
+
+  it 'raises Errno::EAFNOSUPPORT if unsupported family passed' do
+    lambda { UDPSocket.new(-1) }.should raise_error(Errno::EAFNOSUPPORT)
+  end
 end
