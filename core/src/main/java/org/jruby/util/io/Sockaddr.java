@@ -30,6 +30,7 @@ import java.util.Arrays;
 
 import org.jruby.RubyString;
 import org.jruby.ext.socket.SocketUtils;
+import org.jruby.ext.socket.SocketUtilsIPV6;
 import org.jruby.runtime.Helpers;
 
 public class Sockaddr {
@@ -209,6 +210,7 @@ public class Sockaddr {
         int port = ((val.get(2)&0xff) << 8) + (val.get(3)&0xff);
 
         final StringBuilder formatAddr = new StringBuilder();
+        RubyString ip;
 
         if (af == AddressFamily.AF_INET) {
             formatAddr.append(val.get(4) & 0xff)
@@ -218,15 +220,17 @@ public class Sockaddr {
                       .append(val.get(6) & 0xff)
                       .append('.')
                       .append(val.get(7) & 0xff);
-
+            ip = RubyString.newString(runtime, formatAddr);
         } else {                                    // if af == AddressFamily.AF_INET6
             for (int i = 4; i <= 19; i++) {
                 if (i != 4 && i % 2 == 0) formatAddr.append(':');
                 formatAddr.append(Integer.toHexString(val.get(i) & 0xff | 0x100).substring(1));
             }
+            ip = RubyString.newString(runtime,
+                                      SocketUtilsIPV6.getIPV6Address(formatAddr.toString()));
         }
 
-        return RubyArray.newArray(runtime, runtime.newFixnum(port), RubyString.newString(runtime, formatAddr));
+        return RubyArray.newArray(runtime, runtime.newFixnum(port), ip);
     }
 
     public static IRubyObject pack_sockaddr_un(ThreadContext context, String unixpath) {
