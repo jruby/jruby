@@ -57,7 +57,8 @@ public class SocketUtilsIPV6 {
                 throw new IllegalArgumentException("can not parse [null]");
             }
 
-            final String withoutIPv4MappedNotation = rewriteIPv4MappedNotation(string);
+            final String withoutScope = removeScope(string);
+            final String withoutIPv4MappedNotation = rewriteIPv4MappedNotation(withoutScope);
             final String longNotation = expandShortNotation(withoutIPv4MappedNotation);
 
             final long[] longs = tryParseStringArrayIntoLongArray(string, longNotation);
@@ -168,6 +169,16 @@ public class SocketUtilsIPV6 {
             }
 
             return builder.toString();
+        }
+
+        private String removeScope(String string) {
+            int hasScope = string.indexOf('%');
+
+            if (hasScope != -1) {
+                return string.substring(0, hasScope);
+            }
+
+            return string;
         }
 
         /**
