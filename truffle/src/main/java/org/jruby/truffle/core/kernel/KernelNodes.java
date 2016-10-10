@@ -1897,6 +1897,11 @@ public abstract class KernelNodes {
         }
 
         @Specialization
+        public double untaint(double num) {
+            return num;
+        }
+
+        @Specialization
         public boolean untaint(boolean bool) {
             return bool;
         }
