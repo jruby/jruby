@@ -226,21 +226,21 @@ post-process-and-upload-results: [
 
 metrics: {
   run: [
-    [mx, benchmark, allocation]
+    [mx, -v, benchmark, allocation]
   ] ${post-process-and-upload-results} [
-    [mx, benchmark, minheap]
+    [mx, -v, benchmark, minheap]
   ] ${post-process-and-upload-results} [
-    [mx, benchmark, time]
+    [mx, -v, benchmark, time]
   ] ${post-process-and-upload-results}
 }
 
 compiler-metrics: {
   run: [
-    [mx, benchmark, "allocation:compile-mandelbrot"]
+    [mx, -v, benchmark, "allocation:compile-mandelbrot"]
   ] ${post-process-and-upload-results} [
-    [mx, benchmark, "minheap:compile-mandelbrot"]
+    [mx, -v, benchmark, "minheap:compile-mandelbrot"]
   ] ${post-process-and-upload-results} [
-    [mx, benchmark, "time:compile-mandelbrot"]
+    [mx, -v, benchmark, "time:compile-mandelbrot"]
   ] ${post-process-and-upload-results}
 }
 
@@ -251,55 +251,55 @@ setup-benchmarks: [
 
 classic-benchmarks: {
   run: ${setup-benchmarks} [
-    [mx, benchmark, classic]
+    [mx, -v, benchmark, classic]
   ] ${post-process-and-upload-results}
 }
 
 chunky-benchmarks: {
   run: ${setup-benchmarks} [
-    [mx, benchmark, chunky]
+    [mx, -v, benchmark, chunky]
   ] ${post-process-and-upload-results}
 }
 
 psd-benchmarks: {
   run: ${setup-benchmarks} [
-    [mx, benchmark, psd]
+    [mx, -v, benchmark, psd]
   ] ${post-process-and-upload-results}
 }
 
 image-demo-benchmarks: {
   run: ${setup-benchmarks} [
-    [mx, benchmark, image-demo]
+    [mx, -v, benchmark, image-demo]
   ] ${post-process-and-upload-results}
 }
 
 optcarrot-benchmarks: {
   run: ${setup-benchmarks} [
-    [mx, benchmark, optcarrot]
+    [mx, -v, benchmark, optcarrot]
   ] ${post-process-and-upload-results}
 }
 
 asciidoctor-benchmarks: {
   run: ${setup-benchmarks} [
-    [mx, benchmark, asciidoctor]
+    [mx, -v, benchmark, asciidoctor]
   ] ${post-process-and-upload-results}
 }
 
 synthetic-benchmarks: {
   run: ${setup-benchmarks} [
-    [mx, benchmark, synthetic]
+    [mx, -v, benchmark, synthetic]
   ] ${post-process-and-upload-results}
 }
 
 micro-benchmarks: {
   run: ${setup-benchmarks} [
-    [mx, benchmark, micro]
+    [mx, -v, benchmark, micro]
   ] ${post-process-and-upload-results}
 }
 
 savina-benchmarks: {
   run: ${setup-benchmarks} [
-    [mx, benchmark, savina]
+    [mx, -v, benchmark, savina]
   ] ${post-process-and-upload-results}
 }
 
@@ -309,7 +309,7 @@ server-benchmarks: {
   }
 
   run: ${setup-benchmarks} [
-    [mx, benchmark, server]
+    [mx, -v, benchmark, server]
   ] ${post-process-and-upload-results}
 }
 
