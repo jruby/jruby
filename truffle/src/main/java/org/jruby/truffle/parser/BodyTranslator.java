@@ -2546,8 +2546,9 @@ public class BodyTranslator extends Translator {
     public RubyNode visitOpAsgnNode(OpAsgnParseNode node) {
         final ISourcePosition pos = node.getPosition();
 
-        if (node.getOperatorName().equals("||")) {
-            // Why does this ||= come through as a visitOpAsgnNode and not a visitOpAsgnOrNode?
+        final boolean isOrOperator = node.getOperatorName().equals("||");
+        if (isOrOperator || node.getOperatorName().equals("&&")) {
+            // Why does this ||= or &&= come through as a visitOpAsgnNode and not a visitOpAsgnOrNode?
 
             final String temp = environment.allocateLocalTemp("opassign");
             final ParseNode writeReceiverToTemp = new LocalAsgnParseNode(pos, temp, 0, node.getReceiverNode());
@@ -2563,8 +2564,16 @@ public class BodyTranslator extends Translator {
             RubyNode lhs = readMethod.accept(this);
             RubyNode rhs = writeMethod.accept(this);
 
-            final RubyNode ret = new DefinedWrapperNode(context, fullSourceSection, context.getCoreStrings().ASSIGNMENT,
-                    sequence(context, source, sourceSection, Arrays.asList(writeReceiverToTemp.accept(this), new OrNode(lhs, rhs))));
+            final RubyNode controlNode = isOrOperator ? new OrNode(lhs, rhs) : new AndNode(lhs, rhs);
+            final RubyNode ret = new DefinedWrapperNode(
+                    context,
+                    fullSourceSection,
+                    context.getCoreStrings().ASSIGNMENT,
+                    sequence(
+                            context,
+                            source,
+                            sourceSection,
+                            Arrays.asList(writeReceiverToTemp.accept(this), controlNode)));
 
             return addNewlineIfNeeded(node, ret);
         }
