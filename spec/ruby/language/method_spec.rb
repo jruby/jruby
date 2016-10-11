@@ -1235,3 +1235,35 @@ describe "A method call with a space between method name and parentheses" do
     args.should == [1, :block_value]
   end
 end
+
+describe "An array-dereference method ([])" do
+  SpecEvaluate.desc = "for definition"
+
+  context "received the passed-in block" do
+    evaluate <<-ruby do
+        def [](*, &b)
+          b.call
+        end
+    ruby
+      pr = proc {:ok}
+
+      self[&pr].should == :ok
+      self['foo', &pr].should == :ok
+      self.[](&pr).should == :ok
+      self.[]('foo', &pr).should == :ok
+    end
+
+    evaluate <<-ruby do
+        def [](*)
+          yield
+        end
+    ruby
+      pr = proc {:ok}
+
+      self[&pr].should == :ok
+      self['foo', &pr].should == :ok
+      self.[](&pr).should == :ok
+      self.[]('foo', &pr).should == :ok
+    end
+  end
+end
