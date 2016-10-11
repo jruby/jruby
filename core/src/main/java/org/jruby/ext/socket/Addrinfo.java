@@ -171,6 +171,7 @@ public class Addrinfo extends RubyObject {
 
         try {
             IRubyObject _sockaddrAry = TypeConverter.checkArrayType(sockaddr);
+
             if (!_sockaddrAry.isNil()) {
                 RubyArray sockaddAry = (RubyArray)_sockaddrAry;
 
@@ -196,17 +197,13 @@ public class Addrinfo extends RubyObject {
                     IRubyObject nodename = sockaddAry.eltOk(2);
                     IRubyObject numericnode = sockaddAry.eltOk(3);
 
-                    if (!nodename.isNil()) {
-                        nodename = nodename.convertToString();
-                    }
-                    numericnode = numericnode.convertToString();
-
+                    InetAddress inetAddress = null;
                     int _port = service.convertToInteger().getIntValue();
-                    try {
-                        socketAddress = new InetSocketAddress(SocketUtils.getRubyInetAddresses(nodename.convertToString().getByteList())[0], _port);
-                    } catch (UnknownHostException uhe) {
-                        socketAddress = new InetSocketAddress(SocketUtils.getRubyInetAddresses(numericnode.convertToString().getByteList())[0], _port);
-                    }
+
+                    if (!nodename.isNil()) inetAddress = getRubyInetAddress(nodename);
+                    if (inetAddress == null) inetAddress = getRubyInetAddress(numericnode);
+
+                    this.socketAddress = new InetSocketAddress(inetAddress, _port);
 
                     // fall through below to finish setting up
                 } else {
@@ -219,27 +216,26 @@ public class Addrinfo extends RubyObject {
 
                 InetAddress inetAddress = null;
 
-                try {
-                    inetAddress = SocketUtils.getRubyInetAddresses(sockaddrString.getByteList())[0];
-
-                    int _port;
-                    if (port != null) {
-                        _port = SocketUtils.portToInt(port);
-                    } else {
-                        _port = 0;
-                    }
-
-                    this.socketAddress = new InetSocketAddress(inetAddress, _port);
-
-                    if (getInetAddress() instanceof Inet4Address) {
-                        this.pfamily = PF_INET;
-                    } else {
-                        this.pfamily = PF_INET6;
-                    }
-                } catch (UnknownHostException uhe) {
+                inetAddress = getRubyInetAddress(sockaddr);
+                if (inetAddress == null) {
                     // try unpacking
                     // FIXME: inefficient to allow exception before trying unpack
                     this.socketAddress = Sockaddr.sockaddrFromBytes(runtime, sockaddr.convertToString().getBytes());
+                }
+
+                int _port;
+                if (port != null) {
+                    _port = SocketUtils.portToInt(port);
+                } else {
+                    _port = 0;
+                }
+
+                this.socketAddress = new InetSocketAddress(inetAddress, _port);
+
+                if (getInetAddress() instanceof Inet4Address) {
+                    this.pfamily = PF_INET;
+                } else {
+                    this.pfamily = PF_INET6;
                 }
             }
 
@@ -666,6 +662,14 @@ public class Addrinfo extends RubyObject {
 
         if (in.isLoopbackAddress()) return "::1";
         return SocketUtilsIPV6.getIPV6Address(in.getHostAddress());
+    }
+
+    private InetAddress getRubyInetAddress(IRubyObject node) {
+        try {
+            return SocketUtils.getRubyInetAddresses(node.convertToString().getByteList())[0];
+        } catch (UnknownHostException uhe) {
+            return null;
+        }
     }
 
     @JRubyMethod(optional = 1)
