@@ -49,7 +49,7 @@ project 'JRuby Core' do
   jar 'com.github.jnr:jnr-enxio:0.13', :exclusions => ['com.github.jnr:jnr-ffi']
   jar 'com.github.jnr:jnr-x86asm:1.0.2', :exclusions => ['com.github.jnr:jnr-ffi']
   jar 'com.github.jnr:jnr-unixsocket:0.13', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-posix:3.0.31-SNAPSHOT', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-posix:3.0.31', :exclusions => ['com.github.jnr:jnr-ffi']
   jar 'com.github.jnr:jnr-constants:0.9.4', :exclusions => ['com.github.jnr:jnr-ffi']
   jar 'com.github.jnr:jnr-ffi:2.1.0'
   jar 'com.github.jnr:jffi:${jffi.version}'
