@@ -49,6 +49,7 @@ graal-core: ${labsjdk} {
   setup: ${common.setup} [
     ${mx_sclone} ["https://github.com/graalvm/graal-core.git", ../graal-core],
     [cd, ../graal-core],
+    [mx, sversions],
     [mx, build],
     [cd, ../main]
   ]
@@ -64,6 +65,7 @@ graal-enterprise: ${labsjdk} {
   setup: ${common.setup} [
     ${mx_sclone} ["https://github.com/graalvm/graal-enterprise.git", ../graal-enterprise],
     [cd, ../graal-enterprise/graal-enterprise],
+    [mx, sversions],
     [mx, build],
     [cd, ../../main]
   ]
@@ -107,6 +109,7 @@ sulong: ${labsjdk} {
     ${mx_sclone} ["https://github.com/graalvm/sulong.git", ../sulong],
     [cd, ../sulong],
     [mx, sforceimports], # Use Sulong's Truffle for now
+    [mx, sversions],
     [mx, build],
     [cd, ../main],
     ${jt} [build, cexts],
