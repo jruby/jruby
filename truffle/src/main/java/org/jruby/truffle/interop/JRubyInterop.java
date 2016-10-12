@@ -10,6 +10,7 @@
 package org.jruby.truffle.interop;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.TruffleOptions;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.Ruby;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -43,7 +44,7 @@ public class JRubyInterop {
     }
 
     private String findJRubyHome() {
-        if (System.getenv("JRUBY_HOME") == null && System.getProperty("jruby.home") == null) {
+        if (!TruffleOptions.AOT && System.getenv("JRUBY_HOME") == null && System.getProperty("jruby.home") == null) {
             // Set JRuby home automatically for GraalVM
             final CodeSource codeSource = Ruby.class.getProtectionDomain().getCodeSource();
             if (codeSource != null) {
