@@ -799,7 +799,7 @@ public final class SkinnyMethodAdapter extends MethodVisitor {
     }
     
     public void f2i() {
-        getMethodVisitor().visitInsn(F2D);
+        getMethodVisitor().visitInsn(F2I);
     }
     
     public void f2l() {
