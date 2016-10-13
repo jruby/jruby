@@ -51,6 +51,7 @@ public abstract class FixnumNodes {
 
         @Specialization(rewriteOn = ArithmeticException.class)
         public int neg(int value) {
+            // TODO CS 13-Oct-16, use negateExact, but this isn't intrinsified by Graal yet
             return Math.subtractExact(0, value);
         }
 
@@ -1004,6 +1005,7 @@ public abstract class FixnumNodes {
 
         @Specialization(rewriteOn = ArithmeticException.class)
         public int absIntInBounds(int n) {
+            // TODO CS 13-Oct-16, use negateExact, but this isn't intrinsified by Graal yet
             return (n < 0) ? Math.subtractExact(0, n) : n;
         }
 
