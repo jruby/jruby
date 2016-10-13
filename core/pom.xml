@@ -687,6 +687,7 @@ DO NOT MODIFIY - GENERATED CODE
                   <artifactSet>
                     <includes>
                       <include>com.github.jnr:jnr-ffi</include>
+                      <include>me.qmx.jitescript:jitescript</include>
                       <include>org.ow2.asm:*</include>
                     </includes>
                   </artifactSet>
@@ -720,6 +721,7 @@ DO NOT MODIFIY - GENERATED CODE
                   <artifactSet>
                     <includes>
                       <include>com.github.jnr:jnr-ffi</include>
+                      <include>me.qmx.jitescript:jitescript</include>
                       <include>org.ow2.asm:*</include>
                     </includes>
                   </artifactSet>
@@ -753,6 +755,7 @@ DO NOT MODIFIY - GENERATED CODE
                   <artifactSet>
                     <includes>
                       <include>com.github.jnr:jnr-ffi</include>
+                      <include>me.qmx.jitescript:jitescript</include>
                       <include>org.ow2.asm:*</include>
                     </includes>
                   </artifactSet>
@@ -786,6 +789,7 @@ DO NOT MODIFIY - GENERATED CODE
                   <artifactSet>
                     <includes>
                       <include>com.github.jnr:jnr-ffi</include>
+                      <include>me.qmx.jitescript:jitescript</include>
                       <include>org.ow2.asm:*</include>
                     </includes>
                   </artifactSet>
@@ -819,6 +823,7 @@ DO NOT MODIFIY - GENERATED CODE
                   <artifactSet>
                     <includes>
                       <include>com.github.jnr:jnr-ffi</include>
+                      <include>me.qmx.jitescript:jitescript</include>
                       <include>org.ow2.asm:*</include>
                     </includes>
                   </artifactSet>
@@ -852,6 +857,7 @@ DO NOT MODIFIY - GENERATED CODE
                   <artifactSet>
                     <includes>
                       <include>com.github.jnr:jnr-ffi</include>
+                      <include>me.qmx.jitescript:jitescript</include>
                       <include>org.ow2.asm:*</include>
                     </includes>
                   </artifactSet>
@@ -885,6 +891,7 @@ DO NOT MODIFIY - GENERATED CODE
                   <artifactSet>
                     <includes>
                       <include>com.github.jnr:jnr-ffi</include>
+                      <include>me.qmx.jitescript:jitescript</include>
                       <include>org.ow2.asm:*</include>
                     </includes>
                   </artifactSet>
@@ -918,6 +925,7 @@ DO NOT MODIFIY - GENERATED CODE
                   <artifactSet>
                     <includes>
                       <include>com.github.jnr:jnr-ffi</include>
+                      <include>me.qmx.jitescript:jitescript</include>
                       <include>org.ow2.asm:*</include>
                     </includes>
                   </artifactSet>
@@ -951,6 +959,7 @@ DO NOT MODIFIY - GENERATED CODE
                   <artifactSet>
                     <includes>
                       <include>com.github.jnr:jnr-ffi</include>
+                      <include>me.qmx.jitescript:jitescript</include>
                       <include>org.ow2.asm:*</include>
                     </includes>
                   </artifactSet>
