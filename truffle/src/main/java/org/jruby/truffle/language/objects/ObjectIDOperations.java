@@ -10,7 +10,6 @@
 package org.jruby.truffle.language.objects;
 
 import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.ExactMath;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.Property;
 import org.jruby.truffle.Layouts;
@@ -60,7 +59,7 @@ public abstract class ObjectIDOperations {
     }
 
     public static long smallFixnumToIDOverflow(long fixnum) throws ArithmeticException {
-        return ExactMath.addExact(ExactMath.multiplyExact(fixnum, 2), 1);
+        return Math.addExact(Math.multiplyExact(fixnum, 2), 1);
     }
 
     public static long smallFixnumToID(long fixnum) {

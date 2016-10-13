@@ -11,7 +11,6 @@ package org.jruby.truffle.core.numeric;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
-import com.oracle.truffle.api.ExactMath;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
@@ -52,7 +51,7 @@ public abstract class FixnumNodes {
 
         @Specialization(rewriteOn = ArithmeticException.class)
         public int neg(int value) {
-            return ExactMath.subtractExact(0, value);
+            return Math.subtractExact(0, value);
         }
 
         @Specialization(contains = "neg")
@@ -65,7 +64,7 @@ public abstract class FixnumNodes {
 
         @Specialization(rewriteOn = ArithmeticException.class)
         public long neg(long value) {
-            return ExactMath.subtractExact(0, value);
+            return Math.subtractExact(0, value);
         }
 
         @Specialization
@@ -87,7 +86,7 @@ public abstract class FixnumNodes {
 
         @Specialization(rewriteOn = ArithmeticException.class)
         public int add(int a, int b) {
-            return ExactMath.addExact(a, b);
+            return Math.addExact(a, b);
         }
 
         @Specialization
@@ -106,7 +105,7 @@ public abstract class FixnumNodes {
 
         @Specialization(rewriteOn = ArithmeticException.class)
         public long add(long a, long b) {
-            return ExactMath.addExact(a, b);
+            return Math.addExact(a, b);
         }
 
         @Specialization
@@ -142,7 +141,7 @@ public abstract class FixnumNodes {
 
         @Specialization(rewriteOn = ArithmeticException.class)
         public int sub(int a, int b) {
-            return ExactMath.subtractExact(a, b);
+            return Math.subtractExact(a, b);
         }
 
         @Specialization
@@ -161,7 +160,7 @@ public abstract class FixnumNodes {
 
         @Specialization(rewriteOn = ArithmeticException.class)
         public long sub(long a, long b) {
-            return ExactMath.subtractExact(a, b);
+            return Math.subtractExact(a, b);
         }
 
         @Specialization
@@ -197,7 +196,7 @@ public abstract class FixnumNodes {
 
         @Specialization(rewriteOn = ArithmeticException.class)
         public int mul(int a, int b) {
-            return ExactMath.multiplyExact(a, b);
+            return Math.multiplyExact(a, b);
         }
 
         @Specialization
@@ -216,7 +215,7 @@ public abstract class FixnumNodes {
 
         @Specialization(rewriteOn = ArithmeticException.class)
         public long mul(long a, long b) {
-            return ExactMath.multiplyExact(a, b);
+            return Math.multiplyExact(a, b);
         }
 
         @TruffleBoundary
@@ -1005,7 +1004,7 @@ public abstract class FixnumNodes {
 
         @Specialization(rewriteOn = ArithmeticException.class)
         public int absIntInBounds(int n) {
-            return (n < 0) ? ExactMath.subtractExact(0, n) : n;
+            return (n < 0) ? Math.subtractExact(0, n) : n;
         }
 
         @Specialization(contains = "absIntInBounds")
@@ -1018,7 +1017,7 @@ public abstract class FixnumNodes {
 
         @Specialization(rewriteOn = ArithmeticException.class)
         public long absInBounds(long n) {
-            return (n < 0) ? ExactMath.subtractExact(0, n) : n;
+            return (n < 0) ? Math.subtractExact(0, n) : n;
         }
 
         @Specialization(contains = "absInBounds")
