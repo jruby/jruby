@@ -109,7 +109,7 @@ class AntlrBuildTask(mx.BuildTask):
         pass
 
 def mavenSetup():
-    buildPack = join(_suite.dir, 'jruby-build-pack')
+    buildPack = join(_suite.dir, 'jruby-build-pack/maven')
     mavenDir = buildPack if isdir(buildPack) else join(_suite.dir, 'mxbuild/mvn')
     maven_repo_arg = '-Dmaven.repo.local=' + mavenDir
     env = os.environ.copy()
