@@ -630,7 +630,7 @@ module Truffle
       end
 
       executable = if @options[:run][:executable]
-                     executables = Dir.glob("#{@options[:global][:truffle_bundle_path]}/jruby+truffle/*/gems/*/{bin,exe}/*").sort
+                     executables = Dir.glob("#{@options[:global][:truffle_bundle_path]}/jruby+truffle/2.3.0/bin/*").sort
                      executables.find { |path| File.basename(path) == @options[:run][:executable] } or
                          raise "no executable with name '#{@options[:run][:executable]}' found"
                    end
