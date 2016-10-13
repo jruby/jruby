@@ -16,7 +16,7 @@ import time
 import tarfile
 import zipfile
 from threading import Thread
-from os.path import join, exists
+from os.path import join, exists, isdir
 
 import mx
 import mx_benchmark
@@ -109,7 +109,8 @@ class AntlrBuildTask(mx.BuildTask):
         pass
 
 def mavenSetup():
-    mavenDir = join(_suite.dir, 'mxbuild', 'mvn')
+    buildPack = join(_suite.dir, 'jruby-build-pack')
+    mavenDir = buildPack if isdir(buildPack) else join(_suite.dir, 'mxbuild/mvn')
     maven_repo_arg = '-Dmaven.repo.local=' + mavenDir
     env = os.environ.copy()
     env['JRUBY_BUILD_MORE_QUIET'] = 'true'
