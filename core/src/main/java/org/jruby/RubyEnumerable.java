@@ -320,15 +320,12 @@ public class RubyEnumerable {
         final RubyArray result = runtime.newArray();
 
         try {
-            each(context, self, new JavaInternalBlockBody(runtime, Arity.NO_ARGUMENTS) {
+            each(context, self, new JavaInternalBlockBody(runtime, Arity.ONE_ARGUMENT) {
                 long i = len; // Atomic ?
                 public IRubyObject yield(ThreadContext context, IRubyObject arg) {
                     synchronized (result) {
                         if (i == 0) {
-                            // While iterating over an RubyEnumerator, "arg"
-                            // gets overwritten by the new value, leading to JRUBY-6892.
-                            // So call .dup() whenever appropriate.
-                            result.append(arg.isImmediate() ? arg : arg.dup());
+                            result.append(arg);
                         } else {
                             --i;
                         }
