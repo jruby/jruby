@@ -355,16 +355,13 @@ public class RubyEnumerable {
         final RubyArray result = runtime.newArray();
 
         try {
-            each(context, self, new JavaInternalBlockBody(runtime, Signature.NO_ARGUMENTS) {
+            each(context, self, new JavaInternalBlockBody(runtime, Signature.ONE_REQUIRED) {
                 long i = len; // Atomic ?
                 public IRubyObject yield(ThreadContext context, IRubyObject[] args) {
-                    IRubyObject packedArg = packEnumValues(context.runtime, args);
                     synchronized (result) {
                         if (i == 0) {
-                            // While iterating over an RubyEnumerator, "arg"
-                            // gets overwritten by the new value, leading to JRUBY-6892.
-                            // So call .dup() whenever appropriate.
-                            result.append(packedArg.isImmediate() ? packedArg : packedArg.dup());
+                            IRubyObject packedArg = packEnumValues(context.runtime, args);
+                            result.append(packedArg);
                         } else {
                             --i;
                         }
