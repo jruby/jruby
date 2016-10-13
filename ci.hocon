@@ -294,6 +294,7 @@ other-benchmarks: {
   ] ${post-process-and-upload-results} [
     [mx, benchmark, micro]
   ] ${post-process-and-upload-results}
+  timelimit: "00:40:00"
 }
 
 server-benchmarks: {
