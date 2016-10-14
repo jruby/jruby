@@ -34,22 +34,6 @@ public class Main {
         config.setCompileMode(RubyInstanceConfig.CompileMode.TRUFFLE);
 
         if (in != null) {
-            // Global variables
-            IAccessor programName = new ValueAccessor(runtime.newString(filename));
-            runtime.getGlobalVariables().define("$PROGRAM_NAME", programName, GlobalVariable.Scope.GLOBAL);
-            runtime.getGlobalVariables().define("$0", programName, GlobalVariable.Scope.GLOBAL);
-
-            for (Map.Entry<String, String> entry : config.getOptionGlobals().entrySet()) {
-                final IRubyObject varvalue;
-                if (entry.getValue() != null) {
-                    varvalue = runtime.newString(entry.getValue());
-                } else {
-                    varvalue = runtime.getTrue();
-                }
-
-                runtime.getGlobalVariables().set("$" + entry.getKey(), varvalue);
-            }
-
             int exitCode = runtime.getTruffleContext().execute(filename);
             System.exit(exitCode);
         }
