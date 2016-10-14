@@ -23,10 +23,10 @@ public interface ConditionVariableLayout extends BasicObjectLayout {
 
     DynamicObject createConditionVariable(
             DynamicObjectFactory factory,
-            Object condition);
+            ConditionVariableObject condition);
 
     boolean isConditionVariable(DynamicObject object);
 
-    Object getCondition(DynamicObject object);
+    ConditionVariableObject getCondition(DynamicObject object);
 
 }
