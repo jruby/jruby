@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.language.loader;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.source.Source;
 import org.jruby.Ruby;
 import org.jruby.truffle.RubyContext;
@@ -36,6 +37,7 @@ public class SourceLoader {
         this.context = context;
     }
 
+    @TruffleBoundary
     public Source load(String canonicalPath) throws IOException {
         if (canonicalPath.equals("-e")) {
             return loadFragment(new String(context.getJRubyRuntime().getInstanceConfig().inlineScript(), StandardCharsets.UTF_8), "-e");
@@ -57,10 +59,12 @@ public class SourceLoader {
         }
     }
 
+    @TruffleBoundary
     public Source loadFragment(String fragment, String name) {
         return Source.newBuilder(fragment).name(name).mimeType(RubyLanguage.MIME_TYPE).build();
     }
 
+    @TruffleBoundary
     private Source loadResource(String path) throws IOException {
         if (!path.toLowerCase(Locale.ENGLISH).endsWith(".rb")) {
             throw new FileNotFoundException(path);

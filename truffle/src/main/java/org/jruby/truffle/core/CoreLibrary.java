@@ -155,7 +155,7 @@ public class CoreLibrary {
 
     private final RubyContext context;
 
-    private final Source source = Source.newBuilder("").name("(core)").mimeType(RubyLanguage.MIME_TYPE).build();
+    private final Source source = initCoreSource();
     private final SourceSection sourceSection = source.createUnavailableSection();
 
     private final DynamicObject argumentErrorClass;
@@ -289,6 +289,11 @@ public class CoreLibrary {
     private static final Object systemObject = TruffleOptions.AOT ? null : JavaInterop.asTruffleObject(System.class);
 
     private final String coreLoadPath;
+
+    @TruffleBoundary
+    private static Source initCoreSource() {
+        return Source.newBuilder("").name("(core)").mimeType(RubyLanguage.MIME_TYPE).build();
+    }
 
     private String buildCoreLoadPath() {
         String path = context.getOptions().CORE_LOAD_PATH;

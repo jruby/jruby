@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.vm.PolyglotEngine;
 import org.jruby.JRubyTruffleInterface;
@@ -49,6 +50,7 @@ public class JRubyTruffleImpl implements JRubyTruffleInterface {
         engine.dispose();
     }
 
+    @TruffleBoundary
     private Source loadSource(String source, String name) {
         return Source.newBuilder(source).name(name).mimeType(RubyLanguage.MIME_TYPE).build();
     }
