@@ -32,7 +32,7 @@ no-graal: {
   }
 }
 
-labsjdk: {
+labsjdk8: {
   downloads: {
     JAVA_HOME: {
       name: labsjdk,
@@ -42,10 +42,27 @@ labsjdk: {
   }
 }
 
+labsjdk9: {
+  downloads: {
+    JAVA9_HOME: {
+      name: labsjdk,
+      version: "9-HSCOMPSNAPSHOT",
+      platformspecific: true
+    }
+  }
+}
+
+use-java9: {
+  environment: {
+    JAVA_HOME: "$JAVA9_HOME",
+    PATH: "$JAVA9_HOME/bin:$PATH"
+  }
+}
+
 // Allow a version mismatch with truffle to prefer the language truffle version
 mx_sclone: [mx, --version-conflict-resolution, ignore, sclone, --kind, git]
 
-graal-core: ${labsjdk} {
+graal-core: ${labsjdk8} {
   setup: ${common.setup} [
     ${mx_sclone} ["https://github.com/graalvm/graal-core.git", ../graal-core],
     [cd, ../graal-core],
@@ -61,7 +78,7 @@ graal-core: ${labsjdk} {
   }
 }
 
-graal-enterprise: ${labsjdk} {
+graal-enterprise: ${labsjdk8} {
   setup: ${common.setup} [
     ${mx_sclone} ["https://github.com/graalvm/graal-enterprise.git", ../graal-enterprise],
     [cd, ../graal-enterprise/graal-enterprise],
@@ -89,7 +106,7 @@ graal-enterprise-no-om: {
   }
 }
 
-sulong: ${labsjdk} {
+sulong: ${labsjdk8} {
   packages: {
     llvm: "==3.3"
   }
@@ -358,6 +375,8 @@ builds: [
   {name: ruby-test-gems} ${common} ${gate-caps} ${test-gems},
   {name: ruby-test-ecosystem} ${common} ${gate-caps} ${test-ecosystem},
   {name: ruby-test-tarball} ${common} ${gate-caps} {run: [${jt} [tarball]]},
+  
+  {name: ruby-test-specs-language-java9} ${common} ${labsjdk9} ${gate-caps} ${use-java9} {run: [${jt} [test, specs, ":language"]]},
 
   {name: ruby-test-compiler-graal-core} ${common} ${graal-core} ${gate-caps} {run: [${jt} [test, compiler]]},
   {name: ruby-test-compiler-graal-enterprise} ${common} ${graal-enterprise} ${gate-caps} {run: [${jt} [test, compiler]]},
