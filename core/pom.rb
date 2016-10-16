@@ -49,7 +49,7 @@ project 'JRuby Core' do
   jar 'com.github.jnr:jnr-enxio:0.13', :exclusions => ['com.github.jnr:jnr-ffi']
   jar 'com.github.jnr:jnr-x86asm:1.0.2', :exclusions => ['com.github.jnr:jnr-ffi']
   jar 'com.github.jnr:jnr-unixsocket:0.13', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-posix:3.0.30', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-posix:3.0.31', :exclusions => ['com.github.jnr:jnr-ffi']
   jar 'com.github.jnr:jnr-constants:0.9.4', :exclusions => ['com.github.jnr:jnr-ffi']
   jar 'com.github.jnr:jnr-ffi:2.1.0'
   jar 'com.github.jnr:jffi:${jffi.version}'
@@ -281,12 +281,18 @@ project 'JRuby Core' do
 
   [:all, :release, :main, :osgi, :j2ee, :complete, :dist, :'jruby_complete_jar_extended', :'jruby-jars' ].each do |name|
     profile name do
+      # we shade in all dependencies which use the asm classes and relocate
+      # the asm package-name. with all jruby artifacts behave the same
+      # regarding asm: lib/jruby, jruby-core and jruby-complete via maven
       plugin :shade do
         execute_goals( 'shade',
                        :id => 'shade the asm classes',
                        :phase => 'package',
                        'artifactSet' => {
+                         # IMPORTANT these needs to match exclusions in
+                         # maven/jruby-complete/pom.rb
                          'includes' => [ 'com.github.jnr:jnr-ffi',
+                                         'me.qmx.jitescript:jitescript',
                                          'org.ow2.asm:*' ]
                        },
                        'relocations' => [ { 'pattern' =>  'org.objectweb',

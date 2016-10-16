@@ -61,6 +61,7 @@ import jnr.constants.platform.SocketLevel;
 import jnr.constants.platform.SocketOption;
 import jnr.constants.platform.TCP;
 import jnr.netdb.Protocol;
+import jnr.unixsocket.UnixServerSocket;
 import jnr.unixsocket.UnixServerSocketChannel;
 import jnr.unixsocket.UnixSocketAddress;
 import jnr.unixsocket.UnixSocketChannel;
@@ -224,20 +225,16 @@ public class RubySocket extends RubyBasicSocket {
 
     @JRubyMethod()
     public IRubyObject bind(ThreadContext context, IRubyObject arg) {
-        final InetSocketAddress iaddr;
+        final SocketAddress sockaddr;
 
         if (arg instanceof Addrinfo) {
             Addrinfo addr = (Addrinfo) arg;
-            if (!addr.ip_p(context).isTrue()) {
-                throw context.runtime.newTypeError("not an INET or INET6 address: " + addr);
-            }
-            iaddr = new InetSocketAddress(addr.getInetAddress().getHostAddress(), addr.getPort());
-        }
-        else {
-             iaddr = Sockaddr.addressFromSockaddr_in(context, arg);
+            sockaddr = addr.getSocketAddress();
+        } else {
+            sockaddr = Sockaddr.addressFromSockaddr(context, arg);
         }
 
-        doBind(context, iaddr);
+        doBind(context, sockaddr);
 
         return RubyFixnum.zero(context.runtime);
     }

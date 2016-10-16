@@ -352,9 +352,10 @@ public class RubyBasicSocket extends RubyIO {
         Ruby runtime = context.runtime;
 
         InetSocketAddress sock = getInetRemoteSocket();
-        if (sock != null) return runtime.newString(sock.getHostName());
+
+        if (sock != null) return Sockaddr.pack_sockaddr_in(context, sock);
         UnixSocketAddress unix = getUnixRemoteSocket();
-        return runtime.newString(unix.path());
+        return Sockaddr.pack_sockaddr_un(context, unix.path());
     }
 
     @JRubyMethod(name = "getpeereid", notImplemented = true)
@@ -405,6 +406,10 @@ public class RubyBasicSocket extends RubyIO {
             String howString = null;
             if (args[0] instanceof RubyString || args[0] instanceof RubySymbol) {
                 howString = args[0].asJavaString();
+            } else {
+                Ruby runtime = context.runtime;
+                IRubyObject maybeString = TypeConverter.checkStringType(runtime, args[0]);
+                if (!maybeString.isNil()) howString = maybeString.toString();
             }
             if (howString != null) {
                 if (howString.equals("RD") || howString.equals("SHUT_RD")) {
@@ -413,65 +418,46 @@ public class RubyBasicSocket extends RubyIO {
                     how = 1;
                 } else if (howString.equals("RDWR") || howString.equals("SHUT_RDWR")) {
                     how = 2;
+                } else {
+                    throw SocketUtils.sockerr(context.runtime, "`how' should be either :SHUT_RD, :SHUT_WR, :SHUT_RDWR");
                 }
             } else {
                 how = RubyNumeric.fix2int(args[0]);
             }
         }
 
-        try {
-            return shutdownInternal(context, how);
-        }
-        catch (BadDescriptorException e) {
-            throw context.runtime.newErrnoEBADFError();
-        }
+        OpenFile fptr = getOpenFileChecked();
+
+        return shutdownInternal(context, fptr, how);
     }
 
     @Override
     @JRubyMethod
     public IRubyObject close_write(ThreadContext context) {
-        Ruby runtime = context.runtime;
-        OpenFile fptr;
-
-//        if (rb_safe_level() >= 4 && !OBJ_TAINTED(sock)) {
-//            rb_raise(rb_eSecurityError, "Insecure: can't close socket");
-//        }
-        fptr = getOpenFileChecked();
-        if ((fptr.getMode() & OpenFile.READABLE) == 0) {
-            return rbIoClose(runtime);
-        }
-        // shutdown write
-        try {
-            shutdownInternal(context, 1);
-        }
-        catch (BadDescriptorException e) {
-            throw runtime.newErrnoEBADFError();
-        }
-
-        return context.nil;
+        return closeHalf(context, OpenFile.WRITABLE);
     }
 
     @Override
     @JRubyMethod
     public IRubyObject close_read(ThreadContext context) {
+        return closeHalf(context, OpenFile.READABLE);
+    }
+
+    private IRubyObject closeHalf(ThreadContext context, int closeHalf) {
         Ruby runtime = context.runtime;
+        OpenFile fptr;
 
-        if (!openFile.isOpen()) {
-            throw context.runtime.newIOError("not opened for reading");
+        int otherHalf = closeHalf == OpenFile.READABLE ? OpenFile.WRITABLE : OpenFile.READABLE;
+
+        fptr = getOpenFileChecked();
+        if ((fptr.getMode() & otherHalf) == 0) {
+            // shutdown fully
+            return rbIoClose(runtime);
         }
 
-        if (!openFile.isWritable()) {
-            close();
-
-        } else {
-            // shutdown read
-            try {
-                shutdownInternal(context, 0);
-            }
-            catch (BadDescriptorException e) {
-                throw runtime.newErrnoEBADFError();
-            }
-        }
+        // shutdown half
+        shutdownInternal(context, fptr, 0);
+        fptr.setMode(fptr.getMode() & ~closeHalf);
 
         return context.nil;
     }
@@ -499,7 +485,7 @@ public class RubyBasicSocket extends RubyIO {
     protected ByteList doRead(ThreadContext context, final ByteBuffer buffer) {
         OpenFile fptr;
 
-        fptr = getOpenFile();
+        fptr = getOpenFileInitialized();
         fptr.checkReadable(context);
 
         try {
@@ -602,7 +588,11 @@ public class RubyBasicSocket extends RubyIO {
     protected SocketAddress getRemoteSocket() {
         Channel channel = getOpenChannel();
 
-        return SocketType.forChannel(channel).getRemoteSocketAddress(channel);
+        SocketAddress address = SocketType.forChannel(channel).getRemoteSocketAddress(channel);
+
+        if (address == null) throw getRuntime().newErrnoENOTCONNError();
+
+        return address;
     }
 
     protected IRubyObject getSocknameCommon(ThreadContext context, String caller) {
@@ -617,13 +607,13 @@ public class RubyBasicSocket extends RubyIO {
         return Sockaddr.pack_sockaddr_in(context, 0, "0.0.0.0");
     }
 
-    private IRubyObject shutdownInternal(ThreadContext context, int how) throws BadDescriptorException {
+    private static IRubyObject shutdownInternal(ThreadContext context, OpenFile fptr, int how) {
         Ruby runtime = context.runtime;
         Channel channel;
 
         switch (how) {
         case 0:
-            channel = getOpenChannel();
+            channel = fptr.channel();
             try {
                 SocketType.forChannel(channel).shutdownInput(channel);
             }
@@ -631,12 +621,12 @@ public class RubyBasicSocket extends RubyIO {
                 // MRI ignores errors from shutdown()
             }
 
-            openFile.setMode(openFile.getMode() & ~OpenFile.READABLE);
+            fptr.setMode(fptr.getMode() & ~OpenFile.READABLE);
 
             return RubyFixnum.zero(runtime);
 
         case 1:
-            channel = getOpenChannel();
+            channel = fptr.channel();
             try {
                 SocketType.forChannel(channel).shutdownOutput(channel);
             }
@@ -644,13 +634,13 @@ public class RubyBasicSocket extends RubyIO {
                 // MRI ignores errors from shutdown()
             }
 
-            openFile.setMode(openFile.getMode() & ~OpenFile.WRITABLE);
+            fptr.setMode(fptr.getMode() & ~OpenFile.WRITABLE);
 
             return RubyFixnum.zero(runtime);
 
         case 2:
-            shutdownInternal(context, 0);
-            shutdownInternal(context, 1);
+            shutdownInternal(context, fptr, 0);
+            shutdownInternal(context, fptr, 1);
 
             return RubyFixnum.zero(runtime);
 

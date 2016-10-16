@@ -154,7 +154,7 @@ public class SocketUtils {
         Ruby runtime = context.runtime;
 
         try {
-            InetAddress addr = getRubyInetAddress(hostname.convertToString().getByteList());
+            InetAddress addr = getRubyInetAddresses(hostname.convertToString().getByteList())[0];
             IRubyObject ret0, ret1, ret2, ret3;
 
             ret0 = runtime.newString(addr.getCanonicalHostName());
@@ -442,19 +442,19 @@ public class SocketUtils {
         }
     }
 
-    public static InetAddress getRubyInetAddress(ByteList address) throws UnknownHostException {
+    public static InetAddress[] getRubyInetAddresses(ByteList address) throws UnknownHostException {
         // switched to String because the ByteLists were not comparing properly in 1.9 mode (encoding?
         // FIXME: Need to properly decode this string (see Helpers.decodeByteList)
         String addressString = Helpers.byteListToString(address);
 
         if (addressString.equals(BROADCAST)) {
-            return InetAddress.getByAddress(INADDR_BROADCAST);
+            return new InetAddress[] {InetAddress.getByAddress(INADDR_BROADCAST)};
 
         } else if (addressString.equals(ANY)) {
-            return InetAddress.getByAddress(INADDR_ANY);
+            return new InetAddress[] {InetAddress.getByAddress(INADDR_ANY)};
 
         } else {
-            return InetAddress.getByName(addressString);
+            return InetAddress.getAllByName(addressString);
 
         }
     }
