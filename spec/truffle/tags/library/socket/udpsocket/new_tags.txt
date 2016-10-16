@@ -1,0 +1,2 @@
+fails:UDPSocket.new using Symbol argument
+fails:UDPSocket.new using String argument
