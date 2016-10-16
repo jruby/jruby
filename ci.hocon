@@ -52,13 +52,6 @@ labsjdk9: {
   }
 }
 
-use-java9: {
-  environment: {
-    JAVA_HOME: "$JAVA9_HOME",
-    PATH: "$JAVA9_HOME/bin:$PATH"
-  }
-}
-
 // Allow a version mismatch with truffle to prefer the language truffle version
 mx_sclone: [mx, --version-conflict-resolution, ignore, sclone, --kind, git]
 
@@ -376,7 +369,7 @@ builds: [
   {name: ruby-test-ecosystem} ${common} ${gate-caps} ${test-ecosystem},
   {name: ruby-test-tarball} ${common} ${gate-caps} {run: [${jt} [tarball]]},
   
-  {name: ruby-test-specs-language-java9} ${common} ${labsjdk9} ${gate-caps} ${use-java9} {run: [${jt} [test, specs, ":language"]]},
+  {name: ruby-test-specs-language-java9} ${common} ${labsjdk9} ${gate-caps} {run: [["JAVA_HOME=$JAVA9_HOME", "PATH=$JAVA9_HOME/bin:$PATH"] ${jt} [test, specs, ":language"]]},
 
   {name: ruby-test-compiler-graal-core} ${common} ${graal-core} ${gate-caps} {run: [${jt} [test, compiler]]},
   {name: ruby-test-compiler-graal-enterprise} ${common} ${graal-enterprise} ${gate-caps} {run: [${jt} [test, compiler]]},
