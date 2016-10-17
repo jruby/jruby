@@ -126,13 +126,18 @@ public class FeatureLoader {
         }
     }
 
+    @TruffleBoundary
+    private boolean isSulongAvailable() {
+        return context.getEnv().isMimeTypeSupported(RubyLanguage.CEXT_MIME_TYPE);
+    }
+
     public void ensureCExtImplementationLoaded(VirtualFrame frame, String feature, IndirectCallNode callNode) {
         synchronized (cextImplementationLock) {
             if (cextImplementationLoaded) {
                 return;
             }
 
-            if (!context.getEnv().isMimeTypeSupported(RubyLanguage.CEXT_MIME_TYPE)) {
+            if (!isSulongAvailable()) {
                 throw new RaiseException(context.getCoreExceptions().loadError("Sulong is required to support C extensions, and it doesn't appear to be available", feature, null));
             }
 

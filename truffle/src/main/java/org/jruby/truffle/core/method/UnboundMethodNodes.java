@@ -104,6 +104,7 @@ public abstract class UnboundMethodNodes {
     @CoreMethod(names = "hash")
     public abstract static class HashNode extends CoreMethodArrayArgumentsNode {
 
+        @TruffleBoundary
         @Specialization
         public long hash(DynamicObject rubyMethod) {
             final InternalMethod method = Layouts.UNBOUND_METHOD.getMethod(rubyMethod);

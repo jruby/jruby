@@ -100,6 +100,7 @@ public class EncodingManager {
         LOOKUP.put(name.toLowerCase(Locale.ENGLISH), rubyEncoding);
     }
 
+    @TruffleBoundary
     public synchronized DynamicObject replicateEncoding(Encoding encoding, String name) {
         if (getRubyEncoding(name) != null) {
             return null;

@@ -108,6 +108,7 @@ public abstract class MethodNodes {
     @CoreMethod(names = "hash")
     public abstract static class HashNode extends CoreMethodArrayArgumentsNode {
 
+        @TruffleBoundary
         @Specialization
         public long hash(DynamicObject rubyMethod) {
             final InternalMethod method = Layouts.METHOD.getMethod(rubyMethod);
