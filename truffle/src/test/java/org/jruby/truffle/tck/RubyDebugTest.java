@@ -30,6 +30,9 @@ import org.junit.Test;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.util.LinkedList;
 import java.util.Objects;
 
@@ -48,6 +51,16 @@ public class RubyDebugTest {
     private PolyglotEngine engine;
     private final ByteArrayOutputStream out = new ByteArrayOutputStream();
     private final ByteArrayOutputStream err = new ByteArrayOutputStream();
+
+    private static Source getSource(String path) {
+        InputStream stream = ClassLoader.getSystemResourceAsStream(path);
+        Reader reader = new InputStreamReader(stream);
+        try {
+            return Source.newBuilder(reader).name(new File(path).getName()).mimeType(RubyLanguage.MIME_TYPE).build();
+        } catch (IOException e) {
+            throw new Error(e);
+        }
+    }
 
     @Before
     public void before() throws IOException {
@@ -76,7 +89,7 @@ public class RubyDebugTest {
 
         }).build();
 
-        engine.eval(Source.newBuilder(new File("src/test/ruby/init.rb")).build());
+        engine.eval(getSource("src/test/ruby/init.rb"));
 
         run.clear();
     }
@@ -259,7 +272,7 @@ public class RubyDebugTest {
     }
 
     private static Source createFactorial() throws IOException {
-        return Source.newBuilder(new File("src/test/ruby/factorial.rb")).build();
+        return getSource("src/test/ruby/factorial.rb");
     }
 
     private final String getErr() {
