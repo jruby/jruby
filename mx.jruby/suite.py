@@ -85,17 +85,14 @@ suite = {
         "jruby-antlr": {
             "class": "AntlrProject",
             "sourceDir": "truffle/src/main/antlr4",
-            "outputDir": "truffle/target/generated-sources/antlr4",
+            "outputDir": "truffle/src/main/antlr4",
             "grammars": [ "org/jruby/truffle/core/format/pack/Pack.g4" ],
             "dependencies": [ "ANTLR4_RUNTIME" ],
         },
 
         "jruby-truffle": {
-            "dir": "truffle",
-            "sourceDirs": [
-                "src/main/java",
-                "target/generated-sources/antlr4",
-            ],
+            "dir": "truffle/src/main",
+            "sourceDirs": ["java", "antlr4"],
             "dependencies": [
                 "jruby-core",
                 "jruby-antlr",
@@ -113,6 +110,23 @@ suite = {
             "class": "ArchiveProject",
             "outputDir": "truffle/src/main/ruby",
             "prefix": "jruby-truffle",
+        },
+
+        "jruby-truffle-test": {
+            "dir": "truffle/src/test",
+            "sourceDirs": ["java"],
+            "dependencies": [
+                "jruby-truffle",
+                "truffle:TRUFFLE_TCK",
+                "mx:JUNIT",
+            ],
+            "javaCompliance": "1.8",
+        },
+
+        "jruby-truffle-ruby-test": {
+            "class": "ArchiveProject",
+            "outputDir": "truffle/src/test/ruby",
+            "prefix": "src/test/ruby",
         },
 
         # Depends on jruby-core extracting jni libs in lib/jni
@@ -171,6 +185,22 @@ suite = {
             ],
             "description": "JRuby+Truffle Native Libs",
             "license": "EPL"
+        },
+
+        "RUBY-TEST": {
+            "dependencies": [
+                "jruby-truffle-test",
+                "jruby-truffle-ruby-test",
+            ],
+            "exclude" : [
+                "mx:HAMCREST",
+                "mx:JUNIT"
+            ],
+            "distDependencies": [
+                "RUBY",
+                "truffle:TRUFFLE_TCK"
+            ],
+            "license" : "EPL",
         },
     },
 }

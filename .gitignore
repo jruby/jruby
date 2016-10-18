@@ -124,6 +124,10 @@ build.eclipse
 /mxbuild
 /mx.imports
 /RUBY.dist
+/RUBY-TEST.dist
+
+# Antlr (when launched by mx)
+/truffle/src/main/antlr4/**/*.java
 
 # Truffle findbugs
 truffle-findbugs-report.html
