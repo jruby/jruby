@@ -1220,7 +1220,7 @@ module Commands
 
     unless benchmark_ruby
       run_args.push '--graal' unless args.delete('--no-graal') || args.include?('list')
-      run_args.push '-J-G:+TruffleCompilationExceptionsAreFatal'
+      run_args.push '-J-Dgraal.TruffleCompilationExceptionsAreFatal=true'
     end
     
     run_args.push "-I#{Utilities.find_gem('deep-bench')}/lib" rescue nil
