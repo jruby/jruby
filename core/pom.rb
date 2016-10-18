@@ -64,7 +64,6 @@ project 'JRuby Core' do
   jar 'com.headius:options:1.4'
   jar 'com.headius:coro-mock:1.0', :scope => 'provided'
   jar 'com.headius:unsafe-mock', '${unsafe.version}', :scope => 'provided'
-  jar 'com.headius:jsr292-mock:1.1', :scope => 'provided'
 
   jar 'bsf:bsf:2.4.0', :scope => 'provided'
   jar 'com.jcraft:jzlib:1.1.3'
