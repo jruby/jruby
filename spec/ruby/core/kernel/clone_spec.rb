@@ -62,4 +62,24 @@ describe "Kernel#clone" do
       nil.clone
     }.should raise_error(TypeError)
   end
+
+  it "replaces a singleton object's metaclass with a new copy with the same superclass" do
+    cls = Class.new do
+      def bar
+        ['a']
+      end
+    end
+
+    object = cls.new
+    object.define_singleton_method(:bar) do
+      ['b', *super()]
+    end
+    object.bar.should == ['b', 'a']
+
+    cloned = object.clone
+    cloned.define_singleton_method(:bar) do
+      ['c', *super()]
+    end
+    cloned.bar.should == ['c', 'a']
+  end
 end
