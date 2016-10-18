@@ -615,10 +615,15 @@ module Commands
       warn "warning: --igv might not work on master - if it does not, use truffle-head instead which builds against latest graal" if Utilities.git_branch == 'master'
       Utilities.ensure_igv_running
       if args.delete('--full')
-        jruby_args += %w[-J-G:Dump=Truffle]
+        jruby_args << "-J-Dgraal.Dump=Truffle"
       else
-        jruby_args += %w[-J-G:Dump=TrufflePartialEscape]
+        jruby_args << "-J-Dgraal.Dump=TruffleTree,PartialEscape"
       end
+      jruby_args << "-J-Dgraal.PrintBackendCFG=false"
+    end
+
+    if args.delete('--fg')
+      jruby_args << "-J-Dgraal.TruffleBackgroundCompilation=false"
     end
 
     if args.delete('--no-print-cmd')
