@@ -143,15 +143,20 @@ import org.jruby.truffle.platform.UnsafeGroup;
 import org.jruby.truffle.util.StringUtils;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.ProcessBuilder.Redirect;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
+
+import static org.jruby.truffle.core.array.ArrayHelpers.getStore;
 
 @CoreClass("Kernel")
 public abstract class KernelNodes {
@@ -209,24 +214,23 @@ public abstract class KernelNodes {
             }
 
             final InputStream stdout = process.getInputStream();
-            final InputStreamReader reader = new InputStreamReader(stdout, StandardCharsets.UTF_8);
 
-            final StringBuilder resultBuilder = new StringBuilder();
+            final ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
-            // TODO(cs): this isn't great for binary output
-
+            final int bufferSize = 1024;
+            final byte[] buffer = new byte[bufferSize];
+            int bytesRead = 0;
             try {
-                int c;
-
-                while ((c = reader.read()) != -1) {
-                    resultBuilder.append((char) c);
+                while ((bytesRead = stdout.read(buffer, 0, bufferSize)) != -1) {
+                    baos.write(buffer, 0, bytesRead);
                 }
+
             } catch (IOException e) {
                 throw new JavaException(e);
             }
 
             // TODO (nirvdrum 10-Mar-15) This should be using the default external encoding, rather than hard-coded to UTF-8.
-            return createString(StringOperations.encodeRope(resultBuilder.toString(), EncodingOperations.getEncoding(getContext().getEncodingManager().getRubyEncoding("UTF-8"))));
+            return createString(baos.toByteArray(), EncodingOperations.getEncoding(getContext().getEncodingManager().getRubyEncoding("UTF-8")));
         }
 
     }
@@ -710,12 +714,23 @@ public abstract class KernelNodes {
 
         @TruffleBoundary
         private String[] buildCommandLine(Object command, Object[] args) {
-            final String[] commandLine = new String[1 + args.length];
-            commandLine[0] = command.toString();
-            for (int n = 0; n < args.length; n++) {
-                commandLine[1 + n] = args[n].toString();
+            final List<String> commandLine = new ArrayList<>(1 + args.length);
+            if (RubyGuards.isRubyArray(command)) {
+                // For handling: exec([cmdname, argv0], arg1, ...)
+                // argv0 not yet implemented
+                final Object[] store = (Object[]) getStore((DynamicObject) command);
+                commandLine.add(store[0].toString());
+            } else {
+                commandLine.add(command.toString());
             }
-            return commandLine;
+            for (int n = 0; n < args.length; n++) {
+                if (n == args.length - 1 && RubyGuards.isRubyHash(args[n])) {
+                    break;
+                }
+                commandLine.add(args[n].toString());
+            }
+            final String[] result = new String[commandLine.size()];
+            return commandLine.toArray(result);
         }
 
         @TruffleBoundary

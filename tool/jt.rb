@@ -459,6 +459,7 @@ module Commands
       jt test compiler                               run compiler tests (uses the same logic as --graal to find Graal)
       jt test integration                            runs all integration tests
       jt test integration [TESTS]                    runs the given integration tests
+      jt test bundle                                 tests using bundler
       jt test gems                                   tests using gems
       jt test ecosystem [TESTS]                      tests using the wider ecosystem such as bundler, Rails, etc
       jt test cexts [--no-libxml --no-openssl --no-argon2]       run C extension tests
@@ -737,6 +738,7 @@ module Commands
       test_ecosystem 'HAS_REDIS' => 'true'
       test_compiler
       test_cexts
+    when 'bundle' then test_bundle(*rest)
     when 'compiler' then test_compiler(*rest)
     when 'cexts' then test_cexts(*rest)
     when 'report' then test_report(*rest)
@@ -958,6 +960,43 @@ module Commands
     end
   end
   private :test_ecosystem
+
+  def test_bundle(*args)
+    gems = [{:url => "https://github.com/sstephenson/hike", :commit => "3abf0b3feb47c26911f8cedf2cd409471fd26da1"}]
+    gems.each do |gem|
+      gem_url = gem[:url]
+      name = gem_url.split('/')[-1]
+      require 'tmpdir'
+      temp_dir = Dir.mktmpdir(name)
+      begin
+        Dir.chdir(temp_dir) do
+          puts "Cloning gem #{name} into temp directory: #{temp_dir}"
+          raw_sh(*['git', 'clone', gem_url])
+        end
+        gem_dir = File.join(temp_dir, name)
+        gem_home = if ENV['GEM_HOME']
+                     ENV['GEM_HOME']
+                   else
+                     tmp_home = File.join(temp_dir, "gem_home")
+                     Dir.mkdir(tmp_home)
+                     puts "Using temporary GEM_HOME:#{tmp_home}"
+                     tmp_home
+                   end
+        Dir.chdir(gem_dir) do
+          if gem.has_key?(:commit)
+            raw_sh(*['git', 'checkout', gem[:commit]])
+          end
+          run({'GEM_HOME' => gem_home}, *["-rbundler-workarounds", "-S", "gem", "install", "bundler", "-v","1.12.5"])
+          run({'GEM_HOME' => gem_home}, *["-rbundler-workarounds", "-S", "bundle", "install"])
+          # Need to workaround ruby_install name `jruby-truffle` in the gems binstubs (command can't be found )
+          # or figure out how to get it on the path to get `bundle exec rake` working
+          #run({'GEM_HOME' => gem_home}, *["-rbundler-workarounds", "-S", "bundle", "exec", "rake"])
+        end
+      ensure
+        FileUtils.remove_entry temp_dir
+      end
+    end
+  end
 
   def test_specs(command, *args)
     env_vars = {}

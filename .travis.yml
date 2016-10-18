@@ -24,6 +24,7 @@ matrix:
   - env: JT='test tck'
   - env: JT='check_ambiguous_arguments' SKIP_BUILD=true V=1
   - env: JT='test mri'
+  - env: JT='test bundle'
   allow_failures:
   - env: JT='test mri'
   # Exlude the default job https://github.com/travis-ci/travis-ci/issues/4681
