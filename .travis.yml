@@ -34,6 +34,7 @@ matrix:
 install:
 - git clone https://github.com/graalvm/mx
 - export PATH=$PWD/mx:$PATH
+- echo MX_BINARY_SUITES=truffle >> mx.jruby/env
 - ln -s mvnw mvn
 - export PATH=$PWD:$PATH
 - if [ -z "$SKIP_BUILD" ]; then V=1 tool/jt.rb build; fi
