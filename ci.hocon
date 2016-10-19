@@ -357,7 +357,7 @@ test-cexts: ${sulong} ${gem-test-pack} {
 
 builds: [
   {name: ruby-test-fast} ${common} ${gate-caps} {run: [${jt} [test, fast]]},
-  {name: ruby-test-tck} ${common} ${gate-caps} {run: [${jt} [test, tck]]},
+  {name: ruby-test-tck} ${common} ${gate-caps} {run: [[mx, rubytck]]},
   {name: ruby-test-specs-command-line} ${common} ${gate-caps} {run: [${jt} [test, specs, ":command_line"]]},
   {name: ruby-test-specs-language} ${common} ${gate-caps} {run: [${jt} [test, specs, ":language"]]},
   {name: ruby-test-specs-core} ${common} ${gate-caps} {run: [${jt} [test, specs, -Gci, ":core"]]},
