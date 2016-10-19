@@ -39,8 +39,8 @@ install:
 - ln -s mvnw mvn
 - export PATH=$PWD:$PATH
 - if [ -z "$SKIP_BUILD" ]; then V=1 tool/jt.rb build; fi
-script:
 - $COMMAND
+script:
 - tool/jt.rb $JT
 
 notifications:
