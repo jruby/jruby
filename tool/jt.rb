@@ -1051,6 +1051,7 @@ module Commands
   private :test_specs
 
   def test_tck(*args)
+    exec 'mx', 'rubytck' if Utilities.mx?
     env = {'JRUBY_BUILD_MORE_QUIET' => 'true'}
     mvn env, *args, '-Ptck'
   end

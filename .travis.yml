@@ -21,7 +21,7 @@ matrix:
   - env: JT='test integration'
   - env: JT='test gems' COMMAND=test/truffle/gems/install-gems.sh
   - env: JT='test ecosystem' JAVA_OPTS="$JAVA_OPTS -Xmx512m" HAS_REDIS=true COMMAND=test/truffle/ecosystem-travis-install.sh
-  - env: JT='test tck'
+  - env: JT='test tck' COMMAND='mx build' SKIP_BUILD=true
   - env: JT='check_ambiguous_arguments' SKIP_BUILD=true V=1
   - env: JT='test mri'
   - env: JT='test bundle'
@@ -32,6 +32,8 @@ matrix:
   - jdk: oraclejdk8
 
 install:
+- git clone https://github.com/graalvm/mx
+- export PATH=$PWD/mx:$PATH
 - if [ -z "$SKIP_BUILD" ]; then V=1 tool/jt.rb build; fi
 script:
 - $COMMAND
