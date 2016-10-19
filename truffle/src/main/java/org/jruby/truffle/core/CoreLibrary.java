@@ -433,7 +433,7 @@ public class CoreLibrary {
 
         for (Errno errno : Errno.values()) {
             if (errno.name().startsWith("E")) {
-                if(errno.equals(Errno.EWOULDBLOCK) && Errno.EWOULDBLOCK.intValue() == Errno.EAGAIN.intValue()){
+                if (errno.equals(Errno.EWOULDBLOCK) && Errno.EWOULDBLOCK.intValue() == Errno.EAGAIN.intValue()){
                     continue; // Don't define it as a class, define it as constant later.
                 }
                 errnoClasses.put(errno, defineClass(errnoModule, systemCallErrorClass, errno.name()));
@@ -974,35 +974,56 @@ public class CoreLibrary {
             @SuppressWarnings("unchecked")
             final Future<RubyRootNode>[] coreFileFutures = new Future[coreFiles.length];
 
-            try {
-                for (int n = 0; n < coreFiles.length; n++) {
-                    final int finalN = n;
+            if (TruffleOptions.AOT) {
+                try {
+                    for (int n = 0; n < coreFiles.length; n++) {
+                        final RubyRootNode rootNode = context.getCodeLoader().parse(
+                                context.getSourceCache().getSource(getCoreLoadPath() + coreFiles[n]),
+                                UTF8Encoding.INSTANCE, ParserContext.TOP_LEVEL, null, true, node);
 
-                    coreFileFutures[n] = ForkJoinPool.commonPool().submit(() ->
-                            context.getCodeLoader().parse(
-                                    context.getSourceCache().getSource(getCoreLoadPath() + coreFiles[finalN]),
-                                    UTF8Encoding.INSTANCE, ParserContext.TOP_LEVEL, null, true, node)
-                    );
+                        final CodeLoader.DeferredCall deferredCall = context.getCodeLoader().prepareExecute(
+                                ParserContext.TOP_LEVEL,
+                                DeclarationContext.TOP_LEVEL,
+                                rootNode,
+                                null,
+                                context.getCoreLibrary().getMainObject());
 
-                    if (!context.getOptions().CORE_PARALLEL_LOAD) {
-                        coreFileFutures[n].get();
+                        deferredCall.callWithoutCallNode();
                     }
+                } catch (IOException e) {
+                    throw new JavaException(e);
                 }
+            } else {
+                try {
+                    for (int n = 0; n < coreFiles.length; n++) {
+                        final int finalN = n;
 
-                for (int n = 0; n < coreFiles.length; n++) {
-                    final RubyRootNode rootNode = coreFileFutures[n].get();
+                        coreFileFutures[n] = ForkJoinPool.commonPool().submit(() ->
+                                context.getCodeLoader().parse(
+                                        context.getSourceCache().getSource(getCoreLoadPath() + coreFiles[finalN]),
+                                        UTF8Encoding.INSTANCE, ParserContext.TOP_LEVEL, null, true, node)
+                        );
 
-                    final CodeLoader.DeferredCall deferredCall = context.getCodeLoader().prepareExecute(
-                            ParserContext.TOP_LEVEL,
-                            DeclarationContext.TOP_LEVEL,
-                            rootNode,
-                            null,
-                            context.getCoreLibrary().getMainObject());
+                        if (!context.getOptions().CORE_PARALLEL_LOAD) {
+                            coreFileFutures[n].get();
+                        }
+                    }
 
-                    deferredCall.callWithoutCallNode();
+                    for (int n = 0; n < coreFiles.length; n++) {
+                        final RubyRootNode rootNode = coreFileFutures[n].get();
+
+                        final CodeLoader.DeferredCall deferredCall = context.getCodeLoader().prepareExecute(
+                                ParserContext.TOP_LEVEL,
+                                DeclarationContext.TOP_LEVEL,
+                                rootNode,
+                                null,
+                                context.getCoreLibrary().getMainObject());
+
+                        deferredCall.callWithoutCallNode();
+                    }
+                } catch (InterruptedException | ExecutionException e) {
+                    throw new JavaException(e);
                 }
-            } catch (InterruptedException | ExecutionException e) {
-                throw new JavaException(e);
             }
 
             Main.printTruffleTimeMetric("after-load-core");
