@@ -7,7 +7,7 @@ cache:
   - $HOME/.m2
   - $HOME/.mx/cache
 
-before_script:
+before_install:
 - unset GEM_PATH GEM_HOME IRBRC JRUBY_OPTS
 
 jdk: oraclejdk8
