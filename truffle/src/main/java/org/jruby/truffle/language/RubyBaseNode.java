@@ -25,6 +25,7 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.truffle.core.array.ArrayHelpers;
 import org.jruby.truffle.core.exception.CoreExceptions;
+import org.jruby.truffle.core.format.FormatRootNode;
 import org.jruby.truffle.core.kernel.TraceManager;
 import org.jruby.truffle.core.numeric.BignumOperations;
 import org.jruby.truffle.core.rope.CodeRange;
@@ -189,6 +190,11 @@ public abstract class RubyBaseNode extends Node {
 
                 if (parent instanceof RubyRootNode) {
                     context = ((RubyRootNode) parent).getContext();
+                    break;
+                }
+
+                if (parent instanceof FormatRootNode) {
+                    context = ((FormatRootNode) parent).getContext();
                     break;
                 }
 
