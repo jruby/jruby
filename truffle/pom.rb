@@ -29,10 +29,6 @@ project 'JRuby Truffle' do
   
   jar 'junit:junit', :scope => 'test'
 
-  plugin 'org.antlr:antlr4-maven-plugin', '4.5.1-1' do
-    execute_goal :antlr4
-  end
-
   plugin( :compiler,
           'encoding' => 'utf-8',
           'debug' => 'true',

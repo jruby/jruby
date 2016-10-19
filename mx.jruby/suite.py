@@ -55,11 +55,6 @@ suite = {
 
         # ------------- Libraries -------------
 
-        "ANTLR4_MAIN": mavenLib(
-            "org.antlr:antlr4:4.5.1-1",
-            "a8867c83a73791cf30e30de4cf5d0c9a5f0dfdab",
-            "0c0dcb94d272b012b33e215d4a61bdf93a48b872"),
-
         "ANTLR4_RUNTIME": mavenLib(
             "org.antlr:antlr4-runtime:4.5.1-1",
             "66144204f9d6d7d3f3f775622c2dd7e9bd511d97",
@@ -82,20 +77,11 @@ suite = {
             "jar": "lib/jruby.jar",
         },
 
-        "jruby-antlr": {
-            "class": "AntlrProject",
-            "sourceDir": "truffle/src/main/antlr4",
-            "outputDir": "truffle/src/main/antlr4",
-            "grammars": [ "org/jruby/truffle/core/format/pack/Pack.g4" ],
-            "dependencies": [ "ANTLR4_RUNTIME" ],
-        },
-
         "jruby-truffle": {
             "dir": "truffle/src/main",
-            "sourceDirs": ["java", "antlr4"],
+            "sourceDirs": [ "java" ],
             "dependencies": [
                 "jruby-core",
-                "jruby-antlr",
                 "truffle:TRUFFLE_API",
                 "truffle:TRUFFLE_DEBUG",
                 "ANTLR4_RUNTIME",

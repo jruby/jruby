@@ -65,66 +65,6 @@ class LicensesProject(ArchiveProject):
     def getResults(self):
         return [join(_suite.dir, f) for f in self.license_files]
 
-class AntlrProject(mx.Project):
-    def __init__(self, suite, name, deps, workingSets, theLicense, **args):
-        mx.Project.__init__(self, suite, name, "", [], deps, workingSets, _suite.dir, theLicense)
-        assert 'outputDir' in args
-        assert 'sourceDir' in args
-        assert 'grammars' in args
-        self.doNotArchive = True
-
-    def getBuildTask(self, args):
-        return AntlrBuildTask(self, args)
-
-class AntlrBuildTask(mx.BuildTask):
-    def __init__(self, project, args):
-        mx.BuildTask.__init__(self, project, args, 1)
-
-    def __str__(self):
-        return 'Generate Antlr grammar for {}'.format(self.subject)
-
-    def needsBuild(self, newestInput):
-        sup = mx.BuildTask.needsBuild(self, newestInput)
-        if sup[0]:
-            return sup
-        newestOutput = self.newestOutput()
-        if not newestOutput:
-            return (True, "no java files yet")
-
-        src = join(_suite.dir, self.subject.sourceDir)
-        for grammar in self.subject.grammars:
-            if newestOutput.isOlderThan(join(src, grammar)):
-                return (True, "%s needs to be regenerated" % (grammar))
-
-        return (False, 'all files are up to date')
-
-    def newestOutput(self):
-        out = join(_suite.dir, self.subject.outputDir)
-        newest = None
-        for grammar in self.subject.grammars:
-            parser = join(out, os.path.splitext(grammar)[0] + "Parser.java")
-            parser = TimeStampFile(parser)
-            if not newest or parser.isNewerThan(newest):
-                    newest = parser
-        return newest
-
-    def build(self):
-        antlr4 = None
-        for lib in _suite.libs:
-            if lib.name == "ANTLR4_MAIN":
-                antlr4 = lib
-        assert antlr4
-
-        antlr4jar = antlr4.classpath_repr()
-        out = join(_suite.dir, self.subject.outputDir)
-        src = join(_suite.dir, self.subject.sourceDir)
-        for grammar in self.subject.grammars:
-            pkg = os.path.dirname(grammar).replace('/', '.')
-            mx.run_java(['-jar', antlr4jar, '-o', out, '-package', pkg, grammar], cwd=src)
-
-    def clean(self, forBuild=False):
-        pass
-
 def mavenSetup():
     buildPack = join(_suite.dir, 'jruby-build-pack/maven')
     mavenDir = buildPack if isdir(buildPack) else join(_suite.dir, 'mxbuild/mvn')
