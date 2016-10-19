@@ -20,10 +20,27 @@ from os.path import join, exists, isdir
 
 import mx
 import mx_benchmark
+import mx_unittest
+
+TimeStampFile = mx.TimeStampFile
 
 _suite = mx.suite('jruby')
 
-TimeStampFile = mx.TimeStampFile
+rubyDists = [
+    'RUBY',
+    'RUBY-TEST'
+]
+
+def unittest_use_distribution_jars(config):
+    """use the distribution jars instead of the class files"""
+    vmArgs, mainClass, mainClassArgs = config
+    cpIndex, _ = mx.find_classpath_arg(vmArgs)
+    junitCP = [mx.classpath("com.oracle.mxtool.junit")]
+    rubyCP = [mx.classpath(mx.distribution(distr)) for distr in rubyDists]
+    vmArgs[cpIndex] = ":".join(junitCP + rubyCP)
+    return (vmArgs, mainClass, mainClassArgs)
+
+mx_unittest.add_config_participant(unittest_use_distribution_jars)
 
 # Project and BuildTask classes
 
@@ -295,8 +312,14 @@ def ruby_command(args):
         log(java + ' ' + ' '.join(map(pipes.quote, allArgs)))
     return os.execve(java, [argv0] + allArgs, env)
 
+def ruby_tck(args):
+    env = setup_jruby_home()
+    os.environ["JRUBY_HOME"] = env["JRUBY_HOME"]
+    mx_unittest.unittest(['--verbose', '--suite', 'jruby'])
+
 mx.update_commands(_suite, {
     'ruby' : [ruby_command, '[ruby args|@VM options]'],
+    'rubytck': [ruby_tck, ''],
 })
 
 # Utilities
