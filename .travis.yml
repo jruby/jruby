@@ -5,6 +5,7 @@ sudo: false
 cache:
   directories:
   - $HOME/.m2
+  - $HOME/.mx/cache
 
 before_script:
 - unset GEM_PATH GEM_HOME IRBRC JRUBY_OPTS
