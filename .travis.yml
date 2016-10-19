@@ -34,6 +34,8 @@ matrix:
 install:
 - git clone https://github.com/graalvm/mx
 - export PATH=$PWD/mx:$PATH
+- ln -s mvnw mvn
+- export PATH=$PWD:$PATH
 - if [ -z "$SKIP_BUILD" ]; then V=1 tool/jt.rb build; fi
 script:
 - $COMMAND
