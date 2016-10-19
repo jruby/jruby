@@ -19,8 +19,6 @@ import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.methods.InternalMethod;
 
-import java.util.concurrent.Callable;
-
 public final class UnresolvedDispatchNode extends DispatchNode {
 
     private int depth = 0;

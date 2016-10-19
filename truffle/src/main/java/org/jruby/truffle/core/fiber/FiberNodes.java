@@ -36,7 +36,6 @@ import org.jruby.truffle.language.control.BreakException;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.control.ReturnException;
 import org.jruby.truffle.language.methods.UnsupportedOperationBehavior;
-import org.jruby.truffle.parser.BodyTranslator;
 import org.jruby.truffle.platform.UnsafeGroup;
 
 import java.util.concurrent.CountDownLatch;

@@ -35,7 +35,6 @@ import org.jruby.truffle.core.exception.ExceptionOperations;
 import org.jruby.truffle.core.fiber.FiberManager;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.SafepointAction;
 import org.jruby.truffle.language.backtrace.Backtrace;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.objects.AllocateObjectNode;

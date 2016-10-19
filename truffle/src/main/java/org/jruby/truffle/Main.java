@@ -11,13 +11,8 @@ package org.jruby.truffle;
 
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
-import org.jruby.internal.runtime.GlobalVariable;
-import org.jruby.internal.runtime.ValueAccessor;
-import org.jruby.runtime.IAccessor;
-import org.jruby.runtime.builtin.IRubyObject;
 
 import java.io.InputStream;
-import java.util.Map;
 
 public class Main {
 
