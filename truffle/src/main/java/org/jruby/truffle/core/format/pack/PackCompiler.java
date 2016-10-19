@@ -55,7 +55,7 @@ public class PackCompiler {
         parser.sequence();
 
         return Truffle.getRuntime().createCallTarget(
-                new FormatRootNode(currentNode.getEncapsulatingSourceSection(), builder.getEncoding(), builder.getNode()));
+                new FormatRootNode(context, currentNode.getEncapsulatingSourceSection(), builder.getEncoding(), builder.getNode()));
     }
 
 }

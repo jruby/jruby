@@ -34,7 +34,7 @@ public class PrintfCompiler {
         final PrintfSimpleTreeBuilder builder = new PrintfSimpleTreeBuilder(context, configs);
 
         return Truffle.getRuntime().createCallTarget(
-            new FormatRootNode(currentNode.getEncapsulatingSourceSection(),
+            new FormatRootNode(context, currentNode.getEncapsulatingSourceSection(),
                 FormatEncoding.DEFAULT, builder.getNode()));
     }
 
