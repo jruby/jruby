@@ -72,23 +72,23 @@ class AntlrBuildTask(mx.BuildTask):
             return sup
         newestOutput = self.newestOutput()
         if not newestOutput:
-            return (True, "no class files yet")
+            return (True, "no java files yet")
+
         src = join(_suite.dir, self.subject.sourceDir)
-        for root, _, files in os.walk(src):
-            for name in files:
-                file = TimeStampFile(join(root, name))
-                if file.isNewerThan(newestOutput):
-                    return (True, file)
+        for grammar in self.subject.grammars:
+            if newestOutput.isOlderThan(join(src, grammar)):
+                return (True, "%s needs to be regenerated" % (grammar))
+
         return (False, 'all files are up to date')
 
     def newestOutput(self):
         out = join(_suite.dir, self.subject.outputDir)
         newest = None
-        for root, _, files in os.walk(out):
-            for name in files:
-                file = TimeStampFile(join(root, name))
-                if not newest or file.isNewerThan(newest):
-                    newest = file
+        for grammar in self.subject.grammars:
+            parser = join(out, os.path.splitext(grammar)[0] + "Parser.java")
+            parser = TimeStampFile(parser)
+            if not newest or parser.isNewerThan(newest):
+                    newest = parser
         return newest
 
     def build(self):
