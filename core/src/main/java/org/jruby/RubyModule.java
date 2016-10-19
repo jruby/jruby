@@ -299,6 +299,12 @@ public class RubyModule extends RubyObject {
         }
     }
 
+    protected MethodHandle newIdTest() {
+        return Binder.from(boolean.class, ThreadContext.class, IRubyObject.class)
+                .insert(2,id)
+                .invokeStaticQuiet(LOOKUP, Bootstrap.class, "testModuleMatch");
+    }
+
     /** separate path for MetaClass construction
      *
      */
@@ -307,9 +313,7 @@ public class RubyModule extends RubyObject {
 
         id = runtime.allocModuleId();
 
-        idTest = Binder.from(boolean.class, ThreadContext.class, IRubyObject.class)
-                .insert(2,id)
-                .invokeStaticQuiet(LOOKUP, Bootstrap.class, "testModuleMatch");
+        idTest = newIdTest();
 
         runtime.addModule(this);
         // if (parent == null) parent = runtime.getObject();
