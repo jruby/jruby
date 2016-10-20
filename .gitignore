@@ -126,9 +126,6 @@ build.eclipse
 /RUBY.dist
 /RUBY-TEST.dist
 
-# Antlr (when launched by mx)
-/truffle/src/main/antlr4/**/*.java
-
 # Truffle findbugs
 truffle-findbugs-report.html
 findbugs-noUpdateChecks-3.0.0.tar.gz
