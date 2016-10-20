@@ -1,3 +1,4 @@
 org.eclipse.jdt.core.compiler.problem.invalidJavadoc=warning
 org.eclipse.jdt.core.compiler.problem.missingDeprecatedAnnotation=warning
 org.eclipse.jdt.core.compiler.problem.missingOverrideAnnotation=warning
+org.eclipse.jdt.core.compiler.problem.unusedParameter=ignore
