@@ -66,10 +66,8 @@ public abstract class SetNode extends RubyNode {
 
     @Specialization(guards = { "isNullHash(hash)", "!isRubyString(key)" })
     public Object setNull(VirtualFrame frame, DynamicObject hash, Object key, Object value, boolean byIdentity) {
-        int hashed = 0;
-        if (!byIdentityProfile.profile(byIdentity)) {
-            hashed = hashNode.hash(frame, key);
-        }
+        boolean profiledByIdentity = byIdentityProfile.profile(byIdentity);
+        final int hashed = hashNode.hash(frame, key, profiledByIdentity);
 
         Object store = PackedArrayStrategy.createStore(getContext(), hashed, key, value);
         assert HashOperations.verifyStore(getContext(), store, 1, null, null);
@@ -99,10 +97,7 @@ public abstract class SetNode extends RubyNode {
 
         boolean profiledByIdentity = byIdentityProfile.profile(byIdentity);
 
-        int hashed = 0;
-        if (!profiledByIdentity) {
-            hashed = hashNode.hash(frame, key);
-        }
+        int hashed = hashNode.hash(frame, key, profiledByIdentity);
 
         final Object[] store = (Object[]) Layouts.HASH.getStore(hash);
         final int size = Layouts.HASH.getSize(hash);

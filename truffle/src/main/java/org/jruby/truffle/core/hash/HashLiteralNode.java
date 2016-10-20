@@ -112,7 +112,7 @@ public abstract class HashLiteralNode extends RubyNode {
                     }
                 }
 
-                final int hashed = hashNode.hash(frame, key);
+                final int hashed = hashNode.hash(frame, key, false);
 
                 final Object value = keyValues[n * 2 + 1].execute(frame);
 
