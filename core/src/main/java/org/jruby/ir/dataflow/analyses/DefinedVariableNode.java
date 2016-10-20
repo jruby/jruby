@@ -87,6 +87,7 @@ public class DefinedVariableNode extends FlowGraphNode<DefinedVariablesProblem, 
 
     private void identifyUndefinedVarsInClosure(Set<Variable> undefinedVars, IRClosure cl, int minDepth) {
         int clBaseDepth = minDepth + (cl.getFlags().contains(IRFlags.REUSE_PARENT_DYNSCOPE) ? 0 : 1);
+        cl.setUpUseDefLocalVarMaps();
         for (LocalVariable lv: cl.getUsedLocalVariables()) {
             // This can happen where an outer scope variable
             // is not used in this scope but is used in a nested
@@ -124,21 +125,18 @@ public class DefinedVariableNode extends FlowGraphNode<DefinedVariablesProblem, 
                 if (!v.isSelf()) {
                     if (v instanceof LocalVariable) {
                         lv = (LocalVariable)v;
-                        if (lv.getScopeDepth() >= parentScopeDepth) {
-                            // Variables that belong to outer scopes
-                            // are considered already defined.
-                            tmp.set(problem.getDFVar(v));
-                        }
-
-                        if (!tmp.get(problem.getDFVar(v))) {
+                        // Variables that belong to outer scopes
+                        // are considered already defined.
+                        if (lv.getScopeDepth() < parentScopeDepth && !tmp.get(problem.getDFVar(v))) {
                             // We want lv suitable for initializing in this scope
                             undefinedVars.add(lv.getScopeDepth() == 0 ? lv : lv.cloneForDepth(0));
-                            tmp.set(problem.getDFVar(lv));
                         }
+                        tmp.set(problem.getDFVar(lv));
                     }
                 }
             }
 
+            /*
             if (i instanceof ClosureAcceptingInstr) {
                 // Find all variables used in the closure and
                 // figure out if they are defined are not.
@@ -147,6 +145,7 @@ public class DefinedVariableNode extends FlowGraphNode<DefinedVariablesProblem, 
                     identifyUndefinedVarsInClosure(undefinedVars, ((WrappedIRClosure)o).getClosure(), 0);
                 }
             }
+            */
 
             // v is defined
             if (i instanceof ResultInstr) {
