@@ -90,6 +90,7 @@ suite = {
             "annotationProcessors": ["truffle:TRUFFLE_DSL_PROCESSOR"],
             "javaCompliance": "1.8",
             "workingSets": "JRubyTruffle",
+            "checkPackagePrefix": "false",
         },
 
         "jruby-truffle-ruby": {
@@ -107,6 +108,7 @@ suite = {
                 "mx:JUNIT",
             ],
             "javaCompliance": "1.8",
+            "checkPackagePrefix": "false",
         },
 
         "jruby-truffle-ruby-test": {
@@ -168,6 +170,9 @@ suite = {
                 "jruby-lib-jni",
                 "jruby-lib-ruby",
                 "jruby-licences",
+            ],
+            "overlaps": [
+                "RUBY",
             ],
             "description": "JRuby+Truffle Native Libs",
             "license": "EPL"
