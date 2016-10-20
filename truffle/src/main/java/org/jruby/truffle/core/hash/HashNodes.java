@@ -317,8 +317,7 @@ public abstract class HashNodes {
         }
 
         @ExplodeLoop
-        @Specialization(guards = { "isPackedHash(hash)", "isCompareByIdentity(hash)" },
-                contains = "getConstantIndexPackedArray")
+        @Specialization(guards = {"isPackedHash(hash)", "isCompareByIdentity(hash)"}, contains = "getConstantIndexPackedArrayByIdentity")
         public Object getPackedArrayByIdentity(VirtualFrame frame, DynamicObject hash, Object key,
                 @Cached("create()") BranchProfile notInHashProfile,
                 @Cached("create()") BranchProfile useDefaultProfile) {
