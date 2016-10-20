@@ -94,14 +94,18 @@ public class DefinedVariableNode extends FlowGraphNode<DefinedVariablesProblem, 
             // Variables that belong to outer scopes should always
             // be considered defined.
             for (Variable v: i.getUsedVariables()) {
+                LocalVariable lv;
                 if (!v.isSelf()) {
-                    if (v instanceof LocalVariable && ((LocalVariable)v).getScopeDepth() >= parentScopeDepth) {
-                        tmp.set(problem.getDFVar(v));
-                    }
+                    if (v instanceof LocalVariable) {
+                        lv = (LocalVariable)v;
+                        if (lv.getScopeDepth() >= parentScopeDepth) {
+                            tmp.set(problem.getDFVar(v));
+                        }
 
-                    if (!tmp.get(problem.getDFVar(v))) {
-                        // System.out.println("Variable " + v + " in instr " + i + " in " + basicBlock + " isn't defined!");
-                        undefinedVars.add(v);
+                        if (!tmp.get(problem.getDFVar(v))) {
+                            // System.out.println("Variable " + v + " in instr " + i + " in " + basicBlock + " isn't defined!");
+                            undefinedVars.add(lv.getScopeDepth() == 0 ? lv : lv.cloneForDepth(0));
+                        }
                     }
                 }
             }
