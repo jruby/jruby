@@ -194,8 +194,6 @@ public abstract class HashNodes {
 
         @Specialization(guards = "isNullHash(hash)")
         public Object getNull(VirtualFrame frame, DynamicObject hash, Object key) {
-            hashNode.hash(frame, key);
-
             if (undefinedValue != null) {
                 return undefinedValue;
             } else {
