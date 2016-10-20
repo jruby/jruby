@@ -27,11 +27,11 @@ describe "Truffle::Interop.execute" do
   end
   
   it "doesn't call nil" do
-    lambda { Truffle::Interop.execute(nil) }.should raise_error(RubyTruffleError)
+    lambda { Truffle::Interop.execute(nil) }.should raise_error(TypeError)
   end
   
   it "doesn't call strings" do
-    lambda { Truffle::Interop.execute('hello') }.should raise_error(RubyTruffleError)
+    lambda { Truffle::Interop.execute('hello') }.should raise_error(TypeError)
   end
 
 end
