@@ -234,7 +234,7 @@ def ruby_command(args):
     assert os.path.basename(truffle_api) == "truffle-api.jar"
     vmArgs = [
         # '-Xss2048k',
-        '-Xbootclasspath/p:' + truffle_api,
+        '-Xbootclasspath/a:' + truffle_api,
         '-cp', ':'.join(classpath),
     ] + vmArgs
     vmArgs = vmArgs + ['org.jruby.Main']
