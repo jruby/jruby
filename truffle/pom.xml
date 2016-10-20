@@ -21,7 +21,7 @@ DO NOT MODIFIY - GENERATED CODE
     <jruby.basedir>${basedir}/..</jruby.basedir>
     <polyglot.dump.readonly>true</polyglot.dump.readonly>
     <polyglot.dump.pom>pom.xml</polyglot.dump.pom>
-    <truffle.version>af21c6632dbc4e8c48cd25d0b7d623d379c888e6-SNAPSHOT</truffle.version>
+    <truffle.version>3c34543a8b7ff5edd74b76aafbeb3af52bd4afe7-SNAPSHOT</truffle.version>
   </properties>
   <dependencies>
     <dependency>
