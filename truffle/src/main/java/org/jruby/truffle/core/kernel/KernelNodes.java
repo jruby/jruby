@@ -1831,7 +1831,7 @@ public abstract class KernelNodes {
 
     public abstract static class ToHexStringNode extends CoreMethodArrayArgumentsNode {
 
-        public abstract String executeToHexString(VirtualFrame frame, Object value);
+        public abstract String executeToHexString(Object value);
 
         @Specialization
         public String toHexString(int value) {
@@ -1866,13 +1866,13 @@ public abstract class KernelNodes {
             toHexStringNode = KernelNodesFactory.ToHexStringNodeFactory.create(null);
         }
 
-        public abstract DynamicObject executeToS(VirtualFrame frame, Object self);
+        public abstract DynamicObject executeToS(Object self);
 
         @Specialization
-        public DynamicObject toS(VirtualFrame frame, Object self) {
+        public DynamicObject toS(Object self) {
             String className = Layouts.MODULE.getFields(classNode.executeLogicalClass(self)).getName();
-            Object id = objectIDNode.executeObjectID(frame, self);
-            String hexID = toHexStringNode.executeToHexString(frame, id);
+            Object id = objectIDNode.executeObjectID(self);
+            String hexID = toHexStringNode.executeToHexString(id);
 
             final DynamicObject string = createString(formatToS(className, hexID));
             taintResultNode.maybeTaint(self, string);
