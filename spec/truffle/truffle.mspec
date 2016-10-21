@@ -37,11 +37,6 @@ class MSpecScript
 
   set :core, [
     "spec/ruby/core",
-    
-    # Troublesome - they do work, but sometimes fail, sometimes timeout
-    "^spec/ruby/core/io/io_spec.rb",
-    "^spec/ruby/core/io/popen_spec.rb",
-    "^spec/ruby/core/io/pipe_spec.rb"
   ]
 
   set :library, [
