@@ -357,7 +357,7 @@ test-cexts: ${sulong} ${gem-test-pack} {
 
 deployBinaries: {
   run: [
-    [mx, deploy-binary-if-truffle-head, --only, RUBY, binary-snapshots]
+    [mx, deploy-binary-if-truffle-head, jruby-binary-snapshots]
   ]
   timelimit: "30:00"
 }

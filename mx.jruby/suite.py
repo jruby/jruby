@@ -71,7 +71,7 @@ suite = {
     },
 
     "repositories" : {
-         "binary-snapshots" : {
+         "jruby-binary-snapshots" : {
              "url" : "https://curio.ssw.jku.at/nexus/content/repositories/snapshots",
              "licenses" : ["EPL"]
           },
