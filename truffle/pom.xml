@@ -157,6 +157,9 @@ DO NOT MODIFIY - GENERATED CODE
           <systemProperties>
             <jruby.home>${basedir}/..</jruby.home>
           </systemProperties>
+          <additionalClasspathElements>
+            <additionalClasspathElement>${basedir}</additionalClasspathElement>
+          </additionalClasspathElements>
         </configuration>
       </plugin>
     </plugins>

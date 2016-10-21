@@ -65,7 +65,8 @@ project 'JRuby Truffle' do
   plugin( :surefire,
           'systemProperties' => {
               'jruby.home' =>  '${basedir}/..'
-          } )
+          },
+          'additionalClasspathElements' => ['${basedir}'] )
 
   build do
     default_goal 'package'
