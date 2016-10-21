@@ -19,4 +19,6 @@ fails:IO.popen with a leading Array argument accepts [env, command, arg1, arg2, 
 fails:IO.popen with a leading Array argument accepts '[env, command, arg1, arg2, ..., exec options], mode'
 fails:IO.popen with a leading Array argument accepts '[env, command, arg1, arg2, ..., exec options], mode, IO options'
 fails:IO.popen with a leading Array argument accepts '[env, command, arg1, arg2, ...], mode, IO + exec options'
+fails:IO.popen raises IOError when writing a read-only pipe
+fails:IO.popen reads and writes a read/write pipe
 slow:IO.popen sees an infinitely looping subprocess exit when read pipe is closed
