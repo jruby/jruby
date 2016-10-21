@@ -22,6 +22,8 @@ module RbConfig
     'host_cpu' => Truffle::System.host_cpu,
     'bindir' => bindir,
     'libdir' => "#{jruby_home}/lib/ruby/truffle",
+    "sitelibdir"=>"#{jruby_home}/lib/ruby/2.3/site_ruby", # TODO BJF Oct 21, 2016 Need to review these values
+    "sitearchdir"=>"#{jruby_home}/lib/ruby/2.3/site_ruby",
     'ruby_install_name' => 'jruby-truffle',
     'RUBY_INSTALL_NAME' => 'jruby-truffle',
     # 'ruby_install_name' => 'jruby',
