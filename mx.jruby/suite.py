@@ -26,7 +26,7 @@ def mavenLib(mavenDep, sha1, sourceSha1, license):
     }
 
 suite = {
-    "mxversion": "5.51.0",
+    "mxversion": "5.51.3",
     "name": "jrubytruffle",
 
     "imports": {
@@ -73,7 +73,7 @@ suite = {
     "repositories" : {
          "jruby-binary-snapshots" : {
              "url" : "https://curio.ssw.jku.at/nexus/content/repositories/snapshots",
-             "licenses" : ["EPL"]
+             "licenses" : ["EPL-1.0", "BSD-simplified", "MIT", "Apache-2.0", "GPLv2", "zlib"]
           },
      },
 
