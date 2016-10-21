@@ -273,6 +273,7 @@ def ruby_tck(args):
 mx.update_commands(_suite, {
     'ruby' : [ruby_command, '[ruby args|@VM options]'],
     'rubytck': [ruby_tck, ''],
+    'deploy-binary-if-truffle-head': [deploy_binary_if_truffle_head, ''],
 })
 
 # Utilities
