@@ -102,9 +102,6 @@ class JRubyCoreMavenProject(mx.MavenProject):
             version = f.readline().strip()
         return join(_suite.dir, 'core/target/jruby-core-' + version + '-shaded-sources.jar')
 
-    def extended_java_packages(self):
-        return []
-
 class JRubyCoreBuildTask(mx.BuildTask):
     def __str__(self):
         return 'Building {} with Maven'.format(self.subject)
