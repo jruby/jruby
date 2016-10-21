@@ -33,7 +33,7 @@ rubyDists = [
 
 def deploy_binary_if_truffle_head(args):
     """If the active branch is 'truffle-head', deploy binaries for the primary suite to remote maven repository."""
-    primary_branch = 'deploy-snapshots'
+    primary_branch = 'truffle-head'
     active_branch = mx.VC.get_vc(_suite.dir).active_branch(_suite.dir)
     if active_branch == primary_branch:
         return mx.command_function('deploy-binary')(args)
