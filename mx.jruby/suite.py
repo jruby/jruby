@@ -70,6 +70,13 @@ suite = {
         },
     },
 
+    "repositories" : {
+         "binary-snapshots" : {
+             "url" : "https://curio.ssw.jku.at/nexus/content/repositories/snapshots",
+             "licenses" : ["EPL"]
+          },
+     },
+
     "libraries": {
 
         # ------------- Libraries -------------

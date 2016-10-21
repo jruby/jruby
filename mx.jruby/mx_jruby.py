@@ -31,6 +31,16 @@ rubyDists = [
     'RUBY-TEST'
 ]
 
+def deploy_binary_if_truffle_head(args):
+    """If the active branch is 'truffle-head', deploy binaries for the primary suite to remote maven repository."""
+    primary_branch = 'deploy-snapshots'
+    active_branch = mx.VC.get_vc(_suite.dir).active_branch(_suite.dir)
+    if active_branch == primary_branch:
+        return mx.command_function('deploy-binary')(args)
+    else:
+        mx.log('The active branch is "%s". Binaries are deployed only if the active branch is "%s".' % (active_branch, primary_branch))
+        return 0
+
 def unittest_use_distribution_jars(config):
     """use the distribution jars instead of the class files"""
     vmArgs, mainClass, mainClassArgs = config

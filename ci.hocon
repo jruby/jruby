@@ -18,7 +18,7 @@ common: {
     [mx, sclone, --kind, git, "https://github.com/jruby/jruby-build-pack.git", jruby-build-pack],
     [cp, bin/jruby.bash, bin/jruby],
     [chmod, "+x", bin/jruby],
-    [mx, build]
+    [mx, build, --force-javac]
   ]
 
   timelimit: "01:00:00"
@@ -355,6 +355,13 @@ test-cexts: ${sulong} ${gem-test-pack} {
   ]
 }
 
+deployBinaries: {
+  run: [
+    [mx, deploy-binary-if-truffle-head, --only, RUBY, binary-snapshots]
+  ]
+  timelimit: "30:00"
+}
+
 builds: [
   {name: ruby-test-fast} ${common} ${gate-caps} {run: [${jt} [test, fast]]},
   {name: ruby-test-tck} ${common} ${gate-caps} {run: [[mx, rubytck]]},
@@ -443,4 +450,6 @@ builds: [
   {name: ruby-benchmarks-server-graal-enterprise-no-om} ${common} ${graal-enterprise-no-om} ${daily-bench-caps} ${jruby-truffle} ${server-benchmarks},
   {name: ruby-benchmarks-server-graal-vm-snapshot} ${common} ${graal-vm-snapshot} ${bench-caps} ${jruby-truffle} ${server-benchmarks}
   {name: ruby-benchmarks-server-graal-vm-release} ${common} ${graal-vm-release} ${bench-caps} ${jruby-truffle} ${server-benchmarks}
+
+  {name: ruby-deploy-binaries} ${common} ${gate-caps} ${deployBinaries}
 ]
