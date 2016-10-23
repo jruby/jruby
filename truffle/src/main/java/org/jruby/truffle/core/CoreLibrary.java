@@ -118,6 +118,7 @@ import org.jruby.truffle.language.loader.CodeLoader;
 import org.jruby.truffle.language.loader.SourceLoader;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.methods.InternalMethod;
+import org.jruby.truffle.language.methods.SharedMethodInfo;
 import org.jruby.truffle.language.objects.FreezeNode;
 import org.jruby.truffle.language.objects.FreezeNodeGen;
 import org.jruby.truffle.language.objects.SingletonClassNode;
@@ -242,6 +243,7 @@ public class CoreLibrary {
     private final DynamicObject rubiniusFFIPointerClass;
     private final DynamicObject signalModule;
     private final DynamicObject truffleModule;
+    private final DynamicObject truffleBootModule;
     private final DynamicObject truffleInteropModule;
     private final DynamicObject bigDecimalClass;
     private final DynamicObject encodingCompatibilityErrorClass;
@@ -282,6 +284,7 @@ public class CoreLibrary {
     private final Map<Errno, DynamicObject> errnoClasses = new HashMap<>();
 
     @CompilationFinal private InternalMethod basicObjectSendMethod;
+    @CompilationFinal private InternalMethod truffleBootRunJRubyRootMethod;
 
     @CompilationFinal private GlobalVariableStorage loadPathStorage;
     @CompilationFinal private GlobalVariableStorage loadedFeaturesStorage;
@@ -335,6 +338,10 @@ public class CoreLibrary {
 
         public SingletonClassNode getSingletonClassNode() {
             return singletonClassNode;
+        }
+
+        public DynamicObject getSingletonClass(Object object) {
+            return singletonClassNode.executeSingletonClass(object);
         }
 
         @Override
@@ -586,7 +593,7 @@ public class CoreLibrary {
         defineModule(truffleModule, "String");
         final DynamicObject attachments = defineModule(truffleModule, "Attachments");
         defineModule(attachments, "Internal");
-        defineModule(truffleModule, "Boot");
+        truffleBootModule = defineModule(truffleModule, "Boot");
         defineModule(truffleModule, "Fixnum");
         defineModule(truffleModule, "Safe");
         defineModule(truffleModule, "System");
@@ -803,6 +810,7 @@ public class CoreLibrary {
         coreMethodNodeManager.allMethodInstalled();
 
         basicObjectSendMethod = getMethod(basicObjectClass, "__send__");
+        truffleBootRunJRubyRootMethod = getMethod(node.getSingletonClass(truffleBootModule), "run_jruby_root");
     }
 
     private InternalMethod getMethod(DynamicObject module, String name) {
@@ -1450,6 +1458,10 @@ public class CoreLibrary {
     public boolean isSend(InternalMethod method) {
         CallTarget callTarget = method.getCallTarget();
         return callTarget == basicObjectSendMethod.getCallTarget();
+    }
+
+    public boolean isRunJRubyRootMethod(SharedMethodInfo info) {
+        return info == truffleBootRunJRubyRootMethod.getSharedMethodInfo();
     }
 
     public DynamicObjectFactory getIntRangeFactory() {

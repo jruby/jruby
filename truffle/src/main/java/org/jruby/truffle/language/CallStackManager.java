@@ -15,6 +15,7 @@ import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.FrameInstanceVisitor;
 import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.nodes.RootNode;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.Layouts;
@@ -27,6 +28,7 @@ import org.jruby.truffle.language.backtrace.BacktraceFormatter;
 import org.jruby.truffle.language.backtrace.InternalRootNode;
 import org.jruby.truffle.language.exceptions.DisablingBacktracesNode;
 import org.jruby.truffle.language.methods.InternalMethod;
+import org.jruby.truffle.language.methods.SharedMethodInfo;
 import org.jruby.util.Memo;
 
 import java.util.ArrayList;
@@ -221,16 +223,17 @@ public class CallStackManager {
             return false;
         }
 
-        // Ignore the call to run_jruby_root
-        // TODO CS 2-Feb-16 should find a better way to detect this than a string
+        final RootNode rootNode = callNode.getRootNode();
 
-        final String name = callNode.getRootNode().getName();
-
-        if (name != null && name.equals("run_jruby_root")) {
-            return true;
+        // Ignore the call to Truffle::Boot.run_jruby_root
+        if (rootNode instanceof RubyRootNode) {
+            SharedMethodInfo sharedMethodInfo = ((RubyRootNode) rootNode).getSharedMethodInfo();
+            if (context.getCoreLibrary().isRunJRubyRootMethod(sharedMethodInfo)) {
+                return true;
+            }
         }
 
-        if (callNode.getRootNode() instanceof InternalRootNode) {
+        if (rootNode instanceof InternalRootNode) {
             return true;
         }
 
