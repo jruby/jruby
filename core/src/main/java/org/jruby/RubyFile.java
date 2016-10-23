@@ -509,6 +509,15 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     @JRubyMethod(required = 1, optional = 1, meta = true)
     public static IRubyObject basename(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = context.runtime;
+        final String separator = runtime.getClass("File").getConstant("SEPARATOR").toString();
+        final char separatorChar = separator.charAt(0);
+        String altSeparator = null;
+        char altSeparatorChar = '\0';
+        final IRubyObject rbAltSeparator = runtime.getClass("File").getConstant("ALT_SEPARATOR");
+        if (rbAltSeparator != context.nil) {
+          altSeparator = rbAltSeparator.toString();
+          altSeparatorChar = altSeparator.charAt(0);
+        }
 
         RubyString origString = StringSupport.checkEmbeddedNulls(runtime, get_path(context, args[0]));
         Encoding origEncoding = origString.getEncoding();
@@ -542,16 +551,16 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             }
         }
 
-        while (name.length() > 1 && name.charAt(name.length() - 1) == '/') {
+        while (name.length() > 1 && (name.charAt(name.length() - 1) == separatorChar || (altSeparator != null && name.charAt(name.length() - 1) == altSeparatorChar))) {
             name = name.substring(0, name.length() - 1);
         }
 
-        // Paths which end in "/" or "\\" must be stripped off.
+        // Paths which end in File::SEPARATOR or File::ALT_SEPARATOR must be stripped off.
         int slashCount = 0;
         int length = name.length();
         for (int i = length - 1; i >= 0; i--) {
             char c = name.charAt(i);
-            if (c != '/' && c != '\\') {
+            if (c != separatorChar && (altSeparator == null || c != altSeparatorChar)) {
                 break;
             }
             slashCount++;
@@ -560,13 +569,12 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             name = name.substring(0, name.length() - slashCount);
         }
 
-        int index = name.lastIndexOf('/');
-        if (index == -1) {
-            // XXX actually only on windows...
-            index = name.lastIndexOf('\\');
+        int index = name.lastIndexOf(separatorChar);
+        if (index == -1 && altSeparator != null) {
+            index = name.lastIndexOf(altSeparatorChar);
         }
 
-        if (!name.equals("/") && index != -1) {
+        if (!(name.equals(separator) || (altSeparator != null && name.equals(altSeparator))) && index != -1) {
             name = name.substring(index + 1);
         }
 
