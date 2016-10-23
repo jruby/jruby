@@ -442,6 +442,8 @@ module Commands
           --server        run an instrumentation server on port 8080
           --igv           make sure IGV is running and dump Graal graphs after partial escape (implies --graal)
               --full      show all phases, not just up to the Truffle partial escape
+          --fg            disable background compilation
+          --trace         show compilation information on stdout
           --jdebug        run a JDWP debug server on #{JDEBUG_PORT}
           --jexception[s] print java exceptions
           --exec          use exec rather than system
@@ -563,7 +565,8 @@ module Commands
 
     {
       '--asm' => '--graal',
-      '--igv' => '--graal'
+      '--igv' => '--graal',
+      '--trace' => '--graal',
     }.each_pair do |arg, dep|
       args.unshift dep if args.include?(arg)
     end
@@ -625,6 +628,10 @@ module Commands
 
     if args.delete('--fg')
       jruby_args << "-J-Dgraal.TruffleBackgroundCompilation=false"
+    end
+
+    if args.delete('--trace')
+      jruby_args << "-J-Dgraal.TraceTruffleCompilation=true"
     end
 
     if args.delete('--no-print-cmd')
