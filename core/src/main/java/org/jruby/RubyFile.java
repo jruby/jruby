@@ -570,8 +570,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         }
 
         int index = name.lastIndexOf(separatorChar);
-        if (index == -1 && altSeparator != null) {
-            index = name.lastIndexOf(altSeparatorChar);
+        if (altSeparator != null) {
+            index = Math.max(index, name.lastIndexOf(altSeparatorChar));
         }
 
         if (!(name.equals(separator) || (altSeparator != null && name.equals(altSeparator))) && index != -1) {
