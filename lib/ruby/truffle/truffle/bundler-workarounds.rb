@@ -584,7 +584,7 @@ Error:  Gem::Ext::BuildError: ERROR: Failed to build gem native extension.
         This can be used to ignore building gem extensions until this is working correctly.
 HEREDOC
 puts native_extensions if $VERBOSE
-require "rubygems/ext/builder"
+require "rubygems/ext"
 
 class Gem::Ext::Builder
   def build_extensions
