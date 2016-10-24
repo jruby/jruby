@@ -1,4 +1,3 @@
-$quiet_workaround = false
 
 workaround_header = <<-HEREDOC
 ==========================================
@@ -9,7 +8,7 @@ Instructions:
   2. Try running gem tests, e.g.:
       GEM_HOME=/Users/brandonfish/Documents/truffle_gem_home ../../jruby/bin/jruby -X+T -rbundler-workarounds -S bundle exec rake
 HEREDOC
-puts workaround_header unless $quiet_workaround
+puts workaround_header if $VERBOSE
 
 
 
@@ -21,7 +20,7 @@ Error:
 Called here:
   lib/ruby/stdlib/rubygems/basic_specification.rb:313
 HEREDOC
-puts have_extensions unless $quiet_workaround
+puts have_extensions if $VERBOSE
 class Gem::BasicSpecification
   def have_extensions?; !extensions.nil? && !extensions.empty?; end
 end
@@ -31,7 +30,7 @@ remote_fetcher = <<-HEREDOC
 ==========================================
 Workaround: Use wget in remote fetcher
 HEREDOC
-puts remote_fetcher unless $quiet_workaround
+puts remote_fetcher if $VERBOSE
 
 require 'rubygems/remote_fetcher'
 class Gem::RemoteFetcher
@@ -140,7 +139,7 @@ remote_fetcher_api = <<-HEREDOC
 ==========================================
 Workaround: Hardcode DNS Resolution to rubygems.org for gem install
 HEREDOC
-puts remote_fetcher_api unless $quiet_workaround
+puts remote_fetcher_api if $VERBOSE
 
 class Gem::RemoteFetcher
   def api_endpoint(uri)
@@ -180,7 +179,7 @@ Error:
 Called here:
   lib/bundler/ruby_version.rb:98
 HEREDOC
-puts ruby_version unless $quiet_workaround
+puts ruby_version if $VERBOSE
 RUBY_ENGINE = "ruby"
 
 
@@ -188,7 +187,7 @@ curl_https = <<-HEREDOC
 ==========================================
 Workaround: Use curl when URIs are https
 HEREDOC
-puts curl_https unless $quiet_workaround
+puts curl_https if $VERBOSE
 class CurlResponse < Net::HTTPOK
   def body
     @body
@@ -239,7 +238,7 @@ rubygems_package = <<-HEREDOC
         - shell to tar for untarring
         - skip some checksum/digest verification
 HEREDOC
-puts rubygems_package unless $quiet_workaround
+puts rubygems_package if $VERBOSE
 require 'rubygems/package'
 class Gem::Package
   def extract_files destination_dir, pattern = "*"
@@ -335,7 +334,7 @@ zlib_crc = <<-HEREDOC
 ==========================================
 Workaround: Disable zlib crc check
 HEREDOC
-puts zlib_crc unless $quiet_workaround
+puts zlib_crc if $VERBOSE
 require "zlib"
 module Zlib
   class GzipFile
@@ -366,7 +365,7 @@ bundler_updater = <<-HEREDOC
 ==========================================
 Workaround: Shell to gunzip in bundler updater
 HEREDOC
-puts bundler_updater unless $quiet_workaround
+puts bundler_updater if $VERBOSE
 bundler_loaded = false
 begin
   require "bundler"
@@ -441,7 +440,7 @@ module OpenSSL
       Called here:
         lib/ruby/stdlib/rubygems/security.rb:372
     HEREDOC
-    puts cipher_new unless $quiet_workaround
+    puts cipher_new if $VERBOSE
 
     def self.new(enc)
 
@@ -457,7 +456,7 @@ module OpenSSL
       Called here:
         bundler/vendor/net/http/persistent.rb:519
   HEREDOC
-  puts verify_peer unless $quiet_workaround
+  puts verify_peer if $VERBOSE
   module SSL
     VERIFY_PEER = 1
   end
@@ -470,7 +469,7 @@ module OpenSSL
       Called here:
         bundler/vendor/net/http/persistent.rb:1142
   HEREDOC
-  puts verify_none unless $quiet_workaround
+  puts verify_none if $VERBOSE
   module SSL
     VERIFY_NONE = 0
   end
@@ -499,7 +498,7 @@ bundler_fetcher = <<-HEREDOC
 ==========================================
 Workaround: Use curl in bundler downloader for https requests
 HEREDOC
-puts bundler_fetcher unless $quiet_workaround
+puts bundler_fetcher if $VERBOSE
 
 require "openssl-stubs"
 
@@ -562,7 +561,7 @@ Workaround: Change =~ to == for resolver#search_for
 Error:  type mismatch: String given
         stdlib/rubygems/resolver.rb:237:in `block in search_for'
 HEREDOC
-puts resolver_search_for unless $quiet_workaround
+puts resolver_search_for if $VERBOSE
 require "rubygems/resolver"
 class Gem::Resolver
   def search_for(dependency)
@@ -584,7 +583,7 @@ Workaround: Ignore native extensions
 Error:  Gem::Ext::BuildError: ERROR: Failed to build gem native extension.
         This can be used to ignore building gem extensions until this is working correctly.
 HEREDOC
-puts native_extensions unless $quiet_workaround
+puts native_extensions if $VERBOSE
 require "rubygems/ext/builder"
 
 class Gem::Ext::Builder
@@ -615,4 +614,4 @@ class Gem::Ext::Builder
   end
 end
 
-puts "==========================================" unless $quiet_workaround
+puts "==========================================" if $VERBOSE
