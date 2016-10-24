@@ -577,6 +577,42 @@ class Gem::Resolver
         map { |s| ActivationRequest.new s, dependency, [] }
   end
 end
-                                                                                                               #
+
+native_extensions = <<-HEREDOC
+==========================================
+Workaround: Ignore native extensions
+Error:  Gem::Ext::BuildError: ERROR: Failed to build gem native extension.
+        This can be used to ignore building gem extensions until this is working correctly.
+HEREDOC
+puts native_extensions unless $quiet_workaround
+require "rubygems/ext/builder"
+
+class Gem::Ext::Builder
+  def build_extensions
+    return if @spec.extensions.empty?
+
+    if @build_args.empty?
+      say "Building native extensions.  This could take a while..."
+    else
+      say "Building native extensions with: '#{@build_args.join ' '}'"
+      say "This could take a while..."
+    end
+
+    dest_path = @spec.extension_dir
+
+    FileUtils.rm_f @spec.gem_build_complete_path
+
+    @ran_rake = false # only run rake once
+
+    @spec.extensions.each do |extension|
+      break if @ran_rake
+      puts "WORKAROUND: Skipping build extension:#{extension}, dest_path:#{dest_path}"
+      #build_extension extension, dest_path
+    end
+
+    # This doesn't exist when we skip building
+    #FileUtils.touch @spec.gem_build_complete_path
+  end
+end
 
 puts "==========================================" unless $quiet_workaround
