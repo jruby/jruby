@@ -217,7 +217,7 @@ class Gem::Request
     # WORKAROUND START
     if @uri.scheme == "https"
       resp = CurlResponse.new("1.1", 200, "OK")
-      resp_raw = `curl -i #{@uri}`
+      resp_raw = `curl -i -s #{@uri}`
       blank_line_idx = resp_raw.index("\r\n\r\n")
       header = resp_raw[0, blank_line_idx]
       resp.body = resp_raw[(blank_line_idx+4)..-1]
@@ -515,7 +515,7 @@ if bundler_loaded
           # WORKAROUND START
           response = if uri.scheme == "https"
                        resp = CurlResponse.new("1.1", 200, "OK")
-                       resp_raw = `curl -i #{uri}`
+                       resp_raw = `curl -i -s #{uri}`
                        blank_line_idx = resp_raw.index("\r\n\r\n")
                        header = resp_raw[0, blank_line_idx]
                        resp.body = resp_raw[(blank_line_idx+4)..-1]
