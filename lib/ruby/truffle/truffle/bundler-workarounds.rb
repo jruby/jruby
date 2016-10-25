@@ -616,38 +616,40 @@ end
 
 puts "==========================================" if $VERBOSE
 
-native_extensions = <<-HEREDOC
+if bundler_loaded
+  native_extensions = <<-HEREDOC
 ==========================================
 Workaround: Do not setup signal traps
 Error:  Some signals are not recognized
-HEREDOC
-puts native_extensions if $VERBOSE
+  HEREDOC
+  puts native_extensions if $VERBOSE
 
-require 'bundler/cli'
-require 'bundler/cli/exec'
+  require 'bundler/cli'
+  require 'bundler/cli/exec'
 
-module Bundler
-  class CLI::Exec
-    def kernel_load(file, *args)
-      args.pop if args.last.is_a?(Hash)
-      ARGV.replace(args)
-      $0 = file
-      Process.setproctitle(process_title(file, args)) if Process.respond_to?(:setproctitle)
-      ui = Bundler.ui
-      Bundler.ui = nil
-      require "bundler/setup"
-      signals = Signal.list.keys - RESERVED_SIGNALS
-      # signals.each {|s| trap(s, "DEFAULT") } Commented out
-      Kernel.load(file)
-    rescue SystemExit
-      raise
-    rescue Exception => e # rubocop:disable Lint/RescueException
-      Bundler.ui = ui
-      Bundler.ui.error "bundler: failed to load command: #{cmd} (#{file})"
-      backtrace = e.backtrace.take_while {|bt| !bt.start_with?(__FILE__) }
-      abort "#{e.class}: #{e.message}\n  #{backtrace.join("\n  ")}"
+  module Bundler
+    class CLI::Exec
+      def kernel_load(file, *args)
+        args.pop if args.last.is_a?(Hash)
+        ARGV.replace(args)
+        $0 = file
+        Process.setproctitle(process_title(file, args)) if Process.respond_to?(:setproctitle)
+        ui         = Bundler.ui
+        Bundler.ui = nil
+        require "bundler/setup"
+        signals = Signal.list.keys - RESERVED_SIGNALS
+        # signals.each {|s| trap(s, "DEFAULT") } Commented out
+        Kernel.load(file)
+      rescue SystemExit
+        raise
+      rescue Exception => e # rubocop:disable Lint/RescueException
+        Bundler.ui = ui
+        Bundler.ui.error "bundler: failed to load command: #{cmd} (#{file})"
+        backtrace = e.backtrace.take_while { |bt| !bt.start_with?(__FILE__) }
+        abort "#{e.class}: #{e.message}\n  #{backtrace.join("\n  ")}"
+      end
     end
   end
-end
 
-puts "==========================================" if $VERBOSE
+  puts "==========================================" if $VERBOSE
+end
