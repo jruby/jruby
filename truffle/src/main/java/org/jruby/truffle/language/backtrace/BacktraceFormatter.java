@@ -56,7 +56,8 @@ public class BacktraceFormatter {
 
     // For debugging
     public static List<String> rubyBacktrace(RubyContext context) {
-        return BacktraceFormatter.createDefaultFormatter(context).formatBacktrace(context, null, context.getCallStack().getBacktrace(null));
+        return new BacktraceFormatter(context, EnumSet.of(FormattingFlags.INCLUDE_CORE_FILES)).
+                formatBacktrace(context, null, context.getCallStack().getBacktrace(null));
     }
 
     // For debugging
