@@ -236,88 +236,91 @@ weekly-bench-caps: {
   timelimit: "02:00:00"
 }
 
+bench: {
+  cmd: [mx, --dynamicimport, ruby-benchmarks, benchmark]
+  setup: [
+    [mx, sclone, --kind, git, "https://github.com/jruby/benchmark-interface.git", benchmark-interface],
+    [mx, sclone, --kind, git, --revision, mx-config, "https://github.com/graalvm/ruby-benchmarks.git", ruby-benchmarks]
+  ]
+}
+
 post-process-and-upload-results: [
   [tool/truffle/post-process-results-json.rb, bench-results.json, bench-results-processed.json],
   [cat, bench-results-processed.json],
   [bench-uploader.py, bench-results-processed.json]
 ]
 
-metrics: {
+metrics: ${bench} {
   run: [
-    [mx, benchmark, allocation]
+    ${bench.cmd} [allocation]
   ] ${post-process-and-upload-results} [
-    [mx, benchmark, minheap]
+    ${bench.cmd} [minheap]
   ] ${post-process-and-upload-results} [
-    [mx, benchmark, time]
+    ${bench.cmd} [time]
   ] ${post-process-and-upload-results}
   timelimit: "00:25:00"
 }
 
-compiler-metrics: {
+compiler-metrics: ${bench} {
   run: [
-    [mx, benchmark, "allocation:compile-mandelbrot"]
+    ${bench.cmd} ["allocation:compile-mandelbrot"]
   ] ${post-process-and-upload-results} [
-    [mx, benchmark, "minheap:compile-mandelbrot"]
+    ${bench.cmd} ["minheap:compile-mandelbrot"]
   ] ${post-process-and-upload-results} [
-    [mx, benchmark, "time:compile-mandelbrot"]
+    ${bench.cmd} ["time:compile-mandelbrot"]
   ] ${post-process-and-upload-results}
   timelimit: "00:50:00"
 }
 
-setup-benchmarks: [
-  [mx, sclone, --kind, git, "https://github.com/jruby/benchmark-interface.git", benchmark-interface],
-  [mx, sclone, --kind, git, "https://github.com/jruby/all-ruby-benchmarks.git", all-ruby-benchmarks]
-]
-
-classic-benchmarks: {
-  run: ${setup-benchmarks} [
-    [mx, benchmark, classic]
+classic-benchmarks: ${bench} {
+  run: [
+    ${bench.cmd} [classic]
   ] ${post-process-and-upload-results}
   timelimit: "00:35:00"
 }
 
-chunky-benchmarks: {
-  run: ${setup-benchmarks} [
-    [mx, benchmark, chunky]
+chunky-benchmarks: ${bench} {
+  run: [
+    ${bench.cmd} [chunky]
   ] ${post-process-and-upload-results}
   timelimit: "00:40:00"
 }
 
-psd-benchmarks: {
-  run: ${setup-benchmarks} [
-    [mx, benchmark, psd]
+psd-benchmarks: ${bench} {
+  run: [
+    ${bench.cmd} [psd]
   ] ${post-process-and-upload-results}
   timelimit: "01:15:00"
 }
 
-asciidoctor-benchmarks: {
-  run: ${setup-benchmarks} [
-    [mx, benchmark, asciidoctor]
+asciidoctor-benchmarks: ${bench} {
+  run: [
+    ${bench.cmd} [asciidoctor]
   ] ${post-process-and-upload-results}
   timelimit: "00:35:00"
 }
 
-other-benchmarks: {
-  run: ${setup-benchmarks} [
-    [mx, benchmark, image-demo]
+other-benchmarks: ${bench} {
+  run: [
+    ${bench.cmd} [image-demo]
   ] ${post-process-and-upload-results} [
-    [mx, benchmark, optcarrot]
+    ${bench.cmd} [optcarrot]
   ] ${post-process-and-upload-results} [
-    [mx, benchmark, savina]
+    ${bench.cmd} [savina]
   ] ${post-process-and-upload-results} [
-    [mx, benchmark, synthetic]
+    ${bench.cmd} [synthetic]
   ] ${post-process-and-upload-results} [
-    [mx, benchmark, micro]
+    ${bench.cmd} [micro]
   ] ${post-process-and-upload-results}
   timelimit: "00:40:00"
 }
 
-server-benchmarks: {
+server-benchmarks: ${bench} {
   packages: {
     "apache/ab": ">=2.3"
   }
 
-  run: ${setup-benchmarks} [
+  run: [
     [mx, benchmark, server]
   ] ${post-process-and-upload-results}
   timelimit: "00:20:00"
