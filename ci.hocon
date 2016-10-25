@@ -238,8 +238,8 @@ weekly-bench-caps: {
 
 bench: {
   cmd: [mx, --dynamicimport, ruby-benchmarks, benchmark]
-  setup: [
-    ${mx_sclone} ["https://github.com/jruby/benchmark-interface.git", benchmark-interface],
+  setup: ${common.setup} [
+    ${mx_sclone} ["https://github.com/jruby/benchmark-interface.git", ../benchmark-interface],
     ${mx_sclone} [--revision, mx-config, "https://github.com/jruby/all-ruby-benchmarks.git", ../ruby-benchmarks]
   ]
 }
@@ -321,7 +321,7 @@ server-benchmarks: ${bench} {
   }
 
   run: [
-    [mx, benchmark, server]
+    ${bench.cmd} [server]
   ] ${post-process-and-upload-results}
   timelimit: "00:20:00"
 }

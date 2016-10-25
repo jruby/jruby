@@ -170,7 +170,11 @@ module Utilities
     if File.exist?(benchmark)
       benchmark
     else
-      File.join(find_repo('all-ruby-benchmarks'), benchmark)
+      begin
+        File.join(find_repo('ruby-benchmarks'), benchmark)
+      rescue
+        File.join(find_repo('all-ruby-benchmarks'), benchmark)
+      end
     end
   end
 
