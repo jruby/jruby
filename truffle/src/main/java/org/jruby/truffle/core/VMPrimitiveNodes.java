@@ -590,16 +590,4 @@ public abstract class VMPrimitiveNodes {
 
     }
 
-    @Primitive(name = "vm_set_process_title", needsSelf = false)
-    public abstract static class VMSetProcessTitlePrimitiveNode extends PrimitiveArrayArgumentsNode {
-
-        @Specialization(guards = "isRubyString(title)")
-        public DynamicObject setClass(DynamicObject title) {
-            // no-op
-            return title;
-        }
-
-    }
-
-
 }
