@@ -415,13 +415,14 @@ module Rbzlib
     crc = crc ^ 0xffffffff
     i = 0
 
-    while len >= 8
-      while i < 8
-        crc = @@crc_table[(crc ^ buf[i].ord) & 0xff] ^ (crc >> 8)
-        i += 1
-      end
-      len -= 8
-    end
+    # Commented out library code here because method specs were failing
+    # while len >= 8
+    #   while i < 8
+    #     crc = @@crc_table[(crc ^ buf[i].ord) & 0xff] ^ (crc >> 8)
+    #     i += 1
+    #   end
+    #   len -= 8
+    # end
 
     if len != 0
       loop do
