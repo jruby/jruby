@@ -239,8 +239,8 @@ weekly-bench-caps: {
 bench: {
   cmd: [mx, --dynamicimport, ruby-benchmarks, benchmark]
   setup: [
-    [mx, sclone, --kind, git, "https://github.com/jruby/benchmark-interface.git", benchmark-interface],
-    [mx, sclone, --kind, git, --revision, mx-config, "https://github.com/graalvm/ruby-benchmarks.git", ruby-benchmarks]
+    ${mx_sclone} ["https://github.com/jruby/benchmark-interface.git", benchmark-interface],
+    ${mx_sclone} [--revision, mx-config, "https://github.com/jruby/all-ruby-benchmarks.git", ../ruby-benchmarks]
   ]
 }
 
