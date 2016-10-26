@@ -49,6 +49,7 @@ public class PrependedModule extends IncludedModule {
         for (Map.Entry<String, DynamicMethod> entry : methods.entrySet()) {
             DynamicMethod method = entry.getValue();
             method.setImplementationClass(this);
+            method.setDefinedClass(origin);
         }
     }
 
