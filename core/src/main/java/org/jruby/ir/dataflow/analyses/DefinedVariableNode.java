@@ -7,6 +7,7 @@ import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.ResultInstr;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.operands.TemporaryLocalVariable;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.ir.IRClosure;
@@ -116,10 +117,9 @@ public class DefinedVariableNode extends FlowGraphNode<DefinedVariablesProblem, 
         initSolution();
         for (Instr i: basicBlock.getInstrs()) {
             for (Variable v: i.getUsedVariables()) {
-                LocalVariable lv;
                 if (!v.isSelf()) {
                     if (v instanceof LocalVariable) {
-                        lv = (LocalVariable)v;
+                        LocalVariable lv = (LocalVariable) v;
                         // Variables that belong to outer scopes
                         // are considered already defined.
                         if (lv.getScopeDepth() < parentScopeDepth && !tmp.get(problem.getDFVar(v))) {
@@ -127,6 +127,12 @@ public class DefinedVariableNode extends FlowGraphNode<DefinedVariablesProblem, 
                             undefinedVars.add(lv.getScopeDepth() == 0 ? lv : lv.cloneForDepth(0));
                         }
                         tmp.set(problem.getDFVar(lv));
+                    } else if (v instanceof TemporaryLocalVariable) {
+                        TemporaryLocalVariable tlv = (TemporaryLocalVariable) v;
+                        if (!tmp.get(problem.getDFVar(v))) {
+                            undefinedVars.add(tlv);
+                        }
+                        tmp.set(problem.getDFVar(tlv));
                     }
                 }
             }
