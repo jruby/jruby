@@ -65,6 +65,9 @@ public class ExceptionTranslatingNode extends RubyNode {
             throw new RaiseException(translate(error));
         } catch (ThreadDeath death) {
             throw death;
+        } catch (IllegalArgumentException e) {
+            errorProfile.enter();
+            throw new RaiseException(translate(e));
         } catch (Throwable exception) {
             errorProfile.enter();
             throw new RaiseException(translate(exception));
@@ -87,6 +90,15 @@ public class ExceptionTranslatingNode extends RubyNode {
         }
 
         return coreExceptions().systemStackErrorStackLevelTooDeep(this, error);
+    }
+
+    @TruffleBoundary
+    private DynamicObject translate(IllegalArgumentException exception) {
+        if (getContext().getOptions().EXCEPTIONS_PRINT_JAVA) {
+            exception.printStackTrace();
+        }
+
+        return coreExceptions().argumentError(exception.getMessage(), this);
     }
 
     @TruffleBoundary
