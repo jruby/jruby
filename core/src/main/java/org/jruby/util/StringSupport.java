@@ -428,18 +428,19 @@ public final class StringSupport {
         return (int)(cr >>> 31);
     }
 
-    public static int codePoint(Ruby runtime, Encoding enc, byte[] bytes, int p, int end) {
-        if (p >= end) throw runtime.newArgumentError("empty string");
-        int cl = preciseLength(enc, bytes, p, end);
-        if (cl <= 0) throw runtime.newArgumentError("invalid byte sequence in " + enc);
-        return enc.mbcToCode(bytes, p, end);
-    }
-
     public static int codePoint(Encoding enc, byte[] bytes, int p, int end) {
         if (p >= end) throw new IllegalArgumentException("empty string");
         int cl = preciseLength(enc, bytes, p, end);
         if (cl <= 0) throw new IllegalArgumentException("invalid byte sequence in " + enc);
         return enc.mbcToCode(bytes, p, end);
+    }
+
+    public static int codePoint(Ruby runtime, Encoding enc, byte[] bytes, int p, int end) {
+        try {
+            return codePoint(enc, bytes, p, end);
+        } catch (IllegalArgumentException e) {
+            throw runtime.newArgumentError(e.getMessage());
+        }
     }
 
     public static int codeLength(Encoding enc, int c) {
