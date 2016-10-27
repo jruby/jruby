@@ -1052,9 +1052,8 @@ public final class StringSupport {
 
     private static final Object DUMMY_VALUE = "";
 
-    public static TrTables trSetupTable(final ByteList str, final Ruby runtime,
-        final boolean[] stable, TrTables tables, final boolean first, final Encoding enc) {
-
+    public static TrTables trSetupTable(final ByteList str,
+                                        final boolean[] stable, TrTables tables, final boolean first, final Encoding enc) {
         int i, l[] = {0};
         final boolean cflag;
 
@@ -1082,7 +1081,7 @@ public final class StringSupport {
         IntHashMap<Object> table = null, ptable = null;
 
         int c;
-        while ((c = trNext(tr, runtime, enc)) != -1) {
+        while ((c = trNext(tr, enc)) != -1) {
             if (c < TRANS_SIZE) {
                 if ( buf == null ) { // initialize buf
                     buf = new byte[TRANS_SIZE];
@@ -1136,6 +1135,16 @@ public final class StringSupport {
         return tables;
     }
 
+    public static TrTables trSetupTable(final ByteList str, final Ruby runtime,
+        final boolean[] stable, TrTables tables, final boolean first, final Encoding enc) {
+
+        try {
+            return trSetupTable(str, stable, tables, first, enc);
+        } catch (IllegalArgumentException e) {
+            throw runtime.newArgumentError(e.getMessage());
+        }
+    }
+
     public static boolean trFind(final int c, final boolean[] table, final TrTables tables) {
         if (c < TRANS_SIZE) return table[c];
 
@@ -1154,16 +1163,16 @@ public final class StringSupport {
         return table[TRANS_SIZE];
     }
 
-    public static int trNext(final TR tr, Ruby runtime, Encoding enc) {
+    public static int trNext(final TR tr, Encoding enc) {
         for (;;) {
             if ( ! tr.gen ) {
-                return trNext_nextpart(tr, runtime, enc);
+                return trNext_nextpart(tr, enc);
             }
 
             while (enc.codeToMbcLength( ++tr.now ) <= 0) {
                 if (tr.now == tr.max) {
                     tr.gen = false;
-                    return trNext_nextpart(tr, runtime, enc);
+                    return trNext_nextpart(tr, enc);
                 }
             }
             if (tr.now < tr.max) {
@@ -1175,27 +1184,35 @@ public final class StringSupport {
         }
     }
 
-    private static int trNext_nextpart(final TR tr, Ruby runtime, Encoding enc) {
+    public static int trNext(final TR tr, Ruby runtime, Encoding enc) {
+        try {
+            return trNext(tr, enc);
+        } catch (IllegalArgumentException e) {
+            throw runtime.newArgumentError(e.getMessage());
+        }
+    }
+
+    private static int trNext_nextpart(final TR tr, Encoding enc) {
         final int[] n = {0};
 
         if (tr.p == tr.pend) return -1;
         if (EncodingUtils.encAscget(tr.buf, tr.p, tr.pend, n, enc) == '\\' && tr.p + n[0] < tr.pend) {
             tr.p += n[0];
         }
-        tr.now = EncodingUtils.encCodepointLength(runtime, tr.buf, tr.p, tr.pend, n, enc);
+        tr.now = EncodingUtils.encCodepointLength(tr.buf, tr.p, tr.pend, n, enc);
         tr.p += n[0];
         if (EncodingUtils.encAscget(tr.buf, tr.p, tr.pend, n, enc) == '-' && tr.p + n[0] < tr.pend) {
             tr.p += n[0];
             if (tr.p < tr.pend) {
-                int c = EncodingUtils.encCodepointLength(runtime, tr.buf, tr.p, tr.pend, n, enc);
+                int c = EncodingUtils.encCodepointLength(tr.buf, tr.p, tr.pend, n, enc);
                 tr.p += n[0];
                 if (tr.now > c) {
                     if (tr.now < 0x80 && c < 0x80) {
-                        throw runtime.newArgumentError("invalid range \""
+                        throw new IllegalArgumentException("invalid range \""
                                 + (char) tr.now + '-' + (char) c + "\" in string transliteration");
                     }
 
-                    throw runtime.newArgumentError("invalid range in string transliteration");
+                    throw new IllegalArgumentException("invalid range in string transliteration");
                 }
                 tr.gen = true;
                 tr.max = c;
