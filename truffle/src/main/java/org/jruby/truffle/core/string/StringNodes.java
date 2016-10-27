@@ -2735,12 +2735,7 @@ public abstract class StringNodes {
                 if (singlebyte) {
                     c = bytes[p++] & 0xff;
                 } else {
-                    try {
-                        c = RopeOperations.codePoint(getContext(), rope, p);
-                    } catch (org.jruby.exceptions.RaiseException ex) {
-                        throw new RaiseException(getContext().getJRubyInterop().toTruffle(ex.getException(), this));
-                    }
-
+                    c = RopeOperations.codePoint(getContext(), rope, p);
                     p += StringSupport.length(enc, bytes, p, end);
                 }
 
