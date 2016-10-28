@@ -14,6 +14,7 @@ package org.jruby.truffle.core.encoding;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.object.DynamicObject;
+import jnr.constants.platform.LangInfo;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
 import org.jcodings.EncodingDB.Entry;
@@ -114,7 +115,20 @@ public class EncodingManager {
 
     @TruffleBoundary
     public Encoding getLocaleEncoding() {
-        return context.getJRubyRuntime().getEncodingService().getLocaleEncoding();
+        String localeEncodingName;
+        try {
+            localeEncodingName = context.getNativePlatform().getPosix().nl_langinfo(LangInfo.CODESET.intValue());
+        }
+        catch (UnsupportedOperationException e) {
+            localeEncodingName = Charset.defaultCharset().name();
+        }
+
+        DynamicObject rubyEncoding = getRubyEncoding(localeEncodingName);
+        if (rubyEncoding == null) {
+            rubyEncoding = getRubyEncoding("US-ASCII");
+        }
+
+        return EncodingOperations.getEncoding(rubyEncoding);
     }
 
     @TruffleBoundary
