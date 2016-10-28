@@ -28,7 +28,6 @@ import org.jcodings.EncodingDB;
 import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.transcode.EConvFlags;
 import org.jruby.Main;
-import org.jruby.exceptions.MainExitException;
 import org.jruby.ext.ffi.Platform;
 import org.jruby.ext.ffi.Platform.OS_TYPE;
 import org.jruby.runtime.Constants;
@@ -1118,7 +1117,8 @@ public class CoreLibrary {
         if (externalEncodingName != null && !externalEncodingName.equals("")) {
             final DynamicObject loadedEncoding = getContext().getEncodingManager().getRubyEncoding(externalEncodingName);
             if (loadedEncoding == null) {
-                throw new MainExitException(1, "unknown encoding name - " + externalEncodingName);
+                // TODO (nirvdrum 28-Oct-16): This should just print a nice error message and exit with a status code of 1 -- it's essentially an input validation error -- no need to show the user a full trace.
+                throw new RuntimeException("unknown encoding name - " + externalEncodingName);
             } else {
                 getContext().getEncodingManager().setDefaultExternalEncoding(EncodingOperations.getEncoding(loadedEncoding));
             }
@@ -1130,7 +1130,8 @@ public class CoreLibrary {
         if (internalEncodingName != null && !internalEncodingName.equals("")) {
             final DynamicObject rubyEncoding = getContext().getEncodingManager().getRubyEncoding(internalEncodingName);
             if (rubyEncoding == null) {
-                throw new MainExitException(1, "unknown encoding name - " + internalEncodingName);
+                // TODO (nirvdrum 28-Oct-16): This should just print a nice error message and exit with a status code of 1 -- it's essentially an input validation error -- no need to show the user a full trace.
+                throw new RuntimeException("unknown encoding name - " + internalEncodingName);
             } else {
                 getContext().getEncodingManager().setDefaultInternalEncoding(EncodingOperations.getEncoding(rubyEncoding));
             }
