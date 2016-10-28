@@ -158,8 +158,9 @@ class JRubyCoreBuildTask(mx.BuildTask):
     def clean(self, forBuild=False):
         if forBuild:
             return
+        maven_repo_arg, env = mavenSetup()
         quiet = [] if mx.get_opts().verbose else ['-q']
-        mx.run_maven(quiet + ['clean'], nonZeroIsFatal=False, cwd=_suite.dir)
+        mx.run_maven(quiet + [maven_repo_arg, 'clean'], nonZeroIsFatal=False, cwd=_suite.dir, env=env)
         jar = self.newestOutput()
         if jar.exists():
             os.remove(jar.path)
