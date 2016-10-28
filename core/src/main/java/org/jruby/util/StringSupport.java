@@ -1581,7 +1581,7 @@ public final class StringSupport {
     /**
      * rb_str_delete_bang
      */
-    public static CodeRangeable delete_bangCommon19(CodeRangeable rubyString, Ruby runtime, boolean[] squeeze, TrTables tables, Encoding enc) {
+    public static CodeRangeable delete_bangCommon19(CodeRangeable rubyString, boolean[] squeeze, TrTables tables, Encoding enc) {
         rubyString.modify();
         rubyString.keepCodeRange();
 
@@ -1605,7 +1605,7 @@ public final class StringSupport {
                 }
                 s++;
             } else {
-                c = codePoint(runtime, enc, bytes, s, send);
+                c = codePoint(enc, bytes, s, send);
                 int cl = codeLength(enc, c);
                 if (trFind(c, squeeze, tables)) {
                     modify = true;
@@ -1621,6 +1621,14 @@ public final class StringSupport {
         rubyString.setCodeRange(cr);
 
         return modify ? rubyString : null;
+    }
+
+    public static CodeRangeable delete_bangCommon19(CodeRangeable rubyString, Ruby runtime, boolean[] squeeze, TrTables tables, Encoding enc) {
+        try {
+            return delete_bangCommon19(rubyString, squeeze, tables, enc);
+        } catch (IllegalArgumentException e) {
+            throw runtime.newArgumentError(e.getMessage());
+        }
     }
 
     /**
