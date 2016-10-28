@@ -1995,7 +1995,7 @@ public abstract class StringNodes {
             final Rope rope = rope(string);
 
             if (! rope.isEmpty()) {
-                final ByteList succByteList = StringSupport.succCommon(getContext().getJRubyRuntime(), StringOperations.getByteListReadOnly(string));
+                final ByteList succByteList = StringSupport.succCommon(StringOperations.getByteListReadOnly(string));
 
                 StringOperations.setRope(string, StringOperations.ropeFromByteList(succByteList, rope.getCodeRange()));
             }
