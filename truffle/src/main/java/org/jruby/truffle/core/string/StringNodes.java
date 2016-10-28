@@ -1046,20 +1046,14 @@ public abstract class StringNodes {
             }
 
             final byte[] outputBytes = rope.getBytesCopy();
+            final boolean modified = multiByteDowncase(encoding, outputBytes, 0, outputBytes.length);
 
-            try {
-                final boolean modified = multiByteDowncase(encoding, outputBytes, 0, outputBytes.length);
+            if (modifiedProfile.profile(modified)) {
+                StringOperations.setRope(string, makeLeafRopeNode.executeMake(outputBytes, rope.getEncoding(), rope.getCodeRange(), rope.characterLength()));
 
-                if (modifiedProfile.profile(modified)) {
-                    StringOperations.setRope(string, makeLeafRopeNode.executeMake(outputBytes, rope.getEncoding(), rope.getCodeRange(), rope.characterLength()));
-
-                    return string;
-                } else {
-                    return nil();
-                }
-            } catch (IllegalArgumentException e) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                throw new RaiseException(coreExceptions().argumentError(e.getMessage(), this));
+                return string;
+            } else {
+                return nil();
             }
         }
 
@@ -1573,12 +1567,7 @@ public abstract class StringNodes {
         public int ord(DynamicObject string) {
             final Rope rope = rope(string);
 
-            try {
-                return RopeOperations.codePoint(getContext(), rope, 0);
-            } catch (IllegalArgumentException e) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                throw new RaiseException(coreExceptions().argumentError(e.getMessage(), this));
-            }
+            return RopeOperations.codePoint(getContext(), rope, 0);
         }
 
     }
@@ -2438,19 +2427,13 @@ public abstract class StringNodes {
             }
 
             final ByteList bytes = RopeOperations.toByteListCopy(rope);
+            final boolean modified = multiByteUpcase(encoding, bytes.unsafeBytes(), bytes.begin(), bytes.realSize());
+            if (modified) {
+                StringOperations.setRope(string, StringOperations.ropeFromByteList(bytes, rope.getCodeRange()));
 
-            try {
-                final boolean modified = multiByteUpcase(encoding, bytes.unsafeBytes(), bytes.begin(), bytes.realSize());
-                if (modified) {
-                    StringOperations.setRope(string, StringOperations.ropeFromByteList(bytes, rope.getCodeRange()));
-
-                    return string;
-                } else {
-                    return nil();
-                }
-            } catch (IllegalArgumentException e) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                throw new RaiseException(coreExceptions().argumentError(e.getMessage(), this));
+                return string;
+            } else {
+                return nil();
             }
         }
 
