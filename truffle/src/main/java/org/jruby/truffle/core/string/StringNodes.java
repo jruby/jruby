@@ -1966,7 +1966,7 @@ public abstract class StringNodes {
                     StringOperations.setRope(string, StringOperations.ropeFromByteList(buffer));
                 }
             } else {
-                if (! StringSupport.multiByteSqueeze(getContext().getJRubyRuntime(), buffer, squeeze, tables, enc, true)) {
+                if (! StringSupport.multiByteSqueeze(buffer, squeeze, tables, enc, true)) {
                     return nil();
                 } else {
                     StringOperations.setRope(string, StringOperations.ropeFromByteList(buffer));
@@ -1978,7 +1978,7 @@ public abstract class StringNodes {
 
         @TruffleBoundary
         private boolean squeezeCommonMultiByte(ByteList value, boolean squeeze[], StringSupport.TrTables tables, Encoding enc, boolean isArg) {
-            return StringSupport.multiByteSqueeze(getContext().getJRubyRuntime(), value, squeeze, tables, enc, isArg);
+            return StringSupport.multiByteSqueeze(value, squeeze, tables, enc, isArg);
         }
 
         public static boolean zeroArgs(Object[] args) {
