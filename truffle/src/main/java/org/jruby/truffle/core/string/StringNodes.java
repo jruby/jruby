@@ -985,7 +985,7 @@ public abstract class StringNodes {
             }
 
             final CodeRangeable buffer = StringOperations.getCodeRangeableReadWrite(string, checkEncodingNode);
-            if (StringSupport.delete_bangCommon19(buffer, getContext().getJRubyRuntime(), squeeze, tables, enc) == null) {
+            if (StringSupport.delete_bangCommon19(buffer, squeeze, tables, enc) == null) {
                 return nil();
             }
 
