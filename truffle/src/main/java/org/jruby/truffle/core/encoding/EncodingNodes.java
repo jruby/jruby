@@ -335,7 +335,7 @@ public abstract class EncodingNodes {
         @TruffleBoundary
         @Specialization(guards = "isRubyEncoding(encoding)")
         public DynamicObject defaultExternalEncoding(DynamicObject encoding) {
-            getContext().getJRubyRuntime().setDefaultExternalEncoding(EncodingOperations.getEncoding(encoding));
+            getContext().getEncodingManager().setDefaultExternalEncoding(EncodingOperations.getEncoding(encoding));
 
             return encoding;
         }
@@ -344,7 +344,7 @@ public abstract class EncodingNodes {
         @Specialization(guards = "isRubyString(encodingString)")
         public DynamicObject defaultExternal(DynamicObject encodingString) {
             final DynamicObject rubyEncoding = getContext().getEncodingManager().getRubyEncoding(encodingString.toString());
-            getContext().getJRubyRuntime().setDefaultExternalEncoding(EncodingOperations.getEncoding(rubyEncoding));
+            getContext().getEncodingManager().setDefaultExternalEncoding(EncodingOperations.getEncoding(rubyEncoding));
 
             return rubyEncoding;
         }
@@ -376,7 +376,7 @@ public abstract class EncodingNodes {
         @TruffleBoundary
         @Specialization(guards = "isRubyEncoding(encoding)")
         public DynamicObject defaultInternal(DynamicObject encoding) {
-            getContext().getJRubyRuntime().setDefaultInternalEncoding(EncodingOperations.getEncoding(encoding));
+            getContext().getEncodingManager().setDefaultInternalEncoding(EncodingOperations.getEncoding(encoding));
 
             return encoding;
         }
@@ -384,7 +384,7 @@ public abstract class EncodingNodes {
         @TruffleBoundary
         @Specialization(guards = "isNil(encoding)")
         public DynamicObject defaultInternal(Object encoding) {
-            getContext().getJRubyRuntime().setDefaultInternalEncoding(null);
+            getContext().getEncodingManager().setDefaultInternalEncoding(null);
 
             return nil();
         }
@@ -486,9 +486,9 @@ public abstract class EncodingNodes {
         private Encoding getEncoding(String name) {
             switch (name) {
                 case "internal":
-                    return getContext().getJRubyRuntime().getDefaultInternalEncoding();
+                    return getContext().getEncodingManager().getDefaultInternalEncoding();
                 case "external":
-                    return getContext().getJRubyRuntime().getDefaultExternalEncoding();
+                    return getContext().getEncodingManager().getDefaultExternalEncoding();
                 case "locale":
                 case "filesystem":
                     return getContext().getEncodingManager().getLocaleEncoding();

@@ -45,6 +45,9 @@ public class EncodingManager {
 
     private final RubyContext context;
 
+    private Encoding defaultExternalEncoding;
+    private Encoding defaultInternalEncoding;
+
     public EncodingManager(RubyContext context) {
         this.context = context;
     }
@@ -150,4 +153,19 @@ public class EncodingManager {
         }
     }
 
+    public void setDefaultExternalEncoding(Encoding defaultExternalEncoding) {
+        this.defaultExternalEncoding = defaultExternalEncoding;
+    }
+
+    public Encoding getDefaultExternalEncoding() {
+        return defaultExternalEncoding;
+    }
+
+    public void setDefaultInternalEncoding(Encoding defaultInternalEncoding) {
+        this.defaultInternalEncoding = defaultInternalEncoding;
+    }
+
+    public Encoding getDefaultInternalEncoding() {
+        return defaultInternalEncoding;
+    }
 }

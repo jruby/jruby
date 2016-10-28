@@ -28,6 +28,7 @@ import org.jcodings.EncodingDB;
 import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.transcode.EConvFlags;
 import org.jruby.Main;
+import org.jruby.exceptions.MainExitException;
 import org.jruby.ext.ffi.Platform;
 import org.jruby.ext.ffi.Platform.OS_TYPE;
 import org.jruby.runtime.Constants;
@@ -48,6 +49,7 @@ import org.jruby.truffle.core.bool.TrueClassNodesFactory;
 import org.jruby.truffle.core.dir.DirNodesFactory;
 import org.jruby.truffle.core.encoding.EncodingConverterNodesFactory;
 import org.jruby.truffle.core.encoding.EncodingNodesFactory;
+import org.jruby.truffle.core.encoding.EncodingOperations;
 import org.jruby.truffle.core.exception.ExceptionNodesFactory;
 import org.jruby.truffle.core.exception.NameErrorNodesFactory;
 import org.jruby.truffle.core.exception.NoMethodErrorNodesFactory;
@@ -690,7 +692,6 @@ public class CoreLibrary {
     public void initialize() {
         initializeGlobalVariables();
         initializeConstants();
-        initializeEncodingConstants();
         initializeSignalConstants();
     }
 
@@ -1108,6 +1109,29 @@ public class CoreLibrary {
                 Layouts.MODULE.getFields(encodingClass).setConstant(context, node, constName, rubyEncoding);
             }
         });
+
+        // External should always have a value, but Encoding.external_encoding{,=} will lazily setup
+        final String externalEncodingName = getContext().getJRubyRuntime().getInstanceConfig().getExternalEncoding();
+        if (externalEncodingName != null && !externalEncodingName.equals("")) {
+            final DynamicObject loadedEncoding = getContext().getEncodingManager().getRubyEncoding(externalEncodingName);
+            if (loadedEncoding == null) {
+                throw new MainExitException(1, "unknown encoding name - " + externalEncodingName);
+            } else {
+                getContext().getEncodingManager().setDefaultExternalEncoding(EncodingOperations.getEncoding(loadedEncoding));
+            }
+        } else {
+            getContext().getEncodingManager().setDefaultExternalEncoding(getContext().getEncodingManager().getLocaleEncoding());
+        }
+
+        final String internalEncodingName = getContext().getJRubyRuntime().getInstanceConfig().getInternalEncoding();
+        if (internalEncodingName != null && !internalEncodingName.equals("")) {
+            final DynamicObject rubyEncoding = getContext().getEncodingManager().getRubyEncoding(internalEncodingName);
+            if (rubyEncoding == null) {
+                throw new MainExitException(1, "unknown encoding name - " + internalEncodingName);
+            } else {
+                getContext().getEncodingManager().setDefaultInternalEncoding(EncodingOperations.getEncoding(rubyEncoding));
+            }
+        }
     }
 
     @TruffleBoundary

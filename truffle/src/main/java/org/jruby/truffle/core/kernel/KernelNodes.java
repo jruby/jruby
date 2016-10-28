@@ -870,7 +870,7 @@ public abstract class KernelNodes {
             // TODO(CS): having some trouble interacting with JRuby stdin - so using this hack
             final InputStream in = getContext().getJRubyRuntime().getInstanceConfig().getInput();
 
-            Encoding encoding = getContext().getJRubyRuntime().getDefaultExternalEncoding();
+            Encoding encoding = getContext().getEncodingManager().getDefaultExternalEncoding();
 
             final BufferedReader reader = new BufferedReader(new InputStreamReader(in, encoding.getCharset()));
 
