@@ -80,7 +80,8 @@ def mavenSetup():
     mavenDir = buildPack if isdir(buildPack) else join(_suite.dir, 'mxbuild/mvn')
     maven_repo_arg = '-Dmaven.repo.local=' + mavenDir
     env = os.environ.copy()
-    env['JRUBY_BUILD_MORE_QUIET'] = 'true'
+    if not mx.get_opts().verbose:
+        env['JRUBY_BUILD_MORE_QUIET'] = 'true'
     # HACK: since the maven executable plugin does not configure the
     # java executable that is used we unfortunately need to prepend it to the PATH
     javaHome = os.getenv('JAVA_HOME')
@@ -146,7 +147,8 @@ class JRubyCoreBuildTask(mx.BuildTask):
         cwd = _suite.dir
         maven_repo_arg, env = mavenSetup()
         mx.log("Building jruby-core with Maven")
-        mx.run_maven(['-q', '-DskipTests', maven_repo_arg, '-Dcreate.sources.jar', '-pl', 'core,lib'], cwd=cwd, env=env)
+        quiet = [] if mx.get_opts().verbose else ['-q']
+        mx.run_maven(quiet + ['-DskipTests', maven_repo_arg, '-Dcreate.sources.jar', '-pl', 'core,lib'], cwd=cwd, env=env)
         # Install Bundler
         gem_home = join(_suite.dir, 'lib', 'ruby', 'gems', 'shared')
         env['GEM_HOME'] = gem_home
@@ -156,7 +158,8 @@ class JRubyCoreBuildTask(mx.BuildTask):
     def clean(self, forBuild=False):
         if forBuild:
             return
-        mx.run_maven(['-q', 'clean'], nonZeroIsFatal=False, cwd=_suite.dir)
+        quiet = [] if mx.get_opts().verbose else ['-q']
+        mx.run_maven(quiet + ['clean'], nonZeroIsFatal=False, cwd=_suite.dir)
         jar = self.newestOutput()
         if jar.exists():
             os.remove(jar.path)
