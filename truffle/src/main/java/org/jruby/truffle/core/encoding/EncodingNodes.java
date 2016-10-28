@@ -12,7 +12,6 @@
 package org.jruby.truffle.core.encoding;
 
 import com.oracle.truffle.api.CompilerAsserts;
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
@@ -40,8 +39,6 @@ import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.builtins.UnaryCoreMethodNode;
 import org.jruby.truffle.builtins.YieldingCoreMethodNode;
 import org.jruby.truffle.core.cast.ToEncodingNode;
-import org.jruby.truffle.core.cast.ToStrNode;
-import org.jruby.truffle.core.cast.ToStrNodeGen;
 import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.string.StringOperations;
@@ -322,84 +319,6 @@ public abstract class EncodingNodes {
 
         protected int getCacheLimit() {
             return getContext().getOptions().ENCODING_COMPATIBILE_QUERY_CACHE;
-        }
-
-    }
-
-    @NonStandard
-    @CoreMethod(names = "default_external_jruby=", onSingleton = true, required = 1)
-    public abstract static class SetDefaultExternalNode extends CoreMethodArrayArgumentsNode {
-
-        @Child private ToStrNode toStrNode;
-
-        @TruffleBoundary
-        @Specialization(guards = "isRubyEncoding(encoding)")
-        public DynamicObject defaultExternalEncoding(DynamicObject encoding) {
-            getContext().getEncodingManager().setDefaultExternalEncoding(EncodingOperations.getEncoding(encoding));
-
-            return encoding;
-        }
-
-        @TruffleBoundary
-        @Specialization(guards = "isRubyString(encodingString)")
-        public DynamicObject defaultExternal(DynamicObject encodingString) {
-            final DynamicObject rubyEncoding = getContext().getEncodingManager().getRubyEncoding(encodingString.toString());
-            getContext().getEncodingManager().setDefaultExternalEncoding(EncodingOperations.getEncoding(rubyEncoding));
-
-            return rubyEncoding;
-        }
-
-        @TruffleBoundary
-        @Specialization(guards = "isNil(nil)")
-        public DynamicObject defaultExternal(Object nil) {
-            throw new RaiseException(coreExceptions().argumentError("default external can not be nil", this));
-        }
-
-        @Specialization(guards = { "!isRubyEncoding(encoding)", "!isRubyString(encoding)", "!isNil(encoding)" })
-        public DynamicObject defaultExternal(VirtualFrame frame, Object encoding) {
-            if (toStrNode == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                toStrNode = insert(ToStrNodeGen.create(getContext(), null, null));
-            }
-
-            return defaultExternal(toStrNode.executeToStr(frame, encoding));
-        }
-
-    }
-
-    @NonStandard
-    @CoreMethod(names = "default_internal_jruby=", onSingleton = true, required = 1)
-    public abstract static class SetDefaultInternalNode extends CoreMethodArrayArgumentsNode {
-
-        @Child private ToStrNode toStrNode;
-
-        @TruffleBoundary
-        @Specialization(guards = "isRubyEncoding(encoding)")
-        public DynamicObject defaultInternal(DynamicObject encoding) {
-            getContext().getEncodingManager().setDefaultInternalEncoding(EncodingOperations.getEncoding(encoding));
-
-            return encoding;
-        }
-
-        @TruffleBoundary
-        @Specialization(guards = "isNil(encoding)")
-        public DynamicObject defaultInternal(Object encoding) {
-            getContext().getEncodingManager().setDefaultInternalEncoding(null);
-
-            return nil();
-        }
-
-        @Specialization(guards = { "!isRubyEncoding(encoding)", "!isNil(encoding)" })
-        public DynamicObject defaultInternal(VirtualFrame frame, Object encoding) {
-            if (toStrNode == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                toStrNode = insert(ToStrNodeGen.create(getContext(), null, null));
-            }
-
-            final DynamicObject encodingName = toStrNode.executeToStr(frame, encoding);
-            getContext().getJRubyRuntime().setDefaultInternalEncoding(EncodingOperations.getEncoding(getContext().getEncodingManager().getRubyEncoding(encodingName.toString())));
-
-            return encodingName;
         }
 
     }

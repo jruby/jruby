@@ -50,6 +50,7 @@ import org.jruby.truffle.core.dir.DirNodesFactory;
 import org.jruby.truffle.core.encoding.EncodingConverterNodesFactory;
 import org.jruby.truffle.core.encoding.EncodingNodesFactory;
 import org.jruby.truffle.core.encoding.EncodingOperations;
+import org.jruby.truffle.core.encoding.TruffleEncodingNodesFactory;
 import org.jruby.truffle.core.exception.ExceptionNodesFactory;
 import org.jruby.truffle.core.exception.NameErrorNodesFactory;
 import org.jruby.truffle.core.exception.NoMethodErrorNodesFactory;
@@ -588,6 +589,7 @@ public class CoreLibrary {
         defineModule(truffleModule, "Digest");
         defineModule(truffleModule, "ObjSpace");
         defineModule(truffleModule, "Etc");
+        defineModule(truffleModule, "Encoding");
         defineModule(truffleModule, "Coverage");
         defineModule(truffleModule, "Graal");
         defineModule(truffleModule, "Ropes");
@@ -766,6 +768,7 @@ public class CoreLibrary {
                 TruffleBindingNodesFactory.getFactories(),
                 TruffleBootNodesFactory.getFactories(),
                 TruffleDebugNodesFactory.getFactories(),
+                TruffleEncodingNodesFactory.getFactories(),
                 TruffleFixnumNodesFactory.getFactories(),
                 TruffleGCNodesFactory.getFactories(),
                 TruffleGraalNodesFactory.getFactories(),
