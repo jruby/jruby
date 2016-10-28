@@ -238,7 +238,7 @@ weekly-bench-caps: {
 
 bench: {
   cmd: [mx, --dynamicimport, ruby-benchmarks, benchmark]
-  setup: ${common.setup} [
+  setup: [
     ${mx_sclone} ["https://github.com/jruby/benchmark-interface.git", ../benchmark-interface],
     ${mx_sclone} [--revision, mx-config, "https://github.com/jruby/all-ruby-benchmarks.git", ../ruby-benchmarks]
   ]
@@ -250,8 +250,8 @@ post-process-and-upload-results: [
   [bench-uploader.py, bench-results-processed.json]
 ]
 
-metrics: ${bench} {
-  run: [
+metrics: {
+  run: ${bench.setup} [
     ${bench.cmd} [allocation]
   ] ${post-process-and-upload-results} [
     ${bench.cmd} [minheap]
@@ -261,8 +261,8 @@ metrics: ${bench} {
   timelimit: "00:25:00"
 }
 
-compiler-metrics: ${bench} {
-  run: [
+compiler-metrics: {
+  run: ${bench.setup} [
     ${bench.cmd} ["allocation:compile-mandelbrot"]
   ] ${post-process-and-upload-results} [
     ${bench.cmd} ["minheap:compile-mandelbrot"]
@@ -272,36 +272,36 @@ compiler-metrics: ${bench} {
   timelimit: "00:50:00"
 }
 
-classic-benchmarks: ${bench} {
-  run: [
+classic-benchmarks: {
+  run: ${bench.setup} [
     ${bench.cmd} [classic]
   ] ${post-process-and-upload-results}
   timelimit: "00:35:00"
 }
 
-chunky-benchmarks: ${bench} {
-  run: [
+chunky-benchmarks: {
+  run: ${bench.setup} [
     ${bench.cmd} [chunky]
   ] ${post-process-and-upload-results}
   timelimit: "00:40:00"
 }
 
-psd-benchmarks: ${bench} {
-  run: [
+psd-benchmarks: {
+  run: ${bench.setup} [
     ${bench.cmd} [psd]
   ] ${post-process-and-upload-results}
   timelimit: "01:15:00"
 }
 
-asciidoctor-benchmarks: ${bench} {
-  run: [
+asciidoctor-benchmarks: {
+  run: ${bench.setup} [
     ${bench.cmd} [asciidoctor]
   ] ${post-process-and-upload-results}
   timelimit: "00:35:00"
 }
 
-other-benchmarks: ${bench} {
-  run: [
+other-benchmarks: {
+  run: ${bench.setup} [
     ${bench.cmd} [image-demo]
   ] ${post-process-and-upload-results} [
     ${bench.cmd} [optcarrot]
@@ -315,12 +315,12 @@ other-benchmarks: ${bench} {
   timelimit: "00:40:00"
 }
 
-server-benchmarks: ${bench} {
+server-benchmarks: {
   packages: {
     "apache/ab": ">=2.3"
   }
 
-  run: [
+  run: ${bench.setup} [
     ${bench.cmd} [server]
   ] ${post-process-and-upload-results}
   timelimit: "00:20:00"
