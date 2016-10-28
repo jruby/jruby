@@ -1233,7 +1233,7 @@ public final class StringSupport {
     public static enum NeighborChar {NOT_CHAR, FOUND, WRAPPED}
 
     // MRI: str_succ
-    public static ByteList succCommon(Ruby runtime, ByteList original) {
+    public static ByteList succCommon(ByteList original) {
         byte carry[] = new byte[org.jcodings.Config.ENC_CODE_TO_MBC_MAXLEN];
         int carryP = 0;
         carry[0] = 1;
@@ -1264,7 +1264,7 @@ public final class StringSupport {
 
             int cl = preciseLength(enc, bytes, s, end);
             if (cl <= 0) continue;
-            switch (neighbor = succAlnumChar(runtime, enc, bytes, s, cl, carry, 0)) {
+            switch (neighbor = succAlnumChar(enc, bytes, s, cl, carry, 0)) {
                 case NOT_CHAR: continue;
                 case FOUND:    return valueCopy;
                 case WRAPPED:  lastAlnum = s;
@@ -1279,9 +1279,9 @@ public final class StringSupport {
             while ((s = enc.prevCharHead(bytes, p, s, end)) != -1) {
                 int cl = preciseLength(enc, bytes, s, end);
                 if (cl <= 0) continue;
-                neighbor = succChar(runtime, enc, bytes, s, cl);
+                neighbor = succChar(enc, bytes, s, cl);
                 if (neighbor == NeighborChar.FOUND) return valueCopy;
-                if (preciseLength(enc, bytes, s, s + 1) != cl) succChar(runtime, enc, bytes, s, cl); /* wrapped to \0...\0.  search next valid char. */
+                if (preciseLength(enc, bytes, s, s + 1) != cl) succChar(enc, bytes, s, cl); /* wrapped to \0...\0.  search next valid char. */
                 if (!enc.isAsciiCompatible()) {
                     System.arraycopy(bytes, s, carry, 0, cl);
                     carryLen = cl;
@@ -1297,8 +1297,16 @@ public final class StringSupport {
         return valueCopy;
     }
 
+    public static ByteList succCommon(Ruby runtime, ByteList original) {
+        try {
+            return succCommon(original);
+        } catch (IllegalArgumentException e) {
+            throw runtime.newArgumentError(e.getMessage());
+        }
+    }
+
     // MRI: enc_succ_char
-    public static NeighborChar succChar(Ruby runtime, Encoding enc, byte[] bytes, int p, int len) {
+    public static NeighborChar succChar(Encoding enc, byte[] bytes, int p, int len) {
         int l;
         if (enc.minLength() > 1) {
 	        /* wchar, trivial case */
@@ -1306,7 +1314,7 @@ public final class StringSupport {
             if (!MBCLEN_CHARFOUND_P(r)) {
                 return NeighborChar.NOT_CHAR;
             }
-            c = codePoint(runtime, enc, bytes, p, p + len) + 1;
+            c = codePoint(enc, bytes, p, p + len) + 1;
             l = codeLength(enc, c);
             if (l == 0) return NeighborChar.NOT_CHAR;
             if (l != len) return NeighborChar.WRAPPED;
@@ -1349,8 +1357,16 @@ public final class StringSupport {
         }
     }
 
+    public static NeighborChar succChar(Ruby runtime, Encoding enc, byte[] bytes, int p, int len) {
+        try {
+            return succChar(enc, bytes, p, len);
+        } catch (IllegalArgumentException e) {
+            throw runtime.newArgumentError(e.getMessage());
+        }
+    }
+
     // MRI: enc_succ_alnum_char
-    private static NeighborChar succAlnumChar(Ruby runtime, Encoding enc, byte[]bytes, int p, int len, byte[]carry, int carryP) {
+    private static NeighborChar succAlnumChar(Encoding enc, byte[]bytes, int p, int len, byte[]carry, int carryP) {
         byte save[] = new byte[org.jcodings.Config.ENC_CODE_TO_MBC_MAXLEN];
         int c = enc.mbcToCode(bytes, p, p + len);
 
@@ -1364,7 +1380,7 @@ public final class StringSupport {
         }
 
         System.arraycopy(bytes, p, save, 0, len);
-        NeighborChar ret = succChar(runtime, enc, bytes, p, len);
+        NeighborChar ret = succChar(enc, bytes, p, len);
         if (ret == NeighborChar.FOUND) {
             c = enc.mbcToCode(bytes, p, p + len);
             if (enc.isCodeCType(c, cType)) return NeighborChar.FOUND;
@@ -1375,7 +1391,7 @@ public final class StringSupport {
 
         while (true) {
             System.arraycopy(bytes, p, save, 0, len);
-            ret = predChar(runtime, enc, bytes, p, len);
+            ret = predChar(enc, bytes, p, len);
             if (ret == NeighborChar.FOUND) {
                 c = enc.mbcToCode(bytes, p, p + len);
                 if (!enc.isCodeCType(c, cType)) {
@@ -1397,11 +1413,11 @@ public final class StringSupport {
         }
 
         System.arraycopy(bytes, p, carry, carryP, len);
-        succChar(runtime, enc, carry, carryP, len);
+        succChar(enc, carry, carryP, len);
         return NeighborChar.WRAPPED;
     }
 
-    private static NeighborChar predChar(Ruby runtime, Encoding enc, byte[]bytes, int p, int len) {
+    private static NeighborChar predChar(Encoding enc, byte[]bytes, int p, int len) {
         int l;
         if (enc.minLength() > 1) {
 	        /* wchar, trivial case */
@@ -1409,7 +1425,7 @@ public final class StringSupport {
             if (!MBCLEN_CHARFOUND_P(r)) {
                 return NeighborChar.NOT_CHAR;
             }
-            c = codePoint(runtime, enc, bytes, p, p + len);
+            c = codePoint(enc, bytes, p, p + len);
             if (c == 0) return NeighborChar.NOT_CHAR;
             --c;
             l = codeLength(enc, c);
