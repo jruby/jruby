@@ -172,7 +172,7 @@ module Utilities
     else
       begin
         File.join(find_repo('ruby-benchmarks'), benchmark)
-      rescue
+      rescue RuntimeError
         File.join(find_repo('all-ruby-benchmarks'), benchmark)
       end
     end
