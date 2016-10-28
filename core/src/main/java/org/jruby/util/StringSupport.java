@@ -1842,7 +1842,7 @@ public final class StringSupport {
      * rb_str_tr / rb_str_tr_bang
      */
 
-    public static CodeRangeable trTransHelper(Ruby runtime, CodeRangeable self, CodeRangeable srcStr, CodeRangeable replStr, boolean sflag) {
+    public static CodeRangeable trTransHelper(CodeRangeable self, CodeRangeable srcStr, CodeRangeable replStr, boolean sflag) {
         // This method does not handle the cases where either srcStr or replStr are empty.  It is the responsibility
         // of the caller to take the appropriate action in those cases.
 
@@ -1877,7 +1877,7 @@ public final class StringSupport {
                 trans[i] = 1;
             }
 
-            while ((c = StringSupport.trNext(trSrc, runtime, enc)) != -1) {
+            while ((c = StringSupport.trNext(trSrc, enc)) != -1) {
                 if (c < StringSupport.TRANS_SIZE) {
                     trans[c] = -1;
                 } else {
@@ -1885,7 +1885,7 @@ public final class StringSupport {
                     hash.put(c, 1); // QTRUE
                 }
             }
-            while ((c = StringSupport.trNext(trRepl, runtime, enc)) != -1) {}  /* retrieve last replacer */
+            while ((c = StringSupport.trNext(trRepl, enc)) != -1) {}  /* retrieve last replacer */
             last = trRepl.now;
             for (int i=0; i< StringSupport.TRANS_SIZE; i++) {
                 if (trans[i] != -1) {
@@ -1897,8 +1897,8 @@ public final class StringSupport {
                 trans[i] = -1;
             }
 
-            while ((c = StringSupport.trNext(trSrc, runtime, enc)) != -1) {
-                int r = StringSupport.trNext(trRepl, runtime, enc);
+            while ((c = StringSupport.trNext(trSrc, enc)) != -1) {
+                int r = StringSupport.trNext(trRepl, enc);
                 if (r == -1) r = trRepl.now;
                 if (c < StringSupport.TRANS_SIZE) {
                     trans[c] = r;
@@ -1926,7 +1926,7 @@ public final class StringSupport {
             int t = 0;
             while (s < send) {
                 boolean mayModify = false;
-                c0 = c = codePoint(runtime, e1, sbytes, s, send);
+                c0 = c = codePoint(e1, sbytes, s, send);
                 clen = codeLength(e1, c);
                 tlen = enc == e1 ? clen : codeLength(enc, c);
                 s += clen;
@@ -1998,7 +1998,7 @@ public final class StringSupport {
 
             while (s < send) {
                 boolean mayModify = false;
-                c0 = c = codePoint(runtime, e1, sbytes, s, send);
+                c0 = c = codePoint(e1, sbytes, s, send);
                 clen = codeLength(e1, c);
                 tlen = enc == e1 ? clen : codeLength(enc, c);
 
@@ -2054,6 +2054,14 @@ public final class StringSupport {
             return self;
         }
         return null;
+    }
+
+    public static CodeRangeable trTransHelper(Ruby runtime, CodeRangeable self, CodeRangeable srcStr, CodeRangeable replStr, boolean sflag) {
+        try {
+            return trTransHelper(self, srcStr, replStr, sflag);
+        } catch (IllegalArgumentException e) {
+            throw runtime.newArgumentError(e.getMessage());
+        }
     }
 
     private static int trCode(int c, int[]trans, IntHash<Integer> hash, boolean cflag, int last, boolean set) {
