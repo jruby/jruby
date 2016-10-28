@@ -29,7 +29,6 @@ public abstract class TruffleEncodingNodes {
 
         @Child private ToStrNode toStrNode;
 
-        @TruffleBoundary
         @Specialization(guards = "isRubyEncoding(encoding)")
         public DynamicObject defaultExternalEncoding(DynamicObject encoding) {
             getContext().getEncodingManager().setDefaultExternalEncoding(EncodingOperations.getEncoding(encoding));
@@ -37,7 +36,6 @@ public abstract class TruffleEncodingNodes {
             return encoding;
         }
 
-        @TruffleBoundary
         @Specialization(guards = "isRubyString(encodingString)")
         public DynamicObject defaultExternal(DynamicObject encodingString) {
             final DynamicObject rubyEncoding = getContext().getEncodingManager().getRubyEncoding(encodingString.toString());
@@ -46,7 +44,6 @@ public abstract class TruffleEncodingNodes {
             return rubyEncoding;
         }
 
-        @TruffleBoundary
         @Specialization(guards = "isNil(nil)")
         public DynamicObject defaultExternal(Object nil) {
             throw new RaiseException(coreExceptions().argumentError("default external can not be nil", this));
@@ -69,7 +66,6 @@ public abstract class TruffleEncodingNodes {
 
         @Child private ToStrNode toStrNode;
 
-        @TruffleBoundary
         @Specialization(guards = "isRubyEncoding(encoding)")
         public DynamicObject defaultInternal(DynamicObject encoding) {
             getContext().getEncodingManager().setDefaultInternalEncoding(EncodingOperations.getEncoding(encoding));
@@ -77,7 +73,6 @@ public abstract class TruffleEncodingNodes {
             return encoding;
         }
 
-        @TruffleBoundary
         @Specialization(guards = "isNil(encoding)")
         public DynamicObject defaultInternal(Object encoding) {
             getContext().getEncodingManager().setDefaultInternalEncoding(null);
