@@ -62,14 +62,14 @@ class Encoding
         map[key] = [nil, index]
       }
 
-      each_alias { |alias_name, index|
+      Truffle::Encoding.each_alias { |alias_name, index|
         key = alias_name.upcase.to_sym
         map[key] = [alias_name, index]
       }
 
       %w[internal external locale filesystem].each { |name|
         key = name.upcase.to_sym
-        enc = get_default_encoding(name)
+        enc = Truffle::Encoding.get_default_encoding(name)
         index = enc ? map[enc.name.upcase.to_sym].last : nil
         map[key] = [name, index]
       }

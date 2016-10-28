@@ -9,18 +9,26 @@
  */
 package org.jruby.truffle.core.encoding;
 
+import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
+import org.jcodings.Encoding;
+import org.jcodings.EncodingDB;
+import org.jcodings.specific.USASCIIEncoding;
+import org.jcodings.util.CaseInsensitiveBytesHash;
+import org.jcodings.util.Hash;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.builtins.YieldingCoreMethodNode;
 import org.jruby.truffle.core.cast.ToStrNode;
 import org.jruby.truffle.core.cast.ToStrNodeGen;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.control.RaiseException;
+import org.jruby.util.ByteList;
 
 @CoreClass("Truffle::Encoding")
 public abstract class TruffleEncodingNodes {
@@ -95,5 +103,50 @@ public abstract class TruffleEncodingNodes {
         }
 
     }
+
+    @CoreMethod(names = "each_alias", onSingleton = true, needsBlock = true)
+    public abstract static class EachAliasNode extends YieldingCoreMethodNode {
+
+        @Specialization
+        public DynamicObject eachAlias(VirtualFrame frame, DynamicObject block) {
+            CompilerAsserts.neverPartOfCompilation();
+            for (Hash.HashEntry<EncodingDB.Entry> entry : EncodingDB.getAliases().entryIterator()) {
+                final CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<EncodingDB.Entry> e = (CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<EncodingDB.Entry>) entry;
+                final ByteList aliasName = new ByteList(e.bytes, e.p, e.end - e.p, USASCIIEncoding.INSTANCE, false);
+                yield(frame, block, createString(aliasName), entry.value.getIndex());
+            }
+            return nil();
+        }
+    }
+
+    @CoreMethod(names = "get_default_encoding", onSingleton = true, required = 1)
+    public abstract static class GetDefaultEncodingNode extends CoreMethodArrayArgumentsNode {
+
+        @Specialization(guards = "isRubyString(name)")
+        public DynamicObject getDefaultEncoding(DynamicObject name) {
+            final Encoding encoding = getEncoding(StringOperations.getString(name));
+            if (encoding == null) {
+                return nil();
+            } else {
+                return getContext().getEncodingManager().getRubyEncoding(encoding);
+            }
+        }
+
+        @TruffleBoundary
+        private Encoding getEncoding(String name) {
+            switch (name) {
+                case "internal":
+                    return getContext().getEncodingManager().getDefaultInternalEncoding();
+                case "external":
+                    return getContext().getEncodingManager().getDefaultExternalEncoding();
+                case "locale":
+                case "filesystem":
+                    return getContext().getEncodingManager().getLocaleEncoding();
+                default:
+                    throw new UnsupportedOperationException();
+            }
+        }
+    }
+
 
 }
