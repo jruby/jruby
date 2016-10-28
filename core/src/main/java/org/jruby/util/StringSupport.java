@@ -2187,10 +2187,10 @@ public final class StringSupport {
         return modify;
     }
 
-    public static boolean multiByteSwapcase(Ruby runtime, Encoding enc, byte[] bytes, int s, int end) {
+    public static boolean multiByteSwapcase(Encoding enc, byte[] bytes, int s, int end) {
         boolean modify = false;
         while (s < end) {
-            int c = codePoint(runtime, enc, bytes, s, end);
+            int c = codePoint(enc, bytes, s, end);
             if (enc.isUpper(c)) {
                 enc.codeToMbc(toLower(enc, c), bytes, s);
                 modify = true;
@@ -2202,6 +2202,14 @@ public final class StringSupport {
         }
 
         return modify;
+    }
+
+    public static boolean multiByteSwapcase(Ruby runtime, Encoding enc, byte[] bytes, int s, int end) {
+        try {
+            return multiByteSwapcase(enc, bytes, s, end);
+        } catch (IllegalArgumentException e) {
+            throw runtime.newArgumentError(e.getMessage());
+        }
     }
 
     private static int rb_memsearch_ss(byte[] xsBytes, int xs, int m, byte[] ysBytes, int ys, int n) {
