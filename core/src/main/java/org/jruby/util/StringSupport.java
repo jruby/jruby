@@ -2134,7 +2134,7 @@ public final class StringSupport {
         return false;
     }
 
-    public static boolean multiByteSqueeze(Ruby runtime, ByteList value, boolean squeeze[], TrTables tables, Encoding enc, boolean isArg) {
+    public static boolean multiByteSqueeze(ByteList value, boolean squeeze[], TrTables tables, Encoding enc, boolean isArg) {
         int s = value.getBegin();
         int t = s;
         int send = s + value.getRealSize();
@@ -2147,7 +2147,7 @@ public final class StringSupport {
                 if (c != save || (isArg && !squeeze[c])) bytes[t++] = (byte)(save = c);
                 s++;
             } else {
-                c = codePoint(runtime, enc, bytes, s, send);
+                c = codePoint(enc, bytes, s, send);
                 int cl = codeLength(enc, c);
                 if (c != save || (isArg && !trFind(c, squeeze, tables))) {
                     if (t != s) enc.codeToMbc(c, bytes, t);
@@ -2164,6 +2164,14 @@ public final class StringSupport {
         }
 
         return false;
+    }
+
+    public static boolean multiByteSqueeze(Ruby runtime, ByteList value, boolean squeeze[], TrTables tables, Encoding enc, boolean isArg) {
+        try {
+            return multiByteSqueeze(value, squeeze, tables, enc, isArg);
+        } catch (IllegalArgumentException e) {
+            throw runtime.newArgumentError(e.getMessage());
+        }
     }
 
     /**
