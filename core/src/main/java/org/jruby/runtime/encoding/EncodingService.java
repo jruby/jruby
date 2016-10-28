@@ -239,8 +239,11 @@ public final class EncodingService {
                     ((CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry>)hei.next());
             Entry ee = e.value;
 
+            // The alias name should be exactly the one in the encodings DB.
+            visitor.defineAlias(ee.getIndex(), new String(e.bytes, e.p, e.end));
+
+            // The constant names must be treated by the the <code>encodingNames</code> helper.
             for (String constName : encodingNames(e.bytes, e.p, e.end)) {
-                visitor.defineAlias(ee.getIndex(), constName);
                 visitor.defineConstant(ee.getIndex(), constName);
             }
         }
