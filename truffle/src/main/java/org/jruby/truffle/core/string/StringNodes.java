@@ -1719,7 +1719,7 @@ public abstract class StringNodes {
                     return string;
                 }
             } else {
-                if (StringSupport.multiByteSwapcase(getContext().getJRubyRuntime(), enc, bytes, s, end)) {
+                if (StringSupport.multiByteSwapcase(enc, bytes, s, end)) {
                     StringOperations.setRope(string, makeLeafRopeNode.executeMake(bytes, rope.getEncoding(), rope.getCodeRange(), rope.characterLength()));
 
                     return string;
