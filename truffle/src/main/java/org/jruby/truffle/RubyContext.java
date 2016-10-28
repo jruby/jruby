@@ -101,12 +101,15 @@ public class RubyContext extends ExecutionContext {
 
     private final AttachmentsManager attachmentsManager;
 
+    private String currentDirectory;
+
     public RubyContext(Ruby jrubyRuntime, TruffleLanguage.Env env) {
         latestInstance = this;
 
         this.jrubyRuntime = jrubyRuntime;
         this.jrubyInterop = new JRubyInterop(this, jrubyRuntime);
         this.env = env;
+        this.currentDirectory = System.getProperty("user.dir");
 
         if (options.CALL_GRAPH) {
             callGraph = new CallGraph();
@@ -370,6 +373,14 @@ public class RubyContext extends ExecutionContext {
 
     public EncodingManager getEncodingManager() {
         return encodingManager;
+    }
+
+    public String getCurrentDirectory() {
+        return currentDirectory;
+    }
+
+    public void setCurrentDirectory(String currentDirectory) {
+        this.currentDirectory = currentDirectory;
     }
 
 }

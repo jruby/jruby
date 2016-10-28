@@ -401,7 +401,7 @@ public abstract class TrufflePosixNodes {
 
             if (result == 0) {
                 final String cwd = posix().getcwd();
-                getContext().getJRubyRuntime().setCurrentDirectory(cwd);
+                getContext().setCurrentDirectory(cwd);
             }
 
             return result;
@@ -596,7 +596,7 @@ public abstract class TrufflePosixNodes {
         @Specialization
         public DynamicObject getcwd() {
             final String cwd = posix().getcwd();
-            final String path = getContext().getJRubyRuntime().getCurrentDirectory();
+            final String path = getContext().getCurrentDirectory();
             assert path.equals(cwd);
 
             // TODO (nirvdrum 12-Sept-16) The rope table always returns UTF-8, but this call should be based on Encoding.default_external and reflect updates to that value.
