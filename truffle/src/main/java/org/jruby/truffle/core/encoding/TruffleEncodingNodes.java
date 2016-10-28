@@ -19,6 +19,7 @@ import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.core.cast.ToStrNode;
 import org.jruby.truffle.core.cast.ToStrNodeGen;
+import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.control.RaiseException;
 
 @CoreClass("Truffle::Encoding")
@@ -38,7 +39,7 @@ public abstract class TruffleEncodingNodes {
 
         @Specialization(guards = "isRubyString(encodingString)")
         public DynamicObject defaultExternal(DynamicObject encodingString) {
-            final DynamicObject rubyEncoding = getContext().getEncodingManager().getRubyEncoding(encodingString.toString());
+            final DynamicObject rubyEncoding = getContext().getEncodingManager().getRubyEncoding(StringOperations.getString(encodingString));
             getContext().getEncodingManager().setDefaultExternalEncoding(EncodingOperations.getEncoding(rubyEncoding));
 
             return rubyEncoding;
