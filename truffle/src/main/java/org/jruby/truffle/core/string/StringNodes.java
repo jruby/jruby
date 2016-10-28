@@ -2597,8 +2597,7 @@ public abstract class StringNodes {
             assert RubyGuards.isRubyString(toStr);
 
             final CodeRangeable buffer = StringOperations.getCodeRangeableReadWrite(self, checkEncodingNode);
-            final CodeRangeable ret = StringSupport.trTransHelper(context.getJRubyRuntime(),
-                    buffer,
+            final CodeRangeable ret = StringSupport.trTransHelper(buffer,
                     StringOperations.getCodeRangeableReadOnly(fromStr, checkEncodingNode),
                     StringOperations.getCodeRangeableReadOnly(toStr, checkEncodingNode),
                     sFlag);
