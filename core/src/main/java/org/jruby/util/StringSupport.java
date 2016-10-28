@@ -923,7 +923,7 @@ public final class StringSupport {
     /**
      * rb_str_count
      */
-    public static int strCount(ByteList str, Ruby runtime, boolean[] table, TrTables tables, Encoding enc) {
+    public static int strCount(ByteList str, boolean[] table, TrTables tables, Encoding enc) {
         final byte[] bytes = str.getUnsafeBytes();
         int p = str.getBegin();
         final int end = p + str.getRealSize();
@@ -936,7 +936,7 @@ public final class StringSupport {
                 if (table[c]) count++;
                 p++;
             } else {
-                c = codePoint(runtime, enc, bytes, p, end);
+                c = codePoint(enc, bytes, p, end);
                 int cl = codeLength(enc, c);
                 if (trFind(c, table, tables)) count++;
                 p += cl;
@@ -944,6 +944,14 @@ public final class StringSupport {
         }
 
         return count;
+    }
+
+    public static int strCount(ByteList str, Ruby runtime, boolean[] table, TrTables tables, Encoding enc) {
+        try {
+            return strCount(str, table, tables, enc);
+        } catch (IllegalArgumentException e) {
+            throw runtime.newArgumentError(e.getMessage());
+        }
     }
 
     /**
