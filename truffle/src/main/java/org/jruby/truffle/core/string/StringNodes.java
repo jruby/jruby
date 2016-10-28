@@ -866,7 +866,7 @@ public abstract class StringNodes {
                 tables = StringSupport.trSetupTable(StringOperations.getByteListReadOnly(otherStr), table, tables, false, enc);
             }
 
-            return StringSupport.strCount(StringOperations.getByteListReadOnly(string), getContext().getJRubyRuntime(), table, tables, enc);
+            return StringSupport.strCount(StringOperations.getByteListReadOnly(string), table, tables, enc);
         }
     }
 
