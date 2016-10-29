@@ -81,12 +81,6 @@ suite = {
 
         # ------------- Libraries -------------
 
-        "ANTLR4_RUNTIME": mavenLib(
-            "org.antlr:antlr4-runtime:4.5.1-1",
-            "66144204f9d6d7d3f3f775622c2dd7e9bd511d97",
-            "e0057705e96c77719e7d49cb64dc014d023e7a9b",
-            "BSD-new"),
-
         "SNAKEYAML": mavenLib(
             "org.yaml:snakeyaml:1.14",
             "c2df91929ed06a25001939929bff5120e0ea3fd4",
@@ -113,7 +107,6 @@ suite = {
                 "jruby-core",
                 "truffle:TRUFFLE_API",
                 "truffle:TRUFFLE_DEBUG",
-                "ANTLR4_RUNTIME",
                 "SNAKEYAML",
             ],
             "annotationProcessors": ["truffle:TRUFFLE_DSL_PROCESSOR"],

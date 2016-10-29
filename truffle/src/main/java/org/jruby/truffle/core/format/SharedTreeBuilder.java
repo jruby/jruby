@@ -14,7 +14,6 @@ import org.jruby.truffle.core.format.control.RepeatExplodedNode;
 import org.jruby.truffle.core.format.control.RepeatLoopNode;
 import org.jruby.truffle.core.format.control.SequenceNode;
 import org.jruby.truffle.core.format.control.StarNode;
-import org.jruby.truffle.core.format.pack.PackParser;
 import org.jruby.truffle.core.format.pack.SimplePackParser;
 
 import java.util.Deque;
@@ -28,14 +27,6 @@ public class SharedTreeBuilder {
         this.context = context;
     }
 
-    public FormatNode finishSubSequence(Deque<List<FormatNode>> sequenceStack, PackParser.SubSequenceContext ctx) {
-        if (ctx.INT() == null) {
-            return finishSubSequence(sequenceStack, SimplePackParser.COUNT_NONE);
-        } else {
-            return finishSubSequence(sequenceStack, Integer.parseInt(ctx.INT().getText()));
-        }
-    }
-
     public FormatNode finishSubSequence(Deque<List<FormatNode>> sequenceStack, int count) {
         final List<FormatNode> sequence = sequenceStack.pop();
         final SequenceNode sequenceNode = new SequenceNode(context, sequence.toArray(new FormatNode[sequence.size()]));
@@ -44,16 +35,6 @@ public class SharedTreeBuilder {
             return sequenceNode;
         } else {
             return createRepeatNode(count, sequenceNode);
-        }
-    }
-
-    public FormatNode applyCount(PackParser.CountContext count, FormatNode node) {
-        if (count == null) {
-            return node;
-        } else if (count.INT() != null) {
-            return applyCount(Integer.parseInt(count.INT().getText()), node);
-        } else {
-            return applyCount(SimplePackParser.COUNT_STAR, node);
         }
     }
 
@@ -76,24 +57,6 @@ public class SharedTreeBuilder {
         } else {
             return new RepeatExplodedNode(context, count, node);
         }
-    }
-
-    public StarLength parseCountContext(PackParser.CountContext ctx) {
-        final boolean star;
-        final int length;
-
-        if (ctx == null) {
-            star = false;
-            length = 1;
-        } else if (ctx.INT() == null) {
-            star = true;
-            length = 0;
-        } else {
-            star = false;
-            length = Integer.parseInt(ctx.INT().getText());
-        }
-
-        return new StarLength(star, length);
     }
 
     public StarLength parseCountContext(int count) {

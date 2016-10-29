@@ -15,7 +15,6 @@ project 'JRuby Truffle' do
               'maven.test.skip' => 'true' )
 
   jar 'org.yaml:snakeyaml:1.14'
-  jar 'org.antlr:antlr4-runtime:4.5.1-1'
 
   jar 'org.jruby:jruby-core', '${project.version}', :scope => 'provided'
 
