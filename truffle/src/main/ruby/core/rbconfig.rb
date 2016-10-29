@@ -30,11 +30,64 @@ module RbConfig
     # 'RUBY_INSTALL_NAME' => 'jruby',
     'ruby_version' => '2.2.0',
     'OBJEXT' => 'll',
-    'DLEXT' => 'su'
+    'DLEXT' => 'su',
+    'rubyhdrdir' => "#{jruby_home}/lib/ruby/truffle/cext",
+    'topdir' => "#{jruby_home}/lib/ruby/stdlib",
+    "rubyarchhdrdir"=>"#{jruby_home}/lib/ruby/truffle/cext",
+    'includedir' => ''
+  }
+
+  MAKEFILE_CONFIG = {
+      'CC' => "mx -p #{ENV['SULONG_HOME']} su-clang -I#{ENV['SULONG_HOME']}/include",
+      'configure_args' => ' ',
+      'CFLAGS' => "  -S -emit-llvm -I#{ENV['OPENSSL_HOME']}/include -DRUBY_EXTCONF_H=\"extconf.h\" -DHAVE_OPENSSL_110_THREADING_API -DHAVE_HMAC_CTX_COPY -DHAVE_EVP_CIPHER_CTX_COPY -DHAVE_BN_RAND_RANGE -DHAVE_BN_PSEUDO_RAND_RANGE -DHAVE_X509V3_EXT_NCONF_NID -Wall -Wno-int-conversion -Wno-int-to-pointer-cast -Wno-unused-variable -Wno-uninitialized -Wno-unused-function -Werror ",
+      'ARCH_FLAG' => '',
+      'CPPFLAGS' => '',
+      'LDFLAGS' => '',
+      'DLDFLAGS' => '',
+      'DLEXT' => 'su',
+      'LIBEXT' => 'c',
+      'OBJEXT' => 'll',
+      'EXEEXT' => '',
+      'LIBS' => '',
+      'DLDLIBS' => '',
+      'LIBRUBYARG_STATIC' => '',
+      'LIBRUBYARG_SHARED' => '',
+      'libdirname' => 'libdir',
+      'LIBRUBY' => '',
+      'LIBRUBY_A' => '',
+      'LIBRUBYARG' => '',
+      'prefix' => '',
+      'ruby_install_name' => 'jruby-truffle',
+      'RUBY_SO_NAME' => '$(RUBY_BASE_NAME)',
+      'hdrdir' => "#{jruby_home}/lib/ruby/truffle/cext",
+      'COMPILE_C' => '$(CC) $(INCFLAGS) $(CPPFLAGS) $(CFLAGS) $(COUTFLAG)$< -o $@',
+      'LINK_SO' => "mx -p #{ENV['SULONG_HOME']} su-link -o $@ $(OBJS)"
   }
 
   def self.ruby
     # TODO (eregon, 30 Sep 2016): should be the one used by the launcher!
     File.join CONFIG['bindir'], CONFIG['ruby_install_name'], CONFIG['exeext']
   end
+
+  def RbConfig::expand(val, config = CONFIG)
+    newval = val.gsub(/\$\$|\$\(([^()]+)\)|\$\{([^{}]+)\}/) {
+      var = $&
+      if !(v = $1 || $2)
+        '$'
+      elsif key = config[v = v[/\A[^:]+(?=(?::(.*?)=(.*))?\z)/]]
+        pat, sub = $1, $2
+        config[v] = false
+        config[v] = RbConfig::expand(key, config)
+        key = key.gsub(/#{Regexp.quote(pat)}(?=\s|\z)/n) {sub} if pat
+        key
+      else
+        var
+      end
+    }
+    val.replace(newval) unless newval == val
+    val
+  end
 end
+
+CROSS_COMPILING = nil
