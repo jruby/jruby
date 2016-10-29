@@ -1,0 +1,1 @@
+fails:Class.new raises a TypeError when given a non-Class

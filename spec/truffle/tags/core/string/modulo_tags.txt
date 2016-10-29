@@ -11,3 +11,4 @@ fails:String#% behaves as if calling Kernel#Float for %g arguments, when the pas
 fails:String#% behaves as if calling Kernel#Float for %G arguments, when the passed argument does not respond to #to_ary
 fails:String#% behaves as if calling Kernel#Float for %G arguments, when the passed argument is hexadecimal string
 fails:String#% when format string contains %<> formats should raise ArgumentError if no hash given
+fails:String#% pads with spaces for %E with Inf, -Inf, and NaN

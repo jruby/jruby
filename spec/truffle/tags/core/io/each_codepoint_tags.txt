@@ -1,1 +1,2 @@
 fails:IO#each_codepoint raises an error if reading invalid sequence
+fails:IO#each_codepoint raises an exception at incomplete character before EOF when conversion takes place
