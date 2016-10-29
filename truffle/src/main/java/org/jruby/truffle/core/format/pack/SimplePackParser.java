@@ -86,6 +86,7 @@ public class SimplePackParser {
                     final boolean signed;
 
                     switch (b) {
+                        case 'c':
                         case 's':
                         case 'i':
                         case 'l':
@@ -93,7 +94,6 @@ public class SimplePackParser {
                             signed = true;
                             break;
 
-                        case 'c':
                         case 'C':
                         case 'S':
                         case 'I':
@@ -204,11 +204,13 @@ public class SimplePackParser {
 
                 case 'U':
                     n++;
+                    disallowNative(b);
                     listener.utf8Character(count());
                     break;
 
                 case 'w':
                     n++;
+                    disallowNative(b);
                     listener.berInteger(count());
                     break;
 
