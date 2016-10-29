@@ -146,13 +146,13 @@ describe MkSpec, "#create_directory" do
 
   it "creates the directory if it does not exist" do
     File.should_receive(:exist?).and_return(false)
-    FileUtils.should_receive(:mkdir_p).with("spec/class")
+    @script.should_receive(:mkdir_p).with("spec/class")
     @script.create_directory("Class").should == "spec/class"
   end
 
   it "creates the directory for a namespaced module if it does not exist" do
     File.should_receive(:exist?).and_return(false)
-    FileUtils.should_receive(:mkdir_p).with("spec/struct/tms")
+    @script.should_receive(:mkdir_p).with("spec/struct/tms")
     @script.create_directory("Struct::Tms").should == "spec/struct/tms"
   end
 end

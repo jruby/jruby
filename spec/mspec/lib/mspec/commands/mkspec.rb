@@ -1,11 +1,10 @@
-#! /usr/bin/env ruby
+#!/usr/bin/env ruby
 
-require 'fileutils'
 require 'rbconfig'
 require 'mspec/version'
 require 'mspec/utils/options'
 require 'mspec/utils/name_map'
-
+require 'mspec/helpers/fs'
 
 class MkSpec
   attr_reader :config
@@ -63,7 +62,7 @@ class MkSpec
         return nil
       end
     else
-      FileUtils.mkdir_p subdir
+      mkdir_p subdir
     end
 
     subdir
