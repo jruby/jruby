@@ -32,8 +32,7 @@ class MSpecScript
   ]
 
   set :language, [
-    "spec/ruby/language",
-    "^spec/ruby/language/heredoc_spec.rb"
+    "spec/ruby/language"
   ]
 
   set :core, [
