@@ -55,8 +55,8 @@ describe "Hash literal" do
   end
 
   it "recognizes '=' at the end of the key" do
-    eval("{:a==>1}").should   == {:"a=" => 1}
-    eval("{:a= =>1}").should  == {:"a=" => 1}
+    eval("{:a==>1}").should == {:"a=" => 1}
+    eval("{:a= =>1}").should == {:"a=" => 1}
     eval("{:a= => 1}").should == {:"a=" => 1}
   end
 
@@ -94,6 +94,14 @@ describe "Hash literal" do
 
   it "expands an '**obj' element into the containing Hash literal initialization" do
     h = {b: 2, c: 3}
+    {**h, a: 1}.should == {b: 2, c: 3, a: 1}
+    {a: 1, **h}.should == {a: 1, b: 2, c: 3}
+    {a: 1, **h, c: 4}.should == {a: 1, b: 2, c: 4}
+  end
+
+  it "expands a BasicObject using ** into the containing Hash literal initialization" do
+    h = BasicObject.new
+    def h.to_hash; {:b => 2, :c => 3}; end
     {**h, a: 1}.should == {b: 2, c: 3, a: 1}
     {a: 1, **h}.should == {a: 1, b: 2, c: 3}
     {a: 1, **h, c: 4}.should == {a: 1, b: 2, c: 4}

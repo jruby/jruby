@@ -14,7 +14,7 @@ describe "Zlib::GzipWriter#mtime=" do
       gzio.mtime.should == Time.at(1)
     end
 
-    @io.string[4, 4].should == "\001\0\0\0"
+    @io.string[4, 4].should == [1,0,0,0].pack('C*')
   end
 
 it "sets mtime using Time" do
@@ -24,7 +24,7 @@ it "sets mtime using Time" do
     gzio.mtime.should == Time.at(1)
   end
 
-  @io.string[4, 4].should == "\001\0\0\0"
+  @io.string[4, 4].should == [1,0,0,0].pack('C*')
   end
 
   it "raises if the header was written" do

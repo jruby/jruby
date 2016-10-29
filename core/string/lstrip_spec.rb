@@ -10,11 +10,8 @@ describe "String#lstrip" do
    "\000 \000hello\000 \000".lstrip.should == "\000 \000hello\000 \000"
   end
 
-  # spec/core/string/lstrip_spec.rb
-  not_compliant_on :rubinius do
-    it "does not strip leading \\0" do
-     "\x00hello".lstrip.should == "\x00hello"
-    end
+  it "does not strip leading \\0" do
+   "\x00hello".lstrip.should == "\x00hello"
   end
 
   it "taints the result when self is tainted" do

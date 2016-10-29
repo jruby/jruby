@@ -148,7 +148,7 @@ describe "Array#sort" do
     a = Array.new(20, 1)
     a.shift
     a[0] = 2
-    a.sort {|a, b| a <=> b }.last.should == 2
+    a.sort {|x, y| x <=> y }.last.should == 2
   end
 
   it "raises an error if objects can't be compared" do

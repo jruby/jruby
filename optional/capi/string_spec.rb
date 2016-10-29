@@ -509,7 +509,6 @@ describe "rb_str_free" do
   # is available. There is no guarantee this even does
   # anything at all
   it "indicates data for a string might be freed" do
-    str = "xyz"
     @s.rb_str_free("xyz").should be_nil
   end
 end

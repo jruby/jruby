@@ -46,4 +46,14 @@ describe "Exception#backtrace" do
       line.should =~ /^[^ ]+\:\d+(:in `[^`]+')?$/
     end
   end
+
+  it "produces a backtrace for an exception captured using $!" do
+    exception = begin
+      raise
+    rescue RuntimeError
+      $!
+    end
+
+    exception.backtrace.first.should =~ /backtrace_spec/
+  end
 end

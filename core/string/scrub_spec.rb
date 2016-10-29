@@ -9,7 +9,8 @@ describe "String#scrub with a default replacement" do
   end
 
   it "replaces invalid byte sequences" do
-    "abc\u3042\x81".scrub.should == "abc\u3042\uFFFD"
+    x81 = [0x81].pack('C').force_encoding('utf-8')
+    "abc\u3042#{x81}".scrub.should == "abc\u3042\uFFFD"
   end
 
   it "returns a copy of self when the input encoding is BINARY" do
@@ -18,9 +19,10 @@ describe "String#scrub with a default replacement" do
     input.scrub.should == "foo"
   end
 
-  it "replaces invalid byte sequences when using ASCII as the input encoding" do
-    input = "abc\u3042\xE3\x80".force_encoding('ASCII')
 
+  it "replaces invalid byte sequences when using ASCII as the input encoding" do
+    xE3x80 = [0xE3, 0x80].pack('CC').force_encoding 'utf-8'
+    input = "abc\u3042#{xE3x80}".force_encoding('ASCII')
     input.scrub.should == "abc?????"
   end
 end
@@ -33,21 +35,26 @@ describe "String#scrub with a custom replacement" do
   end
 
   it "replaces invalid byte sequences" do
-    "abc\u3042\x81".scrub("*").should == "abc\u3042*"
+    x81 = [0x81].pack('C').force_encoding('utf-8')
+    "abc\u3042#{x81}".scrub("*").should == "abc\u3042*"
   end
 
   it "replaces groups of sequences together with a single replacement" do
-    "\xE3\x80".scrub("*").should == "*"
+    xE3x80 = [0xE3, 0x80].pack('CC').force_encoding 'utf-8'
+    xE3x80.scrub("*").should == "*"
   end
 
   it "raises ArgumentError for replacements with an invalid encoding" do
-    block = lambda { "foo\x81".scrub("\xE4") }
+    x81 = [0x81].pack('C').force_encoding('utf-8')
+    xE4 = [0xE4].pack('C').force_encoding('utf-8')
+    block = lambda { "foo#{x81}".scrub(xE4) }
 
     block.should raise_error(ArgumentError)
   end
 
   it "raises TypeError when a non String replacement is given" do
-    block = lambda { "foo\x81".scrub(1) }
+    x81 = [0x81].pack('C').force_encoding('utf-8')
+    block = lambda { "foo#{x81}".scrub(1) }
 
     block.should raise_error(TypeError)
   end
@@ -61,13 +68,15 @@ describe "String#scrub with a block" do
   end
 
   it "replaces invalid byte sequences" do
-    replaced = "abc\u3042\xE3\x80".scrub { |b| "<#{b.unpack("H*")[0]}>" }
+    xE3x80 = [0xE3, 0x80].pack('CC').force_encoding 'utf-8'
+    replaced = "abc\u3042#{xE3x80}".scrub { |b| "<#{b.unpack("H*")[0]}>" }
 
     replaced.should == "abc\u3042<e380>"
   end
 
   it "replaces invalid byte sequences using a custom encoding" do
-    replaced = "\x80\x80".scrub do |bad|
+    x80x80 = [0x80, 0x80].pack('CC').force_encoding 'utf-8'
+    replaced = x80x80.scrub do |bad|
       bad.encode(Encoding::UTF_8, Encoding::Windows_1252)
     end
 
@@ -77,13 +86,15 @@ end
 
 describe "String#scrub!" do
   it "modifies self for valid strings" do
-    input = "a\x81"
+    x81 = [0x81].pack('C').force_encoding('utf-8')
+    input = "a#{x81}"
     input.scrub!
     input.should == "a\uFFFD"
   end
 
   it "accepts blocks" do
-    input = "a\x81"
+    x81 = [0x81].pack('C').force_encoding('utf-8')
+    input = "a#{x81}"
     input.scrub! { |b| "<?>" }
     input.should == "a<?>"
   end

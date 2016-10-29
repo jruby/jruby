@@ -78,4 +78,8 @@ module VariablesSpecs
       a
     end
   end
+
+  def self.false
+    false
+  end
 end

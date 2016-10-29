@@ -31,9 +31,7 @@ describe "Regexps with repetition" do
 
   it "supports {m,n}? (m to n of previous subexpression) - lazy)" do
     /<.{1,}?>/.match("<a>foo</a>").to_a.should == ["<a>"]
-    not_compliant_on :ironruby do # CLR issue
     /.([0-9]){3,5}?foo/.match("9876543210foo").to_a.should == ["543210foo", "0"]
-    end
   end
 
   it "does not treat {m,n}+ as possessive" do

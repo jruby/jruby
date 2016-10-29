@@ -31,35 +31,31 @@ end
 
 describe "String#rindex with String" do
   it "behaves the same as String#rindex(char) for one-character strings" do
-    ["blablabla", "hello cruel world...!"].each do |str|
-      str.split("").uniq.each do |str|
-        chr = str[0]
-        str.rindex(str).should == str.rindex(chr)
+    "blablabla hello cruel world...!".split("").uniq.each do |str|
+      chr = str[0]
+      str.rindex(str).should == str.rindex(chr)
 
-        0.upto(str.size + 1) do |start|
-          str.rindex(str, start).should == str.rindex(chr, start)
-        end
+      0.upto(str.size + 1) do |start|
+        str.rindex(str, start).should == str.rindex(chr, start)
+      end
 
-        (-str.size - 1).upto(-1) do |start|
-          str.rindex(str, start).should == str.rindex(chr, start)
-        end
+      (-str.size - 1).upto(-1) do |start|
+        str.rindex(str, start).should == str.rindex(chr, start)
       end
     end
   end
 
   it "behaves the same as String#rindex(?char) for one-character strings" do
-    ["blablabla", "hello cruel world...!"].each do |str|
-      str.split("").uniq.each do |str|
-        chr = str[0] =~ / / ? str[0] : eval("?#{str[0]}")
-        str.rindex(str).should == str.rindex(chr)
+    "blablabla hello cruel world...!".split("").uniq.each do |str|
+      chr = str[0] =~ / / ? str[0] : eval("?#{str[0]}")
+      str.rindex(str).should == str.rindex(chr)
 
-        0.upto(str.size + 1) do |start|
-          str.rindex(str, start).should == str.rindex(chr, start)
-        end
+      0.upto(str.size + 1) do |start|
+        str.rindex(str, start).should == str.rindex(chr, start)
+      end
 
-        (-str.size - 1).upto(-1) do |start|
-          str.rindex(str, start).should == str.rindex(chr, start)
-        end
+      (-str.size - 1).upto(-1) do |start|
+        str.rindex(str, start).should == str.rindex(chr, start)
       end
     end
   end

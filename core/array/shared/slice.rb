@@ -437,47 +437,23 @@ describe :array_slice, shared: true do
     end
   end
 
-  not_compliant_on :rubinius do
-    it "raises a RangeError when the start index is out of range of Fixnum" do
-      array = [1, 2, 3, 4, 5, 6]
-      obj = mock('large value')
-      obj.should_receive(:to_int).and_return(0x8000_0000_0000_0000_0000)
-      lambda { array.send(@method, obj) }.should raise_error(RangeError)
+  it "raises a RangeError when the start index is out of range of Fixnum" do
+    array = [1, 2, 3, 4, 5, 6]
+    obj = mock('large value')
+    obj.should_receive(:to_int).and_return(0x8000_0000_0000_0000_0000)
+    lambda { array.send(@method, obj) }.should raise_error(RangeError)
 
-      obj = 8e19
-      lambda { array.send(@method, obj) }.should raise_error(RangeError)
-    end
-
-    it "raises a RangeError when the length is out of range of Fixnum" do
-      array = [1, 2, 3, 4, 5, 6]
-      obj = mock('large value')
-      obj.should_receive(:to_int).and_return(0x8000_0000_0000_0000_0000)
-      lambda { array.send(@method, 1, obj) }.should raise_error(RangeError)
-
-      obj = 8e19
-      lambda { array.send(@method, 1, obj) }.should raise_error(RangeError)
-    end
+    obj = 8e19
+    lambda { array.send(@method, obj) }.should raise_error(RangeError)
   end
 
-  deviates_on :rubinius do
-    it "raises a TypeError when the start index is out of range of Fixnum" do
-      array = [1, 2, 3, 4, 5, 6]
-      obj = mock('large value')
-      obj.should_receive(:to_int).and_return(0x8000_0000_0000_0000_0000)
-      lambda { array.send(@method, obj) }.should raise_error(TypeError)
+  it "raises a RangeError when the length is out of range of Fixnum" do
+    array = [1, 2, 3, 4, 5, 6]
+    obj = mock('large value')
+    obj.should_receive(:to_int).and_return(0x8000_0000_0000_0000_0000)
+    lambda { array.send(@method, 1, obj) }.should raise_error(RangeError)
 
-      obj = 8e19
-      lambda { array.send(@method, obj) }.should raise_error(TypeError)
-    end
-
-    it "raises a TypeError when the length is out of range of Fixnum" do
-      array = [1, 2, 3, 4, 5, 6]
-      obj = mock('large value')
-      obj.should_receive(:to_int).and_return(0x8000_0000_0000_0000_0000)
-      lambda { array.send(@method, 1, obj) }.should raise_error(TypeError)
-
-      obj = 8e19
-      lambda { array.send(@method, 1, obj) }.should raise_error(TypeError)
-    end
+    obj = 8e19
+    lambda { array.send(@method, 1, obj) }.should raise_error(RangeError)
   end
 end

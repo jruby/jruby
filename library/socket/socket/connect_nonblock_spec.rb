@@ -45,7 +45,7 @@ describe "Socket#connect_nonblock" do
     @socket.read(6).should == "hello!"
   end
 
-  platform_is_not :freebsd, :solaris do
+  platform_is_not :freebsd, :solaris, :aix do
     it "raises Errno::EINPROGRESS when the connect would block" do
       lambda do
         @socket.connect_nonblock(@addr)

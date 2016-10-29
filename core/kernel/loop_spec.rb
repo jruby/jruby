@@ -40,7 +40,6 @@ describe "Kernel.loop" do
   end
 
   it "rescues StopIteration" do
-    n = 42
     loop do
       raise StopIteration
     end
@@ -49,7 +48,6 @@ describe "Kernel.loop" do
 
   it "rescues StopIteration's subclasses" do
     finish = Class.new StopIteration
-    n = 42
     loop do
       raise finish
     end

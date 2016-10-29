@@ -19,7 +19,6 @@ describe "Literal Regexps" do
   it "caches the Regexp object" do
     rs = []
     2.times do |i|
-      x = 1
       rs << /foo/
     end
     rs[0].should equal(rs[1])
@@ -127,5 +126,23 @@ describe "Literal Regexps" do
     /fooA++Abar/.match("fooAAAbar").should be_nil
     /fooA?+Abar/.match("fooAAAbar").should be_nil
     /fooA*+Abar/.match("fooAAAbar").should be_nil
+  end
+
+  it "supports conditional regular expressions with positional capture groups" do
+    pattern = /\A(foo)?(?(1)(T)|(F))\z/
+
+    pattern.should =~ 'fooT'
+    pattern.should =~ 'F'
+    pattern.should_not =~ 'fooF'
+    pattern.should_not =~ 'T'
+  end
+
+  it "supports conditional regular expressions with positional capture groups" do
+    pattern = /\A(?<word>foo)?(?(<word>)(T)|(F))\z/
+
+    pattern.should =~ 'fooT'
+    pattern.should =~ 'F'
+    pattern.should_not =~ 'fooF'
+    pattern.should_not =~ 'T'
   end
 end

@@ -170,33 +170,44 @@ describe "BasicSocket#setsockopt" do
     n.unpack('i')[0].should >= 1000
   end
 
+  platform_is_not :aix do
+    describe 'accepts Socket::Option as argument' do
+      it 'boolean' do
+        option = Socket::Option.bool(:INET, :SOCKET, :KEEPALIVE, true)
+        @sock.setsockopt(option).should == 0
+        @sock.getsockopt(Socket::SOL_SOCKET, Socket::SO_KEEPALIVE).bool.should == true
+      end
+
+      it 'int' do
+        option = Socket::Option.int(:INET, :SOCKET, :KEEPALIVE, 1)
+        @sock.setsockopt(option).should == 0
+        @sock.getsockopt(Socket::SOL_SOCKET, Socket::SO_KEEPALIVE).bool.should == true
+      end
+    end
+  end
+
+  platform_is :aix do
+    describe 'accepts Socket::Option as argument' do
+      it 'boolean' do
+        option = Socket::Option.bool(:INET, :SOCKET, :KEEPALIVE, true)
+        @sock.setsockopt(option).should == 0
+      end
+
+      it 'int' do
+        option = Socket::Option.int(:INET, :SOCKET, :KEEPALIVE, 1)
+        @sock.setsockopt(option).should == 0
+      end
+    end
+  end
+
   describe 'accepts Socket::Option as argument' do
-    it 'boolean' do
-      option = Socket::Option.bool(:INET, :SOCKET, :KEEPALIVE, true)
+    it 'linger' do
+      option = Socket::Option.linger(true, 10)
       @sock.setsockopt(option).should == 0
-      @sock.getsockopt(Socket::SOL_SOCKET, Socket::SO_KEEPALIVE).bool.should == true
-    end
-
-    it 'int' do
-      option = Socket::Option.int(:INET, :SOCKET, :KEEPALIVE, 1)
-      @sock.setsockopt(option).should == 0
-      @sock.getsockopt(Socket::SOL_SOCKET, Socket::SO_KEEPALIVE).bool.should == true
-    end
-
-    platform_is_not :freebsd, :solaris do
-      it 'linger' do
-        option = Socket::Option.linger(true, 10)
-        @sock.setsockopt(option).should == 0
-        @sock.getsockopt(Socket::SOL_SOCKET, Socket::SO_LINGER).linger.should == [true, 10]
-      end
-    end
-
-    platform_is :freebsd, :solaris do
-      it 'linger' do
-        option = Socket::Option.linger(true, 10)
-        @sock.setsockopt(option).should == 0
-        @sock.getsockopt(Socket::SOL_SOCKET, Socket::SO_LINGER).linger.should == [Socket::SO_LINGER, 10]
-      end
+      onoff, seconds = @sock.getsockopt(Socket::SOL_SOCKET, Socket::SO_LINGER).linger
+      seconds.should == 10
+      # Both results can be produced depending on the OS and value of Socket::SO_LINGER
+      [true, Socket::SO_LINGER].should include(onoff)
     end
   end
 end

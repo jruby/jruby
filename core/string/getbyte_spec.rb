@@ -10,7 +10,7 @@ describe "String#getbyte" do
     "b".getbyte(0).should == 98
 
     # copy-on-write case
-    str1, str2 = "fooXbar".split("X")
+    _str1, str2 = "fooXbar".split("X")
     str2.getbyte(0).should == 98
   end
 
@@ -18,13 +18,13 @@ describe "String#getbyte" do
     "glark".getbyte(-1).should == "glark".getbyte(4)
 
     # copy-on-write case
-    str1, str2 = "fooXbar".split("X")
+    _str1, str2 = "fooXbar".split("X")
     str2.getbyte(-1).should == 114
   end
 
   it "returns an Integer between 0 and 255" do
     "\x00".getbyte(0).should == 0
-    "\xFF".getbyte(0).should == 255
+    [0xFF].pack('C').getbyte(0).should == 255
     256.chr('utf-8').getbyte(0).should == 196
     256.chr('utf-8').getbyte(1).should == 128
   end
@@ -38,7 +38,8 @@ describe "String#getbyte" do
   end
 
   it "mirrors the output of #bytes" do
-    str = "UTF-8 (\u{9865}} characters and hex escapes (\xDE)"
+    xDE = [0xDE].pack('C').force_encoding('utf-8')
+    str = "UTF-8 (\u{9865}} characters and hex escapes (#{xDE})"
     str.bytes.to_a.each_with_index do |byte, index|
       str.getbyte(index).should == byte
     end

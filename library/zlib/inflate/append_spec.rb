@@ -1,10 +1,9 @@
-# -*- encoding: us-ascii -*-
 require File.expand_path('../../../../spec_helper', __FILE__)
 require 'zlib'
 
 describe "Zlib::Inflate#<<" do
   before :all do
-    @foo_deflated = "x\234K\313\317\a\000\002\202\001E"
+    @foo_deflated = [120, 156, 75, 203, 207, 7, 0, 2, 130, 1, 69].pack('C*')
   end
 
   before :each do

@@ -21,24 +21,16 @@ describe "Hash#assoc" do
     @h.assoc(:banana).last.should == :yellow
   end
 
-  ruby_version_is ''...'2.2' do
-    it "only returns the first matching key-value pair for identity hashes" do
-      @h.compare_by_identity
-      @h['pear'] = :red
-      @h['pear'] = :green
-      @h.keys.grep(/pear/).size.should == 2
-      @h.assoc('pear').should == ['pear', :red]
-    end
-  end
-
-  ruby_version_is '2.2' do
-    it "only returns the first matching key-value pair for identity hashes" do
-      @h.compare_by_identity
-      @h['pear'] = :red
-      @h['pear'] = :green
-      @h.keys.grep(/pear/).size.should == 1
-      @h.assoc('pear').should == ['pear', :green]
-    end
+  it "only returns the first matching key-value pair for identity hashes" do
+    # Avoid literal String keys in Hash#[]= due to https://bugs.ruby-lang.org/issues/12855
+    h = {}.compare_by_identity
+    k1 = 'pear'
+    h[k1] = :red
+    k2 = 'pear'
+    h[k2] = :green
+    h.size.should == 2
+    h.keys.grep(/pear/).size.should == 2
+    h.assoc('pear').should == ['pear', :red]
   end
 
   it "uses #== to compare the argument to the keys" do

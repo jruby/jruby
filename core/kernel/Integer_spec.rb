@@ -171,6 +171,10 @@ describe "Integer() given a String", shared: true do
     lambda { Integer("") }.should raise_error(ArgumentError)
   end
 
+  it "parses the value as 0 if the string consists of a single zero character" do
+    Integer("0").should == 0
+  end
+
   %w(x X).each do |x|
     it "parses the value as a hex number if there's a leading 0#{x}" do
       Integer("0#{x}1").should == 0x1

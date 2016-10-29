@@ -4,7 +4,7 @@ require File.expand_path('../fixtures/classes.rb', __FILE__)
 describe "String#sub with pattern, replacement" do
   it "returns a copy of self when no modification is made" do
     a = "hello"
-    b = a.sub /w.*$/, "*"
+    b = a.sub(/w.*$/, "*")
 
     b.should_not equal(a)
     b.should == "hello"
@@ -374,11 +374,9 @@ describe "String#sub! with pattern and block" do
     a.should == "hello"
   end
 
-  not_compliant_on :rubinius do
-    it "raises a RuntimeError if the string is modified while substituting" do
-      str = "hello"
-      lambda { str.sub!(//) { str << 'x' } }.should raise_error(RuntimeError)
-    end
+  it "raises a RuntimeError if the string is modified while substituting" do
+    str = "hello"
+    lambda { str.sub!(//) { str << 'x' } }.should raise_error(RuntimeError)
   end
 
   it "raises a RuntimeError when self is frozen" do
@@ -400,7 +398,7 @@ describe "String#sub with pattern and Hash" do
   end
 
   it "removes keys that don't correspond to matches" do
-    "hello".sub(/./, 'z' => 'L', 'z' => 'b', 'o' => 'ow').should == "ello"
+    "hello".sub(/./, 'z' => 'b', 'o' => 'ow').should == "ello"
   end
 
   it "ignores non-String keys" do
@@ -485,7 +483,7 @@ describe "String#sub! with pattern and Hash" do
   end
 
   it "removes keys that don't correspond to matches" do
-    "hello".sub!(/./, 'z' => 'L', 'z' => 'b', 'o' => 'ow').should == "ello"
+    "hello".sub!(/./, 'z' => 'b', 'o' => 'ow').should == "ello"
   end
 
   it "ignores non-String keys" do

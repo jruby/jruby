@@ -35,104 +35,104 @@ describe :regexp_new_string_ascii_8bit, shared: true do
 
   it "does not set Regexp options if only given one argument" do
     r = Regexp.send(@method, 'Hi')
-    (r.options & Regexp::IGNORECASE).should     == 0
-    (r.options & Regexp::MULTILINE).should      == 0
+    (r.options & Regexp::IGNORECASE).should == 0
+    (r.options & Regexp::MULTILINE).should == 0
     not_supported_on :opal do
-      (r.options & Regexp::EXTENDED).should       == 0
+      (r.options & Regexp::EXTENDED).should == 0
     end
   end
 
   it "does not set Regexp options if second argument is nil or false" do
     r = Regexp.send(@method, 'Hi', nil)
-    (r.options & Regexp::IGNORECASE).should     == 0
-    (r.options & Regexp::MULTILINE).should      == 0
+    (r.options & Regexp::IGNORECASE).should == 0
+    (r.options & Regexp::MULTILINE).should == 0
     not_supported_on :opal do
-      (r.options & Regexp::EXTENDED).should       == 0
+      (r.options & Regexp::EXTENDED).should == 0
     end
 
     r = Regexp.send(@method, 'Hi', false)
-    (r.options & Regexp::IGNORECASE).should     == 0
-    (r.options & Regexp::MULTILINE).should      == 0
+    (r.options & Regexp::IGNORECASE).should == 0
+    (r.options & Regexp::MULTILINE).should == 0
     not_supported_on :opal do
-      (r.options & Regexp::EXTENDED).should       == 0
+      (r.options & Regexp::EXTENDED).should == 0
     end
   end
 
   it "sets options from second argument if it is one of the Fixnum option constants" do
     r = Regexp.send(@method, 'Hi', Regexp::IGNORECASE)
     (r.options & Regexp::IGNORECASE).should_not == 0
-    (r.options & Regexp::MULTILINE).should      == 0
+    (r.options & Regexp::MULTILINE).should == 0
     not_supported_on :opal do
-      (r.options & Regexp::EXTENDED).should     == 0
+      (r.options & Regexp::EXTENDED).should == 0
     end
 
     r = Regexp.send(@method, 'Hi', Regexp::MULTILINE)
-    (r.options & Regexp::IGNORECASE).should     == 0
-    (r.options & Regexp::MULTILINE).should_not  == 0
+    (r.options & Regexp::IGNORECASE).should == 0
+    (r.options & Regexp::MULTILINE).should_not == 0
     not_supported_on :opal do
-      (r.options & Regexp::EXTENDED).should     == 0
+      (r.options & Regexp::EXTENDED).should == 0
     end
 
     not_supported_on :opal do
       r = Regexp.send(@method, 'Hi', Regexp::EXTENDED)
-      (r.options & Regexp::IGNORECASE).should     == 0
-      (r.options & Regexp::MULTILINE).should      == 0
-      (r.options & Regexp::EXTENDED).should_not   == 1
+      (r.options & Regexp::IGNORECASE).should == 0
+      (r.options & Regexp::MULTILINE).should == 0
+      (r.options & Regexp::EXTENDED).should_not == 1
     end
   end
 
   it "accepts a Fixnum of two or more options ORed together as the second argument" do
     r = Regexp.send(@method, 'Hi', Regexp::IGNORECASE | Regexp::EXTENDED)
     (r.options & Regexp::IGNORECASE).should_not == 0
-    (r.options & Regexp::MULTILINE).should      == 0
-    (r.options & Regexp::EXTENDED).should_not   == 0
+    (r.options & Regexp::MULTILINE).should == 0
+    (r.options & Regexp::EXTENDED).should_not == 0
   end
 
   it "treats any non-Fixnum, non-nil, non-false second argument as IGNORECASE" do
     r = Regexp.send(@method, 'Hi', Object.new)
     (r.options & Regexp::IGNORECASE).should_not == 0
-    (r.options & Regexp::MULTILINE).should      == 0
+    (r.options & Regexp::MULTILINE).should == 0
     not_supported_on :opal do
-      (r.options & Regexp::EXTENDED).should     == 0
+      (r.options & Regexp::EXTENDED).should == 0
     end
   end
 
   it "ignores the third argument if it is 'e' or 'euc' (case-insensitive)" do
-    Regexp.send(@method, 'Hi', nil, 'e').encoding.should    == Encoding::US_ASCII
-    Regexp.send(@method, 'Hi', nil, 'euc').encoding.should  == Encoding::US_ASCII
-    Regexp.send(@method, 'Hi', nil, 'E').encoding.should    == Encoding::US_ASCII
-    Regexp.send(@method, 'Hi', nil, 'EUC').encoding.should  == Encoding::US_ASCII
+    Regexp.send(@method, 'Hi', nil, 'e').encoding.should == Encoding::US_ASCII
+    Regexp.send(@method, 'Hi', nil, 'euc').encoding.should == Encoding::US_ASCII
+    Regexp.send(@method, 'Hi', nil, 'E').encoding.should == Encoding::US_ASCII
+    Regexp.send(@method, 'Hi', nil, 'EUC').encoding.should == Encoding::US_ASCII
   end
 
   it "ignores the third argument if it is 's' or 'sjis' (case-insensitive)" do
-    Regexp.send(@method, 'Hi', nil, 's').encoding.should     == Encoding::US_ASCII
-    Regexp.send(@method, 'Hi', nil, 'sjis').encoding.should  == Encoding::US_ASCII
-    Regexp.send(@method, 'Hi', nil, 'S').encoding.should     == Encoding::US_ASCII
-    Regexp.send(@method, 'Hi', nil, 'SJIS').encoding.should  == Encoding::US_ASCII
+    Regexp.send(@method, 'Hi', nil, 's').encoding.should == Encoding::US_ASCII
+    Regexp.send(@method, 'Hi', nil, 'sjis').encoding.should == Encoding::US_ASCII
+    Regexp.send(@method, 'Hi', nil, 'S').encoding.should == Encoding::US_ASCII
+    Regexp.send(@method, 'Hi', nil, 'SJIS').encoding.should == Encoding::US_ASCII
   end
 
   it "ignores the third argument if it is 'u' or 'utf8' (case-insensitive)" do
-    Regexp.send(@method, 'Hi', nil, 'u').encoding.should     == Encoding::US_ASCII
-    Regexp.send(@method, 'Hi', nil, 'utf8').encoding.should  == Encoding::US_ASCII
-    Regexp.send(@method, 'Hi', nil, 'U').encoding.should     == Encoding::US_ASCII
-    Regexp.send(@method, 'Hi', nil, 'UTF8').encoding.should  == Encoding::US_ASCII
+    Regexp.send(@method, 'Hi', nil, 'u').encoding.should == Encoding::US_ASCII
+    Regexp.send(@method, 'Hi', nil, 'utf8').encoding.should == Encoding::US_ASCII
+    Regexp.send(@method, 'Hi', nil, 'U').encoding.should == Encoding::US_ASCII
+    Regexp.send(@method, 'Hi', nil, 'UTF8').encoding.should == Encoding::US_ASCII
   end
 
   it "uses US_ASCII encoding if third argument is 'n' or 'none' (case insensitive) and only ascii characters" do
-    Regexp.send(@method, 'Hi', nil, 'n').encoding.should     == Encoding::US_ASCII
-    Regexp.send(@method, 'Hi', nil, 'none').encoding.should  == Encoding::US_ASCII
-    Regexp.send(@method, 'Hi', nil, 'N').encoding.should     == Encoding::US_ASCII
-    Regexp.send(@method, 'Hi', nil, 'NONE').encoding.should  == Encoding::US_ASCII
+    Regexp.send(@method, 'Hi', nil, 'n').encoding.should == Encoding::US_ASCII
+    Regexp.send(@method, 'Hi', nil, 'none').encoding.should == Encoding::US_ASCII
+    Regexp.send(@method, 'Hi', nil, 'N').encoding.should == Encoding::US_ASCII
+    Regexp.send(@method, 'Hi', nil, 'NONE').encoding.should == Encoding::US_ASCII
   end
 
   it "uses ASCII_8BIT encoding if third argument is 'n' or 'none' (case insensitive) and non-ascii characters" do
     a = "(?:[\x8E\xA1-\xFE])"
     str = "\A(?:#{a}|x*)\z"
 
-    Regexp.send(@method, str, nil, 'N').encoding.should     == Encoding::ASCII_8BIT
-    Regexp.send(@method, str, nil, 'n').encoding.should     == Encoding::ASCII_8BIT
-    Regexp.send(@method, str, nil, 'none').encoding.should  == Encoding::ASCII_8BIT
-    Regexp.send(@method, str, nil, 'NONE').encoding.should  == Encoding::ASCII_8BIT
+    Regexp.send(@method, str, nil, 'N').encoding.should == Encoding::ASCII_8BIT
+    Regexp.send(@method, str, nil, 'n').encoding.should == Encoding::ASCII_8BIT
+    Regexp.send(@method, str, nil, 'none').encoding.should == Encoding::ASCII_8BIT
+    Regexp.send(@method, str, nil, 'NONE').encoding.should == Encoding::ASCII_8BIT
   end
 
   describe "with escaped characters" do
@@ -141,7 +141,7 @@ describe :regexp_new_string_ascii_8bit, shared: true do
     end
 
     it "accepts a backspace followed by a character" do
-      Regexp.send(@method, "\\N").should == /#{"\x5cN"}/
+      Regexp.send(@method, "\\N").should == /#{"\x5c"+"N"}/
     end
 
     it "accepts a one-digit octal value" do
@@ -349,7 +349,7 @@ describe :regexp_new_string_ascii_8bit, shared: true do
     end
 
     it "accepts multiple consecutive '\\' characters" do
-      Regexp.send(@method, "\\\\\\N").should == /#{"\\\\\\N"}/
+      Regexp.send(@method, "\\\\\\N").should == /#{"\\\\\\"+"N"}/
     end
 
     it "accepts characters and escaped octal digits" do

@@ -1,4 +1,4 @@
-
+# -*- encoding: binary -*-
 describe :string_codepoints, shared: true do
   it "raises an ArgumentError when self has an invalid encoding and a method is called on the returned Enumerator" do
     s = "\xDF".force_encoding(Encoding::UTF_8)

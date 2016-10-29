@@ -33,7 +33,7 @@ module ProcessSpecs
   class Signalizer
     attr_reader :pid_file, :pid
 
-    def initialize(scenario=nil, ruby_exe=nil)
+    def initialize(scenario=nil)
       platform_is :windows do
         fail "not supported on windows"
       end
@@ -45,7 +45,7 @@ module ProcessSpecs
         Thread.current.abort_on_exception = true
         args = [@pid_file]
         args << scenario if scenario
-        args << ruby_exe.inspect if scenario and ruby_exe
+        args << RUBY_EXE.inspect if scenario
         @result = ruby_exe @script, args: args
       end
       Thread.pass while @thread.status and !File.exist?(@pid_file)

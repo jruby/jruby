@@ -78,18 +78,8 @@ describe "Array.new with (size, object=nil)" do
     lambda { Array.new(-1) }.should raise_error(ArgumentError)
   end
 
-  platform_is wordsize: 32 do
-    it "raises an ArgumentError if size is too large" do
-      max_size = ArraySpecs.max_32bit_size
-      lambda { Array.new(max_size + 1) }.should raise_error(ArgumentError)
-    end
-  end
-
-  platform_is wordsize: 64 do
-    it "raises an ArgumentError if size is too large" do
-      max_size = ArraySpecs.max_64bit_size
-      lambda { Array.new(max_size + 1) }.should raise_error(ArgumentError)
-    end
+  it "raises an ArgumentError if size is too large" do
+    lambda { Array.new(fixnum_max+1) }.should raise_error(ArgumentError)
   end
 
   it "calls #to_int to convert the size argument to an Integer when object is given" do

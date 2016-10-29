@@ -42,9 +42,7 @@ describe "Regexps with back-references" do
     /(foo.)\1/.match("foo1foo2").should be_nil
   end
 
-  not_compliant_on :ironruby do
-    it "resets nested \<n> backreference before match of outer subexpression" do
-      /(a\1?){2}/.match("aaaa").to_a.should == ["aa", "a"]
-    end
+  it "resets nested \<n> backreference before match of outer subexpression" do
+    /(a\1?){2}/.match("aaaa").to_a.should == ["aa", "a"]
   end
 end
