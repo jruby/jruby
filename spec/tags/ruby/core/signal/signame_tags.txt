@@ -1,0 +1,1 @@
+fails:Signal.signame returns nil if the argument is an invalid signal number
