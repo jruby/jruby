@@ -38,6 +38,8 @@ public class SimplePackParser {
                 case 'v':
                 case 'n':
                 case 'i':
+                case 'j':
+                case 'J':
                 case 'l':
                 case 'I':
                 case 'L':
@@ -71,6 +73,8 @@ public class SimplePackParser {
 
                         case 'q':
                         case 'Q':
+                        case 'j':
+                        case 'J':
                             size = 64;
                             break;
 
@@ -89,6 +93,7 @@ public class SimplePackParser {
                         case 'c':
                         case 's':
                         case 'i':
+                        case 'j':
                         case 'l':
                         case 'q':
                             signed = true;
@@ -97,6 +102,7 @@ public class SimplePackParser {
                         case 'C':
                         case 'S':
                         case 'I':
+                        case 'J':
                         case 'v':
                         case 'n':
                         case 'V':
@@ -121,6 +127,11 @@ public class SimplePackParser {
                         case 'n':
                         case 'N':
                             byteOrder = ByteOrder.BIG_ENDIAN;
+                            break;
+
+                        case 'j':
+                        case 'J':
+                            byteOrder = ByteOrder.nativeOrder();
                             break;
                     }
 
