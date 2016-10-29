@@ -98,7 +98,13 @@ public class ExceptionTranslatingNode extends RubyNode {
             exception.printStackTrace();
         }
 
-        return coreExceptions().argumentError(exception.getMessage(), this);
+        String message = exception.getMessage();
+
+        if (message == null) {
+            message = exception.toString();
+        }
+
+        return coreExceptions().argumentError(message, this);
     }
 
     @TruffleBoundary
