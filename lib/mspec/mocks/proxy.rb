@@ -128,10 +128,10 @@ class MockProxy
 
   def with(*args)
     raise ArgumentError, "you must specify the expected arguments" if args.empty?
-    @arguments = *args
-    behaves_like_ruby_1_9 = *[]
-    if (behaves_like_ruby_1_9)
-      @arguments = @arguments.first if @arguments.length <= 1
+    if args.length == 1
+      @arguments = args.first
+    else
+      @arguments = args
     end
     self
   end

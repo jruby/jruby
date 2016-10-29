@@ -110,7 +110,7 @@ describe MSpecTag, "#options" do
     @options.should_receive(:parse).and_return([])
     @script.should_receive(:exit)
     @script.options
-    $stdout.should =~ /No files specified/
+    $stdout.should include "No files specified"
   end
 end
 
