@@ -19,3 +19,5 @@ fails:Marshal.dump with a Time dumps the zone and the offset
 fails:Marshal.dump with a Time dumps the zone, but not the offset if zone is UTC
 fails:Marshal.dump with an Exception contains the filename in the backtrace
 fails:Marshal.dump with a Symbol dumps a binary encoded Symbol
+fails(travis):Marshal.dump with a String dumps a String with instance variables
+fails(travis):Marshal.dump with an Exception dumps the message for the exception
