@@ -11,13 +11,13 @@ describe "String#upcase" do
   ruby_version_is ''...'2.4' do
     it "is locale insensitive (only replaces a-z)" do
       "äöü".upcase.should == "äöü"
-  
+
       str = Array.new(256) { |c| c.chr }.join
       expected = Array.new(256) do |i|
         c = i.chr
         c.between?("a", "z") ? c.upcase : c
       end.join
-  
+
       str.upcase.should == expected
     end
   end

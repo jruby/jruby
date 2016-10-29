@@ -33,14 +33,5 @@ describe "Process.setpgrp and Process.getpgrp" do
         Process.wait pid
       end
     end
-
-  end
-
-  describe "Process.setpgrp" do
-    platform_is_not :windows do
-      it "returns zero" do
-        Process.setpgrp.should == 0
-      end
-    end
   end
 end

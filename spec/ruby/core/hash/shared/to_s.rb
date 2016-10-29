@@ -1,7 +1,7 @@
 require File.expand_path('../../../../spec_helper', __FILE__)
 require File.expand_path('../../fixtures/classes', __FILE__)
 
-describe :to_s, shared: true do
+describe :hash_to_s, shared: true do
 
   it "returns a string representation with same order as each()" do
     h = { a: [1, 2], b: -2, d: -6, nil => nil }
@@ -45,5 +45,25 @@ describe :to_s, shared: true do
   it "returns an untrusted string if self is untrusted and not empty" do
     {}.untrust.send(@method).untrusted?.should be_false
     { nil => nil }.untrust.send(@method).untrusted?.should be_true
+  end
+
+  ruby_version_is ''...'2.3' do
+    it "raises if inspected result is not default external encoding" do
+      utf_16be = mock("utf_16be")
+      utf_16be.should_receive(:inspect).and_return(%<"utf_16be \u3042">.encode!(Encoding::UTF_16BE))
+
+      lambda {
+        {a: utf_16be}.send(@method)
+      }.should raise_error(Encoding::CompatibilityError)
+    end
+  end
+
+  ruby_version_is '2.3' do
+    it "does not raise if inspected result is not default external encoding" do
+      utf_16be = mock("utf_16be")
+      utf_16be.should_receive(:inspect).and_return(%<"utf_16be \u3042">.encode!(Encoding::UTF_16BE))
+
+      {a: utf_16be}.send(@method).should == '{:a=>"utf_16be \u3042"}'
+    end
   end
 end

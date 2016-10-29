@@ -11,16 +11,28 @@ describe "Socket::Constants" do
   end
 
   it "defines protocol families" do
-    consts = ["PF_INET6", "PF_INET", "PF_IPX", "PF_UNIX", "PF_UNSPEC"]
+    consts = ["PF_INET6", "PF_INET", "PF_UNIX", "PF_UNSPEC"]
     consts.each do |c|
       Socket::Constants.should have_constant(c)
     end
   end
 
+  platform_is_not :aix do
+    it "defines PF_IPX protocol" do
+      Socket::Constants.should have_constant("PF_IPX")
+    end
+  end
+
   it "defines address families" do
-    consts = ["AF_INET6", "AF_INET", "AF_IPX", "AF_UNIX", "AF_UNSPEC"]
+    consts = ["AF_INET6", "AF_INET", "AF_UNIX", "AF_UNSPEC"]
     consts.each do |c|
       Socket::Constants.should have_constant(c)
+    end
+  end
+
+  platform_is_not :aix do
+    it "defines AF_IPX address" do
+      Socket::Constants.should have_constant("AF_IPX")
     end
   end
 
@@ -44,7 +56,6 @@ describe "Socket::Constants" do
     consts.each do |c|
       Socket::Constants.should have_constant(c)
     end
-
   end
 
   it "defines multicast options" do
@@ -58,7 +69,7 @@ describe "Socket::Constants" do
     end
   end
 
-  platform_is_not :solaris, :windows do
+  platform_is_not :solaris, :windows, :aix do
     it "defines multicast options" do
       consts = ["IP_MAX_MEMBERSHIPS"]
       consts.each do |c|

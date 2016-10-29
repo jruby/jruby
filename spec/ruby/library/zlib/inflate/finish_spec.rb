@@ -1,4 +1,3 @@
-# -*- encoding: US-ASCII -*-
 require 'zlib'
 
 describe "Zlib::Inflate#finish" do

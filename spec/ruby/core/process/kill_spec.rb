@@ -96,7 +96,7 @@ platform_is_not :windows do
 
   describe "Process.kill" do
     before :each do
-      @sp = ProcessSpecs::Signalizer.new "self", RUBY_EXE
+      @sp = ProcessSpecs::Signalizer.new "self"
     end
 
     after :each do
@@ -110,7 +110,7 @@ platform_is_not :windows do
 
   describe "Process.kill" do
     before :each do
-      @sp = ProcessSpecs::Signalizer.new "group_numeric", RUBY_EXE
+      @sp = ProcessSpecs::Signalizer.new "group_numeric"
     end
 
     after :each do
@@ -124,7 +124,7 @@ platform_is_not :windows do
 
   describe "Process.kill" do
     before :each do
-      @sp = ProcessSpecs::Signalizer.new "group_short_string", RUBY_EXE
+      @sp = ProcessSpecs::Signalizer.new "group_short_string"
     end
 
     after :each do
@@ -138,7 +138,7 @@ platform_is_not :windows do
 
   describe "Process.kill" do
     before :each do
-      @sp = ProcessSpecs::Signalizer.new "group_full_string", RUBY_EXE
+      @sp = ProcessSpecs::Signalizer.new "group_full_string"
     end
 
     after :each do

@@ -558,7 +558,8 @@ describe "String#gsub with pattern and block" do
 
   not_supported_on :opal do
     it "raises an ArgumentError if encoding is not valid" do
-      lambda { "a\x92b".gsub(/[^\x00-\x7f]/u, '') }.should raise_error(ArgumentError)
+      x92 = [0x92].pack('C').force_encoding('utf-8')
+      lambda { "a#{x92}b".gsub(/[^\x00-\x7f]/u, '') }.should raise_error(ArgumentError)
     end
   end
 end
@@ -682,7 +683,8 @@ describe "String#gsub! with pattern and block" do
 
   not_supported_on :opal do
     it "raises an ArgumentError if encoding is not valid" do
-      lambda { "a\x92b".gsub!(/[^\x00-\x7f]/u, '') }.should raise_error(ArgumentError)
+      x92 = [0x92].pack('C').force_encoding('utf-8')
+      lambda { "a#{x92}b".gsub!(/[^\x00-\x7f]/u, '') }.should raise_error(ArgumentError)
     end
   end
 end

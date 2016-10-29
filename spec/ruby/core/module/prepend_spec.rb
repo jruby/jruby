@@ -44,10 +44,11 @@ describe "Module#prepend" do
     lambda { ModuleSpecs::SubclassSpec.prepend(ModuleSpecs::Subclass.new) }.should_not raise_error(TypeError)
   end
 
-  it "does not import constants" do
-    m1 = Module.new { A = 1 }
+  it "imports constants" do
+    m1 = Module.new
+    m1::MY_CONSTANT = 1
     m2 = Module.new { prepend(m1) }
-    m1.constants.should_not include(:A)
+    m2.constants.should include(:MY_CONSTANT)
   end
 
   it "imports instance methods" do

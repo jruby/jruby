@@ -955,7 +955,7 @@ describe "A method" do
 
       h = mock("keyword splat")
       h.should_receive(:to_hash)
-      lambda { m **h }.should raise_error(TypeError)
+      lambda { m(**h) }.should raise_error(TypeError)
     end
 
     evaluate <<-ruby do

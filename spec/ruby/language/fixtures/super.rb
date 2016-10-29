@@ -383,7 +383,7 @@ module Super
 
       def c
         block_ref = lambda { 16 }
-        super &block_ref
+        super(&block_ref)
       end
     end
   end

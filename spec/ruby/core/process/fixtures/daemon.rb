@@ -54,24 +54,24 @@ module ProcessSpecs
     end
 
     def stay_in_dir
-      Process.daemon *@args
+      Process.daemon(*@args)
       write Dir.pwd
     end
 
     def keep_stdio_open_false_stdout
-      Process.daemon *@args
+      Process.daemon(*@args)
       $stdout.write "writing to stdout"
       write ""
     end
 
     def keep_stdio_open_false_stderr
-      Process.daemon *@args
+      Process.daemon(*@args)
       $stderr.write "writing to stderr"
       write ""
     end
 
     def keep_stdio_open_false_stdin
-      Process.daemon *@args
+      Process.daemon(*@args)
 
       # Reading from /dev/null will return right away. If STDIN were not
       # /dev/null, reading would block and the spec would hang. This is not a
@@ -81,13 +81,13 @@ module ProcessSpecs
 
     def keep_stdio_open_true_stdout
       $stdout.reopen @data
-      Process.daemon *@args
+      Process.daemon(*@args)
       $stdout.write "writing to stdout"
     end
 
     def keep_stdio_open_true_stderr
       $stderr.reopen @data
-      Process.daemon *@args
+      Process.daemon(*@args)
       $stderr.write "writing to stderr"
     end
 
@@ -95,14 +95,14 @@ module ProcessSpecs
       File.open(@input, "w") { |f| f.puts "reading from stdin" }
 
       $stdin.reopen @input, "r"
-      Process.daemon *@args
+      Process.daemon(*@args)
       write $stdin.read
     end
 
     def keep_stdio_open_files
       file = File.open @input, "w"
 
-      Process.daemon *@args
+      Process.daemon(*@args)
       write file.closed?
     end
   end

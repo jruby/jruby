@@ -5,7 +5,7 @@ describe :strscan_pos, shared: true do
 
   it "returns the position of the scan pointer" do
     @s.send(@method).should == 0
-    @s.scan_until /This is/
+    @s.scan_until(/This is/)
     @s.send(@method).should == 7
     @s.get_byte
     @s.send(@method).should == 8

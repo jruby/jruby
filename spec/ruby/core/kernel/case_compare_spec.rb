@@ -124,26 +124,13 @@ describe "Kernel#=== for a class with #== and #equal? overridden to always be fa
     @o2 = @o1.dup
   end
 
-  not_compliant_on :rubinius do
-    it "returns true if the object id is the same even if both #== and #equal? return false" do
-      @o1.object_id.should == @o1.object_id
+  it "returns true if the object id is the same even if both #== and #equal? return false" do
+    @o1.object_id.should == @o1.object_id
 
-      @o1.should_not equal(@o1)
-      (@o1 == @o1).should == false
+    @o1.should_not equal(@o1)
+    (@o1 == @o1).should == false
 
-      (@o1 === @o1).should == true
-    end
-  end
-
-  deviates_on :rubinius do
-    it "returns false if both #== and #equal? return false even if object id is same" do
-      @o1.object_id.should == @o1.object_id
-
-      @o1.should_not equal(@o1)
-      (@o1 == @o1).should == false
-
-      (@o1 === @o1).should == false
-    end
+    (@o1 === @o1).should == true
   end
 
   it "returns false if the object id is not the same and both #== and #equal? return false" do

@@ -34,18 +34,16 @@ end
 
 describe "String#index with String" do
   it "behaves the same as String#index(char) for one-character strings" do
-    ["blablabla", "hello cruel world...!"].each do |str|
-      str.split("").uniq.each do |str|
-        chr = str[0]
-        str.index(str).should == str.index(chr)
+    "blablabla hello cruel world...!".split("").uniq.each do |str|
+      chr = str[0]
+      str.index(str).should == str.index(chr)
 
-        0.upto(str.size + 1) do |start|
-          str.index(str, start).should == str.index(chr, start)
-        end
+      0.upto(str.size + 1) do |start|
+        str.index(str, start).should == str.index(chr, start)
+      end
 
-        (-str.size - 1).upto(-1) do |start|
-          str.index(str, start).should == str.index(chr, start)
-        end
+      (-str.size - 1).upto(-1) do |start|
+        str.index(str, start).should == str.index(chr, start)
       end
     end
   end

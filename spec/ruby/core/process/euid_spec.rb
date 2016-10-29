@@ -50,11 +50,10 @@ describe "Process.euid=" do
             write.close
             euid = read.gets
             euid.should == "1"
+            Process.wait pid
           end
         end
       end
     end
   end
-
-  it "needs to be reviewed for spec completeness"
 end

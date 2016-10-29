@@ -28,7 +28,7 @@ describe "IO.foreach" do
       it "gets data from a fork when passed -" do
         parent_pid = $$
 
-        ret = IO.foreach("|-") { |l| ScratchPad << l; true }
+        IO.foreach("|-") { |l| ScratchPad << l }
 
         if $$ == parent_pid
           ScratchPad.recorded.should == ["hello\n", "from a fork\n"]

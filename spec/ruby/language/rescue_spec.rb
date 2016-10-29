@@ -184,7 +184,7 @@ describe "The rescue keyword" do
     lambda do
       begin
         ScratchPad << :one
-      rescue Exception => e
+      rescue Exception
         ScratchPad << :does_not_run
       else
         ScratchPad << :two

@@ -33,7 +33,7 @@ describe "Module#module_function with specific method names" do
       module_function :test, :test2
     end
 
-    m.respond_to?(:test).should  == true
+    m.respond_to?(:test).should == true
     m.respond_to?(:test2).should == true
     m.respond_to?(:test3).should == false
   end
@@ -96,7 +96,7 @@ describe "Module#module_function with specific method names" do
       module_function :test
     end
 
-    m.public_methods.map {|m| m.to_s }.include?('test').should == true
+    m.public_methods.map {|me| me.to_s }.include?('test').should == true
   end
 
   it "tries to convert the given names to strings using to_str" do
@@ -109,7 +109,7 @@ describe "Module#module_function with specific method names" do
       module_function o, o2
     end
 
-    m.respond_to?(:test).should  == true
+    m.respond_to?(:test).should == true
     m.respond_to?(:test2).should == true
   end
 
@@ -210,8 +210,6 @@ describe "Module#module_function as a toggle (no arguments) in a Module body" do
           module_eval { def test1() end }
           module_eval " def test2() end "
         }
-
-    c = Class.new { include m }
 
     m.respond_to?(:test1).should == false
     m.respond_to?(:test2).should == false

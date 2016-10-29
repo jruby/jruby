@@ -48,14 +48,12 @@ describe "NoMethodError#message" do
     end
   end
 
-  not_compliant_on :rubinius do
-    it "for private method match /private method/" do
-      begin
-        NoMethodErrorSpecs::NoMethodErrorC.new.a_private_method
-      rescue Exception => e
-        e.should be_kind_of(NoMethodError)
-        e.message.match(/private method/).should_not == nil
-      end
+  it "for private method match /private method/" do
+    begin
+      NoMethodErrorSpecs::NoMethodErrorC.new.a_private_method
+    rescue Exception => e
+      e.should be_kind_of(NoMethodError)
+      e.message.match(/private method/).should_not == nil
     end
   end
 end

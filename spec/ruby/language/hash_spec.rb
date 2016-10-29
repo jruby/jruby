@@ -55,8 +55,8 @@ describe "Hash literal" do
   end
 
   it "recognizes '=' at the end of the key" do
-    eval("{:a==>1}").should   == {:"a=" => 1}
-    eval("{:a= =>1}").should  == {:"a=" => 1}
+    eval("{:a==>1}").should == {:"a=" => 1}
+    eval("{:a= =>1}").should == {:"a=" => 1}
     eval("{:a= => 1}").should == {:"a=" => 1}
   end
 
