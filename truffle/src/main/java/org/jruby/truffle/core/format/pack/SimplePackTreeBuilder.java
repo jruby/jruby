@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -44,6 +44,7 @@ import org.jruby.truffle.core.format.write.bytes.WriteMIMEStringNodeGen;
 import org.jruby.truffle.core.format.write.bytes.WriteUTF8CharacterNodeGen;
 import org.jruby.truffle.core.format.write.bytes.WriteUUStringNodeGen;
 import org.jruby.truffle.language.control.RaiseException;
+import sun.misc.Unsafe;
 
 import java.nio.ByteOrder;
 import java.util.ArrayDeque;
@@ -51,7 +52,7 @@ import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
 
-public class PackTreeBuilder extends PackBaseListener {
+public class SimplePackTreeBuilder implements SimplePackListener {
 
     private final RubyContext context;
     private final Node currentNode;
@@ -61,212 +62,89 @@ public class PackTreeBuilder extends PackBaseListener {
     private FormatEncoding encoding = FormatEncoding.DEFAULT;
     private final Deque<List<FormatNode>> sequenceStack = new ArrayDeque<>();
 
-    public PackTreeBuilder(RubyContext context, Node currentNode) {
+    public SimplePackTreeBuilder(RubyContext context, Node currentNode) {
         this.context = context;
         this.currentNode = currentNode;
         sharedTreeBuilder = new SharedTreeBuilder(context);
         pushSequence();
     }
 
-    @Override
-    public void enterSequence(PackParser.SequenceContext ctx) {
+    public void enterSequence() {
         pushSequence();
     }
 
-    @Override
-    public void exitSequence(PackParser.SequenceContext ctx) {
+    public void exitSequence() {
         final List<FormatNode> sequence = sequenceStack.pop();
         appendNode(new SequenceNode(context, sequence.toArray(new FormatNode[sequence.size()])));
     }
 
     @Override
-    public void exitInt8(PackParser.Int8Context ctx) {
-        appendIntegerNode(8, null, ctx.count());
+    public void integer(int size, boolean signed, ByteOrder byteOrder, int count) {
+        appendIntegerNode(size, byteOrder, count);
     }
 
     @Override
-    public void exitUint8(PackParser.Uint8Context ctx) {
-        appendIntegerNode(8, null, ctx.count());
+    public void floatingPoint(int size, ByteOrder byteOrder, int count) {
+        appendFloatNode(size, byteOrder, count);
     }
 
     @Override
-    public void exitInt16Little(PackParser.Int16LittleContext ctx) {
-        appendIntegerNode(16, ByteOrder.LITTLE_ENDIAN, ctx.count());
-    }
-
-    @Override
-    public void exitInt16Big(PackParser.Int16BigContext ctx) {
-        appendIntegerNode(16, ByteOrder.BIG_ENDIAN, ctx.count());
-    }
-
-    @Override
-    public void exitInt16Native(PackParser.Int16NativeContext ctx) {
-        appendIntegerNode(16, ByteOrder.nativeOrder(), ctx.count());
-    }
-
-    @Override
-    public void exitUint16Little(PackParser.Uint16LittleContext ctx) {
-        appendIntegerNode(16, ByteOrder.LITTLE_ENDIAN, ctx.count());
-    }
-
-    @Override
-    public void exitUint16Big(PackParser.Uint16BigContext ctx) {
-        appendIntegerNode(16, ByteOrder.BIG_ENDIAN, ctx.count());
-    }
-
-    @Override
-    public void exitUint16Native(PackParser.Uint16NativeContext ctx) {
-        appendIntegerNode(16, ByteOrder.nativeOrder(), ctx.count());
-    }
-
-    @Override
-    public void exitInt32Little(PackParser.Int32LittleContext ctx) {
-        appendIntegerNode(32, ByteOrder.LITTLE_ENDIAN, ctx.count());
-    }
-
-    @Override
-    public void exitInt32Big(PackParser.Int32BigContext ctx) {
-        appendIntegerNode(32, ByteOrder.BIG_ENDIAN, ctx.count());
-    }
-
-    @Override
-    public void exitInt32Native(PackParser.Int32NativeContext ctx) {
-        appendIntegerNode(32, ByteOrder.nativeOrder(), ctx.count());
-    }
-
-    @Override
-    public void exitUint32Little(PackParser.Uint32LittleContext ctx) {
-        appendIntegerNode(32, ByteOrder.LITTLE_ENDIAN, ctx.count());
-    }
-
-    @Override
-    public void exitUint32Big(PackParser.Uint32BigContext ctx) {
-        appendIntegerNode(32, ByteOrder.BIG_ENDIAN, ctx.count());
-    }
-
-    @Override
-    public void exitUint32Native(PackParser.Uint32NativeContext ctx) {
-        appendIntegerNode(32, ByteOrder.nativeOrder(), ctx.count());
-    }
-
-    @Override
-    public void exitInt64Little(PackParser.Int64LittleContext ctx) {
-        appendIntegerNode(64, ByteOrder.LITTLE_ENDIAN, ctx.count());
-    }
-
-    @Override
-    public void exitInt64Big(PackParser.Int64BigContext ctx) {
-        appendIntegerNode(64, ByteOrder.BIG_ENDIAN, ctx.count());
-    }
-
-    @Override
-    public void exitInt64Native(PackParser.Int64NativeContext ctx) {
-        appendIntegerNode(64, ByteOrder.nativeOrder(), ctx.count());
-    }
-
-    @Override
-    public void exitUint64Little(PackParser.Uint64LittleContext ctx) {
-        appendIntegerNode(64, ByteOrder.LITTLE_ENDIAN, ctx.count());
-    }
-
-    @Override
-    public void exitUint64Big(PackParser.Uint64BigContext ctx) {
-        appendIntegerNode(64, ByteOrder.BIG_ENDIAN, ctx.count());
-    }
-
-    @Override
-    public void exitUint64Native(PackParser.Uint64NativeContext ctx) {
-        appendIntegerNode(64, ByteOrder.nativeOrder(), ctx.count());
-    }
-
-    @Override
-    public void exitUtf8Character(PackParser.Utf8CharacterContext ctx) {
+    public void utf8Character(int count) {
         unify(FormatEncoding.UTF_8);
 
-        appendNode(sharedTreeBuilder.applyCount(ctx.count(),
+        appendNode(sharedTreeBuilder.applyCount(count,
                 WriteUTF8CharacterNodeGen.create(context,
                         ToLongNodeGen.create(context, false,
                                 ReadValueNodeGen.create(context, new SourceNode())))));
     }
 
     @Override
-    public void exitBerInteger(PackParser.BerIntegerContext ctx) {
-        appendNode(sharedTreeBuilder.applyCount(ctx.count(),
+    public void berInteger(int count) {
+        appendNode(sharedTreeBuilder.applyCount(count,
                 WriteBERNodeGen.create(context,
                         ReadLongOrBigIntegerNodeGen.create(context, new SourceNode()))));
-
     }
 
     @Override
-    public void exitF64Native(PackParser.F64NativeContext ctx) {
-        appendFloatNode(64, ByteOrder.nativeOrder(), ctx.count());
+    public void binaryStringSpacePadded(int count) {
+        binaryString((byte) ' ', true, false, count);
     }
 
     @Override
-    public void exitF32Native(PackParser.F32NativeContext ctx) {
-        appendFloatNode(32, ByteOrder.nativeOrder(), ctx.count());
+    public void binaryStringNullPadded(int count) {
+        binaryString((byte) 0, true, false, count);
     }
 
     @Override
-    public void exitF64Little(PackParser.F64LittleContext ctx) {
-        appendFloatNode(64, ByteOrder.LITTLE_ENDIAN, ctx.count());
+    public void binaryStringNullStar(int count) {
+        binaryString((byte) 0, true, count == SimplePackParser.COUNT_STAR, count);
     }
 
     @Override
-    public void exitF32Little(PackParser.F32LittleContext ctx) {
-        appendFloatNode(32, ByteOrder.LITTLE_ENDIAN, ctx.count());
+    public void bitStringMSBFirst(int count) {
+        bitString(ByteOrder.BIG_ENDIAN, count);
     }
 
     @Override
-    public void exitF64Big(PackParser.F64BigContext ctx) {
-        appendFloatNode(64, ByteOrder.BIG_ENDIAN, ctx.count());
+    public void bitStringMSBLast(int count) {
+        bitString(ByteOrder.LITTLE_ENDIAN, count);
     }
 
     @Override
-    public void exitF32Big(PackParser.F32BigContext ctx) {
-        appendFloatNode(32, ByteOrder.BIG_ENDIAN, ctx.count());
+    public void hexStringHighFirst(int count) {
+        hexString(ByteOrder.BIG_ENDIAN, count);
     }
 
     @Override
-    public void exitBinaryStringSpacePadded(PackParser.BinaryStringSpacePaddedContext ctx) {
-        binaryString((byte) ' ', true, false, ctx.count());
+    public void hexStringLowFirst(int count) {
+        hexString(ByteOrder.LITTLE_ENDIAN, count);
     }
 
     @Override
-    public void exitBinaryStringNullPadded(PackParser.BinaryStringNullPaddedContext ctx) {
-        binaryString((byte) 0, true, false, ctx.count());
-    }
-
-    @Override
-    public void exitBinaryStringNullStar(PackParser.BinaryStringNullStarContext ctx) {
-        binaryString((byte) 0, true, ctx.count() != null && ctx.count().INT() == null, ctx.count());
-    }
-
-    @Override
-    public void exitBitStringMSBFirst(PackParser.BitStringMSBFirstContext ctx) {
-        bitString(ByteOrder.BIG_ENDIAN, ctx.count());
-    }
-
-    @Override
-    public void exitBitStringMSBLast(PackParser.BitStringMSBLastContext ctx) {
-        bitString(ByteOrder.LITTLE_ENDIAN, ctx.count());
-    }
-
-    @Override
-    public void exitHexStringHighFirst(PackParser.HexStringHighFirstContext ctx) {
-        hexString(ByteOrder.BIG_ENDIAN, ctx.count());
-    }
-
-    @Override
-    public void exitHexStringLowFirst(PackParser.HexStringLowFirstContext ctx) {
-        hexString(ByteOrder.LITTLE_ENDIAN, ctx.count());
-    }
-
-    @Override
-    public void exitUuString(PackParser.UuStringContext ctx) {
+    public void uuString(int count) {
         unify(FormatEncoding.US_ASCII);
 
-        final SharedTreeBuilder.StarLength starLength = sharedTreeBuilder.parseCountContext(ctx.count());
+        final SharedTreeBuilder.StarLength starLength = sharedTreeBuilder.parseCountContext(count);
 
         appendNode(WriteUUStringNodeGen.create(context, starLength.getLength(), starLength.isStar(),
                 ReadStringNodeGen.create(context, false, "to_str",
@@ -275,15 +153,15 @@ public class PackTreeBuilder extends PackBaseListener {
     }
 
     @Override
-    public void exitMimeString(PackParser.MimeStringContext ctx) {
+    public void mimeString(int count) {
         unify(FormatEncoding.US_ASCII);
 
         int length;
 
-        if (ctx.count() == null || ctx.count().INT() == null) {
+        if (count == SimplePackParser.COUNT_STAR) {
             length = 72;
         } else {
-            length = Integer.parseInt(ctx.count().INT().getText());
+            length = count;
 
             if (length <= 1) {
                 length = 72;
@@ -294,14 +172,13 @@ public class PackTreeBuilder extends PackBaseListener {
                 ReadStringNodeGen.create(context, true, "to_s",
                         true, context.getCoreLibrary().getNilObject(),
                         new SourceNode())));
-
     }
 
     @Override
-    public void exitBase64String(PackParser.Base64StringContext ctx) {
+    public void base64String(int count) {
         unify(FormatEncoding.US_ASCII);
 
-        final SharedTreeBuilder.StarLength starLength = sharedTreeBuilder.parseCountContext(ctx.count());
+        final SharedTreeBuilder.StarLength starLength = sharedTreeBuilder.parseCountContext(count);
 
         appendNode(WriteBase64StringNodeGen.create(context, starLength.getLength(), starLength.isStar(),
                 ReadStringNodeGen.create(context, false, "to_str",
@@ -310,7 +187,7 @@ public class PackTreeBuilder extends PackBaseListener {
     }
 
     @Override
-    public void exitPointer(PackParser.PointerContext ctx) {
+    public void pointer() {
         /*
          * P and p print the address of a string. Obviously that doesn't work
          * well in Java. We'll print 0x0000000000000000 with the hope that at
@@ -320,54 +197,49 @@ public class PackTreeBuilder extends PackBaseListener {
         appendNode(new SequenceNode(context, new FormatNode[]{
                 new AdvanceSourcePositionNode(context, false),
                 writeInteger(64, ByteOrder.nativeOrder(),
-                    new LiteralFormatNode(context, (long) 0))
+                        new LiteralFormatNode(context, (long) 0))
         }));
-
     }
 
     @Override
-    public void exitAt(PackParser.AtContext ctx) {
-        final int position;
-
-        if (ctx.count() == null) {
+    public void at(int position) {
+        if (position == SimplePackParser.COUNT_NONE) {
             position = 1;
-        } else if (ctx.count() != null && ctx.count().INT() == null) {
+        } else if (position == SimplePackParser.COUNT_STAR) {
             throw new UnsupportedOperationException();
-        } else {
-            position = Integer.parseInt(ctx.count().INT().getText());
         }
 
         appendNode(new SetOutputPositionNode(context, position));
     }
 
     @Override
-    public void exitBack(PackParser.BackContext ctx) {
-        if (ctx.count() == null || ctx.count().INT() != null) {
-            appendNode(sharedTreeBuilder.applyCount(ctx.count(), new ReverseOutputPositionNode(context)));
+    public void back(int count) {
+        if (count == SimplePackParser.COUNT_NONE || count >= 0) {
+            appendNode(sharedTreeBuilder.applyCount(count, new ReverseOutputPositionNode(context)));
         }
     }
 
     @Override
-    public void exitNullByte(PackParser.NullByteContext ctx) {
-        appendNode((sharedTreeBuilder.applyCount(ctx.count(),
+    public void nullByte(int count) {
+        appendNode((sharedTreeBuilder.applyCount(count,
                 WriteByteNodeGen.create(context,
                         new LiteralFormatNode(context, (byte) 0)))));
     }
 
     @Override
-    public void enterSubSequence(PackParser.SubSequenceContext ctx) {
+    public void startSubSequence() {
         pushSequence();
     }
 
     @Override
-    public void exitSubSequence(PackParser.SubSequenceContext ctx) {
-        appendNode(sharedTreeBuilder.finishSubSequence(sequenceStack, ctx));
+    public void finishSubSequence(int count) {
+        appendNode(sharedTreeBuilder.finishSubSequence(sequenceStack, count));
     }
 
     @Override
-    public void exitErrorDisallowedNative(PackParser.ErrorDisallowedNativeContext ctx) {
-        throw new RaiseException(context.getCoreExceptions().argumentError(
-                "'" + ctx.NATIVE().getText() + "' allowed only after types sSiIlLqQ", currentNode));
+    public void error(String message) {
+        // TODO CS 29-Oct-16 make this a node so that side effects from previous directives happen
+        throw new RaiseException(context.getCoreExceptions().argumentError(message, currentNode));
     }
 
     public FormatNode getNode() {
@@ -386,11 +258,11 @@ public class PackTreeBuilder extends PackBaseListener {
         sequenceStack.peek().add(node);
     }
 
-    private void appendIntegerNode(int size, ByteOrder byteOrder, PackParser.CountContext count) {
+    private void appendIntegerNode(int size, ByteOrder byteOrder, int count) {
         appendNode(sharedTreeBuilder.applyCount(count, writeInteger(size, byteOrder)));
     }
 
-    private void appendFloatNode(int size, ByteOrder byteOrder, PackParser.CountContext count) {
+    private void appendFloatNode(int size, ByteOrder byteOrder, int count) {
         final FormatNode readNode = ReadDoubleNodeGen.create(context, new SourceNode());
 
         final FormatNode typeNode;
@@ -447,25 +319,25 @@ public class PackTreeBuilder extends PackBaseListener {
                 }
                 break;
             default:
-                throw new IllegalArgumentException();
+                throw new IllegalArgumentException(Integer.toString(size));
         }
 
         return WriteBytesNodeGen.create(context, convertNode);
     }
 
-    private void binaryString(byte padding, boolean padOnNull, boolean appendNull, PackParser.CountContext count) {
+    private void binaryString(byte padding, boolean padOnNull, boolean appendNull, int count) {
         unify(FormatEncoding.ASCII_8BIT);
 
         final boolean pad;
         final int width;
 
-        if (count != null && count.INT() != null) {
+        if (count >= 0) {
             pad = true;
-            width = Integer.parseInt(count.INT().getText());
+            width = count;
         } else {
             pad = false;
 
-            if (count != null && count.INT() == null) {
+            if (count == SimplePackParser.COUNT_STAR) {
                 padOnNull = false;
             }
 
@@ -474,7 +346,7 @@ public class PackTreeBuilder extends PackBaseListener {
 
         final boolean takeAll;
 
-        if (count != null && count.INT() == null) {
+        if (count == SimplePackParser.COUNT_STAR) {
             takeAll = true;
         } else {
             takeAll = false;
@@ -484,34 +356,34 @@ public class PackTreeBuilder extends PackBaseListener {
                 width, padding, takeAll, appendNull,
                 ReadStringNodeGen.create(context, true, "to_str",
                         false, context.getCoreLibrary().getNilObject(),
-                                new SourceNode())));
+                        new SourceNode())));
 
     }
 
-    private void bitString(ByteOrder byteOrder, PackParser.CountContext ctx) {
-        final SharedTreeBuilder.StarLength starLength = sharedTreeBuilder.parseCountContext(ctx);
+    private void bitString(ByteOrder byteOrder, int count) {
+        final SharedTreeBuilder.StarLength starLength = sharedTreeBuilder.parseCountContext(count);
 
         appendNode(WriteBitStringNodeGen.create(context, byteOrder, starLength.isStar(), starLength.getLength(),
                 ReadStringNodeGen.create(context, true, "to_str",
                         false, context.getCoreLibrary().getNilObject(),
-                                new SourceNode())));
+                        new SourceNode())));
     }
 
-    private void hexString(ByteOrder byteOrder, PackParser.CountContext ctx) {
+    private void hexString(ByteOrder byteOrder, int count) {
         final int length;
 
-        if (ctx == null) {
+        if (count == SimplePackParser.COUNT_NONE) {
             length = 1;
-        } else if (ctx.INT() == null) {
+        } else if (count == SimplePackParser.COUNT_STAR) {
             length = -1;
         } else {
-            length = Integer.parseInt(ctx.INT().getText());
+            length = count;
         }
 
         appendNode(WriteHexStringNodeGen.create(context, byteOrder, length,
                 ReadStringNodeGen.create(context, true, "to_str",
                         false, context.getCoreLibrary().getNilObject(),
-                                new SourceNode())));
+                        new SourceNode())));
 
     }
 

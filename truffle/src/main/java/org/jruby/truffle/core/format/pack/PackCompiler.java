@@ -11,6 +11,7 @@ package org.jruby.truffle.core.format.pack;
 
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.nodes.NodeUtil;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.jruby.truffle.RubyContext;
@@ -18,6 +19,9 @@ import org.jruby.truffle.core.format.FormatErrorListener;
 import org.jruby.truffle.core.format.FormatRootNode;
 import org.jruby.truffle.core.format.LoopRecovery;
 import org.jruby.truffle.language.RubyNode;
+import sun.nio.cs.US_ASCII;
+
+import java.nio.charset.StandardCharsets;
 
 public class PackCompiler {
 
@@ -34,25 +38,14 @@ public class PackCompiler {
             format = LoopRecovery.recoverLoop(format);
         }
 
-        final FormatErrorListener errorListener = new FormatErrorListener(context, currentNode);
+        final SimplePackTreeBuilder builder = new SimplePackTreeBuilder(context, currentNode);
 
-        final ANTLRInputStream input = new ANTLRInputStream(format);
+        builder.enterSequence();
 
-        final PackLexer lexer = new PackLexer(input);
-        lexer.removeErrorListeners();
-        lexer.addErrorListener(errorListener);
+        final SimplePackParser parser = new SimplePackParser(builder, format.getBytes(StandardCharsets.US_ASCII));
+        parser.parse();
 
-        final CommonTokenStream tokens = new CommonTokenStream(lexer);
-
-        final PackParser parser = new PackParser(tokens);
-
-        final PackTreeBuilder builder = new PackTreeBuilder(context, currentNode);
-        parser.addParseListener(builder);
-
-        parser.removeErrorListeners();
-        parser.addErrorListener(errorListener);
-
-        parser.sequence();
+        builder.exitSequence();
 
         return Truffle.getRuntime().createCallTarget(
                 new FormatRootNode(context, currentNode.getEncapsulatingSourceSection(), builder.getEncoding(), builder.getNode()));
