@@ -9,7 +9,8 @@ describe "String.new" do
 
   ruby_version_is "2.3" do
     it "accepts an encoding argument" do
-      str = String.new("\xA4\xA2", encoding: 'euc-jp')
+      xA4xA2 = [0xA4, 0xA2].pack('CC').force_encoding 'utf-8'
+      str = String.new(xA4xA2, encoding: 'euc-jp')
       str.encoding.should == Encoding::EUC_JP
     end
   end

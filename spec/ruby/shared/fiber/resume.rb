@@ -22,7 +22,7 @@ describe :fiber_resume, shared: true do
   end
 
   it "returns the last value encountered on first invocation" do
-    fiber = Fiber.new { false; true }
+    fiber = Fiber.new { 1+1; true }
     fiber.send(@method).should be_true
   end
 

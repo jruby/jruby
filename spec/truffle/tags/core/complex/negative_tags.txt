@@ -1,0 +1,1 @@
+fails:Complex#negative? is undefined

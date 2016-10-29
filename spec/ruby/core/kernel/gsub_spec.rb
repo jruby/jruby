@@ -12,13 +12,13 @@ ruby_version_is ""..."1.9" do
     it "raises a TypeError if $_ is not a String" do
       lambda {
         $_ = 123
-        gsub /./, "!"
+        gsub(/./, "!")
       }.should raise_error(TypeError)
     end
 
     it "when matches sets $_ to a new string, leaving the former value unaltered" do
       orig_value = $_ = "hello"
-      gsub "ello", "ola"
+      gsub("ello", "ola")
       $_.should_not equal(orig_value)
       $_.should == "hola"
       orig_value.should == "hello"
@@ -30,17 +30,18 @@ ruby_version_is ""..."1.9" do
 
       orig_value = $_ = "bye"
       gsub(/$/, "!").should == "bye!"
+      orig_value.should == "bye"
     end
 
     it "accepts Regexps as patterns" do
       $_ = "food"
-      gsub /.$/, "l"
+      gsub(/.$/, "l")
       $_.should == "fool"
     end
 
     it "accepts Strings as patterns, treated literally" do
       $_ = "hello, world."
-      gsub ".", "!"
+      gsub(".", "!")
       $_.should == "hello, world!"
     end
 
@@ -48,7 +49,7 @@ ruby_version_is ""..."1.9" do
       $_ = "hello, world."
       stringlike = mock(".")
       stringlike.should_receive(:to_str).and_return(".")
-      gsub stringlike, "!"
+      gsub(stringlike, "!")
       $_.should == "hello, world!"
     end
   end
@@ -56,7 +57,7 @@ ruby_version_is ""..."1.9" do
   describe "Kernel#gsub with a pattern and replacement" do
     it "accepts strings for replacement" do
       $_ = "hello"
-      gsub /./, "."
+      gsub(/./, ".")
       $_.should == "....."
     end
 
@@ -64,13 +65,13 @@ ruby_version_is ""..."1.9" do
       o = mock("o")
       o.should_receive(:to_str).and_return("o")
       $_ = "ping"
-      gsub "i", o
+      gsub("i", o)
       $_.should == "pong"
     end
 
     it "replaces \\1 sequences with the regexp's corresponding capture" do
       $_ = "hello!"
-      gsub /(.)(.)/, '\2\1'
+      gsub(/(.)(.)/, '\2\1')
       $_.should == "ehll!o"
     end
   end

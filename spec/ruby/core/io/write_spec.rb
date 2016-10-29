@@ -57,8 +57,10 @@ describe "IO#write on a file" do
     end
 
     it "raises a invalid byte sequence error if invalid bytes are being written" do
+      # pack "\xFEhi" to avoid utf-8 conflict
+      xFEhi = ([254].pack('C*') + 'hi').force_encoding('utf-8')
       File.open(@filename, "w", encoding: Encoding::US_ASCII) do |file|
-        lambda { file.write("\xFEhi") }.should raise_error(Encoding::InvalidByteSequenceError)
+        lambda { file.write(xFEhi) }.should raise_error(Encoding::InvalidByteSequenceError)
       end
     end
 
@@ -66,7 +68,10 @@ describe "IO#write on a file" do
       File.open(@filename, "w") do |file|
         file.write('Hëllö'.encode('ISO-8859-1'))
       end
-      File.binread(@filename).should == "H\xEBll\xF6".force_encoding(Encoding::ASCII_8BIT)
+      ë = ([235].pack('U')).encode('ISO-8859-1')
+      ö = ([246].pack('U')).encode('ISO-8859-1')
+      res = "H#{ë}ll#{ö}"
+      File.binread(@filename).should == res.force_encoding(Encoding::ASCII_8BIT)
     end
   end
 end
@@ -89,7 +94,9 @@ describe "IO.write" do
 
   it "writes binary data if no encoding is given" do
     IO.write(@filename, 'Hëllö'.encode('ISO-8859-1'))
-    File.binread(@filename).should == "H\xEBll\xF6".force_encoding(Encoding::ASCII_8BIT)
+    xEB = [235].pack('C*')
+    xF6 = [246].pack('C*')
+    File.binread(@filename).should == ("H" + xEB + "ll" + xF6).force_encoding(Encoding::ASCII_8BIT)
   end
 
   platform_is_not :windows do

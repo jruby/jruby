@@ -19,7 +19,7 @@ describe "Module#attr" do
       o.respond_to?("#{a}=").should == false
     end
 
-    o.attr.should  == "test"
+    o.attr.should == "test"
     o.attr3.should == "test3"
     o.send(:attr).should == "test"
     o.send(:attr3).should == "test3"
@@ -101,7 +101,7 @@ describe "Module#attr" do
       o.respond_to?("#{a}=").should == false
     end
 
-    o.attr.should  == "test"
+    o.attr.should == "test"
     o.attr2.should == "test2"
     o.attr3.should == "test3"
   end

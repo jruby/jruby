@@ -13,6 +13,8 @@ begin
   require 'pp'
 rescue LoadError
   module Kernel
-    alias pretty_inspect inspect
+    def pretty_inspect
+      inspect
+    end
   end
 end

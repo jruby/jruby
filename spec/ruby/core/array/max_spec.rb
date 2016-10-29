@@ -13,7 +13,7 @@ describe "Array#max" do
     [1,2].max.should == 2
     [2,1].max.should == 2
   end
-  
+
   describe "given a block with one argument" do
     it "yields in turn the last length-1 values from the array" do
       ary = []

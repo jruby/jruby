@@ -50,6 +50,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockCallback;
 import org.jruby.runtime.CallBlock;
 import org.jruby.runtime.ClassIndex;
+import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ObjectMarshal;
 import org.jruby.runtime.Signature;
@@ -477,18 +478,16 @@ public class RubyRange extends RubyObject {
             return enumeratorizeWithSize(context, this, "each", enumSizeFn(context));
         }
         final Ruby runtime = context.runtime;
-        if (begin instanceof RubyTime) {
-            throw runtime.newTypeError("can't iterate from Time");
-        } else if (begin instanceof RubyFixnum && end instanceof RubyFixnum) {
+        if (begin instanceof RubyFixnum && end instanceof RubyFixnum) {
             fixnumEach(context, runtime, block);
-        } else if (begin instanceof RubySymbol) {
+        } else if (begin instanceof RubySymbol && end instanceof RubySymbol) {
             begin.asString().uptoCommon(context, end.asString(), isExclusive, block, true);
         } else {
             IRubyObject tmp = begin.checkStringType();
             if (!tmp.isNil()) {
                 ((RubyString) tmp).uptoCommon(context, end, isExclusive, block);
             } else {
-                if (!begin.respondsTo("succ")) {
+                if (!discreteObject(context, begin)) {
                     throw runtime.newTypeError("can't iterate from "
                             + begin.getMetaClass().getName());
                 }
@@ -682,11 +681,16 @@ public class RubyRange extends RubyObject {
     @JRubyMethod(name = {"include?", "member?"}, frame = true)
     public IRubyObject include_p(ThreadContext context, final IRubyObject obj) {
         final Ruby runtime = context.runtime;
-        if ( begin instanceof RubyNumeric || end instanceof RubyNumeric
-            || ! TypeConverter.convertToTypeWithCheck(begin, runtime.getInteger(), "to_int").isNil()
-            || ! TypeConverter.convertToTypeWithCheck(end, runtime.getInteger(), "to_int").isNil() ) {
+
+        boolean iterable = begin instanceof RubyNumeric || end instanceof RubyNumeric ||
+                linearObject(context, begin) || linearObject(context, end);
+
+        if (iterable
+                || !TypeConverter.convertToTypeWithCheck(context, begin, runtime.getInteger(), sites(context).to_int_checked).isNil()
+                || !TypeConverter.convertToTypeWithCheck(context, end, runtime.getInteger(), sites(context).to_int_checked).isNil()) {
             return cover_p(context, obj);
         }
+
         if ( begin instanceof RubyString && end instanceof RubyString
             && ((RubyString) begin).getByteList().getRealSize() == 1
             && ((RubyString) end).getByteList().getRealSize() == 1 ) {
@@ -707,7 +711,22 @@ public class RubyRange extends RubyObject {
                 }
             }
         }
+
         return Helpers.invokeSuper(context, this, obj, Block.NULL_BLOCK);
+    }
+
+    private static boolean discreteObject(ThreadContext context, IRubyObject obj) {
+        if (obj instanceof RubyTime) return false;
+        return sites(context).respond_to_succ.respondsTo(context, obj, obj, false);
+    }
+
+    private static boolean linearObject(ThreadContext context, IRubyObject obj) {
+        if (obj instanceof RubyFixnum || obj instanceof RubyFloat) return true;
+//        if (SPECIAL_CONST_P(obj)) return FALSE;
+        if (obj instanceof RubyBignum) return true;
+        if (obj instanceof RubyNumeric) return true;
+        if (obj instanceof RubyTime) return true;
+        return false;
     }
 
     @JRubyMethod(name = "===")
@@ -911,5 +930,9 @@ public class RubyRange extends RubyObject {
     public static boolean isRangeLike(ThreadContext context, IRubyObject obj, RespondToCallSite respond_to_begin, RespondToCallSite respond_to_end) {
         return respond_to_begin.respondsTo(context, obj, obj) &&
                 respond_to_end.respondsTo(context, obj, obj);
+    }
+
+    private static JavaSites.RangeSites sites(ThreadContext context) {
+        return context.sites.Range;
     }
 }

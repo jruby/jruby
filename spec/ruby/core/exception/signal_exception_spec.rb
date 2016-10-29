@@ -67,6 +67,8 @@ describe "rescueing SignalException" do
       sleep
     rescue SignalException => e
       e.signo.should == Signal.list["TERM"]
+      e.signm.should == "SIGTERM"
+      e.message.should == "SIGTERM"
     end
   end
 end

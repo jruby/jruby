@@ -35,7 +35,7 @@ describe "Matrix#/" do
   end
 
   it "returns an instance of Matrix" do
-    (@a /@b).should be_kind_of(Matrix)
+    (@a / @b).should be_kind_of(Matrix)
   end
 
   describe "for a subclass of Matrix" do

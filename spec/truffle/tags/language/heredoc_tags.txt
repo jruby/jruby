@@ -1,0 +1,6 @@
+fails:Heredoc string allows HEREDOC with <<~'identifier', allowing to indent identifier and content
+fails:Heredoc string trims trailing newline character for blank HEREDOC with <<~'identifier'
+fails:Heredoc string allows HEREDOC with <<~identifier, interpolated
+fails:Heredoc string allows HEREDOC with <<"identifier", interpolated
+fails:Heredoc string allows HEREDOC with <<'identifier', no interpolation
+fails:Heredoc string selects the least-indented line and removes its indentation from all the lines

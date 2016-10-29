@@ -118,12 +118,12 @@ describe :thread_exit, shared: true do
     end
 
     it "runs all outer ensure clauses even if inner ensure clause raises exception" do
-      thread = ThreadSpecs.join_dying_thread_with_outer_ensure(@method) { ScratchPad.record :in_outer_ensure_clause }
+      ThreadSpecs.join_dying_thread_with_outer_ensure(@method) { ScratchPad.record :in_outer_ensure_clause }
       ScratchPad.recorded.should == :in_outer_ensure_clause
     end
 
     it "sets $! in outer ensure clause if inner ensure clause raises exception" do
-      thread = ThreadSpecs.join_dying_thread_with_outer_ensure(@method) { ScratchPad.record $! }
+      ThreadSpecs.join_dying_thread_with_outer_ensure(@method) { ScratchPad.record $! }
       ScratchPad.recorded.to_s.should == "In dying thread"
     end
   end

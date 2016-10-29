@@ -3,3 +3,9 @@ fails:Optional variable assignments using compunded constants with &&= assignmen
 fails:Optional variable assignments using compunded constants with &&= assignments will fail with non-existant constants
 fails:Optional variable assignments using compunded constants with operator assignments
 fails:Optional variable assignments using compunded constants with operator assignments will fail with non-existant constants
+fails:Optional variable assignments using &&= using a single variable leaves new variable unassigned
+fails:Optional variable assignments using &&= using a single variable leaves false
+fails:Optional variable assignments using &&= using a single variable leaves nil
+fails:Optional variable assignments using &&= using a single variable does not evaluate the right side when not needed
+fails:Optional variable assignments using &&= using a single variable does re-assign a variable with a truthy value
+fails:Optional variable assignments using &&= using a single variable does re-assign a variable with a truthy value when using an inline rescue

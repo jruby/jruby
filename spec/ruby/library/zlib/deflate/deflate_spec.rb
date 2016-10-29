@@ -1,14 +1,13 @@
-# -*- encoding: us-ascii -*-
 require 'zlib'
 require File.expand_path('../../../../spec_helper', __FILE__)
 
 describe "Zlib::Deflate.deflate" do
   it "deflates some data" do
-    data = "\000" * 10
+    data = Array.new(10,0).pack('C*')
 
     zipped = Zlib::Deflate.deflate data
 
-    zipped.should == "x\234c`\200\001\000\000\n\000\001"
+    zipped.should == [120, 156, 99, 96, 128, 1, 0, 0, 10, 0, 1].pack('C*')
   end
 
   it "deflates lots of data" do
@@ -16,7 +15,10 @@ describe "Zlib::Deflate.deflate" do
 
     zipped = Zlib::Deflate.deflate data
 
-    zipped.should == "x\234\355\301\001\001\000\000\000\200\220\376\257\356\b\n#{"\000" * 31}\030\200\000\000\001"
+    zipped.should == ([120, 156, 237, 193, 1, 1, 0, 0] +
+                      [0, 128, 144, 254, 175, 238, 8, 10] +
+                      Array.new(31, 0) +
+                      [24, 128, 0, 0, 1]).pack('C*')
   end
 
   it "deflates chunked data" do
@@ -42,7 +44,7 @@ describe "Zlib::Deflate#deflate" do
     zipped = @deflator.deflate data, Zlib::FINISH
     @deflator.finish
 
-    zipped.should == "x\234c`\200\001\000\000\n\000\001"
+    zipped.should == [120, 156, 99, 96, 128, 1, 0, 0, 10, 0, 1].pack('C*')
   end
 
   it "deflates lots of data" do
@@ -51,7 +53,10 @@ describe "Zlib::Deflate#deflate" do
     zipped = @deflator.deflate data, Zlib::FINISH
     @deflator.finish
 
-    zipped.should == "x\234\355\301\001\001\000\000\000\200\220\376\257\356\b\n#{"\000" * 31}\030\200\000\000\001"
+    zipped.should == ([120, 156, 237, 193, 1, 1, 0, 0] +
+                      [0, 128, 144, 254, 175, 238, 8, 10] +
+                      Array.new(31, 0) +
+                      [24, 128, 0, 0, 1]).pack('C*')
   end
 end
 

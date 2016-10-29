@@ -26,15 +26,15 @@ describe "Fixnum#**" do
   end
 
   it "raises negative numbers to the given power" do
-    ((-2) ** 29).should eql -536870912
-    ((-2) ** 30).should eql 1073741824
-    ((-2) ** 31).should eql -2147483648
-    ((-2) ** 32).should eql 4294967296
+    ((-2) ** 29).should eql(-536870912)
+    ((-2) ** 30).should eql(1073741824)
+    ((-2) ** 31).should eql(-2147483648)
+    ((-2) ** 32).should eql(4294967296)
 
-    ((-2) ** 61).should eql -2305843009213693952
-    ((-2) ** 62).should eql 4611686018427387904
-    ((-2) ** 63).should eql -9223372036854775808
-    ((-2) ** 64).should eql 18446744073709551616
+    ((-2) ** 61).should eql(-2305843009213693952)
+    ((-2) ** 62).should eql(4611686018427387904)
+    ((-2) ** 63).should eql(-9223372036854775808)
+    ((-2) ** 64).should eql(18446744073709551616)
   end
 
   it "can raise 1 to a Bignum safely" do

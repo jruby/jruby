@@ -122,12 +122,12 @@ describe "IO.popen" do
     end
 
     it "closes the IO after yielding" do
-      io = IO.popen(ruby_cmd('exit'), "r") { |io| io }
+      io = IO.popen(ruby_cmd('exit'), "r") { |_io| _io }
       io.closed?.should be_true
     end
 
     it "allows the IO to be closed inside the block" do
-      io = IO.popen(ruby_cmd('exit'), 'r') { |io| io.close; io }
+      io = IO.popen(ruby_cmd('exit'), 'r') { |_io| _io.close; _io }
       io.closed?.should be_true
     end
 
@@ -212,14 +212,14 @@ describe "IO.popen" do
       end
     end
 
-    it "accepts an Array command with a separate trailing Hash of Process.exec options" do |io|
+    it "accepts an Array command with a separate trailing Hash of Process.exec options" do
       IO.popen({"FOO" => "bar"}, [*ruby_exe, "-e", "STDERR.puts ENV['FOO']"],
                err: [:child, :out]) do |io|
         io.read.should == "bar\n"
       end
     end
 
-    it "accepts an Array command with a separate trailing Hash of Process.exec options, and an IO mode" do |io|
+    it "accepts an Array command with a separate trailing Hash of Process.exec options, and an IO mode" do
       IO.popen({"FOO" => "bar"}, [*ruby_exe, "-e", "STDERR.puts ENV['FOO']"],
                "r", err: [:child, :out]) do |io|
         io.read.should == "bar\n"
@@ -252,21 +252,21 @@ describe "IO.popen" do
       end
     end
 
-    it "accepts [env, command, arg1, arg2, ..., exec options]" do |io|
+    it "accepts [env, command, arg1, arg2, ..., exec options]" do
       IO.popen([{"FOO" => "bar"}, *ruby_exe, "-e", "STDERR.puts ENV[:FOO.to_s]",
                 err: [:child, :out]]) do |io|
         io.read.should == "bar\n"
       end
     end
 
-    it "accepts '[env, command, arg1, arg2, ..., exec options], mode'" do |io|
+    it "accepts '[env, command, arg1, arg2, ..., exec options], mode'" do
       IO.popen([{"FOO" => "bar"}, *ruby_exe, "-e", "STDERR.puts ENV[:FOO.to_s]",
                 err: [:child, :out]], "r") do |io|
         io.read.should == "bar\n"
       end
     end
 
-    it "accepts '[env, command, arg1, arg2, ..., exec options], mode, IO options'" do |io|
+    it "accepts '[env, command, arg1, arg2, ..., exec options], mode, IO options'" do
       IO.popen([{"FOO" => "bar"}, *ruby_exe, "-e", "STDERR.puts ENV[:FOO.to_s]",
                 err: [:child, :out]], "r",
                internal_encoding: Encoding::EUC_JP) do |io|
@@ -275,7 +275,7 @@ describe "IO.popen" do
       end
     end
 
-    it "accepts '[env, command, arg1, arg2, ...], mode, IO + exec options'" do |io|
+    it "accepts '[env, command, arg1, arg2, ...], mode, IO + exec options'" do
       IO.popen([{"FOO" => "bar"}, *ruby_exe, "-e", "STDERR.puts ENV[:FOO.to_s]"], "r",
                err: [:child, :out], internal_encoding: Encoding::EUC_JP) do |io|
         io.read.should == "bar\n"

@@ -82,6 +82,11 @@ import static org.jruby.util.Numeric.safe_mul;
 @JRubyClass(name = "Complex", parent = "Numeric")
 public class RubyComplex extends RubyNumeric {
 
+    private static final String[] UNDEFINED = new String[]{
+            "<", "<=", "<=>", ">", ">=", "between?", "divmod", "floor", "ceil", "modulo", "round", "step",
+            "truncate", "positive?", "negative?"
+    };
+
     public static RubyClass createComplexClass(Ruby runtime) {
         RubyClass complexc = runtime.defineClass("Complex", runtime.getNumeric(), COMPLEX_ALLOCATOR);
         runtime.setComplex(complexc);
@@ -96,10 +101,7 @@ public class RubyComplex extends RubyNumeric {
         complexc.getSingletonClass().undefineMethod("allocate");
         complexc.getSingletonClass().undefineMethod("new");
 
-        String[]undefined = {"<", "<=", "<=>", ">", ">=", "between?", "divmod",
-                             "floor", "ceil", "modulo", "round", "step", "truncate"};
-
-        for (String undef : undefined) {
+        for (String undef : UNDEFINED) {
             complexc.undefineMethod(undef);
         }
 

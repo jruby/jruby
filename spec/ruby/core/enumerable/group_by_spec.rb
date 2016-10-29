@@ -27,7 +27,7 @@ describe "Enumerable#group_by" do
 
   it "gathers whole arrays as elements when each yields multiple" do
     e = EnumerableSpecs::YieldsMulti.new
-    h = e.group_by { |e| e }
+    h = e.group_by { |i| i }
     h.should == { [1, 2] => [[1, 2]],
                   [6, 7, 8, 9] => [[6, 7, 8, 9]],
                   [3, 4, 5] => [[3, 4, 5]] }

@@ -1,4 +1,3 @@
-# -*- encoding: us-ascii -*-
 require File.expand_path('../../../../spec_helper', __FILE__)
 require 'zlib'
 
@@ -8,8 +7,9 @@ describe "Zlib::Deflate#set_dictionary" do
     d.set_dictionary 'aaaaaaaaaa'
     d << 'abcdefghij'
 
-    d.finish.should ==
-      "x\273\024\341\003\313KLJNIMK\317\310\314\002\000\025\206\003\370"
+    d.finish.should == [120, 187, 20, 225, 3, 203, 75, 76,
+                        74, 78, 73, 77, 75, 207, 200, 204,
+                        2, 0, 21, 134, 3, 248].pack('C*')
   end
 end
 

@@ -3353,10 +3353,16 @@ public class IRBuilder {
         if (RubyInstanceConfig.FULL_TRACE_ENABLED || !(rescueNode instanceof RescueModNode) &&
                 rescueNode.getElseNode() != null) return false;
 
+        Node body = rescueNode.getRescueNode().getBodyNode();
+
+        // This optimization omits backtrace info for the exception getting rescued so we cannot
+        // optimize the exception variable.
+        if (body instanceof GlobalVarNode && ((GlobalVarNode) body).getName().equals("$!")) return false;
+
         // FIXME: This MIGHT be able to expand to more complicated expressions like Hash or Array if they
         // contain only SideEffectFree nodes.  Constructing a literal out of these should be safe from
         // effecting or being able to access $!.
-        return rescueNode.getRescueNode().getBodyNode() instanceof SideEffectFree;
+        return body instanceof SideEffectFree;
     }
 
     private Operand buildRescueInternal(RescueNode rescueNode, EnsureBlockInfo ensure) {

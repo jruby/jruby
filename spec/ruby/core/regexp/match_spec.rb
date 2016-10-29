@@ -50,7 +50,8 @@ describe "Regexp#match" do
         end
 
         it "raises an ArgumentError for an invalid encoding" do
-          lambda { /(.).(.)/.match("Hello, \x96 world!", 1) }.should raise_error(ArgumentError)
+          x96 = ([150].pack('C')).force_encoding('utf-8')
+          lambda { /(.).(.)/.match("Hello, #{x96} world!", 1) }.should raise_error(ArgumentError)
         end
       end
     end
@@ -66,7 +67,8 @@ describe "Regexp#match" do
         end
 
         it "raises an ArgumentError for an invalid encoding" do
-          lambda { /(.).(.)/.match("Hello, \x96 world!", -1) }.should raise_error(ArgumentError)
+          x96 = ([150].pack('C')).force_encoding('utf-8')
+          lambda { /(.).(.)/.match("Hello, #{x96} world!", -1) }.should raise_error(ArgumentError)
         end
       end
     end

@@ -85,7 +85,7 @@ module MethodSpecs
     define_method(:one_req_defined_method, Proc.new {|x|})
     define_method(:two_req_defined_method, Proc.new {|x, y|})
     define_method(:no_args_defined_method) {}
-    define_method(:two_grouped_defined_method) {|(x1,x2)|}
+    define_method(:two_grouped_defined_method) {|(_x1,_x2)|}
 
     attr_reader :reader
     attr_writer :writer
@@ -194,7 +194,7 @@ module MethodSpecs
     def one_unnamed_splat(*); end
 
     def one_splat_one_block(*args, &block)
-      options = {}
+      local_is_not_parameter = {}
     end
 
     define_method(:one_optional_defined_method) {|x = 1|}

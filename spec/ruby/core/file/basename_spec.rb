@@ -86,9 +86,6 @@ describe "File.basename" do
     File.basename("bar.txt", ".*").should == "bar"
     File.basename("bar.txt.exe", ".*").should == "bar.txt"
     File.basename("bar.txt.exe", ".txt.exe").should == "bar"
-    deviates_on :rbx do
-      File.basename("bar.txt.exe", ".txt.*").should == "bar"
-    end
   end
 
   it "raises a TypeError if the arguments are not String types" do

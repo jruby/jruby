@@ -51,16 +51,8 @@ describe "Fixnum#<< with n << m" do
     (-7 << -64).should == -1
   end
 
-  not_compliant_on :rubinius, :jruby do
-    it "returns 0 when m < 0 and m is a Bignum" do
-      (3 << -bignum_value).should == 0
-    end
-  end
-
-  deviates_on :rubinius do
-    it "raises a RangeError when m < 0 and m is a Bignum" do
-      lambda { 3 << -bignum_value }.should raise_error(RangeError)
-    end
+  it "returns 0 when m < 0 and m is a Bignum" do
+    (3 << -bignum_value).should == 0
   end
 
   it "returns a Bignum == fixnum_max * 2 when fixnum_max << 1 and n > 0" do

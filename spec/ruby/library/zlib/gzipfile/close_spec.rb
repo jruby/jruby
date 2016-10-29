@@ -1,11 +1,10 @@
-# -*- encoding: ascii-8bit -*-
 require File.expand_path('../../../../spec_helper', __FILE__)
 require 'stringio'
 require 'zlib'
 
 describe "Zlib::GzipFile#close" do
   it "finishes the stream and closes the io" do
-    io = StringIO.new ""
+    io = StringIO.new "".b
     Zlib::GzipWriter.wrap io do |gzio|
       gzio.close
 
@@ -17,7 +16,7 @@ describe "Zlib::GzipFile#close" do
         raise_error(Zlib::GzipFile::Error, 'closed gzip stream')
     end
 
-    io.string[10..-1].should == "\003\000\000\000\000\000\000\000\000\000"
+    io.string[10..-1].should == ([3] + Array.new(9,0)).pack('C*')
   end
 end
 

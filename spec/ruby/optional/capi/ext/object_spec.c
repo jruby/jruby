@@ -164,6 +164,12 @@ static VALUE so_kind_of(VALUE self, VALUE obj, VALUE klass) {
 }
 #endif
 
+#ifdef HAVE_RB_OBJ_METHOD_ARITY
+static VALUE object_specs_rb_obj_method_arity(VALUE self, VALUE obj, VALUE mid) {
+  return INT2FIX(rb_obj_method_arity(obj, SYM2ID(mid)));
+}
+#endif
+
 #ifdef HAVE_RB_OBJ_TAINT
 static VALUE object_spec_rb_obj_taint(VALUE self, VALUE obj) {
   return rb_obj_taint(obj);
@@ -492,6 +498,10 @@ void Init_object_spec(void) {
 
 #ifdef HAVE_RB_OBJ_IS_KIND_OF
   rb_define_method(cls, "rb_obj_is_kind_of", so_kind_of, 2);
+#endif
+
+#ifdef HAVE_RB_OBJ_METHOD_ARITY
+  rb_define_method(cls, "rb_obj_method_arity", object_specs_rb_obj_method_arity, 2);
 #endif
 
 #ifdef HAVE_RB_OBJ_TAINT

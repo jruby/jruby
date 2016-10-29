@@ -473,6 +473,7 @@
 #define HAVE_RB_OBJ_IS_KIND_OF             1
 #define HAVE_RB_OBJ_TAINT                  1
 #define HAVE_RB_OBJ_METHOD                 1
+#define HAVE_RB_OBJ_METHOD_ARITY           1
 #define HAVE_RB_REQUIRE                    1
 #define HAVE_RB_RESPOND_TO                 1
 #define HAVE_RB_OBJ_RESPOND_TO             1

@@ -126,7 +126,7 @@ describe MSpecRun, "#options" do
     @options.should_receive(:parse).and_return([])
     @script.should_receive(:exit)
     @script.options
-    $stdout.should =~ /No files specified/
+    $stdout.should include "No files specified"
   end
 
   it "process 'spec/' if it is a directory and no files were specified" do
