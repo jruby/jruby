@@ -18,11 +18,12 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.ObjectType;
 import com.oracle.truffle.api.object.Property;
 import com.oracle.truffle.api.object.Shape;
-import java.util.ArrayList;
-import java.util.List;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.language.objects.ObjectGraph;
 import org.jruby.truffle.language.objects.ShapeCachingGuards;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Share the object and all that is reachable from it

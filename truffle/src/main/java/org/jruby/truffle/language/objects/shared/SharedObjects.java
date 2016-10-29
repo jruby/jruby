@@ -13,12 +13,13 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.Shape;
-import java.util.ArrayDeque;
-import java.util.Deque;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.Layouts;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.Options;
 import org.jruby.truffle.language.objects.ObjectGraph;
+
+import java.util.ArrayDeque;
+import java.util.Deque;
 
 public abstract class SharedObjects {
 

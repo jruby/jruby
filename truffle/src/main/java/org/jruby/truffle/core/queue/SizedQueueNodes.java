@@ -28,7 +28,6 @@ import org.jruby.truffle.core.thread.ThreadManager.BlockingAction;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
-import org.jruby.truffle.language.objects.shared.SharedObjects;
 import org.jruby.truffle.language.objects.shared.PropagateSharingNode;
 
 import java.util.concurrent.BlockingQueue;

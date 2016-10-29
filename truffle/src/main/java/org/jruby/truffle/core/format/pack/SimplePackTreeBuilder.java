@@ -44,7 +44,6 @@ import org.jruby.truffle.core.format.write.bytes.WriteMIMEStringNodeGen;
 import org.jruby.truffle.core.format.write.bytes.WriteUTF8CharacterNodeGen;
 import org.jruby.truffle.core.format.write.bytes.WriteUUStringNodeGen;
 import org.jruby.truffle.language.control.RaiseException;
-import sun.misc.Unsafe;
 
 import java.nio.ByteOrder;
 import java.util.ArrayDeque;

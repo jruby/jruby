@@ -53,11 +53,12 @@ import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.methods.UnsupportedOperationBehavior;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
+import org.jruby.truffle.language.objects.PropertyFlags;
 import org.jruby.truffle.language.supercall.SuperCallNode;
 import org.jruby.truffle.language.yield.YieldNode;
-import org.jruby.truffle.language.objects.PropertyFlags;
 import org.jruby.truffle.parser.ParserContext;
 import org.jruby.truffle.util.StringUtils;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;

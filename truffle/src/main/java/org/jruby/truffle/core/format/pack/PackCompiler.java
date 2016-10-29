@@ -11,15 +11,10 @@ package org.jruby.truffle.core.format.pack;
 
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.Truffle;
-import com.oracle.truffle.api.nodes.NodeUtil;
-import org.antlr.v4.runtime.ANTLRInputStream;
-import org.antlr.v4.runtime.CommonTokenStream;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.format.FormatErrorListener;
 import org.jruby.truffle.core.format.FormatRootNode;
 import org.jruby.truffle.core.format.LoopRecovery;
 import org.jruby.truffle.language.RubyNode;
-import sun.nio.cs.US_ASCII;
 
 import java.nio.charset.StandardCharsets;
 

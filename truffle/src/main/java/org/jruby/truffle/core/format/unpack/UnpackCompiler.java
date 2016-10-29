@@ -11,16 +11,9 @@ package org.jruby.truffle.core.format.unpack;
 
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.Truffle;
-import org.antlr.v4.runtime.ANTLRInputStream;
-import org.antlr.v4.runtime.CommonTokenStream;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.format.FormatErrorListener;
-import org.jruby.truffle.core.format.FormatRootNode;
 import org.jruby.truffle.core.format.LoopRecovery;
-import org.jruby.truffle.core.format.pack.PackLexer;
-import org.jruby.truffle.core.format.pack.PackParser;
 import org.jruby.truffle.core.format.pack.SimplePackParser;
-import org.jruby.truffle.core.format.pack.SimplePackTreeBuilder;
 import org.jruby.truffle.language.RubyNode;
 
 import java.nio.charset.StandardCharsets;
