@@ -10,6 +10,10 @@
 require_relative '../../../../ruby/spec_helper'
 
 describe "Array#pack" do
+  it "should pack expressions with loops" do
+    ([1] * 1024).pack('l' * 1024).sum.should == 1024
+  end
+  
   it "should be able to pack a tarball entry" do
     ary = ["metadata.gz", "0000444", "0000000", "0000000", "00000001244", "00000000044", "        ", " ", "0", nil,
            "ustar", "00", "wheel", "wheel", "0000000", "0000000", ""]
