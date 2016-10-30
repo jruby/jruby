@@ -95,6 +95,7 @@ import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
+import org.jruby.truffle.language.SnippetNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.backtrace.Activation;
 import org.jruby.truffle.language.backtrace.Backtrace;
@@ -165,8 +166,34 @@ public abstract class KernelNodes {
     @CoreMethod(names = "`", isModuleFunction = true, required = 1, unsafe = { UnsafeGroup.IO, UnsafeGroup.PROCESSES })
     public abstract static class BacktickNode extends CoreMethodArrayArgumentsNode {
 
+        private static class ExecuteResult {
+
+            private final DynamicObject output;
+            private final int pid;
+            private final int code;
+
+            public ExecuteResult(DynamicObject output, int pid, int code) {
+                this.output = output;
+                this.pid = pid;
+                this.code = code;
+            }
+
+            public DynamicObject getOutput() {
+                return output;
+            }
+
+            public int getPid() {
+                return pid;
+            }
+
+            public int getCode() {
+                return code;
+            }
+        }
+
         @Child private CallDispatchHeadNode toHashNode;
         @Child private ToStrNode toStrNode;
+        @Child private SnippetNode setStatusNode = new SnippetNode();
 
         @Specialization(guards = "!isRubyString(command)")
         public DynamicObject backtickCoerce(VirtualFrame frame, DynamicObject command) {
@@ -190,11 +217,18 @@ public abstract class KernelNodes {
             final DynamicObject env = getContext().getCoreLibrary().getENV();
             final DynamicObject envAsHash = (DynamicObject) toHashNode.call(frame, env, "to_hash");
 
-            return spawnAndCaptureOutput(command, envAsHash);
+            final ExecuteResult result = spawnAndCaptureOutput(command, envAsHash);
+
+            setStatusNode.execute(frame,
+                    "Rubinius::Mirror::Process.set_status_global Process::Status.new(pid, code)",
+                    "pid", result.getPid(),
+                    "code", result.getCode());
+
+            return result.output;
         }
 
         @TruffleBoundary
-        private DynamicObject spawnAndCaptureOutput(DynamicObject command, final DynamicObject envAsHash) {
+        private ExecuteResult spawnAndCaptureOutput(DynamicObject command, final DynamicObject envAsHash) {
             // We need to run via bash to get the variable and other expansion we expect
             String[] cmdArray = new String[] { "bash", "-c", command.toString() };
 
@@ -225,13 +259,31 @@ public abstract class KernelNodes {
                 while ((bytesRead = stdout.read(buffer, 0, bufferSize)) != -1) {
                     baos.write(buffer, 0, bytesRead);
                 }
-
             } catch (IOException e) {
                 throw new JavaException(e);
             }
 
+            int code;
+
+            while (true) {
+                try {
+                    code = process.waitFor();
+                    break;
+                } catch (InterruptedException e) {
+                    continue;
+                }
+            }
+
             // TODO (nirvdrum 10-Mar-15) This should be using the default external encoding, rather than hard-coded to UTF-8.
-            return createString(baos.toByteArray(), EncodingOperations.getEncoding(getContext().getEncodingManager().getRubyEncoding("UTF-8")));
+            final DynamicObject output = createString(baos.toByteArray(), EncodingOperations.getEncoding(getContext().getEncodingManager().getRubyEncoding("UTF-8")));
+
+            // TODO CS 30-Oct-16 how to get the PID? JRuby does some gymnastics with reflection. I think we
+            // should probably reimplement this in Ruby using spawn, which starts processes with JNR and so
+            // has proper access to things like the PID.
+
+            final int pid = 0;
+
+            return new ExecuteResult(output, pid, code);
         }
 
     }
