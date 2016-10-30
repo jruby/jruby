@@ -1886,10 +1886,10 @@ public class RubyModule extends RubyObject {
             }
         }
 
-        RubyModule implementationModule = method.getImplementationClass();
+        RubyModule implementationModule = method.getDefinedClass();
         RubyModule originModule = this;
-        while (originModule != implementationModule && originModule.isSingleton()) {
-            originModule = ((MetaClass)originModule).getRealClass();
+        while (originModule != implementationModule && (originModule.isSingleton() || originModule.isIncluded())) {
+            originModule = originModule.getSuperClass();
         }
 
         AbstractRubyMethod newMethod;
@@ -2963,7 +2963,6 @@ public class RubyModule extends RubyObject {
     private void doPrependModule(RubyModule baseModule) {
         List<RubyModule> modulesToInclude = gatherModules(baseModule);
 
-        RubyClass insertBelowSuperClass = null;
         if (methodLocation == this) {
             // In the current logic, if we getService here we know that module is not an
             // IncludedModule, so there's no need to fish out the delegate. But just
