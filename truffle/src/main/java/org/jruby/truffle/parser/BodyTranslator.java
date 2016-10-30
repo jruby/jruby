@@ -259,6 +259,7 @@ import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
 import org.jruby.truffle.parser.lexer.ISourcePosition;
 import org.jruby.truffle.parser.lexer.InvalidSourcePosition;
 import org.jruby.truffle.parser.parser.ParserSupport;
+import org.jruby.truffle.parser.scope.StaticScope;
 import org.jruby.truffle.platform.graal.AssertConstantNodeGen;
 import org.jruby.truffle.platform.graal.AssertNotCompiledNodeGen;
 import org.jruby.truffle.tools.ChaosNodeGen;
@@ -2719,14 +2720,29 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitPreExeNode(PreExeParseNode node) {
+        // The parser seems to visit BEGIN blocks for us first, so we just need to translate them in place
         final RubyNode ret = node.getBodyNode().accept(this);
         return addNewlineIfNeeded(node, ret);
     }
 
     @Override
     public RubyNode visitPostExeNode(PostExeParseNode node) {
-        final RubyNode ret = node.getBodyNode().accept(this);
-        return addNewlineIfNeeded(node, ret);
+        // END blocks run after any other code - not just code in the same file
+
+        // Turn into a call to Truffle::Kernel.at_exit
+
+        // The scope is empty - we won't be able to access local variables
+        // TODO fix this
+        // https://github.com/jruby/jruby/issues/4257
+        final StaticScope scope = new StaticScope(StaticScope.Type.BLOCK, null);
+
+        return translateCallNode(
+                new CallParseNode(node.getPosition(),
+                        new TruffleFragmentParseNode(node.getPosition(), false, new ObjectLiteralNode(context, null, context.getCoreLibrary().getTruffleKernelModule())),
+                        "at_exit",
+                        new ListParseNode(node.getPosition(), new TrueParseNode(node.getPosition())),
+                        new IterParseNode(node.getPosition(), node.getArgsNode(), scope, node.getBodyNode())),
+                false, false, false);
     }
 
     @Override

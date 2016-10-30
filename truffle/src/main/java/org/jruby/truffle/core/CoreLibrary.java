@@ -245,6 +245,7 @@ public class CoreLibrary {
     private final DynamicObject truffleModule;
     private final DynamicObject truffleBootModule;
     private final DynamicObject truffleInteropModule;
+    private final DynamicObject truffleKernelModule;
     private final DynamicObject bigDecimalClass;
     private final DynamicObject encodingCompatibilityErrorClass;
     private final DynamicObject methodClass;
@@ -597,7 +598,7 @@ public class CoreLibrary {
         defineModule(truffleModule, "Fixnum");
         defineModule(truffleModule, "Safe");
         defineModule(truffleModule, "System");
-        defineModule(truffleModule, "Kernel");
+        truffleKernelModule = defineModule(truffleModule, "Kernel");
         defineModule(truffleModule, "Process");
         defineModule(truffleModule, "Binding");
         defineModule(truffleModule, "POSIX");
@@ -1606,6 +1607,10 @@ public class CoreLibrary {
 
     public Object getTruffleInteropModule() {
         return truffleInteropModule;
+    }
+
+    public Object getTruffleKernelModule() {
+        return truffleKernelModule;
     }
 
     private static final String[] coreFiles = {

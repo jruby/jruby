@@ -124,7 +124,7 @@ public class StaticScope implements Serializable {
      * @param type           the type of scope
      * @param enclosingScope the lexically containing scope.
      */
-    protected StaticScope(Type type, StaticScope enclosingScope) {
+    public StaticScope(Type type, StaticScope enclosingScope) {
         this(type, enclosingScope, NO_NAMES);
     }
 
