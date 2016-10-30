@@ -181,18 +181,22 @@ public class JITCompiler implements JITCompilerMBean {
 
         Runnable jitTask = getTaskFor(context, method);
 
-        if (config.getJitBackground() && config.getJitThreshold() > 0) {
-            try {
-                executor.submit(jitTask);
-            } catch (RejectedExecutionException ree) {
-                // failed to submit, just run it directly
+        try {
+            if (config.getJitBackground() && config.getJitThreshold() > 0) {
+                try {
+                    executor.submit(jitTask);
+                } catch (RejectedExecutionException ree) {
+                    // failed to submit, just run it directly
+                    jitTask.run();
+                }
+            } else {
+                // Because are non-asynchonously build if the JIT threshold happens to be 0 we will have no ic yet.
+                method.ensureInstrsReady();
+                // just run directly
                 jitTask.run();
             }
-        } else {
-            // Because are non-asynchonously build if the JIT threshold happens to be 0 we will have no ic yet.
-            method.ensureInstrsReady();
-            // just run directly
-            jitTask.run();
+        } catch (Exception e) {
+            throw new NotCompilableException(e);
         }
     }
 
