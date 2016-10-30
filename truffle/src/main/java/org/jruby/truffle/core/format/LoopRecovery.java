@@ -40,7 +40,7 @@ public abstract class LoopRecovery {
 
         int index = 0;
 
-        // Keep going until we reach the end of hte format string
+        // Keep going until we reach the end of the format string
 
         while (index < format.length()) {
             // If we aren't at the start of a new directive, step forward one
@@ -58,7 +58,7 @@ public abstract class LoopRecovery {
 
             int successfulLengthOfLoopedString = -1;
 
-            // Increase the size of the string that will be tried to belooped - but only as far as there is that much
+            // Increase the size of the string that will be tried to be looped - but only as far as there is that much
             // string both before and after the index
 
             while (tryLengthOfLoopedString <= index && index + tryLengthOfLoopedString <= format.length()) {
@@ -88,7 +88,7 @@ public abstract class LoopRecovery {
 
                 int repetitionsCount = 2;
 
-                // Where in the string the 2 repititions end
+                // Where in the string the 2 repetitions end
 
                 int indexOfEndOfRepititions = index + successfulLengthOfLoopedString;
 
