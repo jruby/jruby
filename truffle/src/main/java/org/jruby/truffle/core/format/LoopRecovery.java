@@ -102,7 +102,16 @@ public abstract class LoopRecovery {
                 // Loop to find out how many times the string appears after the 2 initial instances
 
                 while (indexOfEndOfRepetitions + successfulLengthOfLoopedString <= format.length()) {
+                    // If there isn't another repetition of the string, stop looking
+
                     if (!format.substring(indexOfEndOfRepetitions, indexOfEndOfRepetitions + successfulLengthOfLoopedString).equals(repeated)) {
+                        break;
+                    }
+
+                    // If this repetition isn't followed by a directive, stop looking
+
+                    if (indexOfEndOfRepetitions + successfulLengthOfLoopedString < format.length()
+                            && DIRECTIVES.indexOf(format.charAt(indexOfEndOfRepetitions + successfulLengthOfLoopedString)) == -1) {
                         break;
                     }
 

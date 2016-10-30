@@ -1,1 +1,0 @@
-fails:Array#pack should be able to pack a tarball entry
