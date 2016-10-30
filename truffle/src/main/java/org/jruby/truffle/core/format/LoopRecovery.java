@@ -90,17 +90,17 @@ public abstract class LoopRecovery {
 
                 // Where in the string the 2 repetitions end
 
-                int indexOfEndOfRepititions = index + successfulLengthOfLoopedString;
+                int indexOfEndOfRepetitions = index + successfulLengthOfLoopedString;
 
                 // Loop to find out how many times the string appears after the 2 initial instances
 
-                while (indexOfEndOfRepititions + successfulLengthOfLoopedString <= format.length()) {
-                    if (!format.substring(indexOfEndOfRepititions, indexOfEndOfRepititions + successfulLengthOfLoopedString).equals(repeated)) {
+                while (indexOfEndOfRepetitions + successfulLengthOfLoopedString <= format.length()) {
+                    if (!format.substring(indexOfEndOfRepetitions, indexOfEndOfRepetitions + successfulLengthOfLoopedString).equals(repeated)) {
                         break;
                     }
 
                     repetitionsCount++;
-                    indexOfEndOfRepititions += successfulLengthOfLoopedString;
+                    indexOfEndOfRepetitions += successfulLengthOfLoopedString;
                 }
 
                 // Replace 'nnn' with 'n3'
@@ -111,7 +111,7 @@ public abstract class LoopRecovery {
                 builder.append(repeated);
                 builder.append(')');
                 builder.append(repetitionsCount);
-                builder.append(format.substring(indexOfEndOfRepititions));
+                builder.append(format.substring(indexOfEndOfRepetitions));
 
                 format = builder.toString();
             }
