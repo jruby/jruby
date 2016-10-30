@@ -45,7 +45,7 @@ public abstract class LoopRecovery {
         while (index < format.length()) {
             // If we aren't at the start of a new directive, step forward one
 
-            if ("CSLQcslqInNvVUwDdFfEeFfAaZBbHhuMmpPXx@".indexOf(format.charAt(index)) == -1) {
+            if ("CSLQcslqInjJNvVUwDdFfEeFfAaZBbHhuMmpPXx@".indexOf(format.charAt(index)) == -1) {
                 index++;
                 continue;
             }
