@@ -1,3 +1,4 @@
+exclude :test_idiv, "needs investigation"
 exclude :test_aref, "needs investigation"
 exclude :test_big_2comp, "needs investigation"
 exclude :test_big_fdiv, "needs investigation"
