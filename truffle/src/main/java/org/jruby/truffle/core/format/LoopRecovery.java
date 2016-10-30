@@ -11,6 +11,8 @@ package org.jruby.truffle.core.format;
 
 public abstract class LoopRecovery {
 
+    private static final String DIRECTIVES = "CSLQcslqInjJNvVUwDdFfEeFfAaZBbHhuMmpPXx@";
+
     /**
      * Format strings can sometimes be dynamically generated with code such as:
      * <p>
@@ -32,8 +34,8 @@ public abstract class LoopRecovery {
      * for one simple loop.
      * <p>
      * To do that, for each character we look 1..n characters behind and see if
-     * that pattern is repeated. If it is we have the loop. Nothing more
-     * complicated than that.
+     * that pattern is repeated. If it is we have the loop. We then keep going
+     * and see how many more times we can loop. Nothing more complicated than that.
      */
     public static String recoverLoop(String format) {
         // The index is the point in the format string where we look backwards for loops from
@@ -45,7 +47,7 @@ public abstract class LoopRecovery {
         while (index < format.length()) {
             // If we aren't at the start of a new directive, step forward one
 
-            if ("CSLQcslqInjJNvVUwDdFfEeFfAaZBbHhuMmpPXx@".indexOf(format.charAt(index)) == -1) {
+            if (DIRECTIVES.indexOf(format.charAt(index)) == -1) {
                 index++;
                 continue;
             }
@@ -63,12 +65,17 @@ public abstract class LoopRecovery {
 
             while (tryLengthOfLoopedString <= index && index + tryLengthOfLoopedString <= format.length()) {
                 // If that length of string exists both before and after the index then that's a successful length
-                // to use for looping
+                // to use for looping. The loop must be followed by a new directive. We don't handle whitespace well
+                // here at the moment, as the whitespace won't count as a new directive.
 
                 final String beforeIndex = format.substring(index - tryLengthOfLoopedString, index);
                 final String afterIndex = format.substring(index, index + tryLengthOfLoopedString);
 
-                if (beforeIndex.equals(afterIndex)) {
+                final boolean repetitionExists = beforeIndex.equals(afterIndex);
+                final boolean charactersAfterRepetition = index + tryLengthOfLoopedString < format.length();
+
+                if (repetitionExists && !(charactersAfterRepetition
+                        && DIRECTIVES.indexOf(format.charAt(index + tryLengthOfLoopedString)) == -1)) {
                     successfulLengthOfLoopedString = tryLengthOfLoopedString;
                 }
 
