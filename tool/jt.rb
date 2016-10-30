@@ -458,6 +458,7 @@ module Commands
       jt test                                        run all mri tests, specs and integration tests (set SULONG_HOME, and maybe USE_SYSTEM_CLANG)
       jt test tck [--jdebug]                         run the Truffle Compatibility Kit tests
       jt test mri                                    run mri tests
+          --graal         use Graal (set either GRAALVM_BIN or GRAAL_HOME)
       jt test specs                                  run all specs
       jt test specs fast                             run all specs except sub-processes, GC, sleep, ...
       jt test spec/ruby/language                     run specs in this directory
@@ -778,6 +779,19 @@ module Commands
       "EXCLUDES" => "test/mri/excludes_truffle"
     }
     jruby_args = %w[-J-Xmx2G -Xtruffle.exceptions.print_java]
+
+    if args.delete('--graal')
+      if ENV["RUBY_BIN"]
+        # Assume that Graal is automatically set up if RUBY_BIN is set.
+        # This will also warn if it's not.
+      else
+        javacmd, javacmd_options = Utilities.find_graal_javacmd_and_options
+        env_vars["JAVACMD"] = javacmd
+        jruby_args.push(*javacmd_options)
+      end
+    else
+      jruby_args << '-Xtruffle.graal.warn_unless=false'
+    end
 
     if args.empty?
       args = File.readlines("#{JRUBY_DIR}/test/mri_truffle.index").grep(/^[^#]\w+/).map(&:chomp)
