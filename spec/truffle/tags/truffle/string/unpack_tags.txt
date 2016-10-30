@@ -1,1 +1,0 @@
-fails:String#unpack should be able to unpack a tarball entry
