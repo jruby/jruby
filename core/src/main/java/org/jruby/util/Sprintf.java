@@ -864,12 +864,8 @@ public class Sprintf {
                         break;
                     }
 
-                    if ((flags & FLAG_PRECISION) == 0) {
-                        precision = 6;
-                    }
-
                     NumberFormat nf = getNumberFormat(args.locale);
-                    nf.setMaximumFractionDigits(precision);
+                    nf.setMaximumFractionDigits(Integer.MAX_VALUE);
                     String str = nf.format(dval);
 
                     // grrr, arghh, want to subclass sun.misc.FloatingDecimal, but can't,
@@ -966,6 +962,9 @@ public class Sprintf {
                         width--;
                     } else {
                         signChar = 0;
+                    }
+                    if ((flags & FLAG_PRECISION) == 0) {
+                        precision = 6;
                     }
 
                     switch(fchar) {
