@@ -42,7 +42,6 @@ public class LazyRubyRootNode extends RootNode implements InternalRootNode {
     @CompilationFinal private DynamicObject mainObject;
     @CompilationFinal private InternalMethod method;
 
-    @Child private Node findContextNode;
     @Child private DirectCallNode callNode;
 
     public LazyRubyRootNode(SourceSection sourceSection, FrameDescriptor frameDescriptor, Source source,
@@ -50,12 +49,11 @@ public class LazyRubyRootNode extends RootNode implements InternalRootNode {
         super(RubyLanguage.class, sourceSection, frameDescriptor);
         this.source = source;
         this.argumentNames = argumentNames;
-        this.findContextNode = RubyLanguage.INSTANCE.unprotectedCreateFindContextNode();
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
-        final RubyContext context = RubyLanguage.INSTANCE.unprotectedFindContext(findContextNode);
+        final RubyContext context = RubyContext.getInstance();
 
         if (cachedContext == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();

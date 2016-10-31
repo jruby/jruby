@@ -317,8 +317,8 @@ public class RubyContext extends ExecutionContext {
         return coverageManager;
     }
 
-    public static RubyContext getLatestInstance() {
-        return latestInstance;
+    public static RubyContext getInstance() {
+        return RubyLanguage.INSTANCE.unprotectedFindContext(RubyLanguage.INSTANCE.unprotectedCreateFindContextNode());
     }
 
     public AttachmentsManager getAttachmentsManager() {
