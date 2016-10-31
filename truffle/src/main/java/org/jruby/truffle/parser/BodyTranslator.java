@@ -28,6 +28,7 @@ import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.truffle.core.IsNilNode;
 import org.jruby.truffle.core.IsRubiniusUndefinedNode;
 import org.jruby.truffle.core.RaiseIfFrozenNode;
+import org.jruby.truffle.core.VMPrimitiveNodesFactory;
 import org.jruby.truffle.core.array.ArrayAppendOneNodeGen;
 import org.jruby.truffle.core.array.ArrayConcatNode;
 import org.jruby.truffle.core.array.ArrayDropTailNode;
@@ -112,7 +113,6 @@ import org.jruby.truffle.language.globals.ReadThreadLocalGlobalVariableNode;
 import org.jruby.truffle.language.globals.UpdateLastBacktraceNode;
 import org.jruby.truffle.language.globals.UpdateVerbosityNode;
 import org.jruby.truffle.language.globals.WriteGlobalVariableNodeGen;
-import org.jruby.truffle.language.globals.WriteProgramNameNodeGen;
 import org.jruby.truffle.language.globals.WriteReadOnlyGlobalNode;
 import org.jruby.truffle.language.literal.BooleanLiteralNode;
 import org.jruby.truffle.language.literal.FloatLiteralNode;
@@ -1731,7 +1731,8 @@ public class BodyTranslator extends Translator {
             final RubyNode translated;
 
             if (name.equals("$0")) {
-                translated = WriteProgramNameNodeGen.create(context, fullSourceSection, writeGlobalVariableNode);
+                translated = VMPrimitiveNodesFactory.VMSetProcessTitleNodeFactory.create(
+                        new RubyNode[]{ writeGlobalVariableNode });
             } else {
                 translated = writeGlobalVariableNode;
             }
