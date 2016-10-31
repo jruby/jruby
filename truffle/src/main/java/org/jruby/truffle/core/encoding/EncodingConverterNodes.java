@@ -128,8 +128,7 @@ public abstract class EncodingConverterNodes {
             if (RubyGuards.isRubyString(object)) {
                 return getContext().getJRubyRuntime().newString(RopeOperations.toByteListCopy(StringOperations.rope((DynamicObject) object)));
             } else if (RubyGuards.isRubyEncoding(object)) {
-                final Rope rope = StringOperations.rope(Layouts.ENCODING.getName((DynamicObject) object));
-                return getContext().getJRubyRuntime().getEncodingService().rubyEncodingFromObject(getContext().getJRubyRuntime().newString(RopeOperations.toByteListCopy(rope)));
+                return getContext().getJRubyRuntime().getEncodingService().convertEncodingToRubyEncoding(Layouts.ENCODING.getEncoding((DynamicObject) object));
             } else {
                 throw new UnsupportedOperationException();
             }
