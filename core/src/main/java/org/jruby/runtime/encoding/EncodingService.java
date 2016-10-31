@@ -3,7 +3,6 @@ package org.jruby.runtime.encoding;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
 import org.jcodings.EncodingDB.Entry;
-import org.jcodings.ascii.AsciiTables;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.ISO8859_16Encoding;
 import org.jcodings.util.CaseInsensitiveBytesHash;
@@ -19,8 +18,6 @@ import java.io.Console;
 import java.lang.reflect.Field;
 import java.nio.charset.Charset;
 import java.nio.charset.UnsupportedCharsetException;
-import java.util.ArrayList;
-import java.util.List;
 
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.RubyFixnum;
@@ -28,6 +25,7 @@ import org.jruby.RubyString;
 import org.jruby.ext.nkf.RubyNKF;
 import org.jruby.util.SafePropertyAccessor;
 import org.jruby.util.encoding.ISO_8859_16;
+import org.jruby.util.io.EncodingUtils;
 
 public final class EncodingService {
     private final CaseInsensitiveBytesHash<Entry> encodings;
@@ -214,7 +212,7 @@ public final class EncodingService {
 
             visitor.defineEncoding(ee, e.bytes, e.p, e.end);
 
-            for (String constName : encodingNames(e.bytes, e.p, e.end)) {
+            for (String constName : EncodingUtils.encodingNames(e.bytes, e.p, e.end)) {
                 visitor.defineConstant(ee.getIndex(), constName);
             }
         }
@@ -243,69 +241,10 @@ public final class EncodingService {
             visitor.defineAlias(ee.getIndex(), new String(e.bytes, e.p, e.end));
 
             // The constant names must be treated by the the <code>encodingNames</code> helper.
-            for (String constName : encodingNames(e.bytes, e.p, e.end)) {
+            for (String constName : EncodingUtils.encodingNames(e.bytes, e.p, e.end)) {
                 visitor.defineConstant(ee.getIndex(), constName);
             }
         }
-    }
-
-    private List<String> encodingNames(byte[] name, int p, int end) {
-        final List<String> names = new ArrayList<String>();
-
-        Encoding enc = ASCIIEncoding.INSTANCE;
-        int s = p;
-
-        int code = name[s] & 0xff;
-        if (enc.isDigit(code)) return names;
-
-        boolean hasUpper = false;
-        boolean hasLower = false;
-        if (enc.isUpper(code)) {
-            hasUpper = true;
-            while (++s < end && (enc.isAlnum(name[s] & 0xff) || name[s] == (byte)'_')) {
-                if (enc.isLower(name[s] & 0xff)) hasLower = true;
-            }
-        }
-
-        boolean isValid = false;
-        if (s >= end) {
-            isValid = true;
-            names.add(new String(name, p, end));
-        }
-
-        if (!isValid || hasLower) {
-            if (!hasLower || !hasUpper) {
-                do {
-                    code = name[s] & 0xff;
-                    if (enc.isLower(code)) hasLower = true;
-                    if (enc.isUpper(code)) hasUpper = true;
-                } while (++s < end && (!hasLower || !hasUpper));
-            }
-
-            byte[]constName = new byte[end - p];
-            System.arraycopy(name, p, constName, 0, end - p);
-            s = 0;
-            code = constName[s] & 0xff;
-
-            if (!isValid) {
-                if (enc.isLower(code)) constName[s] = AsciiTables.ToUpperCaseTable[code];
-                for (; s < constName.length; ++s) {
-                    if (!enc.isAlnum(constName[s] & 0xff)) constName[s] = (byte)'_';
-                }
-                if (hasUpper) {
-                    names.add(new String(constName, 0, constName.length));
-                }
-            }
-            if (hasLower) {
-                for (s = 0; s < constName.length; ++s) {
-                    code = constName[s] & 0xff;
-                    if (enc.isLower(code)) constName[s] = AsciiTables.ToUpperCaseTable[code];
-                }
-                names.add(new String(constName, 0, constName.length));
-            }
-        }
-
-        return names;
     }
 
     private void defineEncodingConstant(Ruby runtime, RubyEncoding encoding, String constName) {

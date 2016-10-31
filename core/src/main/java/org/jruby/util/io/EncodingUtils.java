@@ -3,6 +3,7 @@ package org.jruby.util.io;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
 import org.jcodings.Ptr;
+import org.jcodings.ascii.AsciiTables;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF16BEEncoding;
@@ -47,6 +48,7 @@ import org.jruby.util.Sprintf;
 import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -1114,6 +1116,65 @@ public class EncodingUtils {
             str.modifyExpand(len);
         }
         return str;
+    }
+
+    public static List<String> encodingNames(byte[] name, int p, int end) {
+        final List<String> names = new ArrayList<String>();
+
+        Encoding enc = ASCIIEncoding.INSTANCE;
+        int s = p;
+
+        int code = name[s] & 0xff;
+        if (enc.isDigit(code)) return names;
+
+        boolean hasUpper = false;
+        boolean hasLower = false;
+        if (enc.isUpper(code)) {
+            hasUpper = true;
+            while (++s < end && (enc.isAlnum(name[s] & 0xff) || name[s] == (byte)'_')) {
+                if (enc.isLower(name[s] & 0xff)) hasLower = true;
+            }
+        }
+
+        boolean isValid = false;
+        if (s >= end) {
+            isValid = true;
+            names.add(new String(name, p, end));
+        }
+
+        if (!isValid || hasLower) {
+            if (!hasLower || !hasUpper) {
+                do {
+                    code = name[s] & 0xff;
+                    if (enc.isLower(code)) hasLower = true;
+                    if (enc.isUpper(code)) hasUpper = true;
+                } while (++s < end && (!hasLower || !hasUpper));
+            }
+
+            byte[]constName = new byte[end - p];
+            System.arraycopy(name, p, constName, 0, end - p);
+            s = 0;
+            code = constName[s] & 0xff;
+
+            if (!isValid) {
+                if (enc.isLower(code)) constName[s] = AsciiTables.ToUpperCaseTable[code];
+                for (; s < constName.length; ++s) {
+                    if (!enc.isAlnum(constName[s] & 0xff)) constName[s] = (byte)'_';
+                }
+                if (hasUpper) {
+                    names.add(new String(constName, 0, constName.length));
+                }
+            }
+            if (hasLower) {
+                for (s = 0; s < constName.length; ++s) {
+                    code = constName[s] & 0xff;
+                    if (enc.isLower(code)) constName[s] = AsciiTables.ToUpperCaseTable[code];
+                }
+                names.add(new String(constName, 0, constName.length));
+            }
+        }
+
+        return names;
     }
 
     public interface ResizeFunction {
