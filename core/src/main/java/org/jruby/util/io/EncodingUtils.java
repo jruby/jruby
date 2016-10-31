@@ -1647,25 +1647,35 @@ public class EncodingUtils {
         encCrStrBufCat(runtime, str, ptr.getUnsafeBytes(), ptr.getBegin(), ptr.getRealSize(),
                 enc, StringSupport.CR_UNKNOWN, null);
     }
+
     public static void encStrBufCat(Ruby runtime, RubyString str, ByteList ptr) {
         encCrStrBufCat(runtime, str, ptr.getUnsafeBytes(), ptr.getBegin(), ptr.getRealSize(),
                 ptr.getEncoding(), StringSupport.CR_UNKNOWN, null);
     }
+
     public static void encStrBufCat(Ruby runtime, RubyString str, byte[] ptrBytes) {
         encCrStrBufCat(runtime, str, ptrBytes, 0, ptrBytes.length, USASCIIEncoding.INSTANCE, StringSupport.CR_UNKNOWN, null);
     }
+
     public static void encStrBufCat(Ruby runtime, RubyString str, byte[] ptrBytes, Encoding enc) {
         encCrStrBufCat(runtime, str, ptrBytes, 0, ptrBytes.length, enc, StringSupport.CR_UNKNOWN, null);
     }
+
     public static void encStrBufCat(Ruby runtime, RubyString str, byte[] ptrBytes, int ptr, int len, Encoding enc) {
         encCrStrBufCat(runtime, str, ptrBytes, ptr, len,
                 enc, StringSupport.CR_UNKNOWN, null);
+    }
+
+    public static void encStrBufCat(Ruby runtime, RubyString str, CharSequence cseq) {
+        byte[] utf8 = RubyEncoding.encodeUTF8(cseq.toString());
+        encCrStrBufCat(runtime, str, utf8, 0, utf8.length, UTF8Encoding.INSTANCE, StringSupport.CR_UNKNOWN, null);
     }
 
     // rb_enc_cr_str_buf_cat
     public static void encCrStrBufCat(Ruby runtime, CodeRangeable str, ByteList ptr, Encoding ptrEnc, int ptr_cr, int[] ptr_cr_ret) {
         encCrStrBufCat(runtime, str, ptr.getUnsafeBytes(), ptr.getBegin(), ptr.getRealSize(), ptrEnc, ptr_cr, ptr_cr_ret);
     }
+
     public static void encCrStrBufCat(Ruby runtime, CodeRangeable str, byte[] ptrBytes, int ptr, int len, Encoding ptrEnc, int ptr_cr, int[] ptr_cr_ret) {
         Encoding strEnc = str.getByteList().getEncoding();
         Encoding resEnc;

@@ -1176,7 +1176,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
             if (!first) encStrBufCat(runtime, part, INSPECT_COMMA);
             encStrBufCat(runtime, part, INSPECT_SPACE);
-            encStrBufCat(runtime, part, entry.getKey().getBytes());
+            encStrBufCat(runtime, part, entry.getKey());
             encStrBufCat(runtime, part, INSPECT_EQUALS);
             encStrBufCat(runtime, part, sites(context).inspect.call(context, obj, obj).convertToString().getByteList());
 
