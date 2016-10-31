@@ -27,11 +27,12 @@ import jnr.constants.platform.Errno;
 import org.jcodings.EncodingDB;
 import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.transcode.EConvFlags;
+import org.jcodings.util.CaseInsensitiveBytesHash;
+import org.jcodings.util.Hash;
 import org.jruby.Main;
 import org.jruby.ext.ffi.Platform;
 import org.jruby.ext.ffi.Platform.OS_TYPE;
 import org.jruby.runtime.Constants;
-import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.RubyLanguage;
@@ -47,6 +48,7 @@ import org.jruby.truffle.core.bool.FalseClassNodesFactory;
 import org.jruby.truffle.core.bool.TrueClassNodesFactory;
 import org.jruby.truffle.core.dir.DirNodesFactory;
 import org.jruby.truffle.core.encoding.EncodingConverterNodesFactory;
+import org.jruby.truffle.core.encoding.EncodingManager;
 import org.jruby.truffle.core.encoding.EncodingNodesFactory;
 import org.jruby.truffle.core.encoding.EncodingOperations;
 import org.jruby.truffle.core.encoding.TruffleEncodingNodesFactory;
@@ -137,6 +139,7 @@ import org.jruby.truffle.stdlib.psych.PsychEmitterNodesFactory;
 import org.jruby.truffle.stdlib.psych.PsychParserNodesFactory;
 import org.jruby.truffle.stdlib.psych.YAMLEncoding;
 import org.jruby.util.cli.OutputStrings;
+import org.jruby.util.io.EncodingUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -1085,32 +1088,47 @@ public class CoreLibrary {
         }
     }
 
-    public void initializeEncodingConstants() {
-        getContext().getJRubyRuntime().getEncodingService().defineEncodings(new EncodingService.EncodingDefinitionVisitor() {
-            @Override
-            public void defineEncoding(EncodingDB.Entry encodingEntry, byte[] name, int p, int end) {
-                context.getEncodingManager().defineEncoding(encodingEntry, name, p, end);
-            }
+    private void initializeEncodings() {
+        final EncodingManager encodingManager = context.getEncodingManager();
+        final Hash.HashEntryIterator hei = EncodingDB.getEncodings().entryIterator();
 
-            @Override
-            public void defineConstant(int encodingListIndex, String constName) {
-                final DynamicObject rubyEncoding = context.getEncodingManager().getRubyEncoding(encodingListIndex);
+        while (hei.hasNext()) {
+            final CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<EncodingDB.Entry> e =
+                    ((CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<EncodingDB.Entry>)hei.next());
+            final EncodingDB.Entry encodingEntry = e.value;
+
+            encodingManager.defineEncoding(encodingEntry, e.bytes, e.p, e.end);
+
+            for (String constName : EncodingUtils.encodingNames(e.bytes, e.p, e.end)) {
+                final DynamicObject rubyEncoding = context.getEncodingManager().getRubyEncoding(encodingEntry.getIndex());
                 Layouts.MODULE.getFields(encodingClass).setConstant(context, node, constName, rubyEncoding);
             }
-        });
+        }
+    }
 
-        getContext().getJRubyRuntime().getEncodingService().defineAliases(new EncodingService.EncodingAliasVisitor() {
-            @Override
-            public void defineAlias(int encodingListIndex, String constName) {
-                context.getEncodingManager().defineAlias(encodingListIndex, constName);
-            }
+    private void initializeEncodingAliases() {
+        final EncodingManager encodingManager = context.getEncodingManager();
+        final Hash.HashEntryIterator hei = EncodingDB.getAliases().entryIterator();
 
-            @Override
-            public void defineConstant(int encodingListIndex, String constName) {
-                final DynamicObject rubyEncoding = context.getEncodingManager().getRubyEncoding(encodingListIndex);
+        while (hei.hasNext()) {
+            final CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<EncodingDB.Entry> e =
+                    ((CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<EncodingDB.Entry>)hei.next());
+            final EncodingDB.Entry encodingEntry = e.value;
+
+            // The alias name should be exactly the one in the encodings DB.
+            encodingManager.defineAlias(encodingEntry.getIndex(), new String(e.bytes, e.p, e.end));
+
+            // The constant names must be treated by the the <code>encodingNames</code> helper.
+            for (String constName : EncodingUtils.encodingNames(e.bytes, e.p, e.end)) {
+                final DynamicObject rubyEncoding = context.getEncodingManager().getRubyEncoding(encodingEntry.getIndex());
                 Layouts.MODULE.getFields(encodingClass).setConstant(context, node, constName, rubyEncoding);
             }
-        });
+        }
+    }
+
+    public void initializeEncodingManager() {
+        initializeEncodings();
+        initializeEncodingAliases();
 
         // External should always have a value, but Encoding.external_encoding{,=} will lazily setup
         final String externalEncodingName = getContext().getJRubyRuntime().getInstanceConfig().getExternalEncoding();

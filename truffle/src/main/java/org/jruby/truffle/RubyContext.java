@@ -156,7 +156,7 @@ public class RubyContext extends ExecutionContext {
 
         // The encoding manager relies on POSIX having been initialized, so we can't process it during
         // normal core library initialization.
-        coreLibrary.initializeEncodingConstants();
+        coreLibrary.initializeEncodingManager();
 
         threadManager = new ThreadManager(this);
         threadManager.initialize();
