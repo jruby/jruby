@@ -291,6 +291,54 @@ public abstract class DynamicScope implements Cloneable {
     }
 
     /**
+     * getValueOrNil for index 4, depth 0
+     */
+    public IRubyObject getValueFourDepthZeroOrNil(IRubyObject nil) {
+        IRubyObject value = getValueFourDepthZero();
+        return value == null ? setValueDepthZero(nil, 4) : value;
+    }
+
+    /**
+     * getValueOrNil for index 5, depth 0
+     */
+    public IRubyObject getValueFiveDepthZeroOrNil(IRubyObject nil) {
+        IRubyObject value = getValueFiveDepthZero();
+        return value == null ? setValueDepthZero(nil, 5) : value;
+    }
+
+    /**
+     * getValueOrNil for index 6, depth 0
+     */
+    public IRubyObject getValueSixDepthZeroOrNil(IRubyObject nil) {
+        IRubyObject value = getValueSixDepthZero();
+        return value == null ? setValueDepthZero(nil, 6) : value;
+    }
+
+    /**
+     * getValueOrNil for index 7, depth 0
+     */
+    public IRubyObject getValueSevenDepthZeroOrNil(IRubyObject nil) {
+        IRubyObject value = getValueSevenDepthZero();
+        return value == null ? setValueDepthZero(nil, 7) : value;
+    }
+
+    /**
+     * getValueOrNil for index 8, depth 0
+     */
+    public IRubyObject getValueEightDepthZeroOrNil(IRubyObject nil) {
+        IRubyObject value = getValueEightDepthZero();
+        return value == null ? setValueDepthZero(nil, 8) : value;
+    }
+
+    /**
+     * getValueOrNil for index 9, depth 0
+     */
+    public IRubyObject getValueNineDepthZeroOrNil(IRubyObject nil) {
+        IRubyObject value = getValueNineDepthZero();
+        return value == null ? setValueDepthZero(nil, 9) : value;
+    }
+
+    /**
      * Set value in current dynamic scope or one of its captured scopes.
      *
      * @param offset zero-indexed value that represents where variable lives
