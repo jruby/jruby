@@ -78,7 +78,8 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
     // Writing within an existing array with an incompatible type - need to generalise
 
     @Specialization(guards = {
-            "isInBounds(array, index)", "currentStrategy.matches(array)", "!currentStrategy.accepts(array)", "generalizedStrategy.accepts(value)",
+                    "isInBounds(array, index)", "currentStrategy.matches(array)",
+                    "!currentStrategy.accepts(value)", "generalizedStrategy.accepts(value)",
     }, limit = "ARRAY_STRATEGIES")
     public Object writeWithinGeneralize(DynamicObject array, int index, Object value,
             @Cached("of(array)") ArrayStrategy currentStrategy,
