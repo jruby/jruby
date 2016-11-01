@@ -129,6 +129,7 @@ build jruby-complete.jar
 <arg value='test/test_instantiating_interfaces.rb'/>
 <arg value='test/test_openssl.rb'/>
 <arg value='test/test_tempfile_cleanup.rb'/>
+<arg value='test/test_spawn_chdir.rb'/>
 <!--arg value='-v'/-->
 </exec>
 </target>

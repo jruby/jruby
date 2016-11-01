@@ -63,6 +63,7 @@ jruby/test_rbconfig
 jruby/test_require_once
 jruby/test_respond_to
 jruby/test_socket
+jruby/test_spawn_chdir
 jruby/test_string_java_bytes
 jruby/test_string_printf
 jruby/test_string_to_number
