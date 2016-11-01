@@ -780,21 +780,8 @@ module Commands
     }
     jruby_args = %w[-J-Xmx2G -Xtruffle.exceptions.print_java]
 
-    if args.delete('--graal')
-      if ENV["RUBY_BIN"]
-        # Assume that Graal is automatically set up if RUBY_BIN is set.
-        # This will also warn if it's not.
-      else
-        javacmd, javacmd_options = Utilities.find_graal_javacmd_and_options
-        env_vars["JAVACMD"] = javacmd
-        jruby_args.push(*javacmd_options)
-      end
-    else
-      jruby_args << '-Xtruffle.graal.warn_unless=false'
-    end
-
-    if args.empty?
-      args = File.readlines("#{JRUBY_DIR}/test/mri_truffle.index").grep(/^[^#]\w+/).map(&:chomp)
+    if args.count { |arg| !arg.start_with?('-') } == 0
+      args += File.readlines("#{JRUBY_DIR}/test/mri_truffle.index").grep(/^[^#]\w+/).map(&:chomp)
     end
 
     command = %w[test/mri/runner.rb -v --color=never --tty=no -q]
