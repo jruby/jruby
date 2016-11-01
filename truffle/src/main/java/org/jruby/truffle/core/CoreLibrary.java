@@ -983,7 +983,7 @@ public class CoreLibrary {
             @SuppressWarnings("unchecked")
             final Future<RubyRootNode>[] coreFileFutures = new Future[coreFiles.length];
 
-            if (TruffleOptions.AOT) {
+            if (TruffleOptions.AOT || !context.getOptions().CORE_PARALLEL_LOAD) {
                 try {
                     for (int n = 0; n < coreFiles.length; n++) {
                         final RubyRootNode rootNode = context.getCodeLoader().parse(
@@ -1012,10 +1012,6 @@ public class CoreLibrary {
                                         context.getSourceCache().getSource(getCoreLoadPath() + coreFiles[finalN]),
                                         UTF8Encoding.INSTANCE, ParserContext.TOP_LEVEL, null, true, node)
                         );
-
-                        if (!context.getOptions().CORE_PARALLEL_LOAD) {
-                            coreFileFutures[n].get();
-                        }
                     }
 
                     for (int n = 0; n < coreFiles.length; n++) {
