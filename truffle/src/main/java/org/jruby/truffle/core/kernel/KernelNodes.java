@@ -263,16 +263,7 @@ public abstract class KernelNodes {
                 throw new JavaException(e);
             }
 
-            int code;
-
-            while (true) {
-                try {
-                    code = process.waitFor();
-                    break;
-                } catch (InterruptedException e) {
-                    continue;
-                }
-            }
+            final int code = getContext().getThreadManager().runUntilResult(this, () -> process.waitFor());
 
             // TODO (nirvdrum 10-Mar-15) This should be using the default external encoding, rather than hard-coded to UTF-8.
             final DynamicObject output = createString(baos.toByteArray(), EncodingOperations.getEncoding(getContext().getEncodingManager().getRubyEncoding("UTF-8")));
