@@ -74,9 +74,9 @@ matrix:
     # JRuby+Truffle needs Java 8
     - env: JT='test fast'
       jdk: oraclejdk8
-  #allow_failures:
-    #- env: PHASE='-Pj2ee'
-    #  jdk: oraclejdk7
+  allow_failures:
+    - env: PHASE='-Pj2ee'
+      jdk: oraclejdk7
     # NOTE: build seems to never start (waited for any to finish for more than a day) - probably a travis-ci bug
     #- env: PHASE='-Pmain'
     #  sudo: required
