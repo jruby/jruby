@@ -246,7 +246,8 @@ module Truffle
                     before:  ['--before SH_CMD', 'Commands to execute before setup', ADD_TO_ARRAY, []],
                     after:   ['--after SH_CMD', 'Commands to execute after setup', ADD_TO_ARRAY, []],
                     file:    ['--file NAME,CONTENT', Array, 'Create file in truffle_bundle_path', MERGE_TO_HASH, {}],
-                    without: ['--without GROUP', 'Do not install listed gem group by bundler', ADD_TO_ARRAY, []]
+                    without: ['--without GROUP', 'Do not install listed gem group by bundler', ADD_TO_ARRAY, []],
+                    bundler: ['--[no-]bundler', 'Skip bundle install step', STORE_NEW_VALUE, true]
                   }.merge(shared_offline_options),
           run:    {
               help:             ['-h', '--help', 'Show this message', STORE_NEW_VALUE, false],
@@ -580,16 +581,18 @@ module Truffle
 
       gemfile_use_path!(target_gem_path) if @options[:setup][:offline]
 
-      execute_cmd([JRUBY_BIN.to_s,
-                   '-X-C', # See https://github.com/jruby/jruby/issues/4171
-                   "#{Gem.bindir}/bundle",
-                   *bundle_options,
-                   'install',
-                   *(%w(--local --no-prune) if @options[:setup][:offline]),
-                   '--standalone',
-                   '--path', bundle_path,
-                   *(['--without', @options[:setup][:without].join(' ')] unless @options[:setup][:without].empty?)].compact,
-                  print_always: true)
+      if @options[:setup][:bundler]
+        execute_cmd([JRUBY_BIN.to_s,
+                     '-X-C', # See https://github.com/jruby/jruby/issues/4171
+                     "#{Gem.bindir}/bundle",
+                     *bundle_options,
+                     'install',
+                     *(%w(--local --no-prune) if @options[:setup][:offline]),
+                     '--standalone',
+                     '--path', bundle_path,
+                     *(['--without', @options[:setup][:without].join(' ')] unless @options[:setup][:without].empty?)].compact,
+                    print_always: true)
+      end
 
       @options[:setup][:file].each do |name, content|
         log "creating file: #{mock_path}/#{name}" if verbose?
