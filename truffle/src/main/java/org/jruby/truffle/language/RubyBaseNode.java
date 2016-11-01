@@ -242,7 +242,13 @@ public abstract class RubyBaseNode extends Node {
         if (sourceStartLine == 0) {
             return null;
         } else {
-            return getRubySourceSection().toSourceSection(getRootNode().getSourceSection().getSource());
+            final RootNode rootNode = getRootNode();
+
+            if (rootNode == null) {
+                return null;
+            }
+
+            return getRubySourceSection().toSourceSection(rootNode.getSourceSection().getSource());
         }
     }
 
