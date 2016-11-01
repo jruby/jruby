@@ -17,7 +17,6 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.Encoding;
-import org.jcodings.EncodingDB;
 import org.jcodings.Ptr;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.transcode.EConv;
@@ -49,7 +48,6 @@ import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.util.StringUtils;
 import org.jruby.util.ByteList;
-import org.jruby.util.io.EncodingUtils;
 
 import static org.jruby.truffle.core.string.StringOperations.rope;
 
@@ -75,15 +73,6 @@ public abstract class EncodingConverterNodes {
             final byte[] destinationEncodingName = destinationEncoding.getName();
 
             final EConv econv = TranscoderDB.open(sourceEncodingName, destinationEncodingName, rubiniusToJRubyFlags(options));
-
-            if (!EncodingUtils.DECORATOR_P(sourceEncodingName, destinationEncodingName)) {
-                if (sourceEncoding == null) {
-                    sourceEncoding = EncodingDB.dummy(sourceEncodingName).getEncoding();
-                }
-                if (destinationEncoding == null) {
-                    destinationEncoding = EncodingDB.dummy(destinationEncodingName).getEncoding();
-                }
-            }
 
             econv.sourceEncoding = sourceEncoding;
             econv.destinationEncoding = destinationEncoding;
