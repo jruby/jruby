@@ -36,18 +36,24 @@ package org.jruby.runtime.load;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URI;
 import java.net.URL;
 import java.security.AccessControlException;
+import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
+import java.util.jar.JarInputStream;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.ZipException;
@@ -1165,13 +1171,14 @@ public class LoadService {
                 String namePlusSuffix = baseName + suffix;
                 try {
                     String jarFile = namePlusSuffix.substring(5, namePlusSuffix.indexOf("!/"));
-                    JarFile file = new JarFile(jarFile);
                     String expandedFilename = expandRelativeJarPath(namePlusSuffix.substring(namePlusSuffix.indexOf("!/") + 2));
 
                     debugLogTry("resourceFromJarURL", expandedFilename);
-                    if(file.getJarEntry(expandedFilename) != null) {
+                    JarEntry entry;
+                    if((entry = getJarEntry(jarFile, expandedFilename)) != null) {
+                        InputStream stream = getJarFile(jarFile).getInputStream(entry);
                         URI resourceUri = new URI("jar", "file:" + jarFile + "!/" + expandedFilename, null);
-                        foundResource = new LoadServiceResource(resourceUri.toURL(), namePlusSuffix);
+                        foundResource = new LoadServiceResource(resourceUri.toURL(), namePlusSuffix, stream);
                         debugLogFound(foundResource);
                     }
                 } catch (URISyntaxException e) {
@@ -1187,6 +1194,23 @@ public class LoadService {
         }
 
         return foundResource;
+    }
+
+    private final ConcurrentHashMap<String, Map<String, JarEntry>> entriesCache = new ConcurrentHashMap<>(1000, 0.75f, 2);
+
+    private JarEntry getJarEntry(String jarFile, String name) throws IOException {
+        Map<String, JarEntry> entries = entriesCache.get(jarFile);
+        if (entries == null) {
+            JarFile file = new JarFile(jarFile);
+            entries = new HashMap<>();
+            Enumeration<JarEntry> enumEntries = file.entries();
+            while (enumEntries.hasMoreElements()) {
+                JarEntry entry = enumEntries.nextElement();
+                entries.put(entry.getName(), entry);
+            }
+            entriesCache.put(jarFile, entries);
+        }
+        return entries.get(name);
     }
 
     @Deprecated

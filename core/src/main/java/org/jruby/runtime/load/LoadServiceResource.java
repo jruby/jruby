@@ -49,12 +49,14 @@ public class LoadServiceResource {
     private final String name;
     private final boolean absolute;
     private String absolutePath;
+    private final InputStream stream;
 
     public LoadServiceResource(URL resource, String name) {
         this.resource = resource;
         this.path = null;
         this.name = name;
         this.absolute = false;
+        this.stream = null;
     }
 
     public LoadServiceResource(URL resource, String name, boolean absolute) {
@@ -62,6 +64,15 @@ public class LoadServiceResource {
         this.path = null;
         this.name = name;
         this.absolute = absolute;
+        this.stream = null;
+    }
+
+    public LoadServiceResource(URL resource, String name, InputStream stream) {
+        this.resource = resource;
+        this.path = null;
+        this.name = name;
+        this.absolute = false;
+        this.stream = stream;
     }
     
     public LoadServiceResource(File path, String name) {
@@ -69,6 +80,7 @@ public class LoadServiceResource {
         this.path = path;
         this.name = name;
         this.absolute = false;
+        this.stream = null;
     }
 
     public LoadServiceResource(File path, String name, boolean absolute) {
@@ -76,9 +88,14 @@ public class LoadServiceResource {
         this.path = path;
         this.name = name;
         this.absolute = absolute;
+        this.stream = null;
     }
 
     public InputStream getInputStream() throws IOException {
+        if (stream != null) {
+            return new LoadServiceResourceInputStream(stream);
+        }
+
         if (resource != null) {
             InputStream is = resource.openStream();
             try {
@@ -87,6 +104,7 @@ public class LoadServiceResource {
                 is.close();
             }
         }
+
         byte[] bytes = new byte[(int)path.length()];
         ByteBuffer buffer = ByteBuffer.wrap(bytes);
         FileInputStream fis = new FileInputStream(path);
