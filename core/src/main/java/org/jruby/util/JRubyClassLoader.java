@@ -30,6 +30,7 @@ package org.jruby.util;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.Closeable;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -37,44 +38,71 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.management.ManagementFactory;
 import java.net.URL;
+import java.net.URLClassLoader;
+import java.security.ProtectionDomain;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.jar.JarEntry;
+import java.util.jar.JarInputStream;
 
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
-/**
- * this classloader will be populated dynamically in the following ways:
- *
- * <li><code>JRuby.runtime.jruby_class_loader.add_url( java.net.URL.new( "file:my.jar" )</code></li>
- * <li><code>$CLASSPATH << 'path/to/class/or/resources'</code></li>
- * <li><code>require 'some.jar'</code></li>
- * <li><code>load 'some.jar'</code></li>
- *
- * so it is the classloader for ALL the jars used by gems. and this
- * classlaoder is "implicit" part of the $LOAD_PATH of the jruby runtime
- * all ruby resources inside any of the added jars will be found via
- * <code>require</code> and <code>load</code>
- */
-public class JRubyClassLoader extends ClassDefiningJRubyClassLoader {
+public class JRubyClassLoader extends URLClassLoader implements ClassDefiningClassLoader {
 
-    private static final Logger LOG = LoggerFactory.getLogger(JRubyClassLoader.class);
+    private static final Logger LOG = LoggerFactory.getLogger("JRubyClassLoader");
+
+    private final static ProtectionDomain DEFAULT_DOMAIN;
+
+    static {
+        ProtectionDomain defaultDomain = null;
+        try {
+            defaultDomain = JRubyClassLoader.class.getProtectionDomain();
+        }
+        catch (SecurityException se) {
+            // just use null since we can't acquire protection domain
+        }
+        DEFAULT_DOMAIN = defaultDomain;
+    }
+
+    private final Map<URL,Set<String>> jarIndexes = new LinkedHashMap<URL,Set<String>>();
 
     private Runnable unloader;
 
-    private File tempDir;
+    private File tempdir;
 
     public JRubyClassLoader(ClassLoader parent) {
-        super(parent);
+        super(new URL[0], parent);
     }
 
-    // Change visibility so others can see it
-    @Override
-    public void addURL(URL url) {
+    private File getTempDir() {
+        if (tempdir == null) {
+            String processName = ManagementFactory.getRuntimeMXBean().getName();
+            long pid = Long.parseLong(processName.split("@")[0]);
+            File dir = new File(System.getProperty("java.io.tmpdir"), "jruby-" + pid);
+            if (dir.mkdirs()) {
+                dir.deleteOnExit();
+            }
+            ;
+            tempdir = dir;
+        }
+        return tempdir;
+    }
+
+    public void addURLNoIndex(URL url) {
         // if we have such embedded jar within a jar, we copy it to temp file and use the
         // the temp file with the super URLClassLoader
-        if (url.toString().contains( "!/" ) ||
-            !(url.getProtocol().equals("file") || url.getProtocol().equals("http") || url.getProtocol().equals("https"))) {
-            InputStream in = null; OutputStream out = null;
-            try {
+        if ( url.toString().contains( "!/" )) {
+            InputStream in = null;
+            OutputStream out = null;
+            try
+            {
                 File f = File.createTempFile("jruby", new File(url.getFile()).getName(), getTempDir());
                 f.deleteOnExit();
                 out = new BufferedOutputStream( new FileOutputStream( f ) );
@@ -88,88 +116,74 @@ public class JRubyClassLoader extends ClassDefiningJRubyClassLoader {
                 in.close();
                 url = f.toURI().toURL();
             }
-            catch (IOException e) {
+            catch (IOException e)
+            {
                 throw new RuntimeException("BUG: we can not copy embedded jar to temp directory", e);
             }
             finally {
                 // make sure we close everything
                 if ( out != null ) {
-                    try {
+                    try
+                    {
                         out.close();
                     }
-                    catch (IOException ex) { LOG.debug(ex); }
+                    catch (IOException e)
+                    {
+                    }
                 }
                 if ( in != null ) {
-                    try {
+                    try
+                    {
                         in.close();
                     }
-                    catch (IOException ex) { LOG.debug(ex); }
+                    catch (IOException e)
+                    {
+                    }
                 }
             }
         }
         super.addURL( url );
     }
 
-    private File getTempDir() {
-        File tempDir = this.tempDir;
-        if (tempDir != null) return tempDir;
-
-        tempDir = new File(systemTmpDir(), tempDirName());
-        if (tempDir.mkdirs()) {
-            tempDir.deleteOnExit();
-        }
-        return this.tempDir = tempDir;
-    }
-
-    private static final String TEMP_DIR_PREFIX = "jruby-";
-    private static String tempDirName;
-
-    private static String tempDirName() {
-        String dirName = tempDirName;
-        if (dirName != null) return dirName;
-        try {
-            String processName = ManagementFactory.getRuntimeMXBean().getName();
-            return tempDirName = TEMP_DIR_PREFIX + processName.split("@")[0]; // jruby-PID
-        }
-        catch (Throwable ex) {
-            LOG.debug(ex); // e.g. java.lang.management classes not available (on Android)
-            return tempDirName = TEMP_DIR_PREFIX + Integer.toHexString(System.identityHashCode(JRubyClassLoader.class));
-        }
-    }
-
-    private static String systemTmpDir() {
-        try {
-            return System.getProperty("java.io.tmpdir");
-        }
-        catch (SecurityException ex) {
-            LOG.warn("could not access 'java.io.tmpdir' will use working directory", ex);
-        }
-        return "";
-    }
-
-    /**
-     * @deprecated use {@link #close()} instead
-     */
-    public void tearDown(boolean debug) {
-        close();
+    // Change visibility so others can see it
+    @Override
+    public void addURL(URL url) {
+        super.addURL(url);
+        indexJarContents(url);
     }
 
     /**
      * Called when the parent runtime is torn down.
      */
-    @Override
-    public void close() {
-        try {
-            super.close();
-        }
-        catch (Exception ex) { LOG.debug(ex); }
-
+    public void tearDown(boolean debug) {
         try {
             // A hack to allow unloading all JDBC Drivers loaded by this classloader.
             // See http://bugs.jruby.org/4226
             getJDBCDriverUnloader().run();
         }
-        catch (Exception ex) { LOG.debug(ex); }
+        catch (Exception e) {
+            if (debug) LOG.debug(e);
+        }
+    }
+
+    /**
+     * Helper to close the JRuby class-loader.
+     * @param loader
+     * @note This is internal API, do not rely on it to exists!
+     */
+    public static void close(final JRubyClassLoader loader) {
+        if ( loader == null ) return;
+        // URLClassLoader#close only available since Java 7 :
+        try {
+            URLClassLoader.class.getMethod("close").invoke(loader);
+        }
+        catch (NoSuchMethodException ex) { /* noop on Java 6 */ }
+        catch (IllegalAccessException ex) {
+            LOG.info("unexpected illegal access: ", ex);
+        }
+        catch (Exception ex) {
+            LOG.debug(ex);
+        }
     }
 
     @Deprecated
@@ -184,12 +198,193 @@ public class JRubyClassLoader extends ClassDefiningJRubyClassLoader {
                     baos.write(buf, 0, bytesRead);
                 }
 
-                Class<?> unloaderClass = defineClass("org.jruby.util.JDBCDriverUnloader", baos.toByteArray());
+                Class unloaderClass = defineClass("org.jruby.util.JDBCDriverUnloader", baos.toByteArray());
                 unloader = (Runnable) unloaderClass.newInstance();
             }
             catch (RuntimeException e) { throw e; }
             catch (Exception e) { throw new RuntimeException(e); }
         }
         return unloader;
+    }
+
+    public Class<?> defineClass(String name, byte[] bytes) {
+        return super.defineClass(name, bytes, 0, bytes.length, DEFAULT_DOMAIN);
+    }
+
+    public Class<?> defineClass(String name, byte[] bytes, ProtectionDomain domain) {
+        return super.defineClass(name, bytes, 0, bytes.length, domain);
+    }
+
+    @Override
+    protected Class<?> findClass(String className) throws ClassNotFoundException {
+        try {
+            return super.findClass(className);
+        } catch (ClassNotFoundException ex) {
+            String resourceName = className.replace('.', '/').concat(".class");
+
+            URL classUrl = null;
+            synchronized (jarIndexes) {
+                for (URL jarUrl : jarIndexes.keySet()) {
+                    if (jarIndexes.get(jarUrl).contains(resourceName)) {
+                        try {
+                            classUrl = CompoundJarURLStreamHandler.createUrl(jarUrl, resourceName);
+                            break;
+                        } catch (IOException e) {
+                            // keep going to next URL
+                        }
+                    }
+                }
+            }
+
+            if (classUrl != null) {
+                try {
+                    InputStream input = classUrl.openStream();
+                    try {
+                        byte[] buffer = new byte[4096];
+                        ByteArrayOutputStream output = new ByteArrayOutputStream();
+
+                        for (int count = input.read(buffer); count > 0; count = input.read(buffer)) {
+                            output.write(buffer, 0, count);
+                        }
+
+                        byte[] data = output.toByteArray();
+                        int dotIndex = className.lastIndexOf(".");
+                        if (dotIndex != -1) {
+                            String packageName = className.substring(0, dotIndex);
+                            definePackageInternal(packageName);
+                        }
+                        return defineClass(className, data, 0, data.length);
+                    } finally {
+                        close(input);
+                    }
+                } catch (IOException e) {
+                    // just fall-through to the re-throw below
+                    LOG.debug("findClass IOException in getting class for url: " +
+                            classUrl + ", message: " + e.getMessage(), e);
+                }
+            }
+
+            throw ex;
+        }
+    }
+
+    @Override
+    public URL findResource(String resourceName) {
+        URL result = super.findResource(resourceName);
+
+        if (result == null) {
+            synchronized (jarIndexes) {
+                for (URL jarUrl : jarIndexes.keySet()) {
+                    if (jarIndexes.get(jarUrl).contains(resourceName)) {
+                        try {
+                            return CompoundJarURLStreamHandler.createUrl(jarUrl, resourceName);
+                        } catch (IOException e) {
+                            // keep going
+                        }
+                    }
+                }
+            }
+        }
+
+        return result;
+    }
+
+    @Override
+    public Enumeration<URL> findResources(String resourceName) throws IOException {
+        final List<URL> embeddedUrls = new ArrayList<URL>();
+
+        synchronized (jarIndexes) {
+            for (URL jarUrl : jarIndexes.keySet()) {
+                if (jarIndexes.get(jarUrl).contains(resourceName)) {
+                    try {
+                        embeddedUrls.add(CompoundJarURLStreamHandler.createUrl(jarUrl, resourceName));
+                    } catch (IOException e) {
+                        // keep going
+                    }
+                }
+            }
+        }
+
+        if (embeddedUrls.isEmpty()) {
+            return super.findResources(resourceName);
+        } else {
+            final Enumeration<URL> originalResult = super.findResources(resourceName);
+
+            return new Enumeration<URL>() {
+                private Iterator<URL> extendedResult;
+
+                public URL nextElement() {
+                    if (extendedResult == null) {
+                        return originalResult.nextElement();
+                    } else {
+                        return extendedResult.next();
+                    }
+                }
+
+                public boolean hasMoreElements() {
+                    if (extendedResult == null) {
+                        boolean result = originalResult.hasMoreElements();
+
+                        if (!result) {
+                            // original result is consumed, switching to result
+                            // from embedded jars processing.
+                            extendedResult = embeddedUrls.iterator();
+                            result = extendedResult.hasNext();
+                        }
+                        return result;
+                    } else {
+                        return extendedResult.hasNext();
+                    }
+                }
+            };
+        }
+    }
+
+    private void indexJarContents(URL jarUrl) {
+        String proto = jarUrl.getProtocol();
+        // we only need to index jar: and compoundjar: URLs
+        // 1st-level jar files with file: URLs are handled by the JDK
+        if (proto.equals("jar") || proto.equals(CompoundJarURLStreamHandler.PROTOCOL)) {
+            synchronized (jarIndexes) {
+                Set<String> entries = new HashSet<String>();
+                jarIndexes.put(jarUrl, entries);
+
+                try {
+                    InputStream baseInputStream = jarUrl.openStream();
+                    try {
+                        JarInputStream baseJar = new JarInputStream(baseInputStream);
+                        for (JarEntry entry = baseJar.getNextJarEntry(); entry != null; entry = baseJar.getNextJarEntry()) {
+                            entries.add(entry.getName());
+                        }
+                    } finally {
+                        close(baseInputStream);
+                    }
+                } catch (IOException ex) {
+                    // can't read the stream, keep going
+                }
+            }
+        }
+    }
+
+    private static void close(Closeable resource) {
+        if (resource != null) {
+            try {
+                resource.close();
+            }
+            catch (IOException ignore) { /* ignored */ }
+        }
+    }
+
+    private void definePackageInternal(final String name) {
+        if (getPackage(name) == null) {
+            try {
+                definePackage(name, null, null, null, null, null, null, null);
+            }
+            catch (IllegalArgumentException iae) {
+                if (getPackage(name) == null) {
+                    throw new AssertionError("Cannot find package " + name);
+                }
+            }
+        }
     }
 }

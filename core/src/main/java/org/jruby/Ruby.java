@@ -3367,7 +3367,11 @@ public final class Ruby implements Constantizable {
      */
     public void releaseClassLoader() {
         if ( jrubyClassLoader != null ) {
-            getJRubyClassLoader().close();
+            try {
+                getJRubyClassLoader().close();
+            } catch (IOException ioe) {
+                // ignore
+            }
             jrubyClassLoader = null;
         }
     }
