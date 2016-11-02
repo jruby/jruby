@@ -2519,22 +2519,30 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
     private static void putsSingle(ThreadContext context, Ruby runtime, IRubyObject maybeIO, IRubyObject arg, RubyString separator) {
         ByteList line;
+        RubyString string;
 
         if (arg.isNil()) {
             line = getNilByteList(runtime);
+            string = null;
         } else if (runtime.isInspecting(arg)) {
             line = RECURSIVE_BYTELIST;
+            string = null;
         } else if (arg instanceof RubyArray) {
             inspectPuts(context, maybeIO, (RubyArray) arg);
             return;
         } else {
-            line = arg.asString().getByteList();
+            string = arg.asString();
+            line = string.getByteList();
         }
 
-        write(context, maybeIO, line);
+        if (string != null) {
+            write(context, maybeIO, string);
+        } else {
+            write(context, maybeIO, line);
+        }
 
         if (line.length() == 0 || !line.endsWith(separator.getByteList())) {
-            write(context, maybeIO, separator.getByteList());
+            write(context, maybeIO, separator);
         }
     }
 
