@@ -7,6 +7,7 @@ cache:
    - $HOME/.m2
 
 before_install:
+  - rm ~/.m2/settings.xml
   - export MAVEN_SKIP_RC=true
   - mvn -Xmx32M -v | grep 1.7.0; if [ $? = 0 ]; then export MAVEN_OPTS="-XX:MaxPermSize=240M"; else export MAVEN_OPTS="-XX:MaxMetaspaceSize=240M -XX:CompressedClassSpaceSize=240M"; fi
   - export MAVEN_OPTS="-Xmx512M $MAVEN_OPTS"
