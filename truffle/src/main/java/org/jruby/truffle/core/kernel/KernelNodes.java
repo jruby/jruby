@@ -814,19 +814,6 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "fork", isModuleFunction = true, rest = true, unsafe = UnsafeGroup.PROCESSES)
-    public abstract static class ForkNode extends CoreMethodArrayArgumentsNode {
-
-        @TruffleBoundary
-        @Specialization
-        public Object fork(Object[] args) {
-            final SourceSection sourceSection = getContext().getCallStack().getTopMostUserCallNode().getEncapsulatingSourceSection();
-            getContext().getJRubyRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, sourceSection.getSource().getName(), sourceSection.getStartLine(), "Kernel#fork not implemented - defined to satisfy some metaprogramming in RubySpec");
-            return nil();
-        }
-
-    }
-
     @CoreMethod(names = "freeze")
     public abstract static class KernelFreezeNode extends CoreMethodArrayArgumentsNode {
 
