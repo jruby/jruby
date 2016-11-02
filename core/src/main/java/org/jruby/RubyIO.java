@@ -2567,6 +2567,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         return sites(context).write.call(context, maybeIO, maybeIO, str);
     }
 
+    @JRubyMethod
     @Override
     public IRubyObject inspect() {
         Ruby runtime = getRuntime();
