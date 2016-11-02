@@ -6,6 +6,33 @@
  * Eclipse Public License version 1.0
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
+ *
+ * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Eclipse Public
+ * License Version 1.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of
+ * the License at http://www.eclipse.org/legal/epl-v10.html
+ *
+ * Software distributed under the License is distributed on an "AS
+ * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * rights and limitations under the License.
+ *
+ * Copyright (C) 2006 Ola Bini <ola@ologix.com>
+ * Copyright (C) 2009 Joseph LaFata <joe@quibb.org>
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either of the GNU General Public License Version 2 or later (the "GPL"),
+ * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the EPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the EPL, the GPL or the LGPL.
  */
 package org.jruby.truffle.stdlib.bigdecimal;
 
@@ -18,11 +45,6 @@ import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
-import org.jruby.RubyBignum;
-import org.jruby.RubyFixnum;
-import org.jruby.RubyRational;
-import org.jruby.ext.bigdecimal.RubyBigDecimal;
-import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
@@ -30,6 +52,7 @@ import org.jruby.truffle.language.SnippetNode;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 
 import java.math.BigDecimal;
+import java.math.MathContext;
 import java.math.RoundingMode;
 
 @NodeChildren({
@@ -80,10 +103,8 @@ public abstract class BigDecimalCastNode extends RubyNode {
             final Object numerator = numeratorCallNode.call(frame, value, "numerator");
             final Object denominator = denominatorCallNode.call(frame, value, "denominator");
 
-            final RubyRational rubyRationalValue = newRationalRaw(numerator, denominator);
-
             try {
-                return toBigDecimal(rubyRationalValue, (RoundingMode) roundingMode);
+                return toBigDecimal(numerator, denominator, (RoundingMode) roundingMode);
             } catch (Exception e) {
                 throw e;
             }
@@ -99,32 +120,35 @@ public abstract class BigDecimalCastNode extends RubyNode {
     }
 
     @TruffleBoundary
-    private RubyRational newRationalRaw(Object numerator, Object denominator) {
-        return RubyRational.newRationalRaw(
-                getContext().getJRubyRuntime(),
-                toJRubyInteger(numerator),
-                toJRubyInteger(denominator));
+    private BigDecimal toBigDecimal(Object numerator, Object denominator, RoundingMode roundingMode) {
+        BigDecimal numeratorDecimal = toBigDecimal(numerator);
+        BigDecimal denominatorDecimal = toBigDecimal(denominator);
+
+        int len = numeratorDecimal.precision() + denominatorDecimal.precision();
+        int pow = len / 4;
+        MathContext mathContext = new MathContext((pow + 1) * 4, roundingMode);
+
+        return numeratorDecimal.divide(denominatorDecimal, mathContext);
     }
 
     @TruffleBoundary
-    private BigDecimal toBigDecimal(RubyRational rubyRationalValue, RoundingMode roundingMode) {
-        return RubyBigDecimal
-                .getVpRubyObjectWithPrec19Inner(
-                        getContext().getJRubyRuntime().getCurrentContext(),
-                        rubyRationalValue, roundingMode)
-                .getBigDecimalValue();
-    }
-
-    @TruffleBoundary
-    private IRubyObject toJRubyInteger(Object value) {
-        if (value instanceof Integer) {
-            return RubyFixnum.newFixnum(getContext().getJRubyRuntime(), (int) value);
-        } else if (value instanceof Long) {
-            return RubyFixnum.newFixnum(getContext().getJRubyRuntime(), (long) value);
-        } else if (RubyGuards.isRubyBignum(value)) {
-            return RubyBignum.newBignum(getContext().getJRubyRuntime(), Layouts.BIGNUM.getValue((DynamicObject) value));
+    private BigDecimal toBigDecimal(Object object) {
+        if (object instanceof Byte) {
+            return BigDecimal.valueOf((byte) object);
+        } else if (object instanceof Short) {
+            return BigDecimal.valueOf((short) object);
+        } else if (object instanceof Integer) {
+            return BigDecimal.valueOf((int) object);
+        } else if (object instanceof Long) {
+            return BigDecimal.valueOf((long) object);
+        } else if (object instanceof Float) {
+            return BigDecimal.valueOf((float) object);
+        } else if (object instanceof Double) {
+            return BigDecimal.valueOf((double) object);
+        } else if (RubyGuards.isRubyBignum(object)) {
+            return BigDecimal.valueOf(Layouts.BIGNUM.getValue((DynamicObject) object).doubleValue());
         } else {
-            throw new UnsupportedOperationException(value.toString());
+            throw new UnsupportedOperationException();
         }
     }
 
