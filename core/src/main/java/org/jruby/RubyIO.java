@@ -2531,11 +2531,11 @@ public class RubyIO extends RubyObject implements IOEncodable {
             line = arg.asString().getByteList();
         }
 
-        write(context, maybeIO, line);
-
         if (line.length() == 0 || !line.endsWith(separator.getByteList())) {
-            write(context, maybeIO, separator.getByteList());
+            line.append(separator.getByteList());
         }
+
+        write(context, maybeIO, line);
     }
 
     private static IRubyObject inspectPuts(ThreadContext context, IRubyObject maybeIO, RubyArray array) {
