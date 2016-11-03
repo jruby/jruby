@@ -439,4 +439,9 @@ public class JNRTrufflePosix implements TrufflePosix {
     public long[] getgroups() {
         return posix.getgroups();
     }
+
+    @Override
+    public String nl_langinfo(int item) {
+        return posix.nl_langinfo(item);
+    }
 }

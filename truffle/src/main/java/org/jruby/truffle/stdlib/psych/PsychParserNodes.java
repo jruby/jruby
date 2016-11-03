@@ -410,7 +410,7 @@ public abstract class PsychParserNodes {
 
         @TruffleBoundary
         private Object stringFor(String value, boolean tainted, TaintNode taintNode) {
-            Encoding encoding = getContext().getJRubyRuntime().getDefaultInternalEncoding();
+            Encoding encoding = getContext().getEncodingManager().getDefaultInternalEncoding();
 
             if (encoding == null) {
                 encoding = UTF8Encoding.INSTANCE;

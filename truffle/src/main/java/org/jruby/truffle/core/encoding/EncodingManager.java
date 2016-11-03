@@ -14,6 +14,7 @@ package org.jruby.truffle.core.encoding;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.object.DynamicObject;
+import jnr.constants.platform.LangInfo;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
 import org.jcodings.EncodingDB.Entry;
@@ -43,6 +44,9 @@ public class EncodingManager {
     private final Map<String, DynamicObject> LOOKUP = new ConcurrentHashMap<>();
 
     private final RubyContext context;
+
+    private Encoding defaultExternalEncoding;
+    private Encoding defaultInternalEncoding;
 
     public EncodingManager(RubyContext context) {
         this.context = context;
@@ -114,7 +118,20 @@ public class EncodingManager {
 
     @TruffleBoundary
     public Encoding getLocaleEncoding() {
-        return context.getJRubyRuntime().getEncodingService().getLocaleEncoding();
+        String localeEncodingName;
+        try {
+            localeEncodingName = context.getNativePlatform().getPosix().nl_langinfo(LangInfo.CODESET.intValue());
+        }
+        catch (UnsupportedOperationException e) {
+            localeEncodingName = Charset.defaultCharset().name();
+        }
+
+        DynamicObject rubyEncoding = getRubyEncoding(localeEncodingName);
+        if (rubyEncoding == null) {
+            rubyEncoding = getRubyEncoding("US-ASCII");
+        }
+
+        return EncodingOperations.getEncoding(rubyEncoding);
     }
 
     @TruffleBoundary
@@ -136,4 +153,19 @@ public class EncodingManager {
         }
     }
 
+    public void setDefaultExternalEncoding(Encoding defaultExternalEncoding) {
+        this.defaultExternalEncoding = defaultExternalEncoding;
+    }
+
+    public Encoding getDefaultExternalEncoding() {
+        return defaultExternalEncoding;
+    }
+
+    public void setDefaultInternalEncoding(Encoding defaultInternalEncoding) {
+        this.defaultInternalEncoding = defaultInternalEncoding;
+    }
+
+    public Encoding getDefaultInternalEncoding() {
+        return defaultInternalEncoding;
+    }
 }

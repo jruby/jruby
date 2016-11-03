@@ -17,7 +17,6 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.Encoding;
-import org.jcodings.EncodingDB;
 import org.jcodings.Ptr;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.transcode.EConv;
@@ -26,9 +25,7 @@ import org.jcodings.transcode.EConvResult;
 import org.jcodings.transcode.TranscoderDB;
 import org.jcodings.util.CaseInsensitiveBytesHash;
 import org.jcodings.util.Hash;
-import org.jruby.Ruby;
 import org.jruby.runtime.Visibility;
-import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreClass;
@@ -51,7 +48,6 @@ import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.util.StringUtils;
 import org.jruby.util.ByteList;
-import org.jruby.util.io.EncodingUtils;
 
 import static org.jruby.truffle.core.string.StringOperations.rope;
 
@@ -59,48 +55,27 @@ import static org.jruby.truffle.core.string.StringOperations.rope;
 public abstract class EncodingConverterNodes {
 
     @NonStandard
-    @CoreMethod(names = "initialize_jruby", required = 2, optional = 1, visibility = Visibility.PRIVATE)
+    @CoreMethod(names = "initialize_jruby", required = 2, optional = 1, lowerFixnum = 3, visibility = Visibility.PRIVATE)
     public abstract static class InitializeNode extends CoreMethodArrayArgumentsNode {
 
         @TruffleBoundary
-        @Specialization
-        public DynamicObject initialize(DynamicObject self, Object source, Object destination, Object unusedOptions) {
+        @Specialization(guards = { "isRubyEncoding(source)", "isRubyEncoding(destination)" })
+        public DynamicObject initialize(DynamicObject self, DynamicObject source, DynamicObject destination, int options) {
             // Adapted from RubyConverter - see attribution there
-
-            Ruby runtime = getContext().getJRubyRuntime();
-            Encoding[] encs = {null, null};
-            byte[][] encNames = {null, null};
-            int[] ecflags = {0};
-            IRubyObject[] ecopts = {runtime.getNil()};
-
-            final IRubyObject sourceAsJRubyObj = toJRuby(source);
-            final IRubyObject destinationAsJRubyObj = toJRuby(destination);
-
-            EncodingUtils.econvArgs(runtime.getCurrentContext(), new IRubyObject[]{sourceAsJRubyObj, destinationAsJRubyObj}, encNames, encs, ecflags, ecopts);
-
+            //
             // This method should only be called after the Encoding::Converter instance has already been initialized
             // by Rubinius.  Rubinius will do the heavy lifting of parsing the options hash and setting the `@options`
-            // ivar to the resulting int for EConv flags.  Since we don't pass the proper data structures to EncodingUtils,
-            // we must override the flags after its had a pass in order to correct the bad flags value.
-            ecflags[0] = rubiniusToJRubyFlags((int) self.get("@options", coreLibrary().getNilObject()));
+            // ivar to the resulting int for EConv flags.
 
-            EConv econv = EncodingUtils.econvOpenOpts(runtime.getCurrentContext(), encNames[0], encNames[1], ecflags[0], ecopts[0]);
+            Encoding sourceEncoding = Layouts.ENCODING.getEncoding(source);
+            Encoding destinationEncoding = Layouts.ENCODING.getEncoding(destination);
+            final byte[] sourceEncodingName = sourceEncoding.getName();
+            final byte[] destinationEncodingName = destinationEncoding.getName();
 
-            if (econv == null) {
-                throw new UnsupportedOperationException();
-            }
+            final EConv econv = TranscoderDB.open(sourceEncodingName, destinationEncodingName, rubiniusToJRubyFlags(options));
 
-            if (!EncodingUtils.DECORATOR_P(encNames[0], encNames[1])) {
-                if (encs[0] == null) {
-                    encs[0] = EncodingDB.dummy(encNames[0]).getEncoding();
-                }
-                if (encs[1] == null) {
-                    encs[1] = EncodingDB.dummy(encNames[1]).getEncoding();
-                }
-            }
-
-            econv.sourceEncoding = encs[0];
-            econv.destinationEncoding = encs[1];
+            econv.sourceEncoding = sourceEncoding;
+            econv.destinationEncoding = destinationEncoding;
 
             Layouts.ENCODING_CONVERTER.setEconv(self, econv);
 
@@ -122,17 +97,6 @@ public abstract class EncodingConverterNodes {
             }
 
             return flags;
-        }
-
-        private IRubyObject toJRuby(Object object) {
-            if (RubyGuards.isRubyString(object)) {
-                return getContext().getJRubyRuntime().newString(RopeOperations.toByteListCopy(StringOperations.rope((DynamicObject) object)));
-            } else if (RubyGuards.isRubyEncoding(object)) {
-                final Rope rope = StringOperations.rope(Layouts.ENCODING.getName((DynamicObject) object));
-                return getContext().getJRubyRuntime().getEncodingService().rubyEncodingFromObject(getContext().getJRubyRuntime().newString(RopeOperations.toByteListCopy(rope)));
-            } else {
-                throw new UnsupportedOperationException();
-            }
         }
 
     }

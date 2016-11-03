@@ -150,6 +150,10 @@ public class RubyContext extends ExecutionContext {
         nativePlatform = NativePlatformFactory.createPlatform(this);
         rootLexicalScope = new LexicalScope(null, coreLibrary.getObjectClass());
 
+        // The encoding manager relies on POSIX having been initialized, so we can't process it during
+        // normal core library initialization.
+        coreLibrary.initializeEncodingManager();
+
         threadManager = new ThreadManager(this);
         threadManager.initialize();
 
