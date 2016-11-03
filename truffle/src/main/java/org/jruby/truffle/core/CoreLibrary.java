@@ -1127,7 +1127,7 @@ public class CoreLibrary {
         initializeEncodingAliases();
 
         // External should always have a value, but Encoding.external_encoding{,=} will lazily setup
-        final String externalEncodingName = getContext().getJRubyRuntime().getInstanceConfig().getExternalEncoding();
+        final String externalEncodingName = getContext().getJRubyInterop().getExternalEncoding();
         if (externalEncodingName != null && !externalEncodingName.equals("")) {
             final DynamicObject loadedEncoding = getContext().getEncodingManager().getRubyEncoding(externalEncodingName);
             if (loadedEncoding == null) {
@@ -1140,7 +1140,7 @@ public class CoreLibrary {
             getContext().getEncodingManager().setDefaultExternalEncoding(getContext().getEncodingManager().getLocaleEncoding());
         }
 
-        final String internalEncodingName = getContext().getJRubyRuntime().getInstanceConfig().getInternalEncoding();
+        final String internalEncodingName = getContext().getJRubyInterop().getInternalEncoding();
         if (internalEncodingName != null && !internalEncodingName.equals("")) {
             final DynamicObject rubyEncoding = getContext().getEncodingManager().getRubyEncoding(internalEncodingName);
             if (rubyEncoding == null) {

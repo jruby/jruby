@@ -145,4 +145,12 @@ public class JRubyInterop {
     public boolean isFrozenStringLiteral() {
         return jrubyRuntime.getInstanceConfig().isFrozenStringLiteral();
     }
+
+    public String getExternalEncoding() {
+        return jrubyRuntime.getInstanceConfig().getExternalEncoding();
+    }
+
+    public String getInternalEncoding() {
+        return jrubyRuntime.getInstanceConfig().getInternalEncoding();
+    }
 }
