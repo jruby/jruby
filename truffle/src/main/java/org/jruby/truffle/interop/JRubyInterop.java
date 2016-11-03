@@ -191,4 +191,8 @@ public class JRubyInterop {
     public ByteList strConvEnc(ByteList byteList, Encoding encoding) {
         return EncodingUtils.strConvEnc(jrubyRuntime.getCurrentContext(), byteList, encoding, UTF8Encoding.INSTANCE);
     }
+
+    public void setDefaultInternalEncoding(Encoding defaultInternalEncoding) {
+        jrubyRuntime.setDefaultInternalEncoding(defaultInternalEncoding);
+    }
 }
