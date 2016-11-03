@@ -26,6 +26,7 @@ import java.security.CodeSource;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Random;
 
 public class JRubyInterop {
 
@@ -173,5 +174,13 @@ public class JRubyInterop {
 
     public InputStream getInput() {
         return jrubyRuntime.getInstanceConfig().getInput();
+    }
+
+    public void warn(String message) {
+        jrubyRuntime.getWarnings().warn(message);
+    }
+
+    public Random getRandom() {
+        return jrubyRuntime.getRandom();
     }
 }

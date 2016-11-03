@@ -104,7 +104,7 @@ public abstract class RandomizerPrimitiveNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject randomizerGenSeed(DynamicObject randomizerClass) {
-            final BigInteger seed = RubyRandom.randomSeedBigInteger(getContext().getJRubyRuntime().getRandom());
+            final BigInteger seed = RubyRandom.randomSeedBigInteger(getContext().getJRubyInterop().getRandom());
             return createBignum(seed);
         }
     }
