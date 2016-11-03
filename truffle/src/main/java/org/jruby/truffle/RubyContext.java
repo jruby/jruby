@@ -103,8 +103,6 @@ public class RubyContext extends ExecutionContext {
     private String currentDirectory;
 
     public RubyContext(Ruby jrubyRuntime, TruffleLanguage.Env env) {
-        latestInstance = this;
-
         this.jrubyRuntime = jrubyRuntime;
         this.jrubyInterop = new JRubyInterop(this, jrubyRuntime);
         this.env = env;
