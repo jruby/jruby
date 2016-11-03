@@ -23,6 +23,7 @@ import java.io.File;
 import java.net.URISyntaxException;
 import java.security.CodeSource;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 public class JRubyInterop {
@@ -65,7 +66,7 @@ public class JRubyInterop {
             }
         }
 
-        return context.getJRubyRuntime().getJRubyHome();
+        return jrubyRuntime.getJRubyHome();
     }
 
     @TruffleBoundary
@@ -131,5 +132,17 @@ public class JRubyInterop {
 
     public String getOriginalInputFile() {
         return originalInputFile;
+    }
+
+    public byte[] getInlineScript() {
+        return jrubyRuntime.getInstanceConfig().inlineScript();
+    }
+
+    public Collection<String> getRequiredLibraries() {
+        return jrubyRuntime.getInstanceConfig().getRequiredLibraries();
+    }
+
+    public boolean isFrozenStringLiteral() {
+        return jrubyRuntime.getInstanceConfig().isFrozenStringLiteral();
     }
 }
