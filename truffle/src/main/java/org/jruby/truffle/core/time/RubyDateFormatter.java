@@ -11,10 +11,18 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2002, 2009 Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Copyright (C) 2001 Chad Fowler <chadfowler@chadfowler.com>
+ * Copyright (C) 2001-2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Copyright (C) 2002 Benoit Cerrina <b.cerrina@wanadoo.fr>
+ * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
+ * Copyright (C) 2004 Joey Gibson <joey@joeygibson.com>
  * Copyright (C) 2004 Charles O Nutter <headius@headius.com>
- * Copyright (C) 2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
+ * Copyright (C) 2006 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2006 Ola Bini <ola.bini@ki.se>
+ * Copyright (C) 2006 Miguel Covarrubias <mlcovarrubias@gmail.com>
+ * Copyright (C) 2009 Joseph LaFata <joe@quibb.org>
+ * Copyright (C) 2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -38,7 +46,9 @@ import org.joda.time.Chronology;
 import org.joda.time.DateTime;
 import org.joda.time.chrono.GJChronology;
 import org.joda.time.chrono.JulianChronology;
-import org.jruby.RubyTime;
+import org.jruby.Ruby;
+import org.jruby.RubyString;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.util.ByteList;
@@ -49,9 +59,13 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.text.DateFormatSymbols;
 import java.util.Calendar;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static org.jruby.truffle.core.time.RubyDateFormatter.FieldType.NUMERIC;
 import static org.jruby.truffle.core.time.RubyDateFormatter.FieldType.NUMERIC2;
@@ -465,7 +479,7 @@ public class RubyDateFormatter {
                     output = formatZone(colons, (int) value, formatter);
                     break;
                 case FORMAT_ZONE_ID:
-                    output = RubyTime.getRubyTimeZoneName(context.getJRubyRuntime(), dt);
+                    output = getRubyTimeZoneName(context.getJRubyRuntime(), dt);
                     break;
                 case FORMAT_CENTURY:
                     type = NUMERIC;
@@ -609,6 +623,86 @@ public class RubyDateFormatter {
         if (value < 0 && hours == 0) // the formatter could not handle this case
             before = before.replace('+', '-');
         return before + after;
+    }
+
+    public static String getRubyTimeZoneName(Ruby runtime, DateTime dt) {
+        return getRubyTimeZoneName(getEnvTimeZone(runtime).toString(), dt);
+    }
+
+    private static final ByteList TZ_STRING = ByteList.create("TZ");
+
+    private static IRubyObject getEnvTimeZone(Ruby runtime) {
+        RubyString tzVar = (RubyString)runtime.getTime().getInternalVariable("tz_string");
+        if (tzVar == null) {
+            tzVar = runtime.newString(TZ_STRING);
+            tzVar.setFrozen(true);
+            runtime.getTime().setInternalVariable("tz_string", tzVar);
+        }
+        return runtime.getENV().op_aref(runtime.getCurrentContext(), tzVar);
+    }
+
+    /* JRUBY-3560
+     * joda-time disallows use of three-letter time zone IDs.
+     * Since MRI accepts these values, we need to translate them.
+     */
+    private static final Map<String, String> LONG_TZNAME = map(
+            "MET", "CET", // JRUBY-2759
+            "ROC", "Asia/Taipei", // Republic of China
+            "WET", "Europe/Lisbon" // Western European Time
+    );
+
+    /* Some TZ values need to be overriden for Time#zone
+     */
+    private static final Map<String, String> SHORT_STD_TZNAME = map(
+            "Etc/UCT", "UCT",
+            "MET", "MET", // needs to be overriden
+            "UCT", "UCT"
+    );
+
+    private static final Map<String, String> SHORT_DL_TZNAME = map(
+            "Etc/UCT", "UCT",
+            "MET", "MEST", // needs to be overriden
+            "UCT", "UCT"
+    );
+
+    private static final Pattern TIME_OFFSET_PATTERN
+            = Pattern.compile("([\\+-])(\\d\\d):(\\d\\d)(?::(\\d\\d))?");
+
+    public static String getRubyTimeZoneName(String envTZ, DateTime dt) {
+        // see declaration of SHORT_TZNAME
+        if (SHORT_STD_TZNAME.containsKey(envTZ) && ! dt.getZone().toTimeZone().inDaylightTime(dt.toDate())) {
+            return SHORT_STD_TZNAME.get(envTZ);
+        }
+
+        if (SHORT_DL_TZNAME.containsKey(envTZ) && dt.getZone().toTimeZone().inDaylightTime(dt.toDate())) {
+            return SHORT_DL_TZNAME.get(envTZ);
+        }
+
+        String zone = dt.getZone().getShortName(dt.getMillis());
+
+        Matcher offsetMatcher = TIME_OFFSET_PATTERN.matcher(zone);
+
+        if (offsetMatcher.matches()) {
+            if (zone.equals("+00:00")) {
+                zone = "UTC";
+            } else {
+                // try non-localized time zone name
+                zone = dt.getZone().getNameKey(dt.getMillis());
+                if (zone == null) {
+                    zone = "";
+                }
+            }
+        }
+
+        return zone;
+    }
+
+    public static final Map<String, String> map(String... keyValues) {
+        HashMap<String, String> map = new HashMap<>(keyValues.length / 2);
+        for (int i = 0; i < keyValues.length;) {
+            map.put(keyValues[i++], keyValues[i++]);
+        }
+        return map;
     }
 
 }
