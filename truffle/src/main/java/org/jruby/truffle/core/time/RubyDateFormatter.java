@@ -46,10 +46,8 @@ import org.joda.time.Chronology;
 import org.joda.time.DateTime;
 import org.joda.time.chrono.GJChronology;
 import org.joda.time.chrono.JulianChronology;
-import org.jruby.Ruby;
-import org.jruby.RubyString;
-import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.debug.DebugHelpers;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.util.ByteList;
 
@@ -479,7 +477,7 @@ public class RubyDateFormatter {
                     output = formatZone(colons, (int) value, formatter);
                     break;
                 case FORMAT_ZONE_ID:
-                    output = getRubyTimeZoneName(context.getJRubyRuntime(), dt);
+                    output = getRubyTimeZoneName(dt);
                     break;
                 case FORMAT_CENTURY:
                     type = NUMERIC;
@@ -625,20 +623,12 @@ public class RubyDateFormatter {
         return before + after;
     }
 
-    public static String getRubyTimeZoneName(Ruby runtime, DateTime dt) {
-        return getRubyTimeZoneName(getEnvTimeZone(runtime).toString(), dt);
+    public String getRubyTimeZoneName(DateTime dt) {
+        return getRubyTimeZoneName(getEnvTimeZone().toString(), dt);
     }
 
-    private static final ByteList TZ_STRING = ByteList.create("TZ");
-
-    private static IRubyObject getEnvTimeZone(Ruby runtime) {
-        RubyString tzVar = (RubyString)runtime.getTime().getInternalVariable("tz_string");
-        if (tzVar == null) {
-            tzVar = runtime.newString(TZ_STRING);
-            tzVar.setFrozen(true);
-            runtime.getTime().setInternalVariable("tz_string", tzVar);
-        }
-        return runtime.getENV().op_aref(runtime.getCurrentContext(), tzVar);
+    private Object getEnvTimeZone() {
+        return DebugHelpers.eval(context, "Time.now.zone");
     }
 
     /* JRUBY-3560
