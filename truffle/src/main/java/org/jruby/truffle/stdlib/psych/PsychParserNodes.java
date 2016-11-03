@@ -70,7 +70,6 @@ import org.jruby.truffle.language.objects.TaintNode;
 import org.jruby.truffle.language.objects.TaintNodeGen;
 import org.jruby.truffle.util.BoundaryUtils.BoundaryIterable;
 import org.jruby.util.ByteList;
-import org.jruby.util.io.EncodingUtils;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.error.Mark;
 import org.yaml.snakeyaml.events.AliasEvent;
@@ -298,8 +297,7 @@ public abstract class PsychParserNodes {
             Encoding encoding = byteList.getEncoding();
 
             if (!(encoding instanceof UnicodeEncoding)) {
-                byteList = EncodingUtils.strConvEnc(getContext().getJRubyRuntime().getCurrentContext(),
-                        byteList, encoding, UTF8Encoding.INSTANCE);
+                byteList = getContext().getJRubyInterop().strConvEnc(byteList, encoding);
 
                 encoding = UTF8Encoding.INSTANCE;
             }

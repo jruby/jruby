@@ -12,12 +12,16 @@ package org.jruby.truffle.interop;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.TruffleOptions;
 import com.oracle.truffle.api.object.DynamicObject;
+import org.jcodings.Encoding;
+import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.JavaException;
 import org.jruby.truffle.language.loader.SourceLoader;
+import org.jruby.util.ByteList;
+import org.jruby.util.io.EncodingUtils;
 
 import java.io.File;
 import java.io.InputStream;
@@ -182,5 +186,9 @@ public class JRubyInterop {
 
     public Random getRandom() {
         return jrubyRuntime.getRandom();
+    }
+
+    public ByteList strConvEnc(ByteList byteList, Encoding encoding) {
+        return EncodingUtils.strConvEnc(jrubyRuntime.getCurrentContext(), byteList, encoding, UTF8Encoding.INSTANCE);
     }
 }
