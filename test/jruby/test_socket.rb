@@ -332,8 +332,6 @@ class UNIXSocketTests < Test::Unit::TestCase
        ssrv = server.accept
 
        assert_equal ["AF_UNIX", ""], ssrv.peeraddr
-       # TODO doesn't work as expected :
-       pend "UNIXSocket#peeraddr #{cli.peeraddr.inspect} does not include path: #{path.inspect}"
        assert_equal ["AF_UNIX", path], cli.peeraddr
 
        ssrv.close
