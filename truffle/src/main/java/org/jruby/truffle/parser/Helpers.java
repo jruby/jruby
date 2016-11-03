@@ -343,17 +343,6 @@ public class Helpers {
         return null;
     }
 
-    public static RubyModule getNthScopeModule(StaticScope scope, int depth) {
-        int n = depth;
-        while (n > 0) {
-            scope = scope.getEnclosingScope();
-            if (scope.getScopeType() != null) {
-                n--;
-            }
-        }
-        return scope.getModule();
-    }
-
     public static RubyArray viewArgsArray(ThreadContext context, RubyArray rubyArray, int preArgsCount, int postArgsCount) {
         int n = rubyArray.getLength();
         if (preArgsCount + postArgsCount >= n) {
@@ -611,101 +600,8 @@ public class Helpers {
         return method.call(context, self, superClass, name, arg0, arg1, arg2, block);
     }
 
-    public static RubyArray ensureRubyArray(IRubyObject value) {
-        return ensureRubyArray(value.getRuntime(), value);
-    }
-
     public static RubyArray ensureRubyArray(Ruby runtime, IRubyObject value) {
         return value instanceof RubyArray ? (RubyArray)value : RubyArray.newArray(runtime, value);
-    }
-
-    public static IRubyObject nullToNil(IRubyObject value, ThreadContext context) {
-        return value != null ? value : context.nil;
-    }
-
-    public static IRubyObject nullToNil(IRubyObject value, Ruby runtime) {
-        return value != null ? value : runtime.getNil();
-    }
-
-    public static IRubyObject nullToNil(IRubyObject value, IRubyObject nil) {
-        return value != null ? value : nil;
-    }
-
-    public static RubyClass prepareSuperClass(Ruby runtime, IRubyObject rubyClass) {
-        RubyClass.checkInheritable(rubyClass); // use the same logic as in EvaluationState
-        return (RubyClass)rubyClass;
-    }
-
-    public static RubyModule prepareClassNamespace(ThreadContext context, StaticScope scope, IRubyObject rubyModule) {
-        if (rubyModule == null || rubyModule.isNil()) {
-            rubyModule = scope.getModule();
-
-            if (rubyModule == null) {
-                throw context.runtime.newTypeError("no outer class/module");
-            }
-        }
-
-        if (rubyModule instanceof RubyModule) {
-            return (RubyModule)rubyModule;
-        } else {
-            throw context.runtime.newTypeError(rubyModule + " is not a class/module");
-        }
-    }
-
-    public static void handleArgumentSizes(ThreadContext context, Ruby runtime, int given, int required, int opt, int rest) {
-        if (opt == 0) {
-            if (rest < 0) {
-                // no opt, no rest, exact match
-                if (given != required) {
-                    throw runtime.newArgumentError("wrong number of arguments (" + given + " for " + required + ")");
-                }
-            } else {
-                // only rest, must be at least required
-                if (given < required) {
-                    throw runtime.newArgumentError("wrong number of arguments (" + given + " for " + required + ")");
-                }
-            }
-        } else {
-            if (rest < 0) {
-                // opt but no rest, must be at least required and no more than required + opt
-                if (given < required) {
-                    throw runtime.newArgumentError("wrong number of arguments (" + given + " for " + required + ")");
-                } else if (given > (required + opt)) {
-                    throw runtime.newArgumentError("wrong number of arguments (" + given + " for " + (required + opt) + ")");
-                }
-            } else {
-                // opt and rest, must be at least required
-                if (given < required) {
-                    throw runtime.newArgumentError("wrong number of arguments (" + given + " for " + required + ")");
-                }
-            }
-        }
-    }
-
-    public static String getLocalJumpTypeOrRethrow(RaiseException re) {
-        RubyException exception = re.getException();
-        Ruby runtime = exception.getRuntime();
-        if (runtime.getLocalJumpError().isInstance(exception)) {
-            RubyLocalJumpError jumpError = (RubyLocalJumpError)re.getException();
-
-            IRubyObject reason = jumpError.reason();
-
-            return reason.asJavaString();
-        }
-
-        throw re;
-    }
-
-    public static IRubyObject unwrapLocalJumpErrorValue(RaiseException re) {
-        return ((RubyLocalJumpError)re.getException()).exit_value();
-    }
-
-    public static IRubyObject processBlockArgument(Ruby runtime, Block block) {
-        if (!block.isGiven()) {
-            return runtime.getNil();
-        }
-
-        return processGivenBlock(block, runtime);
     }
 
     private static IRubyObject processGivenBlock(Block block, Ruby runtime) {
@@ -754,19 +650,8 @@ public class Helpers {
         return ((RubyProc) proc).getBlock();
     }
 
-    public static Block getBlockFromBlockPassBody(IRubyObject proc, Block currentBlock) {
-        return getBlockFromBlockPassBody(proc.getRuntime(), proc, currentBlock);
-
-    }
-
     public static IRubyObject backref(ThreadContext context) {
         return RubyRegexp.getBackRef(context);
-    }
-
-    public static IRubyObject backrefLastMatch(ThreadContext context) {
-        IRubyObject backref = context.getBackRef();
-
-        return RubyRegexp.last_match(backref);
     }
 
     public static IRubyObject backrefMatchPre(ThreadContext context) {

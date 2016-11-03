@@ -381,9 +381,7 @@ public class RuntimeCache {
     }
 
     public final IRubyObject getConstant(ThreadContext context, StaticScope scope, String name, int index) {
-        IRubyObject value = getValue(context, scope, name, index);
-        // We can callsite cache const_missing if we want
-        return value != null ? value : scope.getModule().callMethod(context, "const_missing", context.runtime.fastNewSymbol(name));
+        throw new UnsupportedOperationException();
     }
 
     public final IRubyObject getConstantDefined(ThreadContext context, StaticScope scope, String name, int index) {
