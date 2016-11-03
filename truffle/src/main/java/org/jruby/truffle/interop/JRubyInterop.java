@@ -20,6 +20,7 @@ import org.jruby.truffle.language.control.JavaException;
 import org.jruby.truffle.language.loader.SourceLoader;
 
 import java.io.File;
+import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.security.CodeSource;
 import java.util.ArrayList;
@@ -152,5 +153,25 @@ public class JRubyInterop {
 
     public String getInternalEncoding() {
         return jrubyRuntime.getInstanceConfig().getInternalEncoding();
+    }
+
+    public CharSequence getDisplayedFileName() {
+        return jrubyRuntime.getInstanceConfig().displayedFileName();
+    }
+
+    public boolean isDebug() {
+        return jrubyRuntime.isDebug();
+    }
+
+    public boolean warningsEnabled() {
+        return jrubyRuntime.warningsEnabled();
+    }
+
+    public boolean isVerbose() {
+        return jrubyRuntime.isVerbose();
+    }
+
+    public InputStream getInput() {
+        return jrubyRuntime.getInstanceConfig().getInput();
     }
 }

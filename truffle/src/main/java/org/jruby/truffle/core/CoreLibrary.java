@@ -841,11 +841,11 @@ public class CoreLibrary {
 
         globals.put("$,", nilObject);
         globals.put("$*", argv);
-        globals.put("$0", StringOperations.createString(context, StringOperations.encodeRope(context.getJRubyRuntime().getInstanceConfig().displayedFileName(), UTF8Encoding.INSTANCE)));
+        globals.put("$0", StringOperations.createString(context, StringOperations.encodeRope(context.getJRubyInterop().getDisplayedFileName(), UTF8Encoding.INSTANCE)));
 
-        globals.put("$DEBUG", context.getJRubyRuntime().isDebug());
+        globals.put("$DEBUG", context.getJRubyInterop().isDebug());
 
-        Object value = context.getJRubyRuntime().warningsEnabled() ? context.getJRubyRuntime().isVerbose() : nilObject;
+        Object value = context.getJRubyInterop().warningsEnabled() ? context.getJRubyInterop().isVerbose() : nilObject;
         globals.put("$VERBOSE", value);
 
         final DynamicObject defaultRecordSeparator = StringOperations.createString(context, StringOperations.encodeRope(CLI_RECORD_SEPARATOR, UTF8Encoding.INSTANCE));
