@@ -5,7 +5,6 @@
 package org.jruby.truffle.core.time;
 
 import org.jruby.truffle.core.time.RubyDateFormatter.Token;
-import org.jruby.truffle.core.time.RubyTimeOutputFormatter;
 
 
 /**
