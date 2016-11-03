@@ -2578,7 +2578,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         String path = openFile.getPath();
         String status = "";
 
-        if (path == null) {
+        if (path == null || path == "") {
             if (openFile.fd() == null) {
                 path = "";
                 status = "(closed)";
