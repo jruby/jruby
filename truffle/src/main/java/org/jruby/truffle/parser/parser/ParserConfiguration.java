@@ -74,7 +74,7 @@ public class ParserConfiguration {
         this.lineNumber = lineNumber;
         this.isEvalParse = !isFileParse;
         this.saveData = saveData;
-        staticScopeFactory = new StaticScopeFactory(runtime);
+        staticScopeFactory = new StaticScopeFactory();
     }
 
     public ParserConfiguration(Ruby runtime, int lineNumber,

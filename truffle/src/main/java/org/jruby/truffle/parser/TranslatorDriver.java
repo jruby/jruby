@@ -68,7 +68,7 @@ public class TranslatorDriver {
 
         final org.jruby.truffle.parser.parser.Parser parser = new org.jruby.truffle.parser.parser.Parser(context);
 
-        final StaticScopeFactory staticScopeFactory = new StaticScopeFactory(context.getJRubyRuntime());
+        final StaticScopeFactory staticScopeFactory = new StaticScopeFactory();
         final StaticScope staticScope = staticScopeFactory.newLocalScope(null);
 
         /*

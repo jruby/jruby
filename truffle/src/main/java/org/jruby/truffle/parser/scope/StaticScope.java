@@ -83,30 +83,17 @@ public class StaticScope implements Serializable {
     // File name where this static scope came from or null if a native or artificial scope
     private String file;
 
-    private DynamicScope dummyScope;
-
     protected IRScopeType scopeType;
 
     private static final String[] NO_NAMES = new String[0];
 
     private Type type;
     private boolean isBlockOrEval;
-    private boolean isArgumentScope; // Is this block and argument scope of a define_method.
 
     private long commandArgumentStack;
 
-    // Method/Closure that this static scope corresponds to.  This is used to tell whether this
-    // scope refers to a method scope or to determined IRScope of the parent of a compiling eval.
-    private IRScope irScope;
-
-    private RubyModule overlayModule;
-
     public enum Type {
         LOCAL, BLOCK, EVAL;
-
-        public static Type fromOrdinal(int value) {
-            return value < 0 || value >= values().length ? null : values()[value];
-        }
     }
 
     /**
@@ -144,13 +131,7 @@ public class StaticScope implements Serializable {
         this.enclosingScope = enclosingScope;
         this.variableNames = names;
         this.type = type;
-        this.irScope = null;
         this.isBlockOrEval = (type != Type.LOCAL);
-        this.isArgumentScope = !isBlockOrEval;
-    }
-
-    public IRScope getIRScope() {
-        return irScope;
     }
 
     public IRScopeType getScopeType() {
@@ -159,11 +140,6 @@ public class StaticScope implements Serializable {
 
     public void setScopeType(IRScopeType scopeType) {
         this.scopeType = scopeType;
-    }
-
-    public void setIRScope(IRScope irScope) {
-        this.irScope = irScope;
-        this.scopeType = irScope.getScopeType();
     }
 
     /**
@@ -445,34 +421,6 @@ public class StaticScope implements Serializable {
     }
 
     /**
-     * Get the live CRef module associated with this scope.
-     *
-     * @return the live module
-     */
-    public RubyModule getModule() {
-        return cref;
-    }
-
-    public StaticScope getPreviousCRefScope() {
-        return previousCRefScope;
-    }
-
-    public void setPreviousCRefScope(StaticScope crefScope) {
-        this.previousCRefScope = crefScope;
-    }
-
-    public void setModule(RubyModule module) {
-        this.cref = module;
-
-        for (StaticScope scope = getEnclosingScope(); scope != null; scope = scope.getEnclosingScope()) {
-            if (scope.cref != null) {
-                previousCRefScope = scope;
-                return;
-            }
-        }
-    }
-
-    /**
      * Update current scoping structure to populate with proper cref scoping values.  This should
      * be called at any point when you reference a scope for the first time.  For the interpreter
      * this is done in a small number of places (defnNode, defsNode, and getBlock).  The compiler
@@ -497,18 +445,6 @@ public class StaticScope implements Serializable {
     }
 
     /**
-     * Argument scopes represent scopes which contain arguments for zsuper.  All LocalStaticScopes
-     * are argument scopes and BlockStaticScopes can be when they are used by define_method.
-     */
-    public boolean isArgumentScope() {
-        return isArgumentScope;
-    }
-
-    public void makeArgumentScope() {
-        this.isArgumentScope = true;
-    }
-
-    /**
      * For all block or method associated with static scopes this will return the signature for that
      * signature-providing scope.  module bodies and other non-arity specific code will return null.
      */
@@ -521,10 +457,6 @@ public class StaticScope implements Serializable {
      */
     public void setSignature(Signature signature) {
         this.signature = signature;
-    }
-
-    public DynamicScope getDummyScope() {
-        return dummyScope == null ? dummyScope = new DummyDynamicScope(this) : dummyScope;
     }
 
     public void setCommandArgumentStack(long commandArgumentStack) {
@@ -575,28 +507,4 @@ public class StaticScope implements Serializable {
         return file;
     }
 
-    public StaticScope duplicate() {
-        StaticScope dupe = new StaticScope(type, enclosingScope, variableNames == null ? NO_NAMES : variableNames);
-        // irScope is not guaranteed to be set onto StaticScope until it is executed for the first time.
-        // We can call duplicate before its first execution.
-        if (irScope != null) dupe.setIRScope(irScope);
-        dupe.setScopeType(scopeType);
-        dupe.setPreviousCRefScope(previousCRefScope);
-        dupe.setModule(cref);
-        dupe.setSignature(signature);
-
-        return dupe;
-    }
-
-    public RubyModule getOverlayModuleForRead() {
-        return overlayModule;
-    }
-
-    public RubyModule getOverlayModuleForWrite(ThreadContext context) {
-        RubyModule omod = overlayModule;
-        if (omod == null) {
-            overlayModule = omod = RubyModule.newModule(context.runtime);
-        }
-        return omod;
-    }
 }

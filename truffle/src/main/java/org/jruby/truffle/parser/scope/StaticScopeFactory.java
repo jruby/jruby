@@ -35,9 +35,8 @@ import org.jruby.Ruby;
 public class StaticScopeFactory {
     private final StaticScope dummyScope;
 
-    public StaticScopeFactory(Ruby runtime) {
+    public StaticScopeFactory() {
         dummyScope = new StaticScope(StaticScope.Type.LOCAL, null);
-        dummyScope.setModule(runtime.getObject());
     }
 
     public StaticScope newBlockScope(StaticScope parent, String file) {
