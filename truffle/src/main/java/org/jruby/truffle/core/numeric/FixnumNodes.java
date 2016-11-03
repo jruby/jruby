@@ -27,6 +27,7 @@ import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.builtins.Primitive;
 import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.core.CoreLibrary;
+import org.jruby.truffle.core.Hashing;
 import org.jruby.truffle.core.InlinableBuiltin;
 import org.jruby.truffle.core.numeric.FixnumNodesFactory.DivNodeFactory;
 import org.jruby.truffle.core.rope.LazyIntRope;
@@ -1194,8 +1195,7 @@ public abstract class FixnumNodes {
             final ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES * 2);
             buffer.putLong(a);
             buffer.putLong(b);
-            return SipHashInline.hash24(getContext().getJRubyRuntime().getHashSeedK0(),
-                getContext().getJRubyRuntime().getHashSeedK1(), buffer.array());
+            return SipHashInline.hash24(Hashing.SEED_K0, Hashing.SEED_K1, buffer.array());
         }
 
 

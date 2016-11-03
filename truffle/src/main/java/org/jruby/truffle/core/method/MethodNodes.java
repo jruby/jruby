@@ -29,6 +29,7 @@ import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.builtins.UnaryCoreMethodNode;
+import org.jruby.truffle.core.Hashing;
 import org.jruby.truffle.core.basicobject.BasicObjectNodes.ReferenceEqualNode;
 import org.jruby.truffle.core.cast.ProcOrNullNode;
 import org.jruby.truffle.core.cast.ProcOrNullNodeGen;
@@ -112,10 +113,10 @@ public abstract class MethodNodes {
         @Specialization
         public long hash(DynamicObject rubyMethod) {
             final InternalMethod method = Layouts.METHOD.getMethod(rubyMethod);
-            long h = Helpers.hashStart(getContext().getJRubyRuntime(), method.getDeclaringModule().hashCode());
-            h = Helpers.murmurCombine(h, Layouts.METHOD.getReceiver(rubyMethod).hashCode());
-            h = Helpers.murmurCombine(h, method.getSharedMethodInfo().hashCode());
-            return Helpers.hashEnd(h);
+            long h = Hashing.start(method.getDeclaringModule().hashCode());
+            h = Hashing.update(h, Layouts.METHOD.getReceiver(rubyMethod).hashCode());
+            h = Hashing.update(h, method.getSharedMethodInfo().hashCode());
+            return Hashing.end(h);
         }
 
     }

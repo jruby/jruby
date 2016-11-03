@@ -52,6 +52,7 @@ import org.jruby.truffle.builtins.CoreMethodNode;
 import org.jruby.truffle.builtins.Primitive;
 import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.builtins.UnaryCoreMethodNode;
+import org.jruby.truffle.core.Hashing;
 import org.jruby.truffle.core.ObjectNodes;
 import org.jruby.truffle.core.ObjectNodesFactory;
 import org.jruby.truffle.core.array.ArrayUtils;
@@ -896,16 +897,12 @@ public abstract class KernelNodes {
 
         @Specialization
         public long hash(int value) {
-            long h = Helpers.hashStart(getContext().getJRubyRuntime(), MURMUR_SEED);
-            h = Helpers.murmurCombine(h, value);
-            return Helpers.hashEnd(h);
+            return Hashing.hash(MURMUR_SEED, value);
         }
 
         @Specialization
         public long hash(long value) {
-            long h = Helpers.hashStart(getContext().getJRubyRuntime(), MURMUR_SEED);
-            h = Helpers.murmurCombine(h, value);
-            return Helpers.hashEnd(h);
+            return Hashing.hash(MURMUR_SEED, value);
         }
 
         @Specialization
