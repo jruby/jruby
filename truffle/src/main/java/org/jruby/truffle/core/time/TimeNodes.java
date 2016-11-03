@@ -38,7 +38,6 @@ import org.jruby.truffle.language.SnippetNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.util.StringUtils;
-import org.jruby.util.RubyDateFormatter;
 
 import java.util.Locale;
 import java.util.Map;
@@ -409,7 +408,7 @@ public abstract class TimeNodes {
         @TruffleBoundary
         @Specialization(guards = "isRubyString(format)")
         public DynamicObject timeStrftime(DynamicObject time, DynamicObject format) {
-            final RubyDateFormatter rdf = getContext().getJRubyRuntime().getCurrentContext().getRubyDateFormatter();
+            final RubyDateFormatter rdf = new RubyDateFormatter(getContext().getJRubyRuntime().getCurrentContext());
             return createString(rdf.formatToByteList(rdf.compilePattern(StringOperations.getByteListReadOnly(format), false),
                     Layouts.TIME.getDateTime(time), Layouts.TIME.getNSec(time), null));
         }
