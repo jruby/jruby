@@ -408,9 +408,9 @@ public abstract class TimeNodes {
         @TruffleBoundary
         @Specialization(guards = "isRubyString(format)")
         public DynamicObject timeStrftime(DynamicObject time, DynamicObject format) {
-            final RubyDateFormatter rdf = new RubyDateFormatter(getContext().getJRubyRuntime().getCurrentContext());
+            final RubyDateFormatter rdf = new RubyDateFormatter(getContext(), this);
             return createString(rdf.formatToByteList(rdf.compilePattern(StringOperations.getByteListReadOnly(format), false),
-                    Layouts.TIME.getDateTime(time), Layouts.TIME.getNSec(time), null));
+                    Layouts.TIME.getDateTime(time), Layouts.TIME.getNSec(time)));
         }
 
     }

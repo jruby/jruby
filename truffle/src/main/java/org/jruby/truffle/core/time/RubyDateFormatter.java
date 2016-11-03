@@ -30,6 +30,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.core.time;
 
+import com.oracle.truffle.api.nodes.Node;
 import jnr.constants.platform.Errno;
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
@@ -41,6 +42,8 @@ import org.jruby.RubyString;
 import org.jruby.RubyTime;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.util.ByteList;
 
 import java.io.ByteArrayInputStream;
@@ -68,7 +71,8 @@ public class RubyDateFormatter {
     private static final DateFormatSymbols FORMAT_SYMBOLS = new DateFormatSymbols(Locale.US);
     private static final Token[] CONVERSION2TOKEN = new Token[256];
 
-    private ThreadContext context;
+    private RubyContext context;
+    private Node currentNode;
     private StrftimeLexer lexer;
 
     static enum Format {
@@ -218,9 +222,10 @@ public class RubyDateFormatter {
     /**
      * Constructor for RubyDateFormatter.
      */
-    public RubyDateFormatter(ThreadContext context) {
+    public RubyDateFormatter(RubyContext context, Node currentNode) {
         super();
         this.context = context;
+        this.currentNode = currentNode;
         lexer = new StrftimeLexer((Reader) null);
     }
 
@@ -244,14 +249,14 @@ public class RubyDateFormatter {
 
         Encoding enc = pattern.getEncoding();
         if (!enc.isAsciiCompatible()) {
-            throw context.runtime.newArgumentError("format should have ASCII compatible encoding");
+            throw new RaiseException(context.getCoreExceptions().argumentError("format should have ASCII compatible encoding", currentNode));
         }
         if (enc != ASCIIEncoding.INSTANCE) { // default for ByteList
             compiledPattern.add(new Token(Format.FORMAT_ENCODING, enc));
         }
 
         ByteArrayInputStream in = new ByteArrayInputStream(pattern.getUnsafeBytes(), pattern.getBegin(), pattern.getRealSize());
-        Reader reader = new InputStreamReader(in, context.runtime.getEncodingService().charsetForEncoding(pattern.getEncoding()));
+        Reader reader = new InputStreamReader(in, context.getJRubyRuntime().getEncodingService().charsetForEncoding(pattern.getEncoding()));
         lexer.yyreset(reader);
 
         Token token;
@@ -348,20 +353,7 @@ public class RubyDateFormatter {
         }
     }
 
-    /** Convenience method when using no pattern caching */
-    public RubyString compileAndFormat(RubyString pattern, boolean dateLibrary, DateTime dt, long nsec, IRubyObject sub_millis) {
-        RubyString out = format(compilePattern(pattern, dateLibrary), dt, nsec, sub_millis);
-        if (pattern.isTaint()) {
-            out.taint(context);
-        }
-        return out;
-    }
-
-    public RubyString format(List<Token> compiledPattern, DateTime dt, long nsec, IRubyObject sub_millis) {
-        return context.runtime.newString(formatToByteList(compiledPattern, dt, nsec, sub_millis));
-    }
-
-    public ByteList formatToByteList(List<Token> compiledPattern, DateTime dt, long nsec, IRubyObject sub_millis) {
+    public ByteList formatToByteList(List<Token> compiledPattern, DateTime dt, long nsec) {
         RubyTimeOutputFormatter formatter = RubyTimeOutputFormatter.DEFAULT_FORMATTER;
         ByteList toAppendTo = new ByteList();
 
@@ -483,7 +475,7 @@ public class RubyDateFormatter {
                     output = formatZone(colons, (int) value, formatter);
                     break;
                 case FORMAT_ZONE_ID:
-                    output = RubyTime.getRubyTimeZoneName(context.runtime, dt);
+                    output = RubyTime.getRubyTimeZoneName(context.getJRubyRuntime(), dt);
                     break;
                 case FORMAT_CENTURY:
                     type = NUMERIC;
@@ -504,16 +496,7 @@ public class RubyDateFormatter {
 
                     output = RubyTimeOutputFormatter.formatNumber(dt.getMillisOfSecond(), 3, '0');
                     if (width > 3) {
-                        if (sub_millis == null || sub_millis.isNil()) { // Time
-                            output += RubyTimeOutputFormatter.formatNumber(nsec, 6, '0');
-                        } else { // Date, DateTime
-                            int prec = width - 3;
-                            IRubyObject power = context.runtime.newFixnum(10).callMethod("**", context.runtime.newFixnum(prec));
-                            IRubyObject truncated = sub_millis.callMethod(context, "numerator").callMethod(context, "*", power);
-                            truncated = truncated.callMethod(context, "/", sub_millis.callMethod(context, "denominator"));
-                            long decimals = truncated.convertToInteger().getLongValue();
-                            output += RubyTimeOutputFormatter.formatNumber(decimals, prec, '0');
-                        }
+                        output += RubyTimeOutputFormatter.formatNumber(nsec, 6, '0');
                     }
 
                     if (width < output.length()) {
@@ -545,13 +528,13 @@ public class RubyDateFormatter {
             try {
                 output = formatter.format(output, value, type);
             } catch (IndexOutOfBoundsException ioobe) {
-                throw context.runtime.newErrnoFromErrno(Errno.ERANGE, "strftime");
+                throw new RaiseException(context.getCoreExceptions().errnoError(Errno.ERANGE.intValue(), "strftime", currentNode));
             }
 
             // reset formatter
             formatter = RubyTimeOutputFormatter.DEFAULT_FORMATTER;
 
-            toAppendTo.append(output.getBytes(context.runtime.getEncodingService().charsetForEncoding(toAppendTo.getEncoding())));
+            toAppendTo.append(output.getBytes(context.getJRubyRuntime().getEncodingService().charsetForEncoding(toAppendTo.getEncoding())));
         }
 
         return toAppendTo;
