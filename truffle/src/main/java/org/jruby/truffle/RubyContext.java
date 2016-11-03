@@ -61,8 +61,6 @@ import java.nio.charset.StandardCharsets;
 
 public class RubyContext extends ExecutionContext {
 
-    private static volatile RubyContext latestInstance;
-
     private final TruffleLanguage.Env env;
     private final Ruby jrubyRuntime;
 
