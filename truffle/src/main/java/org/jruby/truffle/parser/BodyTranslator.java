@@ -2159,7 +2159,6 @@ public class BodyTranslator extends Translator {
         RubyNode rhsTranslated;
 
         if (rhs == null) {
-            context.getJRubyRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, source.getName(), node.getPosition().getLine(), "no RHS for multiple assignment - using nil");
             rhsTranslated = nilNode(source, sourceSection);
         } else {
             rhsTranslated = rhs.accept(this);
@@ -2457,7 +2456,6 @@ public class BodyTranslator extends Translator {
 
             result = new ElidableResultNode(sequence(context, source, sourceSection, sequence), environment.findLocalVarNode(tempRHSName, source, sourceSection));
         } else {
-            context.getJRubyRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, source.getName(), node.getPosition().getLine(), node + " unknown form of multiple assignment");
             result = nilNode(source, sourceSection);
         }
 
@@ -2906,7 +2904,8 @@ public class BodyTranslator extends Translator {
                         final RescueSplatNode rescueNode = new RescueSplatNode(context, fullSourceSection, splatTranslated, bodyTranslated);
                         rescueNodes.add(rescueNode);
                     } else {
-                        unimplemented(node);
+                        RubyNode result;
+                        throw new UnsupportedOperationException();
                     }
                 } else {
                     RubyNode bodyNode;
@@ -3205,14 +3204,9 @@ public class BodyTranslator extends Translator {
 
     @Override
     protected RubyNode defaultVisit(ParseNode node) {
-        final RubyNode ret = unimplemented(node);
-        return addNewlineIfNeeded(node, ret);
-    }
-
-    protected RubyNode unimplemented(ParseNode node) {
-        context.getJRubyRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, source.getName(), node.getPosition().getLine(), node + " does nothing - translating as nil");
         RubySourceSection sourceSection = translate(node.getPosition());
-        return nilNode(source, sourceSection);
+        final RubyNode ret = nilNode(source, sourceSection);
+        return addNewlineIfNeeded(node, ret);
     }
 
     public TranslatorEnvironment getEnvironment() {
