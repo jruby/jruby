@@ -240,12 +240,8 @@ public class RubyDateFormatter {
         }
     }
 
-    public List<Token> compilePattern(RubyString format, boolean dateLibrary) {
-        return compilePattern(format.getByteList(), dateLibrary);
-    }
-
     public List<Token> compilePattern(ByteList pattern, boolean dateLibrary) {
-        List<Token> compiledPattern = new LinkedList<Token>();
+        List<Token> compiledPattern = new LinkedList<>();
 
         Encoding enc = pattern.getEncoding();
         if (!enc.isAsciiCompatible()) {
@@ -336,7 +332,7 @@ public class RubyDateFormatter {
         return compiledPattern;
     }
 
-    static enum FieldType {
+    enum FieldType {
         NUMERIC('0', 0),
         NUMERIC2('0', 2),
         NUMERIC2BLANK(' ', 2),
