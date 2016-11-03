@@ -246,7 +246,7 @@ public class RubyDateFormatter {
         }
 
         ByteArrayInputStream in = new ByteArrayInputStream(pattern.getUnsafeBytes(), pattern.getBegin(), pattern.getRealSize());
-        Reader reader = new InputStreamReader(in, context.getJRubyRuntime().getEncodingService().charsetForEncoding(pattern.getEncoding()));
+        Reader reader = new InputStreamReader(in, context.getEncodingManager().charsetForEncoding(pattern.getEncoding()));
         lexer.yyreset(reader);
 
         Token token;
