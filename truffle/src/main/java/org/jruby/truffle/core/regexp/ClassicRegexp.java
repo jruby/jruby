@@ -77,8 +77,8 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.util.ByteList;
 import org.jruby.util.KCode;
 import org.jruby.util.Pack;
-import org.jruby.util.RegexpOptions;
 import org.jruby.util.RegexpSupport;
+import org.jruby.util.Sprintf;
 import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.cli.Options;
@@ -167,8 +167,105 @@ public class ClassicRegexp implements ReOptions, EncodingCapable, MarshalEncodin
             int p = bytes.getBegin();
             return new Regex(bytes.getUnsafeBytes(), p, p + bytes.getRealSize(), options.toJoniOptions(), enc, Syntax.DEFAULT, runtime.getWarnings());
         } catch (Exception e) {
-            RegexpSupport.raiseRegexpError19(runtime, bytes, enc, options, e.getMessage());
+            raiseRegexpError19(runtime, bytes, enc, options, e.getMessage());
             return null; // not reached
+        }
+    }
+
+    public static void raiseRegexpError19(Ruby runtime, ByteList bytes, Encoding enc, RegexpOptions options, String err) {
+        // TODO: we loose encoding information here, fix it
+        throw runtime.newRegexpError(err + ": " + regexpDescription19(runtime, bytes, options, enc));
+    }
+
+    public static ByteList regexpDescription19(Ruby runtime, ByteList bytes, RegexpOptions options, Encoding enc) {
+        return regexpDescription19(runtime, bytes.getUnsafeBytes(), bytes.getBegin(), bytes.getRealSize(), options, enc);
+    }
+
+    private static ByteList regexpDescription19(Ruby runtime, byte[] s, int start, int len, RegexpOptions options, Encoding enc) {
+        ByteList description = new ByteList();
+        description.setEncoding(enc);
+        description.append((byte)'/');
+        Encoding resultEnc = runtime.getDefaultInternalEncoding();
+        if (resultEnc == null) resultEnc = runtime.getDefaultExternalEncoding();
+
+        appendRegexpString19(runtime, description, s, start, len, enc, resultEnc);
+        description.append((byte)'/');
+        appendOptions(description, options);
+        if (options.isEncodingNone()) description.append((byte) 'n');
+        return description;
+    }
+
+    public static void appendRegexpString19(Ruby runtime, ByteList to, byte[] bytes, int start, int len, Encoding enc, Encoding resEnc) {
+        int p = start;
+        int end = p + len;
+        boolean needEscape = false;
+        while (p < end) {
+            final int c;
+            final int cl;
+            if (enc.isAsciiCompatible()) {
+                cl = 1;
+                c = bytes[p] & 0xff;
+            } else {
+                cl = StringSupport.preciseLength(enc, bytes, p, end);
+                c = enc.mbcToCode(bytes, p, end);
+            }
+
+            if (!Encoding.isAscii(c)) {
+                p += StringSupport.length(enc, bytes, p, end);
+            } else if (c != '/' && enc.isPrint(c)) {
+                p += cl;
+            } else {
+                needEscape = true;
+                break;
+            }
+        }
+        if (!needEscape) {
+            to.append(bytes, start, len);
+        } else {
+            boolean isUnicode = StringSupport.isUnicode(enc);
+            p = start;
+            while (p < end) {
+                final int c;
+                final int cl;
+                if (enc.isAsciiCompatible()) {
+                    cl = 1;
+                    c = bytes[p] & 0xff;
+                } else {
+                    cl = StringSupport.preciseLength(enc, bytes, p, end);
+                    c = enc.mbcToCode(bytes, p, end);
+                }
+
+                if (c == '\\' && p + cl < end) {
+                    int n = cl + StringSupport.length(enc, bytes, p + cl, end);
+                    to.append(bytes, p, n);
+                    p += n;
+                    continue;
+                } else if (c == '/') {
+                    to.append((byte) '\\');
+                    to.append(bytes, p, cl);
+                } else if (!Encoding.isAscii(c)) {
+                    int l = StringSupport.preciseLength(enc, bytes, p, end);
+                    if (l <= 0) {
+                        l = 1;
+                        Sprintf.sprintf(runtime, to, "\\x%02X", c);
+                    } else if (resEnc != null) {
+                        int code = enc.mbcToCode(bytes, p, end);
+                        Sprintf.sprintf(runtime, to , StringSupport.escapedCharFormat(code, isUnicode), code);
+                    } else {
+                        to.append(bytes, p, l);
+                    }
+                    p += l;
+
+                    continue;
+                } else if (enc.isPrint(c)) {
+                    to.append(bytes, p, cl);
+                } else if (!enc.isSpace(c)) {
+                    Sprintf.sprintf(runtime, to, "\\x%02X", c);
+                } else {
+                    to.append(bytes, p, cl);
+                }
+                p += cl;
+            }
         }
     }
 
@@ -1352,7 +1449,8 @@ public class ClassicRegexp implements ReOptions, EncodingCapable, MarshalEncodin
         if (options.isEncodingNone()) {
             if (enc != ASCIIEncoding.INSTANCE) {
                 if (str.scanForCodeRange() != StringSupport.CR_7BIT) {
-                    RegexpSupport.raiseRegexpError19(getRuntime(), bytes, enc, options, "/.../n has a non escaped non ASCII character in non ASCII-8BIT script");
+                    throw new UnsupportedOperationException();
+                    //RegexpSupport.raiseRegexpError19(getRuntime(), bytes, enc, options, "/.../n has a non escaped non ASCII character in non ASCII-8BIT script");
                 }
                 enc = ASCIIEncoding.INSTANCE;
             }
@@ -1369,14 +1467,15 @@ public class ClassicRegexp implements ReOptions, EncodingCapable, MarshalEncodin
         // FIXME: Something unsets this bit, but we aren't...be more permissive until we figure this out
         //if (isLiteral()) throw runtime.newSecurityError("can't modify literal regexp");
         if (pattern != null) throw runtime.newTypeError("already initialized regexp");
-        if (enc.isDummy()) RegexpSupport.raiseRegexpError19(runtime, bytes, enc, options, "can't make regexp with dummy encoding");
+        if (enc.isDummy()) throw new UnsupportedOperationException(); // RegexpSupport.raiseRegexpError19(runtime, bytes, enc, options, "can't make regexp with dummy encoding");
 
         Encoding[]fixedEnc = new Encoding[]{null};
         ByteList unescaped = RegexpSupport.preprocess(runtime, bytes, enc, fixedEnc, RegexpSupport.ErrorMode.RAISE);
         if (fixedEnc[0] != null) {
             if ((fixedEnc[0] != enc && options.isFixed()) ||
                (fixedEnc[0] != ASCIIEncoding.INSTANCE && options.isEncodingNone())) {
-                   RegexpSupport.raiseRegexpError19(runtime, bytes, enc, options, "incompatible character encoding");
+                    throw new UnsupportedOperationException();
+                    //RegexpSupport.raiseRegexpError19(runtime, bytes, enc, options, "incompatible character encoding");
             }
             if (fixedEnc[0] != ASCIIEncoding.INSTANCE) {
                 options.setFixed(true);
@@ -1777,7 +1876,7 @@ public class ClassicRegexp implements ReOptions, EncodingCapable, MarshalEncodin
                 }
             }
 
-            RegexpSupport.appendOptions(result, newOptions);
+            appendOptions(result, newOptions);
 
             if (!newOptions.isEmbeddable()) {
                 result.append((byte)'-');
@@ -1791,6 +1890,12 @@ public class ClassicRegexp implements ReOptions, EncodingCapable, MarshalEncodin
             result.append((byte)')');
             return RubyString.newString(getRuntime(), result, getEncoding());//.infectBy(this);
         } while (true);
+    }
+
+    public static void appendOptions(ByteList to, RegexpOptions options) {
+        if (options.isMultiline()) to.append((byte)'m');
+        if (options.isIgnorecase()) to.append((byte)'i');
+        if (options.isExtended()) to.append((byte)'x');
     }
 
     public ByteList toByteList() {
@@ -1862,7 +1967,7 @@ public class ClassicRegexp implements ReOptions, EncodingCapable, MarshalEncodin
                 }
             }
 
-            RegexpSupport.appendOptions(result, newOptions);
+            appendOptions(result, newOptions);
 
             if (!newOptions.isEmbeddable()) {
                 result.append((byte)'-');

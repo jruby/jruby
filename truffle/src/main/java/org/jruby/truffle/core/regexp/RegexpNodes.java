@@ -75,7 +75,6 @@ import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.threadlocal.ThreadLocalObject;
 import org.jruby.truffle.util.StringUtils;
 import org.jruby.util.ByteList;
-import org.jruby.util.RegexpOptions;
 import org.jruby.util.RegexpSupport;
 import org.jruby.util.RegexpSupport.ErrorMode;
 
@@ -263,7 +262,7 @@ public abstract class RegexpNodes {
             if (fixedEnc[0] != null) {
                 if ((fixedEnc[0] != enc && options.isFixed()) ||
                         (fixedEnc[0] != ASCIIEncoding.INSTANCE && options.isEncodingNone())) {
-                    RegexpSupport.raiseRegexpError19(context.getJRubyRuntime(), byteList, enc, options, "incompatible character encoding");
+                    throw new RaiseException(context.getCoreExceptions().regexpError("incompatible character encoding", null));
                 }
                 if (fixedEnc[0] != ASCIIEncoding.INSTANCE) {
                     options.setFixed(true);

@@ -56,6 +56,7 @@ import org.jruby.truffle.core.regexp.InterpolatedRegexpNode;
 import org.jruby.truffle.core.regexp.MatchDataNodesFactory;
 import org.jruby.truffle.core.regexp.RegexpNodes;
 import org.jruby.truffle.core.regexp.RegexpNodesFactory;
+import org.jruby.truffle.core.regexp.RegexpOptions;
 import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeConstants;
@@ -266,7 +267,6 @@ import org.jruby.truffle.tools.ChaosNodeGen;
 import org.jruby.truffle.util.StringUtils;
 import org.jruby.util.ByteList;
 import org.jruby.util.KeyValuePair;
-import org.jruby.util.RegexpOptions;
 
 import java.io.File;
 import java.math.BigInteger;

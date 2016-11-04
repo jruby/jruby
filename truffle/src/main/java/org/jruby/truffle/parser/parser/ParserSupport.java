@@ -131,7 +131,7 @@ import org.jruby.truffle.parser.scope.DynamicScope;
 import org.jruby.truffle.parser.scope.StaticScope;
 import org.jruby.util.ByteList;
 import org.jruby.util.KeyValuePair;
-import org.jruby.util.RegexpOptions;
+import org.jruby.truffle.core.regexp.RegexpOptions;
 import org.jruby.util.StringSupport;
 import org.jruby.util.cli.Options;
 
@@ -1444,7 +1444,7 @@ public class ParserSupport {
     // MRI: reg_fragment_setenc_gen
     public void setRegexpEncoding(RegexpParseNode end, ByteList value) {
         RegexpOptions options = end.getOptions();
-        Encoding optionsEncoding = options.setup(configuration.getContext().getJRubyRuntime()) ;
+        Encoding optionsEncoding = options.setup(configuration.getContext()) ;
 
         // Change encoding to one specified by regexp options as long as the string is compatible.
         if (optionsEncoding != null) {
@@ -1530,7 +1530,7 @@ public class ParserSupport {
     // regexp options encoding so dregexps can end up starting with the
     // right encoding.
     private ByteList createMaster(RegexpOptions options) {
-        Encoding encoding = options.setup(configuration.getContext().getJRubyRuntime());
+        Encoding encoding = options.setup(configuration.getContext());
 
         return new ByteList(ByteList.NULL_ARRAY, encoding);
     }

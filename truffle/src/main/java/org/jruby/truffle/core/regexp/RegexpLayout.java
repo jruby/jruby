@@ -16,7 +16,6 @@ import com.oracle.truffle.api.object.dsl.Nullable;
 import org.joni.Regex;
 import org.jruby.truffle.core.basicobject.BasicObjectLayout;
 import org.jruby.truffle.core.rope.Rope;
-import org.jruby.util.RegexpOptions;
 
 @Layout
 public interface RegexpLayout extends BasicObjectLayout {
