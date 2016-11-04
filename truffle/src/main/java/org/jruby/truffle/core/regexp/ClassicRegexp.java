@@ -792,6 +792,26 @@ public class ClassicRegexp implements ReOptions, EncodingCapable, MarshalEncodin
         RegexpSupport.preprocess(runtime, bytes, bytes.getEncoding(), new Encoding[]{null}, RegexpSupport.ErrorMode.RAISE);
     }
 
+    public static void preprocessCheck(RubyContext runtime, ByteList bytes) {
+        preprocess(runtime, bytes, bytes.getEncoding(), new Encoding[]{null}, RegexpSupport.ErrorMode.RAISE);
+    }
+
+    public static ByteList preprocess(RubyContext runtime, ByteList str, Encoding enc, Encoding[] fixedEnc, RegexpSupport.ErrorMode mode) {
+        ByteList to = new ByteList(str.getRealSize());
+
+        if (enc.isAsciiCompatible()) {
+            fixedEnc[0] = null;
+        } else {
+            fixedEnc[0] = enc;
+            to.setEncoding(enc);
+        }
+
+        boolean hasProperty = unescapeNonAscii(runtime, to, str.getUnsafeBytes(), str.getBegin(), str.getBegin() + str.getRealSize(), enc, fixedEnc, str, mode);
+        if (hasProperty && fixedEnc[0] == null) fixedEnc[0] = enc;
+        if (fixedEnc[0] != null) to.setEncoding(fixedEnc[0]);
+        return to;
+    }
+
     public static RubyString preprocessDRegexp(Ruby runtime, RubyString[] strings, int embeddedOptions) {
         return preprocessDRegexp(runtime, strings, RegexpOptions.fromEmbeddedOptions(embeddedOptions));
     }

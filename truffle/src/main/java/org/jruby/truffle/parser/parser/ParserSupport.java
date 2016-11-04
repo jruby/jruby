@@ -1375,7 +1375,7 @@ public class ParserSupport {
     public void regexpFragmentCheck(RegexpParseNode end, ByteList value) {
         setRegexpEncoding(end, value);
         try {
-            ClassicRegexp.preprocessCheck(configuration.getContext().getJRubyRuntime(), value);
+            ClassicRegexp.preprocessCheck(configuration.getContext(), value);
         } catch (RaiseException re) {
             compile_error(re.getMessage());
         }
