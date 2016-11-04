@@ -51,7 +51,6 @@ import org.jruby.RubyLocalJumpError;
 import org.jruby.RubyMatchData;
 import org.jruby.RubyModule;
 import org.jruby.RubyProc;
-import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.common.IRubyWarnings.ID;
@@ -82,6 +81,7 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.backtrace.BacktraceData;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.invokedynamic.MethodNames;
+import org.jruby.truffle.core.regexp.ClassicRegexp;
 import org.jruby.truffle.parser.ast.ArgsParseNode;
 import org.jruby.truffle.parser.ast.ArgumentParseNode;
 import org.jruby.truffle.parser.ast.DAsgnParseNode;
@@ -651,25 +651,7 @@ public class Helpers {
     }
 
     public static IRubyObject backref(ThreadContext context) {
-        return RubyRegexp.getBackRef(context);
-    }
-
-    public static IRubyObject backrefMatchPre(ThreadContext context) {
-        IRubyObject backref = context.getBackRef();
-
-        return RubyRegexp.match_pre(backref);
-    }
-
-    public static IRubyObject backrefMatchPost(ThreadContext context) {
-        IRubyObject backref = context.getBackRef();
-
-        return RubyRegexp.match_post(backref);
-    }
-
-    public static IRubyObject backrefMatchLast(ThreadContext context) {
-        IRubyObject backref = context.getBackRef();
-
-        return RubyRegexp.match_last(backref);
+        return ClassicRegexp.getBackRef(context);
     }
 
     public static IRubyObject[] appendToObjectArray(IRubyObject[] array, IRubyObject add) {
@@ -1395,22 +1377,6 @@ public class Helpers {
 
     public static void registerEndBlock(Block block, Ruby runtime) {
         runtime.pushExitBlock(runtime.newProc(Block.Type.LAMBDA, block));
-    }
-
-    public static IRubyObject match3(RubyRegexp regexp, IRubyObject value, ThreadContext context) {
-        if (value instanceof RubyString) {
-            return regexp.op_match(context, value);
-        } else {
-            return value.callMethod(context, "=~", regexp);
-        }
-    }
-
-    public static IRubyObject match3_19(RubyRegexp regexp, IRubyObject value, ThreadContext context) {
-        if (value instanceof RubyString) {
-            return regexp.op_match19(context, value);
-        } else {
-            return value.callMethod(context, "=~", regexp);
-        }
     }
 
     public static IRubyObject getErrorInfo(Ruby runtime) {
@@ -2172,18 +2138,6 @@ public class Helpers {
             scopeOffsets[i] = (((int)depth) << 16) | (int)off;
         }
         return scopeOffsets;
-    }
-
-    public static IRubyObject match2AndUpdateScope(IRubyObject receiver, ThreadContext context, IRubyObject value, String scopeOffsets) {
-        IRubyObject match = ((RubyRegexp)receiver).op_match(context, value);
-        updateScopeWithCaptures(context, decodeCaptureOffsets(scopeOffsets), match);
-        return match;
-    }
-
-    public static IRubyObject match2AndUpdateScope19(IRubyObject receiver, ThreadContext context, IRubyObject value, String scopeOffsets) {
-        IRubyObject match = ((RubyRegexp)receiver).op_match19(context, value);
-        updateScopeWithCaptures(context, decodeCaptureOffsets(scopeOffsets), match);
-        return match;
     }
 
     public static void updateScopeWithCaptures(ThreadContext context, int[] scopeOffsets, IRubyObject result) {

@@ -31,7 +31,6 @@ import org.jcodings.EncodingDB;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyModule;
-import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.internal.runtime.methods.DynamicMethod;
@@ -220,18 +219,6 @@ public abstract class AbstractScript implements Script {
     public final RubyFloat getFloat9(ThreadContext context, double value) {return runtimeCache.getFloat(context, 9, value);}
 
     public static final int NUMBERED_REGEXP_COUNT = 10;
-
-    public final RubyRegexp getRegexp(ThreadContext context, int i, ByteList pattern, int options) {return runtimeCache.getRegexp(context, i, pattern, options);}
-    public final RubyRegexp getRegexp0(ThreadContext context, ByteList pattern, int options) {return runtimeCache.getRegexp(context, 0, pattern, options);}
-    public final RubyRegexp getRegexp1(ThreadContext context, ByteList pattern, int options) {return runtimeCache.getRegexp(context, 1, pattern, options);}
-    public final RubyRegexp getRegexp2(ThreadContext context, ByteList pattern, int options) {return runtimeCache.getRegexp(context, 2, pattern, options);}
-    public final RubyRegexp getRegexp3(ThreadContext context, ByteList pattern, int options) {return runtimeCache.getRegexp(context, 3, pattern, options);}
-    public final RubyRegexp getRegexp4(ThreadContext context, ByteList pattern, int options) {return runtimeCache.getRegexp(context, 4, pattern, options);}
-    public final RubyRegexp getRegexp5(ThreadContext context, ByteList pattern, int options) {return runtimeCache.getRegexp(context, 5, pattern, options);}
-    public final RubyRegexp getRegexp6(ThreadContext context, ByteList pattern, int options) {return runtimeCache.getRegexp(context, 6, pattern, options);}
-    public final RubyRegexp getRegexp7(ThreadContext context, ByteList pattern, int options) {return runtimeCache.getRegexp(context, 7, pattern, options);}
-    public final RubyRegexp getRegexp8(ThreadContext context, ByteList pattern, int options) {return runtimeCache.getRegexp(context, 8, pattern, options);}
-    public final RubyRegexp getRegexp9(ThreadContext context, ByteList pattern, int options) {return runtimeCache.getRegexp(context, 9, pattern, options);}
 
     public static final int NUMBERED_BIGINTEGER_COUNT = 10;
 

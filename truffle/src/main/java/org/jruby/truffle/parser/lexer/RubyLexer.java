@@ -46,7 +46,6 @@ package org.jruby.truffle.parser.lexer;
 import org.jcodings.Encoding;
 import org.joni.Matcher;
 import org.joni.Option;
-import org.jruby.RubyRegexp;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.truffle.Layouts;

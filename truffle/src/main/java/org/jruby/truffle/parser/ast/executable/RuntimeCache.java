@@ -33,7 +33,6 @@ import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyModule;
-import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.common.IRubyWarnings.ID;
@@ -48,6 +47,7 @@ import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.runtime.ivars.VariableAccessor;
 import org.jruby.runtime.opto.ConstantCache;
 import org.jruby.runtime.opto.Invalidator;
+import org.jruby.truffle.core.regexp.ClassicRegexp;
 import org.jruby.truffle.parser.Helpers;
 import org.jruby.truffle.parser.scope.StaticScope;
 import org.jruby.truffle.parser.scope.StaticScopeFactory;
@@ -135,32 +135,13 @@ public class RuntimeCache {
         return flote;
     }
 
-    public final RubyRegexp getRegexp(ThreadContext context, int index, ByteList pattern, int options) {
-        RubyRegexp regexp = regexps[index];
+    public final ClassicRegexp getRegexp(ThreadContext context, int index, ByteList pattern, int options) {
+        ClassicRegexp regexp = regexps[index];
         if (regexp == null || context.runtime.getKCode() != regexp.getKCode()) {
-            regexp = RubyRegexp.newRegexp(context.runtime, pattern, RegexpOptions.fromEmbeddedOptions(options));
+            regexp = ClassicRegexp.newRegexp(context.runtime, pattern, RegexpOptions.fromEmbeddedOptions(options));
             regexp.setLiteral();
             regexps[index] = regexp;
         }
-        return regexp;
-    }
-
-    public final RubyRegexp getRegexp(int index) {
-        return regexps[index];
-    }
-
-    public final RubyRegexp cacheRegexp(int index, RubyString pattern, int options) {
-        RubyRegexp regexp = regexps[index];
-        Ruby runtime = pattern.getRuntime();
-        if (regexp == null || runtime.getKCode() != regexp.getKCode()) {
-            regexp = RubyRegexp.newRegexp(runtime, pattern.getByteList(), RegexpOptions.fromEmbeddedOptions(options));
-            regexps[index] = regexp;
-        }
-        return regexp;
-    }
-
-    public final RubyRegexp cacheRegexp(int index, RubyRegexp regexp) {
-        regexps[index] = regexp;
         return regexp;
     }
 
@@ -354,7 +335,7 @@ public class RuntimeCache {
     }
 
     public final void initRegexps(int size) {
-        regexps = new RubyRegexp[size];
+        regexps = new ClassicRegexp[size];
     }
 
     public final void initBigIntegers(int size) {
@@ -661,8 +642,8 @@ public class RuntimeCache {
     public RubyFixnum[] fixnums = EMPTY_FIXNUMS;
     private static final RubyFloat[] EMPTY_FLOATS = {};
     public RubyFloat[] floats = EMPTY_FLOATS;
-    private static final RubyRegexp[] EMPTY_RUBYREGEXPS = {};
-    public RubyRegexp[] regexps = EMPTY_RUBYREGEXPS;
+    private static final ClassicRegexp[] EMPTY_RUBYREGEXPS = {};
+    public ClassicRegexp[] regexps = EMPTY_RUBYREGEXPS;
     private static final BigInteger[] EMPTY_BIGINTEGERS = {};
     public BigInteger[] bigIntegers = EMPTY_BIGINTEGERS;
     private static final VariableAccessor[] EMPTY_VARIABLE_ACCESSORS = {};

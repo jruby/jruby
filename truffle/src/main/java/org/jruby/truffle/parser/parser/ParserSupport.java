@@ -37,10 +37,10 @@ package org.jruby.truffle.parser.parser;
 
 import org.jcodings.Encoding;
 import org.jruby.RubyBignum;
-import org.jruby.RubyRegexp;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.regexp.ClassicRegexp;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.parser.Signature;
 import org.jruby.truffle.parser.ast.AliasParseNode;
@@ -1375,14 +1375,14 @@ public class ParserSupport {
     public void regexpFragmentCheck(RegexpParseNode end, ByteList value) {
         setRegexpEncoding(end, value);
         try {
-            RubyRegexp.preprocessCheck(configuration.getContext().getJRubyRuntime(), value);
+            ClassicRegexp.preprocessCheck(configuration.getContext().getJRubyRuntime(), value);
         } catch (RaiseException re) {
             compile_error(re.getMessage());
         }
     }        // 1.9 mode overrides to do extra checking...
 
     private List<Integer> allocateNamedLocals(RegexpParseNode regexpNode) {
-        RubyRegexp pattern = RubyRegexp.newRegexp(configuration.getContext().getJRubyRuntime(), regexpNode.getValue(), regexpNode.getOptions());
+        ClassicRegexp pattern = ClassicRegexp.newRegexp(configuration.getContext().getJRubyRuntime(), regexpNode.getValue(), regexpNode.getOptions());
         pattern.setLiteral();
         String[] names = pattern.getNames();
         int length = names.length;
@@ -1475,7 +1475,7 @@ public class ParserSupport {
 
         try {
             // This is only for syntax checking but this will as a side-effect create an entry in the regexp cache.
-            RubyRegexp.newRegexpParser(getConfiguration().getContext().getJRubyRuntime(), value, (RegexpOptions)options.clone());
+            ClassicRegexp.newRegexpParser(getConfiguration().getContext().getJRubyRuntime(), value, (RegexpOptions)options.clone());
         } catch (RaiseException re) {
             compile_error(re.getMessage());
         }

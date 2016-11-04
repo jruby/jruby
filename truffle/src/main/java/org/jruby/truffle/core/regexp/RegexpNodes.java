@@ -621,7 +621,7 @@ public abstract class RegexpNodes {
         public DynamicObject quoteString(DynamicObject raw) {
             final Rope rope = StringOperations.rope(raw);
             boolean isAsciiOnly = rope.getEncoding().isAsciiCompatible() && rope.getCodeRange() == CodeRange.CR_7BIT;
-            return createString(org.jruby.RubyRegexp.quote19(StringOperations.getByteListReadOnly(raw), isAsciiOnly));
+            return createString(ClassicRegexp.quote19(StringOperations.getByteListReadOnly(raw), isAsciiOnly));
         }
 
         @Specialization(guards = "isRubySymbol(raw)")
