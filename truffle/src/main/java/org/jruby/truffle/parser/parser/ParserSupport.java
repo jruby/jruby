@@ -1382,7 +1382,7 @@ public class ParserSupport {
     }        // 1.9 mode overrides to do extra checking...
 
     private List<Integer> allocateNamedLocals(RegexpParseNode regexpNode) {
-        ClassicRegexp pattern = ClassicRegexp.newRegexp(configuration.getContext().getJRubyRuntime(), regexpNode.getValue(), regexpNode.getOptions());
+        ClassicRegexp pattern = ClassicRegexp.newRegexp(configuration.getContext(), regexpNode.getValue(), regexpNode.getOptions());
         pattern.setLiteral();
         String[] names = pattern.getNames();
         int length = names.length;
@@ -1475,7 +1475,7 @@ public class ParserSupport {
 
         try {
             // This is only for syntax checking but this will as a side-effect create an entry in the regexp cache.
-            ClassicRegexp.newRegexpParser(getConfiguration().getContext().getJRubyRuntime(), value, (RegexpOptions)options.clone());
+            ClassicRegexp.newRegexpParser(getConfiguration().getContext(), value, (RegexpOptions)options.clone());
         } catch (RaiseException re) {
             compile_error(re.getMessage());
         }

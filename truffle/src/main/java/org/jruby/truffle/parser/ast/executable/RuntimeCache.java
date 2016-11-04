@@ -135,7 +135,7 @@ public class RuntimeCache {
         return flote;
     }
 
-    public final ClassicRegexp getRegexp(ThreadContext context, int index, ByteList pattern, int options) {
+    /*public final ClassicRegexp getRegexp(ThreadContext context, int index, ByteList pattern, int options) {
         ClassicRegexp regexp = regexps[index];
         if (regexp == null || context.runtime.getKCode() != regexp.getKCode()) {
             regexp = ClassicRegexp.newRegexp(context.runtime, pattern, RegexpOptions.fromEmbeddedOptions(options));
@@ -143,7 +143,7 @@ public class RuntimeCache {
             regexps[index] = regexp;
         }
         return regexp;
-    }
+    }*/
 
     public final BigInteger getBigInteger(int index, String pattern) {
         BigInteger bigint = bigIntegers[index];

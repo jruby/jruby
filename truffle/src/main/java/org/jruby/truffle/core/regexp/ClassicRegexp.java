@@ -95,7 +95,8 @@ import static org.jruby.util.StringSupport.CR_UNKNOWN;
 import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
 import static org.jruby.util.StringSupport.codeRangeScan;
 
-public class ClassicRegexp extends RubyObject implements ReOptions, EncodingCapable, MarshalEncoding {
+public class ClassicRegexp implements ReOptions, EncodingCapable, MarshalEncoding {
+    private final RubyContext context;
     private Regex pattern;
     private ByteList str = ByteList.EMPTY_BYTELIST;
     private RegexpOptions options;
@@ -235,13 +236,6 @@ public class ClassicRegexp extends RubyObject implements ReOptions, EncodingCapa
         return regexpClass;
     }*/
 
-    private static ObjectAllocator REGEXP_ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new ClassicRegexp(runtime, klass);
-        }
-    };
-
     public static int matcherSearch(Matcher matcher, int start, int range, int option) {
         try {
             SearchMatchTask task = new SearchMatchTask(null, start, range, option, false);
@@ -290,55 +284,50 @@ public class ClassicRegexp extends RubyObject implements ReOptions, EncodingCapa
         }
     }
 
-    @Override
-    public ClassIndex getNativeClassIndex() {
-        return ClassIndex.REGEXP;
-    }
-
     /** used by allocator
      */
-    private ClassicRegexp(Ruby runtime, RubyClass klass) {
-        super(runtime, klass);
+    private ClassicRegexp(RubyContext context, RubyClass klass) {
+        this.context = context;
         this.options = new RegexpOptions();
     }
 
     /** default constructor
      */
-    ClassicRegexp(Ruby runtime) {
-        super(runtime, runtime.getRegexp());
+    ClassicRegexp(RubyContext context) {
+        this.context = context;
         this.options = new RegexpOptions();
     }
 
-    private ClassicRegexp(Ruby runtime, ByteList str) {
-        this(runtime);
+    private ClassicRegexp(RubyContext context, ByteList str) {
+        this(context);
         str.getClass();
         this.str = str;
-        this.pattern = getRegexpFromCache(runtime, str, str.getEncoding(), RegexpOptions.NULL_OPTIONS);
+        this.pattern = getRegexpFromCache(context.getJRubyRuntime(), str, str.getEncoding(), RegexpOptions.NULL_OPTIONS);
     }
 
-    private ClassicRegexp(Ruby runtime, ByteList str, RegexpOptions options) {
-        this(runtime);
+    private ClassicRegexp(RubyContext context, ByteList str, RegexpOptions options) {
+        this(context);
         str.getClass();
 
         regexpInitialize(str, str.getEncoding(), options);
     }
 
     // used only by the compiler/interpreter (will set the literal flag)
-    public static ClassicRegexp newRegexp(Ruby runtime, String pattern, RegexpOptions options) {
+    public static ClassicRegexp newRegexp(RubyContext runtime, String pattern, RegexpOptions options) {
         return newRegexp(runtime, ByteList.create(pattern), options);
     }
 
     // used only by the compiler/interpreter (will set the literal flag)
-    public static ClassicRegexp newRegexp(Ruby runtime, ByteList pattern, int options) {
+    public static ClassicRegexp newRegexp(RubyContext runtime, ByteList pattern, int options) {
         return newRegexp(runtime, pattern, RegexpOptions.fromEmbeddedOptions(options));
     }
 
     // used only by the compiler/interpreter (will set the literal flag)
-    public static ClassicRegexp newRegexp(Ruby runtime, ByteList pattern, RegexpOptions options) {
+    public static ClassicRegexp newRegexp(RubyContext runtime, ByteList pattern, RegexpOptions options) {
         try {
             return new ClassicRegexp(runtime, pattern, (RegexpOptions)options.clone());
         } catch (RaiseException re) {
-            throw runtime.newSyntaxError(re.getMessage());
+            throw new org.jruby.truffle.language.control.RaiseException(runtime.getCoreExceptions().syntaxError(re.getMessage(), null));
         }
     }
 
@@ -347,31 +336,31 @@ public class ClassicRegexp extends RubyObject implements ReOptions, EncodingCapa
      * error as opposed to any non-literal regexp creation which may raise a syntax error but will not
      * have this extra source info in the error message
      */
-    public static ClassicRegexp newRegexpParser(Ruby runtime, ByteList pattern, RegexpOptions options) {
+    public static ClassicRegexp newRegexpParser(RubyContext runtime, ByteList pattern, RegexpOptions options) {
         return new ClassicRegexp(runtime, pattern, (RegexpOptions)options.clone());
     }
 
     // used only by the compiler/interpreter (will set the literal flag)
-    public static ClassicRegexp newDRegexp(Ruby runtime, RubyString pattern, RegexpOptions options) {
+    public static ClassicRegexp newDRegexp(RubyContext runtime, RubyString pattern, RegexpOptions options) {
         try {
             return new ClassicRegexp(runtime, pattern.getByteList(), (RegexpOptions)options.clone());
         } catch (RaiseException re) {
-            throw runtime.newRegexpError(re.getMessage());
+            throw new org.jruby.truffle.language.control.RaiseException(runtime.getCoreExceptions().syntaxError(re.getMessage(), null));
         }
     }
 
     // used only by the compiler/interpreter (will set the literal flag)
-    public static ClassicRegexp newDRegexp(Ruby runtime, RubyString pattern, int joniOptions) {
+    public static ClassicRegexp newDRegexp(RubyContext runtime, RubyString pattern, int joniOptions) {
         try {
             RegexpOptions options = RegexpOptions.fromJoniOptions(joniOptions);
             return new ClassicRegexp(runtime, pattern.getByteList(), options);
         } catch (RaiseException re) {
-            throw runtime.newRegexpError(re.getMessage());
+            throw new org.jruby.truffle.language.control.RaiseException(runtime.getCoreExceptions().syntaxError(re.getMessage(), null));
         }
     }
 
     // used only by the compiler/interpreter (will set the literal flag)
-    public static ClassicRegexp newDRegexpEmbedded(Ruby runtime, RubyString pattern, int embeddedOptions) {
+    public static ClassicRegexp newDRegexpEmbedded(RubyContext runtime, RubyString pattern, int embeddedOptions) {
         try {
             RegexpOptions options = RegexpOptions.fromEmbeddedOptions(embeddedOptions);
             // FIXME: Massive hack (fix in DRegexpNode too for interpreter)
@@ -380,27 +369,27 @@ public class ClassicRegexp extends RubyObject implements ReOptions, EncodingCapa
             }
             return new ClassicRegexp(runtime, pattern.getByteList(), options);
         } catch (RaiseException re) {
-            throw runtime.newRegexpError(re.getMessage());
+            throw new org.jruby.truffle.language.control.RaiseException(runtime.getCoreExceptions().syntaxError(re.getMessage(), null));
         }
     }
 
-    public static ClassicRegexp newDRegexpEmbedded19(Ruby runtime, IRubyObject[] strings, int embeddedOptions) {
+    /*public static ClassicRegexp newDRegexpEmbedded19(Ruby runtime, IRubyObject[] strings, int embeddedOptions) {
         try {
             RegexpOptions options = RegexpOptions.fromEmbeddedOptions(embeddedOptions);
             RubyString pattern = preprocessDRegexp(runtime, strings, options);
 
             return new ClassicRegexp(runtime, pattern.getByteList(), options);
         } catch (RaiseException re) {
-            throw runtime.newRegexpError(re.getMessage());
+            throw new org.jruby.truffle.language.control.RaiseException(runtime.getCoreExceptions().syntaxError(re.getMessage(), null));
         }
 
-    }
+    }*/
 
-    public static ClassicRegexp newRegexp(Ruby runtime, ByteList pattern) {
+    public static ClassicRegexp newRegexp(RubyContext runtime, ByteList pattern) {
         return new ClassicRegexp(runtime, pattern);
     }
 
-    static ClassicRegexp newRegexp(Ruby runtime, ByteList str, Regex pattern) {
+    static ClassicRegexp newRegexp(RubyContext runtime, ByteList str, Regex pattern) {
         ClassicRegexp regexp = new ClassicRegexp(runtime);
         str.getClass();
         regexp.str = str;
@@ -410,7 +399,7 @@ public class ClassicRegexp extends RubyObject implements ReOptions, EncodingCapa
     }
 
     // internal usage (Complex/Rational)
-    static ClassicRegexp newDummyRegexp(Ruby runtime, Regex regex) {
+    static ClassicRegexp newDummyRegexp(RubyContext runtime, Regex regex) {
         ClassicRegexp regexp = new ClassicRegexp(runtime);
         regexp.pattern = regex;
         regexp.str = ByteList.EMPTY_BYTELIST;
@@ -1155,11 +1144,11 @@ public class ClassicRegexp extends RubyObject implements ReOptions, EncodingCapa
     /** rb_reg_s_union
     *
     */
-    public static IRubyObject union(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+    /*public static IRubyObject union(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         return union19(context, recv, args);
-    }
+    }*/
 
-    @JRubyMethod(name = "union", rest = true, meta = true)
+    /*@JRubyMethod(name = "union", rest = true, meta = true)
     public static IRubyObject union19(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         IRubyObject obj;
         if (args.length == 1 && !(obj = args[0].checkArrayType()).isNil()) {
@@ -1249,11 +1238,11 @@ public class ClassicRegexp extends RubyObject implements ReOptions, EncodingCapa
             }
             return runtime.getRegexp().newInstance(context, source, Block.NULL_BLOCK);
         }
-    }
+    }*/
 
     /** rb_reg_init_copy
      */
-    @JRubyMethod(required = 1, visibility = Visibility.PRIVATE)
+    /*@JRubyMethod(required = 1, visibility = Visibility.PRIVATE)
     @Override
     public IRubyObject initialize_copy(IRubyObject re) {
         if (this == re) return this;
@@ -1267,7 +1256,7 @@ public class ClassicRegexp extends RubyObject implements ReOptions, EncodingCapa
         regexp.check();
 
         return regexpInitialize(regexp.str, regexp.str.getEncoding(), regexp.getOptions());
-    }
+    }*/
 
     private int objectAsJoniOptions(IRubyObject arg) {
         if (arg instanceof RubyFixnum) return RubyNumeric.fix2int(arg);
@@ -1276,7 +1265,7 @@ public class ClassicRegexp extends RubyObject implements ReOptions, EncodingCapa
         return 0;
     }
 
-    public IRubyObject initialize_m(IRubyObject arg) {
+    /*public IRubyObject initialize_m(IRubyObject arg) {
         return initialize_m19(arg);
     }
 
@@ -1303,9 +1292,9 @@ public class ClassicRegexp extends RubyObject implements ReOptions, EncodingCapa
 
         return regexpInitializeString(arg0.convertToString(),
                 RegexpOptions.fromJoniOptions(objectAsJoniOptions(arg1)));
-    }
+    }*/
 
-    @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE)
+    /*@JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE)
     public IRubyObject initialize_m19(IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         if (arg0 instanceof ClassicRegexp && Options.PARSER_WARN_FLAGS_IGNORED.load()) {
             getRuntime().getWarnings().warn(ID.REGEXP_IGNORED_FLAGS, "flags ignored");
@@ -1333,7 +1322,7 @@ public class ClassicRegexp extends RubyObject implements ReOptions, EncodingCapa
         RegexpOptions newOptions = (RegexpOptions) regexp.getOptions().clone();
         newOptions.setLiteral(false);
         return regexpInitialize(regexp.str, regexp.getEncoding(), newOptions);
-    }
+    }*/
 
     // rb_reg_initialize_str
     private ClassicRegexp regexpInitializeString(RubyString str, RegexpOptions options) {
@@ -1356,7 +1345,7 @@ public class ClassicRegexp extends RubyObject implements ReOptions, EncodingCapa
         Ruby runtime = getRuntime();
         this.options = options;
 
-        checkFrozen();
+        //checkFrozen();
         // FIXME: Something unsets this bit, but we aren't...be more permissive until we figure this out
         //if (isLiteral()) throw runtime.newSecurityError("can't modify literal regexp");
         if (pattern != null) throw runtime.newTypeError("already initialized regexp");
@@ -1386,7 +1375,7 @@ public class ClassicRegexp extends RubyObject implements ReOptions, EncodingCapa
         return this;
     }
 
-    @JRubyMethod
+    /*@JRubyMethod
     @Override
     public RubyFixnum hash() {
         check();
@@ -1416,7 +1405,7 @@ public class ClassicRegexp extends RubyObject implements ReOptions, EncodingCapa
 
         return context.runtime.newBoolean(str.equal(otherRegex.str) &&
                 getOptions().equals(otherRegex.options));
-    }
+    }*/
 
     public IRubyObject op_match2(ThreadContext context) {
         return op_match2_19(context);
@@ -1455,10 +1444,10 @@ public class ClassicRegexp extends RubyObject implements ReOptions, EncodingCapa
         return (start < 0) ? runtime.getFalse() : runtime.getTrue();
     }
 
-    @Override
+    /*@Override
     public IRubyObject op_match(ThreadContext context, IRubyObject arg) {
         return op_match19(context, arg);
-    }
+    }*/
 
     // MRI: rb_reg_match
     /*@JRubyMethod(name = "=~", required = 1, writes = BACKREF, reads = BACKREF)
@@ -1674,7 +1663,7 @@ public class ClassicRegexp extends RubyObject implements ReOptions, EncodingCapa
     @JRubyMethod
     public IRubyObject source() {
         check();
-        return RubyString.newStringShared(getRuntime(), str).infectBy(this);
+        return RubyString.newStringShared(getRuntime(), str);//.infectBy(this);
     }
 
     final int length() {
@@ -1684,21 +1673,21 @@ public class ClassicRegexp extends RubyObject implements ReOptions, EncodingCapa
     /** rb_reg_inspect
      *
      */
-    @Override
+    /*@Override
     public IRubyObject inspect() {
         return inspect19();
-    }
+    }*/
 
-    @JRubyMethod(name = "inspect")
+    /*@JRubyMethod(name = "inspect")
     public IRubyObject inspect19() {
         if (pattern == null) return anyToString();
         return RubyString.newString(getRuntime(), RegexpSupport.regexpDescription19(getRuntime(), str, options, str.getEncoding()));
-    }
+    }*/
 
     private final static int EMBEDDABLE = RE_OPTION_MULTILINE|RE_OPTION_IGNORECASE|RE_OPTION_EXTENDED;
 
     @JRubyMethod
-    @Override
+    //@Override
     public IRubyObject to_s() {
         check();
 
@@ -1780,7 +1769,7 @@ public class ClassicRegexp extends RubyObject implements ReOptions, EncodingCapa
             RegexpSupport.appendRegexpString19(runtime, result, bytes, p, len, str.getEncoding(), null);
 
             result.append((byte)')');
-            return RubyString.newString(getRuntime(), result, getEncoding()).infectBy(this);
+            return RubyString.newString(getRuntime(), result, getEncoding());//.infectBy(this);
         } while (true);
     }
 
@@ -2181,14 +2170,14 @@ public class ClassicRegexp extends RubyObject implements ReOptions, EncodingCapa
         return check ? str.convertToString() : str.checkStringType();
     }
 
-    @Deprecated
+    /*@Deprecated
     public static ClassicRegexp unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
         ClassicRegexp result = newRegexp(input.getRuntime(), input.unmarshalString(), RegexpOptions.fromJoniOptions(input.readSignedByte()));
         input.registerLinkTarget(result);
         return result;
-    }
+    }*/
 
-    public static void marshalTo(ClassicRegexp regexp, MarshalStream output) throws java.io.IOException {
+    /*public static void marshalTo(ClassicRegexp regexp, MarshalStream output) throws java.io.IOException {
         output.registerLinkTarget(regexp);
         output.writeString(regexp.str);
 
@@ -2197,5 +2186,10 @@ public class ClassicRegexp extends RubyObject implements ReOptions, EncodingCapa
         if (regexp.getOptions().isFixed()) options |= RE_FIXED;
 
         output.writeByte(options);
+    }*/
+
+    public Ruby getRuntime() {
+        return context.getJRubyRuntime();
     }
+
 }
