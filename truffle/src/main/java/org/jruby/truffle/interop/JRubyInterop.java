@@ -15,7 +15,6 @@ import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.control.JavaException;
 import org.jruby.truffle.language.loader.SourceLoader;
 import org.jruby.util.ByteList;
@@ -31,13 +30,11 @@ import java.util.Random;
 public class JRubyInterop {
 
     private final Ruby jrubyRuntime;
-    private final RubyContext context;
 
     private String originalInputFile;
     private final String jrubyHome;
 
-    public JRubyInterop(RubyContext context, Ruby jrubyRuntime) {
-        this.context = context;
+    public JRubyInterop(Ruby jrubyRuntime) {
         this.jrubyRuntime = jrubyRuntime;
         this.jrubyHome = findJRubyHome();
     }

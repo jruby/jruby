@@ -106,7 +106,7 @@ public class RubyContext extends ExecutionContext {
 
     public RubyContext(RubyInstanceConfig instanceConfig, Ruby jrubyRuntime, TruffleLanguage.Env env) {
         this.instanceConfig = instanceConfig;
-        this.jrubyInterop = new JRubyInterop(this, jrubyRuntime);
+        this.jrubyInterop = new JRubyInterop(jrubyRuntime);
         this.env = env;
         this.currentDirectory = System.getProperty("user.dir");
 
