@@ -650,10 +650,6 @@ public class Helpers {
         return ((RubyProc) proc).getBlock();
     }
 
-    public static IRubyObject backref(ThreadContext context) {
-        return ClassicRegexp.getBackRef(context);
-    }
-
     public static IRubyObject[] appendToObjectArray(IRubyObject[] array, IRubyObject add) {
         return ArraySupport.newCopy(array, add);
     }
@@ -1398,10 +1394,6 @@ public class Helpers {
     public static IRubyObject setBackref(Ruby runtime, ThreadContext context, IRubyObject value) {
         if (!value.isNil() && !(value instanceof RubyMatchData)) throw runtime.newTypeError(value, runtime.getMatchData());
         return context.setBackRef(value);
-    }
-
-    public static IRubyObject getBackref(Ruby runtime, ThreadContext context) {
-        return backref(context); // backref(context) method otherwise not used
     }
 
     public static IRubyObject preOpAsgnWithOrAnd(IRubyObject receiver, ThreadContext context, IRubyObject self, CallSite varSite) {
