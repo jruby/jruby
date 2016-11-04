@@ -22,6 +22,7 @@ import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.util.Random;
 
 import java.math.BigInteger;
+import java.security.SecureRandom;
 
 public abstract class RandomizerPrimitiveNodes {
 
@@ -101,11 +102,30 @@ public abstract class RandomizerPrimitiveNodes {
     @Primitive(name = "randomizer_gen_seed")
     public static abstract class RandomizerGenSeedPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
+        // Single instance of Random per host VM
+
+        private static java.util.Random random;
+
         @TruffleBoundary
         @Specialization
         public DynamicObject randomizerGenSeed(DynamicObject randomizerClass) {
-            final BigInteger seed = RubyRandom.randomSeedBigInteger(getContext().getJRubyInterop().getRandom());
+            final BigInteger seed = RubyRandom.randomSeedBigInteger(getRandom());
             return createBignum(seed);
+        }
+
+        private java.util.Random getRandom() {
+            if (random == null) {
+                // We don't care about racing to create this
+
+                try {
+                    random = new SecureRandom();
+                } catch (Throwable t) {
+                    // TODO CS 5-Nov-16 should we warn about this?
+                    random = new java.util.Random();
+                }
+            }
+
+            return random;
         }
     }
 

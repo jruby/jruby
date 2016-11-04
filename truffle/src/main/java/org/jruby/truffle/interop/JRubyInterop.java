@@ -127,10 +127,6 @@ public class JRubyInterop {
         jrubyRuntime.getWarnings().warn(message);
     }
 
-    public Random getRandom() {
-        return jrubyRuntime.getRandom();
-    }
-
     public ByteList strConvEnc(ByteList byteList, Encoding encoding) {
         return EncodingUtils.strConvEnc(jrubyRuntime.getCurrentContext(), byteList, encoding, UTF8Encoding.INSTANCE);
     }
