@@ -51,6 +51,8 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.channels.Channels;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Serves as a simple facade for all the parsing magic.
@@ -71,12 +73,12 @@ public class Parser {
     public int getTotalBytes() {
         return totalBytes;
     }
-    
+
     @SuppressWarnings("unchecked")
     public ParseNode parse(String file, ByteList content, DynamicScope blockScope,
                            ParserConfiguration configuration) {
         configuration.setDefaultEncoding(content.getEncoding());
-        RubyArray list = getLines(configuration, context.getJRubyRuntime(), file);
+        List<ByteList> list = getLines(configuration, file);
         LexerSource lexerSource = new ByteListLexerSource(file, configuration.getLineNumber(), content, list);
         return parse(file, lexerSource, blockScope, configuration);
     }
@@ -84,7 +86,7 @@ public class Parser {
     @SuppressWarnings("unchecked")
     public ParseNode parse(String file, byte[] content, DynamicScope blockScope,
                            ParserConfiguration configuration) {
-        RubyArray list = getLines(configuration, context.getJRubyRuntime(), file);
+        List<ByteList> list = getLines(configuration, file);
         ByteList in = new ByteList(content, configuration.getDefaultEncoding());
         LexerSource lexerSource = new ByteListLexerSource(file, configuration.getLineNumber(), in,  list);
         return parse(file, lexerSource, blockScope, configuration);
@@ -96,13 +98,13 @@ public class Parser {
         if (content instanceof LoadServiceResourceInputStream) {
             return parse(file, ((LoadServiceResourceInputStream) content).getBytes(), blockScope, configuration);
         } else {
-            RubyArray list = getLines(configuration, context.getJRubyRuntime(), file);
-            RubyIO io;
-            if (content instanceof FileInputStream) {
+            List<ByteList> list = getLines(configuration, file);
+            RubyIO io = null;
+            /*if (content instanceof FileInputStream) {
                 io = new RubyFile(context.getJRubyRuntime(), file, ((FileInputStream) content).getChannel());
             } else {
                 io = RubyIO.newIO(context.getJRubyRuntime(), Channels.newChannel(content));
-            }
+            }*/
             LexerSource lexerSource = new GetsLexerSource(file, configuration.getLineNumber(), io, list, configuration.getDefaultEncoding());
             return parse(file, lexerSource, blockScope, configuration);
         }
@@ -124,10 +126,7 @@ public class Parser {
         try {
             result = parser.parse(configuration);
             if (parser.lexer.isEndSeen() && configuration.isSaveData()) {
-                IRubyObject verbose = context.getJRubyRuntime().getVerbose();
-                context.getJRubyRuntime().setVerbose(context.getJRubyRuntime().getNil());
-                context.getJRubyRuntime().defineGlobalConstant("DATA", lexerSource.getRemainingAsIO());
-                context.getJRubyRuntime().setVerbose(verbose);
+                context.getJRubyInterop().setData(lexerSource.getRemainingAsIO());
             }
         } catch (IOException e) {
             // Enebo: We may want to change this error to be more specific,
@@ -165,16 +164,8 @@ public class Parser {
         return ast;
     }
 
-    private RubyArray getLines(ParserConfiguration configuration, Ruby runtime, String file) {
-        RubyArray list = null;
-        IRubyObject scriptLines = runtime.getObject().getConstantAt("SCRIPT_LINES__");
-        if (!configuration.isEvalParse() && scriptLines != null) {
-            if (scriptLines instanceof RubyHash) {
-                list = runtime.newArray();
-                ((RubyHash) scriptLines).op_aset(runtime.getCurrentContext(), runtime.newString(file), list);
-            }
-        }
-        return list;
+    private List<ByteList> getLines(ParserConfiguration configuration, String file) {
+        return null;
     }
 
 }

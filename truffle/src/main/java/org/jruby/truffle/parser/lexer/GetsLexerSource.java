@@ -37,6 +37,7 @@ import org.jruby.util.IOInputStream;
 import org.jruby.util.io.ChannelHelper;
 
 import java.nio.channels.Channel;
+import java.util.List;
 
 /**
  *  Lexer source from ripper getting a line at a time via 'gets' calls.
@@ -47,7 +48,7 @@ public class GetsLexerSource extends LexerSource {
     private int offset;
 
     // Main-line Parsing constructor
-    public GetsLexerSource(String sourceName, int line, IRubyObject io, RubyArray scriptLines, Encoding encoding) {
+    public GetsLexerSource(String sourceName, int line, IRubyObject io, List<ByteList> scriptLines, Encoding encoding) {
         super(sourceName, line, scriptLines);
 
         this.io = io;
@@ -94,7 +95,7 @@ public class GetsLexerSource extends LexerSource {
         offset += bytelist.getRealSize();
         bytelist.setEncoding(encoding);
 
-        if (scriptLines != null) scriptLines.append(RubyString.newString(scriptLines.getRuntime(), bytelist));
+        if (scriptLines != null) scriptLines.add(bytelist);
 
         return bytelist;
     }

@@ -195,4 +195,11 @@ public class JRubyInterop {
     public void setDefaultInternalEncoding(Encoding defaultInternalEncoding) {
         jrubyRuntime.setDefaultInternalEncoding(defaultInternalEncoding);
     }
+
+    public void setData(IRubyObject data) {
+        IRubyObject verbose = jrubyRuntime.getVerbose();
+        jrubyRuntime.setVerbose(jrubyRuntime.getNil());
+        jrubyRuntime.defineGlobalConstant("DATA", data);
+        jrubyRuntime.setVerbose(verbose);
+    }
 }

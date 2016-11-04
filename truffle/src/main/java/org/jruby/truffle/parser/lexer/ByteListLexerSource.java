@@ -14,6 +14,7 @@ import org.jruby.util.io.ChannelHelper;
 
 import java.io.ByteArrayInputStream;
 import java.nio.channels.Channel;
+import java.util.List;
 
 /**
  *  Lexer source for ripper when we have all bytes available to us.
@@ -29,7 +30,7 @@ public class ByteListLexerSource extends LexerSource {
      * @param line starting line number for source (used by eval)
      * @param in the ByteList backing the source we want to lex
      */
-    public ByteListLexerSource(String sourceName, int line, ByteList in, RubyArray list) {
+    public ByteListLexerSource(String sourceName, int line, ByteList in, List<ByteList> list) {
         super(sourceName, line, list);
         this.completeSource = in;
     }
@@ -57,7 +58,7 @@ public class ByteListLexerSource extends LexerSource {
         ByteList line = completeSource.makeShared(offset, end - offset);
         offset = end;
 
-        if (scriptLines != null) scriptLines.append(RubyString.newString(scriptLines.getRuntime(), line));
+        if (scriptLines != null) scriptLines.add(line);
 
         return line;
     }
@@ -76,7 +77,8 @@ public class ByteListLexerSource extends LexerSource {
 
     @Override
     public IRubyObject getRemainingAsIO() {
-        if (scriptLines == null) return null;
-        return new RubyIO(scriptLines.getRuntime(), getRemainingAsChannel());
+        throw new UnsupportedOperationException();
+        //if (scriptLines == null) return null;
+        //return new RubyIO(scriptLines.getRuntime(), getRemainingAsChannel());
     }
 }
