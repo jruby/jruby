@@ -40,9 +40,8 @@ import org.jruby.RubyBignum;
 import org.jruby.RubyRegexp;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.common.IRubyWarnings.ID;
-import org.jruby.exceptions.RaiseException;
-import org.jruby.ext.coverage.CoverageData;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.parser.Signature;
 import org.jruby.truffle.parser.ast.AliasParseNode;
 import org.jruby.truffle.parser.ast.AndParseNode;
@@ -1434,7 +1433,7 @@ public class ParserSupport {
             message += (addNewline ? "\n" : "") + line;
         }
 
-        throw getConfiguration().getContext().getJRubyRuntime().newSyntaxError(errorMessage + message);
+        throw new RaiseException(getConfiguration().getContext().getCoreExceptions().syntaxError(errorMessage + message, null));
     }
 
     protected void compileError(Encoding optionEncoding, Encoding encoding) {
