@@ -12,13 +12,10 @@ package org.jruby.truffle.interop;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.TruffleOptions;
 import org.jcodings.Encoding;
-import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.language.control.JavaException;
 import org.jruby.truffle.language.loader.SourceLoader;
-import org.jruby.util.ByteList;
-import org.jruby.util.io.EncodingUtils;
 
 import java.io.File;
 import java.net.URISyntaxException;
@@ -124,10 +121,6 @@ public class JRubyInterop {
 
     public void warn(String message) {
         jrubyRuntime.getWarnings().warn(message);
-    }
-
-    public ByteList strConvEnc(ByteList byteList, Encoding encoding) {
-        return EncodingUtils.strConvEnc(jrubyRuntime.getCurrentContext(), byteList, encoding, UTF8Encoding.INSTANCE);
     }
 
     public void setDefaultInternalEncoding(Encoding defaultInternalEncoding) {
