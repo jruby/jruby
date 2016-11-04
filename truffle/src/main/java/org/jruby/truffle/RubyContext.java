@@ -62,7 +62,6 @@ import java.nio.charset.StandardCharsets;
 public class RubyContext extends ExecutionContext {
 
     private final TruffleLanguage.Env env;
-    private final Ruby jrubyRuntime;
 
     private final Options options = new Options();
     private final RopeTable ropeTable = new RopeTable();
@@ -103,7 +102,6 @@ public class RubyContext extends ExecutionContext {
     private String currentDirectory;
 
     public RubyContext(Ruby jrubyRuntime, TruffleLanguage.Env env) {
-        this.jrubyRuntime = jrubyRuntime;
         this.jrubyInterop = new JRubyInterop(this, jrubyRuntime);
         this.env = env;
         this.currentDirectory = System.getProperty("user.dir");
