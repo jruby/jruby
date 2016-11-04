@@ -49,7 +49,9 @@ import org.joni.Option;
 import org.jruby.RubyRegexp;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.common.IRubyWarnings.ID;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.regexp.ClassicRegexp;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.parser.ast.BackRefParseNode;
 import org.jruby.truffle.parser.ast.BignumParseNode;
@@ -403,7 +405,7 @@ public class RubyLexer extends LexingCommon {
 
     protected void setEncoding(ByteList name) {
         final RubyContext context = parserSupport.getConfiguration().getContext();
-        Encoding newEncoding = context.getJRubyRuntime().getEncodingService().loadEncoding(name);
+        Encoding newEncoding = Layouts.ENCODING.getEncoding(context.getEncodingManager().getRubyEncoding(name.toString()));
 
         if (newEncoding == null) throw new RaiseException(context.getCoreExceptions().argumentError("unknown encoding name: " + name.toString(), null));
         if (!newEncoding.isAsciiCompatible()) throw new RaiseException(context.getCoreExceptions().argumentError(name.toString() + " is not ASCII compatible", null));
@@ -1135,7 +1137,7 @@ public class RubyLexer extends LexingCommon {
 
         int begin = magicLine.getBegin() + beg;
         Matcher matcher = magicRegexp.matcher(magicLine.unsafeBytes(), begin, begin + length);
-        int result = RubyRegexp.matcherSearch(parserSupport.getConfiguration().getContext().getJRubyRuntime(), matcher, begin, begin + length, Option.NONE);
+        int result = ClassicRegexp.matcherSearch(matcher, begin, begin + length, Option.NONE);
 
         if (result < 0) return false;
 
