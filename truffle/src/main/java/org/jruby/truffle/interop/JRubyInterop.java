@@ -22,11 +22,9 @@ import org.jruby.util.ByteList;
 import org.jruby.util.io.EncodingUtils;
 
 import java.io.File;
-import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.security.CodeSource;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Random;
 
@@ -126,30 +124,6 @@ public class JRubyInterop {
         return originalInputFile;
     }
 
-    public byte[] getInlineScript() {
-        return jrubyRuntime.getInstanceConfig().inlineScript();
-    }
-
-    public Collection<String> getRequiredLibraries() {
-        return jrubyRuntime.getInstanceConfig().getRequiredLibraries();
-    }
-
-    public boolean isFrozenStringLiteral() {
-        return jrubyRuntime.getInstanceConfig().isFrozenStringLiteral();
-    }
-
-    public String getExternalEncoding() {
-        return jrubyRuntime.getInstanceConfig().getExternalEncoding();
-    }
-
-    public String getInternalEncoding() {
-        return jrubyRuntime.getInstanceConfig().getInternalEncoding();
-    }
-
-    public CharSequence getDisplayedFileName() {
-        return jrubyRuntime.getInstanceConfig().displayedFileName();
-    }
-
     public boolean isDebug() {
         return jrubyRuntime.isDebug();
     }
@@ -160,10 +134,6 @@ public class JRubyInterop {
 
     public boolean isVerbose() {
         return jrubyRuntime.isVerbose();
-    }
-
-    public InputStream getInput() {
-        return jrubyRuntime.getInstanceConfig().getInput();
     }
 
     public void warn(String message) {

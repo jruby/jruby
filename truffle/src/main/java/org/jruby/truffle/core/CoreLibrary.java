@@ -841,7 +841,7 @@ public class CoreLibrary {
 
         globals.put("$,", nilObject);
         globals.put("$*", argv);
-        globals.put("$0", StringOperations.createString(context, StringOperations.encodeRope(context.getJRubyInterop().getDisplayedFileName(), UTF8Encoding.INSTANCE)));
+        globals.put("$0", StringOperations.createString(context, StringOperations.encodeRope(context.getInstanceConfig().displayedFileName(), UTF8Encoding.INSTANCE)));
 
         globals.put("$DEBUG", context.getJRubyInterop().isDebug());
 
@@ -1127,7 +1127,7 @@ public class CoreLibrary {
         initializeEncodingAliases();
 
         // External should always have a value, but Encoding.external_encoding{,=} will lazily setup
-        final String externalEncodingName = getContext().getJRubyInterop().getExternalEncoding();
+        final String externalEncodingName = getContext().getInstanceConfig().getExternalEncoding();
         if (externalEncodingName != null && !externalEncodingName.equals("")) {
             final DynamicObject loadedEncoding = getContext().getEncodingManager().getRubyEncoding(externalEncodingName);
             if (loadedEncoding == null) {
@@ -1140,7 +1140,7 @@ public class CoreLibrary {
             getContext().getEncodingManager().setDefaultExternalEncoding(getContext().getEncodingManager().getLocaleEncoding());
         }
 
-        final String internalEncodingName = getContext().getJRubyInterop().getInternalEncoding();
+        final String internalEncodingName = getContext().getInstanceConfig().getInternalEncoding();
         if (internalEncodingName != null && !internalEncodingName.equals("")) {
             final DynamicObject rubyEncoding = getContext().getEncodingManager().getRubyEncoding(internalEncodingName);
             if (rubyEncoding == null) {

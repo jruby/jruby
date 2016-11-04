@@ -387,4 +387,7 @@ public class RubyContext extends ExecutionContext {
         this.currentDirectory = currentDirectory;
     }
 
+    public RubyInstanceConfig getInstanceConfig() {
+        return instanceConfig;
+    }
 }

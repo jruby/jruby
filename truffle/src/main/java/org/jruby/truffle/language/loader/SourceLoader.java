@@ -40,7 +40,7 @@ public class SourceLoader {
     @TruffleBoundary
     public Source load(String canonicalPath) throws IOException {
         if (canonicalPath.equals("-e")) {
-            return loadFragment(new String(context.getJRubyInterop().getInlineScript(), StandardCharsets.UTF_8), "-e");
+            return loadFragment(new String(context.getInstanceConfig().inlineScript(), StandardCharsets.UTF_8), "-e");
         } else if (canonicalPath.startsWith(TRUFFLE_SCHEME) || canonicalPath.startsWith(JRUBY_SCHEME)) {
             return loadResource(canonicalPath);
         } else {

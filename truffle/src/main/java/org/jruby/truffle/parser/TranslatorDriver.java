@@ -119,7 +119,7 @@ public class TranslatorDriver {
         boolean isEvalParse = parserContext == ParserContext.EVAL || parserContext == ParserContext.INLINE || parserContext == ParserContext.MODULE;
         final ParserConfiguration parserConfiguration = new ParserConfiguration(context, 0, isInlineSource, !isEvalParse, false);
 
-        if (context.getJRubyInterop().isFrozenStringLiteral()) {
+        if (context.getInstanceConfig().isFrozenStringLiteral()) {
             parserConfiguration.setFrozenStringLiteral(true);
         }
 
