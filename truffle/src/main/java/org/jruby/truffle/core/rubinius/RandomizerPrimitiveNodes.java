@@ -19,10 +19,10 @@ import org.jruby.truffle.builtins.Primitive;
 import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.rope.RopeOperations;
-import org.jruby.util.Random;
 
 import java.math.BigInteger;
 import java.security.SecureRandom;
+import java.util.Random;
 
 public abstract class RandomizerPrimitiveNodes {
 
@@ -31,7 +31,7 @@ public abstract class RandomizerPrimitiveNodes {
 
         @Specialization
         public DynamicObject randomizerAllocate() {
-            return Layouts.RANDOMIZER.createRandomizer(coreLibrary().getRandomizerFactory(), new Random());
+            return Layouts.RANDOMIZER.createRandomizer(coreLibrary().getRandomizerFactory(), new org.jruby.util.Random());
         }
 
     }
@@ -52,12 +52,12 @@ public abstract class RandomizerPrimitiveNodes {
         }
 
         @TruffleBoundary
-        protected static Random randomFromBigInteger(BigInteger seed) {
+        protected static org.jruby.util.Random randomFromBigInteger(BigInteger seed) {
             return RubyRandom.RandomType.randomFromBigInteger(seed);
         }
 
         @TruffleBoundary
-        protected static Random randomFromLong(long seed) {
+        protected static org.jruby.util.Random randomFromLong(long seed) {
             return RubyRandom.RandomType.randomFromLong(seed);
         }
 
@@ -69,7 +69,7 @@ public abstract class RandomizerPrimitiveNodes {
         @Specialization
         public double randomizerRandFloat(DynamicObject randomizer) {
             // Logic copied from org.jruby.util.Random
-            final Random r = Layouts.RANDOMIZER.getRandom(randomizer);
+            final org.jruby.util.Random r = Layouts.RANDOMIZER.getRandom(randomizer);
             final int a = randomInt(r) >>> 5;
             final int b = randomInt(r) >>> 6;
             return (a * 67108864.0 + b) * (1.0 / 9007199254740992.0);
@@ -82,18 +82,18 @@ public abstract class RandomizerPrimitiveNodes {
 
         @Specialization
         public int randomizerRandInt(DynamicObject randomizer, int limit) {
-            final Random r = Layouts.RANDOMIZER.getRandom(randomizer);
+            final org.jruby.util.Random r = Layouts.RANDOMIZER.getRandom(randomizer);
             return (int) randInt(r, (long) limit);
         }
 
         @Specialization
         public long randomizerRandInt(DynamicObject randomizer, long limit) {
-            final Random r = Layouts.RANDOMIZER.getRandom(randomizer);
+            final org.jruby.util.Random r = Layouts.RANDOMIZER.getRandom(randomizer);
             return randInt(r, limit);
         }
 
         @TruffleBoundary
-        protected static long randInt(Random r, long limit) {
+        protected static long randInt(org.jruby.util.Random r, long limit) {
             return RubyRandom.randLimitedFixnumInner(r, limit);
         }
 
@@ -104,7 +104,7 @@ public abstract class RandomizerPrimitiveNodes {
 
         // Single instance of Random per host VM
 
-        private static java.util.Random random;
+        private static Random random;
 
         @TruffleBoundary
         @Specialization
@@ -113,7 +113,7 @@ public abstract class RandomizerPrimitiveNodes {
             return createBignum(seed);
         }
 
-        private java.util.Random getRandom() {
+        private Random getRandom() {
             if (random == null) {
                 // We don't care about racing to create this
 
@@ -121,7 +121,7 @@ public abstract class RandomizerPrimitiveNodes {
                     random = new SecureRandom();
                 } catch (Throwable t) {
                     // TODO CS 5-Nov-16 should we warn about this?
-                    random = new java.util.Random();
+                    random = new Random();
                 }
             }
 
@@ -135,7 +135,7 @@ public abstract class RandomizerPrimitiveNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject genRandBytes(DynamicObject randomizer, int length) {
-            final Random random = Layouts.RANDOMIZER.getRandom(randomizer);
+            final org.jruby.util.Random random = Layouts.RANDOMIZER.getRandom(randomizer);
             final byte[] bytes = new byte[length];
             int idx = 0;
             for (; length >= 4; length -= 4) {
@@ -157,7 +157,7 @@ public abstract class RandomizerPrimitiveNodes {
     }
 
     @TruffleBoundary
-    private static int randomInt(Random random) {
+    private static int randomInt(org.jruby.util.Random random) {
         return random.genrandInt32();
     }
 

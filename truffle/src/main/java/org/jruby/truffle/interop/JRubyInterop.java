@@ -25,7 +25,6 @@ import java.net.URISyntaxException;
 import java.security.CodeSource;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
 public class JRubyInterop {
 
