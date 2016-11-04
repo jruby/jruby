@@ -53,7 +53,6 @@ import org.jruby.truffle.parser.scope.StaticScope;
 import org.jruby.truffle.parser.scope.StaticScopeFactory;
 import org.jruby.util.ByteList;
 import org.jruby.util.DefinedMessage;
-import org.jruby.util.RegexpOptions;
 
 import java.math.BigInteger;
 import java.util.Arrays;

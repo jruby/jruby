@@ -32,17 +32,11 @@ package org.jruby.truffle.parser.parser;
 
 import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
-import org.jruby.ext.coverage.CoverageData;
-import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.parser.scope.DynamicScope;
 import org.jruby.truffle.parser.scope.ManyVarsDynamicScope;
 import org.jruby.truffle.parser.scope.StaticScopeFactory;
-import org.jruby.util.KCode;
-
-import java.util.Arrays;
 
 public class ParserConfiguration {
     private DynamicScope existingScope = null;

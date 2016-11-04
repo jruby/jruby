@@ -19,7 +19,6 @@ import org.jcodings.specific.UTF8Encoding;
 import org.joni.NameEntry;
 import org.joni.Regex;
 import org.joni.Syntax;
-import org.jruby.common.IRubyWarnings;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.RubyContext;

@@ -27,8 +27,6 @@
 package org.jruby.truffle.parser.scope;
 
 
-import org.jruby.Ruby;
-
 /**
  * Gives instances of static scopes based on compile mode.
  */

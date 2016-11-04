@@ -30,9 +30,7 @@ package org.jruby.truffle.parser.scope;
 
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
-import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
-import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.parser.Signature;
 import org.jruby.truffle.parser.ast.AssignableParseNode;
