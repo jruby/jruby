@@ -65,6 +65,7 @@ public class RubyContext extends ExecutionContext {
     private final TruffleLanguage.Env env;
 
     private final RubyInstanceConfig instanceConfig;
+    private String originalInputFile;
 
     private final Options options = new Options();
     private final RopeTable ropeTable = new RopeTable();
@@ -389,5 +390,13 @@ public class RubyContext extends ExecutionContext {
 
     public RubyInstanceConfig getInstanceConfig() {
         return instanceConfig;
+    }
+
+    public void setOriginalInputFile(String originalInputFile) {
+        this.originalInputFile = originalInputFile;
+    }
+
+    public String getOriginalInputFile() {
+        return originalInputFile;
     }
 }

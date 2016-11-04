@@ -88,7 +88,7 @@ public abstract class TruffleBootNodes {
             coreLibrary().getGlobalVariables().put("$0", StringOperations.createString(
                     getContext(), StringOperations.encodeRope(dollar0, UTF8Encoding.INSTANCE)));
 
-            String inputFile = getContext().getJRubyInterop().getOriginalInputFile();
+            String inputFile = getContext().getOriginalInputFile();
 
             final Source source;
             try {

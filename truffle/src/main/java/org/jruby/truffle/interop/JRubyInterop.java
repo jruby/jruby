@@ -30,8 +30,6 @@ import java.util.Random;
 public class JRubyInterop {
 
     private final Ruby jrubyRuntime;
-
-    private String originalInputFile;
     private final String jrubyHome;
 
     public JRubyInterop(Ruby jrubyRuntime) {
@@ -111,14 +109,6 @@ public class JRubyInterop {
 
     public void setVerboseNil() {
         jrubyRuntime.setVerbose(jrubyRuntime.getNil());
-    }
-
-    public void setOriginalInputFile(String originalInputFile) {
-        this.originalInputFile = originalInputFile;
-    }
-
-    public String getOriginalInputFile() {
-        return originalInputFile;
     }
 
     public boolean isDebug() {

@@ -40,7 +40,7 @@ public class JRubyTruffleImpl implements JRubyTruffleInterface {
                     "See https://github.com/jruby/jruby/wiki/Truffle-FAQ#how-do-i-get-jrubytruffle");
         }
 
-        context.getJRubyInterop().setOriginalInputFile(path);
+        context.setOriginalInputFile(path);
 
         return engine.eval(loadSource("Truffle::Boot.run_jruby_root", "run_jruby_root")).as(Integer.class);
     }
