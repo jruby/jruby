@@ -84,8 +84,6 @@ import org.jcodings.exception.EncodingException;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.Ruby;
-import org.jruby.RubyString;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreClass;
@@ -142,6 +140,8 @@ import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.IsFrozenNode;
 import org.jruby.truffle.language.objects.IsFrozenNodeGen;
+import org.jruby.truffle.language.objects.IsTaintedNode;
+import org.jruby.truffle.language.objects.IsTaintedNodeGen;
 import org.jruby.truffle.language.objects.TaintNode;
 import org.jruby.truffle.language.objects.TaintNodeGen;
 import org.jruby.truffle.platform.posix.TrufflePosix;
@@ -3257,12 +3257,116 @@ public abstract class StringNodes {
     @Primitive(name = "string_escape", needsSelf = false)
     public abstract static class StringEscapePrimitiveNode extends PrimitiveArrayArgumentsNode {
 
-        @TruffleBoundary
+        @Child private IsTaintedNode isTaintedNode = IsTaintedNodeGen.create(null, null, null);
+        @Child private TaintNode taintNode = TaintNodeGen.create(null, null, null);
+        private final ConditionProfile taintedProfile = ConditionProfile.createBinaryProfile();
+
         @Specialization
         public DynamicObject string_escape(DynamicObject string) {
-            final org.jruby.RubyString rubyString = new RubyString(getContext().getJRubyRuntime(), getContext().getJRubyRuntime().getString(),
-                StringOperations.getByteListReadOnly(string));
-            return createString(((RubyString) org.jruby.RubyString.rbStrEscape(getContext().getJRubyRuntime().getCurrentContext(), rubyString)).getByteList());
+            final DynamicObject result = create7BitString(rbStrEscape(StringOperations.getByteListReadOnly(string)), USASCIIEncoding.INSTANCE);
+
+            if (taintedProfile.profile(isTaintedNode.isTainted(string))) {
+                taintNode.executeTaint(result);
+            }
+
+            return result;
+        }
+
+        // MRI: rb_str_escape
+        @TruffleBoundary
+        private static ByteList rbStrEscape(ByteList str) {
+            Encoding enc = str.getEncoding();
+            ByteList strBL = str;
+            byte[] pBytes = strBL.unsafeBytes();
+            int p = strBL.begin();
+            int pend = p + strBL.realSize();
+            int prev = p;
+            ByteList result = new ByteList();
+            boolean unicode_p = enc.isUnicode();
+            boolean asciicompat = enc.isAsciiCompatible();
+
+            while (p < pend) {
+                int c, cc;
+                int n = enc.length(pBytes, p, pend);
+                if (!MBCLEN_CHARFOUND_P(n)) {
+                    if (p > prev) result.append(pBytes, prev, p - prev);
+                    n = enc.minLength();
+                    if (pend < p + n)
+                        n = (int)(pend - p);
+                    while ((n--) > 0) {
+                        result.append(String.format("\\x%02X", (long) (pBytes[p] & 0377)).getBytes(StandardCharsets.US_ASCII));
+                        prev = ++p;
+                    }
+                    continue;
+                }
+                n = MBCLEN_CHARFOUND_LEN(n);
+                c = enc.mbcToCode(pBytes, p, pend);
+                p += n;
+                switch (c) {
+                    case '\n': cc = 'n'; break;
+                    case '\r': cc = 'r'; break;
+                    case '\t': cc = 't'; break;
+                    case '\f': cc = 'f'; break;
+                    case '\013': cc = 'v'; break;
+                    case '\010': cc = 'b'; break;
+                    case '\007': cc = 'a'; break;
+                    case 033: cc = 'e'; break;
+                    default: cc = 0; break;
+                }
+                if (cc != 0) {
+                    if (p - n > prev) result.append(pBytes, prev, p - n - prev);
+                    result.append('\\');
+                    result.append((byte) cc);
+                    prev = p;
+                }
+                else if (asciicompat && Encoding.isAscii(c) && (c < 0x7F && c > 31 /*ISPRINT(c)*/)) {
+                }
+                else {
+                    if (p - n > prev) result.append(pBytes, prev, p - n - prev);
+
+                    if (unicode_p && (c & 0xFFFFFFFFL) < 0x7F && Encoding.isAscii(c) && ASCIIEncoding.INSTANCE.isPrint(c)) {
+                        result.append(String.format("%c", (char) (c & 0xFFFFFFFFL)).getBytes(StandardCharsets.US_ASCII));
+                    } else {
+                        result.append(String.format(escapedCharFormat(c, unicode_p), (long) (c & 0xFFFFFFFFL)).getBytes(StandardCharsets.US_ASCII));
+                    }
+
+                    prev = p;
+                }
+            }
+            if (p > prev) result.append(pBytes, prev, p - prev);
+
+            return result;
+        }
+
+        private static int MBCLEN_CHARFOUND_LEN(int r) {
+            return r;
+        }
+
+        // MBCLEN_CHARFOUND_P, ONIGENC_MBCLEN_CHARFOUND_P
+        private static boolean MBCLEN_CHARFOUND_P(int r) {
+            return 0 < r;
+        }
+
+        private static String escapedCharFormat(int c, boolean isUnicode) {
+            String format;
+            // c comparisons must be unsigned 32-bit
+            if (isUnicode) {
+
+                if ((c & 0xFFFFFFFFL) < 0x7F && Encoding.isAscii(c) && ASCIIEncoding.INSTANCE.isPrint(c)) {
+                    throw new UnsupportedOperationException();
+                } else if (c < 0x10000) {
+                    format = "\\u%04X";
+                } else {
+                    format = "\\u{%X}";
+                }
+            } else {
+                if ((c & 0xFFFFFFFFL) < 0x100) {
+                    format = "\\x%02X";
+                } else {
+                    format = "\\x{%X}";
+                }
+            }
+            return format;
         }
 
     }
