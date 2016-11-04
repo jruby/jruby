@@ -260,10 +260,6 @@ public class RubyContext extends ExecutionContext {
         return jrubyInterop;
     }
 
-    public Ruby getJRubyRuntime() {
-        return jrubyRuntime;
-    }
-
     public CoreLibrary getCoreLibrary() {
         return coreLibrary;
     }
