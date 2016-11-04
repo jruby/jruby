@@ -17,6 +17,7 @@ import com.oracle.truffle.api.TruffleLanguage;
 import com.oracle.truffle.api.instrumentation.Instrumenter;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.Ruby;
+import org.jruby.RubyInstanceConfig;
 import org.jruby.truffle.builtins.PrimitiveManager;
 import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.truffle.core.CoreMethods;
@@ -63,6 +64,8 @@ public class RubyContext extends ExecutionContext {
 
     private final TruffleLanguage.Env env;
 
+    private final RubyInstanceConfig instanceConfig;
+
     private final Options options = new Options();
     private final RopeTable ropeTable = new RopeTable();
     private final PrimitiveManager primitiveManager = new PrimitiveManager();
@@ -101,7 +104,8 @@ public class RubyContext extends ExecutionContext {
 
     private String currentDirectory;
 
-    public RubyContext(Ruby jrubyRuntime, TruffleLanguage.Env env) {
+    public RubyContext(RubyInstanceConfig instanceConfig, Ruby jrubyRuntime, TruffleLanguage.Env env) {
+        this.instanceConfig = instanceConfig;
         this.jrubyInterop = new JRubyInterop(this, jrubyRuntime);
         this.env = env;
         this.currentDirectory = System.getProperty("user.dir");

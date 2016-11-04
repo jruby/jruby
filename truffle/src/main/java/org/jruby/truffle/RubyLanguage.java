@@ -60,18 +60,20 @@ public class RubyLanguage extends TruffleLanguage<RubyContext> {
     public RubyContext createContext(Env env) {
         final JRubyContextWrapper runtimeWrapper = (JRubyContextWrapper) env.importSymbol(JRubyTruffleImpl.RUNTIME_SYMBOL);
 
+        final RubyInstanceConfig instanceConfig;
         final Ruby runtime;
 
         if (runtimeWrapper == null) {
-            RubyInstanceConfig config = new RubyInstanceConfig();
-            config.processArgumentsWithRubyopts();
-            config.setCompileMode(RubyInstanceConfig.CompileMode.TRUFFLE);
-            runtime = Ruby.newInstance(config);
+            instanceConfig = new RubyInstanceConfig();
+            instanceConfig.processArgumentsWithRubyopts();
+            instanceConfig.setCompileMode(RubyInstanceConfig.CompileMode.TRUFFLE);
+            runtime = Ruby.newInstance(instanceConfig);
         } else {
             runtime = runtimeWrapper.getRuby();
+            instanceConfig = runtime.getInstanceConfig();
         }
 
-        return new RubyContext(runtime, env);
+        return new RubyContext(instanceConfig, runtime, env);
     }
 
     @Override
