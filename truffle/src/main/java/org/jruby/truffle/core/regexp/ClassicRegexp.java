@@ -45,6 +45,7 @@ import org.joni.Option;
 import org.joni.Regex;
 import org.joni.Region;
 import org.joni.Syntax;
+import org.joni.WarnCallback;
 import org.joni.exception.JOniException;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -172,6 +173,23 @@ public class ClassicRegexp implements ReOptions, EncodingCapable, MarshalEncodin
         }
     }
 
+    private static Regex makeRegexp(RubyContext runtime, ByteList bytes, RegexpOptions options, Encoding enc) {
+        try {
+            int p = bytes.getBegin();
+
+            return new Regex(bytes.getUnsafeBytes(), p, p + bytes.getRealSize(), options.toJoniOptions(), enc, Syntax.DEFAULT, new WarnCallback() {
+                @Override
+                public void warn(String s) {
+                    //
+                }
+            });
+        } catch (Exception e) {
+            throw new org.jruby.truffle.language.control.RaiseException(runtime.getCoreExceptions().regexpError(e.getMessage(), null));
+            //raiseRegexpError19(runtime, bytes, enc, options, e.getMessage());
+            //return null; // not reached
+        }
+    }
+
     public static void raiseRegexpError19(Ruby runtime, ByteList bytes, Encoding enc, RegexpOptions options, String err) {
         // TODO: we loose encoding information here, fix it
         throw runtime.newRegexpError(err + ": " + regexpDescription19(runtime, bytes, options, enc));
@@ -270,6 +288,15 @@ public class ClassicRegexp implements ReOptions, EncodingCapable, MarshalEncodin
     }
 
     static Regex getRegexpFromCache(Ruby runtime, ByteList bytes, Encoding enc, RegexpOptions options) {
+        Regex regex = patternCache.get(bytes);
+        if (regex != null && regex.getEncoding() == enc && regex.getOptions() == options.toJoniOptions()) return regex;
+        regex = makeRegexp(runtime, bytes, options, enc);
+        regex.setUserObject(bytes);
+        patternCache.put(bytes, regex);
+        return regex;
+    }
+
+    static Regex getRegexpFromCache(RubyContext runtime, ByteList bytes, Encoding enc, RegexpOptions options) {
         Regex regex = patternCache.get(bytes);
         if (regex != null && regex.getEncoding() == enc && regex.getOptions() == options.toJoniOptions()) return regex;
         regex = makeRegexp(runtime, bytes, options, enc);
@@ -399,7 +426,7 @@ public class ClassicRegexp implements ReOptions, EncodingCapable, MarshalEncodin
         this(context);
         str.getClass();
         this.str = str;
-        this.pattern = getRegexpFromCache(context.getJRubyRuntime(), str, str.getEncoding(), RegexpOptions.NULL_OPTIONS);
+        this.pattern = getRegexpFromCache(context, str, str.getEncoding(), RegexpOptions.NULL_OPTIONS);
     }
 
     private ClassicRegexp(RubyContext context, ByteList str, RegexpOptions options) {
