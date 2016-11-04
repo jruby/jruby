@@ -40,6 +40,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.LoadServiceResourceInputStream;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
+import org.jruby.truffle.parser.RubyWarnings;
 import org.jruby.truffle.parser.ast.ParseNode;
 import org.jruby.truffle.parser.lexer.ByteListLexerSource;
 import org.jruby.truffle.parser.lexer.GetsLexerSource;
@@ -122,7 +123,7 @@ public class Parser {
         }
 
         long startTime = System.nanoTime();
-        RubyParser parser = new RubyParser(context, lexerSource, context.getJRubyRuntime().getWarnings());
+        RubyParser parser = new RubyParser(context, lexerSource, new RubyWarnings(configuration.getContext()));
         RubyParserResult result;
         try {
             result = parser.parse(configuration);
