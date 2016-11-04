@@ -1487,17 +1487,16 @@ public class ClassicRegexp implements ReOptions, EncodingCapable, MarshalEncodin
 
     // rb_reg_initialize
     public ClassicRegexp regexpInitialize(ByteList bytes, Encoding enc, RegexpOptions options) {
-        Ruby runtime = getRuntime();
         this.options = options;
 
         //checkFrozen();
         // FIXME: Something unsets this bit, but we aren't...be more permissive until we figure this out
         //if (isLiteral()) throw runtime.newSecurityError("can't modify literal regexp");
-        if (pattern != null) throw runtime.newTypeError("already initialized regexp");
+        if (pattern != null) throw new org.jruby.truffle.language.control.RaiseException(context.getCoreExceptions().typeError("already initialized regexp", null));
         if (enc.isDummy()) throw new UnsupportedOperationException(); // RegexpSupport.raiseRegexpError19(runtime, bytes, enc, options, "can't make regexp with dummy encoding");
 
         Encoding[]fixedEnc = new Encoding[]{null};
-        ByteList unescaped = RegexpSupport.preprocess(runtime, bytes, enc, fixedEnc, RegexpSupport.ErrorMode.RAISE);
+        ByteList unescaped = preprocess(context, bytes, enc, fixedEnc, RegexpSupport.ErrorMode.RAISE);
         if (fixedEnc[0] != null) {
             if ((fixedEnc[0] != enc && options.isFixed()) ||
                (fixedEnc[0] != ASCIIEncoding.INSTANCE && options.isEncodingNone())) {
@@ -1515,7 +1514,7 @@ public class ClassicRegexp implements ReOptions, EncodingCapable, MarshalEncodin
         if (fixedEnc[0] != null) options.setFixed(true);
         if (options.isEncodingNone()) setEncodingNone();
 
-        pattern = getRegexpFromCache(runtime, unescaped, enc, options);
+        pattern = getRegexpFromCache(context, unescaped, enc, options);
         bytes.getClass();
         str = bytes;
         return this;
@@ -1928,7 +1927,6 @@ public class ClassicRegexp implements ReOptions, EncodingCapable, MarshalEncodin
     public ByteList toByteList() {
         check();
 
-        Ruby runtime = getRuntime();
         RegexpOptions newOptions = (RegexpOptions)options.clone();
         int p = str.getBegin();
         int len = str.getRealSize();
@@ -2003,13 +2001,87 @@ public class ClassicRegexp implements ReOptions, EncodingCapable, MarshalEncodin
                 if (!newOptions.isExtended()) result.append((byte)'x');
             }
             result.append((byte)':');
-            RegexpSupport.appendRegexpString19(runtime, result, bytes, p, len, str.getEncoding(), null);
+            appendRegexpString19(result, bytes, p, len, str.getEncoding(), null);
 
             result.append((byte)')');
             result.setEncoding(getEncoding());
             return result;
             //return RubyString.newString(getRuntime(), result, getEncoding()).infectBy(this);
         } while (true);
+    }
+
+    public void appendRegexpString19(ByteList to, byte[] bytes, int start, int len, Encoding enc, Encoding resEnc) {
+        int p = start;
+        int end = p + len;
+        boolean needEscape = false;
+        while (p < end) {
+            final int c;
+            final int cl;
+            if (enc.isAsciiCompatible()) {
+                cl = 1;
+                c = bytes[p] & 0xff;
+            } else {
+                cl = StringSupport.preciseLength(enc, bytes, p, end);
+                c = enc.mbcToCode(bytes, p, end);
+            }
+
+            if (!Encoding.isAscii(c)) {
+                p += StringSupport.length(enc, bytes, p, end);
+            } else if (c != '/' && enc.isPrint(c)) {
+                p += cl;
+            } else {
+                needEscape = true;
+                break;
+            }
+        }
+        if (!needEscape) {
+            to.append(bytes, start, len);
+        } else {
+            boolean isUnicode = StringSupport.isUnicode(enc);
+            p = start;
+            while (p < end) {
+                final int c;
+                final int cl;
+                if (enc.isAsciiCompatible()) {
+                    cl = 1;
+                    c = bytes[p] & 0xff;
+                } else {
+                    cl = StringSupport.preciseLength(enc, bytes, p, end);
+                    c = enc.mbcToCode(bytes, p, end);
+                }
+
+                if (c == '\\' && p + cl < end) {
+                    int n = cl + StringSupport.length(enc, bytes, p + cl, end);
+                    to.append(bytes, p, n);
+                    p += n;
+                    continue;
+                } else if (c == '/') {
+                    to.append((byte) '\\');
+                    to.append(bytes, p, cl);
+                } else if (!Encoding.isAscii(c)) {
+                    int l = StringSupport.preciseLength(enc, bytes, p, end);
+                    if (l <= 0) {
+                        l = 1;
+                        to.append(String.format("\\x%02X", c).getBytes(StandardCharsets.US_ASCII));
+                    } else if (resEnc != null) {
+                        int code = enc.mbcToCode(bytes, p, end);
+                        to.append(String.format(StringSupport.escapedCharFormat(code, isUnicode), code).getBytes(StandardCharsets.US_ASCII));
+                    } else {
+                        to.append(bytes, p, l);
+                    }
+                    p += l;
+
+                    continue;
+                } else if (enc.isPrint(c)) {
+                    to.append(bytes, p, cl);
+                } else if (!enc.isSpace(c)) {
+                    to.append(String.format("\\x%02X", c).getBytes(StandardCharsets.US_ASCII));
+                } else {
+                    to.append(bytes, p, cl);
+                }
+                p += cl;
+            }
+        }
     }
 
     public String[] getNames() {
@@ -2341,7 +2413,7 @@ public class ClassicRegexp implements ReOptions, EncodingCapable, MarshalEncodin
     }*/
 
     public Ruby getRuntime() {
-        return context.getJRubyRuntime();
+        throw new UnsupportedOperationException();
     }
 
 }
