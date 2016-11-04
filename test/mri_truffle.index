@@ -84,7 +84,7 @@ ruby/test_signal.rb
 ruby/test_sprintf.rb
 
 # ruby/test_sprintf_comb.rb # almost all failing / regression
-# ruby/test_string.rb # String#inspect not 100% passing.
+ruby/test_string.rb
 ruby/test_stringchar.rb
 ruby/test_struct.rb
 ruby/test_super.rb
