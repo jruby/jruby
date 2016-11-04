@@ -39,6 +39,7 @@ import org.jruby.RubyIO;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.LoadServiceResourceInputStream;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.parser.ast.ParseNode;
 import org.jruby.truffle.parser.lexer.ByteListLexerSource;
 import org.jruby.truffle.parser.lexer.GetsLexerSource;
@@ -131,19 +132,19 @@ public class Parser {
         } catch (IOException e) {
             // Enebo: We may want to change this error to be more specific,
             // but I am not sure which conditions leads to this...so lame message.
-            throw context.getJRubyRuntime().newSyntaxError("Problem reading source: " + e);
+            throw new RaiseException(context.getCoreExceptions().syntaxError("Problem reading source: " + e, null));
         } catch (SyntaxException e) {
             switch (e.getPid()) {
                 case UNKNOWN_ENCODING:
                 case NOT_ASCII_COMPATIBLE:
-                    throw context.getJRubyRuntime().newArgumentError(e.getMessage());
+                    throw new RaiseException(context.getCoreExceptions().argumentError(e.getMessage(), null));
                 default:
                     StringBuilder buffer = new StringBuilder(100);
                     buffer.append(e.getFile()).append(':');
                     buffer.append(e.getLine() + 1).append(": ");
                     buffer.append(e.getMessage());
 
-                    throw context.getJRubyRuntime().newSyntaxError(buffer.toString());
+                    throw new RaiseException(context.getCoreExceptions().syntaxError(buffer.toString(), null));
             }
         } 
         
