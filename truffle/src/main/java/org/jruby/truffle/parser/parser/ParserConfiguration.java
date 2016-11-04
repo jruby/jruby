@@ -36,6 +36,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.ext.coverage.CoverageData;
 import org.jruby.runtime.encoding.EncodingService;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.parser.scope.DynamicScope;
 import org.jruby.truffle.parser.scope.ManyVarsDynamicScope;
 import org.jruby.truffle.parser.scope.StaticScopeFactory;
@@ -60,7 +61,7 @@ public class ParserConfiguration {
     private boolean frozenStringLiteral = false;
 
     private Encoding defaultEncoding;
-    private Ruby runtime;
+    private RubyContext context;
 
     private int[] coverage = EMPTY_COVERAGE;
 
@@ -68,8 +69,8 @@ public class ParserConfiguration {
 
     private static final int[] EMPTY_COVERAGE = new int[0];
 
-    public ParserConfiguration(Ruby runtime, int lineNumber, boolean inlineSource, boolean isFileParse, boolean saveData) {
-        this.runtime = runtime;
+    public ParserConfiguration(RubyContext context, int lineNumber, boolean inlineSource, boolean isFileParse, boolean saveData) {
+        this.context = context;
         this.inlineSource = inlineSource;
         this.lineNumber = lineNumber;
         this.isEvalParse = !isFileParse;
@@ -77,14 +78,14 @@ public class ParserConfiguration {
         staticScopeFactory = new StaticScopeFactory();
     }
 
-    public ParserConfiguration(Ruby runtime, int lineNumber,
+    public ParserConfiguration(RubyContext context, int lineNumber,
             boolean inlineSource, boolean isFileParse, RubyInstanceConfig config) {
-        this(runtime, lineNumber, inlineSource, isFileParse, false, config);
+        this(context, lineNumber, inlineSource, isFileParse, false, config);
     }
 
-    public ParserConfiguration(Ruby runtime, int lineNumber,
+    public ParserConfiguration(RubyContext context, int lineNumber,
             boolean inlineSource, boolean isFileParse, boolean saveData, RubyInstanceConfig config) {
-        this(runtime, lineNumber, inlineSource, isFileParse, saveData);
+        this(context, lineNumber, inlineSource, isFileParse, saveData);
 
         this.isDebug = config.isParserDebug();
         this.frozenStringLiteral = config.isFrozenStringLiteral();
@@ -110,10 +111,6 @@ public class ParserConfiguration {
         return defaultEncoding;
     }
 
-    public EncodingService getEncodingService() {
-        return runtime.getEncodingService();
-    }
-
     public boolean isDebug() {
         return isDebug;
     }
@@ -127,10 +124,6 @@ public class ParserConfiguration {
         return isEvalParse;
     }
 
-    public KCode getKCode() {
-        return runtime.getKCode();
-    }
-    
     public int getLineNumber() {
         return lineNumber;
     }
@@ -147,7 +140,7 @@ public class ParserConfiguration {
     }
 
     public Ruby getRuntime() {
-        return runtime;
+        return context.getJRubyRuntime();
     }
     
     /**
@@ -168,7 +161,7 @@ public class ParserConfiguration {
     }
 
     public boolean isCoverageEnabled() {
-        return !isEvalParse() && runtime.getCoverageData().isCoverageEnabled();
+        return !isEvalParse();
     }
 
     /**
@@ -222,7 +215,7 @@ public class ParserConfiguration {
         if (!isCoverageEnabled()) return null;
 
         growCoverageLines(lines);
-        CoverageData data = runtime.getCoverageData();
+        CoverageData data = context.getJRubyRuntime().getCoverageData();
         data.prepareCoverage(file, coverage);
         return data;
     }
