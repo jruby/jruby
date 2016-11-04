@@ -1417,6 +1417,93 @@ public class ClassicRegexp extends RubyObject implements ReOptions, EncodingCapa
         } while (true);
     }
 
+    public ByteList toByteList() {
+        check();
+
+        Ruby runtime = getRuntime();
+        RegexpOptions newOptions = (RegexpOptions)options.clone();
+        int p = str.getBegin();
+        int len = str.getRealSize();
+        byte[] bytes = str.getUnsafeBytes();
+
+        ByteList result = new ByteList(len);
+        result.append((byte)'(').append((byte)'?');
+
+        again: do {
+            if (len >= 4 && bytes[p] == '(' && bytes[p + 1] == '?') {
+                boolean err = true;
+                p += 2;
+                if ((len -= 2) > 0) {
+                    do {
+                        if (bytes[p] == 'm') {
+                            newOptions.setMultiline(true);
+                        } else if (bytes[p] == 'i') {
+                            newOptions.setIgnorecase(true);
+                        } else if (bytes[p] == 'x') {
+                            newOptions.setExtended(true);
+                        } else {
+                            break;
+                        }
+                        p++;
+                    } while (--len > 0);
+                }
+                if (len > 1 && bytes[p] == '-') {
+                    ++p;
+                    --len;
+                    do {
+                        if (bytes[p] == 'm') {
+                            newOptions.setMultiline(false);
+                        } else if (bytes[p] == 'i') {
+                            newOptions.setIgnorecase(false);
+                        } else if (bytes[p] == 'x') {
+                            newOptions.setExtended(false);
+                        } else {
+                            break;
+                        }
+                        p++;
+                    } while (--len > 0);
+                }
+
+                if (bytes[p] == ')') {
+                    --len;
+                    ++p;
+                    continue again;
+                }
+
+                if (bytes[p] == ':' && bytes[p + len - 1] == ')') {
+                    try {
+                        new Regex(bytes, ++p, p + (len -= 2), Option.DEFAULT, str.getEncoding(), Syntax.DEFAULT);
+                        err = false;
+                    } catch (JOniException e) {
+                        err = true;
+                    }
+                }
+
+                if (err) {
+                    newOptions = options;
+                    p = str.getBegin();
+                    len = str.getRealSize();
+                }
+            }
+
+            RegexpSupport.appendOptions(result, newOptions);
+
+            if (!newOptions.isEmbeddable()) {
+                result.append((byte)'-');
+                if (!newOptions.isMultiline()) result.append((byte)'m');
+                if (!newOptions.isIgnorecase()) result.append((byte)'i');
+                if (!newOptions.isExtended()) result.append((byte)'x');
+            }
+            result.append((byte)':');
+            RegexpSupport.appendRegexpString19(runtime, result, bytes, p, len, str.getEncoding(), null);
+
+            result.append((byte)')');
+            result.setEncoding(getEncoding());
+            return result;
+            //return RubyString.newString(getRuntime(), result, getEncoding()).infectBy(this);
+        } while (true);
+    }
+
     public String[] getNames() {
         int nameLength = pattern.numberOfNames();
         if (nameLength == 0) return EMPTY_STRING_ARRAY;
