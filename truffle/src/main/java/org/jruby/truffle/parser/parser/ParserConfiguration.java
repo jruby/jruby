@@ -180,54 +180,6 @@ public class ParserConfiguration {
         return inlineSource;
     }
 
-    /**
-     * Zero out coverable lines as they're encountered
-     */
-    public void coverLine(int i) {
-        if (isCoverageEnabled()) {
-            growCoverageLines(i);
-            coverage[i] = 0;
-        }
-    }
-
-    /**
-     *  Called by coverLine to grow it large enough to add new covered line.
-     *  Also called at end up parse to pick up any extra non-code lines which
-     *  should be marked -1 for not valid code lines.
-     */
-    public void growCoverageLines(int i) {
-        if (coverage == null) {
-            coverage = new int[i + 1];
-        } else if (coverage.length <= i) {
-            int[] newCoverage = new int[i + 1];
-            Arrays.fill(newCoverage, -1);
-            System.arraycopy(coverage, 0, newCoverage, 0, coverage.length);
-            coverage = newCoverage;
-        }
-    }
-
-    /**
-     * At end of a parse if coverage is enabled we will do final processing
-     * of the primitive coverage array and make sure runtimes coverage data
-     * has been updated with this new data.
-     */
-    public CoverageData finishCoverage(String file, int lines) {
-        if (!isCoverageEnabled()) return null;
-
-        growCoverageLines(lines);
-        CoverageData data = context.getJRubyRuntime().getCoverageData();
-        data.prepareCoverage(file, coverage);
-        return data;
-    }
-
-    /**
-     * Get the coverage array, indicating all coverable lines
-     */
-    @Deprecated
-    public int[] getCoverage() {
-        return coverage;
-    }
-
     public StaticScopeFactory getStaticScopeFactory() {
         return staticScopeFactory;
     }

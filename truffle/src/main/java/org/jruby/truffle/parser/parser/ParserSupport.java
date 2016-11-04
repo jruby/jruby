@@ -275,10 +275,7 @@ public class ParserSupport {
      */
     public ParseNode newline_node(ParseNode node, ISourcePosition position) {
         if (node == null) return null;
-
-        configuration.coverLine(position.getLine());
         node.setNewline();
-
         return node;
     }
 
@@ -293,7 +290,6 @@ public class ParserSupport {
         }
 
         ISourcePosition position;
-        CoverageData coverageData = configuration.finishCoverage(lexer.getFile(), lexer.lineno());
         if (result.getBeginNodes().isEmpty()) {
             if (topOfAST == null) {
                 topOfAST = NilImplicitParseNode.NIL;
@@ -313,7 +309,7 @@ public class ParserSupport {
             topOfAST = newTopOfAST;
         }
 
-        return new RootParseNode(position, result.getScope(), topOfAST, lexer.getFile(), endPosition, coverageData != null);
+        return new RootParseNode(position, result.getScope(), topOfAST, lexer.getFile(), endPosition, false);
     }
 
     /* MRI: block_append */
