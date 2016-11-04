@@ -94,7 +94,7 @@ public abstract class RegexpNodes {
         if (regex.getEncoding() != enc) {
             final Encoding[] fixedEnc = new Encoding[] { null };
             final ByteList sourceByteList = RopeOperations.getByteListReadOnly(Layouts.REGEXP.getSource(regexp));
-            final ByteList preprocessed = RegexpSupport.preprocess(context.getJRubyRuntime(), sourceByteList, enc, fixedEnc, ErrorMode.RAISE);
+            final ByteList preprocessed = ClassicRegexp.preprocess(context, sourceByteList, enc, fixedEnc, ErrorMode.RAISE);
             final RegexpOptions options = Layouts.REGEXP.getOptions(regexp);
             final Encoding newEnc = checkEncoding(regexp, stringRope, true);
             regex = new Regex(preprocessed.getUnsafeBytes(), preprocessed.getBegin(), preprocessed.getBegin() + preprocessed.getRealSize(),
@@ -258,7 +258,7 @@ public abstract class RegexpNodes {
             final ByteList byteList = RopeOperations.getByteListReadOnly(bytes);
             Encoding enc = bytes.getEncoding();
             Encoding[] fixedEnc = new Encoding[]{null};
-            ByteList unescaped = RegexpSupport.preprocess(context.getJRubyRuntime(), byteList, enc, fixedEnc, RegexpSupport.ErrorMode.RAISE);
+            ByteList unescaped = ClassicRegexp.preprocess(context, byteList, enc, fixedEnc, RegexpSupport.ErrorMode.RAISE);
             if (fixedEnc[0] != null) {
                 if ((fixedEnc[0] != enc && options.isFixed()) ||
                         (fixedEnc[0] != ASCIIEncoding.INSTANCE && options.isEncodingNone())) {
