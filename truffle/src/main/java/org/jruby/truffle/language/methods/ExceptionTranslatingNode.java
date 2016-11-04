@@ -57,9 +57,6 @@ public class ExceptionTranslatingNode extends RubyNode {
         } catch (TruffleFatalException exception) {
             errorProfile.enter();
             throw exception;
-        } catch (org.jruby.exceptions.RaiseException e) {
-            errorProfile.enter();
-            throw new RaiseException(getContext().getJRubyInterop().toTruffle(e.getException(), this));
         } catch (StackOverflowError error) {
             errorProfile.enter();
             throw new RaiseException(translate(error));

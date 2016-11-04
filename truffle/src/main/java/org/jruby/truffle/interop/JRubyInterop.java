@@ -76,18 +76,6 @@ public class JRubyInterop {
     }
 
     @TruffleBoundary
-    public DynamicObject toTruffle(org.jruby.RubyException jrubyException, RubyNode currentNode) {
-        switch (jrubyException.getMetaClass().getName()) {
-            case "ArgumentError":
-                return context.getCoreExceptions().argumentError(jrubyException.getMessage().toString(), currentNode);
-            case "RegexpError":
-                return context.getCoreExceptions().regexpError(jrubyException.getMessage().toString(), currentNode);
-        }
-
-        throw new UnsupportedOperationException();
-    }
-
-    @TruffleBoundary
     public String getArg0() {
         return jrubyRuntime.getGlobalVariables().get("$0").toString();
     }
