@@ -11,13 +11,11 @@ package org.jruby.truffle.interop;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.TruffleOptions;
-import com.oracle.truffle.api.object.DynamicObject;
 import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.JavaException;
 import org.jruby.truffle.language.loader.SourceLoader;
 import org.jruby.util.ByteList;
