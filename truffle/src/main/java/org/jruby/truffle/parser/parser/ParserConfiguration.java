@@ -139,10 +139,10 @@ public class ParserConfiguration {
         this.existingScope = existingScope;
     }
 
-    public Ruby getRuntime() {
-        return context.getJRubyRuntime();
+    public RubyContext getContext() {
+        return context;
     }
-    
+
     /**
      * This method returns the appropriate first scope for the parser.
      * 

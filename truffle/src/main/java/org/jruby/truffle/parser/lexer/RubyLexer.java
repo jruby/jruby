@@ -398,7 +398,7 @@ public class RubyLexer extends LexingCommon {
     }
 
     protected void setEncoding(ByteList name) {
-        Ruby runtime = parserSupport.getConfiguration().getRuntime();
+        Ruby runtime = parserSupport.getConfiguration().getContext().getJRubyRuntime();
         Encoding newEncoding = runtime.getEncodingService().loadEncoding(name);
 
         if (newEncoding == null) throw runtime.newArgumentError("unknown encoding name: " + name.toString());
@@ -870,7 +870,7 @@ public class RubyLexer extends LexingCommon {
                 continue;
             case '#': {	/* it's a comment */
                 this.tokenSeen = tokenSeen;
-                if (!parseMagicComment(parserSupport.getConfiguration().getRuntime(), lexb.makeShared(lex_p, lex_pend - lex_p))) {
+                if (!parseMagicComment(parserSupport.getConfiguration().getContext().getJRubyRuntime(), lexb.makeShared(lex_p, lex_pend - lex_p))) {
                     if (comment_at_top()) set_file_encoding(lex_p, lex_pend);
                 }
                 lex_p = lex_pend;

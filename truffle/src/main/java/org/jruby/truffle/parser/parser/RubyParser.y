@@ -2153,7 +2153,7 @@ var_ref         : /*mri:user_variable*/ tIDENTIFIER {
                 }
                 | k__FILE__ {
                     $$ = new FileParseNode(lexer.getPosition(), new ByteList(lexer.getFile().getBytes(),
-                    support.getConfiguration().getRuntime().getEncodingService().getLocaleEncoding()));
+                    support.getConfiguration().getContext().getEncodingManager().getLocaleEncoding()));
                 }
                 | k__LINE__ {
                     $$ = new FixnumParseNode(lexer.getPosition(), lexer.tokline.getLine()+1);
