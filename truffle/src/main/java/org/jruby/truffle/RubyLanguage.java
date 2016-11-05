@@ -17,12 +17,11 @@ import com.oracle.truffle.api.instrumentation.ProvidedTags;
 import com.oracle.truffle.api.instrumentation.StandardTags;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
-import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.runtime.Constants;
 import org.jruby.truffle.core.kernel.TraceManager;
 import org.jruby.truffle.extra.AttachmentsManager;
-import org.jruby.truffle.interop.JRubyContextWrapper;
+import org.jruby.truffle.interop.InstanceConfigWrapper;
 import org.jruby.truffle.language.LazyRubyRootNode;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.stdlib.CoverageManager;
@@ -58,22 +57,19 @@ public class RubyLanguage extends TruffleLanguage<RubyContext> {
 
     @Override
     public RubyContext createContext(Env env) {
-        final JRubyContextWrapper runtimeWrapper = (JRubyContextWrapper) env.importSymbol(JRubyTruffleImpl.RUNTIME_SYMBOL);
+        final InstanceConfigWrapper runtimeWrapper = (InstanceConfigWrapper) env.importSymbol(JRubyTruffleImpl.RUNTIME_SYMBOL);
 
         final RubyInstanceConfig instanceConfig;
-        final Ruby runtime;
 
         if (runtimeWrapper == null) {
             instanceConfig = new RubyInstanceConfig();
             instanceConfig.processArgumentsWithRubyopts();
             instanceConfig.setCompileMode(RubyInstanceConfig.CompileMode.TRUFFLE);
-            runtime = Ruby.newInstance(instanceConfig);
         } else {
-            runtime = runtimeWrapper.getRuby();
-            instanceConfig = runtime.getInstanceConfig();
+            instanceConfig = runtimeWrapper.getInstanceConfig();
         }
 
-        return new RubyContext(instanceConfig, runtime, env);
+        return new RubyContext(instanceConfig, env);
     }
 
     @Override

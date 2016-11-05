@@ -929,8 +929,8 @@ public final class Ruby implements Constantizable {
         final JRubyTruffleInterface truffleContext;
 
         try {
-            Constructor<?> con = clazz.getConstructor(Ruby.class);
-            truffleContext = (JRubyTruffleInterface) con.newInstance(this);
+            Constructor<?> con = clazz.getConstructor(RubyInstanceConfig.class);
+            truffleContext = (JRubyTruffleInterface) con.newInstance(config);
         } catch (Exception e) {
             throw new RuntimeException("Error while calling the constructor of Truffle's RubyContext", e);
         }

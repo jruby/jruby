@@ -12,17 +12,18 @@ package org.jruby.truffle.interop;
 import com.oracle.truffle.api.interop.ForeignAccess;
 import com.oracle.truffle.api.interop.TruffleObject;
 import org.jruby.Ruby;
+import org.jruby.RubyInstanceConfig;
 
-public class JRubyContextWrapper implements TruffleObject {
+public class InstanceConfigWrapper implements TruffleObject {
 
-    private final Ruby ruby;
+    private final RubyInstanceConfig instanceConfig;
 
-    public JRubyContextWrapper(Ruby ruby) {
-        this.ruby = ruby;
+    public InstanceConfigWrapper(RubyInstanceConfig instanceConfig) {
+        this.instanceConfig = instanceConfig;
     }
 
-    public Ruby getRuby() {
-        return ruby;
+    public RubyInstanceConfig getInstanceConfig() {
+        return instanceConfig;
     }
 
     @Override

@@ -110,7 +110,7 @@ public class RubyContext extends ExecutionContext {
 
     private String currentDirectory;
 
-    public RubyContext(RubyInstanceConfig instanceConfig, Ruby jrubyRuntime, TruffleLanguage.Env env) {
+    public RubyContext(RubyInstanceConfig instanceConfig, TruffleLanguage.Env env) {
         this.instanceConfig = instanceConfig;
         jrubyHome = findJRubyHome();
         this.env = env;
@@ -184,7 +184,7 @@ public class RubyContext extends ExecutionContext {
 
         // Load other subsystems
 
-        final PrintStream configStandardOut = jrubyRuntime.getInstanceConfig().getOutput();
+        final PrintStream configStandardOut = instanceConfig.getOutput();
         debugStandardOut = (configStandardOut == System.out) ? null : configStandardOut;
 
         if (options.INSTRUMENTATION_SERVER_PORT != 0) {

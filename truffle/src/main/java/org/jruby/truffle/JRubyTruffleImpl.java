@@ -13,8 +13,8 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.vm.PolyglotEngine;
 import org.jruby.JRubyTruffleInterface;
-import org.jruby.Ruby;
-import org.jruby.truffle.interop.JRubyContextWrapper;
+import org.jruby.RubyInstanceConfig;
+import org.jruby.truffle.interop.InstanceConfigWrapper;
 import org.jruby.truffle.platform.graal.Graal;
 import org.jruby.util.cli.Options;
 
@@ -25,9 +25,9 @@ public class JRubyTruffleImpl implements JRubyTruffleInterface {
 
     // Created by reflection from Ruby#loadTruffle
 
-    public JRubyTruffleImpl(Ruby runtime) {
+    public JRubyTruffleImpl(RubyInstanceConfig instanceConfig) {
         engine = PolyglotEngine.newBuilder()
-                .globalSymbol(JRubyTruffleInterface.RUNTIME_SYMBOL, new JRubyContextWrapper(runtime))
+                .globalSymbol(JRubyTruffleInterface.RUNTIME_SYMBOL, new InstanceConfigWrapper(instanceConfig))
                 .build();
         context = (RubyContext) engine.eval(loadSource("Truffle::Boot.context", "context")).get();
     }
