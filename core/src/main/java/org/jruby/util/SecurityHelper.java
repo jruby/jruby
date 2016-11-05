@@ -6,6 +6,9 @@ import org.jruby.util.log.LoggerFactory;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.security.Security;
+
+import static org.jruby.RubyInstanceConfig.JAVA_VERSION;
 
 public abstract class SecurityHelper {
 
@@ -14,9 +17,14 @@ public abstract class SecurityHelper {
 
     // attempt to enable unlimited-strength crypto on OracleJDK
     public static void checkCryptoRestrictions(final Ruby runtime) {
-        if ( !attempted) {
+        if ( ! attempted ) {
             attempted = true;
-            setNonRestricted();
+            if ( JAVA_VERSION >= 53 ) {
+                setNonRestrictedJava9();
+            }
+            else {
+                setNonRestrictedJava8();
+            }
             // NOTE: this is not 'really' enough and there's more to be done :
             // JceSecurity#defaultPolicy should add: javax.crypto.CryptoAllPermission
             //
@@ -25,7 +33,20 @@ public abstract class SecurityHelper {
         }
     }
 
-    private static boolean setNonRestricted() {
+    private static boolean setNonRestrictedJava9() {
+        try {
+            if (Security.getProperty("crypto.policy") == null) {
+                Security.setProperty("crypto.policy", "unlimited");
+            }
+            return true;
+        }
+        catch (Exception e) {
+            if (LOG.isDebugEnabled()) LOG.debug("unable un-restrict jce security: ", e);
+        }
+        return false;
+    }
+
+    private static boolean setNonRestrictedJava8() {
         try {
             Class jceSecurity = Class.forName("javax.crypto.JceSecurity");
             Field isRestricted = jceSecurity.getDeclaredField("isRestricted");

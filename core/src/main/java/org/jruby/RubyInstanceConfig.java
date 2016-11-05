@@ -1753,7 +1753,7 @@ public class RubyInstanceConfig {
     /**
      * Enable use of the native Java version of the 'net/protocol' library.
      *
-     * Set with the <tt>jruby.thread.pool.max</tt> system property.
+     * Set with the <tt>jruby.native.net.protocol</tt> system property.
      */
     public static final boolean NATIVE_NET_PROTOCOL = Options.NATIVE_NET_PROTOCOL.load();
 
@@ -1892,11 +1892,11 @@ public class RubyInstanceConfig {
     private static int initGlobalJavaVersion() {
         final String specVersion = Options.BYTECODE_VERSION.load();
         switch ( specVersion ) {
-            case "1.6" : return Opcodes.V1_6;
-            case "1.7" : return Opcodes.V1_7;
-            case "1.8" : return Opcodes.V1_8;
+            case "1.6" : return Opcodes.V1_6; // 50
+            case "1.7" : return Opcodes.V1_7; // 51
+            case "1.8" : case "8" : return Opcodes.V1_8; // 52
             // NOTE: JDK 9 now returns "9" instead of "1.9"
-            case "1.9" : case "9" : return Opcodes.V1_8; // +1
+            case "1.9" : case "9" : return Opcodes.V1_8 + 1; // 53
             default :
                 System.err.println("unsupported Java version \"" + specVersion + "\", defaulting to 1.7");
                 return Opcodes.V1_7;
