@@ -9,55 +9,19 @@
  */
 package org.jruby.truffle.interop;
 
-import com.oracle.truffle.api.TruffleOptions;
 import org.jruby.Ruby;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.truffle.language.control.JavaException;
 import org.jruby.truffle.language.loader.SourceLoader;
 
-import java.io.File;
-import java.net.URISyntaxException;
-import java.security.CodeSource;
 import java.util.ArrayList;
 import java.util.List;
 
 public class JRubyInterop {
 
     private final Ruby jrubyRuntime;
-    private final String jrubyHome;
 
     public JRubyInterop(Ruby jrubyRuntime) {
         this.jrubyRuntime = jrubyRuntime;
-        this.jrubyHome = findJRubyHome();
-    }
-
-    public String getJRubyHome() {
-        return jrubyHome;
-    }
-
-    private String findJRubyHome() {
-        if (!TruffleOptions.AOT && System.getenv("JRUBY_HOME") == null && System.getProperty("jruby.home") == null) {
-            // Set JRuby home automatically for GraalVM
-            final CodeSource codeSource = Ruby.class.getProtectionDomain().getCodeSource();
-            if (codeSource != null) {
-                final File currentJarFile;
-                try {
-                    currentJarFile = new File(codeSource.getLocation().toURI());
-                } catch (URISyntaxException e) {
-                    throw new JavaException(e);
-                }
-
-                if (currentJarFile.getName().equals("ruby.jar")) {
-                    String jarDir = currentJarFile.getParent();
-                    if (new File(jarDir, "lib").isDirectory()) {
-                        jrubyRuntime.setJRubyHome(jarDir);
-                        return jarDir;
-                    }
-                }
-            }
-        }
-
-        return jrubyRuntime.getJRubyHome();
     }
 
     public String[] getOriginalLoadPath() {

@@ -150,7 +150,7 @@ public class FeatureLoader {
 
     @TruffleBoundary
     private CallTarget getCExtLibRuby(String feature) {
-        final String path = context.getJRubyInterop().getJRubyHome() + "/lib/ruby/truffle/cext/ruby.su";
+        final String path = context.getJRubyHome() + "/lib/ruby/truffle/cext/ruby.su";
 
         if (!new File(path).exists()) {
             throw new RaiseException(context.getCoreExceptions().loadError("This JRuby distribution does not have the C extension implementation file ruby.su", feature, null));

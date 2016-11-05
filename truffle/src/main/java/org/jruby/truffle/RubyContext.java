@@ -14,6 +14,7 @@ import com.oracle.truffle.api.CompilerOptions;
 import com.oracle.truffle.api.ExecutionContext;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.TruffleLanguage;
+import com.oracle.truffle.api.TruffleOptions;
 import com.oracle.truffle.api.instrumentation.Instrumenter;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.Ruby;
@@ -41,6 +42,7 @@ import org.jruby.truffle.language.Options;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.SafepointManager;
 import org.jruby.truffle.language.arguments.RubyArguments;
+import org.jruby.truffle.language.control.JavaException;
 import org.jruby.truffle.language.loader.CodeLoader;
 import org.jruby.truffle.language.loader.FeatureLoader;
 import org.jruby.truffle.language.loader.SourceCache;
@@ -55,16 +57,20 @@ import org.jruby.truffle.tools.InstrumentationServerManager;
 import org.jruby.truffle.tools.callgraph.CallGraph;
 import org.jruby.truffle.tools.callgraph.SimpleWriter;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
+import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
+import java.security.CodeSource;
 
 public class RubyContext extends ExecutionContext {
 
     private final TruffleLanguage.Env env;
 
     private final RubyInstanceConfig instanceConfig;
+    private final String jrubyHome;
     private String originalInputFile;
 
     private final Options options = new Options();
@@ -107,6 +113,7 @@ public class RubyContext extends ExecutionContext {
 
     public RubyContext(RubyInstanceConfig instanceConfig, Ruby jrubyRuntime, TruffleLanguage.Env env) {
         this.instanceConfig = instanceConfig;
+        jrubyHome = findJRubyHome();
         this.jrubyInterop = new JRubyInterop(jrubyRuntime);
         this.env = env;
         this.currentDirectory = System.getProperty("user.dir");
@@ -197,6 +204,31 @@ public class RubyContext extends ExecutionContext {
         if (Options.SHARED_OBJECTS && Options.SHARED_OBJECTS_FORCE) {
             SharedObjects.startSharing(this);
         }
+    }
+
+    private String findJRubyHome() {
+        if (!TruffleOptions.AOT && System.getenv("JRUBY_HOME") == null && System.getProperty("jruby.home") == null) {
+            // Set JRuby home automatically for GraalVM
+            final CodeSource codeSource = Ruby.class.getProtectionDomain().getCodeSource();
+            if (codeSource != null) {
+                final File currentJarFile;
+                try {
+                    currentJarFile = new File(codeSource.getLocation().toURI());
+                } catch (URISyntaxException e) {
+                    throw new JavaException(e);
+                }
+
+                if (currentJarFile.getName().equals("ruby.jar")) {
+                    String jarDir = currentJarFile.getParent();
+                    if (new File(jarDir, "lib").isDirectory()) {
+                        instanceConfig.setJRubyHome(jarDir);
+                        return jarDir;
+                    }
+                }
+            }
+        }
+
+        return instanceConfig.getJRubyHome();
     }
 
     public Object send(Object object, String methodName, DynamicObject block, Object... arguments) {
@@ -398,5 +430,9 @@ public class RubyContext extends ExecutionContext {
 
     public String getOriginalInputFile() {
         return originalInputFile;
+    }
+
+    public String getJRubyHome() {
+        return jrubyHome;
     }
 }
