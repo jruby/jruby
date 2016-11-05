@@ -47,7 +47,7 @@ public class LinuxPlatform implements NativePlatform {
         signalManager = new SunMiscSignalManager();
         processName = new JavaProcessName();
         sockets = LibraryLoader.create(Sockets.class).library("c").load();
-        clockGetTime = LibraryLoader.create(ClockGetTime.class).library("c").load();
+        clockGetTime = LibraryLoader.create(ClockGetTime.class).library("c").library("rt").load();
         rubiniusConfiguration = new RubiniusConfiguration();
         DefaultRubiniusConfiguration.load(rubiniusConfiguration, context);
         LinuxRubiniusConfiguration.load(rubiniusConfiguration, context);
