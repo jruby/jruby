@@ -72,6 +72,7 @@ public class RubyContext extends ExecutionContext {
     private final RubyInstanceConfig instanceConfig;
     private final String jrubyHome;
     private String originalInputFile;
+    private boolean verbose;
 
     private final Options options = new Options();
     private final RopeTable ropeTable = new RopeTable();
@@ -434,5 +435,21 @@ public class RubyContext extends ExecutionContext {
 
     public String getJRubyHome() {
         return jrubyHome;
+    }
+
+    public void setVerbose(boolean verbose) {
+        this.verbose = verbose;
+    }
+
+    public void setVerboseNil() {
+        verbose = false;
+    }
+
+    public boolean warningsEnabled() {
+        return verbose;
+    }
+
+    public boolean isVerbose() {
+        return verbose;
     }
 }

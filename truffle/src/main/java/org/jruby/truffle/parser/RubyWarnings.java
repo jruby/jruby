@@ -62,7 +62,7 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
 
     @Override
     public boolean isVerbose() {
-        return runtime.getJRubyInterop().isVerbose();
+        return runtime.isVerbose();
     }
 
     /**
@@ -70,7 +70,7 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
      */
     @Override
     public void warn(ID id, ISourcePosition position, String message) {
-        if (!runtime.getJRubyInterop().warningsEnabled()) return;
+        if (!runtime.warningsEnabled()) return;
 
         warn(id, position.getFile(), position.getLine() + 1, message);
     }
@@ -80,7 +80,7 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
      */
     @Override
     public void warn(ID id, String fileName, int lineNumber, String message) {
-        if (!runtime.getJRubyInterop().warningsEnabled()) return;
+        if (!runtime.warningsEnabled()) return;
 
         StringBuilder buffer = new StringBuilder(100);
 
@@ -94,7 +94,7 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
      */
     @Override
     public void warn(ID id, String fileName, String message) {
-        if (!runtime.getJRubyInterop().warningsEnabled()) return;
+        if (!runtime.warningsEnabled()) return;
 
         StringBuilder buffer = new StringBuilder(100);
 
@@ -105,7 +105,7 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
 
     @Override
     public void warn(ID id, String message) {
-        if (!runtime.getJRubyInterop().warningsEnabled()) return;
+        if (!runtime.warningsEnabled()) return;
 
         RubyStackTraceElement[] stack = new RubyStackTraceElement[]{}; //getRubyStackTrace(runtime);
         String file;
@@ -123,7 +123,7 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
     }
 
     public void warnOnce(ID id, String message) {
-        if (!runtime.getJRubyInterop().warningsEnabled()) return;
+        if (!runtime.warningsEnabled()) return;
         if (oncelers.contains(id)) return;
 
         oncelers.add(id);
@@ -136,14 +136,14 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
      */
     public void warning(String message) {
         if (!isVerbose()) return;
-        if (!runtime.getJRubyInterop().warningsEnabled()) return;
+        if (!runtime.warningsEnabled()) return;
 
         warning(ID.MISCELLANEOUS, message);
     }
 
     @Override
     public void warning(ID id, String message) {
-        if (!runtime.getJRubyInterop().warningsEnabled() || !runtime.getJRubyInterop().isVerbose()) return;
+        if (!runtime.warningsEnabled() || !runtime.isVerbose()) return;
 
         RubyStackTraceElement[] stack = new RubyStackTraceElement[]{};//getRubyStackTrace(runtime);
         String file;
@@ -173,7 +173,7 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
      */
     @Override
     public void warning(ID id, String fileName, int lineNumber, String message) {
-        if (!runtime.getJRubyInterop().warningsEnabled() || !runtime.getJRubyInterop().isVerbose()) return;
+        if (!runtime.warningsEnabled() || !runtime.isVerbose()) return;
 
         warn(id, fileName, lineNumber, message);
     }

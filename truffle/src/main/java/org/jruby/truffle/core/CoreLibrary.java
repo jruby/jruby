@@ -845,7 +845,7 @@ public class CoreLibrary {
 
         globals.put("$DEBUG", context.getInstanceConfig().isDebug());
 
-        Object value = context.getJRubyInterop().warningsEnabled() ? context.getJRubyInterop().isVerbose() : nilObject;
+        Object value = context.warningsEnabled() ? context.isVerbose() : nilObject;
         globals.put("$VERBOSE", value);
 
         final DynamicObject defaultRecordSeparator = StringOperations.createString(context, StringOperations.encodeRope(CLI_RECORD_SEPARATOR, UTF8Encoding.INSTANCE));
