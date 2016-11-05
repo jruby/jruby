@@ -61,8 +61,4 @@ public class JRubyInterop {
         return jrubyRuntime.isVerbose();
     }
 
-    public void warn(String message) {
-        jrubyRuntime.getWarnings().warn(message);
-    }
-
 }

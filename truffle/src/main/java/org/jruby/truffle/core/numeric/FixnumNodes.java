@@ -1245,6 +1245,8 @@ public abstract class FixnumNodes {
     @Primitive(name = "fixnum_pow")
     public abstract static class FixnumPowPrimitiveNode extends BignumNodes.BignumCoreMethodNode {
 
+        @Child private SnippetNode warnNode = new SnippetNode();
+
         private final ConditionProfile negativeProfile = ConditionProfile.createBinaryProfile();
         private final ConditionProfile complexProfile = ConditionProfile.createBinaryProfile();
 
@@ -1274,8 +1276,8 @@ public abstract class FixnumNodes {
         }
 
         @Specialization(guards = "isRubyBignum(b)")
-        public Object powBignum(int a, DynamicObject b) {
-            return powBignum((long) a, b);
+        public Object powBignum(VirtualFrame frame, int a, DynamicObject b) {
+            return powBignum(frame, (long) a, b);
         }
 
         @Specialization(guards = "canShiftIntoLong(a, b)")
@@ -1318,9 +1320,8 @@ public abstract class FixnumNodes {
             }
         }
 
-        @TruffleBoundary
         @Specialization(guards = "isRubyBignum(b)")
-        public Object powBignum(long a, DynamicObject b) {
+        public Object powBignum(VirtualFrame frame, long a, DynamicObject b) {
             if (a == 0) {
                 return 0;
             }
@@ -1330,21 +1331,31 @@ public abstract class FixnumNodes {
             }
 
             if (a == -1) {
-                if (Layouts.BIGNUM.getValue(b).testBit(0)) {
+                if (testBit(Layouts.BIGNUM.getValue(b), 0)) {
                     return -1;
                 } else {
                     return 1;
                 }
             }
 
-            if (Layouts.BIGNUM.getValue(b).compareTo(BigInteger.ZERO) < 0) {
+            if (compareTo(Layouts.BIGNUM.getValue(b), BigInteger.ZERO) < 0) {
                 return null; // Primitive failure
             }
 
-            getContext().getJRubyInterop().warn("in a**b, b may be too big");
+            warnNode.execute(frame, "warn('in a**b, b may be too big')");
             // b >= 2**63 && (a > 1 || a < -1) => larger than largest double
             // MRI behavior/bug: always positive Infinity even if a negative and b odd (likely due to libc pow(a, +inf)).
             return Double.POSITIVE_INFINITY;
+        }
+
+        @TruffleBoundary
+        private boolean testBit(BigInteger bigInteger, int n) {
+            return bigInteger.testBit(n);
+        }
+
+        @TruffleBoundary
+        private int compareTo(BigInteger a, BigInteger b) {
+            return a.compareTo(b);
         }
 
         @Specialization(guards = "!isRubyBignum(b)")
