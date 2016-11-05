@@ -421,10 +421,14 @@ public class JITCompiler implements JITCompilerMBean {
         }
     }
 
+    private static boolean java7InvokeDynamic() {
+        return RubyInstanceConfig.JAVA_VERSION == Opcodes.V1_7 || Options.COMPILE_INVOKEDYNAMIC.load() == true;
+    }
+
     public static class MethodJITClassGenerator {
         public MethodJITClassGenerator(String className, String methodName, String key, Ruby ruby, MixedModeIRMethod method, JVMVisitor visitor) {
             this.packageName = JITCompiler.RUBY_JIT_PREFIX;
-            if (RubyInstanceConfig.JAVA_VERSION == Opcodes.V1_7 || Options.COMPILE_INVOKEDYNAMIC.load() == true) {
+            if ( java7InvokeDynamic() ) {
                 // Some versions of Java 7 seems to have a bug that leaks definitions across cousin classloaders
                 // so we force the class name to be unique to this runtime.
 
@@ -519,7 +523,7 @@ public class JITCompiler implements JITCompilerMBean {
     public static class BlockJITClassGenerator {
         public BlockJITClassGenerator(String className, String methodName, String key, Ruby ruby, MixedModeIRBlockBody body, JVMVisitor visitor) {
             this.packageName = JITCompiler.RUBY_JIT_PREFIX;
-            if (RubyInstanceConfig.JAVA_VERSION == Opcodes.V1_7 || Options.COMPILE_INVOKEDYNAMIC.load() == true) {
+            if ( java7InvokeDynamic() ) {
                 // Some versions of Java 7 seems to have a bug that leaks definitions across cousin classloaders
                 // so we force the class name to be unique to this runtime.
 
