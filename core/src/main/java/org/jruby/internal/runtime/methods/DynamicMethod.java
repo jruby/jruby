@@ -33,6 +33,7 @@ package org.jruby.internal.runtime.methods;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import org.jruby.MetaClass;
+import org.jruby.PrependedModule;
 import org.jruby.RubyModule;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -280,6 +281,8 @@ public abstract class DynamicMethod {
 
         // For visibility we need real meta class and not anonymous one from class << self
         if (cls instanceof MetaClass) cls = ((MetaClass) cls).getRealClass();
+
+        if (cls instanceof PrependedModule) cls = ((PrependedModule) cls).getNonIncludedClass();
 
         return cls;
     }
