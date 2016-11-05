@@ -35,7 +35,6 @@ import org.jruby.truffle.core.symbol.SymbolTable;
 import org.jruby.truffle.core.thread.ThreadManager;
 import org.jruby.truffle.extra.AttachmentsManager;
 import org.jruby.truffle.interop.InteropManager;
-import org.jruby.truffle.interop.JRubyInterop;
 import org.jruby.truffle.language.CallStackManager;
 import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.Options;
@@ -77,7 +76,6 @@ public class RubyContext extends ExecutionContext {
     private final Options options = new Options();
     private final RopeTable ropeTable = new RopeTable();
     private final PrimitiveManager primitiveManager = new PrimitiveManager();
-    private final JRubyInterop jrubyInterop;
     private final SafepointManager safepointManager = new SafepointManager(this);
     private final SymbolTable symbolTable;
     private final InteropManager interopManager = new InteropManager(this);
@@ -115,7 +113,6 @@ public class RubyContext extends ExecutionContext {
     public RubyContext(RubyInstanceConfig instanceConfig, Ruby jrubyRuntime, TruffleLanguage.Env env) {
         this.instanceConfig = instanceConfig;
         jrubyHome = findJRubyHome();
-        this.jrubyInterop = new JRubyInterop(jrubyRuntime);
         this.env = env;
         this.currentDirectory = System.getProperty("user.dir");
 
@@ -290,10 +287,6 @@ public class RubyContext extends ExecutionContext {
 
     public NativePlatform getNativePlatform() {
         return nativePlatform;
-    }
-
-    public JRubyInterop getJRubyInterop() {
-        return jrubyInterop;
     }
 
     public CoreLibrary getCoreLibrary() {
