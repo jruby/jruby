@@ -84,9 +84,10 @@ public abstract class TruffleBootNodes {
 
         @Specialization
         public Object runJRubyRootNode(VirtualFrame frame, @Cached("create()") IndirectCallNode callNode) {
-            String dollar0 = getContext().getJRubyInterop().getArg0();
+            final String arg0 = getContext().getInstanceConfig().getScriptFileName();
+
             coreLibrary().getGlobalVariables().put("$0", StringOperations.createString(
-                    getContext(), StringOperations.encodeRope(dollar0, UTF8Encoding.INSTANCE)));
+                    getContext(), StringOperations.encodeRope(arg0, UTF8Encoding.INSTANCE)));
 
             String inputFile = getContext().getOriginalInputFile();
 

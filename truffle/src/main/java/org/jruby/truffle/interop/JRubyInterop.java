@@ -9,7 +9,6 @@
  */
 package org.jruby.truffle.interop;
 
-import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.TruffleOptions;
 import org.jruby.Ruby;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -59,11 +58,6 @@ public class JRubyInterop {
         }
 
         return jrubyRuntime.getJRubyHome();
-    }
-
-    @TruffleBoundary
-    public String getArg0() {
-        return jrubyRuntime.getGlobalVariables().get("$0").toString();
     }
 
     public String[] getOriginalLoadPath() {
