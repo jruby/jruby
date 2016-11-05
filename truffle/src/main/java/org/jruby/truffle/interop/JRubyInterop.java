@@ -66,17 +66,6 @@ public class JRubyInterop {
         return jrubyRuntime.getGlobalVariables().get("$0").toString();
     }
 
-    public String[] getArgv() {
-        final IRubyObject[] jrubyStrings = ((org.jruby.RubyArray) jrubyRuntime.getObject().getConstant("ARGV")).toJavaArray();
-        final String[] strings = new String[jrubyStrings.length];
-
-        for (int n = 0; n < strings.length; n++) {
-            strings[n] = jrubyStrings[n].toString();
-        }
-
-        return strings;
-    }
-
     public String[] getOriginalLoadPath() {
         final List<String> loadPath = new ArrayList<>();
 

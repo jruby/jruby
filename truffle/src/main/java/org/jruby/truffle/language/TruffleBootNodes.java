@@ -122,7 +122,7 @@ public abstract class TruffleBootNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject originalArgv() {
-            final String[] argv = getContext().getJRubyInterop().getArgv();
+            final String[] argv = getContext().getInstanceConfig().getArgv();
             final Object[] array = new Object[argv.length];
 
             for (int n = 0; n < array.length; n++) {
