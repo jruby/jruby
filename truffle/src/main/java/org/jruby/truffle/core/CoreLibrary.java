@@ -843,7 +843,7 @@ public class CoreLibrary {
         globals.put("$*", argv);
         globals.put("$0", StringOperations.createString(context, StringOperations.encodeRope(context.getInstanceConfig().displayedFileName(), UTF8Encoding.INSTANCE)));
 
-        globals.put("$DEBUG", context.getJRubyInterop().isDebug());
+        globals.put("$DEBUG", context.getInstanceConfig().isDebug());
 
         Object value = context.getJRubyInterop().warningsEnabled() ? context.getJRubyInterop().isVerbose() : nilObject;
         globals.put("$VERBOSE", value);

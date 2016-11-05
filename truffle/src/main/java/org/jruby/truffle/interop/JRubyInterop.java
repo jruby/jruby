@@ -53,10 +53,6 @@ public class JRubyInterop {
         jrubyRuntime.setVerbose(jrubyRuntime.getNil());
     }
 
-    public boolean isDebug() {
-        return jrubyRuntime.isDebug();
-    }
-
     public boolean warningsEnabled() {
         return jrubyRuntime.warningsEnabled();
     }
