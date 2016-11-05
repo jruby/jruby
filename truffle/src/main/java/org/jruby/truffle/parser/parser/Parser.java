@@ -119,9 +119,6 @@ public class Parser {
         RubyParserResult result;
         try {
             result = parser.parse(configuration);
-            if (parser.lexer.isEndSeen() && configuration.isSaveData()) {
-                context.getJRubyInterop().setData(lexerSource.getRemainingAsIO());
-            }
         } catch (IOException e) {
             // Enebo: We may want to change this error to be more specific,
             // but I am not sure which conditions leads to this...so lame message.
