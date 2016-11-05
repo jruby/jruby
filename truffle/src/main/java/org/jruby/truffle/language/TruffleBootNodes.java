@@ -32,6 +32,7 @@ import org.jruby.truffle.parser.ParserContext;
 import org.jruby.util.Memo;
 
 import java.io.IOException;
+import java.util.List;
 
 @CoreClass("Truffle::Boot")
 public abstract class TruffleBootNodes {
@@ -141,11 +142,11 @@ public abstract class TruffleBootNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject originalLoadPath() {
-            final String[] path = getContext().getJRubyInterop().getOriginalLoadPath();
-            final Object[] array = new Object[path.length];
+            final List<String> paths = getContext().getInstanceConfig().getLoadPaths();
+            final Object[] array = new Object[paths.size()];
 
             for (int n = 0; n < array.length; n++) {
-                array[n] = StringOperations.createString(getContext(), StringOperations.encodeRope(path[n], UTF8Encoding.INSTANCE));
+                array[n] = StringOperations.createString(getContext(), StringOperations.encodeRope(paths.get(n), UTF8Encoding.INSTANCE));
             }
 
             return createArray(array, array.length);
