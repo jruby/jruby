@@ -11,7 +11,6 @@ package org.jruby.truffle.interop;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.TruffleOptions;
-import org.jcodings.Encoding;
 import org.jruby.Ruby;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.language.control.JavaException;
@@ -121,10 +120,6 @@ public class JRubyInterop {
 
     public void warn(String message) {
         jrubyRuntime.getWarnings().warn(message);
-    }
-
-    public void setDefaultInternalEncoding(Encoding defaultInternalEncoding) {
-        jrubyRuntime.setDefaultInternalEncoding(defaultInternalEncoding);
     }
 
 }

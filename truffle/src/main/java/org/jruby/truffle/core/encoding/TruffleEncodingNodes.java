@@ -96,10 +96,7 @@ public abstract class TruffleEncodingNodes {
                 toStrNode = insert(ToStrNodeGen.create(getContext(), null, null));
             }
 
-            final DynamicObject encodingName = toStrNode.executeToStr(frame, encoding);
-            getContext().getJRubyInterop().setDefaultInternalEncoding(EncodingOperations.getEncoding(getContext().getEncodingManager().getRubyEncoding(encodingName.toString())));
-
-            return encodingName;
+            return toStrNode.executeToStr(frame, encoding);
         }
 
     }
