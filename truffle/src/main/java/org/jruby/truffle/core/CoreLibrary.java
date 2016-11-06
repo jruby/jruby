@@ -845,8 +845,23 @@ public class CoreLibrary {
 
         globals.put("$DEBUG", context.getInstanceConfig().isDebug());
 
-        Object value = context.warningsEnabled() ? context.isVerbose() : nilObject;
-        globals.put("$VERBOSE", value);
+        final Object verbose;
+
+        switch (context.getInstanceConfig().getVerbosity()) {
+            case NIL:
+                verbose = getNilObject();
+                break;
+            case FALSE:
+                verbose = false;
+                break;
+            case TRUE:
+                verbose = true;
+                break;
+            default:
+                throw new UnsupportedOperationException();
+        }
+
+        globals.put("$VERBOSE", verbose);
 
         final DynamicObject defaultRecordSeparator = StringOperations.createString(context, StringOperations.encodeRope(CLI_RECORD_SEPARATOR, UTF8Encoding.INSTANCE));
         node.freezeNode.executeFreeze(defaultRecordSeparator);
