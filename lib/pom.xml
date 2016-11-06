@@ -34,7 +34,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>jruby-openssl</artifactId>
-      <version>0.9.17</version>
+      <version>0.9.18</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -206,6 +206,10 @@ DO NOT MODIFIY - GENERATED CODE
       <id>mavengems</id>
       <url>mavengem:https://rubygems.org</url>
     </repository>
+    <repository>
+      <id>gem-staging</id>
+      <url>http://oss.sonatype.org/content/repositories/staging</url>
+    </repository>
   </repositories>
   <build>
     <extensions>
@@ -313,7 +317,7 @@ DO NOT MODIFIY - GENERATED CODE
       <plugin>
         <groupId>io.takari.polyglot</groupId>
         <artifactId>polyglot-maven-plugin</artifactId>
-        <version>0.1.15</version>
+        <version>0.1.16</version>
         <executions>
           <execution>
             <id>install_gems</id>
@@ -364,7 +368,7 @@ DO NOT MODIFIY - GENERATED CODE
           <dependency>
             <groupId>io.takari.polyglot</groupId>
             <artifactId>polyglot-ruby</artifactId>
-            <version>0.1.15</version>
+            <version>0.1.16</version>
           </dependency>
         </dependencies>
       </plugin>
