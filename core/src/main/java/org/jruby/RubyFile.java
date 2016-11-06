@@ -509,6 +509,15 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     @JRubyMethod(required = 1, optional = 1, meta = true)
     public static IRubyObject basename(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = context.runtime;
+        final String separator = runtime.getClass("File").getConstant("SEPARATOR").toString();
+        final char separatorChar = separator.charAt(0);
+        String altSeparator = null;
+        char altSeparatorChar = '\0';
+        final IRubyObject rbAltSeparator = runtime.getClass("File").getConstant("ALT_SEPARATOR");
+        if (rbAltSeparator != context.nil) {
+          altSeparator = rbAltSeparator.toString();
+          altSeparatorChar = altSeparator.charAt(0);
+        }
 
         RubyString origString = StringSupport.checkEmbeddedNulls(runtime, get_path(context, args[0]));
         Encoding origEncoding = origString.getEncoding();
@@ -542,16 +551,16 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             }
         }
 
-        while (name.length() > 1 && name.charAt(name.length() - 1) == '/') {
+        while (name.length() > 1 && (name.charAt(name.length() - 1) == separatorChar || (altSeparator != null && name.charAt(name.length() - 1) == altSeparatorChar))) {
             name = name.substring(0, name.length() - 1);
         }
 
-        // Paths which end in "/" or "\\" must be stripped off.
+        // Paths which end in File::SEPARATOR or File::ALT_SEPARATOR must be stripped off.
         int slashCount = 0;
         int length = name.length();
         for (int i = length - 1; i >= 0; i--) {
             char c = name.charAt(i);
-            if (c != '/' && c != '\\') {
+            if (c != separatorChar && (altSeparator == null || c != altSeparatorChar)) {
                 break;
             }
             slashCount++;
@@ -560,13 +569,12 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             name = name.substring(0, name.length() - slashCount);
         }
 
-        int index = name.lastIndexOf('/');
-        if (index == -1) {
-            // XXX actually only on windows...
-            index = name.lastIndexOf('\\');
+        int index = name.lastIndexOf(separatorChar);
+        if (altSeparator != null) {
+            index = Math.max(index, name.lastIndexOf(altSeparatorChar));
         }
 
-        if (!name.equals("/") && index != -1) {
+        if (!(name.equals(separator) || (altSeparator != null && name.equals(altSeparator))) && index != -1) {
             name = name.substring(index + 1);
         }
 
@@ -651,9 +659,34 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
     static Pattern PROTOCOL_PATTERN = Pattern.compile(URI_PREFIX_STRING + ".*");
     public static String dirname(ThreadContext context, String jfilename) {
-        String name = jfilename.replace('\\', '/');
+        final Ruby runtime = context.runtime;
+        final String separator = runtime.getClass("File").getConstant("SEPARATOR").toString();
+        final char separatorChar = separator.charAt(0);
+        String altSeparator = null;
+        char altSeparatorChar = '\0';
+        final IRubyObject rbAltSeparator = runtime.getClass("File").getConstant("ALT_SEPARATOR");
+        if (rbAltSeparator != context.nil) {
+          altSeparator = rbAltSeparator.toString();
+          altSeparatorChar = altSeparator.charAt(0);
+        }
+        String name = jfilename;
+        if (altSeparator != null) {
+          name = jfilename.replace(altSeparator, separator);
+        }
         int minPathLength = 1;
         boolean trimmedSlashes = false;
+
+        boolean startsWithSeparator = false;
+
+        if (!name.isEmpty()) {
+          startsWithSeparator = name.charAt(0) == separatorChar;
+        }
+
+        boolean startsWithUNCOnWindows = Platform.IS_WINDOWS && startsWith(name, separatorChar, separatorChar);
+
+        if (startsWithUNCOnWindows) {
+          minPathLength = 2;
+        }
 
         boolean startsWithDriveLetterOnWindows = startsWithDriveLetterOnWindows(name);
 
@@ -662,21 +695,21 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         }
 
         // jar like paths
-        if (name.contains(".jar!/")) {
-            int start = name.indexOf("!/") + 1;
+        if (name.contains(".jar!" + separator)) {
+            int start = name.indexOf("!" + separator) + 1;
             String path = dirname(context, name.substring(start));
-            if (path.equals(".") || path.equals("/")) path = "";
+            if (path.equals(".") || path.equals(separator)) path = "";
             return name.substring(0, start) + path;
         }
         // address all the url like paths first
         if (PROTOCOL_PATTERN.matcher(name).matches()) {
-            int start = name.indexOf(":/") + 2;
+            int start = name.indexOf(":" + separator) + 2;
             String path = dirname(context, name.substring(start));
             if (path.equals(".")) path = "";
             return name.substring(0, start) + path;
         }
 
-        while (name.length() > minPathLength && name.charAt(name.length() - 1) == '/') {
+        while (name.length() > minPathLength && name.charAt(name.length() - 1) == separatorChar) {
             trimmedSlashes = true;
             name = name.substring(0, name.length() - 1);
         }
@@ -691,7 +724,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             }
         } else {
             //TODO deal with UNC names
-            int index = name.lastIndexOf('/');
+            int index = name.lastIndexOf(separator);
 
             if (index == -1) {
                 if (startsWithDriveLetterOnWindows) {
@@ -701,7 +734,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 }
             }
             if (index == 0) {
-                return "/";
+                return jfilename.substring(0, 1);
             }
 
             if (startsWithDriveLetterOnWindows && index == 2) {
@@ -710,24 +743,38 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 index++;
             }
 
-            if (startsWith(jfilename, '\\', '\\')) {
-                index = jfilename.length();
-                String[] split = jfilename.split(Pattern.quote("\\"));
-                if (split[ split.length - 1 ].indexOf('.') > -1) {
-                    index = jfilename.lastIndexOf('\\');
+            if (startsWithUNCOnWindows) {
+              index = jfilename.length();
+              String[] split = name.split(Pattern.quote(separator));
+              int pathSectionCount = 0;
+              for (int i = 0; i < split.length; i++) {
+                if (!split[i].isEmpty()) {
+                  pathSectionCount += 1;
                 }
-
+              }
+              if (pathSectionCount > 2) {
+                  index = name.lastIndexOf(separator);
+              }
             }
-
             result = jfilename.substring(0, index);
+        }
 
+        // trim leading slashes
+        if (startsWithSeparator && result.length() > minPathLength) {
+          while (
+            result.length() > minPathLength &&
+            (result.charAt(minPathLength) == separatorChar ||
+              (altSeparator != null && result.charAt(minPathLength) == altSeparatorChar))
+          ) {
+            result = result.substring(1, result.length());
+          }
         }
 
         char endChar;
         // trim trailing slashes
         while (result.length() > minPathLength) {
             endChar = result.charAt(result.length() - 1);
-            if (endChar == '/' || endChar == '\\') {
+            if (endChar == separatorChar || (altSeparator != null && endChar == altSeparatorChar)) {
                 result = result.substring(0, result.length() - 1);
             } else {
                 break;
