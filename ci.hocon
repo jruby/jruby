@@ -456,8 +456,8 @@ builds: [
   {name: ruby-benchmarks-server-graal-core} ${common} ${graal-core} ${daily-bench-caps} ${jruby-truffle} ${server-benchmarks},
   {name: ruby-benchmarks-server-graal-enterprise} ${common} ${graal-enterprise} ${daily-bench-caps} ${jruby-truffle} ${server-benchmarks},
   {name: ruby-benchmarks-server-graal-enterprise-no-om} ${common} ${graal-enterprise-no-om} ${daily-bench-caps} ${jruby-truffle} ${server-benchmarks},
-  {name: ruby-benchmarks-server-graal-vm-snapshot} ${common} ${graal-vm-snapshot} ${bench-caps} ${jruby-truffle} ${server-benchmarks}
-  {name: ruby-benchmarks-server-graal-vm-release} ${common} ${graal-vm-release} ${bench-caps} ${jruby-truffle} ${server-benchmarks}
+  {name: ruby-benchmarks-server-graal-vm-snapshot} ${common} ${graal-vm-snapshot} ${bench-caps} ${jruby-truffle} ${server-benchmarks},
+  {name: ruby-benchmarks-server-graal-vm-release} ${common} ${graal-vm-release} ${bench-caps} ${jruby-truffle} ${server-benchmarks},
 
   {name: ruby-deploy-binaries} ${common} ${gate-caps} ${deployBinaries}
 ]
