@@ -103,7 +103,7 @@ public abstract class RandomizerPrimitiveNodes {
     public static abstract class RandomizerGenSeedPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         // Single instance of Random per host VM
-        private static final Random RANDOM = getRandom();
+        private static final Random RANDOM = new SecureRandom();
 
         @TruffleBoundary
         @Specialization
@@ -112,14 +112,6 @@ public abstract class RandomizerPrimitiveNodes {
             return createBignum(seed);
         }
 
-        private static Random getRandom() {
-            try {
-                return new SecureRandom();
-            } catch (Throwable t) {
-                // TODO CS 5-Nov-16 should we warn about this?
-                return new Random();
-            }
-        }
     }
 
     @Primitive(name = "randomizer_bytes", lowerFixnum = 1)
