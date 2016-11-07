@@ -103,29 +103,22 @@ public abstract class RandomizerPrimitiveNodes {
     public static abstract class RandomizerGenSeedPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         // Single instance of Random per host VM
-
-        private static Random random;
+        private static final Random RANDOM = getRandom();
 
         @TruffleBoundary
         @Specialization
         public DynamicObject randomizerGenSeed(DynamicObject randomizerClass) {
-            final BigInteger seed = RubyRandom.randomSeedBigInteger(getRandom());
+            final BigInteger seed = RubyRandom.randomSeedBigInteger(RANDOM);
             return createBignum(seed);
         }
 
-        private Random getRandom() {
-            if (random == null) {
-                // We don't care about racing to create this
-
-                try {
-                    random = new SecureRandom();
-                } catch (Throwable t) {
-                    // TODO CS 5-Nov-16 should we warn about this?
-                    random = new Random();
-                }
+        private static Random getRandom() {
+            try {
+                return new SecureRandom();
+            } catch (Throwable t) {
+                // TODO CS 5-Nov-16 should we warn about this?
+                return new Random();
             }
-
-            return random;
         }
     }
 
