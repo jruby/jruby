@@ -7,7 +7,6 @@ exclude :test_clock_getres_TIME_BASED_CLOCK_REALTIME, "missing process timing fu
 exclude :test_clock_gettime_CLOCK_BASED_CLOCK_PROCESS_CPUTIME_ID, "missing process timing functionality"
 exclude :test_clock_gettime_GETTIMEOFDAY_BASED_CLOCK_REALTIME, "missing process timing functionality"
 exclude :test_clock_gettime_TIME_BASED_CLOCK_REALTIME, "missing process timing functionality"
-exclude :test_clock_gettime_unit, "missing process timing functionality"
 exclude :test_deadlock_by_signal_at_forking, "uses fork"
 exclude :test_exec_noshell, "needs investigation"
 exclude :test_exec_wordsplit, "needs investigation"
