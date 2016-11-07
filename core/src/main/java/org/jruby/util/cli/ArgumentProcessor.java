@@ -284,7 +284,7 @@ public class ArgumentProcessor {
                 case 'K': // @Deprecated TODO no longer relevant in Ruby 2.x
                     String eArg = grabValue(getArgumentError("provide a value for -K"));
 
-                    config.setKCode(KCode.create(null, eArg));
+                    config.setKCode(KCode.create(eArg));
 
                     // source encoding
                     config.setSourceEncoding(config.getKCode().getEncoding().toString());

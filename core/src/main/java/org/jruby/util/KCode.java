@@ -29,8 +29,6 @@
 package org.jruby.util;
 
 import org.jcodings.Encoding;
-import org.jruby.Ruby;
-import org.jruby.runtime.builtin.IRubyObject;
 
 public enum KCode {
     NIL(null, "ASCII", 0),
@@ -51,7 +49,7 @@ public enum KCode {
         this.code = code;
     }
 
-    public static KCode create(Ruby runtime, String lang) {
+    public static KCode create(String lang) {
         if (lang == null) return NIL;
         if (lang.length() == 0) return NONE;
 
@@ -72,10 +70,6 @@ public enum KCode {
             return NONE;
         }
         return NIL;
-    }
-
-    public IRubyObject kcode(Ruby runtime) {
-        return kcode == null ? runtime.getNil() : runtime.newString(kcode); 
     }
 
     public String getKCode() {
