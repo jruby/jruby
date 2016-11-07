@@ -173,6 +173,7 @@ def extractArguments(cli_args):
     classpath = []
     print_command = False
     classic = False
+    main_class = "org.jruby.Main"
 
     jruby_opts = os.environ.get('JRUBY_OPTS')
     if jruby_opts:
@@ -183,6 +184,8 @@ def extractArguments(cli_args):
             arg = args.pop(0)
             if arg == '-X+T':
                 pass # Just drop it
+            elif arg == '-X+TM':
+                main_class = "org.jruby.truffle.Main"
             elif arg == '-Xclassic':
                 classic = True
             elif arg == '-J-cmd':
@@ -208,7 +211,7 @@ def extractArguments(cli_args):
                 rubyArgs.append(arg)
                 rubyArgs.extend(args)
                 break
-    return vmArgs, rubyArgs, classpath, print_command, classic
+    return vmArgs, rubyArgs, classpath, print_command, classic, main_class
 
 def extractTarball(file, target_dir):
     if file.endswith('tar'):
@@ -241,7 +244,7 @@ def ruby_command(args):
     java = os.getenv('JAVACMD', java_home + '/bin/java')
     argv0 = java
 
-    vmArgs, rubyArgs, user_classpath, print_command, classic = extractArguments(args)
+    vmArgs, rubyArgs, user_classpath, print_command, classic, main_class = extractArguments(args)
     classpath = mx.classpath(['TRUFFLE_API', 'RUBY']).split(':')
     truffle_api, classpath = classpath[0], classpath[1:]
     classpath += user_classpath
@@ -251,7 +254,7 @@ def ruby_command(args):
         '-Xbootclasspath/a:' + truffle_api,
         '-cp', ':'.join(classpath),
     ] + vmArgs
-    vmArgs = vmArgs + ['org.jruby.Main']
+    vmArgs = vmArgs + [main_class]
     if not classic:
         vmArgs = vmArgs + ['-X+T']
     allArgs = vmArgs + rubyArgs
