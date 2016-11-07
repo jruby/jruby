@@ -29,7 +29,7 @@ public class JRubyTruffleImpl implements JRubyTruffleInterface {
         engine = PolyglotEngine.newBuilder()
                 .globalSymbol(JRubyTruffleInterface.RUNTIME_SYMBOL, new InstanceConfigWrapper(instanceConfig))
                 .build();
-        context = (RubyContext) engine.eval(loadSource("Truffle::Boot.context", "context")).get();
+        context = engine.eval(loadSource("Truffle::Boot.context", "context")).as(RubyContext.class);
     }
 
     @Override
