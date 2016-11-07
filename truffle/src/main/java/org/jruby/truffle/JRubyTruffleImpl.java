@@ -20,39 +20,22 @@ import org.jruby.util.cli.Options;
 
 public class JRubyTruffleImpl implements JRubyTruffleInterface {
 
-    private final PolyglotEngine engine;
-    private final RubyContext context;
+    private final RubyEngine engine;
 
     // Created by reflection from Ruby#loadTruffle
 
     public JRubyTruffleImpl(RubyInstanceConfig instanceConfig) {
-        engine = PolyglotEngine.newBuilder()
-                .globalSymbol(JRubyTruffleInterface.RUNTIME_SYMBOL, new InstanceConfigWrapper(instanceConfig))
-                .build();
-        context = engine.eval(loadSource("Truffle::Boot.context", "context")).as(RubyContext.class);
+        engine = new RubyEngine(instanceConfig);
     }
 
     @Override
     public int execute(String path) {
-        if (!Graal.isGraal() && Options.TRUFFLE_GRAAL_WARNING_UNLESS.load()) {
-            System.err.println("WARNING: This JVM does not have the Graal compiler. " +
-                    "JRuby+Truffle's performance without it will be limited. " +
-                    "See https://github.com/jruby/jruby/wiki/Truffle-FAQ#how-do-i-get-jrubytruffle");
-        }
-
-        context.setOriginalInputFile(path);
-
-        return engine.eval(loadSource("Truffle::Boot.main", "main")).as(Integer.class);
+        return engine.execute(path);
     }
 
     @Override
     public void dispose() {
         engine.dispose();
-    }
-
-    @TruffleBoundary
-    private Source loadSource(String source, String name) {
-        return Source.newBuilder(source).name(name).mimeType(RubyLanguage.MIME_TYPE).build();
     }
     
 }

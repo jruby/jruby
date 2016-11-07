@@ -9,8 +9,6 @@
  */
 package org.jruby.truffle;
 
-import org.jruby.JRubyTruffleInterface;
-import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 
 import java.io.InputStream;
@@ -25,13 +23,12 @@ public class Main {
         final InputStream in = config.getScriptSource();
         final String filename = config.displayedFileName();
 
-        final JRubyTruffleInterface jrubyTruffle = new JRubyTruffleImpl(config);
+        final RubyEngine rubyEngine = new RubyEngine(config);
 
         if (in != null) {
-            final int exitCode = jrubyTruffle.execute(filename);
+            final int exitCode = rubyEngine.execute(filename);
             System.exit(exitCode);
         }
-
     }
 
 }
