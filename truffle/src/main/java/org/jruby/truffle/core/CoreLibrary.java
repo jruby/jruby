@@ -290,7 +290,7 @@ public class CoreLibrary {
     private final Map<Errno, DynamicObject> errnoClasses = new HashMap<>();
 
     @CompilationFinal private InternalMethod basicObjectSendMethod;
-    @CompilationFinal private InternalMethod truffleBootRunJRubyRootMethod;
+    @CompilationFinal private InternalMethod truffleBootMainMethod;
 
     @CompilationFinal private GlobalVariableStorage loadPathStorage;
     @CompilationFinal private GlobalVariableStorage loadedFeaturesStorage;
@@ -817,7 +817,7 @@ public class CoreLibrary {
         coreMethodNodeManager.allMethodInstalled();
 
         basicObjectSendMethod = getMethod(basicObjectClass, "__send__");
-        truffleBootRunJRubyRootMethod = getMethod(node.getSingletonClass(truffleBootModule), "run_jruby_root");
+        truffleBootMainMethod = getMethod(node.getSingletonClass(truffleBootModule), "main");
     }
 
     private InternalMethod getMethod(DynamicObject module, String name) {
@@ -1518,8 +1518,8 @@ public class CoreLibrary {
         return callTarget == basicObjectSendMethod.getCallTarget();
     }
 
-    public boolean isRunJRubyRootMethod(SharedMethodInfo info) {
-        return info == truffleBootRunJRubyRootMethod.getSharedMethodInfo();
+    public boolean isTruffleBootMainMethod(SharedMethodInfo info) {
+        return info == truffleBootMainMethod.getSharedMethodInfo();
     }
 
     public DynamicObjectFactory getIntRangeFactory() {

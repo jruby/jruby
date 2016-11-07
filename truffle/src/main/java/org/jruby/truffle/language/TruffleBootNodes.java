@@ -80,11 +80,11 @@ public abstract class TruffleBootNodes {
         }
     }
 
-    @CoreMethod(names = "run_jruby_root", onSingleton = true)
-    public abstract static class RunJRubyRootNode extends CoreMethodArrayArgumentsNode {
+    @CoreMethod(names = "main", onSingleton = true)
+    public abstract static class MainNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
-        public Object runJRubyRootNode(VirtualFrame frame, @Cached("create()") IndirectCallNode callNode) {
+        public Object main(VirtualFrame frame, @Cached("create()") IndirectCallNode callNode) {
             final String arg0 = getContext().getInstanceConfig().displayedFileName();
 
             coreLibrary().getGlobalVariables().put("$0", StringOperations.createString(

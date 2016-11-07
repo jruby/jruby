@@ -225,10 +225,10 @@ public class CallStackManager {
 
         final RootNode rootNode = callNode.getRootNode();
 
-        // Ignore the call to Truffle::Boot.run_jruby_root
+        // Ignore the call to Truffle::Boot.main
         if (rootNode instanceof RubyRootNode) {
             SharedMethodInfo sharedMethodInfo = ((RubyRootNode) rootNode).getSharedMethodInfo();
-            if (context.getCoreLibrary().isRunJRubyRootMethod(sharedMethodInfo)) {
+            if (context.getCoreLibrary().isTruffleBootMainMethod(sharedMethodInfo)) {
                 return true;
             }
         }

@@ -42,7 +42,7 @@ public class JRubyTruffleImpl implements JRubyTruffleInterface {
 
         context.setOriginalInputFile(path);
 
-        return engine.eval(loadSource("Truffle::Boot.run_jruby_root", "run_jruby_root")).as(Integer.class);
+        return engine.eval(loadSource("Truffle::Boot.main", "main")).as(Integer.class);
     }
 
     @Override
