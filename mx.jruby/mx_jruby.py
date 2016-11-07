@@ -279,36 +279,3 @@ mx.update_commands(_suite, {
     'rubytck': [ruby_tck, ''],
     'deploy-binary-if-truffle-head': [deploy_binary_if_truffle_head, ''],
 })
-
-# Utilities
-
-def jt(args, suite=None, nonZeroIsFatal=True, out=None, err=None, timeout=None, env=None, cwd=None):
-    rubyDir = _suite.dir
-    jt = join(rubyDir, 'tool', 'jt.rb')
-    return mx.run(['ruby', jt] + args, nonZeroIsFatal=nonZeroIsFatal, out=out, err=err, timeout=timeout, env=env, cwd=cwd)
-
-FNULL = open(os.devnull, 'w')
-
-class BackgroundServerTask:
-    def __init__(self, args):
-        self.args = args
-
-    def __enter__(self):
-        preexec_fn, creationflags = mx._get_new_progress_group_args()
-        if mx._opts.verbose:
-            mx.log(' '.join(['(background)'] + map(pipes.quote, self.args)))
-        self.process = subprocess.Popen(self.args, preexec_fn=preexec_fn, creationflags=creationflags, stdout=FNULL, stderr=FNULL)
-        mx._addSubprocess(self.process, self.args)
-
-    def __exit__(self, type, value, traceback):
-        self.process.kill()
-        self.process.wait()
-
-    def is_running(self):
-        return self.process.poll() is None
-
-class BackgroundJT(BackgroundServerTask):
-    def __init__(self, args):
-        rubyDir = _suite.dir
-        jt = join(rubyDir, 'tool', 'jt.rb')
-        BackgroundServerTask.__init__(self, ['ruby', jt] + args)
