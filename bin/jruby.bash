@@ -188,6 +188,7 @@ declare -a ruby_args
 mode=""
 
 JAVA_CLASS_JRUBY_MAIN=org.jruby.Main
+JAVA_CLASS_JRUBY_TRUFFLE_MAIN=org.jruby.truffle.Main
 java_class=$JAVA_CLASS_JRUBY_MAIN
 JAVA_CLASS_NGSERVER=org.jruby.main.NailServerMain
 
@@ -248,6 +249,10 @@ do
         ;;
      -X+T)
         USING_TRUFFLE="true"
+        ;;
+     -X+TM)
+        USING_TRUFFLE="true"
+        java_class=$JAVA_CLASS_JRUBY_TRUFFLE_MAIN
         ;;
      # Match -Xa.b.c=d to translate to -Da.b.c=d as a java option
      -X*)

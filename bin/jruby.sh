@@ -200,6 +200,10 @@ do
       echo "error: -X+T isn't supported in the shell launcher"
       exit 1
       ;;
+     -X+TM)
+      echo "error: -X+TM isn't supported in the shell launcher"
+      exit 1
+      ;;
      -Xclassic)
       ;;
      # Match -Xa.b.c=d to translate to -Da.b.c=d as a java option
