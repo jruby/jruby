@@ -45,16 +45,20 @@
 package org.jruby.truffle;
 
 import org.jruby.RubyInstanceConfig;
+import org.jruby.util.cli.Options;
 import org.jruby.util.cli.OutputStrings;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
+import java.lang.management.ManagementFactory;
 
 public class Main {
 
     public static void main(String[] args) {
+        printTruffleTimeMetric("before-main");
+
         final RubyInstanceConfig config = new RubyInstanceConfig();
         config.setHardExit(true);
         config.processArguments(args);
@@ -71,6 +75,7 @@ public class Main {
 
             final RubyEngine rubyEngine = new RubyEngine(config);
 
+            printTruffleTimeMetric("before-run");
             try {
                 if (in == null) {
                     exitCode = 1;
@@ -85,6 +90,7 @@ public class Main {
                     exitCode = rubyEngine.execute(filename);
                 }
             } finally {
+                printTruffleTimeMetric("after-run");
                 rubyEngine.dispose();
             }
         } else {
@@ -92,6 +98,8 @@ public class Main {
             exitCode = 1;
         }
 
+        printTruffleTimeMetric("after-main");
+        printTruffleMemoryMetric();
         System.exit(exitCode);
     }
 
@@ -148,6 +156,28 @@ public class Main {
 
     private static boolean checkStreamSyntax(RubyEngine engine, InputStream in, String filename) {
         return engine.checkSyntax(in, filename);
+    }
+
+    public static void printTruffleTimeMetric(String id) {
+        if (Options.TRUFFLE_METRICS_TIME.load()) {
+            final long millis = System.currentTimeMillis();
+            System.err.printf("%s %d.%03d%n", id, millis / 1000, millis % 1000);
+        }
+    }
+
+    private static void printTruffleMemoryMetric() {
+        if (Options.TRUFFLE_METRICS_MEMORY_USED_ON_EXIT.load()) {
+            for (int n = 0; n < 10; n++) {
+                System.gc();
+            }
+
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+            }
+
+            System.err.printf("allocated %d%n", ManagementFactory.getMemoryMXBean().getHeapMemoryUsage().getUsed());
+        }
     }
 
 }

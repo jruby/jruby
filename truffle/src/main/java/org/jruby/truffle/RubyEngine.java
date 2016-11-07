@@ -29,7 +29,9 @@ public class RubyEngine {
         engine = PolyglotEngine.newBuilder()
                 .globalSymbol(JRubyTruffleInterface.RUNTIME_SYMBOL, new InstanceConfigWrapper(instanceConfig))
                 .build();
+        Main.printTruffleTimeMetric("before-load-context");
         context = engine.eval(loadSource("Truffle::Boot.context", "context")).as(RubyContext.class);
+        Main.printTruffleTimeMetric("after-load-context");
     }
 
     public int execute(String path) {
