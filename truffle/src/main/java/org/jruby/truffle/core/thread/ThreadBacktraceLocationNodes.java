@@ -58,6 +58,17 @@ public class ThreadBacktraceLocationNodes {
 
     }
 
+    @CoreMethod(names = "label")
+    public abstract static class LabelNode extends UnaryCoreMethodNode {
+
+        @Specialization
+        public Object label(DynamicObject threadBacktraceLocation) {
+            // TODO BJF 7 Nov. 2016 This needs to be implemented, stubbed for now
+            return nil();
+        }
+
+    }
+
     @CoreMethod(names = "lineno")
     public abstract static class LinenoNode extends UnaryCoreMethodNode {
 
