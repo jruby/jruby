@@ -2455,7 +2455,7 @@ public class BodyTranslator extends Translator {
 
             result = new ElidableResultNode(sequence(context, source, sourceSection, sequence), environment.findLocalVarNode(tempRHSName, source, sourceSection));
         } else {
-            result = nilNode(source, sourceSection);
+            throw new UnsupportedOperationException();
         }
 
         final RubyNode ret = new DefinedWrapperNode(context, fullSourceSection, context.getCoreStrings().ASSIGNMENT, result);
