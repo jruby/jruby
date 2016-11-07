@@ -18,6 +18,8 @@ import org.jruby.truffle.interop.InstanceConfigWrapper;
 import org.jruby.truffle.platform.graal.Graal;
 import org.jruby.util.cli.Options;
 
+import java.io.InputStream;
+
 public class RubyEngine {
 
     private final PolyglotEngine engine;
@@ -40,6 +42,17 @@ public class RubyEngine {
         context.setOriginalInputFile(path);
 
         return engine.eval(loadSource("Truffle::Boot.main", "main")).as(Integer.class);
+    }
+
+    public boolean checkSyntax(InputStream in, String filename) {
+        context.setSyntaxCheckInputStream(in);
+        context.setOriginalInputFile(filename);
+
+        return engine.eval(loadSource("Truffle::Boot.check_syntax", "check_syntax")).as(Boolean.class);
+    }
+
+    public RubyContext getContext() {
+        return context;
     }
 
     public void dispose() {

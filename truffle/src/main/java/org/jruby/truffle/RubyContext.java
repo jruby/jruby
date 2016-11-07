@@ -58,6 +58,7 @@ import org.jruby.truffle.tools.callgraph.SimpleWriter;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
@@ -71,6 +72,8 @@ public class RubyContext extends ExecutionContext {
     private final RubyInstanceConfig instanceConfig;
     private final String jrubyHome;
     private String originalInputFile;
+
+    private InputStream syntaxCheckInputStream;
     private boolean verbose;
 
     private final Options options = new Options();
@@ -444,5 +447,13 @@ public class RubyContext extends ExecutionContext {
 
     public boolean isVerbose() {
         return verbose;
+    }
+
+    public InputStream getSyntaxCheckInputStream() {
+        return syntaxCheckInputStream;
+    }
+
+    public void setSyntaxCheckInputStream(InputStream syntaxCheckInputStream) {
+        this.syntaxCheckInputStream = syntaxCheckInputStream;
     }
 }

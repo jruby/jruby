@@ -1695,6 +1695,7 @@ public class CoreLibrary {
             "/core/truffle/ffi/ffi_file.rb",
             "/core/truffle/ffi/ffi_struct.rb",
             "/core/truffle/support.rb",
+            "/core/truffle/boot.rb",
             "/core/io.rb",
             "/core/immediate.rb",
             "/core/string_mirror.rb",

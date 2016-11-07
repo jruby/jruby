@@ -19,6 +19,7 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.RubyLanguage;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
@@ -29,9 +30,12 @@ import org.jruby.truffle.language.loader.CodeLoader;
 import org.jruby.truffle.language.loader.SourceLoader;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.parser.ParserContext;
+import org.jruby.truffle.parser.TranslatorDriver;
 import org.jruby.util.Memo;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.List;
 
 @CoreClass("Truffle::Boot")
@@ -178,6 +182,32 @@ public abstract class TruffleBootNodes {
             return createString(StringOperations.encodeRope(source, UTF8Encoding.INSTANCE));
         }
 
+    }
+
+    @CoreMethod(names = "inner_check_syntax", onSingleton = true)
+    public abstract static class InnerCheckSyntaxNode extends CoreMethodArrayArgumentsNode {
+
+        @TruffleBoundary
+        @Specialization
+        public DynamicObject innerCheckSyntax() {
+            final String inputFile = getContext().getOriginalInputFile();
+            final InputStream inputStream = getContext().getSyntaxCheckInputStream();
+
+            final Source source;
+
+            try {
+                source = Source.newBuilder(new InputStreamReader(inputStream)).name(inputFile).mimeType(RubyLanguage.MIME_TYPE).build();
+            } catch (IOException e) {
+                throw new JavaException(e);
+            }
+
+            final TranslatorDriver translator = new TranslatorDriver(getContext());
+
+            translator.parse(getContext(), source, UTF8Encoding.INSTANCE,
+                    ParserContext.TOP_LEVEL, new String[]{}, null, null, true, null);
+
+            return nil();
+        }
     }
 
 }
