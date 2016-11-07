@@ -223,6 +223,7 @@ import org.jruby.truffle.parser.ast.NextParseNode;
 import org.jruby.truffle.parser.ast.NilParseNode;
 import org.jruby.truffle.parser.ast.NthRefParseNode;
 import org.jruby.truffle.parser.ast.OpAsgnAndParseNode;
+import org.jruby.truffle.parser.ast.OpAsgnConstDeclParseNode;
 import org.jruby.truffle.parser.ast.OpAsgnOrParseNode;
 import org.jruby.truffle.parser.ast.OpAsgnParseNode;
 import org.jruby.truffle.parser.ast.OpElementAsgnParseNode;
@@ -2158,7 +2159,7 @@ public class BodyTranslator extends Translator {
         RubyNode rhsTranslated;
 
         if (rhs == null) {
-            rhsTranslated = nilNode(source, sourceSection);
+            throw new UnsupportedOperationException("null rhs");
         } else {
             rhsTranslated = rhs.accept(this);
         }
@@ -2542,6 +2543,12 @@ public class BodyTranslator extends Translator {
     }
 
     @Override
+    public RubyNode visitOpAsgnConstDeclNode(OpAsgnConstDeclParseNode node) {
+        // TODO (eregon, 7 Nov. 2016): Is there any semantic difference?
+        return visitOpAsgnOrNode(new OpAsgnOrParseNode(node.getPosition(), node.getFirstNode(), node.getSecondNode()));
+    }
+
+    @Override
     public RubyNode visitOpAsgnNode(OpAsgnParseNode node) {
         final ISourcePosition pos = node.getPosition();
 
@@ -2903,7 +2910,6 @@ public class BodyTranslator extends Translator {
                         final RescueSplatNode rescueNode = new RescueSplatNode(context, fullSourceSection, splatTranslated, bodyTranslated);
                         rescueNodes.add(rescueNode);
                     } else {
-                        RubyNode result;
                         throw new UnsupportedOperationException();
                     }
                 } else {
@@ -3203,9 +3209,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     protected RubyNode defaultVisit(ParseNode node) {
-        RubySourceSection sourceSection = translate(node.getPosition());
-        final RubyNode ret = nilNode(source, sourceSection);
-        return addNewlineIfNeeded(node, ret);
+        throw new UnsupportedOperationException(node.toString());
     }
 
     public TranslatorEnvironment getEnvironment() {
