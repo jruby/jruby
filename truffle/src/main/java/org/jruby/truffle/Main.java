@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle;
 
+import org.jruby.JRubyTruffleInterface;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 
@@ -21,15 +22,13 @@ public class Main {
         config.setHardExit(true);
         config.processArguments(args);
 
-        InputStream in = config.getScriptSource();
-        String filename = config.displayedFileName();
+        final InputStream in = config.getScriptSource();
+        final String filename = config.displayedFileName();
 
-        final Ruby runtime = Ruby.newInstance(config);
-
-        config.setCompileMode(RubyInstanceConfig.CompileMode.TRUFFLE);
+        final JRubyTruffleInterface jrubyTruffle = new JRubyTruffleImpl(config);
 
         if (in != null) {
-            int exitCode = runtime.getTruffleContext().execute(filename);
+            final int exitCode = jrubyTruffle.execute(filename);
             System.exit(exitCode);
         }
 
