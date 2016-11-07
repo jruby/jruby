@@ -19,7 +19,8 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.RubyThread.Status;
+
+import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
@@ -63,8 +64,8 @@ public abstract class ThreadNodes {
 
         @Specialization
         public boolean alive(DynamicObject thread) {
-            final Status status = Layouts.THREAD.getStatus(thread);
-            return status != Status.ABORTING && status != Status.DEAD;
+            final ThreadStatus status = Layouts.THREAD.getStatus(thread);
+            return status != ThreadStatus.ABORTING && status != ThreadStatus.DEAD;
         }
 
     }
@@ -312,16 +313,15 @@ public abstract class ThreadNodes {
         @Specialization
         public Object status(DynamicObject self) {
             // TODO: slightly hackish
-            final Status status = Layouts.THREAD.getStatus(self);
-            if (status == Status.DEAD) {
+            final ThreadStatus status = Layouts.THREAD.getStatus(self);
+            if (status == ThreadStatus.DEAD) {
                 if (Layouts.THREAD.getException(self) != null) {
                     return nil();
                 } else {
                     return false;
                 }
             }
-
-            return createString(status.bytes);
+            return create7BitString(status.toString().toLowerCase(), USASCIIEncoding.INSTANCE);
         }
 
     }
@@ -331,8 +331,8 @@ public abstract class ThreadNodes {
 
         @Specialization
         public boolean stop(DynamicObject self) {
-            final Status status = Layouts.THREAD.getStatus(self);
-            return status == Status.DEAD || status == Status.SLEEP;
+            final ThreadStatus status = Layouts.THREAD.getStatus(self);
+            return status == ThreadStatus.DEAD || status == ThreadStatus.SLEEP;
         }
 
     }
@@ -354,7 +354,7 @@ public abstract class ThreadNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject wakeup(final DynamicObject thread) {
-            if (Layouts.THREAD.getStatus(thread) == Status.DEAD) {
+            if (Layouts.THREAD.getStatus(thread) == ThreadStatus.DEAD) {
                 throw new RaiseException(coreExceptions().threadErrorKilledThread(this));
             }
 

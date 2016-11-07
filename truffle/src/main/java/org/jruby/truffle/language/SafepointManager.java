@@ -17,10 +17,10 @@ import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
-import org.jruby.RubyThread.Status;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.InterruptMode;
+import org.jruby.truffle.core.thread.ThreadStatus;
 
 import java.util.Collections;
 import java.util.Set;
@@ -122,7 +122,7 @@ public class SafepointManager {
         final SafepointAction deferredAction = deferred ? action : null;
 
         try {
-            if (!deferred && thread != null && Layouts.THREAD.getStatus(thread) != Status.ABORTING) {
+            if (!deferred && thread != null && Layouts.THREAD.getStatus(thread) != ThreadStatus.ABORTING) {
                 action.run(thread, currentNode);
             }
         } finally {

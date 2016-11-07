@@ -15,7 +15,6 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.posix.DefaultNativeTimeval;
 import jnr.posix.Timeval;
-import org.jruby.RubyThread.Status;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.InterruptMode;
@@ -56,7 +55,7 @@ public class ThreadManager {
     }
 
     public static final InterruptMode DEFAULT_INTERRUPT_MODE = InterruptMode.IMMEDIATE;
-    public static final Status DEFAULT_STATUS = Status.RUN;
+    public static final ThreadStatus DEFAULT_STATUS = ThreadStatus.RUN;
 
     public static DynamicObject createRubyThread(RubyContext context) {
         final DynamicObject object = Layouts.THREAD.createThread(
@@ -162,10 +161,10 @@ public class ThreadManager {
     public static void cleanup(RubyContext context, DynamicObject thread) {
         assert RubyGuards.isRubyThread(thread);
 
-        Layouts.THREAD.setStatus(thread, Status.ABORTING);
+        Layouts.THREAD.setStatus(thread, ThreadStatus.ABORTING);
         context.getThreadManager().unregisterThread(thread);
 
-        Layouts.THREAD.setStatus(thread, Status.DEAD);
+        Layouts.THREAD.setStatus(thread, ThreadStatus.DEAD);
         Layouts.THREAD.setThread(thread, null);
         assert RubyGuards.isRubyThread(thread);
         for (Lock lock : Layouts.THREAD.getOwnedLocks(thread)) {
@@ -218,13 +217,13 @@ public class ThreadManager {
         T result = null;
 
         do {
-            Layouts.THREAD.setStatus(runningThread, Status.SLEEP);
+            Layouts.THREAD.setStatus(runningThread, ThreadStatus.SLEEP);
 
             try {
                 try {
                     result = action.block();
                 } finally {
-                    Layouts.THREAD.setStatus(runningThread, Status.RUN);
+                    Layouts.THREAD.setStatus(runningThread, ThreadStatus.RUN);
                 }
             } catch (InterruptedException e) {
                 // We were interrupted, possibly by the SafepointManager.
