@@ -81,9 +81,14 @@ import java.util.regex.Pattern;
 public class RubyInstanceConfig {
 
     public RubyInstanceConfig() {
-        currentDirectory = Ruby.isSecurityRestricted() ? "/" : JRubyFile.getFileProperty("user.dir");
+        this(Ruby.isSecurityRestricted());
+    }
 
-        if (Ruby.isSecurityRestricted()) {
+    public RubyInstanceConfig(boolean isSecurityRestricted) {
+        this.isSecurityRestricted = isSecurityRestricted;
+        currentDirectory = isSecurityRestricted ? "/" : JRubyFile.getFileProperty("user.dir");
+
+        if (isSecurityRestricted) {
             compileMode = CompileMode.OFF;
             jitLogging = false;
             jitDumping = false;
@@ -117,6 +122,7 @@ public class RubyInstanceConfig {
     }
 
     public RubyInstanceConfig(RubyInstanceConfig parentConfig) {
+        isSecurityRestricted = parentConfig.isSecurityRestricted;
         currentDirectory = parentConfig.getCurrentDirectory();
         compileMode = parentConfig.getCompileMode();
         jitLogging = parentConfig.jitLogging;
@@ -301,7 +307,7 @@ public class RubyInstanceConfig {
         String newJRubyHome = null;
 
         // try the normal property first
-        if (!Ruby.isSecurityRestricted()) {
+        if (!isSecurityRestricted) {
             newJRubyHome = SafePropertyAccessor.getProperty("jruby.home");
         }
 
@@ -1495,6 +1501,8 @@ public class RubyInstanceConfig {
     ////////////////////////////////////////////////////////////////////////////
     // Configuration fields.
     ////////////////////////////////////////////////////////////////////////////
+
+    private final boolean isSecurityRestricted;
 
     /**
      * Indicates whether the script must be extracted from script source
