@@ -40,8 +40,8 @@ module Signal
   end
   remove_const :SIGNAL_LIST
 
-  # replace CLD with CHLD since CLD is not recognized by in `new sun.mics.Signal("CLD")`
-  Numbers[20] = 'CHLD'
+  # replace CLD with CHLD since CLD is not recognized by in `new sun.misc.Signal("CLD")`
+  Numbers[Names['CLD']] = Numbers[Names['CHLD']]
 
   @threads = {}
   @handlers = {}
