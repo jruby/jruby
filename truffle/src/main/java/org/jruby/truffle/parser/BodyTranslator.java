@@ -101,6 +101,7 @@ import org.jruby.truffle.language.exceptions.RescueClassesNode;
 import org.jruby.truffle.language.exceptions.RescueNode;
 import org.jruby.truffle.language.exceptions.RescueSplatNode;
 import org.jruby.truffle.language.exceptions.TryNode;
+import org.jruby.truffle.language.globals.AliasGlobalVarNode;
 import org.jruby.truffle.language.globals.CheckMatchVariableTypeNode;
 import org.jruby.truffle.language.globals.CheckOutputSeparatorVariableTypeNode;
 import org.jruby.truffle.language.globals.CheckProgramNameVariableTypeNode;
@@ -250,6 +251,7 @@ import org.jruby.truffle.parser.ast.TrueParseNode;
 import org.jruby.truffle.parser.ast.TruffleFragmentParseNode;
 import org.jruby.truffle.parser.ast.UndefParseNode;
 import org.jruby.truffle.parser.ast.UntilParseNode;
+import org.jruby.truffle.parser.ast.VAliasParseNode;
 import org.jruby.truffle.parser.ast.VCallParseNode;
 import org.jruby.truffle.parser.ast.WhenParseNode;
 import org.jruby.truffle.parser.ast.WhileParseNode;
@@ -334,6 +336,15 @@ public class BodyTranslator extends Translator {
 
         ret.unsafeSetSourceSection(sourceSection);
 
+        return addNewlineIfNeeded(node, ret);
+    }
+
+    @Override
+    public RubyNode visitVAliasNode(VAliasParseNode node) {
+        final RubySourceSection sourceSection = translate(node.getPosition());
+        final RubyNode ret = new AliasGlobalVarNode(node.getOldName(), node.getNewName());
+
+        ret.unsafeSetSourceSection(sourceSection);
         return addNewlineIfNeeded(node, ret);
     }
 
@@ -3209,7 +3220,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     protected RubyNode defaultVisit(ParseNode node) {
-        throw new UnsupportedOperationException(node.toString());
+        throw new UnsupportedOperationException(node.toString() + " " + node.getPosition());
     }
 
     public TranslatorEnvironment getEnvironment() {

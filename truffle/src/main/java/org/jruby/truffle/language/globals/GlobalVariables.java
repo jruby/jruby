@@ -47,14 +47,17 @@ public class GlobalVariables {
         return storage;
     }
 
+    @TruffleBoundary
     public void alias(String name, GlobalVariableStorage storage) {
         variables.put(name, storage);
     }
 
+    @TruffleBoundary
     public Collection<String> keys() {
         return variables.keySet();
     }
 
+    @TruffleBoundary
     public Collection<DynamicObject> dynamicObjectValues() {
         final Collection<GlobalVariableStorage> storages = variables.values();
         final ArrayList<DynamicObject> values = new ArrayList<>(storages.size());
