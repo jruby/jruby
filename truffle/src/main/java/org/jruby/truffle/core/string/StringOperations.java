@@ -37,7 +37,6 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jcodings.Encoding;
-import org.jruby.RubyEncoding;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.array.ArrayOperations;
@@ -50,6 +49,8 @@ import org.jruby.truffle.util.ByteListUtils;
 import org.jruby.truffle.util.StringUtils;
 import org.jruby.util.ByteList;
 
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 
 public abstract class StringOperations {
@@ -153,16 +154,13 @@ public abstract class StringOperations {
         Charset charset = encoding.getCharset();
 
         // if null charset, fall back on Java default charset
-        if (charset == null) charset = Charset.defaultCharset();
-
-        byte[] bytes;
-        if (charset == RubyEncoding.UTF8) {
-            bytes = RubyEncoding.encodeUTF8(value);
-        } else if (charset == RubyEncoding.UTF16) {
-            bytes = RubyEncoding.encodeUTF16(value);
-        } else {
-            bytes = RubyEncoding.encode(value, charset);
+        if (charset == null) {
+            charset = Charset.defaultCharset();
         }
+
+        final ByteBuffer buffer = charset.encode(CharBuffer.wrap(value));
+        final byte[] bytes = new byte[buffer.limit()];
+        buffer.get(bytes);
 
         return RopeOperations.create(bytes, encoding, codeRange);
     }
