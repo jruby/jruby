@@ -1,1 +1,2 @@
 fails:Thread::Backtrace::Location#label returns the base label of the call frame
+fails:Thread::Backtrace::Location#label returns the block name for a block location

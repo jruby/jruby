@@ -62,9 +62,12 @@ public class ThreadBacktraceLocationNodes {
     public abstract static class LabelNode extends UnaryCoreMethodNode {
 
         @Specialization
-        public Object label(DynamicObject threadBacktraceLocation) {
-            // TODO BJF 7 Nov. 2016 This needs to be implemented, stubbed for now
-            return nil();
+        public DynamicObject label(DynamicObject threadBacktraceLocation) {
+            final Activation activation = ThreadBacktraceLocationLayoutImpl.INSTANCE.getActivation(threadBacktraceLocation);
+            // TODO eregon 8 Nov. 2016 This does not handle blocks
+            final String methodName = activation.getMethod().getSharedMethodInfo().getName();
+
+            return StringOperations.createString(getContext(), StringOperations.encodeRope(methodName, UTF8Encoding.INSTANCE));
         }
 
     }
