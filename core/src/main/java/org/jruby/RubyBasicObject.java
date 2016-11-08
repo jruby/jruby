@@ -959,13 +959,17 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
         // We're cloning ourselves, so we know the result should be a RubyObject
         RubyBasicObject clone = (RubyBasicObject)getMetaClass().getRealClass().allocate();
-        clone.setMetaClass(getSingletonClassClone());
+        clone.setMetaClass(getSingletonClassCloneAndAttach(clone));
         if (isTaint()) clone.setTaint(true);
 
         initCopy(runtime.getCurrentContext(), clone, this, true);
 
         if (isFrozen()) clone.setFrozen(true);
         return clone;
+    }
+
+    protected RubyClass getSingletonClassClone() {
+        return getSingletonClassCloneAndAttach(UNDEF);
     }
 
     /** rb_singleton_class_clone
@@ -975,14 +979,14 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *
      * @return either a real class, or a clone of the current singleton class
      */
-    protected RubyClass getSingletonClassClone() {
+    protected RubyClass getSingletonClassCloneAndAttach(IRubyObject attach) {
         RubyClass klass = getMetaClass();
 
         if (!klass.isSingleton()) {
             return klass;
         }
 
-        MetaClass clone = new MetaClass(getRuntime(), klass.getSuperClass(), ((MetaClass) klass).getAttached());
+        RubyClass clone = new MetaClass(getRuntime(), klass.getSuperClass(), attach);
         clone.flags = flags;
 
         if (this instanceof RubyClass) {
