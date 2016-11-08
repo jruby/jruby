@@ -15,7 +15,6 @@ import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyGuards;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
@@ -30,7 +29,14 @@ public abstract class BucketsStrategy {
 
     public static final int SIGN_BIT_MASK = ~(1 << 31);
 
-    private static final int[] CAPACITIES = Arrays.copyOf(org.jruby.RubyHash.MRI_PRIMES, org.jruby.RubyHash.MRI_PRIMES.length - 1);
+    private static final int MRI_PRIMES[] = {
+                    8 + 3, 16 + 3, 32 + 5, 64 + 3, 128 + 3, 256 + 27, 512 + 9, 1024 + 9, 2048 + 5, 4096 + 3,
+                    8192 + 27, 16384 + 43, 32768 + 3, 65536 + 45, 131072 + 29, 262144 + 3, 524288 + 21, 1048576 + 7,
+                    2097152 + 17, 4194304 + 15, 8388608 + 9, 16777216 + 43, 33554432 + 35, 67108864 + 15,
+                    134217728 + 29, 268435456 + 3, 536870912 + 11, 1073741824 + 85
+    };
+
+    private static final int[] CAPACITIES = MRI_PRIMES;
 
     @TruffleBoundary
     public static DynamicObject create(RubyContext context, Collection<KeyValue> entries, boolean byIdentity) {
