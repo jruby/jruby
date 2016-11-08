@@ -44,6 +44,7 @@
  */
 package org.jruby.truffle;
 
+import com.oracle.truffle.api.TruffleOptions;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.util.cli.Options;
 import org.jruby.util.cli.OutputStrings;
@@ -166,7 +167,8 @@ public class Main {
     }
 
     private static void printTruffleMemoryMetric() {
-        if (Options.TRUFFLE_METRICS_MEMORY_USED_ON_EXIT.load()) {
+        // Memory stats aren't available on AOT.
+        if (!TruffleOptions.AOT && Options.TRUFFLE_METRICS_MEMORY_USED_ON_EXIT.load()) {
             for (int n = 0; n < 10; n++) {
                 System.gc();
             }
