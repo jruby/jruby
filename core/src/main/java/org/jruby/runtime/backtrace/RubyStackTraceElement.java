@@ -13,7 +13,7 @@ public class RubyStackTraceElement implements java.io.Serializable {
     public RubyStackTraceElement(StackTraceElement element) {
         this.className = element.getClassName();
         this.methodName = element.getMethodName();
-        this.fileName = element.getFileName();
+        this.fileName = (element.getFileName() == null) ? "unknown" : element.getFileName();
         this.lineNumber = element.getLineNumber();
         this.binding = false;
         this.frameType = FrameType.METHOD;
@@ -28,7 +28,7 @@ public class RubyStackTraceElement implements java.io.Serializable {
     public RubyStackTraceElement(String klass, String method, String file, int line, boolean binding, FrameType frameType) {
         this.className = klass;
         this.methodName = method;
-        this.fileName = file;
+        this.fileName = (file == null) ? "unknown" : file;
         this.lineNumber = line;
         this.binding = binding;
         this.frameType = frameType;
