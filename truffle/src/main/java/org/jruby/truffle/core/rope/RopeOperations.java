@@ -383,16 +383,15 @@ public class RopeOperations {
                 } else {
                     final int bytesToCopy = substringLengths.peek();
                     final int patternLength = repeatingRope.getChild().byteLength();
-                    int loopCount = (bytesToCopy + patternLength - 1) / patternLength;
 
                     // Fix the offset to be appropriate for a given child. The offset is reset the first time it is
                     // consumed, so there's no need to worry about adversely affecting anything by adjusting it here.
                     offset %= repeatingRope.getChild().byteLength();
 
-                    // Adjust the loop count in case we're straddling two boundaries.
-                    if (offset > 0 && ((bytesToCopy - (patternLength - offset)) % patternLength) > 0) {
-                        loopCount++;
-                    }
+                    // The loopCount has to be precisely determined so every repetion has at least some parts used.
+                    // It has to account for the begging we don't need (offset), has to reach the end but, and must not
+                    // have extra repetitions.
+                    int loopCount = (offset + bytesToCopy + patternLength - 1 ) / patternLength;
 
                     // TODO (nirvdrum 25-Aug-2016): Flattening the rope with CR_VALID will cause a character length recalculation, even though we already know what it is. That operation should be made more optimal.
                     final Rope flattenedChild = flatten(repeatingRope.getChild());
