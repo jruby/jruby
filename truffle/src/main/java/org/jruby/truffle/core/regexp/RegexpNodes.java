@@ -244,7 +244,7 @@ public abstract class RegexpNodes {
                     throw new UnsupportedOperationException();
             }
 
-            bytes = StringOperations.createRope(bytesString, ASCIIEncoding.INSTANCE);
+            bytes = StringOperations.encodeRope(bytesString, ASCIIEncoding.INSTANCE);
         }
 
         return bytes;

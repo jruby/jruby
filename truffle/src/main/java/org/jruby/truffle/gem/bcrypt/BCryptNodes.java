@@ -16,6 +16,7 @@ import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.string.StringOperations;
 
 @CoreClass("Truffle::Gem::BCrypt")
@@ -30,9 +31,8 @@ public abstract class BCryptNodes {
             final String result = BCrypt.hashpw(
                     StringOperations.getString(secret),
                     StringOperations.getString(salt));
-            return StringOperations.createString(
-                    getContext(),
-                    StringOperations.createRope(result, USASCIIEncoding.INSTANCE));
+            return StringOperations.createString(getContext(),
+                            StringOperations.encodeRope(result, USASCIIEncoding.INSTANCE, CodeRange.CR_7BIT));
         }
     }
 
@@ -42,9 +42,8 @@ public abstract class BCryptNodes {
         @TruffleBoundary
         @Specialization
         public Object gensalt(int cost) {
-            return StringOperations.createString(
-                    getContext(),
-                    StringOperations.createRope(BCrypt.gensalt(cost), USASCIIEncoding.INSTANCE));
+            return StringOperations.createString(getContext(),
+                            StringOperations.encodeRope(BCrypt.gensalt(cost), USASCIIEncoding.INSTANCE, CodeRange.CR_7BIT));
         }
     }
 }

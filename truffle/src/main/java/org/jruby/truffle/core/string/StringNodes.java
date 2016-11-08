@@ -1295,7 +1295,7 @@ public abstract class StringNodes {
         @Specialization
         public DynamicObject initializeJavaString(DynamicObject self, String from) {
             raiseIfFrozen(self);
-            StringOperations.setRope(self, StringOperations.createRope(from, ASCIIEncoding.INSTANCE));
+            StringOperations.setRope(self, StringOperations.encodeRope(from, ASCIIEncoding.INSTANCE));
             return self;
         }
 

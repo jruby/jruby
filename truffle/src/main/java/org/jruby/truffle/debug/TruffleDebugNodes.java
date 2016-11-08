@@ -146,7 +146,7 @@ public abstract class TruffleDebugNodes {
         @Specialization(guards = "isRubyArray(array)")
         public DynamicObject arrayStorage(DynamicObject array) {
             String storage = ArrayStrategy.of(array).toString();
-            return StringOperations.createString(getContext(), StringOperations.createRope(storage, USASCIIEncoding.INSTANCE));
+            return StringOperations.createString(getContext(), StringOperations.encodeRope(storage, USASCIIEncoding.INSTANCE));
         }
 
     }
