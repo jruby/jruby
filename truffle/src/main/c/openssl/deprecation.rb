@@ -6,6 +6,7 @@ module OpenSSL
         if with_config("broken-apple-openssl")
           flag = "-Wno-deprecated-declarations"
         end
+        $warnflags ||= [] # MODIFED deprecation, was nil
         $warnflags << " #{flag}"
       else
         flag = ""
