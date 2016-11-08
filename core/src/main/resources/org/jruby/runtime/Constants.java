@@ -30,15 +30,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
-import org.jruby.FlagRegistry;
-import org.jruby.RubyArray;
-import org.jruby.RubyBasicObject;
-import org.jruby.RubyHash;
-import org.jruby.RubyMatchData;
-import org.jruby.RubyModule;
-import org.jruby.RubyString;
-import org.jruby.ext.stringio.StringIO;
-
 public final class Constants {
     public static final String PLATFORM = "java";
 
@@ -81,36 +72,34 @@ public final class Constants {
      */
     public static final int JIT_THRESHOLD = 50;
 
-    private static final FlagRegistry registry = new FlagRegistry();
+    // Flags for all Ruby objects, other flags must go after these
+    public static final int FALSE_F   = 1 << 0;
+    public static final int NIL_F     = 1 << 1;
+    public static final int FROZEN_F  = 1 << 2;
+    public static final int TAINTED_F = 1 << 3;
 
-    // These flags must be registered from top of hierarchy down to maintain order.
-    // TODO: Replace these during the build with their calculated values.
-    public static final int FALSE_F = registry.newFlag(RubyBasicObject.class);
-    public static final int NIL_F = registry.newFlag(RubyBasicObject.class);
-    public static final int FROZEN_F = registry.newFlag(RubyBasicObject.class);
-    public static final int TAINTED_F = registry.newFlag(RubyBasicObject.class);
+    // All these core classes have Object as superclass, so flags start at 1 << 4
+    // Module flags
+    public static final int CACHEPROXY_F     = 1 << 4;
+    public static final int NEEDSIMPL_F      = 1 << 5;
+    public static final int REFINED_MODULE_F = 1 << 6;
+    public static final int IS_OVERLAID_F    = 1 << 7;
 
-    public static final int CACHEPROXY_F = registry.newFlag(RubyModule.class);
-    public static final int NEEDSIMPL_F = registry.newFlag(RubyModule.class);
-    public static final int REFINED_MODULE_F = registry.newFlag(RubyModule.class);
-    public static final int IS_OVERLAID_F = registry.newFlag(RubyModule.class);
+    // String flags
+    public static final int CR_7BIT_F  = 1 << 4;
+    public static final int CR_VALID_F = 1 << 5;
 
-    public static final int CR_7BIT_F    = registry.newFlag(RubyString.class);
-    public static final int CR_VALID_F   = registry.newFlag(RubyString.class);
+    // StringIO flags
+    public static final int STRIO_READABLE = 1 << 4;
+    public static final int STRIO_WRITABLE = 1 << 5;
 
-    public static final int STRIO_READABLE = registry.newFlag(StringIO.class);
-    public static final int STRIO_WRITABLE = registry.newFlag(StringIO.class);
+    // MatchData flags
+    public static final int MATCH_BUSY = 1 << 4;
 
-    public static final int MATCH_BUSY = registry.newFlag(RubyMatchData.class);
+    // Hash flags
+    public static final int COMPARE_BY_IDENTITY_F = 1 << 4;
+    public static final int PROCDEFAULT_HASH_F    = 1 << 5;
 
-    public static final int COMPARE_BY_IDENTITY_F = registry.newFlag(RubyHash.class);
-    public static final int PROCDEFAULT_HASH_F = registry.newFlag(RubyHash.class);
-
-    private static final boolean DEBUG = false;
-    static {
-        if (DEBUG) registry.printFlags();
-    }
-    
     private static String jruby_revision = "@jruby.revision@";
 
     @Deprecated
