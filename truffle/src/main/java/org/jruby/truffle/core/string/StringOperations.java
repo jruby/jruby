@@ -169,11 +169,6 @@ public abstract class StringOperations {
         return encodeRope(value, encoding, CodeRange.CR_UNKNOWN);
     }
 
-    @TruffleBoundary
-    public static Rope createRope(String s, Encoding encoding) {
-        return RopeOperations.create(ByteList.encode(s, "ISO-8859-1"), encoding, CodeRange.CR_UNKNOWN);
-    }
-
     public static ByteList getByteListReadOnly(DynamicObject object) {
         return RopeOperations.getByteListReadOnly(rope(object));
     }

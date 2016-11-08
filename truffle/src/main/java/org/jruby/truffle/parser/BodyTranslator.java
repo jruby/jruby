@@ -59,6 +59,7 @@ import org.jruby.truffle.core.regexp.RegexpOptions;
 import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeConstants;
+import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.rubinius.RubiniusLastStringReadNode;
 import org.jruby.truffle.core.rubinius.RubiniusLastStringWriteNodeGen;
 import org.jruby.truffle.core.string.InterpolatedStringNode;
@@ -3031,7 +3032,16 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitSymbolNode(SymbolParseNode node) {
-        final Rope rope = StringOperations.createRope(node.getName(), node.getEncoding());
+        String name = node.getName();
+        // The symbol is passed as a String but it's really
+        // "interpret the char[] as a byte[] with the given encoding".
+        byte[] bytes = new byte[name.length()];
+        for (int i = 0; i < name.length(); i++) {
+            char val = name.charAt(i);
+            assert val >= 0 && val < 256;
+            bytes[i] = (byte) (val & 0xFF);
+        }
+        final Rope rope = RopeOperations.create(bytes, node.getEncoding(), CodeRange.CR_UNKNOWN);
         final RubyNode ret = new ObjectLiteralNode(context, translate(node.getPosition()).toSourceSection(source), context.getSymbolTable().getSymbol(rope));
         return addNewlineIfNeeded(node, ret);
     }

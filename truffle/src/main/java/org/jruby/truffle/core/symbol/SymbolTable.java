@@ -20,7 +20,6 @@ import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.util.ByteList;
 import org.jruby.util.IdUtil;
 
 import java.lang.ref.Reference;
@@ -70,7 +69,9 @@ public class SymbolTable {
                 return symbol;
             }
 
-            final Rope rope = StringOperations.createRope(stringKey, USASCIIEncoding.INSTANCE);
+            // TODO (eregon, 8 Nov. 2016): This doesn't sound right,
+            // maybe it should become UTF-8 if it's not 7-bit?
+            final Rope rope = StringOperations.encodeRope(stringKey, USASCIIEncoding.INSTANCE);
             symbol = getDeduplicatedSymbol(rope);
 
             stringSymbolMap.put(stringKey, new WeakReference<DynamicObject>(symbol));
@@ -126,7 +127,7 @@ public class SymbolTable {
     }
 
     private DynamicObject createSymbol(Rope rope) {
-        final String string = ByteList.decode(rope.getBytes(), 0, rope.byteLength(), "ISO-8859-1");
+        final String string = RopeOperations.decodeRope(rope);
         // Symbol has to have reference to its SymbolEquality otherwise it would be GCed.
         final SymbolEquality equalityWrapper = new SymbolEquality();
         final DynamicObject symbol = Layouts.SYMBOL.createSymbol(
