@@ -87,15 +87,15 @@ module RbConfig
       'ruby_install_name' => 'jruby-truffle',
       'RUBY_SO_NAME' => '$(RUBY_BASE_NAME)',
       'hdrdir' => "#{jruby_home}/lib/ruby/truffle/cext",
-      'COMPILE_C' => '$(CC) $(INCFLAGS) $(CPPFLAGS) $(CFLAGS) $(COUTFLAG)$< -o $@',
       'bindir' => "#{jruby_home}/bin"
   }
 
   if Truffle::Safe.memory_safe? && Truffle::Safe.processes_safe?
     MAKEFILE_CONFIG.merge!({
+        'COMPILE_C' => "$(CC) $(INCFLAGS) $(CPPFLAGS) $(CFLAGS) $(COUTFLAG)$< -o $@ && mx -p #{ENV['SULONG_HOME']} su-opt -S -always-inline -mem2reg $@ -o $@",
         'CC' => "mx -p #{ENV['SULONG_HOME']} su-clang -I#{ENV['SULONG_HOME']}/include -S",
-        'CFLAGS' => "  -emit-llvm -I#{ENV['OPENSSL_HOME']}/include -DHAVE_OPENSSL_110_THREADING_API -DHAVE_HMAC_CTX_COPY -DHAVE_EVP_CIPHER_CTX_COPY -DHAVE_BN_RAND_RANGE -DHAVE_BN_PSEUDO_RAND_RANGE -DHAVE_X509V3_EXT_NCONF_NID -O3 -fno-fast-math -ggdb3 -Wall -Wextra -Wno-unused-parameter -Wno-parentheses -Wno-long-long -Wno-missing-field-initializers -Wunused-variable -Wpointer-arith -Wwrite-strings -Wdeclaration-after-statement -Wshorten-64-to-32 -Wimplicit-function-declaration -Wdivision-by-zero -Wdeprecated-declarations -Wextra-tokens ",
-        'LINK_SO' => "mx -v -p #{ENV['SULONG_HOME']} su-link -o $@ $(OBJS)",
+        'CFLAGS' => "  -emit-llvm -I#{ENV['OPENSSL_HOME']}/include -DHAVE_OPENSSL_110_THREADING_API -DHAVE_HMAC_CTX_COPY -DHAVE_EVP_CIPHER_CTX_COPY -DHAVE_BN_RAND_RANGE -DHAVE_BN_PSEUDO_RAND_RANGE -DHAVE_X509V3_EXT_NCONF_NID -Wall -Wextra -Wno-unused-parameter -Wno-parentheses -Wno-long-long -Wno-missing-field-initializers -Wunused-variable -Wpointer-arith -Wwrite-strings -Wdeclaration-after-statement -Wshorten-64-to-32 -Wimplicit-function-declaration -Wdivision-by-zero -Wdeprecated-declarations -Wextra-tokens ",
+        'LINK_SO' => "mx -v -p #{ENV['SULONG_HOME']} su-link -o $@ -l #{ENV['OPENSSL_HOME']}/lib/libssl.dylib $(OBJS)",
         'TRY_LINK' => "mx -p #{ENV['SULONG_HOME']} su-clang $(src) $(INCFLAGS) $(CFLAGS) -I#{ENV['SULONG_HOME']}/include $(LIBS)",
         'CPP' => "mx -p #{ENV['SULONG_HOME']} su-clang -I#{ENV['SULONG_HOME']}/include -S"
     })
