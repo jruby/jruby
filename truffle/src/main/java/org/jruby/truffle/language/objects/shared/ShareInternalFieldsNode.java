@@ -20,6 +20,7 @@ import org.jruby.truffle.Layouts;
 import org.jruby.truffle.core.array.ArrayGuards;
 import org.jruby.truffle.core.queue.LinkedBlockingQueueLocksConditions;
 import org.jruby.truffle.language.objects.ShapeCachingGuards;
+import org.jruby.truffle.util.BoundaryUtils.BoundaryIterable;
 
 /**
  * Share the internal field of an object, accessible by its Layout
@@ -67,7 +68,7 @@ public abstract class ShareInternalFieldsNode extends Node {
             @Cached("createWriteBarrierNode()") WriteBarrierNode writeBarrierNode) {
         LinkedBlockingQueueLocksConditions<Object> queue = Layouts.QUEUE.getQueue(object);
         if (!profileEmpty.profile(queue.size() == 0)) {
-            for (Object e : queue) {
+            for (Object e : BoundaryIterable.wrap(queue)) {
                 writeBarrierNode.executeWriteBarrier(e);
             }
         }
