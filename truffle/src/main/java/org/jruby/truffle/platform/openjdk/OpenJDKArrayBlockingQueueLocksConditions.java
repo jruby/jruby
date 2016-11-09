@@ -13,6 +13,8 @@ import org.jruby.truffle.core.queue.ArrayBlockingQueueLocksConditions;
 import org.jruby.truffle.core.queue.DelegatingBlockingQueue;
 import org.jruby.truffle.language.control.JavaException;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+
 import java.lang.invoke.MethodHandle;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.locks.Condition;
@@ -34,6 +36,7 @@ public class OpenJDKArrayBlockingQueueLocksConditions<T>
     private final Condition notEmptyCondition;
     private final Condition notFullCondition;
 
+    @TruffleBoundary
     public OpenJDKArrayBlockingQueueLocksConditions(int capacity) {
         super(new ArrayBlockingQueue<T>(capacity));
 
