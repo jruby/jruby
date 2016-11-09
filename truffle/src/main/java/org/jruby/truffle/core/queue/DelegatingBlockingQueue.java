@@ -9,6 +9,8 @@
  */
 package org.jruby.truffle.core.queue;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.concurrent.BlockingQueue;
@@ -152,6 +154,7 @@ public class DelegatingBlockingQueue<T> implements BlockingQueue<T> {
     }
 
     @Override
+    @TruffleBoundary
     public Iterator<T> iterator() {
         return queue.iterator();
     }
