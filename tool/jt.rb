@@ -74,11 +74,12 @@ module Utilities
 
   def self.find_graal_javacmd_and_options
     graalvm = ENV['GRAALVM_BIN']
+    jvmci = ENV['JVMCI_BIN']
     graal_home = ENV['GRAAL_HOME']
 
-    raise "Both GRAALVM_BIN and GRAAL_HOME defined!" if graalvm && graal_home
+    raise "More than one of GRAALVM_BIN, JVMCI_BIN or GRAAL_HOME defined!" if [graalvm, jvmci, graal_home].count(&:itself) > 1
 
-    if !graalvm && !graal_home
+    if !graalvm && !jvmci && !graal_home
       if truffle_release?
         graalvm = ENV['GRAALVM_RELEASE_BIN']
       else
@@ -88,7 +89,21 @@ module Utilities
 
     if graalvm
       javacmd = File.expand_path(graalvm)
+      vm_args = []
       options = []
+    elsif jvmci
+      javacmd = File.expand_path(jvmci)
+      jvmci_graal_home = ENV['JVMCI_GRAAL_HOME']
+      raise "Also set JVMCI_GRAAL_HOME if you set JVMCI_BIN" unless jvmci_graal_home
+      jvmci_graal_home = File.expand_path(jvmci_graal_home)
+      vm_args = [
+        '-d64',
+        '-XX:+UnlockExperimentalVMOptions',
+        '-XX:+EnableJVMCI',
+        '--add-exports=java.base/jdk.internal.module=com.oracle.graal.graal_core',
+        "--module-path=#{jvmci_graal_home}/../truffle/mxbuild/modules/com.oracle.truffle.truffle_api.jar:#{jvmci_graal_home}/mxbuild/modules/com.oracle.graal.graal_core.jar"
+      ]
+      options = ['--jvmci-truffle']
     elsif graal_home
       graal_home = File.expand_path(graal_home)
       command_line = `mx -v -p #{graal_home} vm -version`.lines.to_a.last
@@ -103,11 +118,11 @@ module Utilities
         vm_args << [nfi_classes, sulong_dependencies, sulong_jar].join(':')
         vm_args << '-XX:-UseJVMCIClassLoader'
       end
-      options = vm_args.map { |arg| "-J#{arg}" }
+      options = []
     else
       raise 'set one of GRAALVM_BIN or GRAAL_HOME in order to use Graal'
     end
-    [javacmd, options]
+    [javacmd, vm_args.map { |arg| "-J#{arg}" } + options]
   end
 
   def self.find_graal_js
@@ -458,7 +473,7 @@ module Commands
       jt test                                        run all mri tests, specs and integration tests (set SULONG_HOME, and maybe USE_SYSTEM_CLANG)
       jt test tck [--jdebug]                         run the Truffle Compatibility Kit tests
       jt test mri                                    run mri tests
-          --graal         use Graal (set either GRAALVM_BIN or GRAAL_HOME)
+          --graal         use Graal (set either GRAALVM_BIN, JVMCI_BIN or GRAAL_HOME)
       jt test specs                                  run all specs
       jt test specs fast                             run all specs except sub-processes, GC, sleep, ...
       jt test spec/ruby/language                     run specs in this directory
@@ -496,8 +511,10 @@ module Commands
       recognised environment variables:
 
         RUBY_BIN                                     The JRuby+Truffle executable to use (normally just bin/jruby)
-        GRAALVM_BIN                                  GraalVM executable (java command) to use
+        GRAALVM_BIN                                  GraalVM executable (java command)
         GRAAL_HOME                                   Directory where there is a built checkout of the Graal compiler (make sure mx is on your path)
+        JVMCI_BIN                                    JVMCI-enabled (so JDK 9 EA build) java command (aslo set JVMCI_GRAAL_HOME)
+        JVMCI_GRAAL_HOME                             Like GRAAL_HOME, but only used for the JARs to run with JVMCI_BIN
         GRAALVM_RELEASE_BIN                          Default GraalVM executable when using a released version of Truffle (such as on master)
         GRAAL_HOME_TRUFFLE_HEAD                      Default Graal directory when using a snapshot version of Truffle (such as on truffle-head)
         SULONG_HOME                                  The Sulong source repository, if you want to run cextc
