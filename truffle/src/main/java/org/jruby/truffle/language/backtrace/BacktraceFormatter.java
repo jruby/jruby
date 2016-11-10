@@ -54,16 +54,16 @@ public class BacktraceFormatter {
         return new BacktraceFormatter(context, flags);
     }
 
-    // For debugging
-    public static List<String> rubyBacktrace(RubyContext context) {
+    private static List<String> rubyBacktrace(RubyContext context, Node node) {
         return new BacktraceFormatter(context, EnumSet.of(FormattingFlags.INCLUDE_CORE_FILES)).
-                formatBacktrace(context, null, context.getCallStack().getBacktrace(null));
+                        formatBacktrace(context, null, context.getCallStack().getBacktrace(node));
     }
 
-    // For debugging
-    public static String printableRubyBacktrace(RubyContext context) {
+    // For debugging:
+    // org.jruby.truffle.language.backtrace.BacktraceFormatter.printableRubyBacktrace(getContext(), this)
+    public static String printableRubyBacktrace(RubyContext context, Node node) {
         final StringBuilder builder = new StringBuilder();
-        for (String line : rubyBacktrace(context)) {
+        for (String line : rubyBacktrace(context, node)) {
             builder.append("\n");
             builder.append(line);
         }
