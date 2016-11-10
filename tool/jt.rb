@@ -103,7 +103,7 @@ module Utilities
         '--add-exports=java.base/jdk.internal.module=com.oracle.graal.graal_core',
         "--module-path=#{jvmci_graal_home}/../truffle/mxbuild/modules/com.oracle.truffle.truffle_api.jar:#{jvmci_graal_home}/mxbuild/modules/com.oracle.graal.graal_core.jar"
       ]
-      options = ['--jvmci-truffle']
+      options = ['--no-bootclasspath']
     elsif graal_home
       graal_home = File.expand_path(graal_home)
       command_line = `mx -v -p #{graal_home} vm -version`.lines.to_a.last
