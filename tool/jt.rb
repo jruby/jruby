@@ -77,7 +77,7 @@ module Utilities
     jvmci = ENV['JVMCI_BIN']
     graal_home = ENV['GRAAL_HOME']
 
-    raise "More than one of GRAALVM_BIN, JVMCI_BIN or GRAAL_HOME defined!" if [graalvm, jvmci, graal_home].count(&:itself) > 1
+    raise "More than one of GRAALVM_BIN, JVMCI_BIN or GRAAL_HOME defined!" if [graalvm, jvmci, graal_home].compact.count > 1
 
     if !graalvm && !jvmci && !graal_home
       if truffle_release?
