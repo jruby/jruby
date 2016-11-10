@@ -88,11 +88,6 @@ public class JNRTrufflePosix implements TrufflePosix {
     }
 
     @Override
-    public Pointer environ() {
-        return posix.environ();
-    }
-
-    @Override
     public String getenv(String envName) {
         return posix.getenv(envName);
     }

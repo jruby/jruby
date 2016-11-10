@@ -35,7 +35,6 @@ public interface TrufflePosix {
     int exec(String path, String[] argv, String[] envp);
     int fork();
     int fstat(int fd, FileStat stat);
-    Pointer environ();
     String getenv(String envName);
     int getegid();
     int geteuid();
