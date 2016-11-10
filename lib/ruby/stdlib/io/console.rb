@@ -75,6 +75,7 @@ if RbConfig::CONFIG['host_os'].downcase =~ /darwin|openbsd|freebsd|netbsd|linux/
         end
         termios
       end
+      private :ttymode
 
       def ttymode_yield(block, &setup)
         begin
@@ -86,6 +87,7 @@ if RbConfig::CONFIG['host_os'].downcase =~ /darwin|openbsd|freebsd|netbsd|linux/
           end
         end
       end
+      private :ttymode_yield
 
       TTY_RAW = Proc.new do |t|
         LibC.cfmakeraw(t)
@@ -269,7 +271,7 @@ if !result || RbConfig::CONFIG['host_os'] =~ /(mswin)|(win32)|(ming)/
     def ioflush
     end
   end
-elsif !IO.method_defined?:ttymode
+elsif !IO.private_method_defined? :ttymode
   warn "io/console on JRuby shells out to stty for most operations"
 
   # Non-Windows assumes stty command is available
