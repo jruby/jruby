@@ -28,7 +28,6 @@ import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.RubyEncoding;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.encoding.EncodingManager;
@@ -41,6 +40,7 @@ import org.jruby.util.Memo;
 import org.jruby.util.StringSupport;
 import org.jruby.util.io.EncodingUtils;
 
+import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -52,6 +52,7 @@ import static org.jruby.truffle.core.rope.CodeRange.CR_UNKNOWN;
 import static org.jruby.truffle.core.rope.CodeRange.CR_VALID;
 
 public class RopeOperations {
+    private static final Charset UTF8 = Charset.forName("UTF-8");
 
     private static final ConcurrentHashMap<Encoding, Charset> encodingToCharsetMap = new ConcurrentHashMap<>();
 
@@ -116,12 +117,12 @@ public class RopeOperations {
 
     @TruffleBoundary
     public static String decodeUTF8(Rope rope) {
-        return decodeUTF8(rope.getBytes(), 0, rope.byteLength());
+        return decode(UTF8, rope.getBytes(), 0, rope.byteLength());
     }
 
     @TruffleBoundary
     public static String decodeUTF8(byte[] bytes, int offset, int byteLength) {
-        return RubyEncoding.decodeUTF8(bytes, offset, byteLength);
+        return decode(UTF8, bytes, offset, byteLength);
     }
 
     @TruffleBoundary
@@ -134,14 +135,14 @@ public class RopeOperations {
         int length = value.byteLength();
 
         Encoding encoding = value.getEncoding();
-
-        if (encoding == UTF8Encoding.INSTANCE) {
-            return RubyEncoding.decodeUTF8(value.getBytes(), begin, length);
-        }
-
         Charset charset = encodingToCharsetMap.computeIfAbsent(encoding, EncodingManager::charsetForEncoding);
 
-        return RubyEncoding.decode(value.getBytes(), begin, length, charset);
+        return decode(charset, value.getBytes(), begin, length);
+    }
+
+    @TruffleBoundary
+    public static String decode(Charset charset, byte[] bytes, int offset, int byteLength) {
+        return charset.decode(ByteBuffer.wrap(bytes, offset, byteLength)).toString();
     }
 
     // MRI: get_actual_encoding
