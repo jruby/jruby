@@ -226,7 +226,7 @@ bench-caps: {
 
 daily-bench-caps: {
   capabilities: [x52, linux, amd64, no_frequency_scaling]
-  targets: [daily]
+  targets: [bench, daily]
   timelimit: "02:00:00"
 }
 
