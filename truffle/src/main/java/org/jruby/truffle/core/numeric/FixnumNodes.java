@@ -630,8 +630,16 @@ public abstract class FixnumNodes {
     public abstract static class CompareNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
-        public int compare(int a, int b) {
-            return Integer.compare(a, b);
+        public int compare(int a, int b,
+                        @Cached("createBinaryProfile()") ConditionProfile smallerProfile,
+                        @Cached("createBinaryProfile()") ConditionProfile equalProfile) {
+            if (smallerProfile.profile(a < b)) {
+                return -1;
+            } else if (equalProfile.profile(a == b)) {
+                return 0;
+            } else {
+                return +1;
+            }
         }
 
         @Specialization(guards = "isRubyBignum(b)")
@@ -640,8 +648,16 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public int compare(long a, long b) {
-            return Long.compare(a, b);
+        public int compare(long a, long b,
+                        @Cached("createBinaryProfile()") ConditionProfile smallerProfile,
+                        @Cached("createBinaryProfile()") ConditionProfile equalProfile) {
+            if (smallerProfile.profile(a < b)) {
+                return -1;
+            } else if (equalProfile.profile(a == b)) {
+                return 0;
+            } else {
+                return +1;
+            }
         }
 
         @Specialization
