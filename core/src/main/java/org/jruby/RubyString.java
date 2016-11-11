@@ -2418,8 +2418,10 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             match.regexp = regexp;
             context.setBackRef(match);
 
+            final int mBeg = matcher.getBegin(), mEnd = matcher.getEnd();
+
             final RubyString repl; final int tuFlags;
-            IRubyObject subStr = makeShared19(runtime, matcher.getBegin(), matcher.getEnd() - matcher.getBegin());
+            IRubyObject subStr = makeShared19(runtime, mBeg, mEnd - mBeg);
             if (hash == null) {
                 tuFlags = 0;
                 repl = objAsString(context, block.yield(context, subStr));
@@ -2430,7 +2432,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
             modifyCheck(bytes, len, enc);
 
-            return subBangCommon(context, matcher, repl, tuFlags | repl.flags);
+            return subBangCommon(context, mBeg, mEnd, repl, tuFlags | repl.flags);
         }
         return context.setBackRef(runtime.getNil());
     }
@@ -2450,29 +2452,33 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             match.regexp = regexp;
             context.setBackRef(match);
 
-            return subBangCommon(context, matcher, repl, repl.flags);
+            return subBangCommon(context, matcher.getBegin(), matcher.getEnd(), repl, repl.flags);
         }
         return context.setBackRef(runtime.getNil());
     }
 
-    private IRubyObject subBangCommon(ThreadContext context, Matcher matcher, RubyString repl, int tuFlags) {
-        final int beg = matcher.getBegin();
-        final int end = matcher.getEnd();
-        int cr = getCodeRange();
+    private IRubyObject subBangCommon(ThreadContext context, final int beg, final int end,
+        final RubyString repl, int tuFlags) { // the sub replacement string
 
         Encoding enc = StringSupport.areCompatible(this, repl);
         if (enc == null) enc = subBangVerifyEncoding(context, repl, beg, end);
 
+        final ByteList replValue = repl.value;
+        final int replSize = replValue.getRealSize();
         final int plen = end - beg;
-        ByteList replValue = repl.value;
-        if (replValue.getRealSize() > plen) {
-            modify19(value.getRealSize() + replValue.getRealSize() - plen);
+
+        if (replSize > plen) {
+            modifyExpand(value.getRealSize() + replSize - plen);
         } else {
             modify19();
         }
 
+        final ByteList value = this.value;
+        final int size = value.getRealSize();
+
         associateEncoding(enc);
 
+        int cr = getCodeRange();
         if (cr > CR_UNKNOWN && cr < CR_BROKEN) {
             int cr2 = repl.getCodeRange();
             if (cr2 == CR_BROKEN || (cr == CR_VALID && cr2 == CR_7BIT)) {
@@ -2482,19 +2488,19 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             }
         }
 
-        if (replValue.getRealSize() != plen) {
+        if (replSize != plen) {
             int src = value.getBegin() + beg + plen;
-            int dst = value.getBegin() + beg + replValue.getRealSize();
-            int length = value.getRealSize() - beg - plen;
-            System.arraycopy(value.getUnsafeBytes(), src, value.getUnsafeBytes(), dst, length);
+            int dst = value.getBegin() + beg + replSize;
+            System.arraycopy(value.getUnsafeBytes(), src, value.getUnsafeBytes(), dst, size - beg - plen);
         }
-        System.arraycopy(replValue.getUnsafeBytes(), replValue.getBegin(), value.getUnsafeBytes(), value.getBegin() + beg, replValue.getRealSize());
-        value.setRealSize(value.getRealSize() + replValue.getRealSize() - plen);
+        System.arraycopy(replValue.getUnsafeBytes(), replValue.getBegin(), value.getUnsafeBytes(), value.getBegin() + beg, replSize);
+        value.setRealSize(size + replSize - plen);
         setCodeRange(cr);
         return infectBy(tuFlags);
     }
 
-    private Encoding subBangVerifyEncoding(ThreadContext context, RubyString repl, int beg, int end) {
+    private Encoding subBangVerifyEncoding(ThreadContext context, final RubyString repl, final int beg, final int end) {
+        final ByteList value = this.value;
         byte[] bytes = value.getUnsafeBytes();
         int p = value.getBegin();
         int len = value.getRealSize();
