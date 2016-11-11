@@ -2419,8 +2419,8 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             RubyMatchData match = RubyRegexp.createMatchData19(context, this, matcher, pattern);
             match.regexp = regexp;
             context.setBackRef(match);
-            final RubyString repl;
-            final int tuFlags;
+
+            final RubyString repl; final int tuFlags;
             IRubyObject subStr = makeShared19(runtime, matcher.getBegin(), matcher.getEnd() - matcher.getBegin());
             if (hash == null) {
                 tuFlags = 0;
@@ -2431,7 +2431,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             }
 
             modifyCheck(bytes, len, enc);
-            frozenCheck();
+
             return subBangCommon(context, matcher, repl, tuFlags | repl.flags);
         }
         return context.setBackRef(runtime.getNil());
@@ -2451,6 +2451,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             RubyMatchData match = RubyRegexp.createMatchData19(context, this, matcher, pattern);
             match.regexp = regexp;
             context.setBackRef(match);
+
             return subBangCommon(context, matcher, repl, repl.flags);
         }
         return context.setBackRef(runtime.getNil());
