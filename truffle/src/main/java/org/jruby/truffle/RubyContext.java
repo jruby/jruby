@@ -115,8 +115,8 @@ public class RubyContext extends ExecutionContext {
 
     public RubyContext(RubyInstanceConfig instanceConfig, TruffleLanguage.Env env) {
         this.instanceConfig = instanceConfig;
-        jrubyHome = findJRubyHome();
         this.env = env;
+        this.jrubyHome = setupJRubyHome();
         this.currentDirectory = System.getProperty("user.dir");
 
         if (options.CALL_GRAPH) {
@@ -207,6 +207,12 @@ public class RubyContext extends ExecutionContext {
         }
     }
 
+    private String setupJRubyHome() {
+        String jrubyHome = findJRubyHome();
+        instanceConfig.setJRubyHome(jrubyHome);
+        return jrubyHome;
+    }
+
     private String findJRubyHome() {
         if (!TruffleOptions.AOT && System.getenv("JRUBY_HOME") == null && System.getProperty("jruby.home") == null) {
             // Set JRuby home automatically for GraalVM
@@ -220,10 +226,20 @@ public class RubyContext extends ExecutionContext {
                 }
 
                 if (currentJarFile.getName().equals("ruby.jar")) {
-                    String jarDir = currentJarFile.getParent();
+                    File jarDir = currentJarFile.getParentFile();
+
+                    // GraalVM
                     if (new File(jarDir, "lib").isDirectory()) {
-                        instanceConfig.setJRubyHome(jarDir);
-                        return jarDir;
+                        return jarDir.getPath();
+                    }
+
+                    // mx: mxbuild/dists/ruby.jar
+                    if (jarDir.getName().equals("dists") && jarDir.getParentFile().getName().equals("mxbuild")) {
+                        String mxbuildDir = currentJarFile.getParentFile().getParent();
+                        File mxJRubyHome = new File(mxbuildDir, "ruby-zip-extracted");
+                        if (mxJRubyHome.isDirectory()) {
+                            return mxJRubyHome.getPath();
+                        }
                     }
                 }
             }
