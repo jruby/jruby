@@ -98,7 +98,7 @@ public abstract class TruffleBootNodes {
 
             final Source source;
             try {
-                source = getContext().getSourceCache().getSource(inputFile);
+                source = getContext().getSourceCache().getMainSource(inputFile);
             } catch (IOException e) {
                 throw new JavaException(e);
             }

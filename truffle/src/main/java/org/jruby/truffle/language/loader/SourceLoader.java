@@ -38,17 +38,25 @@ public class SourceLoader {
     }
 
     @TruffleBoundary
-    public Source load(String canonicalPath) throws IOException {
-        if (canonicalPath.equals("-e")) {
+    public Source loadMain(String path) throws IOException {
+        if (path.equals("-e")) {
             return loadFragment(new String(context.getInstanceConfig().inlineScript(), StandardCharsets.UTF_8), "-e");
-        } else if (canonicalPath.startsWith(TRUFFLE_SCHEME) || canonicalPath.startsWith(JRUBY_SCHEME)) {
+        } else {
+            final File file = new File(path).getCanonicalFile();
+            ensureReadable(path, file);
+
+            // The main source file *must* be named as it's given for __FILE__
+            return Source.newBuilder(file).name(path).mimeType(RubyLanguage.MIME_TYPE).build();
+        }
+    }
+
+    @TruffleBoundary
+    public Source load(String canonicalPath) throws IOException {
+        if (canonicalPath.startsWith(TRUFFLE_SCHEME) || canonicalPath.startsWith(JRUBY_SCHEME)) {
             return loadResource(canonicalPath);
         } else {
             final File file = new File(canonicalPath).getCanonicalFile();
-
-            if (!file.canRead()) {
-                throw new IOException("Can't read file " + canonicalPath);
-            }
+            ensureReadable(canonicalPath, file);
 
             if (canonicalPath.toLowerCase().endsWith(".su")) {
                 return Source.newBuilder(file).name(file.getPath()).mimeType(RubyLanguage.CEXT_MIME_TYPE).build();
@@ -91,6 +99,12 @@ public class SourceLoader {
         }
 
         return Source.newBuilder(new InputStreamReader(stream, StandardCharsets.UTF_8)).name(path).mimeType(RubyLanguage.MIME_TYPE).build();
+    }
+
+    private static void ensureReadable(String path, File file) throws IOException {
+        if (!file.canRead()) {
+            throw new IOException("Can't read file " + path);
+        }
     }
 
 }

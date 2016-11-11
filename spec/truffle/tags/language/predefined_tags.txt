@@ -6,4 +6,3 @@ slow:The predefined global constant ARGV contains Strings encoded in locale Enco
 linux:Global variable $0 actually sets the program name
 slow:Global variable $0 is the path given as the main script and the same as __FILE__
 slow:Global variable $? is thread-local
-fails:Global variable $0 is the path given as the main script and the same as __FILE__
