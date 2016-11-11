@@ -204,7 +204,9 @@ public abstract class PointerPrimitiveNodes {
 
         @Specialization
         public DynamicObject readPointer(DynamicObject pointer) {
-            Pointer readPointer = Layouts.POINTER.getPointer(pointer).getPointer(0);
+            Pointer ptr = Layouts.POINTER.getPointer(pointer);
+            assert ptr.address() != 0 : "Attempt to dereference a null pointer";
+            Pointer readPointer = ptr.getPointer(0);
 
             if (readPointer == null) {
                 readPointer = NULL_POINTER;
