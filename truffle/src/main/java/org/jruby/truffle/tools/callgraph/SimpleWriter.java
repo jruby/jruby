@@ -45,7 +45,7 @@ public class SimpleWriter {
         if (sourceSection == null || sourceSection.getSource() == null) {
             sourceName = "(unknown)";
         } else {
-            sourceName = sourceSection.getSource().getName();
+            sourceName = sourceSection.getSource().getPath();
         }
 
         final int startLine;
