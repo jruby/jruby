@@ -1495,13 +1495,7 @@ public abstract class KernelNodes {
                 featurePath = featureString;
             } else {
                 final Source source = getContext().getCallStack().getCallerFrameIgnoringSend().getCallNode().getEncapsulatingSourceSection().getSource();
-                String result;
-                if (source.getName() == null) {
-                    result = null;
-                } else {
-                    result = source.getName();
-                }
-                final String sourcePath = result;
+                final String sourcePath = source.getPath();
 
                 if (sourcePath == null) {
                     throw new RaiseException(coreExceptions().loadError("cannot infer basepath", featureString, this));
