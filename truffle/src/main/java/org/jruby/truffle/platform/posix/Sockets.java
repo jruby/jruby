@@ -115,20 +115,13 @@ public interface Sockets {
 
 
     /**
-     * int connect(int sockfd, const struct sockaddr *addr,
-     * socklen_t addrlen);
+     * int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
      */
 
     int connect(int socket, Pointer address, int address_len);
 
     /**
-     * int sockfd, void *buf, size_t len, int flags,
-     struct sockaddr *src_addr, socklen_t *addrlen
-     * @param sockfd
-     * @param buf
-     * @param len
-     * @param flags
-     * @return
+     * int sockfd, void *buf, size_t len, int flags, struct sockaddr *src_addr, socklen_t *addrlen
      */
     int recvfrom(int sockfd, ByteBuffer buf, int len, int flags, Pointer  src_addr, Pointer addrlen);
 

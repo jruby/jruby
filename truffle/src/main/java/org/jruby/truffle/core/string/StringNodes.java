@@ -2276,7 +2276,7 @@ public abstract class StringNodes {
             final byte[] reversedBytes = new byte[len];
 
             for (int i = 0; i < len; i++) {
-                reversedBytes[len - i - 1] = originalBytes[i];;
+                reversedBytes[len - i - 1] = originalBytes[i];
             }
 
             StringOperations.setRope(string, makeLeafRopeNode.executeMake(reversedBytes, rope.getEncoding(), rope.getCodeRange(), rope.characterLength()));

@@ -319,7 +319,6 @@ public class StaticScope implements Serializable {
      * @param position
      * @param name
      * @param value
-     * @return
      */
     public AssignableParseNode assign(ISourcePosition position, String name, ParseNode value) {
         return assign(position, name, value, this, 0);

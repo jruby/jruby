@@ -108,7 +108,7 @@ public class ClassicRegexp implements ReOptions, EncodingCapable, MarshalEncodin
         return getEncoding();
     }
     // FIXME: Maybe these should not be static?
-    static final WeakValuedMap<ByteList, Regex> patternCache = new WeakValuedMap();
+    static final WeakValuedMap<ByteList, Regex> patternCache = new WeakValuedMap<>();
 
     private static Regex makeRegexp(RubyContext runtime, ByteList bytes, RegexpOptions options, Encoding enc) {
         try {
