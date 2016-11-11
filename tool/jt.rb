@@ -461,6 +461,7 @@ module Commands
           --server        run an instrumentation server on port 8080
           --igv           make sure IGV is running and dump Graal graphs after partial escape (implies --graal)
               --full      show all phases, not just up to the Truffle partial escape
+          --infopoints    show source location for each node in IGV
           --fg            disable background compilation
           --trace         show compilation information on stdout
           --jdebug        run a JDWP debug server on #{JDEBUG_PORT}
@@ -646,6 +647,11 @@ module Commands
         jruby_args << "-J-Dgraal.Dump=TruffleTree,PartialEscape"
       end
       jruby_args << "-J-Dgraal.PrintBackendCFG=false"
+    end
+
+    if args.delete('--infopoints')
+      jruby_args << "-J-XX:+UnlockDiagnosticVMOptions" << "-J-XX:+DebugNonSafepoints"
+      jruby_args << "-J-Dgraal.TruffleEnableInfopoints=true"
     end
 
     if args.delete('--fg')
