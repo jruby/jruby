@@ -62,7 +62,6 @@ module RbConfig
     'topdir' => "#{jruby_home}/lib/ruby/stdlib",
     "rubyarchhdrdir"=>"#{jruby_home}/lib/ruby/truffle/cext",
     'includedir' => '',
-    'bindir' => "#{jruby_home}/bin"
   }
 
   MAKEFILE_CONFIG = {
