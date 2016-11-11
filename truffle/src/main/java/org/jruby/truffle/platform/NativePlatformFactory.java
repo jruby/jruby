@@ -15,6 +15,7 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.platform.darwin.DarwinPlatform;
 import org.jruby.truffle.platform.java.JavaPlatform;
 import org.jruby.truffle.platform.linux.LinuxPlatform;
+import org.jruby.truffle.platform.solaris.SolarisPlatform;
 
 public abstract class NativePlatformFactory {
 
@@ -26,6 +27,10 @@ public abstract class NativePlatformFactory {
 
         if (Platform.getPlatform().getOS() == Platform.OS_TYPE.LINUX) {
             return new LinuxPlatform(context);
+        }
+
+        if (Platform.getPlatform().getOS() == Platform.OS_TYPE.SOLARIS) {
+            return new SolarisPlatform(context);
         }
 
         if (Platform.getPlatform().getOS() == Platform.OS_TYPE.DARWIN) {
