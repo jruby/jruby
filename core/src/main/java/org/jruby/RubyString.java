@@ -2583,8 +2583,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     private IRubyObject gsubCommon19(ThreadContext context, Block block, RubyString repl,
             RubyHash hash, IRubyObject arg0, final boolean bang, int tuFlags, boolean useBackref) {
         final Ruby runtime = context.runtime;
-        RubyRegexp regexp = arg0 instanceof RubyRegexp ? (RubyRegexp) arg0 :
-                RubyRegexp.newRegexp(runtime, RubyRegexp.quote19(getStringForPattern(arg0).getByteList(), false), new RegexpOptions());
+        RubyRegexp regexp = asRegexpArg(runtime, arg0);
         Regex pattern = regexp.getPattern();
         Regex prepared = regexp.preparePattern(this);
 
