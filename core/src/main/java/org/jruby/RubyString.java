@@ -3981,8 +3981,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     private static final ByteList SPACE_BYTELIST = new ByteList(new byte[] { ' ' }, false);
 
-    private IRubyObject justify19(ThreadContext context, IRubyObject arg0, int jflag) {
-        Ruby runtime = context.runtime;
+    private IRubyObject justify19(Ruby runtime, IRubyObject arg0, int jflag) {
         RubyString result = justifyCommon(runtime, SPACE_BYTELIST,
                 1,
                 true, EncodingUtils.STR_ENC_GET(this), RubyFixnum.num2int(arg0), jflag);
@@ -4002,7 +4001,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
                                                    padCharLen,
                                                    padStr.singleByteOptimizable(),
                                                    enc, width, jflag);
-        if (RubyFixnum.num2int(result.length19()) > RubyFixnum.num2int(length19())) result.infectBy(padStr);
+        if (result.strLength() > strLength()) result.infectBy(padStr);
         int cr = CodeRangeSupport.codeRangeAnd(getCodeRange(), padStr.getCodeRange());
         if (cr != CR_BROKEN) result.setCodeRange(cr);
         return result;
@@ -4065,9 +4064,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         res.setRealSize(p);
 
         RubyString result = new RubyString(runtime, getMetaClass(), res);
-        if (RubyFixnum.num2int(result.length19()) > RubyFixnum.num2int(length19())) {
-                 result.infectBy(this);
-             }
+        if (result.strLength() > strLength()) result.infectBy(this);
         result.associateEncoding(enc);
         return result;
     }
@@ -4085,7 +4082,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     @JRubyMethod(name = "ljust")
     public IRubyObject ljust19(IRubyObject arg0) {
-        return justify19(getRuntime().getCurrentContext(), arg0, 'l');
+        return justify19(getRuntime(), arg0, 'l');
     }
 
     @JRubyMethod(name = "ljust")
@@ -4106,7 +4103,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     @JRubyMethod(name = "rjust")
     public IRubyObject rjust19(IRubyObject arg0) {
-        return justify19(getRuntime().getCurrentContext(), arg0, 'r');
+        return justify19(getRuntime(), arg0, 'r');
     }
 
     @JRubyMethod(name = "rjust")
@@ -4127,7 +4124,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     @JRubyMethod(name = "center")
     public IRubyObject center19(IRubyObject arg0) {
-        return justify19(getRuntime().getCurrentContext(), arg0, 'c');
+        return justify19(getRuntime(), arg0, 'c');
     }
 
     @JRubyMethod(name = "center")
