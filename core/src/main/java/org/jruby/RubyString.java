@@ -2382,13 +2382,8 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         Ruby runtime = context.runtime;
         frozenCheck();
 
-        RubyRegexp regexp = arg0 instanceof RubyRegexp ? (RubyRegexp) arg0 :
-                RubyRegexp.newRegexp(runtime, RubyRegexp.quote19(getStringForPattern(arg0).getByteList(), false), new RegexpOptions());
-        Regex pattern = regexp.getPattern();
-        Regex prepared = regexp.preparePattern(this);
-
-        if (block.isGiven()) return subBangIter(runtime, context, pattern, prepared, null, block, regexp);
-        throw context.runtime.newArgumentError(1, 2);
+        if (block.isGiven()) return subBangIter(runtime, context, arg0, null, block);
+        throw runtime.newArgumentError(1, 2);
     }
 
     @JRubyMethod(name = "sub!", reads = BACKREF, writes = BACKREF)
@@ -2397,18 +2392,22 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         IRubyObject hash = TypeConverter.convertToTypeWithCheck(context, arg1, runtime.getHash(), sites(context).to_hash_checked);
         frozenCheck();
 
-        RubyRegexp regexp = arg0 instanceof RubyRegexp ? (RubyRegexp) arg0 :
+        if (hash.isNil()) {
+            return subBangNoIter(runtime, context, arg0, arg1.convertToString());
+        }
+        return subBangIter(runtime, context, arg0, (RubyHash) hash, block);
+    }
+
+    private RubyRegexp asRegexpArg(final Ruby runtime, final IRubyObject arg0) {
+        return arg0 instanceof RubyRegexp ? (RubyRegexp) arg0 :
             RubyRegexp.newRegexp(runtime, RubyRegexp.quote19(getStringForPattern(arg0).getByteList(), false), new RegexpOptions());
+    }
+
+    private IRubyObject subBangIter(Ruby runtime, ThreadContext context, IRubyObject arg0, RubyHash hash, Block block) {
+        RubyRegexp regexp = asRegexpArg(runtime, arg0);
         Regex pattern = regexp.getPattern();
         Regex prepared = regexp.preparePattern(this);
 
-        if (hash.isNil()) {
-            return subBangNoIter(runtime, context, pattern, prepared, arg1.convertToString(), regexp);
-        }
-        return subBangIter(runtime, context, pattern, prepared, (RubyHash) hash, block, regexp);
-    }
-
-    private IRubyObject subBangIter(Ruby runtime, ThreadContext context, Regex pattern, Regex prepared, RubyHash hash, Block block, RubyRegexp regexp) {
         int begin = value.getBegin();
         int len = value.getRealSize();
         int range = begin + len;
@@ -2433,12 +2432,16 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
             modifyCheck(bytes, len, enc);
             frozenCheck();
-            return subBangCommon(context, pattern, matcher, repl, tuFlags | repl.flags);
+            return subBangCommon(context, matcher, repl, tuFlags | repl.flags);
         }
         return context.setBackRef(runtime.getNil());
     }
 
-    private IRubyObject subBangNoIter(Ruby runtime, ThreadContext context, Regex pattern, Regex prepared, RubyString repl, RubyRegexp regexp) {
+    private IRubyObject subBangNoIter(Ruby runtime, ThreadContext context, IRubyObject arg0, RubyString repl) {
+        RubyRegexp regexp = asRegexpArg(runtime, arg0);
+        Regex pattern = regexp.getPattern();
+        Regex prepared = regexp.preparePattern(this);
+
         int begin = value.getBegin();
         int range = begin + value.getRealSize();
         final Matcher matcher = prepared.matcher(value.getUnsafeBytes(), begin, range);
@@ -2448,12 +2451,12 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             RubyMatchData match = RubyRegexp.createMatchData19(context, this, matcher, pattern);
             match.regexp = regexp;
             context.setBackRef(match);
-            return subBangCommon(context, pattern, matcher, repl, repl.flags);
+            return subBangCommon(context, matcher, repl, repl.flags);
         }
         return context.setBackRef(runtime.getNil());
     }
 
-    private IRubyObject subBangCommon(ThreadContext context, Regex pattern, Matcher matcher, RubyString repl, int tuFlags) {
+    private IRubyObject subBangCommon(ThreadContext context, Matcher matcher, RubyString repl, int tuFlags) {
         final int beg = matcher.getBegin();
         final int end = matcher.getEnd();
         int cr = getCodeRange();
