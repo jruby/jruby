@@ -28,7 +28,7 @@ import org.jcodings.EncodingDB;
 import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.transcode.EConvFlags;
 import org.jcodings.util.CaseInsensitiveBytesHash;
-import org.jcodings.util.Hash;
+import org.jcodings.util.CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry;
 import org.jruby.Main;
 import org.jruby.ext.ffi.Platform;
 import org.jruby.ext.ffi.Platform.OS_TYPE;
@@ -1101,11 +1101,10 @@ public class CoreLibrary {
 
     private void initializeEncodings() {
         final EncodingManager encodingManager = context.getEncodingManager();
-        final Hash.HashEntryIterator hei = EncodingDB.getEncodings().entryIterator();
+        final CaseInsensitiveBytesHash<EncodingDB.Entry>.CaseInsensitiveBytesHashEntryIterator hei = EncodingDB.getEncodings().entryIterator();
 
         while (hei.hasNext()) {
-            final CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<EncodingDB.Entry> e =
-                    ((CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<EncodingDB.Entry>)hei.next());
+            final CaseInsensitiveBytesHashEntry<EncodingDB.Entry> e = hei.next();
             final EncodingDB.Entry encodingEntry = e.value;
 
             encodingManager.defineEncoding(encodingEntry, e.bytes, e.p, e.end);
@@ -1119,11 +1118,10 @@ public class CoreLibrary {
 
     private void initializeEncodingAliases() {
         final EncodingManager encodingManager = context.getEncodingManager();
-        final Hash.HashEntryIterator hei = EncodingDB.getAliases().entryIterator();
+        final CaseInsensitiveBytesHash<EncodingDB.Entry>.CaseInsensitiveBytesHashEntryIterator hei = EncodingDB.getAliases().entryIterator();
 
         while (hei.hasNext()) {
-            final CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<EncodingDB.Entry> e =
-                    ((CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<EncodingDB.Entry>)hei.next());
+            final CaseInsensitiveBytesHashEntry<EncodingDB.Entry> e = hei.next();
             final EncodingDB.Entry encodingEntry = e.value;
 
             // The alias name should be exactly the one in the encodings DB.
