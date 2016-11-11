@@ -151,8 +151,6 @@ public class BacktraceFormatter {
 
             if (reportedSourceSection == null) {
                 builder.append("???");
-            } else if (reportedSourceSection.getSource() == null) {
-                builder.append(String.format("%s:%d", reportedSourceSection.getSource().getName(), reportedSourceSection.getStartLine()));
             } else {
                 builder.append(reportedSourceSection.getSource().getName());
                 builder.append(":");
@@ -214,8 +212,8 @@ public class BacktraceFormatter {
         return null;
     }
 
-    public static boolean isJavaCore(SourceSection sourceSection) {
-        return sourceSection != null && sourceSection.getSource() == null;
+    public boolean isJavaCore(SourceSection sourceSection) {
+        return sourceSection == context.getCoreLibrary().getSourceSection();
     }
 
     public static boolean isCore(RubyContext context, SourceSection sourceSection) {
@@ -267,19 +265,16 @@ public class BacktraceFormatter {
         if (sourceSection != null) {
             final String shortDescription = String.format("%s:%d", sourceSection.getSource().getName(), sourceSection.getStartLine());
 
-            if (shortDescription.trim().equals(":")) {
-                throw new UnsupportedOperationException();
-            } else {
-                builder.append(shortDescription);
 
-                final RootNode rootNode = callNode.getRootNode();
-                final String identifier = rootNode.getName();
+            builder.append(shortDescription);
 
-                if (identifier != null && !identifier.isEmpty()) {
-                    builder.append(":in `");
-                    builder.append(identifier);
-                    builder.append("'");
-                }
+            final RootNode rootNode = callNode.getRootNode();
+            final String identifier = rootNode.getName();
+
+            if (identifier != null && !identifier.isEmpty()) {
+                builder.append(":in `");
+                builder.append(identifier);
+                builder.append("'");
             }
         } else {
             builder.append(getRootOrTopmostNode(callNode).getClass().getSimpleName());
