@@ -393,7 +393,7 @@ public final class StringSupport {
     }
 
     public static long strLengthWithCodeRangeNonAsciiCompatible(Encoding enc, byte[]bytes, int p, int end) {
-        int cr = 0, c = 0;
+        int cr = 0, c;
         for (c = 0; p < end; c++) {
             int cl = preciseLength(enc, bytes, p, end);
             if (cl > 0) {
@@ -1023,6 +1023,8 @@ public final class StringSupport {
 
     public static int strLengthFromRubyString(CodeRangeable string) {
         final ByteList bytes = string.getByteList();
+
+        if (isSingleByteOptimizable(string, bytes.getEncoding())) return bytes.getRealSize();
         return strLengthFromRubyStringFull(string, bytes, bytes.getEncoding());
     }
 
@@ -1488,7 +1490,7 @@ public final class StringSupport {
         final ByteList other = otherString.getByteList();
 
         if (sourceLen - offset < otherLen) return -1;
-        byte[]bytes = source.getUnsafeBytes();
+        byte[] bytes = source.getUnsafeBytes();
         int p = source.getBegin();
         int end = p + source.getRealSize();
         if (offset != 0) {
@@ -1525,7 +1527,7 @@ public final class StringSupport {
         int replLength = replBytes.getRealSize();
         int newLength = oldLength + replLength - len;
 
-        byte[]oldBytes = source.getByteList().getUnsafeBytes();
+        byte[] oldBytes = source.getByteList().getUnsafeBytes();
         int oldBegin = source.getByteList().getBegin();
 
         source.modify(newLength);

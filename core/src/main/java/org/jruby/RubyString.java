@@ -317,13 +317,12 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     }
 
     public final int strLength() {
-        if (StringSupport.isSingleByteOptimizable(this, value.getEncoding())) return value.getRealSize();
         return StringSupport.strLengthFromRubyString(this);
     }
 
     // MRI: rb_str_sublen
     final int subLength(int pos) {
-        if (singleByteOptimizable() || pos < 0) return pos;
+        if (pos < 0 || singleByteOptimizable()) return pos;
         return StringSupport.strLength(value.getEncoding(), value.getUnsafeBytes(), value.getBegin(), value.getBegin() + pos);
     }
 
