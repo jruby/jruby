@@ -1567,12 +1567,9 @@ public final class StringSupport {
 
     // MRI: rb_str_update, first half
     public static void replaceInternal19(Ruby runtime, int beg, int len, RubyString source, RubyString repl) {
-        source.checkEncoding(repl);
-
         if (len < 0) throw runtime.newIndexError("negative length " + len);
 
-        source.checkEncoding(repl);
-        int slen = strLengthFromRubyString(source);
+        int slen = strLengthFromRubyString(source, source.checkEncoding(repl));
 
         if (slen < beg) {
             throw runtime.newIndexError("index " + beg + " out of string");
@@ -1652,7 +1649,7 @@ public final class StringSupport {
     /**
      * MRI: chopped_length
      */
-    public static int choppedLength19(CodeRangeable str, Ruby runtime) {
+    public static int choppedLength(CodeRangeable str) {
         ByteList bl = str.getByteList();
         Encoding enc = bl.getEncoding();
         int p, p2, beg, end;
@@ -1669,10 +1666,14 @@ public final class StringSupport {
         return p - beg;
     }
 
+    @Deprecated
+    public static int choppedLength19(CodeRangeable str, Ruby runtime) {
+        return choppedLength(str);
+    }
+
     /**
      * rb_enc_compatible
      */
-
     public static Encoding areCompatible(CodeRangeable string, CodeRangeable other) {
         Encoding enc1 = string.getByteList().getEncoding();
         Encoding enc2 = other.getByteList().getEncoding();

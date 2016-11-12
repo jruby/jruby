@@ -4213,15 +4213,14 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     public IRubyObject chop19(ThreadContext context) {
         Ruby runtime = context.runtime;
         if (value.getRealSize() == 0) return newEmptyString(runtime, getMetaClass(), value.getEncoding()).infectBy(this);
-        return makeShared19(runtime, 0, StringSupport.choppedLength19(this, runtime));
+        return makeShared19(runtime, 0, StringSupport.choppedLength(this));
     }
 
     @JRubyMethod(name = "chop!")
     public IRubyObject chop_bang19(ThreadContext context) {
         modifyAndKeepCodeRange();
         if (size() > 0) {
-            int len;
-            len = StringSupport.choppedLength19(this, context.runtime);
+            int len = StringSupport.choppedLength(this);
             value.realSize(len);
             if (getCodeRange() != CR_7BIT) {
                 clearCodeRange();
@@ -4390,21 +4389,18 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     @JRubyMethod(name = "lstrip!")
     public IRubyObject lstrip_bang19(ThreadContext context) {
         modifyCheck();
-        Ruby runtime = context.runtime;
-        if (value.getRealSize() == 0) {
-            return runtime.getNil();
-        }
-
-        Encoding enc = EncodingUtils.STR_ENC_GET(this);
+        final ByteList value = this.value;
+        if (value.getRealSize() == 0) return context.nil;
         int s = value.getBegin();
         int end = s + value.getRealSize();
-        byte[]bytes = value.getUnsafeBytes();
+        byte[] bytes = value.getUnsafeBytes();
 
+        Encoding enc = EncodingUtils.STR_ENC_GET(this);
         final IRubyObject result;
         if (singleByteOptimizable(enc)) {
-            result = singleByteLStrip(runtime, bytes, s, end);
+            result = singleByteLStrip(context.runtime, bytes, s, end);
         } else {
-            result = multiByteLStrip(runtime, enc, bytes, s, end);
+            result = multiByteLStrip(context.runtime, enc, bytes, s, end);
         }
         keepCodeRange();
         return result;
