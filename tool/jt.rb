@@ -587,6 +587,7 @@ module Commands
 
   def run(*args)
     env_vars = args.first.is_a?(Hash) ? args.shift : {}
+    options = args.last.is_a?(Hash) ? args.pop : {}
 
     jruby_args = ['-X+T']
 
@@ -670,8 +671,6 @@ module Commands
       jruby_args << "-J-Dgraal.TraceTruffleCompilation=true"
     end
 
-    args << options = {}
-
     if args.delete('--no-print-cmd')
       options[:no_print_cmd] = true
     end
@@ -680,7 +679,7 @@ module Commands
       options[:use_exec] = true
     end
 
-    raw_sh env_vars, Utilities.find_jruby, *jruby_args, *args
+    raw_sh env_vars, Utilities.find_jruby, *jruby_args, *args, options
   end
 
   # Same as #run but uses exec()
