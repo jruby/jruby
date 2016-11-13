@@ -2700,7 +2700,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
                     StringSupport.nth(checkEncoding(regSub), value.getUnsafeBytes(), value.getBegin(),
                             value.getBegin() + value.getRealSize(),
                                       pos) - value.getBegin();
-            pos = regSub.adjustStartPos19(this, pos, false);
+            pos = regSub.adjustStartPos(this, pos, false);
             pos = regSub.search19(context, this, pos, false);
             pos = subLength(pos);
         } else if (sub instanceof RubyString) {
