@@ -11,7 +11,6 @@ package org.jruby.truffle.core.numeric;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
-import com.oracle.truffle.api.ExactMath;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
@@ -28,6 +27,7 @@ import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.builtins.Primitive;
 import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.core.CoreLibrary;
+import org.jruby.truffle.core.Hashing;
 import org.jruby.truffle.core.InlinableBuiltin;
 import org.jruby.truffle.core.numeric.FixnumNodesFactory.DivNodeFactory;
 import org.jruby.truffle.core.rope.LazyIntRope;
@@ -52,7 +52,8 @@ public abstract class FixnumNodes {
 
         @Specialization(rewriteOn = ArithmeticException.class)
         public int neg(int value) {
-            return ExactMath.subtractExact(0, value);
+            // TODO CS 13-Oct-16, use negateExact, but this isn't intrinsified by Graal yet
+            return Math.subtractExact(0, value);
         }
 
         @Specialization(contains = "neg")
@@ -65,7 +66,7 @@ public abstract class FixnumNodes {
 
         @Specialization(rewriteOn = ArithmeticException.class)
         public long neg(long value) {
-            return ExactMath.subtractExact(0, value);
+            return Math.subtractExact(0, value);
         }
 
         @Specialization
@@ -87,7 +88,7 @@ public abstract class FixnumNodes {
 
         @Specialization(rewriteOn = ArithmeticException.class)
         public int add(int a, int b) {
-            return ExactMath.addExact(a, b);
+            return Math.addExact(a, b);
         }
 
         @Specialization
@@ -106,7 +107,7 @@ public abstract class FixnumNodes {
 
         @Specialization(rewriteOn = ArithmeticException.class)
         public long add(long a, long b) {
-            return ExactMath.addExact(a, b);
+            return Math.addExact(a, b);
         }
 
         @Specialization
@@ -142,7 +143,7 @@ public abstract class FixnumNodes {
 
         @Specialization(rewriteOn = ArithmeticException.class)
         public int sub(int a, int b) {
-            return ExactMath.subtractExact(a, b);
+            return Math.subtractExact(a, b);
         }
 
         @Specialization
@@ -161,7 +162,7 @@ public abstract class FixnumNodes {
 
         @Specialization(rewriteOn = ArithmeticException.class)
         public long sub(long a, long b) {
-            return ExactMath.subtractExact(a, b);
+            return Math.subtractExact(a, b);
         }
 
         @Specialization
@@ -197,7 +198,7 @@ public abstract class FixnumNodes {
 
         @Specialization(rewriteOn = ArithmeticException.class)
         public int mul(int a, int b) {
-            return ExactMath.multiplyExact(a, b);
+            return Math.multiplyExact(a, b);
         }
 
         @Specialization
@@ -216,7 +217,7 @@ public abstract class FixnumNodes {
 
         @Specialization(rewriteOn = ArithmeticException.class)
         public long mul(long a, long b) {
-            return ExactMath.multiplyExact(a, b);
+            return Math.multiplyExact(a, b);
         }
 
         @TruffleBoundary
@@ -629,8 +630,16 @@ public abstract class FixnumNodes {
     public abstract static class CompareNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
-        public int compare(int a, int b) {
-            return Integer.compare(a, b);
+        public int compare(int a, int b,
+                        @Cached("createBinaryProfile()") ConditionProfile smallerProfile,
+                        @Cached("createBinaryProfile()") ConditionProfile equalProfile) {
+            if (smallerProfile.profile(a < b)) {
+                return -1;
+            } else if (equalProfile.profile(a == b)) {
+                return 0;
+            } else {
+                return +1;
+            }
         }
 
         @Specialization(guards = "isRubyBignum(b)")
@@ -639,8 +648,16 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public int compare(long a, long b) {
-            return Long.compare(a, b);
+        public int compare(long a, long b,
+                        @Cached("createBinaryProfile()") ConditionProfile smallerProfile,
+                        @Cached("createBinaryProfile()") ConditionProfile equalProfile) {
+            if (smallerProfile.profile(a < b)) {
+                return -1;
+            } else if (equalProfile.profile(a == b)) {
+                return 0;
+            } else {
+                return +1;
+            }
         }
 
         @Specialization
@@ -1005,7 +1022,8 @@ public abstract class FixnumNodes {
 
         @Specialization(rewriteOn = ArithmeticException.class)
         public int absIntInBounds(int n) {
-            return (n < 0) ? ExactMath.subtractExact(0, n) : n;
+            // TODO CS 13-Oct-16, use negateExact, but this isn't intrinsified by Graal yet
+            return (n < 0) ? Math.subtractExact(0, n) : n;
         }
 
         @Specialization(contains = "absIntInBounds")
@@ -1018,7 +1036,7 @@ public abstract class FixnumNodes {
 
         @Specialization(rewriteOn = ArithmeticException.class)
         public long absInBounds(long n) {
-            return (n < 0) ? ExactMath.subtractExact(0, n) : n;
+            return (n < 0) ? Math.subtractExact(0, n) : n;
         }
 
         @Specialization(contains = "absInBounds")
@@ -1193,8 +1211,7 @@ public abstract class FixnumNodes {
             final ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES * 2);
             buffer.putLong(a);
             buffer.putLong(b);
-            return SipHashInline.hash24(getContext().getJRubyRuntime().getHashSeedK0(),
-                getContext().getJRubyRuntime().getHashSeedK1(), buffer.array());
+            return SipHashInline.hash24(Hashing.SEED_K0, Hashing.SEED_K1, buffer.array());
         }
 
 
@@ -1244,6 +1261,8 @@ public abstract class FixnumNodes {
     @Primitive(name = "fixnum_pow")
     public abstract static class FixnumPowPrimitiveNode extends BignumNodes.BignumCoreMethodNode {
 
+        @Child private SnippetNode warnNode = new SnippetNode();
+
         private final ConditionProfile negativeProfile = ConditionProfile.createBinaryProfile();
         private final ConditionProfile complexProfile = ConditionProfile.createBinaryProfile();
 
@@ -1273,8 +1292,8 @@ public abstract class FixnumNodes {
         }
 
         @Specialization(guards = "isRubyBignum(b)")
-        public Object powBignum(int a, DynamicObject b) {
-            return powBignum((long) a, b);
+        public Object powBignum(VirtualFrame frame, int a, DynamicObject b) {
+            return powBignum(frame, (long) a, b);
         }
 
         @Specialization(guards = "canShiftIntoLong(a, b)")
@@ -1317,9 +1336,8 @@ public abstract class FixnumNodes {
             }
         }
 
-        @TruffleBoundary
         @Specialization(guards = "isRubyBignum(b)")
-        public Object powBignum(long a, DynamicObject b) {
+        public Object powBignum(VirtualFrame frame, long a, DynamicObject b) {
             if (a == 0) {
                 return 0;
             }
@@ -1329,21 +1347,31 @@ public abstract class FixnumNodes {
             }
 
             if (a == -1) {
-                if (Layouts.BIGNUM.getValue(b).testBit(0)) {
+                if (testBit(Layouts.BIGNUM.getValue(b), 0)) {
                     return -1;
                 } else {
                     return 1;
                 }
             }
 
-            if (Layouts.BIGNUM.getValue(b).compareTo(BigInteger.ZERO) < 0) {
+            if (compareTo(Layouts.BIGNUM.getValue(b), BigInteger.ZERO) < 0) {
                 return null; // Primitive failure
             }
 
-            getContext().getJRubyRuntime().getWarnings().warn("in a**b, b may be too big");
+            warnNode.execute(frame, "warn('in a**b, b may be too big')");
             // b >= 2**63 && (a > 1 || a < -1) => larger than largest double
             // MRI behavior/bug: always positive Infinity even if a negative and b odd (likely due to libc pow(a, +inf)).
             return Double.POSITIVE_INFINITY;
+        }
+
+        @TruffleBoundary
+        private boolean testBit(BigInteger bigInteger, int n) {
+            return bigInteger.testBit(n);
+        }
+
+        @TruffleBoundary
+        private int compareTo(BigInteger a, BigInteger b) {
+            return a.compareTo(b);
         }
 
         @Specialization(guards = "!isRubyBignum(b)")

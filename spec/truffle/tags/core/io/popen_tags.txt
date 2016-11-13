@@ -19,4 +19,18 @@ fails:IO.popen with a leading Array argument accepts [env, command, arg1, arg2, 
 fails:IO.popen with a leading Array argument accepts '[env, command, arg1, arg2, ..., exec options], mode'
 fails:IO.popen with a leading Array argument accepts '[env, command, arg1, arg2, ..., exec options], mode, IO options'
 fails:IO.popen with a leading Array argument accepts '[env, command, arg1, arg2, ...], mode, IO + exec options'
+fails:IO.popen raises IOError when writing a read-only pipe
+fails:IO.popen reads and writes a read/write pipe
 slow:IO.popen sees an infinitely looping subprocess exit when read pipe is closed
+slow:IO.popen returns an open IO
+slow:IO.popen reads a read-only pipe
+slow:IO.popen writes to a write-only pipe
+slow:IO.popen raises IOError when reading a write-only pipe
+slow:IO.popen waits for the child to finish
+slow:IO.popen does not throw an exception if child exited and has been waited for
+slow:IO.popen returns an instance of a subclass when called on a subclass
+slow:IO.popen coerces mode argument with #to_str
+slow:IO.popen has the given external encoding
+slow:IO.popen has the given internal encoding
+slow:IO.popen sets the internal encoding to nil if it's the same as the external encoding
+slow:IO.popen with a block yields an open IO to the block

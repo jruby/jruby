@@ -15,6 +15,7 @@ import com.oracle.truffle.api.frame.FrameSlotTypeException;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.RootNode;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.RubyLanguage;
 import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.language.backtrace.InternalRootNode;
@@ -25,14 +26,16 @@ import org.jruby.util.StringSupport;
  */
 public class FormatRootNode extends RootNode implements InternalRootNode {
 
+    private final RubyContext context;
     private final FormatEncoding encoding;
 
     @Child private FormatNode child;
 
     @CompilationFinal private int expectedLength = 0;
 
-    public FormatRootNode(SourceSection sourceSection, FormatEncoding encoding, FormatNode child) {
+    public FormatRootNode(RubyContext context, SourceSection sourceSection, FormatEncoding encoding, FormatNode child) {
         super(RubyLanguage.class, sourceSection, FormatFrameDescriptor.FRAME_DESCRIPTOR);
+        this.context = context;
         this.encoding = encoding;
         this.child = child;
     }
@@ -124,4 +127,7 @@ public class FormatRootNode extends RootNode implements InternalRootNode {
         return getName();
     }
 
+    public RubyContext getContext() {
+        return context;
+    }
 }

@@ -15,12 +15,17 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.ObjectType;
 import com.oracle.truffle.api.object.Shape;
 import org.jruby.truffle.Layouts;
+import org.jruby.truffle.language.objects.shared.SharedObjects;
 
 public abstract class ShapeCachingGuards {
 
     public static boolean updateShape(DynamicObject object) {
         CompilerDirectives.transferToInterpreter();
-        return object.updateShape();
+        boolean updated = object.updateShape();
+        if (updated) {
+            assert !SharedObjects.isShared(object);
+        }
+        return updated;
     }
 
     public static boolean isArrayShape(Shape shape) {

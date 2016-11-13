@@ -18,10 +18,24 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
 
 import static org.junit.Assert.*;
 
 public class RubyTckTest extends TruffleTCK {
+
+    private static Source getSource(String path) {
+        InputStream stream = ClassLoader.getSystemResourceAsStream(path);
+        Reader reader = new InputStreamReader(stream);
+        try {
+            return Source.newBuilder(reader).name(new File(path).getName()).mimeType(RubyLanguage.MIME_TYPE).build();
+        } catch (IOException e) {
+            throw new Error(e);
+        }
+    }
 
     private static PolyglotEngine engine;
 
@@ -35,7 +49,7 @@ public class RubyTckTest extends TruffleTCK {
     protected synchronized PolyglotEngine prepareVM() throws Exception {
         if (engine == null) {
             engine = PolyglotEngine.newBuilder().build();
-            engine.eval(Source.newBuilder(new File("src/test/ruby/tck.rb")).build());
+            engine.eval(getSource("src/test/ruby/tck.rb"));
         }
 
         return engine;
@@ -44,7 +58,7 @@ public class RubyTckTest extends TruffleTCK {
     @Override
     protected PolyglotEngine prepareVM(PolyglotEngine.Builder preparedBuilder) throws Exception {
         final PolyglotEngine engine = preparedBuilder.build();
-        engine.eval(Source.newBuilder(new File("src/test/ruby/tck.rb")).build());
+        engine.eval(getSource("src/test/ruby/tck.rb"));
         return engine;
     }
 

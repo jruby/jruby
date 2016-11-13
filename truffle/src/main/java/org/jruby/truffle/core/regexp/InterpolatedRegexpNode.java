@@ -25,7 +25,7 @@ import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.parser.BodyTranslator;
-import org.jruby.util.RegexpOptions;
+import org.jruby.util.ByteList;
 
 public class InterpolatedRegexpNode extends RubyNode {
 
@@ -47,21 +47,21 @@ public class InterpolatedRegexpNode extends RubyNode {
 
     @TruffleBoundary
     private DynamicObject createRegexp(DynamicObject[] parts) {
-        final org.jruby.RubyString[] strings = new org.jruby.RubyString[children.length];
+        final ByteList[] strings = new ByteList[children.length];
 
         for (int n = 0; n < children.length; n++) {
-            strings[n] = org.jruby.RubyString.newString(getContext().getJRubyRuntime(), StringOperations.getByteListReadOnly(parts[n]));
+            strings[n] = StringOperations.getByteListReadOnly(parts[n]);
         }
 
-        final org.jruby.RubyString preprocessed = org.jruby.RubyRegexp.preprocessDRegexp(getContext().getJRubyRuntime(), strings, options);
+        final ByteList preprocessed = ClassicRegexp.preprocessDRegexp(getContext(), strings, options);
 
         final DynamicObject regexp = RegexpNodes.createRubyRegexp(getContext(), this, coreLibrary().getRegexpFactory(),
-                StringOperations.ropeFromByteList(preprocessed.getByteList()), options);
+                StringOperations.ropeFromByteList(preprocessed), options);
 
         if (options.isEncodingNone()) {
             final Rope source = Layouts.REGEXP.getSource(regexp);
 
-            if (!BodyTranslator.all7Bit(preprocessed.getByteList().bytes())) {
+            if (!BodyTranslator.all7Bit(preprocessed.bytes())) {
                 Layouts.REGEXP.setSource(regexp, RopeOperations.withEncodingVerySlow(source, ASCIIEncoding.INSTANCE));
             } else {
                 Layouts.REGEXP.setSource(regexp, RopeOperations.withEncodingVerySlow(source, USASCIIEncoding.INSTANCE));

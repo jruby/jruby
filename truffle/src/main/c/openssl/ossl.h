@@ -233,12 +233,6 @@ void ossl_debug(const char *, ...);
 #define RB_SCAN_ARGS_11         rb_scan_args
 #endif
 
-#ifdef JRUBY_TRUFFLE
-#define CALLBACK(function) NULL
-#else
-#define CALLBACK(function) (function)
-#endif
-
 /*
  * Include all parts
  */

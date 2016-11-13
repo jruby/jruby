@@ -35,12 +35,12 @@ public abstract class ToSNode extends RubyNode {
         callToSNode = DispatchHeadNodeFactory.createMethodCall(context, true);
     }
 
-    protected DynamicObject kernelToS(VirtualFrame frame, Object object) {
+    protected DynamicObject kernelToS(Object object) {
         if (kernelToSNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
             kernelToSNode = insert(KernelNodesFactory.ToSNodeFactory.create(getContext(), null, null));
         }
-        return kernelToSNode.executeToS(frame, object);
+        return kernelToSNode.executeToS(object);
     }
 
     @Specialization(guards = "isRubyString(string)")
@@ -66,7 +66,7 @@ public abstract class ToSNode extends RubyNode {
         if (RubyGuards.isRubyString(value)) {
             return (DynamicObject) value;
         } else {
-            return kernelToS(frame, object);
+            return kernelToS(object);
         }
     }
 

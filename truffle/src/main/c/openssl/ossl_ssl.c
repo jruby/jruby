@@ -707,12 +707,12 @@ ossl_sslctx_setup(VALUE self)
     GetSSLCTX(self, ctx);
 
 #if !defined(OPENSSL_NO_DH)
-    SSL_CTX_set_tmp_dh_callback(ctx, CALLBACK(ossl_tmp_dh_callback));
+    SSL_CTX_set_tmp_dh_callback(ctx, ossl_tmp_dh_callback);
 #endif
 
 #if !defined(OPENSSL_NO_EC)
     if (RTEST(ossl_sslctx_get_tmp_ecdh_cb(self))){
-	SSL_CTX_set_tmp_ecdh_callback(ctx, CALLBACK(ossl_tmp_ecdh_callback));
+	SSL_CTX_set_tmp_ecdh_callback(ctx, ossl_tmp_ecdh_callback);
     }
 #endif
 
@@ -784,9 +784,9 @@ ossl_sslctx_setup(VALUE self)
 
     val = ossl_sslctx_get_verify_mode(self);
     verify_mode = NIL_P(val) ? SSL_VERIFY_NONE : NUM2INT(val);
-    SSL_CTX_set_verify(ctx, verify_mode, CALLBACK(ossl_ssl_verify_callback));
+    SSL_CTX_set_verify(ctx, verify_mode, ossl_ssl_verify_callback);
     if (RTEST(ossl_sslctx_get_client_cert_cb(self)))
-	SSL_CTX_set_client_cert_cb(ctx, CALLBACK(ossl_client_cert_cb));
+	SSL_CTX_set_client_cert_cb(ctx, ossl_client_cert_cb);
 
     val = ossl_sslctx_get_timeout(self);
     if(!NIL_P(val)) SSL_CTX_set_timeout(ctx, NUM2LONG(val));
@@ -832,22 +832,22 @@ ossl_sslctx_setup(VALUE self)
     }
 
     if (RTEST(rb_iv_get(self, "@session_get_cb"))) {
-	SSL_CTX_sess_set_get_cb(ctx, CALLBACK(ossl_sslctx_session_get_cb));
+	SSL_CTX_sess_set_get_cb(ctx, ossl_sslctx_session_get_cb);
 	OSSL_Debug("SSL SESSION get callback added");
     }
     if (RTEST(rb_iv_get(self, "@session_new_cb"))) {
-	SSL_CTX_sess_set_new_cb(ctx, CALLBACK(ossl_sslctx_session_new_cb));
+	SSL_CTX_sess_set_new_cb(ctx, ossl_sslctx_session_new_cb);
 	OSSL_Debug("SSL SESSION new callback added");
     }
     if (RTEST(rb_iv_get(self, "@session_remove_cb"))) {
-	SSL_CTX_sess_set_remove_cb(ctx, CALLBACK(ossl_sslctx_session_remove_cb));
+	SSL_CTX_sess_set_remove_cb(ctx, ossl_sslctx_session_remove_cb);
 	OSSL_Debug("SSL SESSION remove callback added");
     }
 
 #ifdef HAVE_SSL_SET_TLSEXT_HOST_NAME
     val = rb_iv_get(self, "@servername_cb");
     if (!NIL_P(val)) {
-        SSL_CTX_set_tlsext_servername_callback(ctx, CALLBACK(ssl_servername_cb));
+        SSL_CTX_set_tlsext_servername_callback(ctx, ssl_servername_cb);
 	OSSL_Debug("SSL TLSEXT servername callback added");
     }
 #endif
@@ -1221,7 +1221,7 @@ ossl_ssl_setup(VALUE self)
 	SSL_set_ex_data(ssl, ossl_ssl_ex_ptr_idx, WRITE_EX_DATA(self));
 	cb = ossl_sslctx_get_verify_cb(v_ctx);
 	SSL_set_ex_data(ssl, ossl_ssl_ex_vcb_idx, WRITE_EX_DATA(cb));
-	SSL_set_info_callback(ssl, CALLBACK(ssl_info_cb));
+	SSL_set_info_callback(ssl, ssl_info_cb);
     }
 
     return Qtrue;

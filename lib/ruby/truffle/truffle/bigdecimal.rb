@@ -243,22 +243,24 @@ class Truffle::BigDecimal < Numeric
   end
 
   def inspect
-    precs1, precs2 = precs
+    sig, max_sig = precs
 
     format "#<BigDecimal:%s,'%s',%d(%d)>",
            object_id.to_s(16),
            to_s,
-           precs1,
-           precs2
+           sig,
+           max_sig
   end
 
   def _dump(level=nil)
     # TODO (pitr 30-jun-2015): increase density
-    to_s
+    sig, max_sig = precs
+    str = to_s
+    "#{max_sig}:#{to_s}".force_encoding(str.encoding)
   end
 
   def self._load(data)
-    new data
+    new(data.split(':').last)
   end
 
   private

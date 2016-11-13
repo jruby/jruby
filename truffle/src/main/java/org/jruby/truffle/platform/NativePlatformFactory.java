@@ -15,20 +15,27 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.platform.darwin.DarwinPlatform;
 import org.jruby.truffle.platform.java.JavaPlatform;
 import org.jruby.truffle.platform.linux.LinuxPlatform;
+import org.jruby.truffle.platform.solaris.SolarisPlatform;
 
 public abstract class NativePlatformFactory {
 
+    private static final Platform.OS_TYPE OS = Platform.getPlatform().getOS();
+
     public static NativePlatform createPlatform(RubyContext context) {
         if (!TruffleOptions.AOT &&
-                (context.getOptions().PLATFORM_USE_JAVA || (Platform.getPlatform().getOS() == Platform.OS_TYPE.WINDOWS))) {
+                (context.getOptions().PLATFORM_USE_JAVA || (OS == Platform.OS_TYPE.WINDOWS))) {
             return new JavaPlatform(context);
         }
 
-        if (Platform.getPlatform().getOS() == Platform.OS_TYPE.LINUX) {
+        if (OS == Platform.OS_TYPE.LINUX) {
             return new LinuxPlatform(context);
         }
 
-        if (Platform.getPlatform().getOS() == Platform.OS_TYPE.DARWIN) {
+        if (OS == Platform.OS_TYPE.SOLARIS) {
+            return new SolarisPlatform(context);
+        }
+
+        if (OS == Platform.OS_TYPE.DARWIN) {
             return new DarwinPlatform(context);
         }
 

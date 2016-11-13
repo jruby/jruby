@@ -48,7 +48,7 @@ public class DefineClassNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        final Object lexicalParentObject = lexicalParentModule.execute(frame);;
+        final Object lexicalParentObject = lexicalParentModule.execute(frame);
 
         if (!RubyGuards.isRubyModule(lexicalParentObject)) {
             errorProfile.enter();

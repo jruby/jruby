@@ -15,7 +15,6 @@ import com.oracle.truffle.api.object.ObjectType;
 import com.oracle.truffle.api.object.dsl.Layout;
 import com.oracle.truffle.api.object.dsl.Nullable;
 import com.oracle.truffle.api.object.dsl.Volatile;
-import org.jruby.RubyThread;
 import org.jruby.truffle.core.InterruptMode;
 import org.jruby.truffle.core.basicobject.BasicObjectLayout;
 import org.jruby.truffle.core.fiber.FiberManager;
@@ -36,7 +35,7 @@ public interface ThreadLayout extends BasicObjectLayout {
             DynamicObjectFactory factory,
             DynamicObject threadLocals,
             @Volatile InterruptMode interruptMode, // needs to be volatile for fibers implemented by threads
-            @Volatile RubyThread.Status status,
+            @Volatile ThreadStatus status,
             List<Lock> ownedLocks,
             @Nullable FiberManager fiberManager,
             CountDownLatch finishedLatch,
@@ -70,8 +69,8 @@ public interface ThreadLayout extends BasicObjectLayout {
     Thread getThread(DynamicObject object);
     void setThread(DynamicObject object, Thread value);
 
-    RubyThread.Status getStatus(DynamicObject object);
-    void setStatus(DynamicObject object, RubyThread.Status value);
+    ThreadStatus getStatus(DynamicObject object);
+    void setStatus(DynamicObject object, ThreadStatus value);
 
     DynamicObject getException(DynamicObject object);
     void setException(DynamicObject object, DynamicObject value);

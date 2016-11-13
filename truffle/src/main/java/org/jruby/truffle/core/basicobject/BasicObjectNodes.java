@@ -17,12 +17,13 @@ import com.oracle.truffle.api.dsl.Fallback;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.Frame;
 import com.oracle.truffle.api.frame.FrameInstance;
-import com.oracle.truffle.api.frame.FrameInstanceVisitor;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.object.Property;
+import com.oracle.truffle.api.object.Shape;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.ASCIIEncoding;
@@ -52,6 +53,7 @@ import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.methods.UnsupportedOperationBehavior;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
+import org.jruby.truffle.language.objects.PropertyFlags;
 import org.jruby.truffle.language.supercall.SuperCallNode;
 import org.jruby.truffle.language.yield.YieldNode;
 import org.jruby.truffle.parser.ParserContext;
@@ -248,19 +250,26 @@ public abstract class BasicObjectNodes {
         @TruffleBoundary
         @Specialization(guards = {"!isNil(self)", "!isRubySymbol(self)"})
         public DynamicObject instanceVariables(DynamicObject self) {
-            List<Object> keys = self.getShape().getKeyList();
+            Shape shape = self.getShape();
+            List<String> names = new ArrayList<>();
 
-            final Object[] instanceVariableNames = keys.toArray(new Object[keys.size()]);
-            Arrays.sort(instanceVariableNames);
-
-            final List<Object> names = new ArrayList<>();
-            for (Object name : instanceVariableNames) {
-                if (name instanceof String) {
-                    names.add(getSymbol((String) name));
+            for (Property property : shape.getProperties()) {
+                Object name = property.getKey();
+                if (PropertyFlags.isDefined(property) && name instanceof String) {
+                    names.add((String) name);
                 }
             }
+
             final int size = names.size();
-            return createArray(names.toArray(new Object[size]), size);
+            final String[] sortedNames = names.toArray(new String[size]);
+            Arrays.sort(sortedNames);
+
+            final Object[] nameSymbols = new Object[size];
+            for (int i = 0; i < sortedNames.length; i++) {
+                nameSymbols[i] = getSymbol((String) sortedNames[i]);
+            }
+
+            return createArray(nameSymbols, size);
         }
 
         @Specialization

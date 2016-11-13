@@ -60,7 +60,6 @@ import org.jruby.truffle.core.kernel.KernelNodes;
 import org.jruby.truffle.core.kernel.KernelNodesFactory;
 import org.jruby.truffle.core.proc.ProcSignalHandler;
 import org.jruby.truffle.core.string.StringOperations;
-import org.jruby.truffle.core.thread.ThreadManager;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.control.ExitException;
 import org.jruby.truffle.language.control.RaiseException;
@@ -74,6 +73,7 @@ import org.jruby.truffle.language.objects.IsANode;
 import org.jruby.truffle.language.objects.IsANodeGen;
 import org.jruby.truffle.language.objects.LogicalClassNode;
 import org.jruby.truffle.language.objects.LogicalClassNodeGen;
+import org.jruby.truffle.language.objects.shared.SharedObjects;
 import org.jruby.truffle.language.yield.YieldNode;
 import org.jruby.truffle.platform.UnsafeGroup;
 import org.jruby.truffle.platform.signal.Signal;
@@ -477,6 +477,9 @@ public abstract class VMPrimitiveNodes {
         @TruffleBoundary
         @Specialization(guards = "isRubyString(key)")
         public Object get(DynamicObject key) {
+            // Sharing: we do not need to share here as it's only called by the main thread
+            assert getContext().getThreadManager().getCurrentThread() == getContext().getThreadManager().getRootThread();
+
             final Object value = getContext().getNativePlatform().getRubiniusConfiguration().get(key.toString());
 
             if (value == null) {
@@ -584,9 +587,27 @@ public abstract class VMPrimitiveNodes {
 
         @Specialization(guards = "isRubyClass(newClass)")
         public DynamicObject setClass(DynamicObject object, DynamicObject newClass) {
-            Layouts.BASIC_OBJECT.setLogicalClass(object, newClass);
-            Layouts.BASIC_OBJECT.setMetaClass(object, newClass);
+            SharedObjects.propagate(object, newClass);
+            synchronized (object) {
+                Layouts.BASIC_OBJECT.setLogicalClass(object, newClass);
+                Layouts.BASIC_OBJECT.setMetaClass(object, newClass);
+            }
             return object;
+        }
+
+    }
+
+    @Primitive(name = "vm_set_process_title", needsSelf = false)
+    public abstract static class VMSetProcessTitleNode extends PrimitiveArrayArgumentsNode {
+
+        @TruffleBoundary
+        @Specialization(guards = "isRubyString(name)")
+        protected Object writeProgramName(DynamicObject name) {
+            if (getContext().getNativePlatform().getProcessName().canSet()) {
+                getContext().getNativePlatform().getProcessName().set(name.toString());
+            }
+
+            return name;
         }
 
     }

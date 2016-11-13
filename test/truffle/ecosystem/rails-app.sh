@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 
 set -e
+set -x
 
 cd ../jruby-truffle-gem-test-pack/gem-testing/rails-app
 
 JRUBY_BIN=../../../jruby/bin
 JRUBY=$JRUBY_BIN/jruby
-JTR=$JRUBY_BIN/jruby+truffle
+JTR=$JRUBY_BIN/jruby-truffle-tool
 
 if [ -n "$CI" -a -z "$HAS_REDIS" ]
 then
@@ -27,15 +28,16 @@ else
     serverpid=$!
     url=http://localhost:3000
 
+    set +x
     while ! curl -s "$url/people.json";
     do
         echo -n .
         sleep 1
     done
+    set -x
 
     echo Server is up
 
-    set -x
     curl -s -X "DELETE" "$url/people/destroy_all.json"
     test "$(curl -s "$url/people.json")" = '[]'
     curl -s --data 'name=Anybody&email=ab@example.com' "$url/people.json"
@@ -44,8 +46,5 @@ else
 
     kill %1
     kill $(cat tmp/pids/server.pid)
-
-    set +x
-    set +e
 
 fi

@@ -284,7 +284,7 @@ public class ArgumentProcessor {
                 case 'K': // @Deprecated TODO no longer relevant in Ruby 2.x
                     String eArg = grabValue(getArgumentError("provide a value for -K"));
 
-                    config.setKCode(KCode.create(null, eArg));
+                    config.setKCode(KCode.create(eArg));
 
                     // source encoding
                     config.setSourceEncoding(config.getKCode().getEncoding().toString());
@@ -401,7 +401,7 @@ public class ArgumentProcessor {
                         config.setCompileMode(RubyInstanceConfig.CompileMode.FORCE);
                     } else if (extendedOption.equals("classic")) {
                         throw new MainExitException(0, "jruby: the -Xclassic option should have been handled in the launcher");
-                    } else if (extendedOption.equals("+T")) {
+                    } else if (extendedOption.equals("+T") || extendedOption.equals("+TM")) {
                         Options.PARSER_WARN_GROUPED_EXPRESSIONS.force(Boolean.FALSE.toString());
                         config.setCompileMode(RubyInstanceConfig.CompileMode.TRUFFLE);
                         // Make the static option consistent with the compile mode.

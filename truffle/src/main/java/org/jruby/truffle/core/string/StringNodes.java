@@ -7,8 +7,9 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  *
- * Some of the code in this class is transposed from org.jruby.RubyString,
- * licensed under the same EPL1.0/GPL 2.0/LGPL 2.1 used throughout.
+ * Some of the code in this class is transposed from org.jruby.RubyString
+ * and String Support and licensed under the same EPL1.0/GPL 2.0/LGPL 2.1
+ * used throughout.
  *
  * Copyright (C) 2001 Alan Moore <alan_moore@gmx.net>
  * Copyright (C) 2001-2002 Benoit Cerrina <b.cerrina@wanadoo.fr>
@@ -83,7 +84,6 @@ import org.jcodings.exception.EncodingException;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.RubyString;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreClass;
@@ -140,6 +140,8 @@ import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.IsFrozenNode;
 import org.jruby.truffle.language.objects.IsFrozenNodeGen;
+import org.jruby.truffle.language.objects.IsTaintedNode;
+import org.jruby.truffle.language.objects.IsTaintedNodeGen;
 import org.jruby.truffle.language.objects.TaintNode;
 import org.jruby.truffle.language.objects.TaintNodeGen;
 import org.jruby.truffle.platform.posix.TrufflePosix;
@@ -150,6 +152,7 @@ import org.jruby.util.ConvertDouble;
 import org.jruby.util.StringSupport;
 
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -856,17 +859,17 @@ public abstract class StringNodes {
             Encoding enc = checkEncodingNode.executeCheckEncoding(string, otherStr);
 
             final boolean[]table = new boolean[StringSupport.TRANS_SIZE + 1];
-            StringSupport.TrTables tables = StringSupport.trSetupTable(StringOperations.getByteListReadOnly(otherStr), getContext().getJRubyRuntime(), table, null, true, enc);
+            StringSupport.TrTables tables = StringSupport.trSetupTable(StringOperations.getByteListReadOnly(otherStr), table, null, true, enc);
             for (int i = 1; i < otherStrings.length; i++) {
                 otherStr = otherStrings[i];
 
                 assert RubyGuards.isRubyString(otherStr);
 
                 enc = checkEncodingNode.executeCheckEncoding(string, otherStr);
-                tables = StringSupport.trSetupTable(StringOperations.getByteListReadOnly(otherStr), getContext().getJRubyRuntime(), table, tables, false, enc);
+                tables = StringSupport.trSetupTable(StringOperations.getByteListReadOnly(otherStr), table, tables, false, enc);
             }
 
-            return StringSupport.strCount(StringOperations.getByteListReadOnly(string), getContext().getJRubyRuntime(), table, tables, enc);
+            return StringSupport.strCount(StringOperations.getByteListReadOnly(string), table, tables, enc);
         }
     }
 
@@ -975,18 +978,17 @@ public abstract class StringNodes {
 
             boolean[] squeeze = new boolean[StringSupport.TRANS_SIZE + 1];
             StringSupport.TrTables tables = StringSupport.trSetupTable(StringOperations.getByteListReadOnly(otherString),
-                    getContext().getJRubyRuntime(),
                     squeeze, null, true, enc);
 
             for (int i = 1; i < otherStrings.length; i++) {
                 assert RubyGuards.isRubyString(otherStrings[i]);
 
                 enc = checkEncodingNode.executeCheckEncoding(string, otherStrings[i]);
-                tables = StringSupport.trSetupTable(StringOperations.getByteListReadOnly(otherStrings[i]), getContext().getJRubyRuntime(), squeeze, tables, false, enc);
+                tables = StringSupport.trSetupTable(StringOperations.getByteListReadOnly(otherStrings[i]), squeeze, tables, false, enc);
             }
 
             final CodeRangeable buffer = StringOperations.getCodeRangeableReadWrite(string, checkEncodingNode);
-            if (StringSupport.delete_bangCommon19(buffer, getContext().getJRubyRuntime(), squeeze, tables, enc) == null) {
+            if (StringSupport.delete_bangCommon19(buffer, squeeze, tables, enc) == null) {
                 return nil();
             }
 
@@ -1047,20 +1049,14 @@ public abstract class StringNodes {
             }
 
             final byte[] outputBytes = rope.getBytesCopy();
+            final boolean modified = multiByteDowncase(encoding, outputBytes, 0, outputBytes.length);
 
-            try {
-                final boolean modified = multiByteDowncase(encoding, outputBytes, 0, outputBytes.length);
+            if (modifiedProfile.profile(modified)) {
+                StringOperations.setRope(string, makeLeafRopeNode.executeMake(outputBytes, rope.getEncoding(), rope.getCodeRange(), rope.characterLength()));
 
-                if (modifiedProfile.profile(modified)) {
-                    StringOperations.setRope(string, makeLeafRopeNode.executeMake(outputBytes, rope.getEncoding(), rope.getCodeRange(), rope.characterLength()));
-
-                    return string;
-                } else {
-                    return nil();
-                }
-            } catch (IllegalArgumentException e) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                throw new RaiseException(coreExceptions().argumentError(e.getMessage(), this));
+                return string;
+            } else {
+                return nil();
             }
         }
 
@@ -1183,25 +1179,6 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "inspect")
-    public abstract static class InspectNode extends CoreMethodArrayArgumentsNode {
-
-        @Child private TaintResultNode taintResultNode;
-
-        public InspectNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            taintResultNode = new TaintResultNode(context, sourceSection);
-        }
-
-        @TruffleBoundary
-        @Specialization
-        public Object inspect(DynamicObject string) {
-            DynamicObject result = createString(org.jruby.RubyString.inspect(getContext().getJRubyRuntime(),
-                StringOperations.getByteListReadOnly(string)).getByteList());
-            return taintResultNode.maybeTaint(string, result);
-        }
-    }
-
     @CoreMethod(names = "encoding")
     public abstract static class EncodingNode extends CoreMethodArrayArgumentsNode {
 
@@ -1318,7 +1295,7 @@ public abstract class StringNodes {
         @Specialization
         public DynamicObject initializeJavaString(DynamicObject self, String from) {
             raiseIfFrozen(self);
-            StringOperations.setRope(self, StringOperations.createRope(from, ASCIIEncoding.INSTANCE));
+            StringOperations.setRope(self, StringOperations.encodeRope(from, ASCIIEncoding.INSTANCE));
             return self;
         }
 
@@ -1574,12 +1551,7 @@ public abstract class StringNodes {
         public int ord(DynamicObject string) {
             final Rope rope = rope(string);
 
-            try {
-                return RopeOperations.codePoint(getContext(), rope, 0);
-            } catch (IllegalArgumentException e) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                throw new RaiseException(coreExceptions().argumentError(e.getMessage(), this));
-            }
+            return RopeOperations.codePoint(getContext(), rope, 0);
         }
 
     }
@@ -1731,7 +1703,7 @@ public abstract class StringNodes {
                     return string;
                 }
             } else {
-                if (StringSupport.multiByteSwapcase(getContext().getJRubyRuntime(), enc, bytes, s, end)) {
+                if (StringSupport.multiByteSwapcase(enc, bytes, s, end)) {
                     StringOperations.setRope(string, makeLeafRopeNode.executeMake(bytes, rope.getEncoding(), rope.getCodeRange(), rope.characterLength()));
 
                     return string;
@@ -1792,7 +1764,154 @@ public abstract class StringNodes {
         @TruffleBoundary
         private ByteList dumpCommon(DynamicObject string) {
             assert RubyGuards.isRubyString(string);
-            return StringSupport.dumpCommon(getContext().getJRubyRuntime(), StringOperations.getByteListReadOnly(string));
+            return dumpCommon(StringOperations.getByteListReadOnly(string));
+        }
+
+        private ByteList dumpCommon(ByteList byteList) {
+            ByteList buf = null;
+            Encoding enc = byteList.getEncoding();
+
+            int p = byteList.getBegin();
+            int end = p + byteList.getRealSize();
+            byte[]bytes = byteList.getUnsafeBytes();
+
+            int len = 2;
+            while (p < end) {
+                int c = bytes[p++] & 0xff;
+
+                switch (c) {
+                    case '"':case '\\':case '\n':case '\r':case '\t':case '\f':
+                    case '\013': case '\010': case '\007': case '\033':
+                        len += 2;
+                        break;
+                    case '#':
+                        len += isEVStr(bytes, p, end) ? 2 : 1;
+                        break;
+                    default:
+                        if (ASCIIEncoding.INSTANCE.isPrint(c)) {
+                            len++;
+                        } else {
+                            if (enc.isUTF8()) {
+                                int n = preciseLength(enc, bytes, p - 1, end) - 1;
+                                if (n > 0) {
+                                    if (buf == null) buf = new ByteList();
+                                    int cc = codePointX(enc, bytes, p - 1, end);
+                                    buf.append(String.format("%x", cc).getBytes(StandardCharsets.US_ASCII));
+                                    len += buf.getRealSize() + 4;
+                                    buf.setRealSize(0);
+                                    p += n;
+                                    break;
+                                }
+                            }
+                            len += 4;
+                        }
+                        break;
+                }
+            }
+
+            if (!enc.isAsciiCompatible()) {
+                len += ".force_encoding(\"".length() + enc.getName().length + "\")".length();
+            }
+
+            ByteList outBytes = new ByteList(len);
+            byte out[] = outBytes.getUnsafeBytes();
+            int q = 0;
+            p = byteList.getBegin();
+            end = p + byteList.getRealSize();
+
+            out[q++] = '"';
+            while (p < end) {
+                int c = bytes[p++] & 0xff;
+                if (c == '"' || c == '\\') {
+                    out[q++] = '\\';
+                    out[q++] = (byte)c;
+                } else if (c == '#') {
+                    if (isEVStr(bytes, p, end)) out[q++] = '\\';
+                    out[q++] = '#';
+                } else if (c == '\n') {
+                    out[q++] = '\\';
+                    out[q++] = 'n';
+                } else if (c == '\r') {
+                    out[q++] = '\\';
+                    out[q++] = 'r';
+                } else if (c == '\t') {
+                    out[q++] = '\\';
+                    out[q++] = 't';
+                } else if (c == '\f') {
+                    out[q++] = '\\';
+                    out[q++] = 'f';
+                } else if (c == '\013') {
+                    out[q++] = '\\';
+                    out[q++] = 'v';
+                } else if (c == '\010') {
+                    out[q++] = '\\';
+                    out[q++] = 'b';
+                } else if (c == '\007') {
+                    out[q++] = '\\';
+                    out[q++] = 'a';
+                } else if (c == '\033') {
+                    out[q++] = '\\';
+                    out[q++] = 'e';
+                } else if (ASCIIEncoding.INSTANCE.isPrint(c)) {
+                    out[q++] = (byte)c;
+                } else {
+                    out[q++] = '\\';
+                    if (enc.isUTF8()) {
+                        int n = preciseLength(enc, bytes, p - 1, end) - 1;
+                        if (n > 0) {
+                            int cc = codePointX(enc, bytes, p - 1, end);
+                            p += n;
+                            outBytes.setRealSize(q);
+                            outBytes.append(String.format("u{%x}", cc).getBytes(StandardCharsets.US_ASCII));
+                            q = outBytes.getRealSize();
+                            continue;
+                        }
+                    }
+                    outBytes.setRealSize(q);
+                    outBytes.append(String.format("x%02X", c).getBytes(StandardCharsets.US_ASCII));
+                    q = outBytes.getRealSize();
+                }
+            }
+            out[q++] = '"';
+            outBytes.setRealSize(q);
+            assert out == outBytes.getUnsafeBytes(); // must not reallocate
+
+            return outBytes;
+        }
+
+        private static boolean isEVStr(byte[] bytes, int p, int end) {
+            return p < end ? isEVStr(bytes[p] & 0xff) : false;
+        }
+
+        private static boolean isEVStr(int c) {
+            return c == '$' || c == '@' || c == '{';
+        }
+
+        // rb_enc_precise_mbclen
+        private static int preciseLength(Encoding enc, byte[]bytes, int p, int end) {
+            if (p >= end) return -1 - (1);
+            int n = enc.length(bytes, p, end);
+            if (n > end - p) return MBCLEN_NEEDMORE(n - (end - p));
+            return n;
+        }
+
+        private static int MBCLEN_NEEDMORE(int n) {
+            return -1 - n;
+        }
+
+        private static int codePoint(Encoding enc, byte[] bytes, int p, int end) {
+            if (p >= end) throw new IllegalArgumentException("empty string");
+            int cl = preciseLength(enc, bytes, p, end);
+            if (cl <= 0) throw new IllegalArgumentException("invalid byte sequence in " + enc);
+            return enc.mbcToCode(bytes, p, end);
+        }
+
+        private int codePointX(Encoding enc, byte[] bytes, int p, int end) {
+            try {
+                return codePoint(enc, bytes, p, end);
+            } catch (IllegalArgumentException e) {
+                throw new RaiseException(getContext().getCoreExceptions().argumentError(e.getMessage(), this));
+            }
         }
     }
 
@@ -1959,7 +2078,7 @@ public abstract class StringNodes {
             Rope otherRope = rope(otherStr);
             Encoding enc = checkEncodingNode.executeCheckEncoding(string, otherStr);
             final boolean squeeze[] = new boolean[StringSupport.TRANS_SIZE + 1];
-            StringSupport.TrTables tables = StringSupport.trSetupTable(RopeOperations.getByteListReadOnly(otherRope), getContext().getJRubyRuntime(), squeeze, null, true, enc);
+            StringSupport.TrTables tables = StringSupport.trSetupTable(RopeOperations.getByteListReadOnly(otherRope), squeeze, null, true, enc);
 
             boolean singlebyte = rope.isSingleByteOptimizable() && otherRope.isSingleByteOptimizable();
 
@@ -1968,7 +2087,7 @@ public abstract class StringNodes {
                 otherRope = rope(otherStr);
                 enc = checkEncodingNode.executeCheckEncoding(string, otherStr);
                 singlebyte = singlebyte && otherRope.isSingleByteOptimizable();
-                tables = StringSupport.trSetupTable(RopeOperations.getByteListReadOnly(otherRope), getContext().getJRubyRuntime(), squeeze, tables, false, enc);
+                tables = StringSupport.trSetupTable(RopeOperations.getByteListReadOnly(otherRope), squeeze, tables, false, enc);
             }
 
             if (singleByteOptimizableProfile.profile(singlebyte)) {
@@ -1978,7 +2097,7 @@ public abstract class StringNodes {
                     StringOperations.setRope(string, StringOperations.ropeFromByteList(buffer));
                 }
             } else {
-                if (! StringSupport.multiByteSqueeze(getContext().getJRubyRuntime(), buffer, squeeze, tables, enc, true)) {
+                if (! StringSupport.multiByteSqueeze(buffer, squeeze, tables, enc, true)) {
                     return nil();
                 } else {
                     StringOperations.setRope(string, StringOperations.ropeFromByteList(buffer));
@@ -1990,7 +2109,7 @@ public abstract class StringNodes {
 
         @TruffleBoundary
         private boolean squeezeCommonMultiByte(ByteList value, boolean squeeze[], StringSupport.TrTables tables, Encoding enc, boolean isArg) {
-            return StringSupport.multiByteSqueeze(getContext().getJRubyRuntime(), value, squeeze, tables, enc, isArg);
+            return StringSupport.multiByteSqueeze(value, squeeze, tables, enc, isArg);
         }
 
         public static boolean zeroArgs(Object[] args) {
@@ -2007,7 +2126,7 @@ public abstract class StringNodes {
             final Rope rope = rope(string);
 
             if (! rope.isEmpty()) {
-                final ByteList succByteList = StringSupport.succCommon(getContext().getJRubyRuntime(), StringOperations.getByteListReadOnly(string));
+                final ByteList succByteList = StringSupport.succCommon(StringOperations.getByteListReadOnly(string));
 
                 StringOperations.setRope(string, StringOperations.ropeFromByteList(succByteList, rope.getCodeRange()));
             }
@@ -2157,7 +2276,7 @@ public abstract class StringNodes {
             final byte[] reversedBytes = new byte[len];
 
             for (int i = 0; i < len; i++) {
-                reversedBytes[len - i - 1] = originalBytes[i];;
+                reversedBytes[len - i - 1] = originalBytes[i];
             }
 
             StringOperations.setRope(string, makeLeafRopeNode.executeMake(reversedBytes, rope.getEncoding(), rope.getCodeRange(), rope.characterLength()));
@@ -2439,19 +2558,13 @@ public abstract class StringNodes {
             }
 
             final ByteList bytes = RopeOperations.toByteListCopy(rope);
+            final boolean modified = multiByteUpcase(encoding, bytes.unsafeBytes(), bytes.begin(), bytes.realSize());
+            if (modified) {
+                StringOperations.setRope(string, StringOperations.ropeFromByteList(bytes, rope.getCodeRange()));
 
-            try {
-                final boolean modified = multiByteUpcase(encoding, bytes.unsafeBytes(), bytes.begin(), bytes.realSize());
-                if (modified) {
-                    StringOperations.setRope(string, StringOperations.ropeFromByteList(bytes, rope.getCodeRange()));
-
-                    return string;
-                } else {
-                    return nil();
-                }
-            } catch (IllegalArgumentException e) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                throw new RaiseException(coreExceptions().argumentError(e.getMessage(), this));
+                return string;
+            } else {
+                return nil();
             }
         }
 
@@ -2615,8 +2728,7 @@ public abstract class StringNodes {
             assert RubyGuards.isRubyString(toStr);
 
             final CodeRangeable buffer = StringOperations.getCodeRangeableReadWrite(self, checkEncodingNode);
-            final CodeRangeable ret = StringSupport.trTransHelper(context.getJRubyRuntime(),
-                    buffer,
+            final CodeRangeable ret = StringSupport.trTransHelper(buffer,
                     StringOperations.getCodeRangeableReadOnly(fromStr, checkEncodingNode),
                     StringOperations.getCodeRangeableReadOnly(toStr, checkEncodingNode),
                     sFlag);
@@ -2735,12 +2847,7 @@ public abstract class StringNodes {
                 if (singlebyte) {
                     c = bytes[p++] & 0xff;
                 } else {
-                    try {
-                        c = RopeOperations.codePoint(getContext(), rope, p);
-                    } catch (org.jruby.exceptions.RaiseException ex) {
-                        throw new RaiseException(getContext().getJRubyInterop().toTruffle(ex.getException(), this));
-                    }
-
+                    c = RopeOperations.codePoint(getContext(), rope, p);
                     p += StringSupport.length(enc, bytes, p, end);
                 }
 
@@ -3150,12 +3257,116 @@ public abstract class StringNodes {
     @Primitive(name = "string_escape", needsSelf = false)
     public abstract static class StringEscapePrimitiveNode extends PrimitiveArrayArgumentsNode {
 
-        @TruffleBoundary
+        @Child private IsTaintedNode isTaintedNode = IsTaintedNodeGen.create(null, null, null);
+        @Child private TaintNode taintNode = TaintNodeGen.create(null, null, null);
+        private final ConditionProfile taintedProfile = ConditionProfile.createBinaryProfile();
+
         @Specialization
         public DynamicObject string_escape(DynamicObject string) {
-            final org.jruby.RubyString rubyString = new RubyString(getContext().getJRubyRuntime(), getContext().getJRubyRuntime().getString(),
-                StringOperations.getByteListReadOnly(string));
-            return createString(((RubyString) org.jruby.RubyString.rbStrEscape(getContext().getJRubyRuntime().getCurrentContext(), rubyString)).getByteList());
+            final DynamicObject result = create7BitString(rbStrEscape(StringOperations.getByteListReadOnly(string)), USASCIIEncoding.INSTANCE);
+
+            if (taintedProfile.profile(isTaintedNode.isTainted(string))) {
+                taintNode.executeTaint(result);
+            }
+
+            return result;
+        }
+
+        // MRI: rb_str_escape
+        @TruffleBoundary
+        private static ByteList rbStrEscape(ByteList str) {
+            Encoding enc = str.getEncoding();
+            ByteList strBL = str;
+            byte[] pBytes = strBL.unsafeBytes();
+            int p = strBL.begin();
+            int pend = p + strBL.realSize();
+            int prev = p;
+            ByteList result = new ByteList();
+            boolean unicode_p = enc.isUnicode();
+            boolean asciicompat = enc.isAsciiCompatible();
+
+            while (p < pend) {
+                int c, cc;
+                int n = enc.length(pBytes, p, pend);
+                if (!MBCLEN_CHARFOUND_P(n)) {
+                    if (p > prev) result.append(pBytes, prev, p - prev);
+                    n = enc.minLength();
+                    if (pend < p + n)
+                        n = (int)(pend - p);
+                    while ((n--) > 0) {
+                        result.append(String.format("\\x%02X", (long) (pBytes[p] & 0377)).getBytes(StandardCharsets.US_ASCII));
+                        prev = ++p;
+                    }
+                    continue;
+                }
+                n = MBCLEN_CHARFOUND_LEN(n);
+                c = enc.mbcToCode(pBytes, p, pend);
+                p += n;
+                switch (c) {
+                    case '\n': cc = 'n'; break;
+                    case '\r': cc = 'r'; break;
+                    case '\t': cc = 't'; break;
+                    case '\f': cc = 'f'; break;
+                    case '\013': cc = 'v'; break;
+                    case '\010': cc = 'b'; break;
+                    case '\007': cc = 'a'; break;
+                    case 033: cc = 'e'; break;
+                    default: cc = 0; break;
+                }
+                if (cc != 0) {
+                    if (p - n > prev) result.append(pBytes, prev, p - n - prev);
+                    result.append('\\');
+                    result.append((byte) cc);
+                    prev = p;
+                }
+                else if (asciicompat && Encoding.isAscii(c) && (c < 0x7F && c > 31 /*ISPRINT(c)*/)) {
+                }
+                else {
+                    if (p - n > prev) result.append(pBytes, prev, p - n - prev);
+
+                    if (unicode_p && (c & 0xFFFFFFFFL) < 0x7F && Encoding.isAscii(c) && ASCIIEncoding.INSTANCE.isPrint(c)) {
+                        result.append(String.format("%c", (char) (c & 0xFFFFFFFFL)).getBytes(StandardCharsets.US_ASCII));
+                    } else {
+                        result.append(String.format(escapedCharFormat(c, unicode_p), (long) (c & 0xFFFFFFFFL)).getBytes(StandardCharsets.US_ASCII));
+                    }
+
+                    prev = p;
+                }
+            }
+            if (p > prev) result.append(pBytes, prev, p - prev);
+
+            return result;
+        }
+
+        private static int MBCLEN_CHARFOUND_LEN(int r) {
+            return r;
+        }
+
+        // MBCLEN_CHARFOUND_P, ONIGENC_MBCLEN_CHARFOUND_P
+        private static boolean MBCLEN_CHARFOUND_P(int r) {
+            return 0 < r;
+        }
+
+        private static String escapedCharFormat(int c, boolean isUnicode) {
+            String format;
+            // c comparisons must be unsigned 32-bit
+            if (isUnicode) {
+
+                if ((c & 0xFFFFFFFFL) < 0x7F && Encoding.isAscii(c) && ASCIIEncoding.INSTANCE.isPrint(c)) {
+                    throw new UnsupportedOperationException();
+                } else if (c < 0x10000) {
+                    format = "\\u%04X";
+                } else {
+                    format = "\\u{%X}";
+                }
+            } else {
+                if ((c & 0xFFFFFFFFL) < 0x100) {
+                    format = "\\x%02X";
+                } else {
+                    format = "\\x{%X}";
+                }
+            }
+            return format;
         }
 
     }

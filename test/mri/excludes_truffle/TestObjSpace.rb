@@ -1,3 +1,4 @@
+exclude :test_trace_object_allocations_start_stop_clear, "we don't share strings yet"
 exclude :test_memsize_of_root_shared_string, "we don't share strings yet"
 exclude :test_dump_flags, "we don't expose the same GC information as MRI"
 exclude :test_dump_to_default, "object attributes are not the same as MRI"

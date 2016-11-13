@@ -13,14 +13,13 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
-import com.oracle.truffle.api.frame.FrameInstance;
-import com.oracle.truffle.api.frame.FrameInstanceVisitor;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.RubyLanguage;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
@@ -31,9 +30,13 @@ import org.jruby.truffle.language.loader.CodeLoader;
 import org.jruby.truffle.language.loader.SourceLoader;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.parser.ParserContext;
+import org.jruby.truffle.parser.TranslatorDriver;
 import org.jruby.util.Memo;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.List;
 
 @CoreClass("Truffle::Boot")
 public abstract class TruffleBootNodes {
@@ -44,7 +47,7 @@ public abstract class TruffleBootNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject jrubyHomeDirectory() {
-            return createString(StringOperations.encodeRope(getContext().getJRubyInterop().getJRubyHome(), UTF8Encoding.INSTANCE));
+            return createString(StringOperations.encodeRope(getContext().getJRubyHome(), UTF8Encoding.INSTANCE));
         }
 
     }
@@ -55,7 +58,7 @@ public abstract class TruffleBootNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject jrubyHomeDirectoryProtocol() {
-            String home = getContext().getJRubyInterop().getJRubyHome();
+            String home = getContext().getJRubyHome();
 
             if (home.startsWith("uri:classloader:")) {
                 home = home.substring("uri:classloader:".length());
@@ -81,20 +84,21 @@ public abstract class TruffleBootNodes {
         }
     }
 
-    @CoreMethod(names = "run_jruby_root", onSingleton = true)
-    public abstract static class RunJRubyRootNode extends CoreMethodArrayArgumentsNode {
+    @CoreMethod(names = "main", onSingleton = true)
+    public abstract static class MainNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
-        public Object runJRubyRootNode(VirtualFrame frame, @Cached("create()") IndirectCallNode callNode) {
-            String dollar0 = getContext().getJRubyInterop().getArg0();
-            coreLibrary().getGlobalVariables().put("$0", StringOperations.createString(
-                    getContext(), StringOperations.encodeRope(dollar0, UTF8Encoding.INSTANCE)));
+        public Object main(VirtualFrame frame, @Cached("create()") IndirectCallNode callNode) {
+            final String arg0 = getContext().getInstanceConfig().displayedFileName();
 
-            String inputFile = getContext().getJRubyInterop().getOriginalInputFile();
+            coreLibrary().getGlobalVariables().put("$0", StringOperations.createString(
+                    getContext(), StringOperations.encodeRope(arg0, UTF8Encoding.INSTANCE)));
+
+            String inputFile = getContext().getOriginalInputFile();
 
             final Source source;
             try {
-                source = getContext().getSourceCache().getSource(inputFile);
+                source = getContext().getSourceCache().getMainSource(inputFile);
             } catch (IOException e) {
                 throw new JavaException(e);
             }
@@ -124,7 +128,7 @@ public abstract class TruffleBootNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject originalArgv() {
-            final String[] argv = getContext().getJRubyInterop().getArgv();
+            final String[] argv = getContext().getInstanceConfig().getArgv();
             final Object[] array = new Object[argv.length];
 
             for (int n = 0; n < array.length; n++) {
@@ -142,11 +146,11 @@ public abstract class TruffleBootNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject originalLoadPath() {
-            final String[] path = getContext().getJRubyInterop().getOriginalLoadPath();
-            final Object[] array = new Object[path.length];
+            final List<String> paths = getContext().getInstanceConfig().getLoadPaths();
+            final Object[] array = new Object[paths.size()];
 
             for (int n = 0; n < array.length; n++) {
-                array[n] = StringOperations.createString(getContext(), StringOperations.encodeRope(path[n], UTF8Encoding.INSTANCE));
+                array[n] = StringOperations.createString(getContext(), StringOperations.encodeRope(paths.get(n), UTF8Encoding.INSTANCE));
             }
 
             return createArray(array, array.length);
@@ -178,6 +182,32 @@ public abstract class TruffleBootNodes {
             return createString(StringOperations.encodeRope(source, UTF8Encoding.INSTANCE));
         }
 
+    }
+
+    @CoreMethod(names = "inner_check_syntax", onSingleton = true)
+    public abstract static class InnerCheckSyntaxNode extends CoreMethodArrayArgumentsNode {
+
+        @TruffleBoundary
+        @Specialization
+        public DynamicObject innerCheckSyntax() {
+            final String inputFile = getContext().getOriginalInputFile();
+            final InputStream inputStream = getContext().getSyntaxCheckInputStream();
+
+            final Source source;
+
+            try {
+                source = Source.newBuilder(new InputStreamReader(inputStream)).name(inputFile).mimeType(RubyLanguage.MIME_TYPE).build();
+            } catch (IOException e) {
+                throw new JavaException(e);
+            }
+
+            final TranslatorDriver translator = new TranslatorDriver(getContext());
+
+            translator.parse(getContext(), source, UTF8Encoding.INSTANCE,
+                    ParserContext.TOP_LEVEL, new String[]{}, null, null, true, null);
+
+            return nil();
+        }
     }
 
 }

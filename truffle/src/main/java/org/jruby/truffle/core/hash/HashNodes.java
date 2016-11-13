@@ -122,7 +122,7 @@ public abstract class HashNodes {
                     final Object key = pairObjectStore[0];
                     final Object value = pairObjectStore[1];
 
-                    final int hashed = hashNode.hash(frame, key);
+                    final int hashed = hashNode.hash(frame, key, false);
 
                     PackedArrayStrategy.setHashedKeyValue(newStore, n, hashed, key, value);
                 }
@@ -194,8 +194,6 @@ public abstract class HashNodes {
 
         @Specialization(guards = "isNullHash(hash)")
         public Object getNull(VirtualFrame frame, DynamicObject hash, Object key) {
-            hashNode.hash(frame, key);
-
             if (undefinedValue != null) {
                 return undefinedValue;
             } else {
@@ -208,7 +206,7 @@ public abstract class HashNodes {
                 "!isCompareByIdentity(hash)",
                 "cachedIndex >= 0",
                 "cachedIndex < getSize(hash)",
-                "hash(frame, key) == getHashedAt(hash, cachedIndex)",
+                "hashNotIdentity(frame, key) == getHashedAt(hash, cachedIndex)",
                 "eql(frame, key, getKeyAt(hash, cachedIndex))"
         }, limit = "1")
         public Object getConstantIndexPackedArray(VirtualFrame frame, DynamicObject hash, Object key,
@@ -230,8 +228,8 @@ public abstract class HashNodes {
             return PackedArrayStrategy.getValue(store, cachedIndex);
         }
 
-        protected int hash(VirtualFrame frame, Object key) {
-            return hashNode.hash(frame, key);
+        protected int hashNotIdentity(VirtualFrame frame, Object key) {
+            return hashNode.hash(frame, key, false);
         }
 
         protected int getHashedAt(DynamicObject hash, int index) {
@@ -249,16 +247,14 @@ public abstract class HashNodes {
                 return -1;
             }
 
-            int hashed = 0;
-            if (!HashGuards.isCompareByIdentity(hash)) {
-                hashed = hashNode.hash(frame, key);
-            }
+            boolean compareByIdentity = HashGuards.isCompareByIdentity(hash);
+            int hashed = hashNode.hash(frame, key, compareByIdentity);
 
             final Object[] store = (Object[]) Layouts.HASH.getStore(hash);
             final int size = Layouts.HASH.getSize(hash);
 
             for (int n = 0; n < size; n++) {
-                if (HashGuards.isCompareByIdentity(hash)) {
+                if (compareByIdentity) {
                     if (equal(key, PackedArrayStrategy.getKey(store, n))) {
                         return n;
                     }
@@ -293,7 +289,7 @@ public abstract class HashNodes {
         public Object getPackedArray(VirtualFrame frame, DynamicObject hash, Object key,
                 @Cached("create()") BranchProfile notInHashProfile,
                 @Cached("create()") BranchProfile useDefaultProfile) {
-            final int hashed = hashNode.hash(frame, key);
+            final int hashed = hashNode.hash(frame, key, false);
 
             final Object[] store = (Object[]) Layouts.HASH.getStore(hash);
             final int size = Layouts.HASH.getSize(hash);
@@ -321,8 +317,7 @@ public abstract class HashNodes {
         }
 
         @ExplodeLoop
-        @Specialization(guards = { "isPackedHash(hash)", "isCompareByIdentity(hash)" },
-                contains = "getConstantIndexPackedArray")
+        @Specialization(guards = {"isPackedHash(hash)", "isCompareByIdentity(hash)"}, contains = "getConstantIndexPackedArrayByIdentity")
         public Object getPackedArrayByIdentity(VirtualFrame frame, DynamicObject hash, Object key,
                 @Cached("create()") BranchProfile notInHashProfile,
                 @Cached("create()") BranchProfile useDefaultProfile) {
@@ -511,7 +506,7 @@ public abstract class HashNodes {
         public Object deletePackedArray(VirtualFrame frame, DynamicObject hash, Object key, Object maybeBlock) {
             assert HashOperations.verifyStore(getContext(), hash);
 
-            final int hashed = hashNode.hash(frame, key);
+            final int hashed = hashNode.hash(frame, key, false);
 
             final Object[] store = (Object[]) Layouts.HASH.getStore(hash);
             final int size = Layouts.HASH.getSize(hash);
@@ -1359,7 +1354,13 @@ public abstract class HashNodes {
             return hash;
         }
 
-        @Specialization(guards = "isPackedHash(hash)")
+        @Specialization(guards = "isCompareByIdentity(hash)")
+        public DynamicObject rehashIdentity(DynamicObject hash) {
+            // the identity hash of objects never change.
+            return hash;
+        }
+
+        @Specialization(guards = {"isPackedHash(hash)", "!isCompareByIdentity(hash)"})
         public DynamicObject rehashPackedArray(VirtualFrame frame, DynamicObject hash) {
             assert HashOperations.verifyStore(getContext(), hash);
 
@@ -1368,7 +1369,7 @@ public abstract class HashNodes {
 
             for (int n = 0; n < getContext().getOptions().HASH_PACKED_ARRAY_MAX; n++) {
                 if (n < size) {
-                    PackedArrayStrategy.setHashed(store, n, hashNode.hash(frame, PackedArrayStrategy.getKey(store, n)));
+                    PackedArrayStrategy.setHashed(store, n, hashNode.hash(frame, PackedArrayStrategy.getKey(store, n), false));
                 }
             }
 
@@ -1378,7 +1379,7 @@ public abstract class HashNodes {
         }
 
         @TruffleBoundary
-        @Specialization(guards = "isBucketHash(hash)")
+        @Specialization(guards = {"isBucketHash(hash)", "!isCompareByIdentity(hash)"})
         public DynamicObject rehashBuckets(DynamicObject hash) {
             assert HashOperations.verifyStore(getContext(), hash);
 

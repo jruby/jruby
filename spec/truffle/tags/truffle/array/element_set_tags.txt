@@ -1,1 +1,0 @@
-fails:Array#[]= keeps the same storage if compatible and in bounds

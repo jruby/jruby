@@ -1,5 +1,6 @@
 package org.jruby.truffle.platform.darwin;
 
+import com.oracle.truffle.api.TruffleOptions;
 import jnr.ffi.LibraryLoader;
 import jnr.ffi.Pointer;
 import org.jruby.truffle.platform.ProcessName;
@@ -20,12 +21,16 @@ public class DarwinProcessName implements ProcessName {
     private final CrtExterns crtExterns;
 
     public DarwinProcessName() {
-        crtExterns = LibraryLoader.create(CrtExterns.class).failImmediately().library("libSystem.B.dylib").load();
+        if (TruffleOptions.AOT) {
+            crtExterns = null;
+        } else {
+            crtExterns = LibraryLoader.create(CrtExterns.class).failImmediately().library("libSystem.B.dylib").load();
+        }
     }
 
     @Override
     public boolean canSet() {
-        return true;
+        return !TruffleOptions.AOT;
     }
 
     @Override

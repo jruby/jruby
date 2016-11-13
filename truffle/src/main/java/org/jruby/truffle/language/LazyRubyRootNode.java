@@ -16,7 +16,6 @@ import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.FrameDescriptor;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
-import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.RootNode;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
@@ -29,6 +28,7 @@ import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.backtrace.InternalRootNode;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.methods.InternalMethod;
+import org.jruby.truffle.language.objects.shared.SharedObjects;
 import org.jruby.truffle.parser.ParserContext;
 import org.jruby.truffle.parser.TranslatorDriver;
 
@@ -41,7 +41,6 @@ public class LazyRubyRootNode extends RootNode implements InternalRootNode {
     @CompilationFinal private DynamicObject mainObject;
     @CompilationFinal private InternalMethod method;
 
-    @Child private Node findContextNode;
     @Child private DirectCallNode callNode;
 
     public LazyRubyRootNode(SourceSection sourceSection, FrameDescriptor frameDescriptor, Source source,
@@ -49,12 +48,11 @@ public class LazyRubyRootNode extends RootNode implements InternalRootNode {
         super(RubyLanguage.class, sourceSection, frameDescriptor);
         this.source = source;
         this.argumentNames = argumentNames;
-        this.findContextNode = RubyLanguage.INSTANCE.unprotectedCreateFindContextNode();
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
-        final RubyContext context = RubyLanguage.INSTANCE.unprotectedFindContext(findContextNode);
+        final RubyContext context = RubyContext.getInstance();
 
         if (cachedContext == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
@@ -88,7 +86,14 @@ public class LazyRubyRootNode extends RootNode implements InternalRootNode {
                 mainObject,
                 null,
                 frame.getArguments());
-        return callNode.call(frame, arguments);
+        final Object value = callNode.call(frame, arguments);
+
+        // The return value will be leaked to Java, share it.
+        if (Options.SHARED_OBJECTS) {
+            SharedObjects.writeBarrier(value);
+        }
+
+        return value;
     }
 
 }

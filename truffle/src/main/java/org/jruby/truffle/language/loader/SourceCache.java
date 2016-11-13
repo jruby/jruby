@@ -30,6 +30,13 @@ public class SourceCache {
     }
 
     @TruffleBoundary
+    public synchronized Source getMainSource(String path) throws IOException {
+        Source mainSource = loader.loadMain(path);
+        sources.put(path, mainSource);
+        return mainSource;
+    }
+
+    @TruffleBoundary
     public synchronized Source getSource(String canonicalPath) throws IOException {
         Source source = sources.get(canonicalPath);
 

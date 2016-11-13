@@ -1,1 +1,1 @@
-fails:Process.setproctitle should set the process title
+linux:Process.setproctitle should set the process title

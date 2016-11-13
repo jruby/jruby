@@ -48,7 +48,6 @@ public interface ISourcePosition extends PositionAware {
     
     /**
      * Which is the first(start) line that this source position occurs on (zero-based)
-     * @return
      */
 	public int getLine();
 

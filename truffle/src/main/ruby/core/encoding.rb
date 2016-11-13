@@ -62,14 +62,14 @@ class Encoding
         map[key] = [nil, index]
       }
 
-      each_alias { |alias_name, index|
+      Truffle::Encoding.each_alias { |alias_name, index|
         key = alias_name.upcase.to_sym
         map[key] = [alias_name, index]
       }
 
       %w[internal external locale filesystem].each { |name|
         key = name.upcase.to_sym
-        enc = get_default_encoding(name)
+        enc = Truffle::Encoding.get_default_encoding(name)
         index = enc ? map[enc.name.upcase.to_sym].last : nil
         map[key] = [name, index]
       }
@@ -588,6 +588,7 @@ class Encoding
     set_alias_index "external", enc
     set_alias_index "filesystem", enc
     @default_external = undefined
+    Truffle::Encoding.default_external = enc
   end
 
   def self.default_internal
@@ -600,6 +601,7 @@ class Encoding
   def self.default_internal=(enc)
     set_alias_index "internal", enc
     @default_internal = undefined
+    Truffle::Encoding.default_internal = enc
   end
 
   def self.find(name)
@@ -641,22 +643,7 @@ class Encoding
   def self._load(name)
     find name
   end
-  
-  class << self
-    alias_method :default_external_rubinius=, :default_external=
 
-    def default_external=(enc)
-      self.default_external_rubinius = enc
-      self.default_external_jruby = enc
-    end
-
-    alias_method :default_internal_rubinius=, :default_internal=
-
-    def default_internal=(enc)
-      self.default_internal_rubinius = enc
-      self.default_internal_jruby = enc
-    end
-  end
 end
 
 Encoding::TranscodingMap[:'UTF-16BE'] = Rubinius::LookupTable.new

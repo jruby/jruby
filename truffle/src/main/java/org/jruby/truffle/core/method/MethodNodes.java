@@ -22,13 +22,13 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.runtime.ArgumentDescriptor;
-import org.jruby.runtime.Helpers;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.builtins.UnaryCoreMethodNode;
+import org.jruby.truffle.core.Hashing;
 import org.jruby.truffle.core.basicobject.BasicObjectNodes.ReferenceEqualNode;
 import org.jruby.truffle.core.cast.ProcOrNullNode;
 import org.jruby.truffle.core.cast.ProcOrNullNodeGen;
@@ -108,13 +108,14 @@ public abstract class MethodNodes {
     @CoreMethod(names = "hash")
     public abstract static class HashNode extends CoreMethodArrayArgumentsNode {
 
+        @TruffleBoundary
         @Specialization
         public long hash(DynamicObject rubyMethod) {
             final InternalMethod method = Layouts.METHOD.getMethod(rubyMethod);
-            long h = Helpers.hashStart(getContext().getJRubyRuntime(), method.getDeclaringModule().hashCode());
-            h = Helpers.murmurCombine(h, Layouts.METHOD.getReceiver(rubyMethod).hashCode());
-            h = Helpers.murmurCombine(h, method.getSharedMethodInfo().hashCode());
-            return Helpers.hashEnd(h);
+            long h = Hashing.start(method.getDeclaringModule().hashCode());
+            h = Hashing.update(h, Layouts.METHOD.getReceiver(rubyMethod).hashCode());
+            h = Hashing.update(h, method.getSharedMethodInfo().hashCode());
+            return Hashing.end(h);
         }
 
     }

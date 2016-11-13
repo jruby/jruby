@@ -828,7 +828,7 @@ class File < IO
       end
 
       if value.prefix? sep
-        ret.gsub!(/#{SEPARATOR}+$/, '')
+        ret.gsub!(/#{SEPARATOR}+$/o, '')
       elsif not ret.suffix? sep
         ret << sep
       end

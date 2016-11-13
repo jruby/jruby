@@ -1,8 +1,6 @@
 package org.jruby.truffle.parser;
 
-import org.jruby.Ruby;
 import org.jruby.runtime.Arity;
-import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.parser.ast.ArgsParseNode;
 import org.jruby.truffle.parser.ast.ArgumentParseNode;
 import org.jruby.truffle.parser.ast.ForParseNode;
@@ -13,7 +11,6 @@ import org.jruby.truffle.parser.ast.PostExeParseNode;
 import org.jruby.truffle.parser.ast.PreExeParseNode;
 import org.jruby.truffle.parser.ast.StarParseNode;
 import org.jruby.truffle.parser.ast.UnnamedRestArgParseNode;
-import org.jruby.util.TypeConverter;
 
 /**
  * A representation of a Ruby method signature (argument layout, min/max, keyword layout, rest args).
@@ -263,24 +260,5 @@ public class Signature {
 
     public String toString() {
         return "signature(pre=" + pre + ",opt=" + opt + ",post=" + post + ",rest=" + rest + ",kwargs=" + kwargs + ",kwreq=" + requiredKwargs + ",kwrest=" + restKwargs + ")";
-    }
-
-    public void checkArity(Ruby runtime, IRubyObject[] args) {
-        if (args.length < required()) {
-            throw runtime.newArgumentError("wrong number of arguments (" + args.length + " for " + required() + ")");
-        }
-        if (rest == Rest.NONE || rest == Rest.ANON) {
-            // no rest, so we have a maximum
-            if (args.length > required() + opt()) {
-                if (hasKwargs() && !TypeConverter.checkHashType(runtime, args[args.length - 1]).isNil()) {
-                    // we have kwargs and a potential kwargs hash, check with length - 1
-                    if (args.length - 1 > required() + opt()) {
-                        throw runtime.newArgumentError("wrong number of arguments (" + args.length + " for " + (required() + opt) + ")");
-                    }
-                } else {
-                    throw runtime.newArgumentError("wrong number of arguments (" + args.length + " for " + (required() + opt) + ")");
-                }
-            }
-        }
     }
 }

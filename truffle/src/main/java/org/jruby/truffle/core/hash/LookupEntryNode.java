@@ -37,7 +37,8 @@ public class LookupEntryNode extends RubyBaseNode {
     }
 
     public HashLookupResult lookup(VirtualFrame frame, DynamicObject hash, Object key) {
-        final int hashed = hashNode.hash(frame, key);
+        final boolean compareByIdentity = byIdentityProfile.profile(Layouts.HASH.getCompareByIdentity(hash));
+        int hashed = hashNode.hash(frame, key, compareByIdentity);
 
         final Entry[] entries = (Entry[]) Layouts.HASH.getStore(hash);
         final int index = BucketsStrategy.getBucketIndex(hashed, entries.length);
@@ -46,7 +47,7 @@ public class LookupEntryNode extends RubyBaseNode {
         Entry previousEntry = null;
 
         while (entry != null) {
-            if (byIdentityProfile.profile(Layouts.HASH.getCompareByIdentity(hash))) {
+            if (compareByIdentity) {
                 if (equalNode.executeReferenceEqual(key, entry.getKey())) {
                     return new HashLookupResult(hashed, index, previousEntry, entry);
                 }

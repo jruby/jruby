@@ -292,8 +292,8 @@ public class ConvertBytes {
             byte c;
             long i = 0;
 
-            final long cutoff = Long.MAX_VALUE / (long)base;
-            final long cutlim = Long.MAX_VALUE % (long)base;
+            final long cutoff = Long.MAX_VALUE / base;
+            final long cutlim = Long.MAX_VALUE % base;
 
             while(s < end) {
                 c = convertDigit(data[s]);
@@ -540,7 +540,10 @@ public class ConvertBytes {
     public static class ERange extends RuntimeException {
         private static final long serialVersionUID = 3393153027217708024L;
 
-        public static enum Kind {Overflow, Underflow};
+        public static enum Kind {
+            Overflow,
+            Underflow
+        }
         private ConvertBytes.ERange.Kind kind;
         public ERange() {
             super();

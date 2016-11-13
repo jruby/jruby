@@ -16,7 +16,6 @@ package org.jruby.truffle.core.rope;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
-import com.oracle.truffle.api.ExactMath;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.NodeChild;
@@ -241,7 +240,7 @@ public abstract class RopeNodes {
         public Rope concatMutableRope(RopeBuffer left, Rope right, Encoding encoding,
                                       @Cached("createBinaryProfile()") ConditionProfile differentEncodingProfile) {
             try {
-                ExactMath.addExact(left.byteLength(), right.byteLength());
+                Math.addExact(left.byteLength(), right.byteLength());
             } catch (ArithmeticException e) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
                 throw new RaiseException(getContext().getCoreExceptions().argumentError("Result of string concatenation exceeds the system maximum string length", this));
@@ -264,7 +263,7 @@ public abstract class RopeNodes {
                            @Cached("createBinaryProfile()") ConditionProfile brokenCodeRangeProfile,
                            @Cached("createBinaryProfile()") ConditionProfile isLeftSingleByteOptimizableProfile) {
             try {
-                ExactMath.addExact(left.byteLength(), right.byteLength());
+                Math.addExact(left.byteLength(), right.byteLength());
             } catch (ArithmeticException e) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
                 throw new RaiseException(getContext().getCoreExceptions().argumentError("Result of string concatenation exceeds the system maximum string length", this));
@@ -560,7 +559,7 @@ public abstract class RopeNodes {
         @Specialization(guards = { "!isRopeBuffer(base)", "!isSingleByteString(base)", "times > 1" })
         public Rope repeat(Rope base, int times) {
             try {
-                ExactMath.multiplyExact(base.byteLength(), times);
+                Math.multiplyExact(base.byteLength(), times);
             } catch (ArithmeticException e) {
                 throw new RaiseException(getContext().getCoreExceptions().argumentError("Result of repeating string exceeds the system maximum string length", this));
             }

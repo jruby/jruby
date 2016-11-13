@@ -721,12 +721,13 @@ public class RubyGlobal {
 
         @Override
         public IRubyObject get() {
-            return runtime.getKCode().kcode(runtime);
+            String kcode = runtime.getKCode().getKCode();
+            return kcode == null ? runtime.getNil() : runtime.newString(kcode);
         }
 
         @Override
         public IRubyObject set(IRubyObject value) {
-            runtime.setKCode(KCode.create(runtime, value.convertToString().toString()));
+            runtime.setKCode(KCode.create(value.convertToString().toString()));
             return value;
         }
     }

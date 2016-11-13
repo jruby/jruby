@@ -34,7 +34,7 @@ import java.util.concurrent.locks.ReentrantLock;
 @CoreClass("ConditionVariable")
 public abstract class ConditionVariableNodes {
 
-    private static Object getCondition(DynamicObject conditionVariable) {
+    private static ConditionVariableObject getCondition(DynamicObject conditionVariable) {
         return Layouts.CONDITION_VARIABLE.getCondition(conditionVariable);
     }
 
@@ -50,7 +50,7 @@ public abstract class ConditionVariableNodes {
 
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
-            return allocateNode.allocate(rubyClass, new Object());
+            return allocateNode.allocate(rubyClass, new ConditionVariableObject());
         }
 
     }
@@ -72,7 +72,7 @@ public abstract class ConditionVariableNodes {
         public DynamicObject wait(DynamicObject conditionVariable, DynamicObject mutex, long timeoutInMillis) {
             final ReentrantLock lock = Layouts.MUTEX.getLock(mutex);
             final DynamicObject thread = getContext().getThreadManager().getCurrentThread();
-            final Object condition = getCondition(conditionVariable);
+            final ConditionVariableObject condition = getCondition(conditionVariable);
 
             doWait(timeoutInMillis, lock, thread, condition);
 
@@ -130,7 +130,7 @@ public abstract class ConditionVariableNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject doSignal(DynamicObject conditionVariable) {
-            final Object condition = getCondition(conditionVariable);
+            final ConditionVariableObject condition = getCondition(conditionVariable);
             synchronized (condition) {
                 condition.notify();
             }
@@ -145,7 +145,7 @@ public abstract class ConditionVariableNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject doBroadcast(DynamicObject conditionVariable) {
-            final Object condition = getCondition(conditionVariable);
+            final ConditionVariableObject condition = getCondition(conditionVariable);
             synchronized (condition) {
                 condition.notifyAll();
             }

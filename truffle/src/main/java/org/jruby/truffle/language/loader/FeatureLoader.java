@@ -126,13 +126,18 @@ public class FeatureLoader {
         }
     }
 
+    @TruffleBoundary
+    private boolean isSulongAvailable() {
+        return context.getEnv().isMimeTypeSupported(RubyLanguage.CEXT_MIME_TYPE);
+    }
+
     public void ensureCExtImplementationLoaded(VirtualFrame frame, String feature, IndirectCallNode callNode) {
         synchronized (cextImplementationLock) {
             if (cextImplementationLoaded) {
                 return;
             }
 
-            if (!context.getEnv().isMimeTypeSupported(RubyLanguage.CEXT_MIME_TYPE)) {
+            if (!isSulongAvailable()) {
                 throw new RaiseException(context.getCoreExceptions().loadError("Sulong is required to support C extensions, and it doesn't appear to be available", feature, null));
             }
 
@@ -145,7 +150,7 @@ public class FeatureLoader {
 
     @TruffleBoundary
     private CallTarget getCExtLibRuby(String feature) {
-        final String path = context.getJRubyInterop().getJRubyHome() + "/lib/ruby/truffle/cext/ruby.su";
+        final String path = context.getJRubyHome() + "/lib/ruby/truffle/cext/ruby.su";
 
         if (!new File(path).exists()) {
             throw new RaiseException(context.getCoreExceptions().loadError("This JRuby distribution does not have the C extension implementation file ruby.su", feature, null));

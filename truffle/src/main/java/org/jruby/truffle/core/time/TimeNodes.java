@@ -10,7 +10,6 @@
 package org.jruby.truffle.core.time;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
-import com.oracle.truffle.api.ExactMath;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
@@ -39,7 +38,6 @@ import org.jruby.truffle.language.SnippetNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.util.StringUtils;
-import org.jruby.util.RubyDateFormatter;
 
 import java.util.Locale;
 import java.util.Map;
@@ -150,7 +148,7 @@ public abstract class TimeNodes {
         @Specialization
         public DynamicObject addInternal(DynamicObject time, long seconds, long nanoSeconds) {
             final DateTime dateTime = Layouts.TIME.getDateTime(time);
-            final long addMilis = ExactMath.addExact(ExactMath.multiplyExact(seconds, 1000L), (nanoSeconds / 1_000_000));
+            final long addMilis = Math.addExact(Math.multiplyExact(seconds, 1000L), (nanoSeconds / 1_000_000));
             Layouts.TIME.setDateTime(time, dateTime.plus(addMilis));
             Layouts.TIME.setNSec(time, (1_000_000 + Layouts.TIME.getNSec(time) + nanoSeconds % 1_000_000) % 1_000_000);
             return time;
@@ -313,7 +311,7 @@ public abstract class TimeNodes {
 
         private long getMillis(long seconds, int nanoseconds) {
             try {
-                return ExactMath.addExact(ExactMath.multiplyExact(seconds, 1000L), (nanoseconds / 1_000_000));
+                return Math.addExact(Math.multiplyExact(seconds, 1000L), (nanoseconds / 1_000_000));
             } catch (ArithmeticException e) {
                 String message = StringUtils.format("UNIX epoch + %d seconds out of range for Time (Joda-Time limitation)", seconds);
                 throw new RaiseException(coreExceptions().rangeError(message, this));
@@ -410,9 +408,9 @@ public abstract class TimeNodes {
         @TruffleBoundary
         @Specialization(guards = "isRubyString(format)")
         public DynamicObject timeStrftime(DynamicObject time, DynamicObject format) {
-            final RubyDateFormatter rdf = getContext().getJRubyRuntime().getCurrentContext().getRubyDateFormatter();
+            final RubyDateFormatter rdf = new RubyDateFormatter(getContext(), this);
             return createString(rdf.formatToByteList(rdf.compilePattern(StringOperations.getByteListReadOnly(format), false),
-                    Layouts.TIME.getDateTime(time), Layouts.TIME.getNSec(time), null));
+                    Layouts.TIME.getDateTime(time), Layouts.TIME.getNSec(time)));
         }
 
     }

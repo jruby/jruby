@@ -37,12 +37,12 @@ package org.jruby.truffle.parser.parser;
 
 import org.jcodings.Encoding;
 import org.jruby.RubyBignum;
-import org.jruby.RubyRegexp;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.common.IRubyWarnings.ID;
-import org.jruby.exceptions.RaiseException;
-import org.jruby.ext.coverage.CoverageData;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.regexp.ClassicRegexp;
+import org.jruby.truffle.core.regexp.RegexpOptions;
+import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.parser.Signature;
 import org.jruby.truffle.parser.ast.AliasParseNode;
 import org.jruby.truffle.parser.ast.AndParseNode;
@@ -132,7 +132,6 @@ import org.jruby.truffle.parser.scope.DynamicScope;
 import org.jruby.truffle.parser.scope.StaticScope;
 import org.jruby.util.ByteList;
 import org.jruby.util.KeyValuePair;
-import org.jruby.util.RegexpOptions;
 import org.jruby.util.StringSupport;
 import org.jruby.util.cli.Options;
 
@@ -275,10 +274,7 @@ public class ParserSupport {
      */
     public ParseNode newline_node(ParseNode node, ISourcePosition position) {
         if (node == null) return null;
-
-        configuration.coverLine(position.getLine());
         node.setNewline();
-
         return node;
     }
 
@@ -293,7 +289,6 @@ public class ParserSupport {
         }
 
         ISourcePosition position;
-        CoverageData coverageData = configuration.finishCoverage(lexer.getFile(), lexer.lineno());
         if (result.getBeginNodes().isEmpty()) {
             if (topOfAST == null) {
                 topOfAST = NilImplicitParseNode.NIL;
@@ -313,7 +308,7 @@ public class ParserSupport {
             topOfAST = newTopOfAST;
         }
 
-        return new RootParseNode(position, result.getScope(), topOfAST, lexer.getFile(), endPosition, coverageData != null);
+        return new RootParseNode(position, result.getScope(), topOfAST, lexer.getFile(), endPosition, false);
     }
 
     /* MRI: block_append */
@@ -1380,14 +1375,14 @@ public class ParserSupport {
     public void regexpFragmentCheck(RegexpParseNode end, ByteList value) {
         setRegexpEncoding(end, value);
         try {
-            RubyRegexp.preprocessCheck(configuration.getRuntime(), value);
+            ClassicRegexp.preprocessCheck(configuration.getContext(), value);
         } catch (RaiseException re) {
             compile_error(re.getMessage());
         }
     }        // 1.9 mode overrides to do extra checking...
 
     private List<Integer> allocateNamedLocals(RegexpParseNode regexpNode) {
-        RubyRegexp pattern = RubyRegexp.newRegexp(configuration.getRuntime(), regexpNode.getValue(), regexpNode.getOptions());
+        ClassicRegexp pattern = ClassicRegexp.newRegexp(configuration.getContext(), regexpNode.getValue(), regexpNode.getOptions());
         pattern.setLiteral();
         String[] names = pattern.getNames();
         int length = names.length;
@@ -1438,7 +1433,7 @@ public class ParserSupport {
             message += (addNewline ? "\n" : "") + line;
         }
 
-        throw getConfiguration().getRuntime().newSyntaxError(errorMessage + message);
+        throw new RaiseException(getConfiguration().getContext().getCoreExceptions().syntaxError(errorMessage + message, null));
     }
 
     protected void compileError(Encoding optionEncoding, Encoding encoding) {
@@ -1449,7 +1444,7 @@ public class ParserSupport {
     // MRI: reg_fragment_setenc_gen
     public void setRegexpEncoding(RegexpParseNode end, ByteList value) {
         RegexpOptions options = end.getOptions();
-        Encoding optionsEncoding = options.setup(configuration.getRuntime()) ;
+        Encoding optionsEncoding = options.setup(configuration.getContext()) ;
 
         // Change encoding to one specified by regexp options as long as the string is compatible.
         if (optionsEncoding != null) {
@@ -1480,7 +1475,7 @@ public class ParserSupport {
 
         try {
             // This is only for syntax checking but this will as a side-effect create an entry in the regexp cache.
-            RubyRegexp.newRegexpParser(getConfiguration().getRuntime(), value, (RegexpOptions)options.clone());
+            ClassicRegexp.newRegexpParser(getConfiguration().getContext(), value, (RegexpOptions)options.clone());
         } catch (RaiseException re) {
             compile_error(re.getMessage());
         }
@@ -1535,7 +1530,7 @@ public class ParserSupport {
     // regexp options encoding so dregexps can end up starting with the
     // right encoding.
     private ByteList createMaster(RegexpOptions options) {
-        Encoding encoding = options.setup(configuration.getRuntime());
+        Encoding encoding = options.setup(configuration.getContext());
 
         return new ByteList(ByteList.NULL_ARRAY, encoding);
     }

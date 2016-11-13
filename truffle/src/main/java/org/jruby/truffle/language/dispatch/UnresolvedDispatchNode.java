@@ -19,8 +19,6 @@ import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.methods.InternalMethod;
 
-import java.util.concurrent.Callable;
-
 public final class UnresolvedDispatchNode extends DispatchNode {
 
     private int depth = 0;
@@ -54,7 +52,9 @@ public final class UnresolvedDispatchNode extends DispatchNode {
 
         // Make sure to have an up-to-date Shape.
         if (receiverObject instanceof DynamicObject) {
-            ((DynamicObject) receiverObject).updateShape();
+            synchronized (receiverObject) {
+                ((DynamicObject) receiverObject).updateShape();
+            }
         }
 
         final DispatchNode dispatch = atomic(() -> {

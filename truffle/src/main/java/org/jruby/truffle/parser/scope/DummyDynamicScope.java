@@ -42,10 +42,6 @@ public class DummyDynamicScope extends NoVarsDynamicScope {
         super(staticScope, parent);
     }
 
-    public DummyDynamicScope(StaticScope staticScope) {
-        super(staticScope);
-    }
-    
     public void growIfNeeded() {
         growIfNeeded(SIZE, GROW_ERROR);
     }

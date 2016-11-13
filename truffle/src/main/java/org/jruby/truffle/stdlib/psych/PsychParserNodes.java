@@ -47,7 +47,12 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.Encoding;
+import org.jcodings.Ptr;
+import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
+import org.jcodings.transcode.EConv;
+import org.jcodings.transcode.EConvResult;
+import org.jcodings.transcode.TranscoderDB;
 import org.jcodings.unicode.UnicodeEncoding;
 import org.jruby.RubyEncoding;
 import org.jruby.runtime.Helpers;
@@ -70,6 +75,7 @@ import org.jruby.truffle.language.objects.TaintNode;
 import org.jruby.truffle.language.objects.TaintNodeGen;
 import org.jruby.truffle.util.BoundaryUtils.BoundaryIterable;
 import org.jruby.util.ByteList;
+import org.jruby.util.StringSupport;
 import org.jruby.util.io.EncodingUtils;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.error.Mark;
@@ -298,8 +304,7 @@ public abstract class PsychParserNodes {
             Encoding encoding = byteList.getEncoding();
 
             if (!(encoding instanceof UnicodeEncoding)) {
-                byteList = EncodingUtils.strConvEnc(getContext().getJRubyRuntime().getCurrentContext(),
-                        byteList, encoding, UTF8Encoding.INSTANCE);
+                byteList = strConvEnc(getContext(), byteList, encoding);
 
                 encoding = UTF8Encoding.INSTANCE;
             }
@@ -410,7 +415,7 @@ public abstract class PsychParserNodes {
 
         @TruffleBoundary
         private Object stringFor(String value, boolean tainted, TaintNode taintNode) {
-            Encoding encoding = getContext().getJRubyRuntime().getDefaultInternalEncoding();
+            Encoding encoding = getContext().getEncodingManager().getDefaultInternalEncoding();
 
             if (encoding == null) {
                 encoding = UTF8Encoding.INSTANCE;
@@ -429,6 +434,99 @@ public abstract class PsychParserNodes {
             }
 
             return string;
+        }
+
+        private ByteList strConvEnc(RubyContext context, ByteList byteList, Encoding encoding) {
+            return strConvEnc2(context, byteList, encoding, UTF8Encoding.INSTANCE);
+        }
+
+        private static ByteList strConvEnc2(RubyContext context, ByteList value, Encoding fromEncoding, Encoding toEncoding) {
+            return strConvEncOpts(context, value, fromEncoding, toEncoding, 0, null);
+        }
+
+        private static ByteList strConvEncOpts(RubyContext context, ByteList str, Encoding fromEncoding,
+                                                Encoding toEncoding, int ecflags, Object ecopts) {
+            if (toEncoding == null) return str;
+            if (fromEncoding == null) fromEncoding = str.getEncoding();
+            if (fromEncoding == toEncoding) return str;
+            if ((toEncoding.isAsciiCompatible() && isAsciiOnly(str)) ||
+                    toEncoding == ASCIIEncoding.INSTANCE) {
+                if (str.getEncoding() != toEncoding) {
+                    str = str.dup();
+                    str.setEncoding(toEncoding);
+                }
+                return str;
+            }
+
+            ByteList strByteList = str;
+            int len = strByteList.getRealSize();
+            ByteList newStr = new ByteList(len);
+            int olen = len;
+
+            EConv ec = econvOpenOpts(context, fromEncoding.getName(), toEncoding.getName(), ecflags, ecopts);
+            if (ec == null) return str;
+
+            byte[] sbytes = strByteList.getUnsafeBytes();
+            Ptr sp = new Ptr(strByteList.getBegin());
+            int start = sp.p;
+
+            byte[] destbytes;
+            Ptr dp = new Ptr(0);
+            EConvResult ret;
+            int convertedOutput = 0;
+
+            // these are in the while clause in MRI
+            destbytes = newStr.getUnsafeBytes();
+            int dest = newStr.begin();
+            dp.p = dest + convertedOutput;
+            ret = ec.convert(sbytes, sp, start + len, destbytes, dp, dest + olen, 0);
+
+            while (ret == EConvResult.DestinationBufferFull) {
+                int convertedInput = sp.p - start;
+                int rest = len - convertedInput;
+                convertedOutput = dp.p - dest;
+                newStr.setRealSize(convertedOutput);
+                if (convertedInput != 0 && convertedOutput != 0 &&
+                        rest < (Integer.MAX_VALUE / convertedOutput)) {
+                    rest = (rest * convertedOutput) / convertedInput;
+                } else {
+                    rest = olen;
+                }
+                olen += rest < 2 ? 2 : rest;
+                newStr.ensure(olen);
+
+                // these are the while clause in MRI
+                destbytes = newStr.getUnsafeBytes();
+                dest = newStr.begin();
+                dp.p = dest + convertedOutput;
+                ret = ec.convert(sbytes, sp, start + len, destbytes, dp, dest + olen, 0);
+            }
+            ec.close();
+
+            switch (ret) {
+                case Finished:
+                    len = dp.p;
+                    newStr.setRealSize(len);
+                    newStr.setEncoding(toEncoding);
+                    return newStr;
+
+                default:
+                    // some error, return original
+                    return str;
+            }
+        }
+
+        private static EConv econvOpenOpts(RubyContext context, byte[] sourceEncoding, byte[] destinationEncoding, int ecflags, Object opthash) {
+            EConv ec = TranscoderDB.open(sourceEncoding, destinationEncoding, ecflags);
+            return ec;
+        }
+
+        private static boolean isAsciiOnly(ByteList string) {
+            return string.getEncoding().isAsciiCompatible() && scanForCodeRange(string) == StringSupport.CR_7BIT;
+        }
+
+        private static int scanForCodeRange(ByteList string) {
+            return StringSupport.codeRangeScan(EncodingUtils.getActualEncoding(string.getEncoding(), string), string);
         }
 
     }

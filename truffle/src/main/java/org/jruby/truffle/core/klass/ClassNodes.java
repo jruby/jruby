@@ -33,6 +33,7 @@ import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
+import org.jruby.truffle.language.objects.shared.SharedObjects;
 import org.jruby.truffle.util.StringUtils;
 
 @CoreClass("Class")
@@ -239,6 +240,7 @@ public abstract class ClassNodes {
 
         String name = StringUtils.format("#<Class:%s>", Layouts.MODULE.getFields(rubyClass).getName());
         DynamicObject metaClass = ClassNodes.createRubyClass(context, Layouts.BASIC_OBJECT.getLogicalClass(rubyClass), null, singletonSuperclass, name, true, rubyClass, true);
+        SharedObjects.propagate(rubyClass, metaClass);
         Layouts.BASIC_OBJECT.setMetaClass(rubyClass, metaClass);
 
         return Layouts.BASIC_OBJECT.getMetaClass(rubyClass);

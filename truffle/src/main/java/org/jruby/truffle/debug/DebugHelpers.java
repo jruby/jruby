@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.debug;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.Frame;
 import com.oracle.truffle.api.frame.FrameDescriptor;
@@ -24,15 +25,15 @@ import org.jruby.truffle.language.loader.CodeLoader;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.parser.ParserContext;
 
-@Deprecated
 public abstract class DebugHelpers {
 
     @Deprecated
     public static Object eval(String code, Object... arguments) {
-        return eval(RubyContext.getLatestInstance(), code, arguments);
+        return eval(RubyContext.getInstance(), code, arguments);
     }
 
     @Deprecated
+    @TruffleBoundary
     public static Object eval(RubyContext context, String code, Object... arguments) {
         final FrameInstance currentFrameInstance = Truffle.getRuntime().getCurrentFrame();
 

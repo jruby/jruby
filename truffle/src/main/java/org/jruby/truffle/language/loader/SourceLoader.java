@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.language.loader;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.source.Source;
 import org.jruby.Ruby;
 import org.jruby.truffle.RubyContext;
@@ -36,17 +37,26 @@ public class SourceLoader {
         this.context = context;
     }
 
+    @TruffleBoundary
+    public Source loadMain(String path) throws IOException {
+        if (path.equals("-e")) {
+            return loadFragment(new String(context.getInstanceConfig().inlineScript(), StandardCharsets.UTF_8), "-e");
+        } else {
+            final File file = new File(path).getCanonicalFile();
+            ensureReadable(path, file);
+
+            // The main source file *must* be named as it's given for __FILE__
+            return Source.newBuilder(file).name(path).mimeType(RubyLanguage.MIME_TYPE).build();
+        }
+    }
+
+    @TruffleBoundary
     public Source load(String canonicalPath) throws IOException {
-        if (canonicalPath.equals("-e")) {
-            return loadFragment(new String(context.getJRubyRuntime().getInstanceConfig().inlineScript(), StandardCharsets.UTF_8), "-e");
-        } else if (canonicalPath.startsWith(TRUFFLE_SCHEME) || canonicalPath.startsWith(JRUBY_SCHEME)) {
+        if (canonicalPath.startsWith(TRUFFLE_SCHEME) || canonicalPath.startsWith(JRUBY_SCHEME)) {
             return loadResource(canonicalPath);
         } else {
             final File file = new File(canonicalPath).getCanonicalFile();
-
-            if (!file.canRead()) {
-                throw new IOException("Can't read file " + canonicalPath);
-            }
+            ensureReadable(canonicalPath, file);
 
             if (canonicalPath.toLowerCase().endsWith(".su")) {
                 return Source.newBuilder(file).name(file.getPath()).mimeType(RubyLanguage.CEXT_MIME_TYPE).build();
@@ -57,10 +67,12 @@ public class SourceLoader {
         }
     }
 
+    @TruffleBoundary
     public Source loadFragment(String fragment, String name) {
         return Source.newBuilder(fragment).name(name).mimeType(RubyLanguage.MIME_TYPE).build();
     }
 
+    @TruffleBoundary
     private Source loadResource(String path) throws IOException {
         if (!path.toLowerCase(Locale.ENGLISH).endsWith(".rb")) {
             throw new FileNotFoundException(path);
@@ -87,6 +99,12 @@ public class SourceLoader {
         }
 
         return Source.newBuilder(new InputStreamReader(stream, StandardCharsets.UTF_8)).name(path).mimeType(RubyLanguage.MIME_TYPE).build();
+    }
+
+    private static void ensureReadable(String path, File file) throws IOException {
+        if (!file.canRead()) {
+            throw new IOException("Can't read file " + path);
+        }
     }
 
 }

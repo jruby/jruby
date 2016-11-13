@@ -126,7 +126,6 @@ module Process
   #
   def self.setproctitle(title)
     val = Rubinius::Type.coerce_to(title, String, :to_str)
-
     Truffle.invoke_primitive(:vm_set_process_title, val)
   end
 

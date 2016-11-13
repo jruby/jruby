@@ -19,8 +19,6 @@ The Truffle component also distributes:
 
   SnakeYAML (Copyright the SnakeYAML authors, Apache 2.0 licence)
   
-  Antlr4 runtime (Copyright (c) 2015 Terence Parr, Sam Harwell, BSD licence)
-  
   truffle-api and truffle-debug (Copyright Oracle and/or its affiliates, GPL
   v2, with classpath exception)
 

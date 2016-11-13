@@ -19,7 +19,7 @@ require 'timeout'
 require 'yaml'
 require 'open3'
 
-GRAALVM_VERSION = '0.17'
+GRAALVM_VERSION = '0.18'
 
 JRUBY_DIR = File.expand_path('../..', __FILE__)
 M2_REPO = File.expand_path('~/.m2/repository')
@@ -74,11 +74,12 @@ module Utilities
 
   def self.find_graal_javacmd_and_options
     graalvm = ENV['GRAALVM_BIN']
+    jvmci = ENV['JVMCI_BIN']
     graal_home = ENV['GRAAL_HOME']
 
-    raise "Both GRAALVM_BIN and GRAAL_HOME defined!" if graalvm && graal_home
+    raise "More than one of GRAALVM_BIN, JVMCI_BIN or GRAAL_HOME defined!" if [graalvm, jvmci, graal_home].compact.count > 1
 
-    if !graalvm && !graal_home
+    if !graalvm && !jvmci && !graal_home
       if truffle_release?
         graalvm = ENV['GRAALVM_RELEASE_BIN']
       else
@@ -88,10 +89,32 @@ module Utilities
 
     if graalvm
       javacmd = File.expand_path(graalvm)
+      vm_args = []
       options = []
+    elsif jvmci
+      javacmd = File.expand_path(jvmci)
+      jvmci_graal_home = ENV['JVMCI_GRAAL_HOME']
+      raise "Also set JVMCI_GRAAL_HOME if you set JVMCI_BIN" unless jvmci_graal_home
+      jvmci_graal_home = File.expand_path(jvmci_graal_home)
+      vm_args = [
+        '-d64',
+        '-XX:+UnlockExperimentalVMOptions',
+        '-XX:+EnableJVMCI',
+        '--add-exports=java.base/jdk.internal.module=com.oracle.graal.graal_core',
+        "--module-path=#{jvmci_graal_home}/../truffle/mxbuild/modules/com.oracle.truffle.truffle_api.jar:#{jvmci_graal_home}/mxbuild/modules/com.oracle.graal.graal_core.jar"
+      ]
+      options = ['--no-bootclasspath']
     elsif graal_home
       graal_home = File.expand_path(graal_home)
-      command_line = `mx -v -p #{graal_home} vm -version`.lines.to_a.last
+      output = `mx -v -p #{graal_home} vm -version 2>&1`.lines.to_a
+      command_line = output.select { |line| line.include? '-version' }
+      if command_line.size == 1
+        command_line = command_line[0]
+      else
+        $stderr.puts "Error in mx for setting up Graal:"
+        $stderr.puts output
+        abort
+      end
       vm_args = command_line.split
       vm_args.pop # Drop "-version"
       javacmd = vm_args.shift
@@ -103,11 +126,11 @@ module Utilities
         vm_args << [nfi_classes, sulong_dependencies, sulong_jar].join(':')
         vm_args << '-XX:-UseJVMCIClassLoader'
       end
-      options = vm_args.map { |arg| "-J#{arg}" }
+      options = []
     else
       raise 'set one of GRAALVM_BIN or GRAAL_HOME in order to use Graal'
     end
-    [javacmd, options]
+    [javacmd, vm_args.map { |arg| "-J#{arg}" } + options]
   end
 
   def self.find_graal_js
@@ -120,11 +143,6 @@ module Utilities
     jar = ENV['SL_JAR']
     return jar if jar
     raise "couldn't find truffle-sl.jar - build Truffle and find it in there"
-  end
-
-  def self.jruby_eclipse?
-    # tool/jruby_eclipse only works on release currently
-    ENV["JRUBY_ECLIPSE"] == "true" and !truffle_version.end_with?('SNAPSHOT')
   end
 
   def self.mx?
@@ -151,8 +169,6 @@ module Utilities
       ENV['RUBY_BIN']
     elsif mx?
       "#{JRUBY_DIR}/tool/jruby_mx"
-    elsif jruby_eclipse?
-      "#{JRUBY_DIR}/tool/jruby_eclipse"
     else
       "#{JRUBY_DIR}/bin/jruby"
     end
@@ -170,7 +186,11 @@ module Utilities
     if File.exist?(benchmark)
       benchmark
     else
-      File.join(find_repo('all-ruby-benchmarks'), benchmark)
+      begin
+        File.join(find_repo('ruby-benchmarks'), benchmark)
+      rescue RuntimeError
+        File.join(find_repo('all-ruby-benchmarks'), benchmark)
+      end
     end
   end
 
@@ -405,8 +425,6 @@ module ShellUtils
 
     if Utilities.mx?
       args.unshift "-ttool/jruby_mx"
-    elsif Utilities.jruby_eclipse?
-      args.unshift "-ttool/jruby_eclipse"
     end
 
     sh env_vars, Utilities.find_ruby, 'spec/mspec/bin/mspec', command, '--config', 'spec/truffle/truffle.mspec', *args
@@ -442,6 +460,9 @@ module Commands
           --server        run an instrumentation server on port 8080
           --igv           make sure IGV is running and dump Graal graphs after partial escape (implies --graal)
               --full      show all phases, not just up to the Truffle partial escape
+          --infopoints    show source location for each node in IGV
+          --fg            disable background compilation
+          --trace         show compilation information on stdout
           --jdebug        run a JDWP debug server on #{JDEBUG_PORT}
           --jexception[s] print java exceptions
           --exec          use exec rather than system
@@ -452,16 +473,17 @@ module Commands
       jt test                                        run all mri tests, specs and integration tests (set SULONG_HOME, and maybe USE_SYSTEM_CLANG)
       jt test tck [--jdebug]                         run the Truffle Compatibility Kit tests
       jt test mri                                    run mri tests
+          --graal         use Graal (set either GRAALVM_BIN, JVMCI_BIN or GRAAL_HOME)
       jt test specs                                  run all specs
       jt test specs fast                             run all specs except sub-processes, GC, sleep, ...
       jt test spec/ruby/language                     run specs in this directory
       jt test spec/ruby/language/while_spec.rb       run specs in this file
       jt test compiler                               run compiler tests (uses the same logic as --graal to find Graal)
       jt test integration                            runs all integration tests
-      jt test integration TESTS                      runs the given integration tests
+      jt test integration [TESTS]                    runs the given integration tests
+      jt test bundle                                 tests using bundler
       jt test gems                                   tests using gems
-      jt test ecosystem [--offline]                  tests using the wider ecosystem such as bundler, Rails, etc
-                                                         (when --offline it will not use rubygems.org)
+      jt test ecosystem [TESTS]                      tests using the wider ecosystem such as bundler, Rails, etc
       jt test cexts [--no-libxml --no-openssl --no-argon2]       run C extension tests
                                                          (implies --graal, where Graal needs to include Sulong, set SULONG_HOME to a built checkout of Sulong, and set GEM_HOME)
       jt test report :language                       build a report on language specs
@@ -489,8 +511,10 @@ module Commands
       recognised environment variables:
 
         RUBY_BIN                                     The JRuby+Truffle executable to use (normally just bin/jruby)
-        GRAALVM_BIN                                  GraalVM executable (java command) to use
+        GRAALVM_BIN                                  GraalVM executable (java command)
         GRAAL_HOME                                   Directory where there is a built checkout of the Graal compiler (make sure mx is on your path)
+        JVMCI_BIN                                    JVMCI-enabled (so JDK 9 EA build) java command (aslo set JVMCI_GRAAL_HOME)
+        JVMCI_GRAAL_HOME                             Like GRAAL_HOME, but only used for the JARs to run with JVMCI_BIN
         GRAALVM_RELEASE_BIN                          Default GraalVM executable when using a released version of Truffle (such as on master)
         GRAAL_HOME_TRUFFLE_HEAD                      Default Graal directory when using a snapshot version of Truffle (such as on truffle-head)
         SULONG_HOME                                  The Sulong source repository, if you want to run cextc
@@ -554,6 +578,7 @@ module Commands
 
   def run(*args)
     env_vars = args.first.is_a?(Hash) ? args.shift : {}
+    options = args.last.is_a?(Hash) ? args.pop : {}
 
     jruby_args = ['-X+T']
 
@@ -563,7 +588,8 @@ module Commands
 
     {
       '--asm' => '--graal',
-      '--igv' => '--graal'
+      '--igv' => '--graal',
+      '--trace' => '--graal',
     }.each_pair do |arg, dep|
       args.unshift dep if args.include?(arg)
     end
@@ -616,21 +642,35 @@ module Commands
       warn "warning: --igv might not work on master - if it does not, use truffle-head instead which builds against latest graal" if Utilities.git_branch == 'master'
       Utilities.ensure_igv_running
       if args.delete('--full')
-        jruby_args += %w[-J-G:Dump=Truffle]
+        jruby_args << "-J-Dgraal.Dump=Truffle"
       else
-        jruby_args += %w[-J-G:Dump=TrufflePartialEscape]
+        jruby_args << "-J-Dgraal.Dump=TruffleTree,PartialEscape"
       end
+      jruby_args << "-J-Dgraal.PrintBackendCFG=false"
+    end
+
+    if args.delete('--infopoints')
+      jruby_args << "-J-XX:+UnlockDiagnosticVMOptions" << "-J-XX:+DebugNonSafepoints"
+      jruby_args << "-J-Dgraal.TruffleEnableInfopoints=true"
+    end
+
+    if args.delete('--fg')
+      jruby_args << "-J-Dgraal.TruffleBackgroundCompilation=false"
+    end
+
+    if args.delete('--trace')
+      jruby_args << "-J-Dgraal.TraceTruffleCompilation=true"
     end
 
     if args.delete('--no-print-cmd')
-      args << { no_print_cmd: true }
+      options[:no_print_cmd] = true
     end
 
     if args.delete('--exec')
-      args << { use_exec: true }
+      options[:use_exec] = true
     end
 
-    raw_sh env_vars, Utilities.find_jruby, *jruby_args, *args
+    raw_sh env_vars, Utilities.find_jruby, *jruby_args, *args, options
   end
 
   # Same as #run but uses exec()
@@ -733,6 +773,7 @@ module Commands
       test_ecosystem 'HAS_REDIS' => 'true'
       test_compiler
       test_cexts
+    when 'bundle' then test_bundle(*rest)
     when 'compiler' then test_compiler(*rest)
     when 'cexts' then test_cexts(*rest)
     when 'report' then test_report(*rest)
@@ -762,8 +803,8 @@ module Commands
     }
     jruby_args = %w[-J-Xmx2G -Xtruffle.exceptions.print_java]
 
-    if args.empty?
-      args = File.readlines("#{JRUBY_DIR}/test/mri_truffle.index").grep(/^[^#]\w+/).map(&:chomp)
+    if args.count { |arg| !arg.start_with?('-') } == 0
+      args += File.readlines("#{JRUBY_DIR}/test/mri_truffle.index").grep(/^[^#]\w+/).map(&:chomp)
     end
 
     command = %w[test/mri/runner.rb -v --color=never --tty=no -q]
@@ -955,6 +996,43 @@ module Commands
   end
   private :test_ecosystem
 
+  def test_bundle(*args)
+    gems = [{:url => "https://github.com/sstephenson/hike", :commit => "3abf0b3feb47c26911f8cedf2cd409471fd26da1"}]
+    gems.each do |gem|
+      gem_url = gem[:url]
+      name = gem_url.split('/')[-1]
+      require 'tmpdir'
+      temp_dir = Dir.mktmpdir(name)
+      begin
+        Dir.chdir(temp_dir) do
+          puts "Cloning gem #{name} into temp directory: #{temp_dir}"
+          raw_sh(*['git', 'clone', gem_url])
+        end
+        gem_dir = File.join(temp_dir, name)
+        gem_home = if ENV['GEM_HOME']
+                     ENV['GEM_HOME']
+                   else
+                     tmp_home = File.join(temp_dir, "gem_home")
+                     Dir.mkdir(tmp_home)
+                     puts "Using temporary GEM_HOME:#{tmp_home}"
+                     tmp_home
+                   end
+        Dir.chdir(gem_dir) do
+          if gem.has_key?(:commit)
+            raw_sh(*['git', 'checkout', gem[:commit]])
+          end
+          run({'GEM_HOME' => gem_home}, *["-rbundler-workarounds", "-S", "gem", "install", "bundler", "-v","1.13.5"])
+          run({'GEM_HOME' => gem_home}, *["-rbundler-workarounds", "-S", "bundle", "install"])
+          # Need to workaround ruby_install name `jruby-truffle` in the gems binstubs (command can't be found )
+          # or figure out how to get it on the path to get `bundle exec rake` working
+          #run({'GEM_HOME' => gem_home}, *["-rbundler-workarounds", "-S", "bundle", "exec", "rake"])
+        end
+      ensure
+        FileUtils.remove_entry temp_dir
+      end
+    end
+  end
+
   def test_specs(command, *args)
     env_vars = {}
     options = []
@@ -1008,6 +1086,7 @@ module Commands
   private :test_specs
 
   def test_tck(*args)
+    exec 'mx', 'rubytck' if Utilities.mx?
     env = {'JRUBY_BUILD_MORE_QUIET' => 'true'}
     mvn env, *args, '-Ptck'
   end
@@ -1216,7 +1295,7 @@ module Commands
 
     unless benchmark_ruby
       run_args.push '--graal' unless args.delete('--no-graal') || args.include?('list')
-      run_args.push '-J-G:+TruffleCompilationExceptionsAreFatal'
+      run_args.push '-J-Dgraal.TruffleCompilationExceptionsAreFatal=true'
     end
     
     run_args.push "-I#{Utilities.find_gem('deep-bench')}/lib" rescue nil
@@ -1241,15 +1320,10 @@ module Commands
   end
 
   def check_ambiguous_arguments
-    ENV.delete "JRUBY_ECLIPSE" # never run from the Eclipse launcher here
     clean
     # modify pom
     pom = "#{JRUBY_DIR}/truffle/pom.rb"
     contents = File.read(pom)
-    contents.gsub!(/^(\s+)'source'\s*=>.+'1.7'.+,\n\s+'target'\s*=>.+\s*'1.7.+,\n/) do
-      indent = $1
-      $&.gsub("1.7", "1.8") + "#{indent}'fork' => 'true',\n"
-    end
     contents.sub!(/^(\s+)('-J-Dfile.encoding=UTF-8')(.+\n)(?!\1'-parameters')/) do
       "#{$1}#{$2},\n#{$1}'-parameters'#{$3}"
     end

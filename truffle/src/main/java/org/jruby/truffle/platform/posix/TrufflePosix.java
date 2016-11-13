@@ -35,7 +35,6 @@ public interface TrufflePosix {
     int exec(String path, String[] argv, String[] envp);
     int fork();
     int fstat(int fd, FileStat stat);
-    Pointer environ();
     String getenv(String envName);
     int getegid();
     int geteuid();
@@ -104,5 +103,6 @@ public interface TrufflePosix {
     int isatty(int fd);
     int mkfifo(String path, int mode);
     long[] getgroups();
+    String nl_langinfo(int item);
 
 }

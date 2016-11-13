@@ -27,11 +27,12 @@ import jnr.constants.platform.Errno;
 import org.jcodings.EncodingDB;
 import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.transcode.EConvFlags;
+import org.jcodings.util.CaseInsensitiveBytesHash;
+import org.jcodings.util.CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry;
 import org.jruby.Main;
 import org.jruby.ext.ffi.Platform;
 import org.jruby.ext.ffi.Platform.OS_TYPE;
 import org.jruby.runtime.Constants;
-import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.RubyLanguage;
@@ -47,7 +48,10 @@ import org.jruby.truffle.core.bool.FalseClassNodesFactory;
 import org.jruby.truffle.core.bool.TrueClassNodesFactory;
 import org.jruby.truffle.core.dir.DirNodesFactory;
 import org.jruby.truffle.core.encoding.EncodingConverterNodesFactory;
+import org.jruby.truffle.core.encoding.EncodingManager;
 import org.jruby.truffle.core.encoding.EncodingNodesFactory;
+import org.jruby.truffle.core.encoding.EncodingOperations;
+import org.jruby.truffle.core.encoding.TruffleEncodingNodesFactory;
 import org.jruby.truffle.core.exception.ExceptionNodesFactory;
 import org.jruby.truffle.core.exception.NameErrorNodesFactory;
 import org.jruby.truffle.core.exception.NoMethodErrorNodesFactory;
@@ -118,6 +122,7 @@ import org.jruby.truffle.language.loader.CodeLoader;
 import org.jruby.truffle.language.loader.SourceLoader;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.methods.InternalMethod;
+import org.jruby.truffle.language.methods.SharedMethodInfo;
 import org.jruby.truffle.language.objects.FreezeNode;
 import org.jruby.truffle.language.objects.FreezeNodeGen;
 import org.jruby.truffle.language.objects.SingletonClassNode;
@@ -134,6 +139,7 @@ import org.jruby.truffle.stdlib.psych.PsychEmitterNodesFactory;
 import org.jruby.truffle.stdlib.psych.PsychParserNodesFactory;
 import org.jruby.truffle.stdlib.psych.YAMLEncoding;
 import org.jruby.util.cli.OutputStrings;
+import org.jruby.util.io.EncodingUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -155,7 +161,7 @@ public class CoreLibrary {
 
     private final RubyContext context;
 
-    private final Source source = Source.newBuilder("").name("(core)").mimeType(RubyLanguage.MIME_TYPE).build();
+    private final Source source = initCoreSource();
     private final SourceSection sourceSection = source.createUnavailableSection();
 
     private final DynamicObject argumentErrorClass;
@@ -242,7 +248,9 @@ public class CoreLibrary {
     private final DynamicObject rubiniusFFIPointerClass;
     private final DynamicObject signalModule;
     private final DynamicObject truffleModule;
+    private final DynamicObject truffleBootModule;
     private final DynamicObject truffleInteropModule;
+    private final DynamicObject truffleKernelModule;
     private final DynamicObject bigDecimalClass;
     private final DynamicObject encodingCompatibilityErrorClass;
     private final DynamicObject methodClass;
@@ -282,6 +290,7 @@ public class CoreLibrary {
     private final Map<Errno, DynamicObject> errnoClasses = new HashMap<>();
 
     @CompilationFinal private InternalMethod basicObjectSendMethod;
+    @CompilationFinal private InternalMethod truffleBootMainMethod;
 
     @CompilationFinal private GlobalVariableStorage loadPathStorage;
     @CompilationFinal private GlobalVariableStorage loadedFeaturesStorage;
@@ -289,6 +298,11 @@ public class CoreLibrary {
     private static final Object systemObject = TruffleOptions.AOT ? null : JavaInterop.asTruffleObject(System.class);
 
     private final String coreLoadPath;
+
+    @TruffleBoundary
+    private static Source initCoreSource() {
+        return Source.newBuilder("").name("(core)").mimeType(RubyLanguage.MIME_TYPE).build();
+    }
 
     private String buildCoreLoadPath() {
         String path = context.getOptions().CORE_LOAD_PATH;
@@ -330,6 +344,10 @@ public class CoreLibrary {
 
         public SingletonClassNode getSingletonClassNode() {
             return singletonClassNode;
+        }
+
+        public DynamicObject getSingletonClass(Object object) {
+            return singletonClassNode.executeSingletonClass(object);
         }
 
         @Override
@@ -428,7 +446,7 @@ public class CoreLibrary {
 
         for (Errno errno : Errno.values()) {
             if (errno.name().startsWith("E")) {
-                if(errno.equals(Errno.EWOULDBLOCK) && Errno.EWOULDBLOCK.intValue() == Errno.EAGAIN.intValue()){
+                if (errno.equals(Errno.EWOULDBLOCK) && Errno.EWOULDBLOCK.intValue() == Errno.EAGAIN.intValue()){
                     continue; // Don't define it as a class, define it as constant later.
                 }
                 errnoClasses.put(errno, defineClass(errnoModule, systemCallErrorClass, errno.name()));
@@ -573,6 +591,7 @@ public class CoreLibrary {
         defineModule(truffleModule, "Digest");
         defineModule(truffleModule, "ObjSpace");
         defineModule(truffleModule, "Etc");
+        defineModule(truffleModule, "Encoding");
         defineModule(truffleModule, "Coverage");
         defineModule(truffleModule, "Graal");
         defineModule(truffleModule, "Ropes");
@@ -581,11 +600,11 @@ public class CoreLibrary {
         defineModule(truffleModule, "String");
         final DynamicObject attachments = defineModule(truffleModule, "Attachments");
         defineModule(attachments, "Internal");
-        defineModule(truffleModule, "Boot");
+        truffleBootModule = defineModule(truffleModule, "Boot");
         defineModule(truffleModule, "Fixnum");
         defineModule(truffleModule, "Safe");
         defineModule(truffleModule, "System");
-        defineModule(truffleModule, "Kernel");
+        truffleKernelModule = defineModule(truffleModule, "Kernel");
         defineModule(truffleModule, "Process");
         defineModule(truffleModule, "Binding");
         defineModule(truffleModule, "POSIX");
@@ -677,7 +696,6 @@ public class CoreLibrary {
     public void initialize() {
         initializeGlobalVariables();
         initializeConstants();
-        initializeEncodingConstants();
         initializeSignalConstants();
     }
 
@@ -752,6 +770,7 @@ public class CoreLibrary {
                 TruffleBindingNodesFactory.getFactories(),
                 TruffleBootNodesFactory.getFactories(),
                 TruffleDebugNodesFactory.getFactories(),
+                TruffleEncodingNodesFactory.getFactories(),
                 TruffleFixnumNodesFactory.getFactories(),
                 TruffleGCNodesFactory.getFactories(),
                 TruffleGraalNodesFactory.getFactories(),
@@ -798,6 +817,7 @@ public class CoreLibrary {
         coreMethodNodeManager.allMethodInstalled();
 
         basicObjectSendMethod = getMethod(basicObjectClass, "__send__");
+        truffleBootMainMethod = getMethod(node.getSingletonClass(truffleBootModule), "main");
     }
 
     private InternalMethod getMethod(DynamicObject module, String name) {
@@ -821,12 +841,27 @@ public class CoreLibrary {
 
         globals.put("$,", nilObject);
         globals.put("$*", argv);
-        globals.put("$0", StringOperations.createString(context, StringOperations.encodeRope(context.getJRubyRuntime().getInstanceConfig().displayedFileName(), UTF8Encoding.INSTANCE)));
+        globals.put("$0", StringOperations.createString(context, StringOperations.encodeRope(context.getInstanceConfig().displayedFileName(), UTF8Encoding.INSTANCE)));
 
-        globals.put("$DEBUG", context.getJRubyRuntime().isDebug());
+        globals.put("$DEBUG", context.getInstanceConfig().isDebug());
 
-        Object value = context.getJRubyRuntime().warningsEnabled() ? context.getJRubyRuntime().isVerbose() : nilObject;
-        globals.put("$VERBOSE", value);
+        final Object verbose;
+
+        switch (context.getInstanceConfig().getVerbosity()) {
+            case NIL:
+                verbose = getNilObject();
+                break;
+            case FALSE:
+                verbose = false;
+                break;
+            case TRUE:
+                verbose = true;
+                break;
+            default:
+                throw new UnsupportedOperationException();
+        }
+
+        globals.put("$VERBOSE", verbose);
 
         final DynamicObject defaultRecordSeparator = StringOperations.createString(context, StringOperations.encodeRope(CLI_RECORD_SEPARATOR, UTF8Encoding.INSTANCE));
         node.freezeNode.executeFreeze(defaultRecordSeparator);
@@ -969,35 +1004,52 @@ public class CoreLibrary {
             @SuppressWarnings("unchecked")
             final Future<RubyRootNode>[] coreFileFutures = new Future[coreFiles.length];
 
-            try {
-                for (int n = 0; n < coreFiles.length; n++) {
-                    final int finalN = n;
+            if (TruffleOptions.AOT || !context.getOptions().CORE_PARALLEL_LOAD) {
+                try {
+                    for (int n = 0; n < coreFiles.length; n++) {
+                        final RubyRootNode rootNode = context.getCodeLoader().parse(
+                                context.getSourceCache().getSource(getCoreLoadPath() + coreFiles[n]),
+                                UTF8Encoding.INSTANCE, ParserContext.TOP_LEVEL, null, true, node);
 
-                    coreFileFutures[n] = ForkJoinPool.commonPool().submit(() ->
-                            context.getCodeLoader().parse(
-                                    context.getSourceCache().getSource(getCoreLoadPath() + coreFiles[finalN]),
-                                    UTF8Encoding.INSTANCE, ParserContext.TOP_LEVEL, null, true, node)
-                    );
+                        final CodeLoader.DeferredCall deferredCall = context.getCodeLoader().prepareExecute(
+                                ParserContext.TOP_LEVEL,
+                                DeclarationContext.TOP_LEVEL,
+                                rootNode,
+                                null,
+                                context.getCoreLibrary().getMainObject());
 
-                    if (!context.getOptions().CORE_PARALLEL_LOAD) {
-                        coreFileFutures[n].get();
+                        deferredCall.callWithoutCallNode();
                     }
+                } catch (IOException e) {
+                    throw new JavaException(e);
                 }
+            } else {
+                try {
+                    for (int n = 0; n < coreFiles.length; n++) {
+                        final int finalN = n;
 
-                for (int n = 0; n < coreFiles.length; n++) {
-                    final RubyRootNode rootNode = coreFileFutures[n].get();
+                        coreFileFutures[n] = ForkJoinPool.commonPool().submit(() ->
+                                context.getCodeLoader().parse(
+                                        context.getSourceCache().getSource(getCoreLoadPath() + coreFiles[finalN]),
+                                        UTF8Encoding.INSTANCE, ParserContext.TOP_LEVEL, null, true, node)
+                        );
+                    }
 
-                    final CodeLoader.DeferredCall deferredCall = context.getCodeLoader().prepareExecute(
-                            ParserContext.TOP_LEVEL,
-                            DeclarationContext.TOP_LEVEL,
-                            rootNode,
-                            null,
-                            context.getCoreLibrary().getMainObject());
+                    for (int n = 0; n < coreFiles.length; n++) {
+                        final RubyRootNode rootNode = coreFileFutures[n].get();
 
-                    deferredCall.callWithoutCallNode();
+                        final CodeLoader.DeferredCall deferredCall = context.getCodeLoader().prepareExecute(
+                                ParserContext.TOP_LEVEL,
+                                DeclarationContext.TOP_LEVEL,
+                                rootNode,
+                                null,
+                                context.getCoreLibrary().getMainObject());
+
+                        deferredCall.callWithoutCallNode();
+                    }
+                } catch (InterruptedException | ExecutionException e) {
+                    throw new JavaException(e);
                 }
-            } catch (InterruptedException | ExecutionException e) {
-                throw new JavaException(e);
             }
 
             Main.printTruffleTimeMetric("after-load-core");
@@ -1047,32 +1099,70 @@ public class CoreLibrary {
         }
     }
 
-    public void initializeEncodingConstants() {
-        getContext().getJRubyRuntime().getEncodingService().defineEncodings(new EncodingService.EncodingDefinitionVisitor() {
-            @Override
-            public void defineEncoding(EncodingDB.Entry encodingEntry, byte[] name, int p, int end) {
-                context.getEncodingManager().defineEncoding(encodingEntry, name, p, end);
-            }
+    private void initializeEncodings() {
+        final EncodingManager encodingManager = context.getEncodingManager();
+        final CaseInsensitiveBytesHash<EncodingDB.Entry>.CaseInsensitiveBytesHashEntryIterator hei = EncodingDB.getEncodings().entryIterator();
 
-            @Override
-            public void defineConstant(int encodingListIndex, String constName) {
-                final DynamicObject rubyEncoding = context.getEncodingManager().getRubyEncoding(encodingListIndex);
+        while (hei.hasNext()) {
+            final CaseInsensitiveBytesHashEntry<EncodingDB.Entry> e = hei.next();
+            final EncodingDB.Entry encodingEntry = e.value;
+
+            encodingManager.defineEncoding(encodingEntry, e.bytes, e.p, e.end);
+
+            for (String constName : EncodingUtils.encodingNames(e.bytes, e.p, e.end)) {
+                final DynamicObject rubyEncoding = context.getEncodingManager().getRubyEncoding(encodingEntry.getIndex());
                 Layouts.MODULE.getFields(encodingClass).setConstant(context, node, constName, rubyEncoding);
             }
-        });
+        }
+    }
 
-        getContext().getJRubyRuntime().getEncodingService().defineAliases(new EncodingService.EncodingAliasVisitor() {
-            @Override
-            public void defineAlias(int encodingListIndex, String constName) {
-                context.getEncodingManager().defineAlias(encodingListIndex, constName);
-            }
+    private void initializeEncodingAliases() {
+        final EncodingManager encodingManager = context.getEncodingManager();
+        final CaseInsensitiveBytesHash<EncodingDB.Entry>.CaseInsensitiveBytesHashEntryIterator hei = EncodingDB.getAliases().entryIterator();
 
-            @Override
-            public void defineConstant(int encodingListIndex, String constName) {
-                final DynamicObject rubyEncoding = context.getEncodingManager().getRubyEncoding(encodingListIndex);
+        while (hei.hasNext()) {
+            final CaseInsensitiveBytesHashEntry<EncodingDB.Entry> e = hei.next();
+            final EncodingDB.Entry encodingEntry = e.value;
+
+            // The alias name should be exactly the one in the encodings DB.
+            encodingManager.defineAlias(encodingEntry.getIndex(), new String(e.bytes, e.p, e.end));
+
+            // The constant names must be treated by the the <code>encodingNames</code> helper.
+            for (String constName : EncodingUtils.encodingNames(e.bytes, e.p, e.end)) {
+                final DynamicObject rubyEncoding = context.getEncodingManager().getRubyEncoding(encodingEntry.getIndex());
                 Layouts.MODULE.getFields(encodingClass).setConstant(context, node, constName, rubyEncoding);
             }
-        });
+        }
+    }
+
+    public void initializeEncodingManager() {
+        initializeEncodings();
+        initializeEncodingAliases();
+
+        // External should always have a value, but Encoding.external_encoding{,=} will lazily setup
+        final String externalEncodingName = getContext().getInstanceConfig().getExternalEncoding();
+        if (externalEncodingName != null && !externalEncodingName.equals("")) {
+            final DynamicObject loadedEncoding = getContext().getEncodingManager().getRubyEncoding(externalEncodingName);
+            if (loadedEncoding == null) {
+                // TODO (nirvdrum 28-Oct-16): This should just print a nice error message and exit with a status code of 1 -- it's essentially an input validation error -- no need to show the user a full trace.
+                throw new RuntimeException("unknown encoding name - " + externalEncodingName);
+            } else {
+                getContext().getEncodingManager().setDefaultExternalEncoding(EncodingOperations.getEncoding(loadedEncoding));
+            }
+        } else {
+            getContext().getEncodingManager().setDefaultExternalEncoding(getContext().getEncodingManager().getLocaleEncoding());
+        }
+
+        final String internalEncodingName = getContext().getInstanceConfig().getInternalEncoding();
+        if (internalEncodingName != null && !internalEncodingName.equals("")) {
+            final DynamicObject rubyEncoding = getContext().getEncodingManager().getRubyEncoding(internalEncodingName);
+            if (rubyEncoding == null) {
+                // TODO (nirvdrum 28-Oct-16): This should just print a nice error message and exit with a status code of 1 -- it's essentially an input validation error -- no need to show the user a full trace.
+                throw new RuntimeException("unknown encoding name - " + internalEncodingName);
+            } else {
+                getContext().getEncodingManager().setDefaultInternalEncoding(EncodingOperations.getEncoding(rubyEncoding));
+            }
+        }
     }
 
     @TruffleBoundary
@@ -1426,6 +1516,10 @@ public class CoreLibrary {
         return callTarget == basicObjectSendMethod.getCallTarget();
     }
 
+    public boolean isTruffleBootMainMethod(SharedMethodInfo info) {
+        return info == truffleBootMainMethod.getSharedMethodInfo();
+    }
+
     public DynamicObjectFactory getIntRangeFactory() {
         return intRangeFactory;
     }
@@ -1570,6 +1664,10 @@ public class CoreLibrary {
         return truffleInteropModule;
     }
 
+    public Object getTruffleKernelModule() {
+        return truffleKernelModule;
+    }
+
     private static final String[] coreFiles = {
             "/core/pre.rb",
             "/core/lookuptable.rb",
@@ -1595,6 +1693,7 @@ public class CoreLibrary {
             "/core/truffle/ffi/ffi_file.rb",
             "/core/truffle/ffi/ffi_struct.rb",
             "/core/truffle/support.rb",
+            "/core/truffle/boot.rb",
             "/core/io.rb",
             "/core/immediate.rb",
             "/core/string_mirror.rb",

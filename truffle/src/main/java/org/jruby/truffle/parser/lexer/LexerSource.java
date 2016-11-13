@@ -32,12 +32,11 @@
 package org.jruby.truffle.parser.lexer;
 
 import org.jcodings.Encoding;
-import org.jruby.RubyArray;
-import org.jruby.RubyString;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 
 import java.nio.channels.Channel;
+import java.util.List;
 
 /**
  * Simple source capable of providing the next line in Ruby source file being lex'd.
@@ -49,9 +48,9 @@ public abstract class LexerSource {
     // Offset specified where to add to actual offset
     private int lineOffset;
 
-    protected RubyArray scriptLines;
+    protected List<ByteList> scriptLines;
 
-    public LexerSource(String sourceName, int lineOffset, RubyArray scriptLines) {
+    public LexerSource(String sourceName, int lineOffset, List<ByteList> scriptLines) {
         this.name = sourceName;
         this.lineOffset = lineOffset;
         this.scriptLines = scriptLines;
@@ -72,9 +71,9 @@ public abstract class LexerSource {
     public void encodeExistingScriptLines(Encoding encoding) {
         if (scriptLines == null) return;
 
-        int length = scriptLines.getLength();
+        int length = scriptLines.size();
         for (int i = 0; i < length; i++) {
-            RubyString line = (RubyString) scriptLines.eltOk(0);
+            ByteList line = scriptLines.get(0);
 
             line.setEncoding(encoding);
         }

@@ -168,7 +168,7 @@ public class CoreMethodNodeManager {
 
     private static SharedMethodInfo makeSharedMethodInfo(RubyContext context, MethodDetails methodDetails) {
         final CoreMethod method = methodDetails.getMethodAnnotation();
-        final String methodName = method.names()[0];
+        final String methodName = methodDetails.getIndicativeName();
 
         final int required = method.required();
         final int optional = method.optional();

@@ -35,7 +35,7 @@ import org.joni.Option;
 import org.joni.Regex;
 import org.jruby.Ruby;
 import org.jruby.RubyEncoding;
-import org.jruby.RubyRegexp;
+import org.jruby.truffle.core.regexp.ClassicRegexp;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
 
@@ -847,7 +847,7 @@ public abstract class LexingCommon {
 
         int begin = magicLine.getBegin() + beg;
         Matcher matcher = magicRegexp.matcher(magicLine.unsafeBytes(), begin, begin + length);
-        int result = RubyRegexp.matcherSearch(runtime, matcher, begin, begin + length, Option.NONE);
+        int result = ClassicRegexp.matcherSearch(matcher, begin, begin + length, Option.NONE);
 
         if (result < 0) return false;
 

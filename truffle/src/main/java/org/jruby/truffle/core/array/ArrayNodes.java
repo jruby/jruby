@@ -28,7 +28,6 @@ import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.runtime.Helpers;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreClass;
@@ -36,6 +35,7 @@ import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.builtins.CoreMethodNode;
 import org.jruby.truffle.builtins.YieldingCoreMethodNode;
+import org.jruby.truffle.core.Hashing;
 import org.jruby.truffle.core.array.ArrayNodesFactory.RejectInPlaceNodeFactory;
 import org.jruby.truffle.core.array.ArrayNodesFactory.ReplaceNodeFactory;
 import org.jruby.truffle.core.cast.ToAryNodeGen;
@@ -73,7 +73,6 @@ import org.jruby.truffle.language.objects.TaintNodeGen;
 import org.jruby.truffle.language.yield.YieldNode;
 
 import java.util.Arrays;
-import java.util.Comparator;
 
 import static org.jruby.truffle.core.array.ArrayHelpers.getSize;
 import static org.jruby.truffle.core.array.ArrayHelpers.getStore;
@@ -925,9 +924,9 @@ public abstract class ArrayNodes {
         @Specialization(guards = "isNullArray(array)")
         public long hashNull(DynamicObject array) {
             final int size = 0;
-            long h = Helpers.hashStart(getContext().getJRubyRuntime(), size);
-            h = Helpers.murmurCombine(h, MURMUR_ARRAY_SEED);
-            return Helpers.hashEnd(h);
+            long h = Hashing.start(size);
+            h = Hashing.update(h, MURMUR_ARRAY_SEED);
+            return Hashing.end(h);
         }
 
         @Specialization(guards = "strategy.matches(array)", limit = "ARRAY_STRATEGIES")
@@ -936,17 +935,17 @@ public abstract class ArrayNodes {
                          @Cached("createMethodCall()") CallDispatchHeadNode toHashNode) {
             final int size = getSize(array);
             // TODO BJF Jul 4, 2016 Seed could be chosen in advance to avoid branching
-            long h = Helpers.hashStart(getContext().getJRubyRuntime(), size);
-            h = Helpers.murmurCombine(h, MURMUR_ARRAY_SEED);
+            long h = Hashing.start(size);
+            h = Hashing.update(h, MURMUR_ARRAY_SEED);
             final ArrayMirror store = strategy.newMirror(array);
 
             for (int n = 0; n < size; n++) {
                 final Object value = store.get(n);
                 final long valueHash = toLong(frame, toHashNode.call(frame, value, "hash"));
-                h = Helpers.murmurCombine(h, valueHash);
+                h = Hashing.update(h, valueHash);
             }
 
-            return Helpers.hashEnd(h);
+            return Hashing.end(h);
         }
 
         private long toLong(VirtualFrame frame, Object indexObject) {

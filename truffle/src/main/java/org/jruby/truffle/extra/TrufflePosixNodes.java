@@ -91,22 +91,6 @@ public abstract class TrufflePosixNodes {
 
     }
 
-    @CoreMethod(names = "environ", isModuleFunction = true, unsafe = {UnsafeGroup.MEMORY, UnsafeGroup.PROCESSES})
-    public abstract static class EnvironNode extends CoreMethodArrayArgumentsNode {
-
-        @Child private AllocateObjectNode allocateObjectNode;
-
-        public EnvironNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            allocateObjectNode = AllocateObjectNode.create();
-        }
-
-        @Specialization
-        public DynamicObject environ() {
-            return allocateObjectNode.allocate(coreLibrary().getRubiniusFFIPointerClass(), posix().environ());
-        }
-    }
-
     @CoreMethod(names = "fchmod", isModuleFunction = true, required = 2, lowerFixnum = {1, 2}, unsafe = UnsafeGroup.IO)
     public abstract static class FchmodNode extends CoreMethodArrayArgumentsNode {
 
@@ -188,12 +172,13 @@ public abstract class TrufflePosixNodes {
     @CoreMethod(names = "getgroups", isModuleFunction = true, required = 2, lowerFixnum = 1, unsafe = {UnsafeGroup.MEMORY, UnsafeGroup.PROCESSES})
     public abstract static class GetGroupsNode extends CoreMethodArrayArgumentsNode {
 
+        @TruffleBoundary
         @Specialization(guards = "isNil(pointer)")
         public int getGroupsNil(int max, DynamicObject pointer) {
             return getContext().getNativePlatform().getPosix().getgroups().length;
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization(guards = "isRubyPointer(pointer)")
         public int getGroups(int max, DynamicObject pointer) {
             final long[] groups = getContext().getNativePlatform().getPosix().getgroups();
@@ -261,17 +246,6 @@ public abstract class TrufflePosixNodes {
         @Specialization(guards = "isRubyString(path)")
         public int mkfifo(DynamicObject path, int mode) {
             return posix().mkfifo(StringOperations.getString(path), mode);
-        }
-
-    }
-
-    @CoreMethod(names = "putenv", isModuleFunction = true, required = 1, unsafe = UnsafeGroup.PROCESSES)
-    public abstract static class PutenvNode extends CoreMethodArrayArgumentsNode {
-
-        @CompilerDirectives.TruffleBoundary
-        @Specialization(guards = "isRubyString(nameValuePair)")
-        public int putenv(DynamicObject nameValuePair) {
-            throw new UnsupportedOperationException("Not yet implemented in jnr-posix");
         }
 
     }
@@ -400,7 +374,7 @@ public abstract class TrufflePosixNodes {
 
             if (result == 0) {
                 final String cwd = posix().getcwd();
-                getContext().getJRubyRuntime().setCurrentDirectory(cwd);
+                getContext().setCurrentDirectory(cwd);
             }
 
             return result;
@@ -595,7 +569,7 @@ public abstract class TrufflePosixNodes {
         @Specialization
         public DynamicObject getcwd() {
             final String cwd = posix().getcwd();
-            final String path = getContext().getJRubyRuntime().getCurrentDirectory();
+            final String path = getContext().getCurrentDirectory();
             assert path.equals(cwd);
 
             // TODO (nirvdrum 12-Sept-16) The rope table always returns UTF-8, but this call should be based on Encoding.default_external and reflect updates to that value.

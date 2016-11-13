@@ -340,7 +340,7 @@ ossl_ocspreq_sign(int argc, VALUE *argv, VALUE self)
     flg = NIL_P(flags) ? 0 : NUM2INT(flags);
     if(NIL_P(certs)){
 	x509s = sk_X509_new_null();
-	flags |= OCSP_NOCERTS;
+	flg |= OCSP_NOCERTS;
     }
     else x509s = ossl_x509_ary2sk(certs);
     GetOCSPReq(self, req);

@@ -32,16 +32,11 @@ package org.jruby.truffle.parser.parser;
 
 import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
-import org.jruby.ext.coverage.CoverageData;
-import org.jruby.runtime.encoding.EncodingService;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.parser.scope.DynamicScope;
 import org.jruby.truffle.parser.scope.ManyVarsDynamicScope;
 import org.jruby.truffle.parser.scope.StaticScopeFactory;
-import org.jruby.util.KCode;
-
-import java.util.Arrays;
 
 public class ParserConfiguration {
     private DynamicScope existingScope = null;
@@ -60,7 +55,7 @@ public class ParserConfiguration {
     private boolean frozenStringLiteral = false;
 
     private Encoding defaultEncoding;
-    private Ruby runtime;
+    private RubyContext context;
 
     private int[] coverage = EMPTY_COVERAGE;
 
@@ -68,23 +63,23 @@ public class ParserConfiguration {
 
     private static final int[] EMPTY_COVERAGE = new int[0];
 
-    public ParserConfiguration(Ruby runtime, int lineNumber, boolean inlineSource, boolean isFileParse, boolean saveData) {
-        this.runtime = runtime;
+    public ParserConfiguration(RubyContext context, int lineNumber, boolean inlineSource, boolean isFileParse, boolean saveData) {
+        this.context = context;
         this.inlineSource = inlineSource;
         this.lineNumber = lineNumber;
         this.isEvalParse = !isFileParse;
         this.saveData = saveData;
-        staticScopeFactory = new StaticScopeFactory(runtime);
+        staticScopeFactory = new StaticScopeFactory();
     }
 
-    public ParserConfiguration(Ruby runtime, int lineNumber,
+    public ParserConfiguration(RubyContext context, int lineNumber,
             boolean inlineSource, boolean isFileParse, RubyInstanceConfig config) {
-        this(runtime, lineNumber, inlineSource, isFileParse, false, config);
+        this(context, lineNumber, inlineSource, isFileParse, false, config);
     }
 
-    public ParserConfiguration(Ruby runtime, int lineNumber,
+    public ParserConfiguration(RubyContext context, int lineNumber,
             boolean inlineSource, boolean isFileParse, boolean saveData, RubyInstanceConfig config) {
-        this(runtime, lineNumber, inlineSource, isFileParse, saveData);
+        this(context, lineNumber, inlineSource, isFileParse, saveData);
 
         this.isDebug = config.isParserDebug();
         this.frozenStringLiteral = config.isFrozenStringLiteral();
@@ -110,10 +105,6 @@ public class ParserConfiguration {
         return defaultEncoding;
     }
 
-    public EncodingService getEncodingService() {
-        return runtime.getEncodingService();
-    }
-
     public boolean isDebug() {
         return isDebug;
     }
@@ -127,10 +118,6 @@ public class ParserConfiguration {
         return isEvalParse;
     }
 
-    public KCode getKCode() {
-        return runtime.getKCode();
-    }
-    
     public int getLineNumber() {
         return lineNumber;
     }
@@ -146,10 +133,10 @@ public class ParserConfiguration {
         this.existingScope = existingScope;
     }
 
-    public Ruby getRuntime() {
-        return runtime;
+    public RubyContext getContext() {
+        return context;
     }
-    
+
     /**
      * This method returns the appropriate first scope for the parser.
      * 
@@ -168,7 +155,7 @@ public class ParserConfiguration {
     }
 
     public boolean isCoverageEnabled() {
-        return !isEvalParse() && runtime.getCoverageData().isCoverageEnabled();
+        return !isEvalParse();
     }
 
     /**
@@ -185,54 +172,6 @@ public class ParserConfiguration {
      */
     public boolean isInlineSource() {
         return inlineSource;
-    }
-
-    /**
-     * Zero out coverable lines as they're encountered
-     */
-    public void coverLine(int i) {
-        if (isCoverageEnabled()) {
-            growCoverageLines(i);
-            coverage[i] = 0;
-        }
-    }
-
-    /**
-     *  Called by coverLine to grow it large enough to add new covered line.
-     *  Also called at end up parse to pick up any extra non-code lines which
-     *  should be marked -1 for not valid code lines.
-     */
-    public void growCoverageLines(int i) {
-        if (coverage == null) {
-            coverage = new int[i + 1];
-        } else if (coverage.length <= i) {
-            int[] newCoverage = new int[i + 1];
-            Arrays.fill(newCoverage, -1);
-            System.arraycopy(coverage, 0, newCoverage, 0, coverage.length);
-            coverage = newCoverage;
-        }
-    }
-
-    /**
-     * At end of a parse if coverage is enabled we will do final processing
-     * of the primitive coverage array and make sure runtimes coverage data
-     * has been updated with this new data.
-     */
-    public CoverageData finishCoverage(String file, int lines) {
-        if (!isCoverageEnabled()) return null;
-
-        growCoverageLines(lines);
-        CoverageData data = runtime.getCoverageData();
-        data.prepareCoverage(file, coverage);
-        return data;
-    }
-
-    /**
-     * Get the coverage array, indicating all coverable lines
-     */
-    @Deprecated
-    public int[] getCoverage() {
-        return coverage;
     }
 
     public StaticScopeFactory getStaticScopeFactory() {

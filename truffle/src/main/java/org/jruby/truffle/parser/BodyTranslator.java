@@ -19,7 +19,6 @@ import org.jcodings.specific.UTF8Encoding;
 import org.joni.NameEntry;
 import org.joni.Regex;
 import org.joni.Syntax;
-import org.jruby.common.IRubyWarnings;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.RubyContext;
@@ -28,6 +27,7 @@ import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.truffle.core.IsNilNode;
 import org.jruby.truffle.core.IsRubiniusUndefinedNode;
 import org.jruby.truffle.core.RaiseIfFrozenNode;
+import org.jruby.truffle.core.VMPrimitiveNodesFactory;
 import org.jruby.truffle.core.array.ArrayAppendOneNodeGen;
 import org.jruby.truffle.core.array.ArrayConcatNode;
 import org.jruby.truffle.core.array.ArrayDropTailNode;
@@ -55,9 +55,11 @@ import org.jruby.truffle.core.regexp.InterpolatedRegexpNode;
 import org.jruby.truffle.core.regexp.MatchDataNodesFactory;
 import org.jruby.truffle.core.regexp.RegexpNodes;
 import org.jruby.truffle.core.regexp.RegexpNodesFactory;
+import org.jruby.truffle.core.regexp.RegexpOptions;
 import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeConstants;
+import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.rubinius.RubiniusLastStringReadNode;
 import org.jruby.truffle.core.rubinius.RubiniusLastStringWriteNodeGen;
 import org.jruby.truffle.core.string.InterpolatedStringNode;
@@ -100,6 +102,7 @@ import org.jruby.truffle.language.exceptions.RescueClassesNode;
 import org.jruby.truffle.language.exceptions.RescueNode;
 import org.jruby.truffle.language.exceptions.RescueSplatNode;
 import org.jruby.truffle.language.exceptions.TryNode;
+import org.jruby.truffle.language.globals.AliasGlobalVarNode;
 import org.jruby.truffle.language.globals.CheckMatchVariableTypeNode;
 import org.jruby.truffle.language.globals.CheckOutputSeparatorVariableTypeNode;
 import org.jruby.truffle.language.globals.CheckProgramNameVariableTypeNode;
@@ -112,7 +115,6 @@ import org.jruby.truffle.language.globals.ReadThreadLocalGlobalVariableNode;
 import org.jruby.truffle.language.globals.UpdateLastBacktraceNode;
 import org.jruby.truffle.language.globals.UpdateVerbosityNode;
 import org.jruby.truffle.language.globals.WriteGlobalVariableNodeGen;
-import org.jruby.truffle.language.globals.WriteProgramNameNodeGen;
 import org.jruby.truffle.language.globals.WriteReadOnlyGlobalNode;
 import org.jruby.truffle.language.literal.BooleanLiteralNode;
 import org.jruby.truffle.language.literal.FloatLiteralNode;
@@ -223,6 +225,7 @@ import org.jruby.truffle.parser.ast.NextParseNode;
 import org.jruby.truffle.parser.ast.NilParseNode;
 import org.jruby.truffle.parser.ast.NthRefParseNode;
 import org.jruby.truffle.parser.ast.OpAsgnAndParseNode;
+import org.jruby.truffle.parser.ast.OpAsgnConstDeclParseNode;
 import org.jruby.truffle.parser.ast.OpAsgnOrParseNode;
 import org.jruby.truffle.parser.ast.OpAsgnParseNode;
 import org.jruby.truffle.parser.ast.OpElementAsgnParseNode;
@@ -249,6 +252,7 @@ import org.jruby.truffle.parser.ast.TrueParseNode;
 import org.jruby.truffle.parser.ast.TruffleFragmentParseNode;
 import org.jruby.truffle.parser.ast.UndefParseNode;
 import org.jruby.truffle.parser.ast.UntilParseNode;
+import org.jruby.truffle.parser.ast.VAliasParseNode;
 import org.jruby.truffle.parser.ast.VCallParseNode;
 import org.jruby.truffle.parser.ast.WhenParseNode;
 import org.jruby.truffle.parser.ast.WhileParseNode;
@@ -259,13 +263,13 @@ import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
 import org.jruby.truffle.parser.lexer.ISourcePosition;
 import org.jruby.truffle.parser.lexer.InvalidSourcePosition;
 import org.jruby.truffle.parser.parser.ParserSupport;
+import org.jruby.truffle.parser.scope.StaticScope;
 import org.jruby.truffle.platform.graal.AssertConstantNodeGen;
 import org.jruby.truffle.platform.graal.AssertNotCompiledNodeGen;
 import org.jruby.truffle.tools.ChaosNodeGen;
 import org.jruby.truffle.util.StringUtils;
 import org.jruby.util.ByteList;
 import org.jruby.util.KeyValuePair;
-import org.jruby.util.RegexpOptions;
 
 import java.io.File;
 import java.math.BigInteger;
@@ -333,6 +337,15 @@ public class BodyTranslator extends Translator {
 
         ret.unsafeSetSourceSection(sourceSection);
 
+        return addNewlineIfNeeded(node, ret);
+    }
+
+    @Override
+    public RubyNode visitVAliasNode(VAliasParseNode node) {
+        final RubySourceSection sourceSection = translate(node.getPosition());
+        final RubyNode ret = new AliasGlobalVarNode(node.getOldName(), node.getNewName());
+
+        ret.unsafeSetSourceSection(sourceSection);
         return addNewlineIfNeeded(node, ret);
     }
 
@@ -1730,7 +1743,8 @@ public class BodyTranslator extends Translator {
             final RubyNode translated;
 
             if (name.equals("$0")) {
-                translated = WriteProgramNameNodeGen.create(context, fullSourceSection, writeGlobalVariableNode);
+                translated = VMPrimitiveNodesFactory.VMSetProcessTitleNodeFactory.create(
+                        new RubyNode[]{ writeGlobalVariableNode });
             } else {
                 translated = writeGlobalVariableNode;
             }
@@ -2157,8 +2171,7 @@ public class BodyTranslator extends Translator {
         RubyNode rhsTranslated;
 
         if (rhs == null) {
-            context.getJRubyRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, source.getName(), node.getPosition().getLine(), "no RHS for multiple assignment - using nil");
-            rhsTranslated = nilNode(source, sourceSection);
+            throw new UnsupportedOperationException("null rhs");
         } else {
             rhsTranslated = rhs.accept(this);
         }
@@ -2455,8 +2468,7 @@ public class BodyTranslator extends Translator {
 
             result = new ElidableResultNode(sequence(context, source, sourceSection, sequence), environment.findLocalVarNode(tempRHSName, source, sourceSection));
         } else {
-            context.getJRubyRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, source.getName(), node.getPosition().getLine(), node + " unknown form of multiple assignment");
-            result = nilNode(source, sourceSection);
+            throw new UnsupportedOperationException();
         }
 
         final RubyNode ret = new DefinedWrapperNode(context, fullSourceSection, context.getCoreStrings().ASSIGNMENT, result);
@@ -2543,11 +2555,18 @@ public class BodyTranslator extends Translator {
     }
 
     @Override
+    public RubyNode visitOpAsgnConstDeclNode(OpAsgnConstDeclParseNode node) {
+        // TODO (eregon, 7 Nov. 2016): Is there any semantic difference?
+        return visitOpAsgnOrNode(new OpAsgnOrParseNode(node.getPosition(), node.getFirstNode(), node.getSecondNode()));
+    }
+
+    @Override
     public RubyNode visitOpAsgnNode(OpAsgnParseNode node) {
         final ISourcePosition pos = node.getPosition();
 
-        if (node.getOperatorName().equals("||")) {
-            // Why does this ||= come through as a visitOpAsgnNode and not a visitOpAsgnOrNode?
+        final boolean isOrOperator = node.getOperatorName().equals("||");
+        if (isOrOperator || node.getOperatorName().equals("&&")) {
+            // Why does this ||= or &&= come through as a visitOpAsgnNode and not a visitOpAsgnOrNode?
 
             final String temp = environment.allocateLocalTemp("opassign");
             final ParseNode writeReceiverToTemp = new LocalAsgnParseNode(pos, temp, 0, node.getReceiverNode());
@@ -2563,8 +2582,16 @@ public class BodyTranslator extends Translator {
             RubyNode lhs = readMethod.accept(this);
             RubyNode rhs = writeMethod.accept(this);
 
-            final RubyNode ret = new DefinedWrapperNode(context, fullSourceSection, context.getCoreStrings().ASSIGNMENT,
-                    sequence(context, source, sourceSection, Arrays.asList(writeReceiverToTemp.accept(this), new OrNode(lhs, rhs))));
+            final RubyNode controlNode = isOrOperator ? new OrNode(lhs, rhs) : new AndNode(lhs, rhs);
+            final RubyNode ret = new DefinedWrapperNode(
+                    context,
+                    fullSourceSection,
+                    context.getCoreStrings().ASSIGNMENT,
+                    sequence(
+                            context,
+                            source,
+                            sourceSection,
+                            Arrays.asList(writeReceiverToTemp.accept(this), controlNode)));
 
             return addNewlineIfNeeded(node, ret);
         }
@@ -2710,14 +2737,29 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitPreExeNode(PreExeParseNode node) {
+        // The parser seems to visit BEGIN blocks for us first, so we just need to translate them in place
         final RubyNode ret = node.getBodyNode().accept(this);
         return addNewlineIfNeeded(node, ret);
     }
 
     @Override
     public RubyNode visitPostExeNode(PostExeParseNode node) {
-        final RubyNode ret = node.getBodyNode().accept(this);
-        return addNewlineIfNeeded(node, ret);
+        // END blocks run after any other code - not just code in the same file
+
+        // Turn into a call to Truffle::Kernel.at_exit
+
+        // The scope is empty - we won't be able to access local variables
+        // TODO fix this
+        // https://github.com/jruby/jruby/issues/4257
+        final StaticScope scope = new StaticScope(StaticScope.Type.BLOCK, null);
+
+        return translateCallNode(
+                new CallParseNode(node.getPosition(),
+                        new TruffleFragmentParseNode(node.getPosition(), false, new ObjectLiteralNode(context, null, context.getCoreLibrary().getTruffleKernelModule())),
+                        "at_exit",
+                        new ListParseNode(node.getPosition(), new TrueParseNode(node.getPosition())),
+                        new IterParseNode(node.getPosition(), node.getArgsNode(), scope, node.getBodyNode())),
+                false, false, false);
     }
 
     @Override
@@ -2880,7 +2922,7 @@ public class BodyTranslator extends Translator {
                         final RescueSplatNode rescueNode = new RescueSplatNode(context, fullSourceSection, splatTranslated, bodyTranslated);
                         rescueNodes.add(rescueNode);
                     } else {
-                        unimplemented(node);
+                        throw new UnsupportedOperationException();
                     }
                 } else {
                     RubyNode bodyNode;
@@ -2990,7 +3032,16 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitSymbolNode(SymbolParseNode node) {
-        final Rope rope = StringOperations.createRope(node.getName(), node.getEncoding());
+        String name = node.getName();
+        // The symbol is passed as a String but it's really
+        // "interpret the char[] as a byte[] with the given encoding".
+        byte[] bytes = new byte[name.length()];
+        for (int i = 0; i < name.length(); i++) {
+            char val = name.charAt(i);
+            assert val >= 0 && val < 256;
+            bytes[i] = (byte) (val & 0xFF);
+        }
+        final Rope rope = RopeOperations.create(bytes, node.getEncoding(), CodeRange.CR_UNKNOWN);
         final RubyNode ret = new ObjectLiteralNode(context, translate(node.getPosition()).toSourceSection(source), context.getSymbolTable().getSymbol(rope));
         return addNewlineIfNeeded(node, ret);
     }
@@ -3179,14 +3230,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     protected RubyNode defaultVisit(ParseNode node) {
-        final RubyNode ret = unimplemented(node);
-        return addNewlineIfNeeded(node, ret);
-    }
-
-    protected RubyNode unimplemented(ParseNode node) {
-        context.getJRubyRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, source.getName(), node.getPosition().getLine(), node + " does nothing - translating as nil");
-        RubySourceSection sourceSection = translate(node.getPosition());
-        return nilNode(source, sourceSection);
+        throw new UnsupportedOperationException(node.toString() + " " + node.getPosition());
     }
 
     public TranslatorEnvironment getEnvironment() {

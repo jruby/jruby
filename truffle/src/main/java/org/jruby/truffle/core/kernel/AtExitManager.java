@@ -81,6 +81,7 @@ public class AtExitManager {
         return handlers;
     }
 
+    @SuppressWarnings("deprecation")
     public static DynamicObject handleAtExitException(RubyContext context, RaiseException raiseException) {
         final DynamicObject rubyException = raiseException.getException();
         if (Layouts.BASIC_OBJECT.getLogicalClass(rubyException) == context.getCoreLibrary().getSystemExitClass()) {

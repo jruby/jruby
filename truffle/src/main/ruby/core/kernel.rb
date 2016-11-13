@@ -673,4 +673,9 @@ module Kernel
   end
   module_function :global_variables
 
+  def fork
+    raise RubyTruffleError.new('Kernel#fork not implemented')
+  end
+  module_function :fork
+
 end

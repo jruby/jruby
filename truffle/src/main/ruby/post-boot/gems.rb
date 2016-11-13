@@ -11,5 +11,8 @@ begin
 rescue LoadError
 end
 
-
-require 'rubygems'
+begin
+  require 'rubygems'
+rescue LoadError
+  warn('Could not load RubyGems during runtime bootstrap. Please set JRUBY_HOME to an appropriate location.')
+end

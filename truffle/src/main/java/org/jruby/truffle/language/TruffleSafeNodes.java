@@ -76,4 +76,14 @@ public abstract class TruffleSafeNodes {
 
     }
 
+    @CoreMethod(names = "processes_safe?", onSingleton = true)
+    public abstract static class AreProcessesSafeNode extends CoreMethodNode {
+
+        @Specialization
+        public boolean processesSafe() {
+            return getContext().getOptions().PLATFORM_SAFE_PROCESSES;
+        }
+
+    }
+
 }

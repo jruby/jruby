@@ -94,7 +94,7 @@ public class OutputStrings {
         "  -X+C          force compilation of all scripts before they are run (except eval)\n" +
         "  -X+CIR        force compilation and use IR runtime\n" +
         "  -X+JIR        JIT compilation and use IR runtime\n" +
-        "  -X+T          use Truffle\n" +
+        "  -X+T          use Truffle (-X+TM use Truffle's entry point)\n" +
         "  -Xclassic     don't use Truffle, reversing the -X+T option\n" +
         "  -Xsubstring?  list options that contain substring in their name\n" +
         "  -Xprefix...   list options that are prefixed wtih prefix\n" ;

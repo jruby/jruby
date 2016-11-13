@@ -84,7 +84,6 @@ tool/nailgun/ng
 reference.txt
 rubyspec_temp
 .polyglot.pom.rb
-tool/truffle/jruby_truffle_runner/jruby+truffle_runner-*.gem
 test/truffle/cexts/**/Makefile
 
 # binaries
@@ -125,6 +124,7 @@ build.eclipse
 /mxbuild
 /mx.imports
 /RUBY.dist
+/RUBY-TEST.dist
 
 # Truffle findbugs
 truffle-findbugs-report.html

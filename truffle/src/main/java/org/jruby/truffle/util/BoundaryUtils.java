@@ -29,7 +29,7 @@ public class BoundaryUtils {
 
         @Override
         public BoundaryIterator<E> iterator() {
-            return new BoundaryIterator<E>(getIterator());
+            return new BoundaryIterator<>(getIterator());
         }
 
         @TruffleBoundary
@@ -57,6 +57,12 @@ public class BoundaryUtils {
         @Override
         public E next() {
             return iterator.next();
+        }
+
+        @TruffleBoundary
+        @Override
+        public void remove() {
+            iterator.remove();
         }
 
     }

@@ -19,7 +19,6 @@ import jnr.posix.Passwd;
 import jnr.posix.SignalHandler;
 import jnr.posix.SpawnFileAction;
 import jnr.posix.Times;
-import org.jruby.platform.Platform;
 import org.jruby.truffle.core.CoreLibrary;
 
 import java.io.FileDescriptor;
@@ -86,11 +85,6 @@ public class JNRTrufflePosix implements TrufflePosix {
     @Override
     public int fstat(int fd, FileStat stat) {
         return posix.fstat(fd, stat);
-    }
-
-    @Override
-    public Pointer environ() {
-        return posix.environ();
     }
 
     @Override
@@ -439,5 +433,10 @@ public class JNRTrufflePosix implements TrufflePosix {
     @Override
     public long[] getgroups() {
         return posix.getgroups();
+    }
+
+    @Override
+    public String nl_langinfo(int item) {
+        return posix.nl_langinfo(item);
     }
 }

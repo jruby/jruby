@@ -68,7 +68,7 @@ public class TranslatorDriver {
 
         final org.jruby.truffle.parser.parser.Parser parser = new org.jruby.truffle.parser.parser.Parser(context);
 
-        final StaticScopeFactory staticScopeFactory = new StaticScopeFactory(context.getJRubyRuntime());
+        final StaticScopeFactory staticScopeFactory = new StaticScopeFactory();
         final StaticScope staticScope = staticScopeFactory.newLocalScope(null);
 
         /*
@@ -117,9 +117,9 @@ public class TranslatorDriver {
 
         boolean isInlineSource = parserContext == ParserContext.SHELL;
         boolean isEvalParse = parserContext == ParserContext.EVAL || parserContext == ParserContext.INLINE || parserContext == ParserContext.MODULE;
-        final ParserConfiguration parserConfiguration = new ParserConfiguration(context.getJRubyRuntime(), 0, isInlineSource, !isEvalParse, false);
+        final ParserConfiguration parserConfiguration = new ParserConfiguration(context, 0, isInlineSource, !isEvalParse, false);
 
-        if (context.getJRubyRuntime().getInstanceConfig().isFrozenStringLiteral()) {
+        if (context.getInstanceConfig().isFrozenStringLiteral()) {
             parserConfiguration.setFrozenStringLiteral(true);
         }
 

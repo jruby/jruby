@@ -27,16 +27,14 @@
 package org.jruby.truffle.parser.lexer;
 
 import org.jcodings.Encoding;
-import org.jruby.RubyArray;
-import org.jruby.RubyEncoding;
 import org.jruby.RubyIO;
-import org.jruby.RubyString;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.IOInputStream;
 import org.jruby.util.io.ChannelHelper;
 
 import java.nio.channels.Channel;
+import java.util.List;
 
 /**
  *  Lexer source from ripper getting a line at a time via 'gets' calls.
@@ -47,32 +45,13 @@ public class GetsLexerSource extends LexerSource {
     private int offset;
 
     // Main-line Parsing constructor
-    public GetsLexerSource(String sourceName, int line, IRubyObject io, RubyArray scriptLines, Encoding encoding) {
+    public GetsLexerSource(String sourceName, int line, IRubyObject io, List<ByteList> scriptLines, Encoding encoding) {
         super(sourceName, line, scriptLines);
 
         this.io = io;
         this.encoding = encoding;
     }
 
-    // FIXME (enebo 21-Apr-15): ripper probably has same problem as main-line parser so this constructor
-    // may need to be a mix of frobbing the encoding of an incoming object plus defaultEncoding if not.
-    // But main-line parser should not be asking IO for encoding.
-    // Ripper constructor
-    public GetsLexerSource(String sourceName, int line, IRubyObject io, RubyArray scriptLines) {
-        this(sourceName, line, io, scriptLines, frobnicateEncoding(io));
-    }
-
-    // FIXME: Should be a hard failure likely if no encoding is possible
-    public static final Encoding frobnicateEncoding(IRubyObject io) {
-        // Non-ripper IO will not have encoding so we will just use default external
-        if (!io.respondsTo("encoding")) return io.getRuntime().getDefaultExternalEncoding();
-        
-        IRubyObject encodingObject = io.callMethod(io.getRuntime().getCurrentContext(), "encoding");
-
-        return encodingObject instanceof RubyEncoding ? 
-                ((RubyEncoding) encodingObject).getEncoding() : io.getRuntime().getDefaultExternalEncoding();
-    }
-    
     @Override
     public Encoding getEncoding() {
         return encoding;
@@ -94,7 +73,7 @@ public class GetsLexerSource extends LexerSource {
         offset += bytelist.getRealSize();
         bytelist.setEncoding(encoding);
 
-        if (scriptLines != null) scriptLines.append(RubyString.newString(scriptLines.getRuntime(), bytelist));
+        if (scriptLines != null) scriptLines.add(bytelist);
 
         return bytelist;
     }

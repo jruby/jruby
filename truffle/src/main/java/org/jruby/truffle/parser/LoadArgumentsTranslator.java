@@ -119,7 +119,6 @@ public class LoadArgumentsTranslator extends Translator {
         argsNode = node;
 
         final RubySourceSection sourceSection = translate(node.getPosition());
-        final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
         final List<RubyNode> sequence = new ArrayList<>();
 

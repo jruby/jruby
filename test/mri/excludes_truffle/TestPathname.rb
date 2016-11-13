@@ -1,3 +1,4 @@
+exclude :test_sub_matchdata, "needs investigation"
 exclude :test_ascend_446, "needs investigation"
 exclude :test_atime, "needs investigation"
 exclude :test_binread, "needs investigation"

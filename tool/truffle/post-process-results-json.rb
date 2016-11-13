@@ -16,7 +16,7 @@ result = JSON.parse(File.read(ARGV[0]))
 
 result['queries'].each do |q|
   q.delete_if do |k, v|
-    k =~ /extra\.\w+\.commit.\w+/
+    k =~ /^extra\.[\w-]+\.commit\.[\w-]+$/
   end
 end
 

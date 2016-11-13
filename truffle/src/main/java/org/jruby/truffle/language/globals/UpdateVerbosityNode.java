@@ -34,9 +34,9 @@ public class UpdateVerbosityNode extends RubyNode {
     @TruffleBoundary
     private void setVerbose(Object childValue) {
         if (childValue instanceof Boolean) {
-            getContext().getJRubyInterop().setVerbose((boolean) childValue);
+            getContext().setVerbose((boolean) childValue);
         } else if (childValue == nil()) {
-            getContext().getJRubyInterop().setVerboseNil();
+            getContext().setVerboseNil();
         } else {
             throw new UnsupportedOperationException();
         }

@@ -31,14 +31,11 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.parser;
 
-import org.jruby.Ruby;
-import org.jruby.RubyArray;
-import org.jruby.RubyFile;
-import org.jruby.RubyHash;
 import org.jruby.RubyIO;
-import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.LoadServiceResourceInputStream;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.language.control.RaiseException;
+import org.jruby.truffle.parser.RubyWarnings;
 import org.jruby.truffle.parser.ast.ParseNode;
 import org.jruby.truffle.parser.lexer.ByteListLexerSource;
 import org.jruby.truffle.parser.lexer.GetsLexerSource;
@@ -47,10 +44,9 @@ import org.jruby.truffle.parser.lexer.SyntaxException;
 import org.jruby.truffle.parser.scope.DynamicScope;
 import org.jruby.util.ByteList;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.channels.Channels;
+import java.util.List;
 
 /**
  * Serves as a simple facade for all the parsing magic.
@@ -71,12 +67,12 @@ public class Parser {
     public int getTotalBytes() {
         return totalBytes;
     }
-    
+
     @SuppressWarnings("unchecked")
     public ParseNode parse(String file, ByteList content, DynamicScope blockScope,
                            ParserConfiguration configuration) {
         configuration.setDefaultEncoding(content.getEncoding());
-        RubyArray list = getLines(configuration, context.getJRubyRuntime(), file);
+        List<ByteList> list = getLines(configuration, file);
         LexerSource lexerSource = new ByteListLexerSource(file, configuration.getLineNumber(), content, list);
         return parse(file, lexerSource, blockScope, configuration);
     }
@@ -84,7 +80,7 @@ public class Parser {
     @SuppressWarnings("unchecked")
     public ParseNode parse(String file, byte[] content, DynamicScope blockScope,
                            ParserConfiguration configuration) {
-        RubyArray list = getLines(configuration, context.getJRubyRuntime(), file);
+        List<ByteList> list = getLines(configuration, file);
         ByteList in = new ByteList(content, configuration.getDefaultEncoding());
         LexerSource lexerSource = new ByteListLexerSource(file, configuration.getLineNumber(), in,  list);
         return parse(file, lexerSource, blockScope, configuration);
@@ -96,13 +92,13 @@ public class Parser {
         if (content instanceof LoadServiceResourceInputStream) {
             return parse(file, ((LoadServiceResourceInputStream) content).getBytes(), blockScope, configuration);
         } else {
-            RubyArray list = getLines(configuration, context.getJRubyRuntime(), file);
-            RubyIO io;
-            if (content instanceof FileInputStream) {
+            List<ByteList> list = getLines(configuration, file);
+            RubyIO io = null;
+            /*if (content instanceof FileInputStream) {
                 io = new RubyFile(context.getJRubyRuntime(), file, ((FileInputStream) content).getChannel());
             } else {
                 io = RubyIO.newIO(context.getJRubyRuntime(), Channels.newChannel(content));
-            }
+            }*/
             LexerSource lexerSource = new GetsLexerSource(file, configuration.getLineNumber(), io, list, configuration.getDefaultEncoding());
             return parse(file, lexerSource, blockScope, configuration);
         }
@@ -119,32 +115,26 @@ public class Parser {
         }
 
         long startTime = System.nanoTime();
-        RubyParser parser = new RubyParser(context, lexerSource, context.getJRubyRuntime().getWarnings());
+        RubyParser parser = new RubyParser(context, lexerSource, new RubyWarnings(configuration.getContext()));
         RubyParserResult result;
         try {
             result = parser.parse(configuration);
-            if (parser.lexer.isEndSeen() && configuration.isSaveData()) {
-                IRubyObject verbose = context.getJRubyRuntime().getVerbose();
-                context.getJRubyRuntime().setVerbose(context.getJRubyRuntime().getNil());
-                context.getJRubyRuntime().defineGlobalConstant("DATA", lexerSource.getRemainingAsIO());
-                context.getJRubyRuntime().setVerbose(verbose);
-            }
         } catch (IOException e) {
             // Enebo: We may want to change this error to be more specific,
             // but I am not sure which conditions leads to this...so lame message.
-            throw context.getJRubyRuntime().newSyntaxError("Problem reading source: " + e);
+            throw new RaiseException(context.getCoreExceptions().syntaxError("Problem reading source: " + e, null));
         } catch (SyntaxException e) {
             switch (e.getPid()) {
                 case UNKNOWN_ENCODING:
                 case NOT_ASCII_COMPATIBLE:
-                    throw context.getJRubyRuntime().newArgumentError(e.getMessage());
+                    throw new RaiseException(context.getCoreExceptions().argumentError(e.getMessage(), null));
                 default:
                     StringBuilder buffer = new StringBuilder(100);
                     buffer.append(e.getFile()).append(':');
                     buffer.append(e.getLine() + 1).append(": ");
                     buffer.append(e.getMessage());
 
-                    throw context.getJRubyRuntime().newSyntaxError(buffer.toString());
+                    throw new RaiseException(context.getCoreExceptions().syntaxError(buffer.toString(), null));
             }
         } 
         
@@ -165,16 +155,8 @@ public class Parser {
         return ast;
     }
 
-    private RubyArray getLines(ParserConfiguration configuration, Ruby runtime, String file) {
-        RubyArray list = null;
-        IRubyObject scriptLines = runtime.getObject().getConstantAt("SCRIPT_LINES__");
-        if (!configuration.isEvalParse() && scriptLines != null) {
-            if (scriptLines instanceof RubyHash) {
-                list = runtime.newArray();
-                ((RubyHash) scriptLines).op_aset(runtime.getCurrentContext(), runtime.newString(file), list);
-            }
-        }
-        return list;
+    private List<ByteList> getLines(ParserConfiguration configuration, String file) {
+        return null;
     }
 
 }

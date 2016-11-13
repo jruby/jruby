@@ -1,3 +1,11 @@
+# Copyright (c) 2016 Oracle and/or its affiliates. All rights reserved. This
+# code is released under a tri EPL/GPL/LGPL license. You can use it,
+# redistribute it and/or modify it under the terms of the:
+#
+# Eclipse Public License version 1.0
+# GNU General Public License version 2
+# GNU Lesser General Public License version 2.1
+
 # Copyright (c) 2007-2015, Evan Phoenix and contributors
 # All rights reserved.
 #
@@ -32,21 +40,27 @@ module Rubinius
     extend FFI::Library
 
     attach_function :getenv,   [:string], :string
-    attach_function :putenv,   [:string], :int
     attach_function :setenv,   [:string,  :string, :int], :int
     attach_function :unsetenv, [:string], :int
-    attach_function :environ,  'ffi_environ', [], :pointer
   end
 
   class EnvironmentVariables
     include Enumerable
     include Rubinius::EnvironmentAccess
 
+    def initialize
+      vars = Truffle::System.initial_environment_variables
+      @variables = vars.map { |name| set_encoding(name) }
+    end
+
+    def size
+      @variables.size
+    end
+
     def [](key)
       value = getenv(StringValue(key))
       if value
-        value = set_encoding value
-        value.freeze
+        value = set_encoding(value)
       end
       value
     end
@@ -55,20 +69,34 @@ module Rubinius
       key = StringValue(key)
       if value.nil?
         unsetenv(key)
+        @variables.delete(key)
       else
         if setenv(key, StringValue(value), 1) != 0
           Errno.handle("setenv")
         end
+        unless @variables.include?(key)
+          @variables << set_encoding(key.dup)
+        end
       end
       value
     end
-
     alias_method :store, :[]=
 
-    def each_key
-      return to_enum(:each_key) { size } unless block_given?
+    def each
+      return to_enum(:each) { size } unless block_given?
 
-      each { |k, v| yield k }
+      @variables.each do |name|
+        key = set_encoding(name)
+        value = self[name]
+        yield key, value
+      end
+
+      self
+    end
+    alias_method :each_pair, :each
+
+    def each_key(&block)
+      @variables.each(&block)
     end
 
     def each_value
@@ -76,35 +104,6 @@ module Rubinius
 
       each { |k, v| yield v }
     end
-
-    def each
-      return to_enum(:each) { size } unless block_given?
-
-      env = environ()
-      ptr_size = FFI.type_size FFI.find_type(:pointer)
-
-      offset = 0
-      cur = env + offset
-
-      until cur.read_pointer.null?
-        entry = cur.read_pointer.read_string
-        key, value = entry.split '=', 2
-        value.taint if value
-        key.taint if key
-
-        key = set_encoding key
-        value = set_encoding value
-
-        yield key, value
-
-        offset += ptr_size
-        cur = env + offset
-      end
-
-      self
-    end
-
-    alias_method :each_pair, :each
 
     def delete(key)
       existing_value = self[key]
@@ -122,14 +121,23 @@ module Rubinius
       self
     end
 
+    def shift
+      key = @variables.first
+      return nil unless key
+      value = delete key
+
+      key = set_encoding key
+      value = set_encoding value
+
+      return [key, value]
+    end
+
+    # More efficient than using the one from Enumerable
     def include?(key)
       !self[key].nil?
     end
-
     alias_method :has_key?, :include?
     alias_method :key?, :include?
-
-    # More efficient than using the one from Enumerable
     alias_method :member?, :include?
 
     def fetch(key, absent=undefined)
@@ -165,9 +173,7 @@ module Rubinius
     def reject!
       return to_enum(:reject!) { size } unless block_given?
 
-      # Avoid deleting from environ while iterating because the
-      # OS can handle that in a million different bad ways.
-
+      # Avoid deleting from the environment while iterating.
       keys = []
       each { |k, v| keys << k if yield(k, v) }
       keys.each { |k| delete k }
@@ -176,9 +182,7 @@ module Rubinius
     end
 
     def clear
-      # Avoid deleting from environ while iterating because the
-      # OS can handle that in a million different bad ways.
-
+      # Avoid deleting from the environment while iterating.
       keys = []
       each { |k, v| keys << k }
       keys.each { |k| delete k }
@@ -251,30 +255,6 @@ module Rubinius
       to_hash.select(&blk)
     end
 
-    def shift
-      env = environ()
-
-      offset = 0
-      cur = env + offset
-
-      ptr = cur.read_pointer
-      return nil unless ptr
-
-      key, value = ptr.read_string.split "=", 2
-
-      return nil unless key
-
-      key.taint if key
-      value.taint if value
-
-      delete key
-
-      key = set_encoding key
-      value = set_encoding value
-
-      return [key, value]
-    end
-
     def to_a
       ary = []
       each { |k, v| ary << [k, v] }
@@ -322,13 +302,17 @@ module Rubinius
 
     def set_encoding(value)
       return unless value.kind_of? String
-      if Encoding.default_internal && value.ascii_only?
-        value.encode Encoding.default_internal, Encoding.find("locale")
+      locale = Encoding.find("locale")
+      value = if Encoding.default_internal && value.ascii_only?
+        value.encode Encoding.default_internal, locale
+      elsif value.encoding != locale
+        value.dup.force_encoding(locale)
       else
-        value.force_encoding Encoding.find("locale")
+        value
       end
+      value.taint unless value.tainted?
+      value.freeze
     end
-
     private :set_encoding
   end
 end

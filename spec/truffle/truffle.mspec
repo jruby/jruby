@@ -37,11 +37,6 @@ class MSpecScript
 
   set :core, [
     "spec/ruby/core",
-    
-    # Troublesome - they do work, but sometimes fail, sometimes timeout
-    "^spec/ruby/core/io/io_spec.rb",
-    "^spec/ruby/core/io/popen_spec.rb",
-    "^spec/ruby/core/io/pipe_spec.rb"
   ]
 
   set :library, [
@@ -156,8 +151,10 @@ class MSpecScript
   set :files, get(:language) + get(:core) + get(:library) + get(:truffle)
 end
 
-is_child_process = respond_to?(:ruby_exe)
+is_child_process = ENV.key? "MSPEC_RUNNER"
 if i = ARGV.index('slow') and ARGV[i-1] == '--excl-tag' and is_child_process
+  require 'mspec'
+
   class SlowSpecsTagger
     def initialize
       MSpec.register :exception, self

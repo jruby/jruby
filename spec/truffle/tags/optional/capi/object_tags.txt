@@ -100,3 +100,9 @@ fails:CApiObject instance variable access rb_ivar_get returns nil if the instanc
 fails:CApiObject instance variable access rb_ivar_set sets and returns the instance variable on an object
 fails:CApiObject instance variable access rb_ivar_defined returns true if the instance variable is defined
 fails:CApiObject instance variable access rb_ivar_defined returns false if the instance variable is not defined
+fails:CApiObject rb_obj_method_arity returns 0 when the method takes no arguments
+fails:CApiObject rb_obj_method_arity returns 1 when the method takes a single, required argument
+fails:CApiObject rb_obj_method_arity returns -1 when the method takes a variable number of arguments
+fails:CApiObject rb_obj_method_arity returns 2 when the method takes two required arguments
+fails:CApiObject rb_obj_method_arity returns -N-1 when the method takes N required and variable additional arguments
+fails:CApiObject rb_obj_method_arity returns -N-1 when the method takes N required, variable additional, and a block argument

@@ -200,6 +200,10 @@ do
       echo "error: -X+T isn't supported in the shell launcher"
       exit 1
       ;;
+     -X+TM)
+      echo "error: -X+TM isn't supported in the shell launcher"
+      exit 1
+      ;;
      -Xclassic)
       ;;
      # Match -Xa.b.c=d to translate to -Da.b.c=d as a java option
@@ -243,6 +247,8 @@ do
         # Start up as Nailgun server
         java_class=$JAVA_CLASS_NGSERVER
         VERIFY_JRUBY=true ;;
+     --no-bootclasspath)
+        NO_BOOTCLASSPATH=true ;;
      --ng)
         # Use native Nailgun client to toss commands to server
         process_special_opts "--ng" ;;
@@ -280,7 +286,7 @@ if [ "$nailgun_client" != "" ]; then
     exit 1
   fi
 else
-if [ "$VERIFY_JRUBY" != "" ]; then
+if [ "$NO_BOOTCLASSPATH" != "" || "$VERIFY_JRUBY" != "" ]; then
   if [ "$PROFILE_ARGS" != "" ]; then
       echo "Running with instrumented profiler"
   fi

@@ -569,6 +569,146 @@ class String
     false
   end
 
+  def inspect
+    result_encoding = Encoding.default_internal || Encoding.default_external
+    unless result_encoding.ascii_compatible?
+      result_encoding = Encoding::US_ASCII
+    end
+
+    enc = encoding
+    ascii = enc.ascii_compatible?
+    enc_name = enc.name
+    unicode = enc_name.start_with?("UTF-") && enc_name[4] != ?7
+
+    if unicode
+      if enc.equal? Encoding::UTF_16
+        a = getbyte 0
+        b = getbyte 1
+
+        if a == 0xfe and b == 0xff
+          enc = Encoding::UTF_16BE
+        elsif a == 0xff and b == 0xfe
+          enc = Encoding::UTF_16LE
+        else
+          unicode = false
+        end
+      elsif enc.equal? Encoding::UTF_32
+        a = getbyte 0
+        b = getbyte 1
+        c = getbyte 2
+        d = getbyte 3
+
+        if a == 0 and b == 0 and c == 0xfe and d == 0xfe
+          enc = Encoding::UTF_32BE
+        elsif a == 0xff and b == 0xfe and c == 0 and d == 0
+          enc = Encoding::UTF_32LE
+        else
+          unicode = false
+        end
+      end
+    end
+
+    array = []
+
+    index = 0
+    total = bytesize
+    while index < total
+      char = chr_at index
+
+      if char
+        bs = char.bytesize
+
+        if (ascii or unicode) and bs == 1
+          escaped = nil
+
+          byte = getbyte(index)
+          if byte >= 7 and byte <= 92
+            case byte
+              when 7  # \a
+                escaped = '\a'
+              when 8  # \b
+                escaped = '\b'
+              when 9  # \t
+                escaped = '\t'
+              when 10 # \n
+                escaped = '\n'
+              when 11 # \v
+                escaped = '\v'
+              when 12 # \f
+                escaped = '\f'
+              when 13 # \r
+                escaped = '\r'
+              when 27 # \e
+                escaped = '\e'
+              when 34 # \"
+                escaped = '\"'
+              when 35 # #
+                case getbyte(index += 1)
+                  when 36   # $
+                    escaped = '\#$'
+                  when 64   # @
+                    escaped = '\#@'
+                  when 123  # {
+                    escaped = '\#{'
+                  else
+                    index -= 1
+                end
+              when 92 # \\
+                escaped = '\\\\'
+            end
+
+            if escaped
+              array << escaped
+              index += 1
+              next
+            end
+          end
+        end
+
+        if char.printable?
+          array << char
+        else
+          code = char.ord
+          escaped = code.to_s(16).upcase
+
+          if unicode
+            if code < 0x10000
+              pad = "0" * (4 - escaped.bytesize)
+              array << "\\u#{pad}#{escaped}"
+            else
+              array << "\\u{#{escaped}}"
+            end
+          else
+            if code < 0x100
+              pad = "0" * (2 - escaped.bytesize)
+              array << "\\x#{pad}#{escaped}"
+            else
+              array << "\\x{#{escaped}}"
+            end
+          end
+        end
+
+        index += bs
+      else
+        array << "\\x#{getbyte(index).to_s(16)}"
+        index += 1
+      end
+    end
+
+    size = array.inject(0) { |s, chr| s += chr.bytesize }
+    result = String.pattern size + 2, ?".ord
+    m = Rubinius::Mirror.reflect result
+
+    index = 1
+    array.each do |chr|
+      m.copy_from chr, 0, chr.bytesize, index
+      index += chr.bytesize
+    end
+
+    Rubinius::Type.infect result, self
+    result.force_encoding result_encoding
+  end
+
   def prepend(other)
     self[0, 0] = other
     self
