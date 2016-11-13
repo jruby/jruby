@@ -1324,10 +1324,6 @@ module Commands
     # modify pom
     pom = "#{JRUBY_DIR}/truffle/pom.rb"
     contents = File.read(pom)
-    contents.gsub!(/^(\s+)'source'\s*=>.+'1.7'.+,\n\s+'target'\s*=>.+\s*'1.7.+,\n/) do
-      indent = $1
-      $&.gsub("1.7", "1.8") + "#{indent}'fork' => 'true',\n"
-    end
     contents.sub!(/^(\s+)('-J-Dfile.encoding=UTF-8')(.+\n)(?!\1'-parameters')/) do
       "#{$1}#{$2},\n#{$1}'-parameters'#{$3}"
     end
