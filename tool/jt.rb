@@ -662,12 +662,14 @@ module Commands
       jruby_args << "-J-Dgraal.TraceTruffleCompilation=true"
     end
 
+    args << options = {}
+
     if args.delete('--no-print-cmd')
-      args << { no_print_cmd: true }
+      options[:no_print_cmd] = true
     end
 
     if args.delete('--exec')
-      args << { use_exec: true }
+      options[:use_exec] = true
     end
 
     raw_sh env_vars, Utilities.find_jruby, *jruby_args, *args
