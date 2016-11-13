@@ -1797,7 +1797,7 @@ public final class Ruby implements Constantizable {
         // we define the classes at boot because we need them
         addBuiltinIfAllowed("thread.rb", Library.DUMMY);
 
-        if(RubyInstanceConfig.NATIVE_NET_PROTOCOL) {
+        if (RubyInstanceConfig.NATIVE_NET_PROTOCOL) {
             addLazyBuiltin("net/protocol.rb", "net/protocol", "org.jruby.ext.net.protocol.NetProtocolBufferedIOLibrary");
         }
 

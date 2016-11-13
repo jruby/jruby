@@ -82,6 +82,7 @@ import org.jruby.internal.runtime.methods.ProcMethod;
 import org.jruby.internal.runtime.methods.Scoping;
 import org.jruby.internal.runtime.methods.SynchronizedDynamicMethod;
 import org.jruby.internal.runtime.methods.UndefinedMethod;
+import org.jruby.internal.runtime.methods.WrapperMethod;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
@@ -1784,10 +1785,7 @@ public class RubyModule extends RubyObject {
             if (this == method.getImplementationClass()) {
                 method.setVisibility(visibility);
             } else {
-                // FIXME: Why was this using a FullFunctionCallbackMethod before that did callSuper?
-                DynamicMethod newMethod = method.dup();
-                newMethod.setImplementationClass(this);
-                newMethod.setVisibility(visibility);
+                DynamicMethod newMethod = new WrapperMethod(this, method, visibility);
 
                 methodLocation.addMethod(name, newMethod);
             }
@@ -1890,10 +1888,10 @@ public class RubyModule extends RubyObject {
             }
         }
 
-        RubyModule implementationModule = method.getImplementationClass();
+        RubyModule implementationModule = method.getDefinedClass();
         RubyModule originModule = this;
-        while (originModule != implementationModule && originModule.isSingleton()) {
-            originModule = ((MetaClass)originModule).getRealClass();
+        while (originModule != implementationModule && (originModule.isSingleton() || originModule.isIncluded())) {
+            originModule = originModule.getSuperClass();
         }
 
         AbstractRubyMethod newMethod;
@@ -2967,7 +2965,6 @@ public class RubyModule extends RubyObject {
     private void doPrependModule(RubyModule baseModule) {
         List<RubyModule> modulesToInclude = gatherModules(baseModule);
 
-        RubyClass insertBelowSuperClass = null;
         if (methodLocation == this) {
             // In the current logic, if we getService here we know that module is not an
             // IncludedModule, so there's no need to fish out the delegate. But just

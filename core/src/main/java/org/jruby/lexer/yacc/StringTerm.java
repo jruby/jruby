@@ -342,7 +342,6 @@ public class StringTerm extends StrTerm {
 
                     if (regexp) {
                         if (c == end && !simple_re_meta(c)) {
-                            buffer.append('\\');
                             buffer.append(c);
                             continue;
                         }

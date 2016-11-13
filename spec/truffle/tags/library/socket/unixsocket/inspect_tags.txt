@@ -1,0 +1,1 @@
+fails:UNIXSocket#inspect returns sockets fd for unnamed sockets

@@ -6,13 +6,13 @@ require 'fileutils'
 class TestTempfilesCleanUp < Test::Unit::TestCase
 
   def setup
-    @tmpdir = "tmp_#{$$}"
+    @tmpdir = Dir.mktmpdir(File.basename(__FILE__) + $$.to_s)
     FileUtils.rm_f @tmpdir rescue nil
     Dir.mkdir @tmpdir rescue nil
   end
 
   def teardown
-    FileUtils.rm_f @tmpdir
+    FileUtils.rm_rf @tmpdir
   end
 
   def test_cleanup

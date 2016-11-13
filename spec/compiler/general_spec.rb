@@ -326,6 +326,12 @@ modes.each do |mode|
       expect{run("def foo(a, b=(c=1));[a,b,c];end;foo(1,2,3)")}.to raise_error(ArgumentError)
     end
 
+    it "compiles accesses of uninitialized variables" do
+      run("def foo(a); if a; b = 1; end; b.inspect; end; foo(false)") {|result| expect(result).to eq("nil") }
+      run("def foo(a); a ||= (b = 1); b.inspect; end; foo(1)") {|result| expect(result).to eq("nil")}
+      run("def foo(a); a &&= (b = 1); b.inspect; end; foo(nil)") {|result| expect(result).to eq("nil")}
+    end
+
     it "compiles grouped and intra-list rest args" do
       run("def foo(a, (b, *, c), d, *e, f, (g, *h, i), j); [a,b,c,d,e,f,g,h,i,j]; end; foo(1,[2,3,4],5,6,7,8,[9,10,11],12)") do |result|
         expect(result).to eq([1, 2, 4, 5, [6, 7], 8, 9, [10], 11, 12])

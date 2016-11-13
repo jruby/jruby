@@ -129,6 +129,7 @@ public class RubyProcess {
     public static final String CLOCK_UNIT_NANOSECOND = "nanosecond";
     public static final String CLOCK_UNIT_MICROSECOND = "microsecond";
     public static final String CLOCK_UNIT_MILLISECOND = "millisecond";
+    public static final String CLOCK_UNIT_SECOND = "second";
     public static final String CLOCK_UNIT_FLOAT_MICROSECOND = "float_microsecond";
     public static final String CLOCK_UNIT_FLOAT_MILLISECOND = "float_millisecond";
     public static final String CLOCK_UNIT_FLOAT_SECOND = "float_second";
@@ -1426,7 +1427,7 @@ public class RubyProcess {
     public static IRubyObject clock_gettime(ThreadContext context, IRubyObject self, IRubyObject _clock_id, IRubyObject _unit) {
         Ruby runtime = context.runtime;
 
-        if (!(_unit instanceof RubySymbol)) {
+        if (!(_unit instanceof RubySymbol) && !_unit.isNil()) {
             throw runtime.newArgumentError("unexpected unit: " + _unit);
         }
 
@@ -1487,11 +1488,13 @@ public class RubyProcess {
             return runtime.newFixnum(nanos / 1000);
         } else if (unit.equals(CLOCK_UNIT_MILLISECOND)) {
             return runtime.newFixnum(nanos / 1000000);
+        } else if (unit.equals(CLOCK_UNIT_SECOND)) {
+            return runtime.newFixnum(nanos / 1000000000);
         } else if (unit.equals(CLOCK_UNIT_FLOAT_MICROSECOND)) {
             return runtime.newFloat(nanos / 1000.0);
         } else if (unit.equals(CLOCK_UNIT_FLOAT_MILLISECOND)) {
             return runtime.newFloat(nanos / 1000000.0);
-        } else if (unit.equals(CLOCK_UNIT_FLOAT_SECOND)) {
+        } else if (unit.equals(CLOCK_UNIT_FLOAT_SECOND) || unit.equals("")) {
             return runtime.newFloat(nanos / 1000000000.0);
         } else {
             throw runtime.newArgumentError("unexpected unit: " + unit);
@@ -1511,7 +1514,7 @@ public class RubyProcess {
     public static IRubyObject clock_getres(ThreadContext context, IRubyObject self, IRubyObject _clock_id, IRubyObject _unit) {
         Ruby runtime = context.runtime;
 
-        if (!(_unit instanceof RubySymbol)) {
+        if (!(_unit instanceof RubySymbol) && !_unit.isNil()) {
             throw runtime.newArgumentError("unexpected unit: " + _unit);
         }
 

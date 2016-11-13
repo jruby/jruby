@@ -1213,16 +1213,10 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
         fd = sysopenInternal(runtime, data);
         if (fd == null) {
-            if (data.errno == Errno.EMFILE || data.errno == Errno.ENFILE) {
-                System.gc();
-                data.errno = null;
-                fd = sysopenInternal(runtime, data);
-            }
-            if (fd == null) {
-                if (data.errno != null) {
-                    throw runtime.newErrnoFromErrno(data.errno, fname);
-                }
-                throw runtime.newSystemCallError(fname);
+            if (data.errno != null) {
+                throw runtime.newErrnoFromErrno(data.errno, fname.toString());
+            } else {
+                throw runtime.newSystemCallError(fname.toString());
             }
         }
         return fd;
@@ -2525,22 +2519,30 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
     private static void putsSingle(ThreadContext context, Ruby runtime, IRubyObject maybeIO, IRubyObject arg, RubyString separator) {
         ByteList line;
+        RubyString string;
 
         if (arg.isNil()) {
             line = getNilByteList(runtime);
+            string = null;
         } else if (runtime.isInspecting(arg)) {
             line = RECURSIVE_BYTELIST;
+            string = null;
         } else if (arg instanceof RubyArray) {
             inspectPuts(context, maybeIO, (RubyArray) arg);
             return;
         } else {
-            line = arg.asString().getByteList();
+            string = arg.asString();
+            line = string.getByteList();
         }
 
-        write(context, maybeIO, line);
+        if (string != null) {
+            write(context, maybeIO, string);
+        } else {
+            write(context, maybeIO, line);
+        }
 
         if (line.length() == 0 || !line.endsWith(separator.getByteList())) {
-            write(context, maybeIO, separator.getByteList());
+            write(context, maybeIO, separator);
         }
     }
 
@@ -2565,6 +2567,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         return sites(context).write.call(context, maybeIO, maybeIO, str);
     }
 
+    @JRubyMethod
     @Override
     public IRubyObject inspect() {
         Ruby runtime = getRuntime();
@@ -2575,7 +2578,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         String path = openFile.getPath();
         String status = "";
 
-        if (path == null) {
+        if (path == null || path == "") {
             if (openFile.fd() == null) {
                 path = "";
                 status = "(closed)";

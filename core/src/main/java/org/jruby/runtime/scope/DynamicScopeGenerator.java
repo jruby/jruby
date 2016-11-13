@@ -44,6 +44,19 @@ public class DynamicScopeGenerator {
             "getValueNineDepthZero"
     ));
 
+    public static final List<String> SPECIALIZED_GETS_OR_NIL = Collections.unmodifiableList(Arrays.asList(
+            "getValueZeroDepthZeroOrNil",
+            "getValueOneDepthZeroOrNil",
+            "getValueTwoDepthZeroOrNil",
+            "getValueThreeDepthZeroOrNil",
+            "getValueFourDepthZeroOrNil",
+            "getValueFiveDepthZeroOrNil",
+            "getValueSixDepthZeroOrNil",
+            "getValueSevenDepthZeroOrNil",
+            "getValueEightDepthZeroOrNil",
+            "getValueNineDepthZeroOrNil"
+    ));
+
     public static final List<String> SPECIALIZED_SETS = Collections.unmodifiableList(Arrays.asList(
             "setValueZeroDepthZeroVoid",
             "setValueOneDepthZeroVoid",
@@ -178,6 +191,36 @@ public class DynamicScopeGenerator {
                     }});
                 }
 
+                for (int i = 0; i < SPECIALIZED_GETS_OR_NIL.size(); i++) {
+                    final int offset = i;
+
+                    defineMethod(SPECIALIZED_GETS_OR_NIL.get(offset), ACC_PUBLIC, sig(IRubyObject.class, IRubyObject.class), new CodeBlock() {{
+                        line(6);
+
+                        if (size <= offset) {
+                            invokestatic(clsPath, "sizeError", sig(RuntimeException.class));
+                            athrow();
+                        } else {
+                            aload(0);
+                            getfield(clsPath, newFields[offset], ci(IRubyObject.class));
+
+                            dup();
+
+                            LabelNode ok = new LabelNode(new Label());
+                            ifnonnull(ok);
+
+                            pop();
+
+                            aload(0);
+                            aload(1);
+                            putfield(clsPath, newFields[offset], ci(IRubyObject.class));
+                            aload(1);
+
+                            label(ok);
+                            areturn();
+                        }
+                    }});
+                }
 
                 for (int i = 0; i < SPECIALIZED_SETS.size(); i++) {
                     final int offset = i;
