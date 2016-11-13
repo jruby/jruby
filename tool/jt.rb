@@ -145,11 +145,6 @@ module Utilities
     raise "couldn't find truffle-sl.jar - build Truffle and find it in there"
   end
 
-  def self.jruby_eclipse?
-    # tool/jruby_eclipse only works on release currently
-    ENV["JRUBY_ECLIPSE"] == "true" and !truffle_version.end_with?('SNAPSHOT')
-  end
-
   def self.mx?
     mx_ruby_jar = "#{JRUBY_DIR}/mxbuild/dists/ruby.jar"
     constants_file = "#{JRUBY_DIR}/core/src/main/java/org/jruby/runtime/Constants.java"
@@ -174,8 +169,6 @@ module Utilities
       ENV['RUBY_BIN']
     elsif mx?
       "#{JRUBY_DIR}/tool/jruby_mx"
-    elsif jruby_eclipse?
-      "#{JRUBY_DIR}/tool/jruby_eclipse"
     else
       "#{JRUBY_DIR}/bin/jruby"
     end
@@ -432,8 +425,6 @@ module ShellUtils
 
     if Utilities.mx?
       args.unshift "-ttool/jruby_mx"
-    elsif Utilities.jruby_eclipse?
-      args.unshift "-ttool/jruby_eclipse"
     end
 
     sh env_vars, Utilities.find_ruby, 'spec/mspec/bin/mspec', command, '--config', 'spec/truffle/truffle.mspec', *args
@@ -1329,7 +1320,6 @@ module Commands
   end
 
   def check_ambiguous_arguments
-    ENV.delete "JRUBY_ECLIPSE" # never run from the Eclipse launcher here
     clean
     # modify pom
     pom = "#{JRUBY_DIR}/truffle/pom.rb"
