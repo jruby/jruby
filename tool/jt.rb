@@ -106,7 +106,15 @@ module Utilities
       options = ['--no-bootclasspath']
     elsif graal_home
       graal_home = File.expand_path(graal_home)
-      command_line = `mx -v -p #{graal_home} vm -version`.lines.to_a.last
+      output = `mx -v -p #{graal_home} vm -version 2>&1`.lines.to_a
+      command_line = output.select { |line| line.include? '-version' }
+      if command_line.size == 1
+        command_line = command_line[0]
+      else
+        $stderr.puts "Error in mx for setting up Graal:"
+        $stderr.puts output
+        abort
+      end
       vm_args = command_line.split
       vm_args.pop # Drop "-version"
       javacmd = vm_args.shift
