@@ -9,13 +9,15 @@ cache:
 before_install:
   - rm ~/.m2/settings.xml
   - export MAVEN_SKIP_RC=true
-  - mvn -Xmx32M -v | grep 1.7.0; if [ $? = 0 ]; then export MAVEN_OPTS="-XX:MaxPermSize=240M"; else export MAVEN_OPTS="-XX:MaxMetaspaceSize=240M -XX:CompressedClassSpaceSize=240M"; fi
+  - mvn -Xmx32M -v | grep 1.7.0; if [ $? = 0 ]; then export MAVEN_OPTS="-XX:MaxPermSize=200M"; else export MAVEN_OPTS="-XX:MaxMetaspaceSize=200M -XX:CompressedClassSpaceSize=200M"; fi
   - export MAVEN_OPTS="-Xmx512M $MAVEN_OPTS"
 
 before_script:
   - unset GEM_PATH GEM_HOME IRBRC JRUBY_OPTS
   - export PATH="`pwd`/bin:$PATH"
   - echo $HOME
+  - echo $JAVA_OPTS
+  - echo $MAVEN_OPTS
 
 jdk:
   - openjdk7
