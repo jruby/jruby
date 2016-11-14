@@ -78,7 +78,39 @@ public class DynamicScopeGenerator {
         final String clsPath = "org/jruby/runtime/scopes/DynamicScope" + size;
         final String clsName = clsPath.replaceAll("/", ".");
 
+        // try to load the class, in case we have parallel generation happening
+        Class p;
+
         try {
+            p = CDCL.loadClass(clsName);
+        } catch (ClassNotFoundException cnfe) {
+            // try again under lock
+            synchronized (CDCL) {
+                try {
+                    p = CDCL.loadClass(clsName);
+                } catch (ClassNotFoundException cnfe2) {
+                    // proceed to actually generate the class
+                    p = generateInternal(size, clsPath, clsName);
+                }
+            }
+        }
+
+        // acquire constructor handle and store it
+        try {
+            MethodHandle mh = MethodHandles.lookup().findConstructor(p, MethodType.methodType(void.class, StaticScope.class, DynamicScope.class));
+            mh = mh.asType(MethodType.methodType(DynamicScope.class, StaticScope.class, DynamicScope.class));
+            MethodHandle previousMH = specializedFactories.putIfAbsent(size, mh);
+            if (previousMH != null) mh = previousMH;
+
+            return mh;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static Class generateInternal(final int size, final String clsPath, final String clsName) {
+        // ensure only one thread will attempt to generate and define the new class
+        synchronized (CDCL) {
             // create a new one
             final String[] newFields = varList(size);
 
@@ -255,27 +287,7 @@ public class DynamicScopeGenerator {
                 }});
             }};
 
-            Class p;
-
-            try {
-                p = defineClass(jiteClass);
-            } catch (LinkageError e) {
-                String exceptionMessage = e.getMessage();
-                if (exceptionMessage != null && exceptionMessage.contains("duplicate class definition for name") ) {
-                    p = loadClass(jiteClass);
-                } else {
-                    throw(e);
-                }
-            }
-
-            MethodHandle mh = MethodHandles.lookup().findConstructor(p, MethodType.methodType(void.class, StaticScope.class, DynamicScope.class));
-            mh = mh.asType(MethodType.methodType(DynamicScope.class, StaticScope.class, DynamicScope.class));
-            MethodHandle previousMH = specializedFactories.putIfAbsent(size, mh);
-            if (previousMH != null) mh = previousMH;
-
-            return mh;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+            return defineClass(jiteClass);
         }
     }
 
