@@ -372,28 +372,34 @@ public class RopeOperations {
                 offset += substringRope.getOffset();
             } else if (current instanceof RepeatingRope) {
                 final RepeatingRope repeatingRope = (RepeatingRope) current;
+                final Rope child = repeatingRope.getChild();
 
                 // In the absence of any SubstringRopes, we always take the full contents of the RepeatingRope.
                 if (substringLengths.isEmpty()) {
                     // TODO (nirvdrum 06-Apr-16) Rather than process the same child over and over, there may be opportunity to re-use the results from a single pass.
                     for (int i = 0; i < repeatingRope.getTimes(); i++) {
-                        workStack.push(repeatingRope.getChild());
+                        workStack.push(child);
                     }
                 } else {
                     final int bytesToCopy = substringLengths.peek();
-                    final int patternLength = repeatingRope.getChild().byteLength();
+                    final int patternLength = child.byteLength();
 
                     // Fix the offset to be appropriate for a given child. The offset is reset the first time it is
                     // consumed, so there's no need to worry about adversely affecting anything by adjusting it here.
-                    offset %= repeatingRope.getChild().byteLength();
+                    offset %= child.byteLength();
 
                     // The loopCount has to be precisely determined so every repetition has at least some parts used.
                     // It has to account for the beginning we don't need (offset), has to reach the end but, and must not
-                    // have extra repetitions.
-                    int loopCount = (offset + bytesToCopy + patternLength - 1 ) / patternLength;
+                    // have extra repetitions. However it cannot be ever longer then repeatingRope.getTimes()
+                    int loopCount = Integer.min(
+                            repeatingRope.getTimes(),
+                            (offset
+                                    + patternLength * bytesToCopy / patternLength
+                                    + patternLength - 1
+                            ) / patternLength);
 
                     // TODO (nirvdrum 25-Aug-2016): Flattening the rope with CR_VALID will cause a character length recalculation, even though we already know what it is. That operation should be made more optimal.
-                    final Rope flattenedChild = flatten(repeatingRope.getChild());
+                    final Rope flattenedChild = flatten(child);
                     for (int i = 0; i < loopCount; i++) {
                         workStack.push(flattenedChild);
                     }
