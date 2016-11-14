@@ -243,7 +243,7 @@ public class Queue extends RubyObject implements DataType {
     }
 
     public static void setup(Ruby runtime) {
-        RubyClass cQueue = runtime.defineClass("Queue", runtime.getObject(), new ObjectAllocator() {
+        RubyClass cQueue = runtime.getThread().defineClassUnder("Queue", runtime.getObject(), new ObjectAllocator() {
 
             public IRubyObject allocate(Ruby runtime, RubyClass klass) {
                 return new Queue(runtime, klass);
@@ -252,8 +252,10 @@ public class Queue extends RubyObject implements DataType {
         cQueue.undefineMethod("initialize_copy");
         cQueue.setReifiedClass(Queue.class);
         cQueue.defineAnnotatedMethods(Queue.class);
+        runtime.getObject().setConstant("Queue", cQueue);
 
-        runtime.defineClass("ClosedQueueError", runtime.getStopIteration(), runtime.getStopIteration().getAllocator());
+        RubyClass cClosedQueueError = cQueue.defineClassUnder("ClosedQueueError", runtime.getStopIteration(), runtime.getStopIteration().getAllocator());
+        runtime.getObject().setConstant("ClosedQueueError", cClosedQueueError);
     }
 
     @JRubyMethod(visibility = Visibility.PRIVATE)

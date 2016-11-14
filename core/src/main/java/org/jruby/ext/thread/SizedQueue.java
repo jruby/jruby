@@ -60,7 +60,7 @@ public class SizedQueue extends Queue {
     }
 
     public static void setup(Ruby runtime) {
-        RubyClass cSizedQueue = runtime.defineClass("SizedQueue", runtime.getClass("Queue"), new ObjectAllocator() {
+        RubyClass cSizedQueue = runtime.getThread().defineClassUnder("SizedQueue", runtime.getClass("Queue"), new ObjectAllocator() {
 
             public IRubyObject allocate(Ruby runtime, RubyClass klass) {
                 return new SizedQueue(runtime, klass);
@@ -68,6 +68,7 @@ public class SizedQueue extends Queue {
         });
         cSizedQueue.setReifiedClass(SizedQueue.class);
         cSizedQueue.defineAnnotatedMethods(SizedQueue.class);
+        runtime.getObject().setConstant("SizedQueue", cSizedQueue);
     }
 
     @JRubyMethod

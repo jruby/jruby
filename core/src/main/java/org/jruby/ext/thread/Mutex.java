@@ -60,7 +60,7 @@ public class Mutex extends RubyObject {
     }
 
     public static void setup(Ruby runtime) {
-        RubyClass cMutex = runtime.defineClass("Mutex", runtime.getObject(), new ObjectAllocator() {
+        RubyClass cMutex = runtime.getThread().defineClassUnder("Mutex", runtime.getObject(), new ObjectAllocator() {
 
             public IRubyObject allocate(Ruby runtime, RubyClass klass) {
                 return new Mutex(runtime, klass);
@@ -68,6 +68,7 @@ public class Mutex extends RubyObject {
         });
         cMutex.setReifiedClass(Mutex.class);
         cMutex.defineAnnotatedMethods(Mutex.class);
+        runtime.getObject().setConstant("Mutex", cMutex);
     }
 
     @JRubyMethod(name = "locked?")

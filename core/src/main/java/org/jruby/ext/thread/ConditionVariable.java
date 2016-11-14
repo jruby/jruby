@@ -55,7 +55,7 @@ public class ConditionVariable extends RubyObject {
     }
 
     public static void setup(Ruby runtime) {
-        RubyClass cConditionVariable = runtime.defineClass("ConditionVariable", runtime.getObject(), new ObjectAllocator() {
+        RubyClass cConditionVariable = runtime.getThread().defineClassUnder("ConditionVariable", runtime.getObject(), new ObjectAllocator() {
 
             public IRubyObject allocate(Ruby runtime, RubyClass klass) {
                 return new ConditionVariable(runtime, klass);
@@ -64,6 +64,7 @@ public class ConditionVariable extends RubyObject {
         cConditionVariable.undefineMethod("initialize_copy");
         cConditionVariable.setReifiedClass(ConditionVariable.class);
         cConditionVariable.defineAnnotatedMethods(ConditionVariable.class);
+        runtime.getObject().setConstant("ConditionVariable", cConditionVariable);
     }
 
     @JRubyMethod(name = "wait", required = 1, optional = 1)
