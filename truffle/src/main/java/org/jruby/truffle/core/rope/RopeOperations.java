@@ -387,8 +387,8 @@ public class RopeOperations {
                     // consumed, so there's no need to worry about adversely affecting anything by adjusting it here.
                     offset %= repeatingRope.getChild().byteLength();
 
-                    // The loopCount has to be precisely determined so every repetion has at least some parts used.
-                    // It has to account for the begging we don't need (offset), has to reach the end but, and must not
+                    // The loopCount has to be precisely determined so every repetition has at least some parts used.
+                    // It has to account for the beginning we don't need (offset), has to reach the end but, and must not
                     // have extra repetitions.
                     int loopCount = (offset + bytesToCopy + patternLength - 1 ) / patternLength;
 
