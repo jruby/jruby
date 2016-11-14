@@ -78,7 +78,8 @@ ruby/test_readpartial.rb
 # jruby/jruby#4287
 #ruby/test_regexp.rb
 ruby/test_require.rb
-ruby/test_refinement.rb
+# jruby/jruby#4288
+#ruby/test_refinement.rb
 ruby/test_rubyoptions.rb
 # Removed until we can implement the remaining features (#2143)
 #ruby/test_settracefunc.rb
