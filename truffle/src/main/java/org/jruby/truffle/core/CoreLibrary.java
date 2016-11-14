@@ -1254,7 +1254,7 @@ public class CoreLibrary {
     }
 
     public static int long2int(long value) {
-        assert fitsIntoInteger(value);
+        assert fitsIntoInteger(value) : value;
         return (int) value;
     }
 
