@@ -760,6 +760,28 @@ module Commands
     sulong_link '-o', out, *config_libs, *lls
   end
 
+  def cextc_extconf(cext_dir, *clang_opts)
+    abort "You need to set SULONG_HOME" unless SULONG_HOME
+
+    # Ensure ruby.su is up-to-date
+    ruby_cext_api = "#{JRUBY_DIR}/truffle/src/main/c/cext"
+    ruby_c = "#{JRUBY_DIR}/truffle/src/main/c/cext/ruby.c"
+    ruby_h = "#{JRUBY_DIR}/lib/ruby/truffle/cext/ruby.h"
+    ruby_su = "#{JRUBY_DIR}/lib/ruby/truffle/cext/ruby.su"
+    if cext_dir != ruby_cext_api and (newer?(ruby_h, ruby_su) or newer?(ruby_c, ruby_su))
+      puts "Compiling outdated ruby.su"
+      cextc ruby_cext_api
+    end
+
+    gem_name = File.basename(cext_dir)
+    gem_dir = Dir.glob(ENV['GEM_HOME'] + "/gems/#{gem_name}*/")[0] + "ext/#{gem_name}/"
+    Dir.chdir(gem_dir) do
+      run("extconf.rb")
+      raw_sh("make")
+      FileUtils.copy_file("#{gem_name}.su", "#{JRUBY_DIR}/test/truffle/cexts/#{gem_name}/lib/#{gem_name}/#{gem_name}.su")
+    end
+  end
+
   def test(*args)
     path, *rest = args
 
@@ -901,7 +923,12 @@ module Commands
       unless gem_root and File.exist?(File.join(gem_root, CEXTC_CONF_FILE))
         gem_root = "#{JRUBY_DIR}/test/truffle/cexts/#{gem_name}"
       end
-      cextc gem_root, '-Werror=implicit-function-declaration'
+      if gem_name == "ruby-argon2"
+        cextc gem_root, '-Werror=implicit-function-declaration'
+      else
+        cextc_extconf gem_root, '-Werror=implicit-function-declaration'
+      end
+
       next if gem_name == 'psd_native' # psd_native is excluded just for running
       run '--graal',
         *dependencies.map { |d| "-I#{ENV['GEM_HOME']}/gems/#{d}/lib" },
