@@ -68,8 +68,6 @@ STDLIB_FILES = %w[
   uri.rb
   webrick
   webrick.rb
-  xmlrpc
-  xmlrpc.rb
   yaml
   yaml.rb
 ]

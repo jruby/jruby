@@ -184,7 +184,7 @@ class Resolv
 
     def initialize(filename = DefaultFileName)
       @filename = filename
-      @mutex = Mutex.new
+      @mutex = Thread::Mutex.new
       @initialized = nil
     end
 
@@ -338,7 +338,7 @@ class Resolv
     #                   :ndots => 1)
 
     def initialize(config_info=nil)
-      @mutex = Mutex.new
+      @mutex = Thread::Mutex.new
       @config = Config.new(config_info)
       @initialized = nil
     end
@@ -629,7 +629,7 @@ class Resolv
     end
 
     RequestID = {} # :nodoc:
-    RequestIDMutex = Mutex.new # :nodoc:
+    RequestIDMutex = Thread::Mutex.new # :nodoc:
 
     def self.allocate_request_id(host, port) # :nodoc:
       id = nil
@@ -914,7 +914,7 @@ class Resolv
 
     class Config # :nodoc:
       def initialize(config_info=nil)
-        @mutex = Mutex.new
+        @mutex = Thread::Mutex.new
         @config_info = config_info
         @initialized = nil
         @timeouts = nil
@@ -2703,10 +2703,12 @@ class Resolv
           return arg
         when String
           coordinates = ''
-          if Regex =~ arg &&  $1<180
-            hemi = ($4[/([NE])/,1]) || ($4[/([SW])/,1]) ? 1 : -1
-            coordinates = [(($1.to_i*(36e5))+($2.to_i*(6e4))+($3.to_f*(1e3)))*hemi+(2**31)].pack("N")
-            (orientation ||= '') << $4[[/NS/],1] ? 'lat' : 'lon'
+          if Regex =~ arg && $1.to_f < 180
+            m = $~
+            hemi = (m[4][/[NE]/]) || (m[4][/[SW]/]) ? 1 : -1
+            coordinates = [ ((m[1].to_i*(36e5)) + (m[2].to_i*(6e4)) +
+                             (m[3].to_f*(1e3))) * hemi+(2**31) ].pack("N")
+            orientation = m[4][/[NS]/] ? 'lat' : 'lon'
           else
             raise ArgumentError.new("not a properly formed Coord string: " + arg)
           end

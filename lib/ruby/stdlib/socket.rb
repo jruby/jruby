@@ -110,10 +110,8 @@ class Addrinfo
   #     puts s.read
   #   }
   #
-  def connect_from(*args, &block)
-    opts = Hash === args.last ? args.pop : {}
-    local_addr_args = args
-    connect_internal(family_addrinfo(*local_addr_args), opts[:timeout], &block)
+  def connect_from(*args, timeout: nil, &block)
+    connect_internal(family_addrinfo(*args), timeout, &block)
   end
 
   # :call-seq:
@@ -135,8 +133,8 @@ class Addrinfo
   #     puts s.read
   #   }
   #
-  def connect(opts={}, &block)
-    connect_internal(nil, opts[:timeout], &block)
+  def connect(timeout: nil, &block)
+    connect_internal(nil, timeout, &block)
   end
 
   # :call-seq:
@@ -158,11 +156,9 @@ class Addrinfo
   #     puts s.read
   #   }
   #
-  def connect_to(*args, &block)
-    opts = Hash === args.last ? args.pop : {}
-    remote_addr_args = args
-    remote_addrinfo = family_addrinfo(*remote_addr_args)
-    remote_addrinfo.send(:connect_internal, self, opts[:timeout], &block)
+  def connect_to(*args, timeout: nil, &block)
+    remote_addrinfo = family_addrinfo(*args)
+    remote_addrinfo.send(:connect_internal, self, timeout, &block)
   end
 
   # creates a socket bound to self.
@@ -310,14 +306,9 @@ class Socket < BasicSocket
   #     puts sock.read
   #   }
   #
-  def self.tcp(host, port, *rest) # :yield: socket
-    opts = Hash === rest.last ? rest.pop : {}
-    raise ArgumentError, "wrong number of arguments (#{rest.length} for 2)" if 2 < rest.length
-    local_host, local_port = rest
+  def self.tcp(host, port, local_host = nil, local_port = nil, connect_timeout: nil) # :yield: socket
     last_error = nil
     ret = nil
-
-    connect_timeout = opts[:connect_timeout]
 
     local_addr_list = nil
     if local_host != nil || local_port != nil
@@ -333,8 +324,8 @@ class Socket < BasicSocket
       end
       begin
         sock = local_addr ?
-          ai.connect_from(local_addr, :timeout => connect_timeout) :
-          ai.connect(:timeout => connect_timeout)
+          ai.connect_from(local_addr, timeout: connect_timeout) :
+          ai.connect(timeout: connect_timeout)
       rescue SystemCallError
         last_error = $!
         next
@@ -859,4 +850,193 @@ class Socket < BasicSocket
       accept_loop(serv, &b)
     }
   end
+
+  # call-seq:
+  #   socket.connect_nonblock(remote_sockaddr, [options]) => 0
+  #
+  # Requests a connection to be made on the given +remote_sockaddr+ after
+  # O_NONBLOCK is set for the underlying file descriptor.
+  # Returns 0 if successful, otherwise an exception is raised.
+  #
+  # === Parameter
+  #  # +remote_sockaddr+ - the +struct+ sockaddr contained in a string or Addrinfo object
+  #
+  # === Example:
+  #   # Pull down Google's web page
+  #   require 'socket'
+  #   include Socket::Constants
+  #   socket = Socket.new(AF_INET, SOCK_STREAM, 0)
+  #   sockaddr = Socket.sockaddr_in(80, 'www.google.com')
+  #   begin # emulate blocking connect
+  #     socket.connect_nonblock(sockaddr)
+  #   rescue IO::WaitWritable
+  #     IO.select(nil, [socket]) # wait 3-way handshake completion
+  #     begin
+  #       socket.connect_nonblock(sockaddr) # check connection failure
+  #     rescue Errno::EISCONN
+  #     end
+  #   end
+  #   socket.write("GET / HTTP/1.0\r\n\r\n")
+  #   results = socket.read
+  #
+  # Refer to Socket#connect for the exceptions that may be thrown if the call
+  # to _connect_nonblock_ fails.
+  #
+  # Socket#connect_nonblock may raise any error corresponding to connect(2) failure,
+  # including Errno::EINPROGRESS.
+  #
+  # If the exception is Errno::EINPROGRESS,
+  # it is extended by IO::WaitWritable.
+  # So IO::WaitWritable can be used to rescue the exceptions for retrying connect_nonblock.
+  #
+  # By specifying `exception: false`, the options hash allows you to indicate
+  # that connect_nonblock should not raise an IO::WaitWritable exception, but
+  # return the symbol :wait_writable instead.
+  #
+  # === See
+  #  # Socket#connect
+  #def connect_nonblock(addr, exception: true)
+  #  __connect_nonblock(addr, exception)
+  #end
 end
+
+class UDPSocket < IPSocket
+
+  # call-seq:
+  #   udpsocket.recvfrom_nonblock(maxlen [, flags[, outbuf [, options]]]) => [mesg, sender_inet_addr]
+  #
+  # Receives up to _maxlen_ bytes from +udpsocket+ using recvfrom(2) after
+  # O_NONBLOCK is set for the underlying file descriptor.
+  # _flags_ is zero or more of the +MSG_+ options.
+  # The first element of the results, _mesg_, is the data received.
+  # The second element, _sender_inet_addr_, is an array to represent the sender address.
+  #
+  # When recvfrom(2) returns 0,
+  # Socket#recvfrom_nonblock returns an empty string as data.
+  # It means an empty packet.
+  #
+  # === Parameters
+  # * +maxlen+ - the number of bytes to receive from the socket
+  # * +flags+ - zero or more of the +MSG_+ options
+  # * +outbuf+ - destination String buffer
+  # * +options+ - keyword hash, supporting `exception: false`
+  #
+  # === Example
+  # 	require 'socket'
+  # 	s1 = UDPSocket.new
+  # 	s1.bind("127.0.0.1", 0)
+  # 	s2 = UDPSocket.new
+  # 	s2.bind("127.0.0.1", 0)
+  # 	s2.connect(*s1.addr.values_at(3,1))
+  # 	s1.connect(*s2.addr.values_at(3,1))
+  # 	s1.send "aaa", 0
+  # 	begin # emulate blocking recvfrom
+  # 	  p s2.recvfrom_nonblock(10)  #=> ["aaa", ["AF_INET", 33302, "localhost.localdomain", "127.0.0.1"]]
+  # 	rescue IO::WaitReadable
+  # 	  IO.select([s2])
+  # 	  retry
+  # 	end
+  #
+  # Refer to Socket#recvfrom for the exceptions that may be thrown if the call
+  # to _recvfrom_nonblock_ fails.
+  #
+  # UDPSocket#recvfrom_nonblock may raise any error corresponding to recvfrom(2) failure,
+  # including Errno::EWOULDBLOCK.
+  #
+  # If the exception is Errno::EWOULDBLOCK or Errno::EAGAIN,
+  # it is extended by IO::WaitReadable.
+  # So IO::WaitReadable can be used to rescue the exceptions for retrying recvfrom_nonblock.
+  #
+  # By specifying `exception: false`, the options hash allows you to indicate
+  # that recvmsg_nonblock should not raise an IO::WaitWritable exception, but
+  # return the symbol :wait_writable instead.
+  #
+  # === See
+  # * Socket#recvfrom
+  #def recvfrom_nonblock(len, flag = 0, outbuf = nil, exception: true)
+  #  __recvfrom_nonblock(len, flag, outbuf, exception)
+  #end
+end
+
+class TCPServer < TCPSocket
+
+  # call-seq:
+  #   tcpserver.accept_nonblock([options]) => tcpsocket
+  #
+  # Accepts an incoming connection using accept(2) after
+  # O_NONBLOCK is set for the underlying file descriptor.
+  # It returns an accepted TCPSocket for the incoming connection.
+  #
+  # === Example
+  # 	require 'socket'
+  # 	serv = TCPServer.new(2202)
+  # 	begin # emulate blocking accept
+  # 	  sock = serv.accept_nonblock
+  # 	rescue IO::WaitReadable, Errno::EINTR
+  # 	  IO.select([serv])
+  # 	  retry
+  # 	end
+  # 	# sock is an accepted socket.
+  #
+  # Refer to Socket#accept for the exceptions that may be thrown if the call
+  # to TCPServer#accept_nonblock fails.
+  #
+  # TCPServer#accept_nonblock may raise any error corresponding to accept(2) failure,
+  # including Errno::EWOULDBLOCK.
+  #
+  # If the exception is Errno::EWOULDBLOCK, Errno::EAGAIN, Errno::ECONNABORTED, Errno::EPROTO,
+  # it is extended by IO::WaitReadable.
+  # So IO::WaitReadable can be used to rescue the exceptions for retrying accept_nonblock.
+  #
+  # By specifying `exception: false`, the options hash allows you to indicate
+  # that accept_nonblock should not raise an IO::WaitReadable exception, but
+  # return the symbol :wait_readable instead.
+  #
+  # === See
+  # * TCPServer#accept
+  # * Socket#accept
+  #def accept_nonblock(exception: true)
+  #  __accept_nonblock(exception)
+  #end
+end
+
+class UNIXServer < UNIXSocket
+  # call-seq:
+  #   unixserver.accept_nonblock([options]) => unixsocket
+  #
+  # Accepts an incoming connection using accept(2) after
+  # O_NONBLOCK is set for the underlying file descriptor.
+  # It returns an accepted UNIXSocket for the incoming connection.
+  #
+  # === Example
+  # 	require 'socket'
+  # 	serv = UNIXServer.new("/tmp/sock")
+  # 	begin # emulate blocking accept
+  # 	  sock = serv.accept_nonblock
+  # 	rescue IO::WaitReadable, Errno::EINTR
+  # 	  IO.select([serv])
+  # 	  retry
+  # 	end
+  # 	# sock is an accepted socket.
+  #
+  # Refer to Socket#accept for the exceptions that may be thrown if the call
+  # to UNIXServer#accept_nonblock fails.
+  #
+  # UNIXServer#accept_nonblock may raise any error corresponding to accept(2) failure,
+  # including Errno::EWOULDBLOCK.
+  #
+  # If the exception is Errno::EWOULDBLOCK, Errno::EAGAIN, Errno::ECONNABORTED or Errno::EPROTO,
+  # it is extended by IO::WaitReadable.
+  # So IO::WaitReadable can be used to rescue the exceptions for retrying accept_nonblock.
+  #
+  # By specifying `exception: false`, the options hash allows you to indicate
+  # that accept_nonblock should not raise an IO::WaitReadable exception, but
+  # return the symbol :wait_readable instead.
+  #
+  # === See
+  # * UNIXServer#accept
+  # * Socket#accept
+  #def accept_nonblock(exception: true)
+  #  __accept_nonblock(exception)
+  #end
+end if defined?(UNIXSocket)

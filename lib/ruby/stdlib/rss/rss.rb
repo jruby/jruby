@@ -326,7 +326,6 @@ EOC
 
     def inherit_convert_attr_reader(*attrs)
       attrs.each do |attr|
-        attr = attr.id2name if attr.kind_of?(Integer)
         module_eval(<<-EOC, *get_file_and_line_from_caller(2))
         def #{attr}_without_inherit
           convert(@#{attr})
@@ -347,7 +346,6 @@ EOC
 
     def uri_convert_attr_reader(*attrs)
       attrs.each do |attr|
-        attr = attr.id2name if attr.kind_of?(Integer)
         module_eval(<<-EOC, *get_file_and_line_from_caller(2))
         def #{attr}_without_base
           convert(@#{attr})
@@ -368,7 +366,6 @@ EOC
 
     def convert_attr_reader(*attrs)
       attrs.each do |attr|
-        attr = attr.id2name if attr.kind_of?(Integer)
         module_eval(<<-EOC, *get_file_and_line_from_caller(2))
         def #{attr}
           convert(@#{attr})
@@ -379,7 +376,6 @@ EOC
 
     def yes_clean_other_attr_reader(*attrs)
       attrs.each do |attr|
-        attr = attr.id2name if attr.kind_of?(Integer)
         module_eval(<<-EOC, __FILE__, __LINE__ + 1)
           attr_reader(:#{attr})
           def #{attr}?
@@ -391,7 +387,6 @@ EOC
 
     def yes_other_attr_reader(*attrs)
       attrs.each do |attr|
-        attr = attr.id2name if attr.kind_of?(Integer)
         module_eval(<<-EOC, __FILE__, __LINE__ + 1)
           attr_reader(:#{attr})
           def #{attr}?
@@ -409,7 +404,6 @@ EOC
       end
       separator ||= ", "
       attrs.each do |attr|
-        attr = attr.id2name if attr.kind_of?(Integer)
         module_eval(<<-EOC, __FILE__, __LINE__ + 1)
           attr_reader(:#{attr})
           def #{attr}_content
@@ -1241,7 +1235,7 @@ EOC
         __send__(self.class.xml_getter).to_s
       else
         _content = content
-        _content = [_content].pack("m").delete("\n") if need_base64_encode?
+        _content = [_content].pack("m0") if need_base64_encode?
         h(_content)
       end
     end

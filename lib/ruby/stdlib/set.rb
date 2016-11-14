@@ -3,7 +3,7 @@
 #
 # set.rb - defines the Set class
 #++
-# Copyright (c) 2002-2013 Akinori MUSHA <knu@iDaemons.org>
+# Copyright (c) 2002-2016 Akinori MUSHA <knu@iDaemons.org>
 #
 # Documentation by Akinori MUSHA and Gavin Sinclair.
 #
@@ -37,7 +37,8 @@
 # Set uses Hash as storage, so you must note the following points:
 #
 # * Equality of elements is determined according to Object#eql? and
-#   Object#hash.
+#   Object#hash.  Use Set#compare_by_identity to make a set compare
+#   its elements by their identity.
 # * Set assumes that the identity of each element does not change
 #   while it is stored.  Modifying an element of a set will render the
 #   set to an unreliable state.
@@ -89,6 +90,23 @@ class Set
     else
       merge(enum)
     end
+  end
+
+  # Makes the set compare its elements by their identity and returns
+  # self.  This method may not be supported by all subclasses of Set.
+  def compare_by_identity
+    if @hash.respond_to?(:compare_by_identity)
+      @hash.compare_by_identity
+      self
+    else
+      raise NotImplementedError, "#{self.class.name}\##{__method__} is not implemented"
+    end
+  end
+
+  # Returns true if the set will compare its elements by their
+  # identity.  Also see Set#compare_by_identity.
+  def compare_by_identity?
+    @hash.respond_to?(:compare_by_identity?) && @hash.compare_by_identity?
   end
 
   def do_with_enum(enum, &block) # :nodoc:
@@ -335,9 +353,10 @@ class Set
   end
 
   # Deletes every element of the set for which block evaluates to
-  # true, and returns self.
+  # true, and returns self. Returns an enumerator if no block is
+  # given.
   def delete_if
-    block_given? or return enum_for(__method__)
+    block_given? or return enum_for(__method__) { size }
     # @hash.delete_if should be faster, but using it breaks the order
     # of enumeration in subclasses.
     select { |o| yield o }.each { |o| @hash.delete(o) }
@@ -345,9 +364,10 @@ class Set
   end
 
   # Deletes every element of the set for which block evaluates to
-  # false, and returns self.
+  # false, and returns self. Returns an enumerator if no block is
+  # given.
   def keep_if
-    block_given? or return enum_for(__method__)
+    block_given? or return enum_for(__method__) { size }
     # @hash.keep_if should be faster, but using it breaks the order of
     # enumeration in subclasses.
     reject { |o| yield o }.each { |o| @hash.delete(o) }
@@ -355,25 +375,26 @@ class Set
   end
 
   # Replaces the elements with ones returned by collect().
+  # Returns an enumerator if no block is given.
   def collect!
-    block_given? or return enum_for(__method__)
+    block_given? or return enum_for(__method__) { size }
     replace(self.class.new(self) { |o| yield(o) })
   end
   alias map! collect!
 
   # Equivalent to Set#delete_if, but returns nil if no changes were
-  # made.
+  # made. Returns an enumerator if no block is given.
   def reject!(&block)
-    block or return enum_for(__method__)
+    block or return enum_for(__method__) { size }
     n = size
     delete_if(&block)
     self if size != n
   end
 
   # Equivalent to Set#keep_if, but returns nil if no changes were
-  # made.
+  # made. Returns an enumerator if no block is given.
   def select!(&block)
-    block or return enum_for(__method__)
+    block or return enum_for(__method__) { size }
     n = size
     keep_if(&block)
     self if size != n
@@ -467,8 +488,10 @@ class Set
   #   p hash    # => {2000=>#<Set: {"a.rb", "b.rb"}>,
   #             #     2001=>#<Set: {"c.rb", "d.rb", "e.rb"}>,
   #             #     2002=>#<Set: {"f.rb"}>}
+  #
+  # Returns an enumerator if no block is given.
   def classify # :yields: o
-    block_given? or return enum_for(__method__)
+    block_given? or return enum_for(__method__) { size }
 
     h = {}
 
@@ -495,8 +518,10 @@ class Set
   #             #            #<Set: {11, 9, 10}>,
   #             #            #<Set: {3, 4}>,
   #             #            #<Set: {6}>}>
+  #
+  # Returns an enumerator if no block is given.
   def divide(&func)
-    func or return enum_for(__method__)
+    func or return enum_for(__method__) { size }
 
     if func.arity == 2
       require 'tsort'
@@ -649,7 +674,7 @@ class SortedSet < Set
           end
 
           def delete_if
-            block_given? or return enum_for(__method__)
+            block_given? or return enum_for(__method__) { size }
             n = @hash.size
             super
             @keys = nil if @hash.size != n
@@ -657,7 +682,7 @@ class SortedSet < Set
           end
 
           def keep_if
-            block_given? or return enum_for(__method__)
+            block_given? or return enum_for(__method__) { size }
             n = @hash.size
             super
             @keys = nil if @hash.size != n

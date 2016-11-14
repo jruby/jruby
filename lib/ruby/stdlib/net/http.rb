@@ -260,15 +260,20 @@ module Net   #:nodoc:
   #
   #   uri = URI('https://secure.example.com/some_path?query=string')
   #
-  #   Net::HTTP.start(uri.host, uri.port,
-  #     :use_ssl => uri.scheme == 'https') do |http|
+  #   Net::HTTP.start(uri.host, uri.port, :use_ssl => true) do |http|
   #     request = Net::HTTP::Get.new uri
-  #
   #     response = http.request request # Net::HTTPResponse object
   #   end
   #
+  # Or if you simply want to make a GET request, you may pass in an URI
+  # object that has a HTTPS URL. Net::HTTP automatically turn on TLS
+  # verification if the URI object has a 'https' URI scheme.
+  #
+  #   uri = URI('https://example.com/')
+  #   Net::HTTP.get(uri) # => String
+  #
   # In previous versions of Ruby you would need to require 'net/https' to use
-  # HTTPS.  This is no longer true.
+  # HTTPS. This is no longer true.
   #
   # === Proxies
   #
@@ -482,6 +487,24 @@ module Net   #:nodoc:
           return http.request_get(uri, &block)
         }
       end
+    end
+
+    # Posts data to the specified URI object.
+    #
+    # Example:
+    #
+    #   require 'net/http'
+    #   require 'uri'
+    #
+    #   Net::HTTP.post URI('http://www.example.com/api/search'),
+    #                  { "q" => "ruby", "max" => "50" }.to_json,
+    #                  "Content-Type" => "application/json"
+    #
+    def HTTP.post(url, data, header = nil)
+      start(url.hostname, url.port,
+            :use_ssl => url.scheme == 'https' ) {|http|
+        http.post(url.path, data, header)
+      }
     end
 
     # Posts HTML form data to the specified URI object.
@@ -906,18 +929,16 @@ module Net   #:nodoc:
         s.sync_close = true
         D "SSL established"
       end
-      @socket = BufferedIO.new(s)
-      @socket.read_timeout = @read_timeout
-      @socket.continue_timeout = @continue_timeout
-      @socket.debug_output = @debug_output
+      @socket = BufferedIO.new(s, read_timeout: @read_timeout,
+                               continue_timeout: @continue_timeout,
+                               debug_output: @debug_output)
       if use_ssl?
         begin
           if proxy?
             buf = "CONNECT #{@address}:#{@port} HTTP/#{HTTPVersion}\r\n"
             buf << "Host: #{@address}:#{@port}\r\n"
             if proxy_user
-              credential = ["#{proxy_user}:#{proxy_pass}"].pack('m')
-              credential.delete!("\r\n")
+              credential = ["#{proxy_user}:#{proxy_pass}"].pack('m0')
               buf << "Proxy-Authorization: Basic #{credential}\r\n"
             end
             buf << "\r\n"
@@ -930,21 +951,7 @@ module Net   #:nodoc:
              Process.clock_gettime(Process::CLOCK_REALTIME) < @ssl_session.time.to_f + @ssl_session.timeout
             s.session = @ssl_session if @ssl_session
           end
-          if timeout = @open_timeout
-            while true
-              raise Net::OpenTimeout if timeout <= 0
-              start = Process.clock_gettime Process::CLOCK_MONOTONIC
-              # to_io is required because SSLSocket doesn't have wait_readable yet
-              case s.connect_nonblock(exception: false)
-              when :wait_readable; s.to_io.wait_readable(timeout)
-              when :wait_writable; s.to_io.wait_writable(timeout)
-              else; break
-              end
-              timeout -= Process.clock_gettime(Process::CLOCK_MONOTONIC) - start
-            end
-          else
-            s.connect
-          end
+          ssl_socket_connect(s, @open_timeout)
           if @ssl_context.verify_mode != OpenSSL::SSL::VERIFY_NONE
             s.post_connection_check(@address)
           end
@@ -1045,11 +1052,7 @@ module Net   #:nodoc:
 
     # True if requests for this connection will be proxied
     def proxy?
-      !!if @proxy_from_env then
-        proxy_uri
-      else
-        @proxy_address
-      end
+      !!(@proxy_from_env ? proxy_uri : @proxy_address)
     end
 
     # True if the proxy for this connection is determined from the environment
@@ -1059,9 +1062,11 @@ module Net   #:nodoc:
 
     # The proxy URI determined from the environment for this connection.
     def proxy_uri # :nodoc:
+      return if @proxy_uri == false
       @proxy_uri ||= URI::HTTP.new(
         "http".freeze, nil, address, port, nil, nil, nil, nil, nil
-      ).find_proxy
+      ).find_proxy || false
+      @proxy_uri || nil
     end
 
     # The address of the proxy server, if one is configured.
@@ -1447,7 +1452,7 @@ module Net   #:nodoc:
           begin
             res = HTTPResponse.read_new(@socket)
             res.decode_content = req.decode_content
-          end while res.kind_of?(HTTPContinue)
+          end while res.kind_of?(HTTPInformation)
 
           res.uri = req.uri
 

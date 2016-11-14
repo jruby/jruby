@@ -242,9 +242,7 @@ module Net
         else
           sock = TCPSocket.open(host, port)
         end
-        io = BufferedSocket.new(sock)
-        io.read_timeout = @read_timeout
-        io
+        BufferedSocket.new(sock, read_timeout: @read_timeout)
       }
     end
     private :open_socket
@@ -294,6 +292,9 @@ module Net
     def putline(line) # :nodoc:
       if @debug_mode
         print "put: ", sanitize(line), "\n"
+      end
+      if /[\r\n]/ =~ line
+        raise ArgumentError, "A line must not contain CR or LF"
       end
       line = line + CRLF
       @sock.write(line)
@@ -443,8 +444,7 @@ module Net
           if !resp.start_with?("1")
             raise FTPReplyError, resp
           end
-          conn = BufferedSocket.new(sock.accept)
-          conn.read_timeout = @read_timeout
+          conn = BufferedSocket.new(sock.accept, read_timeout: @read_timeout)
           sock.shutdown(Socket::SHUT_WR) rescue nil
           sock.read rescue nil
         ensure

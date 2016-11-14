@@ -43,7 +43,7 @@ class IPAddr
 
   # 32 bit mask for IPv4
   IN4MASK = 0xffffffff
-  # 128 bit mask for IPv4
+  # 128 bit mask for IPv6
   IN6MASK = 0xffffffffffffffffffffffffffffffff
   # Format string for IPv6
   IN6FORMAT = (["%.4x"] * 8).join(':')
@@ -149,7 +149,10 @@ class IPAddr
   # Returns true if two ipaddrs are equal.
   def ==(other)
     other = coerce_other(other)
-    return @family == other.family && @addr == other.to_i
+  rescue
+    false
+  else
+    @family == other.family && @addr == other.to_i
   end
 
   # Returns a new ipaddr built by masking IP address with the given
@@ -335,10 +338,10 @@ class IPAddr
   # Compares the ipaddr with another.
   def <=>(other)
     other = coerce_other(other)
-
-    return nil if other.family != @family
-
-    return @addr <=> other.to_i
+  rescue
+    nil
+  else
+    @addr <=> other.to_i if other.family == @family
   end
   include Comparable
 

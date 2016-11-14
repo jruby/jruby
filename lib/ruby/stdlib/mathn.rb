@@ -55,31 +55,16 @@ unless defined?(Math.exp!)
 end
 
 ##
-# When mathn is required, Fixnum's division is enhanced to
+# When mathn is required, Integer's division is enhanced to
 # return more precise values from mathematical expressions.
 #
 #   2/3*3  # => 0
 #   require 'mathn'
 #   2/3*3  # => 2
-
-class Fixnum
-  remove_method :/
-
-  ##
-  # +/+ defines the Rational division for Fixnum.
-  #
-  #   1/3  # => (1/3)
-
-  alias / quo
-end
-
-##
-# When mathn is required Bignum's division is enhanced to
-# return more precise values from mathematical expressions.
 #
 #   (2**72) / ((2**70) * 3)  # => 4/3
 
-class Bignum
+class Integer
   remove_method :/
 
   ##
@@ -118,14 +103,7 @@ module Math
 
   def sqrt(a)
     if a.kind_of?(Complex)
-      abs = sqrt(a.real*a.real + a.imag*a.imag)
-      x = sqrt((a.real + abs)/Rational(2))
-      y = sqrt((-a.real + abs)/Rational(2))
-      if a.imag >= 0
-        Complex(x, y)
-      else
-        Complex(x, -y)
-      end
+      sqrt!(a)
     elsif a.respond_to?(:nan?) and a.nan?
       a
     elsif a >= 0

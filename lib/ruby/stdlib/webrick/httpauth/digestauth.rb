@@ -111,7 +111,7 @@ module WEBrick
         @instance_key = hexdigest(self.__id__, Time.now.to_i, Process.pid)
         @opaques = {}
         @last_nonce_expire = Time.now
-        @mutex = Mutex.new
+        @mutex = Thread::Mutex.new
       end
 
       ##
@@ -312,7 +312,7 @@ module WEBrick
       def generate_next_nonce(req)
         now = "%012d" % req.request_time.to_i
         pk  = hexdigest(now, @instance_key)[0,32]
-        nonce = [now + ":" + pk].pack("m*").chop # it has 60 length of chars.
+        nonce = [now + ":" + pk].pack("m0") # it has 60 length of chars.
         nonce
       end
 
