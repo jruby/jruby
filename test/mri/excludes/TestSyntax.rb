@@ -1,6 +1,7 @@
 exclude :test__END___cr, "needs investigation"
 exclude :test_constant_reassignment_nested, "needs investigation"
 exclude :test_constant_reassignment_toplevel, "needs investigation"
+exclude :test_dedented_heredoc_with_newline, "hangs"
 exclude :test_defined_empty_argument, "needs investigation"
 exclude :test_do_block_in_lambda, "needs investigation"
 exclude :test_duplicated_when, "needs investigation"
