@@ -71,8 +71,8 @@ import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
+import org.jruby.truffle.platform.FDSet;
 import org.jruby.truffle.platform.UnsafeGroup;
-import org.jruby.truffle.platform.posix.FDSet;
 import org.jruby.util.ByteList;
 import org.jruby.util.Dir;
 import org.jruby.util.unsafe.UnsafeHolder;
@@ -301,7 +301,7 @@ public abstract class IOPrimitiveNodes {
 
             final int fd = Layouts.IO.getDescriptor(file);
 
-            final FDSet fdSet = new FDSet();
+            final FDSet fdSet = getContext().getNativePlatform().createFDSet();
             fdSet.set(fd);
 
             final Timeval timeoutObject = new DefaultNativeTimeval(jnr.ffi.Runtime.getSystemRuntime());
@@ -663,7 +663,7 @@ public abstract class IOPrimitiveNodes {
             final int[] fds = getFileDescriptors(setToSelect);
             final int nfds = max(fds) + 1;
 
-            final FDSet fdSet = new FDSet();
+            final FDSet fdSet = getContext().getNativePlatform().createFDSet();
 
             final ThreadManager.ResultOrTimeout<Integer> resultOrTimeout = getContext().getThreadManager().runUntilTimeout(this, timeoutMicros, new ThreadManager.BlockingTimeoutAction<Integer>() {
                 @Override
