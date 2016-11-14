@@ -1,7 +1,7 @@
 # frozen_string_literal: false
 require_relative 'utils'
 
-class  OpenSSL::TestASN1 < Test::Unit::TestCase
+class  OpenSSL::TestASN1 < OpenSSL::TestCase
   def test_decode
     subj = OpenSSL::X509::Name.parse("/DC=org/DC=ruby-lang/CN=TestCA")
     key = OpenSSL::TestUtils::TEST_KEY_RSA1024
@@ -270,6 +270,20 @@ rEzBQ0F9dUyqQ9gyRg8KHhDfv9HzT1d/rnUZMkoombwYBRIUChGCYV0GnJcan2Zm
 
     expected += 17
     assert_equal expected, OpenSSL::ASN1.decode("\x17\r130722232317Z").value
+  end
+
+  def test_encode_utctime_2k38
+    encoded = OpenSSL::ASN1::UTCTime(2 ** 31 - 1).to_der
+    assert_equal 2 ** 31 - 1, OpenSSL::ASN1.decode(encoded).value.to_i
+
+    encoded = OpenSSL::ASN1::UTCTime(2 ** 31).to_der
+    assert_equal 2 ** 31, OpenSSL::ASN1.decode(encoded).value.to_i
+  end
+
+  def test_decode_enumerated
+    encoded = OpenSSL::ASN1.Enumerated(0).to_der
+    assert_equal "\x0a\x01\x00".b, encoded
+    assert_equal encoded, OpenSSL::ASN1.decode(encoded).to_der
   end
 
   def test_create_inf_length_primitive

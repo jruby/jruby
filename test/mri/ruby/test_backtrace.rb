@@ -198,7 +198,7 @@ class TestBacktrace < Test::Unit::TestCase
 
   def test_caller_locations_base_label
     assert_equal("#{__method__}", caller_locations(0, 1)[0].base_label)
-    loc, = tap {|loc| break caller_locations(0, 1)}
+    loc, = tap {break caller_locations(0, 1)}
     assert_equal("#{__method__}", loc.base_label)
     begin
       raise
@@ -209,7 +209,7 @@ class TestBacktrace < Test::Unit::TestCase
 
   def test_caller_locations_label
     assert_equal("#{__method__}", caller_locations(0, 1)[0].label)
-    loc, = tap {|loc| break caller_locations(0, 1)}
+    loc, = tap {break caller_locations(0, 1)}
     assert_equal("block in #{__method__}", loc.label)
     begin
       raise
@@ -228,7 +228,7 @@ class TestBacktrace < Test::Unit::TestCase
 
   def test_thread_backtrace
     begin
-      q = Queue.new
+      q = Thread::Queue.new
       th = Thread.new{
         th_rec q
       }
@@ -256,7 +256,7 @@ class TestBacktrace < Test::Unit::TestCase
 
   def test_thread_backtrace_locations_with_range
     begin
-      q = Queue.new
+      q = Thread::Queue.new
       th = Thread.new{
         th_rec q
       }

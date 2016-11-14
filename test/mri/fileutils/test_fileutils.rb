@@ -9,7 +9,6 @@ require 'tmpdir'
 require 'test/unit'
 
 class TestFileUtils < Test::Unit::TestCase
-  TMPROOT = "#{Dir.tmpdir}/fileutils.rb.#{$$}"
   include Test::Unit::FileAssertions
 
   def assert_output_lines(expected, fu = self, message=nil)
@@ -96,8 +95,7 @@ class TestFileUtils < Test::Unit::TestCase
     end
 
     begin
-      tmproot = TMPROOT
-      Dir.mkdir tmproot unless File.directory?(tmproot)
+      tmproot = Dir.mktmpdir "fileutils"
       Dir.chdir tmproot do
         Dir.mkdir("\n")
         Dir.rmdir("\n")
@@ -145,8 +143,7 @@ class TestFileUtils < Test::Unit::TestCase
   def setup
     @prevdir = Dir.pwd
     @groups = Process.groups if have_file_perm?
-    tmproot = TMPROOT
-    mymkdir tmproot unless File.directory?(tmproot)
+    tmproot = @tmproot = Dir.mktmpdir "fileutils"
     Dir.chdir tmproot
     my_rm_rf 'data'; mymkdir 'data'
     my_rm_rf 'tmp';  mymkdir 'tmp'
@@ -155,7 +152,7 @@ class TestFileUtils < Test::Unit::TestCase
 
   def teardown
     Dir.chdir @prevdir
-    my_rm_rf TMPROOT
+    my_rm_rf @tmproot
   end
 
 
@@ -363,6 +360,11 @@ class TestFileUtils < Test::Unit::TestCase
     assert_directory 'tmp2/tmp'
     assert_raise(ArgumentError, bug3588) do
       cp_r 'tmp2', 'tmp2/new_tmp2'
+    end
+
+    bug12892 = '[ruby-core:77885] [Bug #12892]'
+    assert_raise(Errno::ENOENT, bug12892) do
+      cp_r 'non/existent', 'tmp'
     end
   end
 
@@ -965,6 +967,22 @@ class TestFileUtils < Test::Unit::TestCase
       my_rm_rf 'tmp/dest'
       mkdir 'tmp/dest'
       install [Pathname.new('tmp/a'), Pathname.new('tmp/b')], Pathname.new('tmp/dest')
+    }
+  end
+
+  def test_install_owner_option
+    File.open('tmp/aaa', 'w') {|f| f.puts 'aaa' }
+    File.open('tmp/bbb', 'w') {|f| f.puts 'bbb' }
+    assert_nothing_raised {
+      install 'tmp/aaa', 'tmp/bbb', :owner => "nobody", :noop => true
+    }
+  end
+
+  def test_install_group_option
+    File.open('tmp/aaa', 'w') {|f| f.puts 'aaa' }
+    File.open('tmp/bbb', 'w') {|f| f.puts 'bbb' }
+    assert_nothing_raised {
+      install 'tmp/aaa', 'tmp/bbb', :group => "nobody", :noop => true
     }
   end
 

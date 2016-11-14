@@ -28,6 +28,22 @@ class TestObject < Test::Unit::TestCase
     end
   end
 
+  def test_clone
+    a = Object.new
+    def a.b; 2 end
+
+    a.freeze
+    c = a.clone
+    assert_equal(true, c.frozen?)
+    assert_equal(2, c.b)
+
+    d = a.clone(freeze: false)
+    def d.e; 3; end
+    assert_equal(false, d.frozen?)
+    assert_equal(2, d.b)
+    assert_equal(3, d.e)
+  end
+
   def test_init_dupclone
     cls = Class.new do
       def initialize_clone(orig); throw :initialize_clone; end
@@ -387,19 +403,15 @@ class TestObject < Test::Unit::TestCase
 
     m = "\u{30e1 30bd 30c3 30c9}"
     c = Class.new
-    EnvUtil.with_default_external(Encoding::UTF_8) do
-      assert_raise_with_message(NameError, /#{m}/) do
-        c.class_eval {remove_method m}
-      end
+    assert_raise_with_message(NameError, /#{m}/) do
+      c.class_eval {remove_method m}
     end
     c = Class.new {
       define_method(m) {}
       remove_method(m)
     }
-    EnvUtil.with_default_external(Encoding::UTF_8) do
-      assert_raise_with_message(NameError, /#{m}/) do
-        c.class_eval {remove_method m}
-      end
+    assert_raise_with_message(NameError, /#{m}/) do
+      c.class_eval {remove_method m}
     end
   end
 
@@ -844,7 +856,7 @@ class TestObject < Test::Unit::TestCase
         end
       end
 
-      assert_raise_with_message(#{exc}, "bug5473") {1.foo}
+      assert_raise_with_message(#{exc}, "bug5473", #{bug5473.dump}) {1.foo}
       SRC
     end
   end

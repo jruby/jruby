@@ -27,7 +27,7 @@ tddwpBAEDjcwMzA5NTYzMTU1MzAwpQMCARM=
 -----END SSL SESSION PARAMETERS-----
     SESSION
 
-    start_server(OpenSSL::SSL::VERIFY_NONE, true, :ignore_listener_error => true) { |_, port|
+    start_server(ignore_listener_error: true) { |_, port|
       ctx = OpenSSL::SSL::SSLContext.new
       ctx.session_cache_mode = OpenSSL::SSL::SSLContext::SESSION_CACHE_CLIENT
       ctx.session_id_context = self.object_id.to_s
@@ -46,7 +46,7 @@ tddwpBAEDjcwMzA5NTYzMTU1MzAwpQMCARM=
 
   def test_session
     Timeout.timeout(5) do
-      start_server(OpenSSL::SSL::VERIFY_NONE, true) do |server, port|
+      start_server do |server, port|
         sock = TCPSocket.new("127.0.0.1", port)
         ctx = OpenSSL::SSL::SSLContext.new("TLSv1")
         ssl = OpenSSL::SSL::SSLSocket.new(sock, ctx)
@@ -55,16 +55,13 @@ tddwpBAEDjcwMzA5NTYzMTU1MzAwpQMCARM=
         session = ssl.session
         assert(session == OpenSSL::SSL::Session.new(session.to_pem))
         assert(session == OpenSSL::SSL::Session.new(ssl))
-        assert_equal(300, session.timeout)
         session.timeout = 5
         assert_equal(5, session.timeout)
         assert_not_nil(session.time)
         # SSL_SESSION_time keeps long value so we can't keep nsec fragment.
         session.time = t1 = Time.now.to_i
         assert_equal(Time.at(t1), session.time)
-        if session.respond_to?(:id)
-          assert_not_nil(session.id)
-        end
+        assert_not_nil(session.id)
         pem = session.to_pem
         assert_match(/\A-----BEGIN SSL SESSION PARAMETERS-----/, pem)
         assert_match(/-----END SSL SESSION PARAMETERS-----\Z/, pem)
@@ -157,7 +154,7 @@ __EOS__
 
   def test_client_session
     last_session = nil
-    start_server(OpenSSL::SSL::VERIFY_NONE, true) do |server, port|
+    start_server do |server, port|
       2.times do
         sock = TCPSocket.new("127.0.0.1", port)
         # Debian's openssl 0.9.8g-13 failed at assert(ssl.session_reused?),
@@ -171,10 +168,7 @@ __EOS__
         session = ssl.session
         if last_session
           assert(ssl.session_reused?)
-
-          if session.respond_to?(:id)
-            assert_equal(session.id, last_session.id)
-          end
+          assert_equal(session.id, last_session.id)
           assert_equal(session.to_pem, last_session.to_pem)
           assert_equal(session.to_der, last_session.to_der)
           # Older version of OpenSSL may not be consistent.  Look up which versions later.
@@ -217,25 +211,25 @@ __EOS__
         assert_equal(stats[:cache_misses], 0)
         assert(ssl.session_reused?)
         ctx.session_remove(session)
-        saved_session = session
+        saved_session = session.to_der
       when 2
         assert_equal(stats[:cache_num], 1)
         assert_equal(stats[:cache_hits], 1)
         assert_equal(stats[:cache_misses], 1)
         assert(!ssl.session_reused?)
-        ctx.session_add(saved_session)
+        ctx.session_add(OpenSSL::SSL::Session.new(saved_session))
       when 3
         assert_equal(stats[:cache_num], 2)
         assert_equal(stats[:cache_hits], 2)
         assert_equal(stats[:cache_misses], 1)
         assert(ssl.session_reused?)
-        ctx.flush_sessions(Time.now + 5000)
+        ctx.flush_sessions(Time.now + 10000)
       when 4
         assert_equal(stats[:cache_num], 1)
         assert_equal(stats[:cache_hits], 2)
         assert_equal(stats[:cache_misses], 2)
         assert(!ssl.session_reused?)
-        ctx.session_add(saved_session)
+        ctx.session_add(OpenSSL::SSL::Session.new(saved_session))
       end
       connections += 1
 
@@ -243,14 +237,12 @@ __EOS__
     end
 
     first_session = nil
-    start_server(OpenSSL::SSL::VERIFY_NONE, true, :ctx_proc => ctx_proc, :server_proc => server_proc) do |server, port|
+    start_server(ctx_proc: ctx_proc, server_proc: server_proc) do |server, port|
       10.times do |i|
         sock = TCPSocket.new("127.0.0.1", port)
         ctx = OpenSSL::SSL::SSLContext.new
-        if defined?(OpenSSL::SSL::OP_NO_TICKET)
-          # disable RFC4507 support
-          ctx.options = OpenSSL::SSL::OP_NO_TICKET
-        end
+        # disable RFC4507 support
+        ctx.options = OpenSSL::SSL::OP_NO_TICKET
         ssl = OpenSSL::SSL::SSLSocket.new(sock, ctx)
         ssl.sync_close = true
         ssl.session = first_session if first_session
@@ -293,7 +285,7 @@ __EOS__
       # any resulting value is OK (ignored)
     }
 
-    start_server(OpenSSL::SSL::VERIFY_NONE, true) do |server, port|
+    start_server do |server, port|
       sock = TCPSocket.new("127.0.0.1", port)
       begin
         ssl = OpenSSL::SSL::SSLSocket.new(sock, ctx)
@@ -352,7 +344,7 @@ __EOS__
       c.session_cache_stats
       readwrite_loop(c, ssl)
     }
-    start_server(OpenSSL::SSL::VERIFY_NONE, true, :ctx_proc => ctx_proc, :server_proc => server_proc) do |server, port|
+    start_server(ctx_proc: ctx_proc, server_proc: server_proc) do |server, port|
       last_client_session = nil
       3.times do
         sock = TCPSocket.new("127.0.0.1", port)
@@ -376,6 +368,12 @@ __EOS__
     end
     assert(called[:get1])
     assert(called[:get2])
+  end
+
+  def test_dup
+    sess_orig = OpenSSL::SSL::Session.new(DUMMY_SESSION)
+    sess_dup = sess_orig.dup
+    assert_equal(sess_orig.to_der, sess_dup.to_der)
   end
 end
 

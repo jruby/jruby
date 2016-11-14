@@ -3,16 +3,13 @@
 
 require_relative 'utils'
 
-class OpenSSL::TestHMAC < Test::Unit::TestCase
+class OpenSSL::TestHMAC < OpenSSL::TestCase
   def setup
     @digest = OpenSSL::Digest::MD5
     @key = "KEY"
     @data = "DATA"
     @h1 = OpenSSL::HMAC.new(@key, @digest.new)
     @h2 = OpenSSL::HMAC.new(@key, "MD5")
-  end
-
-  def teardown
   end
 
   def test_hmac
@@ -38,5 +35,12 @@ class OpenSSL::TestHMAC < Test::Unit::TestCase
     hmac = OpenSSL::HMAC.new("qShkcwN92rsM9nHfdnP4ugcVU2iI7iM/trovs01ZWok", "SHA256")
     result = hmac.update(data).hexdigest
     assert_equal "a13984b929a07912e4e21c5720876a8e150d6f67f854437206e7f86547248396", result
+  end
+
+  def test_reset_keep_key
+    first = @h1.update("test").hexdigest
+    @h2.reset
+    second = @h2.update("test").hexdigest
+    assert_equal first, second
   end
 end if defined?(OpenSSL::TestUtils)

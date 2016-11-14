@@ -61,13 +61,14 @@ class TC_OpenStruct < Test::Unit::TestCase
   end
 
   def test_frozen
-    o = OpenStruct.new
+    o = OpenStruct.new(foo: 42)
     o.a = 'a'
     o.freeze
     assert_raise(RuntimeError) {o.b = 'b'}
     assert_not_respond_to(o, :b)
     assert_raise(RuntimeError) {o.a = 'z'}
     assert_equal('a', o.a)
+    assert_equal(42, o.foo)
     o = OpenStruct.new :a => 42
     def o.frozen?; nil end
     o.freeze
@@ -170,7 +171,7 @@ class TC_OpenStruct < Test::Unit::TestCase
     assert os.respond_to? :foo
     assert_equal([], os.singleton_methods)
     assert_equal(42, os.foo)
-    assert_equal([:foo, :foo=], os.singleton_methods)
+    assert_equal([:foo, :foo=], os.singleton_methods.sort)
   end
 
   def test_does_not_redefine

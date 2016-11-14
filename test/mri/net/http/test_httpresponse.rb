@@ -323,7 +323,7 @@ EOS
     response.uri = uri
 
     assert_equal uri, response.uri
-    refute_same  uri, response.uri
+    assert_not_same  uri, response.uri
   end
 
   def test_ensure_zero_space_does_not_regress
@@ -383,6 +383,22 @@ EOS
     assert_equal('1.1', res.http_version)
     assert_equal('200', res.code)
     assert_equal(nil, res.message)
+  end
+
+  def test_raises_exception_with_missing_reason
+    io = dummy_io(<<EOS)
+HTTP/1.1 404
+Content-Length: 5
+Connection: close
+
+hello
+EOS
+
+    res = Net::HTTPResponse.read_new(io)
+    assert_equal(nil, res.message)
+    assert_raise Net::HTTPServerException do
+      res.error!
+    end
   end
 
 private

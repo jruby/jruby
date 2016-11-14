@@ -459,6 +459,18 @@ class TestBigDecimal < Test::Unit::TestCase
     assert_equal(false, BigDecimal.new("NaN") > n1)
   end
 
+  def test_cmp_float_nan
+    assert_equal(nil, BigDecimal.new("1") <=> Float::NAN)
+  end
+
+  def test_cmp_float_pos_inf
+    assert_equal(-1, BigDecimal.new("1") <=> Float::INFINITY)
+  end
+
+  def test_cmp_float_neg_inf
+    assert_equal(+1, BigDecimal.new("1") <=> -Float::INFINITY)
+  end
+
   def test_cmp_failing_coercion
     n1 = BigDecimal.new("1")
     assert_equal(nil, n1 <=> nil)
@@ -794,6 +806,12 @@ class TestBigDecimal < Test::Unit::TestCase
     BigDecimal.save_exception_mode do
       BigDecimal.mode(BigDecimal::EXCEPTION_INFINITY, false)
       assert_equal(0, BigDecimal("0").div(BigDecimal("Infinity")))
+    end
+
+    x = BigDecimal.new("1")
+    y = BigDecimal.new("0.22")
+    (2..20).each do |i|
+      assert_equal ("0."+"45"*(i/2)+"5"*(i%2)+"E1"), x.div(y, i).to_s, "#{i}"
     end
   end
 

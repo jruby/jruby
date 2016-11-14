@@ -432,6 +432,12 @@ class TC_Set < Test::Unit::TestCase
     ret = set.delete_if { |i| i % 3 == 0 }
     assert_same(set, ret)
     assert_equal(Set[1,2,4,5,7,8,10], set)
+
+    set = Set.new(1..10)
+    enum = set.delete_if
+    assert_equal(set.size, enum.size)
+    assert_same(set, enum.each { |i| i % 3 == 0 })
+    assert_equal(Set[1,2,4,5,7,8,10], set)
   end
 
   def test_keep_if
@@ -443,6 +449,12 @@ class TC_Set < Test::Unit::TestCase
     set = Set.new(1..10)
     ret = set.keep_if { |i| i % 3 != 0 }
     assert_same(set, ret)
+    assert_equal(Set[1,2,4,5,7,8,10], set)
+
+    set = Set.new(1..10)
+    enum = set.keep_if
+    assert_equal(set.size, enum.size)
+    assert_same(set, enum.each { |i| i % 3 != 0 })
     assert_equal(Set[1,2,4,5,7,8,10], set)
   end
 
@@ -462,6 +474,22 @@ class TC_Set < Test::Unit::TestCase
 
     assert_same(set, ret)
     assert_equal(Set[2,4,6,'A','B','C',nil], set)
+
+    set = Set[1,2,3,'a','b','c',-1..1,2..4]
+    enum = set.collect!
+
+    assert_equal(set.size, enum.size)
+    assert_same(set, enum.each  { |i|
+      case i
+      when Numeric
+        i * 2
+      when String
+        i.upcase
+      else
+        nil
+      end
+    })
+    assert_equal(Set[2,4,6,'A','B','C',nil], set)
   end
 
   def test_reject!
@@ -474,6 +502,30 @@ class TC_Set < Test::Unit::TestCase
     ret = set.reject! { |i| i % 3 == 0 }
     assert_same(set, ret)
     assert_equal(Set[1,2,4,5,7,8,10], set)
+
+    set = Set.new(1..10)
+    enum = set.reject!
+    assert_equal(set.size, enum.size)
+    assert_same(set, enum.each { |i| i % 3 == 0 })
+    assert_equal(Set[1,2,4,5,7,8,10], set)
+  end
+
+  def test_select!
+    set = Set.new(1..10)
+    ret = set.select! { |i| i <= 10 }
+    assert_equal(nil, ret)
+    assert_equal(Set.new(1..10), set)
+
+    set = Set.new(1..10)
+    ret = set.select! { |i| i % 3 != 0 }
+    assert_same(set, ret)
+    assert_equal(Set[1,2,4,5,7,8,10], set)
+
+    set = Set.new(1..10)
+    enum = set.select!
+    assert_equal(set.size, enum.size)
+    assert_equal(nil, enum.each { |i| i <= 10 })
+    assert_equal(Set.new(1..10), set)
   end
 
   def test_merge
@@ -551,6 +603,18 @@ class TC_Set < Test::Unit::TestCase
     assert_equal(Set[3,6,9], ret[0])
     assert_equal(Set[1,4,7,10], ret[1])
     assert_equal(Set[2,5,8], ret[2])
+
+    set = Set.new(1..10)
+    enum = set.classify
+
+    assert_equal(set.size, enum.size)
+    ret = enum.each { |i| i % 3 }
+    assert_equal(3, ret.size)
+    assert_instance_of(Hash, ret)
+    ret.each_value { |value| assert_instance_of(Set, value) }
+    assert_equal(Set[3,6,9], ret[0])
+    assert_equal(Set[1,4,7,10], ret[1])
+    assert_equal(Set[2,5,8], ret[2])
   end
 
   def test_divide
@@ -584,6 +648,17 @@ class TC_Set < Test::Unit::TestCase
         raise "unexpected group: #{s.inspect}"
       end
     }
+
+    set = Set.new(1..10)
+    enum = set.divide
+    ret = enum.each { |i| i % 3 }
+
+    assert_equal(set.size, enum.size)
+    assert_equal(3, ret.size)
+    n = 0
+    ret.each { |s| n += s.size }
+    assert_equal(set.size, n)
+    assert_equal(set, ret.flatten)
   end
 
   def test_taintness
@@ -639,6 +714,25 @@ class TC_Set < Test::Unit::TestCase
 
     set1.add(set2)
     assert_equal(true, set1.inspect.include?('#<Set: {...}>'))
+  end
+
+  def test_compare_by_identity
+    a1, a2 = "a", "a"
+    b1, b2 = "b", "b"
+    c = "c"
+    array = [a1, b1, c, a2, b2]
+
+    iset = Set.new.compare_by_identity
+    assert_send([iset, :compare_by_identity?])
+    iset.merge(array)
+    assert_equal(5, iset.size)
+    assert_equal(array.map(&:object_id).sort, iset.map(&:object_id).sort)
+
+    set = Set.new
+    assert_not_send([set, :compare_by_identity?])
+    set.merge(array)
+    assert_equal(3, set.size)
+    assert_equal(array.uniq.sort, set.sort)
   end
 end
 

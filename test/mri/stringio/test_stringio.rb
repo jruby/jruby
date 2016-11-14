@@ -1,6 +1,7 @@
 # frozen_string_literal: false
 require 'test/unit'
 require 'stringio'
+require "rbconfig/sizeof"
 require_relative '../ruby/ut_eof'
 
 class TestStringIO < Test::Unit::TestCase
@@ -12,6 +13,27 @@ class TestStringIO < Test::Unit::TestCase
   alias open_file_rw open_file
 
   include TestEOF::Seek
+
+  def test_initialize
+    assert_kind_of StringIO, StringIO.new
+    assert_kind_of StringIO, StringIO.new('str')
+    assert_kind_of StringIO, StringIO.new('str', 'r+')
+    assert_raise(ArgumentError) { StringIO.new('', 'x') }
+    assert_raise(ArgumentError) { StringIO.new('', 'rx') }
+    assert_raise(ArgumentError) { StringIO.new('', 'rbt') }
+    assert_raise(TypeError) { StringIO.new(nil) }
+    assert_raise(TypeError) { StringIO.new('str', nil) }
+
+    o = Object.new
+    def o.to_str
+      nil
+    end
+    assert_raise(TypeError) { StringIO.new(o) }
+    def o.to_str
+      'str'
+    end
+    assert_kind_of StringIO, StringIO.new(o)
+  end
 
   def test_truncate
     io = StringIO.new("")
@@ -136,6 +158,15 @@ class TestStringIO < Test::Unit::TestCase
     f = StringIO.new(s)
     f.print("\u{3053 3093 306b 3061 306f ff01}".b)
     assert_equal(Encoding::UTF_8, s.encoding, "honor the original encoding over ASCII-8BIT")
+  end
+
+  def test_write_integer_overflow
+    long_max = (1 << (RbConfig::SIZEOF["long"] * 8 - 1)) - 1
+    f = StringIO.new
+    f.pos = long_max
+    assert_raise(ArgumentError) {
+      f.write("pos + len overflows")
+    }
   end
 
   def test_set_encoding
@@ -652,5 +683,30 @@ class TestStringIO < Test::Unit::TestCase
 
     bug_11945 = '[ruby-core:72699] [Bug #11945]'
     assert_equal Encoding::ASCII_8BIT, s.external_encoding, bug_11945
+  end
+
+  def test_new_block_warning
+    assert_warn(/does not take block/) do
+      StringIO.new {}
+    end
+  end
+
+  def test_overflow
+    skip if RbConfig::SIZEOF["void*"] > RbConfig::SIZEOF["long"]
+    limit = (1 << (RbConfig::SIZEOF["void*"]*8-1)) - 0x10
+    assert_separately(%w[-rstringio], "#{<<-"begin;"}\n#{<<-"end;"}")
+    begin;
+      limit = #{limit}
+      ary = []
+      while true
+        x = "a"*0x100000
+        break if [x].pack("p").unpack("i!")[0] < 0
+        ary << x
+        skip if ary.size > 100
+      end
+      s = StringIO.new(x)
+      s.gets("xxx", limit)
+      assert_equal(0x100000, s.pos)
+    end;
   end
 end

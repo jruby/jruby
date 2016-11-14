@@ -3,7 +3,7 @@ require_relative "utils"
 
 if defined?(OpenSSL::TestUtils)
 
-class OpenSSL::TestX509Store < Test::Unit::TestCase
+class OpenSSL::TestX509Store < OpenSSL::TestCase
   def setup
     @rsa1024 = OpenSSL::TestUtils::TEST_KEY_RSA1024
     @rsa2048 = OpenSSL::TestUtils::TEST_KEY_RSA2048
@@ -13,9 +13,6 @@ class OpenSSL::TestX509Store < Test::Unit::TestCase
     @ca2 = OpenSSL::X509::Name.parse("/DC=org/DC=ruby-lang/CN=CA2")
     @ee1 = OpenSSL::X509::Name.parse("/DC=org/DC=ruby-lang/CN=EE1")
     @ee2 = OpenSSL::X509::Name.parse("/DC=org/DC=ruby-lang/CN=EE2")
-  end
-
-  def teardown
   end
 
   def test_nosegv_on_cleanup
@@ -151,8 +148,6 @@ class OpenSSL::TestX509Store < Test::Unit::TestCase
     assert_equal(false, store.verify(OpenSSL::X509::Certificate.new(ee1_cert)))
     assert_equal(OpenSSL::X509::V_ERR_CERT_NOT_YET_VALID, store.error)
 
-    return unless defined?(OpenSSL::X509::V_FLAG_CRL_CHECK)
-
     store = OpenSSL::X509::Store.new
     store.purpose = OpenSSL::X509::PURPOSE_ANY
     store.flags = OpenSSL::X509::V_FLAG_CRL_CHECK
@@ -226,6 +221,13 @@ class OpenSSL::TestX509Store < Test::Unit::TestCase
         store.add_crl(crl2) # add CRL issued by same CA twice.
       }
     end
+  end
+
+  def test_dup
+    store = OpenSSL::X509::Store.new
+    assert_raise(NoMethodError) { store.dup }
+    ctx = OpenSSL::X509::StoreContext.new(store)
+    assert_raise(NoMethodError) { ctx.dup }
   end
 end
 

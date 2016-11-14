@@ -61,15 +61,22 @@ class TestLambdaParameters < Test::Unit::TestCase
     assert_equal(nil, ->(&b){ b }.call)
     foo { puts "bogus block " }
     assert_equal(1, ->(&b){ b.call }.call { 1 })
-    b = nil
-    assert_equal(1, ->(&b){ b.call }.call { 1 })
-    assert_nil(b)
+    _b = nil
+    assert_equal(1, ->(&_b){ _b.call }.call { 1 })
+    assert_nil(_b)
   end
 
   def test_call_block_from_lambda
     bug9605 = '[ruby-core:61470] [Bug #9605]'
     plus = ->(x,y) {x+y}
     assert_raise(ArgumentError, bug9605) {proc(&plus).call [1,2]}
+  end
+
+  def test_instance_exec
+    bug12568 = '[ruby-core:76300] [Bug #12568]'
+    assert_nothing_raised(ArgumentError, bug12568) do
+      instance_exec([1,2,3], &->(a=[]){ a })
+    end
   end
 
   def yield_1(arg)

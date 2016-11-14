@@ -5,6 +5,9 @@ require 'tmpdir'
 require 'timeout'
 
 class TestQueue < Test::Unit::TestCase
+  Queue = Thread::Queue
+  SizedQueue = Thread::SizedQueue
+
   def test_queue_initialized
     assert_raise(TypeError) {
       Queue.allocate.push(nil)
@@ -129,7 +132,7 @@ class TestQueue < Test::Unit::TestCase
   def test_thr_kill
     bug5343 = '[ruby-core:39634]'
     Dir.mktmpdir {|d|
-      timeout = 30
+      timeout = 60
       total_count = 250
       begin
         assert_normal_exit(<<-"_eom", bug5343, {:timeout => timeout, :chdir=>d})
@@ -509,7 +512,7 @@ class TestQueue < Test::Unit::TestCase
         count = 0
         while e = q.pop
           i, st = e
-          count += 1 if i.is_a?(Fixnum) && st.is_a?(String)
+          count += 1 if i.is_a?(Integer) && st.is_a?(String)
         end
         count
       end

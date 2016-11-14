@@ -3,7 +3,7 @@ require_relative 'utils'
 
 if defined?(OpenSSL::TestUtils)
 
-class OpenSSL::TestPKCS7 < Test::Unit::TestCase
+class OpenSSL::TestPKCS7 < OpenSSL::TestCase
   def setup
     @rsa1024 = OpenSSL::TestUtils::TEST_KEY_RSA1024
     @rsa2048 = OpenSSL::TestUtils::TEST_KEY_RSA2048
@@ -123,12 +123,6 @@ class OpenSSL::TestPKCS7 < Test::Unit::TestCase
   end
 
   def test_enveloped
-    if OpenSSL::OPENSSL_VERSION_NUMBER <= 0x0090704f
-      # PKCS7_encrypt() of OpenSSL-0.9.7d goes to SEGV.
-      # http://www.mail-archive.com/openssl-dev@openssl.org/msg17376.html
-      return
-    end
-
     certs = [@ee1_cert, @ee2_cert]
     cipher = OpenSSL::Cipher::AES.new("128-CBC")
     data = "aaaaa\nbbbbb\nccccc\n"

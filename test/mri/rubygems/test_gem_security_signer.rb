@@ -1,4 +1,4 @@
-# frozen_string_literal: false
+# frozen_string_literal: true
 require 'rubygems/test_case'
 
 unless defined?(OpenSSL::SSL) then
@@ -199,6 +199,14 @@ c7NM7KZZjj7G++SXjYTEI1PHSA7aFQ/i/+qSUvx+Pg==
 
   def test_sign_wrong_key
     signer = Gem::Security::Signer.new ALTERNATE_KEY, [PUBLIC_CERT]
+
+    assert_raises Gem::Security::Exception do
+      signer.sign 'hello'
+    end
+  end
+
+  def test_sign_no_certs
+    signer = Gem::Security::Signer.new ALTERNATE_KEY, []
 
     assert_raises Gem::Security::Exception do
       signer.sign 'hello'
