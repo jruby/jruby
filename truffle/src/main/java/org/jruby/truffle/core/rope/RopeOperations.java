@@ -330,11 +330,6 @@ public class RopeOperations {
             } else if (current instanceof SubstringRope) {
                 final SubstringRope substringRope = (SubstringRope) current;
 
-                // If this SubstringRope is a descendant of another SubstringRope, we need to increment the offset
-                // so that when we finally reach a rope with its byte[] filled, we're extracting bytes from the correct
-                // location.
-                offset += substringRope.getOffset();
-
                 workStack.push(substringRope.getChild());
 
                 // Either we haven't seen another SubstringRope or it's been cleared off the work queue. In either case,
@@ -344,7 +339,7 @@ public class RopeOperations {
                 } else {
                     // Since we may be taking a substring of a substring, we need to note that we're not extracting the
                     // entirety of the current SubstringRope.
-                    final int adjustedByteLength = substringRope.byteLength() - (offset - substringRope.getOffset());
+                    final int adjustedByteLength = substringRope.byteLength() - offset;
 
                     // We have to do some bookkeeping once we encounter multiple SubstringRopes along the same ancestry
                     // chain. The top of the stack always indicates the number of bytes to extract from any descendants.
@@ -370,6 +365,11 @@ public class RopeOperations {
                         substringLengths.push(adjustedByteLength);
                     }
                 }
+
+                // If this SubstringRope is a descendant of another SubstringRope, we need to increment the offset
+                // so that when we finally reach a rope with its byte[] filled, we're extracting bytes from the correct
+                // location.
+                offset += substringRope.getOffset();
             } else if (current instanceof RepeatingRope) {
                 final RepeatingRope repeatingRope = (RepeatingRope) current;
 
