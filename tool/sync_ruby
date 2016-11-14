@@ -40,6 +40,7 @@ class Sync
 
   def sync_tests
     Dir.glob("#{@source}/test/*") do |file|
+      next if file =~ /\/excludes$/
       cp_r file, "#{@target}/test/mri", :verbose => true
     end
   end
