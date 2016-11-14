@@ -317,6 +317,35 @@ public abstract class KernelNodes {
 
     }
 
+    /** Check if operands are the same object or call #eql? */
+    public abstract static class SameOrEqlNode extends CoreMethodArrayArgumentsNode {
+
+        @Child private CallDispatchHeadNode eqlNode;
+
+        private final ConditionProfile sameProfile = ConditionProfile.createBinaryProfile();
+
+        public abstract boolean executeSameOrEql(VirtualFrame frame, Object a, Object b);
+
+        @Specialization
+        public boolean sameOrEql(VirtualFrame frame, Object a, Object b,
+                        @Cached("create()") ReferenceEqualNode referenceEqualNode) {
+            if (sameProfile.profile(referenceEqualNode.executeReferenceEqual(a, b))) {
+                return true;
+            } else {
+                return areEql(frame, a, b);
+            }
+        }
+
+        private boolean areEql(VirtualFrame frame, Object left, Object right) {
+            if (eqlNode == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                eqlNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+            }
+            return eqlNode.callBoolean(frame, left, "eql?", null, right);
+        }
+
+    }
+
     @CoreMethod(names = { "<=>" }, required = 1)
     public abstract static class CompareNode extends CoreMethodArrayArgumentsNode {
 
