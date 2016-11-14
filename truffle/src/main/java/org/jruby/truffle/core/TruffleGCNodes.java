@@ -10,6 +10,7 @@
 package org.jruby.truffle.core;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.TruffleOptions;
 import com.oracle.truffle.api.dsl.Specialization;
 import org.jruby.RubyGC;
 import org.jruby.truffle.builtins.CoreClass;
@@ -25,6 +26,10 @@ public abstract class TruffleGCNodes {
         @TruffleBoundary
         @Specialization
         public int count() {
+            if (TruffleOptions.AOT) {
+                throw new UnsupportedOperationException("Memory manager is not available with AOT.");
+            }
+
             return RubyGC.getCollectionCount();
         }
 
@@ -36,6 +41,10 @@ public abstract class TruffleGCNodes {
         @TruffleBoundary
         @Specialization
         public long time() {
+            if (TruffleOptions.AOT) {
+                throw new UnsupportedOperationException("Memory manager is not available with AOT.");
+            }
+
             return RubyGC.getCollectionTime();
         }
 

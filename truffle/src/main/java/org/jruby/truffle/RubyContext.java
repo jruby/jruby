@@ -190,7 +190,8 @@ public class RubyContext extends ExecutionContext {
         final PrintStream configStandardOut = instanceConfig.getOutput();
         debugStandardOut = (configStandardOut == System.out) ? null : configStandardOut;
 
-        if (options.INSTRUMENTATION_SERVER_PORT != 0) {
+        // The instrumentation server can't be run with AOT because com.sun.net.httpserver.spi.HttpServerProvider uses runtime class loading.
+        if (!TruffleOptions.AOT && options.INSTRUMENTATION_SERVER_PORT != 0) {
             instrumentationServerManager = new InstrumentationServerManager(this, options.INSTRUMENTATION_SERVER_PORT);
             instrumentationServerManager.start();
         } else {

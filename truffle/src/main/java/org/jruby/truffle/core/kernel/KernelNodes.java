@@ -13,6 +13,7 @@ import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.TruffleOptions;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.CreateCast;
 import com.oracle.truffle.api.dsl.ImportStatic;
@@ -228,6 +229,10 @@ public abstract class KernelNodes {
 
         @TruffleBoundary
         private ExecuteResult spawnAndCaptureOutput(DynamicObject command, final DynamicObject envAsHash) {
+            if (TruffleOptions.AOT) {
+                throw new UnsupportedOperationException("ProcessEnvironment.environment not supported with AOT");
+            }
+
             // We need to run via bash to get the variable and other expansion we expect
             String[] cmdArray = new String[] { "bash", "-c", command.toString() };
 
@@ -741,6 +746,10 @@ public abstract class KernelNodes {
 
         @Specialization
         public Object exec(VirtualFrame frame, Object command, Object[] args) {
+            if (TruffleOptions.AOT) {
+                throw new UnsupportedOperationException("ProcessEnvironment.environment not supported with AOT.");
+            }
+
             if (toHashNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
                 toHashNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
