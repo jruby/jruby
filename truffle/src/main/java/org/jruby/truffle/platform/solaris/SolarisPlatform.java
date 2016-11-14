@@ -51,7 +51,7 @@ public class SolarisPlatform implements NativePlatform {
         memoryManager = Runtime.getSystemRuntime().getMemoryManager();
         signalManager = new SunMiscSignalManager();
         processName = new JavaProcessName();
-        sockets = LibraryLoader.create(Sockets.class).library("c").load();
+        sockets = LibraryLoader.create(Sockets.class).library("socket").load();
         clockGetTime = LibraryLoader.create(ClockGetTime.class).library("c").library("rt").load();
         rubiniusConfiguration = new RubiniusConfiguration();
         DefaultRubiniusConfiguration.load(rubiniusConfiguration, context);
