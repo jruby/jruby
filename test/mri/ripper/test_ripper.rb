@@ -61,22 +61,15 @@ class TestRipper::Ripper < Test::Unit::TestCase
     assert_predicate @ripper, :yydebug
   end
 
-  # https://bugs.jruby.org/4176
-  def test_dedent_string
-    col = Ripper.dedent_string '  hello', 0
-    assert_equal 0, col
-    col = Ripper.dedent_string '  hello', 2
-    assert_equal 2, col
-    col = Ripper.dedent_string '  hello', 4
-    assert_equal 2, col
-
-    # lexing a squiggly heredoc triggers Ripper#dedent_string use
-    src = <<-END
-puts <<~END
-  hello
-end
-    END
-
-    assert_nothing_raised { Ripper.lex src }
+  def test_regexp_with_option
+    bug11932 = '[ruby-core:72638] [Bug #11932]'
+    src = '/[\xC0-\xF0]/u'.force_encoding(Encoding::UTF_8)
+    ripper = Ripper.new(src)
+    ripper.parse
+    assert_predicate(ripper, :error?)
+    src = '/[\xC0-\xF0]/n'.force_encoding(Encoding::UTF_8)
+    ripper = Ripper.new(src)
+    ripper.parse
+    assert_not_predicate(ripper, :error?, bug11932)
   end
 end if ripper_test

@@ -255,6 +255,10 @@ class TestMath < Test::Unit::TestCase
     end
 
     assert_raise(Math::DomainError) { Math.gamma(-Float::INFINITY) }
+    x = Math.gamma(-0.0)
+    mesg = "Math.gamma(-0.0) should be -INF"
+    assert_infinity(x, mesg)
+    assert_predicate(x, :negative?, mesg)
   end
 
   def test_lgamma
@@ -271,6 +275,11 @@ class TestMath < Test::Unit::TestCase
     assert_float_and_int([Math.log(6),                1], Math.lgamma(4))
 
     assert_raise(Math::DomainError) { Math.lgamma(-Float::INFINITY) }
+    x, sign = Math.lgamma(-0.0)
+    mesg = "Math.lgamma(-0.0) should be [INF, -1]"
+    assert_infinity(x, mesg)
+    assert_predicate(x, :positive?, mesg)
+    assert_equal(-1, sign, mesg)
   end
 
   def test_fixnum_to_f
@@ -322,6 +331,7 @@ class TestMath < Test::Unit::TestCase
       end
     end
 
+    check(Math.cos((0r + 1)._to_f), Math.cos(0r))
     check(Math.exp((0r + 1)._to_f), Math.exp(0r))
     check(Math.log((0r + 1)._to_f), Math.log(0r))
   ensure
