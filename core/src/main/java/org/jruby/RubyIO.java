@@ -2805,6 +2805,11 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
     @JRubyMethod(name = "readpartial", required = 1, optional = 1)
     public IRubyObject readpartial(ThreadContext context, IRubyObject[] args) {
+        // ruby bug 11885
+        if (args.length == 2) {
+            args[1] = args[1].convertToString();
+        }
+
         IRubyObject value = getPartial(context, args, false, false);
 
         if (value.isNil()) {
