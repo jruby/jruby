@@ -57,7 +57,7 @@ public abstract class SetNode extends RubyNode {
 
     public SetNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
-        hashNode = new HashNode(context, sourceSection);
+        hashNode = new HashNode();
         eqlNode = DispatchHeadNodeFactory.createMethodCall(context);
         equalNode = BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(null);
     }

@@ -31,7 +31,7 @@ public class LookupEntryNode extends RubyBaseNode {
 
     public LookupEntryNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
-        hashNode = new HashNode(context, sourceSection);
+        hashNode = new HashNode();
         eqlNode = DispatchHeadNodeFactory.createMethodCall(context);
         equalNode = BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(null);
     }

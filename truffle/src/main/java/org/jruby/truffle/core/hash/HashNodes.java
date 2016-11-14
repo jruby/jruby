@@ -75,14 +75,8 @@ public abstract class HashNodes {
     @ImportStatic(HashGuards.class)
     public abstract static class ConstructNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private HashNode hashNode;
-        @Child private AllocateObjectNode allocateObjectNode;
-
-        public ConstructNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            hashNode = new HashNode(context, sourceSection);
-            allocateObjectNode = AllocateObjectNode.create();
-        }
+        @Child private HashNode hashNode = new HashNode();
+        @Child private AllocateObjectNode allocateObjectNode = AllocateObjectNode.create();
 
         @ExplodeLoop
         @Specialization(guards = "isSmallArrayOfPairs(args)")
@@ -183,7 +177,7 @@ public abstract class HashNodes {
 
         public GetIndexNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            hashNode = new HashNode(context, sourceSection);
+            hashNode = new HashNode();
             eqlNode = DispatchHeadNodeFactory.createMethodCall(context);
             equalNode = BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(null);
             callDefaultNode = DispatchHeadNodeFactory.createMethodCall(context);
@@ -482,7 +476,7 @@ public abstract class HashNodes {
 
         public DeleteNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            hashNode = new HashNode(context, sourceSection);
+            hashNode = new HashNode();
             eqlNode = DispatchHeadNodeFactory.createMethodCall(context);
             lookupEntryNode = new LookupEntryNode(context, sourceSection);
             yieldNode = new YieldNode(context);
@@ -1342,12 +1336,7 @@ public abstract class HashNodes {
     @ImportStatic(HashGuards.class)
     public abstract static class RehashNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private HashNode hashNode;
-
-        public RehashNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            hashNode = new HashNode(context, sourceSection);
-        }
+        @Child private HashNode hashNode = new HashNode();
 
         @Specialization(guards = "isNullHash(hash)")
         public DynamicObject rehashNull(DynamicObject hash) {
