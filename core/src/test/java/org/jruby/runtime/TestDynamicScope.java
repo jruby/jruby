@@ -1,5 +1,7 @@
 package org.jruby.runtime;
 
+import java.lang.invoke.MethodHandle;
+import java.util.ArrayList;
 import junit.framework.TestCase;
 import org.jruby.RubyBasicObject;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -7,9 +9,35 @@ import org.jruby.runtime.scope.DynamicScopeGenerator;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.Arrays;
-
 public class TestDynamicScope extends TestCase {
+    @Test
+    public void testMultithreadedScopeGeneration() throws Throwable {
+        final ArrayList<MethodHandle> result = new ArrayList<>();
+        final int numberOfThreads = 10;
+
+        Thread[] threads = new Thread[numberOfThreads];
+        for(int i = 0; i < numberOfThreads; i++) {
+            threads[i] = new Thread(new Runnable(){
+                public void run() {
+                    MethodHandle dynamicScope = DynamicScopeGenerator.generate(10);
+                    synchronized(result) {
+                        result.add(dynamicScope);
+                    }
+                }
+            });
+            threads[i].start();
+        }
+
+        for(int i = 0; i < numberOfThreads; i++) {
+            threads[i].join();
+        }
+
+        Assert.assertEquals(numberOfThreads, result.size());
+        for (int i = 0; i < result.size() - 1; ++i) {
+            Assert.assertEquals(result.get(i), result.get(i+1));
+        }
+    }
+
     @Test
     public void testScopeGeneration() throws Throwable {
         for (int i = 0; i < 100; i++) {

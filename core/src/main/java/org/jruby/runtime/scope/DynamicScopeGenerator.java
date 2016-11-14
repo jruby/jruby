@@ -255,7 +255,18 @@ public class DynamicScopeGenerator {
                 }});
             }};
 
-            Class p = defineClass(jiteClass);
+            Class p;
+
+            try {
+                p = defineClass(jiteClass);
+            } catch (LinkageError e) {
+                String exceptionMessage = e.getMessage();
+                if (exceptionMessage != null && exceptionMessage.contains("duplicate class definition for name") ) {
+                    p = loadClass(jiteClass);
+                } else {
+                    throw(e);
+                }
+            }
 
             MethodHandle mh = MethodHandles.lookup().findConstructor(p, MethodType.methodType(void.class, StaticScope.class, DynamicScope.class));
             mh = mh.asType(MethodType.methodType(DynamicScope.class, StaticScope.class, DynamicScope.class));
@@ -310,7 +321,15 @@ public class DynamicScopeGenerator {
     }
 
     private static Class defineClass(JiteClass jiteClass) {
-        return CDCL.defineClass(jiteClass.getClassName().replaceAll("/", "."), jiteClass.toBytes(JDKVersion.V1_7));
+        return CDCL.defineClass(classNameFromJiteClass(jiteClass), jiteClass.toBytes(JDKVersion.V1_7));
+    }
+
+    private static Class loadClass(JiteClass jiteClass) throws ClassNotFoundException {
+        return CDCL.loadClass(classNameFromJiteClass(jiteClass));
+    }
+
+    private static String classNameFromJiteClass(JiteClass jiteClass) {
+        return jiteClass.getClassName().replaceAll("/", ".");
     }
 
     private static String[] varList(int size) {
