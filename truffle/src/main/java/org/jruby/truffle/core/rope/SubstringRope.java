@@ -57,7 +57,7 @@ public class SubstringRope extends Rope {
             return ret;
         }
 
-        return RopeOperations.extractRange(child, offset, byteLength());
+        return RopeOperations.flattenBytes(this);
     }
 
     @Override
