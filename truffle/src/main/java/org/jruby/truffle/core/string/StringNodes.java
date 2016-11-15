@@ -895,7 +895,6 @@ public abstract class StringNodes {
             final Rope other = rope(salt);
 
             if (other.byteLength() < 2) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
                 throw new RaiseException(coreExceptions().argumentError("salt too short (need >= 2 bytes)", this));
             }
 
@@ -904,7 +903,6 @@ public abstract class StringNodes {
             final byte[] saltBytes = Arrays.copyOfRange(other.getBytes(), 0, other.byteLength());
 
             if (saltBytes[0] == 0 || saltBytes[1] == 0) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
                 throw new RaiseException(coreExceptions().argumentError("salt too short (need >= 2 bytes)", this));
             }
 
@@ -913,7 +911,6 @@ public abstract class StringNodes {
             // We differ from MRI in that we do not process salt to make it work and we will
             // return any errors via errno.
             if (cryptedString == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
                 throw new RaiseException(coreExceptions().errnoError(posix.errno(), this));
             }
 
@@ -4462,7 +4459,6 @@ public abstract class StringNodes {
                     return new SearchResult(index, repeatingRope);
                 }
             } else {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
                 throw new UnsupportedOperationException("Don't know how to traverse rope type: " + base.getClass().getName());
             }
         }
