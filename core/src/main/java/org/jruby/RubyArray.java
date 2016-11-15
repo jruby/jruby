@@ -4275,6 +4275,44 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         return context.runtime.getFalse();
     }
 
+    @JRubyMethod
+    public static IRubyObject sum(final ThreadContext context, IRubyObject self, final Block block) {
+        final Ruby runtime = context.runtime;
+        RubyFixnum zero = RubyFixnum.zero(runtime);
+
+        /* NB: MRI says "Enumerable#sum method may not respect method redefinition of "+" methods such as Integer#+." */
+        if (!isBuiltin("each")) return RubyEnumerable.sumCommon(context, this, zero, block);
+
+        return sumCommon(context, self, zero, block);
+    }
+
+    @JRubyMethod
+    public static IRubyObject sum(final ThreadContext context, IRubyObject self, IRubyObject init, final Block block) {
+        /* NB: MRI says "Enumerable#sum method may not respect method redefinition of "+" methods such as Integer#+." */
+        if (!isBuiltin("each")) return RubyEnumerable.sumCommon(context, this, init, block);
+
+        return sumCommon(context, self, init, block);
+    }
+
+    public static IRubyObject sumCommon(final ThreadContext context, IRubyObject self, IRubyObject init, final Block block) {
+        final Ruby runtime = context.runtime;
+        final IRubyObject result[] = new IRubyObject[] { init };
+
+        if (block.isGiven()) {
+            for (int i = 0; i < realLength; i++) {
+                IRubyObject value = block.yield(context, eltOk(i));
+                result[0] = result[0].callMethod(context, "+", value);
+            }
+        } else {
+            for (int i = 0; i < realLength; i++) {
+                IRubyObject value = eltOk(i);
+                result[0] = result[0].callMethod(context, "+", value);
+            }
+        }
+
+        return result[0];
+    }
+
     public IRubyObject find(ThreadContext context, IRubyObject ifnone, Block block) {
         if (!isBuiltin("each")) return RubyEnumerable.detectCommon(context, this, block);
 
