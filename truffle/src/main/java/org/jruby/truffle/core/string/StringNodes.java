@@ -2622,8 +2622,6 @@ public abstract class StringNodes {
                 return nil();
             }
 
-            StringOperations.keepCodeRange(string);
-
             int s = 0;
             int end = s + rope.byteLength();
             byte[] bytes = rope.getBytesCopy();

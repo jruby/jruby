@@ -112,28 +112,8 @@ public abstract class StringOperations {
         return Layouts.STRING.getRope(string).getCodeRange();
     }
 
-    public static void setCodeRange(DynamicObject string, int codeRange) {
-        // TODO (nirvdrum 07-Jan-16) Code range is now stored in the rope and ropes are immutable -- all calls to this method are suspect.
-        final int existingCodeRange = StringOperations.getCodeRange(string).toInt();
-
-        if (existingCodeRange != codeRange) {
-            CompilerDirectives.transferToInterpreterAndInvalidate();
-            throw new RuntimeException(StringUtils.format("Tried changing the code range value for a rope from %d to %d", existingCodeRange, codeRange));
-        }
-    }
-
     public static boolean isCodeRangeValid(DynamicObject string) {
         return StringOperations.getCodeRange(string) == CodeRange.CR_VALID;
-    }
-
-    public static void clearCodeRange(DynamicObject string) {
-        StringOperations.setCodeRange(string, CodeRange.CR_UNKNOWN.toInt());
-    }
-
-    public static void keepCodeRange(DynamicObject string) {
-        if (StringOperations.getCodeRange(string) == CodeRange.CR_BROKEN) {
-            clearCodeRange(string);
-        }
     }
 
     public static int normalizeIndex(int length, int index) {
