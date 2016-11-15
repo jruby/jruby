@@ -455,7 +455,7 @@ module Commands
       jt rebuild                                     clean and build
       jt run [options] args...                       run JRuby with -X+T and args
           --graal         use Graal (set either GRAALVM_BIN or GRAAL_HOME)
-              --stress    stress the compiler (compile immediately, background compilation, compilation exceptions are fatal)
+              --stress    stress the compiler (compile immediately, foreground compilation, compilation exceptions are fatal)
           --js            add Graal.js to the classpath (set GRAAL_JS_JAR)
           --asm           show assembly (implies --graal)
           --server        run an instrumentation server on port 8080
