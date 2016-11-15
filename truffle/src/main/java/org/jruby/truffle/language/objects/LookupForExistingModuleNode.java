@@ -36,8 +36,13 @@ public abstract class LookupForExistingModuleNode extends RubyNode {
 
     @Specialization(guards = "isRubyModule(lexicalParent)")
     public RubyConstant lookupForExistingModule(VirtualFrame frame, String name, DynamicObject lexicalParent,
-            @Cached("createBinaryProfile()") ConditionProfile autoloadProfile) {
-        RubyConstant constant = deepConstantSearch(frame, name, lexicalParent);
+            @Cached("createBinaryProfile()") ConditionProfile autoloadProfile,
+            @Cached("createBinaryProfile()") ConditionProfile warnProfile) {
+        RubyConstant constant = deepConstantSearch(name, lexicalParent);
+
+        if (warnProfile.profile(constant != null && constant.isDeprecated())) {
+            warnDeprecatedConstant(frame, name);
+        }
 
         // If a constant already exists with this class/module name and it's an autoload module, we have to trigger
         // the autoload behavior before proceeding.
@@ -50,13 +55,20 @@ public abstract class LookupForExistingModuleNode extends RubyNode {
 
             Layouts.MODULE.getFields(lexicalParent).removeConstant(getContext(), this, name);
             getRequireNode().executeRequire(frame, StringOperations.getString((DynamicObject) constant.getValue()));
-            return deepConstantSearch(frame, name, lexicalParent);
+            final RubyConstant autoConstant = deepConstantSearch(name, lexicalParent);
+
+            if (warnProfile.profile(constant != null && constant.isDeprecated())) {
+                warnDeprecatedConstant(frame, name);
+            }
+
+            return autoConstant;
         }
 
         return constant;
     }
 
-    private RubyConstant deepConstantSearch(VirtualFrame frame, String name, DynamicObject lexicalParent) {
+    @CompilerDirectives.TruffleBoundary(throwsControlFlowException = true)
+    private RubyConstant deepConstantSearch(String name, DynamicObject lexicalParent) {
         RubyConstant constant = Layouts.MODULE.getFields(lexicalParent).getConstant(name);
 
         final DynamicObject objectClass = getContext().getCoreLibrary().getObjectClass();
@@ -74,9 +86,7 @@ public abstract class LookupForExistingModuleNode extends RubyNode {
         if (constant != null && !constant.isVisibleTo(getContext(), LexicalScope.NONE, lexicalParent)) {
             throw new RaiseException(getContext().getCoreExceptions().nameErrorPrivateConstant(lexicalParent, name, this));
         }
-        if (constant != null && constant.isDeprecated()) {
-            warnDeprecatedConstant(frame, name);
-        }
+
         return constant;
     }
 
@@ -93,6 +103,7 @@ public abstract class LookupForExistingModuleNode extends RubyNode {
             CompilerDirectives.transferToInterpreterAndInvalidate();
             warnNode = insert(new WarnNode());
         }
+
         warnNode.execute(frame, "constant ", name, " is deprecated");
     }
 

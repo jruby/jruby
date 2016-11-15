@@ -61,6 +61,7 @@ public abstract class TruffleSystemNodes {
     @CoreMethod(names = "host_os", onSingleton = true)
     public abstract static class HostOSNode extends CoreMethodNode {
 
+        @TruffleBoundary
         @Specialization
         public DynamicObject hostOS() {
             return createString(StringOperations.encodeRope(RbConfigLibrary.getOSName(), UTF8Encoding.INSTANCE));
