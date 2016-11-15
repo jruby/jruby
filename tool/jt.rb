@@ -455,6 +455,7 @@ module Commands
       jt rebuild                                     clean and build
       jt run [options] args...                       run JRuby with -X+T and args
           --graal         use Graal (set either GRAALVM_BIN or GRAAL_HOME)
+              --stress    stress the compiler (compile immediately, background compilation, compilation exceptions are fatal)
           --js            add Graal.js to the classpath (set GRAAL_JS_JAR)
           --asm           show assembly (implies --graal)
           --server        run an instrumentation server on port 8080
@@ -588,6 +589,7 @@ module Commands
 
     {
       '--asm' => '--graal',
+      '--stress' => '--graal',
       '--igv' => '--graal',
       '--trace' => '--graal',
     }.each_pair do |arg, dep|
@@ -609,6 +611,12 @@ module Commands
       end
     else
       jruby_args << '-Xtruffle.graal.warn_unless=false'
+    end
+
+    if args.delete('--stress')
+      jruby_args << '-G:+TruffleCompileImmediately'
+      jruby_args << '-G:-TruffleBackgroundCompilation'
+      jruby_args << '-G:+TruffleCompilationExceptionsAreFatal'
     end
 
     if args.delete('--js')
