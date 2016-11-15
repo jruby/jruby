@@ -15,25 +15,17 @@ import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.basicobject.BasicObjectNodes;
-import org.jruby.truffle.core.basicobject.BasicObjectNodesFactory;
 import org.jruby.truffle.language.RubyBaseNode;
-import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
-import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 
 public class LookupEntryNode extends RubyBaseNode {
 
-    @Child HashNode hashNode;
-    @Child CallDispatchHeadNode eqlNode;
-    @Child BasicObjectNodes.ReferenceEqualNode equalNode;
-    
+    @Child HashNode hashNode = new HashNode();
+    @Child CompareHashKeysNode compareHashKeysNode = new CompareHashKeysNode();
+
     private final ConditionProfile byIdentityProfile = ConditionProfile.createBinaryProfile();
 
     public LookupEntryNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
-        hashNode = new HashNode();
-        eqlNode = DispatchHeadNodeFactory.createMethodCall(context);
-        equalNode = BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(null);
     }
 
     public HashLookupResult lookup(VirtualFrame frame, DynamicObject hash, Object key) {
@@ -47,14 +39,8 @@ public class LookupEntryNode extends RubyBaseNode {
         Entry previousEntry = null;
 
         while (entry != null) {
-            if (compareByIdentity) {
-                if (equalNode.executeReferenceEqual(key, entry.getKey())) {
-                    return new HashLookupResult(hashed, index, previousEntry, entry);
-                }
-            } else {
-                if (eqlNode.callBoolean(frame, key, "eql?", null, entry.getKey())) {
-                    return new HashLookupResult(hashed, index, previousEntry, entry);
-                }
+            if (equalKeys(frame, compareByIdentity, key, hashed, entry.getKey(), entry.getHashed())) {
+                return new HashLookupResult(hashed, index, previousEntry, entry);
             }
 
             previousEntry = entry;
@@ -62,6 +48,10 @@ public class LookupEntryNode extends RubyBaseNode {
         }
 
         return new HashLookupResult(hashed, index, previousEntry, null);
+    }
+
+    protected boolean equalKeys(VirtualFrame frame, boolean compareByIdentity, Object key, int hashed, Object otherKey, int otherHashed) {
+        return compareHashKeysNode.equalKeys(frame, compareByIdentity, key, hashed, otherKey, otherHashed);
     }
 
 }
