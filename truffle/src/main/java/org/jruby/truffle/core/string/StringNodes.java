@@ -1172,7 +1172,6 @@ public abstract class StringNodes {
                 taintResultNode = insert(new TaintResultNode(getContext(), null));
             }
 
-            // TODO (nirvdrum 08-Jan-16) For CR_7BIT, we should always be able set to CR_7BIT. CR_VALID is trickier because any one character could be 7-bit.
             final DynamicObject ret = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), substringRope);
 
             return taintResultNode.maybeTaint(string, ret);
@@ -3420,7 +3419,6 @@ public abstract class StringNodes {
             if (StringSupport.MBCLEN_CHARFOUND_P(clen)) {
                 ret = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), makeSubstringNode.executeMake(rope, offset, clen));
             } else {
-                // TODO (nirvdrum 13-Jan-16) We know that the code range is CR_7BIT. Ensure we're not wasting time figuring that out again in the substring creation.
                 ret = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), makeSubstringNode.executeMake(rope, offset, 1));
             }
 

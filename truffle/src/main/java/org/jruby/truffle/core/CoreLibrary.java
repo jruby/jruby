@@ -865,8 +865,6 @@ public class CoreLibrary {
 
         final DynamicObject defaultRecordSeparator = StringOperations.createString(context, StringOperations.encodeRope(CLI_RECORD_SEPARATOR, UTF8Encoding.INSTANCE));
         node.freezeNode.executeFreeze(defaultRecordSeparator);
-
-        // TODO (nirvdrum 05-Feb-15) We need to support the $-0 alias as well.
         globals.put("$/", defaultRecordSeparator);
 
         globals.put("$SAFE", 0);
