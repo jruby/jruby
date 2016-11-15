@@ -1035,10 +1035,7 @@ public abstract class StringNodes {
             final Encoding encoding = rope.getEncoding();
 
             if (encoding.isDummy()) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                throw new RaiseException(
-                        coreExceptions().encodingCompatibilityError(
-                                StringUtils.format("incompatible encoding with this operation: %s", encoding), this));
+                throw new RaiseException(coreExceptions().encodingCompatibilityErrorIncompatibleWithOperation(encoding, this));
             }
 
             if (emptyStringProfile.profile(rope.isEmpty())) {
@@ -1667,7 +1664,7 @@ public abstract class StringNodes {
             makeLeafRopeNode = RopeNodesFactory.MakeLeafRopeNodeGen.create(null, null, null, null);
         }
 
-        @TruffleBoundary
+        @TruffleBoundary(throwsControlFlowException = true)
         @Specialization
         public DynamicObject swapcaseSingleByte(DynamicObject string,
                                                 @Cached("createBinaryProfile()") ConditionProfile emptyStringProfile,
@@ -1678,10 +1675,7 @@ public abstract class StringNodes {
             final Encoding enc = rope.getEncoding();
 
             if (enc.isDummy()) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                throw new RaiseException(
-                        coreExceptions().encodingCompatibilityError(
-                                StringUtils.format("incompatible encoding with this operation: %s", enc), this));
+                throw new RaiseException(coreExceptions().encodingCompatibilityErrorIncompatibleWithOperation(enc, this));
             }
 
             if (emptyStringProfile.profile(rope.isEmpty())) {
@@ -2543,10 +2537,7 @@ public abstract class StringNodes {
             final Encoding encoding = rope.getEncoding();
 
             if (encoding.isDummy()) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                throw new RaiseException(
-                        coreExceptions().encodingCompatibilityError(
-                                StringUtils.format("incompatible encoding with this operation: %s", encoding), this));
+                throw new RaiseException(coreExceptions().encodingCompatibilityErrorIncompatibleWithOperation(encoding, this));
             }
 
             if (rope.isEmpty()) {
@@ -2611,8 +2602,7 @@ public abstract class StringNodes {
             final Encoding enc = rope.getEncoding();
 
             if (enc.isDummy()) {
-                throw new RaiseException(coreExceptions().encodingCompatibilityError(
-                                StringUtils.format("incompatible encoding with this operation: %s", enc), this));
+                throw new RaiseException(coreExceptions().encodingCompatibilityErrorIncompatibleWithOperation(enc, this));
             }
 
             if (rope.isEmpty()) {

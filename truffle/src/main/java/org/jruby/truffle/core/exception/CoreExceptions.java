@@ -771,6 +771,11 @@ public class CoreExceptions {
     }
 
     @TruffleBoundary
+    public DynamicObject encodingCompatibilityErrorIncompatibleWithOperation(Encoding encoding, Node currentNode) {
+        return encodingCompatibilityError(StringUtils.format("incompatible encoding with this operation: %s", encoding), currentNode);
+    }
+
+    @TruffleBoundary
     public DynamicObject encodingCompatibilityError(String message, Node currentNode) {
         return ExceptionOperations.createRubyException(
                 context.getCoreLibrary().getEncodingCompatibilityErrorClass(),
