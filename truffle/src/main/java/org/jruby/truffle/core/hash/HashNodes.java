@@ -207,7 +207,7 @@ public abstract class HashNodes {
                 return -1;
             }
 
-            boolean compareByIdentity = HashGuards.isCompareByIdentity(hash);
+            boolean compareByIdentity = Layouts.HASH.getCompareByIdentity(hash);
             int hashed = hashNode.hash(frame, key, compareByIdentity);
 
             final Object[] store = (Object[]) Layouts.HASH.getStore(hash);
