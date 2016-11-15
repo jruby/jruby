@@ -3,15 +3,19 @@ jt: [ruby, tool/jt.rb]
 common: {
   packages: {
     git:        ">=1.8.3"
-    maven:      ">=3.3.9"
     mercurial:  ">=3.2.4"
     ruby:       ">=2.1.0"
-    "java/jdk": "==1.8.0/60"
+  }
+
+  downloads : {
+    JAVA_HOME : {name : oraclejdk, version : "8u60", platformspecific: true}
+    MAVEN_HOME : {name : maven, version : "3.3.9"}
   }
 
   environment: {
     CI: "true",
     JAVA_OPTS: -Xmx2G
+    PATH: "$JAVA_HOME/bin:$MAVEN_HOME/bin:$PATH"
   }
 
   setup: [
@@ -220,6 +224,11 @@ gate-caps: {
   targets: [gate, post-push]
 }
 
+gate-caps-solaris: {
+  capabilities: [solaris, sparcv9]
+  targets: [gate, post-push]
+}
+
 daily-gate-caps: {
   capabilities: [linux, amd64]
   targets: [gate, post-push, daily]
@@ -240,6 +249,10 @@ daily-bench-caps: {
   capabilities: [x52, linux, amd64, no_frequency_scaling]
   targets: [bench, daily]
   timelimit: "02:00:00"
+}
+
+daily-bench-caps-solaris: ${daily-bench-caps} {
+  capabilities: [m7_eighth, solaris]
 }
 
 weekly-bench-caps: {
@@ -289,6 +302,10 @@ classic-benchmarks: {
     ${bench.cmd} [classic]
   ] ${post-process-and-upload-results}
   timelimit: "00:35:00"
+}
+
+classic-benchmarks-solaris: ${classic-benchmarks} {
+  timelimit: "01:10:00"
 }
 
 chunky-benchmarks: {
@@ -406,6 +423,7 @@ deployBinaries: {
 
 builds: [
   {name: ruby-test-fast} ${common} ${gate-caps} {run: [${jt} [test, fast]]},
+  {name: ruby-test-fast-solaris} ${common} ${gate-caps-solaris} {run: [${jt} [test, fast]]},
   {name: ruby-test-tck} ${common} ${gate-caps} {run: [[mx, rubytck]]},
   {name: ruby-test-specs-command-line} ${common} ${gate-caps} {run: [${jt} [test, specs, ":command_line"]]},
   {name: ruby-test-specs-language} ${common} ${gate-caps} {run: [${jt} [test, specs, ":language"]]},
@@ -442,7 +460,9 @@ builds: [
   {name: ruby-benchmarks-classic-indy} ${common} ${no-graal} ${weekly-bench-caps} ${jruby-indy-benchmark} ${classic-benchmarks},
   {name: ruby-benchmarks-classic-no-graal} ${common} ${no-graal} ${weekly-bench-caps} ${jruby-truffle} ${classic-benchmarks},
   {name: ruby-benchmarks-classic-graal-core} ${common} ${graal-core} ${daily-bench-caps} ${jruby-truffle} ${classic-benchmarks},
+  {name: ruby-benchmarks-classic-graal-core-solaris} ${common} ${graal-core} ${daily-bench-caps-solaris} ${jruby-truffle} ${classic-benchmarks-solaris},
   {name: ruby-benchmarks-classic-graal-enterprise} ${common} ${graal-enterprise} ${daily-bench-caps} ${jruby-truffle} ${classic-benchmarks},
+  {name: ruby-benchmarks-classic-graal-enterprise-solaris} ${common} ${graal-enterprise} ${daily-bench-caps-solaris} ${jruby-truffle} ${classic-benchmarks-solaris},
   {name: ruby-benchmarks-classic-graal-enterprise-no-om} ${common} ${graal-enterprise-no-om} ${daily-bench-caps} ${jruby-truffle} ${classic-benchmarks},
   {name: ruby-benchmarks-classic-graal-vm-snapshot} ${common} ${graal-vm-snapshot} ${bench-caps} ${jruby-truffle} ${classic-benchmarks},
   {name: ruby-benchmarks-classic-graal-vm-release} ${common} ${graal-vm-release} ${bench-caps} ${jruby-truffle} ${classic-benchmarks},
