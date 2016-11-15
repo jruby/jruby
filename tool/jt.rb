@@ -698,7 +698,7 @@ module Commands
     e 'p begin', *args, 'end'
   end
 
-  def build_ruby_su
+  def build_ruby_su(cext_dir)
     abort "You need to set SULONG_HOME" unless SULONG_HOME
 
     # Ensure ruby.su is up-to-date
@@ -714,7 +714,7 @@ module Commands
   private :build_ruby_su
 
   def cextc(cext_dir, *clang_opts)
-    build_ruby_su
+    build_ruby_su(cext_dir)
 
     config_file = File.join(cext_dir, CEXTC_CONF_FILE)
     unless File.exist?(config_file)
@@ -774,7 +774,7 @@ module Commands
   end
 
   def cextc_extconf(cext_dir, *clang_opts)
-    build_ruby_su
+    build_ruby_su(cext_dir)
 
     gem_name = File.basename(cext_dir)
     gem_dir = Dir.glob(ENV['GEM_HOME'] + "/gems/#{gem_name}*/")[0] + "ext/#{gem_name}/"
