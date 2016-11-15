@@ -4280,7 +4280,6 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         final Ruby runtime = context.runtime;
         RubyFixnum zero = RubyFixnum.zero(runtime);
 
-        /* NB: MRI says "Enumerable#sum method may not respect method redefinition of "+" methods such as Integer#+." */
         if (!isBuiltin("each")) return RubyEnumerable.sumCommon(context, this, zero, block);
 
         return sumCommon(context, self, zero, block);
@@ -4288,12 +4287,13 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
 
     @JRubyMethod
     public static IRubyObject sum(final ThreadContext context, IRubyObject self, IRubyObject init, final Block block) {
-        /* NB: MRI says "Enumerable#sum method may not respect method redefinition of "+" methods such as Integer#+." */
         if (!isBuiltin("each")) return RubyEnumerable.sumCommon(context, this, init, block);
 
         return sumCommon(context, self, init, block);
     }
 
+    /* FIXME: optimise for special types (e.g. Integer)? */
+    /* NB: MRI says "Enumerable#sum method may not respect method redefinition of "+" methods such as Integer#+." */
     public static IRubyObject sumCommon(final ThreadContext context, IRubyObject self, IRubyObject init, final Block block) {
         final Ruby runtime = context.runtime;
         final IRubyObject result[] = new IRubyObject[] { init };
