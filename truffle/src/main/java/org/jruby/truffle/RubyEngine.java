@@ -64,7 +64,7 @@ public class RubyEngine {
 
     public int doCheckSyntax(InputStream in, String filename) {
         // check primary script
-        boolean status = checkStreamSyntax(in, filename);
+        boolean status = checkSyntax(in, filename);
 
         // check other scripts specified on argv
         for (String arg : context.getInstanceConfig().getArgv()) {
@@ -78,7 +78,7 @@ public class RubyEngine {
         File file = new File(filename);
         if (file.exists()) {
             try {
-                return checkStreamSyntax(new FileInputStream(file), filename);
+                return checkSyntax(new FileInputStream(file), filename);
             } catch (FileNotFoundException fnfe) {
                 context.getInstanceConfig().getError().println("File not found: " + filename);
                 return false;
@@ -86,10 +86,6 @@ public class RubyEngine {
         } else {
             return false;
         }
-    }
-
-    private boolean checkStreamSyntax(InputStream in, String filename) {
-        return checkSyntax(in, filename);
     }
 
     public boolean checkSyntax(InputStream in, String filename) {
