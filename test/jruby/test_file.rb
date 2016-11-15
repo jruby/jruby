@@ -698,6 +698,28 @@ class TestFile < Test::Unit::TestCase
     assert_equal(result, 'falsetruetrue')
   end
 
+  def test_file_empty # - empty?
+    assert(!File.empty?('test/jruby/test_file.rb'))
+
+    f = File.open('emptyfile.rb', 'w')
+    f.write('')
+    f.close()
+    assert(File.empty?('emptyfile.rb'))
+
+    assert(!File.empty?('filethatdoesnotexist123'))
+  end
+
+  def test_file_zero # - zero?
+    assert(!File.zero?('test/jruby/test_file.rb'))
+
+    f = File.open('emptyfile.rb', 'w')
+    f.write('')
+    f.close()
+    assert(File.empty?('emptyfile.rb'))
+
+    assert(!File.zero?('filethatdoesnotexist123'))
+  end
+
   [ :executable?, :executable_real? ].each do |method|
     define_method :"test_#{method}_query" do # - executable?/executable_real?
       if WINDOWS

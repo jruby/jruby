@@ -1526,6 +1526,20 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                                 && path.charAt(1) == ':'));
     }
 
+    @JRubyMethod(name = {"empty?", "zero?"})
+    public static boolean empty(ThreadContext context, String name) {
+      Ruby runtime = context.runtime;
+      int fileSize = runtime.newFileStat(name).size();
+
+      if (fileSize < 0) {
+        return false;
+      } else if (fileSize == 0) {
+        return true;
+      } else {
+        return false;
+      }
+    }
+
     // adjusts paths started with '/' or '\\', on windows.
     static String adjustRootPathOnWindows(Ruby runtime, String path, String dir) {
         if (path == null || !Platform.IS_WINDOWS) return path;
