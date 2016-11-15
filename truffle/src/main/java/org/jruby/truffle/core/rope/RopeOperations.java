@@ -120,7 +120,6 @@ public class RopeOperations {
         return decode(UTF8, rope.getBytes(), 0, rope.byteLength());
     }
 
-    @TruffleBoundary
     public static String decodeUTF8(byte[] bytes, int offset, int byteLength) {
         return decode(UTF8, bytes, offset, byteLength);
     }
@@ -600,7 +599,7 @@ public class RopeOperations {
         return CR_VALID;
     }
 
-    @TruffleBoundary
+    @TruffleBoundary(throwsControlFlowException = true)
     public static int codePoint(RubyContext context, Rope rope, int start) {
         byte[] bytes = rope.getBytes();
         int p = start;

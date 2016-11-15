@@ -69,8 +69,6 @@ public abstract class StringOperations {
         return Layouts.STRING.createString(context.getCoreLibrary().getStringFactory(), rope);
     }
 
-    // Since ByteList.toString does not decode properly
-    @TruffleBoundary
     public static String getString(DynamicObject string) {
         return RopeOperations.decodeRope(StringOperations.rope(string));
     }
