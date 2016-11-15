@@ -32,7 +32,7 @@ public class StringCodeRangeableWrapper implements CodeRangeable {
 
     @Override
     public int getCodeRange() {
-        return StringOperations.getCodeRange(string).toInt();
+        return StringOperations.codeRange(string).toInt();
     }
 
     @Override
@@ -63,7 +63,7 @@ public class StringCodeRangeableWrapper implements CodeRangeable {
 
     @Override
     public final void keepCodeRange() {
-        if (StringOperations.getCodeRange(string) == CodeRange.CR_BROKEN) {
+        if (StringOperations.codeRange(string) == CodeRange.CR_BROKEN) {
             setCodeRange(CodeRange.CR_UNKNOWN.toInt());
         }
     }
@@ -80,7 +80,7 @@ public class StringCodeRangeableWrapper implements CodeRangeable {
 
     @Override
     public final void modifyAndKeepCodeRange() {
-        if (StringOperations.getCodeRange(string) == CodeRange.CR_BROKEN) {
+        if (StringOperations.codeRange(string) == CodeRange.CR_BROKEN) {
             setCodeRange(CodeRange.CR_UNKNOWN.toInt());
         }
     }

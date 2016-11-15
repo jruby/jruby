@@ -27,7 +27,7 @@ public class StringGuards {
 
     public static boolean is7Bit(DynamicObject string) {
         assert RubyGuards.isRubyString(string);
-        return StringOperations.getCodeRange(string) == CodeRange.CR_7BIT;
+        return StringOperations.codeRange(string) == CodeRange.CR_7BIT;
     }
 
     public static boolean isAsciiCompatible(DynamicObject string) {

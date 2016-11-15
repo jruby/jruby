@@ -79,7 +79,7 @@ public abstract class StringOperations {
                                                                        final EncodingNodes.CheckEncodingNode checkEncodingNode) {
         return new StringCodeRangeableWrapper(string, checkEncodingNode) {
             private final ByteList byteList = RopeOperations.toByteListCopy(StringOperations.rope(string));
-            int codeRange = StringOperations.getCodeRange(string).toInt();
+            int codeRange = StringOperations.codeRange(string).toInt();
 
             @Override
             public void setCodeRange(int newCodeRange) {
@@ -108,12 +108,8 @@ public abstract class StringOperations {
         };
     }
 
-    public static CodeRange getCodeRange(DynamicObject string) {
-        return Layouts.STRING.getRope(string).getCodeRange();
-    }
-
     public static boolean isCodeRangeValid(DynamicObject string) {
-        return StringOperations.getCodeRange(string) == CodeRange.CR_VALID;
+        return StringOperations.codeRange(string) == CodeRange.CR_VALID;
     }
 
     public static int normalizeIndex(int length, int index) {
