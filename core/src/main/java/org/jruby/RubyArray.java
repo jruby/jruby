@@ -4276,25 +4276,25 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     }
 
     @JRubyMethod
-    public static IRubyObject sum(final ThreadContext context, IRubyObject self, final Block block) {
+    public IRubyObject sum(final ThreadContext context, final Block block) {
         final Ruby runtime = context.runtime;
         RubyFixnum zero = RubyFixnum.zero(runtime);
 
         if (!isBuiltin("each")) return RubyEnumerable.sumCommon(context, this, zero, block);
 
-        return sumCommon(context, self, zero, block);
+        return sumCommon(context, zero, block);
     }
 
     @JRubyMethod
-    public static IRubyObject sum(final ThreadContext context, IRubyObject self, IRubyObject init, final Block block) {
+    public IRubyObject sum(final ThreadContext context, IRubyObject init, final Block block) {
         if (!isBuiltin("each")) return RubyEnumerable.sumCommon(context, this, init, block);
 
-        return sumCommon(context, self, init, block);
+        return sumCommon(context, init, block);
     }
 
     /* FIXME: optimise for special types (e.g. Integer)? */
     /* NB: MRI says "Array#sum method may not respect method redefinition of "+" methods such as Integer#+." */
-    public static IRubyObject sumCommon(final ThreadContext context, IRubyObject self, IRubyObject init, final Block block) {
+    public IRubyObject sumCommon(final ThreadContext context, IRubyObject init, final Block block) {
         final Ruby runtime = context.runtime;
         final IRubyObject result[] = new IRubyObject[] { init };
 
