@@ -614,9 +614,9 @@ module Commands
     end
 
     if args.delete('--stress')
-      jruby_args << '-G:+TruffleCompileImmediately'
-      jruby_args << '-G:-TruffleBackgroundCompilation'
-      jruby_args << '-G:+TruffleCompilationExceptionsAreFatal'
+      jruby_args << '-J-Dgraal.TruffleCompileImmediately=true'
+      jruby_args << '-J-Dgraal.TruffleBackgroundCompilation=false'
+      jruby_args << '-J-Dgraal.TruffleCompilationExceptionsAreFatal=true'
     end
 
     if args.delete('--js')

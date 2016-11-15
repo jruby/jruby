@@ -191,11 +191,17 @@ def extractArguments(cli_args):
             elif arg == '-J-cmd':
                 print_command = True
             elif arg.startswith('-J-G:+'):
-                vmArgs.append('-Dgraal.'+arg[6:]+'=true')
+                rewritten = '-Dgraal.'+arg[6:]+'=true'
+                mx.warn(arg + ' is deprecated - use -J' + rewritten + ' instead')
+                vmArgs.append(rewritten)
             elif arg.startswith('-J-G:-'):
-                vmArgs.append('-Dgraal.'+arg[6:]+'=false')
+                rewritten = '-Dgraal.'+arg[6:]+'=false'
+                mx.warn(arg + ' is deprecated - use -J' + rewritten + ' instead')
+                vmArgs.append(rewritten)
             elif arg.startswith('-J-G:'):
-                vmArgs.append('-Dgraal.'+arg[5:])
+                rewritten = '-Dgraal.'+arg[5:]
+                mx.warn(arg + ' is deprecated - use -J' + rewritten + ' instead')
+                vmArgs.append(rewritten)
             elif arg == '-J-cp' or arg == '-J-classpath':
                 cp = args.pop(0)
                 if cp[:2] == '-J':
