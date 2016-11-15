@@ -164,7 +164,7 @@ public abstract class SetNode extends RubyNode {
     private HashLookupResult lookup(VirtualFrame frame, DynamicObject hash, Object key) {
         if (lookupEntryNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            lookupEntryNode = insert(new LookupEntryNode(getContext(), null));
+            lookupEntryNode = insert(new LookupEntryNode());
         }
         return lookupEntryNode.lookup(frame, hash, key);
     }

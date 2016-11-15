@@ -33,6 +33,8 @@ import org.jruby.truffle.builtins.CoreMethodNode;
 import org.jruby.truffle.builtins.NonStandard;
 import org.jruby.truffle.builtins.YieldingCoreMethodNode;
 import org.jruby.truffle.core.array.ArrayBuilderNode;
+import org.jruby.truffle.core.hash.HashNodesFactory.DefaultValueNodeFactory;
+import org.jruby.truffle.core.hash.HashNodesFactory.GetIndexNodeFactory;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.PerformanceWarnings;
 import org.jruby.truffle.language.RubyGuards;
@@ -54,12 +56,7 @@ public abstract class HashNodes {
     @CoreMethod(names = "allocate", constructor = true)
     public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private AllocateObjectNode allocateObjectNode;
-
-        public AllocateNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            allocateObjectNode = AllocateObjectNode.create();
-        }
+        @Child private AllocateObjectNode allocateObjectNode = AllocateObjectNode.create();
 
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
@@ -165,7 +162,7 @@ public abstract class HashNodes {
     public abstract static class GetIndexNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode callDefaultNode;
-        @Child private LookupEntryNode lookupEntryNode;
+        @Child private LookupEntryNode lookupEntryNode = new LookupEntryNode();
         @Child private HashNode hashNode = new HashNode();
         @Child private CompareHashKeysNode compareHashKeysNode = new CompareHashKeysNode();
 
@@ -174,7 +171,6 @@ public abstract class HashNodes {
         public GetIndexNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             callDefaultNode = DispatchHeadNodeFactory.createMethodCall(context);
-            lookupEntryNode = new LookupEntryNode(context, sourceSection);
         }
 
         public abstract Object executeGet(VirtualFrame frame, DynamicObject hash, Object key);
@@ -306,7 +302,7 @@ public abstract class HashNodes {
 
         public GetOrUndefinedNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            getIndexNode = HashNodesFactory.GetIndexNodeFactory.create(context, sourceSection, null);
+            getIndexNode = GetIndexNodeFactory.create(context, sourceSection, null);
             getIndexNode.setUndefinedValue(context.getCoreLibrary().getRubiniusUndefined());
         }
 
@@ -370,10 +366,6 @@ public abstract class HashNodes {
 
         private final ConditionProfile profile = ConditionProfile.createBinaryProfile();
 
-        public IsCompareByIdentityNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public boolean compareByIdentity(DynamicObject hash) {
             return profile.profile(Layouts.HASH.getCompareByIdentity(hash));
@@ -401,14 +393,12 @@ public abstract class HashNodes {
     public abstract static class DeleteNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CompareHashKeysNode compareHashKeysNode = new CompareHashKeysNode();
-        @Child private HashNode hashNode;
-        @Child private LookupEntryNode lookupEntryNode;
+        @Child private HashNode hashNode = new HashNode();
+        @Child private LookupEntryNode lookupEntryNode = new LookupEntryNode();
         @Child private YieldNode yieldNode;
 
         public DeleteNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            hashNode = new HashNode();
-            lookupEntryNode = new LookupEntryNode(context, sourceSection);
             yieldNode = new YieldNode(context);
         }
 
@@ -518,10 +508,6 @@ public abstract class HashNodes {
     public abstract static class EachNode extends YieldingCoreMethodNode {
 
         @Child private CallDispatchHeadNode toEnumNode;
-
-        public EachNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization(guards = "isNullHash(hash)")
         public DynamicObject eachNull(DynamicObject hash, DynamicObject block) {
@@ -1025,7 +1011,7 @@ public abstract class HashNodes {
 
             if (lookupEntryNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                lookupEntryNode = insert(new LookupEntryNode(getContext(), null));
+                lookupEntryNode = insert(new LookupEntryNode());
             }
 
             for (KeyValue keyValue : HashOperations.iterableKeyValues(other)) {
@@ -1285,12 +1271,7 @@ public abstract class HashNodes {
     @CoreMethod(names = "internal_default_value")
     public abstract static class InternalDefaultValueNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private DefaultValueNode defaultValueNode;
-
-        public InternalDefaultValueNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            defaultValueNode = HashNodesFactory.DefaultValueNodeFactory.create(null);
-        }
+        @Child private DefaultValueNode defaultValueNode = DefaultValueNodeFactory.create(null);
 
         @Specialization
         public Object internalDefaultValue(DynamicObject hash) {

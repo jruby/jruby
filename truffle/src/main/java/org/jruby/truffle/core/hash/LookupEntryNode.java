@@ -9,13 +9,12 @@
  */
 package org.jruby.truffle.core.hash;
 
+import org.jruby.truffle.Layouts;
+import org.jruby.truffle.language.RubyBaseNode;
+
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
-import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.Layouts;
-import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.language.RubyBaseNode;
 
 public class LookupEntryNode extends RubyBaseNode {
 
@@ -23,10 +22,6 @@ public class LookupEntryNode extends RubyBaseNode {
     @Child CompareHashKeysNode compareHashKeysNode = new CompareHashKeysNode();
 
     private final ConditionProfile byIdentityProfile = ConditionProfile.createBinaryProfile();
-
-    public LookupEntryNode(RubyContext context, SourceSection sourceSection) {
-        super(context, sourceSection);
-    }
 
     public HashLookupResult lookup(VirtualFrame frame, DynamicObject hash, Object key) {
         final boolean compareByIdentity = byIdentityProfile.profile(Layouts.HASH.getCompareByIdentity(hash));
