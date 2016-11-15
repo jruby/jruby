@@ -18,6 +18,9 @@ import org.jruby.truffle.interop.InstanceConfigWrapper;
 import org.jruby.truffle.platform.graal.Graal;
 import org.jruby.util.cli.Options;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.InputStream;
 
 public class RubyEngine {
@@ -46,13 +49,6 @@ public class RubyEngine {
         return engine.eval(loadSource("Truffle::Boot.main", "main")).as(Integer.class);
     }
 
-    public boolean checkSyntax(InputStream in, String filename) {
-        context.setSyntaxCheckInputStream(in);
-        context.setOriginalInputFile(filename);
-
-        return engine.eval(loadSource("Truffle::Boot.check_syntax", "check_syntax")).as(Boolean.class);
-    }
-
     public RubyContext getContext() {
         return context;
     }
@@ -64,6 +60,43 @@ public class RubyEngine {
     @TruffleBoundary
     private Source loadSource(String source, String name) {
         return Source.newBuilder(source).name(name).mimeType(RubyLanguage.MIME_TYPE).build();
+    }
+
+    public int doCheckSyntax(InputStream in, String filename) {
+        // check primary script
+        boolean status = checkStreamSyntax(in, filename);
+
+        // check other scripts specified on argv
+        for (String arg : context.getInstanceConfig().getArgv()) {
+            status = status && checkFileSyntax(arg);
+        }
+
+        return status ? 0 : -1;
+    }
+
+    private boolean checkFileSyntax(String filename) {
+        File file = new File(filename);
+        if (file.exists()) {
+            try {
+                return checkStreamSyntax(new FileInputStream(file), filename);
+            } catch (FileNotFoundException fnfe) {
+                context.getInstanceConfig().getError().println("File not found: " + filename);
+                return false;
+            }
+        } else {
+            return false;
+        }
+    }
+
+    private boolean checkStreamSyntax(InputStream in, String filename) {
+        return checkSyntax(in, filename);
+    }
+
+    public boolean checkSyntax(InputStream in, String filename) {
+        context.setSyntaxCheckInputStream(in);
+        context.setOriginalInputFile(filename);
+
+        return engine.eval(loadSource("Truffle::Boot.check_syntax", "check_syntax")).as(Boolean.class);
     }
 
 }

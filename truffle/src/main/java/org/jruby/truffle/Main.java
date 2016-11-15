@@ -86,7 +86,7 @@ public class Main {
                     exitCode = 1;
                 } else if (config.getShouldCheckSyntax()) {
                     // check syntax only and exit
-                    exitCode = doCheckSyntax(rubyEngine, in, filename);
+                    exitCode = rubyEngine.doCheckSyntax(in, filename);
                 } else {
                     exitCode = rubyEngine.execute(filename);
                 }
@@ -127,36 +127,6 @@ public class Main {
         if (config.isShowVersion()) {
             config.getOutput().println(OutputStrings.getVersionString());
         }
-    }
-
-    private static int doCheckSyntax(RubyEngine engine, InputStream in, String filename) {
-        // check primary script
-        boolean status = checkStreamSyntax(engine, in, filename);
-
-        // check other scripts specified on argv
-        for (String arg : engine.getContext().getInstanceConfig().getArgv()) {
-            status = status && checkFileSyntax(engine, arg);
-        }
-
-        return status ? 0 : -1;
-    }
-
-    private static boolean checkFileSyntax(RubyEngine engine, String filename) {
-        File file = new File(filename);
-        if (file.exists()) {
-            try {
-                return checkStreamSyntax(engine, new FileInputStream(file), filename);
-            } catch (FileNotFoundException fnfe) {
-                engine.getContext().getInstanceConfig().getError().println("File not found: " + filename);
-                return false;
-            }
-        } else {
-            return false;
-        }
-    }
-
-    private static boolean checkStreamSyntax(RubyEngine engine, InputStream in, String filename) {
-        return engine.checkSyntax(in, filename);
     }
 
     public static void printTruffleTimeMetric(String id) {
