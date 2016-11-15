@@ -194,7 +194,8 @@ Truffle::Tool.add_config :activesupport,
                          deep_merge(
                              rails_common,
                              stubs.fetch(:activesupport_isolation),
-                             replacements.fetch(:method_source))
+                             replacements.fetch(:method_source),
+                             exclusions_for(:activesupport))
 
 Truffle::Tool.add_config :activemodel,
                          deep_merge(
@@ -275,7 +276,7 @@ end
 
 Truffle::Tool.add_ci_definition :activesupport do
   subdir 'activesupport'
-  rails_ci
+  rails_ci has_exclusions: true
 end
 
 Truffle::Tool.add_ci_definition :railties do
