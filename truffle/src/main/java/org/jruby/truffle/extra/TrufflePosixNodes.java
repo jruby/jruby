@@ -9,6 +9,8 @@
  */
 package org.jruby.truffle.extra;
 
+import com.kenai.jffi.Platform;
+import com.kenai.jffi.Platform.OS;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Cached;
@@ -517,18 +519,26 @@ public abstract class TrufflePosixNodes {
     public abstract static class MajorNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
-        public int major(int dev) {
-            return (dev >> 24) & 255;
-        }
+        public int major(long dev) {
+            if (Platform.getPlatform().getOS() == OS.SOLARIS) {
+                return (int) (dev >> 32); // Solaris has major number in the upper 32 bits.
+            } else {
+                return (int) ((dev >> 24) & 0xff);
 
+            }
+        }
     }
 
     @CoreMethod(names = "minor", isModuleFunction = true, required = 1, lowerFixnum = 1, unsafe = UnsafeGroup.IO)
     public abstract static class MinorNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
-        public int minor(int dev) {
-            return (dev & 16777215);
+        public int minor(long dev) {
+            if (Platform.getPlatform().getOS() == OS.SOLARIS) {
+                return (int) dev; // Solaris has minor number in the lower 32 bits.
+            } else {
+                return (int) (dev & 0xffffff);
+            }
         }
 
     }
