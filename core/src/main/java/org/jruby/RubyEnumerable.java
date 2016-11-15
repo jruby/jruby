@@ -896,13 +896,8 @@ public class RubyEnumerable {
         if (block.isGiven()) {
             callEach(runtime, context, self, Signature.OPTIONAL, new BlockCallback() {
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
-                    final IRubyObject larg; boolean ary = false;
-                    switch (largs.length) {
-                        case 0:  larg = ctx.nil; break;
-                        case 1:  larg = largs[0]; break;
-                        default: larg = RubyArray.newArrayMayCopy(ctx.runtime, largs); ary = true;
-                    }
-                    IRubyObject val = ary ? block.yieldArray(ctx, larg, null) : block.yield(ctx, larg);
+                    IRubyObject larg = packEnumValues(ctx, largs);
+                    IRubyObject val = block.yieldArray(ctx, larg, null);
                     result[0] = result[0].callMethod(context, "+", val);
 
                     return ctx.nil;
@@ -911,12 +906,7 @@ public class RubyEnumerable {
         } else {
             callEach(runtime, context, self, Signature.OPTIONAL, new BlockCallback() {
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
-                    final IRubyObject larg;
-                    switch (largs.length) {
-                        case 0:  larg = ctx.nil; break;
-                        case 1:  larg = largs[0]; break;
-                        default: larg = RubyArray.newArrayMayCopy(ctx.runtime, largs);;
-                    }
+                    IRubyObject larg = packEnumValues(ctx, largs);
                     result[0] = result[0].callMethod(context, "+", larg);
 
                     return ctx.nil;
