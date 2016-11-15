@@ -268,9 +268,7 @@ public abstract class KernelNodes {
             }
 
             final int code = getContext().getThreadManager().runUntilResult(this, () -> process.waitFor());
-
-            // TODO (nirvdrum 10-Mar-15) This should be using the default external encoding, rather than hard-coded to UTF-8.
-            final DynamicObject output = createString(baos.toByteArray(), EncodingOperations.getEncoding(getContext().getEncodingManager().getRubyEncoding("UTF-8")));
+            final DynamicObject output = createString(baos.toByteArray(), getContext().getEncodingManager().getDefaultExternalEncoding());
 
             // TODO CS 30-Oct-16 how to get the PID? JRuby does some gymnastics with reflection. I think we
             // should probably reimplement this in Ruby using spawn, which starts processes with JNR and so
