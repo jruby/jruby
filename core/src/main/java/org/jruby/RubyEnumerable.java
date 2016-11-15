@@ -907,6 +907,48 @@ public class RubyEnumerable {
         }
     }
 
+    @JRubyMethod
+    public static IRubyObject sum(ThreadContext context, IRubyObject self, final Block block) {
+        final Ruby runtime = context.runtime;
+        RubyFixnum zero = RubyFixnum.zero(runtime);
+        return sumCommon(context, self, zero, block);
+    }
+
+    @JRubyMethod
+    public static IRubyObject sum(ThreadContext context, IRubyObject self, IRubyObject init, final Block block) {
+        return sumCommon(context, self, init, block);
+    }
+
+    /* FIXME: optimise for special types (e.g. Integer)? */
+    /* NB: MRI says "Enumerable#sum method may not respect method redefinition of "+" methods such as Integer#+." */
+    public static IRubyObject sumCommon(final ThreadContext context, IRubyObject self, IRubyObject init, final Block block) {
+        final Ruby runtime = context.runtime;
+        final IRubyObject result[] = new IRubyObject[] { init };
+
+        if (block.isGiven()) {
+            callEach(runtime, context, self, Signature.OPTIONAL, new BlockCallback() {
+                public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
+                    IRubyObject larg = packEnumValues(ctx, largs);
+                    IRubyObject val = block.yieldArray(ctx, larg, null);
+                    result[0] = result[0].callMethod(context, "+", val);
+
+                    return ctx.nil;
+                }
+            });
+        } else {
+            callEach(runtime, context, self, Signature.OPTIONAL, new BlockCallback() {
+                public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
+                    IRubyObject larg = packEnumValues(ctx, largs);
+                    result[0] = result[0].callMethod(context, "+", larg);
+
+                    return ctx.nil;
+                }
+            });
+        }
+
+        return result[0];
+    }
+
     public static IRubyObject injectCommon(final ThreadContext context, IRubyObject self, IRubyObject init, final Block block) {
         final Ruby runtime = context.runtime;
         final IRubyObject result[] = new IRubyObject[] { init };

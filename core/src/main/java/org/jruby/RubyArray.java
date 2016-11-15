@@ -4310,6 +4310,44 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         return context.runtime.getFalse();
     }
 
+    @JRubyMethod
+    public IRubyObject sum(final ThreadContext context, final Block block) {
+        final Ruby runtime = context.runtime;
+        RubyFixnum zero = RubyFixnum.zero(runtime);
+
+        if (!isBuiltin("each")) return RubyEnumerable.sumCommon(context, this, zero, block);
+
+        return sumCommon(context, zero, block);
+    }
+
+    @JRubyMethod
+    public IRubyObject sum(final ThreadContext context, IRubyObject init, final Block block) {
+        if (!isBuiltin("each")) return RubyEnumerable.sumCommon(context, this, init, block);
+
+        return sumCommon(context, init, block);
+    }
+
+    /* FIXME: optimise for special types (e.g. Integer)? */
+    /* NB: MRI says "Array#sum method may not respect method redefinition of "+" methods such as Integer#+." */
+    public IRubyObject sumCommon(final ThreadContext context, IRubyObject init, final Block block) {
+        final Ruby runtime = context.runtime;
+        final IRubyObject result[] = new IRubyObject[] { init };
+
+        if (block.isGiven()) {
+            for (int i = 0; i < realLength; i++) {
+                IRubyObject value = block.yield(context, eltOk(i));
+                result[0] = result[0].callMethod(context, "+", value);
+            }
+        } else {
+            for (int i = 0; i < realLength; i++) {
+                IRubyObject value = eltOk(i);
+                result[0] = result[0].callMethod(context, "+", value);
+            }
+        }
+
+        return result[0];
+    }
+
     public IRubyObject find(ThreadContext context, IRubyObject ifnone, Block block) {
         if (!isBuiltin("each")) return RubyEnumerable.detectCommon(context, this, block);
 
