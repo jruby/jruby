@@ -4293,7 +4293,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     }
 
     /* FIXME: optimise for special types (e.g. Integer)? */
-    /* NB: MRI says "Enumerable#sum method may not respect method redefinition of "+" methods such as Integer#+." */
+    /* NB: MRI says "Array#sum method may not respect method redefinition of "+" methods such as Integer#+." */
     public static IRubyObject sumCommon(final ThreadContext context, IRubyObject self, IRubyObject init, final Block block) {
         final Ruby runtime = context.runtime;
         final IRubyObject result[] = new IRubyObject[] { init };
