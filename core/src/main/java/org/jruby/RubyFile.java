@@ -785,21 +785,15 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     }
 
     @JRubyMethod(name = {"empty?", "zero?"}, required = 1, meta = true)
-    public static IRubyObject empty(ThreadContext context, IRubyObject self, IRubyObject str) {
+    public static IRubyObject empty_p(ThreadContext context, IRubyObject self, IRubyObject str) {
         Ruby runtime = context.runtime;
-        String f = StringSupport.checkEmbeddedNulls(runtime, get_path(context, str)).getUnicodeValue();
+        String filename = StringSupport.checkEmbeddedNulls(runtime, get_path(context, str)).getUnicodeValue();
 
-        if ( ! new File(f).exists() ) {
-            return runtime.getFalse();
-        }
+        if (!new File(filename).exists()) return runtime.getFalse();
 
-        int size = runtime.newFileStat(f, false).size().convertToInteger().getIntValue();
-        if (size == 0) {
-            return runtime.getTrue();
-        }
-        else {
-            return runtime.getFalse();
-        }
+        int size = runtime.newFileStat(filename, false).size().convertToInteger().getIntValue();
+
+        return runtime.newBoolean(size == 0);
     }
 
     /**
