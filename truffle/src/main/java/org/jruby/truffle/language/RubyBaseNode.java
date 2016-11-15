@@ -178,6 +178,7 @@ public abstract class RubyBaseNode extends Node {
             while (true) {
                 if (parent == null) {
                     context = RubyContext.getInstance();
+                    break;
                 }
 
                 if (parent instanceof RubyBaseNode) {
