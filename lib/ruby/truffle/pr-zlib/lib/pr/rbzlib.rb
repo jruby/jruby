@@ -241,19 +241,19 @@ module Rbzlib
     end
 
     def [](idx)
-      @buffer[(idx * 2) + @offset, 2].unpack('S').first
+      @buffer[(idx * 2) + @offset, 2].unpack('v').first
     end
 
     def []=(idx, val)
-      @buffer[(idx * 2) + @offset, 2] = [val].pack('S')
+      @buffer[(idx * 2) + @offset, 2] = [val].pack('v')
     end
 
     def get()
-      @buffer[@offset, 2].unpack('S').first
+      @buffer[@offset, 2].unpack('v').first
     end
 
     def set(val)
-      @buffer[@offset, 2] = [val].pack('S')
+      @buffer[@offset, 2] = [val].pack('v')
     end
   end
 
@@ -669,7 +669,7 @@ module Rbzlib
 
     s.z_err = Z_DATA_ERROR if (c == Z_EOF)
 
-    return (x.unpack('L').first)
+    return (x.unpack('v').first)
   end
 
   # Check the gzip header of a gz_stream opened for reading. Set the stream
