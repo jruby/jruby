@@ -55,7 +55,7 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.FormatNode;
 import org.jruby.truffle.core.format.exceptions.RangeException;
 import org.jruby.truffle.core.rope.CodeRange;
-import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.core.string.UTF8Operations;
 
 @NodeChildren({
         @NodeChild(value = "value", type = FormatNode.class),
@@ -71,7 +71,7 @@ public abstract class WriteUTF8CharacterNode extends FormatNode {
                                   @Cached("createBinaryProfile()") ConditionProfile rangeProfile) {
         writeByte(frame, (byte) value);
 
-        if (rangeProfile.profile(StringOperations.isUTF8ValidOneByte((byte) value))) {
+        if (rangeProfile.profile(UTF8Operations.isUTF8ValidOneByte((byte) value))) {
             setStringCodeRange(frame, CodeRange.CR_7BIT);
         } else {
             setStringCodeRange(frame, CodeRange.CR_BROKEN);
@@ -91,7 +91,7 @@ public abstract class WriteUTF8CharacterNode extends FormatNode {
         writeBytes(frame, bytes);
         increaseStringLength(frame, -2 + 1);
 
-        if (rangeProfile.profile(StringOperations.isUTF8ValidTwoBytes(bytes))) {
+        if (rangeProfile.profile(UTF8Operations.isUTF8ValidTwoBytes(bytes))) {
             setStringCodeRange(frame, CodeRange.CR_VALID);
         } else {
             setStringCodeRange(frame, CodeRange.CR_BROKEN);
@@ -112,7 +112,7 @@ public abstract class WriteUTF8CharacterNode extends FormatNode {
         writeBytes(frame, bytes);
         increaseStringLength(frame, -3 + 1);
 
-        if (rangeProfile.profile(StringOperations.isUTF8ValidThreeBytes(bytes))) {
+        if (rangeProfile.profile(UTF8Operations.isUTF8ValidThreeBytes(bytes))) {
             setStringCodeRange(frame, CodeRange.CR_VALID);
         } else {
             setStringCodeRange(frame, CodeRange.CR_BROKEN);
@@ -134,7 +134,7 @@ public abstract class WriteUTF8CharacterNode extends FormatNode {
         writeBytes(frame, bytes);
         increaseStringLength(frame, -4 + 1);
 
-        if (rangeProfile.profile(StringOperations.isUTF8ValidFourBytes(bytes))) {
+        if (rangeProfile.profile(UTF8Operations.isUTF8ValidFourBytes(bytes))) {
             setStringCodeRange(frame, CodeRange.CR_VALID);
         } else {
             setStringCodeRange(frame, CodeRange.CR_BROKEN);
@@ -157,7 +157,7 @@ public abstract class WriteUTF8CharacterNode extends FormatNode {
         writeBytes(frame, bytes);
         increaseStringLength(frame, -5 + 1);
 
-        if (rangeProfile.profile(StringOperations.isUTF8ValidFiveBytes(bytes))) {
+        if (rangeProfile.profile(UTF8Operations.isUTF8ValidFiveBytes(bytes))) {
             setStringCodeRange(frame, CodeRange.CR_VALID);
         } else {
             setStringCodeRange(frame, CodeRange.CR_BROKEN);
@@ -181,7 +181,7 @@ public abstract class WriteUTF8CharacterNode extends FormatNode {
         writeBytes(frame, bytes);
         increaseStringLength(frame, -6 + 1);
 
-        if (rangeProfile.profile(StringOperations.isUTF8ValidSixBytes(bytes))) {
+        if (rangeProfile.profile(UTF8Operations.isUTF8ValidSixBytes(bytes))) {
             setStringCodeRange(frame, CodeRange.CR_VALID);
         } else {
             setStringCodeRange(frame, CodeRange.CR_BROKEN);
