@@ -758,7 +758,7 @@ public class RubyMath {
             }
 
             double int_part = (int) x;
-            sign = (int_part % 2 == 0 && (x - int_part) != 0.0 && (x < 0)) ? -1 : 1;
+            sign = ((x == -0.0) || (int_part % 2 == 0 && (x - int_part) != 0.0 && (x < 0))) ? -1 : 1;
             if ((x - int_part) == 0.0 && 0 < int_part && int_part <= FACTORIAL.length) {
                 value = Math.log(FACTORIAL[(int) int_part - 1]);
             }
