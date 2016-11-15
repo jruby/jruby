@@ -298,7 +298,6 @@ public abstract class StringNodes {
         public abstract DynamicObject executeInt(VirtualFrame frame, DynamicObject string, int times);
 
         @Specialization(guards = "times < 0")
-        @TruffleBoundary
         public DynamicObject multiplyTimesNegative(DynamicObject string, int times) {
             throw new RaiseException(coreExceptions().argumentError("negative argument", this));
         }
@@ -312,7 +311,6 @@ public abstract class StringNodes {
         }
 
         @Specialization(guards = "isRubyBignum(times)")
-        @TruffleBoundary
         public DynamicObject multiply(DynamicObject string, DynamicObject times) {
             throw new RaiseException(coreExceptions().rangeError("bignum too big to convert into `long'", this));
         }
@@ -1524,7 +1522,6 @@ public abstract class StringNodes {
         @Child private RopeNodes.GetByteNode ropeGetByteNode;
 
         @Specialization(guards = "isEmpty(string)")
-        @TruffleBoundary
         public int ordEmpty(DynamicObject string) {
             throw new RaiseException(coreExceptions().argumentError("empty string", this));
         }
@@ -3503,7 +3500,7 @@ public abstract class StringNodes {
     @Primitive(name = "string_to_f", needsSelf = false)
     public static abstract class StringToFPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
-        @TruffleBoundary
+        @TruffleBoundary(throwsControlFlowException = true)
         @Specialization
         public Object stringToF(DynamicObject string, boolean strict) {
             final Rope rope = rope(string);
@@ -3919,7 +3916,6 @@ public abstract class StringNodes {
     public static abstract class StringPreviousByteIndexPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Specialization(guards = "index < 0")
-        @TruffleBoundary
         public Object stringPreviousByteIndexNegativeIndex(DynamicObject string, int index) {
             throw new RaiseException(coreExceptions().argumentError("negative index given", this));
         }
