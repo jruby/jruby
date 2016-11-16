@@ -991,7 +991,18 @@ public class BodyTranslator extends Translator {
 
         LexicalScope newLexicalScope = environment.pushLexicalScope();
         try {
-            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(fullSourceSection, newLexicalScope, Arity.NO_ARGUMENTS, name, false, null, false, false, false);
+            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(
+                    fullSourceSection,
+                    newLexicalScope,
+                    Arity.NO_ARGUMENTS,
+                    null,
+                    name,
+                    sclass ? "class body" : "module body",
+                    false,
+                    null,
+                    false,
+                    false,
+                    false);
 
             final ReturnID returnId;
 
@@ -1385,7 +1396,19 @@ public class BodyTranslator extends Translator {
 
         final Arity arity = MethodTranslator.getArity(argsNode);
         final ArgumentDescriptor[] argumentDescriptors = Helpers.argsNodeToArgumentDescriptors(argsNode);
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection.toSourceSection(source), environment.getLexicalScope(), arity, methodName, false, argumentDescriptors, false, false, false);
+
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(
+                sourceSection.toSourceSection(source),
+                environment.getLexicalScope(),
+                arity,
+                null,
+                methodName,
+                null,
+                false,
+                argumentDescriptors,
+                false,
+                false,
+                false);
 
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
                 context, environment, environment.getParseEnvironment(), environment.getParseEnvironment().allocateReturnID(), true, true, sharedMethodInfo, methodName, 0, null);
@@ -1974,10 +1997,20 @@ public class BodyTranslator extends Translator {
         // Unset this flag for any for any blocks within the for statement's body
         final boolean hasOwnScope = isLambda || !translatingForStatement;
 
-        final String name = isLambda ? "(lambda)" : getIdentifierInNewEnvironment(true, currentCallMethodName);
         final boolean isProc = !isLambda;
 
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection.toSourceSection(source), environment.getLexicalScope(), MethodTranslator.getArity(argsNode), name, true, Helpers.argsNodeToArgumentDescriptors(argsNode), false, false, false);
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(
+                sourceSection.toSourceSection(source),
+                environment.getLexicalScope(),
+                MethodTranslator.getArity(argsNode),
+                null,
+                null,
+                isLambda ? "lambda" : getIdentifierInNewEnvironment(true, currentCallMethodName),
+                true,
+                Helpers.argsNodeToArgumentDescriptors(argsNode),
+                false,
+                false,
+                false);
 
         final String namedMethodName = isLambda ? sharedMethodInfo.getName(): environment.getNamedMethodName();
 
