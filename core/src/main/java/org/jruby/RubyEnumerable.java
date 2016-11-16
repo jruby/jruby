@@ -919,18 +919,18 @@ public class RubyEnumerable {
         return sumCommon(context, self, init, block);
     }
 
-    /* FIXME: optimise for special types (e.g. Integer)? */
-    /* NB: MRI says "Enumerable#sum method may not respect method redefinition of "+" methods such as Integer#+." */
+    /* TODO: optimise for special types (e.g. Range, Hash, ...) */
     public static IRubyObject sumCommon(final ThreadContext context, IRubyObject self, IRubyObject init, final Block block) {
         final Ruby runtime = context.runtime;
         final IRubyObject result[] = new IRubyObject[] { init };
+        final double memo[] = new double[] { 0.0 };
 
         if (block.isGiven()) {
             callEach(runtime, context, self, Signature.OPTIONAL, new BlockCallback() {
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
                     IRubyObject larg = packEnumValues(ctx, largs);
                     IRubyObject val = block.yieldArray(ctx, larg, null);
-                    result[0] = result[0].callMethod(context, "+", val);
+                    result[0] = sumAdd(ctx, result[0], val, memo);
 
                     return ctx.nil;
                 }
@@ -939,7 +939,7 @@ public class RubyEnumerable {
             callEach(runtime, context, self, Signature.OPTIONAL, new BlockCallback() {
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
                     IRubyObject larg = packEnumValues(ctx, largs);
-                    result[0] = result[0].callMethod(context, "+", larg);
+                    result[0] = sumAdd(ctx, result[0], larg, memo);
 
                     return ctx.nil;
                 }
@@ -947,6 +947,62 @@ public class RubyEnumerable {
         }
 
         return result[0];
+    }
+
+    /* FIXME: optimise for special types (e.g. Integer)? */
+    /* NB: MRI says "Enumerable#sum method may not respect method redefinition of "+" methods such as Integer#+." */
+    public static IRubyObject sumAdd(final ThreadContext ctx, IRubyObject lhs, IRubyObject rhs, final double c[]) {
+        boolean floats = false;
+        double f = 0.0;
+        double x = 0.0, y, t;
+        if (lhs instanceof RubyFloat) {
+            if (rhs instanceof RubyFloat) {
+                f = ((RubyFloat) lhs).getValue();
+                x = ((RubyFloat) rhs).getValue();
+                floats = true;
+            } else if (rhs instanceof RubyFixnum) {
+                f = ((RubyFloat) lhs).getValue();
+                x = ((RubyFixnum) rhs).getDoubleValue();
+                floats = true;
+            } else if (rhs instanceof RubyBignum) {
+                f = ((RubyFloat) lhs).getValue();
+                x = ((RubyBignum) rhs).getDoubleValue();
+                floats = true;
+            } else if (rhs instanceof RubyRational) {
+                f = ((RubyFloat) lhs).getValue();
+                x = ((RubyRational) rhs).getDoubleValue(ctx);
+                floats = true;
+            }
+        } else if (rhs instanceof RubyFloat) {
+            if (lhs instanceof RubyFixnum) {
+                c[0] = 0.0;
+                f = ((RubyFixnum) lhs).getDoubleValue();
+                x = ((RubyFloat) rhs).getValue();
+                floats = true;
+            } else if (lhs instanceof RubyBignum) {
+                c[0] = 0.0;
+                f = ((RubyBignum) lhs).getDoubleValue();
+                x = ((RubyFloat) rhs).getValue();
+                floats = true;
+            } else if (lhs instanceof RubyRational) {
+                c[0] = 0.0;
+                f = ((RubyRational) lhs).getDoubleValue();
+                x = ((RubyFloat) rhs).getValue();
+                floats = true;
+            }
+        }
+
+        if (!floats) {
+            return lhs.callMethod(ctx, "+", rhs);
+        }
+
+        // Kahan's compensated summation algorithm
+        y = x - c[0];
+        t = f + y;
+        c[0] = (t - f) - y;
+        f = t;
+
+        return new RubyFloat(ctx.runtime, f);
     }
 
     public static IRubyObject injectCommon(final ThreadContext context, IRubyObject self, IRubyObject init, final Block block) {
