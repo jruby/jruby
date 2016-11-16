@@ -4332,16 +4332,17 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     public IRubyObject sumCommon(final ThreadContext context, IRubyObject init, final Block block) {
         final Ruby runtime = context.runtime;
         final IRubyObject result[] = new IRubyObject[] { init };
+        final double memo[] = new double[] { 0.0 };
 
         if (block.isGiven()) {
             for (int i = 0; i < realLength; i++) {
                 IRubyObject value = block.yield(context, eltOk(i));
-                result[0] = result[0].callMethod(context, "+", value);
+                result[0] = RubyEnumerable.sumAdd(context, result[0], value, memo);
             }
         } else {
             for (int i = 0; i < realLength; i++) {
                 IRubyObject value = eltOk(i);
-                result[0] = result[0].callMethod(context, "+", value);
+                result[0] = RubyEnumerable.sumAdd(context, result[0], value, memo);
             }
         }
 
