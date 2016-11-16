@@ -28,7 +28,6 @@ public class SharedMethodInfo {
     /** The original name of the method. Does not change when aliased. */
     private final String name;
     private final String notes;
-    private final boolean isBlock;
     private final ArgumentDescriptor[] argumentDescriptors;
     private final boolean alwaysClone;
     private final boolean alwaysInline;
@@ -41,7 +40,6 @@ public class SharedMethodInfo {
             DynamicObject definitionModule,
             String name,
             String notes,
-            boolean isBlock,
             ArgumentDescriptor[] argumentDescriptors,
             boolean alwaysClone,
             boolean alwaysInline,
@@ -56,7 +54,6 @@ public class SharedMethodInfo {
         this.definitionModule = definitionModule;
         this.name = name;
         this.notes = notes;
-        this.isBlock = isBlock;
         this.argumentDescriptors = argumentDescriptors;
         this.alwaysClone = alwaysClone;
         this.alwaysInline = alwaysInline;
@@ -83,10 +80,6 @@ public class SharedMethodInfo {
         return notes;
     }
 
-    public boolean isBlock() {
-        return isBlock;
-    }
-
     public ArgumentDescriptor[] getArgumentDescriptors() {
         return argumentDescriptors;
     }
@@ -111,7 +104,6 @@ public class SharedMethodInfo {
                 definitionModule,
                 newName,
                 notes,
-                isBlock,
                 argumentDescriptors,
                 alwaysClone,
                 alwaysInline,

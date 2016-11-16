@@ -176,7 +176,6 @@ public class CoreMethodNodeManager {
                 module,
                 methodDetails.getPrimaryName(),
                 "builtin",
-                false,
                 null,
                 context.getOptions().CORE_ALWAYS_CLONE,
                 method.needsCallerFrame() && context.getOptions().INLINE_NEEDS_CALLER_FRAME,

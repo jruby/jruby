@@ -117,7 +117,6 @@ public abstract class SymbolNodes {
                     null,
                     Layouts.SYMBOL.getString(symbol),
                     "proc",
-                    true,
                     ArgumentDescriptor.ANON_REST,
                     false,
                     false,
