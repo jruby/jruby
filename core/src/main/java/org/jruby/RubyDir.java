@@ -624,6 +624,15 @@ public class RubyDir extends RubyObject {
         return this;
     }
 
+    @JRubyMethod(name = "empty?", meta = true)
+    public static IRubyObject empty_p(ThreadContext context, IRubyObject recv, IRubyObject arg) {
+        Ruby runtime = context.runtime;
+        RubyString path = StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, arg));
+        RubyFileStat fileStat = runtime.newFileStat(path.asJavaString(), false);
+        boolean isDirectory = fileStat.directory_p().isTrue();
+        return runtime.newBoolean(isDirectory && entries19(context, recv, arg).getLength() <= 2);
+    }
+
     @JRubyMethod(name = "exist?", meta = true)
     public static IRubyObject exist(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         Ruby runtime = context.runtime;
