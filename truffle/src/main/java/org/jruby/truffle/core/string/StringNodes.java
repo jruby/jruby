@@ -2658,16 +2658,12 @@ public abstract class StringNodes {
 
         public static int checkIndex(int length, int index, RubyNode node) {
             if (index > length) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                throw new RaiseException(
-                        node.getContext().getCoreExceptions().indexError(StringUtils.format("index %d out of string", index), node));
+                throw new RaiseException(node.getContext().getCoreExceptions().indexErrorOutOfString(index, node));
             }
 
             if (index < 0) {
                 if (-index > length) {
-                    CompilerDirectives.transferToInterpreterAndInvalidate();
-                    throw new RaiseException(
-                            node.getContext().getCoreExceptions().indexError(StringUtils.format("index %d out of string", index), node));
+                    throw new RaiseException(node.getContext().getCoreExceptions().indexErrorOutOfString(index, node));
                 }
 
                 index += length;
@@ -2682,16 +2678,12 @@ public abstract class StringNodes {
             final int length = rope(string).byteLength();
 
             if (index >= length) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                throw new RaiseException(
-                        node.getContext().getCoreExceptions().indexError(StringUtils.format("index %d out of string", index), node));
+                throw new RaiseException(node.getContext().getCoreExceptions().indexErrorOutOfString(index, node));
             }
 
             if (index < 0) {
                 if (-index > length) {
-                    CompilerDirectives.transferToInterpreterAndInvalidate();
-                    throw new RaiseException(
-                            node.getContext().getCoreExceptions().indexError(StringUtils.format("index %d out of string", index), node));
+                    throw new RaiseException(node.getContext().getCoreExceptions().indexErrorOutOfString(index, node));
                 }
 
                 index += length;

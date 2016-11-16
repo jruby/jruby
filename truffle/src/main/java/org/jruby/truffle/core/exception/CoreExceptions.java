@@ -258,6 +258,11 @@ public class CoreExceptions {
     // IndexError
 
     @TruffleBoundary
+    public DynamicObject indexErrorOutOfString(int index, Node currentNode) {
+        return indexError(StringUtils.format("index %d out of string", index), currentNode);
+    }
+
+    @TruffleBoundary
     public DynamicObject indexError(String message, Node currentNode) {
         return ExceptionOperations.createRubyException(
                 context.getCoreLibrary().getIndexErrorClass(),
