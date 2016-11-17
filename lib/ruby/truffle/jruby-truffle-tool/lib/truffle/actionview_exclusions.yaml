@@ -1,4 +1,6 @@
 ---
+## test/template/...##
+
 # source code line numbers are off by one?
 CachedViewRenderTest:
 - test_render_error_indentation
@@ -871,3 +873,12 @@ UrlHelperTest:
 - test_mail_to_with_nil
 - test_mail_to_with_special_characters
 - test_mail_with_options
+
+## test/actionpack/... ##
+
+RenderTest:
+- test_line_offset
+- test_render_action_upcased
+
+## test/activerecord/... ##
+

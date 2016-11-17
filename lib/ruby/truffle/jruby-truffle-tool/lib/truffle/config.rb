@@ -245,7 +245,7 @@ Truffle::Tool.add_config :psd,
 
 Truffle::Tool.add_config :actionview,
                          deep_merge(rails_common,
-                                    exclusions_for(:actionview),
+                                    exclusions_for(:actionview, ignore_missing: true),
                                     stubs.fetch(:html_sanitizer))
 
 class Truffle::Tool::CIEnvironment
@@ -352,7 +352,16 @@ end
 
 Truffle::Tool.add_ci_definition :actionview do
   subdir 'actionview'
-  rails_ci has_exclusions:   true,
-           require_pattern: 'test/template/**/*_test.rb'
-  # TODO (pitr-ch 17-Nov-2016): run "test/activerecord/*_test.rb" and "test/actionpack/**/*_test.rb" as well, has to be run separately
+  rails_ci_setup(has_exclusions: true)
+  results = [
+      rails_ci_run(has_exclusions:  true,
+                   require_pattern: 'test/template/**/*_test.rb'),
+      rails_ci_run(has_exclusions:  true,
+                   require_pattern: 'test/actionpack/**/*_test.rb')
+  # TODO (pitr-ch 17-Nov-2016): requires ActiveRecord connection to database to run, uses sqlite
+  # rails_ci_run(has_exclusions:  true,
+  #              require_pattern: 'test/activerecord/*_test.rb')
+  ]
+
+  set_result results.all?
 end
