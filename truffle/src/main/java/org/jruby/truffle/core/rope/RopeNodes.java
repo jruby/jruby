@@ -845,7 +845,7 @@ public abstract class RopeNodes {
                                     @Cached("createBinaryProfile()") ConditionProfile singleByteCharProfile,
                                     @Cached("create()") BranchProfile errorProfile) {
             final int firstByte = getByteNode.executeGetByte(rope, index);
-            if (singleByteCharProfile.profile(firstByte <= 127)) {
+            if (singleByteCharProfile.profile(firstByte < 128)) {
                 return firstByte;
             }
 
