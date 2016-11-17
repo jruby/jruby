@@ -1354,7 +1354,7 @@ public abstract class StringNodes {
 
         @Child private CallDispatchHeadNode appendNode;
         @Child private CharacterByteIndexNode characterByteIndexNode;
-        @Child private CheckIndexNode checkIndexNode;
+        @Child private CheckCharacterIndexNode checkCharacterIndexNode;
         @Child private EncodingNodes.CheckEncodingNode checkEncodingNode;
         @Child private RopeNodes.MakeConcatNode prependMakeConcatNode;
         @Child private RopeNodes.MakeConcatNode leftMakeConcatNode;
@@ -1367,7 +1367,7 @@ public abstract class StringNodes {
             super(context, sourceSection);
             characterByteIndexNode = StringNodesFactory.CharacterByteIndexNodeFactory.create(new RubyNode[] {});
             checkEncodingNode = EncodingNodesFactory.CheckEncodingNodeGen.create(context, sourceSection, null, null);
-            checkIndexNode = StringNodesFactory.CheckIndexNodeGen.create(null, null);
+            checkCharacterIndexNode = StringNodesFactory.CheckCharacterIndexNodeGen.create(null, null);
             leftMakeConcatNode = RopeNodesFactory.MakeConcatNodeGen.create(null, null, null);
             rightMakeConcatNode = RopeNodesFactory.MakeConcatNodeGen.create(null, null, null);
             leftMakeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
@@ -1425,7 +1425,7 @@ public abstract class StringNodes {
             final Rope insert = rope(other);
             final Encoding compatibleEncoding = checkEncodingNode.executeCheckEncoding(string, other);
 
-            final int normalizedIndex = checkIndexNode.executeCheckIndex(string, index);
+            final int normalizedIndex = checkCharacterIndexNode.executeCheck(source, index);
             final int byteIndex = characterByteIndexNode.executeInt(frame, string, normalizedIndex, 0);
 
             final Rope splitLeft = leftMakeSubstringNode.executeMake(source, 0, byteIndex);
@@ -1454,31 +1454,31 @@ public abstract class StringNodes {
 
     @ImportStatic(StringGuards.class)
     @NodeChildren({ @NodeChild("string"), @NodeChild("index") })
-    public static abstract class CheckIndexNode extends RubyNode {
+    public static abstract class CheckCharacterIndexNode extends RubyNode {
 
-        public abstract int executeCheckIndex(DynamicObject string, int index);
+        public abstract int executeCheck(Rope string, int index);
 
         @Specialization
-        protected int checkIndex(DynamicObject string, int index,
-                                 @Cached("createBinaryProfile()") ConditionProfile negativeIndexProfile,
-                                 @Cached("create()") BranchProfile errorProfile) {
-            final int length = rope(string).characterLength();
+        protected int check(Rope rope, int characterIndex,
+                            @Cached("createBinaryProfile()") ConditionProfile negativeIndexProfile,
+                            @Cached("create()") BranchProfile errorProfile) {
+            final int characterLength = rope.characterLength();
 
-            if (index > length) {
+            if (characterIndex > characterLength) {
                 errorProfile.enter();
-                throw new RaiseException(getContext().getCoreExceptions().indexErrorOutOfString(index, this));
+                throw new RaiseException(getContext().getCoreExceptions().indexErrorOutOfString(characterIndex, this));
             }
 
-            if (negativeIndexProfile.profile(index < 0)) {
-                if (-index > length) {
+            if (negativeIndexProfile.profile(characterIndex < 0)) {
+                if (-characterIndex > characterLength) {
                     errorProfile.enter();
-                    throw new RaiseException(getContext().getCoreExceptions().indexErrorOutOfString(index, this));
+                    throw new RaiseException(getContext().getCoreExceptions().indexErrorOutOfString(characterIndex, this));
                 }
 
-                index += length;
+                characterIndex += characterLength;
             }
 
-            return index;
+            return characterIndex;
         }
 
     }
@@ -1943,7 +1943,7 @@ public abstract class StringNodes {
     @ImportStatic(StringGuards.class)
     public abstract static class SetByteNode extends CoreMethodNode {
 
-        @Child private CheckIndexForRefNode checkIndexForRefNode;
+        @Child private CheckByteIndexNode checkByteIndexNode;
         @Child private RopeNodes.MakeConcatNode composedMakeConcatNode;
         @Child private RopeNodes.MakeConcatNode middleMakeConcatNode;
         @Child private RopeNodes.MakeLeafRopeNode makeLeafRopeNode;
@@ -1952,7 +1952,7 @@ public abstract class StringNodes {
 
         public SetByteNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            checkIndexForRefNode = StringNodesFactory.CheckIndexForRefNodeGen.create(null, null);
+            checkByteIndexNode = StringNodesFactory.CheckByteIndexNodeGen.create(null, null);
             composedMakeConcatNode = RopeNodesFactory.MakeConcatNodeGen.create(null, null, null);
             middleMakeConcatNode = RopeNodesFactory.MakeConcatNodeGen.create(null, null, null);
             makeLeafRopeNode = RopeNodesFactory.MakeLeafRopeNodeGen.create(null, null, null, null);
@@ -1972,9 +1972,8 @@ public abstract class StringNodes {
 
         @Specialization(guards = "!isRopeBuffer(string)")
         public int setByte(DynamicObject string, int index, int value) {
-            final int normalizedIndex = checkIndexForRefNode.executeCheckIndexForRef(string, index);
-
             final Rope rope = rope(string);
+            final int normalizedIndex = checkByteIndexNode.executeCheck(rope, index);
 
             final Rope left = leftMakeSubstringNode.executeMake(rope, 0, normalizedIndex);
             final Rope right = rightMakeSubstringNode.executeMake(rope, normalizedIndex + 1, rope.byteLength() - normalizedIndex - 1);
@@ -1988,9 +1987,8 @@ public abstract class StringNodes {
 
         @Specialization(guards = "isRopeBuffer(string)")
         public int setByteRopeBuffer(DynamicObject string, int index, int value) {
-            final int normalizedIndex = checkIndexForRefNode.executeCheckIndexForRef(string, index);
-
             final RopeBuffer rope = (RopeBuffer) rope(string);
+            final int normalizedIndex = checkByteIndexNode.executeCheck(rope, index);
 
             rope.getByteList().set(normalizedIndex, value);
 
@@ -2001,31 +1999,31 @@ public abstract class StringNodes {
 
     @ImportStatic(StringGuards.class)
     @NodeChildren({ @NodeChild("string"), @NodeChild("index") })
-    public static abstract class CheckIndexForRefNode extends RubyNode {
+    public static abstract class CheckByteIndexNode extends RubyNode {
 
-        public abstract int executeCheckIndexForRef(DynamicObject string, int index);
+        public abstract int executeCheck(Rope string, int index);
 
         @Specialization
-        protected int checkIndexForRef(DynamicObject string, int index,
-                                    @Cached("createBinaryProfile()") ConditionProfile negativeIndexProfile,
-                                    @Cached("create()") BranchProfile errorProfile) {
-            final int length = rope(string).byteLength();
+        protected int checkIndex(Rope rope, int byteIndex,
+                                 @Cached("createBinaryProfile()") ConditionProfile negativeIndexProfile,
+                                 @Cached("create()") BranchProfile errorProfile) {
+            final int byteLength = rope.byteLength();
 
-            if (index >= length) {
+            if (byteIndex >= byteLength) {
                 errorProfile.enter();
-                throw new RaiseException(getContext().getCoreExceptions().indexErrorOutOfString(index, this));
+                throw new RaiseException(getContext().getCoreExceptions().indexErrorOutOfString(byteIndex, this));
             }
 
-            if (negativeIndexProfile.profile(index < 0)) {
-                if (-index > length) {
+            if (negativeIndexProfile.profile(byteIndex < 0)) {
+                if (-byteIndex > byteLength) {
                     errorProfile.enter();
-                    throw new RaiseException(getContext().getCoreExceptions().indexErrorOutOfString(index, this));
+                    throw new RaiseException(getContext().getCoreExceptions().indexErrorOutOfString(byteIndex, this));
                 }
 
-                index += length;
+                byteIndex += byteLength;
             }
 
-            return index;
+            return byteIndex;
         }
 
     }
