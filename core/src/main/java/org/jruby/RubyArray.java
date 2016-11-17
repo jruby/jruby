@@ -71,6 +71,7 @@ import org.jruby.util.io.EncodingUtils;
 
 import java.io.IOException;
 import java.lang.reflect.Array;
+import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
@@ -4327,25 +4328,183 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         return sumCommon(context, init, block);
     }
 
-    /* FIXME: optimise for special types (e.g. Integer)? */
-    /* NB: MRI says "Array#sum method may not respect method redefinition of "+" methods such as Integer#+." */
     public IRubyObject sumCommon(final ThreadContext context, IRubyObject init, final Block block) {
         final Ruby runtime = context.runtime;
-        final IRubyObject result[] = new IRubyObject[] { init };
+        IRubyObject result = init;
 
-        if (block.isGiven()) {
-            for (int i = 0; i < realLength; i++) {
-                IRubyObject value = block.yield(context, eltOk(i));
-                result[0] = result[0].callMethod(context, "+", value);
-            }
-        } else {
-            for (int i = 0; i < realLength; i++) {
-                IRubyObject value = eltOk(i);
-                result[0] = result[0].callMethod(context, "+", value);
-            }
+        /*
+         * This state machine is simple: it assumes all elements are the same type,
+         * and transitions to a later state when that assumption fails.
+         *
+         * The order of states is:
+         *
+         * - is_fixnum => { is_bignum | is_rational | is_float | other }
+         * - is_bignum => { is_rational | is_float | other }
+         * - is_rational => { is_float | other }
+         * - is_float => { other }
+         * - other [terminal]
+         */
+        boolean is_fixnum=false, is_bignum=false, is_rational=false, is_float=false;
+
+        if (result instanceof RubyFixnum) {
+            is_fixnum = true;
+        } else if (result instanceof RubyBignum) {
+            is_bignum = true;
+        } else if (result instanceof RubyRational) {
+            is_rational = true;
+        } else if (result instanceof RubyFloat) {
+            is_float = true;
         }
 
-        return result[0];
+        int i = 0;
+        IRubyObject value = null;
+
+        if (is_fixnum) {
+            long sum = ((RubyFixnum) result).getLongValue();
+fixnum_loop:
+            for (; i < realLength; value=null, i++) {
+                if (value == null) {
+                    value = eltOk(i);
+                    if (block.isGiven()) {
+                        value = block.yield(context, value);
+                    }
+                }
+
+                if (value instanceof RubyFixnum) {
+                    /* should not overflow long type */
+                    long other = ((RubyFixnum) value).getLongValue();
+                    long sum2 = sum + other;
+                    if (Helpers.additionOverflowed(sum, other, sum2)) {
+                        is_bignum = true;
+                        break fixnum_loop;
+                    } else {
+                        sum = sum2;
+                    }
+                } else if (value instanceof RubyBignum) {
+                    is_bignum = true;
+                    break fixnum_loop;
+                } else if (value instanceof RubyRational) {
+                    is_rational = true;
+                    break fixnum_loop;
+                } else {
+                    is_float = value instanceof RubyFloat;
+                    break fixnum_loop;
+                }
+            }
+
+            if (is_bignum) {
+                result = RubyBignum.newBignum(runtime, sum);
+            } else if (is_rational) {
+                result = RubyRational.newRationalCanonicalize(context, sum, 1);
+            } else if (is_float) {
+                result = RubyFloat.newFloat(runtime, (double) sum);
+            } else {
+                result = RubyFixnum.newFixnum(runtime, sum);
+            }
+        }
+        if (is_bignum) {
+            BigInteger sum = ((RubyBignum) result).getBigIntegerValue();
+bignum_loop:
+            for (; i < realLength; value=null, i++) {
+                if (value == null) {
+                    value = eltOk(i);
+                    if (block.isGiven()) {
+                        value = block.yield(context, value);
+                    }
+                }
+
+                if (value instanceof RubyFixnum) {
+                    final RubyFixnum ival = (RubyFixnum) value;
+                    final long lval = ival.getLongValue();
+                    final BigInteger bval = BigInteger.valueOf(lval);
+                    sum = sum.add(bval);
+                } else if (value instanceof RubyBignum) {
+                    final RubyBignum ival = (RubyBignum) value;
+                    final BigInteger bval = ival.getBigIntegerValue();
+                    sum = sum.add(bval);
+                } else if (value instanceof RubyRational) {
+                    is_rational = true;
+                    break bignum_loop;
+                } else {
+                    is_float = value instanceof RubyFloat;
+                    break bignum_loop;
+                }
+            }
+
+            if (is_rational) {
+                result = RubyRational.newRationalCanonicalize(context, RubyBignum.newBignum(runtime, sum), RubyFixnum.one(runtime));
+            } else if (is_float) {
+                result = RubyFloat.newFloat(runtime, sum.doubleValue());
+            } else {
+                result = RubyBignum.newBignum(runtime, sum);
+            }
+        }
+        if (is_rational) {
+rational_loop:
+            for (; i < realLength; value=null, i++) {
+                if (value == null) {
+                    value = eltOk(i);
+                    if (block.isGiven()) {
+                        value = block.yield(context, value);
+                    }
+                }
+
+                if (value instanceof RubyFixnum || value instanceof RubyBignum || value instanceof RubyRational) {
+                    result = ((RubyRational) result).op_add(context, value);
+                } else if (value instanceof RubyFloat) {
+                    result = RubyFloat.newFloat(runtime, ((RubyRational) result).getDoubleValue(context));
+                    is_float = true;
+                    break rational_loop;
+                } else {
+                    break rational_loop;
+                }
+            }
+        }
+        if (is_float) {
+            double f = ((RubyFloat) result).getDoubleValue();
+            double c = 0.0;
+            double x, y, t;
+float_loop:
+            for (; i < realLength; value=null, i++) {
+                if (value == null) {
+                    value = eltOk(i);
+                    if (block.isGiven()) {
+                        value = block.yield(context, value);
+                    }
+                }
+
+                if (value instanceof RubyFixnum) {
+                    x = ((RubyFixnum) value).getDoubleValue();
+                } else if (value instanceof RubyBignum) {
+                    x = ((RubyBignum) value).getDoubleValue();
+                } else if (value instanceof RubyRational) {
+                    x = ((RubyRational) value).getDoubleValue(context);
+                } else if (value instanceof RubyFloat) {
+                    x = ((RubyFloat) value).getDoubleValue();
+                } else {
+                    break float_loop;
+                }
+                // Kahan's compensated summation algorithm
+                y = x - c;
+                t = f + y;
+                c = (t - f) - y;
+                f = t;
+            }
+            result = new RubyFloat(runtime, f);
+        }
+//object_loop:
+        for (; i < realLength; value=null, i++) {
+            if (value == null) {
+                value = eltOk(i);
+                if (block.isGiven()) {
+                    value = block.yield(context, value);
+                }
+            }
+
+            result = result.callMethod(context, "+", value);
+        }
+
+        return result;
     }
 
     public IRubyObject find(ThreadContext context, IRubyObject ifnone, Block block) {
