@@ -56,6 +56,7 @@ public class RopeOperations {
 
     private static final ConcurrentHashMap<Encoding, Charset> encodingToCharsetMap = new ConcurrentHashMap<>();
 
+    @TruffleBoundary
     public static LeafRope create(byte[] bytes, Encoding encoding, CodeRange codeRange) {
         if (bytes.length == 1) {
             final int index = bytes[0] & 0xff;
@@ -89,7 +90,6 @@ public class RopeOperations {
             case CR_VALID: return new ValidLeafRope(bytes, encoding, characterLength);
             case CR_BROKEN: return new InvalidLeafRope(bytes, encoding);
             default: {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
                 throw new RuntimeException(StringUtils.format("Unknown code range type: %d", codeRange));
             }
         }
