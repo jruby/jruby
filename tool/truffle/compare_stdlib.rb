@@ -1,13 +1,12 @@
 name = ARGV.first
 
-# gem install path
-require 'path'
+require 'pathname'
 
-org = Path("lib/ruby/stdlib/#{name}")
-dst = Path("lib/ruby/truffle/mri/#{name}")
+org = Pathname("lib/ruby/stdlib/#{name}")
+dst = Pathname("lib/ruby/truffle/mri/#{name}")
 
-a = org.glob("**/*.rb").map { |p| p % org }
-b = dst.glob("**/*.rb").map { |p| p % dst }
+a = Pathname.glob(org + '**/*.rb').map { |p| p.relative_path_from org }
+b = Pathname.glob(dst + '**/*.rb').map { |p| p.relative_path_from dst }
 
 puts "Extra files:"
 puts b-a
