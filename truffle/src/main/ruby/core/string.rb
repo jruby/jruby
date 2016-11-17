@@ -871,11 +871,11 @@ class String
     return unless bytes
 
     chr = chr_at bytes
-    if chr.ord == 10 and chr.ascii?
+    if chr.ord == 10
       if i = m.previous_byte_index(bytes)
         chr = chr_at i
 
-        bytes = i if chr.ord == 13 and chr.ascii?
+        bytes = i if chr.ord == 13
       end
     end
 
@@ -901,7 +901,6 @@ class String
       return unless bytes = m.previous_byte_index(bytesize)
 
       chr = chr_at bytes
-      return unless chr.ascii?
 
       case chr.ord
         when 13
@@ -910,7 +909,7 @@ class String
           if j = m.previous_byte_index(bytes)
             chr = chr_at j
 
-            if chr.ord == 13 and chr.ascii?
+            if chr.ord == 13
               bytes = j
             end
           end
@@ -923,13 +922,13 @@ class String
 
       while i = m.previous_byte_index(bytes)
         chr = chr_at i
-        break unless chr.ord == 10 and chr.ascii?
+        break unless chr.ord == 10
 
         bytes = i
 
         if j = m.previous_byte_index(i)
           chr = chr_at j
-          if chr.ord == 13 and chr.ascii?
+          if chr.ord == 13
             bytes = j
           end
         end

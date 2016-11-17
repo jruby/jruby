@@ -2733,31 +2733,6 @@ public abstract class StringNodes {
         }
     }
 
-
-    @Primitive(name = "character_ascii_p")
-    @ImportStatic(StringGuards.class)
-    public static abstract class CharacterAsciiPrimitiveNode extends PrimitiveArrayArgumentsNode {
-
-        @Specialization(guards = "is7Bit(character)")
-        public boolean isCharacterAscii(DynamicObject character) {
-            return ! rope(character).isEmpty();
-        }
-
-        @Specialization(guards = "!is7Bit(character)")
-        public boolean isCharacterAsciiMultiByte(DynamicObject character) {
-            final Rope rope = rope(character);
-            final int codepoint = StringSupport.preciseCodePoint(
-                    rope.getEncoding(),
-                    rope.getBytes(),
-                    0,
-                    rope.byteLength());
-
-            final boolean found = codepoint != -1;
-
-            return found && Encoding.isAscii(codepoint);
-        }
-    }
-
     @Primitive(name = "character_printable_p")
     public static abstract class CharacterPrintablePrimitiveNode extends PrimitiveArrayArgumentsNode {
 
