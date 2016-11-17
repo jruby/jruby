@@ -1116,6 +1116,18 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return match19Common(context, str, RubyNumeric.num2int(pos), true, block);
     }
 
+    @JRubyMethod(name = "match?")
+    public IRubyObject match_p(ThreadContext context, IRubyObject str) {
+        IRubyObject[] dummy = new IRubyObject[1];
+        return context.runtime.newBoolean(matchPos(context, str, dummy, dummy, 0) >= 0);
+    }
+
+    @JRubyMethod(name = "match?")
+    public IRubyObject match_p(ThreadContext context, IRubyObject str, IRubyObject pos) {
+        IRubyObject[] dummy = new IRubyObject[1];
+        return context.runtime.newBoolean(matchPos(context, str, dummy, dummy, RubyNumeric.num2int(pos)) > 0);
+    }
+
     private IRubyObject match19Common(ThreadContext context, IRubyObject str, int pos, boolean setBackref, Block block) {
         IRubyObject[] holder = setBackref ? null : new IRubyObject[] { context.nil };
         if (matchPos(context, str, null, holder, pos) < 0) {
