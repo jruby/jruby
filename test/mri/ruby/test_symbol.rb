@@ -164,17 +164,26 @@ class TestSymbol < Test::Unit::TestCase
     end;
   end
 
-  # def test_to_proc_iseq
-  #   assert_separately([], <<~"end;", timeout: 1) # do
-  #     bug11845 = '[ruby-core:72381] [Bug #11845]'
-  #     assert_nil(:class.to_proc.source_location, bug11845)
-  #     assert_equal([[:rest]], :class.to_proc.parameters, bug11845)
-  #     c = Class.new {define_method(:klass, :class.to_proc)}
-  #     m = c.instance_method(:klass)
-  #     assert_nil(m.source_location, bug11845)
-  #     assert_equal([[:rest]], m.parameters, bug11845)
-  #   end;
-  # end
+  def test_to_proc_iseq
+    assert_separately([], <<~"end;", timeout: 1) # do
+      bug11845 = '[ruby-core:72381] [Bug #11845]'
+      assert_nil(:class.to_proc.source_location, bug11845)
+      assert_equal([[:rest]], :class.to_proc.parameters, bug11845)
+      c = Class.new {define_method(:klass, :class.to_proc)}
+      m = c.instance_method(:klass)
+      assert_nil(m.source_location, bug11845)
+      assert_equal([[:rest]], m.parameters, bug11845)
+    end;
+  end
+
+  def test_to_proc_binding
+    assert_separately([], <<~"end;", timeout: 1) # do
+      bug12137 = '[ruby-core:74100] [Bug #12137]'
+      assert_raise(ArgumentError, bug12137) {
+        :succ.to_proc.binding
+      }
+    end;
+  end
 
   def test_call
     o = Object.new

@@ -1052,8 +1052,8 @@ q.pop
 
   def test_thread_name
     t = Thread.start {sleep}
+    sleep 0.001 until t.stop?
     assert_nil t.name
-    Thread.pass until t.stop?
     s = t.inspect
     t.name = 'foo'
     assert_equal 'foo', t.name
@@ -1082,5 +1082,11 @@ q.pop
   ensure
     t.kill
     t.join
+  end
+
+  def test_thread_setname_in_initialize
+    bug12290 = '[ruby-core:74963] [Bug #12290]'
+    c = Class.new(Thread) {def initialize() self.name = "foo"; super; end}
+    assert_equal("foo", c.new {Thread.current.name}.value)
   end
 end
