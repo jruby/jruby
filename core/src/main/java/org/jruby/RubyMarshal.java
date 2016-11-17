@@ -163,4 +163,13 @@ public class RubyMarshal {
         output.dumpObject(object);
         return output.isTainted();
     }
+
+    /**
+     * Convenience method for objects that are undumpable. Always throws.
+     *
+     * @throws TypeError
+     */
+    public static IRubyObject undumpable(ThreadContext context, RubyObject self) {
+        throw context.runtime.newTypeError("can't dump " + self.type());
+    }
 }

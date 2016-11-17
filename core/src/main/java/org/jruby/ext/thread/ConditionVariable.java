@@ -29,6 +29,7 @@ package org.jruby.ext.thread;
 
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
+import org.jruby.RubyMarshal;
 import org.jruby.RubyObject;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
@@ -131,7 +132,7 @@ public class ConditionVariable extends RubyObject {
 
     @JRubyMethod
     public IRubyObject marshal_dump(ThreadContext context) {
-        return ThreadLibrary.undumpable(context, this);
+        return RubyMarshal.undumpable(context, this);
     }
     
 }

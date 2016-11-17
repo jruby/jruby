@@ -35,6 +35,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.jruby.Ruby;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
+import org.jruby.RubyMarshal;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
 import org.jruby.RubyThread;
@@ -428,7 +429,7 @@ public class Queue extends RubyObject implements DataType {
 
     @JRubyMethod
     public IRubyObject marshal_dump(ThreadContext context) {
-        return ThreadLibrary.undumpable(context, this);
+        return RubyMarshal.undumpable(context, this);
     }
 
     @JRubyMethod
