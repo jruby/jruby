@@ -1851,7 +1851,7 @@ public class RipperLexer extends LexingCommon {
             return Tokens.tOP_ASGN;
         }
 
-        if (isSpaceArg(c, spaceSeen) || isLexState(lex_state, EXPR_FITEM)) return parseQuote(c);
+        if (isSpaceArg(c, spaceSeen) || (isLexState(lex_state, EXPR_FITEM) && c == 's')) return parseQuote(c);
 
         setState(isAfterOperator() ? EXPR_ARG : EXPR_BEG);
 
