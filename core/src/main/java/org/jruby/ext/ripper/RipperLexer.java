@@ -172,7 +172,7 @@ public class RipperLexer extends LexingCommon {
         IF ("if", Tokens.kIF, Tokens.kIF_MOD, EXPR_BEG),
         DEFINED_P ("defined?", Tokens.kDEFINED, Tokens.kDEFINED, EXPR_ARG),
         SUPER ("super", Tokens.kSUPER, Tokens.kSUPER, EXPR_ARG),
-        UNDEF ("undef", Tokens.kUNDEF, Tokens.kUNDEF, EXPR_FNAME),
+        UNDEF ("undef", Tokens.kUNDEF, Tokens.kUNDEF, EXPR_FNAME|EXPR_FITEM),
         BREAK ("break", Tokens.kBREAK, Tokens.kBREAK, EXPR_MID),
         IN ("in", Tokens.kIN, Tokens.kIN, EXPR_BEG),
         DO ("do", Tokens.kDO, Tokens.kDO, EXPR_BEG),
@@ -191,7 +191,7 @@ public class RipperLexer extends LexingCommon {
         LEND ("END", Tokens.klEND, Tokens.klEND, EXPR_END),
         LBEGIN ("BEGIN", Tokens.klBEGIN, Tokens.klBEGIN, EXPR_END),
         WHILE ("while", Tokens.kWHILE, Tokens.kWHILE_MOD, EXPR_BEG),
-        ALIAS ("alias", Tokens.kALIAS, Tokens.kALIAS, EXPR_FNAME),
+        ALIAS ("alias", Tokens.kALIAS, Tokens.kALIAS, EXPR_FNAME|EXPR_FITEM),
         __ENCODING__("__ENCODING__", Tokens.k__ENCODING__, Tokens.k__ENCODING__, EXPR_END);
 
         public final String name;
@@ -336,7 +336,7 @@ public class RipperLexer extends LexingCommon {
         String value = createTokenString();
 
         if (!isLexState(last_state, EXPR_DOT|EXPR_FNAME) && parser.getCurrentScope().isDefined(value) >= 0) {
-            setState(EXPR_END);
+            setState(EXPR_END|EXPR_LABEL);
         }
 
         identValue = value.intern();
@@ -524,7 +524,7 @@ public class RipperLexer extends LexingCommon {
 
         case 's':
             lex_strterm = new StringTerm(str_ssym, begin, end);
-            setState(EXPR_FNAME);
+            setState(EXPR_FNAME|EXPR_FITEM);
             return Tokens.tSYMBEG;
 
         case 'I':
@@ -1850,8 +1850,8 @@ public class RipperLexer extends LexingCommon {
             setState(EXPR_BEG);
             return Tokens.tOP_ASGN;
         }
-        
-        if (isSpaceArg(c, spaceSeen)) return parseQuote(c);
+
+        if (isSpaceArg(c, spaceSeen) || (isLexState(lex_state, EXPR_FITEM) && c == 's')) return parseQuote(c);
 
         setState(isAfterOperator() ? EXPR_ARG : EXPR_BEG);
 

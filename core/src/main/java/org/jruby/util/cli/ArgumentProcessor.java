@@ -817,6 +817,12 @@ public class ArgumentProcessor {
                 return true;
             }
         });
+        features.put("gem", new Function2<Boolean, ArgumentProcessor, Boolean>() {
+            public Boolean apply(ArgumentProcessor processor, Boolean enable) {
+                processor.config.setDisableGems(!enable);
+                return true;
+            }
+        });
         features.put("gems", new Function2<Boolean, ArgumentProcessor, Boolean>() {
             public Boolean apply(ArgumentProcessor processor, Boolean enable) {
                 processor.config.setDisableGems(!enable);
