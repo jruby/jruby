@@ -2976,7 +2976,7 @@ public abstract class StringNodes {
 
         @Specialization(guards = "indexOutOfBounds(string, byteIndex)")
         public Object stringChrAtOutOfBounds(DynamicObject string, int byteIndex) {
-            return false;
+            return nil();
         }
 
         @Specialization(guards = { "!indexOutOfBounds(string, byteIndex)", "isSingleByteOptimizable(string)" })
