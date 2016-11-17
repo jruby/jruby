@@ -52,6 +52,9 @@ import org.jruby.ast.VCallNode;
 import org.jruby.ast.WhileNode;
 import org.jruby.compiler.Constantizable;
 import org.jruby.compiler.NotCompilableException;
+import org.jruby.ext.thread.ConditionVariable;
+import org.jruby.ext.thread.Mutex;
+import org.jruby.ext.thread.SizedQueue;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScriptBody;
 import org.jruby.javasupport.JavaSupport;
@@ -1679,6 +1682,10 @@ public final class Ruby implements Constantizable {
     }
 
     private void initLibraries() {
+        Mutex.setup(this);
+        ConditionVariable.setup(this);
+        org.jruby.ext.thread.Queue.setup(this);
+        SizedQueue.setup(this);
         new ThreadFiberLibrary().load(this, false);
     }
 

@@ -62,9 +62,6 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.ThreadKill;
-import org.jruby.ext.thread.ConditionVariable;
-import org.jruby.ext.thread.Mutex;
-import org.jruby.ext.thread.SizedQueue;
 import org.jruby.internal.runtime.NativeThread;
 import org.jruby.internal.runtime.RubyRunnable;
 import org.jruby.internal.runtime.ThreadLike;
@@ -439,11 +436,6 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         location.defineAnnotatedMethods(Location.class);
 
         runtime.setLocation(location);
-        
-        Mutex.setup(runtime);
-        ConditionVariable.setup(runtime);
-        org.jruby.ext.thread.Queue.setup(runtime);
-        SizedQueue.setup(runtime);
 
         return threadClass;
     }
