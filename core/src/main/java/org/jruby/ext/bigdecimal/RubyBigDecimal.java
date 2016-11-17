@@ -69,7 +69,6 @@ import org.jruby.util.StringSupport;
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
-@JRubyClass(name="BigDecimal", parent="Numeric")
 public class RubyBigDecimal extends RubyNumeric {
 
     private static final ObjectAllocator ALLOCATOR = new ObjectAllocator() {
@@ -1728,7 +1727,7 @@ public class RubyBigDecimal extends RubyNumeric {
      *                 if the argument number is negative
      * @throws IllegalArgumentException
      *                 if rootMC has precision 0
-     * @see http://oldblog.novaloka.nl/blogger.xs4all.nl/novaloka/archive/2007/09/15/295396.html
+     * @link http://oldblog.novaloka.nl/blogger.xs4all.nl/novaloka/archive/2007/09/15/295396.html
      */
     public static BigDecimal bigSqrt(BigDecimal squarD, MathContext rootMC) {
        // General number and precision checking

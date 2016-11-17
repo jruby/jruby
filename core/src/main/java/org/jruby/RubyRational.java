@@ -89,7 +89,7 @@ import static org.jruby.runtime.invokedynamic.MethodNames.HASH;
  *  1.9 rational.c as of revision: 20011
  */
 
-@JRubyClass(name = "Rational", parent = "Numeric", include = "Precision")
+@JRubyClass(name = "Rational", parent = "Numeric")
 public class RubyRational extends RubyNumeric {
     
     public static RubyClass createRationalClass(Ruby runtime) {

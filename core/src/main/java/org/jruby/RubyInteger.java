@@ -63,7 +63,7 @@ import static org.jruby.RubyEnumerator.SizeFn;
  *
  * @author  jpetersen
  */
-@JRubyClass(name="Integer", parent="Numeric", include="Precision")
+@JRubyClass(name="Integer", parent="Numeric")
 public abstract class RubyInteger extends RubyNumeric {
 
     public static RubyClass createIntegerClass(Ruby runtime) {
@@ -525,6 +525,135 @@ public abstract class RubyInteger extends RubyNumeric {
     @JRubyMethod(name = "denominator")
     public IRubyObject denominator(ThreadContext context) {
         return RubyFixnum.one(context.runtime);
+    }
+
+    @JRubyMethod(name = "to_s")
+    @Override
+    public abstract RubyString to_s();
+
+    @JRubyMethod(name = "to_s")
+    public abstract RubyString to_s(IRubyObject x);
+
+    @JRubyMethod(name = "-@")
+    public abstract IRubyObject op_uminus(ThreadContext context);
+
+    @JRubyMethod(name = "+")
+    public abstract IRubyObject op_plus(ThreadContext context, IRubyObject other);
+
+    @JRubyMethod(name = "-")
+    public abstract IRubyObject op_minus(ThreadContext context, IRubyObject other);
+
+    @JRubyMethod(name = "*")
+    public abstract IRubyObject op_mul(ThreadContext context, IRubyObject other);
+
+    @JRubyMethod(name = "div")
+    public abstract IRubyObject op_idiv(ThreadContext context, IRubyObject other);
+
+    public final IRubyObject div_div(ThreadContext context, IRubyObject other) {
+        return op_idiv(context, other);
+    }
+
+    @JRubyMethod(name = "/")
+    public abstract IRubyObject op_div(ThreadContext context, IRubyObject other);
+
+    @JRubyMethod(name = {"%", "modulo"})
+    public abstract IRubyObject op_mod(ThreadContext context, IRubyObject other);
+
+    @JRubyMethod(name = "**")
+    public abstract IRubyObject op_pow(ThreadContext context, IRubyObject other);
+
+    @JRubyMethod(name = "abs")
+    public abstract IRubyObject abs(ThreadContext context);
+
+    @JRubyMethod(name = "magnitude")
+    @Override
+    public IRubyObject magnitude(ThreadContext context) {
+        return abs(context);
+    }
+
+    @JRubyMethod(name = "==")
+    @Override
+    public abstract IRubyObject op_equal(ThreadContext context, IRubyObject other);
+
+    @JRubyMethod(name = "<=>")
+    @Override
+    public abstract IRubyObject op_cmp(ThreadContext context, IRubyObject other);
+
+    @JRubyMethod(name = "~")
+    public abstract IRubyObject op_neg(ThreadContext context);
+
+    @JRubyMethod(name = "&")
+    public abstract IRubyObject op_and(ThreadContext context, IRubyObject other);
+
+    @JRubyMethod(name = "|")
+    public abstract IRubyObject op_or(ThreadContext context, IRubyObject other);
+
+    @JRubyMethod(name = "^")
+    public abstract IRubyObject op_xor(ThreadContext context, IRubyObject other);
+
+    @JRubyMethod(name = "[]")
+    public abstract IRubyObject op_aref(ThreadContext context, IRubyObject other);
+
+    @JRubyMethod(name = "<<")
+    public abstract IRubyObject op_lshift(ThreadContext context, IRubyObject other);
+
+    @JRubyMethod(name = ">>")
+    public abstract IRubyObject op_rshift(ThreadContext context, IRubyObject other);
+
+    @JRubyMethod(name = "to_f")
+    public abstract IRubyObject to_f(ThreadContext context);
+
+    @JRubyMethod(name = "size")
+    public abstract IRubyObject size(ThreadContext context);
+
+    @JRubyMethod(name = "zero?")
+    public abstract IRubyObject zero_p(ThreadContext context);
+
+    @JRubyMethod(name = "bit_length")
+    public abstract IRubyObject bit_length(ThreadContext context);
+
+    public IRubyObject op_gt(ThreadContext context, IRubyObject other) {
+        return RubyComparable.op_gt(context, this, other);
+    }
+
+    public IRubyObject op_lt(ThreadContext context, IRubyObject other) {
+        return RubyComparable.op_lt(context, this, other);
+    }
+
+    public IRubyObject op_ge(ThreadContext context, IRubyObject other) {
+        return RubyComparable.op_ge(context, this, other);
+    }
+
+    public IRubyObject op_le(ThreadContext context, IRubyObject other) {
+        return RubyComparable.op_le(context, this, other);
+    }
+
+    public IRubyObject op_uminus() {
+        return op_uminus(getRuntime().getCurrentContext());
+    }
+
+    public IRubyObject op_neg() {
+        return to_f(getRuntime().getCurrentContext());
+    }
+
+    public IRubyObject op_aref(IRubyObject other) {
+        return op_aref(getRuntime().getCurrentContext(), other);
+    }
+
+    public IRubyObject op_lshift(IRubyObject other) {
+        return op_lshift(getRuntime().getCurrentContext(), other);
+    }
+
+    public IRubyObject op_rshift(IRubyObject other) {
+        return op_rshift(getRuntime().getCurrentContext(), other);
+    }
+
+    public IRubyObject to_f() {
+        return to_f(getRuntime().getCurrentContext());
+    }
+
+    public IRubyObject size() {
+        return size(getRuntime().getCurrentContext());
     }
 
     private static JavaSites.IntegerSites sites(ThreadContext context) {

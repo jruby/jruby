@@ -73,7 +73,7 @@ import static org.jruby.util.Numeric.nurat_rationalize_internal;
 /**
   * A representation of a float object
  */
-@JRubyClass(name="Float", parent="Numeric", include="Precision")
+@JRubyClass(name="Float", parent="Numeric")
 public class RubyFloat extends RubyNumeric {
     public static final int ROUNDS = 1;
     public static final int RADIX = 2;

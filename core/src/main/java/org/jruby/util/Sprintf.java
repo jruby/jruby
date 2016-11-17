@@ -616,16 +616,12 @@ public class Sprintf {
                         name = null;
                     }
 
-                    ClassIndex type = arg.getMetaClass().getClassIndex();
-                    if (type != ClassIndex.FIXNUM && type != ClassIndex.BIGNUM) {
-                        switch(type) {
-                        case FLOAT:
-                            arg = RubyNumeric.dbl2num(arg.getRuntime(),((RubyFloat)arg).getValue());
-                            break;
-                        case STRING:
-                            arg = ((RubyString)arg).stringToInum19(0, true);
-                            break;
-                        default:
+                    if (!(arg instanceof RubyFixnum || arg instanceof RubyBignum)) {
+                        if (arg instanceof RubyFloat) {
+                            arg = RubyNumeric.dbl2num(arg.getRuntime(), ((RubyFloat) arg).getValue());
+                        } else if (arg instanceof RubyString) {
+                            arg = ((RubyString) arg).stringToInum19(0, true);
+                        } else {
                             if (arg.respondsTo("to_int")) {
                                 arg = TypeConverter.convertToType(arg, arg.getRuntime().getInteger(), "to_int", true);
                             } else {
@@ -633,7 +629,6 @@ public class Sprintf {
                             }
                             break;
                         }
-                        type = arg.getMetaClass().getClassIndex();
                     }
                     byte[] bytes = null;
                     int first = 0;
@@ -671,7 +666,7 @@ public class Sprintf {
                     // uses C-sprintf, in part, to format numeric output, while
                     // we'll use Java's numeric formatting code (and our own).
                     boolean zero;
-                    if (type == ClassIndex.FIXNUM) {
+                    if (arg instanceof RubyFixnum) {
                         negative = ((RubyFixnum)arg).getLongValue() < 0;
                         zero = ((RubyFixnum)arg).getLongValue() == 0;
                         if (negative && fchar == 'u') {
