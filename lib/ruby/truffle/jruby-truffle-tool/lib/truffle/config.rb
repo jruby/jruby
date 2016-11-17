@@ -250,6 +250,13 @@ Truffle::Tool.add_config :actionview,
 
 class Truffle::Tool::CIEnvironment
   def rails_ci(has_exclusions: false, skip_test_files: [], require_pattern: 'test/**/*_test.rb')
+    rails_ci_setup has_exclusions: has_exclusions
+    set_result rails_ci_run has_exclusions:  has_exclusions,
+                            skip_test_files: skip_test_files,
+                            require_pattern: require_pattern
+  end
+
+  def rails_ci_setup(has_exclusions: false)
     options           = {}
     options[:debug]   = ['-d', '--[no-]debug', 'Run tests with remote debugging enabled.', STORE_NEW_VALUE, false]
     options[:exclude] = ['--[no-]exclusion', 'Exclude known failing tests', STORE_NEW_VALUE, true] if has_exclusions
@@ -260,11 +267,14 @@ class Truffle::Tool::CIEnvironment
     use_only_https_git_paths!
 
     has_to_succeed setup
-    set_result run([*(['--exclude-pattern', *skip_test_files.join('|')] unless skip_test_files.empty?),
-                    '--require-pattern', require_pattern,
-                    *(%w[-r excluded-tests] if has_exclusions && option(:exclude)),
-                    *(%w[--debug] if option(:debug)),
-                    *%w[-- -I test -e nil]])
+  end
+
+  def rails_ci_run(has_exclusions: false, skip_test_files: [], require_pattern: 'test/**/*_test.rb')
+    run([*(['--exclude-pattern', *skip_test_files.join('|')] unless skip_test_files.empty?),
+         '--require-pattern', require_pattern,
+         *(%w[-r excluded-tests] if has_exclusions && option(:exclude)),
+         *(%w[--debug] if option(:debug)),
+         *%w[-- -I test -e nil]])
   end
 end
 
