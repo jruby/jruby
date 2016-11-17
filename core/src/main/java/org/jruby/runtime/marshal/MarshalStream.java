@@ -240,21 +240,19 @@ public class MarshalStream extends FilterOutputStream {
             case FALSE:
                 write('F');
                 return;
-            case INTEGER:
-                if (value instanceof RubyFixnum) {
-                    RubyFixnum fixnum = (RubyFixnum)value;
+            case FIXNUM:
+                RubyFixnum fixnum = (RubyFixnum)value;
 
-                    if (isMarshalFixnum(fixnum)) {
-                        write('i');
-                        writeInt((int) fixnum.getLongValue());
-                        return;
-                    }
-                    // FIXME: inefficient; constructing a bignum just for dumping?
-                    value = RubyBignum.newBignum(value.getRuntime(), fixnum.getLongValue());
-
-                    // fall through
+                if (isMarshalFixnum(fixnum)) {
+                    write('i');
+                    writeInt((int) fixnum.getLongValue());
+                    return;
                 }
-                
+                // FIXME: inefficient; constructing a bignum just for dumping?
+                value = RubyBignum.newBignum(value.getRuntime(), fixnum.getLongValue());
+
+                // fall through
+            case BIGNUM:
                 write('l');
                 RubyBignum.marshalTo((RubyBignum)value, this);
                 return;
