@@ -680,7 +680,7 @@ public class RubyMath {
 
     @JRubyMethod(name = "gamma", required = 1, module = true, visibility = Visibility.PRIVATE)
     public static RubyFloat gamma(ThreadContext context, IRubyObject recv, IRubyObject x) {
-        double value = ((RubyFloat) RubyKernel.new_float(recv, x)).getDoubleValue();
+        double value = RubyKernel.new_float(recv, x).getDoubleValue();
         double result = nemes_gamma(value);
         /* note nemes_gamma can return Double.POSITIVE_INFINITY or Double.NEGATIVE_INFINITY
          * when value is an integer less than 1.
@@ -719,7 +719,7 @@ public class RubyMath {
 
     @JRubyMethod(name = "lgamma", required = 1, module = true, visibility = Visibility.PRIVATE)
     public static RubyArray lgamma(ThreadContext context, IRubyObject recv, IRubyObject x) {
-        double value      = RubyKernel.new_float(recv, x).getDoubleValue();
+        double value = RubyKernel.new_float(recv, x).getDoubleValue();
         // JRUBY-4653: Could this error checking done more elegantly?
         if (value < 0 && Double.isInfinite(value)) throw context.runtime.newMathDomainError("lgamma");
 
@@ -743,22 +743,22 @@ public class RubyMath {
      * Inner class to help with &Gamma; functions
      */
     public static class NemesLogGamma {
-        public double value;
-        public double sign = 1;
+        public final double value;
+        public final double sign;
 
         public NemesLogGamma(double x) {
             if (Double.isInfinite(x)) {
-                value = Double.POSITIVE_INFINITY;
+                value = Double.POSITIVE_INFINITY; sign = 1;
                 return;
             }
 
             if (Double.isNaN(x)) {
-                value = Double.NaN;
+                value = Double.NaN; sign = 1;
                 return;
             }
 
             double int_part = (int) x;
-            sign = (int_part % 2 == 0 && (x - int_part) != 0.0 && (x < 0)) ? -1 : 1;
+            sign = signum(x, int_part);
             if ((x - int_part) == 0.0 && 0 < int_part && int_part <= FACTORIAL.length) {
                 value = Math.log(FACTORIAL[(int) int_part - 1]);
             }
@@ -779,5 +779,14 @@ public class RubyMath {
                         (Math.log(2) + Math.log(Math.PI) - Math.log(x)) / 2.0;
             }
         }
+
+        private static int signum(final double x, final double int_part) {
+            return ( (int_part % 2 == 0 && (x - int_part) != 0.0 && (x < 0)) || negZero(x) ) ? -1 : 1;
+        }
+
+        private static boolean negZero(final double x) {
+            return x == 0.0 && Double.doubleToRawLongBits(x) != 0; // detect -0.0 (since in Java: `0.0 == -0.0`)
+        }
+
     }
 }
