@@ -4371,8 +4371,15 @@ fixnum_loop:
                 }
 
                 if (value instanceof RubyFixnum) {
-                    /* comment from MRI: should not overflow long type */
-                    sum += ((RubyFixnum) value).getLongValue();
+                    /* should not overflow long type */
+                    long other = ((RubyFixnum) value).getLongValue();
+                    long sum2 = sum + other;
+                    if (Helpers.additionOverflowed(sum, other, sum2)) {
+                        is_bignum = true;
+                        break fixnum_loop;
+                    } else {
+                        sum = sum2;
+                    }
                 } else if (value instanceof RubyBignum) {
                     is_bignum = true;
                     break fixnum_loop;
