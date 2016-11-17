@@ -1474,7 +1474,10 @@ public class PopenExecutor {
                 }
                 break;
 
-            case FIXNUM:
+            case INTEGER:
+                if (!(val instanceof RubyFixnum)) {
+                    return ST_STOP;
+                }
             case FILE:
             case IO:
             case ARRAY:
@@ -1523,9 +1526,14 @@ public class PopenExecutor {
             case IO:
                 val = checkExecRedirectFd(runtime, val, false);
                 /* fall through */
-            case FIXNUM:
-                param = val;
-                eargp.fd_dup2 = checkExecRedirect1(runtime, eargp.fd_dup2, key, param);
+            case INTEGER:
+                if (val instanceof RubyFixnum) {
+                    param = val;
+                    eargp.fd_dup2 = checkExecRedirect1(runtime, eargp.fd_dup2, key, param);
+                    break;
+                }
+
+                checkExecRedirectDefault(runtime, key, val, eargp);
                 break;
 
             case ARRAY:
@@ -1574,16 +1582,22 @@ public class PopenExecutor {
                 break;
 
             default:
-                tmp = val;
-                val = TypeConverter.ioCheckIO(runtime, tmp);
-                if (!val.isNil()) {
-                    val = checkExecRedirectFd(runtime, val, false);
-                    param = val;
-                    eargp.fd_dup2 = checkExecRedirect1(runtime, eargp.fd_dup2, key, param);
-                }
-                throw runtime.newArgumentError("wrong exec redirect action");
+                checkExecRedirectDefault(runtime, key, val, eargp);
         }
 
+    }
+
+    private static void checkExecRedirectDefault(Ruby runtime, IRubyObject key, IRubyObject val, ExecArg eargp) {
+        IRubyObject tmp;
+        IRubyObject param;
+        tmp = val;
+        val = TypeConverter.ioCheckIO(runtime, tmp);
+        if (!val.isNil()) {
+            val = checkExecRedirectFd(runtime, val, false);
+            param = val;
+            eargp.fd_dup2 = checkExecRedirect1(runtime, eargp.fd_dup2, key, param);
+        }
+        throw runtime.newArgumentError("wrong exec redirect action");
     }
 
     // MRI: check_exec_redirect_fd

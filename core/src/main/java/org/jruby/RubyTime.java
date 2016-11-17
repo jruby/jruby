@@ -265,8 +265,7 @@ public class RubyTime extends RubyObject {
         boolean typeError = false;
 
         switch (v.getMetaClass().getClassIndex()) {
-            case FIXNUM:
-            case BIGNUM:
+            case INTEGER:
                 return v;
 
             case RATIONAL:
@@ -298,8 +297,7 @@ public class RubyTime extends RubyObject {
         }
 
         switch (v.getMetaClass().getClassIndex()) {
-            case FIXNUM:
-            case BIGNUM:
+            case INTEGER:
                 return v;
 
             case RATIONAL:

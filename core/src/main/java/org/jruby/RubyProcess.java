@@ -646,8 +646,7 @@ public class RubyProcess {
                 }
         /* fall through */
 
-            case FIXNUM:
-            case BIGNUM:
+            case INTEGER:
                 return rval.convertToInteger().getIntValue();
         }
 
@@ -688,8 +687,7 @@ public class RubyProcess {
                 }
         /* fall through */
 
-            case FIXNUM:
-            case BIGNUM:
+            case INTEGER:
                 return rtype.convertToInteger().getIntValue();
         }
 

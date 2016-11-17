@@ -1463,11 +1463,12 @@ public class JavaUtil {
         case NIL:
             javaObject = null;
             break;
-        case FIXNUM:
-            javaObject = Long.valueOf(((RubyFixnum) object).getLongValue());
-            break;
-        case BIGNUM:
-            javaObject = ((RubyBignum) object).getValue();
+        case INTEGER:
+            if (object instanceof RubyFixnum) {
+                javaObject = Long.valueOf(((RubyFixnum) object).getLongValue());
+            } else {
+                javaObject = ((RubyBignum) object).getValue();
+            }
             break;
         case FLOAT:
             javaObject = new Double(((RubyFloat) object).getValue());

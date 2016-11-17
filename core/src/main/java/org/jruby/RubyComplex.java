@@ -288,8 +288,7 @@ public class RubyComplex extends RubyNumeric {
      */
     private static void realCheck(ThreadContext context, IRubyObject num) {
         switch (num.getMetaClass().getClassIndex()) {
-        case FIXNUM:
-        case BIGNUM:
+        case INTEGER:
         case FLOAT:
         case RATIONAL:
             break;

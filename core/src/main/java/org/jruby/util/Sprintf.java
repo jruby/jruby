@@ -616,12 +616,16 @@ public class Sprintf {
                         name = null;
                     }
 
-                    if (!(arg instanceof RubyFixnum || arg instanceof RubyBignum)) {
-                        if (arg instanceof RubyFloat) {
-                            arg = RubyNumeric.dbl2num(arg.getRuntime(), ((RubyFloat) arg).getValue());
-                        } else if (arg instanceof RubyString) {
-                            arg = ((RubyString) arg).stringToInum19(0, true);
-                        } else {
+                    ClassIndex type = arg.getMetaClass().getClassIndex();
+                    if (type != ClassIndex.INTEGER) {
+                        switch(type) {
+                        case FLOAT:
+                            arg = RubyNumeric.dbl2num(arg.getRuntime(),((RubyFloat)arg).getValue());
+                            break;
+                        case STRING:
+                            arg = ((RubyString)arg).stringToInum19(0, true);
+                            break;
+                        default:
                             if (arg.respondsTo("to_int")) {
                                 arg = TypeConverter.convertToType(arg, arg.getRuntime().getInteger(), "to_int", true);
                             } else {
@@ -629,6 +633,7 @@ public class Sprintf {
                             }
                             break;
                         }
+                        type = arg.getMetaClass().getClassIndex();
                     }
                     byte[] bytes = null;
                     int first = 0;
@@ -666,7 +671,7 @@ public class Sprintf {
                     // uses C-sprintf, in part, to format numeric output, while
                     // we'll use Java's numeric formatting code (and our own).
                     boolean zero;
-                    if (arg instanceof RubyFixnum) {
+                    if (type == ClassIndex.INTEGER) {
                         negative = ((RubyFixnum)arg).getLongValue() < 0;
                         zero = ((RubyFixnum)arg).getLongValue() == 0;
                         if (negative && fchar == 'u') {
