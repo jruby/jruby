@@ -10,7 +10,6 @@ class TestLoadingBuiltinLibraries < Test::Unit::TestCase
       require 'strscan.so'
       require 'zlib.so'
       require 'enumerator.so'
-      require 'thread.so'
       require 'digest.so'
       require 'digest.rb'
       require 'digest/md5.so'
