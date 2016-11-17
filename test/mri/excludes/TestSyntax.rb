@@ -12,8 +12,6 @@ exclude :test_duplicated_when, "needs investigation"
 exclude :test_integer_suffix, "needs investigation"
 exclude :test_invalid_next, "needs investigation"
 exclude :test_null_range_cmdarg, "needs investigation"
-exclude :test_syntax_ext, "needs investigation #4308"
-exclude :test_syntax_lib, "needs investigation #4308"
-exclude :test_syntax_sample, "needs investigation #4308"
-exclude :test_syntax_test, "needs investigation #4308"
+
+
 
