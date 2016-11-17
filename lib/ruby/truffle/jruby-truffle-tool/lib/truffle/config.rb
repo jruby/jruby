@@ -245,7 +245,7 @@ Truffle::Tool.add_config :psd,
 
 
 class Truffle::Tool::CIEnvironment
-  def rails_ci(has_exclusions: false, skip_test_files: [])
+  def rails_ci(has_exclusions: false, skip_test_files: [], require_pattern: 'test/**/*_test.rb')
     options           = {}
     options[:debug]   = ['-d', '--[no-]debug', 'Run tests with remote debugging enabled.', STORE_NEW_VALUE, false]
     options[:exclude] = ['--[no-]exclusion', 'Exclude known failing tests', STORE_NEW_VALUE, true] if has_exclusions
@@ -257,7 +257,7 @@ class Truffle::Tool::CIEnvironment
 
     has_to_succeed setup
     set_result run([*(['--exclude-pattern', *skip_test_files.join('|')] unless skip_test_files.empty?),
-                    *%w[--require-pattern test/**/*_test.rb],
+                    '--require-pattern', require_pattern,
                     *(%w[-r excluded-tests] if has_exclusions && option(:exclude)),
                     *(%w[--debug] if option(:debug)),
                     *%w[-- -I test -e nil]])
