@@ -11,7 +11,3 @@ exclude :test_do_block_in_lambda, "needs investigation"
 exclude :test_duplicated_when, "needs investigation"
 exclude :test_integer_suffix, "needs investigation"
 exclude :test_invalid_next, "needs investigation"
-exclude :test_null_range_cmdarg, "needs investigation"
-
-
-
