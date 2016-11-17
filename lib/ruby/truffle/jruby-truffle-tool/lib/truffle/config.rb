@@ -174,11 +174,11 @@ def exclusion_file(gem_name)
   data.pretty_inspect
 end
 
-def exclusions_for(name)
+def exclusions_for(name, ignore_missing: false)
   { setup: { file: { 'excluded-tests.rb' => format(dedent(<<-RUBY), exclusion_file(name)) } } }
     failures = %s
     require 'truffle/exclude_rspec_examples'
-    Truffle::Tool.exclude_rspec_examples failures
+    Truffle::Tool.exclude_rspec_examples failures, ignore_missing: #{!!ignore_missing}
   RUBY
 end
 
