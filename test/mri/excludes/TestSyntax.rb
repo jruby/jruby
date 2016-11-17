@@ -1,6 +1,5 @@
 exclude :test__END___cr, "needs investigation"
 exclude :test_alias_symbol, "needs investigation #4308"
-exclude :test_cmdarg_kwarg_lvar_clashing_method, "needs investigation #4308"
 exclude :test_constant_reassignment_nested, "needs investigation"
 exclude :test_constant_reassignment_toplevel, "needs investigation"
 exclude :test_dedented_heredoc_with_blank_more_indented_line, "needs investigation #4308"

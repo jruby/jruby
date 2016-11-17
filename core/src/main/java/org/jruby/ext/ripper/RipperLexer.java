@@ -336,7 +336,7 @@ public class RipperLexer extends LexingCommon {
         String value = createTokenString();
 
         if (!isLexState(last_state, EXPR_DOT|EXPR_FNAME) && parser.getCurrentScope().isDefined(value) >= 0) {
-            setState(EXPR_END);
+            setState(EXPR_END|EXPR_LABEL);
         }
 
         identValue = value.intern();

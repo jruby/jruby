@@ -1056,7 +1056,7 @@ public class RubyLexer extends LexingCommon {
     private int identifierToken(int result, String value) {
         if (result == Tokens.tIDENTIFIER && !isLexState(last_state, EXPR_DOT|EXPR_FNAME) &&
                 parserSupport.getCurrentScope().isDefined(value) >= 0) {
-            setState(EXPR_END);
+            setState(EXPR_END|EXPR_LABEL);
         }
 
         yaccValue = value;
