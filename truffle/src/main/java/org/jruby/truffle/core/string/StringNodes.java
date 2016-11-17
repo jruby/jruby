@@ -1354,6 +1354,7 @@ public abstract class StringNodes {
 
         @Child private CallDispatchHeadNode appendNode;
         @Child private CharacterByteIndexNode characterByteIndexNode;
+        @Child private CheckIndexNode checkIndexNode;
         @Child private EncodingNodes.CheckEncodingNode checkEncodingNode;
         @Child private RopeNodes.MakeConcatNode prependMakeConcatNode;
         @Child private RopeNodes.MakeConcatNode leftMakeConcatNode;
@@ -1366,6 +1367,7 @@ public abstract class StringNodes {
             super(context, sourceSection);
             characterByteIndexNode = StringNodesFactory.CharacterByteIndexNodeFactory.create(new RubyNode[] {});
             checkEncodingNode = EncodingNodesFactory.CheckEncodingNodeGen.create(context, sourceSection, null, null);
+            checkIndexNode = StringNodesFactory.CheckIndexNodeGen.create(null, null);
             leftMakeConcatNode = RopeNodesFactory.MakeConcatNodeGen.create(null, null, null);
             rightMakeConcatNode = RopeNodesFactory.MakeConcatNodeGen.create(null, null, null);
             leftMakeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
@@ -1423,8 +1425,7 @@ public abstract class StringNodes {
             final Rope insert = rope(other);
             final Encoding compatibleEncoding = checkEncodingNode.executeCheckEncoding(string, other);
 
-            final int stringLength = source.characterLength();
-            final int normalizedIndex = StringNodesHelper.checkIndex(stringLength, index, this);
+            final int normalizedIndex = checkIndexNode.executeCheckIndex(string, index);
             final int byteIndex = characterByteIndexNode.executeInt(frame, string, normalizedIndex, 0);
 
             final Rope splitLeft = leftMakeSubstringNode.executeMake(source, 0, byteIndex);
@@ -1449,6 +1450,37 @@ public abstract class StringNodes {
         protected boolean indexAtEitherBounds(int index) {
             return indexAtStartBound(index) || indexAtEndBound(index);
         }
+    }
+
+    @ImportStatic(StringGuards.class)
+    @NodeChildren({ @NodeChild("string"), @NodeChild("index") })
+    public static abstract class CheckIndexNode extends RubyNode {
+
+        public abstract int executeCheckIndex(DynamicObject string, int index);
+
+        @Specialization
+        protected int checkIndex(DynamicObject string, int index,
+                                 @Cached("createBinaryProfile()") ConditionProfile negativeIndexProfile,
+                                 @Cached("create()") BranchProfile errorProfile) {
+            final int length = rope(string).characterLength();
+
+            if (index > length) {
+                errorProfile.enter();
+                throw new RaiseException(getContext().getCoreExceptions().indexErrorOutOfString(index, this));
+            }
+
+            if (negativeIndexProfile.profile(index < 0)) {
+                if (-index > length) {
+                    errorProfile.enter();
+                    throw new RaiseException(getContext().getCoreExceptions().indexErrorOutOfString(index, this));
+                }
+
+                index += length;
+            }
+
+            return index;
+        }
+
     }
 
     @CoreMethod(names = "lstrip!", raiseIfFrozenSelf = true)
@@ -2688,22 +2720,6 @@ public abstract class StringNodes {
     }
 
     public static class StringNodesHelper {
-
-        public static int checkIndex(int length, int index, RubyNode node) {
-            if (index > length) {
-                throw new RaiseException(node.getContext().getCoreExceptions().indexErrorOutOfString(index, node));
-            }
-
-            if (index < 0) {
-                if (-index > length) {
-                    throw new RaiseException(node.getContext().getCoreExceptions().indexErrorOutOfString(index, node));
-                }
-
-                index += length;
-            }
-
-            return index;
-        }
 
         @TruffleBoundary
         private static Object trTransHelper(RubyContext context, EncodingNodes.CheckEncodingNode checkEncodingNode,
