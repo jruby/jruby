@@ -79,7 +79,7 @@ Ruby. The ecosystem tests test commands related to Ruby. The gems tests test a
 small number of key Ruby 3rd party modules.
 
 The basic test to run every time you make changes is a subset of specs which
-run in reasonable time.
+runs in reasonable time.
 
 ```
 $ jt test fast
@@ -96,14 +96,14 @@ don't normally run them locally unless we're working on that functionality.
 
 ### Running
 
-`jt run` runs JRuby+Truffle. You can use it exactly as you'd run the MRI `ruby`
+`jt ruby` runs JRuby+Truffle. You can use it exactly as you'd run the MRI `ruby`
 command. Although it does set a couple of extra options to help you when
 developing, such as loading the core lirbary from disk rather than the JAR. `jt
-run` prints the real command it's running as it starts.
+ruby` prints the real command it's running as it starts.
 
 ```
 $ ruby ...
-$ jt run ...
+$ jt ruby ...
 ```
 
 Note that running Ruby without any arguments does not start a shell. You should
@@ -115,14 +115,14 @@ system Ruby or a GraalVM tarball.
 Specify JVM options with `-J-option`.
 
 ```
-$ jt run -J-Xmx1G test.rb
+$ jt ruby -J-Xmx1G test.rb
 ```
 
 JRuby+Truffle options are set with `-Xtruffle...=...`. For example
 `-Xtruffle.exceptions.print_java=true` to print Java exceptions before
 translating them to Ruby exceptions.
 
-To see all options run `jt run -Xtruffle...` (literally, with the three dots).
+To see all options run `jt ruby -Xtruffle...` (literally, with the three dots).
 
 You can also set JVM options in the `JAVA_OPTS` environment variable (don't
 prefix with `-J`), or the `JRUBY_OPTS` variable (do prefix with `-J`). Ruby
@@ -136,27 +136,27 @@ and run with the `--graal` option.
 
 ```
 $ GRAALVM_BIN=../graalvm-0.18-re/bin/java
-$ jt run --graal ...
+$ jt ruby --graal ...
 ```
 
 You can check this is working by printing the value of `Truffle::Graal.graal?`.
 
 ```
 $ GRAALVM_BIN=../graalvm-0.18-re/bin/java
-$ jt run --graal -e 'p Truffle::Graal.graal?'
+$ jt ruby --graal -e 'p Truffle::Graal.graal?'
 ```
 
 To run with Graal built from source, set `GRAAL_HOME`.
 
 ```
 $ GRAAL_HOME=../../graal/graal-core-workspace/graal-core
-$ jt run --graal ...
+$ jt ruby --graal ...
 ```
 
 Set Graal options as any other JVM option.
 
 ```
-$ jt run --graal -J-Dgraal.TraceTruffleCompilation=true ...
+$ jt ruby --graal -J-Dgraal.TraceTruffleCompilation=true ...
 ```
 
 We have flags in `jt` to set some options, such as `--trace` for
