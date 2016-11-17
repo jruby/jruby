@@ -56,6 +56,7 @@ public class RopeOperations {
 
     private static final ConcurrentHashMap<Encoding, Charset> encodingToCharsetMap = new ConcurrentHashMap<>();
 
+    @TruffleBoundary
     public static LeafRope create(byte[] bytes, Encoding encoding, CodeRange codeRange) {
         if (bytes.length == 1) {
             final int index = bytes[0] & 0xff;
@@ -95,6 +96,7 @@ public class RopeOperations {
         }
     }
 
+    @TruffleBoundary
     public static Rope withEncodingVerySlow(Rope originalRope, Encoding newEncoding, CodeRange newCodeRange) {
         if ((originalRope.getEncoding() == newEncoding) && (originalRope.getCodeRange() == newCodeRange)) {
             return originalRope;
