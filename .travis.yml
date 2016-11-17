@@ -78,6 +78,7 @@ matrix:
   allow_failures:
     - env: PHASE='-Pj2ee'
       jdk: oraclejdk7
+    - env: PHASE='-Prake -Dtask=spec:ruby:fast'
     # NOTE: build seems to never start (waited for any to finish for more than a day) - probably a travis-ci bug
     #- env: PHASE='-Pmain'
     #  sudo: required
