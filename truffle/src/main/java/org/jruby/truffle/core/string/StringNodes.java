@@ -1911,6 +1911,7 @@ public abstract class StringNodes {
     @ImportStatic(StringGuards.class)
     public abstract static class SetByteNode extends CoreMethodNode {
 
+        @Child private CheckIndexForRefNode checkIndexForRefNode;
         @Child private RopeNodes.MakeConcatNode composedMakeConcatNode;
         @Child private RopeNodes.MakeConcatNode middleMakeConcatNode;
         @Child private RopeNodes.MakeLeafRopeNode makeLeafRopeNode;
@@ -1919,6 +1920,7 @@ public abstract class StringNodes {
 
         public SetByteNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            checkIndexForRefNode = StringNodesFactory.CheckIndexForRefNodeGen.create(null, null);
             composedMakeConcatNode = RopeNodesFactory.MakeConcatNodeGen.create(null, null, null);
             middleMakeConcatNode = RopeNodesFactory.MakeConcatNodeGen.create(null, null, null);
             makeLeafRopeNode = RopeNodesFactory.MakeLeafRopeNodeGen.create(null, null, null, null);
@@ -1938,7 +1940,7 @@ public abstract class StringNodes {
 
         @Specialization(guards = "!isRopeBuffer(string)")
         public int setByte(DynamicObject string, int index, int value) {
-            final int normalizedIndex = StringNodesHelper.checkIndexForRef(string, index, this);
+            final int normalizedIndex = checkIndexForRefNode.executeCheckIndexForRef(string, index);
 
             final Rope rope = rope(string);
 
@@ -1954,13 +1956,44 @@ public abstract class StringNodes {
 
         @Specialization(guards = "isRopeBuffer(string)")
         public int setByteRopeBuffer(DynamicObject string, int index, int value) {
-            final int normalizedIndex = StringNodesHelper.checkIndexForRef(string, index, this);
+            final int normalizedIndex = checkIndexForRefNode.executeCheckIndexForRef(string, index);
 
             final RopeBuffer rope = (RopeBuffer) rope(string);
 
             rope.getByteList().set(normalizedIndex, value);
 
             return value;
+        }
+
+    }
+
+    @ImportStatic(StringGuards.class)
+    @NodeChildren({ @NodeChild("string"), @NodeChild("index") })
+    public static abstract class CheckIndexForRefNode extends RubyNode {
+
+        public abstract int executeCheckIndexForRef(DynamicObject string, int index);
+
+        @Specialization
+        protected int checkIndexForRef(DynamicObject string, int index,
+                                    @Cached("createBinaryProfile()") ConditionProfile negativeIndexProfile,
+                                    @Cached("create()") BranchProfile errorProfile) {
+            final int length = rope(string).byteLength();
+
+            if (index >= length) {
+                errorProfile.enter();
+                throw new RaiseException(getContext().getCoreExceptions().indexErrorOutOfString(index, this));
+            }
+
+            if (negativeIndexProfile.profile(index < 0)) {
+                if (-index > length) {
+                    errorProfile.enter();
+                    throw new RaiseException(getContext().getCoreExceptions().indexErrorOutOfString(index, this));
+                }
+
+                index += length;
+            }
+
+            return index;
         }
 
     }
@@ -2658,26 +2691,6 @@ public abstract class StringNodes {
 
         public static int checkIndex(int length, int index, RubyNode node) {
             if (index > length) {
-                throw new RaiseException(node.getContext().getCoreExceptions().indexErrorOutOfString(index, node));
-            }
-
-            if (index < 0) {
-                if (-index > length) {
-                    throw new RaiseException(node.getContext().getCoreExceptions().indexErrorOutOfString(index, node));
-                }
-
-                index += length;
-            }
-
-            return index;
-        }
-
-        public static int checkIndexForRef(DynamicObject string, int index, RubyNode node) {
-            assert RubyGuards.isRubyString(string);
-
-            final int length = rope(string).byteLength();
-
-            if (index >= length) {
                 throw new RaiseException(node.getContext().getCoreExceptions().indexErrorOutOfString(index, node));
             }
 
