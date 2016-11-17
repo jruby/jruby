@@ -243,6 +243,10 @@ Truffle::Tool.add_config :openweather,
 Truffle::Tool.add_config :psd,
                          replacements.fetch(:nokogiri)
 
+Truffle::Tool.add_config :actionview,
+                         deep_merge(rails_common,
+                                    exclusions_for(:actionview),
+                                    stubs.fetch(:html_sanitizer))
 
 class Truffle::Tool::CIEnvironment
   def rails_ci(has_exclusions: false, skip_test_files: [], require_pattern: 'test/**/*_test.rb')
@@ -334,4 +338,11 @@ Truffle::Tool.add_ci_definition :algebrick do
   has_to_succeed setup
 
   set_result run(%w[test/algebrick_test.rb])
+end
+
+Truffle::Tool.add_ci_definition :actionview do
+  subdir 'actionview'
+  rails_ci has_exclusions:   true,
+           require_pattern: 'test/template/**/*_test.rb'
+  # TODO (pitr-ch 17-Nov-2016): run "test/activerecord/*_test.rb" and "test/actionpack/**/*_test.rb" as well, has to be run separately
 end
