@@ -19,6 +19,8 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
+import com.sun.security.auth.module.UnixSystem;
+
 import jnr.constants.platform.Fcntl;
 import jnr.ffi.Pointer;
 import org.jcodings.specific.UTF8Encoding;
@@ -177,25 +179,24 @@ public abstract class TrufflePosixNodes {
         @TruffleBoundary
         @Specialization(guards = "isNil(pointer)")
         public int getGroupsNil(int max, DynamicObject pointer) {
-            return getContext().getNativePlatform().getPosix().getgroups().length;
+            return getGroups().length;
         }
 
         @TruffleBoundary
         @Specialization(guards = "isRubyPointer(pointer)")
         public int getGroups(int max, DynamicObject pointer) {
-            final long[] groups = getContext().getNativePlatform().getPosix().getgroups();
-
             final Pointer pointerValue = Layouts.POINTER.getPointer(pointer);
-
-            for (int n = 0; n < groups.length && n < max; n++) {
-                // TODO CS 16-May-15 this is platform dependent
+            final long[] groups = getGroups();
+            for (int n = 0; n < groups.length; n++) {
                 pointerValue.putInt(4 * n, (int) groups[n]);
-
             }
-
             return groups.length;
         }
 
+        @TruffleBoundary
+        private static long[] getGroups() {
+            return new UnixSystem().getGroups();
+        }
     }
 
     @CoreMethod(names = "getrlimit", isModuleFunction = true, required = 2, lowerFixnum = 1, unsafe = {UnsafeGroup.PROCESSES, UnsafeGroup.MEMORY})
