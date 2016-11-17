@@ -1,5 +1,6 @@
 name = ARGV.first
 
+# gem install path
 require 'path'
 
 org = Path("lib/ruby/stdlib/#{name}")
