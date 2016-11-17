@@ -121,8 +121,13 @@ public class ArrayUtils {
                 array.getClass().getComponentType().getName() + ')');
     }
 
+    @Deprecated
     public static void copyDataToJavaArrayDirect(ThreadContext context,
         final RubyArray rubyArray, final Object javaArray) {
+        copyDataToJavaArrayDirect(rubyArray, javaArray);
+    }
+
+    public static void copyDataToJavaArrayDirect(final RubyArray rubyArray, final Object javaArray) {
         Class targetType = javaArray.getClass().getComponentType();
 
         // 'premature' optimizations as reflected Array.set is (still) noticeably slower

@@ -1404,9 +1404,9 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
 
         try {
             System.arraycopy(values, begin, values, begin + items.length, (int) len);
-            System.arraycopy(items, 0, values, begin, items.length);
+            ArraySupport.copy(items, 0, values, begin, items.length);
         } catch (ArrayIndexOutOfBoundsException e) {
-            concurrentModification();
+            throw concurrentModification(getRuntime(), e);
         }
 
         return this;
@@ -4627,9 +4627,9 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
             Class type = target.getComponentType();
             Object rawJavaArray = Array.newInstance(type, realLength);
             try {
-                ArrayUtils.copyDataToJavaArrayDirect(getRuntime().getCurrentContext(), this, rawJavaArray);
-            } catch (ArrayIndexOutOfBoundsException aioob) {
-                concurrentModification();
+                ArrayUtils.copyDataToJavaArrayDirect(this, rawJavaArray);
+            } catch (ArrayIndexOutOfBoundsException ex) {
+                throw concurrentModification(getRuntime(), ex);
             }
             return rawJavaArray;
         } else {
@@ -4967,7 +4967,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
             final int len = this.realLength;
             int newCapacity = minCapacity > len ? minCapacity : len;
             IRubyObject[] values = new IRubyObject[newCapacity];
-            System.arraycopy(this.values, begin, values, 0, len);
+            ArraySupport.copy(this.values, begin, values, 0, len);
             this.values = values;
             this.begin = 0;
         }
