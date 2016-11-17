@@ -617,7 +617,7 @@ public class Sprintf {
                     }
 
                     ClassIndex type = arg.getMetaClass().getClassIndex();
-                    if (type != ClassIndex.FIXNUM && type != ClassIndex.BIGNUM) {
+                    if (type != ClassIndex.INTEGER) {
                         switch(type) {
                         case FLOAT:
                             arg = RubyNumeric.dbl2num(arg.getRuntime(),((RubyFloat)arg).getValue());
@@ -671,7 +671,7 @@ public class Sprintf {
                     // uses C-sprintf, in part, to format numeric output, while
                     // we'll use Java's numeric formatting code (and our own).
                     boolean zero;
-                    if (type == ClassIndex.FIXNUM) {
+                    if (type == ClassIndex.INTEGER) {
                         negative = ((RubyFixnum)arg).getLongValue() < 0;
                         zero = ((RubyFixnum)arg).getLongValue() == 0;
                         if (negative && fchar == 'u') {

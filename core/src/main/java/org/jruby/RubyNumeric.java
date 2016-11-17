@@ -771,15 +771,15 @@ public class RubyNumeric extends RubyObject {
     /** num_divmod
      *
      */
-    public IRubyObject divmod(ThreadContext context, IRubyObject other) {
-        return divmod19(context, other);
+    public IRubyObject divmod19(ThreadContext context, IRubyObject other) {
+        return divmod(context, other);
     }
 
     /** num_divmod
      *
      */
     @JRubyMethod(name = "divmod")
-    public IRubyObject divmod19(ThreadContext context, IRubyObject other) {
+    public IRubyObject divmod(ThreadContext context, IRubyObject other) {
         return RubyArray.newArray(getRuntime(), div(context, other), modulo19(context, other));
     }
 

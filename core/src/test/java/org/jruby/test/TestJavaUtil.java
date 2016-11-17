@@ -50,7 +50,7 @@ public class TestJavaUtil extends TestCase {
 
     public void testConvertJavaToRuby() {
         assertEquals(JavaUtil.convertJavaToRuby(runtime, null).getType().name().toString(), "NilClass");
-        assertEquals(JavaUtil.convertJavaToRuby(runtime, new Integer(1000)).getType().name().toString(), "Fixnum");
+        assertEquals(JavaUtil.convertJavaToRuby(runtime, new Integer(1000)).getType().name().toString(), "Integer");
         assertEquals(JavaUtil.convertJavaToRuby(runtime, new Double(1.0)).getType().name().toString(), "Float");
         assertEquals(JavaUtil.convertJavaToRuby(runtime, Boolean.TRUE).getType().name().toString(), "TrueClass");
         assertEquals(JavaUtil.convertJavaToRuby(runtime, Boolean.FALSE).getType().name().toString(), "FalseClass");
