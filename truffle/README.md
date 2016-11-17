@@ -32,8 +32,9 @@ you can also Tweet to @chrisgseaton, or email chris.seaton@oracle.com.
 
 ## User Documentation
 
-The JRuby wiki includes general user documentation for JRuby+Truffle. This
-file is documentation for working on the development of JRuby+Truffle.
+The [JRuby wiki](https://github.com/jruby/jruby/wiki/Truffle) includes general
+user documentation for JRuby+Truffle. This file is documentation for working on
+the development of JRuby+Truffle.
 
 ## Developer Documentation
 
@@ -170,7 +171,7 @@ things partially evaluate as we expect, that things optimise as we'd expect,
 that on-stack-replacement works and so on.
 
 ```
-$ ... jt test compiler
+$ jt test compiler
 ```
 
 ### Benchmarking with Graal
@@ -215,3 +216,8 @@ is intended for special cases such as integrating with other Graal projects, and
 we wouldn't recommend using it for normal development. If you do use it, you
 should clean before using `jt` again as having built it with `mx` will change
 some behaviour.
+
+###  IDEs
+
+The majority of us use IntelliJ IDEA, but it's also [possible to use
+Eclipse](https://github.com/jruby/jruby/wiki/Using-Eclipse-with-JRuby-Truffle).
