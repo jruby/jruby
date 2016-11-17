@@ -126,6 +126,7 @@ import org.jruby.util.KeyValuePair;
 import org.jruby.util.cli.Options;
 import org.jruby.util.StringSupport;
 import static org.jruby.lexer.LexingCommon.EXPR_BEG;
+import static org.jruby.lexer.LexingCommon.EXPR_FITEM;
 import static org.jruby.lexer.LexingCommon.EXPR_FNAME;
 import static org.jruby.lexer.LexingCommon.EXPR_ENDFN;
 import static org.jruby.lexer.LexingCommon.EXPR_ENDARG;
@@ -159,7 +160,7 @@ public class RubyParser {
         support.setWarnings(warnings);
         lexer.setWarnings(warnings);
     }
-					// line 163 "-"
+					// line 164 "-"
   // %token constants
   public static final int kCLASS = 257;
   public static final int kMODULE = 258;
@@ -1842,7 +1843,7 @@ states[19] = new ParserState() {
 };
 states[20] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    lexer.setState(EXPR_FNAME);
+                    lexer.setState(EXPR_FNAME|EXPR_FITEM);
     return yyVal;
   }
 };
@@ -2590,7 +2591,7 @@ states[143] = new ParserState() {
 };
 states[144] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    lexer.setState(EXPR_FNAME);
+                    lexer.setState(EXPR_FNAME|EXPR_FITEM);
     return yyVal;
   }
 };
@@ -5346,7 +5347,7 @@ states[643] = new ParserState() {
   }
 };
 }
-					// line 2574 "RubyParser.y"
+					// line 2575 "RubyParser.y"
 
     /** The parse method use an lexer stream and parse it to an AST node 
      * structure
@@ -5361,4 +5362,4 @@ states[643] = new ParserState() {
         return support.getResult();
     }
 }
-					// line 10130 "-"
+					// line 10131 "-"

@@ -36,6 +36,7 @@ import org.jruby.lexer.LexerSource;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import static org.jruby.lexer.LexingCommon.EXPR_BEG;
+import static org.jruby.lexer.LexingCommon.EXPR_FITEM;
 import static org.jruby.lexer.LexingCommon.EXPR_FNAME;
 import static org.jruby.lexer.LexingCommon.EXPR_ENDFN;
 import static org.jruby.lexer.LexingCommon.EXPR_ENDARG;
@@ -46,7 +47,7 @@ public class RipperParser extends RipperParserBase {
     public RipperParser(ThreadContext context, IRubyObject ripper, LexerSource source) {
         super(context, ripper, source);
     }
-					// line 50 "-"
+					// line 51 "-"
   // %token constants
   public static final int kCLASS = 257;
   public static final int kMODULE = 258;
@@ -1720,7 +1721,7 @@ states[19] = new RipperParserState() {
 };
 states[20] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    p.setState(EXPR_FNAME);
+                    p.setState(EXPR_FNAME|EXPR_FITEM);
     return yyVal;
   }
 };
@@ -2447,7 +2448,7 @@ states[143] = new RipperParserState() {
 };
 states[144] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    p.setState(EXPR_FNAME);
+                    p.setState(EXPR_FNAME|EXPR_FITEM);
     return yyVal;
   }
 };
@@ -4736,6 +4737,6 @@ states[640] = new RipperParserState() {
   }
 };
 }
-					// line 2115 "RipperParser.y"
+					// line 2116 "RipperParser.y"
 }
-					// line 9497 "-"
+					// line 9498 "-"

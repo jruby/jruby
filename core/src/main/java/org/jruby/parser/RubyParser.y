@@ -123,6 +123,7 @@ import org.jruby.util.KeyValuePair;
 import org.jruby.util.cli.Options;
 import org.jruby.util.StringSupport;
 import static org.jruby.lexer.LexingCommon.EXPR_BEG;
+import static org.jruby.lexer.LexingCommon.EXPR_FITEM;
 import static org.jruby.lexer.LexingCommon.EXPR_FNAME;
 import static org.jruby.lexer.LexingCommon.EXPR_ENDFN;
 import static org.jruby.lexer.LexingCommon.EXPR_ENDARG;
@@ -411,7 +412,7 @@ stmt_or_begin   : stmt {
                 }
 
 stmt            : kALIAS fitem {
-                    lexer.setState(EXPR_FNAME);
+                    lexer.setState(EXPR_FNAME|EXPR_FITEM);
                 } fitem {
                     $$ = support.newAlias($1, $2, $4);
                 }
@@ -871,7 +872,7 @@ undef_list      : fitem {
                     $$ = support.newUndef($1.getPosition(), $1);
                 }
                 | undef_list ',' {
-                    lexer.setState(EXPR_FNAME);
+                    lexer.setState(EXPR_FNAME|EXPR_FITEM);
                 } fitem {
                     $$ = support.appendToBlock($1, support.newUndef($1.getPosition(), $4));
                 }
