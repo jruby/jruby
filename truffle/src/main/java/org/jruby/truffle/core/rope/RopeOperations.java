@@ -600,19 +600,4 @@ public class RopeOperations {
         return CR_VALID;
     }
 
-    @TruffleBoundary(throwsControlFlowException = true)
-    public static int codePoint(RubyContext context, Rope rope, int start) {
-        byte[] bytes = rope.getBytes();
-        int p = start;
-        int end = rope.byteLength();
-        Encoding enc = rope.getEncoding();
-
-        assert p < end : "empty string";
-        int cl = StringSupport.preciseLength(enc, bytes, p, end);
-        if (cl <= 0) {
-            throw new RaiseException(context.getCoreExceptions().argumentError("invalid byte sequence in " + enc, null));
-        }
-        return enc.mbcToCode(bytes, p, end);
-    }
-
 }

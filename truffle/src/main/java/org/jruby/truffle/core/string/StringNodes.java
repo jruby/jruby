@@ -1522,7 +1522,8 @@ public abstract class StringNodes {
 
         @TruffleBoundary
         @Specialization(guards = { "!isEmpty(string)", "!isSingleByteOptimizable(string)" })
-        public Object lstripBang(DynamicObject string) {
+        public Object lstripBang(DynamicObject string,
+                                 @Cached("create()") RopeNodes.GetCodePointNode getCodePointNode) {
             // Taken from org.jruby.RubyString#lstrip_bang19 and org.jruby.RubyString#multiByteLStrip.
 
             final Rope rope = rope(string);
@@ -1532,7 +1533,7 @@ public abstract class StringNodes {
 
             int p = s;
             while (p < end) {
-                int c = RopeOperations.codePoint(getContext(), rope, p);
+                int c = getCodePointNode.executeGetCodePoint(rope, p);
                 if (!ASCIIEncoding.INSTANCE.isSpace(c)) break;
                 p += StringSupport.codeLength(enc, c);
             }
@@ -1551,29 +1552,15 @@ public abstract class StringNodes {
     @ImportStatic(StringGuards.class)
     public abstract static class OrdNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private RopeNodes.GetByteNode ropeGetByteNode;
-
         @Specialization(guards = "isEmpty(string)")
         public int ordEmpty(DynamicObject string) {
             throw new RaiseException(coreExceptions().argumentError("empty string", this));
         }
 
-        // TODO (nirvdrum 03-Feb-16): Is it possible to have a single-byte optimizable string that isn't ASCII-compatible?
-        @Specialization(guards = { "!isEmpty(string)", "isSingleByteOptimizable(string)" })
-        public int ordAsciiOnly(DynamicObject string) {
-            if (ropeGetByteNode == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                ropeGetByteNode = insert(RopeNodes.GetByteNode.create());
-            }
-
-            return ropeGetByteNode.executeGetByte(rope(string), 0);
-        }
-
-        @Specialization(guards = { "!isEmpty(string)", "!isSingleByteOptimizable(string)" })
-        public int ord(DynamicObject string) {
-            final Rope rope = rope(string);
-
-            return RopeOperations.codePoint(getContext(), rope, 0);
+        @Specialization(guards = "!isEmpty(string)")
+        public int ord(DynamicObject string,
+                       @Cached("create()") RopeNodes.GetCodePointNode getCodePointNode) {
+            return getCodePointNode.executeGetCodePoint(rope(string), 0);
         }
 
     }
@@ -1651,7 +1638,8 @@ public abstract class StringNodes {
 
         @TruffleBoundary
         @Specialization(guards = { "!isEmpty(string)", "!isSingleByteOptimizable(string)" })
-        public Object rstripBang(DynamicObject string) {
+        public Object rstripBang(DynamicObject string,
+                                 @Cached("create()") RopeNodes.GetCodePointNode getCodePointNode) {
             // Taken from org.jruby.RubyString#rstrip_bang19 and org.jruby.RubyString#multiByteRStrip19.
 
             final Rope rope = rope(string);
@@ -1663,7 +1651,7 @@ public abstract class StringNodes {
             int endp = end;
             int prev;
             while ((prev = prevCharHead(enc, bytes, start, endp, end)) != -1) {
-                int point = RopeOperations.codePoint(getContext(), rope, prev);
+                int point = getCodePointNode.executeGetCodePoint(rope, prev);
                 if (point != 0 && !ASCIIEncoding.INSTANCE.isSpace(point)) break;
                 endp = prev;
             }
@@ -2646,10 +2634,12 @@ public abstract class StringNodes {
     @CoreMethod(names = "capitalize!", raiseIfFrozenSelf = true)
     public abstract static class CapitalizeBangNode extends CoreMethodArrayArgumentsNode {
 
+        @Child private RopeNodes.GetCodePointNode getCodePointNode;
         @Child private RopeNodes.MakeLeafRopeNode makeLeafRopeNode;
 
         public CapitalizeBangNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            getCodePointNode = RopeNodes.GetCodePointNode.create();
             makeLeafRopeNode = RopeNodesFactory.MakeLeafRopeNodeGen.create(null, null, null, null);
         }
 
@@ -2674,7 +2664,7 @@ public abstract class StringNodes {
             byte[] bytes = rope.getBytesCopy();
             boolean modify = false;
 
-            int c = RopeOperations.codePoint(getContext(), rope, s);
+            int c = getCodePointNode.executeGetCodePoint(rope, s);
             if (enc.isLower(c)) {
                 enc.codeToMbc(StringSupport.toUpper(enc, c), bytes, s);
                 modify = true;
@@ -2682,7 +2672,7 @@ public abstract class StringNodes {
 
             s += StringSupport.codeLength(enc, c);
             while (s < end) {
-                c = RopeOperations.codePoint(getContext(), rope, s);
+                c = getCodePointNode.executeGetCodePoint(rope, s);
                 if (enc.isUpper(c)) {
                     enc.codeToMbc(StringSupport.toLower(enc, c), bytes, s);
                     modify = true;
@@ -2815,11 +2805,13 @@ public abstract class StringNodes {
     @Primitive(name = "string_awk_split")
     public static abstract class StringAwkSplitPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
+        @Child private RopeNodes.GetCodePointNode getCodePointNode;
         @Child private RopeNodes.MakeSubstringNode makeSubstringNode;
         @Child private TaintResultNode taintResultNode;
 
         public StringAwkSplitPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            getCodePointNode = RopeNodes.GetCodePointNode.create();
             makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
             taintResultNode = new TaintResultNode(context, sourceSection);
         }
@@ -2847,7 +2839,7 @@ public abstract class StringNodes {
                 if (singlebyte) {
                     c = bytes[p++] & 0xff;
                 } else {
-                    c = RopeOperations.codePoint(getContext(), rope, p);
+                    c = getCodePointNode.executeGetCodePoint(rope, p);
                     p += StringSupport.length(enc, bytes, p, end);
                 }
 
