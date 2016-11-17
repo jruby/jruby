@@ -55,6 +55,7 @@ import org.jruby.lexer.yacc.SyntaxException.PID;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Signature;
 import org.jruby.util.ByteList;
+import org.jruby.util.IdUtil;
 import org.jruby.util.KeyValuePair;
 import org.jruby.util.RegexpOptions;
 import org.jruby.util.StringSupport;
@@ -1307,8 +1308,7 @@ public class ParserSupport {
         StaticScope scope = getCurrentScope();
 
         for (int i = 0; i < length; i++) {
-            // TODO: Pass by non-local-varnamed things but make sure consistent with list we get from regexp
-            if (RubyLexer.getKeyword(names[i]) == null && !Character.isUpperCase(names[i].charAt(0))) {
+            if (RubyLexer.getKeyword(names[i]) == null && IdUtil.isLocal(names[i])) {
                 int slot = scope.isDefined(names[i]);
                 if (slot >= 0) {
                     // If verbose and the variable is not just another named capture, warn

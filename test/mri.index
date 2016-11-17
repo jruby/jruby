@@ -75,8 +75,7 @@ ruby/test_range.rb
 ruby/test_rational.rb
 ruby/test_rational2.rb
 ruby/test_readpartial.rb
-# jruby/jruby#4287
-#ruby/test_regexp.rb
+ruby/test_regexp.rb
 ruby/test_require.rb
 # jruby/jruby#4288
 #ruby/test_refinement.rb
