@@ -120,10 +120,10 @@ module Utilities
       javacmd = vm_args.shift
       if Dir.exist?("#{graal_home}/mx.sulong")
         sulong_dependencies = "#{graal_home}/lib/*"
-        sulong_jar = "#{graal_home}/build/sulong.jar"
+        sulong_jars = ["#{graal_home}/build/sulong.jar", "#{graal_home}/build/sulong_options.jar"]
         nfi_classes = File.expand_path('../graal-core/mxbuild/graal/com.oracle.nfi/bin', graal_home)
         vm_args << '-cp'
-        vm_args << [nfi_classes, sulong_dependencies, sulong_jar].join(':')
+        vm_args << [nfi_classes, sulong_dependencies, *sulong_jars].join(':')
         vm_args << '-XX:-UseJVMCIClassLoader'
       end
       options = []
