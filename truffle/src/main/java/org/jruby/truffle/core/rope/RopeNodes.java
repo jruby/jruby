@@ -422,6 +422,7 @@ public abstract class RopeNodes {
             return new ValidLeafRope(bytes, encoding, bytes.length);
         }
 
+        @TruffleBoundary
         @Specialization(guards = { "isUnknown(codeRange)", "!isEmpty(bytes)", "!isBinaryString(encoding)", "isAsciiCompatible(encoding)" })
         public LeafRope makeUnknownLeafRopeAsciiCompatible(byte[] bytes, Encoding encoding, CodeRange codeRange, Object characterLength,
                                             @Cached("createBinaryProfile()") ConditionProfile discovered7BitProfile,
