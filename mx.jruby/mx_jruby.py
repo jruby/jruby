@@ -8,16 +8,12 @@
 
 import sys
 import os
-import subprocess
 import pipes
 import shutil
-import json
-import time
 import tarfile
 from os.path import join, exists, isdir
 
 import mx
-import mx_benchmark
 import mx_unittest
 
 TimeStampFile = mx.TimeStampFile
