@@ -208,6 +208,13 @@ jruby-truffle: {
   }
 }
 
+jruby-truffle-cexts: {
+  environment: {
+    GUEST_VM: jruby,
+    GUEST_VM_CONFIG: truffle-cexts,
+  }
+}
+
 gate-caps: {
   capabilities: [linux, amd64]
   targets: [gate, post-push]
@@ -324,6 +331,20 @@ server-benchmarks: {
     ${bench.cmd} [server]
   ] ${post-process-and-upload-results}
   timelimit: "00:20:00"
+}
+
+cext-benchmarks: ${sulong} {
+  setup: ${sulong.setup} ${gem-test-pack.setup} ${bench.setup} [
+    ${jt} [cextc, ../ruby-benchmarks/chunky_png/oily_png],
+    ${jt} [cextc, ../ruby-benchmarks/psd.rb/psd_native]
+  ]
+  
+  run: [
+    ${bench.cmd} [chunky]
+  ] ${post-process-and-upload-results} [
+    ${bench.cmd} [psd]
+  ] ${post-process-and-upload-results}
+  timelimit: "02:00:00"
 }
 
 gem-test-pack: {
@@ -458,6 +479,8 @@ builds: [
   {name: ruby-benchmarks-server-graal-enterprise-no-om} ${common} ${graal-enterprise-no-om} ${daily-bench-caps} ${jruby-truffle} ${server-benchmarks},
   {name: ruby-benchmarks-server-graal-vm-snapshot} ${common} ${graal-vm-snapshot} ${bench-caps} ${jruby-truffle} ${server-benchmarks},
   {name: ruby-benchmarks-server-graal-vm-release} ${common} ${graal-vm-release} ${bench-caps} ${jruby-truffle} ${server-benchmarks},
+
+  {name: ruby-benchmarks-cext} ${common} ${daily-gate-caps} ${jruby-truffle-cexts} ${cext-benchmarks},
 
   {name: ruby-deploy-binaries} ${common} ${gate-caps} ${deployBinaries}
 ]
