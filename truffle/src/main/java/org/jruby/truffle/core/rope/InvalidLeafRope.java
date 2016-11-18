@@ -10,7 +10,6 @@
 
 package org.jruby.truffle.core.rope;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import org.jcodings.Encoding;
 
 public class InvalidLeafRope extends LeafRope {

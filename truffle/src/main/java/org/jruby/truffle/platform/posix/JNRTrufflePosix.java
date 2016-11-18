@@ -9,6 +9,8 @@
  */
 package org.jruby.truffle.platform.posix;
 
+import com.kenai.jffi.Platform;
+import com.kenai.jffi.Platform.OS;
 import jnr.constants.platform.Fcntl;
 import jnr.constants.platform.Signal;
 import jnr.constants.platform.Sysconf;
@@ -20,9 +22,6 @@ import jnr.posix.SignalHandler;
 import jnr.posix.SpawnFileAction;
 import jnr.posix.Times;
 import org.jruby.truffle.core.CoreLibrary;
-
-import com.kenai.jffi.Platform;
-import com.kenai.jffi.Platform.OS;
 
 import java.io.FileDescriptor;
 import java.nio.ByteBuffer;

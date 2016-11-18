@@ -11,7 +11,6 @@ package org.jruby.truffle.interop;
 
 import com.oracle.truffle.api.interop.ForeignAccess;
 import com.oracle.truffle.api.interop.TruffleObject;
-import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 
 public class InstanceConfigWrapper implements TruffleObject {

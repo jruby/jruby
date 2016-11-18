@@ -9,6 +9,11 @@
  */
 package org.jruby.truffle.platform.solaris;
 
+import jnr.ffi.LibraryLoader;
+import jnr.ffi.Runtime;
+import jnr.ffi.provider.MemoryManager;
+import jnr.posix.POSIX;
+import jnr.posix.POSIXFactory;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.queue.ArrayBlockingQueueLocksConditions;
 import org.jruby.truffle.core.queue.LinkedBlockingQueueLocksConditions;
@@ -28,12 +33,6 @@ import org.jruby.truffle.platform.posix.TrufflePosix;
 import org.jruby.truffle.platform.posix.TrufflePosixHandler;
 import org.jruby.truffle.platform.signal.SignalManager;
 import org.jruby.truffle.platform.sunmisc.SunMiscSignalManager;
-
-import jnr.ffi.LibraryLoader;
-import jnr.ffi.Runtime;
-import jnr.ffi.provider.MemoryManager;
-import jnr.posix.POSIX;
-import jnr.posix.POSIXFactory;
 
 public class SolarisPlatform implements NativePlatform {
 

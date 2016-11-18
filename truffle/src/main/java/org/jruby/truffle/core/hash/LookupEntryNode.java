@@ -9,12 +9,11 @@
  */
 package org.jruby.truffle.core.hash;
 
-import org.jruby.truffle.Layouts;
-import org.jruby.truffle.language.RubyBaseNode;
-
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
+import org.jruby.truffle.Layouts;
+import org.jruby.truffle.language.RubyBaseNode;
 
 public class LookupEntryNode extends RubyBaseNode {
 

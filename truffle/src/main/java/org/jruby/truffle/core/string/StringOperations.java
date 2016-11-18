@@ -33,7 +33,6 @@
  */
 package org.jruby.truffle.core.string;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jcodings.Encoding;
@@ -46,7 +45,6 @@ import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.util.ByteListUtils;
-import org.jruby.truffle.util.StringUtils;
 import org.jruby.util.ByteList;
 
 import java.nio.ByteBuffer;

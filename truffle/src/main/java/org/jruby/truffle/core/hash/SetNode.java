@@ -9,9 +9,6 @@
  */
 package org.jruby.truffle.core.hash;
 
-import org.jruby.truffle.Layouts;
-import org.jruby.truffle.language.RubyNode;
-
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.ImportStatic;
@@ -23,6 +20,8 @@ import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.profiles.ConditionProfile;
+import org.jruby.truffle.Layouts;
+import org.jruby.truffle.language.RubyNode;
 
 @ImportStatic(HashGuards.class)
 @NodeChildren({

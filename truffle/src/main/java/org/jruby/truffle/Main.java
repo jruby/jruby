@@ -49,9 +49,6 @@ import org.jruby.RubyInstanceConfig;
 import org.jruby.util.cli.Options;
 import org.jruby.util.cli.OutputStrings;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.lang.management.ManagementFactory;
 

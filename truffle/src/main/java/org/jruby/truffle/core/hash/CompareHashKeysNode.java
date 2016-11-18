@@ -9,14 +9,13 @@
  */
 package org.jruby.truffle.core.hash;
 
+import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.core.basicobject.BasicObjectNodes.ReferenceEqualNode;
 import org.jruby.truffle.core.basicobject.BasicObjectNodesFactory.ReferenceEqualNodeFactory;
 import org.jruby.truffle.core.kernel.KernelNodes.SameOrEqlNode;
 import org.jruby.truffle.core.kernel.KernelNodesFactory.SameOrEqlNodeFactory;
 import org.jruby.truffle.language.RubyBaseNode;
-
-import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.frame.VirtualFrame;
 
 public class CompareHashKeysNode extends RubyBaseNode {
 

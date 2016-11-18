@@ -50,7 +50,6 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
-
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.Layouts;

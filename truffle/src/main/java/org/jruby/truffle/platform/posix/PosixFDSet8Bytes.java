@@ -11,7 +11,6 @@
 package org.jruby.truffle.platform.posix;
 
 import jnr.ffi.Pointer;
-
 import org.jruby.truffle.platform.FDSet;
 import org.jruby.truffle.util.StringUtils;
 
