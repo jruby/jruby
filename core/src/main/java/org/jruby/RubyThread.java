@@ -1638,14 +1638,6 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         exitingException = exception;
     }
 
-    @Override
-    protected void finalize() {
-        if (exitingException != null && reportOnException == getRuntime().getFalse() && !exceptionCaptured) {
-            printReportExceptionWarning();
-            getRuntime().printError(exitingException.getException());
-        }
-    }
-
     protected void printReportExceptionWarning() {
         PrintStream errorStream = getRuntime().getErrorStream();
         String name = threadImpl.getReportName();
