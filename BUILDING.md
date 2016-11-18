@@ -125,10 +125,10 @@ from MRI's tests (under test/mri), use one of the following commands:
 The MRI suite (under `test/mri`) has a runner script in `test/mri/runner.rb` that sets up
 an appropriate test environment. Many of the MRI tests will need to be run via this script.
 ```
-jruby test/mri/runner.rb test/mri/<path to test>
+jruby -r ./test/mri_test_env.rb test/mri/runner.rb test/mri/<path to test>
 ```
 
-You can pass `-v` to the runner for verbose output or `-n test_method_name` to only run a single test method.
+You can pass `-v` to the runner for verbose output or `-n test_method_name` to only run a single test method.  If you are interested in all failures you can exlude the -r option (of mri_test_env.rb).  Some excluded tests are inherent limitations of JRuby and some are just problems we have not gotten to yet.
 
 #### Run a test file with known-failing tests excluded
 
