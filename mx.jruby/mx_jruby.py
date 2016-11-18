@@ -15,7 +15,6 @@ import json
 import time
 import tarfile
 import zipfile
-from threading import Thread
 from os.path import join, exists, isdir
 
 import mx
