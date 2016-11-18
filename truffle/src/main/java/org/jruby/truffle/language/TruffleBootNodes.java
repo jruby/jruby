@@ -158,6 +158,16 @@ public abstract class TruffleBootNodes {
 
     }
     
+    @CoreMethod(names = "rubygems_enabled?", onSingleton = true)
+    public abstract static class RubygemsEnabledNode extends CoreMethodNode {
+
+        @Specialization
+        public boolean isRubygemsEnabled() {
+            return !getContext().getInstanceConfig().isDisableGems();
+        }
+
+    }
+
     @CoreMethod(names = "source_of_caller", isModuleFunction = true)
     public abstract static class SourceOfCallerNode extends CoreMethodArrayArgumentsNode {
 

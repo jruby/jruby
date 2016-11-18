@@ -406,7 +406,6 @@ public class ArgumentProcessor {
                         config.setCompileMode(RubyInstanceConfig.CompileMode.TRUFFLE);
                         // Make the static option consistent with the compile mode.
                         Options.COMPILE_MODE.force("TRUFFLE");
-                        config.setDisableGems(true);
                     } else if (extendedOption.endsWith("...")) {
                         Options.listPrefix(extendedOption.substring(0, extendedOption.length() - "...".length()));
                         config.setShouldRunInterpreter(false);
