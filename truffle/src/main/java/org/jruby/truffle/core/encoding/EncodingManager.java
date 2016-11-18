@@ -120,6 +120,7 @@ public class EncodingManager {
     public Encoding getLocaleEncoding() {
         String localeEncodingName;
         try {
+            assert LangInfo.CODESET.defined();
             localeEncodingName = context.getNativePlatform().getPosix().nl_langinfo(LangInfo.CODESET.intValue());
         }
         catch (UnsupportedOperationException e) {
