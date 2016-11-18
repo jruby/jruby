@@ -514,7 +514,7 @@ public abstract class TrufflePosixNodes {
 
     }
 
-    @CoreMethod(names = "major", isModuleFunction = true, required = 1, lowerFixnum = 1, unsafe = UnsafeGroup.IO)
+    @CoreMethod(names = "major", isModuleFunction = true, required = 1, unsafe = UnsafeGroup.IO)
     public abstract static class MajorNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
@@ -528,7 +528,7 @@ public abstract class TrufflePosixNodes {
         }
     }
 
-    @CoreMethod(names = "minor", isModuleFunction = true, required = 1, lowerFixnum = 1, unsafe = UnsafeGroup.IO)
+    @CoreMethod(names = "minor", isModuleFunction = true, required = 1, unsafe = UnsafeGroup.IO)
     public abstract static class MinorNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
