@@ -230,6 +230,7 @@ def setup_jruby_home():
     env['JRUBY_HOME'] = extractPath
     return env
 
+# Print to stderr, mx.log() outputs to stdout
 def log(msg):
     print >> sys.stderr, msg
 
