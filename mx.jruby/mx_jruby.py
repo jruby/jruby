@@ -14,7 +14,6 @@ import shutil
 import json
 import time
 import tarfile
-import zipfile
 from os.path import join, exists, isdir
 
 import mx
@@ -218,16 +217,6 @@ def extractArguments(cli_args):
                 break
     return vmArgs, rubyArgs, classpath, print_command, classic, main_class
 
-def extractTarball(file, target_dir):
-    if file.endswith('tar'):
-        with tarfile.open(file, 'r:') as tf:
-            tf.extractall(target_dir)
-    elif file.endswith('jar') or file.endswith('zip'):
-        with zipfile.ZipFile(file, "r") as zf:
-            zf.extractall(target_dir)
-    else:
-        mx.abort('Unsupported compressed file ' + file)
-
 def setup_jruby_home():
     rubyZip = mx.distribution('RUBY-ZIP').path
     assert exists(rubyZip)
@@ -235,7 +224,8 @@ def setup_jruby_home():
     if TimeStampFile(extractPath).isOlderThan(rubyZip):
         if exists(extractPath):
             shutil.rmtree(extractPath)
-        extractTarball(rubyZip, extractPath)
+        with tarfile.open(rubyZip, 'r:') as tf:
+            tf.extractall(extractPath)
     env = os.environ.copy()
     env['JRUBY_HOME'] = extractPath
     return env
