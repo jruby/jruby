@@ -708,7 +708,7 @@ module Commands
     ruby_su = "#{JRUBY_DIR}/lib/ruby/truffle/cext/ruby.su"
     if cext_dir != ruby_cext_api and (newer?(ruby_h, ruby_su) or newer?(ruby_c, ruby_su))
       puts "Compiling outdated ruby.su"
-      cextc ruby_cext_api
+      cextc_extconf ruby_cext_api, false
     end
   end
   private :build_ruby_su
@@ -776,16 +776,30 @@ module Commands
   def cextc_extconf(cext_dir, test_gem, *clang_opts)
     build_ruby_su(cext_dir)
 
-    gem_name = File.basename(cext_dir)
-    gem_dir = if test_gem
+    is_ruby = cext_dir == "#{JRUBY_DIR}/truffle/src/main/c/cext"
+    gem_name = if is_ruby
+                 "ruby"
+               else
+                 File.basename(cext_dir)
+               end
+
+    gem_dir = if is_ruby
+                "#{JRUBY_DIR}/truffle/src/main/c/cext"
+              elsif test_gem
                 "#{JRUBY_DIR}/test/truffle/cexts/#{gem_name}/ext/#{gem_name}/"
               else
                 Dir.glob(ENV['GEM_HOME'] + "/gems/#{gem_name}*/")[0] + "ext/#{gem_name}/"
               end
+    copy_target = if is_ruby
+                    "#{JRUBY_DIR}/lib/ruby/truffle/cext/ruby.su"
+                  else
+                    "#{JRUBY_DIR}/test/truffle/cexts/#{gem_name}/lib/#{gem_name}/#{gem_name}.su"
+                  end
+
     Dir.chdir(gem_dir) do
       run("extconf.rb")
       raw_sh("make")
-      FileUtils.copy_file("#{gem_name}.su", "#{JRUBY_DIR}/test/truffle/cexts/#{gem_name}/lib/#{gem_name}/#{gem_name}.su")
+      FileUtils.copy_file("#{gem_name}.su", copy_target)
     end
   end
 
