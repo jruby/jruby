@@ -92,8 +92,10 @@ module RbConfig
   if Truffle::Safe.memory_safe? && Truffle::Safe.processes_safe?
     if ENV['USE_SYSTEM_CLANG']
       clang = 'clang'
+      opt = 'opt'
     else
       clang = "mx -p #{ENV['SULONG_HOME']} su-clang"
+      opt = "mx -p #{ENV['SULONG_HOME']} su-opt"
     end
     
     cc = "#{clang} -I#{ENV['SULONG_HOME']}/include -S"
@@ -102,7 +104,7 @@ module RbConfig
     MAKEFILE_CONFIG.merge!({
         'CC' => cc,
         'CPP' => cpp,
-        'COMPILE_C' => "$(CC) $(INCFLAGS) $(CPPFLAGS) $(CFLAGS) $(COUTFLAG)$< -o $@ && mx -p #{ENV['SULONG_HOME']} su-opt -S -always-inline -mem2reg $@ -o $@",
+        'COMPILE_C' => "$(CC) $(INCFLAGS) $(CPPFLAGS) $(CFLAGS) $(COUTFLAG)$< -o $@ && #{opt} -S -always-inline -mem2reg $@ -o $@",
         'CFLAGS' => "  -emit-llvm -I#{ENV['OPENSSL_HOME']}/include -DHAVE_OPENSSL_110_THREADING_API -DHAVE_HMAC_CTX_COPY -DHAVE_EVP_CIPHER_CTX_COPY -DHAVE_BN_RAND_RANGE -DHAVE_BN_PSEUDO_RAND_RANGE -DHAVE_X509V3_EXT_NCONF_NID -Wall -Wextra -Wno-unused-parameter -Wno-parentheses -Wno-long-long -Wno-missing-field-initializers -Wunused-variable -Wpointer-arith -Wwrite-strings -Wdeclaration-after-statement -Wshorten-64-to-32 -Wimplicit-function-declaration -Wdivision-by-zero -Wdeprecated-declarations -Wextra-tokens ",
         'LINK_SO' => "mx -v -p #{ENV['SULONG_HOME']} su-link -o $@ -l #{ENV['OPENSSL_HOME']}/lib/libssl.dylib $(OBJS)",
         'TRY_LINK' => "#{clang} $(src) $(INCFLAGS) $(CFLAGS) -I#{ENV['SULONG_HOME']}/include $(LIBS)"
