@@ -787,8 +787,10 @@ module Commands
                 cext_dir
               elsif test_gem
                 "#{JRUBY_DIR}/test/truffle/cexts/#{gem_name}/ext/#{gem_name}/"
-              else
+              elsif cext_dir.start_with?(JRUBY_DIR)
                 Dir.glob(ENV['GEM_HOME'] + "/gems/#{gem_name}*/")[0] + "ext/#{gem_name}/"
+              else
+                cext_dir + "/ext/#{gem_name}/"
               end
     copy_target = if is_ruby
                     "#{JRUBY_DIR}/lib/ruby/truffle/cext/ruby.su"
