@@ -783,8 +783,8 @@ module Commands
                  File.basename(cext_dir)
                end
 
-    gem_dir = if is_ruby
-                "#{JRUBY_DIR}/truffle/src/main/c/cext"
+    gem_dir = if cext_dir.start_with?("#{JRUBY_DIR}/truffle/src/main/c")
+                cext_dir
               elsif test_gem
                 "#{JRUBY_DIR}/test/truffle/cexts/#{gem_name}/ext/#{gem_name}/"
               else
