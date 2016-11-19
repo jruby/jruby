@@ -81,7 +81,7 @@ graal-enterprise: ${labsjdk8} {
   ]
 
   environment: {
-    GRAAL_HOME: ../graal-enterprise/graal-enterprise,
+    GRAAL_HOME: "$PWD/../graal-enterprise/graal-enterprise",
     HOST_VM: server,
     HOST_VM_CONFIG: graal-enterprise
   }
@@ -92,7 +92,7 @@ graal-enterprise-no-om: {
   setup: ${graal-enterprise.setup}
 
   environment: {
-    GRAAL_HOME: ../graal-enterprise/graal-enterprise,
+    GRAAL_HOME: "$PWD/../graal-enterprise/graal-enterprise",
     HOST_VM: server,
     HOST_VM_CONFIG: graal-enterprise-no-om,
     JRUBY_OPTS: "-J-Dtruffle.object.LayoutFactory=com.oracle.truffle.object.basic.DefaultLayoutFactory"
@@ -105,8 +105,8 @@ sulong: ${labsjdk8} {
   }
 
   environment: {
-    GRAAL_HOME: ../sulong,
-    SULONG_HOME: ../sulong,
+    GRAAL_HOME: "$PWD/../sulong",
+    SULONG_HOME: "$PWD/../sulong",
     SULONG_NO_LIBRARY: "true",
     USE_SYSTEM_CLANG: "true",
     LIBXML_LIB: "/usr/lib64/libxml2.so.2",
@@ -349,7 +349,7 @@ cext-benchmarks: ${sulong} {
 
 gem-test-pack: {
   environment: {
-    GEM_HOME: ../jruby-truffle-gem-test-pack/gems
+    GEM_HOME: "$PWD/../jruby-truffle-gem-test-pack/gems"
   }
 
   setup: [
