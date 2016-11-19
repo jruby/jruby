@@ -1,5 +1,6 @@
 package org.jruby.runtime;
 
+import java.io.IOException;
 import java.lang.reflect.Array;
 import java.nio.channels.ClosedChannelException;
 import java.nio.charset.Charset;
@@ -263,25 +264,49 @@ public class Helpers {
             // Ruby returns an IOError.  Java throws same exception for all errors so
             // we resort to this hack...
 
-            if ("Bad file descriptor".equals(errorMessage)) {
-                return Errno.EBADF;
-            } else if ("File not open".equals(errorMessage)) {
-                return null;
-            } else if ("An established connection was aborted by the software in your host machine".equals(errorMessage)) {
-                return Errno.ECONNABORTED;
-            } else if (t.getMessage().equals("Broken pipe")) {
-                return Errno.EPIPE;
-            } else if ("Connection reset by peer".equals(errorMessage) ||
-                       "An existing connection was forcibly closed by the remote host".equals(errorMessage) ||
-                    (Platform.IS_WINDOWS && errorMessage.contains("connection was aborted"))) {
-                return Errno.ECONNRESET;
-            } else if (errorMessage.equals("No space left on device")) {
-                return Errno.ENOSPC;
-            } else if (errorMessage.equals("Too many open files")) {
-                return Errno.EMFILE;
+            switch ( errorMessage ) {
+                case "Bad file descriptor":
+                    return Errno.EBADF;
+                case "File not open":
+                    return null;
+                case "An established connection was aborted by the software in your host machine":
+                case "connection was aborted": // Windows
+                    return Errno.ECONNABORTED;
+                case "Broken pipe":
+                    return Errno.EPIPE;
+                case "Connection reset by peer":
+                case "An existing connection was forcibly closed by the remote host":
+                    return Errno.ECONNRESET;
+                case "Too many levels of symbolic links":
+                    return Errno.ELOOP;
+                case "Too many open files":
+                    return Errno.EMFILE;
+                case "Too many open files in system":
+                    return Errno.ENFILE;
+                case "Network is unreachable":
+                    return Errno.ENETUNREACH;
+                case "Address already in use":
+                    return Errno.EADDRINUSE;
+                case "No space left on device":
+                    return Errno.ENOSPC;
             }
         }
         return null;
+    }
+
+    /**
+     * Java does not give us enough information for specific error conditions
+     * so we are reduced to divining them through string matches...
+     *
+     * TODO: Should ECONNABORTED get thrown earlier in the descriptor itself or is it ok to handle this late?
+     * TODO: Should we include this into Errno code somewhere do we can use this from other places as well?
+     */
+    public static RaiseException newIOErrorFromException(Ruby runtime, IOException ex) {
+        Errno errno = errnoFromException(ex);
+
+        if (errno == null) throw runtime.newIOError(ex.getLocalizedMessage());
+
+        throw runtime.newErrnoFromErrno(errno, ex.getLocalizedMessage());
     }
 
     public static RubyModule getNthScopeModule(StaticScope scope, int depth) {
