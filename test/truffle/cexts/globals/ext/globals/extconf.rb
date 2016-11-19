@@ -1,2 +1,2 @@
 require 'mkmf'
-create_makefile('minimum')
+create_makefile('globals')

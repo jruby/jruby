@@ -773,11 +773,15 @@ module Commands
     sulong_link '-o', out, *config_libs, *lls
   end
 
-  def cextc_extconf(cext_dir, *clang_opts)
+  def cextc_extconf(cext_dir, test_gem, *clang_opts)
     build_ruby_su(cext_dir)
 
     gem_name = File.basename(cext_dir)
-    gem_dir = Dir.glob(ENV['GEM_HOME'] + "/gems/#{gem_name}*/")[0] + "ext/#{gem_name}/"
+    gem_dir = if test_gem
+                "#{JRUBY_DIR}/test/truffle/cexts/#{gem_name}/ext/#{gem_name}/"
+              else
+                Dir.glob(ENV['GEM_HOME'] + "/gems/#{gem_name}*/")[0] + "ext/#{gem_name}/"
+              end
     Dir.chdir(gem_dir) do
       run("extconf.rb")
       raw_sh("make")
@@ -896,7 +900,7 @@ module Commands
         next if gem_name == 'xml' && no_libxml
         next if gem_name == 'xopenssl' && no_openssl
         dir = "#{JRUBY_DIR}/test/truffle/cexts/#{gem_name}"
-        cextc dir
+        cextc_extconf dir, true
         name = File.basename(dir)
         next if gem_name == 'globals' # globals is excluded just for running
         run '--graal', "-I#{dir}/lib", "#{dir}/bin/#{name}", :out => output_file
@@ -929,7 +933,7 @@ module Commands
       if gem_name == "ruby-argon2"
         cextc gem_root, '-Werror=implicit-function-declaration'
       else
-        cextc_extconf gem_root, '-Werror=implicit-function-declaration'
+        cextc_extconf gem_root, false, '-Werror=implicit-function-declaration'
       end
 
       next if gem_name == 'psd_native' # psd_native is excluded just for running
