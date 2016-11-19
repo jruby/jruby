@@ -546,7 +546,7 @@ module Commands
       mvn env, *maven_options, '-pl', 'truffle', 'package'
     when 'cexts'
       no_openssl = options.delete('--no-openssl')
-      cextc "#{JRUBY_DIR}/truffle/src/main/c/cext"
+      build_ruby_su
       unless no_openssl
         cextc "#{JRUBY_DIR}/truffle/src/main/c/openssl"
       end
@@ -698,7 +698,7 @@ module Commands
     e 'p begin', *args, 'end'
   end
 
-  def build_ruby_su(cext_dir)
+  def build_ruby_su(cext_dir=nil)
     abort "You need to set SULONG_HOME" unless SULONG_HOME
 
     # Ensure ruby.su is up-to-date
@@ -773,7 +773,7 @@ module Commands
     sulong_link '-o', out, *config_libs, *lls
   end
 
-  def cextc_extconf(cext_dir, test_gem, *clang_opts)
+  def cextc_extconf(cext_dir, test_gem=false, *clang_opts)
     build_ruby_su(cext_dir)
 
     is_ruby = cext_dir == "#{JRUBY_DIR}/truffle/src/main/c/cext"
