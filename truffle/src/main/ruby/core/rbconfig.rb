@@ -86,7 +86,7 @@ module RbConfig
       'ruby_install_name' => 'jruby-truffle',
       'RUBY_SO_NAME' => '$(RUBY_BASE_NAME)',
       'hdrdir' => "#{jruby_home}/lib/ruby/truffle/cext",
-      'bindir' => "#{jruby_home}/bin"
+      'bindir' => bindir
   }
 
   if Truffle::Safe.memory_safe? && Truffle::Safe.processes_safe?
