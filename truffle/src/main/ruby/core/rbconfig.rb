@@ -6,9 +6,8 @@
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
 #
-#
 # Copyright (C) 1993-2013 Yukihiro Matsumoto. All rights reserved.
-
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
 # are met:
