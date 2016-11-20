@@ -200,21 +200,6 @@ public abstract class ParseNode implements ISourcePositionHolder, ParseResult {
         return name.substring(name.lastIndexOf('.') + 1);
     }
 
-    public <T extends ParseNode> T findFirstChild(final Class<T> nodeClass) {
-        return accept(new AbstractNodeVisitor<T>() {
-
-            @Override
-            protected T defaultVisit(ParseNode node) {
-                if (nodeClass.isAssignableFrom(node.getClass())) {
-                    return (T) node;
-                } else {
-                    return visitFirstChild(node);
-                }
-            }
-
-        });
-    }
-
     /**
      * @return the nodeId
      */
