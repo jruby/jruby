@@ -136,21 +136,21 @@ To run with a GraalVM binary tarball, set the `GRAALVM_BIN` environment variable
 and run with the `--graal` option.
 
 ```
-$ GRAALVM_BIN=../graalvm-0.18-re/bin/java
+$ export GRAALVM_BIN=.../graalvm-0.18-re/bin/java
 $ jt ruby --graal ...
 ```
 
 You can check this is working by printing the value of `Truffle::Graal.graal?`.
 
 ```
-$ GRAALVM_BIN=../graalvm-0.18-re/bin/java
+$ export GRAALVM_BIN=.../graalvm-0.18-re/bin/java
 $ jt ruby --graal -e 'p Truffle::Graal.graal?'
 ```
 
 To run with Graal built from source, set `GRAAL_HOME`.
 
 ```
-$ GRAAL_HOME=../../graal/graal-core-workspace/graal-core
+$ export GRAAL_HOME=.../graal-core
 $ jt ruby --graal ...
 ```
 
@@ -180,7 +180,7 @@ Checkout the `all-ruby-benchmarks` and `benchmark-interface` repositories above
 your checkout of JRuby. We usually run like this.
 
 ```
-$ jt benchmark ../all-ruby-benchmarks/classic/mandelbrot.rb --simple
+$ jt benchmark .../all-ruby-benchmarks/classic/mandelbrot.rb --simple
 ```
 
 Output is iterations per second, printed roughly every second (more frequently
@@ -193,20 +193,70 @@ THe best way to set JVM options here is to use `JAVA_OPTS`.
 You can turn off Graal if you want using `--no-graal`.
 
 ```
-$ jt benchmark --no-graal ../all-ruby-benchmarks/classic/mandelbrot.rb --simple
+$ jt benchmark --no-graal .../all-ruby-benchmarks/classic/mandelbrot.rb --simple
 ```
 
 You can benchmark JRuby Classic using `-Xclassic` in `JRUBY_OPTS`.
 
 ```
-$ JRUBY_OPTS=-Xclassic jt benchmark ../all-ruby-benchmarks/classic/mandelbrot.rb --simple
+$ JRUBY_OPTS=-Xclassic jt benchmark .../all-ruby-benchmarks/classic/mandelbrot.rb --simple
 ```
 
 You can benchmark an entirely different implementation using the
 `JT_BENCHMARK_RUBY` environment variable.
 
 ```
-$ JT_BENCHMARK_RUBY=ruby jt benchmark ../all-ruby-benchmarks/classic/mandelbrot.rb --simple
+$ JT_BENCHMARK_RUBY=ruby jt benchmark .../all-ruby-benchmarks/classic/mandelbrot.rb --simple
+```
+
+### Sulong and C extensions
+
+JRuby runs C extension using Sulong. You should build Sulong from source.
+
+https://github.com/graalvm/sulong
+
+Then set `SULONG_HOME` and `GRAAL_HOME` environment variables to the Sulong
+repository.
+
+```
+$ export SULONG_HOME=.../sulong
+$ export GRAAL_HOME=$SULONG_HOME
+```
+
+You can now build the C extension support. Building the OpenSSL C extension is
+incomplete, so most people probably want to disable that.
+
+```
+$ jt build cexts --no-openssl
+```
+
+Get the `jruby-truffle-gem-test-pack` repository.
+
+https://github.com/jruby/jruby-truffle-gem-test-pack
+
+You can then test C extension support.
+
+```
+$ export GEM_HOME=../jruby-truffle-gem-test-pack/gems
+$ jt test cexts --no-libxml --no-openssl --no-argon2
+```
+
+If you want to test `libxml`, remove that flag and set either `LIBXML_HOME` or
+`LIBXML_INCLUDE` and `LIBXML_LIB`. Try the same with `OPENSSL_` if you are
+adventurous.
+
+To run C extension bechmarks, follow the instructions for benchmarking above,
+and then try.
+
+```
+$  USE_CEXTS=true JRUBY_OPTS=-Xtruffle.cexts.log.load=true jt benchmark .../all-ruby-benchmarks/chunky_png/chunky-color-r.rb --simple
+```
+
+These benchmarks have Ruby fallbacks, so we should carefully check that the
+C extension is actually being used by looking for these log lines.
+
+```
+[ruby] INFO loading cext module ...
 ```
 
 ### mx and integrating with other Graal projects
