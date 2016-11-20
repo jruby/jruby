@@ -345,8 +345,6 @@ cext-benchmarks: ${sulong} {
   
   run: [
     ${bench.cmd} [chunky]
-  ] ${post-process-and-upload-results} [
-    ${bench.cmd} [psd]
   ] ${post-process-and-upload-results}
   timelimit: "02:00:00"
 }
