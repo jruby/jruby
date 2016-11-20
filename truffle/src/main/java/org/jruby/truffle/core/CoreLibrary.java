@@ -999,8 +999,7 @@ public class CoreLibrary {
             Main.printTruffleTimeMetric("before-load-core");
             state = State.LOADING_RUBY_CORE;
 
-            @SuppressWarnings("unchecked")
-            final Future<RubyRootNode>[] coreFileFutures = new Future[coreFiles.length];
+            final List<Future<RubyRootNode>> coreFileFutures = new ArrayList<>();
 
             if (TruffleOptions.AOT || !context.getOptions().CORE_PARALLEL_LOAD) {
                 try {
@@ -1026,15 +1025,15 @@ public class CoreLibrary {
                     for (int n = 0; n < coreFiles.length; n++) {
                         final int finalN = n;
 
-                        coreFileFutures[n] = ForkJoinPool.commonPool().submit(() ->
+                        coreFileFutures.add(ForkJoinPool.commonPool().submit(() ->
                                 context.getCodeLoader().parse(
                                         context.getSourceCache().getSource(getCoreLoadPath() + coreFiles[finalN]),
                                         UTF8Encoding.INSTANCE, ParserContext.TOP_LEVEL, null, true, node)
-                        );
+                        ));
                     }
 
                     for (int n = 0; n < coreFiles.length; n++) {
-                        final RubyRootNode rootNode = coreFileFutures[n].get();
+                        final RubyRootNode rootNode = coreFileFutures.get(n).get();
 
                         final CodeLoader.DeferredCall deferredCall = context.getCodeLoader().prepareExecute(
                                 ParserContext.TOP_LEVEL,
