@@ -3259,7 +3259,7 @@ public abstract class StringNodes {
                     if (p > prev) result.append(pBytes, prev, p - prev);
                     n = enc.minLength();
                     if (pend < p + n)
-                        n = (int)(pend - p);
+                        n = (pend - p);
                     while ((n--) > 0) {
                         result.append(String.format("\\x%02X", (long) (pBytes[p] & 0377)).getBytes(StandardCharsets.US_ASCII));
                         prev = ++p;
@@ -3294,7 +3294,7 @@ public abstract class StringNodes {
                     if (unicode_p && (c & 0xFFFFFFFFL) < 0x7F && Encoding.isAscii(c) && ASCIIEncoding.INSTANCE.isPrint(c)) {
                         result.append(String.format("%c", (char) (c & 0xFFFFFFFFL)).getBytes(StandardCharsets.US_ASCII));
                     } else {
-                        result.append(String.format(escapedCharFormat(c, unicode_p), (long) (c & 0xFFFFFFFFL)).getBytes(StandardCharsets.US_ASCII));
+                        result.append(String.format(escapedCharFormat(c, unicode_p), c & 0xFFFFFFFFL).getBytes(StandardCharsets.US_ASCII));
                     }
 
                     prev = p;

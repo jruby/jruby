@@ -206,7 +206,7 @@ public class RubyLexer extends LexingCommon {
     }
     
     public static Keyword getKeyword(String str) {
-        return (Keyword) map.get(str);
+        return map.get(str);
     }
     
     // Used for tiny smidgen of grammar in lexer (see setParserSupport())
