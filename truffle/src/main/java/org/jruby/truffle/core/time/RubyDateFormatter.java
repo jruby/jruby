@@ -47,6 +47,7 @@ import org.joda.time.DateTime;
 import org.joda.time.chrono.GJChronology;
 import org.joda.time.chrono.JulianChronology;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.encoding.EncodingManager;
 import org.jruby.truffle.debug.DebugHelpers;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.util.ByteList;
@@ -262,7 +263,7 @@ public class RubyDateFormatter {
         }
 
         ByteArrayInputStream in = new ByteArrayInputStream(pattern.getUnsafeBytes(), pattern.getBegin(), pattern.getRealSize());
-        Reader reader = new InputStreamReader(in, context.getEncodingManager().charsetForEncoding(pattern.getEncoding()));
+        Reader reader = new InputStreamReader(in, EncodingManager.charsetForEncoding(pattern.getEncoding()));
         lexer.yyreset(reader);
 
         Token token;
@@ -541,7 +542,7 @@ public class RubyDateFormatter {
             // reset formatter
             formatter = RubyTimeOutputFormatter.DEFAULT_FORMATTER;
 
-            toAppendTo.append(output.getBytes(context.getEncodingManager().charsetForEncoding(toAppendTo.getEncoding())));
+            toAppendTo.append(output.getBytes(EncodingManager.charsetForEncoding(toAppendTo.getEncoding())));
         }
 
         return toAppendTo;
