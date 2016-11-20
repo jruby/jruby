@@ -334,6 +334,10 @@ server-benchmarks: {
 }
 
 cext-benchmarks: ${sulong} {
+  environment: {
+    JRUBY_OPTS: "-Xtruffle.cexts.log.load=true"
+  }
+
   setup: ${sulong.setup} ${gem-test-pack.setup} ${bench.setup} [
     ${jt} [cextc_extconf, ../ruby-benchmarks/chunky_png/oily_png],
     ${jt} [cextc_extconf, ../ruby-benchmarks/psd.rb/psd_native]
