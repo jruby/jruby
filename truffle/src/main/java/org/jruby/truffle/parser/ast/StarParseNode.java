@@ -55,7 +55,7 @@ public class StarParseNode extends ParseNode {
     /**
      * @see ParseNode#accept(NodeVisitor)
      */
-    public Object accept(NodeVisitor visitor) {
+    public <T> T accept(NodeVisitor<T> visitor) {
     	return visitor.visitStarNode(this);
     }
     

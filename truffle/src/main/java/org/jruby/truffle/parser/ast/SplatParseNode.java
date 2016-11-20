@@ -51,7 +51,7 @@ public class SplatParseNode extends ParseNode {
     }
 
     @Override
-    public Object accept(NodeVisitor visitor) {
+    public <T> T accept(NodeVisitor<T> visitor) {
         return visitor.visitSplatNode(this);
     }
 
