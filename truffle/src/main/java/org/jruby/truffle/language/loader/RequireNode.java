@@ -129,7 +129,7 @@ public abstract class RequireNode extends RubyNode {
                 } else if (RubyLanguage.CEXT_MIME_TYPE.equals(mimeType)) {
                     featureLoader.ensureCExtImplementationLoaded(frame, feature, callNode);
 
-                    if (getContext().getOptions().CEXTS_LOG) {
+                    if (getContext().getOptions().CEXTS_LOG_LOAD) {
                         Log.info("loading cext module %s", expandedPath);
                     }
 
