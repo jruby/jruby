@@ -78,6 +78,7 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
     /**
      * Prints a warning, unless $VERBOSE is nil.
      */
+    @SuppressWarnings("deprecation")
     @Override
     public void warn(ID id, String fileName, int lineNumber, String message) {
         if (!runtime.warningsEnabled()) return;
@@ -92,6 +93,7 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
     /**
      * Prints a warning, unless $VERBOSE is nil.
      */
+    @SuppressWarnings("deprecation")
     @Override
     public void warn(ID id, String fileName, String message) {
         if (!runtime.warningsEnabled()) return;

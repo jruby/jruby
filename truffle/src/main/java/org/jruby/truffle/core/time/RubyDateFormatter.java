@@ -634,6 +634,7 @@ public class RubyDateFormatter {
         return getRubyTimeZoneName(getEnvTimeZone().toString(), dt);
     }
 
+    @SuppressWarnings("deprecation")
     private Object getEnvTimeZone() {
         return DebugHelpers.eval(context, "Time.now.zone");
     }
