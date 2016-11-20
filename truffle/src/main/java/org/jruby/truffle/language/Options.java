@@ -21,6 +21,7 @@ import static org.jruby.util.cli.Options.TRUFFLE_BINDING_LOCAL_VARIABLE_CACHE;
 import static org.jruby.util.cli.Options.TRUFFLE_BIND_CACHE;
 import static org.jruby.util.cli.Options.TRUFFLE_CALL_GRAPH;
 import static org.jruby.util.cli.Options.TRUFFLE_CALL_GRAPH_WRITE;
+import static org.jruby.util.cli.Options.TRUFFLE_CEXTS_LOG;
 import static org.jruby.util.cli.Options.TRUFFLE_CHAOS;
 import static org.jruby.util.cli.Options.TRUFFLE_CLASS_CACHE;
 import static org.jruby.util.cli.Options.TRUFFLE_CONSTANT_CACHE;
@@ -174,5 +175,9 @@ public class Options {
     // Other tools
 
     public boolean CHAOS = TRUFFLE_CHAOS.load();
+
+    // Cexts
+
+    public final boolean CEXTS_LOG = TRUFFLE_CEXTS_LOG.load();
 
 }
