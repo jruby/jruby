@@ -39,9 +39,8 @@ public class RubyEngine {
 
     public int execute(String path) {
         if (!Graal.isGraal() && Options.TRUFFLE_GRAAL_WARNING_UNLESS.load()) {
-            System.err.println("WARNING: This JVM does not have the Graal compiler. " +
-                    "JRuby+Truffle's performance without it will be limited. " +
-                    "See https://github.com/jruby/jruby/wiki/Truffle-FAQ#how-do-i-get-jrubytruffle");
+            Log.warning("This JVM does not have the Graal compiler - performance will be limited - " +
+                    "see https://github.com/jruby/jruby/wiki/Truffle-FAQ#how-do-i-get-jrubytruffle");
         }
 
         context.setOriginalInputFile(path);
