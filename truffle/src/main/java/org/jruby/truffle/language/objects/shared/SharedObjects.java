@@ -54,7 +54,7 @@ public abstract class SharedObjects {
         final Deque<DynamicObject> stack = new ArrayDeque<>();
 
         if (Options.SHARED_OBJECTS_DEBUG) {
-            System.err.println("Sharing decl frame of " + Layouts.PROC.getSharedMethodInfo(block).getSourceSection().getShortDescription());
+            System.err.println("Sharing decl frame of " + Layouts.PROC.getSharedMethodInfo(block).getSourceSection());
         }
 
         final MaterializedFrame declarationFrame = Layouts.PROC.getDeclarationFrame(block);
