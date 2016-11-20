@@ -406,6 +406,17 @@ public class RubyPathname extends RubyObject {
         }
     }
 
+    @JRubyMethod(name = "empty?")
+    public IRubyObject empty_p(ThreadContext context) {
+        RubyModule fileTest = context.runtime.getFileTest();
+        if (fileTest.callMethod(context, "directory?", getPath()).isTrue()) {
+            return context.runtime.getDir().callMethod(context, "empty?", getPath());
+        }
+        else {
+            return fileTest.callMethod(context, "empty?", getPath());
+        }
+    }
+
     /* Helpers */
 
     private IRubyObject[] insertPath(IRubyObject[] args, int i) {

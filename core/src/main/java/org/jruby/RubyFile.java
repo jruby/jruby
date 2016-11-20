@@ -784,18 +784,6 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return result;
     }
 
-    @JRubyMethod(name = {"empty?", "zero?"}, required = 1, meta = true)
-    public static IRubyObject empty_p(ThreadContext context, IRubyObject self, IRubyObject str) {
-        Ruby runtime = context.runtime;
-        String filename = StringSupport.checkEmbeddedNulls(runtime, get_path(context, str)).getUnicodeValue();
-
-        if (!new File(filename).exists()) return runtime.getFalse();
-
-        int size = runtime.newFileStat(filename, false).size().convertToInteger().getIntValue();
-
-        return runtime.newBoolean(size == 0);
-    }
-
     /**
      * Returns the extension name of the file. An empty string is returned if
      * the filename (not the entire path) starts or ends with a dot.
