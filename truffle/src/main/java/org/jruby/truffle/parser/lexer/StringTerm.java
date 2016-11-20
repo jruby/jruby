@@ -417,6 +417,7 @@ nonascii:       hasNonAscii = true; // Label for comparison with MRI only.
     }    
 
     // Was a goto in original ruby lexer
+    @SuppressWarnings("fallthrough")
     private void escaped(RubyLexer lexer, ByteList buffer) throws IOException {
         int c;
 
@@ -431,6 +432,7 @@ nonascii:       hasNonAscii = true; // Label for comparison with MRI only.
         }
     }
 
+    @SuppressWarnings("fallthrough")
     private void parseEscapeIntoBuffer(RubyLexer lexer, ByteList buffer) throws IOException {
         int c;
 

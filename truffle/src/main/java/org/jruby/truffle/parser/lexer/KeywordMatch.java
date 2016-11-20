@@ -206,6 +206,7 @@ public class KeywordMatch {
         return null;
     }
 
+    @SuppressWarnings("fallthrough")
     public static RubyLexer.Keyword match8(byte[] words) {
         switch(words[0]) {
         case 'd': 

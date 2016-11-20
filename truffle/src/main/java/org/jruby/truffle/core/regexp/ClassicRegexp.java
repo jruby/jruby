@@ -223,6 +223,7 @@ public class ClassicRegexp implements ReOptions, EncodingCapable, MarshalEncodin
         if (hasProperty && fixedEnc[0] == null) fixedEnc[0] = enc;
     }
 
+    @SuppressWarnings("fallthrough")
     public static boolean unescapeNonAscii(RubyContext context, ByteList to, byte[] bytes, int p, int end, Encoding enc, Encoding[] encp, ByteList str, RegexpSupport.ErrorMode mode) {
         boolean hasProperty = false;
         byte[] buf = null;
@@ -438,6 +439,7 @@ public class ClassicRegexp implements ReOptions, EncodingCapable, MarshalEncodin
         return 0;
     }
 
+    @SuppressWarnings("fallthrough")
     public static int readEscapedByte(RubyContext context, byte[] to, int toP, byte[] bytes, int p, int end, ByteList str, RegexpSupport.ErrorMode mode) {
         if (p == end || bytes[p++] != (byte)'\\') raisePreprocessError(context, str, "too short escaped multibyte character", mode);
 

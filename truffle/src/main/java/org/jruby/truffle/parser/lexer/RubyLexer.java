@@ -826,6 +826,7 @@ public class RubyLexer extends LexingCommon {
      *
      *@return    Description of the Returned Value
      */
+    @SuppressWarnings("fallthrough")
     private int yylex() throws IOException {
         int c;
         boolean spaceSeen = false;
@@ -2136,6 +2137,7 @@ public class RubyLexer extends LexingCommon {
      *@param c The first character of the number.
      *@return A int constant wich represents a token.
      */
+    @SuppressWarnings("fallthrough")
     private int parseNumber(int c) throws IOException {
         setState(EXPR_END);
         newtok(true);
