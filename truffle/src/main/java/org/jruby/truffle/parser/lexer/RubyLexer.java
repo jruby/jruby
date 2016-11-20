@@ -1320,6 +1320,7 @@ public class RubyLexer extends LexingCommon {
         return Tokens.kDO;
     }
 
+    @SuppressWarnings("fallthrough")
     private int dollar() throws IOException {
         setState(EXPR_END);
         newtok(true);
@@ -2413,8 +2414,8 @@ public class RubyLexer extends LexingCommon {
             buffer.append((char) codepoint);
         }
     }
- 
-    
+
+    @SuppressWarnings("fallthrough")
     public int readEscape() throws IOException {
         int c = nextc();
 
