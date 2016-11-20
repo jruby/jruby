@@ -1208,7 +1208,7 @@ public class ParserSupport {
     }
 
     public ParseNode remove_duplicate_keys(HashParseNode hash) {
-        List<ParseNode> encounteredKeys = new ArrayList();
+        List<ParseNode> encounteredKeys = new ArrayList<>();
 
         for (KeyValuePair<ParseNode,ParseNode> pair: hash.getPairs()) {
             ParseNode key = pair.getKey();
