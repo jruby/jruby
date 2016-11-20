@@ -708,7 +708,7 @@ module Commands
     ruby_su = "#{JRUBY_DIR}/lib/ruby/truffle/cext/ruby.su"
     if cext_dir != ruby_cext_api and (newer?(ruby_h, ruby_su) or newer?(ruby_c, ruby_su))
       puts "Compiling outdated ruby.su"
-      cextc_extconf ruby_cext_api, false
+      cextc ruby_cext_api
     end
   end
   private :build_ruby_su
