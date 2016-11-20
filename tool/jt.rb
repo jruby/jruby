@@ -916,7 +916,7 @@ module Commands
         next if gem_name == 'xml' && no_libxml
         next if gem_name == 'xopenssl' && no_openssl
         dir = "#{JRUBY_DIR}/test/truffle/cexts/#{gem_name}"
-        cextc_extconf dir, true
+        cextc dir
         name = File.basename(dir)
         next if gem_name == 'globals' # globals is excluded just for running
         run '--graal', "-I#{dir}/lib", "#{dir}/bin/#{name}", :out => output_file
@@ -949,7 +949,8 @@ module Commands
       if gem_name == "ruby-argon2"
         cextc gem_root, '-Werror=implicit-function-declaration'
       else
-        cextc_extconf gem_root, false, '-Werror=implicit-function-declaration'
+        #cextc_extconf gem_root, false, '-Werror=implicit-function-declaration'
+        cextc gem_root
       end
 
       next if gem_name == 'psd_native' # psd_native is excluded just for running
