@@ -117,7 +117,8 @@ module RbConfig
 
   def self.ruby
     # TODO (eregon, 30 Sep 2016): should be the one used by the launcher!
-    File.join CONFIG['bindir'], CONFIG['ruby_install_name'], CONFIG['exeext']
+    jruby_truffle = CONFIG['ruby_install_name'] + CONFIG['exeext']
+    File.join CONFIG['bindir'], jruby_truffle
   end
 
   def RbConfig::expand(val, config = CONFIG)
