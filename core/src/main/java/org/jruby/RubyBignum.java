@@ -54,14 +54,10 @@ import org.jruby.runtime.marshal.UnmarshalStream;
 @JRubyClass(name="Bignum", parent="Integer")
 public class RubyBignum extends RubyInteger {
     public static RubyClass createBignumClass(Ruby runtime) {
-        RubyClass bignum = runtime.defineClass("Bignum", runtime.getInteger(),
-                ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+        RubyClass bignum = runtime.getInteger();
+        runtime.getObject().setConstant("Bignum", bignum);
+        runtime.getObject().deprecateConstant(runtime, "Bignum");
         runtime.setBignum(bignum);
-
-        bignum.setClassIndex(ClassIndex.BIGNUM);
-        bignum.setReifiedClass(RubyBignum.class);
-
-        bignum.defineAnnotatedMethods(RubyBignum.class);
 
         return bignum;
     }
