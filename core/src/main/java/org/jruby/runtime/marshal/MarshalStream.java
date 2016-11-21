@@ -184,7 +184,10 @@ public class MarshalStream extends FilterOutputStream {
                     break;
                 }
 
-                if (nativeClassIndex != value.getMetaClass().getClassIndex() && nativeClassIndex != ClassIndex.STRUCT) {
+                if (nativeClassIndex != value.getMetaClass().getClassIndex() &&
+                        nativeClassIndex != ClassIndex.STRUCT &&
+                        nativeClassIndex != ClassIndex.FIXNUM &&
+                        nativeClassIndex != ClassIndex.BIGNUM) {
                     // object is a custom class that extended one of the native types other than Object
                     writeUserClass(value, type);
                 }
