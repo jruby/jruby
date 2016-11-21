@@ -785,7 +785,13 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     @JRubyMethod(name = "name")
     public IRubyObject getName() {
-        return RubyString.newString(getRuntime(), threadImpl.getRubyName());
+        Ruby runtime = getRuntime();
+
+        CharSequence rubyName = threadImpl.getRubyName();
+
+        if (rubyName == null) return runtime.getNil();
+
+        return RubyString.newString(getRuntime(), rubyName);
     }
 
     private boolean pendingInterruptInclude(IRubyObject err) {
