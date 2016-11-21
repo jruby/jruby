@@ -12,6 +12,8 @@
  */
 package org.jruby.truffle.core.encoding;
 
+import com.kenai.jffi.Platform;
+import com.kenai.jffi.Platform.OS;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.object.DynamicObject;
 import jnr.constants.platform.LangInfo;
@@ -120,8 +122,15 @@ public class EncodingManager {
     public Encoding getLocaleEncoding() {
         String localeEncodingName;
         try {
-            assert LangInfo.CODESET.defined();
-            localeEncodingName = context.getNativePlatform().getPosix().nl_langinfo(LangInfo.CODESET.intValue());
+            final int codeset;
+            if (Platform.getPlatform().getOS() == OS.SOLARIS) {
+                // Workaround until jnr-constants is released
+                codeset = 49;
+            } else {
+                assert LangInfo.CODESET.defined();
+                codeset = LangInfo.CODESET.intValue();
+            }
+            localeEncodingName = context.getNativePlatform().getPosix().nl_langinfo(codeset);
         }
         catch (UnsupportedOperationException e) {
             localeEncodingName = Charset.defaultCharset().name();
