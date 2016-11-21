@@ -231,6 +231,11 @@ bench-caps: {
   timelimit: "02:00:00"
 }
 
+daily-caps: {
+  capabilities: [linux, amd64]
+  targets: [daily]
+}
+
 daily-bench-caps: {
   capabilities: [x52, linux, amd64, no_frequency_scaling]
   targets: [bench, daily]
@@ -386,6 +391,12 @@ test-cexts: ${sulong} ${gem-test-pack} {
   ]
 }
 
+test-compilation-flags: {
+  environment: {
+    JRUBY_OPTS: "-J-Dgraal.TraceTruffleCompilation=true -J-Dgraal.TruffleCompilationExceptionsAreFatal=true"
+  }
+}
+
 deployBinaries: {
   run: [
     [mx, deploy-binary-if-truffle-head, jruby-binary-snapshots]
@@ -413,6 +424,9 @@ builds: [
   {name: ruby-test-compiler-graal-enterprise} ${common} ${graal-enterprise} ${gate-caps} {run: [${jt} [test, compiler]]},
   {name: ruby-test-compiler-graal-vm-snapshot} ${common} ${graal-vm-snapshot} ${gate-caps} {run: [${jt} [test, compiler]]},
   {name: ruby-test-compiler-graal-vm-release} ${common} ${graal-vm-release} ${gate-caps} {run: [${jt} [test, compiler]]},
+  
+  {name: ruby-test-specs-command-line-vm-release} ${common} ${graal-vm-release} ${daily-caps} ${test-compilation-flags} {run: [${jt} [test, specs, ":command_line", --graal]]},
+  {name: ruby-test-specs-language-vm-release} ${common} ${graal-vm-release} ${daily-caps} ${test-compilation-flags} {run: [${jt} [test, specs, ":language", --graal]]},
 
   {name: ruby-metrics-noindy} ${common} ${no-graal} ${weekly-bench-caps} ${jruby-noindy-metrics} ${metrics},
   {name: ruby-metrics-indy} ${common} ${no-graal} ${weekly-bench-caps} ${jruby-indy-metrics} ${metrics},
