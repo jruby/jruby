@@ -360,7 +360,7 @@ public class RubyDateFormatter {
         }
     }
 
-    public ByteList formatToByteList(List<Token> compiledPattern, ZonedDateTime dt, long nsec) {
+    public ByteList formatToByteList(List<Token> compiledPattern, ZonedDateTime dt) {
         RubyTimeOutputFormatter formatter = RubyTimeOutputFormatter.DEFAULT_FORMATTER;
         ByteList toAppendTo = new ByteList();
 
@@ -501,10 +501,7 @@ public class RubyDateFormatter {
                     int defaultWidth = (format == Format.FORMAT_NANOSEC) ? 9 : 3;
                     int width = formatter.getWidth(defaultWidth);
 
-                    output = RubyTimeOutputFormatter.formatNumber(dt.getNano() / 1_000_000, 3, '0');
-                    if (width > 3) {
-                        output += RubyTimeOutputFormatter.formatNumber(nsec, 6, '0');
-                    }
+                    output = RubyTimeOutputFormatter.formatNumber(dt.getNano(), 9, '0');
 
                     if (width < output.length()) {
                         output = output.substring(0, width);

@@ -30,6 +30,7 @@ import org.jruby.truffle.builtins.NonStandard;
 import org.jruby.truffle.builtins.Primitive;
 import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.core.time.RubyDateFormatter.Token;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.SnippetNode;
@@ -43,6 +44,7 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.TextStyle;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -61,7 +63,6 @@ public abstract class TimeNodes {
         @Specialization(guards = "isRubyTime(from)")
         public Object initializeCopy(DynamicObject self, DynamicObject from) {
             Layouts.TIME.setDateTime(self, Layouts.TIME.getDateTime(from));
-            Layouts.TIME.setNSec(self, Layouts.TIME.getNSec(from));
             Layouts.TIME.setOffset(self, Layouts.TIME.getOffset(from));
             Layouts.TIME.setRelativeOffset(self, Layouts.TIME.getRelativeOffset(from));
             return self;
@@ -158,9 +159,7 @@ public abstract class TimeNodes {
         @Specialization
         public DynamicObject addInternal(DynamicObject time, long seconds, long nanoSeconds) {
             final ZonedDateTime dateTime = Layouts.TIME.getDateTime(time);
-            final long addMilis = Math.addExact(Math.multiplyExact(seconds, 1000L), (nanoSeconds / 1_000_000));
-            Layouts.TIME.setDateTime(time, dateTime.plusNanos(addMilis * 1_000_000));
-            Layouts.TIME.setNSec(time, (1_000_000 + Layouts.TIME.getNSec(time) + nanoSeconds % 1_000_000) % 1_000_000);
+            Layouts.TIME.setDateTime(time, dateTime.plusSeconds(seconds).plusNanos(nanoSeconds));
             return time;
         }
     }
@@ -180,7 +179,7 @@ public abstract class TimeNodes {
             return allocateObjectNode.allocate(
                     klass,
                     Layouts.TIME.getDateTime(time),
-                    Layouts.TIME.getNSec(time),
+                            0,
                     Layouts.TIME.getZone(time),
                     Layouts.TIME.getOffset(time),
                     Layouts.TIME.getRelativeOffset(time),
@@ -301,48 +300,33 @@ public abstract class TimeNodes {
 
         @Specialization(guards = { "isUTC" })
         public DynamicObject timeSSpecificUTC(DynamicObject timeClass, long seconds, int nanoseconds, boolean isUTC, Object offset) {
-            final long milliseconds = getMillis(seconds, nanoseconds);
-            return allocateObjectNode.allocate(timeClass, utcTime(milliseconds), nanoseconds % 1_000_000, nil(), nil(), false, isUTC);
+            return allocateObjectNode.allocate(timeClass, getDateTime(seconds, nanoseconds, UTC), 0, nil(), nil(), false, isUTC);
         }
 
         @Specialization(guards = { "!isUTC", "isNil(offset)" })
         public DynamicObject timeSSpecific(VirtualFrame frame, DynamicObject timeClass, long seconds, int nanoseconds, boolean isUTC, Object offset) {
-            final long milliseconds = getMillis(seconds, nanoseconds);
             final TimeZoneAndName zoneName = getTimeZoneNode.executeGetTimeZone(frame);
             return allocateObjectNode.allocate(timeClass,
-                    localtime(milliseconds, zoneName.getZone()),
-                    nanoseconds % 1_000_000, nil(), offset, false, isUTC);
+                            getDateTime(seconds, nanoseconds, zoneName.getZone()),
+                            0, nil(), offset, false, isUTC);
         }
 
         @Specialization(guards = { "!isUTC" })
         public DynamicObject timeSSpecific(VirtualFrame frame, DynamicObject timeClass, long seconds, int nanoseconds, boolean isUTC, long offset) {
-            final long milliseconds = getMillis(seconds, nanoseconds);
+            ZoneId timeZone = ZoneId.ofOffset("", ZoneOffset.ofTotalSeconds((int) offset));
             return allocateObjectNode.allocate(timeClass,
-                    offsetTime(milliseconds, (int) offset), nanoseconds % 1_000_000, nil(), nil(), false, isUTC);
+                            getDateTime(seconds, nanoseconds, timeZone), 0, nil(), nil(), false, isUTC);
         }
 
-        private long getMillis(long seconds, int nanoseconds) {
+
+        @TruffleBoundary
+        private ZonedDateTime getDateTime(long seconds, int nanoseconds, ZoneId timeZone) {
             try {
-                return Math.addExact(Math.multiplyExact(seconds, 1000L), (nanoseconds / 1_000_000));
-            } catch (ArithmeticException e) {
-                String message = StringUtils.format("UNIX epoch + %d seconds out of range for Time (Joda-Time limitation)", seconds);
+                return ZonedDateTime.ofInstant(Instant.ofEpochSecond(seconds, nanoseconds), timeZone);
+            } catch (DateTimeException e) {
+                String message = StringUtils.format("UNIX epoch + %d seconds out of range for Time (java.time limitation)", seconds);
                 throw new RaiseException(coreExceptions().rangeError(message, this));
             }
-        }
-
-        @TruffleBoundary
-        private ZonedDateTime utcTime(long milliseconds) {
-            return ZonedDateTime.ofInstant(Instant.ofEpochMilli(milliseconds), UTC);
-        }
-
-        @TruffleBoundary
-        private ZonedDateTime offsetTime(long milliseconds, int offset) {
-            return ZonedDateTime.ofInstant(Instant.ofEpochMilli(milliseconds), ZoneId.ofOffset("", ZoneOffset.ofTotalSeconds(offset)));
-        }
-
-        @TruffleBoundary
-        private ZonedDateTime localtime(long milliseconds, ZoneId timeZone) {
-            return ZonedDateTime.ofInstant(Instant.ofEpochMilli(milliseconds), timeZone);
         }
 
     }
@@ -363,7 +347,7 @@ public abstract class TimeNodes {
         @TruffleBoundary
         @Specialization
         public long timeUSeconds(DynamicObject time) {
-            return Layouts.TIME.getDateTime(time).getNano() / 1_000_000L * 1_000L + (Layouts.TIME.getNSec(time) / 1_000L);
+            return Layouts.TIME.getDateTime(time).getNano() / 1000;
         }
 
     }
@@ -421,8 +405,8 @@ public abstract class TimeNodes {
         @Specialization(guards = "isRubyString(format)")
         public DynamicObject timeStrftime(DynamicObject time, DynamicObject format) {
             final RubyDateFormatter rdf = new RubyDateFormatter(getContext(), this);
-            return createString(rdf.formatToByteList(rdf.compilePattern(StringOperations.getByteListReadOnly(format), false),
-                    Layouts.TIME.getDateTime(time), Layouts.TIME.getNSec(time)));
+            final List<Token> pattern = rdf.compilePattern(StringOperations.getByteListReadOnly(format), false);
+            return createString(rdf.formatToByteList(pattern, Layouts.TIME.getDateTime(time)));
         }
 
     }
@@ -477,7 +461,7 @@ public abstract class TimeNodes {
 
         @TruffleBoundary
         private DynamicObject buildTime(DynamicObject timeClass, int sec, int min, int hour, int mday, int month, int year,
-                int nsec, int isdst, boolean fromutc, Object utcoffset, TimeZoneAndName envZone, int millis) {
+                int nsec, int isdst, boolean fromutc, Object utcoffset, TimeZoneAndName envZone, int zoneOffsetMillis) {
             if (sec < 0 || sec > 59 ||
                     min < 0 || min > 59 ||
                     hour < 0 || hour > 23 ||
@@ -493,7 +477,7 @@ public abstract class TimeNodes {
                     .plusHours(hour)
                     .plusMinutes(min)
                     .plusSeconds(sec)
-                    .plusNanos((nsec / 1_000_000) * 1_000_000);
+                    .plusNanos(nsec);
 
             final ZoneId zone;
             final boolean relativeOffset;
@@ -507,7 +491,7 @@ public abstract class TimeNodes {
                 } else if (utcoffset == nil()) {
                     zone = envZone.getZone();
                     // TODO BJF 16-Feb-2016 verify which zone the following date time should be in
-                    final String zoneName = TimeZoneParser.getShortZoneName(dt.withZoneSameInstant(zone), zone);
+                    // final String zoneName = TimeZoneParser.getShortZoneName(dt.withZoneSameInstant(zone), zone);
                     zoneToStore = envZone.getNameAsRubyObject(getContext()); // createString(StringOperations.encodeRope(zoneName, UTF8Encoding.INSTANCE));
                     relativeOffset = false;
                 } else if (utcoffset instanceof Integer) {
@@ -519,7 +503,7 @@ public abstract class TimeNodes {
                     relativeOffset = true;
                     zoneToStore = nil();
                 } else if (utcoffset instanceof DynamicObject) {
-                    zone = ZoneId.ofOffset("", ZoneOffset.ofTotalSeconds(millis / 1_000));
+                    zone = ZoneId.ofOffset("", ZoneOffset.ofTotalSeconds(zoneOffsetMillis / 1_000));
                     relativeOffset = true;
                     zoneToStore = nil();
                 } else {
@@ -539,7 +523,7 @@ public abstract class TimeNodes {
                 dt = dt.withEarlierOffsetAtOverlap();
             }
 
-            return allocateObjectNode.allocate(timeClass, dt, nsec % 1_000_000, zoneToStore, utcoffset, relativeOffset, fromutc);
+            return allocateObjectNode.allocate(timeClass, dt, 0, zoneToStore, utcoffset, relativeOffset, fromutc);
         }
 
         private static int cast(Object value) {
@@ -552,10 +536,6 @@ public abstract class TimeNodes {
             }
         }
 
-        private static int fixOffset(int seconds) {
-            return seconds;
-        }
-
     }
 
     @Primitive(name = "time_nseconds")
@@ -564,7 +544,7 @@ public abstract class TimeNodes {
         @TruffleBoundary
         @Specialization
         public long timeNSeconds(DynamicObject time) {
-            return Layouts.TIME.getDateTime(time).getNano() + Layouts.TIME.getNSec(time);
+            return Layouts.TIME.getDateTime(time).getNano();
         }
 
     }
@@ -575,8 +555,8 @@ public abstract class TimeNodes {
         @TruffleBoundary
         @Specialization
         public long timeSetNSeconds(DynamicObject time, int nanoseconds) {
-            Layouts.TIME.setDateTime(time, Layouts.TIME.getDateTime(time).plusNanos(nanoseconds));
-            Layouts.TIME.setNSec(time, nanoseconds % 1_000_000);
+            final ZonedDateTime dateTime = Layouts.TIME.getDateTime(time);
+            Layouts.TIME.setDateTime(time, dateTime.plusNanos(nanoseconds - dateTime.getNano()));
             return nanoseconds;
         }
 
