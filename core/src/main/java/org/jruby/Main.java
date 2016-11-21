@@ -219,7 +219,7 @@ public class Main {
         catch (Throwable t) {
             // If a Truffle exception gets this far it's a hard failure - don't try and dress it up as a Ruby exception
 
-            if (main.config.getCompileMode() == RubyInstanceConfig.CompileMode.TRUFFLE) {
+            if (main.config.getCompileMode().isTruffle()) {
                 System.err.println("Truffle internal error: " + t);
                 t.printStackTrace(System.err);
             } else {
