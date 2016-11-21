@@ -28,7 +28,7 @@ public class Log {
 
             @Override
             public void publish(LogRecord record) {
-                System.console().format("[ruby] %s %s%n", record.getLevel().getName(), record.getMessage());
+                System.err.printf("[ruby] %s %s%n", record.getLevel().getName(), record.getMessage());
             }
 
             @Override
