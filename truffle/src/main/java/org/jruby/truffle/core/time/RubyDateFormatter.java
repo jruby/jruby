@@ -468,12 +468,12 @@ public class RubyDateFormatter {
                     value = dt.getDayOfWeek().getValue();
                     break;
                 case FORMAT_YEAR_LONG:
-                    value = year(dt, dt.getYear());
+                    value = dt.getYear();
                     type = (value >= 0) ? NUMERIC4 : NUMERIC5;
                     break;
                 case FORMAT_YEAR_SHORT:
                     type = NUMERIC2;
-                    value = year(dt, dt.getYear()) % 100;
+                    value = dt.getYear() % 100;
                     break;
                 case FORMAT_COLON_ZONE_OFF:
                     // custom logic because this is so weird
@@ -486,7 +486,7 @@ public class RubyDateFormatter {
                     break;
                 case FORMAT_CENTURY:
                     type = NUMERIC;
-                    value = year(dt, dt.getYear()) / 100;
+                    value = dt.getYear() / 100;
                     break;
                 case FORMAT_EPOCH:
                     type = NUMERIC;
@@ -516,12 +516,12 @@ public class RubyDateFormatter {
                     formatter = RubyTimeOutputFormatter.DEFAULT_FORMATTER; // no more formatting
                     break;
                 case FORMAT_WEEKYEAR:
-                    value = year(dt, new DateTime(dt.toInstant().getEpochSecond() * 1_000).getWeekyear());
+                    value = new DateTime(dt.toInstant().getEpochSecond() * 1_000).getWeekyear();
                     type = (value >= 0) ? NUMERIC4 : NUMERIC5;
                     break;
                 case FORMAT_WEEKYEAR_SHORT:
                     type = NUMERIC2;
-                    value = year(dt, new DateTime(dt.toInstant().getEpochSecond() * 1_000).getWeekyear()) % 100;
+                    value = new DateTime(dt.toInstant().getEpochSecond() * 1_000).getWeekyear() % 100;
                     break;
                 case FORMAT_MICROSEC_EPOCH:
                     // only available for Date
@@ -546,20 +546,6 @@ public class RubyDateFormatter {
         }
 
         return toAppendTo;
-    }
-
-    /**
-     * Ruby always follows Astronomical year numbering,
-     * that is BC x is -x+1 and there is a year 0 (BC 1)
-     * but Joda-time returns -x for year x BC in Julian chronology (no year 0) */
-    private int year(ZonedDateTime dt, int year) {
-        DateTime dtj = new DateTime(dt.toInstant().getEpochSecond() * 1_000);
-        Chronology c;
-        if (year < 0 && (
-                (c = dtj.getChronology()) instanceof JulianChronology ||
-                (c instanceof GJChronology && ((GJChronology) c).getGregorianCutover().isAfter(dtj))))
-            return year + 1;
-        return year;
     }
 
     private int formatWeekYear(ZonedDateTime dt, int firstDayOfWeek) {
