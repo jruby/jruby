@@ -672,23 +672,24 @@ public abstract class TimeNodes {
         }
 
         @TruffleBoundary(throwsControlFlowException = true)
-        public static TimeZoneAndName parse(RubyNode node, String zone) {
+        public static TimeZoneAndName parse(RubyNode node, String zoneString) {
+            String zone = zoneString;
             String upZone = zone.toUpperCase(Locale.ENGLISH);
 
             Matcher tzMatcher = TZ_PATTERN.matcher(zone);
             if (tzMatcher.matches()) {
-                String zoneName = tzMatcher.group(1);
+                String name = tzMatcher.group(1);
                 String sign = tzMatcher.group(2);
                 String hours = tzMatcher.group(3);
                 String minutes = tzMatcher.group(4);
                 String seconds = tzMatcher.group(5);
 
-                if (zoneName == null) {
-                    zoneName = "";
+                if (name == null) {
+                    name = "";
                 }
 
                 // Sign is reversed in legacy TZ notation
-                return getTimeZoneFromHHMM(node, zoneName, sign.equals("-"), hours, minutes, seconds);
+                return getTimeZoneFromHHMM(node, name, sign.equals("-"), hours, minutes, seconds);
             } else {
                 if (LONG_TZNAME.containsKey(upZone)) {
                     zone = LONG_TZNAME.get(upZone);
