@@ -176,14 +176,13 @@ public abstract class TimeNodes {
 
         @Specialization
         public DynamicObject dup(DynamicObject time, DynamicObject klass) {
-            return allocateObjectNode.allocate(
-                    klass,
-                    Layouts.TIME.getDateTime(time),
+            return allocateObjectNode.allocate(klass, Layouts.TIME.build(
+                            Layouts.TIME.getDateTime(time),
                             0,
-                    Layouts.TIME.getZone(time),
-                    Layouts.TIME.getOffset(time),
-                    Layouts.TIME.getRelativeOffset(time),
-                    Layouts.TIME.getIsUtc(time));
+                            Layouts.TIME.getZone(time),
+                            Layouts.TIME.getOffset(time),
+                            Layouts.TIME.getRelativeOffset(time),
+                            Layouts.TIME.getIsUtc(time)));
         }
     }
 
@@ -256,7 +255,7 @@ public abstract class TimeNodes {
 
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
-            return allocateObjectNode.allocate(rubyClass, ZERO, 0, coreLibrary().getNilObject(), 0, false, false);
+            return allocateObjectNode.allocate(rubyClass, Layouts.TIME.build(ZERO, 0, coreLibrary().getNilObject(), 0, false, false));
         }
 
     }
@@ -276,7 +275,7 @@ public abstract class TimeNodes {
         @Specialization
         public DynamicObject timeSNow(VirtualFrame frame, DynamicObject timeClass) {
             final TimeZoneAndName zoneName = getTimeZoneNode.executeGetTimeZone(frame);
-            return allocateObjectNode.allocate(timeClass, now(zoneName.getZone()), 0, nil(), nil(), false, false);
+            return allocateObjectNode.allocate(timeClass, Layouts.TIME.build(now(zoneName.getZone()), 0, nil(), nil(), false, false));
         }
 
         @TruffleBoundary
@@ -300,22 +299,22 @@ public abstract class TimeNodes {
 
         @Specialization(guards = { "isUTC" })
         public DynamicObject timeSSpecificUTC(DynamicObject timeClass, long seconds, int nanoseconds, boolean isUTC, Object offset) {
-            return allocateObjectNode.allocate(timeClass, getDateTime(seconds, nanoseconds, UTC), 0, nil(), nil(), false, isUTC);
+            return allocateObjectNode.allocate(timeClass, Layouts.TIME.build(getDateTime(seconds, nanoseconds, UTC), 0, nil(), nil(), false, isUTC));
         }
 
         @Specialization(guards = { "!isUTC", "isNil(offset)" })
         public DynamicObject timeSSpecific(VirtualFrame frame, DynamicObject timeClass, long seconds, int nanoseconds, boolean isUTC, Object offset) {
             final TimeZoneAndName zoneName = getTimeZoneNode.executeGetTimeZone(frame);
-            return allocateObjectNode.allocate(timeClass,
+            return allocateObjectNode.allocate(timeClass, Layouts.TIME.build(
                             getDateTime(seconds, nanoseconds, zoneName.getZone()),
-                            0, nil(), offset, false, isUTC);
+                            0, nil(), offset, false, isUTC));
         }
 
         @Specialization(guards = { "!isUTC" })
         public DynamicObject timeSSpecific(VirtualFrame frame, DynamicObject timeClass, long seconds, int nanoseconds, boolean isUTC, long offset) {
             ZoneId timeZone = ZoneId.ofOffset("", ZoneOffset.ofTotalSeconds((int) offset));
-            return allocateObjectNode.allocate(timeClass,
-                            getDateTime(seconds, nanoseconds, timeZone), 0, nil(), nil(), false, isUTC);
+            return allocateObjectNode.allocate(timeClass, Layouts.TIME.build(
+                            getDateTime(seconds, nanoseconds, timeZone), 0, nil(), nil(), false, isUTC));
         }
 
 
@@ -523,7 +522,7 @@ public abstract class TimeNodes {
                 dt = dt.withEarlierOffsetAtOverlap();
             }
 
-            return allocateObjectNode.allocate(timeClass, dt, 0, zoneToStore, utcoffset, relativeOffset, fromutc);
+            return allocateObjectNode.allocate(timeClass, Layouts.TIME.build(dt, 0, zoneToStore, utcoffset, relativeOffset, fromutc));
         }
 
         private static int cast(Object value) {

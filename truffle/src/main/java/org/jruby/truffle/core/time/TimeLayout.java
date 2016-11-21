@@ -22,13 +22,12 @@ public interface TimeLayout extends BasicObjectLayout {
     DynamicObjectFactory createTimeShape(DynamicObject logicalClass,
                                          DynamicObject metaClass);
 
-    DynamicObject createTime(DynamicObjectFactory factory,
-                             ZonedDateTime dateTime,
-                             long nSec,
-                             Object zone,
-                             Object offset,
-                             boolean relativeOffset,
-                             boolean isUtc);
+    Object[] build(ZonedDateTime dateTime,
+                    long nSec,
+                    Object zone,
+                    Object offset,
+                    boolean relativeOffset,
+                    boolean isUtc);
 
     boolean isTime(DynamicObject object);
 
