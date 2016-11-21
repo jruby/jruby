@@ -766,6 +766,7 @@ public class RubyHash extends RubyObject implements Map {
 
         if (proc.isNil()) {
             ifNone = proc;
+            flags &= ~PROCDEFAULT_HASH_F;
             return proc;
         }
 
