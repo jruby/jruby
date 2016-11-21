@@ -23,7 +23,6 @@ public interface TimeLayout extends BasicObjectLayout {
                                          DynamicObject metaClass);
 
     Object[] build(ZonedDateTime dateTime,
-                    long nSec,
                     Object zone,
                     Object offset,
                     boolean relativeOffset,
@@ -33,9 +32,6 @@ public interface TimeLayout extends BasicObjectLayout {
 
     ZonedDateTime getDateTime(DynamicObject object);
     void setDateTime(DynamicObject object, ZonedDateTime value);
-
-    long getNSec(DynamicObject object);
-    void setNSec(DynamicObject object, long value);
 
     Object getOffset(DynamicObject object);
     void setOffset(DynamicObject object, Object value);
