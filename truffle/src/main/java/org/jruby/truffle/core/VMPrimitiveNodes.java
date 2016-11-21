@@ -550,19 +550,19 @@ public abstract class VMPrimitiveNodes {
 
             final int finalOptions = options;
 
-            // retry:
-            pid = getContext().getThreadManager().runUntilResult(this, () -> posix().waitpid(input_pid, statusReference, finalOptions));
+            pid = getContext().getThreadManager().runUntilResult(this, () -> {
+                int result = posix().waitpid(input_pid, statusReference, finalOptions);
+                if (result == -1 && posix().errno() == EINTR.intValue()) {
+                    throw new InterruptedException();
+                }
+                return result;
+            });
 
             final int errno = posix().errno();
 
             if (pid == -1) {
                 if (errno == ECHILD.intValue()) {
                     return false;
-                }
-                if (errno == EINTR.intValue()) {
-                    throw new UnsupportedOperationException();
-                    //if(!state->check_async(calling_environment)) return NULL;
-                    //goto retry;
                 }
 
                 // TODO handle other errnos?
