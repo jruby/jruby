@@ -43,6 +43,7 @@ import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -484,7 +485,7 @@ public class RubyNumeric extends RubyObject {
     protected final RubyArray doCoerce(ThreadContext context, IRubyObject other, boolean err) {
         if (!sites(context).respond_to_coerce.respondsTo(context, other, other)) {
             if (err) {
-                coerceRescue(context, other);
+                coerceFailed(context, other);
             }
             return null;
         }
@@ -942,8 +943,10 @@ public class RubyNumeric extends RubyObject {
      */
 
     private IRubyObject[] scanStepArgs(ThreadContext context, IRubyObject[] args) {
+        Ruby runtime = context.runtime;
+
         IRubyObject to = context.nil;
-        IRubyObject step = context.runtime.newFixnum(1);
+        IRubyObject step = runtime.newFixnum(1);
 
         if (args.length >= 1) to = args[0];
         if (args.length >= 2) step = args[1];
@@ -956,39 +959,68 @@ public class RubyNumeric extends RubyObject {
             step = kwargs[1];
 
             if(!to.isNil() && args.length > 1) {
-                throw context.runtime.newArgumentError("to is given twice");
+                throw runtime.newArgumentError("to is given twice");
             }
             if(!step.isNil() && args.length > 2) {
-                throw context.runtime.newArgumentError("step is given twice");
+                throw runtime.newArgumentError("step is given twice");
             }
         } else {
-            if (RubyBasicObject.equalInternal(context, step, RubyFixnum.zero(context.runtime))) {
-                throw context.runtime.newArgumentError("step can't be 0");
-            }
             if (step.isNil()) {
-                throw context.runtime.newTypeError("step must be numeric");
+                throw runtime.newTypeError("step must be numeric");
+            }
+            if (RubyBasicObject.equalInternal(context, step, RubyFixnum.zero(runtime))) {
+                throw runtime.newArgumentError("step can't be 0");
             }
         }
 
         if (step.isNil()) {
-            step = RubyFixnum.one(context.runtime);
+            step = RubyFixnum.one(runtime);
         }
 
+        boolean desc = numStepNegative(runtime, context, step);
         if (to.isNil()) {
-            if ( f_negative_p(context, step) ) {
-                to = RubyFloat.newFloat(context.runtime, Double.NEGATIVE_INFINITY);
-            } else {
-                to = RubyFloat.newFloat(context.runtime, Double.POSITIVE_INFINITY);
-            }
+            to = desc ?
+                    RubyFloat.newFloat(runtime, Double.NEGATIVE_INFINITY) :
+                    RubyFloat.newFloat(runtime, Double.POSITIVE_INFINITY);
         }
 
         return new IRubyObject[] {to, step};
     }
 
+    private boolean numStepNegative(Ruby runtime, ThreadContext context, IRubyObject num) {
+        if (num instanceof RubyFixnum) {
+            if (sites(context).op_lt.isBuiltin(runtime.getInteger())) {
+                return ((RubyFixnum) num).getLongValue() < 0;
+            }
+        }
+        else if (num instanceof RubyBignum) {
+            if (sites(context).op_lt.isBuiltin(runtime.getInteger())) {
+                return ((RubyBignum) num).isNegative(context).isTrue();
+            }
+        }
+        IRubyObject r = UNDEF;
+        try {
+            context.setExceptionRequiresBacktrace(false);
+            r = stepCompareWithZero(context, num);
+        } catch (RaiseException re) {
+        } finally {
+            context.setExceptionRequiresBacktrace(true);
+        }
+        if (r == UNDEF) {
+            coerceFailed(context, num);
+        }
+        return !r.isTrue();
+    }
+
+    private IRubyObject stepCompareWithZero(ThreadContext context, IRubyObject num) {
+        IRubyObject zero = RubyFixnum.zero(context.runtime);
+        return Helpers.invokeChecked(context, num, sites(context).op_gt_checked, zero);
+    }
+
     private IRubyObject stepCommon(ThreadContext context, IRubyObject to, IRubyObject step, Block block) {
         Ruby runtime = context.runtime;
         if (this instanceof RubyFixnum && to instanceof RubyFixnum && step instanceof RubyFixnum) {
-            fixnumStep(context, runtime, ((RubyFixnum)this).getLongValue(),
+            fixnumStep(context, runtime, getLongValue(),
                                          ((RubyFixnum)to).getLongValue(),
                                          ((RubyFixnum)step).getLongValue(),
                                           block);
