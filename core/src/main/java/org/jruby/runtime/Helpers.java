@@ -493,6 +493,11 @@ public class Helpers {
     }
 
     // MRI: rb_check_funcall
+    public static IRubyObject invokeChecked(ThreadContext context, IRubyObject self, JavaSites.CheckedSites sites, IRubyObject arg0) {
+        return self.getMetaClass().finvokeChecked(context, self, sites, arg0);
+    }
+
+    // MRI: rb_check_funcall
     public static IRubyObject invokeChecked(ThreadContext context, IRubyObject self, JavaSites.CheckedSites sites, IRubyObject... args) {
         return self.getMetaClass().finvokeChecked(context, self, sites, args);
     }
