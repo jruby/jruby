@@ -12,8 +12,6 @@ package org.jruby.truffle;
 import org.jruby.JRubyTruffleInterface;
 import org.jruby.RubyInstanceConfig;
 
-import java.io.InputStream;
-
 public class JRubyTruffleImpl implements JRubyTruffleInterface {
 
     private final RubyEngine engine;
@@ -27,11 +25,6 @@ public class JRubyTruffleImpl implements JRubyTruffleInterface {
     @Override
     public int execute(String path) {
         return engine.execute(path);
-    }
-
-    @Override
-    public int doCheckSyntax(InputStream in, String filename) {
-        return engine.doCheckSyntax(in, filename);
     }
 
     @Override

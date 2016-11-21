@@ -60,7 +60,6 @@ import java.io.InputStream;
 import java.io.PrintStream;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
-import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -220,7 +219,7 @@ public class Main {
         catch (Throwable t) {
             // If a Truffle exception gets this far it's a hard failure - don't try and dress it up as a Ruby exception
 
-            if (main.isTruffle()) {
+            if (main.config.getCompileMode() == RubyInstanceConfig.CompileMode.TRUFFLE) {
                 System.err.println("Truffle internal error: " + t);
                 t.printStackTrace(System.err);
             } else {
@@ -274,22 +273,18 @@ public class Main {
 
         Ruby _runtime;
 
-        if (isTruffle()) {
-            _runtime = null;
+        if (DripMain.DRIP_RUNTIME != null) {
+            // use drip's runtime, reinitializing config
+            _runtime = DripMain.DRIP_RUNTIME;
+            _runtime.reinitialize(true);
         } else {
-            if (DripMain.DRIP_RUNTIME != null) {
-                // use drip's runtime, reinitializing config
-                _runtime = DripMain.DRIP_RUNTIME;
-                _runtime.reinitialize(true);
-            } else {
-                _runtime = Ruby.newInstance(config);
-            }
+            _runtime = Ruby.newInstance(config);
         }
 
         final Ruby runtime = _runtime;
         final AtomicBoolean didTeardown = new AtomicBoolean();
 
-        if (runtime != null && config.isHardExit()) {
+        if (config.isHardExit()) {
             // we're the command-line JRuby, and should set a shutdown hook for
             // teardown.
             Runtime.getRuntime().addShutdownHook(new Thread() {
@@ -302,9 +297,7 @@ public class Main {
         }
 
         try {
-            if (runtime != null) {
-                doSetContextClassLoader(runtime);
-            }
+            doSetContextClassLoader(runtime);
 
             if (in == null) {
                 // no script to run, return success
@@ -314,38 +307,13 @@ public class Main {
                 throw new MainExitException(1, "jruby: no Ruby script found in input (LoadError)");
             } else if (config.getShouldCheckSyntax()) {
                 // check syntax only and exit
-                if (isTruffle()) {
-                    final JRubyTruffleInterface truffle = loadTruffle();
-
-                    try {
-                        final int exitCode = truffle.doCheckSyntax(in, filename);
-                        return new Status(exitCode);
-                    } finally {
-                        truffle.dispose();
-                    }
-                } else {
-                    return doCheckSyntax(runtime, in, filename);
-                }
+                return doCheckSyntax(runtime, in, filename);
             } else {
                 // proceed to run the script
-                if (isTruffle()) {
-                    final JRubyTruffleInterface truffle = loadTruffle();
-
-                    printTruffleTimeMetric("before-run");
-
-                    try {
-                        final int exitCode = truffle.execute(filename);
-                        return new Status(exitCode);
-                    } finally {
-                        printTruffleTimeMetric("after-run");
-                        truffle.dispose();
-                    }
-                } else {
-                    return doRunFromMain(runtime, in, filename);
-                }
+                return doRunFromMain(runtime, in, filename);
             }
         } finally {
-            if (runtime != null && didTeardown.compareAndSet(false, true)) {
+            if (didTeardown.compareAndSet(false, true)) {
                 runtime.tearDown();
             }
         }
@@ -607,43 +575,6 @@ public class Main {
         
         // TODO: should match MRI (>= 2.2.3) exit status - @see ruby/test_enum.rb#test_first
         return 2;
-    }
-
-    private boolean isTruffle() {
-        return config.getCompileMode().isTruffle();
-    }
-
-    private JRubyTruffleInterface loadTruffle() {
-        Main.printTruffleTimeMetric("before-load-context");
-
-        String javaVersion = System.getProperty("java.version");
-        String[] parts = javaVersion.split("\\D+");
-        int firstPart = Integer.valueOf(parts[0]);
-        if (!(firstPart >= 9 || Integer.valueOf(parts[1]) >= 8)) {
-            System.err.println("JRuby+Truffle needs Java 8 to run (found " + javaVersion + ").");
-            System.exit(1);
-        }
-
-        final Class<?> clazz;
-
-        try {
-            clazz = Class.forName("org.jruby.truffle.JRubyTruffleImpl");
-        } catch (Exception e) {
-            throw new RuntimeException("JRuby's Truffle backend not available - either it was not compiled because JRuby was built with Java 7, or it has been removed", e);
-        }
-
-        final JRubyTruffleInterface truffleContext;
-
-        try {
-            Constructor<?> con = clazz.getConstructor(RubyInstanceConfig.class);
-            truffleContext = (JRubyTruffleInterface) con.newInstance(config);
-        } catch (Exception e) {
-            throw new RuntimeException("Error while calling the constructor of Truffle's RubyContext", e);
-        }
-
-        Main.printTruffleTimeMetric("after-load-context");
-
-        return truffleContext;
     }
     
     public static void printTruffleTimeMetric(String id) {

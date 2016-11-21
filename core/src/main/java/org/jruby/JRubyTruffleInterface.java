@@ -9,8 +9,6 @@
  */
 package org.jruby;
 
-import java.io.InputStream;
-
 public interface JRubyTruffleInterface {
 
     String RUNTIME_SYMBOL = "org.jruby.truffle.runtime";
@@ -18,7 +16,5 @@ public interface JRubyTruffleInterface {
     int execute(String path);
 
     void dispose();
-
-    int doCheckSyntax(InputStream in, String filename);
-
+    
 }
