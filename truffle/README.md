@@ -245,8 +245,13 @@ If you want to test `libxml`, remove that flag and set either `LIBXML_HOME` or
 `LIBXML_INCLUDE` and `LIBXML_LIB`. Try the same with `OPENSSL_` if you are
 adventurous.
 
-To run C extension bechmarks, follow the instructions for benchmarking above,
-and then try.
+To run C extension bechmarks, you first need to compile them.
+
+```
+$ jt cextc .../all-ruby-benchmarks/chunky_png/oily_png/
+```
+
+Then follow the instructions for benchmarking above, and then try:
 
 ```
 $  USE_CEXTS=true JRUBY_OPTS=-Xtruffle.cexts.log.load=true jt benchmark .../all-ruby-benchmarks/chunky_png/chunky-color-r.rb --simple
