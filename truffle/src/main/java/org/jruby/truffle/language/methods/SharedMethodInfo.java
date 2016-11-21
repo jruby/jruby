@@ -14,6 +14,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.language.LexicalScope;
+import org.jruby.truffle.util.SourceSectionUtils;
 
 /**
  * {@link InternalMethod} objects are copied as properties such as visibility are changed.
@@ -143,7 +144,7 @@ public class SharedMethodInfo {
         if (sourceSection == null || !sourceSection.isAvailable()) {
             return getDescriptiveName();
         } else {
-            return String.format("%s %s:%d", getDescriptiveName(), sourceSection.getSource().getName(), sourceSection.getStartLine());
+            return getDescriptiveName() + " " + SourceSectionUtils.fileLine(sourceSection);
         }
     }
 

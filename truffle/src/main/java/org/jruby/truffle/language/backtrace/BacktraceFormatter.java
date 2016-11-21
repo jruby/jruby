@@ -21,6 +21,7 @@ import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.loader.SourceLoader;
+import org.jruby.truffle.util.SourceSectionUtils;
 import org.jruby.truffle.util.StringUtils;
 
 import java.io.PrintWriter;
@@ -263,7 +264,7 @@ public class BacktraceFormatter {
         final SourceSection sourceSection = callNode.getEncapsulatingSourceSection();
 
         if (sourceSection != null) {
-            final String shortDescription = String.format("%s:%d", sourceSection.getSource().getName(), sourceSection.getStartLine());
+            final String shortDescription = SourceSectionUtils.fileLine(sourceSection);
 
 
             builder.append(shortDescription);
