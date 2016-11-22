@@ -89,7 +89,7 @@ public class InlinedCoreMethodNode extends RubyNode {
 
     public static InlinedCoreMethodNode inlineBuiltin(RubyCallNodeParameters callParameters, InternalMethod method, NodeFactory<? extends InlinableBuiltin> builtinFactory) {
         final RubyContext context = callParameters.getContext();
-        // Let arguments to null as we need to execute self once to lookup resolves the same method
+        // Let arguments to null as we need to execute the receiver ourselves to lookup the method
         final List<RubyNode> arguments = Arrays.asList(new RubyNode[1 + callParameters.getArguments().length]);
         final InlinableBuiltin builtinNode = CoreMethodNodeManager.createNodeFromFactory(context, callParameters.getSection(), builtinFactory, arguments);
 
