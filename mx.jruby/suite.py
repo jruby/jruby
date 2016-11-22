@@ -95,7 +95,7 @@ suite = {
         "jruby-core": {
             "class": "JRubyCoreMavenProject",
             "sourceDirs": [ "core/src/main/java" ],
-            "watch": [ "core/src" ],
+            "watch": [ "core/src", "core/pom.rb" ],
             "jar": "lib/jruby.jar",
             "license": [ "EPL-1.0", "BSD-new", "BSD-simplified", "MIT", "Apache-2.0" ],
         },
