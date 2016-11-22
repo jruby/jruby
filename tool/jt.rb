@@ -950,8 +950,7 @@ module Commands
       if gem_name == "ruby-argon2"
         cextc gem_root, '-Werror=implicit-function-declaration'
       else
-        #cextc_extconf gem_root, false, '-Werror=implicit-function-declaration'
-        cextc gem_root
+        cextc_extconf gem_root, false, '-Werror=implicit-function-declaration'
       end
 
       next if gem_name == 'psd_native' # psd_native is excluded just for running
