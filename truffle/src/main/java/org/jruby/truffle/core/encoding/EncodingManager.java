@@ -123,13 +123,8 @@ public class EncodingManager {
         String localeEncodingName;
         try {
             final int codeset;
-            if (Platform.getPlatform().getOS() == OS.SOLARIS) {
-                // Workaround until jnr-constants is released
-                codeset = 49;
-            } else {
-                assert LangInfo.CODESET.defined();
-                codeset = LangInfo.CODESET.intValue();
-            }
+            assert LangInfo.CODESET.defined();
+            codeset = LangInfo.CODESET.intValue();
             localeEncodingName = context.getNativePlatform().getPosix().nl_langinfo(codeset);
         }
         catch (UnsupportedOperationException e) {
