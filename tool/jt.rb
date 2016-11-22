@@ -548,7 +548,7 @@ module Commands
       no_openssl = options.delete('--no-openssl')
       build_ruby_su
       unless no_openssl
-        cextc "#{JRUBY_DIR}/truffle/src/main/c/openssl"
+        cextc_old "#{JRUBY_DIR}/truffle/src/main/c/openssl"
       end
     when 'parser'
       jay = Utilities.find_repo('jay')
@@ -708,12 +708,12 @@ module Commands
     ruby_su = "#{JRUBY_DIR}/lib/ruby/truffle/cext/ruby.su"
     if cext_dir != ruby_cext_api and (newer?(ruby_h, ruby_su) or newer?(ruby_c, ruby_su))
       puts "Compiling outdated ruby.su"
-      cextc_extconf ruby_cext_api
+      cextc ruby_cext_api
     end
   end
   private :build_ruby_su
 
-  def cextc(cext_dir, *clang_opts)
+  def cextc_old(cext_dir, *clang_opts)
     build_ruby_su(cext_dir)
 
     config_file = File.join(cext_dir, CEXTC_CONF_FILE)
@@ -773,7 +773,7 @@ module Commands
     sulong_link '-o', out, *config_libs, *lls
   end
 
-  def cextc_extconf(cext_dir, test_gem=false, *clang_opts)
+  def cextc(cext_dir, test_gem=false, *clang_opts)
     build_ruby_su(cext_dir)
 
     is_ruby = cext_dir == "#{JRUBY_DIR}/truffle/src/main/c/cext"
@@ -917,7 +917,7 @@ module Commands
         next if gem_name == 'xml' && no_libxml
         next if gem_name == 'xopenssl' && no_openssl
         dir = "#{JRUBY_DIR}/test/truffle/cexts/#{gem_name}"
-        cextc_extconf dir, true
+        cextc dir, true
         name = File.basename(dir)
         next if gem_name == 'globals' # globals is excluded just for running
         run '--graal', "-I#{dir}/lib", "#{dir}/bin/#{name}", :out => output_file
@@ -948,9 +948,9 @@ module Commands
         gem_root = "#{JRUBY_DIR}/test/truffle/cexts/#{gem_name}"
       end
       if gem_name == "ruby-argon2"
-        cextc gem_root, '-Werror=implicit-function-declaration'
+        cextc_old gem_root, '-Werror=implicit-function-declaration'
       else
-        cextc_extconf gem_root, false, '-Werror=implicit-function-declaration'
+        cextc gem_root, false, '-Werror=implicit-function-declaration'
       end
 
       next if gem_name == 'psd_native' # psd_native is excluded just for running
