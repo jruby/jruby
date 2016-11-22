@@ -269,13 +269,14 @@ public class RubyBignum extends RubyInteger {
      */
     @Override
     public IRubyObject coerce(IRubyObject other) {
+        Ruby runtime = getRuntime();
         if (other instanceof RubyFixnum) {
-            return getRuntime().newArray(newBignum(getRuntime(), ((RubyFixnum) other).getLongValue()), this);
+            return runtime.newArray(newBignum(runtime, ((RubyFixnum) other).getLongValue()), this);
         } else if (other instanceof RubyBignum) {
-            return getRuntime().newArray(newBignum(getRuntime(), ((RubyBignum) other).getValue()), this);
-    }
+            return runtime.newArray(newBignum(runtime, ((RubyBignum) other).getValue()), this);
+        }
 
-        throw getRuntime().newTypeError("Can't coerce " + other.getMetaClass().getName() + " to Bignum");
+        return RubyArray.newArray(runtime, RubyKernel.new_float(this, other), RubyKernel.new_float(this, this));
     }
 
     /** rb_big_uminus
