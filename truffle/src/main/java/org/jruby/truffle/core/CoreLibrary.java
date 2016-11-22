@@ -444,7 +444,7 @@ public class CoreLibrary {
         errnoModule = defineModule("Errno");
 
         for (Errno errno : Errno.values()) {
-            if (errno.name().startsWith("E")) {
+            if (errno.defined()) {
                 if (errno.equals(Errno.EWOULDBLOCK) && Errno.EWOULDBLOCK.intValue() == Errno.EAGAIN.intValue()){
                     continue; // Don't define it as a class, define it as constant later.
                 }
