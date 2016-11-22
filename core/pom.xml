@@ -488,6 +488,7 @@ DO NOT MODIFIY - GENERATED CODE
               <goal>compile</goal>
             </goals>
             <configuration>
+              <debug>true</debug>
               <annotationProcessors>
                 <annotationProcessor>org.jruby.anno.AnnotationBinder</annotationProcessor>
               </annotationProcessors>
@@ -509,6 +510,7 @@ DO NOT MODIFIY - GENERATED CODE
               <goal>compile</goal>
             </goals>
             <configuration>
+              <debug>true</debug>
               <compilerArgs>
                 <compilerArg>-XDignore.symbol.file=true</compilerArg>
                 <compilerArg>-J-Duser.language=en</compilerArg>
