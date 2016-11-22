@@ -672,21 +672,25 @@ public class Sprintf {
                     // we'll use Java's numeric formatting code (and our own).
                     boolean zero;
                     if (type == ClassIndex.INTEGER) {
-                        negative = ((RubyFixnum)arg).getLongValue() < 0;
-                        zero = ((RubyFixnum)arg).getLongValue() == 0;
-                        if (negative && fchar == 'u') {
-                            bytes = getUnsignedNegativeBytes((RubyFixnum)arg);
+                        if (arg instanceof RubyFixnum) {
+                            negative = ((RubyFixnum) arg).getLongValue() < 0;
+                            zero = ((RubyFixnum) arg).getLongValue() == 0;
+                            if (negative && fchar == 'u') {
+                                bytes = getUnsignedNegativeBytes((RubyFixnum) arg);
+                            } else {
+                                bytes = getFixnumBytes((RubyFixnum) arg, base, sign, fchar == 'X');
+                            }
                         } else {
-                            bytes = getFixnumBytes((RubyFixnum)arg,base,sign,fchar=='X');
+                            negative = ((RubyBignum) arg).getValue().signum() < 0;
+                            zero = ((RubyBignum) arg).getValue().equals(BigInteger.ZERO);
+                            if (negative && fchar == 'u' && usePrefixForZero) {
+                                bytes = getUnsignedNegativeBytes((RubyBignum) arg);
+                            } else {
+                                bytes = getBignumBytes((RubyBignum) arg, base, sign, fchar == 'X');
+                            }
                         }
                     } else {
-                        negative = ((RubyBignum)arg).getValue().signum() < 0;
-                        zero = ((RubyBignum)arg).getValue().equals(BigInteger.ZERO);
-                        if (negative && fchar == 'u' && usePrefixForZero) {
-                            bytes = getUnsignedNegativeBytes((RubyBignum)arg);
-                        } else {
-                            bytes = getBignumBytes((RubyBignum)arg,base,sign,fchar=='X');
-                        }
+                        throw runtime.newTypeError(arg, runtime.getInteger());
                     }
                     if ((flags & FLAG_SHARP) != 0) {
                         if (!zero || usePrefixForZero) {
