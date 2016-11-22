@@ -1357,6 +1357,16 @@ public class RubyNumeric extends RubyObject {
         return sites(context).op_gt.call(context, this, this, zero);
     }
 
+    @JRubyMethod(name = "finite?")
+    public IRubyObject finite_p(ThreadContext context) {
+        return context.runtime.getTrue();
+    }
+
+    @JRubyMethod(name = "infinite?")
+    public IRubyObject infinite_p(ThreadContext context) {
+        return context.runtime.getNil();
+    }
+
     private static JavaSites.NumericSites sites(ThreadContext context) {
         return context.sites.Numeric;
     }

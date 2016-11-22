@@ -968,6 +968,42 @@ public class RubyComplex extends RubyNumeric {
         }
         return real.callMethod(context, "rationalize", args);
     }
+
+    @JRubyMethod(name = "finite?")
+    @Override
+    public IRubyObject finite_p(ThreadContext context) {
+        IRubyObject magnitude = magnitude(context);
+
+        if (magnitude instanceof RubyInteger || magnitude instanceof RubyRational) {
+            return context.runtime.getTrue();
+        }
+
+        if (magnitude instanceof RubyFloat) {
+            return context.runtime.newBoolean(!((RubyFloat) magnitude).infinite_p().isTrue());
+        }
+
+        return sites(context).finite.call(context, magnitude, magnitude);
+    }
+
+    @JRubyMethod(name = "infinite?")
+    @Override
+    public IRubyObject infinite_p(ThreadContext context) {
+        IRubyObject magnitude = magnitude(context);
+
+        if (magnitude instanceof RubyInteger || magnitude instanceof RubyRational) {
+            return context.nil;
+        }
+
+        if (magnitude instanceof RubyFloat) {
+            RubyFloat flote = (RubyFloat) magnitude;
+            if (flote.infinite_p().isTrue()) {
+                return context.runtime.newFixnum(flote.getDoubleValue() < 0 ? -1 : 1);
+            }
+            return context.nil;
+        }
+
+        return sites(context).infinite.call(context, magnitude, magnitude);
+    }
     
     static RubyArray str_to_c_internal(ThreadContext context, IRubyObject recv) {
         RubyString s = recv.convertToString();

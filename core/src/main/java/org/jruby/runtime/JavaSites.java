@@ -349,6 +349,8 @@ public class JavaSites {
         public final CallSite op_exp = new FunctionalCachingCallSite("**");
         public final CallSite op_times = new FunctionalCachingCallSite("*");
         public final CallSite op_minus = new FunctionalCachingCallSite("-");
+        public final CallSite finite = new FunctionalCachingCallSite("finite?");
+        public final CallSite infinite = new FunctionalCachingCallSite("infinite?");
     }
 
     public static class RationalSites {
