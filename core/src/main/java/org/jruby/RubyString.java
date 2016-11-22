@@ -1545,6 +1545,11 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
         if (opts != null) {
             IRubyObject encoding = opts.fastARef(context.runtime.newSymbol("encoding"));
+            IRubyObject capacity = opts.fastARef(context.runtime.newSymbol("capacity"));
+
+            if (!(capacity == null || capacity.isNil())) {
+                modify(capacity.convertToInteger().getIntValue());
+            }
 
             if (!(encoding == null || encoding.isNil())) {
                 modify();
