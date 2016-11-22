@@ -10,6 +10,10 @@ class MSpecScript
     RbConfig::CONFIG['host_os'] == 'linux'
   end
 
+  def self.solaris?
+    RbConfig::CONFIG['host_os'] == 'solaris'
+  end
+
   JRUBY_DIR = File.expand_path('../../..', __FILE__)
 
   set :target, "#{JRUBY_DIR}/bin/jruby#{windows? ? '.bat' : ''}"
@@ -139,6 +143,11 @@ class MSpecScript
   if linux?
     # exclude specs tagged with 'linux'
     set :xtags, (get(:xtags) || []) + ['linux']
+  end
+
+  if solaris?
+    # exclude specs tagged with 'solaris'
+    set :xtags, (get(:xtags) || []) + ['solaris']
   end
 
   # Enable features
