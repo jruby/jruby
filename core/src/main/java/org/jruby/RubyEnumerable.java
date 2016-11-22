@@ -2003,7 +2003,7 @@ public class RubyEnumerable {
     @JRubyMethod
     public static IRubyObject chunk(ThreadContext context, IRubyObject self, final Block block) {
         if(!block.isGiven()) {
-            throw context.runtime.newArgumentError("no block given");
+            return enumeratorize(context.runtime, self, "chunk");
         }
 
         IRubyObject enumerator = context.runtime.getEnumerator().allocate();
