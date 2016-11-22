@@ -1,6 +1,6 @@
 module Signal
   def trap(sig, cmd = nil, &block)
-    sig = SIGNALS[sig] if sig.kind_of?(Fixnum)
+    sig = SIGNALS[sig] if sig.kind_of?(Integer)
     sig = sig.to_s.sub(/^SIG(.+)/,'\1')
 
     if RESERVED_SIGNALS.include?(sig)
