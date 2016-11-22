@@ -83,7 +83,8 @@ public class InlinedCoreMethodNode extends RubyNode {
 
     private RubyCallNode rewriteToCallNode() {
         CompilerDirectives.transferToInterpreterAndInvalidate();
-        RubyCallNode callNode = new RubyCallNode(callNodeParameters);
+        // We need to pass the updated children of this node to the call node
+        RubyCallNode callNode = new RubyCallNode(callNodeParameters.withReceiverAndArguments(receiverNode, argumentNodes, callNodeParameters.getBlock()));
         return replace(callNode, method.getName() + " was redefined");
     }
 
