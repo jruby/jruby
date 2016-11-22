@@ -29,6 +29,7 @@ package org.jruby;
 
 import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
+import org.jruby.ast.util.ArgsUtil;
 import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.JavaSites;
@@ -953,20 +954,42 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
     @Override
     public IRubyObject rbClone() {
-        Ruby runtime = getRuntime();
+        return rbCloneInternal(getRuntime().getCurrentContext(), true);
+    }
+
+    public IRubyObject rbClone(ThreadContext context, IRubyObject maybeOpts) {
+        Ruby runtime = context.runtime;
+
+        boolean kwfreeze = true;
+        IRubyObject opts = ArgsUtil.getOptionsArg(runtime, maybeOpts);
+
+        if (!opts.isNil()) {
+            IRubyObject freeze = ((RubyHash) opts).fastARef(runtime.newSymbol("freeze"));
+            if (freeze != null) {
+                kwfreeze = freeze.isTrue();
+            }
+        }
+
+        return rbCloneInternal(context, kwfreeze);
+    }
+
+    private IRubyObject rbCloneInternal(ThreadContext context, boolean freeze) {
+        Ruby runtime = context.runtime;
 
         if (isImmediate()) throw runtime.newTypeError("can't clone " + getMetaClass().getName());
 
         // We're cloning ourselves, so we know the result should be a RubyObject
-        RubyBasicObject clone = (RubyBasicObject)getMetaClass().getRealClass().allocate();
+        RubyBasicObject clone = (RubyBasicObject) getMetaClass().getRealClass().allocate();
         clone.setMetaClass(getSingletonClassCloneAndAttach(clone));
         if (isTaint()) clone.setTaint(true);
 
-        initCopy(runtime.getCurrentContext(), clone, this, true);
+        initCopy(context, clone, this, true);
 
-        if (isFrozen()) clone.setFrozen(true);
+        if (freeze && isFrozen()) clone.setFrozen(true);
+
         return clone;
     }
+
 
     protected RubyClass getSingletonClassClone() {
         return getSingletonClassCloneAndAttach(UNDEF);

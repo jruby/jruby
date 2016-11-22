@@ -1880,8 +1880,13 @@ public class RubyKernel {
     }
 
     @JRubyMethod(name = "clone")
-    public static IRubyObject rbClone(IRubyObject self) {
-        return ((RubyBasicObject)self).rbClone();
+    public static IRubyObject rbClone(ThreadContext context, IRubyObject self) {
+        return self.rbClone();
+    }
+
+    @JRubyMethod(name = "clone")
+    public static IRubyObject rbClone(ThreadContext context, IRubyObject self, IRubyObject opts) {
+        return ((RubyBasicObject) self).rbClone(context, opts);
     }
 
     @JRubyMethod
@@ -2064,6 +2069,10 @@ public class RubyKernel {
         }
 
         return str;
+    }
+
+    public static IRubyObject rbClone(IRubyObject self) {
+        return rbClone(self.getRuntime().getCurrentContext(), self);
     }
 
     public static class LoopMethods {
