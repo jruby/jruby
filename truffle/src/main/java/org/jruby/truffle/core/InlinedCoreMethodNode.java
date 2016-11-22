@@ -95,7 +95,7 @@ public class InlinedCoreMethodNode extends RubyNode {
                 // We need to pass the updated children of this node to the call node
                 RubyCallNode callNode = new RubyCallNode(callNodeParameters.withReceiverAndArguments(receiverNode, argumentNodes, callNodeParameters.getBlock()));
                 replacedBy = callNode;
-                return replace(callNode, method.getName() + " was redefined");
+                return replace(callNode, method.getName() + " could not be executed inline");
             } else {
                 return replacedBy;
             }
