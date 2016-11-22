@@ -14,6 +14,8 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.NodeFactory;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
+import com.oracle.truffle.api.nodes.NodeUtil;
+
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreMethodNodeManager;
 import org.jruby.truffle.core.array.ArrayUtils;
@@ -37,6 +39,8 @@ public class InlinedCoreMethodNode extends RubyNode {
     @Child LookupMethodNode lookupMethodNode;
     @Child RubyNode receiverNode;
     @Children final RubyNode[] argumentNodes;
+
+    private RubyCallNode replacedBy = null;
 
     public InlinedCoreMethodNode(RubyCallNodeParameters callNodeParameters, InternalMethod method, InlinableBuiltin builtin) {
         super(callNodeParameters.getContext(), callNodeParameters.getSection());
@@ -83,9 +87,19 @@ public class InlinedCoreMethodNode extends RubyNode {
 
     private RubyCallNode rewriteToCallNode() {
         CompilerDirectives.transferToInterpreterAndInvalidate();
-        // We need to pass the updated children of this node to the call node
-        RubyCallNode callNode = new RubyCallNode(callNodeParameters.withReceiverAndArguments(receiverNode, argumentNodes, callNodeParameters.getBlock()));
-        return replace(callNode, method.getName() + " was redefined");
+        return atomic(() -> {
+            // Check if we are still in the AST
+            boolean found = !NodeUtil.forEachChild(getParent(), node -> node != this);
+
+            if (found) {
+                // We need to pass the updated children of this node to the call node
+                RubyCallNode callNode = new RubyCallNode(callNodeParameters.withReceiverAndArguments(receiverNode, argumentNodes, callNodeParameters.getBlock()));
+                replacedBy = callNode;
+                return replace(callNode, method.getName() + " was redefined");
+            } else {
+                return replacedBy;
+            }
+        });
     }
 
     public static InlinedCoreMethodNode inlineBuiltin(RubyCallNodeParameters callParameters, InternalMethod method, NodeFactory<? extends InlinableBuiltin> builtinFactory) {
