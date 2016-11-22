@@ -33,8 +33,6 @@ import static org.jruby.anno.FrameField.BACKREF;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
-import org.jruby.RubyDir;
-import org.jruby.RubyFileTest;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
@@ -410,10 +408,11 @@ public class RubyPathname extends RubyObject {
 
     @JRubyMethod(name = "empty?")
     public IRubyObject empty_p(ThreadContext context) {
-        if (RubyFileTest.directory_p(context, this, getPath()).isTrue()) {
-            return RubyDir.empty_p(context, this, getPath());
+        RubyModule fileTest = context.runtime.getFileTest();
+        if (fileTest.callMethod(context, "directory?", getPath()).isTrue()) {
+            return context.runtime.getDir().callMethod(context, "empty?", getPath());
         } else {
-            return RubyFileTest.zero_p(context, this, getPath());
+            return fileTest.callMethod(context, "empty?", getPath());
         }
     }
 
