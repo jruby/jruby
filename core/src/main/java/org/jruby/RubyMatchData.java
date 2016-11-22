@@ -721,6 +721,34 @@ public class RubyMatchData extends RubyObject {
         return getRuntime().newFixnum( hashCode() );
     }
 
+    @JRubyMethod
+    public RubyHash named_captures(ThreadContext context) {
+        Ruby runtime = context.runtime;
+
+        RubyHash hash = RubyHash.newHash(runtime);
+
+        if (regexp.getPattern().numberOfNames() > 0) {
+            Iterator<NameEntry> nameEntryIterator = regexp.getPattern().namedBackrefIterator();
+            while (nameEntryIterator.hasNext()) {
+                NameEntry entry = nameEntryIterator.next();
+                RubyString key = RubyString.newStringShared(runtime, new ByteList(entry.name, entry.nameP, entry.nameEnd - entry.nameP, regexp.getEncoding(), false));
+                boolean found = false;
+
+                for (int i : entry.getBackRefs()) {
+                    IRubyObject value = RubyRegexp.nth_match(i, this);
+                    if (value.isTrue()) {
+                        hash.op_asetForString(runtime, key, value);
+                        found = true;
+                    }
+                }
+
+                if (!found) hash.op_asetForString(runtime, key, context.nil);
+            }
+        }
+
+        return hash;
+    }
+
     /**
      * Get the begin offset of the given region, or -1 if the region does not exist.
      *
