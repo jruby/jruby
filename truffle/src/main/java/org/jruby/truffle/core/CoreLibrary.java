@@ -1001,7 +1001,7 @@ public class CoreLibrary {
                 try {
                     for (int n = 0; n < coreFiles.length; n++) {
                         final RubyRootNode rootNode = context.getCodeLoader().parse(
-                                context.getSourceCache().getSource(getCoreLoadPath() + coreFiles[n]),
+                                context.getSourceLoader().load(getCoreLoadPath() + coreFiles[n]),
                                 UTF8Encoding.INSTANCE, ParserContext.TOP_LEVEL, null, true, node);
 
                         final CodeLoader.DeferredCall deferredCall = context.getCodeLoader().prepareExecute(
@@ -1023,7 +1023,7 @@ public class CoreLibrary {
 
                         coreFileFutures.add(ForkJoinPool.commonPool().submit(() ->
                                 context.getCodeLoader().parse(
-                                        context.getSourceCache().getSource(getCoreLoadPath() + coreFiles[finalN]),
+                                        context.getSourceLoader().load(getCoreLoadPath() + coreFiles[finalN]),
                                         UTF8Encoding.INSTANCE, ParserContext.TOP_LEVEL, null, true, node)
                         ));
                     }
@@ -1075,7 +1075,7 @@ public class CoreLibrary {
 
                 try {
                     for (String path : new String[]{"/post-boot/gems.rb", "/post-boot/shims.rb"}) {
-                        final RubyRootNode rootNode = context.getCodeLoader().parse(context.getSourceCache().getSource(getCoreLoadPath() + path), UTF8Encoding.INSTANCE, ParserContext.TOP_LEVEL, null, true, node);
+                        final RubyRootNode rootNode = context.getCodeLoader().parse(context.getSourceLoader().load(getCoreLoadPath() + path), UTF8Encoding.INSTANCE, ParserContext.TOP_LEVEL, null, true, node);
                         final CodeLoader.DeferredCall deferredCall = context.getCodeLoader().prepareExecute(ParserContext.TOP_LEVEL, DeclarationContext.TOP_LEVEL, rootNode, null, context.getCoreLibrary().getMainObject());
                         deferredCall.callWithoutCallNode();
                     }

@@ -102,7 +102,7 @@ public abstract class RequireNode extends RubyNode {
 
                 final Source source;
                 try {
-                    source = getContext().getSourceCache().getSource(expandedPath);
+                    source = getContext().getSourceLoader().load(expandedPath);
                 } catch (IOException e) {
                     return false;
                 }

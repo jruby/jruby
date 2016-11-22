@@ -43,7 +43,6 @@ import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.control.JavaException;
 import org.jruby.truffle.language.loader.CodeLoader;
 import org.jruby.truffle.language.loader.FeatureLoader;
-import org.jruby.truffle.language.loader.SourceCache;
 import org.jruby.truffle.language.loader.SourceLoader;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.methods.InternalMethod;
@@ -87,7 +86,6 @@ public class RubyContext extends ExecutionContext {
     private final ObjectSpaceManager objectSpaceManager = new ObjectSpaceManager(this);
     private final AtExitManager atExitManager = new AtExitManager(this);
     private final SourceLoader sourceLoader = new SourceLoader(this);
-    private final SourceCache sourceCache = new SourceCache(sourceLoader);
     private final CallStackManager callStack = new CallStackManager(this);
     private final CoreStrings coreStrings = new CoreStrings(this);
     private final FrozenStrings frozenStrings = new FrozenStrings(this);
@@ -364,10 +362,6 @@ public class RubyContext extends ExecutionContext {
 
     public SourceLoader getSourceLoader() {
         return sourceLoader;
-    }
-
-    public SourceCache getSourceCache() {
-        return sourceCache;
     }
 
     public RopeTable getRopeTable() {
