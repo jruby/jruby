@@ -307,7 +307,7 @@ public class RubyFileTest {
         return zero_p(recv.getRuntime().getCurrentContext(), recv, filename);
     }
 
-    @JRubyMethod(name = "zero?", required = 1, module = true)
+    @JRubyMethod(name = {"empty?", "zero?"}, required = 1, module = true)
     public static RubyBoolean zero_p(ThreadContext context, IRubyObject recv, IRubyObject filename) {
         Ruby runtime = context.runtime;
 
@@ -444,7 +444,7 @@ public class RubyFileTest {
             return RubyFileTest.writable_p(recv, filename);
         }
 
-        @JRubyMethod(name = "zero?", required = 1)
+        @JRubyMethod(name = {"empty?", "zero?"}, required = 1)
         public static RubyBoolean zero_p(ThreadContext context, IRubyObject recv, IRubyObject filename) {
             return RubyFileTest.zero_p(context, recv, filename);
         }
