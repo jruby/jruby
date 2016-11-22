@@ -37,6 +37,7 @@ public class JavaSites {
     public final ComplexSites Complex = new ComplexSites();
     public final RationalSites Rational = new RationalSites();
     public final RangeSites Range = new RangeSites();
+    public final WarningSites Warning = new WarningSites();
     public final ZlibSites Zlib = new ZlibSites();
 
     public static class BasicObjectSites {
@@ -376,6 +377,12 @@ public class JavaSites {
         public final CallSite begin = new FunctionalCachingCallSite("begin");
         public final CallSite end = new FunctionalCachingCallSite("end");
         public final CallSite exclude_end = new FunctionalCachingCallSite("exclude_end?");
+    }
+
+    public static class WarningSites {
+        public final CheckedSites to_int_checked = new CheckedSites("to_str");
+        public final CallSite warn = new FunctionalCachingCallSite("warn");
+        public final CallSite write = new FunctionalCachingCallSite("write");
     }
 
     public static class ZlibSites {

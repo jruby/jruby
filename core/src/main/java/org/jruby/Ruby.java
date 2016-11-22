@@ -1597,6 +1597,8 @@ public final class Ruby implements Constantizable {
         }
 
         TracePoint.createTracePointClass(this);
+
+        RubyWarnings.createWarningModule(this);
     }
 
     public static final int NIL_PREFILLED_ARRAY_SIZE = RubyArray.ARRAY_DEFAULT_SIZE * 8;
@@ -2409,6 +2411,14 @@ public final class Ruby implements Constantizable {
 
     public void setLocation(RubyClass location) {
         this.locationClass = location;
+    }
+
+    public RubyModule getWarning() {
+        return warningModule;
+    }
+
+    public void setWarning(RubyModule warningModule) {
+        this.warningModule = warningModule;
     }
 
     public RubyModule getErrno() {
@@ -5126,7 +5136,7 @@ public final class Ruby implements Constantizable {
             kernelModule, comparableModule, enumerableModule, mathModule,
             marshalModule, etcModule, fileTestModule, gcModule,
             objectSpaceModule, processModule, procUIDModule, procGIDModule,
-            procSysModule, precisionModule, errnoModule;
+            procSysModule, precisionModule, errnoModule, warningModule;
 
     private DynamicMethod privateMethodMissing, protectedMethodMissing, variableMethodMissing,
             superMethodMissing, normalMethodMissing, defaultMethodMissing, defaultModuleMethodMissing,
