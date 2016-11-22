@@ -30,7 +30,6 @@ JDEBUG = "-J-agentlib:jdwp=transport=dt_socket,server=y,address=#{JDEBUG_PORT},s
 JDEBUG_TEST = "-Dmaven.surefire.debug=-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=#{JDEBUG_PORT} -Xnoagent -Djava.compiler=NONE"
 JEXCEPTION = "-Xtruffle.exceptions.print_java=true"
 METRICS_REPS = 10
-CEXTC_CONF_FILE = '.jruby-cext-build.yml'
 
 VERBOSE = ENV.include? 'V'
 
@@ -713,66 +712,6 @@ module Commands
   end
   private :build_ruby_su
 
-  def cextc_old(cext_dir, *clang_opts)
-    build_ruby_su(cext_dir)
-
-    config_file = File.join(cext_dir, CEXTC_CONF_FILE)
-    unless File.exist?(config_file)
-      abort "There is no #{CEXTC_CONF_FILE} in #{cext_dir} at the moment - I don't know how to build it"
-    end
-
-    config = YAML.load_file(config_file)
-    config_src = config['src']
-
-    src = replace_env_vars(config['src'])
-    # Expand relative to the cext directory
-    src = File.expand_path(src, cext_dir)
-    src_files = Dir[src].sort
-    raise "No source files found in #{src}!" if src_files.empty?
-
-    config_cflags = config['cflags'] || ''
-    config_cflags = replace_env_vars(config_cflags)
-    config_cflags = config_cflags.split
-    # Expand include paths
-    config_cflags.map! { |cflag|
-      if cflag.start_with? '-I'
-        inc = File.expand_path(cflag[2..-1], cext_dir)
-        "-I#{inc}"
-      else
-        cflag
-      end
-    }
-
-    out = File.expand_path(config['out'], cext_dir)
-
-    lls = []
-
-    src_files.each do |src|
-      ll = File.join(File.dirname(out), File.basename(src, '.*') + '.ll')
-
-      clang "-I#{SULONG_HOME}/include", '-Ilib/ruby/truffle/cext', '-S', '-emit-llvm', *config_cflags, *clang_opts, src, '-o', ll
-      llvm_opt '-S', '-always-inline', '-mem2reg', ll, '-o', ll
-
-      lls.push ll
-    end
-
-    config_libs = config['libs'] || ''
-    config_libs = replace_env_vars(config_libs)
-    config_libs = config_libs.split(' ')
-
-    if MAC
-      config_libs.each do |lib|
-        if lib.include?('.so')
-          lib['.so'] = '.dylib'
-        end
-      end
-    end
-
-    config_libs = config_libs.flat_map { |l| ['-l', l] }
-
-    sulong_link '-o', out, *config_libs, *lls
-  end
-
   def cextc(cext_dir, test_gem=false, *clang_opts)
     build_ruby_su(cext_dir)
 
@@ -941,9 +880,7 @@ module Commands
     tests.each do |gem_name, dependencies, libs, gem_root|
       next if gem_name == 'nokogiri' # nokogiri totally excluded
       next if gem_name == 'nokogiri' && no_libxml
-      unless gem_root and File.exist?(File.join(gem_root, CEXTC_CONF_FILE))
-        gem_root = "#{JRUBY_DIR}/test/truffle/cexts/#{gem_name}"
-      end
+      gem_root = "#{JRUBY_DIR}/test/truffle/cexts/#{gem_name}"
       cextc gem_root, false, '-Werror=implicit-function-declaration'
 
       next if gem_name == 'psd_native' # psd_native is excluded just for running
