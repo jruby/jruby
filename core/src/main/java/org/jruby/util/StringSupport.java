@@ -824,15 +824,18 @@ public final class StringSupport {
                 if (ASCIIEncoding.INSTANCE.isPrint(c)) {
                     len++;
                 } else {
-                    if (enc.isUTF8()) {
+                    if (enc.isUTF8() && c > 0x7F) {
                         int n = preciseLength(enc, bytes, p - 1, end) - 1;
-                        if (n > 0) {
-                            if (buf == null) buf = new ByteList();
+                        if (MBCLEN_CHARFOUND_LEN(n) > 0) {
                             int cc = codePoint(runtime, enc, bytes, p - 1, end);
-                            Sprintf.sprintf(runtime, buf, "%x", cc);
-                            len += buf.getRealSize() + 4;
-                            buf.setRealSize(0);
-                            p += n;
+                            if (cc <= 0xFFFF) {
+                                len += 6;
+                            } else if (cc <= 0xFFFFF) {
+                                len += 9;
+                            } else {
+                                len += 10;
+                            }
+                            p += MBCLEN_CHARFOUND_LEN(n) - 1;
                             break;
                         }
                     }
@@ -889,18 +892,22 @@ public final class StringSupport {
                 out[q++] = (byte)c;
             } else {
                 out[q++] = '\\';
+                outBytes.setRealSize(q);
                 if (enc.isUTF8()) {
                     int n = preciseLength(enc, bytes, p - 1, end) - 1;
-                    if (n > 0) {
+                    if (MBCLEN_CHARFOUND_LEN(n) > 0) {
                         int cc = codePoint(runtime, enc, bytes, p - 1, end);
-                        p += n;
                         outBytes.setRealSize(q);
-                        Sprintf.sprintf(runtime, outBytes, "u{%x}", cc);
+                        p += n;
+                        if (cc <= 0xFFFF) {
+                            Sprintf.sprintf(runtime, outBytes, "u%04X", cc);
+                        } else {
+                            Sprintf.sprintf(runtime, outBytes, "u{%X}", cc);
+                        }
                         q = outBytes.getRealSize();
                         continue;
                     }
                 }
-                outBytes.setRealSize(q);
                 Sprintf.sprintf(runtime, outBytes, "x%02X", c);
                 q = outBytes.getRealSize();
             }
