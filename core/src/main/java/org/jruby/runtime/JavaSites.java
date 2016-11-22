@@ -371,6 +371,11 @@ public class JavaSites {
     public static class RangeSites {
         public final RespondToCallSite respond_to_succ = new RespondToCallSite("succ");
         public final CheckedSites to_int_checked = new CheckedSites("to_int");
+        public final RespondToCallSite respond_to_begin = new RespondToCallSite("begin");
+        public final RespondToCallSite respond_to_end = new RespondToCallSite("end");
+        public final CallSite begin = new FunctionalCachingCallSite("begin");
+        public final CallSite end = new FunctionalCachingCallSite("end");
+        public final CallSite exclude_end = new FunctionalCachingCallSite("exclude_end?");
     }
 
     public static class ZlibSites {

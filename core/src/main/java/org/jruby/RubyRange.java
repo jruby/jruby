@@ -932,6 +932,52 @@ public class RubyRange extends RubyObject {
                 respond_to_end.respondsTo(context, obj, obj);
     }
 
+    // MRI: rb_range_beg_len
+    public static IRubyObject rangeBeginLength(ThreadContext context, IRubyObject range, int len, int[] begLen, int err) {
+        JavaSites.RangeSites sites = sites(context);
+
+        if (!RubyRange.isRangeLike(context, range, sites.respond_to_begin, sites.respond_to_end)) return context.fals;
+
+        IRubyObject _beg = sites.begin.call(context, range, range);
+        IRubyObject _end = sites.end.call(context, range, range);
+        boolean excludeEnd = sites.exclude_end.call(context, range, range).isTrue();
+        int beg = _beg.convertToInteger().getIntValue();
+        int end = _end.convertToInteger().getIntValue();
+        int origBeg = beg;
+        int origEnd = end;
+
+        if (beg < 0) {
+            beg += len;
+            if (beg < 0) {
+                return rangeBeginLengthError(context, origBeg, origEnd, excludeEnd, err);
+            }
+        }
+
+        if (end < 0) {
+            end += len;
+        }
+
+        if (!excludeEnd) end++;
+
+        if (err == 0 || err == 2) { // CON: ???
+            if (beg > len) return rangeBeginLengthError(context, origBeg, origEnd, excludeEnd, err);
+            if (end > len) end = len;
+        }
+
+        len = end - beg;
+        if (len < 0) len = 0;
+
+        begLen[0] = beg;
+        begLen[1] = len;
+
+        return context.tru;
+    }
+
+    private static IRubyObject rangeBeginLengthError(ThreadContext context, int beg, int end, boolean excludeEnd, int err) {
+        if (err != 0) throw context.runtime.newRangeError(beg + ".." + (excludeEnd ? "." : "") + end + " out of range");
+        return context.nil;
+    }
+
     private static JavaSites.RangeSites sites(ThreadContext context) {
         return context.sites.Range;
     }
