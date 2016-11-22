@@ -2238,12 +2238,8 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     /** rb_str_concat
      *
      */
-    public RubyString concat(IRubyObject other) {
-        return concat19(getRuntime().getCurrentContext(), other);
-    }
-
     @JRubyMethod(name = {"concat", "<<"})
-    public RubyString concat19(ThreadContext context, IRubyObject other) {
+    public RubyString concat(ThreadContext context, IRubyObject other) {
         Ruby runtime = context.runtime;
         if (other instanceof RubyFixnum) {
             long c = RubyNumeric.num2long(other);
@@ -2261,6 +2257,37 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
         if (other instanceof RubySymbol) throw runtime.newTypeError("can't convert Symbol into String");
         return append19(other);
+    }
+
+    /** rb_str_concat
+     *
+     */
+    @JRubyMethod(name = {"concat", "<<"}, rest = true)
+    public RubyString concat(ThreadContext context, IRubyObject[] objs) {
+        Ruby runtime = context.runtime;
+
+        modifyCheck();
+
+        if (objs.length > 0) {
+            RubyString tmp = newStringLight(runtime, objs.length, getEncoding());
+
+            for (IRubyObject obj : objs) {
+                tmp.concat(context, obj);
+            }
+
+            append(tmp);
+        }
+
+        return this;
+    }
+
+    public RubyString concat(IRubyObject other) {
+        return concat(getRuntime().getCurrentContext(), other);
+    }
+
+    @Deprecated
+    public RubyString concat19(ThreadContext context, IRubyObject other) {
+        return concat(context, other);
     }
 
     private RubyString concatNumeric(Ruby runtime, int c) {
@@ -2297,6 +2324,28 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     @JRubyMethod
     public IRubyObject prepend(ThreadContext context, IRubyObject other) {
         return replace19(other.convertToString().op_plus19(context, this));
+    }
+
+    /**
+     * rb_str_prepend
+     */
+    @JRubyMethod(rest = true)
+    public IRubyObject prepend(ThreadContext context, IRubyObject[] objs) {
+        Ruby runtime = context.runtime;
+
+        modifyCheck();
+
+        if (objs.length > 0) {
+            RubyString tmp = newStringLight(runtime, objs.length, getEncoding());
+
+            for (IRubyObject obj : objs) {
+                tmp.concat(context, obj);
+            }
+
+            replaceInternal19(0, 0, tmp);
+        }
+
+        return this;
     }
 
     /** rb_str_crypt

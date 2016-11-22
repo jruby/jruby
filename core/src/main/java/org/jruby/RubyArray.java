@@ -1569,8 +1569,8 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
 	/** rb_ary_concat
      *
      */
-    @JRubyMethod(name = "concat", required = 1)
-    public RubyArray concat(IRubyObject obj) {
+    @JRubyMethod(name = "concat")
+    public RubyArray concat(ThreadContext context, IRubyObject obj) {
         modifyCheck();
 
         RubyArray ary = obj.convertToArray();
@@ -1578,6 +1578,32 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         if (ary.realLength > 0) splice(realLength, 0, ary, false);
 
         return this;
+    }
+
+    /** rb_ary_concat
+     *
+     */
+    @JRubyMethod(name = "concat", rest = true)
+    public RubyArray concat(ThreadContext context, IRubyObject[] objs) {
+        Ruby runtime = context.runtime;
+
+        modifyCheck();
+
+        if (objs.length > 0) {
+            RubyArray tmp = newArray(runtime, objs.length);
+
+            for (IRubyObject obj : objs) {
+                tmp.concat(context, obj);
+            }
+
+            append(tmp);
+        }
+
+        return this;
+    }
+
+    public RubyArray concat(IRubyObject obj) {
+        return concat(getRuntime().getCurrentContext(), obj);
     }
 
     @Deprecated
