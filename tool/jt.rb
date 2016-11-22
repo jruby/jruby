@@ -548,7 +548,7 @@ module Commands
       no_openssl = options.delete('--no-openssl')
       build_ruby_su
       unless no_openssl
-        cextc_old "#{JRUBY_DIR}/truffle/src/main/c/openssl"
+        cextc "#{JRUBY_DIR}/truffle/src/main/c/openssl"
       end
     when 'parser'
       jay = Utilities.find_repo('jay')
@@ -794,6 +794,8 @@ module Commands
               end
     copy_target = if is_ruby
                     "#{JRUBY_DIR}/lib/ruby/truffle/cext/ruby.su"
+                  elsif cext_dir == "#{JRUBY_DIR}/truffle/src/main/c/openssl"
+                    "#{JRUBY_DIR}/truffle/src/main/c/openssl/openssl.su"
                   else
                     "#{JRUBY_DIR}/test/truffle/cexts/#{gem_name}/lib/#{gem_name}/#{gem_name}.su"
                   end
