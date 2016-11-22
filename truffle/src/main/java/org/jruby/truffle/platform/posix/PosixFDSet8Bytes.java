@@ -59,6 +59,6 @@ public class PosixFDSet8Bytes implements FDSet {
     }
 
     private long bitmapElementMask(int fd) {
-        return 1 << (fd % FIELD_SIZE_IN_BITS);
+        return 1L << (fd % FIELD_SIZE_IN_BITS);
     }
 }
