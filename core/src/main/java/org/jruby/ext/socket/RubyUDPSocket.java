@@ -511,6 +511,9 @@ public class RubyUDPSocket extends RubyIPSocket {
         try {
             return doReceive(this, runtime, false, RubyNumeric.fix2int(length), null);
         }
+        catch (PortUnreachableException e) {
+            throw runtime.newErrnoECONNREFUSEDError();
+        }
         catch (IOException e) { // SocketException
             throw runtime.newIOErrorFromException(e);
         }
