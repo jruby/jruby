@@ -196,6 +196,7 @@ public class ExceptionTranslatingNode extends RubyNode {
             } else {
                 messageBuilder.append(t.getClass().getSimpleName());
                 messageBuilder.append(" ");
+
                 if (message != null) {
                     messageBuilder.append(message);
                 } else {
@@ -206,11 +207,12 @@ public class ExceptionTranslatingNode extends RubyNode {
                     messageBuilder.append(" ");
                     messageBuilder.append(t.getStackTrace()[0].toString());
                 }
+            }
 
-                t = t.getCause();
-                if (t != null) {
-                    messageBuilder.append("\nCaused by: ");
-                }
+            t = t.getCause();
+
+            if (t != null) {
+                messageBuilder.append("\nCaused by: ");
             }
         }
 
