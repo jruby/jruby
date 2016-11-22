@@ -496,7 +496,7 @@ builds: [
   {name: ruby-benchmarks-server-graal-vm-snapshot} ${common} ${graal-vm-snapshot} ${bench-caps} ${jruby-truffle} ${server-benchmarks},
   {name: ruby-benchmarks-server-graal-vm-release} ${common} ${graal-vm-release} ${bench-caps} ${jruby-truffle} ${server-benchmarks},
 
-  {name: ruby-benchmarks-cext} ${common} ${daily-gate-caps} ${jruby-truffle-cexts} ${cext-benchmarks},
+  {name: ruby-benchmarks-cext} ${common} ${daily-bench-caps} ${jruby-truffle-cexts} ${cext-benchmarks},
 
   {name: ruby-deploy-binaries} ${common} ${gate-caps} ${deployBinaries}
 ]
