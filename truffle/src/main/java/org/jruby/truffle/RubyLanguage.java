@@ -20,7 +20,6 @@ import com.oracle.truffle.api.source.Source;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.runtime.Constants;
 import org.jruby.truffle.core.kernel.TraceManager;
-import org.jruby.truffle.extra.AttachmentsManager;
 import org.jruby.truffle.interop.InstanceConfigWrapper;
 import org.jruby.truffle.language.LazyRubyRootNode;
 import org.jruby.truffle.language.RubyGuards;
@@ -34,7 +33,6 @@ import java.io.IOException;
         mimeType = RubyLanguage.MIME_TYPE)
 @ProvidedTags({
         CoverageManager.LineTag.class,
-        AttachmentsManager.LineTag.class,
         TraceManager.CallTag.class,
         TraceManager.ClassTag.class,
         TraceManager.LineTag.class,

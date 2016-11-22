@@ -48,30 +48,4 @@ public class SourceCache {
         return source;
     }
 
-    public synchronized Source getBestSourceFuzzily(final String fuzzyPath) {
-        final List<Map.Entry<String, Source>> matches = new ArrayList<>(sources.entrySet());
-
-        Collections.sort(matches, (a, b) -> Integer.compare(
-                lengthOfCommonPrefix(fuzzyPath, b.getKey()),
-                lengthOfCommonPrefix(fuzzyPath, a.getKey())));
-
-        if (matches.isEmpty()) {
-            return null;
-        } else {
-            return matches.get(0).getValue();
-        }
-    }
-
-    private int lengthOfCommonPrefix(String a, String b) {
-        int n = 0;
-
-        while (n < a.length()
-                && n < b.length()
-                && a.charAt(a.length() - n - 1) == b.charAt(b.length() - n - 1)) {
-            n++;
-        }
-
-        return n;
-    }
-
 }

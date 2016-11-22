@@ -33,7 +33,6 @@ import org.jruby.truffle.core.string.CoreStrings;
 import org.jruby.truffle.core.string.FrozenStrings;
 import org.jruby.truffle.core.symbol.SymbolTable;
 import org.jruby.truffle.core.thread.ThreadManager;
-import org.jruby.truffle.extra.AttachmentsManager;
 import org.jruby.truffle.interop.InteropManager;
 import org.jruby.truffle.language.CallStackManager;
 import org.jruby.truffle.language.LexicalScope;
@@ -109,8 +108,6 @@ public class RubyContext extends ExecutionContext {
 
     private final Object classVariableDefinitionLock = new Object();
 
-    private final AttachmentsManager attachmentsManager;
-
     private String currentDirectory;
 
     public RubyContext(RubyInstanceConfig instanceConfig, TruffleLanguage.Env env) {
@@ -177,7 +174,6 @@ public class RubyContext extends ExecutionContext {
         // Capture known builtin methods
 
         final Instrumenter instrumenter = env.lookup(Instrumenter.class);
-        attachmentsManager = new AttachmentsManager(this, instrumenter);
         traceManager = new TraceManager(this, instrumenter);
         coreMethods = new CoreMethods(coreLibrary);
 
@@ -364,10 +360,6 @@ public class RubyContext extends ExecutionContext {
 
     public static RubyContext getInstance() {
         return RubyLanguage.INSTANCE.unprotectedFindContext(RubyLanguage.INSTANCE.unprotectedCreateFindContextNode());
-    }
-
-    public AttachmentsManager getAttachmentsManager() {
-        return attachmentsManager;
     }
 
     public SourceLoader getSourceLoader() {

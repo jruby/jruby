@@ -101,7 +101,6 @@ import org.jruby.truffle.core.thread.ThreadNodesFactory;
 import org.jruby.truffle.core.time.TimeNodesFactory;
 import org.jruby.truffle.core.tracepoint.TracePointNodesFactory;
 import org.jruby.truffle.debug.TruffleDebugNodesFactory;
-import org.jruby.truffle.extra.AttachmentsInternalNodesFactory;
 import org.jruby.truffle.extra.TruffleGraalNodesFactory;
 import org.jruby.truffle.extra.TrufflePosixNodesFactory;
 import org.jruby.truffle.extra.ffi.PointerPrimitiveNodesFactory;
@@ -598,8 +597,6 @@ public class CoreLibrary {
         defineModule(truffleModule, "GC");
         defineModule(truffleModule, "Array");
         defineModule(truffleModule, "String");
-        final DynamicObject attachments = defineModule(truffleModule, "Attachments");
-        defineModule(attachments, "Internal");
         truffleBootModule = defineModule(truffleModule, "Boot");
         defineModule(truffleModule, "Fixnum");
         defineModule(truffleModule, "Safe");
@@ -707,7 +704,6 @@ public class CoreLibrary {
         List<List<? extends NodeFactory<? extends RubyNode>>> factories = Arrays.asList(
                 ArrayNodesFactory.getFactories(),
                 AtomicReferenceNodesFactory.getFactories(),
-                AttachmentsInternalNodesFactory.getFactories(),
                 BasicObjectNodesFactory.getFactories(),
                 BCryptNodesFactory.getFactories(),
                 BigDecimalNodesFactory.getFactories(),
@@ -1745,8 +1741,6 @@ public class CoreLibrary {
             "/core/math.rb",
             "/core/method.rb",
             "/core/unbound_method.rb",
-            "/core/truffle/attachments.rb",
-            "/core/truffle/debug.rb",
             "/core/truffle/cext.rb",
             "/core/truffle/interop.rb",
             "/core/rbconfig.rb",
