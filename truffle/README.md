@@ -238,7 +238,7 @@ You can then test C extension support.
 
 ```
 $ export GEM_HOME=../jruby-truffle-gem-test-pack/gems
-$ jt test cexts --no-libxml --no-openssl --no-argon2
+$ jt test cexts --no-libxml --no-openssl
 ```
 
 If you want to test `libxml`, remove that flag and set either `LIBXML_HOME` or
