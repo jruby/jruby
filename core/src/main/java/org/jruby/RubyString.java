@@ -2238,8 +2238,8 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     /** rb_str_concat
      *
      */
-    @JRubyMethod(name = {"concat", "<<"})
-    public RubyString concat(ThreadContext context, IRubyObject other) {
+    @JRubyMethod(name = "<<")
+    public RubyString concatSingle(ThreadContext context, IRubyObject other) {
         Ruby runtime = context.runtime;
         if (other instanceof RubyFixnum) {
             long c = RubyNumeric.num2long(other);
@@ -2262,7 +2262,15 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     /** rb_str_concat
      *
      */
-    @JRubyMethod(name = {"concat", "<<"}, rest = true)
+    @JRubyMethod(name = {"concat"})
+    public RubyString concat(ThreadContext context, IRubyObject obj) {
+        return concatSingle(context, obj);
+    }
+
+    /** rb_str_concat_multi
+     *
+     */
+    @JRubyMethod(name = {"concat"}, rest = true)
     public RubyString concat(ThreadContext context, IRubyObject[] objs) {
         Ruby runtime = context.runtime;
 
@@ -2272,10 +2280,10 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             RubyString tmp = newStringLight(runtime, objs.length, getEncoding());
 
             for (IRubyObject obj : objs) {
-                tmp.concat(context, obj);
+                tmp.concatSingle(context, obj);
             }
 
-            append(tmp);
+            append19(tmp);
         }
 
         return this;
