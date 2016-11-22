@@ -1546,7 +1546,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         if (opts != null) {
             IRubyObject encoding = opts.fastARef(context.runtime.newSymbol("encoding"));
 
-            if (!encoding.isNil()) {
+            if (!(encoding == null || encoding.isNil())) {
                 modify();
                 setEncodingAndCodeRange(runtime.getEncodingService().getEncodingFromObject(encoding), CR_UNKNOWN);
             }
