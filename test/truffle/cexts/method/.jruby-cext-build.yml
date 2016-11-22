@@ -1,2 +1,0 @@
-src: ext/method/*.c
-out: lib/method/method.su

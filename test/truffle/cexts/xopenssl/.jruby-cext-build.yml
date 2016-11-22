@@ -1,4 +1,0 @@
-src: ext/xopenssl/*.c
-cflags: -I$OPENSSL_INCLUDE
-libs: $OPENSSL_LIB
-out: lib/xopenssl/xopenssl.su

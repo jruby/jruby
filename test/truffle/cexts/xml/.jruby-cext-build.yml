@@ -1,4 +1,0 @@
-src: ext/xml/*.c
-cflags: -I$LIBXML_INCLUDE
-libs: $LIBXML_LIB
-out: lib/xml/xml.su
