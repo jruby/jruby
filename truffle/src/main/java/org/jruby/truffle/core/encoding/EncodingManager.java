@@ -12,8 +12,6 @@
  */
 package org.jruby.truffle.core.encoding;
 
-import com.kenai.jffi.Platform;
-import com.kenai.jffi.Platform.OS;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.object.DynamicObject;
 import jnr.constants.platform.LangInfo;

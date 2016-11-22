@@ -35,7 +35,6 @@ package org.jruby.truffle.parser.ast;
 
 import org.jruby.ParseResult;
 import org.jruby.truffle.parser.ast.types.INameNode;
-import org.jruby.truffle.parser.ast.visitor.AbstractNodeVisitor;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
 import org.jruby.truffle.parser.lexer.ISourcePosition;
 import org.jruby.truffle.parser.lexer.ISourcePositionHolder;
