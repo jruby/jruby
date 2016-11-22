@@ -38,6 +38,7 @@ package org.jruby.runtime;
 import org.jcodings.Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyContinuation.Continuation;
 import org.jruby.RubyInstanceConfig;
@@ -85,6 +86,8 @@ public final class ThreadContext {
     // runtime, nil, and runtimeCache cached here for speed of access from any thread
     public final Ruby runtime;
     public final IRubyObject nil;
+    public final RubyBoolean tru;
+    public final RubyBoolean fals;
     public final RuntimeCache runtimeCache;
 
     // Is this thread currently with in a function trace?
@@ -185,6 +188,8 @@ public final class ThreadContext {
     private ThreadContext(Ruby runtime) {
         this.runtime = runtime;
         this.nil = runtime.getNil();
+        this.tru = runtime.getTrue();
+        this.fals = runtime.getFalse();
         this.currentBlockType = Block.Type.NORMAL;
         this.savedExcInLambda = null;
 
