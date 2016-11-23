@@ -1822,13 +1822,13 @@ public class RubyModule extends RubyObject {
         return !method.isUndefined() && !(checkVisibility && method.getVisibility() == PRIVATE);
     }
 
-    public boolean doesMethodRespondTo(String name, boolean checkVisibility) {
-        return Helpers.doesMethodRespondTo(searchMethod(name), checkVisibility);
+    public boolean respondsToMethod(String name, boolean checkVisibility) {
+        return Helpers.respondsToMethod(searchMethod(name), checkVisibility);
     }
 
     @Deprecated
     public boolean isMethodBound(String name, boolean checkVisibility, boolean checkRespondTo) {
-        return checkRespondTo ? doesMethodRespondTo(name, checkVisibility): isMethodBound(name, checkVisibility);
+        return checkRespondTo ? respondsToMethod(name, checkVisibility): isMethodBound(name, checkVisibility);
     }
 
     public IRubyObject newMethod(IRubyObject receiver, String methodName, boolean bound, Visibility visibility) {

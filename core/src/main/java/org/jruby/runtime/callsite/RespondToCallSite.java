@@ -1,13 +1,11 @@
 package org.jruby.runtime.callsite;
 
-import org.jruby.Ruby;
 import org.jruby.RubySymbol;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.RubyClass;
 import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.runtime.Visibility;
 
 public class RespondToCallSite extends NormalCachingCallSite {
     private volatile RespondToTuple respondToTuple = RespondToTuple.NULL_CACHE;
@@ -164,7 +162,7 @@ public class RespondToCallSite extends NormalCachingCallSite {
 
     private static RespondToTuple recacheRespondsTo(CacheEntry respondToMethod, String newString, RubyClass klass, boolean checkVisibility, ThreadContext context) {
         CacheEntry respondToLookupResult = klass.searchWithCache(newString);
-        boolean respondsTo = Helpers.doesMethodRespondTo(respondToLookupResult.method, checkVisibility);
+        boolean respondsTo = Helpers.respondsToMethod(respondToLookupResult.method, checkVisibility);
 
         return new RespondToTuple(newString, checkVisibility, respondToMethod, respondToLookupResult, context.runtime.newBoolean(respondsTo));
     }
