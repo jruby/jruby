@@ -127,17 +127,22 @@ module Enumerable
   end
 
   def uniq
+    values = []
     hash = {}
-    if defined? yield
+    if block_given?
       each do |obj|
         ret = yield *obj
-        hash[ret] = obj unless hash.key? ret
+        next if hash.key? ret
+        hash[ret] = obj
+        values << obj
       end
     else
       each do |obj|
+        next if hash.key? obj
         hash[obj] = obj unless hash.key? obj
+        values << obj
       end
     end
-    hash.values
+    values
   end
 end

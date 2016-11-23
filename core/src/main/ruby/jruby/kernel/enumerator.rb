@@ -204,6 +204,24 @@ class Enumerator
       end.__set_inspect :zip, args
     end
 
+    def uniq
+      hash = {}
+      if block_given?
+        Lazy.new(self) do |yielder, obj|
+          ret = yield *obj
+          next if hash.key? ret
+          hash[ret] = obj
+          yielder << obj
+        end
+      else
+        Lazy.new(self) do |yielder, obj|
+          next if hash.key? obj
+          hash[obj] = obj unless hash.key? obj
+          yielder << obj
+        end
+      end
+    end
+
     protected
     def __set_inspect(method, args = nil, receiver = nil)
       @method = method
