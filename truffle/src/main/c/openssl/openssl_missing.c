@@ -7,6 +7,12 @@
  * This program is licensed under the same licence as Ruby.
  * (See the file 'LICENCE'.)
  */
+
+// Added by Truffle - no idea why we need it
+#ifndef RUBY_EXTCONF_H
+#define RUBY_EXTCONF_H "extconf.h"
+#endif
+
 #include RUBY_EXTCONF_H
 
 #if defined(HAVE_OPENSSL_ENGINE_H) && defined(HAVE_EVP_CIPHER_CTX_ENGINE)
