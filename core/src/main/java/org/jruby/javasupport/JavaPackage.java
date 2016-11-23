@@ -207,9 +207,8 @@ public class JavaPackage extends RubyModule {
 
     private IRubyObject respond_to(final ThreadContext context, IRubyObject mname, final boolean includePrivate) {
         String name = mname.asJavaString();
-        if ( getMetaClass().isMethodBound(name, !includePrivate, true) ) {
-            return context.runtime.getTrue();
-        }
+
+        if (getMetaClass().doesMethodRespondTo(name, !includePrivate)) return context.runtime.getTrue();
         /*
         if ( ( name = BlankSlateWrapper.handlesMethod(name) ) != null ) {
             RubyBoolean bound = checkMetaClassBoundMethod(context, name, includePrivate);
