@@ -6,6 +6,7 @@
 require 'rbconfig'
 require 'fileutils'
 require 'shellwords'
+require 'pathname'
 
 # :stopdoc:
 class String
@@ -225,8 +226,10 @@ module MakeMakefile
   end
 
   # topdir = File.dirname(File.dirname(__FILE__))
-  # topdir = File.dirname(File.dirname(File.dirname(File.dirname(__FILE__)))) # MODIFED two more folders up to jruby
-  topdir = File.dirname(File.dirname(File.dirname(File.dirname(File.dirname(__FILE__))))) # MODIFED 3 more folders up to jruby
+  # Modified for JRuby+Truffle
+  topdir = Pathname.new(File.dirname(__FILE__)).enum_for(:ascend).detect { |dir|
+    dir.join('ci.hocon').exist?
+  }.to_s
   path = File.expand_path($0)
   until (dir = File.dirname(path)) == path
     if File.identical?(dir, topdir)
