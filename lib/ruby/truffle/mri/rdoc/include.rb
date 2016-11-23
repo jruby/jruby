@@ -1,1 +1,9 @@
-require_relative '../../../stdlib/rdoc/' + File.basename(__FILE__)
+##
+# A Module included in a class with \#include
+#
+#   RDoc::Include.new 'Enumerable', 'comment ...'
+
+class RDoc::Include < RDoc::Mixin
+
+end
+

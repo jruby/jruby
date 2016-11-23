@@ -1,1 +1,4 @@
-require_relative '../../../stdlib/psych/' + File.basename(__FILE__)
+module Psych
+  class Omap < ::Hash
+  end
+end

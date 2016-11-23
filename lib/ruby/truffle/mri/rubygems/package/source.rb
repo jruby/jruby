@@ -1,1 +1,4 @@
-require_relative '../../../../stdlib/rubygems/package/' + File.basename(__FILE__)
+# frozen_string_literal: true
+class Gem::Package::Source # :nodoc:
+end
+

@@ -1,1 +1,2 @@
-require_relative '../../../../stdlib/rubygems/resolver/' + File.basename(__FILE__)
+# frozen_string_literal: true
+require 'rubygems/resolver/molinillo/lib/molinillo'

@@ -1483,12 +1483,12 @@ public abstract class KernelNodes {
             String feature = StringOperations.getString(featureString);
 
             // Pysch loads either the jar or the so - we need to intercept
-            if (feature.equals("psych.so") && callerIs("stdlib/psych.rb")) {
+            if (feature.equals("psych.so") && callerIs("mri/psych.rb")) {
                 feature = "truffle/psych.rb";
             }
 
             // TODO CS 1-Mar-15 ERB will use strscan if it's there, but strscan is not yet complete, so we need to hide it
-            if (feature.equals("strscan") && callerIs("stdlib/erb.rb")) {
+            if (feature.equals("strscan") && callerIs("mri/erb.rb")) {
                 throw new RaiseException(coreExceptions().loadErrorCannotLoad(feature, this));
             }
 

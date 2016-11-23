@@ -1,1 +1,4 @@
-require_relative '../../../stdlib/minitest/' + File.basename(__FILE__)
+require "minitest"
+
+Minitest.load_plugins
+Minitest::PrideIO.pride!

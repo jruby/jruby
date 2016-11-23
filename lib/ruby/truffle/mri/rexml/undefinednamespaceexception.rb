@@ -1,1 +1,9 @@
-require_relative '../../../stdlib/rexml/' + File.basename(__FILE__)
+# frozen_string_literal: false
+require 'rexml/parseexception'
+module REXML
+  class UndefinedNamespaceException < ParseException
+    def initialize( prefix, source, parser )
+      super( "Undefined prefix #{prefix} found" )
+    end
+  end
+end

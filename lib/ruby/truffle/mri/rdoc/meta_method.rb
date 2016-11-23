@@ -1,1 +1,6 @@
-require_relative '../../../stdlib/rdoc/' + File.basename(__FILE__)
+##
+# MetaMethod represents a meta-programmed method
+
+class RDoc::MetaMethod < RDoc::AnyMethod
+end
+

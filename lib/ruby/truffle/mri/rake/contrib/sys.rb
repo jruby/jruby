@@ -1,1 +1,4 @@
-require_relative '../../../../stdlib/rake/contrib/' + File.basename(__FILE__)
+# TODO: Remove in Rake 11
+
+fail "ERROR: 'rake/contrib/sys' is obsolete and no longer supported. " +
+  "Use 'FileUtils' instead."
