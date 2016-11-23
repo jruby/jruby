@@ -36,14 +36,11 @@ package org.jruby;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.runtime.CallSite;
-import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.JavaSites.ComparableSites;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.callsite.RespondToCallSite;
 
 import static org.jruby.runtime.Helpers.invokedynamic;
-import static org.jruby.runtime.invokedynamic.MethodNames.OP_CMP;
 
 /** Implementation of the Comparable module.
  *
@@ -86,7 +83,6 @@ public class RubyComparable {
 
         RubyFixnum zero = RubyFixnum.zero(context.runtime);
 
-        ComparableSites sites = sites(context);
         if (op_gt.call(context, val, val, zero).isTrue()) return 1;
         if (op_lt.call(context, val, val, zero).isTrue()) return -1;
 
