@@ -40,7 +40,7 @@ labsjdk8: {
   downloads: {
     JAVA_HOME: {
       name: labsjdk,
-      version: "8u92-jvmci-0.22",
+      version: "8u111-jvmci-0.23",
       platformspecific: true
     }
   }
