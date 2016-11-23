@@ -191,26 +191,20 @@ public class ExceptionTranslatingNode extends RubyNode {
         while (t != null) {
             final String message = t.getMessage();
 
-            if (message != null && message.startsWith("LLVM error")) {
+            messageBuilder.append(t.getClass().getSimpleName());
+            messageBuilder.append(" ");
+            if (message != null) {
                 messageBuilder.append(message);
             } else {
-                messageBuilder.append(t.getClass().getSimpleName());
+                messageBuilder.append("<no message>");
+            }
+
+            if (t.getStackTrace().length > 0) {
                 messageBuilder.append(" ");
-
-                if (message != null) {
-                    messageBuilder.append(message);
-                } else {
-                    messageBuilder.append("<no message>");
-                }
-
-                if (t.getStackTrace().length > 0) {
-                    messageBuilder.append(" ");
-                    messageBuilder.append(t.getStackTrace()[0].toString());
-                }
+                messageBuilder.append(t.getStackTrace()[0].toString());
             }
 
             t = t.getCause();
-
             if (t != null) {
                 messageBuilder.append("\nCaused by: ");
             }
