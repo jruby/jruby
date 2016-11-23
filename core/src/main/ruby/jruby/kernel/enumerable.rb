@@ -125,4 +125,19 @@ module Enumerable
     klass = Enumerator::Lazy::LAZY_WITH_NO_BLOCK # Note: class_variable_get is private in 1.8
     Enumerator::Lazy.new(klass.new(self, :each, []))
   end
+
+  def uniq
+    hash = {}
+    if defined? yield
+      each do |obj|
+        ret = yield *obj
+        hash[ret] = obj unless hash.key? ret
+      end
+    else
+      each do |obj|
+        hash[obj] = obj unless hash.key? obj
+      end
+    end
+    hash.values
+  end
 end
