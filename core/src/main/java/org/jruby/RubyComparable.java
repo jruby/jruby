@@ -98,6 +98,16 @@ public class RubyComparable {
         return cmpint(context, sites.op_gt, sites.op_lt, val, a, b);
     }
 
+    public static int cmpAndCmpint(ThreadContext context, IRubyObject a, IRubyObject b) {
+        IRubyObject cmpResult = sites(context).op_cmp.call(context, a, a, b);
+        return cmpint(context, cmpResult, a, b);
+    }
+
+    public static int cmpAndCmpint(ThreadContext context, CallSite op_cmp, CallSite op_gt, CallSite op_lt, IRubyObject a, IRubyObject b) {
+        IRubyObject cmpResult = op_cmp.call(context, a, a, b);
+        return cmpint(context, op_gt, op_lt, cmpResult, a, b);
+    }
+
     /** rb_cmperr
      *
      */
@@ -239,6 +249,27 @@ public class RubyComparable {
     @JRubyMethod(name = "between?", required = 2)
     public static RubyBoolean between_p(ThreadContext context, IRubyObject recv, IRubyObject first, IRubyObject second) {
         return context.runtime.newBoolean(op_lt(context, recv, first).isFalse() && op_gt(context, recv, second).isFalse());
+    }
+
+    @JRubyMethod(name = "clamp")
+    public static IRubyObject clamp(ThreadContext context, IRubyObject recv, IRubyObject min, IRubyObject max) {
+        int c;
+
+        ComparableSites sites = sites(context);
+        CallSite op_gt = sites.op_gt;
+        CallSite op_lt = sites.op_lt;
+        CallSite op_cmp = sites.op_cmp;
+
+        if (cmpAndCmpint(context, op_cmp, op_gt, op_lt, min, max) > 0) {
+            throw context.runtime.newArgumentError("min argument must be smaller than max argument");
+        }
+
+        c = cmpAndCmpint(context, op_cmp, op_gt, op_lt, recv, min);
+        if (c == 0) return recv;
+        if (c < 0) return min;
+        c = cmpAndCmpint(context, op_cmp, op_gt, op_lt, recv, max);
+        if (c > 0) return max;
+        return recv;
     }
 
     private static ComparableSites sites(ThreadContext context) {
