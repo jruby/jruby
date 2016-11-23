@@ -392,19 +392,11 @@ module ShellUtils
   end
 
   def clang(*args)
-    if ENV['USE_SYSTEM_CLANG']
-      sh 'clang', *args
-    else
-      mx_sulong 'su-clang', *args
-    end
+    sh 'clang-3.3', *args
   end
 
   def llvm_opt(*args)
-    if ENV['USE_SYSTEM_CLANG']
-      sh 'opt', *args
-    else
-      mx_sulong 'su-opt', *args
-    end
+    sh 'opt-3.3', *args
   end
 
   def sulong_run(*args)
@@ -445,7 +437,7 @@ module Commands
       jt build [options]                             build
       jt rebuild [options]                           clean and build
           truffle                                    build only the Truffle part, assumes the rest is up-to-date
-          cexts [--no-openssl]                       build the cext backend (set SULONG_HOME and maybe USE_SYSTEM_CLANG)
+          cexts [--no-openssl]                       build the cext backend (set SULONG_HOME)
           parser                                     build the parser
           --build-pack                               use the build pack
           --offline                                  use the build pack to build offline
@@ -470,7 +462,7 @@ module Commands
       jt e 14 + 2                                    evaluate an expression
       jt puts 14 + 2                                 evaluate and print an expression
       jt cextc directory clang-args                  compile the C extension in directory, with optional extra clang arguments
-      jt test                                        run all mri tests, specs and integration tests (set SULONG_HOME, and maybe USE_SYSTEM_CLANG)
+      jt test                                        run all mri tests, specs and integration tests (set SULONG_HOME)
       jt test tck [--jdebug]                         run the Truffle Compatibility Kit tests
       jt test mri                                    run mri tests
           --graal         use Graal (set either GRAALVM_BIN, JVMCI_BIN or GRAAL_HOME)
@@ -518,7 +510,6 @@ module Commands
         GRAALVM_RELEASE_BIN                          Default GraalVM executable when using a released version of Truffle (such as on master)
         GRAAL_HOME_TRUFFLE_HEAD                      Default Graal directory when using a snapshot version of Truffle (such as on truffle-head)
         SULONG_HOME                                  The Sulong source repository, if you want to run cextc
-        USE_SYSTEM_CLANG                             Use the system clang rather than Sulong\'s when compiling C extensions
         GRAAL_JS_JAR                                 The location of trufflejs.jar
         SL_JAR                                       The location of truffle-sl.jar
         LIBXML_HOME, LIBXML_INCLUDE, LIBXML_LIB      The location of libxml2 (the directory containing include etc), and the direct include directory and library file
@@ -824,27 +815,27 @@ module Commands
     # Test that we can compile and run some basic C code that uses libxml and openssl
 
     unless no_libxml
-      clang '-S', '-emit-llvm', "-I#{LIBXML_INCLUDE}", 'test/truffle/cexts/xml/main.c', '-o', 'test/truffle/cexts/xml/main.ll'
-      out, _ = sulong_run("-l#{LIBXML_LIB}", 'test/truffle/cexts/xml/main.ll', {capture: true})
+      clang '-c', '-emit-llvm', "-I#{LIBXML_INCLUDE}", 'test/truffle/cexts/xml/main.c', '-o', 'test/truffle/cexts/xml/main.bc'
+      out, _ = sulong_run("-l#{LIBXML_LIB}", 'test/truffle/cexts/xml/main.bc', {capture: true})
       raise unless out == "7\n"
     end
 
     unless no_openssl
-      clang '-S', '-emit-llvm', "-I#{OPENSSL_INCLUDE}", 'test/truffle/cexts/xopenssl/main.c', '-o', 'test/truffle/cexts/xopenssl/main.ll'
-      out, _ = sulong_run("-l#{OPENSSL_LIB}", 'test/truffle/cexts/xopenssl/main.ll', {capture: true})
+      clang '-c', '-emit-llvm', "-I#{OPENSSL_INCLUDE}", 'test/truffle/cexts/xopenssl/main.c', '-o', 'test/truffle/cexts/xopenssl/main.bc'
+      out, _ = sulong_run("-l#{OPENSSL_LIB}", 'test/truffle/cexts/xopenssl/main.bc', {capture: true})
       raise unless out == "5d41402abc4b2a76b9719d911017c592\n"
     end
 
     # Test that we can run those same test when they're build as a .su and we load the code and libraries from that
 
     unless no_libxml
-      sulong_link '-o', 'test/truffle/cexts/xml/main.su', '-l', "#{LIBXML_LIB}", 'test/truffle/cexts/xml/main.ll'
+      sulong_link '-o', 'test/truffle/cexts/xml/main.su', '-l', "#{LIBXML_LIB}", 'test/truffle/cexts/xml/main.bc'
       out, _ = sulong_run('test/truffle/cexts/xml/main.su', {capture: true})
       raise unless out == "7\n"
     end
 
     unless no_openssl
-      sulong_link '-o', 'test/truffle/cexts/xopenssl/main.su', '-l', "#{OPENSSL_LIB}", 'test/truffle/cexts/xopenssl/main.ll'
+      sulong_link '-o', 'test/truffle/cexts/xopenssl/main.su', '-l', "#{OPENSSL_LIB}", 'test/truffle/cexts/xopenssl/main.bc'
       out, _ = sulong_run('test/truffle/cexts/xopenssl/main.su', {capture: true})
       raise unless out == "5d41402abc4b2a76b9719d911017c592\n"
     end
