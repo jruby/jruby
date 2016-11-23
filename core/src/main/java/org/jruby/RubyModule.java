@@ -1818,19 +1818,17 @@ public class RubyModule extends RubyObject {
      */
     public boolean isMethodBound(String name, boolean checkVisibility) {
         DynamicMethod method = searchMethod(name);
-        if (!method.isUndefined()) {
-            return !(checkVisibility && method.getVisibility() == PRIVATE);
-        }
-        return false;
+
+        return !method.isUndefined() && !(checkVisibility && method.getVisibility() == PRIVATE);
     }
 
+    public boolean doesMethodRespondTo(String name, boolean checkVisibility) {
+        return Helpers.doesMethodRespondTo(searchMethod(name), checkVisibility);
+    }
+
+    @Deprecated
     public boolean isMethodBound(String name, boolean checkVisibility, boolean checkRespondTo) {
-        if (!checkRespondTo) return isMethodBound(name, checkVisibility);
-        DynamicMethod method = searchMethod(name);
-        if (!method.isUndefined() && !method.isNotImplemented()) {
-            return !(checkVisibility && method.getVisibility() == PRIVATE);
-        }
-        return false;
+        return checkRespondTo ? doesMethodRespondTo(name, checkVisibility): isMethodBound(name, checkVisibility);
     }
 
     public IRubyObject newMethod(IRubyObject receiver, String methodName, boolean bound, Visibility visibility) {

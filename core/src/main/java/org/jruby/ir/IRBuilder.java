@@ -561,10 +561,6 @@ public class IRBuilder {
     }
 
     protected Operand buildWithOrder(Node node, boolean preserveOrder) {
-        // Even though String literals are mutable they cannot fail or depend on rest of program's semantics so
-        // they can ignore order.
-        if (node instanceof StrNode) return buildStrRaw((StrNode) node);
-
         Operand value = build(node);
 
         // We need to preserve order in cases (like in presence of assignments) except that immutable
