@@ -106,6 +106,10 @@ public class RubyGlobal {
         runtime.defineGlobalConstant("FALSE", runtime.getFalse());
         runtime.defineGlobalConstant("NIL", runtime.getNil());
 
+        runtime.getObject().deprecateConstant(runtime, "TRUE");
+        runtime.getObject().deprecateConstant(runtime, "FALSE");
+        runtime.getObject().deprecateConstant(runtime, "NIL");
+
         initARGV(runtime);
 
         IAccessor d = new ValueAccessor(runtime.newString(
