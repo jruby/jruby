@@ -939,7 +939,6 @@ public final class ThreadContext {
      * @return an Array with the backtrace
      */
     public BacktraceElement[] createBacktrace2(int level, boolean nativeException) {
-        BacktraceElement[] backtrace = this.backtrace.clone(); // TODO do we need to clone?
         BacktraceElement[] newTrace = new BacktraceElement[backtraceIndex + 1];
         System.arraycopy(backtrace, 0, newTrace, 0, newTrace.length);
         return newTrace;
