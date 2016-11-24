@@ -35,17 +35,6 @@ def deploy_binary_if_truffle_head(args):
         mx.log('The active branch is "%s". Binaries are deployed only if the active branch is "%s".' % (active_branch, primary_branch))
         return 0
 
-def unittest_use_distribution_jars(config):
-    """use the distribution jars instead of the class files"""
-    vmArgs, mainClass, mainClassArgs = config
-    cpIndex, _ = mx.find_classpath_arg(vmArgs)
-    junitCP = [mx.classpath("com.oracle.mxtool.junit")]
-    rubyCP = [mx.classpath(mx.distribution(distr)) for distr in rubyDists]
-    vmArgs[cpIndex] = ":".join(junitCP + rubyCP)
-    return (vmArgs, mainClass, mainClassArgs)
-
-mx_unittest.add_config_participant(unittest_use_distribution_jars)
-
 # Project and BuildTask classes
 
 class ArchiveProject(mx.ArchivableProject):
