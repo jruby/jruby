@@ -239,13 +239,14 @@ def ruby_command(args):
     vmArgs, rubyArgs, user_classpath, print_command, classic, main_class = extractArguments(args)
     classpath = mx.classpath(['TRUFFLE_API', 'RUBY']).split(':')
     truffle_api, classpath = classpath[0], classpath[1:]
-    classpath += user_classpath
     assert os.path.basename(truffle_api) == "truffle-api.jar"
-    vmArgs = [
+    # Give precedence to graal classpath and VM options
+    classpath = user_classpath + classpath
+    vmArgs = vmArgs + [
         # '-Xss2048k',
         '-Xbootclasspath/a:' + truffle_api,
         '-cp', ':'.join(classpath),
-    ] + vmArgs
+    ]
     vmArgs = vmArgs + [main_class]
     if not classic:
         vmArgs = vmArgs + ['-X+T']
