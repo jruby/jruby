@@ -554,7 +554,7 @@ public final class Ruby implements Constantizable {
             return;
         }
 
-        if (getInstanceConfig().getCompileMode().isTruffle()) {
+        if (getInstanceConfig().getCompileMode() == CompileMode.TRUFFLE) {
             final JRubyTruffleInterface truffleContext = getTruffleContext();
             Main.printTruffleTimeMetric("before-run");
             int exitCode;
@@ -839,7 +839,7 @@ public final class Ruby implements Constantizable {
     }
 
     public IRubyObject runScript(Script script, boolean wrap) {
-        if (getInstanceConfig().getCompileMode().isTruffle()) {
+        if (getInstanceConfig().getCompileMode() == CompileMode.TRUFFLE) {
             throw new UnsupportedOperationException();
         }
 
@@ -855,7 +855,7 @@ public final class Ruby implements Constantizable {
     }
 
     public IRubyObject runInterpreter(ThreadContext context, ParseResult parseResult, IRubyObject self) {
-        if (getInstanceConfig().getCompileMode().isTruffle()) {
+        if (getInstanceConfig().getCompileMode() == CompileMode.TRUFFLE) {
             throw new UnsupportedOperationException();
         }
 
@@ -1277,7 +1277,7 @@ public final class Ruby implements Constantizable {
         boolean reflectionWorks = doesReflectionWork();
 
         if (!RubyInstanceConfig.DEBUG_PARSER && reflectionWorks
-                && !getInstanceConfig().getCompileMode().isTruffle()) {
+                && getInstanceConfig().getCompileMode() != CompileMode.TRUFFLE) {
             loadService.require("jruby");
         }
 
@@ -1286,7 +1286,7 @@ public final class Ruby implements Constantizable {
         // out of base boot mode
         bootingCore = false;
 
-        if (!getInstanceConfig().getCompileMode().isTruffle()) {
+        if (getInstanceConfig().getCompileMode() != CompileMode.TRUFFLE) {
             // init Ruby-based kernel
             initRubyKernel();
 
@@ -1324,7 +1324,7 @@ public final class Ruby implements Constantizable {
         bootingRuntime = false;
 
         // Require in all libraries specified on command line
-        if (!getInstanceConfig().getCompileMode().isTruffle()) {
+        if (getInstanceConfig().getCompileMode() != CompileMode.TRUFFLE) {
             for (String scriptName : config.getRequiredLibraries()) {
                 topSelf.callMethod(context, "require", RubyString.newString(this, scriptName));
             }
