@@ -150,7 +150,7 @@ public class Options {
     public final boolean METHODMISSING_ALWAYS_CLONE = TRUFFLE_METHODMISSING_ALWAYS_CLONE.load();
     public final boolean METHODMISSING_ALWAYS_INLINE = TRUFFLE_METHODMISSING_ALWAYS_INLINE.load();
 
-    // Other tuning parameteres
+    // Other tuning parameters
 
     public final int PACK_UNROLL_LIMIT = TRUFFLE_PACK_UNROLL_LIMIT.load();
     public final int PACK_RECOVER_LOOP_MIN = TRUFFLE_PACK_RECOVER_LOOP_MIN.load();
