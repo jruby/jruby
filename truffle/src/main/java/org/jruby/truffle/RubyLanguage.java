@@ -20,7 +20,6 @@ import com.oracle.truffle.api.source.Source;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.runtime.Constants;
 import org.jruby.truffle.core.kernel.TraceManager;
-import org.jruby.truffle.interop.InstanceConfigWrapper;
 import org.jruby.truffle.language.LazyRubyRootNode;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.stdlib.CoverageManager;
