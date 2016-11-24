@@ -7,7 +7,7 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.language;
+package org.jruby.truffle;
 
 import static org.jruby.util.cli.Options.TRUFFLE_ALLOCATE_CLASS_CACHE;
 import static org.jruby.util.cli.Options.TRUFFLE_ARRAY_SMALL;

@@ -21,7 +21,7 @@ import org.jruby.truffle.core.InterruptMode;
 import org.jruby.truffle.core.fiber.FiberManager;
 import org.jruby.truffle.core.fiber.FiberNodes;
 import org.jruby.truffle.core.proc.ProcOperations;
-import org.jruby.truffle.language.Options;
+import org.jruby.truffle.Options;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.SafepointAction;
 import org.jruby.truffle.language.SafepointManager;

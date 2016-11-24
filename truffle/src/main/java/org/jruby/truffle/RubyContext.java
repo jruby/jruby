@@ -36,7 +36,6 @@ import org.jruby.truffle.core.thread.ThreadManager;
 import org.jruby.truffle.interop.InteropManager;
 import org.jruby.truffle.language.CallStackManager;
 import org.jruby.truffle.language.LexicalScope;
-import org.jruby.truffle.language.Options;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.SafepointManager;
 import org.jruby.truffle.language.arguments.RubyArguments;
