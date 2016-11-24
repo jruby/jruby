@@ -29,6 +29,10 @@ public class RubyEngine {
     private final RubyContext context;
 
     public RubyEngine(RubyInstanceConfig instanceConfig) {
+        if (!instanceConfig.getCompileMode().isTruffle()) {
+            throw new UnsupportedOperationException();
+        }
+
         engine = PolyglotEngine.newBuilder()
                 .globalSymbol(JRubyTruffleInterface.RUNTIME_SYMBOL, new InstanceConfigWrapper(instanceConfig))
                 .build();

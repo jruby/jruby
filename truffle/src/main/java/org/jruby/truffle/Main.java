@@ -60,6 +60,7 @@ public class Main {
         final RubyInstanceConfig config = new RubyInstanceConfig(false);
         config.setHardExit(true);
         config.processArguments(args);
+        config.setCompileMode(RubyInstanceConfig.CompileMode.TRUFFLE);
 
         doShowVersion(config);
         doShowCopyright(config);
