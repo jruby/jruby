@@ -55,16 +55,12 @@ public class RubyLanguage extends TruffleLanguage<RubyContext> {
 
     @Override
     public RubyContext createContext(Env env) {
-        final InstanceConfigWrapper runtimeWrapper = (InstanceConfigWrapper) env.importSymbol(JRubyTruffleImpl.RUNTIME_SYMBOL);
+        RubyInstanceConfig instanceConfig = (RubyInstanceConfig) env.getConfig().get(RubyEngine.INSTANCE_CONFIG_KEY);
 
-        final RubyInstanceConfig instanceConfig;
-
-        if (runtimeWrapper == null) {
+        if (instanceConfig == null) {
             instanceConfig = new RubyInstanceConfig();
             instanceConfig.processArgumentsWithRubyopts();
             instanceConfig.setCompileMode(RubyInstanceConfig.CompileMode.TRUFFLE);
-        } else {
-            instanceConfig = runtimeWrapper.getInstanceConfig();
         }
 
         return new RubyContext(instanceConfig, env);

@@ -13,8 +13,6 @@ import java.io.InputStream;
 
 public interface JRubyTruffleInterface {
 
-    String RUNTIME_SYMBOL = "org.jruby.truffle.runtime";
-
     int execute(String path);
 
     void dispose();
