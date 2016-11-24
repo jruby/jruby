@@ -246,8 +246,8 @@ def ruby_command(args):
         # '-Xss2048k',
         '-Xbootclasspath/a:' + truffle_api,
         '-cp', ':'.join(classpath),
+        main_class
     ]
-    vmArgs = vmArgs + [main_class]
     if not classic:
         vmArgs = vmArgs + ['-X+T']
     allArgs = vmArgs + rubyArgs
