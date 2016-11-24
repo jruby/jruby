@@ -61,6 +61,9 @@ import java.io.PrintStream;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -315,7 +318,7 @@ public class Main {
             } else if (config.getShouldCheckSyntax()) {
                 // check syntax only and exit
                 if (isTruffle()) {
-                    final JRubyTruffleInterface truffle = loadTruffle();
+                    final TruffleRubyEngineInterface truffle = loadTruffle();
 
                     try {
                         final int exitCode = truffle.doCheckSyntax(in, filename);
@@ -329,7 +332,7 @@ public class Main {
             } else {
                 // proceed to run the script
                 if (isTruffle()) {
-                    final JRubyTruffleInterface truffle = loadTruffle();
+                    final TruffleRubyEngineInterface truffle = loadTruffle();
 
                     printTruffleTimeMetric("before-run");
 
@@ -613,7 +616,7 @@ public class Main {
         return config.getCompileMode().isTruffle();
     }
 
-    private JRubyTruffleInterface loadTruffle() {
+    private TruffleRubyEngineInterface loadTruffle() {
         Main.printTruffleTimeMetric("before-load-context");
 
         String javaVersion = System.getProperty("java.version");
@@ -624,26 +627,34 @@ public class Main {
             System.exit(1);
         }
 
-        final Class<?> clazz;
+        final Class<?> truffleRubyEngineClass;
 
         try {
-            clazz = Class.forName("org.jruby.truffle.JRubyTruffleImpl");
+            truffleRubyEngineClass = Class.forName("org.jruby.truffle.RubyEngine");
         } catch (Exception e) {
             throw new RuntimeException("JRuby's Truffle backend not available - either it was not compiled because JRuby was built with Java 7, or it has been removed", e);
         }
 
-        final JRubyTruffleInterface truffleContext;
+        final TruffleRubyEngineInterface truffleEngine;
 
         try {
-            Constructor<?> con = clazz.getConstructor(RubyInstanceConfig.class);
-            truffleContext = (JRubyTruffleInterface) con.newInstance(config);
+            final Object truffleEngineInstance = truffleRubyEngineClass.getConstructor(RubyInstanceConfig.class).newInstance(config);
+
+            truffleEngine = (TruffleRubyEngineInterface) Proxy.newProxyInstance(getClass().getClassLoader(), new Class[]{TruffleRubyEngineInterface.class}, new InvocationHandler() {
+
+                @Override
+                public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+                    return truffleRubyEngineClass.getMethod(method.getName(), method.getParameterTypes()).invoke(truffleEngineInstance, args);
+                }
+
+            });
         } catch (Exception e) {
             throw new RuntimeException("Error while calling the constructor of Truffle's RubyContext", e);
         }
 
         Main.printTruffleTimeMetric("after-load-context");
 
-        return truffleContext;
+        return truffleEngine;
     }
     
     public static void printTruffleTimeMetric(String id) {

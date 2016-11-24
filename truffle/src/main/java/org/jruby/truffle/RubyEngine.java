@@ -12,7 +12,6 @@ package org.jruby.truffle;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.vm.PolyglotEngine;
-import org.jruby.JRubyTruffleInterface;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.truffle.platform.graal.Graal;
 import org.jruby.util.cli.Options;

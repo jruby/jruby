@@ -11,7 +11,7 @@ package org.jruby;
 
 import java.io.InputStream;
 
-public interface JRubyTruffleInterface {
+public interface TruffleRubyEngineInterface {
 
     int execute(String path);
 
