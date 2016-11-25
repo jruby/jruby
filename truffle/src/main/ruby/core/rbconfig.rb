@@ -105,7 +105,7 @@ module RbConfig
         'CPP' => cpp,
         'COMPILE_C' => "$(CC) $(INCFLAGS) $(CPPFLAGS) $(CFLAGS) $(COUTFLAG)$< -o $@ && #{opt} -S -always-inline -mem2reg $@ -o $@",
         'CFLAGS' => "-emit-llvm",
-        'LINK_SO' => "mx -v -p #{ENV['SULONG_HOME']} su-link -o $@ -l #{ENV['OPENSSL_LIB']} -l #{ENV['LIBXML_LIB']} $(OBJS)",
+        'LINK_SO' => "mx -v -p #{ENV['SULONG_HOME']} su-link -o $@ $(OBJS)",
         'TRY_LINK' => "#{clang} $(src) $(INCFLAGS) $(CFLAGS) -I#{ENV['SULONG_HOME']}/include $(LIBS)"
     })
     
