@@ -104,7 +104,7 @@ module RbConfig
         'CC' => cc,
         'CPP' => cpp,
         'COMPILE_C' => "$(CC) $(INCFLAGS) $(CPPFLAGS) $(CFLAGS) $(COUTFLAG)$< -o $@ && #{opt} -S -always-inline -mem2reg $@ -o $@",
-        'CFLAGS' => "  -emit-llvm -Wall -Wextra -Wno-unused-parameter -Wno-parentheses -Wno-long-long -Wno-missing-field-initializers -Wunused-variable -Wpointer-arith -Wwrite-strings -Wdeclaration-after-statement -Wshorten-64-to-32 -Wimplicit-function-declaration -Wdivision-by-zero -Wdeprecated-declarations -Wextra-tokens ",
+        'CFLAGS' => "  -emit-llvm -Wall -Wextra -Wno-unused-parameter -Wno-parentheses -Wno-long-long -Wno-missing-field-initializers -Wunused-variable -Wpointer-arith -Wwrite-strings -Wdeclaration-after-statement -Wshorten-64-to-32 -Wimplicit-function-declaration -Wdivision-by-zero -Wdeprecated-declarations -Wextra-tokens",
         'LINK_SO' => "mx -v -p #{ENV['SULONG_HOME']} su-link -o $@ -l #{ENV['OPENSSL_LIB']} -l #{ENV['LIBXML_LIB']} $(OBJS)",
         'TRY_LINK' => "#{clang} $(src) $(INCFLAGS) $(CFLAGS) -I#{ENV['SULONG_HOME']}/include $(LIBS)"
     })
