@@ -778,7 +778,7 @@ public class ArgumentProcessor {
 
     private static void checkProperties() {
         for (String propertyName : System.getProperties().stringPropertyNames()) {
-            if (propertyName.startsWith("jruby.")) {
+            if (propertyName.startsWith("jruby.") && !propertyName.startsWith("jruby.truffle.")) {
                 if (!isPropertySupported(propertyName)) {
                     System.err.println("jruby: warning: unknown property " + propertyName);
                 }

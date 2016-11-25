@@ -1,0 +1,2 @@
+ARGUMENTS                   arguments                  String[]     []          "Foo bar baz"
+EXCEPTIONS_PRINT_JAVA       exceptions.print_java      boolean      false       "Foo baz bar"

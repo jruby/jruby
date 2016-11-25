@@ -46,6 +46,8 @@ import org.jruby.truffle.language.loader.SourceLoader;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.objects.shared.SharedObjects;
+import org.jruby.truffle.options.NewOptions;
+import org.jruby.truffle.options.OptionsBuilder;
 import org.jruby.truffle.platform.NativePlatform;
 import org.jruby.truffle.platform.NativePlatformFactory;
 import org.jruby.truffle.stdlib.CoverageManager;
@@ -65,6 +67,8 @@ import java.security.CodeSource;
 public class RubyContext extends ExecutionContext {
 
     private final TruffleLanguage.Env env;
+
+    private final NewOptions newOptions;
 
     private final RubyInstanceConfig instanceConfig;
     private final String jrubyHome;
@@ -111,6 +115,12 @@ public class RubyContext extends ExecutionContext {
     public RubyContext(RubyInstanceConfig instanceConfig, TruffleLanguage.Env env) {
         this.instanceConfig = instanceConfig;
         this.env = env;
+
+        final OptionsBuilder optionsBuilder = new OptionsBuilder();
+        optionsBuilder.set(env.getConfig());
+        optionsBuilder.set(System.getProperties());
+        newOptions = optionsBuilder.build();
+
         this.jrubyHome = setupJRubyHome();
         this.currentDirectory = System.getProperty("user.dir");
 
@@ -462,5 +472,9 @@ public class RubyContext extends ExecutionContext {
 
     public void setSyntaxCheckInputStream(InputStream syntaxCheckInputStream) {
         this.syntaxCheckInputStream = syntaxCheckInputStream;
+    }
+
+    public NewOptions getNewOptions() {
+        return newOptions;
     }
 }

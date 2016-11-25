@@ -33,7 +33,7 @@ import static org.jruby.util.cli.Options.TRUFFLE_DISPATCH_CACHE;
 import static org.jruby.util.cli.Options.TRUFFLE_ENCODING_COMPATIBLE_QUERY_CACHE;
 import static org.jruby.util.cli.Options.TRUFFLE_ENCODING_LOADED_CLASSES_CACHE;
 import static org.jruby.util.cli.Options.TRUFFLE_EVAL_CACHE;
-import static org.jruby.util.cli.Options.TRUFFLE_EXCEPTIONS_PRINT_JAVA;
+//import static org.jruby.util.cli.Options.TRUFFLE_EXCEPTIONS_PRINT_JAVA;
 import static org.jruby.util.cli.Options.TRUFFLE_EXCEPTIONS_PRINT_UNCAUGHT_JAVA;
 import static org.jruby.util.cli.Options.TRUFFLE_EXCEPTIONS_STORE_JAVA;
 import static org.jruby.util.cli.Options.TRUFFLE_HASH_PACKED_ARRAY_MAX;
@@ -159,7 +159,7 @@ public class Options {
 
     public final int INSTRUMENTATION_SERVER_PORT = TRUFFLE_INSTRUMENTATION_SERVER_PORT.load();
     public final boolean EXCEPTIONS_STORE_JAVA = TRUFFLE_EXCEPTIONS_STORE_JAVA.load();
-    public final boolean EXCEPTIONS_PRINT_JAVA = TRUFFLE_EXCEPTIONS_PRINT_JAVA.load();
+    //public final boolean EXCEPTIONS_PRINT_JAVA = TRUFFLE_EXCEPTIONS_PRINT_JAVA.load();
     public final boolean EXCEPTIONS_PRINT_UNCAUGHT_JAVA = TRUFFLE_EXCEPTIONS_PRINT_UNCAUGHT_JAVA.load();
     public final boolean BACKTRACES_HIDE_CORE_FILES = TRUFFLE_BACKTRACES_HIDE_CORE_FILES.load();
     public final boolean BACKTRACES_INTERLEAVE_JAVA = TRUFFLE_BACKTRACES_INTERLEAVE_JAVA.load();

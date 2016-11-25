@@ -74,7 +74,7 @@ public class ExceptionTranslatingNode extends RubyNode {
 
     @TruffleBoundary
     private DynamicObject translate(ArithmeticException exception) {
-        if (getContext().getOptions().EXCEPTIONS_PRINT_JAVA) {
+        if (getContext().getNewOptions().EXCEPTIONS_PRINT_JAVA) {
             exception.printStackTrace();
         }
 
@@ -83,7 +83,7 @@ public class ExceptionTranslatingNode extends RubyNode {
 
     @TruffleBoundary
     private DynamicObject translate(StackOverflowError error) {
-        if (getContext().getOptions().EXCEPTIONS_PRINT_JAVA) {
+        if (getContext().getNewOptions().EXCEPTIONS_PRINT_JAVA) {
             error.printStackTrace();
         }
 
@@ -92,7 +92,7 @@ public class ExceptionTranslatingNode extends RubyNode {
 
     @TruffleBoundary
     private DynamicObject translate(IllegalArgumentException exception) {
-        if (getContext().getOptions().EXCEPTIONS_PRINT_JAVA) {
+        if (getContext().getNewOptions().EXCEPTIONS_PRINT_JAVA) {
             exception.printStackTrace();
         }
 
@@ -107,7 +107,7 @@ public class ExceptionTranslatingNode extends RubyNode {
 
     @TruffleBoundary
     private DynamicObject translate(UnsupportedSpecializationException exception) {
-        if (getContext().getOptions().EXCEPTIONS_PRINT_JAVA) {
+        if (getContext().getNewOptions().EXCEPTIONS_PRINT_JAVA) {
             exception.printStackTrace();
         }
 
@@ -175,7 +175,7 @@ public class ExceptionTranslatingNode extends RubyNode {
 
     @TruffleBoundary
     public DynamicObject translate(Throwable throwable) {
-        if (getContext().getOptions().EXCEPTIONS_PRINT_JAVA
+        if (getContext().getNewOptions().EXCEPTIONS_PRINT_JAVA
                 || getContext().getOptions().EXCEPTIONS_PRINT_UNCAUGHT_JAVA) {
             throwable.printStackTrace();
         }
