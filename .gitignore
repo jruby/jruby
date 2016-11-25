@@ -16,6 +16,11 @@
 *.tokens
 *.su
 *.ll
+*.bc
+extconf.h
+mkmf.log
+Makefile
+cext-output.txt
 
 .DS_Store
 .debug.properties
