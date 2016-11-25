@@ -2587,7 +2587,11 @@ public class BodyTranslator extends Translator {
     @Override
     public RubyNode visitOpAsgnConstDeclNode(OpAsgnConstDeclParseNode node) {
         // TODO (eregon, 7 Nov. 2016): Is there any semantic difference?
-        return visitOpAsgnOrNode(new OpAsgnOrParseNode(node.getPosition(), node.getFirstNode(), node.getSecondNode()));
+        if ("&&".equals(node.getOperator())) {
+            return visitOpAsgnAndNode(new OpAsgnAndParseNode(node.getPosition(), node.getFirstNode(), node.getSecondNode()));
+        } else {
+            return visitOpAsgnOrNode(new OpAsgnOrParseNode(node.getPosition(), node.getFirstNode(), node.getSecondNode()));
+        }
     }
 
     @Override
