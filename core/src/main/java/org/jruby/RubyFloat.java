@@ -814,11 +814,29 @@ public class RubyFloat extends RubyNumeric {
     /** floor
      *
      */
-    @JRubyMethod(name = "floor")
-    @Override
-    public IRubyObject floor() {
-        return dbl2num(getRuntime(), Math.floor(value));
-    }
+     @Override
+     public IRubyObject floor() {
+         return dbl2num(getRuntime(), Math.floor(value));
+     }
+
+     @JRubyMethod(name = "floor", optional = 1)
+     public IRubyObject floor(ThreadContext context, IRubyObject[] args) {
+         if (args.length == 0) return floor();
+
+         double digits = num2long(args[0]);
+         double magnifier = Math.pow(10.0, Math.abs(digits));
+         double reducer   = Math.pow(10.0, -Math.abs(digits));
+
+         if (digits > 0) {
+           return RubyFloat.newFloat(context.runtime, Math.floor(value * magnifier) / magnifier);
+         }
+
+         if (digits < 0) {
+           return dbl2num(context.runtime, Math.floor(value * reducer) * magnifier);
+         }
+
+         return dbl2num(context.runtime, Math.floor(value));
+     }
 
     /** flo_ceil
      *
