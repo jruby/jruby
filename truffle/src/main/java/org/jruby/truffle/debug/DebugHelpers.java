@@ -18,7 +18,7 @@ import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.source.Source;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.RubyLanguage;
 import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.loader.CodeLoader;
@@ -63,7 +63,7 @@ public abstract class DebugHelpers {
             evalFrame.setObject(evalFrame.getFrameDescriptor().findOrAddFrameSlot(arguments[n]), arguments[n + 1]);
         }
 
-        final Source source = Source.fromText(StringOperations.createByteList(code), "debug-eval");
+        final Source source = Source.newBuilder(code).name("debug-eval").mimeType(RubyLanguage.MIME_TYPE).build();
 
         final RubyRootNode rootNode = context.getCodeLoader().parse(
                 source,
