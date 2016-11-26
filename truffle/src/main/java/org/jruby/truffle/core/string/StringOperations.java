@@ -58,11 +58,6 @@ public abstract class StringOperations {
         return Layouts.STRING.createString(context.getCoreLibrary().getStringFactory(), ropeFromByteList(bytes, CodeRange.CR_UNKNOWN));
     }
 
-    /** Creates a String from the ByteList, with 7-bit CR */
-    public static DynamicObject create7BitString(RubyContext context, ByteList bytes) {
-        return Layouts.STRING.createString(context.getCoreLibrary().getStringFactory(), ropeFromByteList(bytes, CodeRange.CR_7BIT));
-    }
-
     public static DynamicObject createString(RubyContext context, Rope rope) {
         return Layouts.STRING.createString(context.getCoreLibrary().getStringFactory(), rope);
     }
@@ -157,11 +152,6 @@ public abstract class StringOperations {
     public static Rope ropeFromByteList(ByteList byteList, int codeRange) {
         // TODO (nirvdrum 08-Jan-16) We need to make a copy of the ByteList's bytes for now to be safe, but we should be able to use the unsafe bytes as we move forward.
         return RopeOperations.create(byteList.bytes(), byteList.getEncoding(), CodeRange.fromInt(codeRange));
-    }
-
-    @TruffleBoundary
-    public static ByteList createByteList(CharSequence s) {
-        return ByteListUtils.create(s);
     }
 
     public static Rope rope(DynamicObject string) {
