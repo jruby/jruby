@@ -9,10 +9,13 @@
  */
 package org.jruby.truffle.core.string;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jcodings.Encoding;
 import org.jruby.truffle.core.encoding.EncodingNodes;
+import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.language.RubyGuards;
+import org.jruby.truffle.util.StringUtils;
 import org.jruby.util.ByteList;
 import org.jruby.util.CodeRangeable;
 
@@ -29,7 +32,7 @@ public class StringCodeRangeableWrapper implements CodeRangeable {
 
     @Override
     public int getCodeRange() {
-        return StringOperations.getCodeRange(string).toInt();
+        return StringOperations.codeRange(string).toInt();
     }
 
     @Override
@@ -44,17 +47,25 @@ public class StringCodeRangeableWrapper implements CodeRangeable {
 
     @Override
     public void setCodeRange(int newCodeRange) {
-        StringOperations.setCodeRange(string, newCodeRange);
+        // TODO (nirvdrum 07-Jan-16) Code range is now stored in the rope and ropes are immutable -- all calls to this method are suspect.
+        final int existingCodeRange = getCodeRange();
+
+        if (existingCodeRange != newCodeRange) {
+            CompilerDirectives.transferToInterpreterAndInvalidate();
+            throw new RuntimeException(StringUtils.format("Tried changing the code range value for a rope from %d to %d", existingCodeRange, newCodeRange));
+        }
     }
 
     @Override
     public final void clearCodeRange() {
-        StringOperations.clearCodeRange(string);
+        setCodeRange(CodeRange.CR_UNKNOWN.toInt());
     }
 
     @Override
     public final void keepCodeRange() {
-        StringOperations.keepCodeRange(string);
+        if (StringOperations.codeRange(string) == CodeRange.CR_BROKEN) {
+            setCodeRange(CodeRange.CR_UNKNOWN.toInt());
+        }
     }
 
     @Override
@@ -69,7 +80,9 @@ public class StringCodeRangeableWrapper implements CodeRangeable {
 
     @Override
     public final void modifyAndKeepCodeRange() {
-        StringOperations.keepCodeRange(string);
+        if (StringOperations.codeRange(string) == CodeRange.CR_BROKEN) {
+            setCodeRange(CodeRange.CR_UNKNOWN.toInt());
+        }
     }
 
     @Override

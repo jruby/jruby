@@ -6,9 +6,8 @@
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
 #
-#
 # Copyright (C) 1993-2013 Yukihiro Matsumoto. All rights reserved.
-
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
 # are met:
@@ -86,27 +85,40 @@ module RbConfig
       'ruby_install_name' => 'jruby-truffle',
       'RUBY_SO_NAME' => '$(RUBY_BASE_NAME)',
       'hdrdir' => "#{jruby_home}/lib/ruby/truffle/cext",
-      'bindir' => "#{jruby_home}/bin"
+      'bindir' => bindir
   }
 
   if Truffle::Safe.memory_safe? && Truffle::Safe.processes_safe?
+    if ENV['USE_SYSTEM_CLANG']
+      clang = 'clang'
+      opt = 'opt'
+    else
+      clang = "mx -p #{ENV['SULONG_HOME']} su-clang"
+      opt = "mx -p #{ENV['SULONG_HOME']} su-opt"
+    end
+    
+    cc = "#{clang} -I#{ENV['SULONG_HOME']}/include -S"
+    cpp = "#{clang} -I#{ENV['SULONG_HOME']}/include -S"
+    
     MAKEFILE_CONFIG.merge!({
-        'COMPILE_C' => "$(CC) $(INCFLAGS) $(CPPFLAGS) $(CFLAGS) $(COUTFLAG)$< -o $@ && mx -p #{ENV['SULONG_HOME']} su-opt -S -always-inline -mem2reg $@ -o $@",
-        'CC' => "mx -p #{ENV['SULONG_HOME']} su-clang -I#{ENV['SULONG_HOME']}/include -S",
-        'CFLAGS' => "  -emit-llvm -I#{ENV['OPENSSL_HOME']}/include -DHAVE_OPENSSL_110_THREADING_API -DHAVE_HMAC_CTX_COPY -DHAVE_EVP_CIPHER_CTX_COPY -DHAVE_BN_RAND_RANGE -DHAVE_BN_PSEUDO_RAND_RANGE -DHAVE_X509V3_EXT_NCONF_NID -Wall -Wextra -Wno-unused-parameter -Wno-parentheses -Wno-long-long -Wno-missing-field-initializers -Wunused-variable -Wpointer-arith -Wwrite-strings -Wdeclaration-after-statement -Wshorten-64-to-32 -Wimplicit-function-declaration -Wdivision-by-zero -Wdeprecated-declarations -Wextra-tokens ",
-        'LINK_SO' => "mx -v -p #{ENV['SULONG_HOME']} su-link -o $@ -l #{ENV['OPENSSL_HOME']}/lib/libssl.dylib $(OBJS)",
-        'TRY_LINK' => "mx -p #{ENV['SULONG_HOME']} su-clang $(src) $(INCFLAGS) $(CFLAGS) -I#{ENV['SULONG_HOME']}/include $(LIBS)",
-        'CPP' => "mx -p #{ENV['SULONG_HOME']} su-clang -I#{ENV['SULONG_HOME']}/include -S"
+        'CC' => cc,
+        'CPP' => cpp,
+        'COMPILE_C' => "$(CC) $(INCFLAGS) $(CPPFLAGS) $(CFLAGS) $(COUTFLAG)$< -o $@ && #{opt} -S -always-inline -mem2reg $@ -o $@",
+        'CFLAGS' => "-emit-llvm",
+        'LINK_SO' => "mx -v -p #{ENV['SULONG_HOME']} su-link -o $@ $(OBJS)",
+        'TRY_LINK' => "#{clang} $(src) $(INCFLAGS) $(CFLAGS) -I#{ENV['SULONG_HOME']}/include $(LIBS)"
     })
+    
     CONFIG.merge!({
-        'CC' => "mx -p #{ENV['SULONG_HOME']} su-clang -I#{ENV['SULONG_HOME']}/include -S",
-        'CPP' => "mx -p #{ENV['SULONG_HOME']} su-clang -I#{ENV['SULONG_HOME']}/include -S"
+        'CC' => cc,
+        'CPP' => cpp
     })
   end
 
   def self.ruby
     # TODO (eregon, 30 Sep 2016): should be the one used by the launcher!
-    File.join CONFIG['bindir'], CONFIG['ruby_install_name'], CONFIG['exeext']
+    jruby_truffle = CONFIG['ruby_install_name'] + CONFIG['exeext']
+    File.join CONFIG['bindir'], jruby_truffle
   end
 
   def RbConfig::expand(val, config = CONFIG)

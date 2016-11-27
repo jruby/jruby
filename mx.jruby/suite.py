@@ -26,7 +26,7 @@ def mavenLib(mavenDep, sha1, sourceSha1, license):
     }
 
 suite = {
-    "mxversion": "5.51.3",
+    "mxversion": "5.59.0",
     "name": "jrubytruffle",
 
     "imports": {
@@ -34,7 +34,7 @@ suite = {
             {
                 "name": "truffle",
                 # Must be the same as in truffle/pom.rb (except for the -SNAPSHOT part only in pom.rb, and there we can use a release name)
-                "version": "d5ad21241e5452bdb7a1ea2623db72b63712098f",
+                "version": "332a893bdbc0cc4386da2067bd4fcfdcb168e6fc",
                 "urls": [
                     {"url": "https://github.com/graalvm/truffle.git", "kind": "git"},
                     {"url": "https://curio.ssw.jku.at/nexus/content/repositories/snapshots", "kind": "binary"},
@@ -95,7 +95,7 @@ suite = {
         "jruby-core": {
             "class": "JRubyCoreMavenProject",
             "sourceDirs": [ "core/src/main/java" ],
-            "watch": [ "core/src" ],
+            "watch": [ "core/src", "core/pom.rb" ],
             "jar": "lib/jruby.jar",
             "license": [ "EPL-1.0", "BSD-new", "BSD-simplified", "MIT", "Apache-2.0" ],
         },

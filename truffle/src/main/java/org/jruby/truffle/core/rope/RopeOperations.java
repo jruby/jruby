@@ -21,7 +21,6 @@
  */
 package org.jruby.truffle.core.rope;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jcodings.Encoding;
@@ -33,7 +32,6 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.encoding.EncodingManager;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyGuards;
-import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.util.StringUtils;
 import org.jruby.util.ByteList;
 import org.jruby.util.Memo;
@@ -56,6 +54,7 @@ public class RopeOperations {
 
     private static final ConcurrentHashMap<Encoding, Charset> encodingToCharsetMap = new ConcurrentHashMap<>();
 
+    @TruffleBoundary
     public static LeafRope create(byte[] bytes, Encoding encoding, CodeRange codeRange) {
         if (bytes.length == 1) {
             final int index = bytes[0] & 0xff;
@@ -89,12 +88,12 @@ public class RopeOperations {
             case CR_VALID: return new ValidLeafRope(bytes, encoding, characterLength);
             case CR_BROKEN: return new InvalidLeafRope(bytes, encoding);
             default: {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
                 throw new RuntimeException(StringUtils.format("Unknown code range type: %d", codeRange));
             }
         }
     }
 
+    @TruffleBoundary
     public static Rope withEncodingVerySlow(Rope originalRope, Encoding newEncoding, CodeRange newCodeRange) {
         if ((originalRope.getEncoding() == newEncoding) && (originalRope.getCodeRange() == newCodeRange)) {
             return originalRope;
@@ -120,7 +119,6 @@ public class RopeOperations {
         return decode(UTF8, rope.getBytes(), 0, rope.byteLength());
     }
 
-    @TruffleBoundary
     public static String decodeUTF8(byte[] bytes, int offset, int byteLength) {
         return decode(UTF8, bytes, offset, byteLength);
     }
@@ -598,21 +596,6 @@ public class RopeOperations {
         // If we get this far, one must be CR_7BIT and the other must be CR_VALID, so promote to the more general code range.
 
         return CR_VALID;
-    }
-
-    @TruffleBoundary
-    public static int codePoint(RubyContext context, Rope rope, int start) {
-        byte[] bytes = rope.getBytes();
-        int p = start;
-        int end = rope.byteLength();
-        Encoding enc = rope.getEncoding();
-
-        assert p < end : "empty string";
-        int cl = StringSupport.preciseLength(enc, bytes, p, end);
-        if (cl <= 0) {
-            throw new RaiseException(context.getCoreExceptions().argumentError("invalid byte sequence in " + enc, null));
-        }
-        return enc.mbcToCode(bytes, p, end);
     }
 
 }

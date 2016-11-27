@@ -66,7 +66,7 @@ public class AttrAssignParseNode extends ParseNode implements INameNode, IArgume
      * Accept for the visitor pattern.
      * @param visitor the visitor
      **/
-    public Object accept(NodeVisitor visitor) {
+    public <T> T accept(NodeVisitor<T> visitor) {
         return visitor.visitAttrAssignNode(this);
     }
 

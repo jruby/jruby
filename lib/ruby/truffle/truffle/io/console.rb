@@ -57,14 +57,14 @@ class IO
 
   def raw(*)
     saved = stty('-g')
-    stty('raw')
+    stty('raw -echo')
     yield self
   ensure
     stty(saved)
   end
 
   def raw!(*)
-    stty('raw')
+    stty('raw -echo')
   end
 
   def cooked(*)

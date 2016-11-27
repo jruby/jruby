@@ -14,6 +14,7 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.source.Source;
+import org.jruby.truffle.Log;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.RubyLanguage;
 import org.jruby.truffle.core.array.ArrayOperations;
@@ -151,6 +152,10 @@ public class FeatureLoader {
     @TruffleBoundary
     private CallTarget getCExtLibRuby(String feature) {
         final String path = context.getJRubyHome() + "/lib/ruby/truffle/cext/ruby.su";
+
+        if (context.getOptions().CEXTS_LOG_LOAD) {
+            Log.info("loading cext implementation %s", path);
+        }
 
         if (!new File(path).exists()) {
             throw new RaiseException(context.getCoreExceptions().loadError("This JRuby distribution does not have the C extension implementation file ruby.su", feature, null));

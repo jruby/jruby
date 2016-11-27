@@ -46,7 +46,7 @@ module ExecJS
         if Truffle::Interop.boxed?(value)
           value
         else
-          JSON.parse(Truffle::Interop.unbox(STRINGIFY.call(STRINGIFY, value)))
+          JSON.parse(Truffle::Interop.from_java_string(STRINGIFY.call(STRINGIFY, value)))
         end
       end
 

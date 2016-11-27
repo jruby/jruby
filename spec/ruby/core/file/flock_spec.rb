@@ -71,8 +71,10 @@ describe "File#flock" do
       f2.flock(File::LOCK_UN).should == 0
     end
   end
+end
 
-  platform_is :solaris, :java do
+platform_is :solaris, :java do
+  describe "File#flock on Solaris or Java" do
     before :each do
       @read_file = File.open @name, "r"
       @write_file = File.open @name, "w"

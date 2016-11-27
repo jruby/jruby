@@ -30,7 +30,6 @@ JDEBUG = "-J-agentlib:jdwp=transport=dt_socket,server=y,address=#{JDEBUG_PORT},s
 JDEBUG_TEST = "-Dmaven.surefire.debug=-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=#{JDEBUG_PORT} -Xnoagent -Djava.compiler=NONE"
 JEXCEPTION = "-Xtruffle.exceptions.print_java=true"
 METRICS_REPS = 10
-CEXTC_CONF_FILE = '.jruby-cext-build.yml'
 
 VERBOSE = ENV.include? 'V'
 
@@ -120,10 +119,10 @@ module Utilities
       javacmd = vm_args.shift
       if Dir.exist?("#{graal_home}/mx.sulong")
         sulong_dependencies = "#{graal_home}/lib/*"
-        sulong_jar = "#{graal_home}/build/sulong.jar"
+        sulong_jars = ["#{graal_home}/build/sulong.jar", "#{graal_home}/build/sulong_options.jar"]
         nfi_classes = File.expand_path('../graal-core/mxbuild/graal/com.oracle.nfi/bin', graal_home)
         vm_args << '-cp'
-        vm_args << [nfi_classes, sulong_dependencies, sulong_jar].join(':')
+        vm_args << [nfi_classes, sulong_dependencies, *sulong_jars].join(':')
         vm_args << '-XX:-UseJVMCIClassLoader'
       end
       options = []
@@ -455,6 +454,7 @@ module Commands
       jt rebuild                                     clean and build
       jt run [options] args...                       run JRuby with -X+T and args
           --graal         use Graal (set either GRAALVM_BIN or GRAAL_HOME)
+              --stress    stress the compiler (compile immediately, foreground compilation, compilation exceptions are fatal)
           --js            add Graal.js to the classpath (set GRAAL_JS_JAR)
           --asm           show assembly (implies --graal)
           --server        run an instrumentation server on port 8080
@@ -484,7 +484,7 @@ module Commands
       jt test bundle                                 tests using bundler
       jt test gems                                   tests using gems
       jt test ecosystem [TESTS]                      tests using the wider ecosystem such as bundler, Rails, etc
-      jt test cexts [--no-libxml --no-openssl --no-argon2]       run C extension tests
+      jt test cexts [--no-libxml --no-openssl]       run C extension tests
                                                          (implies --graal, where Graal needs to include Sulong, set SULONG_HOME to a built checkout of Sulong, and set GEM_HOME)
       jt test report :language                       build a report on language specs
                      :core                               (results go into test/target/mspec-html-report)
@@ -545,7 +545,7 @@ module Commands
       mvn env, *maven_options, '-pl', 'truffle', 'package'
     when 'cexts'
       no_openssl = options.delete('--no-openssl')
-      cextc "#{JRUBY_DIR}/truffle/src/main/c/cext"
+      build_ruby_su
       unless no_openssl
         cextc "#{JRUBY_DIR}/truffle/src/main/c/openssl"
       end
@@ -588,6 +588,7 @@ module Commands
 
     {
       '--asm' => '--graal',
+      '--stress' => '--graal',
       '--igv' => '--graal',
       '--trace' => '--graal',
     }.each_pair do |arg, dep|
@@ -609,6 +610,12 @@ module Commands
       end
     else
       jruby_args << '-Xtruffle.graal.warn_unless=false'
+    end
+
+    if args.delete('--stress')
+      jruby_args << '-J-Dgraal.TruffleCompileImmediately=true'
+      jruby_args << '-J-Dgraal.TruffleBackgroundCompilation=false'
+      jruby_args << '-J-Dgraal.TruffleCompilationExceptionsAreFatal=true'
     end
 
     if args.delete('--js')
@@ -690,7 +697,7 @@ module Commands
     e 'p begin', *args, 'end'
   end
 
-  def cextc(cext_dir, *clang_opts)
+  def build_ruby_su(cext_dir=nil)
     abort "You need to set SULONG_HOME" unless SULONG_HOME
 
     # Ensure ruby.su is up-to-date
@@ -702,62 +709,42 @@ module Commands
       puts "Compiling outdated ruby.su"
       cextc ruby_cext_api
     end
+  end
+  private :build_ruby_su
 
-    config_file = File.join(cext_dir, CEXTC_CONF_FILE)
-    unless File.exist?(config_file)
-      abort "There is no #{CEXTC_CONF_FILE} in #{cext_dir} at the moment - I don't know how to build it"
+  def cextc(cext_dir, test_gem=false, *clang_opts)
+    build_ruby_su(cext_dir)
+
+    is_ruby = cext_dir == "#{JRUBY_DIR}/truffle/src/main/c/cext"
+    gem_name = if is_ruby
+                 "ruby"
+               else
+                 File.basename(cext_dir)
+               end
+
+    gem_dir = if cext_dir.start_with?("#{JRUBY_DIR}/truffle/src/main/c")
+                cext_dir
+              elsif test_gem
+                "#{JRUBY_DIR}/test/truffle/cexts/#{gem_name}/ext/#{gem_name}/"
+              elsif cext_dir.start_with?(JRUBY_DIR)
+                Dir.glob(ENV['GEM_HOME'] + "/gems/#{gem_name}*/")[0] + "ext/#{gem_name}/"
+              else
+                cext_dir + "/ext/#{gem_name}/"
+              end
+    copy_target = if is_ruby
+                    "#{JRUBY_DIR}/lib/ruby/truffle/cext/ruby.su"
+                  elsif cext_dir == "#{JRUBY_DIR}/truffle/src/main/c/openssl"
+                    "#{JRUBY_DIR}/truffle/src/main/c/openssl/openssl.su"
+                  else
+                    "#{JRUBY_DIR}/test/truffle/cexts/#{gem_name}/lib/#{gem_name}/#{gem_name}.su"
+                  end
+
+    Dir.chdir(gem_dir) do
+      STDERR.puts "in #{gem_dir}..."
+      run("extconf.rb")
+      raw_sh("make")
+      FileUtils.copy_file("#{gem_name}.su", copy_target)
     end
-
-    config = YAML.load_file(config_file)
-    config_src = config['src']
-
-    src = replace_env_vars(config['src'])
-    # Expand relative to the cext directory
-    src = File.expand_path(src, cext_dir)
-    src_files = Dir[src].sort
-    raise "No source files found in #{src}!" if src_files.empty?
-
-    config_cflags = config['cflags'] || ''
-    config_cflags = replace_env_vars(config_cflags)
-    config_cflags = config_cflags.split
-    # Expand include paths
-    config_cflags.map! { |cflag|
-      if cflag.start_with? '-I'
-        inc = File.expand_path(cflag[2..-1], cext_dir)
-        "-I#{inc}"
-      else
-        cflag
-      end
-    }
-
-    out = File.expand_path(config['out'], cext_dir)
-
-    lls = []
-
-    src_files.each do |src|
-      ll = File.join(File.dirname(out), File.basename(src, '.*') + '.ll')
-
-      clang "-I#{SULONG_HOME}/include", '-Ilib/ruby/truffle/cext', '-S', '-emit-llvm', *config_cflags, *clang_opts, src, '-o', ll
-      llvm_opt '-S', '-always-inline', '-mem2reg', ll, '-o', ll
-
-      lls.push ll
-    end
-
-    config_libs = config['libs'] || ''
-    config_libs = replace_env_vars(config_libs)
-    config_libs = config_libs.split(' ')
-
-    if MAC
-      config_libs.each do |lib|
-        if lib.include?('.so')
-          lib['.so'] = '.dylib'
-        end
-      end
-    end
-
-    config_libs = config_libs.flat_map { |l| ['-l', l] }
-
-    sulong_link '-o', out, *config_libs, *lls
   end
 
   def test(*args)
@@ -833,7 +820,6 @@ module Commands
   def test_cexts(*args)
     no_libxml = args.delete('--no-libxml')
     no_openssl = args.delete('--no-openssl')
-    no_argon2 = args.delete('--no-argon2')
 
     # Test that we can compile and run some basic C code that uses libxml and openssl
 
@@ -871,7 +857,7 @@ module Commands
         next if gem_name == 'xml' && no_libxml
         next if gem_name == 'xopenssl' && no_openssl
         dir = "#{JRUBY_DIR}/test/truffle/cexts/#{gem_name}"
-        cextc dir
+        cextc dir, true
         name = File.basename(dir)
         next if gem_name == 'globals' # globals is excluded just for running
         run '--graal', "-I#{dir}/lib", "#{dir}/bin/#{name}", :out => output_file
@@ -885,28 +871,25 @@ module Commands
 
     # Test that we can compile and run some real C extensions
 
-    tests = [
-        ['oily_png', ['chunky_png-1.3.6', 'oily_png-1.2.0'], ['oily_png']],
-        ['psd_native', ['chunky_png-1.3.6', 'oily_png-1.2.0', 'bindata-2.3.1', 'hashie-3.4.4', 'psd-enginedata-1.1.1', 'psd-2.1.2', 'psd_native-1.1.3'], ['oily_png', 'psd_native']],
-        ['nokogiri', [], ['nokogiri']]
-    ]
-    
-    unless no_argon2
-      tests.push ['ruby-argon2', [], [], "#{ENV['GEM_HOME']}/bundler/gems/ruby-argon2-bd3fb1e056cf"]
-    end
+    if ENV['GEM_HOME']
+      tests = [
+          ['oily_png', ['chunky_png-1.3.6', 'oily_png-1.2.0'], ['oily_png']],
+          ['psd_native', ['chunky_png-1.3.6', 'oily_png-1.2.0', 'bindata-2.3.1', 'hashie-3.4.4', 'psd-enginedata-1.1.1', 'psd-2.1.2', 'psd_native-1.1.3'], ['oily_png', 'psd_native']],
+          ['nokogiri', [], ['nokogiri']]
+      ]
 
-    tests.each do |gem_name, dependencies, libs, gem_root|
-      next if gem_name == 'nokogiri' # nokogiri totally excluded
-      next if gem_name == 'nokogiri' && no_libxml
-      unless gem_root and File.exist?(File.join(gem_root, CEXTC_CONF_FILE))
+      tests.each do |gem_name, dependencies, libs, gem_root|
+        next if gem_name == 'nokogiri' # nokogiri totally excluded
+        next if gem_name == 'nokogiri' && no_libxml
         gem_root = "#{JRUBY_DIR}/test/truffle/cexts/#{gem_name}"
+        cextc gem_root, false, '-Werror=implicit-function-declaration'
+
+        next if gem_name == 'psd_native' # psd_native is excluded just for running
+        run '--graal',
+          *dependencies.map { |d| "-I#{ENV['GEM_HOME']}/gems/#{d}/lib" },
+          *libs.map { |l| "-I#{JRUBY_DIR}/test/truffle/cexts/#{l}/lib" },
+          "#{JRUBY_DIR}/test/truffle/cexts/#{gem_name}/test.rb", gem_root
       end
-      cextc gem_root, '-Werror=implicit-function-declaration'
-      next if gem_name == 'psd_native' # psd_native is excluded just for running
-      run '--graal',
-        *dependencies.map { |d| "-I#{ENV['GEM_HOME']}/gems/#{d}/lib" },
-        *libs.map { |l| "-I#{JRUBY_DIR}/test/truffle/cexts/#{l}/lib" },
-        "#{JRUBY_DIR}/test/truffle/cexts/#{gem_name}/test.rb", gem_root
     end
   end
   private :test_cexts

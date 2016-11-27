@@ -25,7 +25,7 @@ public class ComplexParseNode extends NumericParseNode implements SideEffectFree
     }
 
     @Override
-    public Object accept(NodeVisitor visitor) {
+    public <T> T accept(NodeVisitor<T> visitor) {
        return visitor.visitComplexNode(this);
     }
 

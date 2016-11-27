@@ -9,7 +9,6 @@
  */
 package org.jruby.truffle.core.rope;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
 
@@ -62,9 +61,7 @@ public class LazyIntRope extends LazyRope {
     @Override
     public Rope withEncoding(Encoding newEncoding, CodeRange newCodeRange) {
         if (newCodeRange != getCodeRange()) {
-            CompilerDirectives.transferToInterpreterAndInvalidate();
-            throw new UnsupportedOperationException(
-                    "Cannot fast-path updating encoding with different code range.");
+            throw new UnsupportedOperationException("Cannot fast-path updating encoding with different code range.");
         }
 
         return new LazyIntRope(value, newEncoding, length(value));

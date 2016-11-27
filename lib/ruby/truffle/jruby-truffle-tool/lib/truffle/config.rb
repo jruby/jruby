@@ -174,11 +174,11 @@ def exclusion_file(gem_name)
   data.pretty_inspect
 end
 
-def exclusions_for(name)
+def exclusions_for(name, ignore_missing: false)
   { setup: { file: { 'excluded-tests.rb' => format(dedent(<<-RUBY), exclusion_file(name)) } } }
     failures = %s
     require 'truffle/exclude_rspec_examples'
-    Truffle::Tool.exclude_rspec_examples failures
+    Truffle::Tool.exclude_rspec_examples failures, ignore_missing: #{!!ignore_missing}
   RUBY
 end
 
@@ -194,7 +194,8 @@ Truffle::Tool.add_config :activesupport,
                          deep_merge(
                              rails_common,
                              stubs.fetch(:activesupport_isolation),
-                             replacements.fetch(:method_source))
+                             replacements.fetch(:method_source),
+                             exclusions_for(:activesupport))
 
 Truffle::Tool.add_config :activemodel,
                          deep_merge(
@@ -242,9 +243,20 @@ Truffle::Tool.add_config :openweather,
 Truffle::Tool.add_config :psd,
                          replacements.fetch(:nokogiri)
 
+Truffle::Tool.add_config :actionview,
+                         deep_merge(rails_common,
+                                    exclusions_for(:actionview, ignore_missing: true),
+                                    stubs.fetch(:html_sanitizer))
 
 class Truffle::Tool::CIEnvironment
-  def rails_ci(has_exclusions: false, skip_test_files: [])
+  def rails_ci(has_exclusions: false, skip_test_files: [], require_pattern: 'test/**/*_test.rb')
+    rails_ci_setup has_exclusions: has_exclusions
+    set_result rails_ci_run has_exclusions:  has_exclusions,
+                            skip_test_files: skip_test_files,
+                            require_pattern: require_pattern
+  end
+
+  def rails_ci_setup(has_exclusions: false)
     options           = {}
     options[:debug]   = ['-d', '--[no-]debug', 'Run tests with remote debugging enabled.', STORE_NEW_VALUE, false]
     options[:exclude] = ['--[no-]exclusion', 'Exclude known failing tests', STORE_NEW_VALUE, true] if has_exclusions
@@ -255,11 +267,14 @@ class Truffle::Tool::CIEnvironment
     use_only_https_git_paths!
 
     has_to_succeed setup
-    set_result run([*(['--exclude-pattern', *skip_test_files.join('|')] unless skip_test_files.empty?),
-                    *%w[--require-pattern test/**/*_test.rb],
-                    *(%w[-r excluded-tests] if has_exclusions && option(:exclude)),
-                    *(%w[--debug] if option(:debug)),
-                    *%w[-- -I test -e nil]])
+  end
+
+  def rails_ci_run(has_exclusions: false, skip_test_files: [], require_pattern: 'test/**/*_test.rb')
+    run([*(['--exclude-pattern', *skip_test_files.join('|')] unless skip_test_files.empty?),
+         '--require-pattern', require_pattern,
+         *(%w[-r excluded-tests] if has_exclusions && option(:exclude)),
+         *(%w[--debug] if option(:debug)),
+         *%w[-- -I test -e nil]])
   end
 end
 
@@ -275,7 +290,7 @@ end
 
 Truffle::Tool.add_ci_definition :activesupport do
   subdir 'activesupport'
-  rails_ci
+  rails_ci has_exclusions: true
 end
 
 Truffle::Tool.add_ci_definition :railties do
@@ -333,4 +348,20 @@ Truffle::Tool.add_ci_definition :algebrick do
   has_to_succeed setup
 
   set_result run(%w[test/algebrick_test.rb])
+end
+
+Truffle::Tool.add_ci_definition :actionview do
+  subdir 'actionview'
+  rails_ci_setup(has_exclusions: true)
+  results = [
+      rails_ci_run(has_exclusions:  true,
+                   require_pattern: 'test/template/**/*_test.rb'),
+      rails_ci_run(has_exclusions:  true,
+                   require_pattern: 'test/actionpack/**/*_test.rb')
+  # TODO (pitr-ch 17-Nov-2016): requires ActiveRecord connection to database to run, uses sqlite
+  # rails_ci_run(has_exclusions:  true,
+  #              require_pattern: 'test/activerecord/*_test.rb')
+  ]
+
+  set_result results.all?
 end

@@ -59,7 +59,7 @@ public class DSymbolParseNode extends DParseNode {
     }
 
     @Override
-    public Object accept(NodeVisitor visitor) {
+    public <T> T accept(NodeVisitor<T> visitor) {
         return visitor.visitDSymbolNode(this);
     }
 }

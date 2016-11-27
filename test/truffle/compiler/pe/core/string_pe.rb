@@ -34,9 +34,6 @@ example "x = 'abc'; x == x.b", true
 example "'abc'.ascii_only?", true
 example "'こにちわ'.ascii_only?", false
 
-example "''.ascii?", false
-example "'abc'.ascii?", true
-
 example "'abc'.valid_encoding?", true
 example "'こにちわ'.valid_encoding?", true
 

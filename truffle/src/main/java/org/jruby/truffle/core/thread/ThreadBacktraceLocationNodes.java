@@ -41,9 +41,6 @@ public class ThreadBacktraceLocationNodes {
 
             final SourceSection sourceSection = activation.getCallNode().getEncapsulatingSourceSection();
             final Source source = sourceSection.getSource();
-            if (source == null) {
-                return coreStrings().UNKNOWN.createInstance();
-            }
 
             // Get absolute path
             final String path = source.getPath();
@@ -71,9 +68,6 @@ public class ThreadBacktraceLocationNodes {
 
             final SourceSection sourceSection = activation.getCallNode().getEncapsulatingSourceSection();
             final Source source = sourceSection.getSource();
-            if (source == null) {
-                return coreStrings().UNKNOWN.createInstance();
-            }
 
             // Get file path except for the main script
             final String path = source.getName();
@@ -134,10 +128,6 @@ public class ThreadBacktraceLocationNodes {
             final RootNode rootNode = callNode.getRootNode();
 
             final SourceSection sourceSection = callNode.getEncapsulatingSourceSection();
-
-            if (sourceSection.getSource() == null) {
-                return createString(StringOperations.encodeRope(String.format("%s:%d", sourceSection.getSource().getName(), sourceSection.getStartLine()), UTF8Encoding.INSTANCE));
-            }
 
             return createString(RopeOperations.format(getContext(),
                     sourceSection.getSource().getName(),

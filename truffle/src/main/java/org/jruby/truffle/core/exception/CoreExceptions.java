@@ -258,6 +258,11 @@ public class CoreExceptions {
     // IndexError
 
     @TruffleBoundary
+    public DynamicObject indexErrorOutOfString(int index, Node currentNode) {
+        return indexError(StringUtils.format("index %d out of string", index), currentNode);
+    }
+
+    @TruffleBoundary
     public DynamicObject indexError(String message, Node currentNode) {
         return ExceptionOperations.createRubyException(
                 context.getCoreLibrary().getIndexErrorClass(),
@@ -768,6 +773,11 @@ public class CoreExceptions {
     @TruffleBoundary
     public DynamicObject encodingCompatibilityErrorIncompatible(Encoding a, Encoding b, Node currentNode) {
         return encodingCompatibilityError(StringUtils.format("incompatible character encodings: %s and %s", a, b), currentNode);
+    }
+
+    @TruffleBoundary
+    public DynamicObject encodingCompatibilityErrorIncompatibleWithOperation(Encoding encoding, Node currentNode) {
+        return encodingCompatibilityError(StringUtils.format("incompatible encoding with this operation: %s", encoding), currentNode);
     }
 
     @TruffleBoundary

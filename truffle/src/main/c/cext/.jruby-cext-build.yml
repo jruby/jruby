@@ -1,3 +1,0 @@
-src: ./*.c
-out: ../../../../../lib/ruby/truffle/cext/ruby.su
-cflags: -Wall -Werror

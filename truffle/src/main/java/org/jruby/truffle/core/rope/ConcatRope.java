@@ -9,7 +9,6 @@
  */
 package org.jruby.truffle.core.rope;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import org.jcodings.Encoding;
 
@@ -38,7 +37,6 @@ public class ConcatRope extends Rope {
     @Override
     public Rope withEncoding(Encoding newEncoding, CodeRange newCodeRange) {
         if (newCodeRange != getCodeRange()) {
-            CompilerDirectives.transferToInterpreterAndInvalidate();
             throw new UnsupportedOperationException("Cannot fast-path updating encoding with different code range.");
         }
 

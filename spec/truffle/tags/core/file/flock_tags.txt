@@ -1,5 +1,11 @@
 fails:File#flock blocks if trying to lock an exclusively locked file
 fails:File#flock returns 0 if trying to lock a non-exclusively locked file
-fails:File#flock fails with EBADF acquiring exclusive lock on read-only File
-fails:File#flock fails with EBADF acquiring shared lock on read-only File
+fails:File#flock on Solaris or Java fails with EBADF acquiring exclusive lock on read-only File
+fails:File#flock on Solaris or Java fails with EBADF acquiring shared lock on read-only File
 slow:File#flock returns false if trying to lock an exclusively locked file
+solaris:File#flock exclusively locks a file
+solaris:File#flock non-exclusively locks a file
+solaris:File#flock blocks if trying to lock an exclusively locked file
+solaris:File#flock returns 0 if trying to lock a non-exclusively locked file
+solaris:File#flock on Solaris or Java fails with EBADF acquiring exclusive lock on read-only File
+solaris:File#flock on Solaris or Java fails with EBADF acquiring shared lock on read-only File

@@ -14,6 +14,8 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.NodeFactory;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
+import com.oracle.truffle.api.nodes.NodeUtil;
+
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreMethodNodeManager;
 import org.jruby.truffle.core.array.ArrayUtils;
@@ -37,6 +39,8 @@ public class InlinedCoreMethodNode extends RubyNode {
     @Child LookupMethodNode lookupMethodNode;
     @Child RubyNode receiverNode;
     @Children final RubyNode[] argumentNodes;
+
+    private RubyCallNode replacedBy = null;
 
     public InlinedCoreMethodNode(RubyCallNodeParameters callNodeParameters, InternalMethod method, InlinableBuiltin builtin) {
         super(callNodeParameters.getContext(), callNodeParameters.getSection());
@@ -83,13 +87,24 @@ public class InlinedCoreMethodNode extends RubyNode {
 
     private RubyCallNode rewriteToCallNode() {
         CompilerDirectives.transferToInterpreterAndInvalidate();
-        RubyCallNode callNode = new RubyCallNode(callNodeParameters);
-        return replace(callNode, method.getName() + " was redefined");
+        return atomic(() -> {
+            // Check if we are still in the AST
+            boolean found = !NodeUtil.forEachChild(getParent(), node -> node != this);
+
+            if (found) {
+                // We need to pass the updated children of this node to the call node
+                RubyCallNode callNode = new RubyCallNode(callNodeParameters.withReceiverAndArguments(receiverNode, argumentNodes, callNodeParameters.getBlock()));
+                replacedBy = callNode;
+                return replace(callNode, method.getName() + " could not be executed inline");
+            } else {
+                return replacedBy;
+            }
+        });
     }
 
     public static InlinedCoreMethodNode inlineBuiltin(RubyCallNodeParameters callParameters, InternalMethod method, NodeFactory<? extends InlinableBuiltin> builtinFactory) {
         final RubyContext context = callParameters.getContext();
-        // Let arguments to null as we need to execute self once to lookup resolves the same method
+        // Let arguments to null as we need to execute the receiver ourselves to lookup the method
         final List<RubyNode> arguments = Arrays.asList(new RubyNode[1 + callParameters.getArguments().length]);
         final InlinableBuiltin builtinNode = CoreMethodNodeManager.createNodeFromFactory(context, callParameters.getSection(), builtinFactory, arguments);
 

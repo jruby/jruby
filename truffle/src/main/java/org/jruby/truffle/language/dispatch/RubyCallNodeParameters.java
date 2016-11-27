@@ -50,6 +50,10 @@ public class RubyCallNodeParameters {
         this.isAttrAssign = isAttrAssign;
     }
 
+    public RubyCallNodeParameters withReceiverAndArguments(RubyNode receiver, RubyNode[] arguments, RubyNode block) {
+        return new RubyCallNodeParameters(context, section, receiver, methodName, block, arguments, isSplatted, ignoreVisibility, isVCall, isSafeNavigation, isAttrAssign);
+    }
+
     public RubyContext getContext() {
         return context;
     }

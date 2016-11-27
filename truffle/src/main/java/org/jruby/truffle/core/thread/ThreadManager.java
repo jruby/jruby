@@ -21,7 +21,7 @@ import org.jruby.truffle.core.InterruptMode;
 import org.jruby.truffle.core.fiber.FiberManager;
 import org.jruby.truffle.core.fiber.FiberNodes;
 import org.jruby.truffle.core.proc.ProcOperations;
-import org.jruby.truffle.language.Options;
+import org.jruby.truffle.Options;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.SafepointAction;
 import org.jruby.truffle.language.SafepointManager;
@@ -30,6 +30,7 @@ import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.control.ReturnException;
 import org.jruby.truffle.language.control.ThreadExitException;
 import org.jruby.truffle.language.objects.shared.SharedObjects;
+import org.jruby.truffle.util.SourceSectionUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -98,7 +99,7 @@ public class ThreadManager {
         }
 
         final SourceSection sourceSection = Layouts.PROC.getSharedMethodInfo(block).getSourceSection();
-        final String info = String.format("%s:%d", sourceSection.getSource().getName(), sourceSection.getStartLine());
+        final String info = SourceSectionUtils.fileLine(sourceSection);
         initialize(thread, context, currentNode, info, () -> {
             final Object value = ProcOperations.rootCall(block, arguments);
             Layouts.THREAD.setValue(thread, value);

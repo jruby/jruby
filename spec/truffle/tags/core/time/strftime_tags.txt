@@ -1,2 +1,4 @@
 fails:Time#strftime rounds an offset to the nearest second when formatting with %z
 fails:Time#strftime with %N formats the picoseconds of the second with %12N
+fails:Time#strftime should be able to show the commercial week
+fails:Time#strftime should be able to show the timezone if available

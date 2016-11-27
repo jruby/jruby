@@ -9,6 +9,8 @@
  */
 package org.jruby.truffle.extra;
 
+import com.kenai.jffi.Platform;
+import com.kenai.jffi.Platform.OS;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Cached;
@@ -17,6 +19,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
+import com.sun.security.auth.module.UnixSystem;
 import jnr.constants.platform.Fcntl;
 import jnr.ffi.Pointer;
 import org.jcodings.specific.UTF8Encoding;
@@ -32,7 +35,6 @@ import org.jruby.truffle.core.time.GetTimeZoneNode;
 import org.jruby.truffle.extra.ffi.PointerPrimitiveNodes;
 import org.jruby.truffle.language.SnippetNode;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.platform.UnsafeGroup;
 import org.jruby.truffle.platform.signal.Signal;
 
@@ -175,25 +177,24 @@ public abstract class TrufflePosixNodes {
         @TruffleBoundary
         @Specialization(guards = "isNil(pointer)")
         public int getGroupsNil(int max, DynamicObject pointer) {
-            return getContext().getNativePlatform().getPosix().getgroups().length;
+            return getGroups().length;
         }
 
         @TruffleBoundary
         @Specialization(guards = "isRubyPointer(pointer)")
         public int getGroups(int max, DynamicObject pointer) {
-            final long[] groups = getContext().getNativePlatform().getPosix().getgroups();
-
             final Pointer pointerValue = Layouts.POINTER.getPointer(pointer);
-
-            for (int n = 0; n < groups.length && n < max; n++) {
-                // TODO CS 16-May-15 this is platform dependent
+            final long[] groups = getGroups();
+            for (int n = 0; n < groups.length; n++) {
                 pointerValue.putInt(4 * n, (int) groups[n]);
-
             }
-
             return groups.length;
         }
 
+        @TruffleBoundary
+        private static long[] getGroups() {
+            return new UnixSystem().getGroups();
+        }
     }
 
     @CoreMethod(names = "getrlimit", isModuleFunction = true, required = 2, lowerFixnum = 1, unsafe = {UnsafeGroup.PROCESSES, UnsafeGroup.MEMORY})
@@ -513,22 +514,30 @@ public abstract class TrufflePosixNodes {
 
     }
 
-    @CoreMethod(names = "major", isModuleFunction = true, required = 1, lowerFixnum = 1, unsafe = UnsafeGroup.IO)
+    @CoreMethod(names = "major", isModuleFunction = true, required = 1, unsafe = UnsafeGroup.IO)
     public abstract static class MajorNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
-        public int major(int dev) {
-            return (dev >> 24) & 255;
-        }
+        public int major(long dev) {
+            if (Platform.getPlatform().getOS() == OS.SOLARIS) {
+                return (int) (dev >> 32); // Solaris has major number in the upper 32 bits.
+            } else {
+                return (int) ((dev >> 24) & 0xff);
 
+            }
+        }
     }
 
-    @CoreMethod(names = "minor", isModuleFunction = true, required = 1, lowerFixnum = 1, unsafe = UnsafeGroup.IO)
+    @CoreMethod(names = "minor", isModuleFunction = true, required = 1, unsafe = UnsafeGroup.IO)
     public abstract static class MinorNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
-        public int minor(int dev) {
-            return (dev & 16777215);
+        public int minor(long dev) {
+            if (Platform.getPlatform().getOS() == OS.SOLARIS) {
+                return (int) dev; // Solaris has minor number in the lower 32 bits.
+            } else {
+                return (int) (dev & 0xffffff);
+            }
         }
 
     }

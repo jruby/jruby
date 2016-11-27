@@ -1,1 +1,6 @@
-require_relative '../../../stdlib/rdoc/' + File.basename(__FILE__)
+##
+# GhostMethod represents a method referenced only by a comment
+
+class RDoc::GhostMethod < RDoc::AnyMethod
+end
+

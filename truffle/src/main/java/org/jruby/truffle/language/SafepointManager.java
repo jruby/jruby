@@ -92,7 +92,6 @@ public class SafepointManager {
 
         if (!interruptible) {
             Thread.currentThread().interrupt(); // keep the interrupt flag
-            System.err.println("re-interrupting " + thread);
             return; // interrupt me later
         }
 

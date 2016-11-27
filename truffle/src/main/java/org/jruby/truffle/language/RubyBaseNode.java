@@ -33,7 +33,6 @@ import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.CoreStrings;
 import org.jruby.truffle.core.string.StringOperations;
-import org.jruby.truffle.extra.AttachmentsManager;
 import org.jruby.truffle.platform.posix.Sockets;
 import org.jruby.truffle.platform.posix.TrufflePosix;
 import org.jruby.truffle.stdlib.CoverageManager;
@@ -178,6 +177,7 @@ public abstract class RubyBaseNode extends Node {
             while (true) {
                 if (parent == null) {
                     context = RubyContext.getInstance();
+                    break;
                 }
 
                 if (parent instanceof RubyBaseNode) {
@@ -284,8 +284,7 @@ public abstract class RubyBaseNode extends Node {
             return isCall();
         }
 
-        if (tag == AttachmentsManager.LineTag.class
-                || tag == TraceManager.LineTag.class
+        if (tag == TraceManager.LineTag.class
                 || tag == CoverageManager.LineTag.class
                 || tag == StandardTags.StatementTag.class) {
             return isNewLine();

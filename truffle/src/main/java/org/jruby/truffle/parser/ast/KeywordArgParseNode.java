@@ -22,7 +22,7 @@ public class KeywordArgParseNode extends ParseNode {
     }
 
     @Override
-    public Object accept(NodeVisitor visitor) {
+    public <T> T accept(NodeVisitor<T> visitor) {
         return visitor.visitKeywordArgNode(this);
     }
 

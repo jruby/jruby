@@ -16,12 +16,14 @@ import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.FrameDescriptor;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
+import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.RootNode;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.runtime.Visibility;
+import org.jruby.truffle.Options;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.RubyLanguage;
 import org.jruby.truffle.language.arguments.RubyArguments;
@@ -36,6 +38,8 @@ public class LazyRubyRootNode extends RootNode implements InternalRootNode {
 
     private final Source source;
     private final String[] argumentNames;
+
+    @Child private Node findContextNode = RubyLanguage.INSTANCE.unprotectedCreateFindContextNode();
 
     @CompilationFinal private RubyContext cachedContext;
     @CompilationFinal private DynamicObject mainObject;
@@ -52,7 +56,7 @@ public class LazyRubyRootNode extends RootNode implements InternalRootNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        final RubyContext context = RubyContext.getInstance();
+        final RubyContext context = RubyLanguage.INSTANCE.unprotectedFindContext(findContextNode);
 
         if (cachedContext == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();

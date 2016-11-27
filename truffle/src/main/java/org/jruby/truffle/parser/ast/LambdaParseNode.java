@@ -55,7 +55,7 @@ public class LambdaParseNode extends IterParseNode {
     }
 
     @Override
-    public Object accept(NodeVisitor visitor) {
+    public <T> T accept(NodeVisitor<T> visitor) {
         return visitor.visitLambdaNode(this);
     }
 

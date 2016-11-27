@@ -380,10 +380,20 @@ public abstract class ModuleNodes {
             final Arity arity = isGetter ? Arity.NO_ARGUMENTS : Arity.ONE_REQUIRED;
             final String ivar = "@" + name;
             final String accessorName = isGetter ? name : name + "=";
-            final String indicativeName = name + "(attr_" + (isGetter ? "reader" : "writer") + ")";
 
             final RubyNode checkArity = Translator.createCheckArityNode(getContext(), sourceSection.getSource(), rubySourceSection, arity);
-            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, LexicalScope.NONE, arity, indicativeName, false, null, false, false, false);
+
+            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(
+                    sourceSection,
+                    LexicalScope.NONE,
+                    arity,
+                    module,
+                    accessorName,
+                    "attr_" + (isGetter ? "reader" : "writer"),
+                    null,
+                    false,
+                    false,
+                    false);
 
             final RubyNode self = new ProfileArgumentNode(new ReadSelfNode());
             final RubyNode accessInstanceVariable;

@@ -318,6 +318,8 @@ public class Options {
     public static final Option<Boolean> TRUFFLE_SHARED_OBJECTS_FORCE = bool(TRUFFLE, "truffle.shared.objects.force", false, "Force sharing of objects roots at startup.");
     public static final Option<Boolean> TRUFFLE_SHARED_OBJECTS_SHARE_ALL = bool(TRUFFLE, "truffle.shared.objects.share_all", false, "Consider all objects as shared.");
 
+    public static final Option<Boolean> TRUFFLE_CEXTS_LOG_LOAD = bool(TRUFFLE, "truffle.cexts.log.load", false, "Log loading of cexts.");
+
     public static String dump() {
         return "# JRuby configuration options with current values\n" +
                 Option.formatValues(_loadedOptions);

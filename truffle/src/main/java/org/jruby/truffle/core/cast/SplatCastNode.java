@@ -22,6 +22,7 @@ import org.jruby.truffle.core.array.ArrayDupNode;
 import org.jruby.truffle.core.array.ArrayDupNodeGen;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SnippetNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
@@ -45,8 +46,6 @@ public abstract class SplatCastNode extends RubyNode {
     private final DynamicObject conversionMethod;
 
     @Child private ArrayDupNode dup;
-    @Child private CallDispatchHeadNode respondToToA;
-    @Child private BooleanCastNode respondToCast;
     @Child private CallDispatchHeadNode toA;
 
     public SplatCastNode(RubyContext context, SourceSection sourceSection, NilBehavior nilBehavior, boolean useToAry) {
@@ -54,8 +53,6 @@ public abstract class SplatCastNode extends RubyNode {
         this.nilBehavior = nilBehavior;
         // Calling private #to_a is allowed for the *splat operator.
         dup = ArrayDupNodeGen.create(context, sourceSection, null);
-        respondToToA = DispatchHeadNodeFactory.createMethodCall(context, true, MissingBehavior.RETURN_MISSING);
-        respondToCast = BooleanCastNodeGen.create(null);
         toA = DispatchHeadNodeFactory.createMethodCall(context, true, MissingBehavior.RETURN_MISSING);
         String name = useToAry ? "to_ary" : "to_a";
         conversionMethod = context.getSymbolTable().getSymbol(name);
@@ -91,25 +88,20 @@ public abstract class SplatCastNode extends RubyNode {
         return dup.executeDup(frame, array);
     }
 
-    @Specialization(guards = { "!isNil(object)", "!isRubyArray(object)" })
+    @Specialization(guards = {"!isNil(object)", "!isRubyArray(object)"})
     public DynamicObject splat(VirtualFrame frame, Object object,
-            @Cached("create()") BranchProfile errorProfile) {
-        // MRI tries to call dynamic respond_to? here.
-        Object respondToResult = respondToToA.call(frame, object, "respond_to?", conversionMethod, true);
-        if (respondToResult != DispatchNode.MISSING && respondToCast.executeBoolean(frame, respondToResult)) {
-            final Object array = toA.call(frame, object, conversionMethod);
-
-            if (RubyGuards.isRubyArray(array)) {
-                return (DynamicObject) array;
-            } else if (array == nil() || array == DispatchNode.MISSING) {
-                return createArray(new Object[] { object }, 1);
-            } else {
-                errorProfile.enter();
-                throw new RaiseException(coreExceptions().typeErrorCantConvertTo(object, "Array", Layouts.SYMBOL.getString(conversionMethod), array, this));
-            }
+                               @Cached("create()") BranchProfile errorProfile, @Cached("new()") SnippetNode snippetNode) {
+        final Object array = snippetNode.execute(frame, "Rubinius::Type.rb_check_convert_type(v, Array, method)",
+            "v", object, "method", conversionMethod);
+        if (RubyGuards.isRubyArray(array)) {
+            return (DynamicObject) array;
+        } else if (array == nil()) {
+            return createArray(new Object[]{object}, 1);
+        } else {
+            errorProfile.enter();
+            throw new RaiseException(coreExceptions().typeErrorCantConvertTo(object, "Array",
+                Layouts.SYMBOL.getString(conversionMethod), array, this));
         }
-
-        return createArray(new Object[] { object }, 1);
     }
 
 }

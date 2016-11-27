@@ -10,7 +10,6 @@
 
 package org.jruby.truffle.core.rope;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import org.jcodings.Encoding;
 
 public class ValidLeafRope extends LeafRope {
@@ -22,7 +21,6 @@ public class ValidLeafRope extends LeafRope {
     @Override
     public Rope withEncoding(Encoding newEncoding, CodeRange newCodeRange) {
         if (newCodeRange != getCodeRange()) {
-            CompilerDirectives.transferToInterpreterAndInvalidate();
             throw new UnsupportedOperationException("Cannot fast-path updating encoding with different code range.");
         }
 
