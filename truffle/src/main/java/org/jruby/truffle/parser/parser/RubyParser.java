@@ -3664,7 +3664,7 @@ states[460] = new ParserState() {
 };
 states[461] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = support.newRegexpNode(support.getPosition(((ParseNode)yyVals[-1+yyTop])), ((ParseNode)yyVals[-1+yyTop]), (RegexpParseNode) ((RegexpParseNode)yyVals[0+yyTop]));
+                    yyVal = support.newRegexpNode(support.getPosition(((ParseNode)yyVals[-1+yyTop])), ((ParseNode)yyVals[-1+yyTop]), ((RegexpParseNode)yyVals[0+yyTop]));
     return yyVal;
   }
 };
@@ -4024,7 +4024,7 @@ states[519] = new ParserState() {
 };
 states[520] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-      yyVal = new FileParseNode(lexer.getPosition(), new ByteList(lexer.getFile().getBytes(),
+                    yyVal = new FileParseNode(lexer.getPosition(), new ByteList(lexer.getFile().getBytes(),
                     support.getConfiguration().getContext().getEncodingManager().getLocaleEncoding()));
     return yyVal;
   }
