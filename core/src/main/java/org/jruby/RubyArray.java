@@ -129,14 +129,14 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     }
 
     protected final void concurrentModification() {
-        concurrentModification(getRuntime(), null);
+        throw concurrentModification(getRuntime(), null);
     }
 
-    private static void concurrentModification(Ruby runtime, Exception cause) {
+    private static RuntimeException concurrentModification(Ruby runtime, Exception cause) {
         RuntimeException ex = runtime.newConcurrencyError("Detected invalid array contents due to unsynchronized modifications with concurrent users");
         // NOTE: probably not useful to be on except for debugging :
         // if ( cause != null ) ex.initCause(cause);
-        throw ex;
+        return ex;
     }
 
     /** rb_ary_s_create
@@ -694,7 +694,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
                     fill(values, begin, begin + ilen, arg1);
                 }
             } catch (ArrayIndexOutOfBoundsException ex) {
-                concurrentModification(runtime, ex);
+                throw concurrentModification(runtime, ex);
             }
             realLength = ilen;
         }
@@ -845,8 +845,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         try {
             return eltInternal((int)offset);
         } catch (ArrayIndexOutOfBoundsException ex) {
-            concurrentModification(getRuntime(), ex);
-            return null; // not reached
+            throw concurrentModification(getRuntime(), ex);
         }
     }
 
@@ -858,8 +857,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         try {
             return eltInternalSet(offset, value);
         } catch (ArrayIndexOutOfBoundsException ex) {
-            concurrentModification(getRuntime(), ex);
-            return null; // not reached
+            throw concurrentModification(getRuntime(), ex);
         }
     }
 
@@ -976,7 +974,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
             try {
                 Helpers.fillNil(values, begin + realLength, begin + ((int) beg), getRuntime());
             } catch (ArrayIndexOutOfBoundsException e) {
-                concurrentModification();
+                throw concurrentModification(getRuntime(), e);
             }
             realLength = (int) len;
         } else {
@@ -1371,7 +1369,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
                 if (newLength < ARRAY_DEFAULT_SIZE) newLength = ARRAY_DEFAULT_SIZE;
 
                 newLength += valuesLength;
-                IRubyObject[]vals = new IRubyObject[newLength];
+                IRubyObject[] vals = new IRubyObject[newLength];
                 safeArrayCopy(values, begin, vals, 1, valuesLength);
                 Helpers.fillNil(vals, valuesLength + 1, newLength, getRuntime());
                 values = vals;
@@ -1858,7 +1856,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
                 result.append19(eltInternal(i));
             }
         } catch (ArrayIndexOutOfBoundsException e) {
-            concurrentModification();
+            throw concurrentModification(getRuntime(), e);
         }
 
         return result;
@@ -2070,7 +2068,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
                 }
             }
         } catch (ArrayIndexOutOfBoundsException e) {
-            concurrentModification();
+            throw concurrentModification(getRuntime(), e);
         }
 
         p -= begin;
@@ -2121,7 +2119,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
                 begin = 0;
                 Helpers.fillNil(values, 0, realLength, getRuntime());
             } catch (ArrayIndexOutOfBoundsException e) {
-                concurrentModification();
+                throw concurrentModification(getRuntime(), e);
             }
         }
 
@@ -2216,7 +2214,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
             try {
                 fill(values, begin + beg, begin + end, item);
             } catch (ArrayIndexOutOfBoundsException ex) {
-                concurrentModification(context.runtime, ex);
+                throw concurrentModification(context.runtime, ex);
             }
         }
 
@@ -2425,7 +2423,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
                 }
             }
         } catch (ArrayIndexOutOfBoundsException e) {
-            concurrentModification();
+            throw concurrentModification(getRuntime(), e);
         }
         return this;
     }
@@ -2457,7 +2455,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
                 vals[length - i - 1] = myValues[myBegin + i];
             }
         } catch (ArrayIndexOutOfBoundsException e) {
-            concurrentModification();
+            throw concurrentModification(getRuntime(), e);
         }
         return new RubyArray(getRuntime(), getMetaClass(), vals);
     }
@@ -2652,7 +2650,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
                 if (i2 << 1 < valuesLength && valuesLength > ARRAY_DEFAULT_SIZE) realloc(i2 << 1, valuesLength);
             }
         } catch (ArrayIndexOutOfBoundsException ex) {
-            concurrentModification(context.runtime, ex);
+            throw concurrentModification(context.runtime, ex);
         }
 
         return value;
@@ -2688,7 +2686,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
             System.arraycopy(values, begin + pos + 1, values, begin + pos, len - (pos + 1));
             values[begin + len - 1] = getRuntime().getNil();
         } catch (ArrayIndexOutOfBoundsException e) {
-            concurrentModification();
+            throw concurrentModification(getRuntime(), e);
         }
         realLength--;
 
@@ -2760,7 +2758,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
                 try {
                     Helpers.fillNil(values, beg + i2, beg + i1, runtime);
                 } catch (ArrayIndexOutOfBoundsException ex) {
-                    concurrentModification(runtime, ex);
+                    throw concurrentModification(runtime, ex);
                 }
             }
         }
@@ -2862,7 +2860,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
                 result[i] = newArrayMayCopy(runtime, tmp);
             }
         } catch (ArrayIndexOutOfBoundsException ex) {
-            concurrentModification(context.runtime, ex);
+            throw concurrentModification(runtime, ex);
         }
         return newArrayMayCopy(runtime, result);
     }
@@ -3066,7 +3064,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
                 ary = (RubyArray) stack.pop(context);
             }
         } catch (ArrayIndexOutOfBoundsException ex) {
-            concurrentModification(context.runtime, ex);
+            throw concurrentModification(context.runtime, ex);
         }
         return modified;
     }
@@ -3210,7 +3208,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
             copyInto(z.values, 0);
             y.copyInto(z.values, realLength);
         } catch (ArrayIndexOutOfBoundsException e) {
-            concurrentModification();
+            throw concurrentModification(runtime, e);
         }
         z.realLength = len;
         return z;
@@ -3245,7 +3243,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
                 copyInto(ary2.values, i);
             }
         } catch (ArrayIndexOutOfBoundsException e) {
-            concurrentModification();
+            throw concurrentModification(runtime, e);
         }
 
         ary2.infectBy(this);
@@ -3341,7 +3339,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
                 if (hash.fastDelete(v)) result.values[j++] = v;
             }
         } catch (ArrayIndexOutOfBoundsException ex) {
-            concurrentModification(context.runtime, ex);
+            throw concurrentModification(context.runtime, ex);
         }
         result.realLength = j;
         return result;
@@ -3362,8 +3360,9 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
      */
     @JRubyMethod(name = "-", required = 1)
     public IRubyObject op_diff(IRubyObject other) {
+        Ruby runtime = getRuntime();
         RubyHash hash = other.convertToArray().makeHash();
-        RubyArray ary3 = newArray(getRuntime());
+        RubyArray ary3 = newArray(runtime);
 
         try {
             for (int i = 0; i < realLength; i++) {
@@ -3371,10 +3370,10 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
                 if (hash.fastARef(value) != null) continue;
                 ary3.append(value);
             }
-        } catch (ArrayIndexOutOfBoundsException aioob) {
-            concurrentModification();
+        } catch (ArrayIndexOutOfBoundsException e) {
+            throw concurrentModification(runtime, e);
         }
-        Helpers.fillNil(ary3.values, ary3.realLength, ary3.values.length, getRuntime());
+        Helpers.fillNil(ary3.values, ary3.realLength, ary3.values.length, runtime);
 
         return ary3;
     }
@@ -3490,7 +3489,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
                 }
             });
         } catch (ArrayIndexOutOfBoundsException ex) {
-            concurrentModification(context.runtime, ex);
+            throw concurrentModification(context.runtime, ex);
         }
         return this;
     }
@@ -4053,7 +4052,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
                 eltSetOk(r, tmp);
             }
         } catch (ArrayIndexOutOfBoundsException ex) {
-            concurrentModification(context.runtime, ex);
+            throw concurrentModification(context.runtime, ex);
         }
 
         return this;
@@ -4181,8 +4180,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
                 return ary;
             }
         } catch (ArrayIndexOutOfBoundsException ex) {
-            concurrentModification(context.runtime, ex);
-            return this; // not reached
+            throw concurrentModification(context.runtime, ex);
         }
     }
 
@@ -4215,10 +4213,10 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
                 }
             }
         } catch (ArrayIndexOutOfBoundsException ex) {
-            concurrentModification(context.runtime, ex);
+            throw concurrentModification(context.runtime, ex);
         }
 
-        return context.runtime.getNil();
+        return context.nil;
     }
 
     private static int rotateCount(int cnt, int len) {
@@ -4240,7 +4238,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
                 System.arraycopy(ptr, begin, ptr2, len, cnt);
             }
         } catch (ArrayIndexOutOfBoundsException ex) {
-            concurrentModification(context.runtime, ex);
+            throw concurrentModification(context.runtime, ex);
         }
 
         return rotated;
@@ -4357,7 +4355,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
                 output.dumpObject(array.eltInternal(i));
             }
         } catch (ArrayIndexOutOfBoundsException ex) {
-            concurrentModification(array.getRuntime(), ex);
+            throw concurrentModification(array.getRuntime(), ex);
         }
     }
 
@@ -4414,9 +4412,8 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         RubyString iFmt = obj.convertToString();
         try {
             return Pack.pack(context, context.runtime, this, iFmt);
-        } catch (ArrayIndexOutOfBoundsException aioob) {
-            concurrentModification();
-            return null; // not reached
+        } catch (ArrayIndexOutOfBoundsException e) {
+            throw concurrentModification(context.runtime, e);
         }
     }
 
@@ -4865,8 +4862,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         try {
             return values[i];
         } catch (ArrayIndexOutOfBoundsException ex) {
-            concurrentModification(runtime, ex);
-            return null; // not reached
+            throw concurrentModification(runtime, ex);
         }
     }
 
@@ -4878,8 +4874,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         try {
             return values[i] = value;
         } catch (ArrayIndexOutOfBoundsException ex) {
-            concurrentModification(runtime, ex);
-            return null; // not reached
+            throw concurrentModification(runtime, ex);
         }
     }
 
@@ -4893,8 +4888,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
             values[i] = value;
             return tmp;
         } catch (ArrayIndexOutOfBoundsException e) {
-            concurrentModification(runtime, e);
-            return null; // not reached
+            throw concurrentModification(runtime, e);
         }
     }
 
@@ -4908,8 +4902,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
             if (doSet) values[i] = value;
             return tmp;
         } catch (ArrayIndexOutOfBoundsException ex) {
-            concurrentModification(runtime, ex);
-            return null; // not reached
+            throw concurrentModification(runtime, ex);
         }
     }
 
@@ -4921,9 +4914,8 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         try {
             System.arraycopy(source, sourceStart, target, targetStart, length);
         } catch (ArrayIndexOutOfBoundsException ex) {
-            concurrentModification(runtime, ex);
+            throw concurrentModification(runtime, ex);
         }
-        // not reached
     }
 
     private static ArraySites sites(ThreadContext context) {

@@ -81,7 +81,6 @@ import org.jruby.ast.Node;
 import org.jruby.ast.NonLocalControlFlowNode;
 import org.jruby.ast.NumericNode;
 import org.jruby.ast.OpAsgnAndNode;
-import org.jruby.ast.OpAsgnNode;
 import org.jruby.ast.OpAsgnOrNode;
 import org.jruby.ast.OptArgNode;
 import org.jruby.ast.PostExeNode;
@@ -116,13 +115,12 @@ import org.jruby.lexer.yacc.ISourcePositionHolder;
 import org.jruby.lexer.LexerSource;
 import org.jruby.lexer.yacc.RubyLexer;
 import org.jruby.lexer.yacc.StrTerm;
-import org.jruby.lexer.yacc.SyntaxException;
 import org.jruby.lexer.yacc.SyntaxException.PID;
 import org.jruby.util.ByteList;
 import org.jruby.util.KeyValuePair;
-import org.jruby.util.cli.Options;
 import org.jruby.util.StringSupport;
 import static org.jruby.lexer.LexingCommon.EXPR_BEG;
+import static org.jruby.lexer.LexingCommon.EXPR_FITEM;
 import static org.jruby.lexer.LexingCommon.EXPR_FNAME;
 import static org.jruby.lexer.LexingCommon.EXPR_ENDFN;
 import static org.jruby.lexer.LexingCommon.EXPR_ENDARG;
@@ -374,8 +372,7 @@ bodystmt      : compstmt opt_rescue opt_else opt_ensure {
                       node = support.appendToBlock($1, $3);
                   }
                   if ($4 != null) {
-                      if (node == null) node = NilImplicitNode.NIL;
-                      node = new EnsureNode(support.getPosition($1), node, $4);
+                      node = new EnsureNode(support.getPosition($1), support.makeNullNil(node), $4);
                   }
 
                   support.fixpos(node, $1);
@@ -407,11 +404,11 @@ stmt_or_begin   : stmt {
                 | kBEGIN {
                    support.yyerror("BEGIN is permitted only at toplevel");
                 } tLCURLY top_compstmt tRCURLY {
-                    $$ = new BeginNode($1, $2 == null ? NilImplicitNode.NIL : $2);
+                    $$ = new BeginNode($1, support.makeNullNil($2));
                 }
 
 stmt            : kALIAS fitem {
-                    lexer.setState(EXPR_FNAME);
+                    lexer.setState(EXPR_FNAME|EXPR_FITEM);
                 } fitem {
                     $$ = support.newAlias($1, $2, $4);
                 }
@@ -871,7 +868,7 @@ undef_list      : fitem {
                     $$ = support.newUndef($1.getPosition(), $1);
                 }
                 | undef_list ',' {
-                    lexer.setState(EXPR_FNAME);
+                    lexer.setState(EXPR_FNAME|EXPR_FITEM);
                 } fitem {
                     $$ = support.appendToBlock($1, support.newUndef($1.getPosition(), $4));
                 }
@@ -1083,14 +1080,14 @@ arg             : lhs '=' arg {
                     support.checkExpression($3);
     
                     boolean isLiteral = $1 instanceof FixnumNode && $3 instanceof FixnumNode;
-                    $$ = new DotNode(support.getPosition($1), $1, $3, false, isLiteral);
+                    $$ = new DotNode(support.getPosition($1), support.makeNullNil($1), support.makeNullNil($3), false, isLiteral);
                 }
                 | arg tDOT3 arg {
                     support.checkExpression($1);
                     support.checkExpression($3);
 
                     boolean isLiteral = $1 instanceof FixnumNode && $3 instanceof FixnumNode;
-                    $$ = new DotNode(support.getPosition($1), $1, $3, true, isLiteral);
+                    $$ = new DotNode(support.getPosition($1), support.makeNullNil($1), support.makeNullNil($3), true, isLiteral);
                 }
                 | arg tPLUS arg {
                     $$ = support.getOperatorCallNode($1, "+", $3, lexer.getPosition());
@@ -1194,7 +1191,7 @@ arg             : lhs '=' arg {
 
 arg_value       : arg {
                     support.checkExpression($1);
-                    $$ = $1 != null ? $1 : NilImplicitNode.NIL;
+                    $$ = support.makeNullNil($1);
                 }
 
 aref_args       : none
@@ -1345,7 +1342,7 @@ primary         : literal
                     lexer.getCmdArgumentState().reset();
                 } bodystmt kEND {
                     lexer.getCmdArgumentState().reset($<Long>2.longValue());
-                    $$ = new BeginNode($1, $3 == null ? NilImplicitNode.NIL : $3);
+                    $$ = new BeginNode($1, support.makeNullNil($3));
                 }
                 | tLPAREN_ARG {
                     lexer.setState(EXPR_ENDARG);
@@ -1435,7 +1432,7 @@ primary         : literal
                 } expr_value do {
                     lexer.getConditionState().end();
                 } compstmt kEND {
-                    Node body = $6 == null ? NilImplicitNode.NIL : $6;
+                    Node body = support.makeNullNil($6);
                     $$ = new WhileNode($1, support.getConditionNode($3), body);
                 }
                 | kUNTIL {
@@ -1443,7 +1440,7 @@ primary         : literal
                 } expr_value do {
                   lexer.getConditionState().end();
                 } compstmt kEND {
-                    Node body = $6 == null ? NilImplicitNode.NIL : $6;
+                    Node body = support.makeNullNil($6);
                     $$ = new UntilNode($1, support.getConditionNode($3), body);
                 }
                 | kCASE expr_value opt_terms case_body kEND {
@@ -1466,7 +1463,7 @@ primary         : literal
                     }
                     support.pushLocalScope();
                 } bodystmt kEND {
-                    Node body = $5 == null ? NilImplicitNode.NIL : $5;
+                    Node body = support.makeNullNil($5);
 
                     $$ = new ClassNode($1, $<Colon3Node>2, support.getCurrentScope(), body, $3);
                     support.popCurrentScope();
@@ -1479,7 +1476,7 @@ primary         : literal
                     support.setInSingle(0);
                     support.pushLocalScope();
                 } bodystmt kEND {
-                    Node body = $7 == null ? NilImplicitNode.NIL : $7;
+                    Node body = support.makeNullNil($7);
 
                     $$ = new SClassNode($1, $3, support.getCurrentScope(), body);
                     support.popCurrentScope();
@@ -1492,7 +1489,7 @@ primary         : literal
                     }
                     support.pushLocalScope();
                 } bodystmt kEND {
-                    Node body = $4 == null ? NilImplicitNode.NIL : $4;
+                    Node body = support.makeNullNil($4);
 
                     $$ = new ModuleNode($1, $<Colon3Node>2, support.getCurrentScope(), body);
                     support.popCurrentScope();
@@ -1503,8 +1500,7 @@ primary         : literal
                     $$ = lexer.getCurrentArg();
                     lexer.setCurrentArg(null);
                 } f_arglist bodystmt kEND {
-                    Node body = $5;
-                    if (body == null) body = NilImplicitNode.NIL;
+                    Node body = support.makeNullNil($5);
 
                     $$ = new DefnNode($1, $2, (ArgsNode) $4, support.getCurrentScope(), body, $6.getLine());
                     support.popCurrentScope();
@@ -1848,7 +1844,7 @@ opt_rescue      : kRESCUE exc_list exc_var then compstmt opt_rescue {
                     } else {
                         node = $5;
                     }
-                    Node body = node == null ? NilImplicitNode.NIL : node;
+                    Node body = support.makeNullNil(node);
                     $$ = new RescueBodyNode($1, $2, body, $6);
                 }
                 | { 

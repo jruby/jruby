@@ -1571,7 +1571,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
     // rb_reg_regsub
     static RubyString regsub19(ThreadContext context, RubyString str, RubyString src, Matcher matcher, Regex pattern) {
-        Ruby runtime = str.getRuntime();
+        Ruby runtime = context.runtime;
 
         RubyString val = null;
         int p, s, e;
@@ -1601,7 +1601,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             if (c != '\\' || s == e) continue;
 
             if (val == null) {
-                val = RubyString.newString(str.getRuntime(), new ByteList(ss - p));
+                val = RubyString.newString(runtime, new ByteList(ss - p));
             }
             EncodingUtils.encStrBufCat(runtime, val, sBytes, p, ss - p, strEnc);
 
@@ -1638,12 +1638,12 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
                         try {
                             no = pattern.nameToBackrefNumber(sBytes, name, nameEnd, regs);
                         } catch (JOniException je) {
-                            throw str.getRuntime().newIndexError(je.getMessage());
+                            throw runtime.newIndexError(je.getMessage());
                         }
                         p = s = nameEnd + clen[0];
                         break;
                     } else {
-                        throw str.getRuntime().newRuntimeError("invalid group name reference format");
+                        throw runtime.newRuntimeError("invalid group name reference format");
                     }
                 }
 
@@ -1690,17 +1690,12 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return val;
     }
 
-    final int adjustStartPos19(RubyString str, int pos, boolean reverse) {
-        return adjustStartPosInternal(str, checkEncoding(str, false), pos, reverse);
-    }
-
     final int adjustStartPos(RubyString str, int pos, boolean reverse) {
+        check();
         return adjustStartPosInternal(str, pattern.getEncoding(), pos, reverse);
     }
 
-    private final int adjustStartPosInternal(RubyString str, Encoding enc, int pos, boolean reverse) {
-        check();
-
+    private static int adjustStartPosInternal(RubyString str, Encoding enc, int pos, boolean reverse) {
         ByteList value = str.getByteList();
         int len = value.getRealSize();
         if (pos > 0 && enc.maxLength() != 1 && pos < len) {
