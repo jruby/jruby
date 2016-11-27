@@ -50,7 +50,7 @@ ruby_version_is "2.2" do
 
     it "raises an Encoding::CompatibilityError if string is not in an unicode encoding" do
       lambda do
-        "\xE0".force_encoding("ISO-8859-1").unicode_normalize(:nfd)
+        [0xE0].pack('C').force_encoding("ISO-8859-1").unicode_normalize(:nfd)
       end.should raise_error(Encoding::CompatibilityError)
     end
 
