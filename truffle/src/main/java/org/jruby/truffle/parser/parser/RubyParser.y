@@ -137,7 +137,8 @@ import static org.jruby.truffle.parser.lexer.LexingCommon.EXPR_ENDARG;
 import static org.jruby.truffle.parser.lexer.LexingCommon.EXPR_ENDFN;
 import static org.jruby.truffle.parser.lexer.LexingCommon.EXPR_FNAME;
 import static org.jruby.truffle.parser.lexer.LexingCommon.EXPR_LABEL;
- 
+
+@SuppressWarnings({"unchecked", "fallthrough"})
 public class RubyParser {
     protected final ParserSupport support;
     protected final RubyLexer lexer;
