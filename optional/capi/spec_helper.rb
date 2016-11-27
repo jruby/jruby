@@ -3,6 +3,7 @@ $extmk = false
 
 require 'rbconfig'
 require 'fileutils'
+require 'tmpdir'
 
 OBJDIR ||= File.expand_path("../../../ext/#{RUBY_NAME}/#{RUBY_VERSION}", __FILE__)
 FileUtils.makedirs(OBJDIR)
@@ -43,7 +44,7 @@ def compile_extension(name)
     require 'mkmf'
     hdrdir = $hdrdir
   elsif RUBY_NAME == 'jruby+truffle'
-    return compile_extension_jruby_truffle(name)
+    return compile_jruby_truffle_extconf_make(name, path, objdir)
   else
     raise "Don't know how to build C extensions with #{RUBY_NAME}"
   end
@@ -110,12 +111,39 @@ def compile_extension_jruby_truffle(name)
     f.puts "out: #{output_file}"
   end
 
-  system "#{RbConfig::CONFIG['bindir']}/../tool/jt.rb", 'cextc', extension_path
-  raise "Compilation of #{extension_path} failed: #{$?}" unless $?.success?
+  command = ["#{RbConfig::CONFIG['bindir']}/../tool/jt.rb", 'cextc', extension_path]
+  system(*command)
+  raise "Compilation of #{extension_path} failed: #{$?}\n#{command.join(' ')}" unless $?.success?
 
   output_file
 ensure
   File.delete(sulong_config_file) if File.exist?(sulong_config_file)
+end
+
+def compile_jruby_truffle_extconf_make(name, path, objdir)
+  ext       = "#{name}_spec"
+  file      = "#{ext}.c"
+  source    = "#{path}/#{file}"
+  lib_target = "#{objdir}/#{ext}.#{RbConfig::CONFIG['DLEXT']}"
+  temp_dir = Dir.mktmpdir
+  begin
+    copy =  "#{temp_dir}/#{file}"
+    FileUtils.cp "#{path}/rubyspec.h", temp_dir
+    FileUtils.cp "#{path}/jruby_truffle.h", temp_dir
+    FileUtils.cp source, copy
+    extconf_src = "require 'mkmf'\n" +
+                  "create_makefile('#{ext}', '#{temp_dir}')"
+    File.write("#{temp_dir}/extconf.rb", extconf_src)
+    Dir.chdir(temp_dir) do
+      system "#{RbConfig.ruby} extconf.rb"
+      system "make"                                    # run make in temp dir
+      FileUtils.cp "#{ext}.su", lib_target             # copy to .su file to library dir
+      FileUtils.cp "#{ext}.ll", objdir                 # copy to .ll file to library dir
+    end
+  ensure
+    FileUtils.remove_entry temp_dir
+  end
+  lib_target
 end
 
 def load_extension(name)

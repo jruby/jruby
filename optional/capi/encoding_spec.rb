@@ -170,7 +170,8 @@ describe "C-API Encoding function" do
 
   describe "rb_enc_str_new" do
     it "returns a String in US-ASCII encoding when high bits are set" do
-      result = @s.rb_enc_str_new("\xEE", 1, Encoding::US_ASCII)
+      xEE = [0xEE].pack('C').force_encoding('utf-8')
+      result = @s.rb_enc_str_new(xEE, 1, Encoding::US_ASCII)
       result.encoding.should equal(Encoding::US_ASCII)
     end
   end
@@ -183,7 +184,8 @@ describe "C-API Encoding function" do
       end
 
       it "returns ENC_CODERANGE_VALID if there are high bits set" do
-        result = @s.rb_enc_str_coderange("\xEE".force_encoding("ascii-8bit"))
+        xEE = [0xEE].pack('C').force_encoding('utf-8')
+        result = @s.rb_enc_str_coderange(xEE.force_encoding("ascii-8bit"))
         result.should == :coderange_valid
       end
     end
@@ -200,7 +202,7 @@ describe "C-API Encoding function" do
       end
 
       it "returns ENC_CODERANGE_BROKEN if there are high bits set in an invalid string" do
-        result = @s.rb_enc_str_coderange("\xEE".force_encoding("utf-8"))
+        result = @s.rb_enc_str_coderange([0xEE].pack('C').force_encoding("utf-8"))
         result.should == :coderange_broken
       end
     end
@@ -212,7 +214,7 @@ describe "C-API Encoding function" do
       end
 
       it "returns ENC_CODERANGE_BROKEN if there are high bits set" do
-        result = @s.rb_enc_str_coderange("\xEE".force_encoding("us-ascii"))
+        result = @s.rb_enc_str_coderange([0xEE].pack('C').force_encoding("us-ascii"))
         result.should == :coderange_broken
       end
     end
@@ -284,7 +286,7 @@ describe "C-API Encoding function" do
 
   describe "rb_enc_compatible" do
     it "returns 0 if the encodings of the Strings are not compatible" do
-      a = "\xff".force_encoding "ascii-8bit"
+      a = [0xff].pack('C').force_encoding "ascii-8bit"
       b = "\u3042".encode("utf-8")
       @s.rb_enc_compatible(a, b).should == 0
     end
@@ -448,7 +450,7 @@ describe "C-API Encoding function" do
 
     it "raises ArgumentError if an invalid byte sequence is given" do
       lambda do
-        @s.rb_enc_codepoint_len("\xa0\xa1") # Invalid sequence identifier
+        @s.rb_enc_codepoint_len([0xa0, 0xa1].pack('CC').force_encoding('utf-8')) # Invalid sequence identifier
       end.should raise_error(ArgumentError)
     end
 

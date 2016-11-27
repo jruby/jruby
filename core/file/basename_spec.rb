@@ -88,6 +88,22 @@ describe "File.basename" do
     File.basename("bar.txt.exe", ".txt.exe").should == "bar"
   end
 
+  platform_is_not :windows do
+    it "takes into consideration the platform path separator(s)" do
+      File.basename("C:\\foo\\bar").should == "C:\\foo\\bar"
+      File.basename("C:/foo/bar").should == "bar"
+      File.basename("/foo/bar\\baz").should == "bar\\baz"
+    end
+  end
+
+  platform_is :windows do
+    it "takes into consideration the platform path separator(s)" do
+      File.basename("C:\\foo\\bar").should == "bar"
+      File.basename("C:/foo/bar").should == "bar"
+      File.basename("/foo/bar\\baz").should == "baz"
+    end
+  end
+
   it "raises a TypeError if the arguments are not String types" do
     lambda { File.basename(nil)          }.should raise_error(TypeError)
     lambda { File.basename(1)            }.should raise_error(TypeError)
