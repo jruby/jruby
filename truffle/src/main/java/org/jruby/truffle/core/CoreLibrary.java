@@ -783,30 +783,36 @@ public class CoreLibrary {
                 WeakRefPrimitiveNodesFactory.getFactories()
                 );
 
-        int nFactories = factories.size();
-        int threads = 8;
-        int chunk = nFactories / threads;
+        if (context.getOptions().CORE_PARALLEL_LOAD) {
+            int nFactories = factories.size();
+            int threads = 8;
+            int chunk = nFactories / threads;
 
-        List<Callable<Void>> tasks = new ArrayList<>(threads);
-        for (int t = 0; t < threads; t++) {
-            final int nb = t;
-            tasks.add(() -> {
-                int start = nb * chunk;
-                int end = nb == threads - 1 ? nFactories : (nb + 1) * chunk;
-                for (int i = start; i < end; i++) {
-                    coreMethodNodeManager.addCoreMethodNodes(factories.get(i));
+            List<Callable<Void>> tasks = new ArrayList<>(threads);
+            for (int t = 0; t < threads; t++) {
+                final int nb = t;
+                tasks.add(() -> {
+                    int start = nb * chunk;
+                    int end = nb == threads - 1 ? nFactories : (nb + 1) * chunk;
+                    for (int i = start; i < end; i++) {
+                        coreMethodNodeManager.addCoreMethodNodes(factories.get(i));
+                    }
+                    return null;
+                });
+            }
+
+            for (Future<Void> future : ForkJoinPool.commonPool().invokeAll(tasks)) {
+                try {
+                    future.get();
+                } catch (InterruptedException e) {
+                    throw new JavaException(e);
+                } catch (ExecutionException e) {
+                    throw new JavaException(e.getCause());
                 }
-                return null;
-            });
-        }
-
-        for (Future<Void> future : ForkJoinPool.commonPool().invokeAll(tasks)) {
-            try {
-                future.get();
-            } catch (InterruptedException e) {
-                throw new JavaException(e);
-            } catch (ExecutionException e) {
-                throw new JavaException(e.getCause());
+            }
+        } else {
+            for (List<? extends NodeFactory<? extends RubyNode>> factory : factories) {
+                coreMethodNodeManager.addCoreMethodNodes(factory);
             }
         }
 
