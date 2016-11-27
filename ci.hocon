@@ -272,17 +272,13 @@ bench: {
 }
 
 post-process-and-upload-results-wait: [
-  [tool/truffle/post-process-results-json.rb, bench-results.json, bench-results-processed.json],
-  [cat, bench-results-processed.json],
-  [bench-uploader.py, bench-results-processed.json],
-  [tool/truffle/fail-if-any-failed.rb, bench-results-processed.json, --wait]
+  [bench-uploader.py, bench-results.json],
+  [tool/truffle/fail-if-any-failed.rb, bench-results.json, --wait]
 ]
 
 post-process-and-upload-results: [
-  [tool/truffle/post-process-results-json.rb, bench-results.json, bench-results-processed.json],
-  [cat, bench-results-processed.json],
-  [bench-uploader.py, bench-results-processed.json],
-  [tool/truffle/fail-if-any-failed.rb, bench-results-processed.json]
+  [bench-uploader.py, bench-results.json],
+  [tool/truffle/fail-if-any-failed.rb, bench-results.json]
 ]
 
 metrics: {
