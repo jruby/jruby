@@ -73,7 +73,13 @@ module NetHTTPSpecs
     end
 
     def stop_server
-      @server.shutdown if @server
+      if @server
+        begin
+          @server.shutdown
+        rescue Errno::EPIPE
+          # Because WEBrick is not thread-safe and only catches IOError
+        end
+      end
       if @server_thread
         ruby_version_is "2.2" do # earlier versions can stay blocked on IO.select
           @server_thread.join
