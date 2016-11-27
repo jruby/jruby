@@ -12,20 +12,31 @@ require 'json'
 result = JSON.parse(File.read(ARGV[0]))
 wait = ARGV[1] == '--wait'
 
+failures = []
+
+if File.exist?('failures')
+  failures = File.read('failures').split("\n").map { |failure| eval(failure) }
+else
+  failures = []
+end
+
 any_failed = result['queries'].any? do |q|
-  q.any? do |k, v|
-    k == 'extra.error' && v == 'failed'
+  if q['extra.error'] == 'failed'
+    failures.push [q['host-vm'], q['host-vm-config'], q['guest-vm'], q['guest-vm-config'], q['bench-suite'], q['benchmark']]
   end
 end
 
 if wait
   if any_failed
-    STDERR.puts 'some benchmark failed, waiting to return failure...'
-    File.write('failures', '')
+    STDERR.puts 'waiting to return failure...'
+    File.write('failures', failures.map(&:inspect).join("\n"))
   end
 else
   if any_failed || File.exist?('failures')
-    STDERR.puts 'some benchmark failed, returning failure'
+    STDERR.puts 'these failed:'
+    failures.each do |failure|
+      STDERR.puts failure.inspect
+    end
     exit 1
   end
 end
