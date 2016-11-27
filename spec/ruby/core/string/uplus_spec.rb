@@ -16,5 +16,9 @@ ruby_version_is "2.3" do
 
       output.equal?(input).should == true
     end
+
+    it 'returns mutable copy despite freeze-magic-comment in file' do
+      ruby_exe(fixture(__FILE__, "freeze_magic_comment.rb")).should == 'mutable'
+    end
   end
 end

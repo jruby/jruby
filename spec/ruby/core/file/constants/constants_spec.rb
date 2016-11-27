@@ -29,3 +29,15 @@ platform_is_not :windows do
     end
   end
 end
+
+ruby_version_is "2.3" do
+  platform_is :linux do
+    describe "File::TMPFILE" do
+      it "is defined" do
+        # Since Linux 3.11, does not work Travis (probably because built on a older host).
+        has_tmpfile = !ENV.key?('TRAVIS') && (`uname -r`.chomp.split('.').map(&:to_i) <=> [3,11]) >= 0
+        File.const_defined?(:TMPFILE).should == has_tmpfile
+      end
+    end
+  end
+end

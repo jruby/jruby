@@ -1,4 +1,4 @@
-# -*- encoding: us-ascii -*-
+# -*- encoding: binary -*-
 
 require File.expand_path('../../spec_helper', __FILE__)
 
@@ -200,13 +200,13 @@ describe "Ruby character strings" do
     end
 
     # TODO: spec other source encodings
-    describe "with US-ASCII source encoding" do
+    describe "with ASCII_8BIT source encoding" do
       it "produces an ASCII string when escaping ASCII characters via \\u" do
-        "\u0000".encoding.should == Encoding::US_ASCII
+        "\u0000".encoding.should == Encoding::ASCII_8BIT
       end
 
       it "produces an ASCII string when escaping ASCII characters via \\u{}" do
-        "\u{0000}".encoding.should == Encoding::US_ASCII
+        "\u{0000}".encoding.should == Encoding::ASCII_8BIT
       end
 
       it "produces a UTF-8-encoded string when escaping non-ASCII characters via \\u" do

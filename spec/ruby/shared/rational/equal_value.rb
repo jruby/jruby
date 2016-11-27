@@ -34,6 +34,6 @@ describe :rational_equal_value, shared: true do
     obj = mock("Object")
     obj.should_receive(:==).and_return(:result)
 
-    (Rational(3, 4) == obj).should == :result
+    (Rational(3, 4) == obj).should_not be_false
   end
 end
