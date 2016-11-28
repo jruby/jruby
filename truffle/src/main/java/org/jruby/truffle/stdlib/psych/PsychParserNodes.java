@@ -52,7 +52,7 @@ import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.transcode.EConv;
 import org.jcodings.transcode.EConvResult;
-import org.jcodings.transcode.TranscoderDB;
+import org.jcodings.transcode.TranscodingManager;
 import org.jcodings.unicode.UnicodeEncoding;
 import org.jruby.RubyEncoding;
 import org.jruby.runtime.Helpers;
@@ -463,7 +463,7 @@ public abstract class PsychParserNodes {
             ByteList newStr = new ByteList(len);
             int olen = len;
 
-            EConv ec = econvOpenOpts(context, fromEncoding.getName(), toEncoding.getName(), ecflags, ecopts);
+            EConv ec = econvOpenOpts(context, fromEncoding, toEncoding, ecflags, ecopts);
             if (ec == null) return str;
 
             byte[] sbytes = strByteList.getUnsafeBytes();
@@ -479,7 +479,7 @@ public abstract class PsychParserNodes {
             destbytes = newStr.getUnsafeBytes();
             int dest = newStr.begin();
             dp.p = dest + convertedOutput;
-            ret = ec.convert(sbytes, sp, start + len, destbytes, dp, dest + olen, 0);
+            ret = TranscodingManager.convert(ec, sbytes, sp, start + len, destbytes, dp, dest + olen, 0);
 
             while (ret == EConvResult.DestinationBufferFull) {
                 int convertedInput = sp.p - start;
@@ -499,7 +499,7 @@ public abstract class PsychParserNodes {
                 destbytes = newStr.getUnsafeBytes();
                 dest = newStr.begin();
                 dp.p = dest + convertedOutput;
-                ret = ec.convert(sbytes, sp, start + len, destbytes, dp, dest + olen, 0);
+                ret = TranscodingManager.convert(ec, sbytes, sp, start + len, destbytes, dp, dest + olen, 0);
             }
             ec.close();
 
@@ -516,8 +516,8 @@ public abstract class PsychParserNodes {
             }
         }
 
-        private static EConv econvOpenOpts(RubyContext context, byte[] sourceEncoding, byte[] destinationEncoding, int ecflags, Object opthash) {
-            EConv ec = TranscoderDB.open(sourceEncoding, destinationEncoding, ecflags);
+        private static EConv econvOpenOpts(RubyContext context, Encoding sourceEncoding, Encoding destinationEncoding, int ecflags, Object opthash) {
+            EConv ec = TranscodingManager.create(sourceEncoding, destinationEncoding, ecflags);
             return ec;
         }
 

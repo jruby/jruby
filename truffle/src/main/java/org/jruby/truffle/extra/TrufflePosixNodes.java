@@ -13,6 +13,7 @@ import com.kenai.jffi.Platform;
 import com.kenai.jffi.Platform.OS;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.TruffleOptions;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
@@ -193,6 +194,10 @@ public abstract class TrufflePosixNodes {
 
         @TruffleBoundary
         private static long[] getGroups() {
+            if (TruffleOptions.AOT) {
+                throw new UnsupportedOperationException("UnixSystem is not supported with AOT.");
+            }
+
             return new UnixSystem().getGroups();
         }
     }
