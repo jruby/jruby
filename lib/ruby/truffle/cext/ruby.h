@@ -45,6 +45,14 @@ extern "C" {
 
 #define HAVE_RB_IO_T
 
+// Overrides
+
+#ifdef memcpy
+#undef memcpy
+#endif
+
+#define memcpy truffle_managed_memcpy
+
 // Macros
 
 #define NORETURN(X) __attribute__((__noreturn__)) X
