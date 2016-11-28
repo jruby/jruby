@@ -1979,23 +1979,19 @@ public class IRBuilder {
         return scope instanceof IRFor ? getLocalVariable(name, depth) : getNewLocalVariable(name, 0);
     }
 
-    private void addArgReceiveInstr(Variable v, int argIndex, boolean post, int numPreReqd, int numPostRead) {
-        if (post) {
-            addInstr(new ReceivePostReqdArgInstr(v, argIndex, numPreReqd, numPostRead));
-        } else {
-            addInstr(new ReceivePreReqdArgInstr(v, argIndex));
-        }
-    }
+    private void addArgReceiveInstr(Variable v, int argIndex, boolean post, int numPreReqd, int numPostRead) rece
 
     /* '_' can be seen as a variable only by its first assignment as a local variable.  For any additional
      * '_' we create temporary variables in the case the scope has a zsuper in it.  If so, then the zsuper
      * call will slurp those temps up as it's parameters so it can properly set up the call.
      */
     private Variable argumentResult(String name) {
-        if (name.equals("_") && underscoreVariableSeen) {
+        boolean isUnderscore = name.equals("_");
+
+        if (isUnderscore && underscoreVariableSeen) {
             return createTemporaryVariable();
         } else {
-            underscoreVariableSeen = true;
+            if (isUnderscore) underscoreVariableSeen = true;
             return getNewLocalVariable(name, 0);
         }
     }
