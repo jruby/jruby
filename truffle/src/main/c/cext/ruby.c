@@ -374,7 +374,7 @@ VALUE rb_intern_str(VALUE string) {
 }
 
 VALUE rb_str_cat(VALUE string, const char *to_concat, long length) {
-  truffle_invoke(RUBY_CEXT, "rb_str_cat", string, rb_str_new_cstr(to_concat), length);
+  truffle_invoke((void *)string, "concat", rb_str_new(to_concat, length));
   return string;
 }
 

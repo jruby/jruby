@@ -306,10 +306,6 @@ module Truffle::CExt
     string.intern
   end
 
-  def rb_str_cat(string, to_concat, length)
-    raise 'not implemented'
-  end
-
   def rb_string_value_cstr_check(string)
     !string.include?("\0")
   end
