@@ -1201,22 +1201,8 @@ public class ParserSupport {
         return arg_var(identifier);
     }
 
-    // 1.9
     public ArgumentNode arg_var(String name) {
-        StaticScope current = getCurrentScope();
-
-        // Multiple _ arguments are allowed.  To not screw with tons of arity
-        // issues in our runtime we will allocate unnamed bogus vars so things
-        // still work. MRI does not use name as intern'd value so they don't
-        // have this issue.
-        if (name == "_") {
-            int count = 0;
-            while (current.exists(name) >= 0) {
-                name = ("_$" + count++).intern();
-            }
-        }
-        
-        return new ArgumentNode(lexer.getPosition(), name, current.addVariableThisScope(name));
+        return new ArgumentNode(lexer.getPosition(), name, getCurrentScope().addVariableThisScope(name));
     }
 
     public String formal_argument(String identifier) {

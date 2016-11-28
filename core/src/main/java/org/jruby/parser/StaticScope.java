@@ -240,13 +240,6 @@ public class StaticScope implements Serializable {
      * @return index of variable
      */
     public int addVariableThisScope(String name) {
-        // Ignore duplicate "_" args in blocks
-        // (duplicate _ args are named "_$0")
-        // Dont allocate slots for them.
-        if (name.equals("_$0")) {
-            return -1;
-        }
-
         int slot = exists(name);
 
         if (slot >= 0) return slot;
