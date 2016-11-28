@@ -508,10 +508,6 @@ module Truffle::CExt
     Rational(num, den)
   end
 
-  def rb_complex_new(real, imag)
-    Complex.new(real, imag)
-  end
-
   def rb_Complex(real, imag)
     Complex.new(real, imag)
   end
