@@ -414,7 +414,7 @@ test-compilation-flags: {
   }
 }
 
-deployBinaries: {
+deploy-binaries: {
   run: [
     [mx, deploy-binary-if-truffle-head, jruby-binary-snapshots]
   ]
@@ -517,5 +517,5 @@ builds: [
 
   {name: ruby-benchmarks-cext} ${common} ${daily-bench-caps} ${jruby-truffle-cexts} ${cext-benchmarks},
 
-  {name: ruby-deploy-binaries} ${common} ${gate-caps} ${deployBinaries}
+  {name: ruby-deploy-binaries} ${common} ${gate-caps} ${deploy-binaries}
 ]
