@@ -1216,18 +1216,11 @@ public class ParserSupport {
         if (name == "_") return name;
 
         StaticScope current = getCurrentScope();
-        if (current.isBlockScope()) {
-            if (current.exists(name) >= 0) yyerror("duplicated argument name");
+        if (current.exists(name) >= 0) yyerror("duplicated argument name");
 
-            if (warnings.isVerbose() && current.isDefined(name) >= 0 &&
-                    Options.PARSER_WARN_LOCAL_SHADOWING.load() &&
-                    !ParserSupport.skipTruffleRubiniusWarnings(lexer)) {
-
-                warnings.warning(ID.STATEMENT_NOT_REACHED, lexer.getPosition(),
-                        "shadowing outer local variable - " + name);
-            }
-        } else if (current.exists(name) >= 0) {
-            yyerror("duplicated argument name");
+        if (current.isBlockScope() && warnings.isVerbose() && current.isDefined(name) >= 0 &&
+                Options.PARSER_WARN_LOCAL_SHADOWING.load() && !ParserSupport.skipTruffleRubiniusWarnings(lexer)) {
+            warnings.warning(ID.STATEMENT_NOT_REACHED, lexer.getPosition(), "shadowing outer local variable - " + name);
         }
 
         return name;
