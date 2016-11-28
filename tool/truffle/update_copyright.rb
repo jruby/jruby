@@ -56,6 +56,8 @@ truffle_paths = %w[
 
 excludes = %w[
   test/truffle/pack-real-usage.rb
+  test/truffle/cexts
+  truffle/src/main/c/openssl
 ]
 
 # Until those all have copyright headers
