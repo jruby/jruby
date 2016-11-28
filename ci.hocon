@@ -357,7 +357,8 @@ server-benchmarks: {
 
 cext-benchmarks: ${sulong} {
   environment: {
-    JRUBY_OPTS: "-Xtruffle.cexts.log.load=true"
+    JRUBY_OPTS: "-Xtruffle.cexts.log.load=true -Dgraal.TruffleCompileOnly=nothing",
+    USE_CEXTS: "true"
   }
 
   setup: ${sulong.setup} ${gem-test-pack.setup} ${bench.setup} [
