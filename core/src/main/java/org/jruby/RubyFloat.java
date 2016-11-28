@@ -799,11 +799,56 @@ public class RubyFloat extends RubyNumeric {
     /** floor
      *
      */
-    @JRubyMethod(name = "floor")
-    @Override
-    public IRubyObject floor() {
-        return dbl2num(getRuntime(), Math.floor(value));
-    }
+
+     @Override
+     public IRubyObject floor() {
+         return dbl2num(getRuntime(), Math.floor(value));
+     }
+
+     @JRubyMethod(name = "floor", optional = 1)
+     public IRubyObject floor(ThreadContext context, IRubyObject[] args) {
+         if (args.length == 0) return floor();
+
+         double number = value;
+         double digits = num2long(args[0]);
+         double magnifier = Math.pow(10.0, Math.abs(digits));
+         double reducer   = Math.pow(10.0, -Math.abs(digits));
+
+         // Borrowed from round
+         double binexp;
+         if (value == 0) {
+             binexp = 0;
+         } else {
+             binexp = Math.ceil(Math.log(value)/Math.log(2));
+         }
+
+         if (digits >= (DIG+2) - (binexp > 0 ? binexp / 4 : binexp / 3 - 1)) {
+             return RubyFloat.newFloat(context.runtime, value);
+         }
+         if (digits < -(binexp > 0 ? binexp / 3 + 1 : binexp / 4)) {
+             return dbl2num(context.runtime, (long) 0);
+         }
+
+         if (digits > 0) {
+            number = Math.floor(value * magnifier) / magnifier;
+         }
+
+         if (digits < 0) {
+            number = Math.floor(value * reducer) * magnifier;
+         }
+
+         // Deal with big numbers
+         if (number > Long.MAX_VALUE || number < Long.MIN_VALUE) {
+             BigDecimal roundedNumber = new BigDecimal(Double.toString(number));
+             return RubyBignum.newBignum(context.runtime, roundedNumber.toBigInteger());
+         }
+
+         if (digits > 0) {
+            return RubyFloat.newFloat(context.runtime, number);
+         } else {
+            return dbl2num(context.runtime, number);
+         }
+     }
 
     /** flo_ceil
      *
