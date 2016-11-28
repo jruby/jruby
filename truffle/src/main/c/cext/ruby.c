@@ -456,7 +456,6 @@ int RARRAY_LENINT(VALUE array) {
 }
 
 VALUE *RARRAY_PTR(VALUE array) {
-  // Needs to return a fake VALUE* which actually calls back into Ruby when read or written
   return (VALUE*) truffle_invoke(RUBY_CEXT, "RARRAY_PTR", array);
 }
 
