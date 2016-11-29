@@ -806,7 +806,9 @@ module Commands
     env = { "JRUBY_OPTS" => jruby_opts.join(' ') }
 
     Dir["#{JRUBY_DIR}/test/truffle/compiler/*.sh"].sort.each do |test_script|
-      sh env, test_script
+      if args.empty? or args.include?(File.basename(test_script, ".*"))
+        sh env, test_script
+      end
     end
   end
   private :test_compiler
