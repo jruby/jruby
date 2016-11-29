@@ -89,16 +89,18 @@ module RbConfig
   }
 
   if Truffle::Safe.memory_safe? && Truffle::Safe.processes_safe?
-    cc = "clang-3.3 -I#{ENV['SULONG_HOME']}/include"
+    clang = ENV['JT_CLANG'] || 'clang'
+    opt = ENV['JT_OPT'] || 'opt'
+    cc = "#{clang} -I#{ENV['SULONG_HOME']}/include"
     cpp = cc
     
     MAKEFILE_CONFIG.merge!({
         'CC' => cc,
         'CPP' => cpp,
-        'COMPILE_C' => "$(CC) $(INCFLAGS) $(CPPFLAGS) $(CFLAGS) $(COUTFLAG)$< -o $@ && opt-3.3 -always-inline -mem2reg $@ -o $@",
+        'COMPILE_C' => "$(CC) $(INCFLAGS) $(CPPFLAGS) $(CFLAGS) $(COUTFLAG)$< -o $@ && #{opt} -always-inline -mem2reg $@ -o $@",
         'CFLAGS' => "-c -emit-llvm",
         'LINK_SO' => "mx -v -p #{ENV['SULONG_HOME']} su-link -o $@ $(OBJS) $(LIBS)",
-        'TRY_LINK' => "clang-3.3 $(src) $(INCFLAGS) $(CFLAGS) -I#{ENV['SULONG_HOME']}/include $(LIBS)"
+        'TRY_LINK' => "#{clang} $(src) $(INCFLAGS) $(CFLAGS) -I#{ENV['SULONG_HOME']}/include $(LIBS)"
     })
     
     CONFIG.merge!({
