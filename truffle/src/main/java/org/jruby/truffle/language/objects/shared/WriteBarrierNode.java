@@ -25,6 +25,10 @@ public abstract class WriteBarrierNode extends Node {
 
     protected final int depth;
 
+    public static WriteBarrierNode create() {
+        return WriteBarrierNodeGen.create(0);
+    }
+
     public WriteBarrierNode(int depth) {
         this.depth = depth;
     }
