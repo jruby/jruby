@@ -27,7 +27,10 @@ class MSpecScript
       -Xtruffle.graal.warn_unless=false
     ]
     core_path = "#{JRUBY_DIR}/truffle/src/main/ruby"
-    flags << "-Xtruffle.core.load_path=#{core_path}" if File.directory?(core_path)
+    if File.directory?(core_path)
+      flags << "-Xtruffle.core.load_path=#{core_path}"
+      flags << "-Xtruffle.backtraces.hide_core_files=false"
+    end
     set :flags, flags
   end
 
