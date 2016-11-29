@@ -75,7 +75,7 @@ public class TranscodingManager {
                 final Transcoder transcoder = e.getTranscoder();
 
                 allTranscoders.putIfAbsent(sourceName, new HashMap<>());
-                final Map fromSource = allTranscoders.get(sourceName);
+                final Map<String, Transcoder> fromSource = allTranscoders.get(sourceName);
                 fromSource.put(destinationName, transcoder);
             }
         }
@@ -230,7 +230,7 @@ public class TranscodingManager {
                         continue;
                     }
 
-                    final LinkedList newPath = (LinkedList) path.clone();
+                    final LinkedList<String> newPath = (LinkedList<String>) path.clone();
                     newPath.add(destinationName);
                     queue.add(newPath);
                     alreadyVisited.add(destinationName);
