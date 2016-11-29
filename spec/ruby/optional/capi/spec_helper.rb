@@ -138,7 +138,7 @@ def compile_jruby_truffle_extconf_make(name, path, objdir)
       system "#{RbConfig.ruby} extconf.rb"
       system "make"                                    # run make in temp dir
       FileUtils.cp "#{ext}.su", lib_target             # copy to .su file to library dir
-      FileUtils.cp "#{ext}.ll", objdir                 # copy to .ll file to library dir
+      FileUtils.cp "#{ext}.bc", objdir                 # copy to .bc file to library dir
     end
   ensure
     FileUtils.remove_entry temp_dir
