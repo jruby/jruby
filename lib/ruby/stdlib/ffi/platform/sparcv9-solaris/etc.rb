@@ -3,13 +3,13 @@
 module Platform; end
 module Platform::Etc
   class Passwd < FFI::Struct
-    self.size = 36
     layout :pw_name, :string, 0,
-           :pw_passwd, :string, 4,
-           :pw_uid, :uint, 8,
-           :pw_gid, :uint, 12,
-           :pw_dir, :string, 28,
-           :pw_shell, :string, 32
+           :pw_passwd, :string, 8,
+           :pw_uid, :uint, 16,
+           :pw_gid, :uint, 20,
+           :pw_dir, :string, 48,
+           :pw_shell, :string, 56
+
 
 
 
@@ -18,9 +18,9 @@ module Platform::Etc
 
   end
   class Group < FFI::Struct
-    self.size = 16
     layout :gr_name, :string, 0,
-           :gr_gid, :uint, 8
+           :gr_gid, :uint, 16
+
 
 
 

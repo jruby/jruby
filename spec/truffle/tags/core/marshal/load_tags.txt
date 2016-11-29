@@ -10,3 +10,5 @@ fails:Marshal.load when called with a proc returns the value of the proc
 fails:Marshal.load when called with a proc calls the proc for recursively visited data
 fails:Marshal.load when called with a proc loads an Array with proc
 fails:Marshal.load when a class does not exist in the namespace raises an ArgumentError
+fails:Marshal.load for a Time loads the zone
+fails:Marshal.load for a Time loads nanoseconds

@@ -13,9 +13,6 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
-
-import java.util.Set;
-
 import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.ext.rbconfig.RbConfigLibrary;
@@ -25,6 +22,8 @@ import org.jruby.truffle.builtins.CoreMethodNode;
 import org.jruby.truffle.builtins.YieldingCoreMethodNode;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.util.unsafe.UnsafeHolder;
+
+import java.util.Set;
 
 @CoreClass("Truffle::System")
 public abstract class TruffleSystemNodes {
@@ -61,6 +60,7 @@ public abstract class TruffleSystemNodes {
     @CoreMethod(names = "host_os", onSingleton = true)
     public abstract static class HostOSNode extends CoreMethodNode {
 
+        @TruffleBoundary
         @Specialization
         public DynamicObject hostOS() {
             return createString(StringOperations.encodeRope(RbConfigLibrary.getOSName(), UTF8Encoding.INSTANCE));

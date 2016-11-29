@@ -71,7 +71,7 @@ public abstract class TruffleKernelNodes {
             }
 
             try {
-                final RubyRootNode rootNode = getContext().getCodeLoader().parse(getContext().getSourceCache().getSource(StringOperations.getString(file)), UTF8Encoding.INSTANCE, ParserContext.TOP_LEVEL, null, true, this);
+                final RubyRootNode rootNode = getContext().getCodeLoader().parse(getContext().getSourceLoader().load(StringOperations.getString(file)), UTF8Encoding.INSTANCE, ParserContext.TOP_LEVEL, null, true, this);
                 final CodeLoader.DeferredCall deferredCall = getContext().getCodeLoader().prepareExecute(ParserContext.TOP_LEVEL, DeclarationContext.TOP_LEVEL, rootNode, null, getContext().getCoreLibrary().getMainObject());
                 deferredCall.call(frame, callNode);
             } catch (IOException e) {

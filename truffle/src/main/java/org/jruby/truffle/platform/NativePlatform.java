@@ -33,6 +33,8 @@ public interface NativePlatform {
 
     RubiniusConfiguration getRubiniusConfiguration();
 
+    FDSet createFDSet();
+
     <T> ArrayBlockingQueueLocksConditions<T> createArrayBlockingQueueLocksConditions(int capacity);
 
     <T> LinkedBlockingQueueLocksConditions<T> createLinkedBlockingQueueLocksConditions();

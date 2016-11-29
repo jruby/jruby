@@ -2,4 +2,4 @@
 
 source test/truffle/common.sh.inc
 
-jt ruby --graal -J-G:+TruffleCompilationExceptionsAreFatal test/truffle/compiler/osr/osr.rb
+jt ruby --graal -J-Dgraal.TruffleCompilationExceptionsAreFatal=true test/truffle/compiler/osr/osr.rb

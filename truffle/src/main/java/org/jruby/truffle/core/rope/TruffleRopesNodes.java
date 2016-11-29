@@ -128,7 +128,7 @@ public abstract class TruffleRopesNodes {
 
         @Specialization
         public DynamicObject createSimpleString() {
-            return createString(RopeOperations.create(new byte[]{'t', 'e', 's', 't'}, UTF8Encoding.INSTANCE, CodeRange.CR_7BIT));
+            return createString(new AsciiOnlyLeafRope(new byte[]{'t', 'e', 's', 't'}, UTF8Encoding.INSTANCE));
         }
     }
 

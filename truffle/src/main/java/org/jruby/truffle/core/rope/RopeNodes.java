@@ -22,6 +22,7 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.Encoding;
@@ -242,7 +243,6 @@ public abstract class RopeNodes {
             try {
                 Math.addExact(left.byteLength(), right.byteLength());
             } catch (ArithmeticException e) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
                 throw new RaiseException(getContext().getCoreExceptions().argumentError("Result of string concatenation exceeds the system maximum string length", this));
             }
 
@@ -265,7 +265,6 @@ public abstract class RopeNodes {
             try {
                 Math.addExact(left.byteLength(), right.byteLength());
             } catch (ArithmeticException e) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
                 throw new RaiseException(getContext().getCoreExceptions().argumentError("Result of string concatenation exceeds the system maximum string length", this));
             }
 
@@ -366,7 +365,6 @@ public abstract class RopeNodes {
                 int delta = StringSupport.encFastMBCLen(bytes, p, e, encoding);
 
                 if (delta < 0) {
-                    CompilerDirectives.transferToInterpreterAndInvalidate();
                     throw new UnsupportedOperationException("Code range is reported as valid, but is invalid for the given encoding: " + encoding.toString());
                 }
 
@@ -425,6 +423,7 @@ public abstract class RopeNodes {
             return new ValidLeafRope(bytes, encoding, bytes.length);
         }
 
+        @TruffleBoundary
         @Specialization(guards = { "isUnknown(codeRange)", "!isEmpty(bytes)", "!isBinaryString(encoding)", "isAsciiCompatible(encoding)" })
         public LeafRope makeUnknownLeafRopeAsciiCompatible(byte[] bytes, Encoding encoding, CodeRange codeRange, Object characterLength,
                                             @Cached("createBinaryProfile()") ConditionProfile discovered7BitProfile,
@@ -818,6 +817,64 @@ public abstract class RopeNodes {
             }
 
             return rope.getRight().getRawBytes()[index - rope.getLeft().byteLength()] & 0xff;
+        }
+
+    }
+
+    @NodeChildren({
+            @NodeChild(type = RubyNode.class, value = "rope"),
+            @NodeChild(type = RubyNode.class, value = "index")
+    })
+    public abstract static class GetCodePointNode extends RubyNode {
+
+        public static GetCodePointNode create() {
+            return RopeNodesFactory.GetCodePointNodeGen.create(null, null);
+        }
+
+        public abstract int executeGetCodePoint(Rope rope, int index);
+
+        @Specialization(guards = "rope.isSingleByteOptimizable()")
+        public int getCodePointSingleByte(Rope rope, int index,
+                                          @Cached("create()") GetByteNode getByteNode) {
+            return getByteNode.executeGetByte(rope, index);
+        }
+
+        @Specialization(guards = { "!rope.isSingleByteOptimizable()", "rope.getEncoding().isUTF8()" })
+        public int getCodePointUTF8(Rope rope, int index,
+                                    @Cached("create()") GetByteNode getByteNode,
+                                    @Cached("createBinaryProfile()") ConditionProfile singleByteCharProfile,
+                                    @Cached("create()") BranchProfile errorProfile) {
+            final int firstByte = getByteNode.executeGetByte(rope, index);
+            if (singleByteCharProfile.profile(firstByte < 128)) {
+                return firstByte;
+            }
+
+            return getCodePointMultiByte(rope, index, errorProfile);
+        }
+
+        @Specialization(guards = { "!rope.isSingleByteOptimizable()", "!rope.getEncoding().isUTF8()" })
+        public int getCodePointMultiByte(Rope rope, int index,
+                                         @Cached("create()") BranchProfile errorProfile) {
+            final byte[] bytes = rope.getBytes();
+            final Encoding encoding = rope.getEncoding();
+
+            final int characterLength = preciseCharacterLength(encoding, bytes, index, rope.byteLength());
+            if (characterLength <= 0) {
+                errorProfile.enter();
+                throw new RaiseException(getContext().getCoreExceptions().argumentError("invalid byte sequence in " + encoding, null));
+            }
+
+            return mbcToCode(encoding, bytes, index, rope.byteLength());
+        }
+
+        @TruffleBoundary
+        private int preciseCharacterLength(Encoding encoding, byte[] bytes, int start, int end) {
+            return StringSupport.preciseLength(encoding, bytes, start, end);
+        }
+
+        @TruffleBoundary
+        private int mbcToCode(Encoding encoding, byte[] bytes, int start, int end) {
+            return encoding.mbcToCode(bytes, start, end);
         }
 
     }

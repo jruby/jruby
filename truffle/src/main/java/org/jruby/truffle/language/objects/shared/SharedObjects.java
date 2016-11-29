@@ -13,10 +13,12 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.Shape;
+import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.language.Options;
+import org.jruby.truffle.Options;
 import org.jruby.truffle.language.objects.ObjectGraph;
+import org.jruby.truffle.util.SourceSectionUtils;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -54,7 +56,8 @@ public abstract class SharedObjects {
         final Deque<DynamicObject> stack = new ArrayDeque<>();
 
         if (Options.SHARED_OBJECTS_DEBUG) {
-            System.err.println("Sharing decl frame of " + Layouts.PROC.getSharedMethodInfo(block).getSourceSection().getShortDescription());
+            final SourceSection sourceSection = Layouts.PROC.getSharedMethodInfo(block).getSourceSection();
+            System.err.println("Sharing decl frame of " + SourceSectionUtils.fileLine(sourceSection));
         }
 
         final MaterializedFrame declarationFrame = Layouts.PROC.getDeclarationFrame(block);

@@ -21,6 +21,7 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.cast.BooleanCastNode;
 import org.jruby.truffle.core.cast.BooleanCastNodeGen;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.util.SourceSectionUtils;
 
 public final class WhileNode extends RubyNode {
 
@@ -67,8 +68,8 @@ public final class WhileNode extends RubyNode {
         @Override
         public String toString() {
             SourceSection sourceSection = getEncapsulatingSourceSection();
-            if (sourceSection != null && sourceSection.getSource() != null) {
-                return String.format("while loop at %s:%d", sourceSection.getSource().getName(), sourceSection.getStartLine());
+            if (sourceSection != null && sourceSection.isAvailable()) {
+                return "while loop at " + SourceSectionUtils.fileLine(sourceSection);
             } else {
                 return "while loop";
             }

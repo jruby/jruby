@@ -266,7 +266,7 @@ public abstract class BasicObjectNodes {
 
             final Object[] nameSymbols = new Object[size];
             for (int i = 0; i < sortedNames.length; i++) {
-                nameSymbols[i] = getSymbol((String) sortedNames[i]);
+                nameSymbols[i] = getSymbol(sortedNames[i]);
             }
 
             return createArray(nameSymbols, size);

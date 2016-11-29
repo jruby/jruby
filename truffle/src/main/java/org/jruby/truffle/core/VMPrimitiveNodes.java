@@ -38,6 +38,7 @@
 package org.jruby.truffle.core;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.TruffleOptions;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Fallback;
 import com.oracle.truffle.api.dsl.Specialization;
@@ -449,6 +450,11 @@ public abstract class VMPrimitiveNodes {
 
         @TruffleBoundary
         private boolean handleDefault(DynamicObject signalName) {
+            // We can't work with signals with AOT.
+            if (TruffleOptions.AOT) {
+                return true;
+            }
+
             Signal signal = getContext().getNativePlatform().getSignalManager().createSignal(signalName.toString());
             try {
                 getContext().getNativePlatform().getSignalManager().watchDefaultForSignal(signal);
@@ -460,6 +466,11 @@ public abstract class VMPrimitiveNodes {
 
         @TruffleBoundary
         private boolean handle(DynamicObject signalName, SignalHandler newHandler) {
+            // We can't work with signals with AOT.
+            if (TruffleOptions.AOT) {
+                return true;
+            }
+
             Signal signal = getContext().getNativePlatform().getSignalManager().createSignal(signalName.toString());
             try {
                 getContext().getNativePlatform().getSignalManager().watchSignal(signal, newHandler);
@@ -539,19 +550,19 @@ public abstract class VMPrimitiveNodes {
 
             final int finalOptions = options;
 
-            // retry:
-            pid = getContext().getThreadManager().runUntilResult(this, () -> posix().waitpid(input_pid, statusReference, finalOptions));
+            pid = getContext().getThreadManager().runUntilResult(this, () -> {
+                int result = posix().waitpid(input_pid, statusReference, finalOptions);
+                if (result == -1 && posix().errno() == EINTR.intValue()) {
+                    throw new InterruptedException();
+                }
+                return result;
+            });
 
             final int errno = posix().errno();
 
             if (pid == -1) {
                 if (errno == ECHILD.intValue()) {
                     return false;
-                }
-                if (errno == EINTR.intValue()) {
-                    throw new UnsupportedOperationException();
-                    //if(!state->check_async(calling_environment)) return NULL;
-                    //goto retry;
                 }
 
                 // TODO handle other errnos?

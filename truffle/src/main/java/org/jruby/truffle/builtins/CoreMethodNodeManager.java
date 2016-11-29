@@ -25,7 +25,7 @@ import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.core.numeric.FixnumLowerNodeGen;
 import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.NotProvided;
-import org.jruby.truffle.language.Options;
+import org.jruby.truffle.Options;
 import org.jruby.truffle.language.RubyConstant;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
@@ -139,7 +139,7 @@ public class CoreMethodNodeManager {
             System.err.println("WARNING: Either onSingleton or constructor for " + methodDetails.getIndicativeName());
         }
 
-        final SharedMethodInfo sharedMethodInfo = makeSharedMethodInfo(context, methodDetails);
+        final SharedMethodInfo sharedMethodInfo = makeSharedMethodInfo(context, module, methodDetails);
         final CallTarget callTarget = makeGenericMethod(context, methodDetails, sharedMethodInfo);
 
         if (method.isModuleFunction()) {
@@ -166,18 +166,20 @@ public class CoreMethodNodeManager {
         }
     }
 
-    private static SharedMethodInfo makeSharedMethodInfo(RubyContext context, MethodDetails methodDetails) {
+    private static SharedMethodInfo makeSharedMethodInfo(RubyContext context, DynamicObject module, MethodDetails methodDetails) {
         final CoreMethod method = methodDetails.getMethodAnnotation();
-        final String methodName = methodDetails.getIndicativeName();
 
-        final int required = method.required();
-        final int optional = method.optional();
-        final boolean needsCallerFrame = method.needsCallerFrame();
-        final boolean alwaysInline = needsCallerFrame && context.getOptions().INLINE_NEEDS_CALLER_FRAME;
-
-        final Arity arity = new Arity(required, optional, method.rest());
-
-        return new SharedMethodInfo(context.getCoreLibrary().getSourceSection(), LexicalScope.NONE, arity, methodName, false, null, context.getOptions().CORE_ALWAYS_CLONE, alwaysInline, needsCallerFrame);
+        return new SharedMethodInfo(
+                context.getCoreLibrary().getSourceSection(),
+                LexicalScope.NONE,
+                new Arity(method.required(), method.optional(), method.rest()),
+                module,
+                methodDetails.getPrimaryName(),
+                "builtin",
+                null,
+                context.getOptions().CORE_ALWAYS_CLONE,
+                method.needsCallerFrame() && context.getOptions().INLINE_NEEDS_CALLER_FRAME,
+                method.needsCallerFrame());
     }
 
     private static CallTarget makeGenericMethod(RubyContext context, MethodDetails methodDetails, SharedMethodInfo sharedMethodInfo) {
@@ -385,8 +387,16 @@ public class CoreMethodNodeManager {
             return nodeFactory;
         }
 
+        public String getModuleName() {
+            return moduleName;
+        }
+
+        public String getPrimaryName() {
+            return methodAnnotation.names()[0];
+        }
+
         public String getIndicativeName() {
-            return moduleName + "#" + methodAnnotation.names()[0];
+            return moduleName + "#" + getPrimaryName();
         }
     }
 

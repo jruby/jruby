@@ -1,4 +1,5 @@
 ---
+- actionview
 - actionpack
 - activesupport
 - activemodel

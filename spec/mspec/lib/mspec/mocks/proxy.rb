@@ -39,7 +39,7 @@ class MockIntObject
 
   def to_int
     @calls += 1
-    @value
+    @value.to_int
   end
 
   def count

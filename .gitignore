@@ -16,6 +16,13 @@
 *.tokens
 *.su
 *.ll
+*.bc
+extconf.h
+mkmf.log
+Makefile
+cext-output.txt
+bench-results.json
+bench-results-processed.json
 
 .DS_Store
 .debug.properties

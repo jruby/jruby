@@ -280,6 +280,8 @@ public class IRBuilder {
 
     private int _lastProcessedLineNum = -1;
 
+    public boolean underscoreVariableSeen = false;
+
     public IRLoop getCurrentLoop() {
         return loopStack.isEmpty() ? null : loopStack.peek();
     }
@@ -1985,17 +1987,29 @@ public class IRBuilder {
         }
     }
 
+    /* '_' can be seen as a variable only by its first assignment as a local variable.  For any additional
+     * '_' we create temporary variables in the case the scope has a zsuper in it.  If so, then the zsuper
+     * call will slurp those temps up as it's parameters so it can properly set up the call.
+     */
+    private Variable argumentResult(String name) {
+        boolean isUnderscore = name.equals("_");
+
+        if (isUnderscore && underscoreVariableSeen) {
+            return createTemporaryVariable();
+        } else {
+            if (isUnderscore) underscoreVariableSeen = true;
+            return getNewLocalVariable(name, 0);
+        }
+    }
+
     public void receiveRequiredArg(Node node, int argIndex, boolean post, int numPreReqd, int numPostRead) {
         switch (node.getNodeType()) {
             case ARGUMENTNODE: {
-                ArgumentNode a = (ArgumentNode)node;
-                String argName = a.getName();
+                String argName = ((ArgumentNode)node).getName();
+
                 if (scope instanceof IRMethod) addArgumentDescription(ArgumentType.req, argName);
-                // Ignore duplicate "_" args in blocks
-                // (duplicate _ args are named "_$0")
-                if (!argName.equals("_$0")) {
-                    addArgReceiveInstr(getNewLocalVariable(argName, 0), argIndex, post, numPreReqd, numPostRead);
-                }
+
+                addArgReceiveInstr(argumentResult(argName), argIndex, post, numPreReqd, numPostRead);
                 break;
             }
             case MULTIPLEASGNNODE: {
@@ -2054,7 +2068,7 @@ public class IRBuilder {
                 Label variableAssigned = getNewLabel();
                 OptArgNode optArg = (OptArgNode)args[optIndex + j];
                 String argName = optArg.getName();
-                Variable argVar = getNewLocalVariable(argName, 0);
+                Variable argVar = argumentResult(argName);
                 if (scope instanceof IRMethod) addArgumentDescription(ArgumentType.opt, argName);
                 // You need at least required+j+1 incoming args for this opt arg to get an arg at all
                 addInstr(new ReceiveOptArgInstr(argVar, signature.required(), signature.pre(), j));
@@ -2085,7 +2099,7 @@ public class IRBuilder {
             // You need at least required+opt+1 incoming args for the rest arg to get any args at all
             // If it is going to get something, then it should ignore required+opt args from the beginning
             // because they have been accounted for already.
-            addInstr(new ReceiveRestArgInstr(getNewLocalVariable(argName, 0), signature.required() + opt, argIndex));
+            addInstr(new ReceiveRestArgInstr(argumentResult(argName), signature.required() + opt, argIndex));
         }
 
         // Post(-opt and rest) required args
@@ -2106,9 +2120,9 @@ public class IRBuilder {
         // reify to Proc if we have a block arg
         BlockArgNode blockArg = argsNode.getBlock();
         if (blockArg != null) {
-            String blockArgName = blockArg.getName();
-            Variable blockVar = getLocalVariable(blockArgName, 0);
-            if (scope instanceof IRMethod) addArgumentDescription(ArgumentType.block, blockArgName);
+            String argName = blockArg.getName();
+            Variable blockVar = argumentResult(argName);
+            if (scope instanceof IRMethod) addArgumentDescription(ArgumentType.block, argName);
             Variable tmp = createTemporaryVariable();
             addInstr(new LoadImplicitClosureInstr(tmp));
             addInstr(new ReifyClosureInstr(blockVar, tmp));

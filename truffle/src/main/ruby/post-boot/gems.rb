@@ -11,8 +11,10 @@ begin
 rescue LoadError
 end
 
-begin
-  require 'rubygems'
-rescue LoadError
-  warn('Could not load RubyGems during runtime bootstrap. Please set JRUBY_HOME to an appropriate location.')
+if Truffle::Boot.rubygems_enabled?
+  begin
+    require 'rubygems'
+  rescue LoadError
+    warn('Could not load RubyGems during runtime bootstrap. Please set JRUBY_HOME to an appropriate location.')
+  end
 end

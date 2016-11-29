@@ -54,6 +54,7 @@ import org.jruby.util.ArraySupport;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
 
@@ -198,11 +199,11 @@ public class Helpers {
 
     public static String[] getScopeNames(String scopeNames) {
         StringTokenizer toker = new StringTokenizer(scopeNames, ";");
-        ArrayList list = new ArrayList(10);
+        List<String> list = new ArrayList<>(10);
         while (toker.hasMoreTokens()) {
             list.add(toker.nextToken().intern());
         }
-        return (String[])list.toArray(new String[list.size()]);
+        return list.toArray(new String[list.size()]);
     }
 
     /** Use an ArgsParseNode (used for blocks) to generate ArgumentDescriptors */

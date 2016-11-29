@@ -33,7 +33,6 @@
  */
 package org.jruby.truffle.core.string;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jcodings.Encoding;
@@ -45,8 +44,6 @@ import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.language.RubyGuards;
-import org.jruby.truffle.util.ByteListUtils;
-import org.jruby.truffle.util.StringUtils;
 import org.jruby.util.ByteList;
 
 import java.nio.ByteBuffer;
@@ -60,17 +57,10 @@ public abstract class StringOperations {
         return Layouts.STRING.createString(context.getCoreLibrary().getStringFactory(), ropeFromByteList(bytes, CodeRange.CR_UNKNOWN));
     }
 
-    /** Creates a String from the ByteList, with 7-bit CR */
-    public static DynamicObject create7BitString(RubyContext context, ByteList bytes) {
-        return Layouts.STRING.createString(context.getCoreLibrary().getStringFactory(), ropeFromByteList(bytes, CodeRange.CR_7BIT));
-    }
-
     public static DynamicObject createString(RubyContext context, Rope rope) {
         return Layouts.STRING.createString(context.getCoreLibrary().getStringFactory(), rope);
     }
 
-    // Since ByteList.toString does not decode properly
-    @TruffleBoundary
     public static String getString(DynamicObject string) {
         return RopeOperations.decodeRope(StringOperations.rope(string));
     }
@@ -79,7 +69,7 @@ public abstract class StringOperations {
                                                                        final EncodingNodes.CheckEncodingNode checkEncodingNode) {
         return new StringCodeRangeableWrapper(string, checkEncodingNode) {
             private final ByteList byteList = RopeOperations.toByteListCopy(StringOperations.rope(string));
-            int codeRange = StringOperations.getCodeRange(string).toInt();
+            int codeRange = StringOperations.codeRange(string).toInt();
 
             @Override
             public void setCodeRange(int newCodeRange) {
@@ -108,32 +98,8 @@ public abstract class StringOperations {
         };
     }
 
-    public static CodeRange getCodeRange(DynamicObject string) {
-        return Layouts.STRING.getRope(string).getCodeRange();
-    }
-
-    public static void setCodeRange(DynamicObject string, int codeRange) {
-        // TODO (nirvdrum 07-Jan-16) Code range is now stored in the rope and ropes are immutable -- all calls to this method are suspect.
-        final int existingCodeRange = StringOperations.getCodeRange(string).toInt();
-
-        if (existingCodeRange != codeRange) {
-            CompilerDirectives.transferToInterpreterAndInvalidate();
-            throw new RuntimeException(StringUtils.format("Tried changing the code range value for a rope from %d to %d", existingCodeRange, codeRange));
-        }
-    }
-
     public static boolean isCodeRangeValid(DynamicObject string) {
-        return StringOperations.getCodeRange(string) == CodeRange.CR_VALID;
-    }
-
-    public static void clearCodeRange(DynamicObject string) {
-        StringOperations.setCodeRange(string, CodeRange.CR_UNKNOWN.toInt());
-    }
-
-    public static void keepCodeRange(DynamicObject string) {
-        if (StringOperations.getCodeRange(string) == CodeRange.CR_BROKEN) {
-            clearCodeRange(string);
-        }
+        return StringOperations.codeRange(string) == CodeRange.CR_VALID;
     }
 
     public static int normalizeIndex(int length, int index) {
@@ -187,11 +153,6 @@ public abstract class StringOperations {
         return RopeOperations.create(byteList.bytes(), byteList.getEncoding(), CodeRange.fromInt(codeRange));
     }
 
-    @TruffleBoundary
-    public static ByteList createByteList(CharSequence s) {
-        return ByteListUtils.create(s);
-    }
-
     public static Rope rope(DynamicObject string) {
         assert RubyGuards.isRubyString(string);
 
@@ -220,90 +181,6 @@ public abstract class StringOperations {
         assert RubyGuards.isRubyString(string);
 
         return RopeOperations.decodeUTF8(Layouts.STRING.getRope(string));
-    }
-
-    public static boolean isUTF8ValidOneByte(byte b) {
-        return b >= 0;
-    }
-
-    public static boolean isUTF8ValidTwoBytes(byte... bytes) {
-        assert bytes.length == 2;
-
-        if ((bytes[0] & 0xff) >= 0xc2 && (bytes[0] & 0xff) <= 0xdf) {
-            return (bytes[1] & 0xff) >= 0x80 && (bytes[1] & 0xff) <= 0xbf;
-        }
-
-        return false;
-    }
-
-    public static boolean isUTF8ValidThreeBytes(byte... bytes) {
-        assert bytes.length == 3;
-
-        if ((bytes[0] & 0xff) < 0xe0 || (bytes[0] & 0xff) > 0xef) {
-            return false;
-        }
-
-        if ((bytes[2] & 0xff) < 0x80 || (bytes[2] & 0xff) > 0xbf) {
-            return false;
-        }
-
-        if ((bytes[1] & 0xff) >= 0x80 || (bytes[2] & 0xff) <= 0xbf) {
-            if ((bytes[0] & 0xff) == 0xe0) {
-                return (bytes[1] & 0xff) >= 0xa0;
-            }
-
-            if ((bytes[0] & 0xff) == 0xed) {
-                return (bytes[1] & 0xff) <= 0x9f;
-            }
-
-            return true;
-        }
-
-        return false;
-    }
-
-    public static boolean isUTF8ValidFourBytes(byte... bytes) {
-        assert bytes.length == 4;
-
-        if ((bytes[3] & 0xff) < 0x80 || (bytes[3] & 0xff) > 0xbf) {
-            return false;
-        }
-
-        if ((bytes[2] & 0xff) < 0x80 || (bytes[2] & 0xff) > 0xbf) {
-            return false;
-        }
-
-        if ((bytes[0] & 0xff) < 0xf0 || (bytes[0] & 0xff) > 0xf4) {
-            return false;
-        }
-
-        if ((bytes[1] & 0xff) >= 0x80 || (bytes[2] & 0xff) <= 0xbf) {
-            if ((bytes[0] & 0xff) == 0xf0) {
-                return (bytes[1] & 0xff) >= 0x90;
-            }
-
-            if ((bytes[0] & 0xff) == 0xf4) {
-                return (bytes[1] & 0xff) <= 0x8f;
-            }
-
-            return true;
-        }
-
-        return false;
-    }
-
-    public static boolean isUTF8ValidFiveBytes(byte... bytes) {
-        assert bytes.length == 5;
-
-        // There are currently no valid five byte UTF-8 codepoints.
-        return false;
-    }
-
-    public static boolean isUTF8ValidSixBytes(byte... bytes) {
-        assert bytes.length == 6;
-
-        // There are currently no valid six byte UTF-8 codepoints.
-        return false;
     }
 
 }

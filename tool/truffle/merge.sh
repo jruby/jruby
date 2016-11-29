@@ -1,6 +1,6 @@
 #!/bin/sh
 
-git merge --no-commit origin/master
+git merge --no-commit --no-ff origin/master
 
 # git reset appveyor.yml
 git rm -f appveyor.yml

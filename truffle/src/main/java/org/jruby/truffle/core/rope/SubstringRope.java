@@ -10,7 +10,6 @@
 
 package org.jruby.truffle.core.rope;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import org.jcodings.Encoding;
 
 public class SubstringRope extends Rope {
@@ -40,7 +39,6 @@ public class SubstringRope extends Rope {
     @Override
     public Rope withEncoding(Encoding newEncoding, CodeRange newCodeRange) {
         if (newCodeRange != getCodeRange()) {
-            CompilerDirectives.transferToInterpreterAndInvalidate();
             throw new UnsupportedOperationException("Cannot fast-path updating encoding with different code range.");
         }
 
@@ -57,7 +55,7 @@ public class SubstringRope extends Rope {
             return ret;
         }
 
-        return RopeOperations.extractRange(child, offset, byteLength());
+        return RopeOperations.flattenBytes(this);
     }
 
     @Override

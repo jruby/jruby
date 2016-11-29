@@ -57,11 +57,14 @@ module Process
     RLIMIT_SBSIZE  = Rubinius::Config['rbx.platform.process.RLIMIT_SBSIZE']
     RLIMIT_STACK   = Rubinius::Config['rbx.platform.process.RLIMIT_STACK']
 
-    RLIMIT_RTPRIO     = Rubinius::Config['rbx.platform.process.RLIMIT_RTPRIO']
-    RLIMIT_RTTIME     = Rubinius::Config['rbx.platform.process.RLIMIT_RTTIME']
-    RLIMIT_SIGPENDING = Rubinius::Config['rbx.platform.process.RLIMIT_SIGPENDING']
-    RLIMIT_MSGQUEUE   = Rubinius::Config['rbx.platform.process.RLIMIT_MSGQUEUE']
-    RLIMIT_NICE       = Rubinius::Config['rbx.platform.process.RLIMIT_NICE']
+    has_rlimit_rtprio = Rubinius::Config['rbx.platform.process.RLIMIT_RTPRIO']
+    if has_rlimit_rtprio
+      RLIMIT_RTPRIO     = Rubinius::Config['rbx.platform.process.RLIMIT_RTPRIO']
+      RLIMIT_RTTIME     = Rubinius::Config['rbx.platform.process.RLIMIT_RTTIME']
+      RLIMIT_SIGPENDING = Rubinius::Config['rbx.platform.process.RLIMIT_SIGPENDING']
+      RLIMIT_MSGQUEUE   = Rubinius::Config['rbx.platform.process.RLIMIT_MSGQUEUE']
+      RLIMIT_NICE       = Rubinius::Config['rbx.platform.process.RLIMIT_NICE']
+    end
 
     WNOHANG = 1
     WUNTRACED = 2

@@ -1,1 +1,2 @@
-require_relative '../../stdlib/drb'
+# frozen_string_literal: false
+require 'drb/drb'

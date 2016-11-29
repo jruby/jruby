@@ -365,7 +365,7 @@ public class MethodTranslator extends BodyTranslator {
         while (methodArgumentsTranslator.isBlock) {
             if (!(methodArgumentsTranslator.parent instanceof MethodTranslator)) {
                 return new ZSuperOutsideMethodNode(context, fullSourceSection, insideDefineMethod);
-            } else if (methodArgumentsTranslator.currentCallMethodName.equals("define_method")) {
+            } else if (methodArgumentsTranslator.currentCallMethodName != null && methodArgumentsTranslator.currentCallMethodName.equals("define_method")) {
                 insideDefineMethod = true;
             }
             methodArgumentsTranslator = (MethodTranslator) methodArgumentsTranslator.parent;

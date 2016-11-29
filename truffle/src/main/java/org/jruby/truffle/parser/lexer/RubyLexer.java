@@ -206,7 +206,7 @@ public class RubyLexer extends LexingCommon {
     }
     
     public static Keyword getKeyword(String str) {
-        return (Keyword) map.get(str);
+        return map.get(str);
     }
     
     // Used for tiny smidgen of grammar in lexer (see setParserSupport())
@@ -826,6 +826,7 @@ public class RubyLexer extends LexingCommon {
      *
      *@return    Description of the Returned Value
      */
+    @SuppressWarnings("fallthrough")
     private int yylex() throws IOException {
         int c;
         boolean spaceSeen = false;
@@ -1319,6 +1320,7 @@ public class RubyLexer extends LexingCommon {
         return Tokens.kDO;
     }
 
+    @SuppressWarnings("fallthrough")
     private int dollar() throws IOException {
         setState(EXPR_END);
         newtok(true);
@@ -2136,6 +2138,7 @@ public class RubyLexer extends LexingCommon {
      *@param c The first character of the number.
      *@return A int constant wich represents a token.
      */
+    @SuppressWarnings("fallthrough")
     private int parseNumber(int c) throws IOException {
         setState(EXPR_END);
         newtok(true);
@@ -2411,8 +2414,8 @@ public class RubyLexer extends LexingCommon {
             buffer.append((char) codepoint);
         }
     }
- 
-    
+
+    @SuppressWarnings("fallthrough")
     public int readEscape() throws IOException {
         int c = nextc();
 

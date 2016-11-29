@@ -45,8 +45,21 @@ describe "Time#strftime" do
   end
 
   # Date/DateTime round at creation time, but Time does it in strftime.
-  it "rounds an offset to the nearest second when formatting with %z" do
-    time = @new_time_with_offset[2012, 1, 1, 0, 0, 0, Rational(36645, 10)]
-    time.strftime("%::z").should == "+01:01:05"
+  ruby_version_is ""..."2.4" do
+    it "rounds an offset to the nearest second when formatting with %z" do
+      time = @new_time_with_offset[2012, 1, 1, 0, 0, 0, Rational(36645, 10)]
+      time.strftime("%::z").should == "+01:01:05"
+    end
+  end
+
+  ruby_version_is "2.4" do
+    it "rounds an offset to the nearest even second when formatting with %z" do
+      time = @new_time_with_offset[2012, 1, 1, 0, 0, 0, Rational(36645, 10)]
+      time.strftime("%::z").should == "+01:01:04"
+      time = @new_time_with_offset[2012, 1, 1, 0, 0, 0, Rational(36655, 10)]
+      time.strftime("%::z").should == "+01:01:06"
+      time = @new_time_with_offset[2012, 1, 1, 0, 0, 0, Rational(36665, 10)]
+      time.strftime("%::z").should == "+01:01:06"
+    end
   end
 end

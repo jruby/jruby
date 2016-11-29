@@ -1,1 +1,2 @@
-require_relative '../../../../stdlib/rake/ext/' + File.basename(__FILE__)
+
+# TODO: remove in Rake 11

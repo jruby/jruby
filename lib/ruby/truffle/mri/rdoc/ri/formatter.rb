@@ -1,1 +1,5 @@
-require_relative '../../../../stdlib/rdoc/ri/' + File.basename(__FILE__)
+##
+# For RubyGems backwards compatibility
+
+module RDoc::RI::Formatter # :nodoc:
+end

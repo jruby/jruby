@@ -12,8 +12,6 @@ package org.jruby.truffle.core.hash;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.profiles.ConditionProfile;
-import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.ObjectNodes.ObjectIDPrimitiveNode;
 import org.jruby.truffle.core.ObjectNodesFactory.ObjectIDPrimitiveNodeFactory;
 import org.jruby.truffle.language.RubyBaseNode;
@@ -28,17 +26,12 @@ public class HashNode extends RubyBaseNode {
     private final ConditionProfile isIntegerProfile = ConditionProfile.createBinaryProfile();
     private final ConditionProfile isLongProfile = ConditionProfile.createBinaryProfile();
 
-    public HashNode(RubyContext context, SourceSection sourceSection) {
-        super(context, sourceSection);
-        hashNode = DispatchHeadNodeFactory.createMethodCall(context, true);
-    }
-
     public int hash(VirtualFrame frame, Object key, boolean compareByIdentity) {
         final Object hashedObject;
         if (compareByIdentity) {
             hashedObject = objectID(key);
         } else {
-            hashedObject = hashNode.call(frame, key, "hash");
+            hashedObject = hash(frame, key);
         }
 
         if (isIntegerProfile.profile(hashedObject instanceof Integer)) {
@@ -48,6 +41,14 @@ public class HashNode extends RubyBaseNode {
         } else {
             throw new UnsupportedOperationException();
         }
+    }
+
+    private Object hash(VirtualFrame frame, Object object) {
+        if (hashNode == null) {
+            CompilerDirectives.transferToInterpreterAndInvalidate();
+            hashNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
+        }
+        return hashNode.call(frame, object, "hash");
     }
 
     private Object objectID(Object object) {

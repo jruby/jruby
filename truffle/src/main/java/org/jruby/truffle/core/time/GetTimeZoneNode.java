@@ -14,12 +14,13 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.utilities.CyclicAssumption;
-import org.joda.time.DateTimeZone;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.core.time.TimeNodes.TimeZoneParser;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.SnippetNode;
+
+import java.time.ZoneId;
 
 public abstract class GetTimeZoneNode extends RubyNode {
 
@@ -31,23 +32,29 @@ public abstract class GetTimeZoneNode extends RubyNode {
 
     @Child SnippetNode snippetNode = new SnippetNode();
 
-    public abstract DateTimeZone executeGetTimeZone(VirtualFrame frame);
+    public abstract TimeZoneAndName executeGetTimeZone(VirtualFrame frame);
 
     @Specialization(assumptions = "TZ_UNCHANGED.getAssumption()")
-    public DateTimeZone getTimeZone(VirtualFrame frame,
-            @Cached("getTimeZone(frame)") DateTimeZone zone) {
+    public TimeZoneAndName getTimeZone(VirtualFrame frame,
+            @Cached("getTimeZone(frame)") TimeZoneAndName zone) {
         return zone;
     }
 
-    protected DateTimeZone getTimeZone(VirtualFrame frame) {
+    protected TimeZoneAndName getTimeZone(VirtualFrame frame) {
         Object tz = snippetNode.execute(frame, "ENV['TZ']");
+        String tzString = "";
+        if (RubyGuards.isRubyString(tz)) {
+            tzString = StringOperations.getString((DynamicObject) tz);
+        }
 
         // TODO CS 4-May-15 not sure how TZ ends up being nil
-
         if (tz == nil()) {
-            return DateTimeZone.getDefault();
+            return new TimeZoneAndName(ZoneId.systemDefault(), null);
+        } else if (tzString.equalsIgnoreCase("localtime")) {
+            // On Solaris, $TZ is "localtime", so get it from Java
+            return new TimeZoneAndName(ZoneId.systemDefault(), null);
         } else if (RubyGuards.isRubyString(tz)) {
-            return TimeZoneParser.parse(this, StringOperations.getString((DynamicObject) tz));
+            return TimeZoneParser.parse(this, tzString);
         } else {
             throw new UnsupportedOperationException();
         }

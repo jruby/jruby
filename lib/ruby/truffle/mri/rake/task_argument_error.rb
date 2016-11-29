@@ -1,1 +1,7 @@
-require_relative '../../../stdlib/rake/' + File.basename(__FILE__)
+module Rake
+
+  # Error indicating an ill-formed task declaration.
+  class TaskArgumentError < ArgumentError
+  end
+
+end

@@ -32,11 +32,6 @@
 
 class String
 
-  def ascii?
-    Truffle.primitive :character_ascii_p
-    raise PrimitiveFailure, "Rubinius::Character#ascii? primitive failed"
-  end
-
   def printable?
     Truffle.primitive :character_printable_p
     raise PrimitiveFailure, "Rubinius::Character#printable? primitive failed"

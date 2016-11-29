@@ -76,12 +76,6 @@ public class SymbolParseNode extends ParseNode implements ILiteralNode, INameNod
         }
     }
 
-    public boolean equals(Object other) {
-        return other instanceof SymbolParseNode &&
-                name.equals(((SymbolParseNode) other).getName()) &&
-                encoding == ((SymbolParseNode) other).getEncoding();
-    }
-
     public NodeType getNodeType() {
         return NodeType.SYMBOLNODE;
     }

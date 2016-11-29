@@ -20,6 +20,7 @@ import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.control.JavaException;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.control.TruffleFatalException;
 
@@ -179,14 +180,18 @@ public class ExceptionTranslatingNode extends RubyNode {
             throwable.printStackTrace();
         }
 
-        final String message = throwable.getMessage();
-        final String reportedMessage;
+        Throwable t = throwable;
+        if (t instanceof JavaException) {
+            t = t.getCause();
+        }
 
-        if (message != null && message.startsWith("LLVM error")) {
-            reportedMessage = message;
-        } else {
-            final StringBuilder messageBuilder = new StringBuilder();
-            messageBuilder.append(throwable.getClass().getSimpleName());
+        final StringBuilder messageBuilder = new StringBuilder();
+        messageBuilder.append('\n');
+
+        while (t != null) {
+            final String message = t.getMessage();
+
+            messageBuilder.append(t.getClass().getSimpleName());
             messageBuilder.append(" ");
             if (message != null) {
                 messageBuilder.append(message);
@@ -194,14 +199,18 @@ public class ExceptionTranslatingNode extends RubyNode {
                 messageBuilder.append("<no message>");
             }
 
-            if (throwable.getStackTrace().length > 0) {
+            if (t.getStackTrace().length > 0) {
                 messageBuilder.append(" ");
-                messageBuilder.append(throwable.getStackTrace()[0].toString());
+                messageBuilder.append(t.getStackTrace()[0].toString());
             }
-            reportedMessage = messageBuilder.toString();
+
+            t = t.getCause();
+            if (t != null) {
+                messageBuilder.append("\nCaused by: ");
+            }
         }
 
-        return coreExceptions().internalError(reportedMessage, this, throwable);
+        return coreExceptions().internalError(messageBuilder.toString(), this, throwable);
     }
 
 }

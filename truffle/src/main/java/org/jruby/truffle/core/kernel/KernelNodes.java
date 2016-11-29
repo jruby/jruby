@@ -13,6 +13,7 @@ import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.TruffleOptions;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.CreateCast;
 import com.oracle.truffle.api.dsl.ImportStatic;
@@ -67,7 +68,6 @@ import org.jruby.truffle.core.cast.TaintResultNode;
 import org.jruby.truffle.core.cast.ToPathNodeGen;
 import org.jruby.truffle.core.cast.ToStrNode;
 import org.jruby.truffle.core.cast.ToStrNodeGen;
-import org.jruby.truffle.core.encoding.EncodingOperations;
 import org.jruby.truffle.core.format.BytesResult;
 import org.jruby.truffle.core.format.FormatExceptionTranslator;
 import org.jruby.truffle.core.format.exceptions.FormatException;
@@ -228,6 +228,10 @@ public abstract class KernelNodes {
 
         @TruffleBoundary
         private ExecuteResult spawnAndCaptureOutput(DynamicObject command, final DynamicObject envAsHash) {
+            if (TruffleOptions.AOT) {
+                throw new UnsupportedOperationException("ProcessEnvironment.environment not supported with AOT");
+            }
+
             // We need to run via bash to get the variable and other expansion we expect
             String[] cmdArray = new String[] { "bash", "-c", command.toString() };
 
@@ -263,9 +267,7 @@ public abstract class KernelNodes {
             }
 
             final int code = getContext().getThreadManager().runUntilResult(this, () -> process.waitFor());
-
-            // TODO (nirvdrum 10-Mar-15) This should be using the default external encoding, rather than hard-coded to UTF-8.
-            final DynamicObject output = createString(baos.toByteArray(), EncodingOperations.getEncoding(getContext().getEncodingManager().getRubyEncoding("UTF-8")));
+            final DynamicObject output = createString(baos.toByteArray(), getContext().getEncodingManager().getDefaultExternalEncoding());
 
             // TODO CS 30-Oct-16 how to get the PID? JRuby does some gymnastics with reflection. I think we
             // should probably reimplement this in Ruby using spawn, which starts processes with JNR and so
@@ -308,6 +310,35 @@ public abstract class KernelNodes {
             }
 
             return equalNode.callBoolean(frame, left, "==", null, right);
+        }
+
+    }
+
+    /** Check if operands are the same object or call #eql? */
+    public abstract static class SameOrEqlNode extends CoreMethodArrayArgumentsNode {
+
+        @Child private CallDispatchHeadNode eqlNode;
+
+        private final ConditionProfile sameProfile = ConditionProfile.createBinaryProfile();
+
+        public abstract boolean executeSameOrEql(VirtualFrame frame, Object a, Object b);
+
+        @Specialization
+        public boolean sameOrEql(VirtualFrame frame, Object a, Object b,
+                        @Cached("create()") ReferenceEqualNode referenceEqualNode) {
+            if (sameProfile.profile(referenceEqualNode.executeReferenceEqual(a, b))) {
+                return true;
+            } else {
+                return areEql(frame, a, b);
+            }
+        }
+
+        private boolean areEql(VirtualFrame frame, Object left, Object right) {
+            if (eqlNode == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                eqlNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+            }
+            return eqlNode.callBoolean(frame, left, "eql?", null, right);
         }
 
     }
@@ -741,6 +772,10 @@ public abstract class KernelNodes {
 
         @Specialization
         public Object exec(VirtualFrame frame, Object command, Object[] args) {
+            if (TruffleOptions.AOT) {
+                throw new UnsupportedOperationException("ProcessEnvironment.environment not supported with AOT.");
+            }
+
             if (toHashNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
                 toHashNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
@@ -1448,12 +1483,12 @@ public abstract class KernelNodes {
             String feature = StringOperations.getString(featureString);
 
             // Pysch loads either the jar or the so - we need to intercept
-            if (feature.equals("psych.so") && callerIs("stdlib/psych.rb")) {
+            if (feature.equals("psych.so") && callerIs("mri/psych.rb")) {
                 feature = "truffle/psych.rb";
             }
 
             // TODO CS 1-Mar-15 ERB will use strscan if it's there, but strscan is not yet complete, so we need to hide it
-            if (feature.equals("strscan") && callerIs("stdlib/erb.rb")) {
+            if (feature.equals("strscan") && callerIs("mri/erb.rb")) {
                 throw new RaiseException(coreExceptions().loadErrorCannotLoad(feature, this));
             }
 

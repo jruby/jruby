@@ -52,7 +52,7 @@ public class ArgsPushParseNode extends ParseNode {
         return NodeType.ARGSPUSHNODE;
     }
 
-    public Object accept(NodeVisitor visitor) {
+    public <T> T accept(NodeVisitor<T> visitor) {
         return visitor.visitArgsPushNode(this);
     }
 

@@ -60,6 +60,9 @@ public abstract class WriteObjectFieldNode extends RubyBaseNode {
             if (shared) {
                 writeBarrierNode.executeWriteBarrier(value);
                 synchronized (object) {
+                    // Re-check the shape under the monitor as another thread might have changed it
+                    // by adding a field (fine) or upgrading an existing field to Object storage
+                    // (need to use the new storage)
                     if (object.getShape() != cachedShape) {
                         CompilerDirectives.transferToInterpreter();
                         execute(object, value);
@@ -95,6 +98,9 @@ public abstract class WriteObjectFieldNode extends RubyBaseNode {
             if (shared) {
                 writeBarrierNode.executeWriteBarrier(value);
                 synchronized (object) {
+                    // Re-check the shape under the monitor as another thread might have changed it
+                    // by adding a field or upgrading an existing field to Object storage
+                    // (we need to make sure to have the right shape to add the new field)
                     if (object.getShape() != oldShape) {
                         CompilerDirectives.transferToInterpreter();
                         execute(object, value);

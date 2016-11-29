@@ -31,6 +31,8 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.Source;
+
+import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
@@ -46,7 +48,6 @@ import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.SnippetNode;
 import org.jruby.truffle.language.control.JavaException;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.util.ByteListUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -325,9 +326,7 @@ public abstract class InteropNodes {
         @Specialization
         public DynamicObject unbox(CharSequence receiver) {
             // TODO CS-21-Dec-15 this shouldn't be needed - we need to convert j.l.String to Ruby's String automatically
-
-            return Layouts.STRING.createString(coreLibrary().getStringFactory(),
-                    StringOperations.ropeFromByteList(ByteListUtils.create(receiver)));
+            return StringOperations.createString(getContext(), StringOperations.encodeRope(receiver, ASCIIEncoding.INSTANCE));
         }
 
         @Specialization

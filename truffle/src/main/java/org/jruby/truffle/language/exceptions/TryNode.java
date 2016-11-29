@@ -23,7 +23,7 @@ import org.jruby.truffle.language.methods.ExceptionTranslatingNode;
 
 public class TryNode extends RubyNode {
 
-    @Child private ExceptionTranslatingNode tryPart;
+    @Child private RubyNode tryPart;
     @Children private final RescueNode[] rescueParts;
     @Child private RubyNode elsePart;
 

@@ -158,7 +158,17 @@ public class TranslatorDriver {
         parseEnvironment.resetLexicalScope(lexicalScope);
 
         // TODO (10 Feb. 2015): name should be "<top (required)> for the require-d/load-ed files.
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, parseEnvironment.getLexicalScope(), Arity.NO_ARGUMENTS, "<main>", false, null, false, false, false);
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(
+                sourceSection,
+                parseEnvironment.getLexicalScope(),
+                Arity.NO_ARGUMENTS,
+                null,
+                "<main>",
+                null,
+                null,
+                false,
+                false,
+                false);
 
         final TranslatorEnvironment environment = new TranslatorEnvironment(context, parentEnvironment,
                 parseEnvironment, parseEnvironment.allocateReturnID(), ownScopeForAssignments, false, sharedMethodInfo, sharedMethodInfo.getName(), 0, null);
@@ -247,7 +257,17 @@ public class TranslatorDriver {
     }
 
     private TranslatorEnvironment environmentForFrameDescriptor(RubyContext context, FrameDescriptor frameDescriptor) {
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(context.getCoreLibrary().getSourceSection(), context.getRootLexicalScope(), Arity.NO_ARGUMENTS, "(unknown)", false, null, false, false, false);
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(
+                context.getCoreLibrary().getSourceSection(),
+                context.getRootLexicalScope(),
+                Arity.NO_ARGUMENTS,
+                null,
+                null,
+                "external",
+                null,
+                false,
+                false,
+                false);
             // TODO(CS): how do we know if the frame is a block or not?
             return new TranslatorEnvironment(context, null, parseEnvironment,
                     parseEnvironment.allocateReturnID(), true, true, sharedMethodInfo, sharedMethodInfo.getName(), 0, null, frameDescriptor);
@@ -257,7 +277,17 @@ public class TranslatorDriver {
         if (frame == null) {
             return null;
         } else {
-            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(context.getCoreLibrary().getSourceSection(), context.getRootLexicalScope(), Arity.NO_ARGUMENTS, "(unknown)", false, null, false, false, false);
+            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(
+                    context.getCoreLibrary().getSourceSection(),
+                    context.getRootLexicalScope(),
+                    Arity.NO_ARGUMENTS,
+                    null,
+                    null,
+                    "external",
+                    null,
+                    false,
+                    false,
+                    false);
             final MaterializedFrame parent = RubyArguments.getDeclarationFrame(frame);
             // TODO(CS): how do we know if the frame is a block or not?
             return new TranslatorEnvironment(context, environmentForFrame(context, parent), parseEnvironment,

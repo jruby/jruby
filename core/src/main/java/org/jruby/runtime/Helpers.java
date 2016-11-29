@@ -2880,7 +2880,7 @@ public class Helpers {
      * We have respondTo logic in RubyModule and we have a special callsite for respond_to?.
      * This method is just so we can share that logic.
      */
-    public static boolean doesMethodRespondTo(DynamicMethod method, boolean checkVisibility) {
+    public static boolean respondsToMethod(DynamicMethod method, boolean checkVisibility) {
         if (method.isUndefined() || method.isNotImplemented()) return false;
 
         return !(checkVisibility &&

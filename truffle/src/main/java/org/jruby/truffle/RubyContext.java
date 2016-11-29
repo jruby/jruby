@@ -33,18 +33,15 @@ import org.jruby.truffle.core.string.CoreStrings;
 import org.jruby.truffle.core.string.FrozenStrings;
 import org.jruby.truffle.core.symbol.SymbolTable;
 import org.jruby.truffle.core.thread.ThreadManager;
-import org.jruby.truffle.extra.AttachmentsManager;
 import org.jruby.truffle.interop.InteropManager;
 import org.jruby.truffle.language.CallStackManager;
 import org.jruby.truffle.language.LexicalScope;
-import org.jruby.truffle.language.Options;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.SafepointManager;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.control.JavaException;
 import org.jruby.truffle.language.loader.CodeLoader;
 import org.jruby.truffle.language.loader.FeatureLoader;
-import org.jruby.truffle.language.loader.SourceCache;
 import org.jruby.truffle.language.loader.SourceLoader;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.methods.InternalMethod;
@@ -88,7 +85,6 @@ public class RubyContext extends ExecutionContext {
     private final ObjectSpaceManager objectSpaceManager = new ObjectSpaceManager(this);
     private final AtExitManager atExitManager = new AtExitManager(this);
     private final SourceLoader sourceLoader = new SourceLoader(this);
-    private final SourceCache sourceCache = new SourceCache(sourceLoader);
     private final CallStackManager callStack = new CallStackManager(this);
     private final CoreStrings coreStrings = new CoreStrings(this);
     private final FrozenStrings frozenStrings = new FrozenStrings(this);
@@ -108,8 +104,6 @@ public class RubyContext extends ExecutionContext {
     private final CoverageManager coverageManager;
 
     private final Object classVariableDefinitionLock = new Object();
-
-    private final AttachmentsManager attachmentsManager;
 
     private String currentDirectory;
 
@@ -177,7 +171,6 @@ public class RubyContext extends ExecutionContext {
         // Capture known builtin methods
 
         final Instrumenter instrumenter = env.lookup(Instrumenter.class);
-        attachmentsManager = new AttachmentsManager(this, instrumenter);
         traceManager = new TraceManager(this, instrumenter);
         coreMethods = new CoreMethods(coreLibrary);
 
@@ -190,7 +183,8 @@ public class RubyContext extends ExecutionContext {
         final PrintStream configStandardOut = instanceConfig.getOutput();
         debugStandardOut = (configStandardOut == System.out) ? null : configStandardOut;
 
-        if (options.INSTRUMENTATION_SERVER_PORT != 0) {
+        // The instrumentation server can't be run with AOT because com.sun.net.httpserver.spi.HttpServerProvider uses runtime class loading.
+        if (!TruffleOptions.AOT && options.INSTRUMENTATION_SERVER_PORT != 0) {
             instrumentationServerManager = new InstrumentationServerManager(this, options.INSTRUMENTATION_SERVER_PORT);
             instrumentationServerManager.start();
         } else {
@@ -365,16 +359,8 @@ public class RubyContext extends ExecutionContext {
         return RubyLanguage.INSTANCE.unprotectedFindContext(RubyLanguage.INSTANCE.unprotectedCreateFindContextNode());
     }
 
-    public AttachmentsManager getAttachmentsManager() {
-        return attachmentsManager;
-    }
-
     public SourceLoader getSourceLoader() {
         return sourceLoader;
-    }
-
-    public SourceCache getSourceCache() {
-        return sourceCache;
     }
 
     public RopeTable getRopeTable() {

@@ -35,7 +35,6 @@ package org.jruby.truffle.parser.ast;
 
 import org.jruby.ParseResult;
 import org.jruby.truffle.parser.ast.types.INameNode;
-import org.jruby.truffle.parser.ast.visitor.AbstractNodeVisitor;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
 import org.jruby.truffle.parser.lexer.ISourcePosition;
 import org.jruby.truffle.parser.lexer.ISourcePositionHolder;
@@ -198,21 +197,6 @@ public abstract class ParseNode implements ISourcePositionHolder, ParseResult {
     protected String getNodeName() {
         String name = getClass().getName();
         return name.substring(name.lastIndexOf('.') + 1);
-    }
-
-    public <T extends ParseNode> T findFirstChild(final Class<T> nodeClass) {
-        return accept(new AbstractNodeVisitor<T>() {
-
-            @Override
-            protected T defaultVisit(ParseNode node) {
-                if (nodeClass.isAssignableFrom(node.getClass())) {
-                    return (T) node;
-                } else {
-                    return visitFirstChild(node);
-                }
-            }
-
-        });
     }
 
     /**

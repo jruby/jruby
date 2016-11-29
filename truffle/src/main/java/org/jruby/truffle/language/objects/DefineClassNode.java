@@ -55,17 +55,14 @@ public class DefineClassNode extends RubyNode {
             throw new RaiseException(coreExceptions().typeErrorIsNotA(lexicalParentObject, "module", this));
         }
 
-        DynamicObject lexicalParentModule = (DynamicObject) lexicalParentObject;
-
+        final DynamicObject lexicalParentModule = (DynamicObject) lexicalParentObject;
         final DynamicObject superClass = executeSuperClass(frame);
-
         final RubyConstant constant = lookupForExistingModule(frame, name, lexicalParentModule);
 
         final DynamicObject definedClass;
 
         if (needToDefineProfile.profile(constant == null)) {
             definedClass = ClassNodes.createInitializedRubyClass(getContext(), lexicalParentModule, superClass, name);
-
             callInherited(frame, superClass, definedClass);
         } else {
             if (!RubyGuards.isRubyClass(constant.getValue())) {

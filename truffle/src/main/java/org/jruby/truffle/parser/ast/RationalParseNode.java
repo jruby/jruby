@@ -27,7 +27,7 @@ public class RationalParseNode extends NumericParseNode implements SideEffectFre
     }
 
     @Override
-    public Object accept(NodeVisitor visitor) {
+    public <T> T accept(NodeVisitor<T> visitor) {
         return visitor.visitRationalNode(this);
     }
 

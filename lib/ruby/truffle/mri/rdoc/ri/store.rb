@@ -1,1 +1,6 @@
-require_relative '../../../../stdlib/rdoc/ri/' + File.basename(__FILE__)
+module RDoc::RI
+
+  Store = RDoc::Store # :nodoc:
+
+end
+

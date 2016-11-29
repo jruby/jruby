@@ -9,9 +9,12 @@
  */
 package org.jruby.truffle.language.methods;
 
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.runtime.ArgumentDescriptor;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.language.LexicalScope;
+import org.jruby.truffle.util.SourceSectionUtils;
 
 /**
  * {@link InternalMethod} objects are copied as properties such as visibility are changed.
@@ -22,9 +25,10 @@ public class SharedMethodInfo {
     private final SourceSection sourceSection;
     private final LexicalScope lexicalScope;
     private final Arity arity;
+    private final DynamicObject definitionModule;
     /** The original name of the method. Does not change when aliased. */
     private final String name;
-    private final boolean isBlock;
+    private final String notes;
     private final ArgumentDescriptor[] argumentDescriptors;
     private final boolean alwaysClone;
     private final boolean alwaysInline;
@@ -34,8 +38,9 @@ public class SharedMethodInfo {
             SourceSection sourceSection,
             LexicalScope lexicalScope,
             Arity arity,
+            DynamicObject definitionModule,
             String name,
-            boolean isBlock,
+            String notes,
             ArgumentDescriptor[] argumentDescriptors,
             boolean alwaysClone,
             boolean alwaysInline,
@@ -47,8 +52,9 @@ public class SharedMethodInfo {
         this.sourceSection = sourceSection;
         this.lexicalScope = lexicalScope;
         this.arity = arity;
+        this.definitionModule = definitionModule;
         this.name = name;
-        this.isBlock = isBlock;
+        this.notes = notes;
         this.argumentDescriptors = argumentDescriptors;
         this.alwaysClone = alwaysClone;
         this.alwaysInline = alwaysInline;
@@ -71,8 +77,8 @@ public class SharedMethodInfo {
         return name;
     }
 
-    public boolean isBlock() {
-        return isBlock;
+    public String getNotes() {
+        return notes;
     }
 
     public ArgumentDescriptor[] getArgumentDescriptors() {
@@ -96,23 +102,49 @@ public class SharedMethodInfo {
                 sourceSection,
                 lexicalScope,
                 arity,
+                definitionModule,
                 newName,
-                isBlock,
+                notes,
                 argumentDescriptors,
                 alwaysClone,
                 alwaysInline,
                 needsCallerFrame);
     }
 
-    @Override
-    public String toString() {
-        final String suffix;
-        if (sourceSection == null) {
-            return name;
-        } else if (!sourceSection.isAvailable()) {
-            return String.format("%s %s", name, sourceSection.getSource().getName());
+    public String getDescriptiveName() {
+        final StringBuilder descriptiveName = new StringBuilder();
+
+        if (definitionModule != null) {
+            descriptiveName.append(Layouts.MODULE.getFields(definitionModule).getName());
+        }
+
+        if (name != null) {
+            descriptiveName.append('#');
+            descriptiveName.append(name);
+        }
+
+        if (notes != null) {
+            final boolean parens = descriptiveName.length() > 0;
+
+            if (parens) {
+                descriptiveName.append(" (");
+            }
+
+            descriptiveName.append(notes);
+
+            if (parens) {
+                descriptiveName.append(')');
+            }
+        }
+
+        return descriptiveName.toString();
+    }
+
+    public String getDescriptiveNameAndSource() {
+        if (sourceSection == null || !sourceSection.isAvailable()) {
+            return getDescriptiveName();
         } else {
-            return String.format("%s %s:%d", name, sourceSection.getSource().getName(), sourceSection.getStartLine());
+            return getDescriptiveName() + " " + SourceSectionUtils.fileLine(sourceSection);
         }
     }
 

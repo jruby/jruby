@@ -54,7 +54,7 @@ public class ArgsCatParseNode extends ParseNode {
         return NodeType.ARGSCATNODE;
     }
 
-    public Object accept(NodeVisitor visitor) {
+    public <T> T accept(NodeVisitor<T> visitor) {
         return visitor.visitArgsCatNode(this);
     }
     

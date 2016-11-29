@@ -10,6 +10,7 @@
 package org.jruby.truffle.core.hash;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
@@ -19,16 +20,8 @@ import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.profiles.ConditionProfile;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.Layouts;
-import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.basicobject.BasicObjectNodes;
-import org.jruby.truffle.core.basicobject.BasicObjectNodesFactory;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
-import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
-import org.jruby.truffle.language.objects.IsFrozenNode;
-import org.jruby.truffle.language.objects.IsFrozenNodeGen;
 
 @ImportStatic(HashGuards.class)
 @NodeChildren({
@@ -39,35 +32,25 @@ import org.jruby.truffle.language.objects.IsFrozenNodeGen;
 })
 public abstract class SetNode extends RubyNode {
 
-    @Child private HashNode hashNode;
-    @Child private CallDispatchHeadNode eqlNode;
-    @Child private BasicObjectNodes.ReferenceEqualNode equalNode;
+    @Child private HashNode hashNode = new HashNode();
     @Child private LookupEntryNode lookupEntryNode;
+    @Child private CompareHashKeysNode compareHashKeysNode = new CompareHashKeysNode();
+    @Child private FreezeHashKeyIfNeededNode freezeHashKeyIfNeededNode = FreezeHashKeyIfNeededNodeGen.create(null, null);
 
-    private final ConditionProfile byIdentityProfile = ConditionProfile.createBinaryProfile();
-
-    private final BranchProfile extendProfile = BranchProfile.create();
-    private final ConditionProfile strategyProfile = ConditionProfile.createBinaryProfile();
-
-    @Child private IsFrozenNode isFrozenNode;
-    @Child private CallDispatchHeadNode dupNode;
-    @Child private CallDispatchHeadNode freezeNode;
-
-    private final ConditionProfile frozenProfile = ConditionProfile.createBinaryProfile();
-
-    public SetNode(RubyContext context, SourceSection sourceSection) {
-        super(context, sourceSection);
-        hashNode = new HashNode(context, sourceSection);
-        eqlNode = DispatchHeadNodeFactory.createMethodCall(context);
-        equalNode = BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(null);
+    public static SetNode create() {
+        return SetNodeGen.create(null, null, null, null);
     }
 
     public abstract Object executeSet(VirtualFrame frame, DynamicObject hash, Object key, Object value, boolean byIdentity);
 
-    @Specialization(guards = { "isNullHash(hash)", "!isRubyString(key)" })
-    public Object setNull(VirtualFrame frame, DynamicObject hash, Object key, Object value, boolean byIdentity) {
-        boolean profiledByIdentity = byIdentityProfile.profile(byIdentity);
-        final int hashed = hashNode.hash(frame, key, profiledByIdentity);
+    @Specialization(guards = "isNullHash(hash)")
+    public Object setNull(VirtualFrame frame, DynamicObject hash, Object originalKey, Object value, boolean byIdentity,
+                    @Cached("createBinaryProfile()") ConditionProfile byIdentityProfile) {
+        assert HashOperations.verifyStore(getContext(), hash);
+        boolean compareByIdentity = byIdentityProfile.profile(byIdentity);
+        final Object key = freezeHashKeyIfNeededNode.executeFreezeIfNeeded(frame, originalKey, compareByIdentity);
+
+        final int hashed = hashNode.hash(frame, key, compareByIdentity);
 
         Object store = PackedArrayStrategy.createStore(getContext(), hashed, key, value);
         assert HashOperations.verifyStore(getContext(), store, 1, null, null);
@@ -80,39 +63,26 @@ public abstract class SetNode extends RubyNode {
         return value;
     }
 
-    @Specialization(guards = {"isNullHash(hash)", "byIdentity", "isRubyString(key)"})
-    public Object setNullByIdentity(VirtualFrame frame, DynamicObject hash, DynamicObject key, Object value, boolean byIdentity) {
-        return setNull(frame, hash, key, value, byIdentity);
-    }
-
-    @Specialization(guards = {"isNullHash(hash)", "!byIdentity", "isRubyString(key)"})
-    public Object setNullNotByIdentity(VirtualFrame frame, DynamicObject hash, DynamicObject key, Object value, boolean byIdentity) {
-        return setNull(frame, hash, freezeAndDupIfNeeded(frame, key), value, byIdentity);
-    }
-
     @ExplodeLoop
-    @Specialization(guards = {"isPackedHash(hash)", "!isRubyString(key)"})
-    public Object setPackedArray(VirtualFrame frame, DynamicObject hash, Object key, Object value, boolean byIdentity) {
+    @Specialization(guards = "isPackedHash(hash)")
+    public Object setPackedArray(VirtualFrame frame, DynamicObject hash, Object originalKey, Object value, boolean byIdentity,
+                    @Cached("createBinaryProfile()") ConditionProfile byIdentityProfile,
+                    @Cached("createBinaryProfile()") ConditionProfile strategyProfile,
+                    @Cached("create()") BranchProfile extendProfile) {
         assert HashOperations.verifyStore(getContext(), hash);
+        final boolean compareByIdentity = byIdentityProfile.profile(byIdentity);
+        final Object key = freezeHashKeyIfNeededNode.executeFreezeIfNeeded(frame, originalKey, compareByIdentity);
 
-        boolean profiledByIdentity = byIdentityProfile.profile(byIdentity);
-
-        int hashed = hashNode.hash(frame, key, profiledByIdentity);
+        final int hashed = hashNode.hash(frame, key, compareByIdentity);
 
         final Object[] store = (Object[]) Layouts.HASH.getStore(hash);
         final int size = Layouts.HASH.getSize(hash);
 
         for (int n = 0; n < getContext().getOptions().HASH_PACKED_ARRAY_MAX; n++) {
             if (n < size) {
-                final boolean equal;
-                if (profiledByIdentity) {
-                    equal = equalNode.executeReferenceEqual(key, PackedArrayStrategy.getKey(store, n));
-                } else {
-                    equal = hashed == PackedArrayStrategy.getHashed(store, n) &&
-                            eqlNode.callBoolean(frame, key, "eql?", null, PackedArrayStrategy.getKey(store, n));
-                }
-
-                if (equal) {
+                final int otherHashed = PackedArrayStrategy.getHashed(store, n);
+                final Object otherKey = PackedArrayStrategy.getKey(store, n);
+                if (equalKeys(frame, compareByIdentity, key, hashed, otherKey, otherHashed)) {
                     PackedArrayStrategy.setValue(store, n, value);
                     assert HashOperations.verifyStore(getContext(), hash);
                     return value;
@@ -136,25 +106,16 @@ public abstract class SetNode extends RubyNode {
         return value;
     }
 
-    @Specialization(guards = {"isPackedHash(hash)", "byIdentity", "isRubyString(key)"})
-    public Object setPackedArrayByIdentity(VirtualFrame frame, DynamicObject hash, DynamicObject key, Object value, boolean byIdentity) {
-        return setPackedArray(frame, hash, key, value, byIdentity);
-    }
-
-    @Specialization(guards = {"isPackedHash(hash)", "!byIdentity", "isRubyString(key)"})
-    public Object setPackedArrayNotByIdentity(VirtualFrame frame, DynamicObject hash, DynamicObject key, Object value, boolean byIdentity) {
-        return setPackedArray(frame, hash, freezeAndDupIfNeeded(frame, key), value, byIdentity);
-    }
-
-    // Can't be @Cached yet as we call from the RubyString specialisation
-    private final ConditionProfile foundProfile = ConditionProfile.createBinaryProfile();
-    private final ConditionProfile bucketCollisionProfile = ConditionProfile.createBinaryProfile();
-    private final ConditionProfile appendingProfile = ConditionProfile.createBinaryProfile();
-    private final ConditionProfile resizeProfile = ConditionProfile.createBinaryProfile();
-
-    @Specialization(guards = {"isBucketHash(hash)", "!isRubyString(key)"})
-    public Object setBuckets(VirtualFrame frame, DynamicObject hash, Object key, Object value, boolean byIdentity) {
+    @Specialization(guards = "isBucketHash(hash)")
+    public Object setBuckets(VirtualFrame frame, DynamicObject hash, Object originalKey, Object value, boolean byIdentity,
+                    @Cached("createBinaryProfile()") ConditionProfile byIdentityProfile,
+                    @Cached("createBinaryProfile()") ConditionProfile foundProfile,
+                    @Cached("createBinaryProfile()") ConditionProfile bucketCollisionProfile,
+                    @Cached("createBinaryProfile()") ConditionProfile appendingProfile,
+                    @Cached("createBinaryProfile()") ConditionProfile resizeProfile) {
         assert HashOperations.verifyStore(getContext(), hash);
+        final boolean compareByIdentity = byIdentityProfile.profile(byIdentity);
+        final Object key = freezeHashKeyIfNeededNode.executeFreezeIfNeeded(frame, originalKey, compareByIdentity);
 
         final HashLookupResult result = lookup(frame, hash, key);
         final Entry entry = result.getEntry();
@@ -202,51 +163,13 @@ public abstract class SetNode extends RubyNode {
     private HashLookupResult lookup(VirtualFrame frame, DynamicObject hash, Object key) {
         if (lookupEntryNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            lookupEntryNode = insert(new LookupEntryNode(getContext(), null));
+            lookupEntryNode = insert(new LookupEntryNode());
         }
         return lookupEntryNode.lookup(frame, hash, key);
     }
 
-    @Specialization(guards = {"isBucketHash(hash)", "byIdentity", "isRubyString(key)"})
-    public Object setBucketsByIdentity(VirtualFrame frame, DynamicObject hash, DynamicObject key, Object value, boolean byIdentity) {
-        return setBuckets(frame, hash, key, value, byIdentity);
-    }
-
-    @Specialization(guards = {"isBucketHash(hash)", "!byIdentity", "isRubyString(key)"})
-    public Object setBucketsNotByIdentity(VirtualFrame frame, DynamicObject hash, DynamicObject key, Object value, boolean byIdentity) {
-        return setBuckets(frame, hash, freezeAndDupIfNeeded(frame, key), value, byIdentity);
-    }
-
-    private Object freezeAndDupIfNeeded(VirtualFrame frame, DynamicObject key) {
-        if (!frozenProfile.profile(isFrozen(key))) {
-            return freeze(frame, dup(frame, key));
-        } else {
-            return key;
-        }
-    }
-
-    private boolean isFrozen(Object value) {
-        if (isFrozenNode == null) {
-            CompilerDirectives.transferToInterpreterAndInvalidate();
-            isFrozenNode = insert(IsFrozenNodeGen.create(getContext(), null, null));
-        }
-        return isFrozenNode.executeIsFrozen(value);
-    }
-
-    private Object dup(VirtualFrame frame, Object value) {
-        if (dupNode == null) {
-            CompilerDirectives.transferToInterpreterAndInvalidate();
-            dupNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
-        }
-        return dupNode.call(frame, value, "dup");
-    }
-
-    private Object freeze(VirtualFrame frame, Object value) {
-        if (freezeNode == null) {
-            CompilerDirectives.transferToInterpreterAndInvalidate();
-            freezeNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
-        }
-        return freezeNode.call(frame, value, "freeze");
+    protected boolean equalKeys(VirtualFrame frame, boolean compareByIdentity, Object key, int hashed, Object otherKey, int otherHashed) {
+        return compareHashKeysNode.equalKeys(frame, compareByIdentity, key, hashed, otherKey, otherHashed);
     }
 
 }

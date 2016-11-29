@@ -96,12 +96,7 @@ public abstract class TruffleBootNodes {
 
             String inputFile = getContext().getOriginalInputFile();
 
-            final Source source;
-            try {
-                source = getContext().getSourceCache().getMainSource(inputFile);
-            } catch (IOException e) {
-                throw new JavaException(e);
-            }
+            final Source source = getMainSource(inputFile);
 
             final RubyRootNode rootNode = getContext().getCodeLoader().parse(
                     source,
@@ -120,6 +115,16 @@ public abstract class TruffleBootNodes {
 
             return deferredCall.call(frame, callNode);
         }
+
+        @TruffleBoundary
+        public synchronized Source getMainSource(String path) {
+            try {
+                return getContext().getSourceLoader().loadMain(path);
+            } catch (IOException e) {
+                throw new JavaException(e);
+            }
+        }
+
     }
 
     @CoreMethod(names = "original_argv", onSingleton = true)
@@ -158,6 +163,16 @@ public abstract class TruffleBootNodes {
 
     }
     
+    @CoreMethod(names = "rubygems_enabled?", onSingleton = true)
+    public abstract static class RubygemsEnabledNode extends CoreMethodNode {
+
+        @Specialization
+        public boolean isRubygemsEnabled() {
+            return !getContext().getInstanceConfig().isDisableGems();
+        }
+
+    }
+
     @CoreMethod(names = "source_of_caller", isModuleFunction = true)
     public abstract static class SourceOfCallerNode extends CoreMethodArrayArgumentsNode {
 

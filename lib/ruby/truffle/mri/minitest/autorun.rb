@@ -1,1 +1,12 @@
-require_relative '../../../stdlib/minitest/' + File.basename(__FILE__)
+begin
+  require "rubygems"
+  gem "minitest"
+rescue Gem::LoadError
+  # do nothing
+end
+
+require "minitest"
+require "minitest/spec"
+require "minitest/mock"
+
+Minitest.autorun

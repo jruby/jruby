@@ -8,18 +8,12 @@
 
 import sys
 import os
-import subprocess
 import pipes
 import shutil
-import json
-import time
 import tarfile
-import zipfile
-from threading import Thread
 from os.path import join, exists, isdir
 
 import mx
-import mx_benchmark
 import mx_unittest
 
 TimeStampFile = mx.TimeStampFile
@@ -40,17 +34,6 @@ def deploy_binary_if_truffle_head(args):
     else:
         mx.log('The active branch is "%s". Binaries are deployed only if the active branch is "%s".' % (active_branch, primary_branch))
         return 0
-
-def unittest_use_distribution_jars(config):
-    """use the distribution jars instead of the class files"""
-    vmArgs, mainClass, mainClassArgs = config
-    cpIndex, _ = mx.find_classpath_arg(vmArgs)
-    junitCP = [mx.classpath("com.oracle.mxtool.junit")]
-    rubyCP = [mx.classpath(mx.distribution(distr)) for distr in rubyDists]
-    vmArgs[cpIndex] = ":".join(junitCP + rubyCP)
-    return (vmArgs, mainClass, mainClassArgs)
-
-mx_unittest.add_config_participant(unittest_use_distribution_jars)
 
 # Project and BuildTask classes
 
@@ -191,11 +174,17 @@ def extractArguments(cli_args):
             elif arg == '-J-cmd':
                 print_command = True
             elif arg.startswith('-J-G:+'):
-                vmArgs.append('-Dgraal.'+arg[6:]+'=true')
+                rewritten = '-Dgraal.'+arg[6:]+'=true'
+                mx.warn(arg + ' is deprecated - use -J' + rewritten + ' instead')
+                vmArgs.append(rewritten)
             elif arg.startswith('-J-G:-'):
-                vmArgs.append('-Dgraal.'+arg[6:]+'=false')
+                rewritten = '-Dgraal.'+arg[6:]+'=false'
+                mx.warn(arg + ' is deprecated - use -J' + rewritten + ' instead')
+                vmArgs.append(rewritten)
             elif arg.startswith('-J-G:'):
-                vmArgs.append('-Dgraal.'+arg[5:])
+                rewritten = '-Dgraal.'+arg[5:]
+                mx.warn(arg + ' is deprecated - use -J' + rewritten + ' instead')
+                vmArgs.append(rewritten)
             elif arg == '-J-cp' or arg == '-J-classpath':
                 cp = args.pop(0)
                 if cp[:2] == '-J':
@@ -213,16 +202,6 @@ def extractArguments(cli_args):
                 break
     return vmArgs, rubyArgs, classpath, print_command, classic, main_class
 
-def extractTarball(file, target_dir):
-    if file.endswith('tar'):
-        with tarfile.open(file, 'r:') as tf:
-            tf.extractall(target_dir)
-    elif file.endswith('jar') or file.endswith('zip'):
-        with zipfile.ZipFile(file, "r") as zf:
-            zf.extractall(target_dir)
-    else:
-        mx.abort('Unsupported compressed file ' + file)
-
 def setup_jruby_home():
     rubyZip = mx.distribution('RUBY-ZIP').path
     assert exists(rubyZip)
@@ -230,11 +209,13 @@ def setup_jruby_home():
     if TimeStampFile(extractPath).isOlderThan(rubyZip):
         if exists(extractPath):
             shutil.rmtree(extractPath)
-        extractTarball(rubyZip, extractPath)
+        with tarfile.open(rubyZip, 'r:') as tf:
+            tf.extractall(extractPath)
     env = os.environ.copy()
     env['JRUBY_HOME'] = extractPath
     return env
 
+# Print to stderr, mx.log() outputs to stdout
 def log(msg):
     print >> sys.stderr, msg
 
@@ -247,14 +228,15 @@ def ruby_command(args):
     vmArgs, rubyArgs, user_classpath, print_command, classic, main_class = extractArguments(args)
     classpath = mx.classpath(['TRUFFLE_API', 'RUBY']).split(':')
     truffle_api, classpath = classpath[0], classpath[1:]
-    classpath += user_classpath
     assert os.path.basename(truffle_api) == "truffle-api.jar"
-    vmArgs = [
+    # Give precedence to graal classpath and VM options
+    classpath = user_classpath + classpath
+    vmArgs = vmArgs + [
         # '-Xss2048k',
         '-Xbootclasspath/a:' + truffle_api,
         '-cp', ':'.join(classpath),
-    ] + vmArgs
-    vmArgs = vmArgs + [main_class]
+        main_class
+    ]
     if not classic:
         vmArgs = vmArgs + ['-X+T']
     allArgs = vmArgs + rubyArgs

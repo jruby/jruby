@@ -1,1 +1,10 @@
-require_relative '../../../stdlib/rdoc/' + File.basename(__FILE__)
+##
+# An anonymous class like:
+#
+#   c = Class.new do end
+#
+# AnonClass is currently not used.
+
+class RDoc::AnonClass < RDoc::ClassModule
+end
+

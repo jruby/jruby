@@ -101,7 +101,6 @@ import org.jruby.truffle.core.thread.ThreadNodesFactory;
 import org.jruby.truffle.core.time.TimeNodesFactory;
 import org.jruby.truffle.core.tracepoint.TracePointNodesFactory;
 import org.jruby.truffle.debug.TruffleDebugNodesFactory;
-import org.jruby.truffle.extra.AttachmentsInternalNodesFactory;
 import org.jruby.truffle.extra.TruffleGraalNodesFactory;
 import org.jruby.truffle.extra.TrufflePosixNodesFactory;
 import org.jruby.truffle.extra.ffi.PointerPrimitiveNodesFactory;
@@ -445,7 +444,7 @@ public class CoreLibrary {
         errnoModule = defineModule("Errno");
 
         for (Errno errno : Errno.values()) {
-            if (errno.name().startsWith("E")) {
+            if (errno.defined()) {
                 if (errno.equals(Errno.EWOULDBLOCK) && Errno.EWOULDBLOCK.intValue() == Errno.EAGAIN.intValue()){
                     continue; // Don't define it as a class, define it as constant later.
                 }
@@ -598,8 +597,6 @@ public class CoreLibrary {
         defineModule(truffleModule, "GC");
         defineModule(truffleModule, "Array");
         defineModule(truffleModule, "String");
-        final DynamicObject attachments = defineModule(truffleModule, "Attachments");
-        defineModule(attachments, "Internal");
         truffleBootModule = defineModule(truffleModule, "Boot");
         defineModule(truffleModule, "Fixnum");
         defineModule(truffleModule, "Safe");
@@ -707,7 +704,6 @@ public class CoreLibrary {
         List<List<? extends NodeFactory<? extends RubyNode>>> factories = Arrays.asList(
                 ArrayNodesFactory.getFactories(),
                 AtomicReferenceNodesFactory.getFactories(),
-                AttachmentsInternalNodesFactory.getFactories(),
                 BasicObjectNodesFactory.getFactories(),
                 BCryptNodesFactory.getFactories(),
                 BigDecimalNodesFactory.getFactories(),
@@ -865,8 +861,6 @@ public class CoreLibrary {
 
         final DynamicObject defaultRecordSeparator = StringOperations.createString(context, StringOperations.encodeRope(CLI_RECORD_SEPARATOR, UTF8Encoding.INSTANCE));
         node.freezeNode.executeFreeze(defaultRecordSeparator);
-
-        // TODO (nirvdrum 05-Feb-15) We need to support the $-0 alias as well.
         globals.put("$/", defaultRecordSeparator);
 
         globals.put("$SAFE", 0);
@@ -1001,14 +995,13 @@ public class CoreLibrary {
             Main.printTruffleTimeMetric("before-load-core");
             state = State.LOADING_RUBY_CORE;
 
-            @SuppressWarnings("unchecked")
-            final Future<RubyRootNode>[] coreFileFutures = new Future[coreFiles.length];
+            final List<Future<RubyRootNode>> coreFileFutures = new ArrayList<>();
 
             if (TruffleOptions.AOT || !context.getOptions().CORE_PARALLEL_LOAD) {
                 try {
                     for (int n = 0; n < coreFiles.length; n++) {
                         final RubyRootNode rootNode = context.getCodeLoader().parse(
-                                context.getSourceCache().getSource(getCoreLoadPath() + coreFiles[n]),
+                                context.getSourceLoader().load(getCoreLoadPath() + coreFiles[n]),
                                 UTF8Encoding.INSTANCE, ParserContext.TOP_LEVEL, null, true, node);
 
                         final CodeLoader.DeferredCall deferredCall = context.getCodeLoader().prepareExecute(
@@ -1028,15 +1021,15 @@ public class CoreLibrary {
                     for (int n = 0; n < coreFiles.length; n++) {
                         final int finalN = n;
 
-                        coreFileFutures[n] = ForkJoinPool.commonPool().submit(() ->
+                        coreFileFutures.add(ForkJoinPool.commonPool().submit(() ->
                                 context.getCodeLoader().parse(
-                                        context.getSourceCache().getSource(getCoreLoadPath() + coreFiles[finalN]),
+                                        context.getSourceLoader().load(getCoreLoadPath() + coreFiles[finalN]),
                                         UTF8Encoding.INSTANCE, ParserContext.TOP_LEVEL, null, true, node)
-                        );
+                        ));
                     }
 
                     for (int n = 0; n < coreFiles.length; n++) {
-                        final RubyRootNode rootNode = coreFileFutures[n].get();
+                        final RubyRootNode rootNode = coreFileFutures.get(n).get();
 
                         final CodeLoader.DeferredCall deferredCall = context.getCodeLoader().prepareExecute(
                                 ParserContext.TOP_LEVEL,
@@ -1082,7 +1075,7 @@ public class CoreLibrary {
 
                 try {
                     for (String path : new String[]{"/post-boot/gems.rb", "/post-boot/shims.rb"}) {
-                        final RubyRootNode rootNode = context.getCodeLoader().parse(context.getSourceCache().getSource(getCoreLoadPath() + path), UTF8Encoding.INSTANCE, ParserContext.TOP_LEVEL, null, true, node);
+                        final RubyRootNode rootNode = context.getCodeLoader().parse(context.getSourceLoader().load(getCoreLoadPath() + path), UTF8Encoding.INSTANCE, ParserContext.TOP_LEVEL, null, true, node);
                         final CodeLoader.DeferredCall deferredCall = context.getCodeLoader().prepareExecute(ParserContext.TOP_LEVEL, DeclarationContext.TOP_LEVEL, rootNode, null, context.getCoreLibrary().getMainObject());
                         deferredCall.callWithoutCallNode();
                     }
@@ -1254,7 +1247,7 @@ public class CoreLibrary {
     }
 
     public static int long2int(long value) {
-        assert fitsIntoInteger(value);
+        assert fitsIntoInteger(value) : value;
         return (int) value;
     }
 
@@ -1748,8 +1741,6 @@ public class CoreLibrary {
             "/core/math.rb",
             "/core/method.rb",
             "/core/unbound_method.rb",
-            "/core/truffle/attachments.rb",
-            "/core/truffle/debug.rb",
             "/core/truffle/cext.rb",
             "/core/truffle/interop.rb",
             "/core/rbconfig.rb",

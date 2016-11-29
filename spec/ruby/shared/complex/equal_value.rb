@@ -60,7 +60,7 @@ describe :complex_equal_value, shared: true do
       obj = mock("Object")
       obj.should_receive(:==).with(value).and_return(:expected)
 
-      (value == obj).should == :expected
+      (value == obj).should_not be_false
     end
   end
 

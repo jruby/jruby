@@ -231,6 +231,7 @@ do
               -*)
                 opt="${opt:1}=false" ;;
             esac
+            echo "$1 is deprecated - use -J-Dgraal.$opt instead" >&2
             java_args=("${java_args[@]}" "-Dgraal.$opt")
         else
             if [ "${val:0:3}" = "-ea" ]; then

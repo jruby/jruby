@@ -42,11 +42,9 @@ import com.oracle.truffle.api.nodes.Node;
 import jnr.constants.platform.Errno;
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
-import org.joda.time.Chronology;
 import org.joda.time.DateTime;
-import org.joda.time.chrono.GJChronology;
-import org.joda.time.chrono.JulianChronology;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.encoding.EncodingManager;
 import org.jruby.truffle.debug.DebugHelpers;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.util.ByteList;
@@ -56,7 +54,11 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.text.DateFormatSymbols;
+import java.time.Instant;
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoField;
 import java.util.Calendar;
+import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -258,7 +260,7 @@ public class RubyDateFormatter {
         }
 
         ByteArrayInputStream in = new ByteArrayInputStream(pattern.getUnsafeBytes(), pattern.getBegin(), pattern.getRealSize());
-        Reader reader = new InputStreamReader(in, context.getEncodingManager().charsetForEncoding(pattern.getEncoding()));
+        Reader reader = new InputStreamReader(in, EncodingManager.charsetForEncoding(pattern.getEncoding()));
         lexer.yyreset(reader);
 
         Token token;
@@ -355,7 +357,7 @@ public class RubyDateFormatter {
         }
     }
 
-    public ByteList formatToByteList(List<Token> compiledPattern, DateTime dt, long nsec) {
+    public ByteList formatToByteList(List<Token> compiledPattern, ZonedDateTime dt) {
         RubyTimeOutputFormatter formatter = RubyTimeOutputFormatter.DEFAULT_FORMATTER;
         ByteList toAppendTo = new ByteList();
 
@@ -377,7 +379,7 @@ public class RubyDateFormatter {
                     break;
                 case FORMAT_WEEK_LONG:
                     // This is GROSS, but Java API's aren't ISO 8601 compliant at all
-                    int v = (dt.getDayOfWeek()+1)%8;
+                    int v = (dt.getDayOfWeek().getValue()+1)%8;
                     if(v == 0) {
                         v++;
                     }
@@ -385,17 +387,17 @@ public class RubyDateFormatter {
                     break;
                 case FORMAT_WEEK_SHORT:
                     // This is GROSS, but Java API's aren't ISO 8601 compliant at all
-                    v = (dt.getDayOfWeek()+1)%8;
+                    v = (dt.getDayOfWeek().getValue()+1)%8;
                     if(v == 0) {
                         v++;
                     }
                     output = FORMAT_SYMBOLS.getShortWeekdays()[v];
                     break;
                 case FORMAT_MONTH_LONG:
-                    output = FORMAT_SYMBOLS.getMonths()[dt.getMonthOfYear()-1];
+                    output = FORMAT_SYMBOLS.getMonths()[dt.getMonthValue()-1];
                     break;
                 case FORMAT_MONTH_SHORT:
-                    output = FORMAT_SYMBOLS.getShortMonths()[dt.getMonthOfYear()-1];
+                    output = FORMAT_SYMBOLS.getShortMonths()[dt.getMonthValue()-1];
                     break;
                 case FORMAT_DAY:
                     type = NUMERIC2;
@@ -407,15 +409,15 @@ public class RubyDateFormatter {
                     break;
                 case FORMAT_HOUR:
                     type = NUMERIC2;
-                    value = dt.getHourOfDay();
+                    value = dt.getHour();
                     break;
                 case FORMAT_HOUR_BLANK:
                     type = NUMERIC2BLANK;
-                    value = dt.getHourOfDay();
+                    value = dt.getHour();
                     break;
                 case FORMAT_HOUR_M:
                 case FORMAT_HOUR_S:
-                    value = dt.getHourOfDay();
+                    value = dt.getHour();
                     if (value == 0) {
                         value = 12;
                     } else if (value > 12) {
@@ -430,21 +432,21 @@ public class RubyDateFormatter {
                     break;
                 case FORMAT_MINUTES:
                     type = NUMERIC2;
-                    value = dt.getMinuteOfHour();
+                    value = dt.getMinute();
                     break;
                 case FORMAT_MONTH:
                     type = NUMERIC2;
-                    value = dt.getMonthOfYear();
+                    value = dt.getMonthValue();
                     break;
                 case FORMAT_MERIDIAN:
-                    output = dt.getHourOfDay() < 12 ? "AM" : "PM";
+                    output = dt.getHour() < 12 ? "AM" : "PM";
                     break;
                 case FORMAT_MERIDIAN_LOWER_CASE:
-                    output = dt.getHourOfDay() < 12 ? "am" : "pm";
+                    output = dt.getHour() < 12 ? "am" : "pm";
                     break;
                 case FORMAT_SECONDS:
                     type = NUMERIC2;
-                    value = dt.getSecondOfMinute();
+                    value = dt.getSecond();
                     break;
                 case FORMAT_WEEK_YEAR_M:
                     type = NUMERIC2;
@@ -456,23 +458,23 @@ public class RubyDateFormatter {
                     break;
                 case FORMAT_DAY_WEEK:
                     type = NUMERIC;
-                    value = dt.getDayOfWeek() % 7;
+                    value = dt.getDayOfWeek().getValue() % 7;
                     break;
                 case FORMAT_DAY_WEEK2:
                     type = NUMERIC;
-                    value = dt.getDayOfWeek();
+                    value = dt.getDayOfWeek().getValue();
                     break;
                 case FORMAT_YEAR_LONG:
-                    value = year(dt, dt.getYear());
+                    value = dt.getYear();
                     type = (value >= 0) ? NUMERIC4 : NUMERIC5;
                     break;
                 case FORMAT_YEAR_SHORT:
                     type = NUMERIC2;
-                    value = year(dt, dt.getYear()) % 100;
+                    value = dt.getYear() % 100;
                     break;
                 case FORMAT_COLON_ZONE_OFF:
                     // custom logic because this is so weird
-                    value = dt.getZone().getOffset(dt.getMillis()) / 1000;
+                    value = dt.getOffset().getTotalSeconds();
                     int colons = (Integer) token.getData();
                     output = formatZone(colons, (int) value, formatter);
                     break;
@@ -481,25 +483,22 @@ public class RubyDateFormatter {
                     break;
                 case FORMAT_CENTURY:
                     type = NUMERIC;
-                    value = year(dt, dt.getYear()) / 100;
+                    value = dt.getYear() / 100;
                     break;
                 case FORMAT_EPOCH:
                     type = NUMERIC;
-                    value = dt.getMillis() / 1000;
+                    value = dt.toInstant().getEpochSecond();
                     break;
                 case FORMAT_WEEK_WEEKYEAR:
                     type = NUMERIC2;
-                    value = dt.getWeekOfWeekyear();
+                    value = dt.get(ChronoField.ALIGNED_WEEK_OF_YEAR);
                     break;
                 case FORMAT_MILLISEC:
                 case FORMAT_NANOSEC:
                     int defaultWidth = (format == Format.FORMAT_NANOSEC) ? 9 : 3;
                     int width = formatter.getWidth(defaultWidth);
 
-                    output = RubyTimeOutputFormatter.formatNumber(dt.getMillisOfSecond(), 3, '0');
-                    if (width > 3) {
-                        output += RubyTimeOutputFormatter.formatNumber(nsec, 6, '0');
-                    }
+                    output = RubyTimeOutputFormatter.formatNumber(dt.getNano(), 9, '0');
 
                     if (width < output.length()) {
                         output = output.substring(0, width);
@@ -511,17 +510,18 @@ public class RubyDateFormatter {
                     formatter = RubyTimeOutputFormatter.DEFAULT_FORMATTER; // no more formatting
                     break;
                 case FORMAT_WEEKYEAR:
-                    value = year(dt, dt.getWeekyear());
+                    value = new DateTime(dt.toInstant().getEpochSecond() * 1_000).getWeekyear();
                     type = (value >= 0) ? NUMERIC4 : NUMERIC5;
                     break;
                 case FORMAT_WEEKYEAR_SHORT:
                     type = NUMERIC2;
-                    value = year(dt, dt.getWeekyear()) % 100;
+                    value = new DateTime(dt.toInstant().getEpochSecond() * 1_000).getWeekyear() % 100;
                     break;
                 case FORMAT_MICROSEC_EPOCH:
                     // only available for Date
                     type = NUMERIC;
-                    value = dt.getMillis();
+                    final Instant instant = dt.toInstant();
+                    value = instant.getEpochSecond() * 1_000 + (instant.getNano() / 1_000_000);
                     break;
                 case FORMAT_SPECIAL:
                     throw new Error("FORMAT_SPECIAL is a special token only for the lexer.");
@@ -536,27 +536,14 @@ public class RubyDateFormatter {
             // reset formatter
             formatter = RubyTimeOutputFormatter.DEFAULT_FORMATTER;
 
-            toAppendTo.append(output.getBytes(context.getEncodingManager().charsetForEncoding(toAppendTo.getEncoding())));
+            toAppendTo.append(output.getBytes(EncodingManager.charsetForEncoding(toAppendTo.getEncoding())));
         }
 
         return toAppendTo;
     }
 
-    /**
-     * Ruby always follows Astronomical year numbering,
-     * that is BC x is -x+1 and there is a year 0 (BC 1)
-     * but Joda-time returns -x for year x BC in Julian chronology (no year 0) */
-    private int year(DateTime dt, int year) {
-        Chronology c;
-        if (year < 0 && (
-                (c = dt.getChronology()) instanceof JulianChronology ||
-                (c instanceof GJChronology && ((GJChronology) c).getGregorianCutover().isAfter(dt))))
-            return year + 1;
-        return year;
-    }
-
-    private int formatWeekYear(DateTime dt, int firstDayOfWeek) {
-        Calendar dtCalendar = dt.toGregorianCalendar();
+    private int formatWeekYear(ZonedDateTime dt, int firstDayOfWeek) {
+        Calendar dtCalendar = GregorianCalendar.from(dt);
         dtCalendar.setFirstDayOfWeek(firstDayOfWeek);
         dtCalendar.setMinimalDaysInFirstWeek(7);
         int value = dtCalendar.get(Calendar.WEEK_OF_YEAR);
@@ -623,10 +610,11 @@ public class RubyDateFormatter {
         return before + after;
     }
 
-    public String getRubyTimeZoneName(DateTime dt) {
+    public String getRubyTimeZoneName(ZonedDateTime dt) {
         return getRubyTimeZoneName(getEnvTimeZone().toString(), dt);
     }
 
+    @SuppressWarnings("deprecation")
     private Object getEnvTimeZone() {
         return DebugHelpers.eval(context, "Time.now.zone");
     }
@@ -658,17 +646,17 @@ public class RubyDateFormatter {
     private static final Pattern TIME_OFFSET_PATTERN
             = Pattern.compile("([\\+-])(\\d\\d):(\\d\\d)(?::(\\d\\d))?");
 
-    public static String getRubyTimeZoneName(String envTZ, DateTime dt) {
+    public static String getRubyTimeZoneName(String envTZ, ZonedDateTime dt) {
         // see declaration of SHORT_TZNAME
-        if (SHORT_STD_TZNAME.containsKey(envTZ) && ! dt.getZone().toTimeZone().inDaylightTime(dt.toDate())) {
+        if (SHORT_STD_TZNAME.containsKey(envTZ) && ! dt.getOffset().getRules().isDaylightSavings(dt.toInstant())) {
             return SHORT_STD_TZNAME.get(envTZ);
         }
 
-        if (SHORT_DL_TZNAME.containsKey(envTZ) && dt.getZone().toTimeZone().inDaylightTime(dt.toDate())) {
+        if (SHORT_DL_TZNAME.containsKey(envTZ) && dt.getOffset().getRules().isDaylightSavings(dt.toInstant())) {
             return SHORT_DL_TZNAME.get(envTZ);
         }
 
-        String zone = dt.getZone().getShortName(dt.getMillis());
+        String zone = dt.getZone().getId();
 
         Matcher offsetMatcher = TIME_OFFSET_PATTERN.matcher(zone);
 
@@ -677,7 +665,7 @@ public class RubyDateFormatter {
                 zone = "UTC";
             } else {
                 // try non-localized time zone name
-                zone = dt.getZone().getNameKey(dt.getMillis());
+                zone = dt.getZone().getId();
                 if (zone == null) {
                     zone = "";
                 }
