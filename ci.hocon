@@ -400,6 +400,10 @@ test-ecosystem: ${gem-test-pack} {
 }
 
 test-cexts: ${sulong} ${gem-test-pack} {
+  environment: {
+    JRUBY_OPTS: "-J-Dgraal.TruffleCompileOnly=nothing",
+  }
+
   setup: ${sulong.setup} ${gem-test-pack.setup}
 
   run: [
