@@ -665,7 +665,7 @@ public class CoreLibrary {
         argv = Layouts.ARRAY.createArray(arrayFactory, null, 0);
         rubiniusUndefined = objectFactory.newInstance();
 
-        globalVariables = new GlobalVariables(context, nilObject);
+        globalVariables = new GlobalVariables(nilObject);
 
         // No need for new version since it's null before which is not cached
         assert Layouts.CLASS.getSuperclass(basicObjectClass) == null;
