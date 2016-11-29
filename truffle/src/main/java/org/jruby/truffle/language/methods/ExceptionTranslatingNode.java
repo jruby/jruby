@@ -102,7 +102,7 @@ public class ExceptionTranslatingNode extends RubyNode {
             message = exception.toString();
         }
 
-        return coreExceptions().argumentError(message, this);
+        return coreExceptions().argumentError(message, this, exception);
     }
 
     @TruffleBoundary
