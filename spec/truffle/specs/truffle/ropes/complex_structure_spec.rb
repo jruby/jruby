@@ -17,6 +17,7 @@ describe "Truffle Rope complex structure" do
       [(('abcd'*3)[1..-3]+('ABCD')), 'bcdabcdabABCD'],
       [(('abcd'*3)[1..-4]+('ABCD')), 'bcdabcdaABCD'],
       [(('abcd'*3)[1..-5]+('ABCD')), 'bcdabcdABCD'],
+      [(('ab'*4)+'0123456789')[1..-2]+'cd', 'bababab012345678cd']
   ].each_with_index do |(a, b), i|
     it format('%d: %s', i, b) do
       a.should == b
