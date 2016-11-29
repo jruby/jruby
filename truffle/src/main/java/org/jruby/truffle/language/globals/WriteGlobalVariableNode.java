@@ -28,17 +28,13 @@ public abstract class WriteGlobalVariableNode extends RubyNode {
         this.name = name;
     }
 
-    @Specialization(assumptions = "storage.getUnchangedAssumption()")
+    @Specialization(guards = "referenceEqualNode.executeReferenceEqual(value, previousValue)",
+                    assumptions = "storage.getUnchangedAssumption()")
     public Object writeTryToKeepConstant(Object value,
             @Cached("getStorage()") GlobalVariableStorage storage,
             @Cached("storage.getValue()") Object previousValue,
             @Cached("create()") ReferenceEqualNode referenceEqualNode) {
-        if (referenceEqualNode.executeReferenceEqual(value, previousValue)) {
-            return previousValue;
-        } else {
-            storage.setValue(getContext(), value);
-            return value;
-        }
+        return previousValue;
     }
 
     @Specialization
