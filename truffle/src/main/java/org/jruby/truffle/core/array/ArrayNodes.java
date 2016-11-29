@@ -931,7 +931,7 @@ public abstract class ArrayNodes {
             }
             final Object result = toIntNode.executeIntOrLong(frame, indexObject);
             if (result instanceof Integer) {
-                return (long) (int) result;
+                return (int) result;
             } else {
                 return (long) result;
             }
