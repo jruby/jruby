@@ -514,7 +514,7 @@ module Truffle::CExt
     end
   end
 
-  def rb_funcall(object, name, argc, args=[])
+  def rb_funcall(object, name, argc, *args)
     object.__send__(name, *args)
   end
 
