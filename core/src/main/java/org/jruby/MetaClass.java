@@ -38,7 +38,7 @@ public final class MetaClass extends RubyClass {
     public MetaClass(Ruby runtime, RubyClass superClass, IRubyObject attached) {
         super(runtime, superClass, false);
         this.attached = attached;
-        setClassIndex(superClass.classIndex); // use same ClassIndex as metaclass, since we're technically still of that type
+        setClassIndex(superClass.getClassIndex()); // use same ClassIndex as metaclass, since we're technically still of that type
     }
 
     @Override
