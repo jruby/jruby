@@ -10,14 +10,12 @@
 
 package org.jruby.truffle.language.globals;
 
-import com.oracle.truffle.api.Assumption;
-import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
-import com.oracle.truffle.api.utilities.CyclicAssumption;
-
-import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.language.objects.shared.SharedObjects;
 import org.jruby.util.cli.Options;
+
+import com.oracle.truffle.api.Assumption;
+import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.utilities.CyclicAssumption;
 
 public class GlobalVariableStorage {
 
@@ -43,33 +41,29 @@ public class GlobalVariableStorage {
         return unchangedAssumption.getAssumption();
     }
 
-    public void setValue(RubyContext context, Object value) {
-        if (assumeConstant) {
-            CompilerDirectives.transferToInterpreterAndInvalidate();
-            if (context.getSharedObjects().isSharing()) {
-                SharedObjects.writeBarrier(value);
-            }
-            this.value = value;
+    public boolean isAssumeConstant() {
+        return assumeConstant;
+    }
 
-            synchronized (this) {
-                if (!assumeConstant) {
-                    // Compiled code didn't see that we do not assumeConstant anymore
-                    return;
-                }
+    public void setValueInternal(Object value) {
+        this.value = value;
+    }
 
-                if (changes <= GLOBAL_VARIABLE_MAX_INVALIDATIONS) {
-                    changes++;
-                    unchangedAssumption.invalidate();
-                } else {
-                    unchangedAssumption.getAssumption().invalidate();
-                    assumeConstant = false;
-                }
+    @TruffleBoundary
+    public void updateAssumeConstant() {
+        synchronized (this) {
+            if (!assumeConstant) {
+                // Compiled code didn't see that we do not assumeConstant anymore
+                return;
             }
-        } else {
-            if (context.getSharedObjects().isSharing()) {
-                SharedObjects.writeBarrier(value);
+
+            if (changes <= GLOBAL_VARIABLE_MAX_INVALIDATIONS) {
+                changes++;
+                unchangedAssumption.invalidate();
+            } else {
+                unchangedAssumption.getAssumption().invalidate();
+                assumeConstant = false;
             }
-            this.value = value;
         }
     }
 
