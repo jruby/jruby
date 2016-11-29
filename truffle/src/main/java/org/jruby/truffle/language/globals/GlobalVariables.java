@@ -18,12 +18,16 @@ import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import org.jruby.truffle.RubyContext;
+
 public class GlobalVariables {
 
+    private final RubyContext context;
     private final DynamicObject defaultValue;
     private final ConcurrentMap<String, GlobalVariableStorage> variables = new ConcurrentHashMap<>();
 
-    public GlobalVariables(DynamicObject defaultValue) {
+    public GlobalVariables(RubyContext context, DynamicObject defaultValue) {
+        this.context = context;
         this.defaultValue = defaultValue;
     }
 
@@ -43,7 +47,7 @@ public class GlobalVariables {
 
     public GlobalVariableStorage put(String key, Object value) {
         GlobalVariableStorage storage = getStorage(key);
-        storage.setValue(value);
+        storage.setValue(context, value);
         return storage;
     }
 

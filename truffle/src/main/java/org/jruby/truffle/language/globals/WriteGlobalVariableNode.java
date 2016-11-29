@@ -36,7 +36,7 @@ public abstract class WriteGlobalVariableNode extends RubyNode {
         if (referenceEqualNode.executeReferenceEqual(value, previousValue)) {
             return previousValue;
         } else {
-            storage.setValue(value);
+            storage.setValue(getContext(), value);
             return value;
         }
     }
@@ -44,7 +44,7 @@ public abstract class WriteGlobalVariableNode extends RubyNode {
     @Specialization
     public Object write(Object value,
             @Cached("getStorage()") GlobalVariableStorage storage) {
-        storage.setValue(value);
+        storage.setValue(getContext(), value);
         return value;
     }
 

@@ -23,9 +23,22 @@ import org.jruby.truffle.util.SourceSectionUtils;
 import java.util.ArrayDeque;
 import java.util.Deque;
 
-public abstract class SharedObjects {
+public class SharedObjects {
 
-    public static void startSharing(RubyContext context) {
+    private final RubyContext context;
+    // No need for volatile since we change this before starting the 2nd Thread
+    private boolean sharing = false;
+
+    public SharedObjects(RubyContext context) {
+        this.context = context;
+    }
+
+    public boolean isSharing() {
+        return sharing;
+    }
+
+    public void startSharing() {
+        sharing = true;
         shareContextRoots(context);
     }
 
