@@ -212,7 +212,7 @@ class Enumerator
       hash = {}
       if block_given?
         Lazy.new(self) do |yielder, obj|
-          ret = yield *obj
+          ret = yield(*obj)
           next if hash.key? ret
           hash[ret] = obj
           yielder << obj

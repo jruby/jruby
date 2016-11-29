@@ -131,7 +131,7 @@ module Enumerable
     hash = {}
     if block_given?
       each do |obj|
-        ret = yield *obj
+        ret = yield(*obj)
         next if hash.key? ret
         hash[ret] = obj
         values << obj
