@@ -400,7 +400,7 @@ public class BodyTranslator extends Translator {
 
         final RubyNode args = node.getFirstNode().accept(this);
         final RubyNode value = node.getSecondNode().accept(this);
-        final RubyNode ret = ArrayAppendOneNodeGen.create(context, fullSourceSection,
+        final RubyNode ret = ArrayAppendOneNodeGen.create(
                 KernelNodesFactory.DupNodeFactory.create(context, fullSourceSection, new RubyNode[] { args }),
                 value);
 
