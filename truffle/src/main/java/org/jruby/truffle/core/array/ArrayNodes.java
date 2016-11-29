@@ -1496,7 +1496,7 @@ public abstract class ArrayNodes {
     @CoreMethod(names = "<<", raiseIfFrozenSelf = true, required = 1)
     public abstract static class AppendNode extends ArrayCoreMethodNode {
 
-        @Child private ArrayAppendOneNode appendOneNode = ArrayAppendOneNodeGen.create(null, null);
+        @Child private ArrayAppendOneNode appendOneNode = ArrayAppendOneNode.create();
 
         @Specialization
         public DynamicObject append(DynamicObject array, Object value) {
@@ -1508,7 +1508,7 @@ public abstract class ArrayNodes {
     @CoreMethod(names = { "push", "__append__" }, rest = true, optional = 1, raiseIfFrozenSelf = true)
     public abstract static class PushNode extends ArrayCoreMethodNode {
 
-        @Child private ArrayAppendOneNode appendOneNode = ArrayAppendOneNodeGen.create(null, null);
+        @Child private ArrayAppendOneNode appendOneNode = ArrayAppendOneNode.create();
 
         @Specialization(guards = "rest.length == 0")
         public DynamicObject pushZero(DynamicObject array, NotProvided unusedValue, Object[] rest) {
