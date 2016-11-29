@@ -60,13 +60,16 @@ class LicensesProject(ArchiveProject):
 
 def mavenSetup():
     maven_args = []
+    env = os.environ.copy()
     if not mx.get_opts().verbose:
         maven_args.append('-q')
-    if 'TRAVIS' not in os.environ:
-        buildPack = join(_suite.dir, 'jruby-build-pack/maven')
-        mavenDir = buildPack if isdir(buildPack) else join(_suite.dir, 'mxbuild/mvn')
-        maven_args.append('-Dmaven.repo.local=' + mavenDir)
-    env = os.environ.copy()
+
+    buildPack = join(_suite.dir, 'jruby-build-pack/maven')
+    if isdir(buildPack):
+        maven_args.append('-Dmaven.repo.local=' + buildPack)
+    elif 'CI' in env and 'TRAVIS' not in env:
+        maven_args.append('-Dmaven.repo.local=' + join(_suite.dir, 'mxbuild/mvn'))
+
     if not mx.get_opts().verbose:
         env['JRUBY_BUILD_MORE_QUIET'] = 'true'
     # HACK: since the maven executable plugin does not configure the
@@ -74,7 +77,7 @@ def mavenSetup():
     javaHome = os.getenv('JAVA_HOME')
     if javaHome:
         env["PATH"] = javaHome + '/bin' + os.pathsep + env["PATH"]
-        mx.logv('Setting PATH to {}'.format(os.environ["PATH"]))
+        mx.logv('Setting PATH to {}'.format(env["PATH"]))
     mx.run(['java', '-version'], env=env)
     return maven_args, env
 
