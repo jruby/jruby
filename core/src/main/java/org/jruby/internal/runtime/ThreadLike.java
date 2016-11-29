@@ -50,13 +50,9 @@ public interface ThreadLike {
 
     public Thread nativeThread();
 
-    public void setNativeName(String name);
+    public void setRubyName(String name);
 
-    public String getNativeName();
-
-    public void setRubyName(CharSequence name);
-
-    public CharSequence getRubyName();
+    public String getRubyName();
 
     public String getReportName();
 }

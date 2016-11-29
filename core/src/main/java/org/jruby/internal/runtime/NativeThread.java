@@ -39,19 +39,12 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class NativeThread implements ThreadLike {
     private final Reference<Thread> nativeThread;
     public final RubyThread rubyThread;
-    public CharSequence rubyName;
-    public String nativeName;
-    
-    @Deprecated
-    public NativeThread(RubyThread rubyThread, IRubyObject[] args, Block block) {
-        throw new RuntimeException();
-    }
+    public String rubyName;
     
     public NativeThread(RubyThread rubyThread, Thread nativeThread) {
         this.rubyThread = rubyThread;
         this.nativeThread = new WeakReference<>(nativeThread);
         this.rubyName = null;
-        this.nativeName = nativeThread.getName();
     }
     
     public void start() {
@@ -116,39 +109,22 @@ public class NativeThread implements ThreadLike {
     }
 
     @Override
-    public void setNativeName(String name) {
-        assert name != null;
-
-        Thread nativeThread = getThread();
-        if (nativeThread != null) {
-            try {
-                nativeThread.setName(name);
-            } catch (SecurityException se) {
-                // current thread cannot modify...ignore
-            }
-        }
-
-        this.nativeName = name;
-    }
-
-    @Override
-    public String getNativeName() {
-        return nativeName;
-    }
-
-    @Override
-    public void setRubyName(CharSequence name) {
+    public void setRubyName(String name) {
         this.rubyName = name;
+        updateName();
     }
 
     @Override
-    public CharSequence getRubyName() {
+    public String getRubyName() {
         return rubyName;
     }
 
     @Override
     public String getReportName() {
-        String nativeName = getNativeName();
+        String nativeName = "";
+
+        Thread thread = getThread();
+        if (thread != null) nativeName = thread.getName();
 
         if (rubyName == null || rubyName.length() == 0) {
             if (nativeName.equals("")) {
@@ -162,5 +138,37 @@ public class NativeThread implements ThreadLike {
             }
             return rubyName + " (" + nativeName + ")";
         }
+    }
+
+    private static final String RUBY_THREAD_PREFIX = "Ruby-";
+
+    void updateName() {
+        // "Ruby-0-Thread-16: (irb):21"
+        // "Ruby-0-Thread-17@worker#1: (irb):21"
+        String newName;
+        String setName = rubyName;
+        Thread thread = getThread();
+
+        if (thread == null) return;
+
+        final String currentName = thread.getName();
+        if (currentName != null && currentName.startsWith(RUBY_THREAD_PREFIX)) {
+            final int i = currentName.indexOf('@'); // Thread#name separator
+            if (i == -1) { // name not set yet: "Ruby-0-Thread-42: FILE:LINE"
+                int end = currentName.indexOf(':');
+                if (end == -1) end = currentName.length();
+                final String prefix = currentName.substring(0, end);
+                newName = currentName.replace(prefix, prefix + '@' + setName);
+
+            } else { // name previously set: "Ruby-0-Thread-42@foo: FILE:LINE"
+                final String prefix = currentName.substring(0, i); // Ruby-0-Thread-42
+                int end = currentName.indexOf(':', i);
+                if (end == -1) end = currentName.length();
+                final String prefixWithName = currentName.substring(0, end); // Ruby-0-Thread-42@foo:
+                newName = currentName.replace(prefixWithName, setName == null ? prefix : (prefix + '@' + setName));
+            }
+        } else return; // not a new-thread that and does not match out Ruby- prefix
+        // ... very likely user-code set the java thread name - thus do not mess!
+        try { thread.setName(newName); } catch (SecurityException ignore) { } // current thread can not modify
     }
 }
