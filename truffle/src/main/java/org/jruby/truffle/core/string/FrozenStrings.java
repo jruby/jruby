@@ -21,7 +21,7 @@ public class FrozenStrings {
 
     private final RubyContext context;
 
-    private final Map<Rope, DynamicObject> frozenStrings = new WeakHashMap<>();
+    private final Map<RopeHolder, DynamicObject> frozenStrings = new WeakHashMap<>();
 
     public FrozenStrings(RubyContext context) {
         this.context = context;
@@ -30,15 +30,45 @@ public class FrozenStrings {
     public synchronized DynamicObject getFrozenString(Rope rope) {
         assert context.getRopeTable().contains(rope);
 
-        DynamicObject string = frozenStrings.get(rope);
+        final RopeHolder holder = new RopeHolder(rope);
+        DynamicObject string = frozenStrings.get(holder);
 
         if (string == null) {
             string = StringOperations.createString(context, rope);
             string.define(Layouts.FROZEN_IDENTIFIER, true);
-            frozenStrings.put(rope, string);
+            frozenStrings.put(holder, string);
         }
 
         return string;
     }
 
+    // TODO (nirvdrum 29-Nov-2016) This is a temporary measure to cope with Rope#equals not taking Encoding into consideration. Fixing that is a much more involved effort, but once completed this wrapper class can be removed.
+    private static class RopeHolder {
+
+        private final Rope rope;
+
+        public RopeHolder(Rope rope) {
+            this.rope = rope;
+        }
+
+        public Rope getRope() {
+            return rope;
+        }
+
+        @Override
+        public int hashCode() {
+            return rope.hashCode();
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (o instanceof RopeHolder) {
+                final RopeHolder other = (RopeHolder) o;
+
+                return rope.getEncoding() == other.getRope().getEncoding() && rope.equals(other.getRope());
+            }
+
+            return false;
+        }
+    }
 }
