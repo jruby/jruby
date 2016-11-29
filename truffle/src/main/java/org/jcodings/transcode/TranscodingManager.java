@@ -207,6 +207,7 @@ public class TranscodingManager {
         return ret;
     }
 
+    @SuppressWarnings("unchecked")
     @TruffleBoundary
     private static LinkedList<String> bfs(String sourceEncodingName, String destinationEncodingName) {
         final Set<String> alreadyVisited = new HashSet<>();
