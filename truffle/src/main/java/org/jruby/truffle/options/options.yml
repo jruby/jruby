@@ -1,0 +1,2 @@
+ARGUMENTS:              [arguments,                 string-array,   [],         Foo bar baz]
+EXCEPTIONS_PRINT_JAVA:  [exceptions.print_java,     boolean,        false,      Foo bar baz]
