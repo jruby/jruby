@@ -11,7 +11,7 @@ package org.jruby.truffle.options;
 
 // This file would be automatically generated from the list of options in the text file.
 
-public class OptionsCatalogue {
+public class OptionsCatalog {
 
     public static final OptionDescription ARGUMENTS = new StringArrayOptionDescription("arguments", "Foo bar baz", new String[0]);
 

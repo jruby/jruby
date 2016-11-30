@@ -36,7 +36,7 @@ public class OptionsBuilder {
     }
 
     private void set(String name, Object value) {
-        final OptionDescription description = OptionsCatalogue.fromName(name);
+        final OptionDescription description = OptionsCatalog.fromName(name);
 
         if (description == null) {
             //throw new UnsupportedOperationException(name);

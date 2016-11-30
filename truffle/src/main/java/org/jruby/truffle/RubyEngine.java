@@ -13,7 +13,7 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.vm.PolyglotEngine;
 import org.jruby.RubyInstanceConfig;
-import org.jruby.truffle.options.OptionsCatalogue;
+import org.jruby.truffle.options.OptionsCatalog;
 import org.jruby.truffle.platform.graal.Graal;
 import org.jruby.util.cli.Options;
 
@@ -36,7 +36,7 @@ public class RubyEngine {
 
         engine = PolyglotEngine.newBuilder()
                 .config(RubyLanguage.MIME_TYPE, INSTANCE_CONFIG_KEY, instanceConfig)
-                .config(RubyLanguage.MIME_TYPE, OptionsCatalogue.ARGUMENTS.getName(), instanceConfig.getArgv())
+                .config(RubyLanguage.MIME_TYPE, OptionsCatalog.ARGUMENTS.getName(), instanceConfig.getArgv())
                 .build();
         Main.printTruffleTimeMetric("before-load-context");
         context = engine.eval(loadSource("Truffle::Boot.context", "context")).as(RubyContext.class);
