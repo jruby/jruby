@@ -39,6 +39,8 @@ import static org.junit.Assert.assertTrue;
 
 public class RubyDebugTest {
 
+    private static final int BREAKPOINT_LINE = 13;
+
     private Debugger debugger;
     private DebuggerSession debuggerSession;
     private final LinkedList<Runnable> run = new LinkedList<>();
@@ -90,7 +92,7 @@ public class RubyDebugTest {
         run.addLast(() -> {
             assertNull(suspendedEvent);
             assertNotNull(debuggerSession);
-            Breakpoint breakpoint = Breakpoint.newBuilder(factorial).lineIs(3).build();
+            Breakpoint breakpoint = Breakpoint.newBuilder(factorial).lineIs(BREAKPOINT_LINE).build();
             debuggerSession.install(breakpoint);
         });
 
@@ -100,7 +102,7 @@ public class RubyDebugTest {
 
         assertExecutedOK("Algorithm loaded");
 
-        assertLocation(3, "1",
+        assertLocation(13, "1",
                         "n", "1",
                         "nMinusOne", "nil",
                         "nMOFact", "nil",
@@ -127,32 +129,32 @@ public class RubyDebugTest {
             debuggerSession.suspendNextExecution();
         });
 
-        assertLocation(13, "res = fac(2)", "res", "nil");
+        assertLocation(23, "res = fac(2)", "res", "nil");
         stepInto(1);
-        assertLocation(2, "if n <= 1",
+        assertLocation(12, "if n <= 1",
                         "n", "2",
                         "nMinusOne", "nil",
                         "nMOFact", "nil",
                         "res", "nil");
         stepOver(1);
-        assertLocation(5, "nMinusOne = n - 1",
+        assertLocation(15, "nMinusOne = n - 1",
                         "n", "2",
                         "nMinusOne", "nil",
                         "nMOFact", "nil",
                         "res", "nil");
         stepOver(1);
-        assertLocation(6, "nMOFact = fac(nMinusOne)",
+        assertLocation(16, "nMOFact = fac(nMinusOne)",
                         "n", "2",
                         "nMinusOne", "1",
                         "nMOFact", "nil",
                         "res", "nil");
         stepOver(1);
-        assertLocation(7, "res = n * nMOFact",
+        assertLocation(17, "res = n * nMOFact",
                         "n", "2", "nMinusOne", "1",
                         "nMOFact", "1",
                         "res", "nil");
         stepOut();
-        assertLocation(13, "res = fac(2)" + System.lineSeparator()
+        assertLocation(23, "res = fac(2)" + System.lineSeparator()
             + "  puts res" + System.lineSeparator() // wrong!?
             + "  res", // wrong!?
                         "res", "2");
