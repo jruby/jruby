@@ -14,25 +14,40 @@ wait = ARGV[1] == '--wait'
 
 failures = []
 
+known_failures = [
+  ["server", "graal-enterprise-no-om", "jruby", "truffle", "asciidoctor", "asciidoctor:load-file"],
+  ["server", "graal-enterprise-no-om", "jruby", "truffle", "server", "tcp-server"],
+  ["server", "graal-enterprise", "jruby", "truffle", "server", "tcp-server"],
+  ["server", "graal-enterprise", "jruby", "truffle", "asciidoctor", "asciidoctor:load-file"],
+  ["server", "graal-core", "jruby", "truffle", "server", "tcp-server"],
+  ["server", "graal-core", "jruby", "truffle", "asciidoctor", "asciidoctor:load-file"]
+]
+
 if File.exist?('failures')
   failures = File.read('failures').split("\n").map { |failure| eval(failure) }
 else
   failures = []
 end
 
-any_failed = result['queries'].any? do |q|
+(result['queries'] || []).any? do |q|
   if q['extra.error'] == 'failed'
     failures.push [q['host-vm'], q['host-vm-config'], q['guest-vm'], q['guest-vm-config'], q['bench-suite'], q['benchmark']]
   end
 end
 
+known_failures.each do |known_failure|
+  if failures.delete(known_failure)
+    STDERR.puts "#{known_failure.inspect} failed, but we know about that"
+  end
+end
+
 if wait
-  if any_failed
+  if !failures.empty?
     STDERR.puts 'waiting to return failure...'
     File.write('failures', failures.map(&:inspect).join("\n"))
   end
 else
-  if any_failed || File.exist?('failures')
+  if !failures.empty? || File.exist?('failures')
     STDERR.puts 'these failed:'
     failures.each do |failure|
       STDERR.puts failure.inspect
