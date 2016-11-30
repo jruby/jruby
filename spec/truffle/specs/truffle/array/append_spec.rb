@@ -21,7 +21,7 @@ describe "Array#<<" do
 
   it "empty array has null storage" do
     ary = []
-    storage(ary).should == "null"
+    storage(ary).should == "fallback"
   end
 
   it "supports transitions from null storage" do

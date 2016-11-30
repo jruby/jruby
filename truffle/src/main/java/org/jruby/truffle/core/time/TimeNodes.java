@@ -194,10 +194,15 @@ public abstract class TimeNodes {
 
             Layouts.TIME.setIsUtc(time, true);
             Layouts.TIME.setRelativeOffset(time, false);
-            Layouts.TIME.setZone(time, create7BitString(UTC.getDisplayName(TextStyle.NARROW, Locale.ENGLISH), USASCIIEncoding.INSTANCE));
+            Layouts.TIME.setZone(time, create7BitString(getUTCDisplayName(), USASCIIEncoding.INSTANCE));
             Layouts.TIME.setDateTime(time, inUTC(dateTime));
 
             return time;
+        }
+
+        @TruffleBoundary
+        private String getUTCDisplayName() {
+            return UTC.getDisplayName(TextStyle.NARROW, Locale.ENGLISH);
         }
 
         @TruffleBoundary

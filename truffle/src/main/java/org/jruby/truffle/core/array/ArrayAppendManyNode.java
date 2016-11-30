@@ -16,8 +16,6 @@ import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
-import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 
 import static org.jruby.truffle.core.array.ArrayHelpers.getSize;
@@ -30,10 +28,6 @@ import static org.jruby.truffle.core.array.ArrayHelpers.setStoreAndSize;
 })
 @ImportStatic(ArrayGuards.class)
 public abstract class ArrayAppendManyNode extends RubyNode {
-
-    public ArrayAppendManyNode(RubyContext context, SourceSection sourceSection) {
-        super(context, sourceSection);
-    }
 
     public abstract DynamicObject executeAppendMany(DynamicObject array, DynamicObject other);
 

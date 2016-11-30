@@ -17,35 +17,53 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.basicobject.BasicObjectNodes.ReferenceEqualNode;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.objects.shared.WriteBarrierNode;
 
 @NodeChild(value = "value")
 public abstract class WriteGlobalVariableNode extends RubyNode {
 
     private final String name;
 
+    @Child ReferenceEqualNode referenceEqualNode = ReferenceEqualNode.create();
+    @Child WriteBarrierNode writeBarrierNode = WriteBarrierNode.create();
+
     public WriteGlobalVariableNode(RubyContext context, SourceSection sourceSection, String name) {
         super(context, sourceSection);
         this.name = name;
     }
 
-    @Specialization(assumptions = "storage.getUnchangedAssumption()")
+    @Specialization(guards = "referenceEqualNode.executeReferenceEqual(value, previousValue)",
+                    assumptions = "storage.getUnchangedAssumption()")
     public Object writeTryToKeepConstant(Object value,
-            @Cached("getStorage()") GlobalVariableStorage storage,
-            @Cached("storage.getValue()") Object previousValue,
-            @Cached("create()") ReferenceEqualNode referenceEqualNode) {
-        if (referenceEqualNode.executeReferenceEqual(value, previousValue)) {
-            return previousValue;
-        } else {
-            storage.setValue(value);
-            return value;
-        }
+                    @Cached("getStorage()") GlobalVariableStorage storage,
+                    @Cached("storage.getValue()") Object previousValue) {
+        return previousValue;
     }
 
-    @Specialization
-    public Object write(Object value,
-            @Cached("getStorage()") GlobalVariableStorage storage) {
-        storage.setValue(value);
+    @Specialization(guards = "storage.isAssumeConstant()",
+                    assumptions = "storage.getUnchangedAssumption()")
+    public Object writeAssumeConstant(Object value,
+                    @Cached("getStorage()") GlobalVariableStorage storage) {
+        if (getContext().getSharedObjects().isSharing()) {
+            writeBarrierNode.executeWriteBarrier(value);
+        }
+        storage.setValueInternal(value);
+        storage.updateAssumeConstant();
         return value;
+    }
+
+    @Specialization(guards = {"workaround()", "!storage.isAssumeConstant()"}, contains = "writeAssumeConstant")
+    public Object write(Object value,
+                    @Cached("getStorage()") GlobalVariableStorage storage) {
+        if (getContext().getSharedObjects().isSharing()) {
+            writeBarrierNode.executeWriteBarrier(value);
+        }
+        storage.setValueInternal(value);
+        return value;
+    }
+
+    protected boolean workaround() {
+        return true;
     }
 
     protected GlobalVariableStorage getStorage() {

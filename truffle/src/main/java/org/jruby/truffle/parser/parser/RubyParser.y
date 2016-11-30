@@ -137,7 +137,8 @@ import static org.jruby.truffle.parser.lexer.LexingCommon.EXPR_ENDARG;
 import static org.jruby.truffle.parser.lexer.LexingCommon.EXPR_ENDFN;
 import static org.jruby.truffle.parser.lexer.LexingCommon.EXPR_FNAME;
 import static org.jruby.truffle.parser.lexer.LexingCommon.EXPR_LABEL;
- 
+
+@SuppressWarnings({"unchecked", "fallthrough"})
 public class RubyParser {
     protected final ParserSupport support;
     protected final RubyLexer lexer;
@@ -1934,7 +1935,7 @@ xstring         : tXSTRING_BEG xstring_contents tSTRING_END {
                 }
 
 regexp          : tREGEXP_BEG regexp_contents tREGEXP_END {
-                    $$ = support.newRegexpNode(support.getPosition($2), $2, (RegexpParseNode) $3);
+                    $$ = support.newRegexpNode(support.getPosition($2), $2, $3);
                 }
 
 words           : tWORDS_BEG ' ' tSTRING_END {

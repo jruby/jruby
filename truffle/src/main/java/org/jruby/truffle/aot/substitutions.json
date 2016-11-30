@@ -1,0 +1,201 @@
+[
+  {
+    "annotatedClass": "org.jruby.truffle.aot.Target_org_jcodings_Encoding",
+    "originalClass": "org.jcodings.Encoding",
+    "methods": [
+      {
+        "annotatedName": "load",
+        "substitute": true
+      }
+    ]
+  },
+  {
+    "annotatedClass": "org.jruby.truffle.aot.Target_org_jcodings_util_ArrayReader",
+    "originalClass": "org.jcodings.util.ArrayReader",
+    "methods": [
+      {
+        "annotatedName": "openStream",
+        "substitute": true
+      }
+    ]
+  },
+  {
+    "annotatedClass": "org.jruby.truffle.aot.Target_org_joda_time_DateTimeUtils",
+    "originalClass": "org.joda.time.DateTimeUtils",
+    "methods": [
+      {
+        "annotatedName": "getDateFormatSymbols",
+        "substitute": true
+      }
+    ]
+  },
+  {
+    "annotatedClass": "org.jruby.truffle.aot.Target_org_joda_time_tz_ZoneInfoProvider",
+    "originalClass": "org.joda.time.tz.ZoneInfoProvider",
+    "methods": [
+      {
+        "annotatedName": "getZone",
+        "substitute": true
+      },
+      {
+        "annotatedName": "openResource",
+        "substitute": true
+      }
+    ],
+    "fields": [
+      {
+        "annotatedName": "iFileDir",
+        "alias": true
+      }
+    ]
+  },
+  {
+    "annotatedClass": "org.jruby.truffle.aot.Target_org_jruby_RubyBasicObject",
+    "originalClass": "org.jruby.RubyBasicObject",
+    "methods": [
+      {
+        "annotatedName": "defaultToJava",
+        "substitute": true
+      }
+    ],
+    "fields": [
+      {
+        "annotatedName": "STAMP_OFFSET",
+        "delete": true
+      },
+      {
+        "annotatedName": "VAR_TABLE_OFFSET",
+        "delete": true
+      }
+    ]
+  },
+  {
+    "annotatedClass": "org.jruby.truffle.aot.Target_org_jruby_RubyEncoding",
+    "originalClass": "org.jruby.RubyEncoding",
+    "fields": [
+      {
+        "annotatedName": "BYTE_ARRAY_BASE",
+        "delete": true
+      },
+      {
+        "annotatedName": "CHAR_ARRAY_BASE",
+        "delete": true
+      },
+      {
+        "annotatedName": "VALUE_FIELD_OFFSET",
+        "delete": true
+      }
+    ]
+  },
+  {
+    "annotatedClass": "org.jruby.truffle.aot.Target_org_jruby_RubyInstanceConfig",
+    "originalClass": "org.jruby.RubyInstanceConfig",
+    "methods": [
+      {
+        "annotatedName": "calculateJRubyHome",
+        "substitute": true
+      },
+      {
+        "annotatedName": "defaultClassLoader",
+        "substitute": true
+      },
+      {
+        "annotatedName": "setupEnvironment",
+        "substitute": true
+      },
+      {
+        "annotatedName": "verifyHome",
+        "alias": true
+      }
+    ],
+    "fields": [
+      {
+        "annotatedName": "environment",
+        "alias": true
+      },
+      {
+        "annotatedName": "error",
+        "alias": true
+      }
+    ]
+  },
+  {
+    "annotatedClass": "org.jruby.truffle.aot.Target_org_jruby_truffle_language_loader_SourceLoader",
+    "originalClass": "org.jruby.truffle.language.loader.SourceLoader",
+    "methods": [
+      {
+        "annotatedName": "loadResource",
+        "substitute": true
+      }
+    ]
+  },
+  {
+    "annotatedClass": "org.jruby.truffle.aot.Target_org_jruby_util_JarResource",
+    "originalClass": "org.jruby.util.JarResource",
+    "methods": [
+      {
+        "annotatedName": "create",
+        "substitute": true
+      }
+    ]
+  },
+  {
+    "annotatedClass": "org.jruby.truffle.aot.Target_org_jruby_util_StringSupport",
+    "originalClass": "org.jruby.util.StringSupport",
+    "fields": [
+      {
+        "annotatedName": "ARRAY_BYTE_BASE_OFFSET",
+        "delete": true
+      }
+    ]
+  },
+  {
+    "annotatedClass": "org.jruby.truffle.aot.Target_org_jruby_util_URLResource",
+    "originalClass": "org.jruby.util.URLResource",
+    "methods": [
+      {
+        "annotatedName": "createClassloaderURI",
+        "substitute": true
+      },
+      {
+        "annotatedName": "openInputStream",
+        "substitute": true
+      }
+    ],
+    "fields": [
+      {
+        "annotatedName": "url",
+        "alias": true
+      }
+    ]
+  },
+  {
+    "annotatedClass": "org.jruby.truffle.aot.Target_org_jruby_util_unsafe_UnsafeHolder",
+    "originalClass": "org.jruby.util.unsafe.UnsafeHolder",
+    "methods": [
+      {
+        "annotatedName": "fullFence",
+        "substitute": true
+      }
+    ],
+    "fields": [
+      {
+        "annotatedName": "ARRAY_OBJECT_BASE_OFFSET",
+        "alias": true,
+        "kind": "ArrayBaseOffset",
+        "declClassName": "[Ljava.lang.Object;"
+      },
+      {
+        "annotatedName": "ARRAY_OBJECT_INDEX_SCALE",
+        "alias": true,
+        "kind": "ArrayIndexScale",
+        "declClassName": "[Ljava.lang.Object;"
+      },
+      {
+        "annotatedName": "SUPPORTS_FENCES",
+        "alias": true,
+        "kind": "FromAlias"
+      }
+    ]
+  },
+]

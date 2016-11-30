@@ -83,6 +83,7 @@ public class RubyContext extends ExecutionContext {
     private final FeatureLoader featureLoader = new FeatureLoader(this);
     private final TraceManager traceManager;
     private final ObjectSpaceManager objectSpaceManager = new ObjectSpaceManager(this);
+    private final SharedObjects sharedObjects = new SharedObjects(this);
     private final AtExitManager atExitManager = new AtExitManager(this);
     private final SourceLoader sourceLoader = new SourceLoader(this);
     private final CallStackManager callStack = new CallStackManager(this);
@@ -197,7 +198,7 @@ public class RubyContext extends ExecutionContext {
 
         // Share once everything is loaded
         if (Options.SHARED_OBJECTS && Options.SHARED_OBJECTS_FORCE) {
-            SharedObjects.startSharing(this);
+            sharedObjects.startSharing();
         }
     }
 
@@ -320,6 +321,10 @@ public class RubyContext extends ExecutionContext {
 
     public ObjectSpaceManager getObjectSpaceManager() {
         return objectSpaceManager;
+    }
+
+    public SharedObjects getSharedObjects() {
+        return sharedObjects;
     }
 
     public ThreadManager getThreadManager() {

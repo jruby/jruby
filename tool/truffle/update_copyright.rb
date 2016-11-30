@@ -43,7 +43,9 @@ COPYRIGHT = /Copyright \(c\) (?<year1>\d{4})(?:, (?<year2>\d{4}))? Oracle\b/
 OTHER_COPYRIGHTS = [
   /Copyright \(c\) \d{4} Software Architecture Group, Hasso Plattner Institute/,
   /Copyright \(c\) \d{4}(?:-\d{4})?,? Evan Phoenix/,
-  /Copyright \(c\) \d{4} Engine Yard/
+  /Copyright \(c\) \d{4} Engine Yard/,
+  /Copyright \(c\) \d{4} Damien Miller <djm@mindrot\.org>/, # BCrypt
+  /\* BEGIN LICENSE BLOCK \**\s*\n\s*\*\s*Version: EPL 1\.0\/GPL 2\.0\/LGPL 2\.1/,
 ]
 
 truffle_paths = %w[
@@ -54,7 +56,12 @@ truffle_paths = %w[
 
 excludes = %w[
   test/truffle/pack-real-usage.rb
+  test/truffle/cexts
+  truffle/src/main/c/openssl
 ]
+
+# Until those all have copyright headers
+excludes << "truffle/src/main/java/org/jruby/truffle/parser"
 
 truffle_paths.each do |path|
   puts "WARNING: incorrect path #{path}" unless File.exist? path

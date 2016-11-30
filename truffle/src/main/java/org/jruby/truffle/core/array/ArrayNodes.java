@@ -171,12 +171,7 @@ public abstract class ArrayNodes {
 
         @Child private KernelNodes.RespondToNode respondToToStrNode;
         @Child private ToIntNode toIntNode;
-        @Child private AllocateObjectNode allocateObjectNode;
-
-        public MulNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            allocateObjectNode = AllocateObjectNode.create();
-        }
+        @Child private AllocateObjectNode allocateObjectNode = AllocateObjectNode.create();
 
         protected abstract Object executeMul(VirtualFrame frame, DynamicObject array, int count);
 
@@ -253,12 +248,7 @@ public abstract class ArrayNodes {
         @Child protected ArrayReadSliceDenormalizedNode readSliceNode;
         @Child protected ArrayReadSliceNormalizedNode readNormalizedSliceNode;
         @Child protected CallDispatchHeadNode fallbackNode;
-        @Child protected AllocateObjectNode allocateObjectNode;
-
-        public IndexNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            allocateObjectNode = AllocateObjectNode.create();
-        }
+        @Child protected AllocateObjectNode allocateObjectNode = AllocateObjectNode.create();
 
         @Specialization
         public Object index(DynamicObject array, int index, NotProvided length) {
@@ -687,12 +677,7 @@ public abstract class ArrayNodes {
     @ImportStatic(ArrayGuards.class)
     public abstract static class ConcatNode extends CoreMethodNode {
 
-        @Child private ArrayAppendManyNode appendManyNode;
-
-        public ConcatNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            appendManyNode = ArrayAppendManyNodeGen.create(context, sourceSection, null, null);
-        }
+        @Child private ArrayAppendManyNode appendManyNode = ArrayAppendManyNodeGen.create(null, null);
 
         @CreateCast("other") public RubyNode coerceOtherToAry(RubyNode other) {
             return ToAryNodeGen.create(null, null, other);
@@ -710,13 +695,8 @@ public abstract class ArrayNodes {
     @ImportStatic(ArrayGuards.class)
     public abstract static class DeleteNode extends YieldingCoreMethodNode {
 
-        @Child private KernelNodes.SameOrEqualNode equalNode;
+        @Child private KernelNodes.SameOrEqualNode equalNode = KernelNodesFactory.SameOrEqualNodeFactory.create(null);
         @Child private IsFrozenNode isFrozenNode;
-
-        public DeleteNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            equalNode = KernelNodesFactory.SameOrEqualNodeFactory.create(null);
-        }
 
         @Specialization(guards = "isNullArray(array)")
         public Object deleteNull(VirtualFrame frame, DynamicObject array, Object value, NotProvided block) {
@@ -820,10 +800,6 @@ public abstract class ArrayNodes {
     public abstract static class EachNode extends YieldingCoreMethodNode {
 
         @Child private CallDispatchHeadNode toEnumNode;
-
-        public EachNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization(guards = "isNullArray(array)")
         public Object eachNull(VirtualFrame frame, DynamicObject array, DynamicObject block) {
@@ -955,7 +931,7 @@ public abstract class ArrayNodes {
             }
             final Object result = toIntNode.executeIntOrLong(frame, indexObject);
             if (result instanceof Integer) {
-                return (long) (int) result;
+                return (int) result;
             } else {
                 return (long) result;
             }
@@ -966,11 +942,10 @@ public abstract class ArrayNodes {
     @CoreMethod(names = "include?", required = 1)
     public abstract static class IncludeNode extends ArrayCoreMethodNode {
 
-        @Child private KernelNodes.SameOrEqualNode equalNode;
+        @Child private KernelNodes.SameOrEqualNode equalNode = KernelNodesFactory.SameOrEqualNodeFactory.create(null);
 
         public IncludeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            equalNode = KernelNodesFactory.SameOrEqualNodeFactory.create(null);
         }
 
         @Specialization(guards = "isNullArray(array)")
@@ -1519,17 +1494,12 @@ public abstract class ArrayNodes {
     }
 
     @CoreMethod(names = "<<", raiseIfFrozenSelf = true, required = 1)
-    public abstract static class LeftShiftNode extends ArrayCoreMethodNode {
+    public abstract static class AppendNode extends ArrayCoreMethodNode {
 
-        @Child private ArrayAppendOneNode appendOneNode;
-
-        public LeftShiftNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            appendOneNode = ArrayAppendOneNodeGen.create(context, sourceSection, null, null);
-        }
+        @Child private ArrayAppendOneNode appendOneNode = ArrayAppendOneNode.create();
 
         @Specialization
-        public DynamicObject leftShift(DynamicObject array, Object value) {
+        public DynamicObject append(DynamicObject array, Object value) {
             return appendOneNode.executeAppendOne(array, value);
         }
 
@@ -1538,12 +1508,7 @@ public abstract class ArrayNodes {
     @CoreMethod(names = { "push", "__append__" }, rest = true, optional = 1, raiseIfFrozenSelf = true)
     public abstract static class PushNode extends ArrayCoreMethodNode {
 
-        @Child private ArrayAppendOneNode appendOneNode;
-
-        public PushNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            appendOneNode = ArrayAppendOneNodeGen.create(context, sourceSection, null, null);
-        }
+        @Child private ArrayAppendOneNode appendOneNode = ArrayAppendOneNode.create();
 
         @Specialization(guards = "rest.length == 0")
         public DynamicObject pushZero(DynamicObject array, NotProvided unusedValue, Object[] rest) {

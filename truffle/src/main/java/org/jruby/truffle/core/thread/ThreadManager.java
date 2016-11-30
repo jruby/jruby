@@ -333,7 +333,7 @@ public class ThreadManager {
         runningRubyThreads.add(thread);
 
         if (Options.SHARED_OBJECTS && runningRubyThreads.size() > 1) {
-            SharedObjects.startSharing(context);
+            context.getSharedObjects().startSharing();
             SharedObjects.writeBarrier(thread);
         }
     }

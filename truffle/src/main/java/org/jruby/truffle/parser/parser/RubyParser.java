@@ -140,7 +140,8 @@ import static org.jruby.truffle.parser.lexer.LexingCommon.EXPR_ENDARG;
 import static org.jruby.truffle.parser.lexer.LexingCommon.EXPR_ENDFN;
 import static org.jruby.truffle.parser.lexer.LexingCommon.EXPR_FNAME;
 import static org.jruby.truffle.parser.lexer.LexingCommon.EXPR_LABEL;
- 
+
+@SuppressWarnings({"unchecked", "fallthrough"})
 public class RubyParser {
     protected final ParserSupport support;
     protected final RubyLexer lexer;
@@ -156,7 +157,7 @@ public class RubyParser {
         support.setWarnings(warnings);
         lexer.setWarnings(warnings);
     }
-					// line 160 "-"
+					// line 161 "-"
   // %token constants
   public static final int kCLASS = 257;
   public static final int kMODULE = 258;
@@ -3664,7 +3665,7 @@ states[460] = new ParserState() {
 };
 states[461] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = support.newRegexpNode(support.getPosition(((ParseNode)yyVals[-1+yyTop])), ((ParseNode)yyVals[-1+yyTop]), (RegexpParseNode) ((RegexpParseNode)yyVals[0+yyTop]));
+                    yyVal = support.newRegexpNode(support.getPosition(((ParseNode)yyVals[-1+yyTop])), ((ParseNode)yyVals[-1+yyTop]), ((RegexpParseNode)yyVals[0+yyTop]));
     return yyVal;
   }
 };
@@ -4024,7 +4025,7 @@ states[519] = new ParserState() {
 };
 states[520] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-      yyVal = new FileParseNode(lexer.getPosition(), new ByteList(lexer.getFile().getBytes(),
+                    yyVal = new FileParseNode(lexer.getPosition(), new ByteList(lexer.getFile().getBytes(),
                     support.getConfiguration().getContext().getEncodingManager().getLocaleEncoding()));
     return yyVal;
   }
@@ -4665,7 +4666,7 @@ states[644] = new ParserState() {
   }
 };
 }
-					// line 2576 "RubyParser.y"
+					// line 2577 "RubyParser.y"
 
     /** The parse method use an lexer stream and parse it to an AST node 
      * structure
@@ -4680,4 +4681,4 @@ states[644] = new ParserState() {
         return support.getResult();
     }
 }
-					// line 10086 "-"
+					// line 10087 "-"

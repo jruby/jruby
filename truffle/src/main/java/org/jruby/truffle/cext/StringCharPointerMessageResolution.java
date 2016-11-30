@@ -35,6 +35,8 @@ import static org.jruby.truffle.core.string.StringOperations.rope;
 )
 public class StringCharPointerMessageResolution {
 
+    // TODO 28-Nov-16 could this be a Ruby class?
+
     @CanResolve
     public abstract static class CharPointerCheckNode extends Node {
 

@@ -1,3 +1,12 @@
+/*
+ * Copyright (c) 2016 Oracle and/or its affiliates. All rights reserved. This
+ * code is released under a tri EPL/GPL/LGPL license. You can use it,
+ * redistribute it and/or modify it under the terms of the:
+ *
+ * Eclipse Public License version 1.0
+ * GNU General Public License version 2
+ * GNU Lesser General Public License version 2.1
+ */
 package org.jruby.truffle.core.array;
 
 import com.oracle.truffle.api.CompilerAsserts;
@@ -27,11 +36,21 @@ public abstract class ArrayStrategy {
         throw unsupported();
     }
 
-    public abstract boolean matches(DynamicObject array);
+    public final boolean matches(DynamicObject array) {
+        return matchesStore(Layouts.ARRAY.getStore(array));
+    }
+
+    protected abstract boolean matchesStore(Object store);
 
     public abstract ArrayMirror newArray(int size);
 
-    public abstract ArrayMirror newMirror(DynamicObject array);
+    public final ArrayMirror newMirror(DynamicObject array) {
+        return newMirrorFromStore(Layouts.ARRAY.getStore(array));
+    }
+
+    protected ArrayMirror newMirrorFromStore(Object store) {
+        throw unsupported();
+    }
 
     @Override
     public abstract String toString();
@@ -65,6 +84,24 @@ public abstract class ArrayStrategy {
             DoubleArrayStrategy.INSTANCE,
             ObjectArrayStrategy.INSTANCE
     };
+
+    private static ArrayStrategy ofStore(Object store) {
+        CompilerAsserts.neverPartOfCompilation();
+
+        if (store == null) {
+            return FallbackArrayStrategy.INSTANCE;
+        } else if (store instanceof int[]) {
+            return IntArrayStrategy.INSTANCE;
+        } else if (store instanceof long[]) {
+            return LongArrayStrategy.INSTANCE;
+        } else if (store instanceof double[]) {
+            return DoubleArrayStrategy.INSTANCE;
+        } else if (store.getClass() == Object[].class) {
+            return ObjectArrayStrategy.INSTANCE;
+        } else {
+            throw new UnsupportedOperationException(store.getClass().getName());
+        }
+    }
 
     public static ArrayStrategy of(DynamicObject array) {
         CompilerAsserts.neverPartOfCompilation();
@@ -141,8 +178,8 @@ public abstract class ArrayStrategy {
         }
 
         @Override
-        public boolean matches(DynamicObject array) {
-            return ArrayGuards.isIntArray(array);
+        public boolean matchesStore(Object store) {
+            return store instanceof int[];
         }
 
         @Override
@@ -163,8 +200,8 @@ public abstract class ArrayStrategy {
         }
 
         @Override
-        public ArrayMirror newMirror(DynamicObject array) {
-            return new IntegerArrayMirror((int[]) Layouts.ARRAY.getStore(array));
+        protected ArrayMirror newMirrorFromStore(Object store) {
+            return new IntegerArrayMirror((int[]) store);
         }
 
         @Override
@@ -204,8 +241,8 @@ public abstract class ArrayStrategy {
         }
 
         @Override
-        public boolean matches(DynamicObject array) {
-            return ArrayGuards.isLongArray(array);
+        public boolean matchesStore(Object store) {
+            return store instanceof long[];
         }
 
         @Override
@@ -214,8 +251,8 @@ public abstract class ArrayStrategy {
         }
 
         @Override
-        public ArrayMirror newMirror(DynamicObject array) {
-            return new LongArrayMirror((long[]) Layouts.ARRAY.getStore(array));
+        public ArrayMirror newMirrorFromStore(Object store) {
+            return new LongArrayMirror((long[]) store);
         }
 
         @Override
@@ -255,8 +292,8 @@ public abstract class ArrayStrategy {
         }
 
         @Override
-        public boolean matches(DynamicObject array) {
-            return ArrayGuards.isDoubleArray(array);
+        public boolean matchesStore(Object store) {
+            return store instanceof double[];
         }
 
         @Override
@@ -265,8 +302,8 @@ public abstract class ArrayStrategy {
         }
 
         @Override
-        public ArrayMirror newMirror(DynamicObject array) {
-            return new DoubleArrayMirror((double[]) Layouts.ARRAY.getStore(array));
+        public ArrayMirror newMirrorFromStore(Object store) {
+            return new DoubleArrayMirror((double[]) store);
         }
 
         @Override
@@ -306,8 +343,8 @@ public abstract class ArrayStrategy {
         }
 
         @Override
-        public boolean matches(DynamicObject array) {
-            return ArrayGuards.isObjectArray(array);
+        public boolean matchesStore(Object store) {
+            return store != null && store.getClass() == Object[].class;
         }
 
         @Override
@@ -316,8 +353,8 @@ public abstract class ArrayStrategy {
         }
 
         @Override
-        public ArrayMirror newMirror(DynamicObject array) {
-            return new ObjectArrayMirror((Object[]) Layouts.ARRAY.getStore(array));
+        public ArrayMirror newMirrorFromStore(Object store) {
+            return new ObjectArrayMirror((Object[]) store);
         }
 
         @Override
@@ -340,13 +377,13 @@ public abstract class ArrayStrategy {
         }
 
         @Override
-        public boolean matches(DynamicObject array) {
-            return ArrayGuards.isLongArray(array);
+        public boolean matchesStore(Object store) {
+            return store instanceof long[];
         }
 
         @Override
-        public ArrayMirror newMirror(DynamicObject array) {
-            return new LongIntArrayMirror((long[]) Layouts.ARRAY.getStore(array));
+        public ArrayMirror newMirrorFromStore(Object store) {
+            return new LongIntArrayMirror((long[]) store);
         }
 
         @Override
@@ -367,8 +404,8 @@ public abstract class ArrayStrategy {
         }
 
         @Override
-        public boolean matches(DynamicObject array) {
-            return ArrayGuards.isObjectArray(array);
+        public boolean matchesStore(Object store) {
+            return store != null && store.getClass() == Object[].class;
         }
 
         @Override
@@ -377,8 +414,8 @@ public abstract class ArrayStrategy {
         }
 
         @Override
-        public ArrayMirror newMirror(DynamicObject array) {
-            return new ObjectArrayMirror((Object[]) Layouts.ARRAY.getStore(array));
+        public ArrayMirror newMirrorFromStore(Object store) {
+            return new ObjectArrayMirror((Object[]) store);
         }
 
         @Override
@@ -400,7 +437,7 @@ public abstract class ArrayStrategy {
         }
 
         @Override
-        public boolean matches(DynamicObject array) {
+        public boolean matchesStore(Object store) {
             return false;
         }
 
@@ -415,13 +452,13 @@ public abstract class ArrayStrategy {
         }
 
         @Override
-        public ArrayMirror newMirror(DynamicObject array) {
+        public ArrayMirror newMirrorFromStore(Object store) {
             throw unsupported();
         }
 
         @Override
         public String toString() {
-            return "null";
+            return "fallback";
         }
 
     }

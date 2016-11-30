@@ -59,10 +59,17 @@ class LicensesProject(ArchiveProject):
         return [join(_suite.dir, f) for f in self.license_files]
 
 def mavenSetup():
-    buildPack = join(_suite.dir, 'jruby-build-pack/maven')
-    mavenDir = buildPack if isdir(buildPack) else join(_suite.dir, 'mxbuild/mvn')
-    maven_repo_arg = '-Dmaven.repo.local=' + mavenDir
+    maven_args = []
     env = os.environ.copy()
+    if not mx.get_opts().verbose:
+        maven_args.append('-q')
+
+    buildPack = join(_suite.dir, 'jruby-build-pack/maven')
+    if isdir(buildPack):
+        maven_args.append('-Dmaven.repo.local=' + buildPack)
+    elif 'CI' in env and 'TRAVIS' not in env:
+        maven_args.append('-Dmaven.repo.local=' + join(_suite.dir, 'mxbuild/mvn'))
+
     if not mx.get_opts().verbose:
         env['JRUBY_BUILD_MORE_QUIET'] = 'true'
     # HACK: since the maven executable plugin does not configure the
@@ -70,9 +77,9 @@ def mavenSetup():
     javaHome = os.getenv('JAVA_HOME')
     if javaHome:
         env["PATH"] = javaHome + '/bin' + os.pathsep + env["PATH"]
-        mx.logv('Setting PATH to {}'.format(os.environ["PATH"]))
+        mx.logv('Setting PATH to {}'.format(env["PATH"]))
     mx.run(['java', '-version'], env=env)
-    return maven_repo_arg, env
+    return maven_args, env
 
 class JRubyCoreMavenProject(mx.MavenProject):
     def getBuildTask(self, args):
@@ -128,10 +135,9 @@ class JRubyCoreBuildTask(mx.BuildTask):
 
     def build(self):
         cwd = _suite.dir
-        maven_repo_arg, env = mavenSetup()
+        maven_args, env = mavenSetup()
         mx.log("Building jruby-core with Maven")
-        quiet = [] if mx.get_opts().verbose else ['-q']
-        mx.run_maven(quiet + ['-DskipTests', maven_repo_arg, '-Dcreate.sources.jar', '-pl', 'core,lib'], cwd=cwd, env=env)
+        mx.run_maven(maven_args + ['-DskipTests', '-Dcreate.sources.jar', '-pl', 'core,lib'], cwd=cwd, env=env)
         # Install Bundler
         gem_home = join(_suite.dir, 'lib', 'ruby', 'gems', 'shared')
         env['GEM_HOME'] = gem_home
@@ -141,9 +147,8 @@ class JRubyCoreBuildTask(mx.BuildTask):
     def clean(self, forBuild=False):
         if forBuild:
             return
-        maven_repo_arg, env = mavenSetup()
-        quiet = [] if mx.get_opts().verbose else ['-q']
-        mx.run_maven(quiet + [maven_repo_arg, 'clean'], nonZeroIsFatal=False, cwd=_suite.dir, env=env)
+        maven_args, env = mavenSetup()
+        mx.run_maven(maven_args + ['clean'], nonZeroIsFatal=False, cwd=_suite.dir, env=env)
         jar = self.newestOutput()
         if jar.exists():
             os.remove(jar.path)

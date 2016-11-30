@@ -306,10 +306,6 @@ module Truffle::CExt
     string.intern
   end
 
-  def rb_str_cat(string, to_concat, length)
-    raise 'not implemented'
-  end
-
   def rb_string_value_cstr_check(string)
     !string.include?("\0")
   end
@@ -319,7 +315,33 @@ module Truffle::CExt
   end
 
   def RARRAY_PTR(array)
-    array
+    ArrayPointer.new(array)
+  end
+
+  class ArrayPointer
+
+    attr_reader :array
+
+    def initialize(array)
+      @array = array
+    end
+
+    def size
+      array.size
+    end
+
+    def [](offset)
+      array[index_from_offset(offset)]
+    end
+
+    def []=(offset, value)
+      array[index_from_offset(offset)] = value
+    end
+
+    def index_from_offset(offset)
+      offset / 8
+    end
+
   end
 
   def rb_Array(value)
@@ -492,7 +514,7 @@ module Truffle::CExt
     end
   end
 
-  def rb_funcall(object, name, argc, args=[])
+  def rb_funcall(object, name, argc, *args)
     object.__send__(name, *args)
   end
 
@@ -506,10 +528,6 @@ module Truffle::CExt
 
   def rb_rational_new(num, den)
     Rational(num, den)
-  end
-
-  def rb_complex_new(real, imag)
-    Complex.new(real, imag)
   end
 
   def rb_Complex(real, imag)

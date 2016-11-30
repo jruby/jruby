@@ -11,7 +11,14 @@ package org.jruby.truffle.language.backtrace;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
+
+import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.language.RubyBaseNode;
+import org.jruby.truffle.language.backtrace.BacktraceFormatter.FormattingFlags;
+
+import com.oracle.truffle.api.nodes.Node;
 
 public class Backtrace {
 
@@ -29,6 +36,30 @@ public class Backtrace {
 
     public Throwable getJavaThrowable() {
         return javaThrowable;
+    }
+
+    @Override
+    public String toString() {
+        RubyContext context = null;
+        if (activations.length > 0) {
+            Activation activation = activations[0];
+            Node node = activation.getCallNode();
+            if (node != null && node instanceof RubyBaseNode) {
+                context = ((RubyBaseNode) node).getContext();
+            }
+        }
+
+        if (context != null) {
+            final BacktraceFormatter backtraceFormatter = new BacktraceFormatter(context, EnumSet.of(FormattingFlags.INCLUDE_CORE_FILES));
+            final StringBuilder builder = new StringBuilder();
+            for (String line : backtraceFormatter.formatBacktrace(context, null, this)) {
+                builder.append("\n");
+                builder.append(line);
+            }
+            return builder.toString().substring(1);
+        } else {
+            return "";
+        }
     }
 
 }

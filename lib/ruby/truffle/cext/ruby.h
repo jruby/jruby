@@ -45,6 +45,14 @@ extern "C" {
 
 #define HAVE_RB_IO_T
 
+// Overrides
+
+#ifdef memcpy
+#undef memcpy
+#endif
+
+#define memcpy truffle_managed_memcpy
+
 // Macros
 
 #define NORETURN(X) __attribute__((__noreturn__)) X
@@ -488,6 +496,17 @@ MUST_INLINE int rb_jt_scan_args_11(int argc, VALUE *argv, const char *format, VA
   }
   *v1 = argv[0];
   if (argc >= 2) *v2 = argv[1];
+  return argc - 1;
+}
+
+MUST_INLINE int rb_jt_scan_args_12(int argc, VALUE *argv, const char *format, VALUE *v1, VALUE *v2, VALUE *v3) {
+  if (argc < 1) {
+    rb_jt_error("rb_jt_scan_args_12 error case not implemented");
+    abort();
+  }
+  *v1 = argv[0];
+  if (argc >= 2) *v2 = argv[1];
+  if (argc >= 3) *v3 = argv[2];
   return argc - 1;
 }
 

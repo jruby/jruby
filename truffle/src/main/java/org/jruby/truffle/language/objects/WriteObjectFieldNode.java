@@ -26,7 +26,6 @@ import org.jruby.truffle.language.RubyBaseNode;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.objects.shared.SharedObjects;
 import org.jruby.truffle.language.objects.shared.WriteBarrierNode;
-import org.jruby.truffle.language.objects.shared.WriteBarrierNodeGen;
 
 @ImportStatic({ RubyGuards.class, ShapeCachingGuards.class })
 public abstract class WriteObjectFieldNode extends RubyBaseNode {
@@ -179,7 +178,7 @@ public abstract class WriteObjectFieldNode extends RubyBaseNode {
 
     protected WriteBarrierNode createWriteBarrierNode(boolean shared) {
         if (shared) {
-            return WriteBarrierNodeGen.create(0);
+            return WriteBarrierNode.create();
         } else {
             return null;
         }

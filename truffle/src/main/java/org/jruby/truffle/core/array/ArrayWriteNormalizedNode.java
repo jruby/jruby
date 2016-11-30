@@ -97,13 +97,9 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
 
     @Specialization(guards = "isExtendingByOne(array, index)")
     public Object writeExtendByOne(DynamicObject array, int index, Object value,
-            @Cached("createArrayAppendOneNode()") ArrayAppendOneNode appendNode) {
+                    @Cached("create()") ArrayAppendOneNode appendNode) {
         appendNode.executeAppendOne(array, value);
         return value;
-    }
-
-    protected ArrayAppendOneNode createArrayAppendOneNode() {
-        return ArrayAppendOneNodeGen.create(getContext(), null, null, null);
     }
 
     // Writing beyond the end of an array - may need to generalize to Object[] or otherwise extend

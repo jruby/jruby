@@ -1,4 +1,4 @@
-# Copyright (c) 2014, 2015 Oracle and/or its affiliates. All rights reserved. This
+# Copyright (c) 2014, 2016 Oracle and/or its affiliates. All rights reserved. This
 # code is released under a tri EPL/GPL/LGPL license. You can use it,
 # redistribute it and/or modify it under the terms of the:
 #
@@ -71,7 +71,7 @@ module RbConfig
       'DLDFLAGS' => '',
       'DLEXT' => 'su',
       'LIBEXT' => 'c',
-      'OBJEXT' => 'll',
+      'OBJEXT' => 'bc',
       'EXEEXT' => '',
       'LIBS' => '',
       'DLDLIBS' => '',
@@ -89,23 +89,17 @@ module RbConfig
   }
 
   if Truffle::Safe.memory_safe? && Truffle::Safe.processes_safe?
-    if ENV['USE_SYSTEM_CLANG']
-      clang = 'clang'
-      opt = 'opt'
-    else
-      clang = "mx -p #{ENV['SULONG_HOME']} su-clang"
-      opt = "mx -p #{ENV['SULONG_HOME']} su-opt"
-    end
-    
-    cc = "#{clang} -I#{ENV['SULONG_HOME']}/include -S"
-    cpp = "#{clang} -I#{ENV['SULONG_HOME']}/include -S"
+    clang = ENV['JT_CLANG'] || 'clang'
+    opt = ENV['JT_OPT'] || 'opt'
+    cc = "#{clang} -I#{ENV['SULONG_HOME']}/include"
+    cpp = cc
     
     MAKEFILE_CONFIG.merge!({
         'CC' => cc,
         'CPP' => cpp,
-        'COMPILE_C' => "$(CC) $(INCFLAGS) $(CPPFLAGS) $(CFLAGS) $(COUTFLAG)$< -o $@ && #{opt} -S -always-inline -mem2reg $@ -o $@",
-        'CFLAGS' => "-emit-llvm",
-        'LINK_SO' => "mx -v -p #{ENV['SULONG_HOME']} su-link -o $@ $(OBJS)",
+        'COMPILE_C' => "$(CC) $(INCFLAGS) $(CPPFLAGS) $(CFLAGS) $(COUTFLAG)$< -o $@ && #{opt} -always-inline -mem2reg $@ -o $@",
+        'CFLAGS' => "-c -emit-llvm",
+        'LINK_SO' => "mx -v -p #{ENV['SULONG_HOME']} su-link -o $@ $(OBJS) $(LIBS)",
         'TRY_LINK' => "#{clang} $(src) $(INCFLAGS) $(CFLAGS) -I#{ENV['SULONG_HOME']}/include $(LIBS)"
     })
     
