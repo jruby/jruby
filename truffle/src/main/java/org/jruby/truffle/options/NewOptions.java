@@ -11,9 +11,11 @@ package org.jruby.truffle.options;
 
 // This file would be automatically generated from the list of options in the text file.
 
+import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
+
 public class NewOptions {
 
-    public final String[] ARGUMENTS;
+    @CompilationFinal(dimensions=1) public final String[] ARGUMENTS;
 
     public final boolean EXCEPTIONS_PRINT_JAVA;
 
