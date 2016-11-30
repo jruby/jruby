@@ -1,1 +1,0 @@
-fails:Hash literal raises a TypeError if any splatted elements keys are not symbols
