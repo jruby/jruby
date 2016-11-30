@@ -72,7 +72,7 @@ public class RubyInterrupt extends RubySignalException {
             args = new IRubyObject[]{signo, runtime.newString("Interrupt")};
         }
 
-        super.initialize(args, block);
+        super.initialize(context, args, block);
         return this;
     }
 }
