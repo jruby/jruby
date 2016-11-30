@@ -35,20 +35,20 @@ interface RootedFileVisitor<T> extends FileVisitor<T> {
         String svmJarPath = RootedFileVisitor.class.getProtectionDomain().getCodeSource().getLocation().getFile();
         String parentDir = new File(svmJarPath).getParent();
 
-        try {
-            // First try reading in the primary Ruby binary suite JAR.
-            File ret = new File(parentDir + "/../mx.imports/binary/jruby/mxbuild/dists/ruby.jar");
+        final String[] paths = new String[] { parentDir + "/../mx.imports/binary/jruby/mxbuild/dists/ruby.jar", parentDir + "/../../../jruby/mxbuild/dists/ruby.jar", parentDir + "/../../../main/mxbuild/dists/ruby.jar" };
 
+        for (String path : paths) {
+            final File ret = new File(path);
             if (ret.exists()) {
-                return ret.getCanonicalPath();
-            } else {
-                // Fallback to the locally built source suite JAR.
-                return new File(parentDir + "/../../../jruby/mxbuild/dists/ruby.jar").getCanonicalPath();
+                try {
+                    return ret.getCanonicalPath();
+                } catch (IOException e) {
+                    return null;
+                }
             }
-
-        } catch (IOException e) {
-            return null;
         }
+
+        return null;
     }
 
     static void visitEachFileOnClassPath(RootedFileVisitor<Path> visitor) {
