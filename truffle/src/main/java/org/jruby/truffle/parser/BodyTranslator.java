@@ -44,6 +44,7 @@ import org.jruby.truffle.core.cast.ToProcNodeGen;
 import org.jruby.truffle.core.cast.ToSNode;
 import org.jruby.truffle.core.cast.ToSNodeGen;
 import org.jruby.truffle.core.hash.ConcatHashLiteralNode;
+import org.jruby.truffle.core.hash.EnsureSymbolKeysNode;
 import org.jruby.truffle.core.hash.HashLiteralNode;
 import org.jruby.truffle.core.hash.HashNodesFactory;
 import org.jruby.truffle.core.kernel.KernelNodesFactory;
@@ -1831,9 +1832,11 @@ public class BodyTranslator extends Translator {
 
         for (KeyValuePair<ParseNode, ParseNode> pair: node.getPairs()) {
             if (pair.getKey() == null) {
+                // This null case is for splats {a: 1, **{b: 2}, c: 3}
                 final RubyNode hashLiteralSoFar = HashLiteralNode.create(context, fullSourceSection, keyValues.toArray(new RubyNode[keyValues.size()]));
                 hashConcats.add(hashLiteralSoFar);
-                hashConcats.add(HashCastNodeGen.create(context, fullSourceSection, pair.getValue().accept(this)));
+                hashConcats.add(new EnsureSymbolKeysNode(context, fullSourceSection,
+                    HashCastNodeGen.create(context, fullSourceSection, pair.getValue().accept(this))));
                 keyValues.clear();
             } else {
                 keyValues.add(pair.getKey().accept(this));
