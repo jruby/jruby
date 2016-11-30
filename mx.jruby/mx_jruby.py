@@ -259,7 +259,7 @@ def ruby_command(args):
 def ruby_tck(args):
     env = setup_jruby_home()
     os.environ["JRUBY_HOME"] = env["JRUBY_HOME"]
-    mx_unittest.unittest(['--verbose', '--suite', 'jruby', 'RubyTckTest'])
+    mx_unittest.unittest(['--verbose', '--suite', 'jruby'])
 
 mx.update_commands(_suite, {
     'ruby' : [ruby_command, '[ruby args|@VM options]'],
