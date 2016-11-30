@@ -33,7 +33,7 @@ public class StringArrayOptionDescription extends OptionDescription {
         } else if (value instanceof String) {
             return parseStringArray((String) value);
         } else {
-            throw new OptionTypeException();
+            throw new OptionTypeException(getName());
         }
     }
 
@@ -57,7 +57,7 @@ public class StringArrayOptionDescription extends OptionDescription {
             }
 
             if (n == string.length() && array && state != start && state != endOfArray) {
-                throw new OptionTypeException();
+                throw new OptionTypeException(getName());
             }
 
             switch (state) {
@@ -90,7 +90,7 @@ public class StringArrayOptionDescription extends OptionDescription {
                         if (string.charAt(n) == quote){
                             n++;
                         } else {
-                            throw new OptionTypeException();
+                            throw new OptionTypeException(getName());
                         }
 
                         state = endOfString;
@@ -116,7 +116,7 @@ public class StringArrayOptionDescription extends OptionDescription {
                         n++;
                         state = endOfArray;
                     } else {
-                        throw new OptionTypeException();
+                        throw new OptionTypeException(getName());
                     }
                     break;
 

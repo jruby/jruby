@@ -34,10 +34,10 @@ public class BooleanOptionDescription extends OptionDescription {
                 case "false":
                     return false;
                 default:
-                    throw new OptionTypeException();
+                    throw new OptionTypeException(getName());
             }
         } else {
-            throw new OptionTypeException();
+            throw new OptionTypeException(getName());
         }
     }
 

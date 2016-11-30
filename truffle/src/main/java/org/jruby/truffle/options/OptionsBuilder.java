@@ -39,9 +39,9 @@ public class OptionsBuilder {
         final OptionDescription description = OptionsCatalog.fromName(name);
 
         if (description == null) {
-            //throw new UnsupportedOperationException(name);
+            //throw new UnknownOptionException(name);
 
-            // Don't throw for now - not all the options are transalted across
+            // Don't throw for now - not all the options are translated across
             return;
         }
 

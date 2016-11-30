@@ -11,4 +11,14 @@ package org.jruby.truffle.options;
 
 public class OptionTypeException extends UnsupportedOperationException {
 
+    private final String name;
+
+    public OptionTypeException(String name) {
+        this.name = name;
+    }
+
+    public String getName() {
+        return name;
+    }
+
 }
