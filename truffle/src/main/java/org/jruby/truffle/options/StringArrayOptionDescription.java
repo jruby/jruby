@@ -37,92 +37,61 @@ public class StringArrayOptionDescription extends OptionDescription {
         }
     }
 
-    // Allows input such as [foo, "bar", 'baz']. Doesn't support escape sequences.
+    // Allows input such as foo,bar,baz. You can escape commas.
 
     private String[] parseStringArray(String string) {
         final List<String> values = new ArrayList<>();
 
-        final int start = 0;
-        final int startOfString = 1;
-        final int endOfString = 2;
-        final int endOfArray = 3;
+        final int startOfString = 0;
+        final int withinString = 1;
+        final int escape = 2;
 
-        int n = 0;
-        int state = start;
-        boolean array = false;
+        int state = startOfString;
 
-        while (n < string.length()) {
-            while (n < string.length() && Character.isWhitespace(string.charAt(n))) {
-                n++;
-            }
+        final StringBuilder builder = new StringBuilder();
 
-            if (n == string.length() && array && state != start && state != endOfArray) {
-                throw new OptionTypeException(getName());
-            }
-
+        for (int n = 0; n < string.length(); n++) {
             switch (state) {
-                case start:
-                    if (string.charAt(n) == '[') {
-                        n++;
-                        array = true;
-                        state = startOfString;
-                    } else {
-                        array = false;
-                        state = startOfString;
-                    }
-                    break;
-
                 case startOfString:
-                    final int startN;
-                    final int endN;
-                    if (string.charAt(n) == '"' || string.charAt(n) == '\'') {
-                        final char quote = string.charAt(n);
-
-                        n++;
-                        startN = n;
-
-                        while (n < string.length() && string.charAt(n) != quote) {
-                            n++;
-                        }
-
-                        endN = n;
-
-                        if (string.charAt(n) == quote){
-                            n++;
-                        } else {
-                            throw new OptionTypeException(getName());
-                        }
-
-                        state = endOfString;
-                    } else {
-                        startN = n;
-
-                        while (n < string.length() && string.charAt(n) != ',') {
-                            n++;
-                        }
-
-                        endN = n;
-
-                        state = endOfString;
-                    }
-                    values.add(string.substring(startN, endN));
+                    builder.setLength(0);
+                    builder.append(string.charAt(n));
+                    state = withinString;
                     break;
 
-                case endOfString:
-                    if (string.charAt(n) == ',') {
-                        n++;
-                        state = startOfString;
-                    } else if (array && string.charAt(n) == ']') {
-                        n++;
-                        state = endOfArray;
-                    } else {
+                case withinString:
+                    switch (string.charAt(n)) {
+                        case ',':
+                            values.add(builder.toString());
+                            state = startOfString;
+                            break;
+
+                        case '\\':
+                            state = escape;
+                            break;
+
+                        default:
+                            builder.append(string.charAt(n));
+                            break;
+                    }
+                    break;
+
+                case escape:
+                    if (string.charAt(n) != ',') {
                         throw new OptionTypeException(getName());
                     }
-                    break;
-
-                case endOfArray:
+                    state = withinString;
+                    builder.append(string.charAt(n));
                     break;
             }
+        }
+
+        switch (state) {
+            case withinString:
+                values.add(builder.toString());
+                break;
+
+            case escape:
+                throw new OptionTypeException(getName());
         }
 
         return values.toArray(new String[values.size()]);
