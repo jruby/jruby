@@ -13,6 +13,8 @@
 
 # Recommended: function jt { ruby tool/jt.rb "$@"; }
 
+abort "Do not run #{$0} with JRuby+Truffle itself, use MRI or some other Ruby." if RUBY_ENGINE == "jruby+truffle"
+
 require 'fileutils'
 require 'json'
 require 'timeout'
