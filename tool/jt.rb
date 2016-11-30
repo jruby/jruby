@@ -124,7 +124,7 @@ module Utilities
         vm_args << '-cp'
         vm_args << [nfi_classes, sulong_dependencies, *sulong_jars].join(':')
         vm_args << '-XX:-UseJVMCIClassLoader'
-        vm_args << "-Dsulong.DynamicBitcodeLibraries=#{Dir.glob("#{graal_home}/mx.sulong/libs/*.bc").join(':')}"
+        vm_args << "-Dsulong.DynamicBitcodeLibraries=#{Dir.glob("#{graal_home}/mxbuild/projects/com.oracle.truffle.llvm.libraries/bin/*.bc").join(':')}"
       end
       options = []
     else
