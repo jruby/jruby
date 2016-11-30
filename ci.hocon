@@ -105,7 +105,7 @@ graal-enterprise-no-om: {
 
 sulong: ${labsjdk8} {
   packages: {
-    llvm: "==3.3"
+    llvm: "==3.2"
   }
 
   environment: {
