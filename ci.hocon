@@ -19,6 +19,9 @@ common: {
   }
 
   setup: [
+    ["echo", "-n", "TRUFFLE_RUBY_VERSION=", ">setup-ci-env"],
+    ["git", "rev-parse", "HEAD", ">>setup-ci-env"],
+    ["export", ["<setup-ci-env"]]
     [mx, sclone, --kind, git, "https://github.com/jruby/jruby-build-pack.git", jruby-build-pack],
     [cp, bin/jruby.bash, bin/jruby],
     [chmod, "+x", bin/jruby],
