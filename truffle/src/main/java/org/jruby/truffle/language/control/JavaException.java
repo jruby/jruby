@@ -24,6 +24,7 @@ public class JavaException extends RuntimeException {
         return cause.getMessage();
     }
 
+    @SuppressWarnings("sync-override")
     @Override
     public final Throwable fillInStackTrace() {
         return null;

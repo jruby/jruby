@@ -369,7 +369,7 @@ public class StringTerm extends StrTerm {
                         /* ignore backslashed spaces in %w */
                     } else if (c != end && !(begin != '\0' && c == begin)) {
                         buffer.append('\\');
-                        lexer.pushback(c);;
+                        lexer.pushback(c);
                         continue;
                     }
                 }
