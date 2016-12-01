@@ -42,7 +42,7 @@ public abstract class CallBlockNode extends RubyNode {
     }
 
     public abstract Object executeCallBlock(VirtualFrame frame, DynamicObject block, Object self,
-                                            DynamicObject blockArgument, Object[] arguments);
+                                            Object blockArgument, Object[] arguments);
 
     // blockArgument is typed as Object below because it must accept "null".
     @Specialization(

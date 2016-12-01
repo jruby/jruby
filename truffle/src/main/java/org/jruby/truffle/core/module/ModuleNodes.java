@@ -668,7 +668,7 @@ public abstract class ModuleNodes {
             yield = new YieldNode(context, DeclarationContext.CLASS_EVAL);
         }
 
-        public abstract Object executeClassExec(VirtualFrame frame, DynamicObject self, Object[] args, DynamicObject block);
+        public abstract Object executeClassExec(VirtualFrame frame, DynamicObject self, Object[] args, Object block);
 
         @Specialization
         public Object classExec(VirtualFrame frame, DynamicObject self, Object[] args, DynamicObject block) {
@@ -1135,7 +1135,7 @@ public abstract class ModuleNodes {
 
         @Child private ModuleNodes.ClassExecNode classExecNode;
 
-        public abstract DynamicObject executeInitialize(VirtualFrame frame, DynamicObject module, DynamicObject block);
+        public abstract DynamicObject executeInitialize(VirtualFrame frame, DynamicObject module, Object block);
 
         void classEval(VirtualFrame frame, DynamicObject module, DynamicObject block) {
             if (classExecNode == null) {
