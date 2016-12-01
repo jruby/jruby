@@ -16,21 +16,15 @@ import javax.annotation.Generated;
 @Generated("tool/truffle/generate-options.rb")
 public class OptionsCatalog {
 
-    
     public static final OptionDescription ARGUMENTS = new StringArrayOptionDescription("arguments", "Command line arguments for the Ruby program", new String[]{});
-    
     public static final OptionDescription EXCEPTIONS_PRINT_JAVA = new BooleanOptionDescription("exceptions.print_java", "Print Java exceptions at the point of translating them to Ruby exceptions", false);
     
-
     public static OptionDescription fromName(String name) {
         switch (name) {
-            
             case "arguments":
                 return ARGUMENTS;
-            
             case "exceptions.print_java":
                 return EXCEPTIONS_PRINT_JAVA;
-            
             default:
                 return null;
         }

@@ -38,7 +38,8 @@ options = options.map do |constant, (name, type, default, description)|
   )
 end
 
-File.write('truffle/src/main/java/org/jruby/truffle/options/NewOptions.java', ERB.new(%{/*
+File.write('truffle/src/main/java/org/jruby/truffle/options/NewOptions.java', ERB.new(<<JAVA).result)
+/*
  * Copyright (c) 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
@@ -58,20 +59,17 @@ import javax.annotation.Generated;
 @Generated("tool/truffle/generate-options.rb")
 public class NewOptions {
 
-    <% options.each do |o| %>
-    <% if o.type.end_with?('[]') %>@CompilationFinal(dimensions=1) <% end %>public final <%= o.type %> <%= o.constant %>;
+    <% options.each do |o| %><% if o.type.end_with?('[]') %>@CompilationFinal(dimensions=1) <% end %>public final <%= o.type %> <%= o.constant %>;
     <% end %>
-
     NewOptions(OptionsBuilder builder) {
-        <% options.each do |o| %>
-        <%= o.constant %> = builder.getOrDefault(OptionsCatalog.<%= o.constant %>);
-        <% end %>
-    }
+    <% options.each do |o| %>    <%= o.constant %> = builder.getOrDefault(OptionsCatalog.<%= o.constant %>);
+    <% end %>}
 
 }
-}).result)
+JAVA
 
-File.write('truffle/src/main/java/org/jruby/truffle/options/OptionsCatalog.java', ERB.new(%{/*
+File.write('truffle/src/main/java/org/jruby/truffle/options/OptionsCatalog.java', ERB.new(<<JAVA).result)
+/*
  * Copyright (c) 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
@@ -89,20 +87,16 @@ import javax.annotation.Generated;
 @Generated("tool/truffle/generate-options.rb")
 public class OptionsCatalog {
 
-    <% options.each do |o| %>
-    public static final OptionDescription <%= o.constant %> = new <%= o.type_cons %>("<%= o.name %>", "<%= o.description %>", <%= o.default %>);
+    <% options.each do |o| %>public static final OptionDescription <%= o.constant %> = new <%= o.type_cons %>("<%= o.name %>", "<%= o.description %>", <%= o.default %>);
     <% end %>
-
     public static OptionDescription fromName(String name) {
         switch (name) {
-            <% options.each do |o| %>
-            case "<%= o.name %>":
+            <% options.each do |o| %>case "<%= o.name %>":
                 return <%= o.constant %>;
-            <% end %>
-            default:
+            <% end %>default:
                 return null;
         }
     }
 
 }
-}).result)
+JAVA

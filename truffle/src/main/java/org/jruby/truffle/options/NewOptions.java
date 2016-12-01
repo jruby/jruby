@@ -18,18 +18,12 @@ import javax.annotation.Generated;
 @Generated("tool/truffle/generate-options.rb")
 public class NewOptions {
 
-    
     @CompilationFinal(dimensions=1) public final String[] ARGUMENTS;
-    
     public final boolean EXCEPTIONS_PRINT_JAVA;
     
-
     NewOptions(OptionsBuilder builder) {
-        
         ARGUMENTS = builder.getOrDefault(OptionsCatalog.ARGUMENTS);
-        
         EXCEPTIONS_PRINT_JAVA = builder.getOrDefault(OptionsCatalog.EXCEPTIONS_PRINT_JAVA);
-        
     }
 
 }
