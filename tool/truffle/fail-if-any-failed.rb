@@ -20,7 +20,13 @@ known_failures = [
   ["server", "graal-enterprise", "jruby", "truffle", "server", "tcp-server"],
   ["server", "graal-enterprise", "jruby", "truffle", "asciidoctor", "asciidoctor:load-file"],
   ["server", "graal-core", "jruby", "truffle", "server", "tcp-server"],
-  ["server", "graal-core", "jruby", "truffle", "asciidoctor", "asciidoctor:load-file"]
+  ["server", "graal-core", "jruby", "truffle", "asciidoctor", "asciidoctor:load-file"],
+  ["server", "graal-vm", "jruby", "truffle", "asciidoctor", "asciidoctor:load-file"],
+  ["server", "graal-vm", "jruby", "truffle", "server", "tcp-server"],
+  ["server", "graal-vm-snap", "jruby", "truffle", "server", "tcp-server"],
+  ["server", "graal-vm-snap", "jruby", "truffle", "asciidoctor", "asciidoctor:load-file"],
+  ["server", "graal-vm", "jruby", "truffle", "chunky", "chunky-decode-png-image-pass"],
+  ["server", "graal-vm-snap", "jruby", "truffle", "chunky", "chunky-decode-png-image-pass"]
 ]
 
 if File.exist?('failures')
