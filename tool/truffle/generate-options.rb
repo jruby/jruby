@@ -12,7 +12,7 @@ require 'ostruct'
 require 'yaml'
 require 'erb'
 
-options = YAML.load_file('truffle/src/main/java/org/jruby/truffle/options/options.yml')
+options = YAML.load_file('tool/truffle/options.yml')
 
 options = options.map do |constant, (name, type, default, description)|
   case type
