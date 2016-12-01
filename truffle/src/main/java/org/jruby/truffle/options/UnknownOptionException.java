@@ -14,6 +14,7 @@ public class UnknownOptionException extends UnsupportedOperationException {
     private final String name;
 
     public UnknownOptionException(String name) {
+        super(String.format("Unknown option %s", name));
         this.name = name;
     }
 

@@ -13,7 +13,8 @@ public class OptionTypeException extends UnsupportedOperationException {
 
     private final String name;
 
-    public OptionTypeException(String name) {
+    public OptionTypeException(String name, String value) {
+        super(String.format("Unsupported value '%s' for option %s", value, name));
         this.name = name;
     }
 
