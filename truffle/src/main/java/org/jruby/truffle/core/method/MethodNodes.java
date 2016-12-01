@@ -80,17 +80,15 @@ public abstract class MethodNodes {
     public abstract static class CallNode extends CoreMethodArrayArgumentsNode {
 
         @Child CallBoundMethodNode callBoundMethodNode;
-        @Child ProcOrNullNode procOrNullNode;
 
         public CallNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             callBoundMethodNode = CallBoundMethodNodeGen.create(context, sourceSection, null, null, null);
-            procOrNullNode = ProcOrNullNodeGen.create(context, sourceSection, null);
         }
 
         @Specialization
-        protected Object call(VirtualFrame frame, DynamicObject method, Object[] arguments, Object block) {
-            return callBoundMethodNode.executeCallBoundMethod(frame, method, arguments, procOrNullNode.executeProcOrNull(block));
+        protected Object call(VirtualFrame frame, DynamicObject method, Object[] arguments, Object maybeBlock) {
+            return callBoundMethodNode.executeCallBoundMethod(frame, method, arguments, maybeBlock);
         }
 
     }
