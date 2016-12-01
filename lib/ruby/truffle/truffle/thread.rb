@@ -54,6 +54,8 @@ class ConditionVariable
   # Creates a new ConditionVariable
   #
   def initialize
+    # Truffle: this Hash must never need a guest-language safepoint, or threads
+    # will get stuck while acquiring the Mutex in interrupt-never mode below.
     @waiters = {}
     @waiters_mutex = Mutex.new
   end
@@ -75,9 +77,6 @@ class ConditionVariable
         end
       ensure
         @waiters_mutex.synchronize do
-          # Truffle: this Hash must never need a guest-language safepoint,
-          # or threads will get struck while acquiring the Mutex in
-          # interrupt-never mode.
           @waiters.delete(Thread.current)
         end
       end
