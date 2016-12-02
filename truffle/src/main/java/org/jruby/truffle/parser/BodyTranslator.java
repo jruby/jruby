@@ -2579,10 +2579,14 @@ public class BodyTranslator extends Translator {
         final RubySourceSection sourceSection = translate(node.getPosition());
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
-        final ParseNode lhs = node.getFirstNode();
-        final ParseNode rhs = node.getSecondNode();
+        RubyNode lhs = node.getFirstNode().accept(this);
+        RubyNode rhs = node.getSecondNode().accept(this);
 
-        final RubyNode andNode = new AndNode(lhs.accept(this), rhs.accept(this));
+        if (lhs instanceof ReadConstantNode && !(rhs instanceof WriteConstantNode)) {
+            rhs = ((ReadConstantNode) lhs).makeWriteNode(rhs);
+        }
+
+        final RubyNode andNode = new AndNode(lhs, rhs);
         andNode.unsafeSetSourceSection(sourceSection);
 
         final RubyNode ret = new DefinedWrapperNode(context, fullSourceSection, context.getCoreStrings().ASSIGNMENT, andNode);
