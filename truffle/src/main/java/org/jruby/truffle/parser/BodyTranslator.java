@@ -27,7 +27,6 @@ import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.truffle.core.IsNilNode;
 import org.jruby.truffle.core.IsRubiniusUndefinedNode;
 import org.jruby.truffle.core.RaiseIfFrozenNode;
-import org.jruby.truffle.core.VMPrimitiveNodesFactory;
 import org.jruby.truffle.core.array.ArrayAppendOneNodeGen;
 import org.jruby.truffle.core.array.ArrayConcatNode;
 import org.jruby.truffle.core.array.ArrayDropTailNode;
@@ -2570,10 +2569,10 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitOpAsgnAndNode(OpAsgnAndParseNode node) {
-        return visitOpAsgnAndNode(node, node.getFirstNode().accept(this), node.getSecondNode().accept(this));
+        return translateOpAsgnAndNode(node, node.getFirstNode().accept(this), node.getSecondNode().accept(this));
     }
 
-    private RubyNode visitOpAsgnAndNode(ParseNode node, RubyNode lhs, RubyNode rhs) {
+    private RubyNode translateOpAsgnAndNode(ParseNode node, RubyNode lhs, RubyNode rhs) {
         /*
          * This doesn't translate as you might expect!
          *
@@ -2601,19 +2600,19 @@ public class BodyTranslator extends Translator {
 
         switch (node.getOperator()) {
             case "&&": {
-                return visitOpAsgnAndNode(node, lhs, rhs);
+                return translateOpAsgnAndNode(node, lhs, rhs);
             }
 
             case "||": {
                 final RubyNode defined = new DefinedNode(context, translateSourceSection(source, lhs.getRubySourceSection()), lhs);
                 lhs = new AndNode(defined, lhs);
 
-                return visitOpAsgnOrNode(node, lhs, rhs);
+                return translateOpAsgOrNode(node, lhs, rhs);
             }
 
             default: {
                 final RubySourceSection sourceSection = translate(node.getPosition());
-                final RubyCallNodeParameters callParameters = new RubyCallNodeParameters(context, sourceSection.toSourceSection(source), lhs, node.getOperator(), null, new RubyNode[] { rhs }, false, true, false, false, false);
+                final RubyCallNodeParameters callParameters = new RubyCallNodeParameters(context, sourceSection.toSourceSection(source), lhs, node.getOperator(), null, new RubyNode[] { rhs }, false, true);
                 final RubyNode opNode = context.getCoreMethods().createCallNode(callParameters);
                 final RubyNode ret = ((ReadConstantNode) lhs).makeWriteNode(opNode);
 
@@ -2708,10 +2707,10 @@ public class BodyTranslator extends Translator {
             lhs = new AndNode(defined, lhs);
         }
 
-        return visitOpAsgnOrNode(node, lhs, rhs);
+        return translateOpAsgOrNode(node, lhs, rhs);
     }
 
-    private RubyNode visitOpAsgnOrNode(ParseNode node, RubyNode lhs, RubyNode rhs) {
+    private RubyNode translateOpAsgOrNode(ParseNode node, RubyNode lhs, RubyNode rhs) {
         /*
          * This doesn't translate as you might expect!
          *
