@@ -1765,8 +1765,10 @@ public class BodyTranslator extends Translator {
             final RubyNode translated;
 
             if (name.equals("$0")) {
-                translated = VMPrimitiveNodesFactory.VMSetProcessTitleNodeFactory.create(
-                        new RubyNode[]{ writeGlobalVariableNode });
+                // Call Process.setproctitle
+                RubyNode processClass = new ObjectLiteralNode(context, fullSourceSection, context.getCoreLibrary().getProcessModule());
+                translated = new RubyCallNode(new RubyCallNodeParameters(context, fullSourceSection, processClass, "setproctitle", null,
+                                new RubyNode[]{writeGlobalVariableNode}, false, false));
             } else {
                 translated = writeGlobalVariableNode;
             }
