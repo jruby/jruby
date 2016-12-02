@@ -27,7 +27,6 @@ import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.truffle.core.IsNilNode;
 import org.jruby.truffle.core.IsRubiniusUndefinedNode;
 import org.jruby.truffle.core.RaiseIfFrozenNode;
-import org.jruby.truffle.core.VMPrimitiveNodesFactory;
 import org.jruby.truffle.core.array.ArrayAppendOneNodeGen;
 import org.jruby.truffle.core.array.ArrayConcatNode;
 import org.jruby.truffle.core.array.ArrayDropTailNode;
@@ -2570,6 +2569,10 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitOpAsgnAndNode(OpAsgnAndParseNode node) {
+        return translateOpAsgnAndNode(node, node.getFirstNode().accept(this), node.getSecondNode().accept(this));
+    }
+
+    private RubyNode translateOpAsgnAndNode(ParseNode node, RubyNode lhs, RubyNode rhs) {
         /*
          * This doesn't translate as you might expect!
          *
@@ -2579,10 +2582,7 @@ public class BodyTranslator extends Translator {
         final RubySourceSection sourceSection = translate(node.getPosition());
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
-        final ParseNode lhs = node.getFirstNode();
-        final ParseNode rhs = node.getSecondNode();
-
-        final RubyNode andNode = new AndNode(lhs.accept(this), rhs.accept(this));
+        final RubyNode andNode = new AndNode(lhs, rhs);
         andNode.unsafeSetSourceSection(sourceSection);
 
         final RubyNode ret = new DefinedWrapperNode(context, fullSourceSection, context.getCoreStrings().ASSIGNMENT, andNode);
@@ -2591,11 +2591,33 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitOpAsgnConstDeclNode(OpAsgnConstDeclParseNode node) {
-        // TODO (eregon, 7 Nov. 2016): Is there any semantic difference?
-        if ("&&".equals(node.getOperator())) {
-            return visitOpAsgnAndNode(new OpAsgnAndParseNode(node.getPosition(), node.getFirstNode(), node.getSecondNode()));
-        } else {
-            return visitOpAsgnOrNode(new OpAsgnOrParseNode(node.getPosition(), node.getFirstNode(), node.getSecondNode()));
+        RubyNode lhs = node.getFirstNode().accept(this);
+        RubyNode rhs = node.getSecondNode().accept(this);
+
+        if (!(rhs instanceof WriteConstantNode)) {
+            rhs = ((ReadConstantNode) lhs).makeWriteNode(rhs);
+        }
+
+        switch (node.getOperator()) {
+            case "&&": {
+                return translateOpAsgnAndNode(node, lhs, rhs);
+            }
+
+            case "||": {
+                final RubyNode defined = new DefinedNode(context, translateSourceSection(source, lhs.getRubySourceSection()), lhs);
+                lhs = new AndNode(defined, lhs);
+
+                return translateOpAsgOrNode(node, lhs, rhs);
+            }
+
+            default: {
+                final RubySourceSection sourceSection = translate(node.getPosition());
+                final RubyCallNodeParameters callParameters = new RubyCallNodeParameters(context, sourceSection.toSourceSection(source), lhs, node.getOperator(), null, new RubyNode[] { rhs }, false, true);
+                final RubyNode opNode = context.getCoreMethods().createCallNode(callParameters);
+                final RubyNode ret = ((ReadConstantNode) lhs).makeWriteNode(opNode);
+
+                return addNewlineIfNeeded(node, ret);
+            }
         }
     }
 
@@ -2676,6 +2698,19 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitOpAsgnOrNode(OpAsgnOrParseNode node) {
+        RubyNode lhs = node.getFirstNode().accept(this);
+        RubyNode rhs = node.getSecondNode().accept(this);
+
+        // This is needed for class variables. Constants are handled separately in visitOpAsgnConstDeclNode.
+        if (node.getFirstNode().needsDefinitionCheck() && !(node.getFirstNode() instanceof InstVarParseNode)) {
+            RubyNode defined = new DefinedNode(context, translateSourceSection(source, lhs.getRubySourceSection()), lhs);
+            lhs = new AndNode(defined, lhs);
+        }
+
+        return translateOpAsgOrNode(node, lhs, rhs);
+    }
+
+    private RubyNode translateOpAsgOrNode(ParseNode node, RubyNode lhs, RubyNode rhs) {
         /*
          * This doesn't translate as you might expect!
          *
@@ -2684,16 +2719,6 @@ public class BodyTranslator extends Translator {
 
         final RubySourceSection sourceSection = translate(node.getPosition());
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
-
-        RubyNode lhs = node.getFirstNode().accept(this);
-        RubyNode rhs = node.getSecondNode().accept(this);
-
-        // I think this is only required for constants - not instance variables
-
-        if (node.getFirstNode().needsDefinitionCheck() && !(node.getFirstNode() instanceof InstVarParseNode)) {
-            RubyNode defined = new DefinedNode(context, translateSourceSection(source, lhs.getRubySourceSection()), lhs);
-            lhs = new AndNode(defined, lhs);
-        }
 
         final RubyNode ret = new DefinedWrapperNode(context, fullSourceSection, context.getCoreStrings().ASSIGNMENT,
                 new OrNode(lhs, rhs));
