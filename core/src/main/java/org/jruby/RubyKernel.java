@@ -823,7 +823,7 @@ public class RubyKernel {
             IRubyObject last = args[argc - 1];
             if ( last instanceof RubyHash ) {
                 RubyHash opt = (RubyHash) last; RubySymbol key;
-                if ( ! opt.isEmpty() && ( opt.has_key_p( key = runtime.newSymbol("cause") ) == runtime.getTrue() ) ) {
+                if ( ! opt.isEmpty() && ( opt.has_key_p( context, key = runtime.newSymbol("cause") ) == runtime.getTrue() ) ) {
                     cause = opt.delete(context, key, Block.NULL_BLOCK);
                     forceCause = true;
                     if ( opt.isEmpty() && --argc == 0 ) { // more opts will be passed along

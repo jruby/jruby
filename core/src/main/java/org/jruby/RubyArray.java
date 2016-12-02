@@ -1909,15 +1909,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
 
         if (ary == this) throw runtime.newArgumentError("recursive array join");
 
-        runtime.safeRecurse(new Ruby.RecursiveFunctionEx<Ruby>() {
-            public IRubyObject call(ThreadContext context, Ruby runtime, IRubyObject obj, boolean recur) {
-                if (recur) throw runtime.newArgumentError("recursive array join");
-
-                RubyArray recAry = ((RubyArray) ary);
-                recAry.joinAny(context, outValue, sep, 0, result);
-
-                return runtime.getNil();
-            }}, context, runtime, outValue, "join", true);
+        context.safeRecurse(JOIN_RECURSIVE, new JoinRecursive.State(ary, outValue, sep, result), this, "join", true);
     }
 
     /** rb_ary_join
@@ -4762,6 +4754,33 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
 
         return -1;
     }
+
+    private static class JoinRecursive implements ThreadContext.RecursiveFunctionEx<JoinRecursive.State> {
+        protected static class State {
+            private final IRubyObject ary;
+            private final IRubyObject outValue;
+            private final RubyString sep;
+            private final RubyString result;
+
+            public State(IRubyObject ary, IRubyObject outValue, RubyString sep, RubyString result) {
+                this.ary = ary;
+                this.outValue = outValue;
+                this.sep = sep;
+                this.result = result;
+            }
+        }
+
+        public IRubyObject call(ThreadContext context, State state, IRubyObject obj, boolean recur) {
+            if (recur) throw context.runtime.newArgumentError("recursive array join");
+
+            RubyArray recAry = ((RubyArray) state.ary);
+            recAry.joinAny(context, state.outValue, state.sep, 0, state.result);
+
+            return context.nil;
+        }
+    }
+
+    private static final JoinRecursive JOIN_RECURSIVE = new JoinRecursive();
 
     public class RubyArrayConversionIterator implements Iterator {
         protected int index = 0;

@@ -2737,7 +2737,7 @@ public class Helpers {
     // MRI: rb_hash
     public static RubyFixnum safeHash(final ThreadContext context, IRubyObject obj) {
         Ruby runtime = context.runtime;
-        IRubyObject hval = runtime.safeRecurse(sites(context).recursive_hash, context, runtime, obj, "hash", true);
+        IRubyObject hval = context.safeRecurse(sites(context).recursive_hash, runtime, obj, "hash", true);
 
         while (!(hval instanceof RubyFixnum)) {
             if (hval instanceof RubyBignum) {

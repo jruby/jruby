@@ -302,16 +302,20 @@ public class RubyRange extends RubyObject {
     }
 
     private IRubyObject inspectValue(final ThreadContext context, IRubyObject value) {
-        return context.runtime.execRecursiveOuter(new Ruby.RecursiveFunction() {
-            public IRubyObject call(IRubyObject obj, boolean recur) {
-                if (recur) {
-                    return RubyString.newString(context.runtime, isExclusive ? "(... ... ...)" : "(... .. ...)");
-                } else {
-                    return inspect(context, obj);
-                }
-            }
-        }, value);
+        return context.safeRecurse(INSPECT_RECURSIVE, value, value, "inspect", true);
     }
+
+    private static class InspectRecursive implements ThreadContext.RecursiveFunctionEx<IRubyObject> {
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject state, IRubyObject obj, boolean recur) {
+            if (recur) {
+                return RubyString.newString(context.runtime, ((RubyRange) obj).isExclusive ? "(... ... ...)" : "(... .. ...)");
+            } else {
+                return inspect(context, obj);
+            }
+        }
+    }
+    private static final InspectRecursive INSPECT_RECURSIVE = new InspectRecursive();
 
     private static final byte[] DOTDOTDOT = new byte[]{'.', '.', '.'};
 

@@ -1223,6 +1223,11 @@ public class RubyHash extends RubyObject implements Map {
      *
      */
     @JRubyMethod(name = {"has_key?", "key?", "include?", "member?"}, required = 1)
+    public RubyBoolean has_key_p(ThreadContext context, IRubyObject key) {
+        Ruby runtime = context.runtime;
+        return internalGetEntry(key) == NO_ENTRY ? runtime.getFalse() : runtime.getTrue();
+    }
+
     public RubyBoolean has_key_p(IRubyObject key) {
         return internalGetEntry(key) == NO_ENTRY ? getRuntime().getFalse() : getRuntime().getTrue();
     }

@@ -254,6 +254,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
                 public void run() {
                     ThreadContext context = runtime.getCurrentContext();
                     context.setFiber(data.fiber.get());
+                    context.useRecursionGuardsFrom(data.parent.getContext());
                     fiberThread.set(context.getThread());
                     context.getThread().setFiberCurrentThread(data.parent);
 
