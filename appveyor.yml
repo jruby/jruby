@@ -16,7 +16,7 @@ install:
   - mvn -X -v
 
 cache:
-  - C:\Users\appveyor\.m2\repository -> pom.xml
+  - C:\Users\appveyor\.m2\repository -> pom.rb
 
 test_script:
   - mvn -Ptest
