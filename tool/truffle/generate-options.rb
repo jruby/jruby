@@ -24,6 +24,10 @@ options = options.map do |constant, (name, type, default, description)|
       type = 'int'
       type_cons = 'IntegerOptionDescription'
       default = default.to_s
+    when 'string'
+      type = 'String'
+      type_cons = 'StringOptionDescription'
+      default = default.to_s
     when 'string-array'
       type = 'String[]'
       type_cons = 'StringArrayOptionDescription'
