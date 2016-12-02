@@ -10,7 +10,7 @@ end
 
 default_gems =
   [
-   ImportedGem.new( 'jruby-openssl', '0.9.17' ),
+   ImportedGem.new( 'jruby-openssl', '0.9.19' ),
    ImportedGem.new( 'rake', '${rake.version}' ),
    ImportedGem.new( 'rdoc', '${rdoc.version}' ),
    ImportedGem.new( 'json', '1.8.0' ),
