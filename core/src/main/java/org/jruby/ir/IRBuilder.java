@@ -1979,9 +1979,11 @@ public class IRBuilder {
         return scope instanceof IRFor ? getLocalVariable(name, depth) : getNewLocalVariable(name, 0);
     }
 
-    private void addArgReceiveInstr(Variable v, int argIndex, boolean post, int numPreReqd, int numPostRead) {
+    private void addArgReceiveInstr(Variable v, int argIndex, Signature signature) {
+        boolean post = signature != null;
+
         if (post) {
-            addInstr(new ReceivePostReqdArgInstr(v, argIndex, numPreReqd, numPostRead));
+            addInstr(new ReceivePostReqdArgInstr(v, argIndex, signature.pre(), signature.opt(), signature.hasRest(), signature.post()));
         } else {
             addInstr(new ReceivePreReqdArgInstr(v, argIndex));
         }
@@ -2002,20 +2004,20 @@ public class IRBuilder {
         }
     }
 
-    public void receiveRequiredArg(Node node, int argIndex, boolean post, int numPreReqd, int numPostRead) {
+    public void receiveRequiredArg(Node node, int argIndex, Signature signature) {
         switch (node.getNodeType()) {
             case ARGUMENTNODE: {
                 String argName = ((ArgumentNode)node).getName();
 
                 if (scope instanceof IRMethod) addArgumentDescription(ArgumentType.req, argName);
 
-                addArgReceiveInstr(argumentResult(argName), argIndex, post, numPreReqd, numPostRead);
+                addArgReceiveInstr(argumentResult(argName), argIndex, signature);
                 break;
             }
             case MULTIPLEASGNNODE: {
                 MultipleAsgnNode childNode = (MultipleAsgnNode) node;
                 Variable v = createTemporaryVariable();
-                addArgReceiveInstr(v, argIndex, post, numPreReqd, numPostRead);
+                addArgReceiveInstr(v, argIndex, signature);
                 if (scope instanceof IRMethod) addArgumentDescription(ArgumentType.anonreq, null);
                 Variable tmp = createTemporaryVariable();
                 addInstr(new ToAryInstr(tmp, v));
@@ -2054,7 +2056,7 @@ public class IRBuilder {
         Node[] args = argsNode.getArgs();
         int preCount = signature.pre();
         for (int i = 0; i < preCount; i++, argIndex++) {
-            receiveRequiredArg(args[i], argIndex, false, -1, -1);
+            receiveRequiredArg(args[i], argIndex, null);
         }
 
         // Fixup opt/rest
@@ -2106,7 +2108,7 @@ public class IRBuilder {
         int postCount = argsNode.getPostCount();
         int postIndex = argsNode.getPostIndex();
         for (int i = 0; i < postCount; i++) {
-            receiveRequiredArg(args[postIndex + i], i, true, signature.pre(), postCount);
+            receiveRequiredArg(args[postIndex + i], i, signature);
         }
     }
 

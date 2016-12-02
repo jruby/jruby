@@ -268,11 +268,11 @@ public class RubyProc extends RubyObject implements DataType {
         boolean isFixed = signature.isFixed();
         int required = signature.required();
         int actual = args.length;
-        boolean restKwargs = blockBody instanceof IRBlockBody && ((IRBlockBody) blockBody).getSignature().hasKwargs();
+        boolean kwargs = blockBody instanceof IRBlockBody && signature.hasKwargs();
 
         // FIXME: This is a hot mess.  restkwargs factors into destructing a single element array as well.  I just weaved it into this logic.
         // for procs and blocks, single array passed to multi-arg must be spread
-        if ((signature != Signature.ONE_ARGUMENT &&  required != 0 && (isFixed || signature != Signature.OPTIONAL) || restKwargs) &&
+        if ((signature != Signature.ONE_ARGUMENT &&  required != 0 && (isFixed || signature != Signature.OPTIONAL) || kwargs) &&
                 actual == 1 && args[0].respondsTo("to_ary")) {
             IRubyObject newAry = Helpers.aryToAry(args[0]);
 
@@ -287,15 +287,11 @@ public class RubyProc extends RubyObject implements DataType {
             actual = args.length;
         }
 
+        // FIXME: This pruning only seems to be needed for any?/all? specs.
         // fixed arity > 0 with mismatch needs a new args array
-        if (isFixed && required > 0 && required != actual) {
-            IRubyObject[] newArgs = ArraySupport.newCopy(args, required);
-
-            if (required > actual) { // Not enough required args pad.
-                Helpers.fillNil(newArgs, actual, required, context.runtime);
-            }
-
-            args = newArgs;
+        int kwargsHackRequired = required + (kwargs ? 1 : 0);
+        if (isFixed && required > 0 && kwargsHackRequired != actual) {
+            args = ArraySupport.newCopy(args, kwargsHackRequired);
         }
 
         return args;

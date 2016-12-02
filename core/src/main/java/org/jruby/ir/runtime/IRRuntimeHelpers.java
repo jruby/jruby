@@ -897,14 +897,33 @@ public class IRRuntimeHelpers {
         return RubyArray.newArrayMayCopy(context.runtime, args, argIndex, remainingArguments);
     }
 
-    @JIT
-    public static IRubyObject receivePostReqdArg(ThreadContext context, IRubyObject[] args, int preReqdArgsCount, int postReqdArgsCount, int argIndex, boolean acceptsKeywordArgument) {
-        boolean kwargs = extractKwargsHash(args, preReqdArgsCount + postReqdArgsCount, acceptsKeywordArgument) != null;
+    @JIT @Interp
+    public static IRubyObject receivePostReqdArg(ThreadContext context, IRubyObject[] args, int pre,
+                                                 int opt, boolean rest, int post,
+                                                 int argIndex, boolean acceptsKeywordArgument) {
+        int required = pre + post;
+        // FIXME: Once we extract kwargs from rest of args processing we can delete this extract and n calc.
+        boolean kwargs = extractKwargsHash(args, required, acceptsKeywordArgument) != null;
         int n = kwargs ? args.length - 1 : args.length;
-        int remaining = n - preReqdArgsCount;
-        if (remaining <= argIndex) return context.nil;
+        int remaining = n - pre;       // we know we have received all pre args by post receives.
 
-        return (remaining > postReqdArgsCount) ? args[n - postReqdArgsCount + argIndex] : args[preReqdArgsCount + argIndex];
+        if (remaining < post) {        // less args available than post args need
+            if (pre + argIndex >= n) { // argument is past end of arg list
+                return context.nil;
+            } else {
+                return args[pre + argIndex];
+            }
+        }
+
+        // At this point we know we have enough arguments left for post without worrying about AIOOBE.
+
+        if (rest) {                      // we can read from back since we will take all args we can get.
+            return args[n - post + argIndex];
+        } else if (n > required + opt) { // we filled all opt so we can read from front (and avoid excess args case from proc).
+            return args[pre + opt + argIndex];
+        } else {                         // partial opts filled in too few args so we can read from end.
+            return args[n - post + argIndex];
+        }
     }
 
     public static IRubyObject receiveOptArg(IRubyObject[] args, int requiredArgs, int preArgs, int argIndex, boolean acceptsKeywordArgument) {
