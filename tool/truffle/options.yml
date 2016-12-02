@@ -1,2 +1,3 @@
 ARGUMENTS:              [arguments,                 string-array,   [],         Command line arguments for the Ruby program]
 EXCEPTIONS_PRINT_JAVA:  [exceptions.print_java,     boolean,        false,      Print Java exceptions at the point of translating them to Ruby exceptions]
+FOO:                    [foo,                       integer,        0,          Foo bar baz]

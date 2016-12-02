@@ -18,6 +18,7 @@ public class OptionsCatalog {
 
     public static final OptionDescription ARGUMENTS = new StringArrayOptionDescription("arguments", "Command line arguments for the Ruby program", new String[]{});
     public static final OptionDescription EXCEPTIONS_PRINT_JAVA = new BooleanOptionDescription("exceptions.print_java", "Print Java exceptions at the point of translating them to Ruby exceptions", false);
+    public static final OptionDescription FOO = new IntegerOptionDescription("foo", "Foo bar baz", 0);
     
     public static OptionDescription fromName(String name) {
         switch (name) {
@@ -25,6 +26,8 @@ public class OptionsCatalog {
                 return ARGUMENTS;
             case "exceptions.print_java":
                 return EXCEPTIONS_PRINT_JAVA;
+            case "foo":
+                return FOO;
             default:
                 return null;
         }
