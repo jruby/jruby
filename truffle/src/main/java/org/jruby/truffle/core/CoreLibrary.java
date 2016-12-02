@@ -1357,6 +1357,10 @@ public class CoreLibrary {
         return procClass;
     }
 
+    public DynamicObject getProcessModule() {
+        return processModule;
+    }
+
     public DynamicObject getRangeClass() {
         return rangeClass;
     }
