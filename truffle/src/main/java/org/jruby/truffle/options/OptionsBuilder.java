@@ -53,13 +53,23 @@ public class OptionsBuilder {
     }
 
     <T> T getOrDefault(OptionDescription description) {
-        Object value = options.get(description);
+        final Object value = options.get(description);
 
         if (value == null) {
-            value = description.getDefaultValue();
+            return (T) description.getDefaultValue();
+        } else {
+            return (T) value;
         }
+    }
 
-        return (T) value;
+    <T> T getOrDefault(OptionDescription description, T defaultValue) {
+        final Object value = options.get(description);
+
+        if (value == null) {
+            return defaultValue;
+        } else {
+            return (T) value;
+        }
     }
 
 }

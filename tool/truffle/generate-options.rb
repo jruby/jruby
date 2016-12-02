@@ -20,18 +20,22 @@ options = options.map do |constant, (name, type, default, description)|
       type = 'boolean'
       type_cons = 'BooleanOptionDescription'
       default = default.to_s
+      null_default = false
     when 'integer'
       type = 'int'
       type_cons = 'IntegerOptionDescription'
       default = default.to_s
+      null_default = 0
     when 'string'
       type = 'String'
       type_cons = 'StringOptionDescription'
       default = default.to_s
+      null_default = 'null'
     when 'string-array'
       type = 'String[]'
       type_cons = 'StringArrayOptionDescription'
       default = "new String[]{#{default.map(&:inspect).join(', ')}}"
+      null_default = 'null'
     else
       raise type
   end
@@ -41,6 +45,8 @@ options = options.map do |constant, (name, type, default, description)|
       :name => name,
       :type => type,
       :default => default,
+      :reference_default => /[A-Z]/.match(default[0]),
+      :null_default => null_default,
       :description => description,
       :type_cons => type_cons
   )
@@ -70,7 +76,7 @@ public class NewOptions {
     <% options.each do |o| %><% if o.type.end_with?('[]') %>@CompilationFinal(dimensions=1) <% end %>public final <%= o.type %> <%= o.constant %>;
     <% end %>
     NewOptions(OptionsBuilder builder) {
-    <% options.each do |o| %>    <%= o.constant %> = builder.getOrDefault(OptionsCatalog.<%= o.constant %>);
+    <% options.each do |o| %>    <%= o.constant %> = builder.getOrDefault(OptionsCatalog.<%= o.constant %><%= o.reference_default ? ', ' + o.default : '' %>);
     <% end %>}
 
 }
@@ -95,7 +101,7 @@ import javax.annotation.Generated;
 @Generated("tool/truffle/generate-options.rb")
 public class OptionsCatalog {
 
-    <% options.each do |o| %>public static final OptionDescription <%= o.constant %> = new <%= o.type_cons %>("<%= o.name %>", "<%= o.description %>", <%= o.default %>);
+    <% options.each do |o| %>public static final OptionDescription <%= o.constant %> = new <%= o.type_cons %>("<%= o.name %>", "<%= o.description %>", <%= o.reference_default ? o.null_default : o.default %>);
     <% end %>
     public static OptionDescription fromName(String name) {
         switch (name) {

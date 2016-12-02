@@ -21,11 +21,13 @@ public class NewOptions {
     @CompilationFinal(dimensions=1) public final String[] ARGUMENTS;
     public final boolean EXCEPTIONS_PRINT_JAVA;
     public final int FOO;
+    public final int BAR;
     
     NewOptions(OptionsBuilder builder) {
         ARGUMENTS = builder.getOrDefault(OptionsCatalog.ARGUMENTS);
         EXCEPTIONS_PRINT_JAVA = builder.getOrDefault(OptionsCatalog.EXCEPTIONS_PRINT_JAVA);
         FOO = builder.getOrDefault(OptionsCatalog.FOO);
+        BAR = builder.getOrDefault(OptionsCatalog.BAR, FOO);
     }
 
 }
