@@ -58,7 +58,7 @@ public abstract class ArrayGeneralizeNode extends RubyNode {
             capacity = mirror.getLength();
         }
         final Object[] store = mirror.getBoxedCopy(capacity);
-        Layouts.ARRAY.setStore(array, store);
+        strategy.setStore(array, store);
         return store;
     }
 

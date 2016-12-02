@@ -41,7 +41,7 @@ public abstract class ArrayAppendOneNode extends RubyNode {
             @Cached("forValue(value)") ArrayStrategy strategy) {
         final ArrayMirror storeMirror = strategy.newArray(1);
         storeMirror.set(0, value);
-        Layouts.ARRAY.setStore(array, storeMirror.getArray());
+        strategy.setStore(array, storeMirror.getArray());
         setSize(array, 1);
         return array;
     }
@@ -59,7 +59,7 @@ public abstract class ArrayAppendOneNode extends RubyNode {
         if (extendProfile.profile(newSize > storeMirror.getLength())) {
             final ArrayMirror newStoreMirror = storeMirror.copyArrayAndMirror(ArrayUtils.capacityForOneMore(getContext(), storeMirror.getLength()));
             newStoreMirror.set(oldSize, value);
-            Layouts.ARRAY.setStore(array, newStoreMirror.getArray());
+            strategy.setStore(array, newStoreMirror.getArray());
             setSize(array, newSize);
         } else {
             storeMirror.set(oldSize, value);
@@ -84,7 +84,7 @@ public abstract class ArrayAppendOneNode extends RubyNode {
         final ArrayMirror storeMirror = generalizedStrategy.newArray(newCapacity);
         currentMirror.copyTo(storeMirror, 0, 0, oldSize);
         storeMirror.set(oldSize, value);
-        Layouts.ARRAY.setStore(array, storeMirror.getArray());
+        generalizedStrategy.setStore(array, storeMirror.getArray());
         setSize(array, newSize);
         return array;
     }

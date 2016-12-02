@@ -89,7 +89,7 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
         final ArrayMirror storeMirror = generalizedStrategy.newArray(currentMirror.getLength());
         currentMirror.copyTo(storeMirror, 0, 0, size);
         storeMirror.set(index, value);
-        Layouts.ARRAY.setStore(array, storeMirror.getArray());
+        generalizedStrategy.setStore(array, storeMirror.getArray());
         return value;
     }
 

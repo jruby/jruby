@@ -17,7 +17,6 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 
@@ -46,7 +45,7 @@ public abstract class ArrayEnsureCapacityNode extends RubyNode {
 
         if (extendProfile.profile(mirror.getLength() < requiredCapacity)) {
             final int capacity = ArrayUtils.capacity(getContext(), mirror.getLength(), requiredCapacity);
-            Layouts.ARRAY.setStore(array, mirror.copyArrayAndMirror(capacity).getArray());
+            strategy.setStore(array, mirror.copyArrayAndMirror(capacity).getArray());
             return true;
         } else {
             return false;

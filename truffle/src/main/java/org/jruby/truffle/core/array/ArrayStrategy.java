@@ -52,6 +52,11 @@ public abstract class ArrayStrategy {
         throw unsupported();
     }
 
+    public void setStore(DynamicObject array, Object store) {
+        assert !(store instanceof ArrayMirror);
+        Layouts.ARRAY.setStore(array, store);
+    }
+
     @Override
     public abstract String toString();
 
