@@ -154,7 +154,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         // Otherwise, we want to forward the exception to the target fiber
         // since it has the ball
         final ThreadFiber fiber = targetFiberData.fiber.get();
-        if ( fiber != null ) fiber.thread.raise(re.getException());
+        if ( fiber != null && fiber.alive() ) fiber.thread.raise(re.getException());
         else LOG.warn("no fiber thread to raise: {}", re.getException().inspect(context));
     }
 
@@ -239,7 +239,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         return thread.getContextVariables();
     }
     
-    boolean alive() {
+    final boolean alive() {
         return thread != null && thread.isAlive() && !data.queue.isShutdown();
     }
     
