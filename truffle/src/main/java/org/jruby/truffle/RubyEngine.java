@@ -15,7 +15,6 @@ import com.oracle.truffle.api.vm.PolyglotEngine;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.truffle.options.OptionsCatalog;
 import org.jruby.truffle.platform.graal.Graal;
-import org.jruby.util.cli.Options;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -44,7 +43,7 @@ public class RubyEngine {
     }
 
     public int execute(String path) {
-        if (!Graal.isGraal() && Options.TRUFFLE_GRAAL_WARNING_UNLESS.load()) {
+        if (!Graal.isGraal() && context.getOptions().GRAAL_WARNING_UNLESS) {
             Log.warning("This JVM does not have the Graal compiler - performance will be limited - " +
                     "see https://github.com/jruby/jruby/wiki/Truffle-FAQ#how-do-i-get-jrubytruffle");
         }
@@ -72,7 +71,7 @@ public class RubyEngine {
         boolean status = checkSyntax(in, filename);
 
         // check other scripts specified on argv
-        for (String arg : context.getNewOptions().ARGUMENTS) {
+        for (String arg : context.getOptions().ARGUMENTS) {
             status = status && checkFileSyntax(arg);
         }
 

@@ -1318,7 +1318,7 @@ public class ParserSupport {
 
             if (warnings.isVerbose() && current.isDefined(name) >= 0 &&
                     Options.PARSER_WARN_LOCAL_SHADOWING.load() &&
-                    !ParserSupport.skipTruffleRubiniusWarnings(lexer)) {
+                    !skipTruffleRubiniusWarnings(lexer)) {
 
                 warnings.warning(ID.STATEMENT_NOT_REACHED, lexer.getPosition().getFile(), lexer.getPosition().getLine(),
                         "shadowing outer local variable - " + name);
@@ -1582,7 +1582,7 @@ public class ParserSupport {
         return "";
     }
 
-    public static boolean skipTruffleRubiniusWarnings(RubyLexer lexer) {
-        return lexer.getFile().startsWith(Options.TRUFFLE_CORE_LOAD_PATH.load());
+    public boolean skipTruffleRubiniusWarnings(RubyLexer lexer) {
+        return lexer.getFile().startsWith(context.getOptions().CORE_LOAD_PATH);
     }
 }

@@ -17,20 +17,242 @@ import javax.annotation.Generated;
 public class OptionsCatalog {
 
     public static final OptionDescription ARGUMENTS = new StringArrayOptionDescription("arguments", "Command line arguments for the Ruby program", new String[]{});
+    public static final OptionDescription PLATFORM_SAFE = new BooleanOptionDescription("platform.safe", "Default value for the safety of all operations", true);
+    public static final OptionDescription PLATFORM_SAFE_LOAD = new BooleanOptionDescription("platform.safe.load", "Treat loading", false);
+    public static final OptionDescription PLATFORM_SAFE_IO = new BooleanOptionDescription("platform.safe.io", "Treat any methods that deal with IO as safe", false);
+    public static final OptionDescription PLATFORM_SAFE_MEMORY = new BooleanOptionDescription("platform.safe.memory", "Treat any methods that deal with unmanaged memory as safe", false);
+    public static final OptionDescription PLATFORM_SAFE_THREADS = new BooleanOptionDescription("platform.safe.threads", "Treat any methods that deal with threads as safe", false);
+    public static final OptionDescription PLATFORM_SAFE_PROCESSES = new BooleanOptionDescription("platform.safe.processes", "Treat any methods that deal with processes as safe", false);
+    public static final OptionDescription PLATFORM_SAFE_SIGNALS = new BooleanOptionDescription("platform.safe.siganls", "Treat any methods that deal with signals as safe", false);
+    public static final OptionDescription PLATFORM_SAFE_EXIT = new BooleanOptionDescription("platform.safe.exit", "Treat #exit! (hard exiting the VM) as safe", false);
+    public static final OptionDescription PLATFORM_SAFE_AT_EXIT = new BooleanOptionDescription("platform.safe.at_exit", "Treat #at_exit as safe", false);
+    public static final OptionDescription PLATFORM_SAFE_PUTS = new BooleanOptionDescription("platform.safe_puts", "Treat safe_puts as safe", true);
+    public static final OptionDescription PLATFORM_USE_JAVA = new BooleanOptionDescription("platform.use_java", "Use a pure-Java platform", false);
+    public static final OptionDescription COVERAGE_GLOBAL = new BooleanOptionDescription("coverage.global", "Run coverage for all code and print results on exit", false);
+    public static final OptionDescription INLINE_JS = new BooleanOptionDescription("inline_js", "Allow inline JavaScript", false);
+    public static final OptionDescription CORE_LOAD_PATH = new StringOptionDescription("core.load_path", "Location to load the Truffle core library from", "truffle:/jruby-truffle");
+    public static final OptionDescription CORE_PARALLEL_LOAD = new BooleanOptionDescription("core.parallel_load", "Load the Truffle core library in parallel", false);
+    public static final OptionDescription ARRAY_UNINITIALIZED_SIZE = new IntegerOptionDescription("array.uninitialized_size", "How large an Array to allocate when we have no other information to go on", 32);
+    public static final OptionDescription ARRAY_SMALL = new IntegerOptionDescription("array.small", "Maximum size of an Array to consider small for optimisations", 3);
+    public static final OptionDescription HASH_PACKED_ARRAY_MAX = new IntegerOptionDescription("hash.packed_array.max", "Maximum size of a Hash to consider using the packed array storage strategy for", 3);
+    public static final OptionDescription ROPE_LAZY_SUBSTRINGS = new BooleanOptionDescription("rope.lazy_substrings", "Indicates whether a substring operation on a rope should be performed lazily", true);
+    public static final OptionDescription ROPE_PRINT_INTERN_STATS = new BooleanOptionDescription("rope.print_intern_stats", "Print interned rope stats at application exit", false);
+    public static final OptionDescription GLOBAL_VARIABLE_MAX_INVALIDATIONS = new IntegerOptionDescription("global_variable.max_invalidations", "Maximum number of times a global variable can be changed to be considered constant", 10);
+    public static final OptionDescription DEFAULT_CACHE = new IntegerOptionDescription("default_cache", "Default size for caches", 8);
+    public static final OptionDescription METHOD_LOOKUP_CACHE = new IntegerOptionDescription("method_lookup.cache", "Method lookup cache size", 0);
+    public static final OptionDescription DISPATCH_CACHE = new IntegerOptionDescription("dispatch.cache", "Dispatch (various forms of method call) cache size", 0);
+    public static final OptionDescription YIELD_CACHE = new IntegerOptionDescription("yield.cache", "Yield cache size", 0);
+    public static final OptionDescription METHOD_TO_PROC_CACHE = new IntegerOptionDescription("to_proc.cache", "Method#to_proc cache size", 0);
+    public static final OptionDescription IS_A_CACHE = new IntegerOptionDescription("is_a.cache", "Kernel#is_a? and #kind_of? cache size", 0);
+    public static final OptionDescription BIND_CACHE = new IntegerOptionDescription("bind.cache", "Cache size of test for being able to bind a method to a module", 0);
+    public static final OptionDescription CONSTANT_CACHE = new IntegerOptionDescription("constant.cache", "Constant cache size", 0);
+    public static final OptionDescription INSTANCE_VARIABLE_CACHE = new IntegerOptionDescription("instance_variable.cache", "Instance variable cache size", 0);
+    public static final OptionDescription BINDING_LOCAL_VARIABLE_CACHE = new IntegerOptionDescription("binding_local_variable.cache", "Binding#local_variable_get/set cache size", 0);
+    public static final OptionDescription SYMBOL_TO_PROC_CACHE = new IntegerOptionDescription("symbol_to_proc.cache", "Symbol#to_proc cache size", 0);
+    public static final OptionDescription ALLOCATE_CLASS_CACHE = new IntegerOptionDescription("allocate_class.cache", "Allocation size class cache size", 0);
+    public static final OptionDescription PACK_CACHE = new IntegerOptionDescription("pack.cache", "Array#pack cache size", 0);
+    public static final OptionDescription UNPACK_CACHE = new IntegerOptionDescription("unpack.cache", "String#unpack cache size", 0);
+    public static final OptionDescription EVAL_CACHE = new IntegerOptionDescription("eval.cache", "eval cache size", 0);
+    public static final OptionDescription CLASS_CACHE = new IntegerOptionDescription("class.cache", ".class and .metaclass cache size", 0);
+    public static final OptionDescription ENCODING_COMPATIBLE_QUERY_CACHE = new IntegerOptionDescription("encoding_compatible_query.cache", "Encoding.compatible? cache size", 0);
+    public static final OptionDescription ENCODING_LOADED_CLASSES_CACHE = new IntegerOptionDescription("encoding_loaded_classes.cache", "Cache size of encoding operations based on anticipated number of total active encodings", 0);
+    public static final OptionDescription THREAD_CACHE = new IntegerOptionDescription("thread.cache", "Cache size of operations that depend on a particular thread", 0);
+    public static final OptionDescription ROPE_CLASS_CACHE = new IntegerOptionDescription("rope_class.cache", "Cache size for rope operations that depend on a concrete rope implementation to avoid virtual calls", 6);
+    public static final OptionDescription INTEROP_CONVERT_CACHE = new IntegerOptionDescription("interop.convert.cache", "Cache size for converting values for interop", 0);
+    public static final OptionDescription INTEROP_EXECUTE_CACHE = new IntegerOptionDescription("interop.execute.cache", "Cache size for interop EXECUTE messages", 0);
+    public static final OptionDescription INTEROP_READ_CACHE = new IntegerOptionDescription("interop.read.cache", "Cache size for interop READ messages", 0);
+    public static final OptionDescription INTEROP_WRITE_CACHE = new IntegerOptionDescription("interop.write.cache", "Cache size for interop WRITE messages", 0);
+    public static final OptionDescription INTEROP_INVOKE_CACHE = new IntegerOptionDescription("interop.invoke.cache", "Cache size for interop INVOKE messages", 0);
+    public static final OptionDescription CLONE_DEFAULT = new BooleanOptionDescription("clone.default", "Default option for cloning", true);
+    public static final OptionDescription INLINE_DEFAULT = new BooleanOptionDescription("inline.default", "Default option for inlining", true);
+    public static final OptionDescription CORE_ALWAYS_CLONE = new BooleanOptionDescription("core.always_clone", "Always clone built-in core methods", false);
+    public static final OptionDescription INLINE_NEEDS_CALLER_FRAME = new BooleanOptionDescription("inline_needs_caller_frame", "Inline methods that need their caller frame", false);
+    public static final OptionDescription YIELD_ALWAYS_CLONE = new BooleanOptionDescription("yield.always_clone", "Always clone yields", false);
+    public static final OptionDescription YIELD_ALWAYS_INLINE = new BooleanOptionDescription("yield.always_inline", "Always inline yields", false);
+    public static final OptionDescription METHODMISSING_ALWAYS_CLONE = new BooleanOptionDescription("method_missing.always_clone", "Always clone #method_missing", false);
+    public static final OptionDescription METHODMISSING_ALWAYS_INLINE = new BooleanOptionDescription("method_missing.always_inline", "Always inline #method_missing", false);
+    public static final OptionDescription PACK_UNROLL_LIMIT = new IntegerOptionDescription("pack.unroll", "If a pack or unpack expression has a loop less than this many iterations", 4);
+    public static final OptionDescription PACK_RECOVER_LOOP_MIN = new IntegerOptionDescription("pack.recover", "If a pack or unpack expression is longer than this", 32);
+    public static final OptionDescription INSTRUMENTATION_SERVER_PORT = new IntegerOptionDescription("instrumentation_server_port", "Port number to run an HTTP server on that provides instrumentation services", 0);
+    public static final OptionDescription EXCEPTIONS_STORE_JAVA = new BooleanOptionDescription("exceptions.store_java", "Store the Java exception with the Ruby backtrace", false);
     public static final OptionDescription EXCEPTIONS_PRINT_JAVA = new BooleanOptionDescription("exceptions.print_java", "Print Java exceptions at the point of translating them to Ruby exceptions", false);
-    public static final OptionDescription FOO = new IntegerOptionDescription("foo", "Foo bar baz", 0);
-    public static final OptionDescription BAR = new IntegerOptionDescription("bar", "Bob boo", 0);
+    public static final OptionDescription EXCEPTIONS_PRINT_UNCAUGHT_JAVA = new BooleanOptionDescription("exceptions.print_uncaught_java", "Print uncaught Java exceptions at the point of translating them to Ruby exceptions", false);
+    public static final OptionDescription BACKTRACES_HIDE_CORE_FILES = new BooleanOptionDescription("backtraces.hide_core_files", "Hide core source files in backtraces", true);
+    public static final OptionDescription BACKTRACES_INTERLEAVE_JAVA = new BooleanOptionDescription("backtraces.interleave_java", "Interleave Java stacktraces into the Ruby backtrace", false);
+    public static final OptionDescription BACKTRACES_LIMIT = new IntegerOptionDescription("backtraces.limit", "Limit the size of Ruby backtraces", 9999);
+    public static final OptionDescription BACKTRACES_OMIT_UNUSED = new BooleanOptionDescription("backtraces.omit_unused", "Omit backtraces that should be unused as they have pure rescue expressions", true);
+    public static final OptionDescription BASICOPS_INLINE = new BooleanOptionDescription("basic_ops.inline", "Inline basic operations (like Fixnum operators) in the AST without a call", true);
+    public static final OptionDescription METRICS_TIME = new BooleanOptionDescription("metrics.time", "Print the time at various stages of VM operation", false);
+    public static final OptionDescription METRICS_MEMORY_USED_ON_EXIT = new BooleanOptionDescription("metrics.memory_used_on_exit", "Print the size of heap memory in use on exit", false);
+    public static final OptionDescription CALL_GRAPH = new BooleanOptionDescription("callgraph", "Maintain a call graph", false);
+    public static final OptionDescription CALL_GRAPH_WRITE = new StringOptionDescription("callgraph.write", "File to write the call graph to on exit", null);
+    public static final OptionDescription CHAOS = new BooleanOptionDescription("chaos", "Randomly modify the representation of objects", false);
+    public static final OptionDescription GRAAL_WARNING_UNLESS = new BooleanOptionDescription("graal.warn_unless", "Warn unless the JVM has the Graal compiler", true);
+    public static final OptionDescription PERF_WARNING = new BooleanOptionDescription("perf.warn", "Warn when using a fature which is not optimized yet", false);
+    public static final OptionDescription SHARED_OBJECTS_ENABLED = new BooleanOptionDescription("shared.objects", "Enable shared objects", true);
+    public static final OptionDescription SHARED_OBJECTS_DEBUG = new BooleanOptionDescription("shared.objects.debug", "Print information about shared objects", false);
+    public static final OptionDescription SHARED_OBJECTS_FORCE = new BooleanOptionDescription("shared.objects.force", "Force sharing of objects roots at startup", false);
+    public static final OptionDescription SHARED_OBJECTS_SHARE_ALL = new BooleanOptionDescription("shared.objects.share_all", "Consider all objects as shared", false);
+    public static final OptionDescription CEXTS_LOG_LOAD = new BooleanOptionDescription("cexts.log.load", "Log loading of cexts", false);
     
     public static OptionDescription fromName(String name) {
         switch (name) {
             case "arguments":
                 return ARGUMENTS;
+            case "platform.safe":
+                return PLATFORM_SAFE;
+            case "platform.safe.load":
+                return PLATFORM_SAFE_LOAD;
+            case "platform.safe.io":
+                return PLATFORM_SAFE_IO;
+            case "platform.safe.memory":
+                return PLATFORM_SAFE_MEMORY;
+            case "platform.safe.threads":
+                return PLATFORM_SAFE_THREADS;
+            case "platform.safe.processes":
+                return PLATFORM_SAFE_PROCESSES;
+            case "platform.safe.siganls":
+                return PLATFORM_SAFE_SIGNALS;
+            case "platform.safe.exit":
+                return PLATFORM_SAFE_EXIT;
+            case "platform.safe.at_exit":
+                return PLATFORM_SAFE_AT_EXIT;
+            case "platform.safe_puts":
+                return PLATFORM_SAFE_PUTS;
+            case "platform.use_java":
+                return PLATFORM_USE_JAVA;
+            case "coverage.global":
+                return COVERAGE_GLOBAL;
+            case "inline_js":
+                return INLINE_JS;
+            case "core.load_path":
+                return CORE_LOAD_PATH;
+            case "core.parallel_load":
+                return CORE_PARALLEL_LOAD;
+            case "array.uninitialized_size":
+                return ARRAY_UNINITIALIZED_SIZE;
+            case "array.small":
+                return ARRAY_SMALL;
+            case "hash.packed_array.max":
+                return HASH_PACKED_ARRAY_MAX;
+            case "rope.lazy_substrings":
+                return ROPE_LAZY_SUBSTRINGS;
+            case "rope.print_intern_stats":
+                return ROPE_PRINT_INTERN_STATS;
+            case "global_variable.max_invalidations":
+                return GLOBAL_VARIABLE_MAX_INVALIDATIONS;
+            case "default_cache":
+                return DEFAULT_CACHE;
+            case "method_lookup.cache":
+                return METHOD_LOOKUP_CACHE;
+            case "dispatch.cache":
+                return DISPATCH_CACHE;
+            case "yield.cache":
+                return YIELD_CACHE;
+            case "to_proc.cache":
+                return METHOD_TO_PROC_CACHE;
+            case "is_a.cache":
+                return IS_A_CACHE;
+            case "bind.cache":
+                return BIND_CACHE;
+            case "constant.cache":
+                return CONSTANT_CACHE;
+            case "instance_variable.cache":
+                return INSTANCE_VARIABLE_CACHE;
+            case "binding_local_variable.cache":
+                return BINDING_LOCAL_VARIABLE_CACHE;
+            case "symbol_to_proc.cache":
+                return SYMBOL_TO_PROC_CACHE;
+            case "allocate_class.cache":
+                return ALLOCATE_CLASS_CACHE;
+            case "pack.cache":
+                return PACK_CACHE;
+            case "unpack.cache":
+                return UNPACK_CACHE;
+            case "eval.cache":
+                return EVAL_CACHE;
+            case "class.cache":
+                return CLASS_CACHE;
+            case "encoding_compatible_query.cache":
+                return ENCODING_COMPATIBLE_QUERY_CACHE;
+            case "encoding_loaded_classes.cache":
+                return ENCODING_LOADED_CLASSES_CACHE;
+            case "thread.cache":
+                return THREAD_CACHE;
+            case "rope_class.cache":
+                return ROPE_CLASS_CACHE;
+            case "interop.convert.cache":
+                return INTEROP_CONVERT_CACHE;
+            case "interop.execute.cache":
+                return INTEROP_EXECUTE_CACHE;
+            case "interop.read.cache":
+                return INTEROP_READ_CACHE;
+            case "interop.write.cache":
+                return INTEROP_WRITE_CACHE;
+            case "interop.invoke.cache":
+                return INTEROP_INVOKE_CACHE;
+            case "clone.default":
+                return CLONE_DEFAULT;
+            case "inline.default":
+                return INLINE_DEFAULT;
+            case "core.always_clone":
+                return CORE_ALWAYS_CLONE;
+            case "inline_needs_caller_frame":
+                return INLINE_NEEDS_CALLER_FRAME;
+            case "yield.always_clone":
+                return YIELD_ALWAYS_CLONE;
+            case "yield.always_inline":
+                return YIELD_ALWAYS_INLINE;
+            case "method_missing.always_clone":
+                return METHODMISSING_ALWAYS_CLONE;
+            case "method_missing.always_inline":
+                return METHODMISSING_ALWAYS_INLINE;
+            case "pack.unroll":
+                return PACK_UNROLL_LIMIT;
+            case "pack.recover":
+                return PACK_RECOVER_LOOP_MIN;
+            case "instrumentation_server_port":
+                return INSTRUMENTATION_SERVER_PORT;
+            case "exceptions.store_java":
+                return EXCEPTIONS_STORE_JAVA;
             case "exceptions.print_java":
                 return EXCEPTIONS_PRINT_JAVA;
-            case "foo":
-                return FOO;
-            case "bar":
-                return BAR;
+            case "exceptions.print_uncaught_java":
+                return EXCEPTIONS_PRINT_UNCAUGHT_JAVA;
+            case "backtraces.hide_core_files":
+                return BACKTRACES_HIDE_CORE_FILES;
+            case "backtraces.interleave_java":
+                return BACKTRACES_INTERLEAVE_JAVA;
+            case "backtraces.limit":
+                return BACKTRACES_LIMIT;
+            case "backtraces.omit_unused":
+                return BACKTRACES_OMIT_UNUSED;
+            case "basic_ops.inline":
+                return BASICOPS_INLINE;
+            case "metrics.time":
+                return METRICS_TIME;
+            case "metrics.memory_used_on_exit":
+                return METRICS_MEMORY_USED_ON_EXIT;
+            case "callgraph":
+                return CALL_GRAPH;
+            case "callgraph.write":
+                return CALL_GRAPH_WRITE;
+            case "chaos":
+                return CHAOS;
+            case "graal.warn_unless":
+                return GRAAL_WARNING_UNLESS;
+            case "perf.warn":
+                return PERF_WARNING;
+            case "shared.objects":
+                return SHARED_OBJECTS_ENABLED;
+            case "shared.objects.debug":
+                return SHARED_OBJECTS_DEBUG;
+            case "shared.objects.force":
+                return SHARED_OBJECTS_FORCE;
+            case "shared.objects.share_all":
+                return SHARED_OBJECTS_SHARE_ALL;
+            case "cexts.log.load":
+                return CEXTS_LOG_LOAD;
             default:
                 return null;
         }

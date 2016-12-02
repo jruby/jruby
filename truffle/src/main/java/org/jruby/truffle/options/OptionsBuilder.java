@@ -15,7 +15,7 @@ import java.util.Properties;
 
 public class OptionsBuilder {
 
-    private final String LEGACY_PREFIX = "jruby.truffle.";
+    private static final String LEGACY_PREFIX = "jruby.truffle.";
 
     private final Map<OptionDescription, Object> options = new HashMap<>();
 
@@ -36,20 +36,21 @@ public class OptionsBuilder {
     }
 
     private void set(String name, Object value) {
+        if (name.equals("instance-config")) {
+            return;
+        }
+
         final OptionDescription description = OptionsCatalog.fromName(name);
 
         if (description == null) {
-            //throw new UnknownOptionException(name);
-
-            // Don't throw for now - not all the options are translated across
-            return;
+            throw new UnknownOptionException(name);
         }
 
         options.put(description, description.checkValue(value));
     }
 
-    public NewOptions build() {
-        return new NewOptions(this);
+    public Options build() {
+        return new Options(this);
     }
 
     <T> T getOrDefault(OptionDescription description) {
@@ -70,6 +71,16 @@ public class OptionsBuilder {
         } else {
             return (T) value;
         }
+    }
+
+    public static <T> T readSystemProperty(OptionDescription description) {
+        final Object value = System.getProperty(LEGACY_PREFIX + description.getName());
+
+        if (value == null) {
+            return (T) description.getDefaultValue();
+        }
+
+        return (T) description.checkValue(value);
     }
 
 }

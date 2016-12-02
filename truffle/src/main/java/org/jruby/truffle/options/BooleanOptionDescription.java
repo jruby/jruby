@@ -25,7 +25,9 @@ public class BooleanOptionDescription extends OptionDescription {
 
     @Override
     public Object checkValue(Object value) {
-        if (value instanceof Boolean) {
+        if (value == null) {
+            return false;
+        } else if (value instanceof Boolean) {
             return value;
         } else if (value instanceof String) {
             switch ((String) value) {

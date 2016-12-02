@@ -666,7 +666,7 @@ public class RubyLexer extends LexingCommon {
     }
 
     private boolean arg_ambiguous() {
-        if (warnings.isVerbose() && Options.PARSER_WARN_AMBIGUOUS_ARGUMENTS.load() && !ParserSupport.skipTruffleRubiniusWarnings(this)) {
+        if (warnings.isVerbose() && Options.PARSER_WARN_AMBIGUOUS_ARGUMENTS.load() && !parserSupport.skipTruffleRubiniusWarnings(this)) {
             warnings.warning(ID.AMBIGUOUS_ARGUMENT, getPosition().getFile(), getPosition().getLine(), "Ambiguous first argument; make sure.");
         }
         return true;
@@ -2101,7 +2101,7 @@ public class RubyLexer extends LexingCommon {
         default:
             pushback(c);
             if (isSpaceArg(c, spaceSeen)) {
-                if (warnings.isVerbose() && Options.PARSER_WARN_ARGUMENT_PREFIX.load() && !ParserSupport.skipTruffleRubiniusWarnings(this))
+                if (warnings.isVerbose() && Options.PARSER_WARN_ARGUMENT_PREFIX.load() && !parserSupport.skipTruffleRubiniusWarnings(this))
                     warnings.warning(ID.ARGUMENT_AS_PREFIX, getPosition().getFile(), getPosition().getLine(), "`*' interpreted as argument prefix");
                 c = Tokens.tSTAR;
             } else if (isBEG()) {

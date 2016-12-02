@@ -29,7 +29,7 @@ options = options.map do |constant, (name, type, default, description)|
     when 'string'
       type = 'String'
       type_cons = 'StringOptionDescription'
-      default = default.to_s
+      default = default.nil? ? 'null' : "\"#{default.to_s}\""
       null_default = 'null'
     when 'string-array'
       type = 'String[]'
@@ -37,7 +37,7 @@ options = options.map do |constant, (name, type, default, description)|
       default = "new String[]{#{default.map(&:inspect).join(', ')}}"
       null_default = 'null'
     else
-      raise type
+      raise type.to_s
   end
 
   OpenStruct.new(
@@ -52,7 +52,7 @@ options = options.map do |constant, (name, type, default, description)|
   )
 end
 
-File.write('truffle/src/main/java/org/jruby/truffle/options/NewOptions.java', ERB.new(<<JAVA).result)
+File.write('truffle/src/main/java/org/jruby/truffle/options/Options.java', ERB.new(<<JAVA).result)
 /*
  * Copyright (c) 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
@@ -71,11 +71,11 @@ import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import javax.annotation.Generated;
 
 @Generated("tool/truffle/generate-options.rb")
-public class NewOptions {
+public class Options {
 
     <% options.each do |o| %><% if o.type.end_with?('[]') %>@CompilationFinal(dimensions=1) <% end %>public final <%= o.type %> <%= o.constant %>;
     <% end %>
-    NewOptions(OptionsBuilder builder) {
+    Options(OptionsBuilder builder) {
     <% options.each do |o| %>    <%= o.constant %> = builder.getOrDefault(OptionsCatalog.<%= o.constant %><%= o.reference_default ? ', ' + o.default : '' %>);
     <% end %>}
 

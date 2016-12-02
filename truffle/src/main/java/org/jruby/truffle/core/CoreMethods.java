@@ -11,8 +11,8 @@ package org.jruby.truffle.core;
 
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.Layouts;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.numeric.FixnumNodesFactory;
-import org.jruby.truffle.Options;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.dispatch.RubyCallNode;
 import org.jruby.truffle.language.dispatch.RubyCallNodeParameters;
@@ -20,14 +20,17 @@ import org.jruby.truffle.language.methods.InternalMethod;
 
 public class CoreMethods {
 
+    private final RubyContext context;
+
     private final InternalMethod fixnumPlus;
     private final InternalMethod fixnumMinus;
     private final InternalMethod fixnumMul;
 
-    public CoreMethods(CoreLibrary coreLibrary) {
-        fixnumPlus = getMethod(coreLibrary.getFixnumClass(), "+");
-        fixnumMinus = getMethod(coreLibrary.getFixnumClass(), "-");
-        fixnumMul = getMethod(coreLibrary.getFixnumClass(), "*");
+    public CoreMethods(RubyContext context) {
+        this.context = context;
+        fixnumPlus = getMethod(context.getCoreLibrary().getFixnumClass(), "+");
+        fixnumMinus = getMethod(context.getCoreLibrary().getFixnumClass(), "-");
+        fixnumMul = getMethod(context.getCoreLibrary().getFixnumClass(), "*");
     }
 
     private InternalMethod getMethod(DynamicObject module, String name) {
@@ -39,7 +42,7 @@ public class CoreMethods {
     }
 
     public RubyNode createCallNode(RubyCallNodeParameters callParameters) {
-        if (!Options.BASICOPS_INLINE || callParameters.getBlock() != null || callParameters.isSplatted() || callParameters.isSafeNavigation()) {
+        if (!context.getOptions().BASICOPS_INLINE || callParameters.getBlock() != null || callParameters.isSplatted() || callParameters.isSafeNavigation()) {
             return new RubyCallNode(callParameters);
         }
 

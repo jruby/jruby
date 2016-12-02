@@ -100,7 +100,7 @@ public class BacktraceFormatter {
             try {
                 lines.add(formatLine(activations, n, exception));
             } catch (Exception e) {
-                if (context.getNewOptions().EXCEPTIONS_PRINT_JAVA) {
+                if (context.getOptions().EXCEPTIONS_PRINT_JAVA) {
                     e.printStackTrace();
                 }
 

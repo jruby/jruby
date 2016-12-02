@@ -23,7 +23,6 @@ import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.runtime.Visibility;
-import org.jruby.truffle.Options;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.RubyLanguage;
 import org.jruby.truffle.language.arguments.RubyArguments;
@@ -31,6 +30,8 @@ import org.jruby.truffle.language.backtrace.InternalRootNode;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.objects.shared.SharedObjects;
+import org.jruby.truffle.options.OptionsBuilder;
+import org.jruby.truffle.options.OptionsCatalog;
 import org.jruby.truffle.parser.ParserContext;
 import org.jruby.truffle.parser.TranslatorDriver;
 
@@ -93,7 +94,7 @@ public class LazyRubyRootNode extends RootNode implements InternalRootNode {
         final Object value = callNode.call(frame, arguments);
 
         // The return value will be leaked to Java, share it.
-        if (Options.SHARED_OBJECTS) {
+        if ((boolean) OptionsBuilder.readSystemProperty(OptionsCatalog.SHARED_OBJECTS_ENABLED)) {
             SharedObjects.writeBarrier(value);
         }
 

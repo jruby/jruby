@@ -21,7 +21,6 @@ import org.jruby.truffle.core.InterruptMode;
 import org.jruby.truffle.core.fiber.FiberManager;
 import org.jruby.truffle.core.fiber.FiberNodes;
 import org.jruby.truffle.core.proc.ProcOperations;
-import org.jruby.truffle.Options;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.SafepointAction;
 import org.jruby.truffle.language.SafepointManager;
@@ -30,6 +29,8 @@ import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.control.ReturnException;
 import org.jruby.truffle.language.control.ThreadExitException;
 import org.jruby.truffle.language.objects.shared.SharedObjects;
+import org.jruby.truffle.options.OptionsBuilder;
+import org.jruby.truffle.options.OptionsCatalog;
 import org.jruby.truffle.util.SourceSectionUtils;
 
 import java.util.ArrayList;
@@ -94,7 +95,7 @@ public class ThreadManager {
     }
 
     public static void initialize(final DynamicObject thread, RubyContext context, Node currentNode, final Object[] arguments, final DynamicObject block) {
-        if (Options.SHARED_OBJECTS) {
+        if (OptionsBuilder.readSystemProperty(OptionsCatalog.SHARED_OBJECTS_ENABLED)) {
             SharedObjects.shareDeclarationFrame(block);
         }
 
@@ -332,7 +333,7 @@ public class ThreadManager {
         initializeCurrentThread(thread);
         runningRubyThreads.add(thread);
 
-        if (Options.SHARED_OBJECTS && runningRubyThreads.size() > 1) {
+        if ((boolean) OptionsBuilder.readSystemProperty(OptionsCatalog.SHARED_OBJECTS_ENABLED) && runningRubyThreads.size() > 1) {
             context.getSharedObjects().startSharing();
             SharedObjects.writeBarrier(thread);
         }

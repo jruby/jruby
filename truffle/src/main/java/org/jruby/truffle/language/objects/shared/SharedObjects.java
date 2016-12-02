@@ -16,8 +16,9 @@ import com.oracle.truffle.api.object.Shape;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.Options;
 import org.jruby.truffle.language.objects.ObjectGraph;
+import org.jruby.truffle.options.OptionsBuilder;
+import org.jruby.truffle.options.OptionsCatalog;
 import org.jruby.truffle.util.SourceSectionUtils;
 
 import java.util.ArrayDeque;
@@ -60,7 +61,7 @@ public class SharedObjects {
 
         long t0 = System.currentTimeMillis();
         shareObjects(stack);
-        if (Options.SHARED_OBJECTS_DEBUG) {
+        if (context.getOptions().SHARED_OBJECTS_DEBUG) {
             System.err.println("Sharing roots took " + (System.currentTimeMillis() - t0) + " ms");
         }
     }
@@ -68,7 +69,7 @@ public class SharedObjects {
     public static void shareDeclarationFrame(DynamicObject block) {
         final Deque<DynamicObject> stack = new ArrayDeque<>();
 
-        if (Options.SHARED_OBJECTS_DEBUG) {
+        if ((boolean) OptionsBuilder.readSystemProperty(OptionsCatalog.SHARED_OBJECTS_DEBUG)) {
             final SourceSection sourceSection = Layouts.PROC.getSharedMethodInfo(block).getSourceSection();
             System.err.println("Sharing decl frame of " + SourceSectionUtils.fileLine(sourceSection));
         }
@@ -101,11 +102,11 @@ public class SharedObjects {
     }
 
     public static boolean isShared(Shape shape) {
-        return Options.SHARED_OBJECTS && (Options.SHARED_OBJECTS_SHARE_ALL || shape.isShared());
+        return (boolean) OptionsBuilder.readSystemProperty(OptionsCatalog.SHARED_OBJECTS_ENABLED) && ((boolean) OptionsBuilder.readSystemProperty(OptionsCatalog.SHARED_OBJECTS_SHARE_ALL) || shape.isShared());
     }
 
     public static void writeBarrier(Object value) {
-        if (Options.SHARED_OBJECTS && value instanceof DynamicObject && !isShared((DynamicObject) value)) {
+        if ((boolean) OptionsBuilder.readSystemProperty(OptionsCatalog.SHARED_OBJECTS_ENABLED) && value instanceof DynamicObject && !isShared((DynamicObject) value)) {
             shareObject(value);
         }
     }

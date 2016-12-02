@@ -46,6 +46,8 @@ package org.jruby.truffle;
 
 import com.oracle.truffle.api.TruffleOptions;
 import org.jruby.RubyInstanceConfig;
+import org.jruby.truffle.options.OptionsBuilder;
+import org.jruby.truffle.options.OptionsCatalog;
 import org.jruby.util.cli.Options;
 import org.jruby.util.cli.OutputStrings;
 
@@ -128,7 +130,7 @@ public class Main {
     }
 
     public static void printTruffleTimeMetric(String id) {
-        if (Options.TRUFFLE_METRICS_TIME.load()) {
+        if (OptionsBuilder.readSystemProperty(OptionsCatalog.METRICS_TIME)) {
             final long millis = System.currentTimeMillis();
             System.err.printf("%s %d.%03d%n", id, millis / 1000, millis % 1000);
         }
@@ -136,7 +138,7 @@ public class Main {
 
     private static void printTruffleMemoryMetric() {
         // Memory stats aren't available on AOT.
-        if (!TruffleOptions.AOT && Options.TRUFFLE_METRICS_MEMORY_USED_ON_EXIT.load()) {
+        if (!TruffleOptions.AOT && (boolean) OptionsBuilder.readSystemProperty(OptionsCatalog.METRICS_MEMORY_USED_ON_EXIT)) {
             for (int n = 0; n < 10; n++) {
                 System.gc();
             }
