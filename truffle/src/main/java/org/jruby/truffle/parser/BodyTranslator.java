@@ -1078,13 +1078,7 @@ public class BodyTranslator extends Translator {
 
         RubyNode lexicalParent = translateCPath(sourceSection, node.getCPath());
 
-        RubyNode superClass;
-        if (node.getSuperNode() != null) {
-            superClass = node.getSuperNode().accept(this);
-        } else {
-            superClass = new ObjectLiteralNode(context, fullSourceSection, context.getCoreLibrary().getObjectClass());
-        }
-
+        final RubyNode superClass = node.getSuperNode() != null ? node.getSuperNode().accept(this) : null;
         final DefineClassNode defineOrGetClass = new DefineClassNode(context, fullSourceSection, name, lexicalParent, superClass);
 
         final RubyNode ret = openModule(sourceSection, defineOrGetClass, name, node.getBodyNode(), false);
