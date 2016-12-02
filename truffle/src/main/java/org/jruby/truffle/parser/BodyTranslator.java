@@ -2570,6 +2570,10 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitOpAsgnAndNode(OpAsgnAndParseNode node) {
+        return visitOpAsgnAndNode(node, node.getFirstNode().accept(this), node.getSecondNode().accept(this));
+    }
+
+    private RubyNode visitOpAsgnAndNode(ParseNode node, RubyNode lhs, RubyNode rhs) {
         /*
          * This doesn't translate as you might expect!
          *
@@ -2578,13 +2582,6 @@ public class BodyTranslator extends Translator {
 
         final RubySourceSection sourceSection = translate(node.getPosition());
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
-
-        RubyNode lhs = node.getFirstNode().accept(this);
-        RubyNode rhs = node.getSecondNode().accept(this);
-
-        if (lhs instanceof ReadConstantNode && !(rhs instanceof WriteConstantNode)) {
-            rhs = ((ReadConstantNode) lhs).makeWriteNode(rhs);
-        }
 
         final RubyNode andNode = new AndNode(lhs, rhs);
         andNode.unsafeSetSourceSection(sourceSection);
@@ -2595,11 +2592,33 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitOpAsgnConstDeclNode(OpAsgnConstDeclParseNode node) {
-        // TODO (eregon, 7 Nov. 2016): Is there any semantic difference?
-        if ("&&".equals(node.getOperator())) {
-            return visitOpAsgnAndNode(new OpAsgnAndParseNode(node.getPosition(), node.getFirstNode(), node.getSecondNode()));
-        } else {
-            return visitOpAsgnOrNode(new OpAsgnOrParseNode(node.getPosition(), node.getFirstNode(), node.getSecondNode()));
+        RubyNode lhs = node.getFirstNode().accept(this);
+        RubyNode rhs = node.getSecondNode().accept(this);
+
+        if (!(rhs instanceof WriteConstantNode)) {
+            rhs = ((ReadConstantNode) lhs).makeWriteNode(rhs);
+        }
+
+        switch (node.getOperator()) {
+            case "&&": {
+                return visitOpAsgnAndNode(node, lhs, rhs);
+            }
+
+            case "||": {
+                final RubyNode defined = new DefinedNode(context, translateSourceSection(source, lhs.getRubySourceSection()), lhs);
+                lhs = new AndNode(defined, lhs);
+
+                return visitOpAsgnOrNode(node, lhs, rhs);
+            }
+
+            default: {
+                final RubySourceSection sourceSection = translate(node.getPosition());
+                final RubyCallNodeParameters callParameters = new RubyCallNodeParameters(context, sourceSection.toSourceSection(source), lhs, node.getOperator(), null, new RubyNode[] { rhs }, false, true, false, false, false);
+                final RubyNode opNode = context.getCoreMethods().createCallNode(callParameters);
+                final RubyNode ret = ((ReadConstantNode) lhs).makeWriteNode(opNode);
+
+                return addNewlineIfNeeded(node, ret);
+            }
         }
     }
 
@@ -2680,6 +2699,19 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitOpAsgnOrNode(OpAsgnOrParseNode node) {
+        RubyNode lhs = node.getFirstNode().accept(this);
+        RubyNode rhs = node.getSecondNode().accept(this);
+
+        // This is needed for class variables. Constants are handled separately in visitOpAsgnConstDeclNode.
+        if (node.getFirstNode().needsDefinitionCheck() && !(node.getFirstNode() instanceof InstVarParseNode)) {
+            RubyNode defined = new DefinedNode(context, translateSourceSection(source, lhs.getRubySourceSection()), lhs);
+            lhs = new AndNode(defined, lhs);
+        }
+
+        return visitOpAsgnOrNode(node, lhs, rhs);
+    }
+
+    private RubyNode visitOpAsgnOrNode(ParseNode node, RubyNode lhs, RubyNode rhs) {
         /*
          * This doesn't translate as you might expect!
          *
@@ -2688,19 +2720,6 @@ public class BodyTranslator extends Translator {
 
         final RubySourceSection sourceSection = translate(node.getPosition());
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
-
-        RubyNode lhs = node.getFirstNode().accept(this);
-        RubyNode rhs = node.getSecondNode().accept(this);
-
-        if (lhs instanceof ReadConstantNode && !(rhs instanceof WriteConstantNode)) {
-            rhs = ((ReadConstantNode) lhs).makeWriteNode(rhs);
-        }
-
-        // I think this is only required for constants - not instance variables
-        if (node.getFirstNode().needsDefinitionCheck() && !(node.getFirstNode() instanceof InstVarParseNode)) {
-            RubyNode defined = new DefinedNode(context, translateSourceSection(source, lhs.getRubySourceSection()), lhs);
-            lhs = new AndNode(defined, lhs);
-        }
 
         final RubyNode ret = new DefinedWrapperNode(context, fullSourceSection, context.getCoreStrings().ASSIGNMENT,
                 new OrNode(lhs, rhs));

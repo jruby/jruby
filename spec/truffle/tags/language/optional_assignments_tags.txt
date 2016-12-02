@@ -1,2 +1,0 @@
-fails:Optional variable assignments using compunded constants with operator assignments
-fails:Optional variable assignments using compunded constants with operator assignments will fail with non-existant constants
