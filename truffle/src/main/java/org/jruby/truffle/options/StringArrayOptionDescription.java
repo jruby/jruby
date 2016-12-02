@@ -33,7 +33,7 @@ public class StringArrayOptionDescription extends OptionDescription {
         } else if (value instanceof String) {
             return parseStringArray((String) value);
         } else {
-            throw new OptionTypeException(getName());
+            throw new OptionTypeException(getName(), value.toString());
         }
     }
 
@@ -77,7 +77,7 @@ public class StringArrayOptionDescription extends OptionDescription {
 
                 case escape:
                     if (string.charAt(n) != ',') {
-                        throw new OptionTypeException(getName());
+                        throw new OptionTypeException(getName(), string);
                     }
                     state = withinString;
                     builder.append(string.charAt(n));
@@ -91,7 +91,7 @@ public class StringArrayOptionDescription extends OptionDescription {
                 break;
 
             case escape:
-                throw new OptionTypeException(getName());
+                throw new OptionTypeException(getName(), string);
         }
 
         return values.toArray(new String[values.size()]);
