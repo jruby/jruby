@@ -23,7 +23,7 @@ public class OptionsCatalog {
     public static final OptionDescription ARGUMENTS = new StringArrayOptionDescription("arguments", "Command line arguments for the Ruby program", new String[]{});
     public static final OptionDescription DISPLAYED_FILE_NAME = new StringOptionDescription("displayed_file_name", "Displayed file name", null);
     public static final OptionDescription DEBUG = new BooleanOptionDescription("debug", "Debug", false);
-    public static final OptionDescription VERBOSITY = new OptionalBooleanOptionDescription("verbosity", "Verbosity", OptionalBoolean.NULL);
+    public static final OptionDescription VERBOSITY = new VerbosityOptionDescription("verbosity", "Verbosity", Verbosity.NIL);
     public static final OptionDescription FROZEN_STRING_LITERALS = new BooleanOptionDescription("frozen_string_literals", "Use frozen string literals", false);
     public static final OptionDescription DISABLE_GEMS = new BooleanOptionDescription("disable_gems", "Disable Gems", false);
     public static final OptionDescription INTERNAL_ENCODING = new StringOptionDescription("internal_encoding", "Internal encoding", null);

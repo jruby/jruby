@@ -499,7 +499,7 @@ public class RubyInstanceConfig {
     /**
      * @see Options#CLI_WARNING_LEVEL
      */
-    public void setVerbosity(org.jruby.RubyInstanceConfig.Verbosity verbosity) {
+    public void setVerbosity(Verbosity verbosity) {
         this.verbosity = verbosity;
     }
 
@@ -507,7 +507,7 @@ public class RubyInstanceConfig {
      * @see Options#CLI_VERBOSE
      */
     public boolean isVerbose() {
-        return verbosity == org.jruby.RubyInstanceConfig.Verbosity.TRUE;
+        return verbosity == Verbosity.TRUE;
     }
 
     /**
@@ -735,7 +735,7 @@ public class RubyInstanceConfig {
     private Map<String, String> optionGlobals = new HashMap<String, String>();
     private boolean processLineEnds = Options.CLI_PROCESS_LINE_ENDS.load();
     private boolean split = Options.CLI_AUTOSPLIT.load();
-    private org.jruby.RubyInstanceConfig.Verbosity verbosity = Options.CLI_WARNING_LEVEL.load();
+    private Verbosity verbosity = Verbosity.NIL;
     private boolean debug = Options.CLI_DEBUG.load();
     private boolean showVersion = Options.CLI_VERSION.load();
     private boolean showBytecode = Options.CLI_BYTECODE.load();
@@ -844,6 +844,10 @@ public class RubyInstanceConfig {
     @Deprecated
     public Boolean getVerbose() {
         return isVerbose();
+    }
+
+    public Verbosity getVerbosity() {
+        return verbosity;
     }
 
     @Deprecated

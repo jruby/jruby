@@ -33,6 +33,7 @@ public class RubyEngine {
             String[] arguments,
             String displayedFileName,
             boolean debug,
+            int verbosity,
             boolean frozenStringLiterals,
             boolean disabledGems,
             String internalEncoding,
@@ -45,6 +46,7 @@ public class RubyEngine {
                 .config(RubyLanguage.MIME_TYPE, OptionsCatalog.ARGUMENTS.getName(), arguments)
                 .config(RubyLanguage.MIME_TYPE, OptionsCatalog.DISPLAYED_FILE_NAME.getName(), displayedFileName)
                 .config(RubyLanguage.MIME_TYPE, OptionsCatalog.DEBUG.getName(), debug)
+                .config(RubyLanguage.MIME_TYPE, OptionsCatalog.VERBOSITY.getName(), verbosity)
                 .config(RubyLanguage.MIME_TYPE, OptionsCatalog.FROZEN_STRING_LITERALS.getName(), frozenStringLiterals)
                 .config(RubyLanguage.MIME_TYPE, OptionsCatalog.DISABLE_GEMS.getName(), disabledGems)
                 .config(RubyLanguage.MIME_TYPE, OptionsCatalog.INTERNAL_ENCODING.getName(), externalEncoding)

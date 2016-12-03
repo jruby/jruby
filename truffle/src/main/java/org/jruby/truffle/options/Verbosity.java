@@ -9,8 +9,8 @@
  */
 package org.jruby.truffle.options;
 
-public enum OptionalBoolean {
-    NULL,
-    TRUE,
-    FALSE
+public enum Verbosity {
+    NIL,
+    FALSE,
+    TRUE
 }

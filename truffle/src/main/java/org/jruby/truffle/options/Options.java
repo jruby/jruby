@@ -25,7 +25,7 @@ public class Options {
     @CompilationFinal(dimensions=1) public final String[] ARGUMENTS;
     public final String DISPLAYED_FILE_NAME;
     public final boolean DEBUG;
-    public final OptionalBoolean VERBOSITY;
+    public final Verbosity VERBOSITY;
     public final boolean FROZEN_STRING_LITERALS;
     public final boolean DISABLE_GEMS;
     public final String INTERNAL_ENCODING;
@@ -116,7 +116,7 @@ public class Options {
         ARGUMENTS = builder.getOrDefault(OptionsCatalog.ARGUMENTS);
         DISPLAYED_FILE_NAME = builder.getOrDefault(OptionsCatalog.DISPLAYED_FILE_NAME);
         DEBUG = builder.getOrDefault(OptionsCatalog.DEBUG);
-        VERBOSITY = builder.getOrDefault(OptionsCatalog.VERBOSITY, OptionalBoolean.NULL);
+        VERBOSITY = builder.getOrDefault(OptionsCatalog.VERBOSITY, Verbosity.NIL);
         FROZEN_STRING_LITERALS = builder.getOrDefault(OptionsCatalog.FROZEN_STRING_LITERALS);
         DISABLE_GEMS = builder.getOrDefault(OptionsCatalog.DISABLE_GEMS);
         INTERNAL_ENCODING = builder.getOrDefault(OptionsCatalog.INTERNAL_ENCODING);

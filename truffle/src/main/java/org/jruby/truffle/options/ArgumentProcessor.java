@@ -238,7 +238,7 @@ public class ArgumentProcessor {
                     break FOR;
                 case 'd':
                     config.setDebug(true);
-                    config.setVerbosity(org.jruby.RubyInstanceConfig.Verbosity.TRUE);
+                    config.setVerbosity(Verbosity.TRUE);
                     break;
                 case 'e':
                     disallowedInRubyOpts(argument);
@@ -321,24 +321,24 @@ public class ArgumentProcessor {
                     config.setInternalEncoding("UTF-8");
                     break;
                 case 'v':
-                    config.setVerbosity(org.jruby.RubyInstanceConfig.Verbosity.TRUE);
+                    config.setVerbosity(Verbosity.TRUE);
                     config.setShowVersion(true);
                     break;
                 case 'w':
-                    config.setVerbosity(org.jruby.RubyInstanceConfig.Verbosity.TRUE);
+                    config.setVerbosity(Verbosity.TRUE);
                     break;
                 case 'W':
                     {
                         String temp = grabOptionalValue();
                         if (temp == null) {
-                            config.setVerbosity(org.jruby.RubyInstanceConfig.Verbosity.TRUE);
+                            config.setVerbosity(Verbosity.TRUE);
                         } else {
                             if (temp.equals("0")) {
-                                config.setVerbosity(org.jruby.RubyInstanceConfig.Verbosity.NIL);
+                                config.setVerbosity(Verbosity.NIL);
                             } else if (temp.equals("1")) {
-                                config.setVerbosity(org.jruby.RubyInstanceConfig.Verbosity.FALSE);
+                                config.setVerbosity(Verbosity.FALSE);
                             } else if (temp.equals("2")) {
-                                config.setVerbosity(org.jruby.RubyInstanceConfig.Verbosity.TRUE);
+                                config.setVerbosity(Verbosity.TRUE);
                             } else {
                                 MainExitException mee = new MainExitException(1, getArgumentError(" -W must be followed by either 0, 1, 2 or nothing"));
                                 mee.setUsageError(true);
@@ -425,7 +425,7 @@ public class ArgumentProcessor {
                         throw new UnsupportedOperationException();
                     } else if (argument.equals("--jdb")) {
                         config.setDebug(true);
-                        config.setVerbosity(org.jruby.RubyInstanceConfig.Verbosity.TRUE);
+                        config.setVerbosity(Verbosity.TRUE);
                         break;
                     } else if (argument.equals("--help")) {
                         disallowedInRubyOpts(argument);
@@ -516,7 +516,7 @@ public class ArgumentProcessor {
                         // ignore this...can't do anything with it after boot
                         break FOR;
                     } else if (argument.equals("--verbose")) {
-                        config.setVerbosity(org.jruby.RubyInstanceConfig.Verbosity.TRUE);
+                        config.setVerbosity(Verbosity.TRUE);
                         break FOR;
                     } else {
                         if (argument.equals("--")) {

@@ -83,6 +83,7 @@ public class Main {
                     config.getArgv(),
                     config.displayedFileName(),
                     config.isDebug(),
+                    config.getVerbosity().ordinal(),
                     config.isFrozenStringLiteral(),
                     config.isDisableGems(),
                     config.getInternalEncoding(),
