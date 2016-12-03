@@ -1,2 +1,1 @@
-fails:File::Stat#ftype returns fifo when the file is a fifo
 slow:File.ftype returns fifo when the file is a fifo
