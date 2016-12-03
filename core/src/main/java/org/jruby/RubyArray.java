@@ -1909,7 +1909,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
 
         if (ary == this) throw runtime.newArgumentError("recursive array join");
 
-        context.safeRecurse(JOIN_RECURSIVE, new JoinRecursive.State(ary, outValue, sep, result), this, "join", true);
+        context.safeRecurse(JOIN_RECURSIVE, new JoinRecursive.State(ary, outValue, sep, result), outValue, "join", true);
     }
 
     /** rb_ary_join
