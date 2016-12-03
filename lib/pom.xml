@@ -222,7 +222,7 @@ DO NOT MODIFIY - GENERATED CODE
       <extension>
         <groupId>org.torquebox.mojo</groupId>
         <artifactId>mavengem-wagon</artifactId>
-        <version>0.2.2-SNAPSHOT</version>
+        <version>0.2.2</version>
       </extension>
     </extensions>
     <resources>
