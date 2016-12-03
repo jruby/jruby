@@ -37,6 +37,7 @@ public class RubyEngine {
                 .config(RubyLanguage.MIME_TYPE, INSTANCE_CONFIG_KEY, instanceConfig)
                 .config(RubyLanguage.MIME_TYPE, OptionsCatalog.LOAD_PATHS.getName(), instanceConfig.getLoadPaths())
                 .config(RubyLanguage.MIME_TYPE, OptionsCatalog.REQUIRED_LIBRARIES.getName(), instanceConfig.getRequiredLibraries())
+                .config(RubyLanguage.MIME_TYPE, OptionsCatalog.INLINE_SCRIPT.getName(), instanceConfig.inlineScript())
                 .config(RubyLanguage.MIME_TYPE, OptionsCatalog.ARGUMENTS.getName(), instanceConfig.getArgv())
                 .config(RubyLanguage.MIME_TYPE, OptionsCatalog.DISPLAYED_FILE_NAME.getName(), instanceConfig.displayedFileName())
                 .config(RubyLanguage.MIME_TYPE, OptionsCatalog.DEBUG.getName(), instanceConfig.isDebug())

@@ -20,6 +20,7 @@ public class Options {
 
     @CompilationFinal(dimensions=1) public final String[] LOAD_PATHS;
     @CompilationFinal(dimensions=1) public final String[] REQUIRED_LIBRARIES;
+    @CompilationFinal(dimensions=1) public final byte[] INLINE_SCRIPT;
     @CompilationFinal(dimensions=1) public final String[] ARGUMENTS;
     public final String DISPLAYED_FILE_NAME;
     public final boolean DEBUG;
@@ -108,6 +109,7 @@ public class Options {
     Options(OptionsBuilder builder) {
         LOAD_PATHS = builder.getOrDefault(OptionsCatalog.LOAD_PATHS);
         REQUIRED_LIBRARIES = builder.getOrDefault(OptionsCatalog.REQUIRED_LIBRARIES);
+        INLINE_SCRIPT = builder.getOrDefault(OptionsCatalog.INLINE_SCRIPT);
         ARGUMENTS = builder.getOrDefault(OptionsCatalog.ARGUMENTS);
         DISPLAYED_FILE_NAME = builder.getOrDefault(OptionsCatalog.DISPLAYED_FILE_NAME);
         DEBUG = builder.getOrDefault(OptionsCatalog.DEBUG);

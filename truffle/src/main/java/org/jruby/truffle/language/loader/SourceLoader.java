@@ -40,7 +40,7 @@ public class SourceLoader {
     @TruffleBoundary
     public Source loadMain(String path) throws IOException {
         if (path.equals("-e")) {
-            return loadFragment(new String(context.getInstanceConfig().inlineScript(), StandardCharsets.UTF_8), "-e");
+            return loadFragment(new String(context.getOptions().INLINE_SCRIPT, StandardCharsets.UTF_8), "-e");
         } else {
             final File file = new File(path).getCanonicalFile();
             ensureReadable(path, file);

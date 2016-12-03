@@ -31,6 +31,11 @@ options = options.map do |constant, (name, type, default, description)|
       type_cons = 'StringOptionDescription'
       default = default.nil? ? 'null' : "\"#{default.to_s}\""
       null_default = 'null'
+    when 'byte-string'
+      type = 'byte[]'
+      type_cons = 'ByteStringOptionDescription'
+      default = 'null'
+      null_default = 'null'
     when 'string-array'
       type = 'String[]'
       type_cons = 'StringArrayOptionDescription'

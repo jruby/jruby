@@ -18,6 +18,7 @@ public class OptionsCatalog {
 
     public static final OptionDescription LOAD_PATHS = new StringArrayOptionDescription("load_paths", "Load paths", new String[]{});
     public static final OptionDescription REQUIRED_LIBRARIES = new StringArrayOptionDescription("required_libraries", "Required libraries", new String[]{});
+    public static final OptionDescription INLINE_SCRIPT = new ByteStringOptionDescription("inline_script", "Inline script", null);
     public static final OptionDescription ARGUMENTS = new StringArrayOptionDescription("arguments", "Command line arguments for the Ruby program", new String[]{});
     public static final OptionDescription DISPLAYED_FILE_NAME = new StringOptionDescription("displayed_file_name", "Displayed file name", null);
     public static final OptionDescription DEBUG = new BooleanOptionDescription("debug", "Debug", false);
@@ -109,6 +110,8 @@ public class OptionsCatalog {
                 return LOAD_PATHS;
             case "required_libraries":
                 return REQUIRED_LIBRARIES;
+            case "inline_script":
+                return INLINE_SCRIPT;
             case "arguments":
                 return ARGUMENTS;
             case "displayed_file_name":
