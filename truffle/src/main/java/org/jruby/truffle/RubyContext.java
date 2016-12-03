@@ -17,7 +17,6 @@ import com.oracle.truffle.api.TruffleLanguage;
 import com.oracle.truffle.api.TruffleOptions;
 import com.oracle.truffle.api.instrumentation.Instrumenter;
 import com.oracle.truffle.api.object.DynamicObject;
-import org.jruby.Ruby;
 import org.jruby.truffle.builtins.PrimitiveManager;
 import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.truffle.core.CoreMethods;
@@ -171,9 +170,9 @@ public class RubyContext extends ExecutionContext {
 
         // Load the nodes
 
-        org.jruby.Main.printTruffleTimeMetric("before-load-nodes");
+        Main.printTruffleTimeMetric("before-load-nodes");
         coreLibrary.addCoreMethods(primitiveManager);
-        org.jruby.Main.printTruffleTimeMetric("after-load-nodes");
+        Main.printTruffleTimeMetric("after-load-nodes");
 
         // Capture known builtin methods
 
@@ -213,10 +212,18 @@ public class RubyContext extends ExecutionContext {
         return jrubyHome;
     }
 
+    private CodeSource getCodeSource() {
+        try {
+            return Class.forName("org.jruby.Ruby").getProtectionDomain().getCodeSource();
+        } catch (Exception e) {
+            throw new RuntimeException("Error getting the classic code source", e);
+        }
+    }
+
     private String findJRubyHome() {
         if (!TruffleOptions.AOT && System.getenv("JRUBY_HOME") == null && System.getProperty("jruby.home") == null) {
             // Set JRuby home automatically for GraalVM
-            final CodeSource codeSource = Ruby.class.getProtectionDomain().getCodeSource();
+            final CodeSource codeSource = getCodeSource();
             if (codeSource != null) {
                 final File currentJarFile;
                 try {
