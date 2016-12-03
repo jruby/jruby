@@ -1,1 +1,0 @@
-fails(windows):File.read raises an Errno::EACCES when passed a path that is a directory
