@@ -35,7 +35,6 @@ import org.jruby.util.JRubyFile;
 import org.jruby.util.KCode;
 import org.jruby.util.SafePropertyAccessor;
 import org.jruby.util.StringSupport;
-import org.jruby.util.cli.Options;
 import org.jruby.util.cli.OutputStrings;
 import org.jruby.util.func.Function2;
 

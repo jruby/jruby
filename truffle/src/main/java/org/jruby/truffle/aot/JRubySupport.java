@@ -13,6 +13,14 @@
  */
 package org.jruby.truffle.aot;
 
+import org.jcodings.Encoding;
+import org.jcodings.EncodingDB;
+import org.jcodings.util.ArrayReader;
+import org.jcodings.util.CaseInsensitiveBytesHash;
+import org.joda.time.DateTimeZone;
+import org.joda.time.tz.DateTimeZoneBuilder;
+import org.joda.time.tz.ZoneInfoProvider;
+
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -25,17 +33,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import org.jcodings.Encoding;
-import org.jcodings.EncodingDB;
-import org.jcodings.transcode.Transcoder;
-import org.jcodings.transcode.TranscoderDB;
-import org.jcodings.util.ArrayReader;
-import org.jcodings.util.CaseInsensitiveBytesHash;
-import org.joda.time.DateTimeZone;
-import org.joda.time.tz.DateTimeZoneBuilder;
-import org.joda.time.tz.ZoneInfoProvider;
-import org.jruby.anno.TypePopulator;
 
 public final class JRubySupport {
     public static final Map<String, DateTimeZone> allTimeZones = getTimeZones();

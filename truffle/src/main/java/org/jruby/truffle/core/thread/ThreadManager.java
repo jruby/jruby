@@ -29,8 +29,6 @@ import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.control.ReturnException;
 import org.jruby.truffle.language.control.ThreadExitException;
 import org.jruby.truffle.language.objects.shared.SharedObjects;
-import org.jruby.truffle.options.OptionsBuilder;
-import org.jruby.truffle.options.OptionsCatalog;
 import org.jruby.truffle.util.SourceSectionUtils;
 
 import java.util.ArrayList;

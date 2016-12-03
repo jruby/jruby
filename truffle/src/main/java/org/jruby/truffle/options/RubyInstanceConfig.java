@@ -33,6 +33,7 @@ import org.jruby.CompatVersion;
 import org.jruby.Profile;
 import org.jruby.Ruby;
 import org.jruby.RubyFile;
+import org.jruby.RubyInstanceConfig.ProfilingMode;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.backtrace.TraceType;
@@ -51,7 +52,6 @@ import org.jruby.util.UriLikePathHelper;
 import org.jruby.util.cli.Options;
 import org.jruby.util.cli.OutputStrings;
 import org.objectweb.asm.Opcodes;
-import org.jruby.RubyInstanceConfig.ProfilingMode;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;

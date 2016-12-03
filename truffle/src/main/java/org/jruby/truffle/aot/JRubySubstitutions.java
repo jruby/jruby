@@ -13,6 +13,15 @@
  */
 package org.jruby.truffle.aot;
 
+import com.oracle.truffle.api.source.Source;
+import org.jcodings.exception.InternalException;
+import org.joda.time.DateTimeZone;
+import org.jruby.Ruby;
+import org.jruby.truffle.RubyLanguage;
+import org.jruby.truffle.language.loader.SourceLoader;
+import org.jruby.util.FileResource;
+import org.jruby.util.SafePropertyAccessor;
+
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.File;
@@ -27,16 +36,6 @@ import java.nio.charset.StandardCharsets;
 import java.text.DateFormatSymbols;
 import java.util.Locale;
 import java.util.Map;
-
-import org.jcodings.exception.InternalException;
-import org.joda.time.DateTimeZone;
-import org.jruby.Ruby;
-import org.jruby.truffle.RubyLanguage;
-import org.jruby.truffle.language.loader.SourceLoader;
-import org.jruby.util.FileResource;
-import org.jruby.util.SafePropertyAccessor;
-
-import com.oracle.truffle.api.source.Source;
 
 // Checkstyle: stop
 

@@ -17,7 +17,6 @@ import com.oracle.truffle.api.instrumentation.ProvidedTags;
 import com.oracle.truffle.api.instrumentation.StandardTags;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
-import org.jruby.RubyInstanceConfig;
 import org.jruby.runtime.Constants;
 import org.jruby.truffle.core.kernel.TraceManager;
 import org.jruby.truffle.language.LazyRubyRootNode;

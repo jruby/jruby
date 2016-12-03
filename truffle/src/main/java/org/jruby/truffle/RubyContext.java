@@ -18,7 +18,6 @@ import com.oracle.truffle.api.TruffleOptions;
 import com.oracle.truffle.api.instrumentation.Instrumenter;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.Ruby;
-import org.jruby.RubyInstanceConfig;
 import org.jruby.truffle.builtins.PrimitiveManager;
 import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.truffle.core.CoreMethods;

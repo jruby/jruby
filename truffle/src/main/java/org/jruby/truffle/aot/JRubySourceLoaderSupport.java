@@ -13,6 +13,9 @@
  */
 package org.jruby.truffle.aot;
 
+import com.oracle.truffle.api.source.Source;
+import org.jruby.truffle.language.loader.SourceLoader;
+
 import java.io.IOException;
 import java.io.Reader;
 import java.net.URI;
@@ -29,9 +32,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-
-import org.jruby.truffle.language.loader.SourceLoader;
-import com.oracle.truffle.api.source.Source;
 
 public final class JRubySourceLoaderSupport {
     public static final Map<String, CoreLibraryFile> allCoreLibraryFiles = getCoreLibrary();

@@ -30,8 +30,6 @@ import org.jruby.truffle.language.backtrace.InternalRootNode;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.objects.shared.SharedObjects;
-import org.jruby.truffle.options.OptionsBuilder;
-import org.jruby.truffle.options.OptionsCatalog;
 import org.jruby.truffle.parser.ParserContext;
 import org.jruby.truffle.parser.TranslatorDriver;
 

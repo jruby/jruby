@@ -12,7 +12,6 @@ package org.jruby.truffle.language;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import org.jruby.truffle.options.OptionsBuilder;
 import org.jruby.truffle.options.OptionsCatalog;
-import org.jruby.util.cli.Options;
 
 import java.util.HashSet;
 import java.util.Set;
