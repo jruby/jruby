@@ -105,3 +105,4 @@ SHARED_OBJECTS_FORCE: [shared.objects.force, boolean, false, Force sharing of ob
 SHARED_OBJECTS_SHARE_ALL: [shared.objects.share_all, boolean, false, Consider all objects as shared]
 
 CEXTS_LOG_LOAD: [cexts.log.load, boolean, false, Log loading of cexts]
+LOG_DYNAMIC_CONSTANT_LOOKUP: [constant.dynamic_lookup.log, boolean, false, Log source code positions where dynamic constant lookup is performed]

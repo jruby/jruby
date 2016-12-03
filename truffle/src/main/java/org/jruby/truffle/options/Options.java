@@ -107,6 +107,7 @@ public class Options {
     public final boolean SHARED_OBJECTS_FORCE;
     public final boolean SHARED_OBJECTS_SHARE_ALL;
     public final boolean CEXTS_LOG_LOAD;
+    public final boolean LOG_DYNAMIC_CONSTANT_LOOKUP;
     
     Options(OptionsBuilder builder) {
         HOME = builder.getOrDefault(OptionsCatalog.HOME);
@@ -198,6 +199,7 @@ public class Options {
         SHARED_OBJECTS_FORCE = builder.getOrDefault(OptionsCatalog.SHARED_OBJECTS_FORCE);
         SHARED_OBJECTS_SHARE_ALL = builder.getOrDefault(OptionsCatalog.SHARED_OBJECTS_SHARE_ALL);
         CEXTS_LOG_LOAD = builder.getOrDefault(OptionsCatalog.CEXTS_LOG_LOAD);
+        LOG_DYNAMIC_CONSTANT_LOOKUP = builder.getOrDefault(OptionsCatalog.LOG_DYNAMIC_CONSTANT_LOOKUP);
     }
 
 }
