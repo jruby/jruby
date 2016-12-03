@@ -36,16 +36,11 @@ public class LoadRequiredLibrariesNode extends RubyNode {
     public Object execute(VirtualFrame frame) {
         Object self = RubyArguments.getSelf(frame);
 
-        for (String requiredLibrary : getRequiredLibraries()) {
+        for (String requiredLibrary : getContext().getOptions().REQUIRED_LIBRARIES) {
             requireNode.call(frame, self, "require", createString(StringOperations.encodeRope(requiredLibrary, UTF8Encoding.INSTANCE)));
         }
 
         return nil();
-    }
-
-    @TruffleBoundary
-    private Collection<String> getRequiredLibraries() {
-        return getContext().getInstanceConfig().getRequiredLibraries();
     }
 
 }

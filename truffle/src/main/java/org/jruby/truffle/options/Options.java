@@ -18,7 +18,15 @@ import javax.annotation.Generated;
 @Generated("tool/truffle/generate-options.rb")
 public class Options {
 
+    @CompilationFinal(dimensions=1) public final String[] LOAD_PATHS;
+    @CompilationFinal(dimensions=1) public final String[] REQUIRED_LIBRARIES;
     @CompilationFinal(dimensions=1) public final String[] ARGUMENTS;
+    public final String DISPLAYED_FILE_NAME;
+    public final boolean DEBUG;
+    public final boolean FROZEN_STRING_LITERALS;
+    public final boolean DISABLE_GEMS;
+    public final String INTERNAL_ENCODING;
+    public final String EXTERNAL_ENCODING;
     public final boolean PLATFORM_SAFE;
     public final boolean PLATFORM_SAFE_LOAD;
     public final boolean PLATFORM_SAFE_IO;
@@ -98,7 +106,15 @@ public class Options {
     public final boolean CEXTS_LOG_LOAD;
     
     Options(OptionsBuilder builder) {
+        LOAD_PATHS = builder.getOrDefault(OptionsCatalog.LOAD_PATHS);
+        REQUIRED_LIBRARIES = builder.getOrDefault(OptionsCatalog.REQUIRED_LIBRARIES);
         ARGUMENTS = builder.getOrDefault(OptionsCatalog.ARGUMENTS);
+        DISPLAYED_FILE_NAME = builder.getOrDefault(OptionsCatalog.DISPLAYED_FILE_NAME);
+        DEBUG = builder.getOrDefault(OptionsCatalog.DEBUG);
+        FROZEN_STRING_LITERALS = builder.getOrDefault(OptionsCatalog.FROZEN_STRING_LITERALS);
+        DISABLE_GEMS = builder.getOrDefault(OptionsCatalog.DISABLE_GEMS);
+        INTERNAL_ENCODING = builder.getOrDefault(OptionsCatalog.INTERNAL_ENCODING);
+        EXTERNAL_ENCODING = builder.getOrDefault(OptionsCatalog.EXTERNAL_ENCODING);
         PLATFORM_SAFE = builder.getOrDefault(OptionsCatalog.PLATFORM_SAFE);
         PLATFORM_SAFE_LOAD = builder.getOrDefault(OptionsCatalog.PLATFORM_SAFE_LOAD, PLATFORM_SAFE);
         PLATFORM_SAFE_IO = builder.getOrDefault(OptionsCatalog.PLATFORM_SAFE_IO, PLATFORM_SAFE);

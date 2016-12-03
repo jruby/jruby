@@ -119,7 +119,7 @@ public class TranslatorDriver {
         boolean isEvalParse = parserContext == ParserContext.EVAL || parserContext == ParserContext.INLINE || parserContext == ParserContext.MODULE;
         final ParserConfiguration parserConfiguration = new ParserConfiguration(context, 0, isInlineSource, !isEvalParse, false);
 
-        if (context.getInstanceConfig().isFrozenStringLiteral()) {
+        if (context.getOptions().FROZEN_STRING_LITERALS) {
             parserConfiguration.setFrozenStringLiteral(true);
         }
 

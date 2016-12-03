@@ -10,6 +10,7 @@
 package org.jruby.truffle.options;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 public class StringArrayOptionDescription extends OptionDescription {
@@ -30,6 +31,15 @@ public class StringArrayOptionDescription extends OptionDescription {
     public Object checkValue(Object value) {
         if (value instanceof String[]) {
             return value;
+        } else if (value instanceof Collection) {
+            final Collection collection = (Collection) value;
+            final String[] strings = new String[collection.size()];
+            int n = 0;
+            for (Object item : collection) {
+                strings[n] = item.toString();
+                n++;
+            }
+            return strings;
         } else if (value instanceof String) {
             return parseStringArray((String) value);
         } else {

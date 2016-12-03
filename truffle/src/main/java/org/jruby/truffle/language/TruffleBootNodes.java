@@ -146,11 +146,11 @@ public abstract class TruffleBootNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject originalLoadPath() {
-            final List<String> paths = getContext().getInstanceConfig().getLoadPaths();
-            final Object[] array = new Object[paths.size()];
+            final String[] paths = getContext().getOptions().LOAD_PATHS;
+            final Object[] array = new Object[paths.length];
 
             for (int n = 0; n < array.length; n++) {
-                array[n] = StringOperations.createString(getContext(), StringOperations.encodeRope(paths.get(n), UTF8Encoding.INSTANCE));
+                array[n] = StringOperations.createString(getContext(), StringOperations.encodeRope(paths[n], UTF8Encoding.INSTANCE));
             }
 
             return createArray(array, array.length);
@@ -163,7 +163,7 @@ public abstract class TruffleBootNodes {
 
         @Specialization
         public boolean isRubygemsEnabled() {
-            return !getContext().getInstanceConfig().isDisableGems();
+            return !getContext().getOptions().DISABLE_GEMS;
         }
 
     }

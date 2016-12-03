@@ -35,7 +35,15 @@ public class RubyEngine {
 
         engine = PolyglotEngine.newBuilder()
                 .config(RubyLanguage.MIME_TYPE, INSTANCE_CONFIG_KEY, instanceConfig)
+                .config(RubyLanguage.MIME_TYPE, OptionsCatalog.LOAD_PATHS.getName(), instanceConfig.getLoadPaths())
+                .config(RubyLanguage.MIME_TYPE, OptionsCatalog.REQUIRED_LIBRARIES.getName(), instanceConfig.getRequiredLibraries())
                 .config(RubyLanguage.MIME_TYPE, OptionsCatalog.ARGUMENTS.getName(), instanceConfig.getArgv())
+                .config(RubyLanguage.MIME_TYPE, OptionsCatalog.DISPLAYED_FILE_NAME.getName(), instanceConfig.displayedFileName())
+                .config(RubyLanguage.MIME_TYPE, OptionsCatalog.DEBUG.getName(), instanceConfig.isDebug())
+                .config(RubyLanguage.MIME_TYPE, OptionsCatalog.FROZEN_STRING_LITERALS.getName(), instanceConfig.isFrozenStringLiteral())
+                .config(RubyLanguage.MIME_TYPE, OptionsCatalog.DISABLE_GEMS.getName(), instanceConfig.isDisableGems())
+                .config(RubyLanguage.MIME_TYPE, OptionsCatalog.INTERNAL_ENCODING.getName(), instanceConfig.getInternalEncoding())
+                .config(RubyLanguage.MIME_TYPE, OptionsCatalog.EXTERNAL_ENCODING.getName(), instanceConfig.getExternalEncoding())
                 .build();
         Main.printTruffleTimeMetric("before-load-context");
         context = engine.eval(loadSource("Truffle::Boot.context", "context")).as(RubyContext.class);

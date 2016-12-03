@@ -25,7 +25,11 @@ public class StringOptionDescription extends OptionDescription {
 
     @Override
     public Object checkValue(Object value) {
-        return value.toString();
+        if (value == null) {
+            return null;
+        } else {
+            return value.toString();
+        }
     }
 
 }
