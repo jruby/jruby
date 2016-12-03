@@ -36,10 +36,6 @@ public class OptionsBuilder {
     }
 
     private void set(String name, Object value) {
-        if (name.equals("instance-config")) {
-            return;
-        }
-
         final OptionDescription description = OptionsCatalog.fromName(name);
 
         if (description == null) {
