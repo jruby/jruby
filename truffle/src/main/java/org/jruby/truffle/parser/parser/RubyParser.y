@@ -126,8 +126,8 @@ import org.jruby.truffle.parser.lexer.RubyLexer;
 import org.jruby.truffle.parser.lexer.StrTerm;
 import org.jruby.truffle.parser.lexer.SyntaxException.PID;
 import org.jruby.util.ByteList;
-import org.jruby.util.KeyValuePair;
-import org.jruby.util.StringSupport;
+import org.jruby.truffle.parser.KeyValuePair;
+import org.jruby.truffle.core.string.StringSupport;
 
 import java.io.IOException;
 

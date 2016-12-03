@@ -32,10 +32,8 @@
 package org.jruby.truffle.parser.lexer;
 
 import org.jcodings.Encoding;
-import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 
-import java.nio.channels.Channel;
 import java.util.List;
 
 /**
@@ -86,8 +84,4 @@ public abstract class LexerSource {
     public abstract ByteList gets();
 
     public abstract int getOffset();
-
-    public abstract Channel getRemainingAsChannel();
-
-    public abstract IRubyObject getRemainingAsIO();
 }

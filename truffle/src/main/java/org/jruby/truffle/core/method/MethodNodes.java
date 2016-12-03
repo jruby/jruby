@@ -21,7 +21,6 @@ import com.oracle.truffle.api.nodes.RootNode;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreClass;
@@ -43,6 +42,7 @@ import org.jruby.truffle.language.methods.CallBoundMethodNodeGen;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.objects.LogicalClassNode;
 import org.jruby.truffle.language.objects.LogicalClassNodeGen;
+import org.jruby.truffle.parser.ArgumentDescriptor;
 
 @CoreClass("Method")
 public abstract class MethodNodes {

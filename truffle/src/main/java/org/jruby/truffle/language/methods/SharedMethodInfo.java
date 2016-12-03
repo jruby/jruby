@@ -11,9 +11,9 @@ package org.jruby.truffle.language.methods;
 
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.language.LexicalScope;
+import org.jruby.truffle.parser.ArgumentDescriptor;
 import org.jruby.truffle.util.SourceSectionUtils;
 
 /**

@@ -51,14 +51,12 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.parser.ReOptions;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.encoding.EncodingCapable;
 import org.jruby.runtime.encoding.MarshalEncoding;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.string.StringSupport;
 import org.jruby.util.ByteList;
 import org.jruby.util.RegexpSupport;
-import org.jruby.util.StringSupport;
-import org.jruby.util.TypeConverter;
 import org.jruby.util.collections.WeakValuedMap;
 import org.jruby.util.io.EncodingUtils;
 
@@ -598,11 +596,6 @@ public class ClassicRegexp implements ReOptions, EncodingCapable, MarshalEncodin
         if (pattern == null) throw getRuntime().newTypeError("uninitialized Regexp");
     }
 
-    @JRubyMethod(meta = true)
-    public static IRubyObject try_convert(ThreadContext context, IRubyObject recv, IRubyObject args) {
-        return TypeConverter.convertToTypeWithCheck(args, context.runtime.getRegexp(), "to_regexp");
-    }
-
     /** rb_reg_quote
      *
      */
@@ -748,7 +741,7 @@ public class ClassicRegexp implements ReOptions, EncodingCapable, MarshalEncodin
     }
 
     @JRubyMethod
-    public IRubyObject options() {
+    public Object options() {
         return getRuntime().newFixnum(getOptions().toOptions());
     }
 
@@ -933,7 +926,7 @@ public class ClassicRegexp implements ReOptions, EncodingCapable, MarshalEncodin
     }
 
     @JRubyMethod
-    public IRubyObject encoding(ThreadContext context) {
+    public Object encoding(ThreadContext context) {
         Encoding enc = (pattern == null) ? str.getEncoding() : pattern.getEncoding();
         return context.runtime.getEncodingService().getEncoding(enc);
     }

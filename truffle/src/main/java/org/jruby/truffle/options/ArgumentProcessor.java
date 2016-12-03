@@ -29,17 +29,14 @@
 package org.jruby.truffle.options;
 
 import org.jruby.exceptions.MainExitException;
-import org.jruby.runtime.profile.builtin.ProfileOutput;
+import org.jruby.truffle.core.string.StringSupport;
 import org.jruby.util.FileResource;
 import org.jruby.util.JRubyFile;
-import org.jruby.util.KCode;
 import org.jruby.util.SafePropertyAccessor;
-import org.jruby.util.StringSupport;
 import org.jruby.util.cli.OutputStrings;
 import org.jruby.util.func.Function2;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;

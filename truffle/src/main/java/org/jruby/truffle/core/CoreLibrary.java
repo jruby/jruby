@@ -29,11 +29,8 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.transcode.EConvFlags;
 import org.jcodings.util.CaseInsensitiveBytesHash;
 import org.jcodings.util.CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry;
-import org.jruby.Main;
-import org.jruby.ext.ffi.Platform;
-import org.jruby.ext.ffi.Platform.OS_TYPE;
-import org.jruby.runtime.Constants;
 import org.jruby.truffle.Layouts;
+import org.jruby.truffle.Main;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.RubyLanguage;
 import org.jruby.truffle.builtins.CoreMethodNodeManager;
@@ -125,6 +122,7 @@ import org.jruby.truffle.language.objects.FreezeNode;
 import org.jruby.truffle.language.objects.FreezeNodeGen;
 import org.jruby.truffle.language.objects.SingletonClassNode;
 import org.jruby.truffle.language.objects.SingletonClassNodeGen;
+import org.jruby.truffle.options.OutputStrings;
 import org.jruby.truffle.parser.ParserContext;
 import org.jruby.truffle.platform.RubiniusTypes;
 import org.jruby.truffle.platform.signal.SignalManager;
@@ -136,8 +134,9 @@ import org.jruby.truffle.stdlib.digest.DigestNodesFactory;
 import org.jruby.truffle.stdlib.psych.PsychEmitterNodesFactory;
 import org.jruby.truffle.stdlib.psych.PsychParserNodesFactory;
 import org.jruby.truffle.stdlib.psych.YAMLEncoding;
-import org.jruby.util.cli.OutputStrings;
-import org.jruby.util.io.EncodingUtils;
+import org.jruby.truffle.util.Constants;
+import org.jruby.truffle.util.EncodingUtils;
+import org.jruby.truffle.util.Platform;
 
 import java.io.File;
 import java.io.IOException;
@@ -911,7 +910,7 @@ public class CoreLibrary {
         Layouts.MODULE.getFields(processModule).setConstant(context, node, "CLOCK_MONOTONIC", ProcessNodes.CLOCK_MONOTONIC);
         Layouts.MODULE.getFields(processModule).setConstant(context, node, "CLOCK_REALTIME", ProcessNodes.CLOCK_REALTIME);
 
-        if (Platform.getPlatform().getOS() == OS_TYPE.LINUX) {
+        if (Platform.getPlatform().getOS() == Platform.OS_TYPE.LINUX) {
             // Naming is not very consistent here, we just follow MRI
             Layouts.MODULE.getFields(processModule).setConstant(context, node, "CLOCK_THREAD_CPUTIME_ID", ProcessNodes.CLOCK_THREAD_CPUTIME);
             Layouts.MODULE.getFields(processModule).setConstant(context, node, "CLOCK_MONOTONIC_RAW", ProcessNodes.CLOCK_MONOTONIC_RAW);

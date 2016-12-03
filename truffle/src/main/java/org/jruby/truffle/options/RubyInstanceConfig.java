@@ -34,13 +34,13 @@ import org.jruby.Profile;
 import org.jruby.RubyFile;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.runtime.Constants;
+import org.jruby.truffle.core.string.StringSupport;
 import org.jruby.util.ClasspathLauncher;
 import org.jruby.util.FileResource;
 import org.jruby.util.InputStreamMarkCursor;
 import org.jruby.util.JRubyFile;
 import org.jruby.util.KCode;
 import org.jruby.util.SafePropertyAccessor;
-import org.jruby.util.StringSupport;
 import org.jruby.util.cli.Options;
 import org.jruby.util.cli.OutputStrings;
 

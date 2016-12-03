@@ -27,25 +27,20 @@
 package org.jruby.truffle.parser.lexer;
 
 import org.jcodings.Encoding;
-import org.jruby.RubyIO;
-import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
-import org.jruby.util.IOInputStream;
-import org.jruby.util.io.ChannelHelper;
 
-import java.nio.channels.Channel;
 import java.util.List;
 
 /**
  *  Lexer source from ripper getting a line at a time via 'gets' calls.
  */
 public class GetsLexerSource extends LexerSource {
-    private IRubyObject io;
+    private Object io;
     private Encoding encoding;
     private int offset;
 
     // Main-line Parsing constructor
-    public GetsLexerSource(String sourceName, int line, IRubyObject io, List<ByteList> scriptLines, Encoding encoding) {
+    public GetsLexerSource(String sourceName, int line, Object io, List<ByteList> scriptLines, Encoding encoding) {
         super(sourceName, line, scriptLines);
 
         this.io = io;
@@ -65,7 +60,7 @@ public class GetsLexerSource extends LexerSource {
 
     @Override
     public ByteList gets() {
-        IRubyObject result = io.callMethod(io.getRuntime().getCurrentContext(), "gets");
+        /*Object result = io.callMethod(io.getRuntime().getCurrentContext(), "gets");
         
         if (result.isNil()) return null;
         
@@ -75,7 +70,8 @@ public class GetsLexerSource extends LexerSource {
 
         if (scriptLines != null) scriptLines.add(bytelist);
 
-        return bytelist;
+        return bytelist;*/
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -83,14 +79,4 @@ public class GetsLexerSource extends LexerSource {
         return offset;
     }
 
-    @Override
-    public Channel getRemainingAsChannel() {
-        if (io instanceof RubyIO) return ((RubyIO) io).getChannel();
-        return ChannelHelper.readableChannel(new IOInputStream(io));
-    }
-
-    @Override
-    public IRubyObject getRemainingAsIO() {
-        return io;
-    }
 }

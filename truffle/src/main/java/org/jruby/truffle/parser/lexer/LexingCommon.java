@@ -36,8 +36,8 @@ import org.joni.Regex;
 import org.jruby.Ruby;
 import org.jruby.RubyEncoding;
 import org.jruby.truffle.core.regexp.ClassicRegexp;
+import org.jruby.truffle.core.string.StringSupport;
 import org.jruby.util.ByteList;
-import org.jruby.util.StringSupport;
 
 import java.io.IOException;
 import java.nio.charset.Charset;

@@ -26,7 +26,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.scope;
 
-import org.jruby.runtime.builtin.IRubyObject;
+
 
 /**
  * This is a DynamicScope that supports exactly three variables.
@@ -36,7 +36,7 @@ public class TwoVarDynamicScope extends OneVarDynamicScope {
     private static final String SIZE_ERROR = "TwoVarDynamicScope only supports scopes with two variables";
     private static final String GROW_ERROR = "TwoVarDynamicScope cannot be grown; use ManyVarsDynamicScope";
     
-    protected IRubyObject variableValueOne;
+    protected Object variableValueOne;
 
     public TwoVarDynamicScope(StaticScope staticScope, DynamicScope parent) {
         super(staticScope, parent);
@@ -57,8 +57,8 @@ public class TwoVarDynamicScope extends OneVarDynamicScope {
     }
 
     @Override
-    public IRubyObject[] getValues() {
-        return new IRubyObject[] {variableValueZero, variableValueOne};
+    public Object[] getValues() {
+        return new Object[] {variableValueZero, variableValueOne};
     }
     
     /**
@@ -72,7 +72,7 @@ public class TwoVarDynamicScope extends OneVarDynamicScope {
      * @return the value here
      */
     @Override
-    public IRubyObject getValue(int offset, int depth) {
+    public Object getValue(int offset, int depth) {
         if (depth > 0) {
             return parent.getValue(offset, depth - 1);
         }
@@ -88,7 +88,7 @@ public class TwoVarDynamicScope extends OneVarDynamicScope {
     }
     
     @Override
-    public IRubyObject getValueDepthZeroOrNil(int offset, IRubyObject nil) {
+    public Object getValueDepthZeroOrNil(int offset, Object nil) {
         assert offset < SIZE : SIZE_ERROR;
         switch (offset) {
         case 0:
@@ -102,7 +102,7 @@ public class TwoVarDynamicScope extends OneVarDynamicScope {
         }
     }
     @Override
-    public IRubyObject getValueOneDepthZeroOrNil(IRubyObject nil) {
+    public Object getValueOneDepthZeroOrNil(Object nil) {
         if (variableValueOne == null) return variableValueOne = nil;
         return variableValueOne;
     }
@@ -115,7 +115,7 @@ public class TwoVarDynamicScope extends OneVarDynamicScope {
      * @param depth how many captured scopes down this variable should be set
      */
     @Override
-    public IRubyObject setValue(int offset, IRubyObject value, int depth) {
+    public Object setValue(int offset, Object value, int depth) {
         if (depth > 0) {
             assert parent != null : "If depth > 0, then parent should not ever be null";
             
@@ -134,7 +134,7 @@ public class TwoVarDynamicScope extends OneVarDynamicScope {
     }
 
     @Override
-    public IRubyObject setValueDepthZero(IRubyObject value, int offset) {
+    public Object setValueDepthZero(Object value, int offset) {
         assert offset < SIZE : SIZE_ERROR;
         switch (offset) {
         case 0:
@@ -146,7 +146,7 @@ public class TwoVarDynamicScope extends OneVarDynamicScope {
         }
     }
     @Override
-    public IRubyObject setValueOneDepthZero(IRubyObject value) {
+    public Object setValueOneDepthZero(Object value) {
         return variableValueOne = value;
     }
 }

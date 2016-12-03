@@ -13,10 +13,10 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.Frame;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.runtime.Visibility;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.Visibility;
 
 public class GetCurrentVisibilityNode extends RubyNode {
 

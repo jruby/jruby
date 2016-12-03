@@ -20,7 +20,7 @@ import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.util.IdUtil;
+import org.jruby.truffle.util.IdUtil;
 
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;

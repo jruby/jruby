@@ -11,7 +11,6 @@ package org.jruby.truffle.language.loader;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.source.Source;
-import org.jruby.Ruby;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.RubyLanguage;
 import org.jruby.truffle.util.StringUtils;
@@ -85,7 +84,7 @@ public class SourceLoader {
             relativeClass = RubyContext.class;
             relativePath = FileSystems.getDefault().getPath(path.substring(TRUFFLE_SCHEME.length()));
         } else if (path.startsWith(JRUBY_SCHEME)) {
-            relativeClass = Ruby.class;
+            relativeClass = jrubySchemeRelativeClass();
             relativePath = FileSystems.getDefault().getPath(path.substring(JRUBY_SCHEME.length()));
         } else {
             throw new UnsupportedOperationException();
@@ -99,6 +98,16 @@ public class SourceLoader {
         }
 
         return Source.newBuilder(new InputStreamReader(stream, StandardCharsets.UTF_8)).name(path).mimeType(RubyLanguage.MIME_TYPE).build();
+    }
+
+    private static Class jrubySchemeRelativeClass() {
+        // TODO CS 3-Dec-16 AOT?
+
+        try {
+            return Class.forName("org.jruby.Ruby");
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private static void ensureReadable(String path, File file) throws IOException {

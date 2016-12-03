@@ -149,7 +149,6 @@ import org.jruby.truffle.util.StringUtils;
 import org.jruby.util.ByteList;
 import org.jruby.util.CodeRangeable;
 import org.jruby.util.ConvertDouble;
-import org.jruby.util.StringSupport;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;

@@ -30,12 +30,12 @@ import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.string.StringSupport;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.util.StringUtils;
 import org.jruby.util.ByteList;
-import org.jruby.util.StringSupport;
 
 import java.util.Arrays;
 

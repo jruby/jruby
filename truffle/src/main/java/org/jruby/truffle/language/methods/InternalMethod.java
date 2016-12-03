@@ -11,10 +11,10 @@ package org.jruby.truffle.language.methods;
 
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.object.DynamicObject;
-import org.jruby.runtime.Visibility;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyGuards;
+import org.jruby.truffle.language.Visibility;
 import org.jruby.truffle.language.objects.ObjectGraphNode;
 
 import java.util.HashSet;

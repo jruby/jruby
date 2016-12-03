@@ -9,7 +9,7 @@
  */
 package org.jruby.truffle.builtins;
 
-import org.jruby.runtime.Visibility;
+import org.jruby.truffle.language.Visibility;
 import org.jruby.truffle.language.methods.UnsupportedOperationBehavior;
 import org.jruby.truffle.platform.UnsafeGroup;
 

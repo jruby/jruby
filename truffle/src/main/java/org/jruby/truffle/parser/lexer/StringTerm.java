@@ -31,8 +31,8 @@ import org.jcodings.Encoding;
 import org.jruby.truffle.core.regexp.RegexpOptions;
 import org.jruby.truffle.parser.ast.RegexpParseNode;
 import org.jruby.truffle.parser.parser.Tokens;
+import org.jruby.truffle.util.KCode;
 import org.jruby.util.ByteList;
-import org.jruby.util.KCode;
 
 import java.io.IOException;
 

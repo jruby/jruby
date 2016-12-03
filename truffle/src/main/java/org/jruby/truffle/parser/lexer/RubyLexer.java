@@ -51,6 +51,7 @@ import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.regexp.ClassicRegexp;
+import org.jruby.truffle.core.string.StringSupport;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.parser.ast.BackRefParseNode;
 import org.jruby.truffle.parser.ast.BignumParseNode;
@@ -68,7 +69,6 @@ import org.jruby.truffle.parser.parser.RubyParser;
 import org.jruby.truffle.parser.parser.Tokens;
 import org.jruby.util.ByteList;
 import org.jruby.util.SafeDoubleParser;
-import org.jruby.util.StringSupport;
 import org.jruby.util.cli.Options;
 
 import java.io.IOException;

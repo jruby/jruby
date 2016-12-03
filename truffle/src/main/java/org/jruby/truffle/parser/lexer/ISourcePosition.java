@@ -27,7 +27,9 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.lexer;
 
-import org.jruby.runtime.PositionAware;
+import org.jruby.truffle.parser.PositionAware;
+
+;
 
 /**
  * This interface is the combination of two needs:  1) A Ruby interpreter position (for warnings 

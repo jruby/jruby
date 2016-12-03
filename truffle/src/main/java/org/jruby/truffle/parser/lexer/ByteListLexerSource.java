@@ -5,12 +5,8 @@
 package org.jruby.truffle.parser.lexer;
 
 import org.jcodings.Encoding;
-import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
-import org.jruby.util.io.ChannelHelper;
 
-import java.io.ByteArrayInputStream;
-import java.nio.channels.Channel;
 import java.util.List;
 
 /**
@@ -65,17 +61,4 @@ public class ByteListLexerSource extends LexerSource {
         return offset;
     }
 
-    @Override
-    public Channel getRemainingAsChannel() {
-        ByteArrayInputStream bais = new ByteArrayInputStream(completeSource.unsafeBytes(), completeSource.begin(), completeSource.realSize());
-        bais.skip(offset);
-        return ChannelHelper.readableChannel(bais);
-    }
-
-    @Override
-    public IRubyObject getRemainingAsIO() {
-        throw new UnsupportedOperationException();
-        //if (scriptLines == null) return null;
-        //return new RubyIO(scriptLines.getRuntime(), getRemainingAsChannel());
-    }
 }

@@ -14,11 +14,11 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.instrumentation.Instrumentable;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.runtime.Visibility;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.kernel.TraceManager;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubySourceSection;
+import org.jruby.truffle.language.Visibility;
 import org.jruby.truffle.language.arguments.RubyArguments;
 
 /**

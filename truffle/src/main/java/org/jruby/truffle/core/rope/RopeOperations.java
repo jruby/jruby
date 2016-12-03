@@ -31,11 +31,11 @@ import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.encoding.EncodingManager;
 import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.core.string.StringSupport;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.util.StringUtils;
 import org.jruby.util.ByteList;
 import org.jruby.util.Memo;
-import org.jruby.util.StringSupport;
 import org.jruby.util.io.EncodingUtils;
 
 import java.nio.ByteBuffer;
