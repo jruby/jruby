@@ -35,10 +35,12 @@
 module RbConfig
   jruby_home = Truffle::Boot.jruby_home_directory
 
-  bindir = if jruby_home.end_with?('/mxbuild/ruby-zip-extracted')
-    File.expand_path('../../bin', jruby_home)
-  else
-    "#{jruby_home}/bin"
+  if jruby_home
+    bindir = if jruby_home.end_with?('/mxbuild/ruby-zip-extracted')
+               File.expand_path('../../bin', jruby_home)
+             else
+               "#{jruby_home}/bin"
+           end
   end
 
   CONFIG = {

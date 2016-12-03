@@ -46,7 +46,11 @@ public abstract class TruffleBootNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject jrubyHomeDirectory() {
-            return createString(StringOperations.encodeRope(getContext().getJRubyHome(), UTF8Encoding.INSTANCE));
+            if (getContext().getJRubyHome() == null) {
+                return nil();
+            } else {
+                return createString(StringOperations.encodeRope(getContext().getJRubyHome(), UTF8Encoding.INSTANCE));
+            }
         }
 
     }
@@ -58,6 +62,10 @@ public abstract class TruffleBootNodes {
         @Specialization
         public DynamicObject jrubyHomeDirectoryProtocol() {
             String home = getContext().getJRubyHome();
+
+            if (home == null) {
+                return nil();
+            }
 
             if (home.startsWith("uri:classloader:")) {
                 home = home.substring("uri:classloader:".length());
