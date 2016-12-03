@@ -638,7 +638,30 @@ public class Main {
         final TruffleRubyEngineInterface truffleEngine;
 
         try {
-            final Object truffleEngineInstance = truffleRubyEngineClass.getConstructor(RubyInstanceConfig.class).newInstance(config);
+            final Object truffleEngineInstance = truffleRubyEngineClass.getConstructor(
+                    String.class,
+                    String[].class,
+                    String[].class,
+                    byte[].class,
+                    String[].class,
+                    String.class,
+                    boolean.class,
+                    boolean.class,
+                    boolean.class,
+                    String.class,
+                    String.class)
+                .newInstance(
+                    config.getJRubyHome(),
+                    config.getLoadPaths().toArray(new String[]{}),
+                    config.getRequiredLibraries().toArray(new String[]{}),
+                    config.inlineScript(),
+                    config.getArgv(),
+                    config.displayedFileName(),
+                    config.isDebug(),
+                    config.isFrozenStringLiteral(),
+                    config.isDisableGems(),
+                    config.getInternalEncoding(),
+                    config.getExternalEncoding());
 
             truffleEngine = (TruffleRubyEngineInterface) Proxy.newProxyInstance(getClass().getClassLoader(), new Class[]{TruffleRubyEngineInterface.class}, new InvocationHandler() {
 

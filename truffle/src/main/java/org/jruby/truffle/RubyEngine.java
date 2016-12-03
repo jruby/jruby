@@ -26,23 +26,30 @@ public class RubyEngine {
     private final PolyglotEngine engine;
     private final RubyContext context;
 
-    public RubyEngine(RubyInstanceConfig instanceConfig) {
-        if (!instanceConfig.getCompileMode().isTruffle()) {
-            throw new UnsupportedOperationException();
-        }
-
+    public RubyEngine(
+            String home,
+            String[] loadPaths,
+            String[] requiredLibraries,
+            byte[] inlineScript,
+            String[] arguments,
+            String displayedFileName,
+            boolean debug,
+            boolean frozenStringLiterals,
+            boolean disabledGems,
+            String internalEncoding,
+            String externalEncoding) {
         engine = PolyglotEngine.newBuilder()
-                .config(RubyLanguage.MIME_TYPE, OptionsCatalog.HOME.getName(), instanceConfig.getJRubyHome())
-                .config(RubyLanguage.MIME_TYPE, OptionsCatalog.LOAD_PATHS.getName(), instanceConfig.getLoadPaths())
-                .config(RubyLanguage.MIME_TYPE, OptionsCatalog.REQUIRED_LIBRARIES.getName(), instanceConfig.getRequiredLibraries())
-                .config(RubyLanguage.MIME_TYPE, OptionsCatalog.INLINE_SCRIPT.getName(), instanceConfig.inlineScript())
-                .config(RubyLanguage.MIME_TYPE, OptionsCatalog.ARGUMENTS.getName(), instanceConfig.getArgv())
-                .config(RubyLanguage.MIME_TYPE, OptionsCatalog.DISPLAYED_FILE_NAME.getName(), instanceConfig.displayedFileName())
-                .config(RubyLanguage.MIME_TYPE, OptionsCatalog.DEBUG.getName(), instanceConfig.isDebug())
-                .config(RubyLanguage.MIME_TYPE, OptionsCatalog.FROZEN_STRING_LITERALS.getName(), instanceConfig.isFrozenStringLiteral())
-                .config(RubyLanguage.MIME_TYPE, OptionsCatalog.DISABLE_GEMS.getName(), instanceConfig.isDisableGems())
-                .config(RubyLanguage.MIME_TYPE, OptionsCatalog.INTERNAL_ENCODING.getName(), instanceConfig.getInternalEncoding())
-                .config(RubyLanguage.MIME_TYPE, OptionsCatalog.EXTERNAL_ENCODING.getName(), instanceConfig.getExternalEncoding())
+                .config(RubyLanguage.MIME_TYPE, OptionsCatalog.HOME.getName(), home)
+                .config(RubyLanguage.MIME_TYPE, OptionsCatalog.LOAD_PATHS.getName(), loadPaths)
+                .config(RubyLanguage.MIME_TYPE, OptionsCatalog.REQUIRED_LIBRARIES.getName(), requiredLibraries)
+                .config(RubyLanguage.MIME_TYPE, OptionsCatalog.INLINE_SCRIPT.getName(), inlineScript)
+                .config(RubyLanguage.MIME_TYPE, OptionsCatalog.ARGUMENTS.getName(), arguments)
+                .config(RubyLanguage.MIME_TYPE, OptionsCatalog.DISPLAYED_FILE_NAME.getName(), displayedFileName)
+                .config(RubyLanguage.MIME_TYPE, OptionsCatalog.DEBUG.getName(), debug)
+                .config(RubyLanguage.MIME_TYPE, OptionsCatalog.FROZEN_STRING_LITERALS.getName(), frozenStringLiterals)
+                .config(RubyLanguage.MIME_TYPE, OptionsCatalog.DISABLE_GEMS.getName(), disabledGems)
+                .config(RubyLanguage.MIME_TYPE, OptionsCatalog.INTERNAL_ENCODING.getName(), externalEncoding)
+                .config(RubyLanguage.MIME_TYPE, OptionsCatalog.EXTERNAL_ENCODING.getName(), internalEncoding)
                 .build();
 
         Main.printTruffleTimeMetric("before-load-context");

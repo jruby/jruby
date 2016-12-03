@@ -77,7 +77,18 @@ public class Main {
             final InputStream in = config.getScriptSource();
             final String filename = config.displayedFileName();
 
-            final RubyEngine rubyEngine = new RubyEngine(config);
+            final RubyEngine rubyEngine = new RubyEngine(
+                    config.getJRubyHome(),
+                    config.getLoadPaths().toArray(new String[]{}),
+                    config.getRequiredLibraries().toArray(new String[]{}),
+                    config.inlineScript(),
+                    config.getArgv(),
+                    config.displayedFileName(),
+                    config.isDebug(),
+                    config.isFrozenStringLiteral(),
+                    config.isDisableGems(),
+                    config.getInternalEncoding(),
+                    config.getExternalEncoding());
 
             printTruffleTimeMetric("before-run");
             try {
