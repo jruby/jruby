@@ -657,7 +657,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return runtime.newString(dirname(context, jfilename)).infectBy(filename);
     }
 
-    static Pattern PROTOCOL_PATTERN = Pattern.compile(URI_PREFIX_STRING + ".*");
+    public static Pattern PROTOCOL_PATTERN = Pattern.compile(URI_PREFIX_STRING + ".*");
     public static String dirname(ThreadContext context, String jfilename) {
         final Ruby runtime = context.runtime;
         final String separator = runtime.getClass("File").getConstant("SEPARATOR").toString();

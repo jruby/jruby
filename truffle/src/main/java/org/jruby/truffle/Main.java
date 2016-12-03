@@ -45,10 +45,9 @@
 package org.jruby.truffle;
 
 import com.oracle.truffle.api.TruffleOptions;
-import org.jruby.RubyInstanceConfig;
 import org.jruby.truffle.options.OptionsBuilder;
 import org.jruby.truffle.options.OptionsCatalog;
-import org.jruby.util.cli.Options;
+import org.jruby.truffle.options.RubyInstanceConfig;
 import org.jruby.util.cli.OutputStrings;
 
 import java.io.InputStream;
@@ -65,7 +64,7 @@ public class Main {
         final RubyInstanceConfig config = new RubyInstanceConfig(false);
         config.setHardExit(true);
         config.processArguments(args);
-        config.setCompileMode(RubyInstanceConfig.CompileMode.TRUFFLE);
+        config.setCompileMode(org.jruby.RubyInstanceConfig.CompileMode.TRUFFLE);
 
         doShowVersion(config);
         doShowCopyright(config);
