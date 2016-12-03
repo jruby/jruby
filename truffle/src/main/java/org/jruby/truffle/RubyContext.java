@@ -70,7 +70,6 @@ public class RubyContext extends ExecutionContext {
 
     private final Options options;
 
-    private final RubyInstanceConfig instanceConfig;
     private final String jrubyHome;
     private String originalInputFile;
 
@@ -111,8 +110,7 @@ public class RubyContext extends ExecutionContext {
 
     private String currentDirectory;
 
-    public RubyContext(RubyInstanceConfig instanceConfig, TruffleLanguage.Env env) {
-        this.instanceConfig = instanceConfig;
+    public RubyContext(TruffleLanguage.Env env) {
         this.env = env;
 
         final OptionsBuilder optionsBuilder = new OptionsBuilder();
@@ -190,7 +188,7 @@ public class RubyContext extends ExecutionContext {
 
         // Load other subsystems
 
-        final PrintStream configStandardOut = instanceConfig.getOutput();
+        final PrintStream configStandardOut = System.out;
         debugStandardOut = (configStandardOut == System.out) ? null : configStandardOut;
 
         // The instrumentation server can't be run with AOT because com.sun.net.httpserver.spi.HttpServerProvider uses runtime class loading.
@@ -248,7 +246,7 @@ public class RubyContext extends ExecutionContext {
             }
         }
 
-        return instanceConfig.getJRubyHome();
+        return options.HOME;
     }
 
     public Object send(Object object, String methodName, DynamicObject block, Object... arguments) {
@@ -430,10 +428,6 @@ public class RubyContext extends ExecutionContext {
 
     public void setCurrentDirectory(String currentDirectory) {
         this.currentDirectory = currentDirectory;
-    }
-
-    public RubyInstanceConfig getInstanceConfig() {
-        return instanceConfig;
     }
 
     public void setOriginalInputFile(String originalInputFile) {

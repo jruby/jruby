@@ -21,6 +21,18 @@ options = options.map do |constant, (name, type, default, description)|
       type_cons = 'BooleanOptionDescription'
       default = default.to_s
       null_default = false
+    when 'optional-boolean'
+      type = 'OptionalBoolean'
+      type_cons = 'OptionalBooleanOptionDescription'
+      default = case default
+                  when nil
+                    'OptionalBoolean.NULL'
+                  when true
+                    'OptionalBoolean.TRUE'
+                  when false
+                    'OptionalBoolean.FALSE'
+                end
+      null_default = 'OptionalBoolean.NULL'
     when 'integer'
       type = 'int'
       type_cons = 'IntegerOptionDescription'

@@ -54,15 +54,8 @@ public class RubyLanguage extends TruffleLanguage<RubyContext> {
 
     @Override
     public RubyContext createContext(Env env) {
-        RubyInstanceConfig instanceConfig = (RubyInstanceConfig) env.getConfig().get(RubyEngine.INSTANCE_CONFIG_KEY);
-
-        if (instanceConfig == null) {
-            instanceConfig = new RubyInstanceConfig();
-            instanceConfig.processArgumentsWithRubyopts();
-            instanceConfig.setCompileMode(RubyInstanceConfig.CompileMode.TRUFFLE);
-        }
-
-        return new RubyContext(instanceConfig, env);
+        // TODO CS 3-Dec-16 need to parse RUBY_OPT here if it hasn't been already?
+        return new RubyContext(env);
     }
 
     @Override

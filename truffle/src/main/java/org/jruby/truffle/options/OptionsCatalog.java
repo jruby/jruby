@@ -16,12 +16,14 @@ import javax.annotation.Generated;
 @Generated("tool/truffle/generate-options.rb")
 public class OptionsCatalog {
 
+    public static final OptionDescription HOME = new StringOptionDescription("home", "Home", null);
     public static final OptionDescription LOAD_PATHS = new StringArrayOptionDescription("load_paths", "Load paths", new String[]{});
     public static final OptionDescription REQUIRED_LIBRARIES = new StringArrayOptionDescription("required_libraries", "Required libraries", new String[]{});
     public static final OptionDescription INLINE_SCRIPT = new ByteStringOptionDescription("inline_script", "Inline script", null);
     public static final OptionDescription ARGUMENTS = new StringArrayOptionDescription("arguments", "Command line arguments for the Ruby program", new String[]{});
     public static final OptionDescription DISPLAYED_FILE_NAME = new StringOptionDescription("displayed_file_name", "Displayed file name", null);
     public static final OptionDescription DEBUG = new BooleanOptionDescription("debug", "Debug", false);
+    public static final OptionDescription VERBOSITY = new OptionalBooleanOptionDescription("verbosity", "Verbosity", OptionalBoolean.NULL);
     public static final OptionDescription FROZEN_STRING_LITERALS = new BooleanOptionDescription("frozen_string_literals", "Use frozen string literals", false);
     public static final OptionDescription DISABLE_GEMS = new BooleanOptionDescription("disable_gems", "Disable Gems", false);
     public static final OptionDescription INTERNAL_ENCODING = new StringOptionDescription("internal_encoding", "Internal encoding", null);
@@ -106,6 +108,8 @@ public class OptionsCatalog {
     
     public static OptionDescription fromName(String name) {
         switch (name) {
+            case "home":
+                return HOME;
             case "load_paths":
                 return LOAD_PATHS;
             case "required_libraries":
@@ -118,6 +122,8 @@ public class OptionsCatalog {
                 return DISPLAYED_FILE_NAME;
             case "debug":
                 return DEBUG;
+            case "verbosity":
+                return VERBOSITY;
             case "frozen_string_literals":
                 return FROZEN_STRING_LITERALS;
             case "disable_gems":

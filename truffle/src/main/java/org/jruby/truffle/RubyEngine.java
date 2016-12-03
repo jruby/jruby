@@ -26,15 +26,13 @@ public class RubyEngine {
     private final PolyglotEngine engine;
     private final RubyContext context;
 
-    public static final String INSTANCE_CONFIG_KEY = "instance-config";
-
     public RubyEngine(RubyInstanceConfig instanceConfig) {
         if (!instanceConfig.getCompileMode().isTruffle()) {
             throw new UnsupportedOperationException();
         }
 
         engine = PolyglotEngine.newBuilder()
-                .config(RubyLanguage.MIME_TYPE, INSTANCE_CONFIG_KEY, instanceConfig)
+                .config(RubyLanguage.MIME_TYPE, OptionsCatalog.HOME.getName(), instanceConfig.getJRubyHome())
                 .config(RubyLanguage.MIME_TYPE, OptionsCatalog.LOAD_PATHS.getName(), instanceConfig.getLoadPaths())
                 .config(RubyLanguage.MIME_TYPE, OptionsCatalog.REQUIRED_LIBRARIES.getName(), instanceConfig.getRequiredLibraries())
                 .config(RubyLanguage.MIME_TYPE, OptionsCatalog.INLINE_SCRIPT.getName(), instanceConfig.inlineScript())
@@ -46,6 +44,7 @@ public class RubyEngine {
                 .config(RubyLanguage.MIME_TYPE, OptionsCatalog.INTERNAL_ENCODING.getName(), instanceConfig.getInternalEncoding())
                 .config(RubyLanguage.MIME_TYPE, OptionsCatalog.EXTERNAL_ENCODING.getName(), instanceConfig.getExternalEncoding())
                 .build();
+
         Main.printTruffleTimeMetric("before-load-context");
         context = engine.eval(loadSource("Truffle::Boot.context", "context")).as(RubyContext.class);
         Main.printTruffleTimeMetric("after-load-context");

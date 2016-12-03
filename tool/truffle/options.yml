@@ -1,3 +1,5 @@
+HOME: [home, string, null, Home]
+
 LOAD_PATHS: [load_paths, string-array, [], Load paths]
 REQUIRED_LIBRARIES: [required_libraries, string-array, [], Required libraries]
 INLINE_SCRIPT: [inline_script, byte-string, null, Inline script]
@@ -5,6 +7,7 @@ ARGUMENTS: [arguments, string-array, [], Command line arguments for the Ruby pro
 DISPLAYED_FILE_NAME: [displayed_file_name, string, null, Displayed file name]
 
 DEBUG: [debug, boolean, false, Debug]
+VERBOSITY: [verbosity, optional-boolean, null, Verbosity]
 FROZEN_STRING_LITERALS: [frozen_string_literals, boolean, false, Use frozen string literals]
 DISABLE_GEMS: [disable_gems, boolean, false, Disable Gems]
 

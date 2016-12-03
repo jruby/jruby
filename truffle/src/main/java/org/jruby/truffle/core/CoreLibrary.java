@@ -845,8 +845,8 @@ public class CoreLibrary {
 
         final Object verbose;
 
-        switch (context.getInstanceConfig().getVerbosity()) {
-            case NIL:
+        switch (context.getOptions().VERBOSITY) {
+            case NULL:
                 verbose = getNilObject();
                 break;
             case FALSE:
