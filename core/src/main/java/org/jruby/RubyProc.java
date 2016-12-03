@@ -270,7 +270,7 @@ public class RubyProc extends RubyObject implements DataType {
         int actual = args.length;
         boolean kwargs = blockBody instanceof IRBlockBody && signature.hasKwargs();
 
-        // FIXME: This is a hot mess.  restkwargs factors into destructing a single element array as well.  I just weaved it into this logic.
+        // FIXME: This is a hot mess.  kwargs factors into destructing a single element array as well.  I just weaved it into this logic.
         // for procs and blocks, single array passed to multi-arg must be spread
         if ((signature != Signature.ONE_ARGUMENT &&  required != 0 && (isFixed || signature != Signature.OPTIONAL) || kwargs) &&
                 actual == 1 && args[0].respondsTo("to_ary")) {
