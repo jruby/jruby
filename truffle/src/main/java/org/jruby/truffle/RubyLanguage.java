@@ -17,11 +17,11 @@ import com.oracle.truffle.api.instrumentation.ProvidedTags;
 import com.oracle.truffle.api.instrumentation.StandardTags;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
-import org.jruby.runtime.Constants;
 import org.jruby.truffle.core.kernel.TraceManager;
 import org.jruby.truffle.language.LazyRubyRootNode;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.stdlib.CoverageManager;
+import org.jruby.truffle.util.Constants;
 
 import java.io.IOException;
 

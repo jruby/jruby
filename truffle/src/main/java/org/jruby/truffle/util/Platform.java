@@ -27,13 +27,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.util;
 
-import org.jruby.Ruby;
-import org.jruby.RubyModule;
-import org.jruby.anno.JRubyMethod;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.SafePropertyAccessor;
-
 import java.nio.ByteOrder;
 import java.util.regex.Pattern;
 
@@ -45,7 +38,6 @@ public class Platform {
     public static final CPU_TYPE CPU = determineCPU();
     public static final OS_TYPE OS = determineOS();
 
-    public static final String NAME = CPU + "-" + OS;
     public static final String LIBPREFIX = OS == OS.WINDOWS ? "" : "lib";
     public static final String LIBSUFFIX = determineLibExt();
     public static final String LIBC = determineLibC();
@@ -288,54 +280,6 @@ public class Platform {
                 && CPU != CPU.UNKNOWN
                 && (addressSize == 32 || addressSize == 64)
                 && javaVersionMajor >= 5;
-    }
-    public static void createPlatformModule(Ruby runtime, RubyModule ffi) {
-        RubyModule module = ffi.defineModuleUnder("Platform");
-        Platform platform = Platform.getPlatform();
-        OS_TYPE os = platform.getOS();
-        module.defineConstant("ADDRESS_SIZE", runtime.newFixnum(platform.addressSize));
-        module.defineConstant("LONG_SIZE", runtime.newFixnum(platform.longSize));
-        module.defineConstant("OS", runtime.newString(OS.toString()));
-        module.defineConstant("ARCH", runtime.newString(platform.getCPU().toString()));
-        module.defineConstant("NAME", runtime.newString(platform.getName()));
-        module.defineConstant("IS_WINDOWS", runtime.newBoolean(os == OS.WINDOWS));
-        module.defineConstant("IS_BSD", runtime.newBoolean(platform.isBSD()));
-        module.defineConstant("IS_FREEBSD", runtime.newBoolean(os == OS.FREEBSD));
-        module.defineConstant("IS_OPENBSD", runtime.newBoolean(os == OS.OPENBSD));
-        module.defineConstant("IS_SOLARIS", runtime.newBoolean(os == OS.SOLARIS));
-        module.defineConstant("IS_LINUX", runtime.newBoolean(os == OS.LINUX));
-        module.defineConstant("IS_MAC", runtime.newBoolean(os == OS.DARWIN));
-        module.defineConstant("LIBC", runtime.newString(LIBC));
-        module.defineConstant("LIBPREFIX", runtime.newString(LIBPREFIX));
-        module.defineConstant("LIBSUFFIX", runtime.newString(LIBSUFFIX));
-        module.defineConstant("BYTE_ORDER", runtime.newFixnum(BYTE_ORDER));
-        module.defineConstant("BIG_ENDIAN", runtime.newFixnum(BIG_ENDIAN));
-        module.defineConstant("LITTLE_ENDIAN", runtime.newFixnum(LITTLE_ENDIAN));
-        module.defineAnnotatedMethods(Platform.class);
-    }
-    @JRubyMethod(name = "windows?", module=true)
-    public static IRubyObject windows_p(ThreadContext context, IRubyObject recv) {
-        return context.runtime.newBoolean(OS == OS.WINDOWS);
-    }
-    @JRubyMethod(name = "mac?", module=true)
-    public static IRubyObject mac_p(ThreadContext context, IRubyObject recv) {
-        return context.runtime.newBoolean(OS == OS.DARWIN);
-    }
-    @JRubyMethod(name = "unix?", module=true)
-    public static IRubyObject unix_p(ThreadContext context, IRubyObject recv) {
-        return context.runtime.newBoolean(Platform.getPlatform().isUnix());
-    }
-    @JRubyMethod(name = "bsd?", module=true)
-    public static IRubyObject bsd_p(ThreadContext context, IRubyObject recv) {
-        return context.runtime.newBoolean(Platform.getPlatform().isBSD());
-    }
-    @JRubyMethod(name = "linux?", module=true)
-    public static IRubyObject linux_p(ThreadContext context, IRubyObject recv) {
-        return context.runtime.newBoolean(OS == OS.LINUX);
-    }
-    @JRubyMethod(name = "solaris?", module=true)
-    public static IRubyObject solaris_p(ThreadContext context, IRubyObject recv) {
-        return context.runtime.newBoolean(OS == OS.SOLARIS);
     }
     /**
      * An extension over <code>System.getProperty</code> method.

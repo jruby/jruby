@@ -18,7 +18,6 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.runtime.Helpers;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreClass;
@@ -36,6 +35,7 @@ import org.jruby.truffle.language.SnippetNode;
 import org.jruby.truffle.language.Visibility;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
+import org.jruby.truffle.parser.Helpers;
 import org.jruby.truffle.util.StringUtils;
 
 import java.time.DateTimeException;

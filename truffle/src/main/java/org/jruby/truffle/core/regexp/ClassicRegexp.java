@@ -46,17 +46,10 @@ import org.joni.Regex;
 import org.joni.Syntax;
 import org.joni.WarnCallback;
 import org.joni.exception.JOniException;
-import org.jruby.Ruby;
-import org.jruby.anno.JRubyMethod;
-import org.jruby.exceptions.RaiseException;
-import org.jruby.parser.ReOptions;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.encoding.EncodingCapable;
-import org.jruby.runtime.encoding.MarshalEncoding;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.string.StringSupport;
+import org.jruby.truffle.parser.ReOptions;
 import org.jruby.util.ByteList;
-import org.jruby.util.RegexpSupport;
 import org.jruby.util.collections.WeakValuedMap;
 import org.jruby.util.io.EncodingUtils;
 
@@ -67,7 +60,7 @@ import static org.jruby.util.StringSupport.CR_BROKEN;
 import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
 import static org.jruby.util.StringSupport.codeRangeScan;
 
-public class ClassicRegexp implements ReOptions, EncodingCapable, MarshalEncoding {
+public class ClassicRegexp implements ReOptions {
     private final RubyContext context;
     private Regex pattern;
     private ByteList str = ByteList.EMPTY_BYTELIST;
@@ -85,27 +78,15 @@ public class ClassicRegexp implements ReOptions, EncodingCapable, MarshalEncodin
         options.setEncodingNone(true);
     }
 
-    @Override
     public Encoding getEncoding() {
         return pattern.getEncoding();
     }
 
-    @Override
     public void setEncoding(Encoding encoding) {
         // FIXME: Which encoding should be changed here?
         // FIXME: transcode?
     }
 
-    @Override
-    public boolean shouldMarshalEncoding() {
-        return getEncoding() != ASCIIEncoding.INSTANCE;
-    }
-
-    @Override
-    public Encoding getMarshalEncoding() {
-        return getEncoding();
-    }
-    // FIXME: Maybe these should not be static?
     static final WeakValuedMap<ByteList, Regex> patternCache = new WeakValuedMap<>();
 
     private static Regex makeRegexp(RubyContext runtime, ByteList bytes, RegexpOptions options, Encoding enc) {
@@ -154,7 +135,7 @@ public class ClassicRegexp implements ReOptions, EncodingCapable, MarshalEncodin
             this.match = match;
         }
 
-        public Integer run(ThreadContext context, Matcher matcher) throws InterruptedException {
+        public Integer run(Object context, Matcher matcher) throws InterruptedException {
             return match ?
                     matcher.matchInterruptible(start, range, option) :
                     matcher.searchInterruptible(start, range, option);
@@ -182,11 +163,11 @@ public class ClassicRegexp implements ReOptions, EncodingCapable, MarshalEncodin
 
     // used only by the compiler/interpreter (will set the literal flag)
     public static ClassicRegexp newRegexp(RubyContext runtime, ByteList pattern, RegexpOptions options) {
-        try {
+        //try {
             return new ClassicRegexp(runtime, pattern, (RegexpOptions)options.clone());
-        } catch (RaiseException re) {
-            throw new org.jruby.truffle.language.control.RaiseException(runtime.getCoreExceptions().syntaxError(re.getMessage(), null));
-        }
+        //} catch (RaiseException re) {
+        //    throw new org.jruby.truffle.language.control.RaiseException(runtime.getCoreExceptions().syntaxError(re.getMessage(), null));
+        //}
     }
 
     /**
@@ -196,18 +177,6 @@ public class ClassicRegexp implements ReOptions, EncodingCapable, MarshalEncodin
      */
     public static ClassicRegexp newRegexpParser(RubyContext runtime, ByteList pattern, RegexpOptions options) {
         return new ClassicRegexp(runtime, pattern, (RegexpOptions)options.clone());
-    }
-
-    /** rb_reg_options
-     */
-    public RegexpOptions getOptions() {
-        check();
-        return options;
-    }
-
-    public final Regex getPattern() {
-        check();
-        return pattern;
     }
 
     private static void preprocessLight(RubyContext context, ByteList str, Encoding enc, Encoding[]fixedEnc, RegexpSupport.ErrorMode mode) {
@@ -592,10 +561,6 @@ public class ClassicRegexp implements ReOptions, EncodingCapable, MarshalEncodin
         return cr;
     }
 
-    private void check() {
-        if (pattern == null) throw getRuntime().newTypeError("uninitialized Regexp");
-    }
-
     /** rb_reg_quote
      *
      */
@@ -740,11 +705,6 @@ public class ClassicRegexp implements ReOptions, EncodingCapable, MarshalEncodin
         return this;
     }
 
-    @JRubyMethod
-    public Object options() {
-        return getRuntime().newFixnum(getOptions().toOptions());
-    }
-
     public static void appendOptions(ByteList to, RegexpOptions options) {
         if (options.isMultiline()) to.append((byte)'m');
         if (options.isIgnorecase()) to.append((byte)'i');
@@ -752,8 +712,6 @@ public class ClassicRegexp implements ReOptions, EncodingCapable, MarshalEncodin
     }
 
     public ByteList toByteList() {
-        check();
-
         RegexpOptions newOptions = (RegexpOptions)options.clone();
         int p = str.getBegin();
         int len = str.getRealSize();
@@ -923,16 +881,6 @@ public class ClassicRegexp implements ReOptions, EncodingCapable, MarshalEncodin
         }
 
         return names;
-    }
-
-    @JRubyMethod
-    public Object encoding(ThreadContext context) {
-        Encoding enc = (pattern == null) ? str.getEncoding() : pattern.getEncoding();
-        return context.runtime.getEncodingService().getEncoding(enc);
-    }
-
-    public Ruby getRuntime() {
-        throw new UnsupportedOperationException();
     }
 
 }
