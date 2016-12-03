@@ -26,8 +26,8 @@
 package org.jruby.truffle.options;
 
 import com.headius.options.Option;
-import org.jruby.ext.rbconfig.RbConfigLibrary;
-import org.jruby.runtime.Constants;
+import org.jruby.truffle.util.Constants;
+import org.jruby.truffle.util.Platform;
 import org.jruby.util.SafePropertyAccessor;
 import org.jruby.util.cli.Options;
 
@@ -154,8 +154,8 @@ public class OutputStrings {
                 SafePropertyAccessor.getProperty("java.runtime.version", SafePropertyAccessor.getProperty("java.version", "Unknown version")),
                 org.jruby.util.cli.Options.COMPILE_INVOKEDYNAMIC.load() ? " +indy" : "",
                 Options.COMPILE_MODE.load().shouldJIT() ? " +jit" : "",
-                RbConfigLibrary.getOSName(),
-                RbConfigLibrary.getArchitecture()
+                Platform.getOSName(),
+                Platform.getArchitecture()
         );
     }
 

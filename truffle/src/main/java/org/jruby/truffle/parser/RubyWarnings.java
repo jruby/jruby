@@ -12,6 +12,9 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
+ * Copyright (C) 2002-2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -28,11 +31,7 @@
 package org.jruby.truffle.parser;
 
 import org.joni.WarnCallback;
-import org.jruby.Ruby;
-import org.jruby.common.IRubyWarnings;
-import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.backtrace.RubyStackTraceElement;
+import org.jruby.truffle.parser.lexer.ISourcePosition;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.debug.DebugHelpers;
 
@@ -42,7 +41,78 @@ import java.util.Set;
 /**
  *
  */
-public class RubyWarnings implements IRubyWarnings, WarnCallback {
+public class RubyWarnings implements WarnCallback {
+
+    public enum ID {
+        AMBIGUOUS_ARGUMENT,
+        ACCESSOR_NOT_INITIALIZED,
+        ACCESSOR_MODULE_FUNCTION,
+        ARGUMENT_AS_PREFIX,
+        ARGUMENT_EXTRA_SPACE,
+        ASSIGNMENT_IN_CONDITIONAL,
+        BIGNUM_FROM_FLOAT_RANGE,
+        BLOCK_BEATS_DEFAULT_VALUE,
+        BLOCK_NOT_ACCEPTED,
+        BLOCK_UNUSED,
+        CONSTANT_ALREADY_INITIALIZED,
+        CONSTANT_DEPRECATED,
+        CONSTANT_BAD_REFERENCE,
+        CVAR_FROM_TOPLEVEL_SINGLETON_METHOD,
+        DECLARING_SCLASS_VARIABLE,
+        DEPRECATED_METHOD,
+        DUMMY_VALUE_USED,
+        END_IN_METHOD,
+        ELSE_WITHOUT_RESCUE,
+        EMPTY_IMPLEMENTATION,
+        ENV_VARS_FROM_CLI_METHOD,
+        FIXNUMS_NOT_SYMBOLS,
+        FLOAT_OUT_OF_RANGE,
+        GLOBAL_NOT_INITIALIZED,
+        GROUPED_EXPRESSION,
+        INEFFECTIVE_GLOBAL,
+        INVALID_CHAR_SEQUENCE,
+        IVAR_NOT_INITIALIZED,
+        MAY_BE_TOO_BIG,
+        MISCELLANEOUS,
+        MULTIPLE_VALUES_FOR_BLOCK,
+        NEGATIVE_NUMBER_FOR_U,
+        NO_SUPER_CLASS,
+        NOT_IMPLEMENTED,
+        OBSOLETE_ARGUMENT,
+        PARENTHISE_ARGUMENTS,
+        PROXY_EXTENDED_LATE,
+        STATEMENT_NOT_REACHED,
+        LITERAL_IN_CONDITIONAL_RANGE,
+        REDEFINING_DANGEROUS,
+        REGEXP_IGNORED_FLAGS,
+        REGEXP_LITERAL_IN_CONDITION,
+        REGEXP_MATCH_AGAINST_STRING,
+        SAFE_NOT_SUPPORTED,
+        STRUCT_CONSTANT_REDEFINED,
+        SYMBOL_AS_INTEGER,
+        SYSSEEK_BUFFERED_IO,
+        SYSWRITE_BUFFERED_IO,
+        SWALLOWED_IO_EXCEPTION,
+        TOO_MANY_ARGUMENTS,
+        UNDEFINING_BAD,
+        USELESS_EXPRESSION,
+        VOID_VALUE_EXPRESSION,
+        NAMED_CAPTURE_CONFLICT,
+        NON_PERSISTENT_JAVA_PROXY,
+        LISTEN_SERVER_SOCKET,
+        PROFILE_MAX_METHODS_EXCEEDED,
+        UNSUPPORTED_SUBPROCESS_OPTION,
+        GC_STRESS_UNIMPLEMENTED,
+        GC_ENABLE_UNIMPLEMENTED,
+        GC_DISABLE_UNIMPLEMENTED,
+        TRUFFLE,
+        RATIONAL_OUT_OF_RANGE,; // TODO(CS): divide up the Truffle warnings
+
+        public String getID() {
+            return name();
+        }
+    }
+
     private final RubyContext runtime;
     private final Set<ID> oncelers = EnumSet.allOf(ID.class);
 
@@ -55,12 +125,6 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
         warn(ID.MISCELLANEOUS, message);
     }
 
-    @Override
-    public Ruby getRuntime() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public boolean isVerbose() {
         return runtime.isVerbose();
     }
@@ -68,7 +132,6 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
     /**
      * Prints a warning, unless $VERBOSE is nil.
      */
-    @Override
     public void warn(ID id, ISourcePosition position, String message) {
         if (!runtime.warningsEnabled()) return;
 
@@ -79,7 +142,6 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
      * Prints a warning, unless $VERBOSE is nil.
      */
     @SuppressWarnings("deprecation")
-    @Override
     public void warn(ID id, String fileName, int lineNumber, String message) {
         if (!runtime.warningsEnabled()) return;
 
@@ -94,7 +156,6 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
      * Prints a warning, unless $VERBOSE is nil.
      */
     @SuppressWarnings("deprecation")
-    @Override
     public void warn(ID id, String fileName, String message) {
         if (!runtime.warningsEnabled()) return;
 
@@ -105,23 +166,10 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
         DebugHelpers.eval(runtime, "$stderr.write Truffle::Interop.from_java_string(message)", "message", buffer.toString());
     }
 
-    @Override
     public void warn(ID id, String message) {
         if (!runtime.warningsEnabled()) return;
 
-        RubyStackTraceElement[] stack = new RubyStackTraceElement[]{}; //getRubyStackTrace(runtime);
-        String file;
-        int line;
-
-        if (stack.length == 0) {
-            file = "(unknown)";
-            line = -1;
-        } else {
-            file = stack[0].getFileName();
-            line = stack[0].getLineNumber();
-        }
-
-        warn(id, file, line, message);
+        throw new UnsupportedOperationException();
     }
 
     public void warnOnce(ID id, String message) {
@@ -140,32 +188,12 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
         if (!isVerbose()) return;
         if (!runtime.warningsEnabled()) return;
 
-        warning(ID.MISCELLANEOUS, message);
-    }
-
-    @Override
-    public void warning(ID id, String message) {
-        if (!runtime.warningsEnabled() || !runtime.isVerbose()) return;
-
-        RubyStackTraceElement[] stack = new RubyStackTraceElement[]{};//getRubyStackTrace(runtime);
-        String file;
-        int line;
-
-        if (stack.length == 0) {
-            file = "(unknown)";
-            line = -1;
-        } else {
-            file = stack[0].getFileName();
-            line = stack[0].getLineNumber();
-        }
-
-        warning(id, file, line, message);
+        throw new UnsupportedOperationException();
     }
 
     /**
      * Prints a warning, only in verbose mode.
      */
-    @Override
     public void warning(ID id, ISourcePosition position, String message) {
         warning(id, position.getFile(), position.getLine() + 1, message);
     }
@@ -173,17 +201,10 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
     /**
      * Prints a warning, only in verbose mode.
      */
-    @Override
     public void warning(ID id, String fileName, int lineNumber, String message) {
         if (!runtime.warningsEnabled() || !runtime.isVerbose()) return;
 
         warn(id, fileName, lineNumber, message);
     }
 
-    private static RubyStackTraceElement[] getRubyStackTrace(Ruby runtime) {
-        ThreadContext context = runtime.getCurrentContext();
-        RubyStackTraceElement[] stack = context.createWarningBacktrace(runtime);
-
-        return stack;
-    }
 }

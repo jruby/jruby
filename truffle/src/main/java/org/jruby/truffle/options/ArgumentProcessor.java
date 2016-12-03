@@ -28,12 +28,10 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.options;
 
-import org.jruby.exceptions.MainExitException;
 import org.jruby.truffle.core.string.StringSupport;
 import org.jruby.util.FileResource;
 import org.jruby.util.JRubyFile;
 import org.jruby.util.SafePropertyAccessor;
-import org.jruby.util.cli.OutputStrings;
 import org.jruby.util.func.Function2;
 
 import java.io.File;
@@ -201,9 +199,10 @@ public class ArgumentProcessor {
                                 //config.setRecordSeparator(String.valueOf((char) val));
                                 throw new UnsupportedOperationException();
                             } catch (Exception e) {
-                                MainExitException mee = new MainExitException(1, getArgumentError(" -0 must be followed by either 0, 777, or a valid octal value"));
-                                mee.setUsageError(true);
-                                throw mee;
+                                //MainExitException mee = new MainExitException(1, getArgumentError(" -0 must be followed by either 0, 777, or a valid octal value"));
+                                //mee.setUsageError(true);
+                                //throw mee;
+                                throw new UnsupportedOperationException();
                             }
                         }
                         //break FOR;
@@ -230,10 +229,12 @@ public class ArgumentProcessor {
                             config.setCurrentDirectory(new File(base, newDir.getPath()).getCanonicalPath());
                         }
                         if (!(new File(config.getCurrentDirectory()).isDirectory()) && !config.getCurrentDirectory().startsWith("uri:classloader:")) {
-                            throw new MainExitException(1, "jruby: Can't chdir to " + saved + " (fatal)");
+                            //throw new MainExitException(1, "jruby: Can't chdir to " + saved + " (fatal)");
+                            throw new UnsupportedOperationException();
                         }
                     } catch (IOException e) {
-                        throw new MainExitException(1, getArgumentError(" -C must be followed by a valid directory"));
+                        //throw new MainExitException(1, getArgumentError(" -C must be followed by a valid directory"));
+                        throw new UnsupportedOperationException();
                     }
                     break FOR;
                 case 'd':
@@ -340,9 +341,10 @@ public class ArgumentProcessor {
                             } else if (temp.equals("2")) {
                                 config.setVerbosity(Verbosity.TRUE);
                             } else {
-                                MainExitException mee = new MainExitException(1, getArgumentError(" -W must be followed by either 0, 1, 2 or nothing"));
-                                mee.setUsageError(true);
-                                throw mee;
+                                //MainExitException mee = new MainExitException(1, getArgumentError(" -W must be followed by either 0, 1, 2 or nothing"));
+                                //mee.setUsageError(true);
+                                //throw mee;
+                                throw new UnsupportedOperationException();
                             }
                         }
                         break FOR;
@@ -362,12 +364,14 @@ public class ArgumentProcessor {
                                 config.setCurrentDirectory(new File(base, newDir.getPath()).getCanonicalPath());
                             }
                             if (!(new File(config.getCurrentDirectory()).isDirectory()) && !config.getCurrentDirectory().startsWith("uri:classloader:")) {
-                                throw new MainExitException(1, "jruby: Can't chdir to " + saved + " (fatal)");
+                                //throw new MainExitException(1, "jruby: Can't chdir to " + saved + " (fatal)");
+                                throw new UnsupportedOperationException();
                             }
                         }
                         config.setXFlag(true);
                     } catch (IOException e) {
-                        throw new MainExitException(1, getArgumentError(" -x must be followed by a valid directory"));
+                        //throw new MainExitException(1, getArgumentError(" -x must be followed by a valid directory"));
+                        throw new UnsupportedOperationException();
                     }
                     break FOR;
                 case 'X':
@@ -375,16 +379,19 @@ public class ArgumentProcessor {
                     String extendedOption = grabOptionalValue();
                     if (extendedOption == null) {
                         if (SafePropertyAccessor.getBoolean("jruby.launcher.nopreamble", false)) {
-                            throw new MainExitException(0, OutputStrings.getExtendedHelp());
+                            //throw new MainExitException(0, OutputStrings.getExtendedHelp());
+                            throw new UnsupportedOperationException();
                         } else {
-                            throw new MainExitException(0, "jruby: missing argument\n" + OutputStrings.getExtendedHelp());
+                            //throw new MainExitException(0, "jruby: missing argument\n" + OutputStrings.getExtendedHelp());
+                            throw new UnsupportedOperationException();
                         }
                     } else if (extendedOption.equals("-C") || extendedOption.equals("-CIR")) {
                         config.setCompileMode(org.jruby.RubyInstanceConfig.CompileMode.OFF);
                     } else if (extendedOption.equals("+C") || extendedOption.equals("+CIR")) {
                         config.setCompileMode(org.jruby.RubyInstanceConfig.CompileMode.FORCE);
                     } else if (extendedOption.equals("classic")) {
-                        throw new MainExitException(0, "jruby: the -Xclassic option should have been handled in the launcher");
+                        //throw new MainExitException(0, "jruby: the -Xclassic option should have been handled in the launcher");
+                        throw new UnsupportedOperationException();
                     } else if (extendedOption.equals("+T") || extendedOption.equals("+TM")) {
                         org.jruby.util.cli.Options.PARSER_WARN_GROUPED_EXPRESSIONS.force(Boolean.FALSE.toString());
                         config.setCompileMode(org.jruby.RubyInstanceConfig.CompileMode.TRUFFLE);
@@ -397,9 +404,10 @@ public class ArgumentProcessor {
                         org.jruby.util.cli.Options.listContains(extendedOption.substring(0, extendedOption.length() - 1));
                         config.setShouldRunInterpreter(false);
                     } else {
-                        MainExitException mee = new MainExitException(1, "jruby: invalid extended option " + extendedOption + " (-X will list valid options)\n");
-                        mee.setUsageError(true);
-                        throw mee;
+                        //MainExitException mee = new MainExitException(1, "jruby: invalid extended option " + extendedOption + " (-X will list valid options)\n");
+                        //mee.setUsageError(true);
+                        //throw mee;
+                        throw new UnsupportedOperationException();
                     }
                     break FOR;
                 case 'y':
@@ -499,9 +507,10 @@ public class ArgumentProcessor {
                         } else if (dumpArg.equals("insns")) {
                             config.setShowBytecode(true);
                         } else {
-                            MainExitException mee = new MainExitException(1, error);
-                            mee.setUsageError(true);
-                            throw mee;
+                            //MainExitException mee = new MainExitException(1, error);
+                            //mee.setUsageError(true);
+                            //throw mee;
+                            throw new UnsupportedOperationException();
                         }
                         break;
                     } else if (argument.equals("--dev")) {
@@ -527,7 +536,8 @@ public class ArgumentProcessor {
                         }
                     }
                 default:
-                    throw new MainExitException(1, "jruby: unknown option " + argument);
+                    //throw new MainExitException(1, "jruby: unknown option " + argument);
+                    throw new UnsupportedOperationException();
             }
         }
     }
@@ -553,22 +563,25 @@ public class ArgumentProcessor {
 
     private void disallowedInRubyOpts(CharSequence option) {
         if (rubyOpts) {
-            throw new MainExitException(1, "jruby: invalid switch in RUBYOPT: " + option + " (RuntimeError)");
+            //throw new MainExitException(1, "jruby: invalid switch in RUBYOPT: " + option + " (RuntimeError)");
+            throw new UnsupportedOperationException();
         }
     }
 
     private static void errorMissingEquals(String label) {
-        MainExitException mee;
-        mee = new MainExitException(1, "missing argument for --" + label + "\n");
-        mee.setUsageError(true);
-        throw mee;
+        //MainExitException mee;
+        //mee = new MainExitException(1, "missing argument for --" + label + "\n");
+        //mee.setUsageError(true);
+        //throw mee;
+        throw new UnsupportedOperationException();
     }
 
     private void processEncodingOption(String value) {
         List<String> encodings = StringSupport.split(value, ':', 3);
         switch (encodings.size()) {
             case 3:
-                throw new MainExitException(1, "extra argument for -E: " + encodings.get(2));
+                //throw new MainExitException(1, "extra argument for -E: " + encodings.get(2));
+                throw new UnsupportedOperationException();
             case 2:
                 config.setInternalEncoding(encodings.get(1));
             case 1:
@@ -665,9 +678,10 @@ public class ArgumentProcessor {
         if (argumentIndex < arguments.size()) {
             return arguments.get(argumentIndex).originalValue;
         }
-        MainExitException mee = new MainExitException(1, errorMessage);
-        if (usageError) mee.setUsageError(true);
-        throw mee;
+        //MainExitException mee = new MainExitException(1, errorMessage);
+        //if (usageError) mee.setUsageError(true);
+        //throw mee;
+        throw new UnsupportedOperationException();
     }
 
     private String grabOptionalValue() {

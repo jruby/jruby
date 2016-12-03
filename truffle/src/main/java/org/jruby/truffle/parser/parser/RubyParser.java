@@ -39,12 +39,11 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.parser;
 
-import org.jruby.common.IRubyWarnings;
-import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.string.StringSupport;
 import org.jruby.truffle.interop.ForeignCodeNode;
 import org.jruby.truffle.parser.KeyValuePair;
+import org.jruby.truffle.parser.RubyWarnings;
 import org.jruby.truffle.parser.ast.ArgsParseNode;
 import org.jruby.truffle.parser.ast.ArgumentParseNode;
 import org.jruby.truffle.parser.ast.ArrayParseNode;
@@ -146,14 +145,14 @@ public class RubyParser {
     protected final ParserSupport support;
     protected final RubyLexer lexer;
 
-    public RubyParser(RubyContext context, LexerSource source, IRubyWarnings warnings) {
+    public RubyParser(RubyContext context, LexerSource source, RubyWarnings warnings) {
         this.support = new ParserSupport(context);
         this.lexer = new RubyLexer(support, source, warnings);
         support.setLexer(lexer);
         support.setWarnings(warnings);
     }
 
-    public void setWarnings(IRubyWarnings warnings) {
+    public void setWarnings(RubyWarnings warnings) {
         support.setWarnings(warnings);
         lexer.setWarnings(warnings);
     }
@@ -1096,7 +1095,7 @@ states[11] = new ParserState() {
                   if (((RescueBodyParseNode)yyVals[-2+yyTop]) != null) {
                       node = new RescueParseNode(support.getPosition(((ParseNode)yyVals[-3+yyTop])), ((ParseNode)yyVals[-3+yyTop]), ((RescueBodyParseNode)yyVals[-2+yyTop]), ((ParseNode)yyVals[-1+yyTop]));
                   } else if (((ParseNode)yyVals[-1+yyTop]) != null) {
-                      support.warn(ID.ELSE_WITHOUT_RESCUE, support.getPosition(((ParseNode)yyVals[-3+yyTop])), "else without rescue is useless");
+                      support.warn(RubyWarnings.ID.ELSE_WITHOUT_RESCUE, support.getPosition(((ParseNode)yyVals[-3+yyTop])), "else without rescue is useless");
                       node = support.appendToBlock(((ParseNode)yyVals[-3+yyTop]), ((ParseNode)yyVals[-1+yyTop]));
                   }
                   if (((ParseNode)yyVals[0+yyTop]) != null) {
@@ -1233,7 +1232,7 @@ states[30] = new ParserState() {
 states[31] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
                     if (support.isInDef() || support.isInSingle()) {
-                        support.warn(ID.END_IN_METHOD, ((ISourcePosition)yyVals[-3+yyTop]), "END in method; use at_exit");
+                        support.warn(RubyWarnings.ID.END_IN_METHOD, ((ISourcePosition)yyVals[-3+yyTop]), "END in method; use at_exit");
                     }
                     yyVal = new PostExeParseNode(((ISourcePosition)yyVals[-3+yyTop]), ((ParseNode)yyVals[-1+yyTop]));
     return yyVal;

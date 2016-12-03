@@ -27,7 +27,11 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.util;
 
+import org.jruby.util.SafePropertyAccessor;
+
 import java.nio.ByteOrder;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 /**
@@ -46,6 +50,8 @@ public class Platform {
     public static final int LITTLE_ENDIAN = 1234;
     public static final int BYTE_ORDER = ByteOrder.nativeOrder().equals(ByteOrder.BIG_ENDIAN) ? BIG_ENDIAN : LITTLE_ENDIAN;
 
+
+    public static final boolean IS_WINDOWS = OS.equals(OS_TYPE.WINDOWS);
 
     protected final int addressSize, longSize;
     private final long addressMask;
@@ -430,4 +436,55 @@ public class Platform {
             || s1.toUpperCase(LOCALE).startsWith(s2.toUpperCase(LOCALE))
             || s1.toLowerCase(LOCALE).startsWith(s2.toLowerCase(LOCALE));
     }
+
+    public static String getOSName() {
+        if (jnr.posix.util.Platform.IS_WINDOWS) {
+            return RUBY_WIN32;
+        }
+
+        String OSName = jnr.posix.util.Platform.getOSName();
+        String theOSName = RUBY_OS_NAMES.get(OSName);
+
+        return theOSName == null ? OSName : theOSName;
+    }
+
+    public static String getArchitecture() {
+        String architecture = jnr.posix.util.Platform.ARCH;
+        if (architecture == null) architecture = "unknown";
+        if (architecture.equals("amd64")) architecture = "x86_64";
+
+        return architecture;
+    }
+
+    private static final String RUBY_DARWIN = "darwin";
+    private static final String RUBY_LINUX = "linux";
+    private static final String RUBY_WIN32 = "mswin32";
+    private static final String RUBY_SOLARIS = "solaris";
+    private static final String RUBY_FREEBSD = "freebsd";
+    private static final String RUBY_AIX = "aix";
+
+    /** This is a map from Java's "friendly" OS names to those used by Ruby */
+    public static final Map<String, String> RUBY_OS_NAMES = new HashMap<String, String>();
+    static {
+        RUBY_OS_NAMES.put("Mac OS X", RUBY_DARWIN);
+        RUBY_OS_NAMES.put("Darwin", RUBY_DARWIN);
+        RUBY_OS_NAMES.put("Linux", RUBY_LINUX);
+        RUBY_OS_NAMES.put("Windows 95", RUBY_WIN32);
+        RUBY_OS_NAMES.put("Windows 98", RUBY_WIN32);
+        RUBY_OS_NAMES.put("Windows Me", RUBY_WIN32);
+        RUBY_OS_NAMES.put("Windows NT", RUBY_WIN32);
+        RUBY_OS_NAMES.put("Windows 2000", RUBY_WIN32);
+        // that's what JDK5 produces on Windows Vista
+        RUBY_OS_NAMES.put("Windows NT (unknown)", RUBY_WIN32);
+        RUBY_OS_NAMES.put("Windows XP", RUBY_WIN32);
+        RUBY_OS_NAMES.put("Windows 2003", RUBY_WIN32);
+        RUBY_OS_NAMES.put("Windows Vista", RUBY_WIN32);
+        RUBY_OS_NAMES.put("Windows 7", RUBY_WIN32);
+        RUBY_OS_NAMES.put("Windows Server 2008", RUBY_WIN32);
+        RUBY_OS_NAMES.put("Solaris", RUBY_SOLARIS);
+        RUBY_OS_NAMES.put("SunOS", RUBY_SOLARIS);
+        RUBY_OS_NAMES.put("FreeBSD", RUBY_FREEBSD);
+        RUBY_OS_NAMES.put("AIX", RUBY_AIX);
+    }
+
 }

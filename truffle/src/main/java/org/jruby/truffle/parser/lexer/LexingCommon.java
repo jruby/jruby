@@ -30,12 +30,7 @@ import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
-import org.joni.Matcher;
-import org.joni.Option;
 import org.joni.Regex;
-import org.jruby.Ruby;
-import org.jruby.RubyEncoding;
-import org.jruby.truffle.core.regexp.ClassicRegexp;
 import org.jruby.truffle.core.string.StringSupport;
 import org.jruby.util.ByteList;
 
@@ -131,11 +126,7 @@ public abstract class LexingCommon {
         try {
             Charset charset = getEncoding().getCharset();
             if (charset != null) {
-                if (charset == RubyEncoding.UTF8) {
-                    return RubyEncoding.decodeUTF8(bytes, start, length);
-                } else {
-                    return new String(bytes, start, length, charset);
-                }
+                return new String(bytes, start, length, charset);
             }
         } catch (UnsupportedCharsetException e) {}
 
@@ -830,43 +821,4 @@ public abstract class LexingCommon {
     public static final String magicString = "^[^\\S]*([^\\s\'\":;]+)\\s*:\\s*(\"(?:\\\\.|[^\"])*\"|[^\"\\s;]+)[\\s;]*[^\\S]*$";
     public static final Regex magicRegexp = new Regex(magicString.getBytes(), 0, magicString.length(), 0, Encoding.load("ASCII"));
 
-
-    // MRI: parser_magic_comment
-    public boolean parseMagicComment(Ruby runtime, ByteList magicLine) throws IOException {
-        int length = magicLine.length();
-
-        if (length <= 7) return false;
-        int beg = magicCommentMarker(magicLine, 0);
-        if (beg >= 0) {
-            int end = magicCommentMarker(magicLine, beg);
-            if (end < 0) return false;
-            length = end - beg - 3; // -3 is to backup over end just found
-        } else {
-            beg = 0;
-        }
-
-        int begin = magicLine.getBegin() + beg;
-        Matcher matcher = magicRegexp.matcher(magicLine.unsafeBytes(), begin, begin + length);
-        int result = ClassicRegexp.matcherSearch(matcher, begin, begin + length, Option.NONE);
-
-        if (result < 0) return false;
-
-        // Regexp is guaranteed to have three matches
-        int begs[] = matcher.getRegion().beg;
-        int ends[] = matcher.getRegion().end;
-        String name = magicLine.subSequence(beg + begs[1], beg + ends[1]).toString().replace('-', '_');
-        ByteList value = magicLine.makeShared(beg + begs[2], ends[2] - begs[2]);
-
-        if ("coding".equals(name) || "encoding".equals(name)) {
-            magicCommentEncoding(value);
-        } else if ("frozen_string_literal".equals(name)) {
-            setCompileOptionFlag(name, value);
-        } else if ("warn_indent".equals(name)) {
-            setTokenInfo(name, value);
-        } else {
-            return false;
-        }
-
-        return true;
-    }
 }

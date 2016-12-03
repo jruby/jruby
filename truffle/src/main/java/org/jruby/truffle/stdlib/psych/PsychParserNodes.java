@@ -54,8 +54,6 @@ import org.jcodings.transcode.EConv;
 import org.jcodings.transcode.EConvResult;
 import org.jcodings.transcode.TranscodingManager;
 import org.jcodings.unicode.UnicodeEncoding;
-import org.jruby.RubyEncoding;
-import org.jruby.runtime.Helpers;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
@@ -97,6 +95,7 @@ import org.yaml.snakeyaml.scanner.ScannerException;
 import java.io.ByteArrayInputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -285,11 +284,20 @@ public abstract class PsychParserNodes {
                         "context", toString(re) == null ? nil() : createUTF8String(toString(re)));
             } catch (Throwable t) {
                 errorProfile.enter();
-                Helpers.throwException(t);
+                throwException(t);
                 return parserObject;
             }
 
             return parserObject;
+        }
+
+        public static void throwException(final Throwable e) {
+            throwsUnchecked(e);
+        }
+
+        @SuppressWarnings("unchecked")
+        private static <T extends Throwable> void throwsUnchecked(final Throwable e) throws T {
+            throw (T) e;
         }
 
         @TruffleBoundary
@@ -421,7 +429,7 @@ public abstract class PsychParserNodes {
                 encoding = UTF8Encoding.INSTANCE;
             }
 
-            Charset charset = RubyEncoding.UTF8;
+            Charset charset = StandardCharsets.UTF_8;
 
             if (encoding.getCharset() != null) {
                 charset = encoding.getCharset();

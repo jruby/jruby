@@ -29,12 +29,8 @@
 package org.jruby.truffle.options;
 
 import jnr.posix.util.Platform;
-import org.jruby.CompatVersion;
-import org.jruby.Profile;
-import org.jruby.RubyFile;
-import org.jruby.exceptions.MainExitException;
-import org.jruby.runtime.Constants;
 import org.jruby.truffle.core.string.StringSupport;
+import org.jruby.truffle.language.control.JavaException;
 import org.jruby.util.ClasspathLauncher;
 import org.jruby.util.FileResource;
 import org.jruby.util.InputStreamMarkCursor;
@@ -145,6 +141,10 @@ public class RubyInstanceConfig {
         return RUBY_SHEBANG.matcher(line).matches();
     }
 
+    private static final String URI_PREFIX_STRING = "^(uri|jar|file|classpath):([^:/]{2,}:([^:/]{2,}:)?)?";
+    private static final Pattern ROOT_PATTERN = Pattern.compile(URI_PREFIX_STRING + "/?/?$");
+    public static Pattern PROTOCOL_PATTERN = Pattern.compile(URI_PREFIX_STRING + ".*");
+
     private String calculateJRubyHome() {
         String newJRubyHome = null;
 
@@ -176,7 +176,7 @@ public class RubyInstanceConfig {
         // RegularFileResource absolutePath will canonicalize resources so that will change c: paths to C:.
         // We will cannonicalize on windows so that jruby.home is also C:.
         // assume all those uri-like pathnames are already in absolute form
-        if (Platform.IS_WINDOWS && !RubyFile.PROTOCOL_PATTERN.matcher(newJRubyHome).matches()) {
+        if (Platform.IS_WINDOWS && !PROTOCOL_PATTERN.matcher(newJRubyHome).matches()) {
             try {
                 newJRubyHome = new File(newJRubyHome).getCanonicalPath();
             }
@@ -253,7 +253,7 @@ public class RubyInstanceConfig {
                 }
             }
         } catch (IOException e) {
-            throw new MainExitException(1, "Error opening script file: " + e.getMessage());
+            throw new JavaException(e);
         }
     }
 
@@ -315,11 +315,6 @@ public class RubyInstanceConfig {
         return input;
     }
 
-    @Deprecated
-    public CompatVersion getCompatVersion() {
-        return CompatVersion.RUBY2_1;
-    }
-
     public void setOutput(PrintStream newOutput) {
         output = newOutput;
     }
@@ -344,14 +339,6 @@ public class RubyInstanceConfig {
         return currentDirectory;
     }
 
-    public void setProfile(Profile newProfile) {
-        profile = newProfile;
-    }
-
-    public Profile getProfile() {
-        return profile;
-    }
-
     public void setEnvironment(Map<String, String> newEnvironment) {
         environment = new HashMap<String, String>();
         if (newEnvironment != null) {
@@ -361,7 +348,7 @@ public class RubyInstanceConfig {
     }
 
     private void setupEnvironment(String jrubyHome) {
-        if (RubyFile.PROTOCOL_PATTERN.matcher(jrubyHome).matches() && !environment.containsKey("RUBY")) {
+        if (PROTOCOL_PATTERN.matcher(jrubyHome).matches() && !environment.containsKey("RUBY")) {
             // the assumption that if JRubyHome is not a regular file that jruby
             // got launched in an embedded fashion
             environment.put("RUBY", ClasspathLauncher.jrubyCommand(defaultClassLoader()));
@@ -708,7 +695,6 @@ public class RubyInstanceConfig {
     private InputStream input          = System.in;
     private PrintStream output         = System.out;
     private PrintStream error          = System.err;
-    private Profile profile            = Profile.DEFAULT;
 
     private org.jruby.RubyInstanceConfig.CompileMode compileMode = org.jruby.RubyInstanceConfig.CompileMode.OFF;
     private String currentDirectory;
@@ -864,30 +850,6 @@ public class RubyInstanceConfig {
     public boolean isxFlag() {
         return xFlag;
     }
-
-    /**
-     * The max count of active methods eligible for JIT-compilation.
-     */
-    @Deprecated
-    public static final int JIT_MAX_METHODS_LIMIT = Constants.JIT_MAX_METHODS_LIMIT;
-
-    /**
-     * The max size of JIT-compiled methods (full class size) allowed.
-     */
-    @Deprecated
-    public static final int JIT_MAX_SIZE_LIMIT = Constants.JIT_MAX_SIZE_LIMIT;
-
-    /**
-     * The JIT threshold to the specified method invocation count.
-     */
-    @Deprecated
-    public static final int JIT_THRESHOLD = Constants.JIT_THRESHOLD;
-
-    /**
-     * Default size for chained compilation.
-     */
-    @Deprecated
-    public static final int CHAINED_COMPILE_LINE_COUNT_DEFAULT = Constants.CHAINED_COMPILE_LINE_COUNT_DEFAULT;
 
     @Deprecated
     public static final boolean nativeEnabled = NATIVE_ENABLED;

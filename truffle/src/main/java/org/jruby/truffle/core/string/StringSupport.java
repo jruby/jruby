@@ -32,15 +32,6 @@ import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.util.IntHash;
 import org.joni.Matcher;
-import org.jruby.Ruby;
-import org.jruby.RubyArray;
-import org.jruby.RubyEncoding;
-import org.jruby.RubyIO;
-import org.jruby.RubyString;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.Constants;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.ByteListHolder;
 import org.jruby.util.CodeRangeSupport;
@@ -59,8 +50,8 @@ import static org.jcodings.Encoding.CHAR_INVALID;
 import static org.jruby.RubyEnumerator.enumeratorize;
 
 public final class StringSupport {
-    public static final int CR_7BIT_F    = Constants.CR_7BIT_F;
-    public static final int CR_VALID_F   = Constants.CR_VALID_F;
+    public static final int CR_7BIT_F    = 16;
+    public static final int CR_VALID_F   = 32;
     public static final int CR_UNKNOWN   = 0;
 
     // We hardcode these so they can be used in a switch below. The assert verifies they match FlagRegistry's value.
@@ -438,14 +429,6 @@ public final class StringSupport {
         return enc.mbcToCode(bytes, p, end);
     }
 
-    public static int codePoint(Ruby runtime, Encoding enc, byte[] bytes, int p, int end) {
-        try {
-            return codePoint(enc, bytes, p, end);
-        } catch (IllegalArgumentException e) {
-            throw runtime.newArgumentError(e.getMessage());
-        }
-    }
-
     public static int codeLength(Encoding enc, int c) {
         return enc.codeToMbcLength(c);
     }
@@ -557,11 +540,6 @@ public final class StringSupport {
         return pp == -1 ? end - p : pp - p;
     }
 
-    public static int offset(RubyString str, int pos) {
-        ByteList value = str.getByteList();
-        return offset(str.getEncoding(), value.getUnsafeBytes(), value.getBegin(), value.getBegin() + value.getRealSize(), pos);
-    }
-
     public static int toLower(Encoding enc, int c) {
         return Encoding.isAscii(c) ? AsciiTables.ToLowerCaseTable[c] : c;
     }
@@ -622,24 +600,6 @@ public final class StringSupport {
         int c;
         while (len-- > 0 && enc.isDigit(c = bytes[p++] & 0xff) && c < '8') olen++;
         return olen;
-    }
-
-    /**
-     * Check whether input object's string value contains a null byte, and if so
-     * throw SecurityError.
-     * @param runtime
-     * @param value
-     */
-    public static final void checkStringSafety(Ruby runtime, IRubyObject value) {
-        RubyString s = value.asString();
-        ByteList bl = s.getByteList();
-        final byte[] array = bl.getUnsafeBytes();
-        final int end = bl.length();
-        for (int i = bl.begin(); i < end; ++i) {
-            if (array[i] == (byte) 0) {
-                throw runtime.newSecurityError("string contains null byte");
-            }
-        }
     }
 
     public static boolean isUnicode(Encoding enc) {
@@ -713,31 +673,6 @@ public final class StringSupport {
         return -1;
     }
 
-    // StringValueCStr, rb_string_value_cstr without trailing null addition
-    public static RubyString checkEmbeddedNulls(Ruby runtime, IRubyObject ptr) {
-        final RubyString s = ptr.convertToString();
-        ByteList sByteList = s.getByteList();
-        byte[] sBytes = sByteList.unsafeBytes();
-        int beg = sByteList.begin();
-        int len = sByteList.length();
-        final Encoding enc = s.getEncoding();
-        final int minlen = enc.minLength();
-
-        if (minlen > 1) {
-            if (strNullChar(sBytes, beg, len, minlen, enc) != -1) {
-                throw runtime.newArgumentError("string contains null char");
-            }
-            return strFillTerm(s, sBytes, beg, len, minlen);
-        }
-        if (memchr(sBytes, beg, '\0', len) != -1) {
-            throw runtime.newArgumentError("string contains null byte");
-        }
-        //if (s[len]) {
-        //    s = str_fill_term(str, s, len, minlen);
-        //}
-        return s;
-    }
-
     // MRI: str_null_char
     private static int strNullChar(byte[] sBytes, int s, int len, final int minlen, Encoding enc) {
         int e = s + len;
@@ -754,28 +689,6 @@ public final class StringSupport {
             if (sBytes[s++] != 0) return false;
         }
         return true;
-    }
-
-    // MRI: str_fill_term
-    private static RubyString strFillTerm(RubyString str, byte[] sBytes, int beg, int len, int termlen) {
-        int capa = sBytes.length - beg;
-
-        if (capa < len + termlen) {
-            // rb_check_lockedtmp(str);
-            str = str.makeIndependent(len + termlen);
-            sBytes = str.getByteList().unsafeBytes();
-            beg = str.getByteList().begin();
-        }
-        else if ( ! str.independent() ) {
-            if ( ! zeroFilled(sBytes, beg + len, termlen) ) {
-                str = str.makeIndependent(len + termlen);
-                sBytes = str.getByteList().unsafeBytes();
-                beg = str.getByteList().begin();
-            }
-        }
-
-        TERM_FILL(sBytes, beg, len, termlen);
-        return str;
     }
 
     private static void TERM_FILL(byte[] ptr, final int beg, final int len, final int termlen) {
@@ -797,122 +710,6 @@ public final class StringSupport {
         } else {
             return end;
         }
-    }
-
-    /**
-     * rb_str_dump
-     */
-
-    public static ByteList dumpCommon(Ruby runtime, ByteList byteList) {
-        ByteList buf = null;
-        Encoding enc = byteList.getEncoding();
-
-        int p = byteList.getBegin();
-        int end = p + byteList.getRealSize();
-        byte[]bytes = byteList.getUnsafeBytes();
-
-        int len = 2;
-        while (p < end) {
-            int c = bytes[p++] & 0xff;
-
-            switch (c) {
-            case '"':case '\\':case '\n':case '\r':case '\t':case '\f':
-            case '\013': case '\010': case '\007': case '\033':
-                len += 2;
-                break;
-            case '#':
-                len += isEVStr(bytes, p, end) ? 2 : 1;
-                break;
-            default:
-                if (ASCIIEncoding.INSTANCE.isPrint(c)) {
-                    len++;
-                } else {
-                    if (enc.isUTF8()) {
-                        int n = preciseLength(enc, bytes, p - 1, end) - 1;
-                        if (n > 0) {
-                            if (buf == null) buf = new ByteList();
-                            int cc = codePoint(runtime, enc, bytes, p - 1, end);
-                            Sprintf.sprintf(runtime, buf, "%x", cc);
-                            len += buf.getRealSize() + 4;
-                            buf.setRealSize(0);
-                            p += n;
-                            break;
-                        }
-                    }
-                    len += 4;
-                }
-                break;
-            }
-        }
-
-        if (!enc.isAsciiCompatible()) {
-            len += ".force_encoding(\"".length() + enc.getName().length + "\")".length();
-        }
-
-        ByteList outBytes = new ByteList(len);
-        byte out[] = outBytes.getUnsafeBytes();
-        int q = 0;
-        p = byteList.getBegin();
-        end = p + byteList.getRealSize();
-
-        out[q++] = '"';
-        while (p < end) {
-            int c = bytes[p++] & 0xff;
-            if (c == '"' || c == '\\') {
-                out[q++] = '\\';
-                out[q++] = (byte)c;
-            } else if (c == '#') {
-                if (isEVStr(bytes, p, end)) out[q++] = '\\';
-                out[q++] = '#';
-            } else if (c == '\n') {
-                out[q++] = '\\';
-                out[q++] = 'n';
-            } else if (c == '\r') {
-                out[q++] = '\\';
-                out[q++] = 'r';
-            } else if (c == '\t') {
-                out[q++] = '\\';
-                out[q++] = 't';
-            } else if (c == '\f') {
-                out[q++] = '\\';
-                out[q++] = 'f';
-            } else if (c == '\013') {
-                out[q++] = '\\';
-                out[q++] = 'v';
-            } else if (c == '\010') {
-                out[q++] = '\\';
-                out[q++] = 'b';
-            } else if (c == '\007') {
-                out[q++] = '\\';
-                out[q++] = 'a';
-            } else if (c == '\033') {
-                out[q++] = '\\';
-                out[q++] = 'e';
-            } else if (ASCIIEncoding.INSTANCE.isPrint(c)) {
-                out[q++] = (byte)c;
-            } else {
-                out[q++] = '\\';
-                if (enc.isUTF8()) {
-                    int n = preciseLength(enc, bytes, p - 1, end) - 1;
-                    if (n > 0) {
-                        int cc = codePoint(runtime, enc, bytes, p - 1, end);
-                        p += n;
-                        outBytes.setRealSize(q);
-                        Sprintf.sprintf(runtime, outBytes, "u{%x}", cc);
-                        q = outBytes.getRealSize();
-                        continue;
-                    }
-                }
-                outBytes.setRealSize(q);
-                Sprintf.sprintf(runtime, outBytes, "x%02X", c);
-                q = outBytes.getRealSize();
-            }
-        }
-        out[q++] = '"';
-        outBytes.setRealSize(q);
-        assert out == outBytes.getUnsafeBytes(); // must not reallocate
-
-        return outBytes;
     }
 
     public static boolean isEVStr(byte[] bytes, int p, int end) {
@@ -947,21 +744,6 @@ public final class StringSupport {
         }
 
         return count;
-    }
-
-    public static int strCount(ByteList str, Ruby runtime, boolean[] table, TrTables tables, Encoding enc) {
-        try {
-            return strCount(str, table, tables, enc);
-        } catch (IllegalArgumentException e) {
-            throw runtime.newArgumentError(e.getMessage());
-        }
-    }
-
-    /**
-     * @deprecated renamed to {@link #strCount(ByteList, Ruby, boolean[], TrTables, Encoding)}
-     */
-    public static int countCommon19(ByteList str, Ruby runtime, boolean[] table, TrTables tables, Encoding enc) {
-        return strCount(str, runtime, table, tables, enc);
     }
 
     // MRI: rb_str_rindex
@@ -1149,16 +931,6 @@ public final class StringSupport {
         return tables;
     }
 
-    public static TrTables trSetupTable(final ByteList str, final Ruby runtime,
-        final boolean[] stable, TrTables tables, final boolean first, final Encoding enc) {
-
-        try {
-            return trSetupTable(str, stable, tables, first, enc);
-        } catch (IllegalArgumentException e) {
-            throw runtime.newArgumentError(e.getMessage());
-        }
-    }
-
     public static boolean trFind(final int c, final boolean[] table, final TrTables tables) {
         if (c < TRANS_SIZE) return table[c];
 
@@ -1195,14 +967,6 @@ public final class StringSupport {
                 tr.gen = false;
                 return tr.max;
             }
-        }
-    }
-
-    public static int trNext(final TR tr, Ruby runtime, Encoding enc) {
-        try {
-            return trNext(tr, enc);
-        } catch (IllegalArgumentException e) {
-            throw runtime.newArgumentError(e.getMessage());
         }
     }
 
@@ -1302,14 +1066,6 @@ public final class StringSupport {
         return valueCopy;
     }
 
-    public static ByteList succCommon(Ruby runtime, ByteList original) {
-        try {
-            return succCommon(original);
-        } catch (IllegalArgumentException e) {
-            throw runtime.newArgumentError(e.getMessage());
-        }
-    }
-
     // MRI: enc_succ_char
     public static NeighborChar succChar(Encoding enc, byte[] bytes, int p, int len) {
         int l;
@@ -1359,14 +1115,6 @@ public final class StringSupport {
                 int end = start + len-(len2+1);
                 Arrays.fill(bytes, start, end, (byte)0xff);
             }
-        }
-    }
-
-    public static NeighborChar succChar(Ruby runtime, Encoding enc, byte[] bytes, int p, int len) {
-        try {
-            return succChar(enc, bytes, p, len);
-        } catch (IllegalArgumentException e) {
-            throw runtime.newArgumentError(e.getMessage());
         }
     }
 
@@ -1568,30 +1316,6 @@ public final class StringSupport {
         if (cr != CR_BROKEN) source.setCodeRange(cr);
     }
 
-    // MRI: rb_str_update, first half
-    public static void replaceInternal19(Ruby runtime, int beg, int len, RubyString source, RubyString repl) {
-        if (len < 0) throw runtime.newIndexError("negative length " + len);
-
-        int slen = strLengthFromRubyString(source, source.checkEncoding(repl));
-
-        if (slen < beg) {
-            throw runtime.newIndexError("index " + beg + " out of string");
-        }
-        if (beg < 0) {
-            if (-beg > slen) {
-                throw runtime.newIndexError("index " + beg + " out of string");
-            }
-            beg += slen;
-        }
-        if (slen < len || slen < beg + len) {
-            len = slen - beg;
-        }
-
-        replaceInternal19(beg, len, source, repl);
-
-        if (repl.isTaint()) source.setTaint(true);
-    }
-
     public static boolean isAsciiOnly(CodeRangeable string) {
         return string.getByteList().getEncoding().isAsciiCompatible() && string.scanForCodeRange() == CR_7BIT;
     }
@@ -1641,14 +1365,6 @@ public final class StringSupport {
         return modify ? rubyString : null;
     }
 
-    public static CodeRangeable delete_bangCommon19(CodeRangeable rubyString, Ruby runtime, boolean[] squeeze, TrTables tables, Encoding enc) {
-        try {
-            return delete_bangCommon19(rubyString, squeeze, tables, enc);
-        } catch (IllegalArgumentException e) {
-            throw runtime.newArgumentError(e.getMessage());
-        }
-    }
-
     /**
      * MRI: chopped_length
      */
@@ -1667,30 +1383,6 @@ public final class StringSupport {
             if (p2 != -1 && EncodingUtils.encAscget(bl.unsafeBytes(),  p2, end, null, enc) == '\r') p = p2;
         }
         return p - beg;
-    }
-
-    @Deprecated
-    public static int choppedLength19(CodeRangeable str, Ruby runtime) {
-        return choppedLength(str);
-    }
-
-    /**
-     * rb_enc_compatible
-     */
-    public static Encoding areCompatible(CodeRangeable string, CodeRangeable other) {
-        Encoding enc1 = string.getByteList().getEncoding();
-        Encoding enc2 = other.getByteList().getEncoding();
-
-        if (enc1 == enc2) return enc1;
-
-        if (other.getByteList().getRealSize() == 0) return enc1;
-        if (string.getByteList().getRealSize() == 0) {
-            return (enc1.isAsciiCompatible() && isAsciiOnly(other)) ? enc1 : enc2;
-        }
-
-        if (!enc1.isAsciiCompatible() || !enc2.isAsciiCompatible()) return null;
-
-        return RubyEncoding.areCompatible(enc1, string.scanForCodeRange(), enc2, other.scanForCodeRange());
     }
 
     public static ByteList addByteLists(ByteList value1, ByteList value2) {
@@ -1715,120 +1407,6 @@ public final class StringSupport {
         if (cr1 == CR_7BIT && (cr2 == CR_7BIT || other.getByteList().getEncoding().isAsciiCompatible())) return true;
         if (cr2 == CR_7BIT && string.getByteList().getEncoding().isAsciiCompatible()) return true;
         return false;
-    }
-
-    public static IRubyObject rbStrEnumerateLines(RubyString str, ThreadContext context, String name, IRubyObject arg, Block block, boolean wantarray) {
-        Ruby runtime = context.runtime;
-
-        Encoding enc;
-        IRubyObject line, rs, orig = str;
-        int ptr, pend, subptr, subend, rsptr, hit, adjusted;
-        int pos, len, rslen;
-        boolean paragraph_mode = false;
-
-        IRubyObject ary = null;
-
-        rs = arg;
-
-        if (block.isGiven()) {
-            if (wantarray) {
-                // this code should be live in 3.0
-                if (false) { // #if STRING_ENUMERATORS_WANTARRAY
-                    runtime.getWarnings().warn("given block not used");
-                    ary = runtime.newEmptyArray();
-                } else {
-                    runtime.getWarnings().warning("passing a block to String#lines is deprecated");
-                    wantarray = false;
-                }
-            }
-        }
-        else {
-            if (wantarray) {
-                ary = runtime.newEmptyArray();
-            } else {
-                return enumeratorize(runtime, str, name, arg);
-            }
-        }
-
-        if (rs.isNil()) {
-            if (wantarray) {
-                ((RubyArray)ary).push(str);
-                return ary;
-            }
-            else {
-                block.yieldSpecific(context, str);
-                return orig;
-            }
-        }
-
-        str = str.newFrozen();
-        byte[] strBytes = str.getByteList().unsafeBytes();
-        ptr = subptr = str.getByteList().begin();
-        pend = ptr + str.size();
-        len = str.size();
-        rs = rs.convertToString();
-        rslen = ((RubyString)rs).size();
-
-        if (rs == context.runtime.getGlobalVariables().get("$/"))
-            enc = str.getEncoding();
-        else
-            enc = str.checkEncoding((RubyString) rs);
-
-        byte[] rsbytes;
-        if (rslen == 0) {
-            rsbytes = RubyIO.PARAGRAPH_SEPARATOR.unsafeBytes();
-            rsptr = RubyIO.PARAGRAPH_SEPARATOR.begin();
-            rslen = 2;
-            paragraph_mode = true;
-        } else {
-
-            rsbytes = ((RubyString)rs).getByteList().unsafeBytes();
-            rsptr = ((RubyString)rs).getByteList().begin();
-        }
-
-        if ((rs == context.runtime.getGlobalVariables().get("$/") || paragraph_mode) && !enc.isAsciiCompatible()) {
-            rs = RubyString.newString(runtime, rsbytes, rsptr, rslen);
-            rs = EncodingUtils.rbStrEncode(context, rs, runtime.getEncodingService().convertEncodingToRubyEncoding(enc), 0, context.nil);
-            rsbytes = ((RubyString)rs).getByteList().unsafeBytes();
-            rsptr = ((RubyString)rs).getByteList().begin();
-            rslen = ((RubyString)rs).getByteList().realSize();
-        }
-
-        while (subptr < pend) {
-            pos = memsearch(rsbytes, rsptr, rslen, strBytes, subptr, pend - subptr, enc);
-            if (pos < 0) break;
-            hit = subptr + pos;
-            adjusted = enc.rightAdjustCharHead(strBytes, subptr, hit, pend);
-            if (hit != adjusted) {
-                subptr = adjusted;
-                continue;
-            }
-            subend = hit + rslen;
-            if (paragraph_mode) {
-                while (subend < pend && enc.isNewLine(strBytes, subend, pend)) {
-                    subend += enc.length(strBytes, subend, pend);
-                }
-            }
-            line = str.substr(runtime, subptr - ptr, subend - subptr);
-            if (wantarray) {
-                ((RubyArray)ary).push(line);
-            } else {
-                block.yieldSpecific(context, line);
-                str.modifyCheck(strBytes, len);
-            }
-            subptr = subend;
-        }
-
-        if (subptr != pend) {
-            line = str.substr(runtime, subptr - ptr, pend - subptr);
-            if (wantarray) {
-                ((RubyArray) ary).push(line);
-            } else {
-                block.yieldSpecific(context, line);
-            }
-        }
-
-        return wantarray ? ary : orig;
     }
 
     public static int memsearch(byte[] xBytes, int x0, int m, byte[] yBytes, int y0, int n, Encoding enc) {
@@ -2078,14 +1656,6 @@ public final class StringSupport {
         return null;
     }
 
-    public static CodeRangeable trTransHelper(Ruby runtime, CodeRangeable self, CodeRangeable srcStr, CodeRangeable replStr, boolean sflag) {
-        try {
-            return trTransHelper(self, srcStr, replStr, sflag);
-        } catch (IllegalArgumentException e) {
-            throw runtime.newArgumentError(e.getMessage());
-        }
-    }
-
     private static int trCode(int c, int[]trans, IntHash<Integer> hash, boolean cflag, int last, boolean set) {
         if (c < StringSupport.TRANS_SIZE) {
             return trans[c];
@@ -2196,14 +1766,6 @@ public final class StringSupport {
         return false;
     }
 
-    public static boolean multiByteSqueeze(Ruby runtime, ByteList value, boolean squeeze[], TrTables tables, Encoding enc, boolean isArg) {
-        try {
-            return multiByteSqueeze(value, squeeze, tables, enc, isArg);
-        } catch (IllegalArgumentException e) {
-            throw runtime.newArgumentError(e.getMessage());
-        }
-    }
-
     /**
      * rb_str_swapcase / rb_str_swapcase_bang
      */
@@ -2240,14 +1802,6 @@ public final class StringSupport {
         }
 
         return modify;
-    }
-
-    public static boolean multiByteSwapcase(Ruby runtime, Encoding enc, byte[] bytes, int s, int end) {
-        try {
-            return multiByteSwapcase(enc, bytes, s, end);
-        } catch (IllegalArgumentException e) {
-            throw runtime.newArgumentError(e.getMessage());
-        }
     }
 
     private static int rb_memsearch_ss(byte[] xsBytes, int xs, int m, byte[] ysBytes, int ys, int n) {
