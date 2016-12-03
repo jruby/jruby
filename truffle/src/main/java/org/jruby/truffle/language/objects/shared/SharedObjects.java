@@ -26,6 +26,11 @@ import java.util.Deque;
 
 public class SharedObjects {
 
+    // TODO CS 3-Dec-16 these shouldn't be static
+    public static final boolean ENABLED = OptionsBuilder.readSystemProperty(OptionsCatalog.SHARED_OBJECTS_ENABLED);
+    public static final boolean SHARE_ALL = OptionsBuilder.readSystemProperty(OptionsCatalog.SHARED_OBJECTS_SHARE_ALL);
+    public static final boolean DEBUG = OptionsBuilder.readSystemProperty(OptionsCatalog.SHARED_OBJECTS_DEBUG);
+
     private final RubyContext context;
     // No need for volatile since we change this before starting the 2nd Thread
     private boolean sharing = false;
@@ -69,7 +74,7 @@ public class SharedObjects {
     public static void shareDeclarationFrame(DynamicObject block) {
         final Deque<DynamicObject> stack = new ArrayDeque<>();
 
-        if ((boolean) OptionsBuilder.readSystemProperty(OptionsCatalog.SHARED_OBJECTS_DEBUG)) {
+        if (DEBUG) {
             final SourceSection sourceSection = Layouts.PROC.getSharedMethodInfo(block).getSourceSection();
             System.err.println("Sharing decl frame of " + SourceSectionUtils.fileLine(sourceSection));
         }
@@ -102,11 +107,11 @@ public class SharedObjects {
     }
 
     public static boolean isShared(Shape shape) {
-        return (boolean) OptionsBuilder.readSystemProperty(OptionsCatalog.SHARED_OBJECTS_ENABLED) && ((boolean) OptionsBuilder.readSystemProperty(OptionsCatalog.SHARED_OBJECTS_SHARE_ALL) || shape.isShared());
+        return ENABLED && (SHARE_ALL || shape.isShared());
     }
 
     public static void writeBarrier(Object value) {
-        if ((boolean) OptionsBuilder.readSystemProperty(OptionsCatalog.SHARED_OBJECTS_ENABLED) && value instanceof DynamicObject && !isShared((DynamicObject) value)) {
+        if (ENABLED && value instanceof DynamicObject && !isShared((DynamicObject) value)) {
             shareObject(value);
         }
     }

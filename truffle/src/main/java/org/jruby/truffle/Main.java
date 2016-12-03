@@ -56,6 +56,9 @@ import java.lang.management.ManagementFactory;
 
 public class Main {
 
+    private static final boolean METRICS_TIME = OptionsBuilder.readSystemProperty(OptionsCatalog.METRICS_TIME);
+    private static final boolean METRICS_MEMORY_USED_ON_EXIT = OptionsBuilder.readSystemProperty(OptionsCatalog.METRICS_MEMORY_USED_ON_EXIT);
+
     public static void main(String[] args) {
         printTruffleTimeMetric("before-main");
 
@@ -130,7 +133,7 @@ public class Main {
     }
 
     public static void printTruffleTimeMetric(String id) {
-        if (OptionsBuilder.readSystemProperty(OptionsCatalog.METRICS_TIME)) {
+        if (METRICS_TIME) {
             final long millis = System.currentTimeMillis();
             System.err.printf("%s %d.%03d%n", id, millis / 1000, millis % 1000);
         }
@@ -138,7 +141,7 @@ public class Main {
 
     private static void printTruffleMemoryMetric() {
         // Memory stats aren't available on AOT.
-        if (!TruffleOptions.AOT && (boolean) OptionsBuilder.readSystemProperty(OptionsCatalog.METRICS_MEMORY_USED_ON_EXIT)) {
+        if (!TruffleOptions.AOT && METRICS_MEMORY_USED_ON_EXIT) {
             for (int n = 0; n < 10; n++) {
                 System.gc();
             }
