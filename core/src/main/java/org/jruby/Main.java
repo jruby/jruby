@@ -658,14 +658,14 @@ public class Main {
     }
     
     public static void printTruffleTimeMetric(String id) {
-        if (Options.TRUFFLE_METRICS_TIME.load()) {
+        if (Boolean.getBoolean("jruby.truffle.metrics.time")) {
             final long millis = System.currentTimeMillis();
             System.err.printf("%s %d.%03d%n", id, millis / 1000, millis % 1000);
         }
     }
 
     private static void printTruffleMemoryMetric() {
-        if (Options.TRUFFLE_METRICS_MEMORY_USED_ON_EXIT.load()) {
+        if (Boolean.getBoolean("jruby.truffle.metrics.memory_used_on_exit")) {
             for (int n = 0; n < 10; n++) {
                 System.gc();
             }

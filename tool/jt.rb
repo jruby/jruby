@@ -444,6 +444,7 @@ module Commands
           truffle                                    build only the Truffle part, assumes the rest is up-to-date
           cexts [--no-openssl]                       build the cext backend (set SULONG_HOME)
           parser                                     build the parser
+          options                                    build the options
           --build-pack                               use the build pack
           --offline                                  use the build pack to build offline
       jt clean                                       clean
@@ -552,6 +553,8 @@ module Commands
       sh 'sh', 'tool/truffle/generate_parser'
       yytables = 'truffle/src/main/java/org/jruby/truffle/parser/parser/YyTables.java'
       File.write(yytables, File.read(yytables).gsub('package org.jruby.parser;', 'package org.jruby.truffle.parser.parser;'))
+    when 'options'
+      sh 'tool/truffle/generate-options.rb'
     when nil
       mvn env, *maven_options, 'package'
     else
@@ -785,7 +788,7 @@ module Commands
     env_vars = {
       "EXCLUDES" => "test/mri/excludes_truffle"
     }
-    jruby_args = %w[-J-Xmx2G -Xtruffle.exceptions.print_java]
+    jruby_args = %w[-J-Xmx2G -Xtruffle.exceptions.print_java=true]
 
     if args.count { |arg| !arg.start_with?('-') } == 0
       args += File.readlines("#{JRUBY_DIR}/test/mri_truffle.index").grep(/^[^#]\w+/).map(&:chomp)
@@ -1335,7 +1338,7 @@ class JT
       send(args.shift)
     when "build"
       command = [args.shift]
-      while ['truffle', 'cexts', 'parser', '--offline', '--build-pack', '--no-openssl'].include?(args.first)
+      while ['truffle', 'cexts', 'parser', 'options', '--offline', '--build-pack', '--no-openssl'].include?(args.first)
         command << args.shift
       end
       send(*command)

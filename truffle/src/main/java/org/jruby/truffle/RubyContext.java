@@ -46,6 +46,8 @@ import org.jruby.truffle.language.loader.SourceLoader;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.objects.shared.SharedObjects;
+import org.jruby.truffle.options.Options;
+import org.jruby.truffle.options.OptionsBuilder;
 import org.jruby.truffle.platform.NativePlatform;
 import org.jruby.truffle.platform.NativePlatformFactory;
 import org.jruby.truffle.stdlib.CoverageManager;
@@ -66,6 +68,8 @@ public class RubyContext extends ExecutionContext {
 
     private final TruffleLanguage.Env env;
 
+    private final Options options;
+
     private final RubyInstanceConfig instanceConfig;
     private final String jrubyHome;
     private String originalInputFile;
@@ -73,7 +77,6 @@ public class RubyContext extends ExecutionContext {
     private InputStream syntaxCheckInputStream;
     private boolean verbose;
 
-    private final Options options = new Options();
     private final RopeTable ropeTable = new RopeTable();
     private final PrimitiveManager primitiveManager = new PrimitiveManager();
     private final SafepointManager safepointManager = new SafepointManager(this);
@@ -111,6 +114,12 @@ public class RubyContext extends ExecutionContext {
     public RubyContext(RubyInstanceConfig instanceConfig, TruffleLanguage.Env env) {
         this.instanceConfig = instanceConfig;
         this.env = env;
+
+        final OptionsBuilder optionsBuilder = new OptionsBuilder();
+        optionsBuilder.set(env.getConfig());
+        optionsBuilder.set(System.getProperties());
+        options = optionsBuilder.build();
+
         this.jrubyHome = setupJRubyHome();
         this.currentDirectory = System.getProperty("user.dir");
 
@@ -173,7 +182,7 @@ public class RubyContext extends ExecutionContext {
 
         final Instrumenter instrumenter = env.lookup(Instrumenter.class);
         traceManager = new TraceManager(this, instrumenter);
-        coreMethods = new CoreMethods(coreLibrary);
+        coreMethods = new CoreMethods(this);
 
         // Load the reset of the core library
 
@@ -197,7 +206,7 @@ public class RubyContext extends ExecutionContext {
         coreLibrary.initializePostBoot();
 
         // Share once everything is loaded
-        if (Options.SHARED_OBJECTS && Options.SHARED_OBJECTS_FORCE) {
+        if (options.SHARED_OBJECTS_ENABLED && options.SHARED_OBJECTS_FORCE) {
             sharedObjects.startSharing();
         }
     }
@@ -259,7 +268,7 @@ public class RubyContext extends ExecutionContext {
     }
 
     public void shutdown() {
-        if (getOptions().ROPE_PRINT_INTERN_STATS) {
+        if (options.ROPE_PRINT_INTERN_STATS) {
             System.out.println("Ropes re-used: " + getRopeTable().getRopesReusedCount());
             System.out.println("Rope byte arrays re-used: " + getRopeTable().getByteArrayReusedCount());
             System.out.println("Rope bytes saved: " + getRopeTable().getRopeBytesSaved());
@@ -463,4 +472,5 @@ public class RubyContext extends ExecutionContext {
     public void setSyntaxCheckInputStream(InputStream syntaxCheckInputStream) {
         this.syntaxCheckInputStream = syntaxCheckInputStream;
     }
+
 }
