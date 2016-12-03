@@ -838,7 +838,16 @@ public class CoreLibrary {
 
         globals.put("$,", nilObject);
         globals.put("$*", argv);
-        globals.put("$0", StringOperations.createString(context, StringOperations.encodeRope(context.getOptions().DISPLAYED_FILE_NAME, UTF8Encoding.INSTANCE)));
+
+        final Object dollarZeroValue;
+
+        if (context.getOptions().DISPLAYED_FILE_NAME == null) {
+            dollarZeroValue = nilObject;
+        } else {
+            dollarZeroValue = StringOperations.createString(context, StringOperations.encodeRope(context.getOptions().DISPLAYED_FILE_NAME, UTF8Encoding.INSTANCE));
+        }
+
+        globals.put("$0", dollarZeroValue);
 
         globals.put("$DEBUG", context.getOptions().DEBUG);
 
