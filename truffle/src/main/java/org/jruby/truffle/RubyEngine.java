@@ -49,8 +49,8 @@ public class RubyEngine {
                 .config(RubyLanguage.MIME_TYPE, OptionsCatalog.VERBOSITY.getName(), verbosity)
                 .config(RubyLanguage.MIME_TYPE, OptionsCatalog.FROZEN_STRING_LITERALS.getName(), frozenStringLiterals)
                 .config(RubyLanguage.MIME_TYPE, OptionsCatalog.DISABLE_GEMS.getName(), disabledGems)
-                .config(RubyLanguage.MIME_TYPE, OptionsCatalog.INTERNAL_ENCODING.getName(), externalEncoding)
-                .config(RubyLanguage.MIME_TYPE, OptionsCatalog.EXTERNAL_ENCODING.getName(), internalEncoding)
+                .config(RubyLanguage.MIME_TYPE, OptionsCatalog.INTERNAL_ENCODING.getName(), internalEncoding)
+                .config(RubyLanguage.MIME_TYPE, OptionsCatalog.EXTERNAL_ENCODING.getName(), externalEncoding)
                 .build();
 
         Main.printTruffleTimeMetric("before-load-context");
