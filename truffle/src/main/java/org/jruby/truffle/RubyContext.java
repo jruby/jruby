@@ -213,7 +213,6 @@ public class RubyContext extends ExecutionContext {
 
     private String setupJRubyHome() {
         String jrubyHome = findJRubyHome();
-        instanceConfig.setJRubyHome(jrubyHome);
         return jrubyHome;
     }
 
