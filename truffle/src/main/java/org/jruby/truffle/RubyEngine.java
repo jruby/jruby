@@ -92,7 +92,7 @@ public class RubyEngine {
             try {
                 return checkSyntax(new FileInputStream(file), filename);
             } catch (FileNotFoundException fnfe) {
-                context.getInstanceConfig().getError().println("File not found: " + filename);
+                System.err.println("File not found: " + filename);
                 return false;
             }
         } else {

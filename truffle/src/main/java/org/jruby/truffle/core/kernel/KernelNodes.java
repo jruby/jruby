@@ -889,7 +889,7 @@ public abstract class KernelNodes {
         @Specialization
         public DynamicObject gets() {
             // TODO(CS): having some trouble interacting with JRuby stdin - so using this hack
-            final InputStream in = getContext().getInstanceConfig().getInput();
+            final InputStream in = System.in;
 
             Encoding encoding = getContext().getEncodingManager().getDefaultExternalEncoding();
 
