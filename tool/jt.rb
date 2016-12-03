@@ -492,6 +492,7 @@ module Commands
       jt tag all spec/ruby/language                  tag all specs in this file, without running them
       jt untag spec/ruby/language                    untag passing specs in this directory
       jt untag spec/ruby/language/while_spec.rb      untag passing specs in this file
+      jt mspec ...                                   run MSpec with the JRuby+Truffle configuration and custom arguments
       jt metrics alloc [--json] ...                  how much memory is allocated running a program (use -Xclassic to test normal JRuby on this metric and others)
       jt metrics minheap ...                         what is the smallest heap you can use to run an application
       jt metrics time ...                            how long does it take to run a command, broken down into different phases
@@ -1016,6 +1017,10 @@ module Commands
         FileUtils.remove_entry temp_dir
       end
     end
+  end
+
+  def mspec(*args)
+    super(*args)
   end
 
   def test_specs(command, *args)
