@@ -20,6 +20,7 @@ import org.jruby.truffle.language.control.ReturnID;
 public class ParseEnvironment {
 
     private LexicalScope lexicalScope = null;
+    private boolean dynamicConstantLookup = false;
 
     public ParseEnvironment(RubyContext context) {
     }
@@ -38,6 +39,14 @@ public class ParseEnvironment {
 
     public void popLexicalScope() {
         lexicalScope = lexicalScope.getParent();
+    }
+
+    public boolean isDynamicConstantLookup() {
+        return dynamicConstantLookup;
+    }
+
+    public void setDynamicConstantLookup(boolean dynamicConstantLookup) {
+        this.dynamicConstantLookup = dynamicConstantLookup;
     }
 
     public ReturnID allocateReturnID() {

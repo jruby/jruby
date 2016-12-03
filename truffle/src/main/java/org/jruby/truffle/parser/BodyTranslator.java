@@ -19,6 +19,7 @@ import org.jcodings.specific.UTF8Encoding;
 import org.joni.NameEntry;
 import org.joni.Regex;
 import org.joni.Syntax;
+import org.jruby.truffle.Log;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.PrimitiveNodeConstructor;
 import org.jruby.truffle.core.CoreLibrary;
@@ -266,6 +267,7 @@ import org.jruby.truffle.parser.scope.StaticScope;
 import org.jruby.truffle.platform.graal.AssertConstantNodeGen;
 import org.jruby.truffle.platform.graal.AssertNotCompiledNodeGen;
 import org.jruby.truffle.tools.ChaosNodeGen;
+import org.jruby.truffle.util.SourceSectionUtils;
 import org.jruby.truffle.util.StringUtils;
 import org.jruby.util.ByteList;
 
@@ -1010,7 +1012,7 @@ public class BodyTranslator extends Translator {
             }
 
             final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(context, environment, environment.getParseEnvironment(),
-                    returnId, true, true, sharedMethodInfo, name, 0, null);
+                            returnId, true, true, true, sharedMethodInfo, name, 0, null);
 
             final BodyTranslator moduleTranslator = new BodyTranslator(currentNode, context, this, newEnvironment, source, false);
 
@@ -1401,7 +1403,7 @@ public class BodyTranslator extends Translator {
                 false);
 
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
-                context, environment, environment.getParseEnvironment(), environment.getParseEnvironment().allocateReturnID(), true, true, sharedMethodInfo, methodName, 0, null);
+                        context, environment, environment.getParseEnvironment(), environment.getParseEnvironment().allocateReturnID(), true, true, false, sharedMethodInfo, methodName, 0, null);
 
         // ownScopeForAssignments is the same for the defined method as the current one.
 
@@ -2012,7 +2014,7 @@ public class BodyTranslator extends Translator {
 
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
                 context, environment, parseEnvironment, returnID, hasOwnScope, false,
-                sharedMethodInfo, namedMethodName, environment.getBlockDepth() + 1, parseEnvironment.allocateBreakID());
+                        false, sharedMethodInfo, namedMethodName, environment.getBlockDepth() + 1, parseEnvironment.allocateBreakID());
         final MethodTranslator methodCompiler = new MethodTranslator(currentNode, context, this, newEnvironment, true, source, argsNode);
 
         if (isProc) {
@@ -3036,10 +3038,29 @@ public class BodyTranslator extends Translator {
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
         final RubyNode receiverNode = node.getReceiverNode().accept(this);
-
         final SingletonClassNode singletonClassNode = SingletonClassNodeGen.create(context, fullSourceSection, receiverNode);
 
-        final RubyNode ret = openModule(sourceSection, singletonClassNode, "(singleton-def)", node.getBodyNode(), true);
+        final boolean dynamicConstantLookup = environment.getParseEnvironment().isDynamicConstantLookup();
+        if (!dynamicConstantLookup) {
+            if (environment.isModuleBody() && node.getReceiverNode() instanceof SelfParseNode) {
+                // Common case of class << self in a module body, the constant lookup scope is still static
+            } else if (environment.parent == null && environment.isModuleBody()) {
+                // At the top-level of a file, opening the singleton class of a single expression
+            } else {
+                // Switch to dynamic constant lookup
+                environment.getParseEnvironment().setDynamicConstantLookup(true);
+                if (context.getOptions().LOG_DYNAMIC_CONSTANT_LOOKUP) {
+                    Log.info("dynamic constant lookup at " + SourceSectionUtils.fileLine(fullSourceSection));
+                }
+            }
+        }
+
+        final RubyNode ret;
+        try {
+            ret = openModule(sourceSection, singletonClassNode, "(singleton-def)", node.getBodyNode(), true);
+        } finally {
+            environment.getParseEnvironment().setDynamicConstantLookup(dynamicConstantLookup);
+        }
         return addNewlineIfNeeded(node, ret);
     }
 

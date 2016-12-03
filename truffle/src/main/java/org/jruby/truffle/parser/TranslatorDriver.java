@@ -160,8 +160,10 @@ public class TranslatorDriver {
                 false,
                 false);
 
+        final boolean topLevel = parserContext == ParserContext.TOP_LEVEL_FIRST || parserContext == ParserContext.TOP_LEVEL;
+        final boolean isModuleBody = topLevel;
         final TranslatorEnvironment environment = new TranslatorEnvironment(context, parentEnvironment,
-                parseEnvironment, parseEnvironment.allocateReturnID(), ownScopeForAssignments, false, sharedMethodInfo, sharedMethodInfo.getName(), 0, null);
+                        parseEnvironment, parseEnvironment.allocateReturnID(), ownScopeForAssignments, false, isModuleBody, sharedMethodInfo, sharedMethodInfo.getName(), 0, null);
 
         // Declare arguments as local variables in the top-level environment - we'll put the values there in a prelude
 
@@ -173,7 +175,7 @@ public class TranslatorDriver {
 
         // Translate to Ruby Truffle nodes
 
-        final BodyTranslator translator = new BodyTranslator(currentNode, context, null, environment, source, parserContext == ParserContext.TOP_LEVEL_FIRST || parserContext == ParserContext.TOP_LEVEL);
+        final BodyTranslator translator = new BodyTranslator(currentNode, context, null, environment, source, topLevel);
 
         RubyNode truffleNode;
 
@@ -260,7 +262,7 @@ public class TranslatorDriver {
                 false);
             // TODO(CS): how do we know if the frame is a block or not?
             return new TranslatorEnvironment(context, null, parseEnvironment,
-                    parseEnvironment.allocateReturnID(), true, true, sharedMethodInfo, sharedMethodInfo.getName(), 0, null, frameDescriptor);
+                        parseEnvironment.allocateReturnID(), true, true, false, sharedMethodInfo, sharedMethodInfo.getName(), 0, null, frameDescriptor);
     }
 
     private TranslatorEnvironment environmentForFrame(RubyContext context, MaterializedFrame frame) {
@@ -281,7 +283,7 @@ public class TranslatorDriver {
             final MaterializedFrame parent = RubyArguments.getDeclarationFrame(frame);
             // TODO(CS): how do we know if the frame is a block or not?
             return new TranslatorEnvironment(context, environmentForFrame(context, parent), parseEnvironment,
-                    parseEnvironment.allocateReturnID(), true, true, sharedMethodInfo, sharedMethodInfo.getName(), 0, null, frame.getFrameDescriptor());
+                            parseEnvironment.allocateReturnID(), true, true, false, sharedMethodInfo, sharedMethodInfo.getName(), 0, null, frame.getFrameDescriptor());
         }
     }
 
