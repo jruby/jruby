@@ -62,7 +62,6 @@ public class Main {
         printTruffleTimeMetric("before-main");
 
         final RubyInstanceConfig config = new RubyInstanceConfig(false);
-        config.setHardExit(true);
         config.processArguments(args);
         config.setCompileMode(org.jruby.RubyInstanceConfig.CompileMode.TRUFFLE);
 
@@ -93,7 +92,7 @@ public class Main {
             try {
                 if (in == null) {
                     exitCode = 1;
-                } else if (config.isXFlag() && !config.hasShebangLine()) {
+                } else if (config.isXFlag()) {
                     // no shebang was found and x option is set
                     config.getError().println("jruby: no Ruby script found in input (LoadError)");
                     exitCode = 1;
