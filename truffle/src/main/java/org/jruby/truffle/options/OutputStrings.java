@@ -152,7 +152,7 @@ public class OutputStrings {
                 SafePropertyAccessor.getProperty("java.vm.version", "Unknown JVM version"),
                 SafePropertyAccessor.getProperty("java.runtime.version", SafePropertyAccessor.getProperty("java.version", "Unknown version")),
                 org.jruby.util.cli.Options.COMPILE_INVOKEDYNAMIC.load() ? " +indy" : "",
-                "truffle",
+                "",
                 Platform.getOSName(),
                 Platform.getArchitecture()
         );

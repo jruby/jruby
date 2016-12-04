@@ -72,7 +72,7 @@ public final class Constants {
      */
     public static final int JIT_THRESHOLD = 50;
     
-    private static String jruby_revision = "046edbf";
+    private static String jruby_revision = "unknown";
 
     @Deprecated
     public static final String JRUBY_PROPERTIES = "/org/jruby/jruby.properties";
