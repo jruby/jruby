@@ -71,6 +71,7 @@ import org.jruby.truffle.language.Visibility;
 import org.jruby.truffle.language.arguments.ArrayIsAtLeastAsLargeAsNode;
 import org.jruby.truffle.language.arguments.SingleBlockArgNode;
 import org.jruby.truffle.language.constants.ReadConstantNode;
+import org.jruby.truffle.language.constants.ReadConstantWithDynamicScopeNode;
 import org.jruby.truffle.language.constants.ReadConstantWithLexicalScopeNode;
 import org.jruby.truffle.language.constants.WriteConstantNode;
 import org.jruby.truffle.language.control.AndNode;
@@ -144,6 +145,7 @@ import org.jruby.truffle.language.methods.UnsupportedOperationBehavior;
 import org.jruby.truffle.language.objects.DefineClassNode;
 import org.jruby.truffle.language.objects.DefineModuleNode;
 import org.jruby.truffle.language.objects.DefineModuleNodeGen;
+import org.jruby.truffle.language.objects.DynamicLexicalScopeNode;
 import org.jruby.truffle.language.objects.LexicalScopeNode;
 import org.jruby.truffle.language.objects.ReadClassVariableNode;
 import org.jruby.truffle.language.objects.ReadInstanceVariableNode;
@@ -989,7 +991,7 @@ public class BodyTranslator extends Translator {
     private RubyNode openModule(RubySourceSection sourceSection, RubyNode defineOrGetNode, String name, ParseNode bodyNode, boolean sclass) {
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
-        LexicalScope newLexicalScope = environment.pushLexicalScope();
+        LexicalScope newLexicalScope = environment.isDynamicConstantLookup() ? LexicalScope.NONE : environment.pushLexicalScope();
         try {
             final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(
                     fullSourceSection,
@@ -1020,7 +1022,9 @@ public class BodyTranslator extends Translator {
 
             return new RunModuleDefinitionNode(context, fullSourceSection, newLexicalScope, definition, defineOrGetNode);
         } finally {
-            environment.popLexicalScope();
+            if (!environment.isDynamicConstantLookup()) {
+                environment.popLexicalScope();
+            }
         }
     }
 
@@ -1064,7 +1068,8 @@ public class BodyTranslator extends Translator {
                 environment.getSharedMethodInfo().getName(),
                 environment.getSharedMethodInfo(),
                 Truffle.getRuntime().createCallTarget(rootNode),
-                sclass);
+                sclass,
+                environment.isDynamicConstantLookup());
 
         return definitionNode;
     }
@@ -1138,7 +1143,14 @@ public class BodyTranslator extends Translator {
         final RubyNode ret;
 
         if (node instanceof Colon2ImplicitParseNode) { // use current lexical scope
-            ret = new LexicalScopeNode(context, fullSourceSection, environment.getLexicalScope());
+            if (environment.getParseEnvironment().isDynamicConstantLookup()) {
+                if (context.getOptions().LOG_DYNAMIC_CONSTANT_LOOKUP) {
+                    Log.info("dynamic constant lookup at " + SourceSectionUtils.fileLine(fullSourceSection));
+                }
+                ret = new DynamicLexicalScopeNode(context, fullSourceSection);
+            } else {
+                ret = new LexicalScopeNode(context, fullSourceSection, environment.getLexicalScope());
+            }
         } else if (node instanceof Colon2ConstParseNode) { // A::B
             ret = node.childNodes().get(0).accept(this);
         } else { // Colon3ParseNode: on top-level (Object)
@@ -1168,7 +1180,14 @@ public class BodyTranslator extends Translator {
         final RubyNode moduleNode;
         ParseNode constNode = node.getConstNode();
         if (constNode == null || constNode instanceof Colon2ImplicitParseNode) {
-            moduleNode = new LexicalScopeNode(context, sourceSection.toSourceSection(source), environment.getLexicalScope());
+            if (environment.getParseEnvironment().isDynamicConstantLookup()) {
+                if (context.getOptions().LOG_DYNAMIC_CONSTANT_LOOKUP) {
+                    Log.info("set dynamic constant at " + SourceSectionUtils.fileLine(sourceSection.toSourceSection(source)));
+                }
+                moduleNode = new DynamicLexicalScopeNode(context, sourceSection.toSourceSection(source));
+            } else {
+                moduleNode = new LexicalScopeNode(context, sourceSection.toSourceSection(source), environment.getLexicalScope());
+            }
         } else if (constNode instanceof Colon2ConstParseNode) {
             constNode = ((Colon2ParseNode) constNode).getLeftNode(); // Misleading doc, we only want the defined part.
             moduleNode = constNode.accept(this);
@@ -1243,9 +1262,18 @@ public class BodyTranslator extends Translator {
             return addNewlineIfNeeded(node, ret);
         }
 
-        final LexicalScope lexicalScope = environment.getLexicalScope();
-        final RubyNode ret = new ReadConstantWithLexicalScopeNode(context, fullSourceSection, lexicalScope, name);
+        final RubyNode ret;
+        if (environment.getParseEnvironment().isDynamicConstantLookup()) {
+            if (context.getOptions().LOG_DYNAMIC_CONSTANT_LOOKUP) {
+                Log.info("dynamic constant lookup at " + SourceSectionUtils.fileLine(fullSourceSection));
+            }
+            ret = new ReadConstantWithDynamicScopeNode(context, fullSourceSection, name);
+        } else {
+            final LexicalScope lexicalScope = environment.getLexicalScope();
+            ret = new ReadConstantWithLexicalScopeNode(context, fullSourceSection, lexicalScope, name);
+        }
         return addNewlineIfNeeded(node, ret);
+
     }
 
     @Override
@@ -1384,7 +1412,7 @@ public class BodyTranslator extends Translator {
 
         final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(
                 sourceSection.toSourceSection(source),
-                environment.getLexicalScope(),
+                environment.getLexicalScopeOrNull(),
                 arity,
                 null,
                 methodName,
@@ -1989,7 +2017,7 @@ public class BodyTranslator extends Translator {
 
         final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(
                 sourceSection.toSourceSection(source),
-                environment.getLexicalScope(),
+                environment.getLexicalScopeOrNull(),
                 MethodTranslator.getArity(argsNode),
                 null,
                 null,
@@ -3042,7 +3070,7 @@ public class BodyTranslator extends Translator {
                 // Switch to dynamic constant lookup
                 environment.getParseEnvironment().setDynamicConstantLookup(true);
                 if (context.getOptions().LOG_DYNAMIC_CONSTANT_LOOKUP) {
-                    Log.info("dynamic constant lookup at " + SourceSectionUtils.fileLine(fullSourceSection));
+                    Log.info("start dynamic constant lookup at " + SourceSectionUtils.fileLine(fullSourceSection));
                 }
             }
         }

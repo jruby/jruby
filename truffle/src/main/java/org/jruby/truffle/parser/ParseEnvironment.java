@@ -38,15 +38,16 @@ public class ParseEnvironment {
     }
 
     public LexicalScope getLexicalScope() {
+        assert !dynamicConstantLookup;
         return lexicalScope;
     }
 
     public LexicalScope pushLexicalScope() {
-        return lexicalScope = new LexicalScope(lexicalScope);
+        return lexicalScope = new LexicalScope(getLexicalScope());
     }
 
     public void popLexicalScope() {
-        lexicalScope = lexicalScope.getParent();
+        lexicalScope = getLexicalScope().getParent();
     }
 
     public boolean isDynamicConstantLookup() {

@@ -73,7 +73,7 @@ public class InternalMethod implements ObjectGraphNode {
             String name,
             DynamicObject declaringModule,
             Visibility visibility, CallTarget callTarget) {
-        this(context, sharedMethodInfo, null, name, declaringModule, visibility, false, null, callTarget, null, null);
+        this(context, sharedMethodInfo, lexicalScope, name, declaringModule, visibility, false, null, callTarget, null, null);
     }
 
     public InternalMethod(
@@ -104,6 +104,7 @@ public class InternalMethod implements ObjectGraphNode {
             CallTarget callTarget,
             DynamicObject capturedBlock, DynamicObject capturedDefaultDefinee) {
         assert RubyGuards.isRubyModule(declaringModule);
+        assert lexicalScope != null;
         this.sharedMethodInfo = sharedMethodInfo;
         this.lexicalScope = lexicalScope;
         this.declaringModule = declaringModule;

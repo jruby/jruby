@@ -160,7 +160,7 @@ public class CoreMethodNodeManager {
             if (ModuleOperations.isMethodPrivateFromName(name)) {
                 visibility = Visibility.PRIVATE;
             }
-            final InternalMethod method = new InternalMethod(context, sharedMethodInfo, LexicalScope.NONE, name, module, visibility, callTarget);
+            final InternalMethod method = new InternalMethod(context, sharedMethodInfo, sharedMethodInfo.getLexicalScope(), name, module, visibility, callTarget);
 
             Layouts.MODULE.getFields(module).addMethod(context, null, method);
         }
@@ -168,10 +168,11 @@ public class CoreMethodNodeManager {
 
     private static SharedMethodInfo makeSharedMethodInfo(RubyContext context, DynamicObject module, MethodDetails methodDetails) {
         final CoreMethod method = methodDetails.getMethodAnnotation();
+        final LexicalScope lexicalScope = new LexicalScope(context.getRootLexicalScope(), module);
 
         return new SharedMethodInfo(
                 context.getCoreLibrary().getSourceSection(),
-                LexicalScope.NONE,
+                lexicalScope,
                 new Arity(method.required(), method.optional(), method.rest()),
                 module,
                 methodDetails.getPrimaryName(),

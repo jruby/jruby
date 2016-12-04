@@ -406,7 +406,8 @@ public abstract class ModuleNodes {
             final RubyNode sequence = Translator.sequence(getContext(), sourceSection.getSource(), rubySourceSection, Arrays.asList(checkArity, accessInstanceVariable));
             final RubyRootNode rootNode = new RubyRootNode(getContext(), sourceSection, null, sharedMethodInfo, sequence, false);
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
-            final InternalMethod method = new InternalMethod(getContext(), sharedMethodInfo, LexicalScope.NONE, accessorName, module, visibility, callTarget);
+            final LexicalScope lexicalScope = getContext().getRootLexicalScope();
+            final InternalMethod method = new InternalMethod(getContext(), sharedMethodInfo, lexicalScope, accessorName, module, visibility, callTarget);
 
             Layouts.MODULE.getFields(module).addMethod(getContext(), this, method);
         }

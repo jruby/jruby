@@ -83,7 +83,7 @@ public class CodeLoader {
         if (parentFrame != null) {
             lexicalScope = RubyArguments.getMethod(parentFrame).getLexicalScope();
         } else {
-            lexicalScope = LexicalScope.NONE;
+            lexicalScope = context.getRootLexicalScope();
         }
 
         final InternalMethod method = new InternalMethod(

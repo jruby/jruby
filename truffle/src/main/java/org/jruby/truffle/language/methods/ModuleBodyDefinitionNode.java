@@ -9,6 +9,9 @@
  */
 package org.jruby.truffle.language.methods;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.LexicalScope;
@@ -31,14 +34,18 @@ public class ModuleBodyDefinitionNode extends RubyBaseNode {
     private final SharedMethodInfo sharedMethodInfo;
     private final CallTarget callTarget;
     private final boolean captureBlock;
+    private final boolean dynamicLexicalScope;
+    private final Map<DynamicObject, LexicalScope> lexicalScopes;
 
     public ModuleBodyDefinitionNode(RubyContext context, SourceSection sourceSection, String name, SharedMethodInfo sharedMethodInfo,
-            CallTarget callTarget, boolean captureBlock) {
+                    CallTarget callTarget, boolean captureBlock, boolean dynamicLexicalScope) {
         super(context, sourceSection);
         this.name = name;
         this.sharedMethodInfo = sharedMethodInfo;
         this.callTarget = callTarget;
         this.captureBlock = captureBlock;
+        this.dynamicLexicalScope = dynamicLexicalScope;
+        this.lexicalScopes = dynamicLexicalScope ? new ConcurrentHashMap<>() : null;
     }
 
     public InternalMethod createMethod(VirtualFrame frame, LexicalScope staticLexicalScope, DynamicObject module) {
@@ -57,12 +64,14 @@ public class ModuleBodyDefinitionNode extends RubyBaseNode {
 
     @TruffleBoundary
     private LexicalScope prepareLexicalScope(LexicalScope staticLexicalScope, LexicalScope parentLexicalScope, DynamicObject module) {
-        if (staticLexicalScope != null) {
+        if (!dynamicLexicalScope) {
             staticLexicalScope.unsafeSetLiveModule(module);
             Layouts.MODULE.getFields(staticLexicalScope.getParent().getLiveModule()).addLexicalDependent(module);
             return staticLexicalScope;
         } else {
-            return new LexicalScope(parentLexicalScope, module);
+            // Cache the scope per module in case the module body is run multiple times.
+            // This allows dynamic constant lookup to cache better.
+            return lexicalScopes.computeIfAbsent(module, m -> new LexicalScope(parentLexicalScope, module));
         }
     }
 

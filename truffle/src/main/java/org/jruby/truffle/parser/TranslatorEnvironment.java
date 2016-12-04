@@ -80,8 +80,21 @@ public class TranslatorEnvironment {
                 breakID, new FrameDescriptor(context.getCoreLibrary().getNilObject()));
     }
 
+    public boolean isDynamicConstantLookup() {
+        return parseEnvironment.isDynamicConstantLookup();
+    }
+
     public LexicalScope getLexicalScope() {
+        assert !isDynamicConstantLookup();
         return parseEnvironment.getLexicalScope();
+    }
+
+    public LexicalScope getLexicalScopeOrNull() {
+        if (isDynamicConstantLookup()) {
+            return null;
+        } else {
+            return parseEnvironment.getLexicalScope();
+        }
     }
 
     public LexicalScope pushLexicalScope() {
