@@ -9,6 +9,8 @@
  */
 package org.jruby.truffle.parser;
 
+import java.io.File;
+
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.control.BreakID;
@@ -21,8 +23,14 @@ public class ParseEnvironment {
 
     private LexicalScope lexicalScope = null;
     private boolean dynamicConstantLookup = false;
+    private final String corePath;
 
     public ParseEnvironment(RubyContext context) {
+        this.corePath = context.getCoreLibrary().getCoreLoadPath() + File.separator + "core" + File.separator;
+    }
+
+    public String getCorePath() {
+        return corePath;
     }
 
     public void resetLexicalScope(LexicalScope lexicalScope) {

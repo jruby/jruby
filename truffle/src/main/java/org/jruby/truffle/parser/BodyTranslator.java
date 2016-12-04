@@ -579,7 +579,7 @@ public class BodyTranslator extends Translator {
             }
         } else if (receiver instanceof VCallParseNode // undefined.equal?(obj)
                 && ((VCallParseNode) receiver).getName().equals("undefined")
-                && getSourcePath(sourceSection).startsWith(buildCorePath(""))
+                && getSourcePath(sourceSection).startsWith(corePath())
                 && methodName.equals("equal?")) {
             RubyNode argument = translateArgumentsAndBlock(sourceSection, null, node.getArgsNode(), methodName).getArguments()[0];
             final RubyNode ret = new IsRubiniusUndefinedNode(context, fullSourceSection, argument);
@@ -1202,16 +1202,8 @@ public class BodyTranslator extends Translator {
         return path;
     }
 
-    private String buildCorePath(String... components) {
-        final StringBuilder ret = new StringBuilder(context.getCoreLibrary().getCoreLoadPath());
-        ret.append(File.separatorChar).append("core");
-
-        for (String component : components) {
-            ret.append(File.separatorChar);
-            ret.append(component);
-        }
-
-        return ret.toString();
+    private String corePath() {
+        return environment.getParseEnvironment().getCorePath();
     }
 
     private String buildPartialPath(String... components) {
@@ -1240,7 +1232,7 @@ public class BodyTranslator extends Translator {
 
         final String name = ConstantReplacer.replacementName(fullSourceSection, node.getName());
 
-        if (name.equals("Rubinius") && getSourcePath(sourceSection).startsWith(buildCorePath(""))) {
+        if (name.equals("Rubinius") && getSourcePath(sourceSection).startsWith(corePath())) {
             final RubyNode ret = new Colon3ParseNode(node.getPosition(), name).accept(this);
             return addNewlineIfNeeded(node, ret);
         }
@@ -1709,7 +1701,7 @@ public class BodyTranslator extends Translator {
             return new UpdateLastBacktraceNode(context, fullSourceSection, rhs);
         }
 
-        final boolean inCore = getSourcePath(translate(node.getValueNode().getPosition())).startsWith(buildCorePath(""));
+        final boolean inCore = getSourcePath(translate(node.getValueNode().getPosition())).startsWith(corePath());
 
         if (!inCore && READ_ONLY_GLOBAL_VARIABLES.contains(name)) {
             return addNewlineIfNeeded(node, new WriteReadOnlyGlobalNode(context, fullSourceSection, name, rhs));
@@ -1793,7 +1785,7 @@ public class BodyTranslator extends Translator {
             }
 
             if (name.equals("$_")) {
-                if (getSourcePath(sourceSection).equals(buildCorePath("regexp.rb"))) {
+                if (getSourcePath(sourceSection).equals(corePath() + "regexp.rb")) {
                     readNode = new RubiniusLastStringReadNode(context, fullSourceSection);
                 } else {
                     readNode = new GetFromThreadLocalNode(context, fullSourceSection, readNode);
@@ -1906,7 +1898,7 @@ public class BodyTranslator extends Translator {
         final RubyNode self = new RaiseIfFrozenNode(context, fullSourceSection, new SelfNode(environment.getFrameDescriptor()));
 
         final String path = getSourcePath(sourceSection);
-        final String corePath = buildCorePath("");
+        final String corePath = corePath();
         final RubyNode ret;
         if (path.equals(corePath + "hash.rb")) {
             if (name.equals("@default")) {
@@ -1954,7 +1946,7 @@ public class BodyTranslator extends Translator {
         final SelfNode self = new SelfNode(environment.getFrameDescriptor());
 
         final String path = getSourcePath(sourceSection);
-        final String corePath = buildCorePath("");
+        final String corePath = corePath();
         final RubyNode ret;
         if (path.equals(corePath + "regexp.rb")) {
             if (name.equals("@source")) {
@@ -3155,7 +3147,7 @@ public class BodyTranslator extends Translator {
     @Override
     public RubyNode visitVCallNode(VCallParseNode node) {
         final RubySourceSection sourceSection = translate(node.getPosition());
-        if (node.getName().equals("undefined") && getSourcePath(sourceSection).startsWith(buildCorePath(""))) {
+        if (node.getName().equals("undefined") && getSourcePath(sourceSection).startsWith(corePath())) {
             final RubyNode ret = new ObjectLiteralNode(context, sourceSection.toSourceSection(source), context.getCoreLibrary().getRubiniusUndefined());
             return addNewlineIfNeeded(node, ret);
         }
