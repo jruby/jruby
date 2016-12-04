@@ -352,6 +352,13 @@ other-benchmarks: {
   timelimit: "00:40:00"
 }
 
+optcarrot-warmup: {
+  run: ${bench.setup} [
+    ${jt} [jt, benchmark, --stable, --elapsed, --time, "300", ../all-ruby-benchmarks/optcarrot/optcarrot.rb]
+  ]
+  timelimit: "00:40:00"
+}
+
 server-benchmarks: {
   packages: {
     "apache/ab": ">=2.3"
@@ -529,6 +536,7 @@ builds: [
   {name: ruby-benchmarks-server-graal-vm-release} ${common} ${graal-vm-release} ${bench-caps} ${jruby-truffle} ${server-benchmarks},
 
   {name: ruby-benchmarks-cext} ${common} ${daily-bench-caps} ${jruby-truffle-cexts} ${cext-benchmarks},
+  {name: ruby-benchmarks-optcarrot-warmup} ${common} ${graal-vm-release} ${daily-bench-caps} ${jruby-truffle} ${optcarrot-warmup},
 
   {name: ruby-deploy-binaries} ${common} ${gate-caps} ${deploy-binaries}
 ]
