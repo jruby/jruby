@@ -14,21 +14,26 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.kernel.TraceManager;
 import org.jruby.truffle.language.LexicalScope;
-import org.jruby.truffle.language.RubyBaseNode;
+import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.Visibility;
 import org.jruby.truffle.language.arguments.RubyArguments;
 
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.instrumentation.Instrumentable;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 
 /**
  * Define a method from a module body (module/class/class << self ... end).
  */
-public class ModuleBodyDefinitionNode extends RubyBaseNode {
+// This is @Instrumentable because the class event for set_trace_func must fire after
+// Class#inherited in RunModuleDefinitionNode.
+@Instrumentable(factory = ModuleBodyDefinitionNodeWrapper.class)
+public class ModuleBodyDefinitionNode extends RubyNode {
 
     private final String name;
     private final SharedMethodInfo sharedMethodInfo;
@@ -46,6 +51,10 @@ public class ModuleBodyDefinitionNode extends RubyBaseNode {
         this.captureBlock = captureBlock;
         this.dynamicLexicalScope = dynamicLexicalScope;
         this.lexicalScopes = dynamicLexicalScope ? new ConcurrentHashMap<>() : null;
+    }
+
+    public ModuleBodyDefinitionNode(ModuleBodyDefinitionNode node) {
+        this(node.getContext(), node.getSourceSection(), node.name, node.sharedMethodInfo, node.callTarget, node.captureBlock, node.dynamicLexicalScope);
     }
 
     public InternalMethod createMethod(VirtualFrame frame, LexicalScope staticLexicalScope, DynamicObject module) {
@@ -73,6 +82,21 @@ public class ModuleBodyDefinitionNode extends RubyBaseNode {
             // This allows dynamic constant lookup to cache better.
             return lexicalScopes.computeIfAbsent(module, m -> new LexicalScope(parentLexicalScope, module));
         }
+    }
+
+    @Override
+    public Object execute(VirtualFrame frame) {
+        // For the purpose of tracing in the right order
+        return nil();
+    }
+
+    @Override
+    protected boolean isTaggedWith(Class<?> tag) {
+        if (tag == TraceManager.ClassTag.class) {
+            return true;
+        }
+
+        return super.isTaggedWith(tag);
     }
 
 }
