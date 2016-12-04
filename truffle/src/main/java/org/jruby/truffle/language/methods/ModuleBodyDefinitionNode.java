@@ -73,9 +73,9 @@ public class ModuleBodyDefinitionNode extends RubyNode {
 
     @TruffleBoundary
     private LexicalScope prepareLexicalScope(LexicalScope staticLexicalScope, LexicalScope parentLexicalScope, DynamicObject module) {
+        staticLexicalScope.unsafeSetLiveModule(module);
+        Layouts.MODULE.getFields(staticLexicalScope.getParent().getLiveModule()).addLexicalDependent(module);
         if (!dynamicLexicalScope) {
-            staticLexicalScope.unsafeSetLiveModule(module);
-            Layouts.MODULE.getFields(staticLexicalScope.getParent().getLiveModule()).addLexicalDependent(module);
             return staticLexicalScope;
         } else {
             // Cache the scope per module in case the module body is run multiple times.

@@ -112,7 +112,7 @@ public abstract class SymbolNodes {
 
             final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(
                     sourceSection,
-                    null,
+                    method.getLexicalScope(),
                     Arity.AT_LEAST_ONE,
                     null,
                     Layouts.SYMBOL.getString(symbol),

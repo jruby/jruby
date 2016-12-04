@@ -38,7 +38,7 @@ public class ParseEnvironment {
     }
 
     public LexicalScope getLexicalScope() {
-        assert !dynamicConstantLookup;
+        // TODO (eregon, 4 Dec. 2016): assert !dynamicConstantLookup;
         return lexicalScope;
     }
 

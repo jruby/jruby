@@ -91,7 +91,8 @@ public class TranslatorEnvironment {
 
     public LexicalScope getLexicalScopeOrNull() {
         if (isDynamicConstantLookup()) {
-            return null;
+            // TODO (eregon, 4 Dec. 2016): we should return null here.
+            return parseEnvironment.getLexicalScope();
         } else {
             return parseEnvironment.getLexicalScope();
         }

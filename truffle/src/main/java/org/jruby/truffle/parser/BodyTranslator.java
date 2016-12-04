@@ -991,7 +991,7 @@ public class BodyTranslator extends Translator {
     private RubyNode openModule(RubySourceSection sourceSection, RubyNode defineOrGetNode, String name, ParseNode bodyNode, boolean sclass) {
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
-        LexicalScope newLexicalScope = environment.isDynamicConstantLookup() ? LexicalScope.NONE : environment.pushLexicalScope();
+        LexicalScope newLexicalScope = environment.pushLexicalScope();
         try {
             final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(
                     fullSourceSection,
@@ -1022,9 +1022,7 @@ public class BodyTranslator extends Translator {
 
             return new RunModuleDefinitionNode(context, fullSourceSection, newLexicalScope, definition, defineOrGetNode);
         } finally {
-            if (!environment.isDynamicConstantLookup()) {
-                environment.popLexicalScope();
-            }
+            environment.popLexicalScope();
         }
     }
 

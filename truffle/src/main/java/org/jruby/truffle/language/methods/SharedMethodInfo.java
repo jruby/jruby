@@ -49,6 +49,7 @@ public class SharedMethodInfo {
             argumentDescriptors = new ArgumentDescriptor[]{};
         }
 
+        assert lexicalScope != null;
         this.sourceSection = sourceSection;
         this.lexicalScope = lexicalScope;
         this.arity = arity;
