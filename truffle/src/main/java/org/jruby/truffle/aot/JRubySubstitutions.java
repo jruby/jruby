@@ -18,7 +18,6 @@ import org.jcodings.exception.InternalException;
 import org.joda.time.DateTimeZone;
 import org.jruby.truffle.RubyLanguage;
 import org.jruby.truffle.language.loader.SourceLoader;
-import org.jruby.truffle.util.SafePropertyAccessor;
 
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
@@ -28,12 +27,9 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.PrintStream;
-import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.text.DateFormatSymbols;
 import java.util.Locale;
-import java.util.Map;
 
 // Checkstyle: stop
 

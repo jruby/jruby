@@ -28,7 +28,6 @@
 package org.jruby.truffle.util;
 
 import org.jruby.util.ByteList;
-import org.jruby.truffle.util.SafeDoubleParser;
 
 public class ConvertDouble {
     /**

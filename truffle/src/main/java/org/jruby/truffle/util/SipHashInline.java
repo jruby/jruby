@@ -1,6 +1,5 @@
 package org.jruby.truffle.util;
 
-import org.jruby.truffle.util.UnsafeHolder;
 import sun.misc.Unsafe;
 
 import java.nio.ByteOrder;

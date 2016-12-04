@@ -35,10 +35,10 @@ import org.joni.Matcher;
 import org.jruby.truffle.util.ByteListHolder;
 import org.jruby.truffle.util.CodeRangeSupport;
 import org.jruby.truffle.util.CodeRangeable;
-import org.jruby.util.ByteList;
-import org.jruby.truffle.util.IntHashMap;
-import sun.misc.Unsafe;
 import org.jruby.truffle.util.EncodingUtils;
+import org.jruby.truffle.util.IntHashMap;
+import org.jruby.util.ByteList;
+import sun.misc.Unsafe;
 
 import java.util.ArrayList;
 import java.util.Arrays;

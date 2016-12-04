@@ -23,8 +23,8 @@ import com.oracle.truffle.api.dsl.Specialization;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.FormatNode;
 import org.jruby.truffle.core.format.printf.PrintfSimpleTreeBuilder;
-import org.jruby.util.ByteList;
 import org.jruby.truffle.util.Sprintf;
+import org.jruby.util.ByteList;
 
 import java.text.NumberFormat;
 import java.util.Locale;
