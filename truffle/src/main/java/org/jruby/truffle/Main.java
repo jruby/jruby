@@ -63,11 +63,9 @@ public class Main {
 
         final RubyInstanceConfig config = new RubyInstanceConfig(false);
         config.processArguments(args);
-        config.setCompileMode(org.jruby.RubyInstanceConfig.CompileMode.TRUFFLE);
 
         doShowVersion(config);
         doShowCopyright(config);
-        doPrintProperties(config);
 
         final int exitCode;
 
@@ -117,16 +115,9 @@ public class Main {
         System.exit(exitCode);
     }
 
-    private static void doPrintProperties(RubyInstanceConfig config) {
-        if (config.getShouldPrintProperties()) {
-            config.getOutput().print(OutputStrings.getPropertyHelp());
-        }
-    }
-
     private static void doPrintUsage(RubyInstanceConfig config, boolean force) {
         if (config.getShouldPrintUsage() || force) {
             config.getOutput().print(OutputStrings.getBasicUsageHelp());
-            config.getOutput().print(OutputStrings.getFeaturesHelp());
         }
     }
 

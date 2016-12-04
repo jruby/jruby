@@ -56,9 +56,9 @@ import org.jruby.util.ByteList;
 import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 
-import static org.jruby.util.StringSupport.CR_BROKEN;
-import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
-import static org.jruby.util.StringSupport.codeRangeScan;
+import static org.jruby.truffle.core.string.StringSupport.CR_BROKEN;
+import static org.jruby.truffle.core.string.StringSupport.EMPTY_STRING_ARRAY;
+import static org.jruby.truffle.core.string.StringSupport.codeRangeScan;
 
 public class ClassicRegexp implements ReOptions {
     private final RubyContext context;

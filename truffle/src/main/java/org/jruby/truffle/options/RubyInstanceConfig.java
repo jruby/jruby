@@ -65,7 +65,7 @@ public class RubyInstanceConfig {
         currentDirectory = isSecurityRestricted ? "/" : getFileProperty("user.dir");
 
         if (isSecurityRestricted) {
-            compileMode = org.jruby.RubyInstanceConfig.CompileMode.OFF;
+            //
         } else {
             if (COMPILE_EXCLUDE != null) {
                 excludedMethods.addAll(StringSupport.split(COMPILE_EXCLUDE, ','));
@@ -286,10 +286,6 @@ public class RubyInstanceConfig {
             jrubyHome = calculateJRubyHome();
         }
         return jrubyHome;
-    }
-
-    public void setCompileMode(org.jruby.RubyInstanceConfig.CompileMode compileMode) {
-        this.compileMode = compileMode;
     }
 
     public void setInput(InputStream newInput) {
@@ -589,7 +585,6 @@ public class RubyInstanceConfig {
     private PrintStream output         = System.out;
     private PrintStream error          = System.err;
 
-    private org.jruby.RubyInstanceConfig.CompileMode compileMode = org.jruby.RubyInstanceConfig.CompileMode.OFF;
     private String currentDirectory;
 
     /** Environment variables; defaults to System.getenv() in constructor */
@@ -677,16 +672,6 @@ public class RubyInstanceConfig {
     @Deprecated
     public String getBasicUsageHelp() {
         return OutputStrings.getBasicUsageHelp();
-    }
-
-    @Deprecated
-    public String getExtendedHelp() {
-        return OutputStrings.getExtendedHelp();
-    }
-
-    @Deprecated
-    public String getPropertyHelp() {
-        return OutputStrings.getPropertyHelp();
     }
 
     @Deprecated

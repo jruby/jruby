@@ -129,17 +129,7 @@ public class TranslatorDriver {
 
         RootParseNode node;
 
-        try {
-            node = (RootParseNode) parser.parse(source.getName(), source.getCode().getBytes(StandardCharsets.UTF_8), dynamicScope, parserConfiguration);
-        } catch (org.jruby.exceptions.RaiseException e) {
-            String message = e.getException().getMessage().asJavaString();
-
-            if (message == null) {
-                message = "(no message)";
-            }
-
-            throw new RaiseException(context.getCoreExceptions().syntaxError(message, currentNode));
-        }
+        node = (RootParseNode) parser.parse(source.getName(), source.getCode().getBytes(StandardCharsets.UTF_8), dynamicScope, parserConfiguration);
 
         final SourceSection sourceSection = source.createSection(0, source.getCode().length());
         final RubySourceSection rubySourceSection = new RubySourceSection(sourceSection);

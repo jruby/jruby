@@ -25,7 +25,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.options;
 
-import com.headius.options.Option;
 import org.jruby.truffle.util.Constants;
 import org.jruby.truffle.util.Platform;
 import org.jruby.truffle.util.SafePropertyAccessor;
@@ -100,50 +99,10 @@ public class OutputStrings {
         return sb.toString();
     }
 
-    public static String getFeaturesHelp() { return
-        "Features:\n" +
-        "  gems                   rubygems (default: " + (org.jruby.util.cli.Options.CLI_RUBYGEMS_ENABLE.defaultValue() ? "enabled" : "disabled") + ")\n" +
-        "  did_you_mean           did_you_mean (default: " + (org.jruby.util.cli.Options.CLI_DID_YOU_MEAN_ENABLE.defaultValue() ? "enabled" : "disabled") + ")\n" +
-        "  rubyopt                RUBYOPT environment variable (default: " + (org.jruby.util.cli.Options.CLI_RUBYOPT_ENABLE.defaultValue() ? "enabled" : "disabled") + ")\n" +
-        "  frozen-string-literal  freeze all string literals (default: disabled)\n" ;
-    }
-
-    public static String getExtendedHelp() { return
-        "Extended options:\n" +
-        "  -X-O          run with ObjectSpace disabled (default; improves performance)\n" +
-        "  -X+O          run with ObjectSpace enabled (reduces performance)\n" +
-        "  -X-C          disable all compilation\n" +
-        "  -X-CIR        disable all compilation and use IR runtime\n" +
-        "  -X+C          force compilation of all scripts before they are run (except eval)\n" +
-        "  -X+CIR        force compilation and use IR runtime\n" +
-        "  -X+JIR        JIT compilation and use IR runtime\n" +
-        "  -X+T          use Truffle (-X+TM use Truffle's entry point)\n" +
-        "  -Xclassic     don't use Truffle, reversing the -X+T option\n" +
-        "  -Xsubstring?  list options that contain substring in their name\n" +
-        "  -Xprefix...   list options that are prefixed wtih prefix\n" ;
-    }
-
-    public static String getPropertyHelp() {
-        StringBuilder sb = new StringBuilder();
-
-        sb
-                .append("# These properties can be used to alter runtime behavior for perf or compatibility.\n")
-                .append("# Specify them by passing -X<property>=<value>\n")
-                .append("#   or if passing directly to Java, -Djruby.<property>=<value>\n")
-                .append("#   or put <property>=<value> in .jrubyrc\n")
-                .append("#\n")
-                .append("# This dump is a valid .jrubyrc file of current settings. Uncomment and modify\n")
-                .append("# settings to customize.\n");
-
-        sb.append(Option.formatOptions(org.jruby.util.cli.Options.PROPERTIES));
-
-        return sb.toString();
-    }
-
     public static String getVersionString() {
         return String.format(
             "jruby%s %s (%s) %s %s %s %s on %s%s%s [%s-%s]",
-                org.jruby.util.cli.Options.COMPILE_MODE.load().isTruffle() ? "+truffle" : "",
+                "+truffle",
                 Constants.VERSION,
                 Constants.RUBY_VERSION,
                 Constants.COMPILE_DATE,
@@ -151,7 +110,7 @@ public class OutputStrings {
                 SafePropertyAccessor.getProperty("java.vm.name", "Unknown JVM"),
                 SafePropertyAccessor.getProperty("java.vm.version", "Unknown JVM version"),
                 SafePropertyAccessor.getProperty("java.runtime.version", SafePropertyAccessor.getProperty("java.version", "Unknown version")),
-                org.jruby.util.cli.Options.COMPILE_INVOKEDYNAMIC.load() ? " +indy" : "",
+                "",
                 "",
                 Platform.getOSName(),
                 Platform.getArchitecture()

@@ -152,7 +152,7 @@ import java.util.concurrent.Future;
 
 public class CoreLibrary {
 
-    private static final String CLI_RECORD_SEPARATOR = org.jruby.util.cli.Options.CLI_RECORD_SEPARATOR.load();
+    private static final String CLI_RECORD_SEPARATOR = "\n";
 
     private static final Property ALWAYS_FROZEN_PROPERTY = Property.create(Layouts.FROZEN_IDENTIFIER, Layout.createLayout().createAllocator().constantLocation(true), 0);
 

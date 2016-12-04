@@ -384,23 +384,18 @@ public class ArgumentProcessor {
                             throw new UnsupportedOperationException();
                         }
                     } else if (extendedOption.equals("-C") || extendedOption.equals("-CIR")) {
-                        config.setCompileMode(org.jruby.RubyInstanceConfig.CompileMode.OFF);
+                        throw new UnsupportedOperationException();
                     } else if (extendedOption.equals("+C") || extendedOption.equals("+CIR")) {
-                        config.setCompileMode(org.jruby.RubyInstanceConfig.CompileMode.FORCE);
+                        throw new UnsupportedOperationException();
                     } else if (extendedOption.equals("classic")) {
                         //throw new MainExitException(0, "jruby: the -Xclassic option should have been handled in the launcher");
                         throw new UnsupportedOperationException();
                     } else if (extendedOption.equals("+T") || extendedOption.equals("+TM")) {
-                        org.jruby.util.cli.Options.PARSER_WARN_GROUPED_EXPRESSIONS.force(Boolean.FALSE.toString());
-                        config.setCompileMode(org.jruby.RubyInstanceConfig.CompileMode.TRUFFLE);
-                        // Make the static option consistent with the compile mode.
-                        org.jruby.util.cli.Options.COMPILE_MODE.force("TRUFFLE");
+                        // Nothing
                     } else if (extendedOption.endsWith("...")) {
-                        org.jruby.util.cli.Options.listPrefix(extendedOption.substring(0, extendedOption.length() - "...".length()));
-                        config.setShouldRunInterpreter(false);
+                        throw new UnsupportedOperationException();
                     } else if (extendedOption.endsWith("?")) {
-                        org.jruby.util.cli.Options.listContains(extendedOption.substring(0, extendedOption.length() - 1));
-                        config.setShouldRunInterpreter(false);
+                        throw new UnsupportedOperationException();
                     } else {
                         //MainExitException mee = new MainExitException(1, "jruby: invalid extended option " + extendedOption + " (-X will list valid options)\n");
                         //mee.setUsageError(true);
@@ -451,8 +446,7 @@ public class ArgumentProcessor {
                         config.setShowBytecode(true);
                         break FOR;
                     } else if (argument.equals("--fast")) {
-                        config.setCompileMode(org.jruby.RubyInstanceConfig.CompileMode.FORCE);
-                        break FOR;
+                        throw new UnsupportedOperationException();
                     } else if (argument.startsWith("--profile")) {
                         throw new UnsupportedOperationException();
                     } else if (VERSION_FLAG.matcher(argument).matches()) {
@@ -512,10 +506,7 @@ public class ArgumentProcessor {
                         }
                         break;
                     } else if (argument.equals("--dev")) {
-                        // most we can do after JVM boot
-                        org.jruby.util.cli.Options.COMPILE_INVOKEDYNAMIC.force("false");
-                        config.setCompileMode(org.jruby.RubyInstanceConfig.CompileMode.OFF);
-                        break FOR;
+                        throw new UnsupportedOperationException();
                     } else if (argument.equals("--server")) {
                         // ignore this...can't do anything with it after boot
                         break FOR;
@@ -691,7 +682,7 @@ public class ArgumentProcessor {
         return null;
     }
 
-    private static final Set<String> KNOWN_PROPERTIES = new HashSet<>(org.jruby.util.cli.Options.PROPERTIES.size() + 16, 1);
+    private static final Set<String> KNOWN_PROPERTIES = new HashSet<>(16, 1);
 
     static {
         //Options.addPropertyNames(KNOWN_PROPERTIES);

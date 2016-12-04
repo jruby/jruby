@@ -37,6 +37,7 @@ import org.jruby.truffle.util.CodeRangeSupport;
 import org.jruby.truffle.util.CodeRangeable;
 import org.jruby.truffle.util.EncodingUtils;
 import org.jruby.truffle.util.IntHashMap;
+import org.jruby.truffle.util.UnsafeHolder;
 import org.jruby.util.ByteList;
 import sun.misc.Unsafe;
 
@@ -65,7 +66,7 @@ public final class StringSupport {
 
     static final int ARRAY_BYTE_BASE_OFFSET;
     static {
-        final Unsafe unsafe = org.jruby.util.unsafe.UnsafeHolder.U;
+        final Unsafe unsafe = UnsafeHolder.U;
         ARRAY_BYTE_BASE_OFFSET = unsafe != null ? unsafe.arrayBaseOffset(byte[].class) : 0;
     }
 
@@ -286,7 +287,7 @@ public final class StringSupport {
                 while (p < ep) {
                     if ((bytes[p++] & 0xc0 /*utf8 lead byte*/) != 0x80) len++;
                 }
-                final Unsafe unsafe = org.jruby.util.unsafe.UnsafeHolder.U;
+                final Unsafe unsafe = UnsafeHolder.U;
                 int eend = ~LOWBITS & end;
                 while (p < eend) {
                     len += countUtf8LeadBytes(unsafe.getLong(bytes, (long) (ARRAY_BYTE_BASE_OFFSET + p)));
