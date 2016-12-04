@@ -66,9 +66,8 @@ import org.jruby.truffle.parser.ast.StrParseNode;
 import org.jruby.truffle.parser.parser.ParserSupport;
 import org.jruby.truffle.parser.parser.RubyParser;
 import org.jruby.truffle.parser.parser.Tokens;
+import org.jruby.truffle.util.SafeDoubleParser;
 import org.jruby.util.ByteList;
-import org.jruby.util.SafeDoubleParser;
-import org.jruby.util.cli.Options;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -665,7 +664,7 @@ public class RubyLexer extends LexingCommon {
     }
 
     private boolean arg_ambiguous() {
-        if (warnings.isVerbose() && Options.PARSER_WARN_AMBIGUOUS_ARGUMENTS.load() && !parserSupport.skipTruffleRubiniusWarnings(this)) {
+        if (warnings.isVerbose() && !parserSupport.skipTruffleRubiniusWarnings(this)) {
             warnings.warning(RubyWarnings.ID.AMBIGUOUS_ARGUMENT, getPosition().getFile(), getPosition().getLine(), "Ambiguous first argument; make sure.");
         }
         return true;
@@ -1104,7 +1103,7 @@ public class RubyLexer extends LexingCommon {
         //a wrong position if the "inclusive" flag is not set.
         ISourcePosition tmpPosition = getPosition();
         if (isSpaceArg(c, spaceSeen)) {
-            if (warnings.isVerbose() && Options.PARSER_WARN_ARGUMENT_PREFIX.load())
+            if (warnings.isVerbose())
                 warnings.warning(RubyWarnings.ID.ARGUMENT_AS_PREFIX, tmpPosition.getFile(), tmpPosition.getLine(), "`&' interpreted as argument prefix");
             c = Tokens.tAMPER;
         } else if (isBEG()) {
@@ -2083,7 +2082,7 @@ public class RubyLexer extends LexingCommon {
             yaccValue = "**";
 
             if (isSpaceArg(c, spaceSeen)) {
-                if (warnings.isVerbose() && Options.PARSER_WARN_ARGUMENT_PREFIX.load())
+                if (warnings.isVerbose())
                     warnings.warning(RubyWarnings.ID.ARGUMENT_AS_PREFIX, getPosition().getFile(), getPosition().getLine(), "`**' interpreted as argument prefix");
                 c = Tokens.tDSTAR;
             } else if (isBEG()) {
@@ -2100,7 +2099,7 @@ public class RubyLexer extends LexingCommon {
         default:
             pushback(c);
             if (isSpaceArg(c, spaceSeen)) {
-                if (warnings.isVerbose() && Options.PARSER_WARN_ARGUMENT_PREFIX.load() && !parserSupport.skipTruffleRubiniusWarnings(this))
+                if (warnings.isVerbose() && !parserSupport.skipTruffleRubiniusWarnings(this))
                     warnings.warning(RubyWarnings.ID.ARGUMENT_AS_PREFIX, getPosition().getFile(), getPosition().getLine(), "`*' interpreted as argument prefix");
                 c = Tokens.tSTAR;
             } else if (isBEG()) {

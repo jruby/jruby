@@ -49,10 +49,8 @@ import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodNode;
 import org.jruby.truffle.builtins.YieldingCoreMethodNode;
 import org.jruby.truffle.core.string.StringOperations;
-import org.jruby.util.unsafe.UnsafeHolder;
+import org.jruby.truffle.util.UnsafeHolder;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Set;
 
 @CoreClass("Truffle::System")

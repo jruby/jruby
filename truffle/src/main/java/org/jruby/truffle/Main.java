@@ -48,7 +48,7 @@ import com.oracle.truffle.api.TruffleOptions;
 import org.jruby.truffle.options.OptionsBuilder;
 import org.jruby.truffle.options.OptionsCatalog;
 import org.jruby.truffle.options.RubyInstanceConfig;
-import org.jruby.util.cli.OutputStrings;
+import org.jruby.truffle.options.OutputStrings;
 
 import java.io.InputStream;
 import java.lang.management.ManagementFactory;

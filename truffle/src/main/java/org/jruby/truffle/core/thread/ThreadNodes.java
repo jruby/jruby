@@ -72,7 +72,7 @@ import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.ReadObjectFieldNode;
 import org.jruby.truffle.language.objects.ReadObjectFieldNodeGen;
 import org.jruby.truffle.platform.UnsafeGroup;
-import org.jruby.util.Memo;
+import org.jruby.truffle.util.Memo;
 
 import java.util.ArrayList;
 import java.util.concurrent.CountDownLatch;

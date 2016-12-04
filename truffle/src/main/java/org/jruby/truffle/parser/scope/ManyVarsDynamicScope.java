@@ -26,9 +26,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.scope;
 
-
-import org.jruby.util.ArraySupport;
-
 /**
  * Represents the the dynamic portion of scoping information.  The variableValues are the
  * values of assigned local or block variables.  The staticScope identifies which sort of
@@ -205,11 +202,21 @@ public class ManyVarsDynamicScope extends DynamicScope {
             Object values[] = new Object[staticScope.getNumberOfVariables()];
             
             if (dynamicSize > 0) {
-                ArraySupport.copy(variableValues, 0, values, 0, dynamicSize);
+                copy(variableValues, 0, values, 0, dynamicSize);
             }
             
             variableValues = values;
         }
+    }
+
+    public static void copy(Object[] src, int srcOff, Object[] dst, int dstOff, final int length) {
+        switch (length) {
+            case 0: return;
+            case 1: dst[dstOff] = src[srcOff]; return;
+            case 2: dst[dstOff] = src[srcOff]; dst[++dstOff] = src[srcOff + 1]; return;
+            case 3: dst[dstOff] = src[srcOff]; dst[++dstOff] = src[srcOff + 1]; dst[++dstOff] = src[srcOff + 2]; return;
+        }
+        System.arraycopy(src, srcOff, dst, dstOff, length);
     }
 
     private void assertGetValue(int offset, int depth) {

@@ -29,10 +29,9 @@
 package org.jruby.truffle.options;
 
 import org.jruby.truffle.core.string.StringSupport;
+import org.jruby.truffle.util.SafePropertyAccessor;
 import org.jruby.util.FileResource;
 import org.jruby.util.JRubyFile;
-import org.jruby.util.SafePropertyAccessor;
-import org.jruby.util.func.Function2;
 
 import java.io.File;
 import java.io.IOException;
@@ -43,6 +42,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiFunction;
 import java.util.regex.Pattern;
 
 /**
@@ -543,7 +543,7 @@ public class ArgumentProcessor {
     }
 
     private void enableDisableFeature(String name, boolean enable) {
-        Function2<Boolean, ArgumentProcessor, Boolean> feature = FEATURES.get(name);
+        BiFunction<ArgumentProcessor, Boolean, Boolean> feature = FEATURES.get(name);
 
         if (feature == null) {
             config.getError().println("warning: unknown argument for --" + (enable ? "enable" : "disable") + ": `" + name + "'");
@@ -740,35 +740,35 @@ public class ArgumentProcessor {
         return false;
     }
 
-    private static final Map<String, Function2<Boolean, ArgumentProcessor, Boolean>> FEATURES;
+    private static final Map<String, BiFunction<ArgumentProcessor, Boolean, Boolean>> FEATURES;
 
     static {
-        Map<String, Function2<Boolean, ArgumentProcessor, Boolean>> features = new HashMap<>(12, 1);
-        Function2<Boolean, ArgumentProcessor, Boolean> function2;
+        Map<String, BiFunction<ArgumentProcessor, Boolean, Boolean>> features = new HashMap<>(12, 1);
+        BiFunction<ArgumentProcessor, Boolean, Boolean> function2;
 
-        features.put("all", new Function2<Boolean, ArgumentProcessor, Boolean>() {
+        features.put("all", new BiFunction<ArgumentProcessor, Boolean, Boolean>() {
             public Boolean apply(ArgumentProcessor processor, Boolean enable) {
                 // disable all features
-                for (Map.Entry<String, Function2<Boolean, ArgumentProcessor, Boolean>> entry : FEATURES.entrySet()) {
+                for (Map.Entry<String, BiFunction<ArgumentProcessor, Boolean, Boolean>> entry : FEATURES.entrySet()) {
                     if (entry.getKey().equals("all")) continue; // skip self
                     entry.getValue().apply(processor, enable);
                 }
                 return true;
             }
         });
-        features.put("gem", new Function2<Boolean, ArgumentProcessor, Boolean>() {
+        features.put("gem", new BiFunction<ArgumentProcessor, Boolean, Boolean>() {
             public Boolean apply(ArgumentProcessor processor, Boolean enable) {
                 processor.config.setDisableGems(!enable);
                 return true;
             }
         });
-        features.put("gems", new Function2<Boolean, ArgumentProcessor, Boolean>() {
+        features.put("gems", new BiFunction<ArgumentProcessor, Boolean, Boolean>() {
             public Boolean apply(ArgumentProcessor processor, Boolean enable) {
                 processor.config.setDisableGems(!enable);
                 return true;
             }
         });
-        features.put("frozen-string-literal", function2 = new Function2<Boolean, ArgumentProcessor, Boolean>() {
+        features.put("frozen-string-literal", function2 = new BiFunction<ArgumentProcessor, Boolean, Boolean>() {
             public Boolean apply(ArgumentProcessor processor, Boolean enable) {
                 processor.config.setFrozenStringLiteral(enable);
                 return true;

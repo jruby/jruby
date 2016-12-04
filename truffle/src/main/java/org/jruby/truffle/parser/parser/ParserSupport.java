@@ -131,7 +131,6 @@ import org.jruby.truffle.parser.lexer.SyntaxException.PID;
 import org.jruby.truffle.parser.scope.DynamicScope;
 import org.jruby.truffle.parser.scope.StaticScope;
 import org.jruby.util.ByteList;
-import org.jruby.util.cli.Options;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -318,7 +317,7 @@ public class ParserSupport {
             head = new BlockParseNode(head.getPosition()).add(head);
         }
 
-        if (warnings.isVerbose() && isBreakStatement(((ListParseNode) head).getLast()) && Options.PARSER_WARN_NOT_REACHED.load()) {
+        if (warnings.isVerbose() && isBreakStatement(((ListParseNode) head).getLast())) {
             warnings.warning(RubyWarnings.ID.STATEMENT_NOT_REACHED, tail.getPosition().getFile(), tail.getPosition().getLine(), "statement not reached");
         }
 
@@ -546,9 +545,7 @@ public class ParserSupport {
     }
 
     private void handleUselessWarn(ParseNode node, String useless) {
-        if (Options.PARSER_WARN_USELESSS_USE_OF.load()) {
-            warnings.warn(RubyWarnings.ID.USELESS_EXPRESSION, node.getPosition().getFile(), node.getPosition().getLine(), "Useless use of " + useless + " in void context.");
-        }
+        warnings.warn(RubyWarnings.ID.USELESS_EXPRESSION, node.getPosition().getFile(), node.getPosition().getLine(), "Useless use of " + useless + " in void context.");
     }
 
     /**
@@ -708,10 +705,7 @@ public class ParserSupport {
                     dotNode.isExclusive(), slot);
         }
         case REGEXPNODE:
-            if (Options.PARSER_WARN_REGEX_CONDITION.load()) {
-                warningUnlessEOption(RubyWarnings.ID.REGEXP_LITERAL_IN_CONDITION, node, "regex literal in condition");
-            }
-
+            warningUnlessEOption(RubyWarnings.ID.REGEXP_LITERAL_IN_CONDITION, node, "regex literal in condition");
             return new MatchParseNode(node.getPosition(), node);
         }
 
@@ -1319,7 +1313,6 @@ public class ParserSupport {
             if (current.exists(name) >= 0) yyerror("duplicated argument name");
 
             if (warnings.isVerbose() && current.isDefined(name) >= 0 &&
-                    Options.PARSER_WARN_LOCAL_SHADOWING.load() &&
                     !skipTruffleRubiniusWarnings(lexer)) {
 
                 warnings.warning(RubyWarnings.ID.STATEMENT_NOT_REACHED, lexer.getPosition().getFile(), lexer.getPosition().getLine(),

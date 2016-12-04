@@ -18,7 +18,7 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.FormatNode;
 import org.jruby.truffle.core.format.exceptions.NoImplicitConversionException;
 import org.jruby.util.ByteList;
-import org.jruby.util.Pack;
+import org.jruby.truffle.util.Pack;
 
 @NodeChildren({
         @NodeChild(value = "value", type = FormatNode.class),

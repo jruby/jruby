@@ -28,8 +28,7 @@ package org.jruby.truffle.options;
 import com.headius.options.Option;
 import org.jruby.truffle.util.Constants;
 import org.jruby.truffle.util.Platform;
-import org.jruby.util.SafePropertyAccessor;
-import org.jruby.util.cli.Options;
+import org.jruby.truffle.util.SafePropertyAccessor;
 
 /**
  * Utility methods to generate the command-line output strings for help,
@@ -153,7 +152,7 @@ public class OutputStrings {
                 SafePropertyAccessor.getProperty("java.vm.version", "Unknown JVM version"),
                 SafePropertyAccessor.getProperty("java.runtime.version", SafePropertyAccessor.getProperty("java.version", "Unknown version")),
                 org.jruby.util.cli.Options.COMPILE_INVOKEDYNAMIC.load() ? " +indy" : "",
-                Options.COMPILE_MODE.load().shouldJIT() ? " +jit" : "",
+                "truffle",
                 Platform.getOSName(),
                 Platform.getArchitecture()
         );

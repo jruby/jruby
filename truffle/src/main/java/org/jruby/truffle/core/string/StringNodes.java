@@ -145,10 +145,10 @@ import org.jruby.truffle.language.objects.IsTaintedNodeGen;
 import org.jruby.truffle.language.objects.TaintNode;
 import org.jruby.truffle.language.objects.TaintNodeGen;
 import org.jruby.truffle.platform.posix.TrufflePosix;
+import org.jruby.truffle.util.CodeRangeable;
 import org.jruby.truffle.util.StringUtils;
 import org.jruby.util.ByteList;
-import org.jruby.util.CodeRangeable;
-import org.jruby.util.ConvertDouble;
+import org.jruby.truffle.util.ConvertDouble;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;

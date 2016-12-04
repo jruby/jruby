@@ -36,6 +36,7 @@ import org.jcodings.specific.UTF32LEEncoding;
 import org.jcodings.transcode.EConv;
 import org.jcodings.transcode.EConvFlags;
 import org.jcodings.unicode.UnicodeEncoding;
+import org.jruby.truffle.core.string.StringSupport;
 import org.jruby.util.ByteList;
 
 import java.util.ArrayList;
@@ -241,6 +242,57 @@ public class EncodingUtils {
             }
         }
         return enc;
+    }
+
+    // rb_enc_ascget
+    public static int encAscget(byte[] pBytes, int p, int e, int[] len, Encoding enc) {
+        int c;
+        int l;
+
+        if (e <= p) {
+            return -1;
+        }
+
+        if (encAsciicompat(enc)) {
+            c = pBytes[p] & 0xFF;
+            if (!Encoding.isAscii((byte)c)) {
+                return -1;
+            }
+            if (len != null) len[0] = 1;
+            return c;
+        }
+        l = StringSupport.preciseLength(enc, pBytes, p, e);
+        if (!StringSupport.MBCLEN_CHARFOUND_P(l)) {
+            return -1;
+        }
+        c = enc.mbcToCode(pBytes, p, e);
+        if (!Encoding.isAscii(c)) {
+            return -1;
+        }
+        if (len != null) len[0] = l;
+        return c;
+    }
+
+    // rb_enc_codepoint_len
+    public static int encCodepointLength(byte[] pBytes, int p, int e, int[] len_p, Encoding enc) {
+        int r;
+        if (e <= p)
+            throw new IllegalArgumentException("empty string");
+        r = StringSupport.preciseLength(enc, pBytes, p, e);
+        if (!StringSupport.MBCLEN_CHARFOUND_P(r)) {
+            throw new IllegalArgumentException("invalid byte sequence in " + enc);
+        }
+        if (len_p != null) len_p[0] = StringSupport.MBCLEN_CHARFOUND_LEN(r);
+        return StringSupport.codePoint(enc, pBytes, p, e);
+    }
+
+    // rb_enc_mbcput
+    public static void encMbcput(int c, byte[] buf, int p, Encoding enc) {
+        enc.codeToMbc(c, buf, p);
+    }
+
+    public static Encoding STR_ENC_GET(ByteListHolder str) {
+        return getEncoding(str.getByteList());
     }
 
 }

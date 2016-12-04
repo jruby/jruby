@@ -9,14 +9,12 @@
  */
 package org.jruby.truffle.core;
 
-import org.jruby.util.cli.Options;
-
 import java.util.Random;
 
 public class Hashing {
 
-    private static final boolean SIPHASH_ENABLED = Options.SIPHASH_ENABLED.load();
-    private static final boolean CONSISTENT_HASHING_ENABLED = Options.CONSISTENT_HASHING.load();
+    private static final boolean SIPHASH_ENABLED = false;
+    private static final boolean CONSISTENT_HASHING_ENABLED = false;
 
     private static final int MURMUR2_MAGIC = 0x5bd1e995;
 

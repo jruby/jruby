@@ -18,7 +18,7 @@ import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
-import org.jruby.util.Memo;
+import org.jruby.truffle.util.Memo;
 
 @CoreClass("Truffle::Binding")
 public abstract class TruffleBindingNodes {

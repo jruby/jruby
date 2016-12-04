@@ -32,14 +32,13 @@ import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.util.IntHash;
 import org.joni.Matcher;
+import org.jruby.truffle.util.ByteListHolder;
+import org.jruby.truffle.util.CodeRangeSupport;
+import org.jruby.truffle.util.CodeRangeable;
 import org.jruby.util.ByteList;
-import org.jruby.util.ByteListHolder;
-import org.jruby.util.CodeRangeSupport;
-import org.jruby.util.CodeRangeable;
-import org.jruby.util.Sprintf;
-import org.jruby.util.collections.IntHashMap;
-import org.jruby.util.io.EncodingUtils;
+import org.jruby.truffle.util.IntHashMap;
 import sun.misc.Unsafe;
+import org.jruby.truffle.util.EncodingUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -47,7 +46,6 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.jcodings.Encoding.CHAR_INVALID;
-import static org.jruby.RubyEnumerator.enumeratorize;
 
 public final class StringSupport {
     public static final int CR_7BIT_F    = 16;

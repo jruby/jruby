@@ -27,8 +27,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.util;
 
-import org.jruby.util.SafePropertyAccessor;
-
 import java.nio.ByteOrder;
 import java.util.HashMap;
 import java.util.Map;
