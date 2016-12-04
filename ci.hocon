@@ -354,7 +354,7 @@ other-benchmarks: {
 
 optcarrot-warmup: {
   run: ${bench.setup} [
-    ${jt} [jt, benchmark, --stable, --elapsed, --time, "300", ../all-ruby-benchmarks/optcarrot/optcarrot.rb]
+    ${jt} [benchmark, --stable, --elapsed, --time, "300", ../all-ruby-benchmarks/optcarrot/optcarrot.rb]
   ]
   timelimit: "00:40:00"
 }
