@@ -30,8 +30,6 @@ package org.jruby.truffle.options;
 
 import org.jruby.truffle.core.string.StringSupport;
 import org.jruby.truffle.util.SafePropertyAccessor;
-import org.jruby.util.FileResource;
-import org.jruby.util.JRubyFile;
 
 import java.io.File;
 import java.io.IOException;
@@ -611,7 +609,7 @@ public class ArgumentProcessor {
         if (RubyInstanceConfig.DEBUG_SCRIPT_RESOLUTION) {
             config.getError().println("Trying path: " + path);
         }
-        try {
+        /*try {
             FileResource fullName = JRubyFile.createRestrictedResource(path, scriptName);
             if (fullName.exists() && fullName.isFile()) {
                 if (RubyInstanceConfig.DEBUG_SCRIPT_RESOLUTION) {
@@ -621,7 +619,7 @@ public class ArgumentProcessor {
             }
         } catch (Exception e) {
             // keep going
-        }
+        }*/
         return null;
     }
 

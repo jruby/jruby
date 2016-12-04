@@ -31,12 +31,7 @@ package org.jruby.truffle.options;
 import jnr.posix.util.Platform;
 import org.jruby.truffle.core.string.StringSupport;
 import org.jruby.truffle.language.control.JavaException;
-import org.jruby.util.ClasspathLauncher;
-import org.jruby.util.FileResource;
-import org.jruby.util.InputStreamMarkCursor;
-import org.jruby.util.JRubyFile;
 import org.jruby.truffle.util.SafePropertyAccessor;
-import org.jruby.util.cli.Options;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
@@ -67,7 +62,7 @@ public class RubyInstanceConfig {
 
     public RubyInstanceConfig(boolean isSecurityRestricted) {
         this.isSecurityRestricted = isSecurityRestricted;
-        currentDirectory = isSecurityRestricted ? "/" : JRubyFile.getFileProperty("user.dir");
+        currentDirectory = isSecurityRestricted ? "/" : getFileProperty("user.dir");
 
         if (isSecurityRestricted) {
             compileMode = org.jruby.RubyInstanceConfig.CompileMode.OFF;
@@ -77,6 +72,17 @@ public class RubyInstanceConfig {
             }
         }
         initEnvironment();
+    }
+
+    public static String getFileProperty(String property) {
+        return normalizeSeps(SafePropertyAccessor.getProperty(property, "/"));
+    }
+
+    public static String normalizeSeps(String path) {
+        if (Platform.IS_WINDOWS) {
+            return path.replace(File.separatorChar, '/');
+        }
+        return path;
     }
 
     private void initEnvironment() {
@@ -112,25 +118,6 @@ public class RubyInstanceConfig {
         if (rubyoptArgs.length != 0) {
             new ArgumentProcessor(rubyoptArgs, false, true, true, this).processArguments();
         }
-    }
-
-    // This method does not work like previous version in verifying it is
-    // a Ruby shebang line.  Looking for ruby before \n is possible to add,
-    // but I wanted to keep this short.
-    private boolean isShebang(InputStreamMarkCursor cursor) throws IOException {
-        if (cursor.read() == '#') {
-            int c = cursor.read();
-            if (c == '!') {
-                cursor.endPoint(-2);
-                return true;
-            } else if (c == '\n') {
-                cursor.rewind();
-            }
-        } else {
-            cursor.rewind();
-        }
-
-        return false;
     }
 
     private static final Pattern RUBY_SHEBANG = Pattern.compile("#!.*ruby.*");
@@ -181,7 +168,7 @@ public class RubyInstanceConfig {
             catch (IOException e) {} // just let newJRubyHome stay the way it is if this fails
         }
 
-        return newJRubyHome == null ? null : JRubyFile.normalizeSeps(newJRubyHome);
+        return newJRubyHome == null ? null : normalizeSeps(newJRubyHome);
     }
 
     // We require the home directory to be absolute
@@ -232,7 +219,7 @@ public class RubyInstanceConfig {
                 return getInput();
             } else {
                 final String script = getScriptFileName();
-                FileResource resource = JRubyFile.createRestrictedResource(getCurrentDirectory(), getScriptFileName());
+                /*FileResource resource = JRubyFile.createRestrictedResource(getCurrentDirectory(), getScriptFileName());
                 if (resource != null && resource.exists()) {
                     if (resource.canRead() && !resource.isDirectory()) {
                         if (isXFlag()) {
@@ -246,9 +233,9 @@ public class RubyInstanceConfig {
                         throw new FileNotFoundException(script + " (Not a file)");
                     }
                 }
-                else {
+                else {*/
                     throw new FileNotFoundException(script + " (No such file or directory)");
-                }
+                //}
             }
         } catch (IOException e) {
             throw new JavaException(e);
@@ -349,7 +336,8 @@ public class RubyInstanceConfig {
         if (PROTOCOL_PATTERN.matcher(jrubyHome).matches() && !environment.containsKey("RUBY")) {
             // the assumption that if JRubyHome is not a regular file that jruby
             // got launched in an embedded fashion
-            environment.put("RUBY", ClasspathLauncher.jrubyCommand(defaultClassLoader()));
+            //environment.put("RUBY", ClasspathLauncher.jrubyCommand(defaultClassLoader()));
+            throw new UnsupportedOperationException();
         }
     }
 
@@ -391,30 +379,18 @@ public class RubyInstanceConfig {
         return loadPaths;
     }
 
-    /**
-     * @see Options#CLI_HELP
-     */
     public void setShouldPrintUsage(boolean shouldPrintUsage) {
         this.shouldPrintUsage = shouldPrintUsage;
     }
 
-    /**
-     * @see Options#CLI_HELP
-     */
     public boolean getShouldPrintUsage() {
         return shouldPrintUsage;
     }
 
-    /**
-     * @see Options#CLI_PROPERTIES
-     */
     public void setShouldPrintProperties(boolean shouldPrintProperties) {
         this.shouldPrintProperties = shouldPrintProperties;
     }
 
-    /**
-     * @see Options#CLI_PROPERTIES
-     */
     public boolean getShouldPrintProperties() {
         return shouldPrintProperties;
     }
@@ -446,100 +422,58 @@ public class RubyInstanceConfig {
         return scriptFileName;
     }
 
-    /**
-     * @see Options#CLI_ASSUME_LOOP
-     */
     public void setAssumeLoop(boolean assumeLoop) {
         this.assumeLoop = assumeLoop;
     }
 
-    /**
-     * @see Options#CLI_ASSUME_PRINT
-     */
     public void setAssumePrinting(boolean assumePrinting) {
         this.assumePrinting = assumePrinting;
     }
 
-    /**
-     * @see Options#CLI_PROCESS_LINE_ENDS
-     */
     public void setProcessLineEnds(boolean processLineEnds) {
         this.processLineEnds = processLineEnds;
     }
 
-    /**
-     * @see Options#CLI_AUTOSPLIT
-     */
     public void setSplit(boolean split) {
         this.split = split;
     }
 
-    /**
-     * @see Options#CLI_AUTOSPLIT
-     */
     public boolean isSplit() {
         return split;
     }
 
-    /**
-     * @see Options#CLI_WARNING_LEVEL
-     */
     public void setVerbosity(Verbosity verbosity) {
         this.verbosity = verbosity;
     }
 
-    /**
-     * @see Options#CLI_VERBOSE
-     */
     public boolean isVerbose() {
         return verbosity == Verbosity.TRUE;
     }
 
-    /**
-     * @see Options#CLI_DEBUG
-     */
     public boolean isDebug() {
         return debug;
     }
 
-    /**
-     * @see Options#CLI_DEBUG
-     */
     public void setDebug(boolean debug) {
         this.debug = debug;
     }
 
-    /**
-     * @see Options#CLI_VERSION
-     */
     public void setShowVersion(boolean showVersion) {
         this.showVersion = showVersion;
     }
 
-    /**
-     * @see Options#CLI_VERSION
-     */
     public boolean isShowVersion() {
         return showVersion;
     }
 
-    /**
-     * @see Options#CLI_BYTECODE
-     */
     public void setShowBytecode(boolean showBytecode) {
         this.showBytecode = showBytecode;
     }
 
-    /**
-     * @see Options#CLI_COPYRIGHT
-     */
     public void setShowCopyright(boolean showCopyright) {
         this.showCopyright = showCopyright;
     }
 
-    /**
-     * @see Options#CLI_COPYRIGHT
-     */
     public boolean isShowCopyright() {
         return showCopyright;
     }
@@ -552,65 +486,38 @@ public class RubyInstanceConfig {
         return shouldRunInterpreter && (hasScriptArgv || !showVersion);
     }
 
-    /**
-     * @see Options#CLI_CHECK_SYNTAX
-     */
     public void setShouldCheckSyntax(boolean shouldSetSyntax) {
         this.shouldCheckSyntax = shouldSetSyntax;
     }
 
-    /**
-     * @see Options#CLI_CHECK_SYNTAX
-     */
     public boolean getShouldCheckSyntax() {
         return shouldCheckSyntax;
     }
 
-    /**
-     * @see Options#CLI_AUTOSPLIT_SEPARATOR
-     */
     public void setInputFieldSeparator(String inputFieldSeparator) {
         this.inputFieldSeparator = inputFieldSeparator;
     }
 
-    /**
-     * @see Options#CLI_ENCODING_INTERNAL
-     */
     public void setInternalEncoding(String internalEncoding) {
         this.internalEncoding = internalEncoding;
     }
 
-    /**
-     * @see Options#CLI_ENCODING_INTERNAL
-     */
     public String getInternalEncoding() {
         return internalEncoding;
     }
 
-    /**
-     * @see Options#CLI_ENCODING_EXTERNAL
-     */
     public void setExternalEncoding(String externalEncoding) {
         this.externalEncoding = externalEncoding;
     }
 
-    /**
-     * @see Options#CLI_ENCODING_EXTERNAL
-     */
     public String getExternalEncoding() {
         return externalEncoding;
     }
 
-    /**
-     * @see Options#CLI_BACKUP_EXTENSION
-     */
     public void setInPlaceBackupExtension(String inPlaceBackupExtension) {
         this.inPlaceBackupExtension = inPlaceBackupExtension;
     }
 
-    /**
-     * @see Options#CLI_BACKUP_EXTENSION
-     */
     public String getInPlaceBackupExtension() {
         return inPlaceBackupExtension;
     }
@@ -627,30 +534,18 @@ public class RubyInstanceConfig {
         this.argvGlobalsOn = argvGlobalsOn;
     }
 
-    /**
-     * @see Options#CLI_RUBYGEMS_ENABLE
-     */
     public boolean isDisableGems() {
         return disableGems;
     }
 
-    /**
-     * @see Options#CLI_RUBYGEMS_ENABLE
-     */
     public void setDisableGems(boolean dg) {
         this.disableGems = dg;
     }
 
-    /**
-     * @see Options#CLI_STRIP_HEADER
-     */
     public void setXFlag(boolean xFlag) {
         this.xFlag = xFlag;
     }
 
-    /**
-     * @see Options#CLI_STRIP_HEADER
-     */
     public boolean isXFlag() {
         return xFlag;
     }
@@ -685,7 +580,7 @@ public class RubyInstanceConfig {
     /**
      * Indicates whether the script must be extracted from script source
      */
-    private boolean xFlag = Options.CLI_STRIP_HEADER.load();
+    private boolean xFlag = false;
 
     /**
      * Indicates whether the script has a shebang line or not
@@ -701,8 +596,8 @@ public class RubyInstanceConfig {
     private Map<String, String> environment;
     private String[] argv = {};
 
-    private String internalEncoding = Options.CLI_ENCODING_INTERNAL.load();
-    private String externalEncoding = Options.CLI_ENCODING_EXTERNAL.load();
+    private String internalEncoding = null;
+    private String externalEncoding = null;
 
     private ClassLoader loader = defaultClassLoader();
 
@@ -714,23 +609,23 @@ public class RubyInstanceConfig {
     private String scriptFileName = null;
     private Collection<String> requiredLibraries = new LinkedHashSet<String>();
     private boolean argvGlobalsOn = false;
-    private boolean assumeLoop = Options.CLI_ASSUME_LOOP.load();
-    private boolean assumePrinting = Options.CLI_ASSUME_PRINT.load();
+    private boolean assumeLoop = false;
+    private boolean assumePrinting = false;
     private Map<String, String> optionGlobals = new HashMap<String, String>();
-    private boolean processLineEnds = Options.CLI_PROCESS_LINE_ENDS.load();
-    private boolean split = Options.CLI_AUTOSPLIT.load();
+    private boolean processLineEnds = false;
+    private boolean split = false;
     private Verbosity verbosity = Verbosity.NIL;
-    private boolean debug = Options.CLI_DEBUG.load();
-    private boolean showVersion = Options.CLI_VERSION.load();
-    private boolean showBytecode = Options.CLI_BYTECODE.load();
-    private boolean showCopyright = Options.CLI_COPYRIGHT.load();
+    private boolean debug = false;
+    private boolean showVersion = false;
+    private boolean showBytecode = false;
+    private boolean showCopyright = false;
     private boolean shouldRunInterpreter = true;
-    private boolean shouldPrintUsage = Options.CLI_HELP.load();
-    private boolean shouldPrintProperties=Options.CLI_PROPERTIES.load();
-    private boolean shouldCheckSyntax = Options.CLI_CHECK_SYNTAX.load();
-    private String inputFieldSeparator = Options.CLI_AUTOSPLIT_SEPARATOR.load();
-    private String inPlaceBackupExtension = Options.CLI_BACKUP_EXTENSION.load();
-    private boolean disableGems = !Options.CLI_RUBYGEMS_ENABLE.load();
+    private boolean shouldPrintUsage = false;
+    private boolean shouldPrintProperties=false;
+    private boolean shouldCheckSyntax = false;
+    private String inputFieldSeparator = null;
+    private String inPlaceBackupExtension = null;
+    private boolean disableGems = false;
     private boolean hasScriptArgv = false;
     private boolean frozenStringLiteral = false;
     private String jrubyHome;
@@ -747,7 +642,7 @@ public class RubyInstanceConfig {
      *
      * Set with the <tt>jruby.jit.exclude</tt> system property.
      */
-    public static final String COMPILE_EXCLUDE = Options.JIT_EXCLUDE.load();
+    public static final String COMPILE_EXCLUDE = "";
 
     /**
      * Indicates the global default for whether native code is enabled. Default
@@ -755,7 +650,7 @@ public class RubyInstanceConfig {
      *
      * Set with the <tt>jruby.native.enabled</tt> system property.
      */
-    public static final boolean NATIVE_ENABLED = Options.NATIVE_ENABLED.load();
+    public static final boolean NATIVE_ENABLED = false;
 
     @Deprecated
     public final static boolean CEXT_ENABLED = false;
@@ -765,10 +660,10 @@ public class RubyInstanceConfig {
      *
      * Set with the <tt>jruby.debug.scriptResolution</tt> system property.
      */
-    public static final boolean DEBUG_SCRIPT_RESOLUTION = Options.DEBUG_SCRIPTRESOLUTION.load();
+    public static final boolean DEBUG_SCRIPT_RESOLUTION = false;
 
     @Deprecated
-    public static final boolean JIT_CACHE_ENABLED = Options.JIT_CACHE.load();
+    public static final boolean JIT_CACHE_ENABLED = false;
 
     @Deprecated
     public void setSafeLevel(int safeLevel) {

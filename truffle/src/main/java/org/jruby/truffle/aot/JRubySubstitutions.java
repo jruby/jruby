@@ -16,10 +16,8 @@ package org.jruby.truffle.aot;
 import com.oracle.truffle.api.source.Source;
 import org.jcodings.exception.InternalException;
 import org.joda.time.DateTimeZone;
-import org.jruby.Ruby;
 import org.jruby.truffle.RubyLanguage;
 import org.jruby.truffle.language.loader.SourceLoader;
-import org.jruby.util.FileResource;
 import org.jruby.truffle.util.SafePropertyAccessor;
 
 import java.io.ByteArrayInputStream;
@@ -85,7 +83,7 @@ final class Target_org_joda_time_tz_ZoneInfoProvider {
     }
 }
 
-@SuppressWarnings("unused")
+/*@SuppressWarnings("unused")
 final class Target_org_jruby_util_URLResource {
     URL url;
 
@@ -96,9 +94,9 @@ final class Target_org_jruby_util_URLResource {
     InputStream openInputStream() throws IOException {
         return url.openStream();
     }
-}
+}*/
 
-final class Target_org_jruby_RubyInstanceConfig {
+/*final class Target_org_jruby_RubyInstanceConfig {
     PrintStream error;
     Map<String, String> environment;
 
@@ -142,7 +140,7 @@ final class Target_org_jruby_RubyInstanceConfig {
 
         return newJRubyHome;
     }
-}
+}*/
 
 final class Target_org_joda_time_DateTimeUtils {
     static DateFormatSymbols getDateFormatSymbols(Locale locale) {
