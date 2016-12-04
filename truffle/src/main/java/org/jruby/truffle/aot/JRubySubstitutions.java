@@ -20,7 +20,7 @@ import org.jruby.Ruby;
 import org.jruby.truffle.RubyLanguage;
 import org.jruby.truffle.language.loader.SourceLoader;
 import org.jruby.util.FileResource;
-import org.jruby.util.SafePropertyAccessor;
+import org.jruby.truffle.util.SafePropertyAccessor;
 
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;

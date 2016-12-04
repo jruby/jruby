@@ -35,10 +35,8 @@ import org.jruby.util.ClasspathLauncher;
 import org.jruby.util.FileResource;
 import org.jruby.util.InputStreamMarkCursor;
 import org.jruby.util.JRubyFile;
-import org.jruby.util.KCode;
-import org.jruby.util.SafePropertyAccessor;
+import org.jruby.truffle.util.SafePropertyAccessor;
 import org.jruby.util.cli.Options;
-import org.jruby.util.cli.OutputStrings;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
@@ -729,7 +727,6 @@ public class RubyInstanceConfig {
     private boolean shouldRunInterpreter = true;
     private boolean shouldPrintUsage = Options.CLI_HELP.load();
     private boolean shouldPrintProperties=Options.CLI_PROPERTIES.load();
-    private KCode kcode = Options.CLI_KCODE.load();
     private boolean shouldCheckSyntax = Options.CLI_CHECK_SYNTAX.load();
     private String inputFieldSeparator = Options.CLI_AUTOSPLIT_SEPARATOR.load();
     private String inPlaceBackupExtension = Options.CLI_BACKUP_EXTENSION.load();

@@ -50,6 +50,7 @@ public class Platform {
 
 
     public static final boolean IS_WINDOWS = OS.equals(OS_TYPE.WINDOWS);
+    public static final boolean IS_BSD = OS.equals(OS_TYPE.WINDOWS);
 
     protected final int addressSize, longSize;
     private final long addressMask;
