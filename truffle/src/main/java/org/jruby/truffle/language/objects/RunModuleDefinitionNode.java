@@ -9,14 +9,14 @@
  */
 package org.jruby.truffle.language.objects;
 
-import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.instrumentation.Instrumentable;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.kernel.TraceManager;
 import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
@@ -24,6 +24,7 @@ import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.methods.ModuleBodyDefinitionNode;
 
+@Instrumentable(factory = RunModuleDefinitionNodeWrapper.class)
 public class RunModuleDefinitionNode extends RubyNode {
 
     final protected LexicalScope lexicalScope;
@@ -41,20 +42,26 @@ public class RunModuleDefinitionNode extends RubyNode {
         callModuleDefinitionNode = Truffle.getRuntime().createIndirectCallNode();
     }
 
+    public RunModuleDefinitionNode(RunModuleDefinitionNode node) {
+        this(node.getContext(), node.getSourceSection(), node.lexicalScope, node.definitionMethod, node.definingModule);
+    }
+
     @Override
     public Object execute(VirtualFrame frame) {
         final DynamicObject module = (DynamicObject) definingModule.execute(frame);
-        final InternalMethod definition = prepareLexicalScope(module, definitionMethod.executeMethod(frame));
+        final InternalMethod definition = definitionMethod.createMethod(frame, lexicalScope, module);
 
         return callModuleDefinitionNode.call(frame, definition.getCallTarget(), RubyArguments.pack(
                 null, null, definition, DeclarationContext.MODULE, null, module, null, new Object[]{}));
     }
 
-    @TruffleBoundary
-    private InternalMethod prepareLexicalScope(DynamicObject module, InternalMethod definition) {
-        lexicalScope.unsafeSetLiveModule(module);
-        Layouts.MODULE.getFields(lexicalScope.getParent().getLiveModule()).addLexicalDependent(module);
-        return definition.withDeclaringModule(module);
+    @Override
+    protected boolean isTaggedWith(Class<?> tag) {
+        if (tag == TraceManager.ClassTag.class) {
+            return true;
+        }
+
+        return super.isTaggedWith(tag);
     }
 
 }

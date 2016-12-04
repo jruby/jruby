@@ -9,37 +9,28 @@
  */
 package org.jruby.truffle.language.methods;
 
-import com.oracle.truffle.api.CallTarget;
-import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.instrumentation.Instrumentable;
-import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.kernel.TraceManager;
-import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.RubySourceSection;
+import org.jruby.truffle.language.LexicalScope;
+import org.jruby.truffle.language.RubyBaseNode;
 import org.jruby.truffle.language.Visibility;
 import org.jruby.truffle.language.arguments.RubyArguments;
+
+import com.oracle.truffle.api.CallTarget;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.source.SourceSection;
 
 /**
  * Define a method from a module body (module/class/class << self ... end).
  */
-@Instrumentable(factory = ModuleBodyDefinitionNodeWrapper.class)
-public class ModuleBodyDefinitionNode extends RubyNode {
+public class ModuleBodyDefinitionNode extends RubyBaseNode {
 
     private final String name;
     private final SharedMethodInfo sharedMethodInfo;
     private final CallTarget callTarget;
     private final boolean captureBlock;
-
-    public ModuleBodyDefinitionNode(RubyContext context, RubySourceSection sourceSection, String name, SharedMethodInfo sharedMethodInfo,
-                                    CallTarget callTarget, boolean captureBlock) {
-        super(context, sourceSection);
-        this.name = name;
-        this.sharedMethodInfo = sharedMethodInfo;
-        this.callTarget = callTarget;
-        this.captureBlock = captureBlock;
-    }
 
     public ModuleBodyDefinitionNode(RubyContext context, SourceSection sourceSection, String name, SharedMethodInfo sharedMethodInfo,
             CallTarget callTarget, boolean captureBlock) {
@@ -50,14 +41,7 @@ public class ModuleBodyDefinitionNode extends RubyNode {
         this.captureBlock = captureBlock;
     }
 
-    public ModuleBodyDefinitionNode(ModuleBodyDefinitionNode node) {
-        this(node.getContext(), node.getRubySourceSection(), node.name, node.sharedMethodInfo, node.callTarget, node.captureBlock);
-    }
-
-    public InternalMethod executeMethod(VirtualFrame frame) {
-        final DynamicObject dummyModule = coreLibrary().getObjectClass();
-        final Visibility dummyVisibility = Visibility.PUBLIC;
-
+    public InternalMethod createMethod(VirtualFrame frame, LexicalScope staticLexicalScope, DynamicObject module) {
         final DynamicObject capturedBlock;
 
         if (captureBlock) {
@@ -65,21 +49,21 @@ public class ModuleBodyDefinitionNode extends RubyNode {
         } else {
             capturedBlock = null;
         }
-        return new InternalMethod(getContext(), sharedMethodInfo, name, dummyModule, dummyVisibility, false, null, callTarget, capturedBlock, null);
+
+        final LexicalScope parentLexicalScope = RubyArguments.getMethod(frame).getLexicalScope();
+        final LexicalScope lexicalScope = prepareLexicalScope(staticLexicalScope, parentLexicalScope, module);
+        return new InternalMethod(getContext(), sharedMethodInfo, lexicalScope, name, module, Visibility.PUBLIC, false, null, callTarget, capturedBlock, null);
     }
 
-    @Override
-    public Object execute(VirtualFrame frame) {
-        return executeMethod(frame);
-    }
-
-    @Override
-    protected boolean isTaggedWith(Class<?> tag) {
-        if (tag == TraceManager.ClassTag.class) {
-            return true;
+    @TruffleBoundary
+    private LexicalScope prepareLexicalScope(LexicalScope staticLexicalScope, LexicalScope parentLexicalScope, DynamicObject module) {
+        if (staticLexicalScope != null) {
+            staticLexicalScope.unsafeSetLiveModule(module);
+            Layouts.MODULE.getFields(staticLexicalScope.getParent().getLiveModule()).addLexicalDependent(module);
+            return staticLexicalScope;
+        } else {
+            return new LexicalScope(parentLexicalScope, module);
         }
-
-        return super.isTaggedWith(tag);
     }
 
 }
