@@ -36,6 +36,7 @@ package org.jruby;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Binding;
@@ -43,7 +44,6 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
-import org.jruby.runtime.IRBlockBody;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
@@ -265,34 +265,14 @@ public class RubyProc extends RubyObject implements DataType {
             return args;
         }
 
-        boolean isFixed = signature.isFixed();
-        int required = signature.required();
-        int actual = args.length;
-        boolean kwargs = blockBody instanceof IRBlockBody && signature.hasKwargs();
-
-        // FIXME: This is a hot mess.  kwargs factors into destructing a single element array as well.  I just weaved it into this logic.
+        // FIXME: weirdly nearly identical logic exists in prepareBlockArgsInternal but only for lambdas.
         // for procs and blocks, single array passed to multi-arg must be spread
-        if ((signature != Signature.ONE_ARGUMENT &&  required != 0 && (isFixed || signature != Signature.OPTIONAL) || kwargs) &&
-                actual == 1 && args[0].respondsTo("to_ary")) {
-            IRubyObject newAry = Helpers.aryToAry(args[0]);
+        int arityValue = signature.arityValue();
+        if (args.length == 1 && (arityValue < -1 || arityValue > 1)) args = IRRuntimeHelpers.toAry(context, args);
 
-            // This is very common to yield in *IRBlockBody.  When we tackle call protocol for blocks this will combine.
-            if (newAry.isNil()) {
-                args = new IRubyObject[] { args[0] };
-            } else if (newAry instanceof RubyArray){
-                args = ((RubyArray) newAry).toJavaArrayMaybeUnsafe();
-            } else {
-                throw context.runtime.newTypeError(args[0].getType().getName() + "#to_ary should return Array");
-            }
-            actual = args.length;
-        }
-
-        // FIXME: This pruning only seems to be needed for any?/all? specs.
+        // FIXME: This pruning only seems to be needed for calls through java block/calls CallBlock/JavaInternalBlockBody (move to those since pure-Ruby does not seem to need this.
         // fixed arity > 0 with mismatch needs a new args array
-        int kwargsHackRequired = required + (kwargs ? 1 : 0);
-        if (isFixed && required > 0 && kwargsHackRequired != actual) {
-            args = ArraySupport.newCopy(args, kwargsHackRequired);
-        }
+        if (arityValue > 0 && arityValue != args.length) args = ArraySupport.newCopy(args, arityValue);
 
         return args;
     }

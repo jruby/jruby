@@ -1631,7 +1631,7 @@ public class IRRuntimeHelpers {
         return context.runtime.newFixnum(i);
     }
 
-    private static IRubyObject[] toAry(ThreadContext context, IRubyObject[] args) {
+    public static IRubyObject[] toAry(ThreadContext context, IRubyObject[] args) {
         if (args.length == 1 && args[0].respondsTo("to_ary")) {
             IRubyObject newAry = Helpers.aryToAry(args[0]);
             if (newAry.isNil()) {
