@@ -19,9 +19,9 @@ DO NOT MODIFIY - GENERATED CODE
   <name>JRuby Lib Setup</name>
   <properties>
     <tesla.dump.readonly>true</tesla.dump.readonly>
+    <jruby.plugins.version>1.1.2</jruby.plugins.version>
     <tesla.dump.pom>pom.xml</tesla.dump.pom>
     <tesla.version>0.1.1</tesla.version>
-    <jruby.plugins.version>1.1.2</jruby.plugins.version>
   </properties>
   <dependencies>
     <dependency>
@@ -38,13 +38,13 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>rake</artifactId>
-      <version>10.1.0</version>
+      <version>${rake.version}</version>
       <type>gem</type>
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>rdoc</artifactId>
-      <version>4.1.2</version>
+      <version>${rdoc.version}</version>
       <type>gem</type>
     </dependency>
     <dependency>
@@ -56,16 +56,10 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>jar-dependencies</artifactId>
-      <version>0.2.6</version>
+      <version>${jar-dependencies.version}</version>
       <type>gem</type>
     </dependency>
   </dependencies>
-  <repositories>
-    <repository>
-      <id>gem-staging</id>
-      <url>http://oss.sonatype.org/content/repositories/staging</url>
-    </repository>
-  </repositories>
   <build>
     <plugins>
       <plugin>
