@@ -28,6 +28,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.options;
 
+import com.oracle.truffle.api.TruffleOptions;
 import jnr.posix.util.Platform;
 import org.jruby.truffle.core.string.StringSupport;
 import org.jruby.truffle.language.control.JavaException;
@@ -138,7 +139,7 @@ public class RubyInstanceConfig {
             newJRubyHome = SafePropertyAccessor.getProperty("jruby.home");
         }
 
-        if (newJRubyHome == null && getLoader().getResource("META-INF/jruby.home/.jrubydir") != null) {
+        if (!TruffleOptions.AOT && newJRubyHome == null && getLoader().getResource("META-INF/jruby.home/.jrubydir") != null) {
             newJRubyHome = "uri:classloader://META-INF/jruby.home";
         }
         if (newJRubyHome != null) {
@@ -556,6 +557,10 @@ public class RubyInstanceConfig {
 
 
     public static ClassLoader defaultClassLoader() {
+        if (TruffleOptions.AOT) {
+            return null;
+        }
+
         ClassLoader loader = RubyInstanceConfig.class.getClassLoader();
 
         // loader can be null for example when jruby comes from the boot-classLoader

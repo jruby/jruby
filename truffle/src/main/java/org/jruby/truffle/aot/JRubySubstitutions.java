@@ -79,95 +79,13 @@ final class Target_org_joda_time_tz_ZoneInfoProvider {
     }
 }
 
-/*@SuppressWarnings("unused")
-final class Target_org_jruby_util_URLResource {
-    URL url;
-
-    static FileResource createClassloaderURI(Ruby runtime, String pathname, boolean isFile) {
-        throw new RuntimeException("Not supported on Substrate VM");
-    }
-
-    InputStream openInputStream() throws IOException {
-        return url.openStream();
-    }
-}*/
-
-/*final class Target_org_jruby_RubyInstanceConfig {
-    PrintStream error;
-    Map<String, String> environment;
-
-    static native String verifyHome(String home, PrintStream error);
-
-    static ClassLoader defaultClassLoader() {
-        return null;
-    }
-
-    void setupEnvironment(String jrubyHome) {
-        if (!new File(jrubyHome).exists() && !environment.containsKey("RUBY")) {
-            environment.put("RUBY", "svm_jruby");
-        }
-    }
-
-    String calculateJRubyHome() {
-        String newJRubyHome = null;
-
-        // try the normal property first
-        if (!Ruby.isSecurityRestricted()) {
-            newJRubyHome = SafePropertyAccessor.getProperty("jruby.home");
-        }
-
-        if (newJRubyHome != null) {
-            // verify it if it's there
-            newJRubyHome = verifyHome(newJRubyHome, error);
-        } else {
-            try {
-                newJRubyHome = SafePropertyAccessor.getenv("JRUBY_HOME");
-            } catch (Exception e) {
-            }
-
-            if (newJRubyHome != null) {
-                // verify it if it's there
-                newJRubyHome = verifyHome(newJRubyHome, error);
-            } else {
-                // otherwise fall back on system temp location
-                newJRubyHome = SafePropertyAccessor.getProperty("java.io.tmpdir");
-            }
-        }
-
-        return newJRubyHome;
-    }
-}*/
-
 final class Target_org_joda_time_DateTimeUtils {
     static DateFormatSymbols getDateFormatSymbols(Locale locale) {
         return DateFormatSymbols.getInstance(locale);
     }
 }
 
-@SuppressWarnings("unused")
-final class Target_org_jruby_util_JarResource {
-    static Object create(String pathname) {
-        return null;
-    }
-}
-
-@SuppressWarnings({"static-method", "unused"})
-final class Target_org_jruby_RubyBasicObject {
-    static long VAR_TABLE_OFFSET;
-    static long STAMP_OFFSET;
-
-    <T> T defaultToJava(Class<T> target) {
-        return null;
-    }
-}
-
-final class Target_org_jruby_RubyEncoding {
-    static int CHAR_ARRAY_BASE;
-    static int BYTE_ARRAY_BASE;
-    static long VALUE_FIELD_OFFSET;
-}
-
-final class Target_org_jruby_util_StringSupport {
+final class Target_org_jruby_truffle_core_string_StringSupport {
     static int ARRAY_BYTE_BASE_OFFSET;
 }
 
