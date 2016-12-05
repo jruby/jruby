@@ -256,18 +256,14 @@ public class RubyProc extends RubyObject implements DataType {
      * arity of one, etc.)
      */
     public static IRubyObject[] prepareArgs(ThreadContext context, Block.Type type, BlockBody blockBody, IRubyObject[] args) {
-        Signature signature = blockBody.getSignature();
-
-        if (args == null) return IRubyObject.NULL_ARRAY;
-
         if (type == Block.Type.LAMBDA) {
-            signature.checkArity(context.runtime, args);
+            blockBody.getSignature().checkArity(context.runtime, args);
             return args;
         }
 
         // FIXME: weirdly nearly identical logic exists in prepareBlockArgsInternal but only for lambdas.
         // for procs and blocks, single array passed to multi-arg must be spread
-        int arityValue = signature.arityValue();
+        int arityValue = blockBody.getSignature().arityValue();
         if (args.length == 1 && (arityValue < -1 || arityValue > 1)) args = IRRuntimeHelpers.toAry(context, args);
 
         // FIXME: This pruning only seems to be needed for calls through java block/calls CallBlock/JavaInternalBlockBody (move to those since pure-Ruby does not seem to need this.
