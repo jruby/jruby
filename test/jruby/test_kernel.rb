@@ -491,6 +491,11 @@ class TestKernel < Test::Unit::TestCase
     assert !res
   end
 
+  def test_system_shell_exit
+    `exit 0`
+    assert_equal 0, $?.exitstatus
+  end
+  
   def test_exec_empty
       assert_raise(Errno::ENOENT) {
         exec("")
