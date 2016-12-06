@@ -451,7 +451,9 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
             return size;
         }
 
-        return context == null ? null : context.nil;
+        if (context == null) context = getRuntime().getCurrentContext();
+
+        return context.nil;
     }
 
     public long size() {
