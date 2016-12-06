@@ -1283,8 +1283,8 @@ public final class Ruby implements Constantizable {
 
     private void initDefinedMessages() {
         for (DefinedMessage definedMessage : DefinedMessage.values()) {
-            RubyString str = RubyString.newString(this, ByteList.create(definedMessage.getText()));
-            str.setFrozen(true);
+            RubyString str = freezeAndDedupString(
+                RubyString.newString(this, ByteList.create(definedMessage.getText())));
             definedMessages.put(definedMessage, str);
         }
     }
@@ -4839,7 +4839,7 @@ public final class Ruby implements Constantizable {
     }
 
     public RubyString getDefinedMessage(DefinedMessage definedMessage) {
-        return freezeAndDedupString(definedMessages.get(definedMessage));
+        return definedMessages.get(definedMessage);
     }
 
     public RubyString getThreadStatus(RubyThread.Status status) {
