@@ -492,7 +492,7 @@ class TestKernel < Test::Unit::TestCase
   end
 
   def test_system_shell_exit
-    `exit 0`
+    system('exit 0')
     assert_equal 0, $?.exitstatus
   end
   
