@@ -49,9 +49,6 @@ import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.DataType;
-import org.jruby.util.ArraySupport;
-
-import java.util.Arrays;
 
 /**
  * @author  jpetersen
@@ -265,10 +262,6 @@ public class RubyProc extends RubyObject implements DataType {
         // for procs and blocks, single array passed to multi-arg must be spread
         int arityValue = blockBody.getSignature().arityValue();
         if (args.length == 1 && (arityValue < -1 || arityValue > 1)) args = IRRuntimeHelpers.toAry(context, args);
-
-        // FIXME: This pruning only seems to be needed for calls through java block/calls CallBlock/JavaInternalBlockBody (move to those since pure-Ruby does not seem to need this.
-        // fixed arity > 0 with mismatch needs a new args array
-        if (arityValue > 0 && arityValue != args.length) args = ArraySupport.newCopy(args, arityValue);
 
         return args;
     }

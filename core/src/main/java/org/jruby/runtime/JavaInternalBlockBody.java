@@ -7,6 +7,7 @@ package org.jruby.runtime;
 import org.jruby.Ruby;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ArraySupport;
 
 /**
  * Represents a special Java implementation of a block.
@@ -66,7 +67,12 @@ public abstract class JavaInternalBlockBody extends BlockBody {
     @Override
     protected IRubyObject doYield(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self) {
         threadCheck(context);
-        
+
+        Signature signature = block.getSignature();
+        int required = signature.required();
+        if (signature.isFixed() && required  > 0 && required != args.length) {
+            args = ArraySupport.newCopy(args, required);
+        }
         return yield(context, args);
     }
     

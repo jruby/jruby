@@ -30,6 +30,7 @@ package org.jruby.runtime;
 import org.jruby.RubyModule;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ArraySupport;
 
 /**
  * A Block implemented using a Java-based BlockCallback implementation. For
@@ -84,6 +85,11 @@ public class CallBlock extends BlockBody {
 
     @Override
     protected IRubyObject doYield(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self) {
+        Signature signature = block.getSignature();
+        int required = signature.required();
+        if (signature.isFixed() && required  > 0 && required != args.length) {
+            args = ArraySupport.newCopy(args, required);
+        }
         return callback.call(context, args, Block.NULL_BLOCK);
     }
 
