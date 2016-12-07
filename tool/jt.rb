@@ -30,7 +30,7 @@ SULONG_HOME = ENV['SULONG_HOME']
 JDEBUG_PORT = 51819
 JDEBUG = "-J-agentlib:jdwp=transport=dt_socket,server=y,address=#{JDEBUG_PORT},suspend=y"
 JDEBUG_TEST = "-Dmaven.surefire.debug=-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=#{JDEBUG_PORT} -Xnoagent -Djava.compiler=NONE"
-JEXCEPTION = "-Xtruffle.exceptions.print_java=true"
+JEXCEPTION = "-Xtruffle.exceptions.print_uncaught_java=true"
 METRICS_REPS = 10
 
 VERBOSE = ENV.include? 'V'
