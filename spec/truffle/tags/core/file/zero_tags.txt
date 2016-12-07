@@ -1,2 +1,0 @@
-fails(windows):File.zero? returns true for NUL
-fails(windows):File.zero? returns true for a directory

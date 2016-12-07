@@ -2,8 +2,6 @@ fails:Kernel#load (path resolution) does not require file twice after $LOAD_PATH
 fails:Kernel#load (shell expansion) expands a tilde to the HOME environment variable as the path to load
 fails:Kernel.load (path resolution) does not require file twice after $LOAD_PATH change
 fails:Kernel.load (shell expansion) expands a tilde to the HOME environment variable as the path to load
-windows:Kernel#load loads a file that recursively requires itself
-windows:Kernel.load loads a file that recursively requires itself
 fails:Kernel#load when passed true for 'wrap' loads from an existing path
 fails:Kernel#load when passed true for 'wrap' sets the enclosing scope to an anonymous module
 fails:Kernel#load when passed true for 'wrap' allows referencing outside namespaces
