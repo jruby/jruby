@@ -159,7 +159,7 @@ public class RubySet extends RubyObject { // implements Set {
         if ( enume instanceof RubySet ) {
             RubySet set = (RubySet) enume;
             initHash(context.runtime, set.size());
-            for ( IRubyObject elem : set.elements() ) {
+            for ( IRubyObject elem : set.elementsOrdered() ) {
                 invokeAdd(context, block.yield(context, elem));
             }
             return set; // done
@@ -280,7 +280,7 @@ public class RubySet extends RubyObject { // implements Set {
         return this;
     }
 
-    private void clearImpl() {
+    protected void clearImpl() {
         hash.rb_clear();
     }
 
@@ -291,7 +291,8 @@ public class RubySet extends RubyObject { // implements Set {
     public RubySet replace(final ThreadContext context, IRubyObject enume) {
         if ( enume instanceof RubySet ) {
             modifyCheck(context.runtime);
-            this.hash.replace(context, ((RubySet) enume).hash);
+            clearImpl();
+            addImplSet(context, (RubySet) enume);
         }
         else {
             final Ruby runtime = context.runtime;
@@ -323,7 +324,7 @@ public class RubySet extends RubyObject { // implements Set {
     public RubySet to_set(final ThreadContext context, final Block block) {
         if ( block.isGiven() ) {
             RubySet set = new RubySet(context.runtime, getMetaClass());
-            set.initialize(context, block);
+            set.initialize(context, this, block);
             return set;
         }
         return this;
@@ -363,7 +364,7 @@ public class RubySet extends RubyObject { // implements Set {
 
     private void flattenMerge(final ThreadContext context, final IRubyObject set, final IdentityHashMap seen) {
         if ( set instanceof RubySet ) {
-            for ( IRubyObject e : ((RubySet) set).elements() ) {
+            for ( IRubyObject e : ((RubySet) set).elementsOrdered() ) {
                 addFlattened(context, seen, e);
             }
         }
@@ -400,7 +401,7 @@ public class RubySet extends RubyObject { // implements Set {
 
     @JRubyMethod(name = "flatten!")
     public IRubyObject flatten_bang(final ThreadContext context) {
-        for ( IRubyObject e : elements() ) {
+        for ( IRubyObject e : elementsOrdered() ) {
             if ( e instanceof RubySet ) { // needs flatten
                 return replace(context, flatten(context));
             }
@@ -499,13 +500,13 @@ public class RubySet extends RubyObject { // implements Set {
     public boolean intersect(final ThreadContext context, final RubySet set) {
         if ( size() < set.size() ) {
             // any? { |o| set.include?(o) }
-            for ( IRubyObject o : elements() ) {
+            for ( IRubyObject o : elementsOrdered() ) {
                 if ( set.contains(context, o) ) return true;
             }
         }
         else {
             // set.any? { |o| include?(o) }
-            for ( IRubyObject o : set.elements() ) {
+            for ( IRubyObject o : set.elementsOrdered() ) {
                 if ( contains(context, o) ) return true;
             }
         }
@@ -530,7 +531,7 @@ public class RubySet extends RubyObject { // implements Set {
             return enumeratorizeWithSize(context, this, "each", enumSize());
         }
 
-        for (IRubyObject elem : elements()) block.yield(context, elem);
+        for (IRubyObject elem : elementsOrdered()) block.yield(context, elem);
         return this;
     }
 
@@ -549,12 +550,17 @@ public class RubySet extends RubyObject { // implements Set {
     @JRubyMethod(name = "add", alias = "<<")
     public RubySet add(final ThreadContext context, IRubyObject obj) {
         modifyCheck(context.runtime);
-        addObject(context.runtime, obj);
+        addImpl(context.runtime, obj);
         return this;
     }
 
-    protected void addObject(final Ruby runtime, final IRubyObject obj) {
+    protected void addImpl(final Ruby runtime, final IRubyObject obj) {
         hash.fastASetCheckString(runtime, obj, runtime.getTrue()); // @hash[obj] = true
+    }
+
+    protected void addImplSet(final ThreadContext context, final RubySet set) {
+        // NOTE: MRI cheats - does not call Set#add thus we do not care ...
+        hash.merge_bang(context, set.hash, Block.NULL_BLOCK);
     }
 
     /**
@@ -570,13 +576,17 @@ public class RubySet extends RubyObject { // implements Set {
     @JRubyMethod
     public IRubyObject delete(final ThreadContext context, IRubyObject obj) {
         modifyCheck(context.runtime);
-        deleteObject(obj);
+        deleteImpl(obj);
         return this;
     }
 
-    private void deleteObject(final IRubyObject obj) {
+    protected boolean deleteImpl(final IRubyObject obj) {
         hash.modify();
-        hash.fastDelete(obj);
+        return hash.fastDelete(obj);
+    }
+
+    protected void deleteImplIterator(final IRubyObject obj, final Iterator it) {
+        it.remove();
     }
 
     /**
@@ -598,7 +608,7 @@ public class RubySet extends RubyObject { // implements Set {
         Iterator<IRubyObject> it = elements().iterator();
         while ( it.hasNext() ) {
             IRubyObject elem = it.next();
-            if ( block.yield(context, elem).isTrue() ) it.remove();
+            if ( block.yield(context, elem).isTrue() ) deleteImplIterator(elem, it); // it.remove
         }
         return this;
     }
@@ -612,7 +622,7 @@ public class RubySet extends RubyObject { // implements Set {
         Iterator<IRubyObject> it = elements().iterator();
         while ( it.hasNext() ) {
             IRubyObject elem = it.next();
-            if ( ! block.yield(context, elem).isTrue() ) it.remove();
+            if ( ! block.yield(context, elem).isTrue() ) deleteImplIterator(elem, it); // it.remove
         }
         return this;
     }
@@ -625,7 +635,7 @@ public class RubySet extends RubyObject { // implements Set {
 
         final RubyArray elems = to_a(context); clearImpl();
         for ( int i=0; i<elems.size(); i++ ) {
-            addObject(context.runtime, block.yield(context, elems.eltInternal(i)));
+            addImpl(context.runtime, block.yield(context, elems.eltInternal(i)));
         }
         return this;
     }
@@ -641,7 +651,7 @@ public class RubySet extends RubyObject { // implements Set {
         Iterator<IRubyObject> it = elements().iterator();
         while ( it.hasNext() ) {
             IRubyObject elem = it.next();
-            if ( block.yield(context, elem).isTrue() ) it.remove();
+            if ( block.yield(context, elem).isTrue() ) deleteImplIterator(elem, it); // it.remove
         }
         return size == size() ? context.nil : this;
     }
@@ -657,7 +667,7 @@ public class RubySet extends RubyObject { // implements Set {
         Iterator<IRubyObject> it = elements().iterator();
         while ( it.hasNext() ) {
             IRubyObject elem = it.next();
-            if ( ! block.yield(context, elem).isTrue() ) it.remove();
+            if ( ! block.yield(context, elem).isTrue() ) deleteImplIterator(elem, it); // it.remove
         }
         return size == size() ? context.nil : this;
     }
@@ -671,20 +681,19 @@ public class RubySet extends RubyObject { // implements Set {
 
         if ( enume instanceof RubySet ) {
             modifyCheck(runtime);
-            // NOTE: MRI cheats - does not call Set#add thus we do not care ...
-            hash.merge_bang(context, ((RubySet) enume).hash, Block.NULL_BLOCK);
+            addImplSet(context, (RubySet) enume);
         }
         else if ( enume instanceof RubyArray ) {
             modifyCheck(runtime);
             RubyArray ary = (RubyArray) enume;
             for ( int i = 0; i < ary.size(); i++ ) {
-                addObject(runtime, ary.eltInternal(i));
+                addImpl(runtime, ary.eltInternal(i));
             }
         }
         else { // do_with_enum(enum) { |o| add(o) }
             doWithEnum(context, enume, new EachBody(runtime) {
                 IRubyObject yieldImpl(ThreadContext context, IRubyObject val) {
-                    addObject(context.runtime, val); return context.nil;
+                    addImpl(context.runtime, val); return context.nil;
                 }
             });
         }
@@ -701,21 +710,21 @@ public class RubySet extends RubyObject { // implements Set {
 
         if ( enume instanceof RubySet ) {
             modifyCheck(runtime);
-            for ( IRubyObject elem : ((RubySet) enume).elements() ) {
-                deleteObject(elem);
+            for ( IRubyObject elem : ((RubySet) enume).elementsOrdered() ) {
+                deleteImpl(elem);
             }
         }
         else if ( enume instanceof RubyArray ) {
             modifyCheck(runtime);
             RubyArray ary = (RubyArray) enume;
             for ( int i = 0; i < ary.size(); i++ ) {
-                deleteObject(ary.eltInternal(i));
+                deleteImpl(ary.eltInternal(i));
             }
         }
         else { // do_with_enum(enum) { |o| delete(o) }
             doWithEnum(context, enume, new EachBody(runtime) {
                 IRubyObject yieldImpl(ThreadContext context, IRubyObject val) {
-                    deleteObject(val); return context.nil;
+                    deleteImpl(val); return context.nil;
                 }
             });
         }
@@ -749,8 +758,8 @@ public class RubySet extends RubyObject { // implements Set {
         final RubySet newSet = new RubySet(runtime, getMetaClass());
         if ( enume instanceof RubySet ) {
             newSet.initHash(runtime, ((RubySet) enume).size());
-            for ( IRubyObject obj : ((RubySet) enume).elements() ) {
-                if ( contains(context, obj) ) newSet.addObject(runtime, obj);
+            for ( IRubyObject obj : ((RubySet) enume).elementsOrdered() ) {
+                if ( contains(context, obj) ) newSet.addImpl(runtime, obj);
             }
         }
         else if ( enume instanceof RubyArray ) {
@@ -758,7 +767,7 @@ public class RubySet extends RubyObject { // implements Set {
             newSet.initHash(runtime, ary.size());
             for ( int i = 0; i < ary.size(); i++ ) {
                 final IRubyObject obj = ary.eltInternal(i);
-                if ( contains(context, obj) ) newSet.addObject(runtime, obj);
+                if ( contains(context, obj) ) newSet.addImpl(runtime, obj);
             }
         }
         else {
@@ -766,7 +775,7 @@ public class RubySet extends RubyObject { // implements Set {
             // do_with_enum(enum) { |o| newSet.add(o) if include?(o) }
             doWithEnum(context, enume, new EachBody(runtime) {
                 IRubyObject yieldImpl(ThreadContext context, IRubyObject obj) {
-                    if ( contains(context, obj) ) newSet.addObject(runtime, obj);
+                    if ( contains(context, obj) ) newSet.addImpl(runtime, obj);
                     return context.nil;
                 }
             });
@@ -785,9 +794,9 @@ public class RubySet extends RubyObject { // implements Set {
 
         RubySet newSet = new RubySet(runtime, runtime.getClass("Set"));
         newSet.initialize(context, enume, Block.NULL_BLOCK); // Set.new(enum)
-        for ( IRubyObject o : elements() ) {
-            if ( newSet.contains(context, o) ) newSet.deleteObject(o); // exclusive or
-            else newSet.addObject(runtime, o);
+        for ( IRubyObject o : elementsOrdered() ) {
+            if ( newSet.contains(context, o) ) newSet.deleteImpl(o); // exclusive or
+            else newSet.addImpl(runtime, o);
         }
 
         return newSet;
@@ -803,7 +812,7 @@ public class RubySet extends RubyObject { // implements Set {
         if ( other instanceof RubySet ) {
             RubySet that = (RubySet) other;
             if ( this.size() == that.size() ) { // && includes all of our elements :
-                for ( IRubyObject obj : elements() ) {
+                for ( IRubyObject obj : elementsOrdered() ) {
                     if ( ! that.contains(context, obj) ) return context.runtime.getFalse();
                 }
                 return context.runtime.getTrue();
@@ -853,7 +862,7 @@ public class RubySet extends RubyObject { // implements Set {
 
         final RubyHash h = new RubyHash(runtime, size());
 
-        for ( IRubyObject i : elements() ) {
+        for ( IRubyObject i : elementsOrdered() ) {
             final IRubyObject key = block.yield(context, i);
             IRubyObject set;
             if ( ( set = h.fastARef(key) ) == null ) {
@@ -909,10 +918,10 @@ public class RubySet extends RubyObject { // implements Set {
 
         final RubyHash dig = DivideTSortHash.newInstance(context);
 
-        for ( IRubyObject u : elements() ) { // each
+        for ( IRubyObject u : elementsOrdered() ) { // each
             RubyArray a;
             dig.fastASet(u, a = runtime.newArray()); // dig[u] = a = []
-            for ( IRubyObject v : elements() ) { // each
+            for ( IRubyObject v : elementsOrdered() ) { // each
                 // func.call(u, v) and a << v
                 IRubyObject ret = block.call(context, u, v);
                 if ( ret.isTrue() ) a.append(v);
@@ -940,7 +949,7 @@ public class RubySet extends RubyObject { // implements Set {
                 public IRubyObject yield(ThreadContext context, IRubyObject[] args) {
                     // final IRubyObject css = args[0];
                     // set.add( self.class.new(css) ) :
-                    set.addObject(runtime, RubySet.create(context, RubySet.this.getMetaClass(), args));
+                    set.addImpl(runtime, RubySet.create(context, RubySet.this.getMetaClass(), args));
                     return context.nil;
                 }
             })
@@ -1063,7 +1072,7 @@ public class RubySet extends RubyObject { // implements Set {
 
         boolean tainted = isTaint(); boolean notFirst = false;
 
-        for ( IRubyObject elem : elements() ) {
+        for ( IRubyObject elem : elementsOrdered() ) {
             final RubyString s = inspect(context, elem);
             if ( s.isTaint() ) tainted = true;
             if ( notFirst ) str.cat((byte) ',').cat((byte) ' ');
@@ -1080,6 +1089,11 @@ public class RubySet extends RubyObject { // implements Set {
 
     protected final Set<IRubyObject> elements() {
         return hash.directKeySet(); // Hash view -> no copying
+    }
+
+    // NOTE: implementation does not expect to be used for altering contents using iterator
+    protected Set<IRubyObject> elementsOrdered() {
+        return elements(); // potentially -> to be re-defined by SortedSet
     }
 
     protected final void modifyCheck(final Ruby runtime) {

@@ -33,6 +33,12 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import java.util.Iterator;
+import java.util.Set;
+import java.util.TreeSet;
+
+import static org.jruby.RubyArray.DefaultComparator;
+
 /**
  * Native implementation of Ruby's SortedSet (set.rb replacement).
  *
@@ -45,7 +51,6 @@ public class RubySortedSet extends RubySet {
         RubyClass SortedSet = runtime.defineClass("SortedSet", runtime.getClass("Set"), ALLOCATOR);
 
         SortedSet.setReifiedClass(RubySortedSet.class);
-
         SortedSet.defineAnnotatedMethods(RubySortedSet.class);
 
         return SortedSet;
@@ -57,16 +62,73 @@ public class RubySortedSet extends RubySet {
         }
     };
 
-    public RubySortedSet(Ruby runtime, RubyClass klass) {
+    private static class OrderComparator extends DefaultComparator {
+
+        private final Ruby runtime;
+
+        OrderComparator(final Ruby runtime) {
+            super(null); this.runtime = runtime;
+        }
+
+        @Override
+        protected ThreadContext context() {
+            return runtime.getCurrentContext();
+        }
+    }
+
+    private final TreeSet order;
+
+    protected RubySortedSet(Ruby runtime, RubyClass klass) {
         super(runtime, klass);
+        order = new TreeSet(new OrderComparator(runtime));
     }
 
     @Override
-    protected void addObject(final Ruby runtime, final IRubyObject obj) {
+    protected void addImpl(final Ruby runtime, final IRubyObject obj) {
+
         if ( ! obj.respondsTo("<=>") ) { // TODO site-cache
             throw runtime.newArgumentError("value must respond to <=>");
         }
-        super.addObject(runtime, obj);
+
+        super.addImpl(runtime, obj); // @hash[obj] = true
+        order.add(obj);
     }
+
+    @Override
+    protected void addImplSet(final ThreadContext context, final RubySet set) {
+        super.addImplSet(context, set);
+        order.addAll(set.elements());
+    }
+
+    @Override
+    protected boolean deleteImpl(final IRubyObject obj) {
+        if ( super.deleteImpl(obj) ) {
+            order.remove(obj); return true;
+        }
+        return false;
+    }
+
+    @Override
+    protected void deleteImplIterator(final IRubyObject obj, final Iterator it) {
+        it.remove(); // super
+        order.remove(obj);
+    }
+
+    @Override
+    protected void clearImpl() {
+        hash.rb_clear();
+        order.clear();
+    }
+
+    @Override
+    @JRubyMethod(name = "to_a", alias = "sort") // re-def Enumerable#sort
+    public RubyArray to_a(final ThreadContext context) {
+        return RubyArray.newArray(context.runtime, order); // instead of this.hash.keys();
+    }
+
+    // NOTE: weirdly Set/SortedSet in Ruby do not have sort!
+
+    @Override
+    protected Set<IRubyObject> elementsOrdered() { return order; }
 
 }
