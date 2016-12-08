@@ -3483,42 +3483,134 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         return sort_bang(context, block);
     }
 
-    protected IRubyObject sortInternal(final ThreadContext context, boolean honorOverride) {
-        Ruby runtime = context.runtime;
-
-        // One check per specialized fast-path to make the check invariant.
-        final boolean fixnumBypass = !honorOverride || runtime.getFixnum().isMethodBuiltin("<=>");
-        final boolean stringBypass = !honorOverride || runtime.getString().isMethodBuiltin("<=>");
-
+    protected IRubyObject sortInternal(final ThreadContext context, final boolean honorOverride) {
         try {
-            Arrays.sort(values, begin, begin + realLength, new Comparator() {
-                public int compare(Object o1, Object o2) {
-                    if (fixnumBypass && o1 instanceof RubyFixnum && o2 instanceof RubyFixnum) {
-                        return compareFixnums((RubyFixnum) o1, (RubyFixnum) o2);
-                    }
-                    if (stringBypass && o1 instanceof RubyString && o2 instanceof RubyString) {
-                        return ((RubyString) o1).op_cmp((RubyString) o2);
-                    }
-                    return compareOthers(context, (IRubyObject)o1, (IRubyObject)o2);
+            Arrays.sort(values, begin, begin + realLength, new DefaultComparator(context, honorOverride) {
+                protected int compareGeneric(IRubyObject o1, IRubyObject o2) {
+                    //TODO: ary_sort_check should be done here
+                    return super.compareGeneric(o1, o2);
                 }
             });
-        } catch (ArrayIndexOutOfBoundsException ex) {
+        }
+        catch (ArrayIndexOutOfBoundsException ex) {
             throw concurrentModification(context.runtime, ex);
         }
         return this;
     }
 
+    // @Deprecated
     protected static int compareFixnums(RubyFixnum o1, RubyFixnum o2) {
-        long a = o1.getLongValue();
-        long b = o2.getLongValue();
-        return a > b ? 1 : a == b ? 0 : -1;
+        return DefaultComparator.compareInteger(o1, o2);
     }
 
+    // @Deprecated
     protected static int compareOthers(ThreadContext context, IRubyObject o1, IRubyObject o2) {
-        IRubyObject ret = sites(context).op_cmp_sort.call(context, o1, o1, o2);
-        int n = RubyComparable.cmpint(context, ret, o1, o2);
-        //TODO: ary_sort_check should be done here
-        return n;
+        return DefaultComparator.compareGeneric(context, o1, o2);
+    }
+
+    public static class DefaultComparator implements Comparator<IRubyObject> {
+
+        final ThreadContext context;
+
+        private final boolean fixnumBypass;
+        private final boolean stringBypass;
+
+        public DefaultComparator(ThreadContext context) {
+            this(context, true);
+        }
+
+        DefaultComparator(ThreadContext context, final boolean honorOverride) {
+            this.context = context;
+            if ( honorOverride && context != null ) {
+                this.fixnumBypass = !honorOverride || context.runtime.getFixnum().isMethodBuiltin("<=>");
+                this.stringBypass = !honorOverride || context.runtime.getString().isMethodBuiltin("<=>");
+            }
+            else { // no-opt
+                this.fixnumBypass = false;
+                this.stringBypass = false;
+            }
+        }
+
+        /*
+        DefaultComparator(ThreadContext context, final boolean fixnumBypass, final boolean stringBypass) {
+            this.context = context;
+            this.fixnumBypass = fixnumBypass;
+            this.stringBypass = stringBypass;
+        } */
+
+        public int compare(IRubyObject obj1, IRubyObject obj2) {
+            if (fixnumBypass && obj1 instanceof RubyFixnum && obj2 instanceof RubyFixnum) {
+                return compareInteger((RubyFixnum) obj1, (RubyFixnum) obj2);
+            }
+            if (stringBypass && obj1 instanceof RubyString && obj2 instanceof RubyString) {
+                return compareString((RubyString) obj1, (RubyString) obj2);
+            }
+            return compareGeneric(obj1, obj2);
+        }
+
+        protected int compareGeneric(IRubyObject o1, IRubyObject o2) {
+            final ThreadContext context = context();
+            return compareGeneric(context, sites(context).op_cmp_sort, o1, o2);
+        }
+
+        protected ThreadContext context() {
+            return context;
+        }
+
+        public static int compareInteger(RubyFixnum o1, RubyFixnum o2) {
+            long a = o1.getLongValue();
+            long b = o2.getLongValue();
+            return a > b ? 1 : a == b ? 0 : -1;
+        }
+
+        public static int compareString(RubyString o1, RubyString o2) {
+            return o1.op_cmp(o2);
+        }
+
+        public static int compareGeneric(ThreadContext context, IRubyObject o1, IRubyObject o2) {
+            return compareGeneric(context, sites(context).op_cmp_sort, o1, o2);
+        }
+
+        public static int compareGeneric(ThreadContext context, CallSite op_cmp_sort, IRubyObject o1, IRubyObject o2) {
+            IRubyObject ret = op_cmp_sort.call(context, o1, o1, o2);
+            return RubyComparable.cmpint(context, ret, o1, o2);
+        }
+
+    }
+
+    static class BlockComparator implements Comparator<IRubyObject> {
+
+        final ThreadContext context;
+
+        protected final Block block;
+        protected final IRubyObject self;
+
+        private final CallSite gt;
+        private final CallSite lt;
+
+        BlockComparator(ThreadContext context, Block block, CallSite gt, CallSite lt) {
+            this(context, block, null, gt, lt);
+        }
+
+        BlockComparator(ThreadContext context, Block block, IRubyObject self, CallSite gt, CallSite lt) {
+            this.context = context == null ? self.getRuntime().getCurrentContext() : context;
+            this.block = block; this.self = self;
+            this.gt = gt; this.lt = lt;
+        }
+
+        public int compare(IRubyObject obj1, IRubyObject obj2) {
+            return RubyComparable.cmpint(context, gt, lt, yieldBlock(obj1, obj2), obj1, obj2);
+        }
+
+        protected final IRubyObject yieldBlock(IRubyObject obj1, IRubyObject obj2) {
+            final ThreadContext context = context();
+            return block.yieldArray(context, context.runtime.newArray(obj1, obj2), self);
+        }
+
+        protected final ThreadContext context() {
+            return context;
+        }
+
     }
 
     protected IRubyObject sortInternal(final ThreadContext context, final Block block) {
@@ -3528,15 +3620,13 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         int length = realLength;
 
         copyInto(newValues, 0);
-        Arrays.sort(newValues, 0, length, new Comparator() {
-            CallSite gt = sites(context).op_gt_sort;
-            CallSite lt = sites(context).op_lt_sort;
-            public int compare(Object o1, Object o2) {
-                IRubyObject obj1 = (IRubyObject) o1;
-                IRubyObject obj2 = (IRubyObject) o2;
-                IRubyObject ret = block.yieldArray(context, getRuntime().newArray(obj1, obj2), null);
+        CallSite gt = sites(context).op_gt_sort;
+        CallSite lt = sites(context).op_lt_sort;
+        Arrays.sort(newValues, 0, length, new BlockComparator(context, block, gt, lt) {
+            @Override
+            public int compare(IRubyObject obj1, IRubyObject obj2) {
                 //TODO: ary_sort_check should be done here
-                return RubyComparable.cmpint(context, gt, lt, ret, obj1, obj2);
+                return super.compare(obj1, obj2);
             }
         });
 
