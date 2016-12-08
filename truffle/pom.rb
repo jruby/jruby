@@ -12,37 +12,8 @@ project 'JRuby Truffle' do
               # Must be the same as in mx.jruby/suite.py (except for the -SNAPSHOT part only in this file, and here we can use a release name)
               'truffle.version' => '0.20',
               'jruby.basedir' => '${basedir}/..',
-              'maven.test.skip' => 'true',
-              'tzdata.version' => '2013d',
-              'tzdata.scope' => 'provided',
+              'maven.test.skip' => 'true'
   )
-
-  jar 'org.yaml:snakeyaml:1.14'
-
-  # exclude jnr-ffi to avoid problems with shading and relocation of the asm packages
-  jar 'com.github.jnr:jnr-netdb:1.1.6', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-enxio:0.13', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-x86asm:1.0.2', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-unixsocket:0.14', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-posix:3.0.32', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-constants:0.9.6', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-ffi:2.1.1'
-  jar 'com.github.jnr:jffi:${jffi.version}'
-  jar 'com.github.jnr:jffi:${jffi.version}:native'
-
-  jar 'org.jruby.joni:joni:2.1.11'
-  jar 'org.jruby.extras:bytelist:1.0.13'
-  jar 'org.jruby.jcodings:jcodings:1.0.18'
-
-  jar 'bsf:bsf:2.4.0', :scope => 'provided'
-  jar 'com.jcraft:jzlib:1.1.3'
-  jar 'com.martiansoftware:nailgun-server:0.9.1'
-  jar 'junit:junit', :scope => 'test'
-  jar 'org.apache.ant:ant:${ant.version}', :scope => 'provided'
-
-  # joda timezone must be before joda-time to be packed correctly
-  jar 'org.jruby:joda-timezones:${tzdata.version}', :scope => '${tzdata.scope}'
-  jar 'joda-time:joda-time:${joda.time.version}'
 
   repository(:url => 'http://lafo.ssw.uni-linz.ac.at/nexus/content/repositories/snapshots/', :id => 'truffle')
 
@@ -51,6 +22,19 @@ project 'JRuby Truffle' do
   jar 'com.oracle.truffle:truffle-debug:' + truffle_version
   jar 'com.oracle.truffle:truffle-dsl-processor:' + truffle_version, :scope => 'provided'
   jar 'com.oracle.truffle:truffle-tck:' + truffle_version, :scope => 'test'
+
+  jar 'com.github.jnr:jnr-unixsocket:0.14'
+  jar 'com.github.jnr:jnr-posix:3.0.32'
+  jar 'com.github.jnr:jnr-constants:0.9.6'
+  jar 'com.github.jnr:jnr-ffi:2.1.1'
+  jar 'com.github.jnr:jffi:1.2.13'
+  jar 'com.github.jnr:jffi:1.2.13:native'
+  
+  jar 'org.yaml:snakeyaml:1.14'
+  jar 'org.jruby.joni:joni:2.1.11'
+  jar 'org.jruby.extras:bytelist:1.0.13'
+  jar 'org.jruby.jcodings:jcodings:1.0.18'
+  jar 'joda-time:joda-time:2.8.2'
   
   jar 'junit:junit', :scope => 'test'
 
