@@ -1271,26 +1271,27 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(names = "initialize", optional = 1, taintFrom = 1)
+    @CoreMethod(names = "initialize_internal", optional = 2, taintFrom = 1)
     public abstract static class InitializeNode extends CoreMethodArrayArgumentsNode {
 
         @Child private IsFrozenNode isFrozenNode;
         @Child private ToStrNode toStrNode;
+        @Child private CallDispatchHeadNode forceEncodingNode;
 
         @Specialization
-        public DynamicObject initialize(DynamicObject self, NotProvided from) {
+        public DynamicObject initialize(DynamicObject self, NotProvided from, NotProvided encoding) {
             return self;
         }
 
         @Specialization
-        public DynamicObject initializeJavaString(DynamicObject self, String from) {
+        public DynamicObject initializeJavaString(DynamicObject self, String from, NotProvided encoding) {
             raiseIfFrozen(self);
             StringOperations.setRope(self, StringOperations.encodeRope(from, ASCIIEncoding.INSTANCE));
             return self;
         }
 
         @Specialization(guards = "isRubyString(from)")
-        public DynamicObject initialize(DynamicObject self, DynamicObject from) {
+        public DynamicObject initialize(DynamicObject self, DynamicObject from, NotProvided encoding) {
             raiseIfFrozen(self);
 
             StringOperations.setRope(self, rope(from));
@@ -1298,14 +1299,38 @@ public abstract class StringNodes {
             return self;
         }
 
+        @Specialization(guards = {"isRubyString(from)"})
+        public DynamicObject initialize(VirtualFrame frame, DynamicObject self, DynamicObject from, DynamicObject encoding) {
+            raiseIfFrozen(self);
+
+            StringOperations.setRope(self, rope(from));
+
+            if (forceEncodingNode == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                forceEncodingNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+            }
+
+            return (DynamicObject) forceEncodingNode.call(frame, self, "force_encoding", encoding);
+        }
+
         @Specialization(guards = { "!isRubyString(from)", "!isString(from)", "wasProvided(from)" })
-        public DynamicObject initialize(VirtualFrame frame, DynamicObject self, Object from) {
+        public DynamicObject initialize(VirtualFrame frame, DynamicObject self, Object from, NotProvided encoding) {
             if (toStrNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
                 toStrNode = insert(ToStrNodeGen.create(getContext(), null, null));
             }
 
-            return initialize(self, toStrNode.executeToStr(frame, from));
+            return initialize(self, toStrNode.executeToStr(frame, from), NotProvided.INSTANCE);
+        }
+
+        @Specialization(guards = { "!isRubyString(from)", "!isString(from)", "wasProvided(from)" })
+        public DynamicObject initialize(VirtualFrame frame, DynamicObject self, Object from, DynamicObject encoding) {
+            if (toStrNode == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                toStrNode = insert(ToStrNodeGen.create(getContext(), null, null));
+            }
+
+            return initialize(frame, self, toStrNode.executeToStr(frame, from), encoding);
         }
 
         protected void raiseIfFrozen(Object object) {

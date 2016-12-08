@@ -1555,6 +1555,18 @@ class String
     m.character_index str, start
   end
 
+  def initialize(other = undefined, encoding: undefined)
+    if !undefined.equal?(other) && !undefined.equal?(encoding)
+      return self.initialize_internal(other, encoding)
+    elsif !undefined.equal?(other)
+      return self.initialize_internal(other)
+    elsif !undefined.equal?(encoding)
+      return self.initialize_internal("", encoding)
+    end
+
+    self.initialize_internal
+  end
+
   def rindex(sub, finish=undefined)
     if undefined.equal?(finish)
       finish = size
