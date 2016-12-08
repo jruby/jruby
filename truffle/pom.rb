@@ -19,34 +19,30 @@ project 'JRuby Truffle' do
 
   jar 'org.yaml:snakeyaml:1.14'
 
-  if ENV['JRUBY_TRUFFLE_BUILD_STANDALONE']
-    # exclude jnr-ffi to avoid problems with shading and relocation of the asm packages
-    jar 'com.github.jnr:jnr-netdb:1.1.6', :exclusions => ['com.github.jnr:jnr-ffi']
-    jar 'com.github.jnr:jnr-enxio:0.13', :exclusions => ['com.github.jnr:jnr-ffi']
-    jar 'com.github.jnr:jnr-x86asm:1.0.2', :exclusions => ['com.github.jnr:jnr-ffi']
-    jar 'com.github.jnr:jnr-unixsocket:0.14', :exclusions => ['com.github.jnr:jnr-ffi']
-    jar 'com.github.jnr:jnr-posix:3.0.32', :exclusions => ['com.github.jnr:jnr-ffi']
-    jar 'com.github.jnr:jnr-constants:0.9.6', :exclusions => ['com.github.jnr:jnr-ffi']
-    jar 'com.github.jnr:jnr-ffi:2.1.1'
-    jar 'com.github.jnr:jffi:${jffi.version}'
-    jar 'com.github.jnr:jffi:${jffi.version}:native'
+  # exclude jnr-ffi to avoid problems with shading and relocation of the asm packages
+  jar 'com.github.jnr:jnr-netdb:1.1.6', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-enxio:0.13', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-x86asm:1.0.2', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-unixsocket:0.14', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-posix:3.0.32', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-constants:0.9.6', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-ffi:2.1.1'
+  jar 'com.github.jnr:jffi:${jffi.version}'
+  jar 'com.github.jnr:jffi:${jffi.version}:native'
 
-    jar 'org.jruby.joni:joni:2.1.11'
-    jar 'org.jruby.extras:bytelist:1.0.13'
-    jar 'org.jruby.jcodings:jcodings:1.0.18'
+  jar 'org.jruby.joni:joni:2.1.11'
+  jar 'org.jruby.extras:bytelist:1.0.13'
+  jar 'org.jruby.jcodings:jcodings:1.0.18'
 
-    jar 'bsf:bsf:2.4.0', :scope => 'provided'
-    jar 'com.jcraft:jzlib:1.1.3'
-    jar 'com.martiansoftware:nailgun-server:0.9.1'
-    jar 'junit:junit', :scope => 'test'
-    jar 'org.apache.ant:ant:${ant.version}', :scope => 'provided'
+  jar 'bsf:bsf:2.4.0', :scope => 'provided'
+  jar 'com.jcraft:jzlib:1.1.3'
+  jar 'com.martiansoftware:nailgun-server:0.9.1'
+  jar 'junit:junit', :scope => 'test'
+  jar 'org.apache.ant:ant:${ant.version}', :scope => 'provided'
 
-    # joda timezone must be before joda-time to be packed correctly
-    jar 'org.jruby:joda-timezones:${tzdata.version}', :scope => '${tzdata.scope}'
-    jar 'joda-time:joda-time:${joda.time.version}'
-  else
-    jar 'org.jruby:jruby-core', '${project.version}', :scope => 'provided'
-  end
+  # joda timezone must be before joda-time to be packed correctly
+  jar 'org.jruby:joda-timezones:${tzdata.version}', :scope => '${tzdata.scope}'
+  jar 'joda-time:joda-time:${joda.time.version}'
 
   repository(:url => 'http://lafo.ssw.uni-linz.ac.at/nexus/content/repositories/snapshots/', :id => 'truffle')
 

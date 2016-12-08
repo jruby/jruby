@@ -321,7 +321,7 @@ do
 done
 
 if [[ "$USING_TRUFFLE" != "" ]]; then
-   JRUBY_CP="$JRUBY_CP$CP_DELIMITER$JRUBY_HOME/lib/jruby-truffle.jar"
+   JRUBY_CP="$JRUBY_HOME/lib/jruby-truffle.jar"
    java_class=$JAVA_CLASS_JRUBY_TRUFFLE_MAIN
    ruby_args=("-X+T" "${ruby_args[@]}")
 fi
