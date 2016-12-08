@@ -1866,6 +1866,31 @@ public class RubyHash extends RubyObject implements Map {
         return ary;
     }
 
+    @JRubyMethod(name = "compact")
+    public IRubyObject compact(ThreadContext context) {
+      IRubyObject res = dup();
+      ((RubyHash)res).compact_bang(context);
+      return res;
+    }
+
+    @JRubyMethod(name = "compact!")
+    public IRubyObject compact_bang(ThreadContext context) {
+      boolean changed = false;
+      modify();
+      iteratorEntry();
+      try {
+        for (RubyHashEntry entry = head.nextAdded; entry != head; entry = entry.nextAdded) {
+          if (entry.value == context.nil) {
+            internalDelete(entry.key);
+            changed = true;
+          }
+        }
+      } finally {
+        iteratorExit();
+      }
+      return changed ? this : context.nil;
+    }
+
     @JRubyMethod(name = "compare_by_identity")
     public IRubyObject getCompareByIdentity(ThreadContext context) {
         modify();
