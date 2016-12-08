@@ -59,6 +59,8 @@ public class RubySet extends RubyObject { // implements Set {
         Set.includeModule(runtime.getEnumerable());
         Set.defineAnnotatedMethods(RubySet.class);
 
+        runtime.getLoadService().require("jruby/set.rb");
+
         return Set;
     }
 
