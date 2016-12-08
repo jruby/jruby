@@ -81,7 +81,7 @@ public abstract class DirNodes {
         public DynamicObject open(DynamicObject dir, DynamicObject path, DynamicObject encoding) {
             // TODO CS 22-Apr-15 race conditions here
 
-            final File file = new File(path.toString());
+            final File file = new File(StringOperations.decodeUTF8(path));
 
             if (!file.isDirectory()) {
                 throw new RaiseException(coreExceptions().errnoError(Errno.ENOTDIR.intValue(), this));
