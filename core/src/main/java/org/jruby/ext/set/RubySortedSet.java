@@ -33,9 +33,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import java.util.Iterator;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 
 import static org.jruby.RubyArray.DefaultComparator;
 
@@ -45,7 +43,7 @@ import static org.jruby.RubyArray.DefaultComparator;
  * @author kares
  */
 @org.jruby.anno.JRubyClass(name="SortedSet", parent = "Set")
-public class RubySortedSet extends RubySet {
+public class RubySortedSet extends RubySet implements SortedSet {
 
     static RubyClass createSortedSetClass(final Ruby runtime) {
         RubyClass SortedSet = runtime.defineClass("SortedSet", runtime.getClass("Set"), ALLOCATOR);
@@ -76,11 +74,11 @@ public class RubySortedSet extends RubySet {
         }
     }
 
-    private final TreeSet order;
+    private final TreeSet<IRubyObject> order;
 
     protected RubySortedSet(Ruby runtime, RubyClass klass) {
         super(runtime, klass);
-        order = new TreeSet(new OrderComparator(runtime));
+        order = new TreeSet<>(new OrderComparator(runtime));
     }
 
     @Override
@@ -130,5 +128,81 @@ public class RubySortedSet extends RubySet {
 
     @Override
     protected Set<IRubyObject> elementsOrdered() { return order; }
+
+    @Override
+    public Iterator<Object> iterator() {
+        return new JavaIterator();
+    }
+
+    // java.util.SortedSet :
+
+    public Comparator<? super IRubyObject> comparator() {
+        return order.comparator();
+    }
+
+    public Object first() {
+        return firstValue().toJava(Object.class);
+    }
+
+    public IRubyObject firstValue() {
+        return order.first();
+    }
+
+    public Object last() {
+        return lastValue().toJava(Object.class);
+    }
+
+    public IRubyObject lastValue() {
+        return order.last();
+    }
+
+    public SortedSet headSet(Object toElement) {
+        throw new UnsupportedOperationException("NOT IMPLEMENTED");
+    }
+
+    public SortedSet subSet(Object fromElement, Object toElement) {
+        throw new UnsupportedOperationException("NOT IMPLEMENTED");
+    }
+
+    public SortedSet tailSet(Object fromElement) {
+        throw new UnsupportedOperationException("NOT IMPLEMENTED");
+    }
+
+    public SortedSet<IRubyObject> rawHeadSet(IRubyObject toElement) {
+        return order.headSet(toElement);
+    }
+
+    public SortedSet<IRubyObject> rawSubSet(IRubyObject fromElement, IRubyObject toElement) {
+        return order.subSet(fromElement, toElement);
+    }
+
+    public SortedSet<IRubyObject> rawTailSet(IRubyObject fromElement) {
+        return order.tailSet(fromElement);
+    }
+
+    private class JavaIterator implements Iterator<Object> {
+
+        private final Iterator<IRubyObject> rawIterator;
+
+        JavaIterator() {
+            rawIterator = RubySortedSet.this.order.iterator();
+        }
+
+        @Override
+        public boolean hasNext() {
+            return rawIterator.hasNext();
+        }
+
+        @Override
+        public Object next() {
+            return rawIterator.next().toJava(Object.class);
+        }
+
+        @Override
+        public void remove() {
+            rawIterator.remove();
+        }
+
+    }
 
 }

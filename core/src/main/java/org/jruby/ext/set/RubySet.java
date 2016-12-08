@@ -32,10 +32,12 @@ import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.*;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings;
+import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ArraySupport;
 
+import java.lang.reflect.Array;
 import java.util.Collection;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
@@ -49,7 +51,7 @@ import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
  * @author kares
  */
 @org.jruby.anno.JRubyClass(name="Set", include = { "Enumerable" })
-public class RubySet extends RubyObject { // implements Set {
+public class RubySet extends RubyObject implements Set {
 
     static RubyClass createSetClass(final Ruby runtime) {
         RubyClass Set = runtime.defineClass("Set", runtime.getObject(), ALLOCATOR);
@@ -269,21 +271,15 @@ public class RubySet extends RubyObject { // implements Set {
         return super.untaint(context);
     }
 
-    public int size() { return hash.size(); }
-
     @JRubyMethod(name = "size", alias = "length")
     public IRubyObject length(ThreadContext context) {
         return context.runtime.newFixnum( size() );
     }
 
-    public boolean isEmpty() { return hash.isEmpty(); }
-
     @JRubyMethod(name = "empty?")
     public IRubyObject empty_p(ThreadContext context) {
         return context.runtime.newBoolean( isEmpty() );
     }
-
-    public void clear() { clearImpl(); }
 
     @JRubyMethod(name = "clear")
     public IRubyObject rb_clear(ThreadContext context) {
@@ -427,16 +423,16 @@ public class RubySet extends RubyObject { // implements Set {
      */
     @JRubyMethod(name = "include?", alias = { "member?" })
     public RubyBoolean include_p(final ThreadContext context, IRubyObject obj) {
-        return hash.has_key_p(context, obj);
+        return context.runtime.newBoolean( containsImpl(obj) );
     }
 
-    final boolean contains(final ThreadContext context, IRubyObject obj) {
-        return include_p(context, obj) == context.runtime.getTrue();
+    final boolean containsImpl(IRubyObject obj) {
+        return hash.fastARef(obj) != null;
     }
 
-    private boolean allElementsIncluded(ThreadContext context, final RubySet set) {
+    private boolean allElementsIncluded(final RubySet set) {
         for ( IRubyObject o : set.elements() ) { // set.all? { |o| include?(o) }
-            if ( ! contains(context, o) ) return false;
+            if ( ! containsImpl(o) ) return false;
         }
         return true;
     }
@@ -450,7 +446,7 @@ public class RubySet extends RubyObject { // implements Set {
             }
             // size >= set.size && set.all? { |o| include?(o) }
             return context.runtime.newBoolean(
-                    size() >= ((RubySet) set).size() && allElementsIncluded(context, (RubySet) set)
+                    size() >= ((RubySet) set).size() && allElementsIncluded((RubySet) set)
             );
         }
         throw context.runtime.newArgumentError("value must be a set");
@@ -465,7 +461,7 @@ public class RubySet extends RubyObject { // implements Set {
             }
             // size >= set.size && set.all? { |o| include?(o) }
             return context.runtime.newBoolean(
-                    size() > ((RubySet) set).size() && allElementsIncluded(context, (RubySet) set)
+                    size() > ((RubySet) set).size() && allElementsIncluded((RubySet) set)
             );
         }
         throw context.runtime.newArgumentError("value must be a set");
@@ -479,7 +475,7 @@ public class RubySet extends RubyObject { // implements Set {
             }
             // size >= set.size && set.all? { |o| include?(o) }
             return context.runtime.newBoolean(
-                    size() <= ((RubySet) set).size() && allElementsIncluded(context, (RubySet) set)
+                    size() <= ((RubySet) set).size() && allElementsIncluded((RubySet) set)
             );
         }
         throw context.runtime.newArgumentError("value must be a set");
@@ -493,7 +489,7 @@ public class RubySet extends RubyObject { // implements Set {
             }
             // size >= set.size && set.all? { |o| include?(o) }
             return context.runtime.newBoolean(
-                    size() < ((RubySet) set).size() && allElementsIncluded(context, (RubySet) set)
+                    size() < ((RubySet) set).size() && allElementsIncluded((RubySet) set)
             );
         }
         throw context.runtime.newArgumentError("value must be a set");
@@ -505,22 +501,22 @@ public class RubySet extends RubyObject { // implements Set {
     @JRubyMethod(name = "intersect?")
     public IRubyObject intersect_p(final ThreadContext context, IRubyObject set) {
         if ( set instanceof RubySet ) {
-            return context.runtime.newBoolean( intersect(context, (RubySet) set) );
+            return context.runtime.newBoolean( intersect((RubySet) set) );
         }
         throw context.runtime.newArgumentError("value must be a set");
     }
 
-    public boolean intersect(final ThreadContext context, final RubySet set) {
+    public boolean intersect(final RubySet set) {
         if ( size() < set.size() ) {
             // any? { |o| set.include?(o) }
             for ( IRubyObject o : elementsOrdered() ) {
-                if ( set.contains(context, o) ) return true;
+                if ( set.containsImpl(o) ) return true;
             }
         }
         else {
             // set.any? { |o| include?(o) }
             for ( IRubyObject o : set.elementsOrdered() ) {
-                if ( contains(context, o) ) return true;
+                if ( containsImpl(o) ) return true;
             }
         }
         return false;
@@ -533,7 +529,7 @@ public class RubySet extends RubyObject { // implements Set {
     @JRubyMethod(name = "disjoint?")
     public IRubyObject disjoint_p(final ThreadContext context, IRubyObject set) {
         if ( set instanceof RubySet ) {
-            return context.runtime.newBoolean( ! intersect(context, (RubySet) set) );
+            return context.runtime.newBoolean( ! intersect((RubySet) set) );
         }
         throw context.runtime.newArgumentError("value must be a set");
     }
@@ -582,7 +578,7 @@ public class RubySet extends RubyObject { // implements Set {
     @JRubyMethod(name = "add?")
     public IRubyObject add_p(final ThreadContext context, IRubyObject obj) {
         // add(o) unless include?(o)
-        if ( contains(context, obj) ) return context.nil;
+        if ( containsImpl(obj) ) return context.nil;
         return add(context, obj);
     }
 
@@ -608,7 +604,7 @@ public class RubySet extends RubyObject { // implements Set {
     @JRubyMethod(name = "delete?")
     public IRubyObject delete_p(final ThreadContext context, IRubyObject obj) {
         // delete(o) if include?(o)
-        if ( ! contains(context, obj) ) return context.nil;
+        if ( ! containsImpl(obj) ) return context.nil;
         return delete(context, obj);
     }
 
@@ -772,7 +768,7 @@ public class RubySet extends RubyObject { // implements Set {
         if ( enume instanceof RubySet ) {
             newSet.initHash(runtime, ((RubySet) enume).size());
             for ( IRubyObject obj : ((RubySet) enume).elementsOrdered() ) {
-                if ( contains(context, obj) ) newSet.addImpl(runtime, obj);
+                if ( containsImpl(obj) ) newSet.addImpl(runtime, obj);
             }
         }
         else if ( enume instanceof RubyArray ) {
@@ -780,7 +776,7 @@ public class RubySet extends RubyObject { // implements Set {
             newSet.initHash(runtime, ary.size());
             for ( int i = 0; i < ary.size(); i++ ) {
                 final IRubyObject obj = ary.eltInternal(i);
-                if ( contains(context, obj) ) newSet.addImpl(runtime, obj);
+                if ( containsImpl(obj) ) newSet.addImpl(runtime, obj);
             }
         }
         else {
@@ -788,7 +784,7 @@ public class RubySet extends RubyObject { // implements Set {
             // do_with_enum(enum) { |o| newSet.add(o) if include?(o) }
             doWithEnum(context, enume, new EachBody(runtime) {
                 IRubyObject yieldImpl(ThreadContext context, IRubyObject obj) {
-                    if ( contains(context, obj) ) newSet.addImpl(runtime, obj);
+                    if ( containsImpl(obj) ) newSet.addImpl(runtime, obj);
                     return context.nil;
                 }
             });
@@ -808,7 +804,7 @@ public class RubySet extends RubyObject { // implements Set {
         RubySet newSet = new RubySet(runtime, runtime.getClass("Set"));
         newSet.initialize(context, enume, Block.NULL_BLOCK); // Set.new(enum)
         for ( IRubyObject o : elementsOrdered() ) {
-            if ( newSet.contains(context, o) ) newSet.deleteImpl(o); // exclusive or
+            if ( newSet.containsImpl(o) ) newSet.deleteImpl(o); // exclusive or
             else newSet.addImpl(runtime, o);
         }
 
@@ -826,7 +822,7 @@ public class RubySet extends RubyObject { // implements Set {
             RubySet that = (RubySet) other;
             if ( this.size() == that.size() ) { // && includes all of our elements :
                 for ( IRubyObject obj : elementsOrdered() ) {
-                    if ( ! that.contains(context, obj) ) return context.runtime.getFalse();
+                    if ( ! that.containsImpl(obj) ) return context.runtime.getFalse();
                 }
                 return context.runtime.getTrue();
             }
@@ -1054,16 +1050,11 @@ public class RubySet extends RubyObject { // implements Set {
         final RubyString str;
 
         if (size() == 0) {
-            str = RubyString.newStringLight(runtime, 16, USASCIIEncoding.INSTANCE);
-            inspectPrefix(str, getMetaClass()); str.cat('{').cat('}').cat('>'); // "#<Set: {}>"
-            return str;
+            return inspectEmpty(runtime);
         }
 
         if (runtime.isInspecting(this)) {
-            str = RubyString.newStringLight(runtime, 20, USASCIIEncoding.INSTANCE);
-            inspectPrefix(str, getMetaClass());
-            str.cat('{').cat(RECURSIVE_BYTES).cat('}').cat('>'); // "#<Set: {...}>"
-            return str;
+            return inspectRecurse(runtime);
         }
 
         str = RubyString.newStringLight(runtime, 32, USASCIIEncoding.INSTANCE);
@@ -1077,6 +1068,19 @@ public class RubySet extends RubyObject { // implements Set {
         finally {
             runtime.unregisterInspecting(this);
         }
+    }
+
+    private RubyString inspectEmpty(final Ruby runtime) {
+        RubyString str = RubyString.newStringLight(runtime, 16, USASCIIEncoding.INSTANCE);
+        inspectPrefix(str, getMetaClass()); str.cat('{').cat('}').cat('>'); // "#<Set: {}>"
+        return str;
+    }
+
+    private RubyString inspectRecurse(final Ruby runtime) {
+        RubyString str = RubyString.newStringLight(runtime, 20, USASCIIEncoding.INSTANCE);
+        inspectPrefix(str, getMetaClass());
+        str.cat('{').cat(RECURSIVE_BYTES).cat('}').cat('>'); // "#<Set: {...}>"
+        return str;
     }
 
     private static RubyString inspectPrefix(final RubyString str, final RubyClass metaClass) {
@@ -1103,7 +1107,13 @@ public class RubySet extends RubyObject { // implements Set {
         if ( tainted ) str.setTaint(true);
     }
 
-    //
+    // pp (in __jruby/set.rb__)
+
+    //@JRubyMethod
+    //public IRubyObject pretty_print_cycle(ThreadContext context, final IRubyObject pp) {
+    //    RubyString str = isEmpty() ? inspectEmpty(context.runtime) : inspectRecurse(context.runtime);
+    //    return pp.callMethod(context, "text", str); // pp.text ...
+    //}
 
     protected final Set<IRubyObject> elements() {
         return hash.directKeySet(); // Hash view -> no copying
@@ -1116,6 +1126,102 @@ public class RubySet extends RubyObject { // implements Set {
 
     protected final void modifyCheck(final Ruby runtime) {
         if ((flags & FROZEN_F) != 0) throw runtime.newFrozenError("Set");
+    }
+
+    // java.util.Set
+
+    public int size() { return hash.size(); }
+
+    public boolean isEmpty() { return hash.isEmpty(); }
+
+    public void clear() { clearImpl(); }
+
+    public boolean contains(Object o) {
+        return containsImpl(toRuby(o));
+    }
+
+    public Iterator<IRubyObject> rawIterator() {
+        return elementsOrdered().iterator();
+    }
+
+    public Iterator<Object> iterator() {
+        return hash.keySet().iterator();
+    }
+
+    public Object[] toArray() {
+        Object[] array = new Object[size()]; int i = 0;
+        for ( IRubyObject elem : elementsOrdered() ) {
+            array[i++] = elem.toJava(Object.class);
+        }
+        return array;
+    }
+
+    public Object[] toArray(final Object[] ary) {
+        final Class type = ary.getClass().getComponentType();
+        Object[] array = ary;
+        if (array.length < size()) {
+            array = (Object[]) Array.newInstance(type, size());
+        }
+
+        int i = 0;
+        for ( IRubyObject elem : elementsOrdered() ) {
+            array[i++] = elem.toJava(type);
+        }
+        return array;
+    }
+
+    public boolean add(Object element) {
+        final Ruby runtime = getRuntime();
+        final int size = size();
+        addImpl(runtime, toRuby(runtime, element));
+        return size() > size; // if added
+    }
+
+    public boolean remove(Object element) {
+        return deleteImpl(toRuby(element));
+    }
+
+    public boolean containsAll(Collection coll) {
+        for ( Object elem : coll ) {
+            if ( ! contains(elem) ) return false;
+        }
+        return true;
+    }
+
+    public boolean addAll(Collection coll) {
+        final Ruby runtime = getRuntime();
+        final int size = size();
+        for ( Object elem : coll ) {
+            addImpl(runtime, toRuby(runtime, elem));
+        }
+        return size() > size; // if added
+    }
+
+    public boolean retainAll(Collection coll) {
+        final int size = size();
+        for (Iterator<IRubyObject> iter = rawIterator(); iter.hasNext();) {
+            IRubyObject elem = iter.next();
+            if ( ! coll.contains(elem.toJava(Object.class)) ) {
+                deleteImplIterator(elem, iter);
+            }
+        }
+        return size() < size;
+    }
+
+    public boolean removeAll(Collection coll) {
+        boolean removed = false;
+        for ( Object elem : coll ) {
+            removed = remove(elem) | removed;
+        }
+        return removed;
+    }
+
+    static IRubyObject toRuby(Ruby runtime, Object obj) {
+        return JavaUtil.convertJavaToUsableRubyObject(runtime, obj);
+    }
+
+    final IRubyObject toRuby(Object obj) {
+        return JavaUtil.convertJavaToUsableRubyObject(getRuntime(), obj);
     }
 
 }
