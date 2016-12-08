@@ -38,6 +38,7 @@ import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -220,6 +221,9 @@ public class RubyInstanceConfig {
                 return getInput();
             } else {
                 final String script = getScriptFileName();
+
+                return new FileInputStream(script);
+
                 /*FileResource resource = JRubyFile.createRestrictedResource(getCurrentDirectory(), getScriptFileName());
                 if (resource != null && resource.exists()) {
                     if (resource.canRead() && !resource.isDirectory()) {
@@ -235,7 +239,7 @@ public class RubyInstanceConfig {
                     }
                 }
                 else {*/
-                    throw new FileNotFoundException(script + " (No such file or directory)");
+                    //throw new FileNotFoundException(script + " (No such file or directory)");
                 //}
             }
         } catch (IOException e) {

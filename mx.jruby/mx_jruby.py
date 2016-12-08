@@ -171,8 +171,6 @@ def extractArguments(cli_args):
         while args:
             arg = args.pop(0)
             if arg == '-X+T':
-                pass # Just drop it
-            elif arg == '-X+TM':
                 main_class = "org.jruby.truffle.Main"
             elif arg == '-Xclassic':
                 classic = True

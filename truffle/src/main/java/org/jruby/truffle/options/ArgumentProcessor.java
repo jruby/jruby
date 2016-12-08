@@ -390,7 +390,7 @@ public class ArgumentProcessor {
                     } else if (extendedOption.equals("classic")) {
                         //throw new MainExitException(0, "jruby: the -Xclassic option should have been handled in the launcher");
                         throw new UnsupportedOperationException();
-                    } else if (extendedOption.equals("+T") || extendedOption.equals("+TM")) {
+                    } else if (extendedOption.equals("+T")) {
                         // Nothing
                     } else if (extendedOption.endsWith("...")) {
                         throw new UnsupportedOperationException();

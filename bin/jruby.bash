@@ -251,10 +251,6 @@ do
      -X+T)
         USING_TRUFFLE="true"
         ;;
-     -X+TM)
-        USING_TRUFFLE="true"
-        java_class=$JAVA_CLASS_JRUBY_TRUFFLE_MAIN
-        ;;
      # Match -Xa.b.c=d to translate to -Da.b.c=d as a java option
      -X*)
         val=${1:2}
@@ -326,6 +322,7 @@ done
 
 if [[ "$USING_TRUFFLE" != "" ]]; then
    JRUBY_CP="$JRUBY_CP$CP_DELIMITER$JRUBY_HOME/lib/jruby-truffle.jar"
+   java_class=$JAVA_CLASS_JRUBY_TRUFFLE_MAIN
    ruby_args=("-X+T" "${ruby_args[@]}")
 fi
 
