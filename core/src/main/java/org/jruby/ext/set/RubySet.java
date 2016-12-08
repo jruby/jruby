@@ -95,7 +95,18 @@ public class RubySet extends RubyObject { // implements Set {
 
     RubySet newSet(final Ruby runtime) {
         RubySet set = new RubySet(runtime, getMetaClass());
-        set.initHash(runtime); return set;
+        set.initHash(runtime);
+        return set;
+    }
+
+    private RubySet newSet(final ThreadContext context, final RubyClass metaClass, final RubyArray elements) {
+        RubySet set = new RubySet(context.runtime, metaClass);
+        final int len = elements.size();
+        set.initHash(context.runtime, len);
+        for ( int i = 0; i < len; i++ ) {
+            set.invokeAdd(context, elements.eltInternal(i));
+        }
+        return set;
     }
 
     /**
@@ -918,38 +929,42 @@ public class RubySet extends RubyObject { // implements Set {
 
         final RubyHash dig = DivideTSortHash.newInstance(context);
 
-        for ( IRubyObject u : elementsOrdered() ) { // each
+        /*
+          each { |u|
+            dig[u] = a = []
+            each{ |v| func.call(u, v) and a << v }
+          }
+         */
+        for ( IRubyObject u : elementsOrdered() ) {
             RubyArray a;
-            dig.fastASet(u, a = runtime.newArray()); // dig[u] = a = []
-            for ( IRubyObject v : elementsOrdered() ) { // each
-                // func.call(u, v) and a << v
+            dig.fastASet(u, a = runtime.newArray());
+            for ( IRubyObject v : elementsOrdered() ) {
                 IRubyObject ret = block.call(context, u, v);
                 if ( ret.isTrue() ) a.append(v);
             }
         }
 
         /*
-          each { |u|
-            dig[u] = a = []
-            each{ |v| func.call(u, v) and a << v }
-          }
-
           set = Set.new()
           dig.each_strongly_connected_component { |css|
             set.add(self.class.new(css))
           }
           set
          */
-
-        final RubySet set = new RubySet(runtime, runtime.getClass("Set"));
+        final RubyClass Set = runtime.getClass("Set");
+        final RubySet set = new RubySet(runtime, Set);
         set.initHash(runtime, dig.size());
         dig.callMethod(context, "each_strongly_connected_component", IRubyObject.NULL_ARRAY, new Block(
             new JavaInternalBlockBody(runtime, Signature.ONE_REQUIRED) {
                 @Override
                 public IRubyObject yield(ThreadContext context, IRubyObject[] args) {
-                    // final IRubyObject css = args[0];
+                    return doYield(context, null, args[0]);
+                }
+
+                @Override
+                protected IRubyObject doYield(ThreadContext context, Block block, IRubyObject css) {
                     // set.add( self.class.new(css) ) :
-                    set.addImpl(runtime, RubySet.create(context, RubySet.this.getMetaClass(), args));
+                    set.addImpl(runtime, RubySet.this.newSet(context, Set, (RubyArray) css));
                     return context.nil;
                 }
             })
@@ -958,6 +973,7 @@ public class RubySet extends RubyObject { // implements Set {
         return set;
     }
 
+    // NOTE: a replacement for set.rb's eval in Set#divide : `class << dig = {} ...`
     public static final class DivideTSortHash extends RubyHash {
 
         private static final String NAME = "DivideTSortHash"; // private constant under Set::
@@ -967,7 +983,7 @@ public class RubySet extends RubyObject { // implements Set {
 
             RubyClass Set = runtime.getClass("Set");
             RubyClass klass = (RubyClass) Set.getConstantAt(NAME, true);
-            if (klass == null) {
+            if (klass == null) { // initialize on-demand when Set#divide is first called
                 synchronized (DivideTSortHash.class) {
                     klass = (RubyClass) Set.getConstantAt(NAME, true);
                     if (klass == null) {
