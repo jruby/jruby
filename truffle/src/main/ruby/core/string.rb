@@ -1555,16 +1555,14 @@ class String
     m.character_index str, start
   end
 
-  def initialize(other = undefined, encoding: undefined)
-    if !undefined.equal?(other) && !undefined.equal?(encoding)
-      return self.initialize_internal(other, encoding)
-    elsif !undefined.equal?(other)
-      return self.initialize_internal(other)
-    elsif !undefined.equal?(encoding)
-      return self.initialize_internal("", encoding)
+  def initialize(other = undefined, encoding: nil)
+    unless undefined.equal?(other)
+      Truffle.check_frozen
+      Truffle.invoke_primitive(:string_initialize, self, other)
+      taint if other.tainted?
     end
-
-    self.initialize_internal
+    self.force_encoding(encoding) if encoding
+    self
   end
 
   def rindex(sub, finish=undefined)

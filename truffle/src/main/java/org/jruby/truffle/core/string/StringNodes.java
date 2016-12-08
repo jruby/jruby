@@ -138,8 +138,6 @@ import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
-import org.jruby.truffle.language.objects.IsFrozenNode;
-import org.jruby.truffle.language.objects.IsFrozenNodeGen;
 import org.jruby.truffle.language.objects.IsTaintedNode;
 import org.jruby.truffle.language.objects.IsTaintedNodeGen;
 import org.jruby.truffle.language.objects.TaintNode;
@@ -1271,74 +1269,31 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(names = "initialize_internal", optional = 2, taintFrom = 1)
+    @Primitive(name = "string_initialize")
     public abstract static class InitializeNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private IsFrozenNode isFrozenNode;
         @Child private ToStrNode toStrNode;
-        @Child private CallDispatchHeadNode forceEncodingNode;
 
         @Specialization
-        public DynamicObject initialize(DynamicObject self, NotProvided from, NotProvided encoding) {
-            return self;
-        }
-
-        @Specialization
-        public DynamicObject initializeJavaString(DynamicObject self, String from, NotProvided encoding) {
-            raiseIfFrozen(self);
+        public DynamicObject initializeJavaString(DynamicObject self, String from) {
             StringOperations.setRope(self, StringOperations.encodeRope(from, ASCIIEncoding.INSTANCE));
             return self;
         }
 
         @Specialization(guards = "isRubyString(from)")
-        public DynamicObject initialize(DynamicObject self, DynamicObject from, NotProvided encoding) {
-            raiseIfFrozen(self);
-
+        public DynamicObject initialize(DynamicObject self, DynamicObject from) {
             StringOperations.setRope(self, rope(from));
-
             return self;
         }
 
-        @Specialization(guards = {"isRubyString(from)"})
-        public DynamicObject initialize(VirtualFrame frame, DynamicObject self, DynamicObject from, DynamicObject encoding) {
-            raiseIfFrozen(self);
-
-            StringOperations.setRope(self, rope(from));
-
-            if (forceEncodingNode == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                forceEncodingNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
-            }
-
-            return (DynamicObject) forceEncodingNode.call(frame, self, "force_encoding", encoding);
-        }
-
-        @Specialization(guards = { "!isRubyString(from)", "!isString(from)", "wasProvided(from)" })
-        public DynamicObject initialize(VirtualFrame frame, DynamicObject self, Object from, NotProvided encoding) {
+        @Specialization(guards = {"!isRubyString(from)", "!isString(from)"})
+        public DynamicObject initialize(VirtualFrame frame, DynamicObject self, Object from) {
             if (toStrNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
                 toStrNode = insert(ToStrNodeGen.create(getContext(), null, null));
             }
 
-            return initialize(self, toStrNode.executeToStr(frame, from), NotProvided.INSTANCE);
-        }
-
-        @Specialization(guards = { "!isRubyString(from)", "!isString(from)", "wasProvided(from)" })
-        public DynamicObject initialize(VirtualFrame frame, DynamicObject self, Object from, DynamicObject encoding) {
-            if (toStrNode == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                toStrNode = insert(ToStrNodeGen.create(getContext(), null, null));
-            }
-
-            return initialize(frame, self, toStrNode.executeToStr(frame, from), encoding);
-        }
-
-        protected void raiseIfFrozen(Object object) {
-            if (isFrozenNode == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                isFrozenNode = insert(IsFrozenNodeGen.create(getContext(), null, null));
-            }
-            isFrozenNode.raiseIfFrozen(object);
+            return initialize(self, toStrNode.executeToStr(frame, from));
         }
 
     }
