@@ -37,7 +37,7 @@ import org.jcodings.transcode.EConv;
 import org.jcodings.transcode.EConvFlags;
 import org.jcodings.unicode.UnicodeEncoding;
 import org.jruby.truffle.core.string.StringSupport;
-import org.jruby.util.ByteList;
+import org.jruby.truffle.util.ByteList;
 
 import java.util.ArrayList;
 import java.util.List;

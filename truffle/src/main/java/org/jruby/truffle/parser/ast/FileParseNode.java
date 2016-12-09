@@ -29,7 +29,7 @@
 package org.jruby.truffle.parser.ast;
 
 import org.jruby.truffle.parser.lexer.ISourcePosition;
-import org.jruby.util.ByteList;
+import org.jruby.truffle.util.ByteList;
 
 /**
  * Represents __FILE__ nodes

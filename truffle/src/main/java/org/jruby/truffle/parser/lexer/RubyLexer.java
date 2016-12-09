@@ -67,7 +67,7 @@ import org.jruby.truffle.parser.parser.ParserSupport;
 import org.jruby.truffle.parser.parser.RubyParser;
 import org.jruby.truffle.parser.parser.Tokens;
 import org.jruby.truffle.util.SafeDoubleParser;
-import org.jruby.util.ByteList;
+import org.jruby.truffle.util.ByteList;
 
 import java.io.IOException;
 import java.math.BigDecimal;

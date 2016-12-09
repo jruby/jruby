@@ -36,7 +36,7 @@ import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.util.EncodingUtils;
 import org.jruby.truffle.util.Memo;
 import org.jruby.truffle.util.StringUtils;
-import org.jruby.util.ByteList;
+import org.jruby.truffle.util.ByteList;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;

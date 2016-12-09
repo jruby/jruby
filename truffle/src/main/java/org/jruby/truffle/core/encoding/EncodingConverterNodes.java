@@ -45,7 +45,7 @@ import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.util.StringUtils;
-import org.jruby.util.ByteList;
+import org.jruby.truffle.util.ByteList;
 
 import java.util.Map;
 

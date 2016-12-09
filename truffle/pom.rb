@@ -32,7 +32,6 @@ project 'JRuby Truffle' do
   
   jar 'org.yaml:snakeyaml:1.14'
   jar 'org.jruby.joni:joni:2.1.11'
-  jar 'org.jruby.extras:bytelist:1.0.13'
   jar 'org.jruby.jcodings:jcodings:1.0.18'
   jar 'joda-time:joda-time:2.8.2'
   

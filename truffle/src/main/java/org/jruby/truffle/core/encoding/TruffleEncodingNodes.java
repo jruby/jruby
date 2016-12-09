@@ -28,7 +28,7 @@ import org.jruby.truffle.core.cast.ToStrNode;
 import org.jruby.truffle.core.cast.ToStrNodeGen;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.util.ByteList;
+import org.jruby.truffle.util.ByteList;
 
 @CoreClass("Truffle::Encoding")
 public abstract class TruffleEncodingNodes {

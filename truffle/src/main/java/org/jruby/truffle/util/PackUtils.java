@@ -35,7 +35,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.util;
 
-import org.jruby.util.ByteList;
+import org.jruby.truffle.util.ByteList;
 
 public class PackUtils {
 

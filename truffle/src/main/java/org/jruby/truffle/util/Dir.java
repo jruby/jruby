@@ -27,12 +27,12 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.util;
 
-import org.jruby.util.ByteList;
+import org.jruby.truffle.util.ByteList;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.jruby.util.ByteList.NULL_ARRAY;
+import static org.jruby.truffle.util.ByteList.NULL_ARRAY;
 
 /**
  * This class exists as a counterpart to the dir.c file in

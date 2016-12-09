@@ -15,7 +15,7 @@ import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.core.string.StringSupport;
-import org.jruby.util.ByteList;
+import org.jruby.truffle.util.ByteList;
 
 import java.io.IOException;
 import java.io.OutputStream;
