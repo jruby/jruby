@@ -49,7 +49,7 @@ import org.jcodings.specific.ASCIIEncoding;
  * of characters. However, its API resembles StringBuffer/StringBuilder more than String
  * because it is a mutable object.
  */
-public class ByteList implements Comparable, CharSequence {
+public class ByteList implements CharSequence {
 
     public static final byte[] NULL_ARRAY = new byte[0];
     public static final ByteList EMPTY_BYTELIST = new ByteList(0);
@@ -695,14 +695,6 @@ public class ByteList implements Comparable, CharSequence {
             return first >= last;
         }
         return false;
-    }
-
-    /**
-     * This comparison matches MRI comparison of Strings (rb_str_cmp).
-     * I wish we had memcmp right now...
-     */
-    public int compareTo(Object other) {
-        return cmp((ByteList)other);
     }
 
     /**
