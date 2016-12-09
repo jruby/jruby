@@ -38,32 +38,6 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
 
     public abstract Object executeWrite(DynamicObject array, int index, Object value);
 
-    // Writing at index 0 into a null array creates a new array of the most specific type
-
-    @Specialization(guards = { "isNullArray(array)", "index == 0", "strategy.specializesFor(value)" }, limit = "ARRAY_STRATEGIES")
-    public Object writeNull0(DynamicObject array, int index, Object value,
-            @Cached("forValue(value)") ArrayStrategy strategy) {
-        final ArrayMirror storeMirror = strategy.newArray(1);
-        storeMirror.set(0, value);
-        setStoreAndSize(array, storeMirror.getArray(), 1);
-        return value;
-    }
-
-    // Writing beyond index 0 in a null array creates an Object[] as we need to fill the rest with nil
-
-    @Specialization(guards = { "isNullArray(array)", "index != 0" })
-    public Object writeNullBeyond(DynamicObject array, int index, Object value) {
-        final Object[] store = new Object[index + 1];
-
-        for (int n = 0; n < index; n++) {
-            store[n] = nil();
-        }
-
-        store[index] = value;
-        setStoreAndSize(array, store, store.length);
-        return value;
-    }
-
     // Writing within an existing array with a compatible type
 
     @Specialization(guards = {
@@ -79,11 +53,12 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
 
     @Specialization(guards = {
                     "isInBounds(array, index)", "currentStrategy.matches(array)",
-                    "!currentStrategy.accepts(value)", "generalizedStrategy.accepts(value)",
+                    "!currentStrategy.accepts(value)", "valueStrategy.specializesFor(value)",
     }, limit = "ARRAY_STRATEGIES")
     public Object writeWithinGeneralize(DynamicObject array, int index, Object value,
             @Cached("of(array)") ArrayStrategy currentStrategy,
-            @Cached("currentStrategy.generalizeFor(value)") ArrayStrategy generalizedStrategy) {
+            @Cached("forValue(value)") ArrayStrategy valueStrategy,
+            @Cached("currentStrategy.generalize(valueStrategy)") ArrayStrategy generalizedStrategy) {
         final int size = getSize(array);
         final ArrayMirror currentMirror = currentStrategy.newMirror(array);
         final ArrayMirror storeMirror = generalizedStrategy.newArray(currentMirror.getLength());

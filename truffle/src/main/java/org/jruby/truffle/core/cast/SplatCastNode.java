@@ -51,7 +51,7 @@ public abstract class SplatCastNode extends RubyNode {
         super(context, sourceSection);
         this.nilBehavior = nilBehavior;
         // Calling private #to_a is allowed for the *splat operator.
-        dup = ArrayDupNodeGen.create(context, sourceSection, null);
+        dup = ArrayDupNodeGen.create(null);
         toA = DispatchHeadNodeFactory.createMethodCall(context, true, MissingBehavior.RETURN_MISSING);
         String name = useToAry ? "to_ary" : "to_a";
         conversionMethod = context.getSymbolTable().getSymbol(name);

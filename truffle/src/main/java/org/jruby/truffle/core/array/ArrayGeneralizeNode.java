@@ -17,7 +17,6 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 
@@ -37,13 +36,6 @@ public abstract class ArrayGeneralizeNode extends RubyNode {
     }
 
     public abstract Object[] executeGeneralize(DynamicObject array, int requiredCapacity);
-
-    @Specialization(guards = "isNullArray(array)")
-    public Object[] generalizeNull(DynamicObject array, int requiredCapacity) {
-        Object[] store = new Object[requiredCapacity];
-        Layouts.ARRAY.setStore(array, store);
-        return store;
-    }
 
     @Specialization(guards = "strategy.matches(array)", limit = "ARRAY_STRATEGIES")
     public Object[] generalize(DynamicObject array, int requiredCapacity,

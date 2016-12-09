@@ -17,7 +17,6 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 
@@ -32,16 +31,11 @@ public abstract class ArrayGetTailNode extends RubyNode {
         this.index = index;
     }
 
-    @Specialization(guards = "isNullArray(array)")
-    public DynamicObject getTailNull(DynamicObject array) {
-        return createArray(null, 0);
-    }
-
     @Specialization(guards = "strategy.matches(array)", limit = "ARRAY_STRATEGIES")
     public DynamicObject getTail(DynamicObject array,
             @Cached("of(array)") ArrayStrategy strategy,
             @Cached("createBinaryProfile()") ConditionProfile indexLargerThanSize) {
-        final int size = Layouts.ARRAY.getSize(array);
+        final int size = strategy.getSize(array);
         if (indexLargerThanSize.profile(index >= size)) {
             return createArray(null, 0);
         } else {

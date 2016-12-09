@@ -15,9 +15,6 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.Layouts;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 
@@ -28,24 +25,14 @@ import org.jruby.truffle.language.objects.AllocateObjectNode;
 @ImportStatic(ArrayGuards.class)
 public abstract class ArrayDupNode extends RubyNode {
 
-    @Child private AllocateObjectNode allocateNode;
-
-    public ArrayDupNode(RubyContext context, SourceSection sourceSection) {
-        super(context, sourceSection);
-        allocateNode = AllocateObjectNode.create();
-    }
+    @Child private AllocateObjectNode allocateNode = AllocateObjectNode.create();
 
     public abstract DynamicObject executeDup(VirtualFrame frame, DynamicObject array);
 
-    @Specialization(guards = "isNullArray(from)")
-    public DynamicObject dupNull(DynamicObject from) {
-        return allocateNode.allocateArray(coreLibrary().getArrayClass(), null, 0);
-    }
-
     @Specialization(guards = "strategy.matches(from)", limit = "ARRAY_STRATEGIES")
-    public DynamicObject dupOther(DynamicObject from,
+    public DynamicObject dup(DynamicObject from,
             @Cached("of(from)") ArrayStrategy strategy) {
-        final int size = Layouts.ARRAY.getSize(from);
+        final int size = strategy.getSize(from);
         Object store = strategy.newMirror(from).copyArrayAndMirror().getArray();
         return allocateNode.allocateArray(coreLibrary().getArrayClass(), store, size);
     }

@@ -17,7 +17,6 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 
@@ -36,16 +35,11 @@ public abstract class ArraySliceNode extends RubyNode {
         this.to = to;
     }
 
-    @Specialization(guards = "isNullArray(array)")
-    public DynamicObject sliceNull(DynamicObject array) {
-        return createArray(null, 0);
-    }
-
     @Specialization(guards = { "strategy.matches(array)" }, limit = "ARRAY_STRATEGIES")
     public DynamicObject readInBounds(DynamicObject array,
             @Cached("of(array)") ArrayStrategy strategy,
             @Cached("createBinaryProfile()") ConditionProfile emptyArray) {
-        final int to = Layouts.ARRAY.getSize(array) + this.to;
+        final int to = strategy.getSize(array) + this.to;
 
         if (emptyArray.profile(from >= to)) {
             return createArray(null, 0);

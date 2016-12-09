@@ -122,19 +122,19 @@ public class RubyCallNode extends RubyNode {
 
         if (isSplatted) {
             assert argumentsObjects.length == 1;
-            return splat(argumentsObjects[0]);
+            return splat(argumentsObjects);
         } else {
             return argumentsObjects;
         }
     }
 
-    private Object[] splat(Object argument) {
+    private Object[] splat(Object[] arguments) {
         if (toObjectArrayNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
             toObjectArrayNode = insert(ArrayToObjectArrayNodeGen.create(null));
         }
         // TODO(CS): what happens if it isn't an Array?
-        return toObjectArrayNode.executeToObjectArray((DynamicObject) argument);
+        return toObjectArrayNode.unsplat(arguments);
     }
 
     @Override

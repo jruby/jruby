@@ -34,18 +34,6 @@ public abstract class ArrayAppendOneNode extends RubyNode {
 
     public abstract DynamicObject executeAppendOne(DynamicObject array, Object value);
 
-    // Append into an empty array
-
-    @Specialization(guards = { "isNullArray(array)", "strategy.specializesFor(value)" }, limit = "ARRAY_STRATEGIES")
-    public DynamicObject appendOneEmpty(DynamicObject array, Object value,
-            @Cached("forValue(value)") ArrayStrategy strategy) {
-        final ArrayMirror storeMirror = strategy.newArray(1);
-        storeMirror.set(0, value);
-        strategy.setStore(array, storeMirror.getArray());
-        setSize(array, 1);
-        return array;
-    }
-
     // Append of the correct type
 
     @Specialization(guards = { "strategy.matches(array)", "strategy.accepts(value)" }, limit = "ARRAY_STRATEGIES")
@@ -71,14 +59,15 @@ public abstract class ArrayAppendOneNode extends RubyNode {
     // Append forcing a generalization
 
     @Specialization(guards = {
-            "currentStrategy.matches(array)", "!currentStrategy.accepts(value)", "generalizedStrategy.accepts(value)",
+            "strategy.matches(array)", "!strategy.accepts(value)", "valueStrategy.specializesFor(value)",
     }, limit = "ARRAY_STRATEGIES")
     public DynamicObject appendOneGeneralize(DynamicObject array, Object value,
-            @Cached("of(array, value)") ArrayStrategy currentStrategy,
-            @Cached("currentStrategy.generalizeFor(value)") ArrayStrategy generalizedStrategy) {
-        final int oldSize = Layouts.ARRAY.getSize(array);
+            @Cached("of(array)") ArrayStrategy strategy,
+            @Cached("forValue(value)") ArrayStrategy valueStrategy,
+            @Cached("strategy.generalize(valueStrategy)") ArrayStrategy generalizedStrategy) {
+        final int oldSize = strategy.getSize(array);
         final int newSize = oldSize + 1;
-        final ArrayMirror currentMirror = currentStrategy.newMirror(array);
+        final ArrayMirror currentMirror = strategy.newMirror(array);
         final int oldCapacity = currentMirror.getLength();
         final int newCapacity = newSize > oldCapacity ? ArrayUtils.capacityForOneMore(getContext(), oldCapacity) : oldCapacity;
         final ArrayMirror storeMirror = generalizedStrategy.newArray(newCapacity);
