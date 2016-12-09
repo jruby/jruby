@@ -248,14 +248,6 @@ public class ByteList implements Comparable, CharSequence {
     }
 
     /**
-     * @see Object#clone()
-     */
-    @Override
-    public Object clone() {
-        return dup();
-    }
-
-    /**
      * creates a duplicate of this bytelist but only in the case of a stringValue and its resulting
      * hash value.  No other elements are duplicated.
      */

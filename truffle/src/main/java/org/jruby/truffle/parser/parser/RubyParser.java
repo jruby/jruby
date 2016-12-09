@@ -3651,7 +3651,7 @@ states[460] = new ParserState() {
                     if (((ParseNode)yyVals[-1+yyTop]) == null) {
                         yyVal = new XStrParseNode(position, null, StringSupport.CR_7BIT);
                     } else if (((ParseNode)yyVals[-1+yyTop]) instanceof StrParseNode) {
-                        yyVal = new XStrParseNode(position, (ByteList) ((StrParseNode)yyVals[-1+yyTop]).getValue().clone(), ((StrParseNode)yyVals[-1+yyTop]).getCodeRange());
+                        yyVal = new XStrParseNode(position, ((StrParseNode)yyVals[-1+yyTop]).getValue().dup(), ((StrParseNode)yyVals[-1+yyTop]).getCodeRange());
                     } else if (((ParseNode)yyVals[-1+yyTop]) instanceof DStrParseNode) {
                         yyVal = new DXStrParseNode(position, ((DStrParseNode)yyVals[-1+yyTop]));
 
