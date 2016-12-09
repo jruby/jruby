@@ -823,7 +823,7 @@ public class RubyKernel {
             IRubyObject last = args[argc - 1];
             if ( last instanceof RubyHash ) {
                 RubyHash opt = (RubyHash) last; RubySymbol key;
-                if ( ! opt.isEmpty() && ( opt.has_key_p( key = runtime.newSymbol("cause") ) == runtime.getTrue() ) ) {
+                if ( ! opt.isEmpty() && ( opt.has_key_p( context, key = runtime.newSymbol("cause") ) == runtime.getTrue() ) ) {
                     cause = opt.delete(context, key, Block.NULL_BLOCK);
                     forceCause = true;
                     if ( opt.isEmpty() && --argc == 0 ) { // more opts will be passed along
@@ -1537,7 +1537,7 @@ public class RubyKernel {
         if (!needChdir && runtime.getPosix().isNative() && !Platform.IS_WINDOWS) {
             // MRI: rb_f_system
             long pid;
-            int[] status = new int[1];
+            int status;
 
 //            #if defined(SIGCLD) && !defined(SIGCHLD)
 //            # define SIGCHLD SIGCLD
@@ -1565,8 +1565,8 @@ public class RubyKernel {
             if (pid < 0) {
                 return runtime.getNil();
             }
-            status[0] = (int)((RubyProcess.RubyStatus) context.getLastExitStatus()).getStatus();
-            if (status[0] == 0) return runtime.getTrue();
+            status = (int)((RubyProcess.RubyStatus) context.getLastExitStatus()).getStatus();
+            if (status == 0) return runtime.getTrue();
             return runtime.getFalse();
         }
 

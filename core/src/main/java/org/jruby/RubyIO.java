@@ -1975,7 +1975,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
         if (closed != null && closed.isTrue()) return io;
         IRubyObject oldExc = runtime.getGlobalVariables().get("$!"); // Save $!
         try {
-            return io.checkCallMethod(context, sites.close_checked);
+            closed = io.checkCallMethod(context, sites.close_checked);
+            return runtime.newBoolean(closed != null && closed.isTrue());
         } catch (RaiseException re) {
             if (re.getMessage().contains(CLOSED_STREAM_MSG)) {
                 // ignore
