@@ -1726,7 +1726,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     public IRubyObject each(ThreadContext context, Block block) {
         if (!block.isGiven()) return enumeratorizeWithSize(context, this, "each", enumLengthFn());
 
-        for (int i = 0; i < realLength; i++) {
+        for (int i = 0; i < size(); i++) {
             // do not coarsen the "safe" catch, since it will misinterpret AIOOBE from the yielded code.
             // See JRUBY-5434
             block.yield(context, eltOk(i));
@@ -2188,6 +2188,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     }
 
     protected IRubyObject fillCommon(ThreadContext context, int beg, long len, IRubyObject item) {
+        unpack();
         modify();
 
         // See [ruby-core:17483]
@@ -2214,6 +2215,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     }
 
     protected IRubyObject fillCommon(ThreadContext context, int beg, long len, Block block) {
+        unpack();
         modify();
 
         // See [ruby-core:17483]
@@ -2461,7 +2463,10 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
 
         IRubyObject[] arr = new IRubyObject[realLength];
 
-        int i;
+        return collectFrom(context, arr, 0, block);
+    }
+
+    protected IRubyObject collectFrom(ThreadContext context, IRubyObject[] arr, int i, Block block) {
         for (i = 0; i < realLength; i++) {
             // Do not coarsen the "safe" check, since it will misinterpret AIOOBE from the yield
             // See JRUBY-5434
@@ -2469,7 +2474,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         }
 
         // use iteration count as new size in case something was deleted along the way
-        return newArrayMayCopy(runtime, arr, 0, i);
+        return newArrayMayCopy(context.runtime, arr, 0, i);
     }
 
     @JRubyMethod(name = {"collect"})
@@ -3500,6 +3505,8 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     }
 
     protected IRubyObject sortInternal(final ThreadContext context, final Block block) {
+        // block code can modify, so we need to iterate
+        unpack();
         IRubyObject[] newValues = new IRubyObject[realLength];
         int length = realLength;
 

@@ -96,6 +96,14 @@ public class RubyArrayTwoObject extends RubyArraySpecialized {
     public IRubyObject collect(ThreadContext context, Block block) {
         if (!packed()) return super.collect(context, block);
 
+        IRubyObject elt0 = block.yield(context, car);
+
+        if (!packed()) return collectFrom(context, arrayOf(elt0), 1, block);
+
+        IRubyObject elt1 = block.yield(context, cdr);
+
+        if (!packed()) return collectFrom(context, arrayOf(elt0, elt1), 2, block);
+
         return new RubyArrayTwoObject(getRuntime(), block.yield(context, car), block.yield(context, cdr));
     }
 
@@ -128,34 +136,6 @@ public class RubyArrayTwoObject extends RubyArraySpecialized {
     public IRubyObject dup() {
         if (!packed()) return super.dup();
         return new RubyArrayTwoObject(this);
-    }
-
-    @Override
-    public IRubyObject each(ThreadContext context, Block block) {
-        if (!packed()) return super.each(context, block);
-
-        if (!block.isGiven()) return enumeratorizeWithSize(context, this, "each", enumLengthFn());
-
-        block.yield(context, car);
-        block.yield(context, cdr);
-
-        return this;
-    }
-
-    @Override
-    protected IRubyObject fillCommon(ThreadContext context, int beg, long len, Block block) {
-        if (!packed()) return super.fillCommon(context, beg, len, block);
-
-        unpack();
-        return super.fillCommon(context, beg, len, block);
-    }
-
-    @Override
-    protected IRubyObject fillCommon(ThreadContext context, int beg, long len, IRubyObject item) {
-        if (!packed()) return super.fillCommon(context, beg, len, item);
-
-        unpack();
-        return super.fillCommon(context, beg, len, item);
     }
 
     @Override

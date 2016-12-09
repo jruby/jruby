@@ -87,7 +87,11 @@ public class RubyArrayOneObject extends RubyArraySpecialized {
     public IRubyObject collect(ThreadContext context, Block block) {
         if (!packed()) return super.collect(context, block);
 
-        return new RubyArrayOneObject(getRuntime(), block.yield(context, value));
+        IRubyObject elt0 = block.yield(context, value);
+
+        if (!packed()) return collectFrom(context, arrayOf(elt0), 1, block);
+
+        return new RubyArrayOneObject(getRuntime(), elt0);
     }
 
     @Override
@@ -117,59 +121,6 @@ public class RubyArrayOneObject extends RubyArraySpecialized {
     public IRubyObject dup() {
         if (!packed()) return super.dup();
         return new RubyArrayOneObject(this);
-    }
-
-    @Override
-    public IRubyObject each(ThreadContext context, Block block) {
-        if (!packed()) return super.each(context, block);
-
-        if (!block.isGiven()) return enumeratorizeWithSize(context, this, "each", enumLengthFn());
-
-        block.yield(context, value);
-
-        return this;
-    }
-
-    @Override
-    protected IRubyObject fillCommon(ThreadContext context, int beg, long len, Block block) {
-        if (!packed()) return super.fillCommon(context, beg, len, block);
-
-        modifyCheck();
-
-        // See [ruby-core:17483]
-        if (len <= 0) return this;
-
-        if (len > Integer.MAX_VALUE - beg) throw context.runtime.newArgumentError("argument too big");
-
-        if (len > 1) {
-            unpack();
-            return super.fillCommon(context, beg, len, block);
-        }
-
-        value = block.yield(context, RubyFixnum.zero(context.runtime));
-
-        return this;
-    }
-
-    @Override
-    protected IRubyObject fillCommon(ThreadContext context, int beg, long len, IRubyObject item) {
-        if (!packed()) return super.fillCommon(context, beg, len, item);
-
-        modifyCheck();
-
-        // See [ruby-core:17483]
-        if (len <= 0) return this;
-
-        if (len > Integer.MAX_VALUE - beg) throw context.runtime.newArgumentError("argument too big");
-
-        if (len > 1) {
-            unpack();
-            return super.fillCommon(context, beg, len, item);
-        }
-
-        value = item;
-
-        return this;
     }
 
     @Override
