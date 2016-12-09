@@ -1407,6 +1407,31 @@ public class RubyHash extends RubyObject implements Map {
         return block.isGiven() ? each_keyCommon(context, block) : enumeratorizeWithSize(context, this, "each_key", enumSizeFn());
     }
 
+    @JRubyMethod(name = "transform_values")
+    public IRubyObject transform_values(final ThreadContext context, final Block block) {
+        return ((RubyHash)dup()).transform_values_bang(context, block);
+    }
+
+    @JRubyMethod(name = "transform_values!")
+    public IRubyObject transform_values_bang(final ThreadContext context, final Block block) {
+        if (block.isGiven()) {
+            testFrozen("Hash");
+            TransformValuesVisitor tvf = new TransformValuesVisitor();
+            iteratorVisitAll(context, tvf, block);
+            return this;
+        }
+
+        return enumeratorizeWithSize(context, this, "transform_values!", enumSizeFn());
+    }
+
+    private static class TransformValuesVisitor extends VisitorWithState<Block> {
+        @Override
+        public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, Block block) {
+            IRubyObject newValue = block.yield(context, value);
+            self.op_aset(context, key, newValue);
+        }
+    }
+
     @JRubyMethod(name = "select!")
     public IRubyObject select_bang(final ThreadContext context, final Block block) {
         if (block.isGiven()) return keep_ifCommon(context, block) ? this : context.runtime.getNil();
