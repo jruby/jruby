@@ -92,12 +92,6 @@ suite = {
 
         # ------------- Libraries -------------
 
-        "ASM": mavenLib(
-          "org.ow2.asm:asm:5.0.4",
-          "0da08b8cce7bbf903602a25a3a163ae252435795",
-          "112ff54474f1f04ccf1384c92e39fdc566f0bb5e",
-          "BSD-new"),
-
         "JNR_POSIX": mavenLib(
           "com.github.jnr:jnr-posix:3.0.32",
           "a6fbbc386acbae4fd3d892f13e2141655ed6e9c0",
@@ -169,7 +163,6 @@ suite = {
             "dependencies": [
                 "truffle:TRUFFLE_API",
                 "truffle:TRUFFLE_DEBUG",
-                "ASM",
                 "JNR_POSIX",
                 "JNR_CONSTANTS",
                 "JNR_FFI",
