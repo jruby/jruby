@@ -30,8 +30,10 @@ package org.jruby.truffle.options;
 
 import com.oracle.truffle.api.TruffleOptions;
 import jnr.posix.util.Platform;
+import org.jcodings.Encoding;
 import org.jruby.truffle.core.string.StringSupport;
 import org.jruby.truffle.language.control.JavaException;
+import org.jruby.truffle.util.KCode;
 import org.jruby.truffle.util.SafePropertyAccessor;
 
 import java.io.BufferedInputStream;
@@ -633,6 +635,8 @@ public class RubyInstanceConfig {
     private boolean hasScriptArgv = false;
     private boolean frozenStringLiteral = false;
     private String jrubyHome;
+    private KCode kcode;
+    private String sourceEncoding;
 
     private boolean forceStdin = false;
 
@@ -764,4 +768,16 @@ public class RubyInstanceConfig {
     }
 
     @Deprecated public static final String JIT_CODE_CACHE = "";
+
+    public void setKCode(KCode kcode) {
+        this.kcode = kcode;
+    }
+
+    public KCode getKCode() {
+        return kcode;
+    }
+
+    public void setSourceEncoding(String sourceEncoding) {
+        this.sourceEncoding = sourceEncoding;
+    }
 }

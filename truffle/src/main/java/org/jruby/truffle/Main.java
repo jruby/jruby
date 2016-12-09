@@ -49,6 +49,7 @@ import org.jruby.truffle.options.OptionsBuilder;
 import org.jruby.truffle.options.OptionsCatalog;
 import org.jruby.truffle.options.OutputStrings;
 import org.jruby.truffle.options.RubyInstanceConfig;
+import org.jruby.truffle.util.MainExitException;
 
 import java.io.InputStream;
 import java.lang.management.ManagementFactory;
@@ -62,7 +63,18 @@ public class Main {
         printTruffleTimeMetric("before-main");
 
         final RubyInstanceConfig config = new RubyInstanceConfig(false);
-        config.processArguments(args);
+
+        try {
+            config.processArguments(args);
+        } catch (MainExitException mee) {
+            if (!mee.isAborted()) {
+                config.getError().println(mee.getMessage());
+                if (mee.isUsageError()) {
+                    doPrintUsage(config, true);
+                }
+            }
+            System.exit(mee.getStatus());
+        }
 
         doShowVersion(config);
         doShowCopyright(config);

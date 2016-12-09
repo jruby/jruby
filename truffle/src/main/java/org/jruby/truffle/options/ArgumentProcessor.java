@@ -29,6 +29,8 @@
 package org.jruby.truffle.options;
 
 import org.jruby.truffle.core.string.StringSupport;
+import org.jruby.truffle.util.KCode;
+import org.jruby.truffle.util.MainExitException;
 import org.jruby.truffle.util.SafePropertyAccessor;
 
 import java.io.File;
@@ -197,10 +199,9 @@ public class ArgumentProcessor {
                                 //config.setRecordSeparator(String.valueOf((char) val));
                                 throw new UnsupportedOperationException();
                             } catch (Exception e) {
-                                //MainExitException mee = new MainExitException(1, getArgumentError(" -0 must be followed by either 0, 777, or a valid octal value"));
-                                //mee.setUsageError(true);
-                                //throw mee;
-                                throw new UnsupportedOperationException();
+                                MainExitException mee = new MainExitException(1, getArgumentError(" -0 must be followed by either 0, 777, or a valid octal value"));
+                                mee.setUsageError(true);
+                                throw mee;
                             }
                         }
                         //break FOR;
@@ -227,12 +228,10 @@ public class ArgumentProcessor {
                             config.setCurrentDirectory(new File(base, newDir.getPath()).getCanonicalPath());
                         }
                         if (!(new File(config.getCurrentDirectory()).isDirectory()) && !config.getCurrentDirectory().startsWith("uri:classloader:")) {
-                            //throw new MainExitException(1, "jruby: Can't chdir to " + saved + " (fatal)");
-                            throw new UnsupportedOperationException();
+                            throw new MainExitException(1, "jruby: Can't chdir to " + saved + " (fatal)");
                         }
                     } catch (IOException e) {
-                        //throw new MainExitException(1, getArgumentError(" -C must be followed by a valid directory"));
-                        throw new UnsupportedOperationException();
+                        throw new MainExitException(1, getArgumentError(" -C must be followed by a valid directory"));
                     }
                     break FOR;
                 case 'd':
@@ -282,7 +281,19 @@ public class ArgumentProcessor {
                     }
                     break FOR;
                 case 'K': // @Deprecated TODO no longer relevant in Ruby 2.x
-                    throw new UnsupportedOperationException();
+                    String eArg = grabValue(getArgumentError("provide a value for -K"));
+
+                    config.setKCode(KCode.create(eArg));
+
+                    // source encoding
+                    config.setSourceEncoding(config.getKCode().getEncoding().toString());
+
+                    // set external encoding if not already specified
+                    if (config.getExternalEncoding() == null) {
+                        config.setExternalEncoding(config.getKCode().getEncoding().toString());
+                    }
+
+                    break;
                 case 'l':
                     disallowedInRubyOpts(argument);
                     config.setProcessLineEnds(true);
@@ -339,10 +350,9 @@ public class ArgumentProcessor {
                             } else if (temp.equals("2")) {
                                 config.setVerbosity(Verbosity.TRUE);
                             } else {
-                                //MainExitException mee = new MainExitException(1, getArgumentError(" -W must be followed by either 0, 1, 2 or nothing"));
-                                //mee.setUsageError(true);
-                                //throw mee;
-                                throw new UnsupportedOperationException();
+                                MainExitException mee = new MainExitException(1, getArgumentError(" -W must be followed by either 0, 1, 2 or nothing"));
+                                mee.setUsageError(true);
+                                throw mee;
                             }
                         }
                         break FOR;
@@ -362,33 +372,24 @@ public class ArgumentProcessor {
                                 config.setCurrentDirectory(new File(base, newDir.getPath()).getCanonicalPath());
                             }
                             if (!(new File(config.getCurrentDirectory()).isDirectory()) && !config.getCurrentDirectory().startsWith("uri:classloader:")) {
-                                //throw new MainExitException(1, "jruby: Can't chdir to " + saved + " (fatal)");
-                                throw new UnsupportedOperationException();
+                                throw new MainExitException(1, "jruby: Can't chdir to " + saved + " (fatal)");
                             }
                         }
                         config.setXFlag(true);
                     } catch (IOException e) {
-                        //throw new MainExitException(1, getArgumentError(" -x must be followed by a valid directory"));
-                        throw new UnsupportedOperationException();
+                        throw new MainExitException(1, getArgumentError(" -x must be followed by a valid directory"));
                     }
                     break FOR;
                 case 'X':
                     disallowedInRubyOpts(argument);
                     String extendedOption = grabOptionalValue();
                     if (extendedOption == null) {
-                        if (SafePropertyAccessor.getBoolean("jruby.launcher.nopreamble", false)) {
-                            //throw new MainExitException(0, OutputStrings.getExtendedHelp());
-                            throw new UnsupportedOperationException();
-                        } else {
-                            //throw new MainExitException(0, "jruby: missing argument\n" + OutputStrings.getExtendedHelp());
-                            throw new UnsupportedOperationException();
-                        }
+                        throw new MainExitException(0, "no extended options in Truffle");
                     } else if (extendedOption.equals("-C") || extendedOption.equals("-CIR")) {
                         throw new UnsupportedOperationException();
                     } else if (extendedOption.equals("+C") || extendedOption.equals("+CIR")) {
                         throw new UnsupportedOperationException();
                     } else if (extendedOption.equals("classic")) {
-                        //throw new MainExitException(0, "jruby: the -Xclassic option should have been handled in the launcher");
                         throw new UnsupportedOperationException();
                     } else if (extendedOption.equals("+T")) {
                         // Nothing
@@ -397,14 +398,17 @@ public class ArgumentProcessor {
                     } else if (extendedOption.endsWith("?")) {
                         throw new UnsupportedOperationException();
                     } else {
-                        //MainExitException mee = new MainExitException(1, "jruby: invalid extended option " + extendedOption + " (-X will list valid options)\n");
-                        //mee.setUsageError(true);
-                        //throw mee;
-                        throw new UnsupportedOperationException();
+                        MainExitException mee = new MainExitException(1, "jruby: invalid extended option " + extendedOption + " (-X will list valid options)\n");
+                        mee.setUsageError(true);
+                        throw mee;
                     }
                     break FOR;
                 case 'y':
-                    throw new UnsupportedOperationException();
+                    disallowedInRubyOpts(argument);
+                    if (!rubyOpts) {
+                        throw new UnsupportedOperationException();
+                    }
+                    break FOR;
                 case '-':
                     if (argument.equals("--command") || argument.equals("--bin")) {
                         characterIndex = argument.length();
@@ -499,10 +503,9 @@ public class ArgumentProcessor {
                         } else if (dumpArg.equals("insns")) {
                             config.setShowBytecode(true);
                         } else {
-                            //MainExitException mee = new MainExitException(1, error);
-                            //mee.setUsageError(true);
-                            //throw mee;
-                            throw new UnsupportedOperationException();
+                            MainExitException mee = new MainExitException(1, error);
+                            mee.setUsageError(true);
+                            throw mee;
                         }
                         break;
                     } else if (argument.equals("--dev")) {
@@ -516,6 +519,11 @@ public class ArgumentProcessor {
                     } else if (argument.equals("--verbose")) {
                         config.setVerbosity(Verbosity.TRUE);
                         break FOR;
+                    } else if (argument.equals("--yydebug")) {
+                        disallowedInRubyOpts(argument);
+                        if (!rubyOpts) {
+                            throw new UnsupportedOperationException();
+                        }
                     } else {
                         if (argument.equals("--")) {
                             // ruby interpreter compatibilty
@@ -525,8 +533,7 @@ public class ArgumentProcessor {
                         }
                     }
                 default:
-                    //throw new MainExitException(1, "jruby: unknown option " + argument);
-                    throw new UnsupportedOperationException();
+                    throw new MainExitException(1, "jruby: unknown option " + argument);
             }
         }
     }
@@ -552,25 +559,22 @@ public class ArgumentProcessor {
 
     private void disallowedInRubyOpts(CharSequence option) {
         if (rubyOpts) {
-            //throw new MainExitException(1, "jruby: invalid switch in RUBYOPT: " + option + " (RuntimeError)");
-            throw new UnsupportedOperationException();
+            throw new MainExitException(1, "jruby: invalid switch in RUBYOPT: " + option + " (RuntimeError)");
         }
     }
 
     private static void errorMissingEquals(String label) {
-        //MainExitException mee;
-        //mee = new MainExitException(1, "missing argument for --" + label + "\n");
-        //mee.setUsageError(true);
-        //throw mee;
-        throw new UnsupportedOperationException();
+        MainExitException mee;
+        mee = new MainExitException(1, "missing argument for --" + label + "\n");
+        mee.setUsageError(true);
+        throw mee;
     }
 
     private void processEncodingOption(String value) {
         List<String> encodings = StringSupport.split(value, ':', 3);
         switch (encodings.size()) {
             case 3:
-                //throw new MainExitException(1, "extra argument for -E: " + encodings.get(2));
-                throw new UnsupportedOperationException();
+                throw new MainExitException(1, "extra argument for -E: " + encodings.get(2));
             case 2:
                 config.setInternalEncoding(encodings.get(1));
             case 1:
@@ -667,10 +671,9 @@ public class ArgumentProcessor {
         if (argumentIndex < arguments.size()) {
             return arguments.get(argumentIndex).originalValue;
         }
-        //MainExitException mee = new MainExitException(1, errorMessage);
-        //if (usageError) mee.setUsageError(true);
-        //throw mee;
-        throw new UnsupportedOperationException();
+        MainExitException mee = new MainExitException(1, errorMessage);
+        if (usageError) mee.setUsageError(true);
+        throw mee;
     }
 
     private String grabOptionalValue() {
