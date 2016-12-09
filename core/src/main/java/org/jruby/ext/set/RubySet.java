@@ -104,13 +104,16 @@ public class RubySet extends RubyObject implements Set {
     }
 
     private RubySet newSet(final ThreadContext context, final RubyClass metaClass, final RubyArray elements) {
-        RubySet set = new RubySet(context.runtime, metaClass);
-        final int len = elements.size();
-        set.initHash(context.runtime, len);
-        for ( int i = 0; i < len; i++ ) {
-            set.invokeAdd(context, elements.eltInternal(i));
+        final RubySet set = new RubySet(context.runtime, metaClass);
+        return set.initSet(context, elements.toJavaArrayMaybeUnsafe(), 0, elements.size());
+    }
+
+    final RubySet initSet(final ThreadContext context, final IRubyObject[] elements, final int off, final int len) {
+        initHash(context.runtime, Math.max(4, len));
+        for ( int i = off; i < len; i++ ) {
+            invokeAdd(context, elements[i]);
         }
-        return set;
+        return this;
     }
 
     /**
@@ -121,9 +124,7 @@ public class RubySet extends RubyObject implements Set {
         final Ruby runtime = context.runtime;
 
         RubySet set = new RubySet(runtime, (RubyClass) self);
-        set.initHash(runtime, Math.max(4, ary.length));
-        for ( int i=0; i<ary.length; i++ ) set.invokeAdd(context, ary[i]);
-        return set;
+        return set.initSet(context, ary, 0, ary.length);
     }
 
     /**
@@ -204,7 +205,7 @@ public class RubySet extends RubyObject implements Set {
         throw context.runtime.newArgumentError("value must be enumerable");
     }
 
-    private IRubyObject invokeAdd(final ThreadContext context, final IRubyObject val) {
+    IRubyObject invokeAdd(final ThreadContext context, final IRubyObject val) {
         return this.callMethod(context,"add", val); // TODO site-cache
     }
 
