@@ -31,12 +31,11 @@ import org.jruby.truffle.language.loader.SourceLoader;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.parser.ParserContext;
 import org.jruby.truffle.parser.TranslatorDriver;
-import org.jruby.util.Memo;
+import org.jruby.truffle.util.Memo;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.List;
 
 @CoreClass("Truffle::Boot")
 public abstract class TruffleBootNodes {
@@ -47,7 +46,11 @@ public abstract class TruffleBootNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject jrubyHomeDirectory() {
-            return createString(StringOperations.encodeRope(getContext().getJRubyHome(), UTF8Encoding.INSTANCE));
+            if (getContext().getJRubyHome() == null) {
+                return nil();
+            } else {
+                return createString(StringOperations.encodeRope(getContext().getJRubyHome(), UTF8Encoding.INSTANCE));
+            }
         }
 
     }
@@ -59,6 +62,10 @@ public abstract class TruffleBootNodes {
         @Specialization
         public DynamicObject jrubyHomeDirectoryProtocol() {
             String home = getContext().getJRubyHome();
+
+            if (home == null) {
+                return nil();
+            }
 
             if (home.startsWith("uri:classloader:")) {
                 home = home.substring("uri:classloader:".length());
@@ -128,7 +135,7 @@ public abstract class TruffleBootNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject originalArgv() {
-            final String[] argv = getContext().getInstanceConfig().getArgv();
+            final String[] argv = getContext().getOptions().ARGUMENTS;
             final Object[] array = new Object[argv.length];
 
             for (int n = 0; n < array.length; n++) {
@@ -146,11 +153,11 @@ public abstract class TruffleBootNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject originalLoadPath() {
-            final List<String> paths = getContext().getInstanceConfig().getLoadPaths();
-            final Object[] array = new Object[paths.size()];
+            final String[] paths = getContext().getOptions().LOAD_PATHS;
+            final Object[] array = new Object[paths.length];
 
             for (int n = 0; n < array.length; n++) {
-                array[n] = StringOperations.createString(getContext(), StringOperations.encodeRope(paths.get(n), UTF8Encoding.INSTANCE));
+                array[n] = StringOperations.createString(getContext(), StringOperations.encodeRope(paths[n], UTF8Encoding.INSTANCE));
             }
 
             return createArray(array, array.length);
@@ -163,7 +170,7 @@ public abstract class TruffleBootNodes {
 
         @Specialization
         public boolean isRubygemsEnabled() {
-            return !getContext().getInstanceConfig().isDisableGems();
+            return !getContext().getOptions().DISABLE_GEMS;
         }
 
     }

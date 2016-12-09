@@ -7,16 +7,23 @@
 # GNU Lesser General Public License version 2.1
 
 def mavenLib(mavenDep, sha1, sourceSha1, license):
-    groupId, artifactId, version = mavenDep.split(':')
-    args = (groupId.replace('.', '/'), artifactId, version, artifactId, version)
-    base = "https://search.maven.org/remotecontent?filepath=%s/%s/%s/%s-%s" % args
+    components = mavenDep.split(':')
+    if len(components) == 3:
+        groupId, artifactId, version = components
+        native = None
+    else:
+        groupId, artifactId, version, native = components
+    if native:
+        args = (groupId.replace('.', '/'), artifactId, version, artifactId, version, native)
+        base = "https://search.maven.org/remotecontent?filepath=%s/%s/%s/%s-%s-%s" % args
+    else:
+        args = (groupId.replace('.', '/'), artifactId, version, artifactId, version)
+        base = "https://search.maven.org/remotecontent?filepath=%s/%s/%s/%s-%s" % args
     url = base + ".jar"
     sourceUrl = base + '-sources.jar'
-    return {
+    description = {
         "urls": [ url ],
         "sha1": sha1,
-        "sourceUrls": [ sourceUrl ],
-        "sourceSha1": sourceSha1,
         "maven": {
             "groupId": groupId,
             "artifactId": artifactId,
@@ -24,6 +31,10 @@ def mavenLib(mavenDep, sha1, sourceSha1, license):
         },
         "license": license
     }
+    if sourceSha1:
+        description["sourceUrls"] = [ sourceUrl ]
+        description["sourceSha1"] = sourceSha1
+    return description
 
 suite = {
     "mxversion": "5.59.0",
@@ -81,10 +92,70 @@ suite = {
 
         # ------------- Libraries -------------
 
+        "ASM": mavenLib(
+          "org.ow2.asm:asm:5.0.4",
+          "0da08b8cce7bbf903602a25a3a163ae252435795",
+          "112ff54474f1f04ccf1384c92e39fdc566f0bb5e",
+          "BSD-new"),
+
+        "JNR_POSIX": mavenLib(
+          "com.github.jnr:jnr-posix:3.0.32",
+          "a6fbbc386acbae4fd3d892f13e2141655ed6e9c0",
+          "7501075537354d9d9fa99f8b753c1f7844db0a45",
+          "EPL-1.0"),
+
+        "JNR_CONSTANTS": mavenLib(
+          "com.github.jnr:jnr-constants:0.9.6",
+          "84955256aa28919f12b6c7c9437ed65d814a3c0c",
+          "5579ab41c687085e714fc330536ec4dda3350b08",
+          "Apache-2.0"),
+
+        "JNR_FFI": mavenLib(
+          "com.github.jnr:jnr-ffi:2.1.1",
+          "ea33aabb52fa201adcf12cddd2f07260bc11e895",
+          "3243e30dd85d29758901c26d86aea434497cd696",
+          "Apache-2.0"),
+
+        "JFFI": mavenLib(
+          "com.github.jnr:jffi:1.2.13",
+          "8926bd0b2d0e9a46e7607eb7866356845c7df9a2",
+          "691ec868b9569092687553a8099a28f71f175097",
+          "Apache-2.0"),
+
+        "JFFI_NATIVE": mavenLib(
+          "com.github.jnr:jffi:1.2.13:native",
+          "c4b81ddacd1e94a73780aa6e4e8b9d2945d5eb4c",
+          None,
+          [ "Apache-2.0", "MIT" ]),
+        
         "SNAKEYAML": mavenLib(
             "org.yaml:snakeyaml:1.14",
             "c2df91929ed06a25001939929bff5120e0ea3fd4",
             "4c6bcedc3efa772a5ae1c2fd01efee8e4d15edac",
+            "Apache-2.0"),
+
+        "JONI": mavenLib(
+            "org.jruby.joni:joni:2.1.11",
+            "655cc3aba1bc9dbdd653f28937bec16f3e9c4cec",
+            "2982d6beb2f8fabe5ac5cc9dec6b4d6a9ffeedb1",
+            "MIT"),
+
+        "BYTELIST": mavenLib(
+            "org.jruby.extras:bytelist:1.0.13",
+            "dc54989113128bda0d303c7bf97a7aba65507ddf",
+            "e8f683aa496bf651879d9e3a8a82e053c2df9b99",
+            "EPL-1.0"),
+
+        "JCODINGS": mavenLib(
+            "org.jruby.jcodings:jcodings:1.0.18",
+            "e2c76a19f00128bb1806207e2989139bfb45f49d",
+            "201985f0f15af95f03494ab9ef0400e849090d6c",
+            "MIT"),
+
+        "JODA_TIME": mavenLib(
+            "joda-time:joda-time:2.8.2",
+            "d27c24204c5e507b16fec01006b3d0f1ec42aed4",
+            "65dd2b998571ea61a3cee68c99a1dde729b14a7e",
             "Apache-2.0"),
     },
 
@@ -92,22 +163,23 @@ suite = {
 
         # ------------- Projects -------------
 
-        "jruby-core": {
-            "class": "JRubyCoreMavenProject",
-            "sourceDirs": [ "core/src/main/java" ],
-            "watch": [ "core/src", "core/pom.rb" ],
-            "jar": "lib/jruby.jar",
-            "license": [ "EPL-1.0", "BSD-new", "BSD-simplified", "MIT", "Apache-2.0" ],
-        },
-
         "jruby-truffle": {
             "dir": "truffle/src/main",
             "sourceDirs": [ "java" ],
             "dependencies": [
-                "jruby-core",
                 "truffle:TRUFFLE_API",
                 "truffle:TRUFFLE_DEBUG",
+                "ASM",
+                "JNR_POSIX",
+                "JNR_CONSTANTS",
+                "JNR_FFI",
+                "JFFI",
+                "JFFI_NATIVE",
                 "SNAKEYAML",
+                "JONI",
+                "BYTELIST",
+                "JCODINGS",
+                "JODA_TIME",
             ],
             "annotationProcessors": ["truffle:TRUFFLE_DSL_PROCESSOR"],
             "javaCompliance": "1.8",
@@ -143,21 +215,10 @@ suite = {
             "license": "EPL-1.0",
         },
 
-        # Depends on jruby-core extracting jni libs in lib/jni
-        "jruby-lib-jni": {
-            "class": "ArchiveProject",
-            "outputDir": "lib/jni",
-            "prefix": "lib/jni",
-            "dependencies": [ "jruby-core" ],
-            "license": [ "Apache-2.0", "MIT" ],
-        },
-
-        # Depends on jruby-core installing gems in lib/ruby
         "jruby-lib-ruby": {
             "class": "ArchiveProject",
             "outputDir": "lib/ruby",
             "prefix": "lib/ruby",
-            "dependencies": [ "jruby-core" ],
             "license": [ "EPL-1.0", "MIT", "BSD-simplified", "GPLv2", "LGPLv21", "zlib" ],
         },
 
@@ -175,7 +236,6 @@ suite = {
         "RUBY": {
             "mainClass": "org.jruby.Main",
             "dependencies": [
-                "jruby-core",
                 "jruby-truffle",
                 "jruby-truffle-ruby",
             ],
@@ -195,7 +255,6 @@ suite = {
             "native": True, # Not Java
             "relpath": True,
             "dependencies": [
-                "jruby-lib-jni",
                 "jruby-lib-ruby",
                 "jruby-licenses",
             ],

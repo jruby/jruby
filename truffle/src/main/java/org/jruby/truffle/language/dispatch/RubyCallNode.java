@@ -10,20 +10,18 @@
 package org.jruby.truffle.language.dispatch;
 
 import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.truffle.Layouts;
-import org.jruby.truffle.core.array.ArrayUtils;
+import org.jruby.truffle.core.array.ArrayToObjectArrayNode;
+import org.jruby.truffle.core.array.ArrayToObjectArrayNodeGen;
 import org.jruby.truffle.core.cast.BooleanCastNode;
 import org.jruby.truffle.core.cast.BooleanCastNodeGen;
 import org.jruby.truffle.core.cast.ProcOrNullNode;
 import org.jruby.truffle.core.cast.ProcOrNullNodeGen;
 import org.jruby.truffle.core.module.ModuleOperations;
-import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.methods.InternalMethod;
@@ -43,13 +41,7 @@ public class RubyCallNode extends RubyNode {
     private final boolean isAttrAssign;
 
     @Child private CallDispatchHeadNode dispatchHead;
-
-    @CompilationFinal private boolean seenNullInUnsplat = false;
-    @CompilationFinal private boolean seenIntegerFixnumInUnsplat = false;
-    @CompilationFinal private boolean seenLongFixnumInUnsplat = false;
-    @CompilationFinal private boolean seenFloatInUnsplat = false;
-    @CompilationFinal private boolean seenObjectInUnsplat = false;
-
+    @Child private ArrayToObjectArrayNode toObjectArrayNode;
     @Child private CallDispatchHeadNode respondToMissing;
     @Child private BooleanCastNode respondToMissingCast;
 
@@ -129,58 +121,20 @@ public class RubyCallNode extends RubyNode {
         }
 
         if (isSplatted) {
-            return splat(argumentsObjects[0]);
+            assert argumentsObjects.length == 1;
+            return splat(argumentsObjects);
         } else {
             return argumentsObjects;
         }
     }
 
-    private Object[] splat(Object argument) {
-        // TODO CS 19-May-15 this is a terrible mess and needs to go
-
-        // TODO(CS): what happens if isn't just one argument, or it isn't an Array?
-
-        if (!RubyGuards.isRubyArray(argument)) {
+    private Object[] splat(Object[] arguments) {
+        if (toObjectArrayNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            throw new UnsupportedOperationException(argument.getClass().toString());
+            toObjectArrayNode = insert(ArrayToObjectArrayNodeGen.create(null));
         }
-
-        final DynamicObject array = (DynamicObject) argument;
-        final int size = Layouts.ARRAY.getSize(array);
-        final Object store = Layouts.ARRAY.getStore(array);
-
-        if (seenNullInUnsplat && store == null) {
-            return new Object[]{};
-        } else if (seenIntegerFixnumInUnsplat && store instanceof int[]) {
-            return ArrayUtils.boxUntil((int[]) store, size);
-        } else if (seenLongFixnumInUnsplat && store instanceof long[]) {
-            return ArrayUtils.boxUntil((long[]) store, size);
-        } else if (seenFloatInUnsplat && store instanceof double[]) {
-            return ArrayUtils.boxUntil((double[]) store, size);
-        } else if (seenObjectInUnsplat && store != null && store.getClass() == Object[].class) {
-            return ArrayUtils.extractRange((Object[]) store, 0, size);
-        }
-
-        CompilerDirectives.transferToInterpreterAndInvalidate();
-
-        if (store == null) {
-            seenNullInUnsplat = true;
-            return new Object[]{};
-        } else if (store instanceof int[]) {
-            seenIntegerFixnumInUnsplat = true;
-            return ArrayUtils.boxUntil((int[]) store, size);
-        } else if (store instanceof long[]) {
-            seenLongFixnumInUnsplat = true;
-            return ArrayUtils.boxUntil((long[]) store, size);
-        } else if (store instanceof double[]) {
-            seenFloatInUnsplat = true;
-            return ArrayUtils.boxUntil((double[]) store, size);
-        } else if (store.getClass() == Object[].class) {
-            seenObjectInUnsplat = true;
-            return ArrayUtils.extractRange((Object[]) store, 0, size);
-        }
-
-        throw new UnsupportedOperationException();
+        // TODO(CS): what happens if it isn't an Array?
+        return toObjectArrayNode.unsplat(arguments);
     }
 
     @Override

@@ -16,7 +16,6 @@ import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 
@@ -33,32 +32,26 @@ public abstract class ArrayReadNormalizedNode extends RubyNode {
 
     public abstract Object executeRead(DynamicObject array, int index);
 
-    // Anything from a null array is nil
-
-    @Specialization(guards = "isNullArray(array)")
-    public DynamicObject readNull(DynamicObject array, int index) {
-        return nil();
-    }
-
     // Read within the bounds of an array with actual storage
 
-    @Specialization(guards = { "isInBounds(array, index)", "strategy.matches(array)" }, limit = "ARRAY_STRATEGIES")
+    @Specialization(guards = {"strategy.matches(array)", "isInBounds(array, index, strategy)"}, limit = "ARRAY_STRATEGIES")
     public Object readInBounds(DynamicObject array, int index,
             @Cached("of(array)") ArrayStrategy strategy) {
         return strategy.newMirror(array).get(index);
     }
 
-    // Reading out of bounds is nil of any array is nil - cannot contain isNullArray
+    // Reading out of bounds is nil for any array
 
-    @Specialization(guards = "!isInBounds(array, index)")
-    public DynamicObject readOutOfBounds(DynamicObject array, int index) {
+    @Specialization(guards = {"strategy.matches(array)", "!isInBounds(array, index, strategy)"}, limit = "ARRAY_STRATEGIES")
+    public DynamicObject readOutOfBounds(DynamicObject array, int index,
+                    @Cached("of(array)") ArrayStrategy strategy) {
         return nil();
     }
 
     // Guards
 
-    protected static boolean isInBounds(DynamicObject array, int index) {
-        return index >= 0 && index < Layouts.ARRAY.getSize(array);
+    protected static boolean isInBounds(DynamicObject array, int index, ArrayStrategy strategy) {
+        return index >= 0 && index < strategy.getSize(array);
     }
 
 }

@@ -32,11 +32,11 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.ast;
 
+import org.jruby.truffle.core.string.StringSupport;
 import org.jruby.truffle.parser.ast.types.ILiteralNode;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
 import org.jruby.truffle.parser.lexer.ISourcePosition;
-import org.jruby.util.ByteList;
-import org.jruby.util.StringSupport;
+import org.jruby.truffle.util.ByteList;
 
 import java.util.List;
 

@@ -1,4 +1,2 @@
 fails:IO.read from a pipe opens a pipe to a fork if the rest is -
 fails(hangs):IO#read raises IOError when stream is closed by another thread
-fails(windows):IO#read on Windows normalizes line endings in text mode
-fails(windows):IO#read on Windows does not normalize line endings in binary mode

@@ -32,7 +32,6 @@ package org.jruby.truffle.parser.parser;
 
 import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.RubyInstanceConfig;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.parser.scope.DynamicScope;
 import org.jruby.truffle.parser.scope.ManyVarsDynamicScope;
@@ -70,19 +69,6 @@ public class ParserConfiguration {
         this.isEvalParse = !isFileParse;
         this.saveData = saveData;
         staticScopeFactory = new StaticScopeFactory();
-    }
-
-    public ParserConfiguration(RubyContext context, int lineNumber,
-            boolean inlineSource, boolean isFileParse, RubyInstanceConfig config) {
-        this(context, lineNumber, inlineSource, isFileParse, false, config);
-    }
-
-    public ParserConfiguration(RubyContext context, int lineNumber,
-            boolean inlineSource, boolean isFileParse, boolean saveData, RubyInstanceConfig config) {
-        this(context, lineNumber, inlineSource, isFileParse, saveData);
-
-        this.isDebug = config.isParserDebug();
-        this.frozenStringLiteral = config.isFrozenStringLiteral();
     }
 
     public void setFrozenStringLiteral(boolean frozenStringLiteral) {

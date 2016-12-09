@@ -17,6 +17,8 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.cast.ProcOrNullNode;
+import org.jruby.truffle.core.cast.ProcOrNullNodeGen;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
 
@@ -28,18 +30,21 @@ import org.jruby.truffle.language.arguments.RubyArguments;
 public abstract class CallBoundMethodNode extends RubyNode {
 
     @Child CallInternalMethodNode callInternalMethodNode;
+    @Child ProcOrNullNode procOrNullNode;
 
     public CallBoundMethodNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
         callInternalMethodNode = CallInternalMethodNodeGen.create(context, sourceSection, null, null);
+        procOrNullNode = ProcOrNullNodeGen.create(context, sourceSection, null);
     }
 
-    public abstract Object executeCallBoundMethod(VirtualFrame frame, DynamicObject method, Object[] arguments, DynamicObject block);
+    public abstract Object executeCallBoundMethod(VirtualFrame frame, DynamicObject method, Object[] arguments, Object block);
 
     @Specialization
-    protected Object call(VirtualFrame frame, DynamicObject method, Object[] arguments, DynamicObject block) {
+    protected Object call(VirtualFrame frame, DynamicObject method, Object[] arguments, Object block) {
         final InternalMethod internalMethod = Layouts.METHOD.getMethod(method);
-        final Object[] frameArguments = packArguments(method, internalMethod, arguments, block);
+        final DynamicObject typedBlock = procOrNullNode.executeProcOrNull(block);
+        final Object[] frameArguments = packArguments(method, internalMethod, arguments, typedBlock);
 
         return callInternalMethodNode.executeCallMethod(frame, internalMethod, frameArguments);
     }

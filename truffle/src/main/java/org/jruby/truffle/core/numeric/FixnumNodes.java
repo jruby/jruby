@@ -37,7 +37,7 @@ import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.methods.UnsupportedOperationBehavior;
-import org.jruby.util.SipHashInline;
+import org.jruby.truffle.util.SipHashInline;
 
 import java.math.BigInteger;
 import java.nio.ByteBuffer;

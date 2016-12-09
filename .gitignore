@@ -23,6 +23,7 @@ Makefile
 cext-output.txt
 bench-results.json
 bench-results-processed.json
+failures
 
 .DS_Store
 .debug.properties

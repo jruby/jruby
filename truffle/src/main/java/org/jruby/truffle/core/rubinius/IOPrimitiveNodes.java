@@ -73,9 +73,9 @@ import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.platform.FDSet;
 import org.jruby.truffle.platform.UnsafeGroup;
-import org.jruby.util.ByteList;
-import org.jruby.util.Dir;
-import org.jruby.util.unsafe.UnsafeHolder;
+import org.jruby.truffle.util.Dir;
+import org.jruby.truffle.util.UnsafeHolder;
+import org.jruby.truffle.util.ByteList;
 
 import java.nio.ByteBuffer;
 

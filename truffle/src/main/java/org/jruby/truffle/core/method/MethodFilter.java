@@ -9,7 +9,7 @@
  */
 package org.jruby.truffle.core.method;
 
-import org.jruby.runtime.Visibility;
+import org.jruby.truffle.language.Visibility;
 import org.jruby.truffle.language.methods.InternalMethod;
 
 public abstract class MethodFilter {

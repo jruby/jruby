@@ -9,6 +9,8 @@
  */
 package org.jruby.truffle.parser;
 
+import java.io.File;
+
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.control.BreakID;
@@ -20,8 +22,15 @@ import org.jruby.truffle.language.control.ReturnID;
 public class ParseEnvironment {
 
     private LexicalScope lexicalScope = null;
+    private boolean dynamicConstantLookup = false;
+    private final String corePath;
 
     public ParseEnvironment(RubyContext context) {
+        this.corePath = context.getCoreLibrary().getCoreLoadPath() + File.separator + "core" + File.separator;
+    }
+
+    public String getCorePath() {
+        return corePath;
     }
 
     public void resetLexicalScope(LexicalScope lexicalScope) {
@@ -29,15 +38,24 @@ public class ParseEnvironment {
     }
 
     public LexicalScope getLexicalScope() {
+        // TODO (eregon, 4 Dec. 2016): assert !dynamicConstantLookup;
         return lexicalScope;
     }
 
     public LexicalScope pushLexicalScope() {
-        return lexicalScope = new LexicalScope(lexicalScope);
+        return lexicalScope = new LexicalScope(getLexicalScope());
     }
 
     public void popLexicalScope() {
-        lexicalScope = lexicalScope.getParent();
+        lexicalScope = getLexicalScope().getParent();
+    }
+
+    public boolean isDynamicConstantLookup() {
+        return dynamicConstantLookup;
+    }
+
+    public void setDynamicConstantLookup(boolean dynamicConstantLookup) {
+        this.dynamicConstantLookup = dynamicConstantLookup;
     }
 
     public ReturnID allocateReturnID() {

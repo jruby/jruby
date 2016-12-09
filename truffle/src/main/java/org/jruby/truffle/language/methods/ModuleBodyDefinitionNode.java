@@ -9,21 +9,29 @@
  */
 package org.jruby.truffle.language.methods;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+import org.jruby.truffle.Layouts;
+import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.kernel.TraceManager;
+import org.jruby.truffle.language.LexicalScope;
+import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.Visibility;
+import org.jruby.truffle.language.arguments.RubyArguments;
+
 import com.oracle.truffle.api.CallTarget;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.instrumentation.Instrumentable;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.runtime.Visibility;
-import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.kernel.TraceManager;
-import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.RubySourceSection;
-import org.jruby.truffle.language.arguments.RubyArguments;
 
 /**
  * Define a method from a module body (module/class/class << self ... end).
  */
+// This is @Instrumentable because the class event for set_trace_func must fire after
+// Class#inherited in RunModuleDefinitionNode.
 @Instrumentable(factory = ModuleBodyDefinitionNodeWrapper.class)
 public class ModuleBodyDefinitionNode extends RubyNode {
 
@@ -31,33 +39,25 @@ public class ModuleBodyDefinitionNode extends RubyNode {
     private final SharedMethodInfo sharedMethodInfo;
     private final CallTarget callTarget;
     private final boolean captureBlock;
-
-    public ModuleBodyDefinitionNode(RubyContext context, RubySourceSection sourceSection, String name, SharedMethodInfo sharedMethodInfo,
-                                    CallTarget callTarget, boolean captureBlock) {
-        super(context, sourceSection);
-        this.name = name;
-        this.sharedMethodInfo = sharedMethodInfo;
-        this.callTarget = callTarget;
-        this.captureBlock = captureBlock;
-    }
+    private final boolean dynamicLexicalScope;
+    private final Map<DynamicObject, LexicalScope> lexicalScopes;
 
     public ModuleBodyDefinitionNode(RubyContext context, SourceSection sourceSection, String name, SharedMethodInfo sharedMethodInfo,
-            CallTarget callTarget, boolean captureBlock) {
+                    CallTarget callTarget, boolean captureBlock, boolean dynamicLexicalScope) {
         super(context, sourceSection);
         this.name = name;
         this.sharedMethodInfo = sharedMethodInfo;
         this.callTarget = callTarget;
         this.captureBlock = captureBlock;
+        this.dynamicLexicalScope = dynamicLexicalScope;
+        this.lexicalScopes = dynamicLexicalScope ? new ConcurrentHashMap<>() : null;
     }
 
     public ModuleBodyDefinitionNode(ModuleBodyDefinitionNode node) {
-        this(node.getContext(), node.getRubySourceSection(), node.name, node.sharedMethodInfo, node.callTarget, node.captureBlock);
+        this(node.getContext(), node.getSourceSection(), node.name, node.sharedMethodInfo, node.callTarget, node.captureBlock, node.dynamicLexicalScope);
     }
 
-    public InternalMethod executeMethod(VirtualFrame frame) {
-        final DynamicObject dummyModule = coreLibrary().getObjectClass();
-        final Visibility dummyVisibility = Visibility.PUBLIC;
-
+    public InternalMethod createMethod(VirtualFrame frame, LexicalScope staticLexicalScope, DynamicObject module) {
         final DynamicObject capturedBlock;
 
         if (captureBlock) {
@@ -65,12 +65,29 @@ public class ModuleBodyDefinitionNode extends RubyNode {
         } else {
             capturedBlock = null;
         }
-        return new InternalMethod(getContext(), sharedMethodInfo, name, dummyModule, dummyVisibility, false, null, callTarget, capturedBlock, null);
+
+        final LexicalScope parentLexicalScope = RubyArguments.getMethod(frame).getLexicalScope();
+        final LexicalScope lexicalScope = prepareLexicalScope(staticLexicalScope, parentLexicalScope, module);
+        return new InternalMethod(getContext(), sharedMethodInfo, lexicalScope, name, module, Visibility.PUBLIC, false, null, callTarget, capturedBlock, null);
+    }
+
+    @TruffleBoundary
+    private LexicalScope prepareLexicalScope(LexicalScope staticLexicalScope, LexicalScope parentLexicalScope, DynamicObject module) {
+        staticLexicalScope.unsafeSetLiveModule(module);
+        Layouts.MODULE.getFields(staticLexicalScope.getParent().getLiveModule()).addLexicalDependent(module);
+        if (!dynamicLexicalScope) {
+            return staticLexicalScope;
+        } else {
+            // Cache the scope per module in case the module body is run multiple times.
+            // This allows dynamic constant lookup to cache better.
+            return lexicalScopes.computeIfAbsent(module, m -> new LexicalScope(parentLexicalScope, module));
+        }
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
-        return executeMethod(frame);
+        // For the purpose of tracing in the right order
+        return nil();
     }
 
     @Override

@@ -18,7 +18,6 @@ import com.oracle.truffle.api.frame.FrameDescriptor;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
@@ -34,6 +33,7 @@ import org.jruby.truffle.language.methods.Arity;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.methods.SharedMethodInfo;
 import org.jruby.truffle.language.methods.SymbolProcNode;
+import org.jruby.truffle.parser.ArgumentDescriptor;
 import org.jruby.truffle.parser.Translator;
 
 import java.util.Arrays;
@@ -112,7 +112,7 @@ public abstract class SymbolNodes {
 
             final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(
                     sourceSection,
-                    null,
+                    method.getLexicalScope(),
                     Arity.AT_LEAST_ONE,
                     null,
                     Layouts.SYMBOL.getString(symbol),

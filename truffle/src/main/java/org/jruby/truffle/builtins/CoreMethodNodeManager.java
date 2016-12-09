@@ -15,7 +15,6 @@ import com.oracle.truffle.api.dsl.GeneratedBy;
 import com.oracle.truffle.api.dsl.NodeFactory;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.runtime.Visibility;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.RaiseIfFrozenNode;
@@ -25,12 +24,12 @@ import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.core.numeric.FixnumLowerNodeGen;
 import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.NotProvided;
-import org.jruby.truffle.Options;
 import org.jruby.truffle.language.RubyConstant;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.RubySourceSection;
+import org.jruby.truffle.language.Visibility;
 import org.jruby.truffle.language.arguments.MissingArgumentBehavior;
 import org.jruby.truffle.language.arguments.ProfileArgumentNode;
 import org.jruby.truffle.language.arguments.ReadBlockNode;
@@ -43,6 +42,7 @@ import org.jruby.truffle.language.methods.ExceptionTranslatingNode;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.methods.SharedMethodInfo;
 import org.jruby.truffle.language.objects.SingletonClassNode;
+import org.jruby.truffle.options.Options;
 import org.jruby.truffle.parser.Translator;
 import org.jruby.truffle.platform.UnsafeGroup;
 import org.jruby.truffle.tools.ChaosNodeGen;
@@ -160,7 +160,7 @@ public class CoreMethodNodeManager {
             if (ModuleOperations.isMethodPrivateFromName(name)) {
                 visibility = Visibility.PRIVATE;
             }
-            final InternalMethod method = new InternalMethod(context, sharedMethodInfo, name, module, visibility, callTarget);
+            final InternalMethod method = new InternalMethod(context, sharedMethodInfo, sharedMethodInfo.getLexicalScope(), name, module, visibility, callTarget);
 
             Layouts.MODULE.getFields(module).addMethod(context, null, method);
         }
@@ -168,10 +168,11 @@ public class CoreMethodNodeManager {
 
     private static SharedMethodInfo makeSharedMethodInfo(RubyContext context, DynamicObject module, MethodDetails methodDetails) {
         final CoreMethod method = methodDetails.getMethodAnnotation();
+        final LexicalScope lexicalScope = new LexicalScope(context.getRootLexicalScope(), module);
 
         return new SharedMethodInfo(
                 context.getCoreLibrary().getSourceSection(),
-                LexicalScope.NONE,
+                lexicalScope,
                 new Arity(method.required(), method.optional(), method.rest()),
                 module,
                 methodDetails.getPrimaryName(),

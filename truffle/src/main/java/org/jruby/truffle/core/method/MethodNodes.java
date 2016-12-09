@@ -21,7 +21,6 @@ import com.oracle.truffle.api.nodes.RootNode;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreClass;
@@ -30,8 +29,6 @@ import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.builtins.UnaryCoreMethodNode;
 import org.jruby.truffle.core.Hashing;
 import org.jruby.truffle.core.basicobject.BasicObjectNodes.ReferenceEqualNode;
-import org.jruby.truffle.core.cast.ProcOrNullNode;
-import org.jruby.truffle.core.cast.ProcOrNullNodeGen;
 import org.jruby.truffle.core.proc.ProcOperations;
 import org.jruby.truffle.core.proc.ProcType;
 import org.jruby.truffle.core.string.StringOperations;
@@ -45,6 +42,7 @@ import org.jruby.truffle.language.methods.CallBoundMethodNodeGen;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.objects.LogicalClassNode;
 import org.jruby.truffle.language.objects.LogicalClassNodeGen;
+import org.jruby.truffle.parser.ArgumentDescriptor;
 
 @CoreClass("Method")
 public abstract class MethodNodes {
@@ -80,17 +78,15 @@ public abstract class MethodNodes {
     public abstract static class CallNode extends CoreMethodArrayArgumentsNode {
 
         @Child CallBoundMethodNode callBoundMethodNode;
-        @Child ProcOrNullNode procOrNullNode;
 
         public CallNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             callBoundMethodNode = CallBoundMethodNodeGen.create(context, sourceSection, null, null, null);
-            procOrNullNode = ProcOrNullNodeGen.create(context, sourceSection, null);
         }
 
         @Specialization
-        protected Object call(VirtualFrame frame, DynamicObject method, Object[] arguments, Object block) {
-            return callBoundMethodNode.executeCallBoundMethod(frame, method, arguments, procOrNullNode.executeProcOrNull(block));
+        protected Object call(VirtualFrame frame, DynamicObject method, Object[] arguments, Object maybeBlock) {
+            return callBoundMethodNode.executeCallBoundMethod(frame, method, arguments, maybeBlock);
         }
 
     }

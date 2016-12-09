@@ -17,8 +17,6 @@ import com.oracle.truffle.api.TruffleLanguage;
 import com.oracle.truffle.api.TruffleOptions;
 import com.oracle.truffle.api.instrumentation.Instrumenter;
 import com.oracle.truffle.api.object.DynamicObject;
-import org.jruby.Ruby;
-import org.jruby.RubyInstanceConfig;
 import org.jruby.truffle.builtins.PrimitiveManager;
 import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.truffle.core.CoreMethods;
@@ -46,6 +44,8 @@ import org.jruby.truffle.language.loader.SourceLoader;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.objects.shared.SharedObjects;
+import org.jruby.truffle.options.Options;
+import org.jruby.truffle.options.OptionsBuilder;
 import org.jruby.truffle.platform.NativePlatform;
 import org.jruby.truffle.platform.NativePlatformFactory;
 import org.jruby.truffle.stdlib.CoverageManager;
@@ -66,14 +66,14 @@ public class RubyContext extends ExecutionContext {
 
     private final TruffleLanguage.Env env;
 
-    private final RubyInstanceConfig instanceConfig;
+    private final Options options;
+
     private final String jrubyHome;
     private String originalInputFile;
 
     private InputStream syntaxCheckInputStream;
     private boolean verbose;
 
-    private final Options options = new Options();
     private final RopeTable ropeTable = new RopeTable();
     private final PrimitiveManager primitiveManager = new PrimitiveManager();
     private final SafepointManager safepointManager = new SafepointManager(this);
@@ -108,9 +108,14 @@ public class RubyContext extends ExecutionContext {
 
     private String currentDirectory;
 
-    public RubyContext(RubyInstanceConfig instanceConfig, TruffleLanguage.Env env) {
-        this.instanceConfig = instanceConfig;
+    public RubyContext(TruffleLanguage.Env env) {
         this.env = env;
+
+        final OptionsBuilder optionsBuilder = new OptionsBuilder();
+        optionsBuilder.set(env.getConfig());
+        optionsBuilder.set(System.getProperties());
+        options = optionsBuilder.build();
+
         this.jrubyHome = setupJRubyHome();
         this.currentDirectory = System.getProperty("user.dir");
 
@@ -165,15 +170,15 @@ public class RubyContext extends ExecutionContext {
 
         // Load the nodes
 
-        org.jruby.Main.printTruffleTimeMetric("before-load-nodes");
+        Main.printTruffleTimeMetric("before-load-nodes");
         coreLibrary.addCoreMethods(primitiveManager);
-        org.jruby.Main.printTruffleTimeMetric("after-load-nodes");
+        Main.printTruffleTimeMetric("after-load-nodes");
 
         // Capture known builtin methods
 
         final Instrumenter instrumenter = env.lookup(Instrumenter.class);
         traceManager = new TraceManager(this, instrumenter);
-        coreMethods = new CoreMethods(coreLibrary);
+        coreMethods = new CoreMethods(this);
 
         // Load the reset of the core library
 
@@ -181,7 +186,7 @@ public class RubyContext extends ExecutionContext {
 
         // Load other subsystems
 
-        final PrintStream configStandardOut = instanceConfig.getOutput();
+        final PrintStream configStandardOut = System.out;
         debugStandardOut = (configStandardOut == System.out) ? null : configStandardOut;
 
         // The instrumentation server can't be run with AOT because com.sun.net.httpserver.spi.HttpServerProvider uses runtime class loading.
@@ -197,21 +202,28 @@ public class RubyContext extends ExecutionContext {
         coreLibrary.initializePostBoot();
 
         // Share once everything is loaded
-        if (Options.SHARED_OBJECTS && Options.SHARED_OBJECTS_FORCE) {
+        if (options.SHARED_OBJECTS_ENABLED && options.SHARED_OBJECTS_FORCE) {
             sharedObjects.startSharing();
         }
     }
 
     private String setupJRubyHome() {
         String jrubyHome = findJRubyHome();
-        instanceConfig.setJRubyHome(jrubyHome);
         return jrubyHome;
+    }
+
+    private CodeSource getCodeSource() {
+        try {
+            return Class.forName("org.jruby.Ruby").getProtectionDomain().getCodeSource();
+        } catch (Exception e) {
+            throw new RuntimeException("Error getting the classic code source", e);
+        }
     }
 
     private String findJRubyHome() {
         if (!TruffleOptions.AOT && System.getenv("JRUBY_HOME") == null && System.getProperty("jruby.home") == null) {
             // Set JRuby home automatically for GraalVM
-            final CodeSource codeSource = Ruby.class.getProtectionDomain().getCodeSource();
+            final CodeSource codeSource = getCodeSource();
             if (codeSource != null) {
                 final File currentJarFile;
                 try {
@@ -240,7 +252,7 @@ public class RubyContext extends ExecutionContext {
             }
         }
 
-        return instanceConfig.getJRubyHome();
+        return options.HOME;
     }
 
     public Object send(Object object, String methodName, DynamicObject block, Object... arguments) {
@@ -259,7 +271,7 @@ public class RubyContext extends ExecutionContext {
     }
 
     public void shutdown() {
-        if (getOptions().ROPE_PRINT_INTERN_STATS) {
+        if (options.ROPE_PRINT_INTERN_STATS) {
             System.out.println("Ropes re-used: " + getRopeTable().getRopesReusedCount());
             System.out.println("Rope byte arrays re-used: " + getRopeTable().getByteArrayReusedCount());
             System.out.println("Rope bytes saved: " + getRopeTable().getRopeBytesSaved());
@@ -424,10 +436,6 @@ public class RubyContext extends ExecutionContext {
         this.currentDirectory = currentDirectory;
     }
 
-    public RubyInstanceConfig getInstanceConfig() {
-        return instanceConfig;
-    }
-
     public void setOriginalInputFile(String originalInputFile) {
         this.originalInputFile = originalInputFile;
     }
@@ -463,4 +471,5 @@ public class RubyContext extends ExecutionContext {
     public void setSyntaxCheckInputStream(InputStream syntaxCheckInputStream) {
         this.syntaxCheckInputStream = syntaxCheckInputStream;
     }
+
 }

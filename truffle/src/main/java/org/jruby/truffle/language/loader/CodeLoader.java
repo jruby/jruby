@@ -20,9 +20,10 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
 import org.jcodings.Encoding;
-import org.jruby.runtime.Visibility;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.RubyRootNode;
+import org.jruby.truffle.language.Visibility;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.methods.InternalMethod;
@@ -77,9 +78,18 @@ public class CodeLoader {
         } else {
             declaringModule = context.getCoreLibrary().getObjectClass();
         }
+
+        final LexicalScope lexicalScope;
+        if (parentFrame != null) {
+            lexicalScope = RubyArguments.getMethod(parentFrame).getLexicalScope();
+        } else {
+            lexicalScope = context.getRootLexicalScope();
+        }
+
         final InternalMethod method = new InternalMethod(
                 context,
                 rootNode.getSharedMethodInfo(),
+                lexicalScope,
                 rootNode.getSharedMethodInfo().getName(),
                 declaringModule,
                 Visibility.PUBLIC,

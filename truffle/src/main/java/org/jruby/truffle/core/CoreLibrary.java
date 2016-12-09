@@ -29,11 +29,8 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.transcode.EConvFlags;
 import org.jcodings.util.CaseInsensitiveBytesHash;
 import org.jcodings.util.CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry;
-import org.jruby.Main;
-import org.jruby.ext.ffi.Platform;
-import org.jruby.ext.ffi.Platform.OS_TYPE;
-import org.jruby.runtime.Constants;
 import org.jruby.truffle.Layouts;
+import org.jruby.truffle.Main;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.RubyLanguage;
 import org.jruby.truffle.builtins.CoreMethodNodeManager;
@@ -66,7 +63,6 @@ import org.jruby.truffle.core.method.MethodNodesFactory;
 import org.jruby.truffle.core.method.UnboundMethodNodesFactory;
 import org.jruby.truffle.core.module.ModuleNodes;
 import org.jruby.truffle.core.module.ModuleNodesFactory;
-import org.jruby.truffle.core.mutex.ConditionVariableNodesFactory;
 import org.jruby.truffle.core.mutex.MutexNodesFactory;
 import org.jruby.truffle.core.numeric.BignumNodesFactory;
 import org.jruby.truffle.core.numeric.FixnumNodesFactory;
@@ -126,6 +122,7 @@ import org.jruby.truffle.language.objects.FreezeNode;
 import org.jruby.truffle.language.objects.FreezeNodeGen;
 import org.jruby.truffle.language.objects.SingletonClassNode;
 import org.jruby.truffle.language.objects.SingletonClassNodeGen;
+import org.jruby.truffle.options.OutputStrings;
 import org.jruby.truffle.parser.ParserContext;
 import org.jruby.truffle.platform.RubiniusTypes;
 import org.jruby.truffle.platform.signal.SignalManager;
@@ -137,8 +134,9 @@ import org.jruby.truffle.stdlib.digest.DigestNodesFactory;
 import org.jruby.truffle.stdlib.psych.PsychEmitterNodesFactory;
 import org.jruby.truffle.stdlib.psych.PsychParserNodesFactory;
 import org.jruby.truffle.stdlib.psych.YAMLEncoding;
-import org.jruby.util.cli.OutputStrings;
-import org.jruby.util.io.EncodingUtils;
+import org.jruby.truffle.util.Constants;
+import org.jruby.truffle.util.EncodingUtils;
+import org.jruby.truffle.util.Platform;
 
 import java.io.File;
 import java.io.IOException;
@@ -154,7 +152,7 @@ import java.util.concurrent.Future;
 
 public class CoreLibrary {
 
-    private static final String CLI_RECORD_SEPARATOR = org.jruby.util.cli.Options.CLI_RECORD_SEPARATOR.load();
+    private static final String CLI_RECORD_SEPARATOR = "\n";
 
     private static final Property ALWAYS_FROZEN_PROPERTY = Property.create(Layouts.FROZEN_IDENTIFIER, Layout.createLayout().createAllocator().constantLocation(true), 0);
 
@@ -491,8 +489,6 @@ public class CoreLibrary {
         bindingClass = defineClass("Binding");
         bindingFactory = Layouts.BINDING.createBindingShape(bindingClass, bindingClass);
         Layouts.CLASS.setInstanceFactoryUnsafe(bindingClass, bindingFactory);
-        final DynamicObject conditionVariableClass = defineClass("ConditionVariable");
-        Layouts.CLASS.setInstanceFactoryUnsafe(conditionVariableClass, Layouts.CONDITION_VARIABLE.createConditionVariableShape(conditionVariableClass, conditionVariableClass));
         dirClass = defineClass("Dir");
         Layouts.CLASS.setInstanceFactoryUnsafe(dirClass, Layouts.DIR.createDirShape(dirClass, dirClass));
         encodingClass = defineClass("Encoding");
@@ -712,7 +708,6 @@ public class CoreLibrary {
                 ByteArrayNodesFactory.getFactories(),
                 CExtNodesFactory.getFactories(),
                 ClassNodesFactory.getFactories(),
-                ConditionVariableNodesFactory.getFactories(),
                 CoverageNodesFactory.getFactories(),
                 DigestNodesFactory.getFactories(),
                 DirNodesFactory.getFactories(),
@@ -843,13 +838,22 @@ public class CoreLibrary {
 
         globals.put("$,", nilObject);
         globals.put("$*", argv);
-        globals.put("$0", StringOperations.createString(context, StringOperations.encodeRope(context.getInstanceConfig().displayedFileName(), UTF8Encoding.INSTANCE)));
 
-        globals.put("$DEBUG", context.getInstanceConfig().isDebug());
+        final Object dollarZeroValue;
+
+        if (context.getOptions().DISPLAYED_FILE_NAME == null) {
+            dollarZeroValue = nilObject;
+        } else {
+            dollarZeroValue = StringOperations.createString(context, StringOperations.encodeRope(context.getOptions().DISPLAYED_FILE_NAME, UTF8Encoding.INSTANCE));
+        }
+
+        globals.put("$0", dollarZeroValue);
+
+        globals.put("$DEBUG", context.getOptions().DEBUG);
 
         final Object verbose;
 
-        switch (context.getInstanceConfig().getVerbosity()) {
+        switch (context.getOptions().VERBOSITY) {
             case NIL:
                 verbose = getNilObject();
                 break;
@@ -915,7 +919,7 @@ public class CoreLibrary {
         Layouts.MODULE.getFields(processModule).setConstant(context, node, "CLOCK_MONOTONIC", ProcessNodes.CLOCK_MONOTONIC);
         Layouts.MODULE.getFields(processModule).setConstant(context, node, "CLOCK_REALTIME", ProcessNodes.CLOCK_REALTIME);
 
-        if (Platform.getPlatform().getOS() == OS_TYPE.LINUX) {
+        if (Platform.getPlatform().getOS() == Platform.OS_TYPE.LINUX) {
             // Naming is not very consistent here, we just follow MRI
             Layouts.MODULE.getFields(processModule).setConstant(context, node, "CLOCK_THREAD_CPUTIME_ID", ProcessNodes.CLOCK_THREAD_CPUTIME);
             Layouts.MODULE.getFields(processModule).setConstant(context, node, "CLOCK_MONOTONIC_RAW", ProcessNodes.CLOCK_MONOTONIC_RAW);
@@ -1139,7 +1143,7 @@ public class CoreLibrary {
         initializeEncodingAliases();
 
         // External should always have a value, but Encoding.external_encoding{,=} will lazily setup
-        final String externalEncodingName = getContext().getInstanceConfig().getExternalEncoding();
+        final String externalEncodingName = getContext().getOptions().EXTERNAL_ENCODING;
         if (externalEncodingName != null && !externalEncodingName.equals("")) {
             final DynamicObject loadedEncoding = getContext().getEncodingManager().getRubyEncoding(externalEncodingName);
             if (loadedEncoding == null) {
@@ -1152,7 +1156,7 @@ public class CoreLibrary {
             getContext().getEncodingManager().setDefaultExternalEncoding(getContext().getEncodingManager().getLocaleEncoding());
         }
 
-        final String internalEncodingName = getContext().getInstanceConfig().getInternalEncoding();
+        final String internalEncodingName = getContext().getOptions().INTERNAL_ENCODING;
         if (internalEncodingName != null && !internalEncodingName.equals("")) {
             final DynamicObject rubyEncoding = getContext().getEncodingManager().getRubyEncoding(internalEncodingName);
             if (rubyEncoding == null) {
@@ -1359,6 +1363,10 @@ public class CoreLibrary {
 
     public DynamicObject getProcClass() {
         return procClass;
+    }
+
+    public DynamicObject getProcessModule() {
+        return processModule;
     }
 
     public DynamicObject getRangeClass() {

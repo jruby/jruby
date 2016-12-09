@@ -1,3 +1,0 @@
-fails:Signal.signame takes a signal name with a well known signal number
-fails:Signal.signame returns nil if the argument is an invalid signal number
-fails:Signal.signame raises a TypeError when the passed argument can't be coerced to Integer

@@ -30,7 +30,7 @@ SULONG_HOME = ENV['SULONG_HOME']
 JDEBUG_PORT = 51819
 JDEBUG = "-J-agentlib:jdwp=transport=dt_socket,server=y,address=#{JDEBUG_PORT},suspend=y"
 JDEBUG_TEST = "-Dmaven.surefire.debug=-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=#{JDEBUG_PORT} -Xnoagent -Djava.compiler=NONE"
-JEXCEPTION = "-Xtruffle.exceptions.print_java=true"
+JEXCEPTION = "-Xtruffle.exceptions.print_uncaught_java=true"
 METRICS_REPS = 10
 
 VERBOSE = ENV.include? 'V'
@@ -149,8 +149,7 @@ module Utilities
 
   def self.mx?
     mx_ruby_jar = "#{JRUBY_DIR}/mxbuild/dists/ruby.jar"
-    constants_file = "#{JRUBY_DIR}/core/src/main/java/org/jruby/runtime/Constants.java"
-    File.exist?(mx_ruby_jar) && File.mtime(mx_ruby_jar) >= File.mtime(constants_file)
+    File.exist?(mx_ruby_jar)
   end
 
   def self.find_ruby
@@ -444,6 +443,7 @@ module Commands
           truffle                                    build only the Truffle part, assumes the rest is up-to-date
           cexts [--no-openssl]                       build the cext backend (set SULONG_HOME)
           parser                                     build the parser
+          options                                    build the options
           --build-pack                               use the build pack
           --offline                                  use the build pack to build offline
       jt clean                                       clean
@@ -491,6 +491,7 @@ module Commands
       jt tag all spec/ruby/language                  tag all specs in this file, without running them
       jt untag spec/ruby/language                    untag passing specs in this directory
       jt untag spec/ruby/language/while_spec.rb      untag passing specs in this file
+      jt mspec ...                                   run MSpec with the JRuby+Truffle configuration and custom arguments
       jt metrics alloc [--json] ...                  how much memory is allocated running a program (use -Xclassic to test normal JRuby on this metric and others)
       jt metrics minheap ...                         what is the smallest heap you can use to run an application
       jt metrics time ...                            how long does it take to run a command, broken down into different phases
@@ -552,6 +553,8 @@ module Commands
       sh 'sh', 'tool/truffle/generate_parser'
       yytables = 'truffle/src/main/java/org/jruby/truffle/parser/parser/YyTables.java'
       File.write(yytables, File.read(yytables).gsub('package org.jruby.parser;', 'package org.jruby.truffle.parser.parser;'))
+    when 'options'
+      sh 'tool/truffle/generate-options.rb'
     when nil
       mvn env, *maven_options, 'package'
     else
@@ -785,7 +788,7 @@ module Commands
     env_vars = {
       "EXCLUDES" => "test/mri/excludes_truffle"
     }
-    jruby_args = %w[-J-Xmx2G -Xtruffle.exceptions.print_java]
+    jruby_args = %w[-J-Xmx2G -Xtruffle.exceptions.print_java=true]
 
     if args.count { |arg| !arg.start_with?('-') } == 0
       args += File.readlines("#{JRUBY_DIR}/test/mri_truffle.index").grep(/^[^#]\w+/).map(&:chomp)
@@ -1013,6 +1016,10 @@ module Commands
         FileUtils.remove_entry temp_dir
       end
     end
+  end
+
+  def mspec(*args)
+    super(*args)
   end
 
   def test_specs(command, *args)
@@ -1335,7 +1342,7 @@ class JT
       send(args.shift)
     when "build"
       command = [args.shift]
-      while ['truffle', 'cexts', 'parser', '--offline', '--build-pack', '--no-openssl'].include?(args.first)
+      while ['truffle', 'cexts', 'parser', 'options', '--offline', '--build-pack', '--no-openssl'].include?(args.first)
         command << args.shift
       end
       send(*command)

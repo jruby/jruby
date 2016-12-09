@@ -31,8 +31,8 @@ import org.jcodings.Encoding;
 import org.jruby.truffle.core.regexp.RegexpOptions;
 import org.jruby.truffle.parser.ast.RegexpParseNode;
 import org.jruby.truffle.parser.parser.Tokens;
-import org.jruby.util.ByteList;
-import org.jruby.util.KCode;
+import org.jruby.truffle.util.KCode;
+import org.jruby.truffle.util.ByteList;
 
 import java.io.IOException;
 
@@ -369,7 +369,7 @@ public class StringTerm extends StrTerm {
                         /* ignore backslashed spaces in %w */
                     } else if (c != end && !(begin != '\0' && c == begin)) {
                         buffer.append('\\');
-                        lexer.pushback(c);;
+                        lexer.pushback(c);
                         continue;
                     }
                 }

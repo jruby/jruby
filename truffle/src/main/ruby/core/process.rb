@@ -129,8 +129,60 @@ module Process
   #
   def self.setproctitle(title)
     val = Rubinius::Type.coerce_to(title, String, :to_str)
-    Truffle.invoke_primitive(:vm_set_process_title, val)
+    if RbConfig::CONFIG["host_os"] == "linux" and File.readable?("/proc/self/maps")
+      setproctitle_linux_from_proc_maps(val)
+    else
+      Truffle.invoke_primitive(:vm_set_process_title, val)
+    end
   end
+
+  # Very hacky implementation to pass the specs, since the JVM doesn't give us argv[0]
+  # Overwrite *argv inplace because finding the argv pointer itself is harder.
+  # Truncates title if title would cover our org.jruby (main class) marker.
+  def self.setproctitle_linux_from_proc_maps(title)
+    @_argv0_address ||= begin
+      command = File.binread("/proc/self/cmdline")
+
+      stack = File.readlines("/proc/self/maps").grep(/\[stack\]/)
+      raise stack.to_s unless stack.size == 1
+
+      from, to = stack[0].split[0].split('-').map { |addr| Integer(addr, 16) }
+      raise unless from < to
+
+      original_argv = Truffle::Boot.original_argv
+      args_length = original_argv.reduce(0) { |bytes,arg| bytes + 1 + arg.bytesize }
+      page = 4096
+      size = 2 * page
+      size += args_length
+      base = to - size
+      base_ptr = FFI::Pointer.new(FFI::Type::CHAR, base)
+      haystack = base_ptr.read_string(size)
+
+      main_index = command.index("\x00org.jruby")
+      raise "Did not find the main class in args" unless main_index
+      needle = command[0...main_index]
+      i = haystack.index("\x00\x00#{needle}")
+      raise "argv[0] not found" unless i
+      i += 2
+
+      @_argv0_max_length = needle.bytesize
+      base + i
+    end
+
+    if title.bytesize > @_argv0_max_length
+      title = title.byteslice(0, @_argv0_max_length)
+    end
+    new_title = title + "\x00" * (@_argv0_max_length - title.bytesize)
+
+    argv0_ptr = FFI::Pointer.new(FFI::Type::CHAR, @_argv0_address)
+    argv0_ptr.write_string(new_title)
+
+    new_command = File.binread("/proc/self/cmdline")
+    raise "failed" unless new_command.start_with?(new_title)
+
+    title
+  end
+  private_class_method :setproctitle_linux_from_proc_maps
 
   def self.setrlimit(resource, cur_limit, max_limit=undefined)
     resource =  coerce_rlimit_resource(resource)

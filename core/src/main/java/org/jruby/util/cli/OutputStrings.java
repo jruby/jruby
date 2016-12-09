@@ -94,7 +94,7 @@ public class OutputStrings {
         "  -X+C          force compilation of all scripts before they are run (except eval)\n" +
         "  -X+CIR        force compilation and use IR runtime\n" +
         "  -X+JIR        JIT compilation and use IR runtime\n" +
-        "  -X+T          use Truffle (-X+TM use Truffle's entry point)\n" +
+        "  -X+T          use Truffle\n" +
         "  -Xclassic     don't use Truffle, reversing the -X+T option\n" +
         "  -Xsubstring?  list options that contain substring in their name\n" +
         "  -Xprefix...   list options that are prefixed wtih prefix\n" ;
@@ -119,8 +119,7 @@ public class OutputStrings {
 
     public static String getVersionString() {
         return String.format(
-            "jruby%s %s (%s) %s %s %s %s on %s%s%s [%s-%s]",
-                Options.COMPILE_MODE.load().isTruffle() ? "+truffle" : "",
+            "jruby %s (%s) %s %s %s %s on %s%s%s [%s-%s]",
                 Constants.VERSION,
                 Constants.RUBY_VERSION,
                 Constants.COMPILE_DATE,

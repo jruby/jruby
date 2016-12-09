@@ -42,6 +42,7 @@ public class TranslatorEnvironment {
 
     private final boolean ownScopeForAssignments;
     private final boolean neverAssignInParentScope;
+    private final boolean isModuleBody;
 
     protected final TranslatorEnvironment parent;
     private boolean needsDeclarationFrame = false; // We keep the logic as we might do it differently one day.
@@ -56,8 +57,8 @@ public class TranslatorEnvironment {
 
     public TranslatorEnvironment(RubyContext context, TranslatorEnvironment parent, ParseEnvironment parseEnvironment,
             ReturnID returnID, boolean ownScopeForAssignments, boolean neverAssignInParentScope,
-            SharedMethodInfo sharedMethodInfo, String namedMethodName, int blockDepth, BreakID breakID,
-            FrameDescriptor frameDescriptor) {
+            boolean isModuleBody, SharedMethodInfo sharedMethodInfo, String namedMethodName, int blockDepth,
+            BreakID breakID, FrameDescriptor frameDescriptor) {
         this.context = context;
         this.parent = parent;
         this.frameDescriptor = frameDescriptor;
@@ -65,6 +66,7 @@ public class TranslatorEnvironment {
         this.returnID = returnID;
         this.ownScopeForAssignments = ownScopeForAssignments;
         this.neverAssignInParentScope = neverAssignInParentScope;
+        this.isModuleBody = isModuleBody;
         this.sharedMethodInfo = sharedMethodInfo;
         this.namedMethodName = namedMethodName;
         this.blockDepth = blockDepth;
@@ -73,13 +75,27 @@ public class TranslatorEnvironment {
 
     public TranslatorEnvironment(RubyContext context, TranslatorEnvironment parent, ParseEnvironment parseEnvironment,
             ReturnID returnID, boolean ownScopeForAssignments, boolean neverAssignInParentScope,
-            SharedMethodInfo methodIdentifier, String namedMethodName, int blockDepth, BreakID breakID) {
-        this(context, parent, parseEnvironment, returnID, ownScopeForAssignments, neverAssignInParentScope, methodIdentifier, namedMethodName, blockDepth, breakID,
-                new FrameDescriptor(context.getCoreLibrary().getNilObject()));
+            boolean isModuleBody, SharedMethodInfo sharedMethodInfo, String namedMethodName, int blockDepth, BreakID breakID) {
+        this(context, parent, parseEnvironment, returnID, ownScopeForAssignments, neverAssignInParentScope, isModuleBody, sharedMethodInfo, namedMethodName, blockDepth,
+                breakID, new FrameDescriptor(context.getCoreLibrary().getNilObject()));
+    }
+
+    public boolean isDynamicConstantLookup() {
+        return parseEnvironment.isDynamicConstantLookup();
     }
 
     public LexicalScope getLexicalScope() {
+        assert !isDynamicConstantLookup();
         return parseEnvironment.getLexicalScope();
+    }
+
+    public LexicalScope getLexicalScopeOrNull() {
+        if (isDynamicConstantLookup()) {
+            // TODO (eregon, 4 Dec. 2016): we should return null here.
+            return parseEnvironment.getLexicalScope();
+        } else {
+            return parseEnvironment.getLexicalScope();
+        }
     }
 
     public LexicalScope pushLexicalScope() {
@@ -191,6 +207,10 @@ public class TranslatorEnvironment {
 
     public boolean getNeverAssignInParentScope() {
         return neverAssignInParentScope;
+    }
+
+    public boolean isModuleBody() {
+        return isModuleBody;
     }
 
     public SharedMethodInfo getSharedMethodInfo() {

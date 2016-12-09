@@ -21,7 +21,7 @@ import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.truffle.core.numeric.FixnumOrBignumNode;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.util.ByteList;
+import org.jruby.truffle.util.ByteList;
 
 import java.math.BigInteger;
 import java.util.Arrays;

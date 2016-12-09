@@ -13,22 +13,22 @@ import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
-import org.jruby.runtime.Visibility;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.RubyConstant;
 import org.jruby.truffle.language.RubyGuards;
+import org.jruby.truffle.language.Visibility;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.objects.shared.SharedObjects;
+import org.jruby.truffle.util.IdUtil;
 import org.jruby.truffle.util.StringUtils;
-import org.jruby.util.IdUtil;
-import org.jruby.util.func.Function1;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.function.Function;
 
 public abstract class ModuleOperations {
 
@@ -393,7 +393,7 @@ public abstract class ModuleOperations {
         return found;
     }
 
-    private static <R> R classVariableLookup(DynamicObject module, Function1<R, DynamicObject> action) {
+    private static <R> R classVariableLookup(DynamicObject module, Function<DynamicObject, R> action) {
         CompilerAsserts.neverPartOfCompilation();
 
         // Look in the current module

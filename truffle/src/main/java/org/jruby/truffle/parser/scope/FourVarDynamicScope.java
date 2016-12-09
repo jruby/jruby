@@ -26,7 +26,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.scope;
 
-import org.jruby.runtime.builtin.IRubyObject;
+
 
 /**
  * This is a DynamicScope that supports exactly four variables.
@@ -36,7 +36,7 @@ public class FourVarDynamicScope extends ThreeVarDynamicScope {
     private static final String SIZE_ERROR = "FourVarDynamicScope only supports scopes with four variables";
     private static final String GROW_ERROR = "FourVarDynamicScope cannot be grown; use ManyVarsDynamicScope";
     
-    protected IRubyObject variableValueThree;
+    protected Object variableValueThree;
 
     public FourVarDynamicScope(StaticScope staticScope, DynamicScope parent) {
         super(staticScope, parent);
@@ -57,8 +57,8 @@ public class FourVarDynamicScope extends ThreeVarDynamicScope {
     }
 
     @Override
-    public IRubyObject[] getValues() {
-        return new IRubyObject[] {variableValueZero, variableValueOne, variableValueTwo, variableValueThree};
+    public Object[] getValues() {
+        return new Object[] {variableValueZero, variableValueOne, variableValueTwo, variableValueThree};
     }
     
     /**
@@ -72,7 +72,7 @@ public class FourVarDynamicScope extends ThreeVarDynamicScope {
      * @return the value here
      */
     @Override
-    public IRubyObject getValue(int offset, int depth) {
+    public Object getValue(int offset, int depth) {
         if (depth > 0) {
             return parent.getValue(offset, depth - 1);
         }
@@ -95,7 +95,7 @@ public class FourVarDynamicScope extends ThreeVarDynamicScope {
      * Variation of getValue that checks for nulls, returning and setting the given value (presumably nil)
      */
     @Override
-    public IRubyObject getValueOrNil(int offset, int depth, IRubyObject nil) {
+    public Object getValueOrNil(int offset, int depth, Object nil) {
         if (depth > 0) {
             return parent.getValueOrNil(offset, depth - 1, nil);
         } else {
@@ -104,7 +104,7 @@ public class FourVarDynamicScope extends ThreeVarDynamicScope {
     }
     
     @Override
-    public IRubyObject getValueDepthZeroOrNil(int offset, IRubyObject nil) {
+    public Object getValueDepthZeroOrNil(int offset, Object nil) {
         assert offset < SIZE : SIZE_ERROR;
         switch (offset) {
         case 0:
@@ -124,7 +124,7 @@ public class FourVarDynamicScope extends ThreeVarDynamicScope {
         }
     }
     @Override
-    public IRubyObject getValueThreeDepthZeroOrNil(IRubyObject nil) {
+    public Object getValueThreeDepthZeroOrNil(Object nil) {
         if (variableValueThree == null) return variableValueThree = nil;
         return variableValueThree;
     }
@@ -137,7 +137,7 @@ public class FourVarDynamicScope extends ThreeVarDynamicScope {
      * @param depth how many captured scopes down this variable should be set
      */
     @Override
-    public IRubyObject setValue(int offset, IRubyObject value, int depth) {
+    public Object setValue(int offset, Object value, int depth) {
         if (depth > 0) {
             assert parent != null : "If depth > 0, then parent should not ever be null";
             
@@ -160,7 +160,7 @@ public class FourVarDynamicScope extends ThreeVarDynamicScope {
     }
 
     @Override
-    public IRubyObject setValueDepthZero(IRubyObject value, int offset) {
+    public Object setValueDepthZero(Object value, int offset) {
         assert offset < SIZE : SIZE_ERROR;
         switch (offset) {
         case 0:
@@ -176,7 +176,7 @@ public class FourVarDynamicScope extends ThreeVarDynamicScope {
         }
     }
     @Override
-    public IRubyObject setValueThreeDepthZero(IRubyObject value) {
+    public Object setValueThreeDepthZero(Object value) {
         return variableValueThree = value;
     }
 }

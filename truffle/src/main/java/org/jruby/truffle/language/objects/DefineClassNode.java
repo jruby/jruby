@@ -36,10 +36,12 @@ public class DefineClassNode extends RubyNode {
     @Child CallDispatchHeadNode inheritedNode;
 
     private final ConditionProfile needToDefineProfile = ConditionProfile.createBinaryProfile();
+    private final ConditionProfile noSuperClassSupplied = ConditionProfile.createBinaryProfile();
     private final BranchProfile errorProfile = BranchProfile.create();
 
-    public DefineClassNode(RubyContext context, SourceSection sourceSection, String name,
-                           RubyNode lexicalParent, RubyNode superClass) {
+    public DefineClassNode(
+            RubyContext context, SourceSection sourceSection, String name,
+            RubyNode lexicalParent, RubyNode superClass) {
         super(context, sourceSection);
         this.name = name;
         this.lexicalParentModule = lexicalParent;
@@ -56,12 +58,18 @@ public class DefineClassNode extends RubyNode {
         }
 
         final DynamicObject lexicalParentModule = (DynamicObject) lexicalParentObject;
-        final DynamicObject superClass = executeSuperClass(frame);
+        final DynamicObject suppliedSuperClass = executeSuperClass(frame);
         final RubyConstant constant = lookupForExistingModule(frame, name, lexicalParentModule);
 
         final DynamicObject definedClass;
 
         if (needToDefineProfile.profile(constant == null)) {
+            final DynamicObject superClass;
+            if (noSuperClassSupplied.profile(suppliedSuperClass == null)) {
+                superClass = getContext().getCoreLibrary().getObjectClass();
+            } else {
+                superClass = suppliedSuperClass;
+            }
             definedClass = ClassNodes.createInitializedRubyClass(getContext(), lexicalParentModule, superClass, name);
             callInherited(frame, superClass, definedClass);
         } else {
@@ -74,8 +82,7 @@ public class DefineClassNode extends RubyNode {
 
             final DynamicObject currentSuperClass = ClassNodes.getSuperClass(definedClass);
 
-            if (currentSuperClass != superClass
-                    && superClass != coreLibrary().getObjectClass()) { // bug-compat with MRI https://bugs.ruby-lang.org/issues/12367
+            if (suppliedSuperClass != null && currentSuperClass != suppliedSuperClass) { // bug-compat with MRI https://bugs.ruby-lang.org/issues/12367
                 errorProfile.enter();
                 throw new RaiseException(coreExceptions().superclassMismatch(
                         Layouts.MODULE.getFields(definedClass).getName(), this));
@@ -86,6 +93,9 @@ public class DefineClassNode extends RubyNode {
     }
 
     private DynamicObject executeSuperClass(VirtualFrame frame) {
+        if (superClassNode == null) {
+            return null;
+        }
         final Object superClassObject = superClassNode.execute(frame);
 
         if (!RubyGuards.isRubyClass(superClassObject)) {

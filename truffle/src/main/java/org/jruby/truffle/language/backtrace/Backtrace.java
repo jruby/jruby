@@ -9,16 +9,15 @@
  */
 package org.jruby.truffle.language.backtrace;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.List;
-
+import com.oracle.truffle.api.nodes.Node;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyBaseNode;
 import org.jruby.truffle.language.backtrace.BacktraceFormatter.FormattingFlags;
 
-import com.oracle.truffle.api.nodes.Node;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.List;
 
 public class Backtrace {
 

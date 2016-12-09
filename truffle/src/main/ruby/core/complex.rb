@@ -369,4 +369,7 @@ class Complex < Numeric
     @imag = imag
   end
 
+  undef_method :negative?
+  undef_method :positive?
+
 end

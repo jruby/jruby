@@ -33,7 +33,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.ast;
 
-import org.jruby.ParseResult;
 import org.jruby.truffle.parser.ast.types.INameNode;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
 import org.jruby.truffle.parser.lexer.ISourcePosition;
@@ -46,7 +45,7 @@ import java.util.List;
 /**
  * Base class for all Nodes in the AST
  */
-public abstract class ParseNode implements ISourcePositionHolder, ParseResult {
+public abstract class ParseNode implements ISourcePositionHolder {
     // We define an actual list to get around bug in java integration (1387115)
     static final List<ParseNode> EMPTY_LIST = new ArrayList<>();
     

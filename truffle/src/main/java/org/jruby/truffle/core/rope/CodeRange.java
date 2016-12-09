@@ -14,7 +14,7 @@
 
 package org.jruby.truffle.core.rope;
 
-import org.jruby.util.StringSupport;
+import org.jruby.truffle.core.string.StringSupport;
 
 public enum CodeRange {
     CR_UNKNOWN(StringSupport.CR_UNKNOWN),

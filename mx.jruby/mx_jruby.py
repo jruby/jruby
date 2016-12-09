@@ -58,101 +58,6 @@ class LicensesProject(ArchiveProject):
     def getResults(self):
         return [join(_suite.dir, f) for f in self.license_files]
 
-def mavenSetup():
-    maven_args = []
-    env = os.environ.copy()
-    if not mx.get_opts().verbose:
-        maven_args.append('-q')
-
-    buildPack = join(_suite.dir, 'jruby-build-pack/maven')
-    if isdir(buildPack):
-        maven_args.append('-Dmaven.repo.local=' + buildPack)
-    elif 'CI' in env and 'TRAVIS' not in env:
-        maven_args.append('-Dmaven.repo.local=' + join(_suite.dir, 'mxbuild/mvn'))
-
-    if not mx.get_opts().verbose:
-        env['JRUBY_BUILD_MORE_QUIET'] = 'true'
-    # HACK: since the maven executable plugin does not configure the
-    # java executable that is used we unfortunately need to prepend it to the PATH
-    javaHome = os.getenv('JAVA_HOME')
-    if javaHome:
-        env["PATH"] = javaHome + '/bin' + os.pathsep + env["PATH"]
-        mx.logv('Setting PATH to {}'.format(env["PATH"]))
-    mx.run(['java', '-version'], env=env)
-    return maven_args, env
-
-class JRubyCoreMavenProject(mx.MavenProject):
-    def getBuildTask(self, args):
-        return JRubyCoreBuildTask(self, args, 1)
-
-    def getResults(self):
-        return None
-
-    def get_source_path(self, resolve):
-        with open(join(_suite.dir, 'VERSION')) as f:
-            version = f.readline().strip()
-        return join(_suite.dir, 'core/target/jruby-core-' + version + '-shaded-sources.jar')
-
-class JRubyCoreBuildTask(mx.BuildTask):
-    def __str__(self):
-        return 'Building {} with Maven'.format(self.subject)
-
-    def newestOutput(self):
-        return TimeStampFile(join(_suite.dir, self.subject.jar))
-
-    def needsBuild(self, newestInput):
-        sup = mx.BuildTask.needsBuild(self, newestInput)
-        if sup[0]:
-            return sup
-
-        jar = self.newestOutput()
-
-        if not jar.exists():
-            return (True, 'no jar yet')
-
-        jni_libs = join(_suite.dir, 'lib/jni')
-        if not exists(jni_libs) or not os.listdir(jni_libs):
-            return (True, jni_libs)
-
-        bundler = join(_suite.dir, 'lib/ruby/gems/shared/gems/bundler-1.10.6')
-        if not exists(bundler) or not os.listdir(bundler):
-            return (True, bundler)
-
-        for watched in self.subject.watch:
-            watched = join(_suite.dir, watched)
-            if not exists(watched):
-                return (True, watched + ' does not exist')
-            elif os.path.isfile(watched) and TimeStampFile(watched).isNewerThan(jar):
-                return (True, watched + ' is newer than the jar')
-            else:
-                for root, _, files in os.walk(watched):
-                    for name in files:
-                        source = join(root, name)
-                        if TimeStampFile(source).isNewerThan(jar):
-                            return (True, source + ' is newer than the jar')
-
-        return (False, 'all files are up to date')
-
-    def build(self):
-        cwd = _suite.dir
-        maven_args, env = mavenSetup()
-        mx.log("Building jruby-core with Maven")
-        mx.run_maven(maven_args + ['-DskipTests', '-Dcreate.sources.jar', '-pl', 'core,lib'], cwd=cwd, env=env)
-        # Install Bundler
-        gem_home = join(_suite.dir, 'lib', 'ruby', 'gems', 'shared')
-        env['GEM_HOME'] = gem_home
-        env['GEM_PATH'] = gem_home
-        mx.run(['bin/jruby', 'bin/gem', 'install', 'bundler', '-v', '1.10.6'], cwd=cwd, env=env)
-
-    def clean(self, forBuild=False):
-        if forBuild:
-            return
-        maven_args, env = mavenSetup()
-        mx.run_maven(maven_args + ['clean'], nonZeroIsFatal=False, cwd=_suite.dir, env=env)
-        jar = self.newestOutput()
-        if jar.exists():
-            os.remove(jar.path)
-
 # Commands
 
 def extractArguments(cli_args):
@@ -160,8 +65,6 @@ def extractArguments(cli_args):
     rubyArgs = []
     classpath = []
     print_command = False
-    classic = False
-    main_class = "org.jruby.Main"
 
     jruby_opts = os.environ.get('JRUBY_OPTS')
     if jruby_opts:
@@ -171,11 +74,10 @@ def extractArguments(cli_args):
         while args:
             arg = args.pop(0)
             if arg == '-X+T':
-                pass # Just drop it
-            elif arg == '-X+TM':
-                main_class = "org.jruby.truffle.Main"
+                # ignore - default
+                pass
             elif arg == '-Xclassic':
-                classic = True
+                mx.error('-Xclassic no longer supported')
             elif arg == '-J-cmd':
                 print_command = True
             elif arg.startswith('-J-G:+'):
@@ -205,7 +107,7 @@ def extractArguments(cli_args):
                 rubyArgs.append(arg)
                 rubyArgs.extend(args)
                 break
-    return vmArgs, rubyArgs, classpath, print_command, classic, main_class
+    return vmArgs, rubyArgs, classpath, print_command, classic
 
 def setup_jruby_home():
     rubyZip = mx.distribution('RUBY-ZIP').path
@@ -230,7 +132,7 @@ def ruby_command(args):
     java = os.getenv('JAVACMD', java_home + '/bin/java')
     argv0 = java
 
-    vmArgs, rubyArgs, user_classpath, print_command, classic, main_class = extractArguments(args)
+    vmArgs, rubyArgs, user_classpath, print_command, classic = extractArguments(args)
     classpath = mx.classpath(['TRUFFLE_API', 'RUBY']).split(':')
     truffle_api, classpath = classpath[0], classpath[1:]
     assert os.path.basename(truffle_api) == "truffle-api.jar"
@@ -240,7 +142,7 @@ def ruby_command(args):
         # '-Xss2048k',
         '-Xbootclasspath/a:' + truffle_api,
         '-cp', ':'.join(classpath),
-        main_class
+        'org.jruby.truffle.Main'
     ]
     if not classic:
         vmArgs = vmArgs + ['-X+T']

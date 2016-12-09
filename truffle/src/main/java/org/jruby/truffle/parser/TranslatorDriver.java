@@ -119,7 +119,7 @@ public class TranslatorDriver {
         boolean isEvalParse = parserContext == ParserContext.EVAL || parserContext == ParserContext.INLINE || parserContext == ParserContext.MODULE;
         final ParserConfiguration parserConfiguration = new ParserConfiguration(context, 0, isInlineSource, !isEvalParse, false);
 
-        if (context.getInstanceConfig().isFrozenStringLiteral()) {
+        if (context.getOptions().FROZEN_STRING_LITERALS) {
             parserConfiguration.setFrozenStringLiteral(true);
         }
 
@@ -129,17 +129,7 @@ public class TranslatorDriver {
 
         RootParseNode node;
 
-        try {
-            node = (RootParseNode) parser.parse(source.getName(), source.getCode().getBytes(StandardCharsets.UTF_8), dynamicScope, parserConfiguration);
-        } catch (org.jruby.exceptions.RaiseException e) {
-            String message = e.getException().getMessage().asJavaString();
-
-            if (message == null) {
-                message = "(no message)";
-            }
-
-            throw new RaiseException(context.getCoreExceptions().syntaxError(message, currentNode));
-        }
+        node = (RootParseNode) parser.parse(source.getName(), source.getCode().getBytes(StandardCharsets.UTF_8), dynamicScope, parserConfiguration);
 
         final SourceSection sourceSection = source.createSection(0, source.getCode().length());
         final RubySourceSection rubySourceSection = new RubySourceSection(sourceSection);
@@ -170,8 +160,10 @@ public class TranslatorDriver {
                 false,
                 false);
 
+        final boolean topLevel = parserContext == ParserContext.TOP_LEVEL_FIRST || parserContext == ParserContext.TOP_LEVEL;
+        final boolean isModuleBody = topLevel;
         final TranslatorEnvironment environment = new TranslatorEnvironment(context, parentEnvironment,
-                parseEnvironment, parseEnvironment.allocateReturnID(), ownScopeForAssignments, false, sharedMethodInfo, sharedMethodInfo.getName(), 0, null);
+                        parseEnvironment, parseEnvironment.allocateReturnID(), ownScopeForAssignments, false, isModuleBody, sharedMethodInfo, sharedMethodInfo.getName(), 0, null);
 
         // Declare arguments as local variables in the top-level environment - we'll put the values there in a prelude
 
@@ -183,7 +175,7 @@ public class TranslatorDriver {
 
         // Translate to Ruby Truffle nodes
 
-        final BodyTranslator translator = new BodyTranslator(currentNode, context, null, environment, source, parserContext == ParserContext.TOP_LEVEL_FIRST || parserContext == ParserContext.TOP_LEVEL);
+        final BodyTranslator translator = new BodyTranslator(currentNode, context, null, environment, source, topLevel);
 
         RubyNode truffleNode;
 
@@ -270,7 +262,7 @@ public class TranslatorDriver {
                 false);
             // TODO(CS): how do we know if the frame is a block or not?
             return new TranslatorEnvironment(context, null, parseEnvironment,
-                    parseEnvironment.allocateReturnID(), true, true, sharedMethodInfo, sharedMethodInfo.getName(), 0, null, frameDescriptor);
+                        parseEnvironment.allocateReturnID(), true, true, false, sharedMethodInfo, sharedMethodInfo.getName(), 0, null, frameDescriptor);
     }
 
     private TranslatorEnvironment environmentForFrame(RubyContext context, MaterializedFrame frame) {
@@ -291,7 +283,7 @@ public class TranslatorDriver {
             final MaterializedFrame parent = RubyArguments.getDeclarationFrame(frame);
             // TODO(CS): how do we know if the frame is a block or not?
             return new TranslatorEnvironment(context, environmentForFrame(context, parent), parseEnvironment,
-                    parseEnvironment.allocateReturnID(), true, true, sharedMethodInfo, sharedMethodInfo.getName(), 0, null, frame.getFrameDescriptor());
+                            parseEnvironment.allocateReturnID(), true, true, false, sharedMethodInfo, sharedMethodInfo.getName(), 0, null, frame.getFrameDescriptor());
         }
     }
 

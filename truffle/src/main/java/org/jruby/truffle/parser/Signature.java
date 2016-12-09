@@ -1,6 +1,5 @@
 package org.jruby.truffle.parser;
 
-import org.jruby.runtime.Arity;
 import org.jruby.truffle.parser.ast.ArgsParseNode;
 import org.jruby.truffle.parser.ast.ArgumentParseNode;
 import org.jruby.truffle.parser.ast.ForParseNode;
@@ -44,7 +43,6 @@ public class Signature {
     private final short post;
     private final short kwargs;
     private final short requiredKwargs;
-    private final Arity arity;
     private final boolean restKwargs;
 
     public Signature(int pre, int opt, int post, Rest rest, int kwargs, int requiredKwargs, boolean restKwargs) {
@@ -55,16 +53,6 @@ public class Signature {
         this.kwargs = (short) kwargs;
         this.requiredKwargs = (short) requiredKwargs;
         this.restKwargs = restKwargs;
-
-        // NOTE: Some logic to *assign* variables still uses Arity, which treats Rest.ANON (the
-        //       |a,| form) as a rest arg for destructuring purposes. However ANON does *not*
-        //       permit more than required args to be passed to a lambda, so we do not consider
-        //       it a "true" rest arg for arity-checking purposes below in checkArity.
-        if (rest != Rest.NONE || opt != 0) {
-            arity = Arity.createArity(-(required() + 1));
-        } else {
-            arity = Arity.fixed(required() + getRequiredKeywordForArityCount());
-        }
     }
 
     public int getRequiredKeywordForArityCount() {
@@ -90,7 +78,6 @@ public class Signature {
     }
 
     public int required() { return pre + post; }
-    public Arity arity() { return arity; }
 
     /**
      * Best attempt at breaking the code of arity values!  We figure out how many fixed/required parameters
@@ -108,22 +95,6 @@ public class Signature {
         }
 
         return fixedValue;
-    }
-
-    // Lossy conversion to half-support older signatures which externally use Arity but needs to be converted.
-    public static Signature from(Arity arity) {
-        switch(arity.required()) {
-            case 0:
-                return arity.isFixed() ? Signature.NO_ARGUMENTS : Signature.OPTIONAL;
-            case 1:
-                return arity.isFixed() ? Signature.ONE_ARGUMENT : Signature.ONE_REQUIRED;
-            case 2:
-                return arity.isFixed() ? Signature.TWO_ARGUMENTS : Signature.TWO_REQUIRED;
-            case 3:
-                return arity.isFixed() ? Signature.THREE_ARGUMENTS : Signature.THREE_REQUIRED;
-        }
-
-        throw new UnsupportedOperationException("We do not know enough about the arity to convert it to a signature");
     }
 
     public static Signature from(int pre, int opt, int post, int kwargs, int requiredKwargs, Rest rest, boolean restKwargs) {

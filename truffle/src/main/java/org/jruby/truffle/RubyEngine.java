@@ -12,9 +12,8 @@ package org.jruby.truffle;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.vm.PolyglotEngine;
-import org.jruby.RubyInstanceConfig;
+import org.jruby.truffle.options.OptionsCatalog;
 import org.jruby.truffle.platform.graal.Graal;
-import org.jruby.util.cli.Options;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -26,23 +25,41 @@ public class RubyEngine {
     private final PolyglotEngine engine;
     private final RubyContext context;
 
-    public static final String INSTANCE_CONFIG_KEY = "instance-config";
-
-    public RubyEngine(RubyInstanceConfig instanceConfig) {
-        if (!instanceConfig.getCompileMode().isTruffle()) {
-            throw new UnsupportedOperationException();
-        }
-
+    public RubyEngine(
+            String home,
+            String[] loadPaths,
+            String[] requiredLibraries,
+            byte[] inlineScript,
+            String[] arguments,
+            String displayedFileName,
+            boolean debug,
+            int verbosity,
+            boolean frozenStringLiterals,
+            boolean disabledGems,
+            String internalEncoding,
+            String externalEncoding) {
         engine = PolyglotEngine.newBuilder()
-                .config(RubyLanguage.MIME_TYPE, INSTANCE_CONFIG_KEY, instanceConfig)
+                .config(RubyLanguage.MIME_TYPE, OptionsCatalog.HOME.getName(), home)
+                .config(RubyLanguage.MIME_TYPE, OptionsCatalog.LOAD_PATHS.getName(), loadPaths)
+                .config(RubyLanguage.MIME_TYPE, OptionsCatalog.REQUIRED_LIBRARIES.getName(), requiredLibraries)
+                .config(RubyLanguage.MIME_TYPE, OptionsCatalog.INLINE_SCRIPT.getName(), inlineScript)
+                .config(RubyLanguage.MIME_TYPE, OptionsCatalog.ARGUMENTS.getName(), arguments)
+                .config(RubyLanguage.MIME_TYPE, OptionsCatalog.DISPLAYED_FILE_NAME.getName(), displayedFileName)
+                .config(RubyLanguage.MIME_TYPE, OptionsCatalog.DEBUG.getName(), debug)
+                .config(RubyLanguage.MIME_TYPE, OptionsCatalog.VERBOSITY.getName(), verbosity)
+                .config(RubyLanguage.MIME_TYPE, OptionsCatalog.FROZEN_STRING_LITERALS.getName(), frozenStringLiterals)
+                .config(RubyLanguage.MIME_TYPE, OptionsCatalog.DISABLE_GEMS.getName(), disabledGems)
+                .config(RubyLanguage.MIME_TYPE, OptionsCatalog.INTERNAL_ENCODING.getName(), internalEncoding)
+                .config(RubyLanguage.MIME_TYPE, OptionsCatalog.EXTERNAL_ENCODING.getName(), externalEncoding)
                 .build();
+
         Main.printTruffleTimeMetric("before-load-context");
         context = engine.eval(loadSource("Truffle::Boot.context", "context")).as(RubyContext.class);
         Main.printTruffleTimeMetric("after-load-context");
     }
 
     public int execute(String path) {
-        if (!Graal.isGraal() && Options.TRUFFLE_GRAAL_WARNING_UNLESS.load()) {
+        if (!Graal.isGraal() && context.getOptions().GRAAL_WARNING_UNLESS) {
             Log.warning("This JVM does not have the Graal compiler - performance will be limited - " +
                     "see https://github.com/jruby/jruby/wiki/Truffle-FAQ#how-do-i-get-jrubytruffle");
         }
@@ -70,7 +87,7 @@ public class RubyEngine {
         boolean status = checkSyntax(in, filename);
 
         // check other scripts specified on argv
-        for (String arg : context.getInstanceConfig().getArgv()) {
+        for (String arg : context.getOptions().ARGUMENTS) {
             status = status && checkFileSyntax(arg);
         }
 
@@ -83,7 +100,7 @@ public class RubyEngine {
             try {
                 return checkSyntax(new FileInputStream(file), filename);
             } catch (FileNotFoundException fnfe) {
-                context.getInstanceConfig().getError().println("File not found: " + filename);
+                System.err.println("File not found: " + filename);
                 return false;
             }
         } else {

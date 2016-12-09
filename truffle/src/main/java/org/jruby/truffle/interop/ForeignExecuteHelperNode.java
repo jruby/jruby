@@ -50,7 +50,7 @@ abstract class ForeignExecuteHelperNode extends RubyNode {
     @Specialization(guards = "isRubyMethod(method)")
     protected Object callMethod(VirtualFrame frame, DynamicObject method, Object[] arguments,
                                 @Cached("createCallBoundMethodNode()") CallBoundMethodNode callBoundMethodNode) {
-        return callBoundMethodNode.executeCallBoundMethod(frame, method, arguments, null);
+        return callBoundMethodNode.executeCallBoundMethod(frame, method, arguments, nil());
     }
 
     protected CallBoundMethodNode createCallBoundMethodNode() {

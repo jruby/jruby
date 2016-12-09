@@ -233,10 +233,6 @@ public final class Ruby implements Constantizable {
      * @see org.jruby.RubyInstanceConfig
      */
     private Ruby(RubyInstanceConfig config) {
-        if (config.getCompileMode().isTruffle()) {
-            throw new UnsupportedOperationException("Truffle isn't supported using a classic context - use PolyglotEngine instead.");
-        }
-
         this.config             = config;
         this.threadService      = new ThreadService(this);
 

@@ -1,6 +1,0 @@
-fails(windows):File.dirname returns all the components of filename except the last one (edge cases on windows)
-fails(windows):File.dirname returns the return all the components of filename except the last one (Windows format)
-fails(windows):File.dirname returns the return all the components of filename except the last one (windows unc)
-fails(windows):File.dirname returns the return all the components of filename except the last one (forward_slash)
-windows:File.dirname ignores a trailing /
-windows:File.dirname returns the return all the components of filename except the last one (unix format)

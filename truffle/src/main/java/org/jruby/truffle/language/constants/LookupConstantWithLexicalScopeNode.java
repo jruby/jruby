@@ -60,7 +60,7 @@ public abstract class LookupConstantWithLexicalScopeNode extends RubyNode implem
         return constant;
     }
 
-    @Specialization(assumptions = "getUnmodifiedAssumption(getModule())")
+    @Specialization
     protected RubyConstant lookupConstantUncached(VirtualFrame frame,
             @Cached("createBinaryProfile()") ConditionProfile isVisibleProfile,
             @Cached("createBinaryProfile()") ConditionProfile isDeprecatedProfile) {
