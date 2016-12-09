@@ -38,7 +38,7 @@ import org.jruby.truffle.util.CodeRangeable;
 import org.jruby.truffle.util.EncodingUtils;
 import org.jruby.truffle.util.IntHashMap;
 import org.jruby.truffle.util.UnsafeHolder;
-import org.jruby.util.ByteList;
+import org.jruby.truffle.util.ByteList;
 import sun.misc.Unsafe;
 
 import java.util.ArrayList;

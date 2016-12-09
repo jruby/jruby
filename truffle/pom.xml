@@ -88,11 +88,6 @@ DO NOT MODIFIY - GENERATED CODE
       <version>2.1.11</version>
     </dependency>
     <dependency>
-      <groupId>org.jruby.extras</groupId>
-      <artifactId>bytelist</artifactId>
-      <version>1.0.13</version>
-    </dependency>
-    <dependency>
       <groupId>org.jruby.jcodings</groupId>
       <artifactId>jcodings</artifactId>
       <version>1.0.18</version>

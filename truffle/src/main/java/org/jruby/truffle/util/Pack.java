@@ -38,7 +38,7 @@ package org.jruby.truffle.util;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.util.ByteList;
+import org.jruby.truffle.util.ByteList;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;

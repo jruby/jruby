@@ -24,7 +24,7 @@ import org.jruby.truffle.builtins.UnaryCoreMethodNode;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.util.ByteList;
+import org.jruby.truffle.util.ByteList;
 
 @CoreClass("Rubinius::ByteArray")
 public abstract class ByteArrayNodes {

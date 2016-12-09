@@ -74,7 +74,7 @@ import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.threadlocal.ThreadLocalObject;
 import org.jruby.truffle.util.StringUtils;
-import org.jruby.util.ByteList;
+import org.jruby.truffle.util.ByteList;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;

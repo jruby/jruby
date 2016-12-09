@@ -18,7 +18,7 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.FormatNode;
 import org.jruby.truffle.core.format.exceptions.NoImplicitConversionException;
 import org.jruby.truffle.util.Pack;
-import org.jruby.util.ByteList;
+import org.jruby.truffle.util.ByteList;
 
 /**
  * Read a string that contains UU-encoded data and write as actual binary

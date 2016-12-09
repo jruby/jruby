@@ -36,7 +36,7 @@ import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.platform.posix.Sockets;
 import org.jruby.truffle.platform.posix.TrufflePosix;
 import org.jruby.truffle.stdlib.CoverageManager;
-import org.jruby.util.ByteList;
+import org.jruby.truffle.util.ByteList;
 
 import java.math.BigInteger;
 

@@ -74,7 +74,7 @@ import org.jruby.truffle.language.objects.TaintNode;
 import org.jruby.truffle.language.objects.TaintNodeGen;
 import org.jruby.truffle.util.BoundaryUtils.BoundaryIterable;
 import org.jruby.truffle.util.EncodingUtils;
-import org.jruby.util.ByteList;
+import org.jruby.truffle.util.ByteList;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.error.Mark;
 import org.yaml.snakeyaml.events.AliasEvent;
