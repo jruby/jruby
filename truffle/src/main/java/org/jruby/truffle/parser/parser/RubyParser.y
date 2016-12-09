@@ -1923,7 +1923,7 @@ xstring         : tXSTRING_BEG xstring_contents tSTRING_END {
                     if ($2 == null) {
                         $$ = new XStrParseNode(position, null, StringSupport.CR_7BIT);
                     } else if ($2 instanceof StrParseNode) {
-                        $$ = new XStrParseNode(position, (ByteList) $<StrParseNode>2.getValue().clone(), $<StrParseNode>2.getCodeRange());
+                        $$ = new XStrParseNode(position, $<StrParseNode>2.getValue().dup(), $<StrParseNode>2.getCodeRange());
                     } else if ($2 instanceof DStrParseNode) {
                         $$ = new DXStrParseNode(position, $<DStrParseNode>2);
 

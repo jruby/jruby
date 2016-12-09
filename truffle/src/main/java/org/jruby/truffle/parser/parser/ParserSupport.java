@@ -1489,7 +1489,7 @@ public class ParserSupport {
             regexpFragmentCheck(end, newValue);
             return new RegexpParseNode(position, newValue, options.withoutOnce());
         } else if (contents instanceof StrParseNode) {
-            ByteList meat = (ByteList) ((StrParseNode) contents).getValue().clone();
+            ByteList meat = ((StrParseNode) contents).getValue().dup();
             regexpFragmentCheck(end, meat);
             checkRegexpSyntax(meat, options.withoutOnce());
             return new RegexpParseNode(contents.getPosition(), meat, options.withoutOnce());
