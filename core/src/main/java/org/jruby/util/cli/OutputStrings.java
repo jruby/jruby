@@ -119,8 +119,7 @@ public class OutputStrings {
 
     public static String getVersionString() {
         return String.format(
-            "jruby%s %s (%s) %s %s %s %s on %s%s%s [%s-%s]",
-                Options.COMPILE_MODE.load().isTruffle() ? "+truffle" : "",
+            "jruby %s (%s) %s %s %s %s on %s%s%s [%s-%s]",
                 Constants.VERSION,
                 Constants.RUBY_VERSION,
                 Constants.COMPILE_DATE,

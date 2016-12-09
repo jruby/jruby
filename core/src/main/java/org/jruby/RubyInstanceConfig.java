@@ -1640,7 +1640,7 @@ public class RubyInstanceConfig {
 	}
 
     public enum CompileMode {
-        JIT, FORCE, OFF, TRUFFLE;
+        JIT, FORCE, OFF;
 
         public boolean shouldPrecompileCLI() {
             return this == JIT || this == FORCE;
@@ -1654,9 +1654,6 @@ public class RubyInstanceConfig {
             return this == FORCE;
         }
 
-        public boolean isTruffle() {
-            return this == TRUFFLE;
-        }
     }
 
     ////////////////////////////////////////////////////////////////////////////

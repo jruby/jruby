@@ -99,8 +99,7 @@ public interface IRubyWarnings {
         GC_STRESS_UNIMPLEMENTED,
         GC_ENABLE_UNIMPLEMENTED,
         GC_DISABLE_UNIMPLEMENTED,
-        TRUFFLE,
-        RATIONAL_OUT_OF_RANGE,; // TODO(CS): divide up the Truffle warnings
+        RATIONAL_OUT_OF_RANGE,;
 
         public String getID() {
             return name();

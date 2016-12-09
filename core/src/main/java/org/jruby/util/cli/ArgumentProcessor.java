@@ -402,10 +402,7 @@ public class ArgumentProcessor {
                     } else if (extendedOption.equals("classic")) {
                         throw new MainExitException(0, "jruby: the -Xclassic option should have been handled in the launcher");
                     } else if (extendedOption.equals("+T")) {
-                        Options.PARSER_WARN_GROUPED_EXPRESSIONS.force(Boolean.FALSE.toString());
-                        config.setCompileMode(RubyInstanceConfig.CompileMode.TRUFFLE);
-                        // Make the static option consistent with the compile mode.
-                        Options.COMPILE_MODE.force("TRUFFLE");
+                        throw new MainExitException(0, "jruby: you need to use the Truffle main to use Truffle - this should have been handled in the launcher");
                     } else if (extendedOption.endsWith("...")) {
                         Options.listPrefix(extendedOption.substring(0, extendedOption.length() - "...".length()));
                         config.setShouldRunInterpreter(false);
