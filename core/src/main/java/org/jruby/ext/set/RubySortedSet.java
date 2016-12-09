@@ -118,10 +118,14 @@ public class RubySortedSet extends RubySet implements SortedSet {
         order.clear();
     }
 
-    @Override
-    @JRubyMethod(name = "to_a", alias = "sort") // re-def Enumerable#sort
-    public RubyArray to_a(final ThreadContext context) {
+    @JRubyMethod(name = "sort") // re-def Enumerable#sort
+    public RubyArray sort(final ThreadContext context) {
         return RubyArray.newArray(context.runtime, order); // instead of this.hash.keys();
+    }
+
+    @Override
+    public RubyArray to_a(final ThreadContext context) {
+        return sort(context); // instead of this.hash.keys();
     }
 
     // NOTE: weirdly Set/SortedSet in Ruby do not have sort!
