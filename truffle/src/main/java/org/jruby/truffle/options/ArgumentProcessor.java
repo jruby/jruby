@@ -585,9 +585,6 @@ public class ArgumentProcessor {
 
     private void runBinScript() {
         String scriptName = grabValue("jruby: provide a bin script to execute");
-        if (scriptName.equals("irb")) {
-            scriptName = "jirb";
-        }
         config.setScriptFileName(resolveScript(scriptName));
         // run as a command if we couldn't find a script
         if (config.getScriptFileName() == null) {
