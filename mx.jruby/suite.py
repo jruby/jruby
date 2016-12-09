@@ -98,12 +98,6 @@ suite = {
           "112ff54474f1f04ccf1384c92e39fdc566f0bb5e",
           "BSD-new"),
 
-        "JNR_UNIXSOCKET": mavenLib(
-          "com.github.jnr:jnr-unixsocket:0.14",
-          "0943cc10ae00e9b6994f5419a85819d329e5656c",
-          "d03edf57d8052231e023203d10ace1da13447bd4",
-          "Apache-2.0"),
-
         "JNR_POSIX": mavenLib(
           "com.github.jnr:jnr-posix:3.0.32",
           "a6fbbc386acbae4fd3d892f13e2141655ed6e9c0",
@@ -176,7 +170,6 @@ suite = {
                 "truffle:TRUFFLE_API",
                 "truffle:TRUFFLE_DEBUG",
                 "ASM",
-                "JNR_UNIXSOCKET",
                 "JNR_POSIX",
                 "JNR_CONSTANTS",
                 "JNR_FFI",
