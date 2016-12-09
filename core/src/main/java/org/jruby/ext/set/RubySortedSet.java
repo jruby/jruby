@@ -116,8 +116,9 @@ public class RubySortedSet extends RubySet implements SortedSet {
 
     @Override
     protected void deleteImplIterator(final IRubyObject obj, final Iterator it) {
-        it.remove(); // super
-        order.remove(obj);
+        super.deleteImpl(obj);
+        // iterator over elementsOrdered()
+        it.remove(); // order.remove(obj)
     }
 
     @Override

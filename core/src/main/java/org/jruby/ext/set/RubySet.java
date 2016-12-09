@@ -615,7 +615,7 @@ public class RubySet extends RubyObject implements Set {
             return enumeratorizeWithSize(context, this, "delete_if", enumSize());
         }
 
-        Iterator<IRubyObject> it = elements().iterator();
+        Iterator<IRubyObject> it = elementsOrdered().iterator();
         while ( it.hasNext() ) {
             IRubyObject elem = it.next();
             if ( block.yield(context, elem).isTrue() ) deleteImplIterator(elem, it); // it.remove
@@ -629,7 +629,7 @@ public class RubySet extends RubyObject implements Set {
             return enumeratorizeWithSize(context, this, "keep_if", enumSize());
         }
 
-        Iterator<IRubyObject> it = elements().iterator();
+        Iterator<IRubyObject> it = elementsOrdered().iterator();
         while ( it.hasNext() ) {
             IRubyObject elem = it.next();
             if ( ! block.yield(context, elem).isTrue() ) deleteImplIterator(elem, it); // it.remove
@@ -658,7 +658,7 @@ public class RubySet extends RubyObject implements Set {
         }
 
         final int size = size();
-        Iterator<IRubyObject> it = elements().iterator();
+        Iterator<IRubyObject> it = elementsOrdered().iterator();
         while ( it.hasNext() ) {
             IRubyObject elem = it.next();
             if ( block.yield(context, elem).isTrue() ) deleteImplIterator(elem, it); // it.remove
@@ -674,7 +674,7 @@ public class RubySet extends RubyObject implements Set {
         }
 
         final int size = size();
-        Iterator<IRubyObject> it = elements().iterator();
+        Iterator<IRubyObject> it = elementsOrdered().iterator();
         while ( it.hasNext() ) {
             IRubyObject elem = it.next();
             if ( ! block.yield(context, elem).isTrue() ) deleteImplIterator(elem, it); // it.remove
