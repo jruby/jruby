@@ -7,7 +7,7 @@ ARGUMENTS: [arguments, string-array, [], Command line arguments for the Ruby pro
 DISPLAYED_FILE_NAME: [displayed_file_name, string, null, Displayed file name]
 
 DEBUG: [debug, boolean, false, Debug]
-VERBOSITY: [verbosity, verbosity, nil, Verbosity]
+VERBOSITY: [verbosity, verbosity, false, Verbosity]
 FROZEN_STRING_LITERALS: [frozen_string_literals, boolean, false, Use frozen string literals]
 DISABLE_GEMS: [disable_gems, boolean, false, Disable Gems]
 

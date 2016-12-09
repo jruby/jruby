@@ -620,7 +620,7 @@ public class RubyInstanceConfig {
     private Map<String, String> optionGlobals = new HashMap<String, String>();
     private boolean processLineEnds = false;
     private boolean split = false;
-    private Verbosity verbosity = Verbosity.NIL;
+    private Verbosity verbosity = Verbosity.FALSE;
     private boolean debug = false;
     private boolean showVersion = false;
     private boolean showBytecode = false;

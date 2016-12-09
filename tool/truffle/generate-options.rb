@@ -32,7 +32,7 @@ options = options.map do |constant, (name, type, default, description)|
                   when 'false'
                     'Verbosity.FALSE'
                 end
-      null_default = 'Verbosity.NIL'
+      null_default = 'Verbosity.FALSE'
     when 'integer'
       type = 'int'
       type_cons = 'IntegerOptionDescription'
