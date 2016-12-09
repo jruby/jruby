@@ -49,8 +49,7 @@ import org.jcodings.specific.ASCIIEncoding;
  * of characters. However, its API resembles StringBuffer/StringBuilder more than String
  * because it is a mutable object.
  */
-public class ByteList implements Comparable, CharSequence, Serializable {
-    private static final long serialVersionUID = -1286166947275543731L;
+public class ByteList implements Comparable, CharSequence {
 
     public static final byte[] NULL_ARRAY = new byte[0];
     public static final ByteList EMPTY_BYTELIST = new ByteList(0);
