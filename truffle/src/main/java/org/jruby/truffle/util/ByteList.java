@@ -62,8 +62,6 @@ public class ByteList implements Comparable, CharSequence, Serializable {
 
     int hash;
 
-    String stringValue;
-
     private static final int DEFAULT_SIZE = 4;
 
     /**
@@ -269,7 +267,6 @@ public class ByteList implements Comparable, CharSequence, Serializable {
     public ByteList dup() {
         ByteList dup = dup(realSize);
         dup.hash = hash;
-        dup.stringValue = stringValue;
         return dup;
     }
 
@@ -284,7 +281,6 @@ public class ByteList implements Comparable, CharSequence, Serializable {
         dup.begin = begin;
         dup.encoding = safeEncoding(encoding);
         dup.hash = hash;
-        dup.stringValue = stringValue;
         return dup;
     }
 
@@ -344,7 +340,6 @@ public class ByteList implements Comparable, CharSequence, Serializable {
      */
     public void invalidate() {
         hash = 0;
-        stringValue = null;
     }
 
     /**
@@ -866,17 +861,11 @@ public class ByteList implements Comparable, CharSequence, Serializable {
     }
 
     /**
-     * Remembers toString value, which is expensive for StringBuffer.
-     *
      * @return an ISO-8859-1 representation of the byte list
      */
     @Override
     public String toString() {
-        String decoded = this.stringValue;
-        if (decoded == null) {
-            this.stringValue = decoded = decode(bytes, begin, realSize, "ISO-8859-1");
-        }
-        return decoded;
+        return decode(bytes, begin, realSize, "ISO-8859-1");
     }
 
     /**
