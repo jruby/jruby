@@ -41,6 +41,7 @@ import java.util.Arrays;
 
 import static org.jruby.truffle.core.rope.CodeRange.CR_7BIT;
 import static org.jruby.truffle.core.rope.CodeRange.CR_BROKEN;
+import static org.jruby.truffle.core.rope.CodeRange.CR_UNKNOWN;
 import static org.jruby.truffle.core.rope.CodeRange.CR_VALID;
 
 public abstract class RopeNodes {
@@ -257,7 +258,7 @@ public abstract class RopeNodes {
             return left;
         }
 
-        @Specialization(guards = { "!isMutableRope(left)" })
+        @Specialization(guards = { "!isMutableRope(left)", "!isCodeRangeBroken(left, right)" })
         public Rope concat(Rope left, Rope right, Encoding encoding,
                            @Cached("createBinaryProfile()") ConditionProfile sameCodeRangeProfile,
                            @Cached("createBinaryProfile()") ConditionProfile brokenCodeRangeProfile,
@@ -277,6 +278,25 @@ public abstract class RopeNodes {
                     commonCodeRange(left.getCodeRange(), right.getCodeRange(), sameCodeRangeProfile, brokenCodeRangeProfile),
                     isSingleByteOptimizable(left, right, isLeftSingleByteOptimizableProfile),
                     depth);
+        }
+
+        @Specialization(guards = {"!isMutableRope(left)", "isCodeRangeBroken(left, right)"})
+        public Rope concatCrBroken(Rope left, Rope right, Encoding encoding,
+                                   @Cached("create()") MakeLeafRopeNode makeLeafRopeNode) {
+            // This specialization was added to a special case where broken code range(s),
+            // may concat to form a valid code range.
+            try {
+                Math.addExact(left.byteLength(), right.byteLength());
+            } catch (ArithmeticException e) {
+                throw new RaiseException(getContext().getCoreExceptions().argumentError("Result of string concatenation exceeds the system maximum string length", this));
+            }
+
+            final byte[] leftBytes = left.getBytes();
+            final byte[] rightBytes = right.getBytes();
+            final byte[] bytes = new byte[leftBytes.length + rightBytes.length];
+            System.arraycopy(leftBytes, 0, bytes, 0, leftBytes.length);
+            System.arraycopy(rightBytes, 0, bytes, leftBytes.length, rightBytes.length);
+            return makeLeafRopeNode.executeMake(bytes, encoding, CR_UNKNOWN, NotProvided.INSTANCE);
         }
 
         public static CodeRange commonCodeRange(CodeRange first, CodeRange second,
@@ -308,6 +328,10 @@ public abstract class RopeNodes {
 
         protected static boolean isMutableRope(Rope rope) {
             return rope instanceof RopeBuffer;
+        }
+
+        protected static boolean isCodeRangeBroken(Rope first, Rope second) {
+            return first.getCodeRange() == CR_BROKEN || second.getCodeRange() == CR_BROKEN;
         }
     }
 
