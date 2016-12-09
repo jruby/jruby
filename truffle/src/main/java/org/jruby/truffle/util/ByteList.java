@@ -340,61 +340,11 @@ public class ByteList implements Comparable, CharSequence, Serializable {
     }
 
     /**
-     * Change ByteBuffer to have a new begin that is +index positions past begin with a new length.
-     *
-     * @param index new value to add to begin
-     * @param len the new realSize/length value
-     */
-    public void view(int index, int len) {
-        realSize = len;
-        begin = begin + index;
-        invalidate();
-    }
-
-    /**
-     * Array copy the byte backing store so that you can guarantee that no other objects are
-     * referencing this objects backing store.
-     */
-    public void unshare() {
-        unshare(realSize);
-    }
-
-    /**
-     * Array copy the byte backing store so that you can guarantee that no other objects are
-     * referencing this objects backing store.  This version on unshare allows a length to be
-     * specified which will copy length bytes from the old backing store.
-     *
-     * @param length is the value of how big the buffer is going to be, not the actual length to copy
-     *
-     * It is used by RubyString.modify(int) to prevent COW pathological situations
-     * (namely to COW with having <code>length - realSize</code> bytes ahead)
-     */
-    public void unshare(int length) {
-        byte[] tmp = new byte[length];
-        System.arraycopy(bytes, begin, tmp, 0, Math.min(realSize, length));
-        bytes = tmp;
-        begin = 0;
-    }
-
-    /**
      * Invalidate the hash and stringValue which may have been cached in this ByteList.
      */
     public void invalidate() {
         hash = 0;
         stringValue = null;
-    }
-
-    /**
-     * Prepend a byte onto the front of this ByteList.
-     *
-     * @param b is the byte to be prepended
-     */
-    public void prepend(byte b) {
-        grow(1);
-        System.arraycopy(bytes, begin + 0, bytes, begin + 1, realSize);
-        bytes[begin + 0] = b;
-        realSize++;
-        invalidate();
     }
 
     /**
@@ -520,23 +470,6 @@ public class ByteList implements Comparable, CharSequence, Serializable {
     }
 
     /**
-     * Resize the ByteList's backing store to be length in size.  Note that this forces the backing
-     * store to array copy regardless of ByteLists current size or contents.  It essentially will
-     * end any COWing.
-     *
-     * @param length the new length for the backing store.
-     */
-    public void realloc(int length) {
-        assert length >= 0 : "Invalid length";
-        assert length >= realSize : "length is too small";
-
-        byte tmp[] = new byte[length];
-        System.arraycopy(bytes, 0, tmp, 0, realSize);
-        bytes = tmp;
-        invalidate();
-    }
-
-    /**
      * Return the current length of the ByteList.
      *
      * @return the number of bytes in this ByteList.
@@ -559,15 +492,6 @@ public class ByteList implements Comparable, CharSequence, Serializable {
     }
 
     /**
-     * Number of characters in this ByteList based on its current encoding.
-     *
-     * @return number of characters
-     */
-    public int lengthEnc() {
-        return encoding.strLength(bytes, begin, begin + realSize);
-    }
-
-    /**
      * Get the byte at index from the ByteList.
      *
      * @param index to retreive byte from
@@ -577,16 +501,6 @@ public class ByteList implements Comparable, CharSequence, Serializable {
         assert index >= 0 : "index must be positive";
 
         return bytes[begin + index];
-    }
-
-    /**
-     *  Get the index code point in this ByteList.
-     *
-     * @param index is the element you want
-     * @return the element you requested
-     */
-    public int getEnc(int index) {
-        return encoding.strCodeAt(bytes, begin, begin + realSize, index);
     }
 
     /**
@@ -600,35 +514,6 @@ public class ByteList implements Comparable, CharSequence, Serializable {
         assert begin + index < begin + realSize : "index is too large";
 
         bytes[begin + index] = (byte)b;
-        invalidate();
-    }
-
-    /**
-     * Unsafe version of replace(int,int,ByteList). The contract is that these
-     * unsafe versions will not make sure thet beg and len indices are correct.
-     */
-    public void unsafeReplace(int beg, int len, ByteList nbytes) {
-        unsafeReplace(beg, len, nbytes.bytes, nbytes.begin, nbytes.realSize);
-    }
-
-    /**
-     * Unsafe version of replace(int,int,byte[]). The contract is that these
-     * unsafe versions will not make sure thet beg and len indices are correct.
-     */
-    public void unsafeReplace(int beg, int len, byte[] buf) {
-        unsafeReplace(beg, len, buf, 0, buf.length);
-    }
-
-    /**
-     * Unsafe version of replace(int,int,byte[],int,int). The contract is that these
-     * unsafe versions will not make sure thet beg and len indices are correct.
-     */
-    public void unsafeReplace(int beg, int len, byte[] nbytes, int index, int count) {
-        grow(count - len);
-        int newSize = realSize + count - len;
-        System.arraycopy(bytes,beg+len,bytes,beg+count,realSize - (len+beg));
-        System.arraycopy(nbytes,index,bytes,beg,count);
-        realSize = newSize;
         invalidate();
     }
 
@@ -774,98 +659,6 @@ public class ByteList implements Comparable, CharSequence, Serializable {
         return -1;
     }
 
-    /**
-     * Get the index of last occurrence of c in ByteList from the end of the ByteList.
-     *
-     * @param c byte to be looking for
-     * @return the index of the byte or -1 if not found
-     */
-    public int lastIndexOf(int c) {
-        return lastIndexOf(c, realSize - 1);
-    }
-
-    /**
-     * Get the index of last occurrence of c in ByteList from the pos offset of the ByteList.
-     *
-     * @param c byte to be looking for
-     * @param pos off set from end of ByteList to look for byte
-     * @return the index of the byte or -1 if not found
-     */
-    public int lastIndexOf(final int c, int pos) {
-        // not sure if this is checked elsewhere,
-        // didn't see it in RubyString. RubyString does
-        // cast to char, so c will be >= 0.
-        if (c > 255) return -1;
-
-        final byte b = (byte)(c&0xFF);
-        final int size = begin + realSize;
-        pos += begin;
-        final byte[] buf = bytes;
-        if (pos >= size) {
-            pos = size;
-        } else {
-            pos++;
-        }
-        for ( ; --pos >= begin && buf[pos] != b ; ) ;
-        return pos - begin;
-    }
-
-    /**
-     * Get the index of last occurrence of find in ByteList from the end of the ByteList.
-     *
-     * @param find ByteList to be looking for
-     * @return the index of the byte or -1 if not found
-     */
-    public int lastIndexOf(ByteList find) {
-        return lastIndexOf(find, realSize);
-    }
-
-    /**
-     * Get the index of last occurrence of find in ByteList from the end of the ByteList.
-     *
-     * @param find ByteList to be looking for
-     * @param pos index from end of list to search from
-     * @return the index of the byte or -1 if not found
-     */
-    public int lastIndexOf(ByteList find, int pos) {
-        return lastIndexOf(bytes, begin, realSize, find.bytes, find.begin, find.realSize, pos);
-    }
-
-    /**
-     * Get the index of last occurrence of target in source using the offset and count parameters.
-     * fromIndex can be used to start beyond zero on source.
-     *
-     * @return the index of the byte or -1 if not found
-     */
-    static int lastIndexOf(byte[] source, int sourceOffset, int sourceCount, byte[] target, int targetOffset, int targetCount, int fromIndex) {
-        int rightIndex = sourceCount - targetCount;
-        if (fromIndex < 0) return -1;
-        if (fromIndex > rightIndex) fromIndex = rightIndex;
-        if (targetCount == 0) return fromIndex;
-
-        int strLastIndex = targetOffset + targetCount - 1;
-        byte strLastChar = target[strLastIndex];
-        int min = sourceOffset + targetCount - 1;
-        int i = min + fromIndex;
-
-        startSearchForLastChar:
-        while (true) {
-            while (i >= min && source[i] != strLastChar) i--;
-            if (i < min) return -1;
-            int j = i - 1;
-            int start = j - (targetCount - 1);
-            int k = strLastIndex - 1;
-
-            while (j > start) {
-                if (source[j--] != target[k--]) {
-                    i--;
-                    continue startSearchForLastChar;
-                }
-            }
-            return start - sourceOffset + 1;
-        }
-    }
-
     public boolean startsWith(ByteList other, int toffset) {
         if (realSize == 0 || this.realSize < other.realSize + toffset) return false;
 
@@ -937,34 +730,6 @@ public class ByteList implements Comparable, CharSequence, Serializable {
                  --last > first && buf[begin + last] == otherBuf[other.begin + last] &&
                          ++first < last && buf[begin + first] == otherBuf[other.begin + first] ; ) ;
             return first >= last;
-        }
-        return false;
-    }
-
-    /**
-     * an alternative to the new version of equals, should
-     * detect inequality faster (in many cases), but is slow
-     * in the case of equal values (all bytes visited), due to
-     * using n+=2, n-=2 vs. ++n, --n while iterating over the array.
-     */
-    public boolean sample_equals(Object other) {
-        if (other == this) return true;
-        if (other instanceof ByteList) {
-            ByteList b = (ByteList) other;
-            int first;
-            int last;
-            int size;
-            byte[] buf;
-            if ((size = realSize) == b.realSize) {
-                // scanning from front and back simultaneously, sampling odd
-                // bytes on the forward iteration and even bytes on the
-                // reverse iteration. the object is to get a mismatch as quickly
-                // as possible.
-                for (buf = bytes, first = -1, last = (size + 1) & ~1 ;
-                     (last -= 2) >= 0 && buf[begin + last] == b.bytes[b.begin + last] &&
-                             (first += 2) < size && buf[begin + first] == b.bytes[b.begin + first] ; ) ;
-                return last < 0 || first == size;
-            }
         }
         return false;
     }
