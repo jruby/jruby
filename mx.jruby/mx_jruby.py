@@ -65,7 +65,6 @@ def extractArguments(cli_args):
     rubyArgs = []
     classpath = []
     print_command = False
-    classic = False
 
     jruby_opts = os.environ.get('JRUBY_OPTS')
     if jruby_opts:
@@ -75,9 +74,10 @@ def extractArguments(cli_args):
         while args:
             arg = args.pop(0)
             if arg == '-X+T':
-                classic = False
+                # ignore - default
+                pass
             elif arg == '-Xclassic':
-                classic = True
+                mx.error('-Xclassic no longer supported')
             elif arg == '-J-cmd':
                 print_command = True
             elif arg.startswith('-J-G:+'):
@@ -107,11 +107,7 @@ def extractArguments(cli_args):
                 rubyArgs.append(arg)
                 rubyArgs.extend(args)
                 break
-    if classic:
-        main_class = "org.jruby.Main"
-    else:
-        main_class = "org.jruby.truffle.Main"
-    return vmArgs, rubyArgs, classpath, print_command, classic, main_class
+    return vmArgs, rubyArgs, classpath, print_command, classic
 
 def setup_jruby_home():
     rubyZip = mx.distribution('RUBY-ZIP').path
@@ -136,7 +132,7 @@ def ruby_command(args):
     java = os.getenv('JAVACMD', java_home + '/bin/java')
     argv0 = java
 
-    vmArgs, rubyArgs, user_classpath, print_command, classic, main_class = extractArguments(args)
+    vmArgs, rubyArgs, user_classpath, print_command, classic = extractArguments(args)
     classpath = mx.classpath(['TRUFFLE_API', 'RUBY']).split(':')
     truffle_api, classpath = classpath[0], classpath[1:]
     assert os.path.basename(truffle_api) == "truffle-api.jar"
@@ -146,7 +142,7 @@ def ruby_command(args):
         # '-Xss2048k',
         '-Xbootclasspath/a:' + truffle_api,
         '-cp', ':'.join(classpath),
-        main_class
+        'org.jruby.truffle.Main'
     ]
     if not classic:
         vmArgs = vmArgs + ['-X+T']
