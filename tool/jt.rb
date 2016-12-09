@@ -149,8 +149,7 @@ module Utilities
 
   def self.mx?
     mx_ruby_jar = "#{JRUBY_DIR}/mxbuild/dists/ruby.jar"
-    constants_file = "#{JRUBY_DIR}/core/src/main/java/org/jruby/runtime/Constants.java"
-    File.exist?(mx_ruby_jar) && File.mtime(mx_ruby_jar) >= File.mtime(constants_file)
+    File.exist?(mx_ruby_jar)
   end
 
   def self.find_ruby
