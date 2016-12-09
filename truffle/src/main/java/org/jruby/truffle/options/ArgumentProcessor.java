@@ -601,17 +601,17 @@ public class ArgumentProcessor {
         if (RubyInstanceConfig.DEBUG_SCRIPT_RESOLUTION) {
             config.getError().println("Trying path: " + path);
         }
-        /*try {
-            FileResource fullName = JRubyFile.createRestrictedResource(path, scriptName);
+        try {
+            File fullName = new File(path, scriptName);
             if (fullName.exists() && fullName.isFile()) {
                 if (RubyInstanceConfig.DEBUG_SCRIPT_RESOLUTION) {
-                    config.getError().println("Found: " + fullName.absolutePath());
+                    config.getError().println("Found: " + fullName.getAbsolutePath());
                 }
-                return fullName.absolutePath();
+                return fullName.getAbsolutePath();
             }
         } catch (Exception e) {
             // keep going
-        }*/
+        }
         return null;
     }
 
