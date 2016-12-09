@@ -44,7 +44,7 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
             "isInBounds(array, index)", "strategy.matches(array)", "strategy.accepts(value)"
     }, limit = "ARRAY_STRATEGIES")
     public Object writeWithin(DynamicObject array, int index, Object value,
-            @Cached("of(array, value)") ArrayStrategy strategy) {
+            @Cached("of(array)") ArrayStrategy strategy) {
         strategy.newMirror(array).set(index, value);
         return value;
     }

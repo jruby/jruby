@@ -801,7 +801,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = { "args.length == 1", "strategy.matches(array)", "strategy.accepts(value(args))" }, limit = "ARRAY_STRATEGIES")
         protected DynamicObject fill(DynamicObject array, Object[] args, NotProvided block,
-                @Cached("of(array, value(args))") ArrayStrategy strategy) {
+                @Cached("of(array)") ArrayStrategy strategy) {
             final Object value = args[0];
             final ArrayMirror store = strategy.newMirror(array);
             final int size = strategy.getSize(array);

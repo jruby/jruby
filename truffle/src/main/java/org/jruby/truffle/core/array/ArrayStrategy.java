@@ -123,15 +123,6 @@ public abstract class ArrayStrategy {
         return ofStore(Layouts.ARRAY.getStore(array));
     }
 
-    public static ArrayStrategy of(DynamicObject array, Object value) {
-        CompilerAsserts.neverPartOfCompilation();
-        if (ArrayGuards.isLongArray(array) && value instanceof Integer) {
-            return LongIntArrayStrategy.INSTANCE;
-        } else {
-            return of(array);
-        }
-    }
-
     public static ArrayStrategy forValue(Object value) {
         CompilerAsserts.neverPartOfCompilation();
         if (value instanceof Integer) {
@@ -359,35 +350,6 @@ public abstract class ArrayStrategy {
         @Override
         public String toString() {
             return "Object[]";
-        }
-
-    }
-
-    // Specific generalization strategies to handle int => long
-
-    /** long[] accepting int */
-    private static class LongIntArrayStrategy extends LongArrayStrategy {
-
-        static final ArrayStrategy INSTANCE = new LongIntArrayStrategy();
-
-        @Override
-        public boolean accepts(Object value) {
-            return value instanceof Integer;
-        }
-
-        @Override
-        public boolean matchesStore(Object store) {
-            return store instanceof long[];
-        }
-
-        @Override
-        public ArrayMirror newMirrorFromStore(Object store) {
-            return new LongIntArrayMirror((long[]) store);
-        }
-
-        @Override
-        public String toString() {
-            return "(long[], int)";
         }
 
     }
