@@ -42,11 +42,10 @@ import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channel;
-import java.nio.channels.FileChannel;
 import java.nio.channels.IllegalBlockingModeException;
 import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.SeekableByteChannel;
 import java.nio.channels.SelectableChannel;
-import java.util.LinkedList;
 
 import org.jruby.Finalizable;
 import org.jruby.Ruby;
@@ -407,8 +406,8 @@ public class ChannelStream implements Stream, Finalizable {
      */
     @Deprecated
     public synchronized ByteList readall() throws IOException, BadDescriptorException {
-        final long fileSize = descriptor.isSeekable() && descriptor.getChannel() instanceof FileChannel
-                ? ((FileChannel) descriptor.getChannel()).size() : 0;
+        final long fileSize = descriptor.isSeekable() && descriptor.getChannel() instanceof SeekableByteChannel
+                ? ((SeekableByteChannel) descriptor.getChannel()).size() : 0;
         //
         // Check file size - special files in /proc have zero size and need to be
         // handled by the generic read path.
@@ -416,7 +415,7 @@ public class ChannelStream implements Stream, Finalizable {
         if (fileSize > 0) {
             ensureRead();
 
-            FileChannel channel = (FileChannel)descriptor.getChannel();
+            SeekableByteChannel channel = (SeekableByteChannel) descriptor.getChannel();
             final long left = fileSize - channel.position() + bufferedInputBytesRemaining();
             if (left <= 0) {
                 eof = true;
@@ -772,7 +771,7 @@ public class ChannelStream implements Stream, Finalizable {
     public synchronized long fgetpos() throws IOException, PipeException, InvalidValueException, BadDescriptorException {
         // Correct position for read / write buffering (we could invalidate, but expensive)
         if (descriptor.isSeekable()) {
-            FileChannel fileChannel = (FileChannel)descriptor.getChannel();
+            SeekableByteChannel fileChannel = (SeekableByteChannel) descriptor.getChannel();
             long pos = fileChannel.position();
             // Adjust for buffered data
             if (reading) {
@@ -798,7 +797,7 @@ public class ChannelStream implements Stream, Finalizable {
      */
     public synchronized void lseek(long offset, int type) throws IOException, InvalidValueException, PipeException, BadDescriptorException {
         if (descriptor.isSeekable()) {
-            FileChannel fileChannel = (FileChannel)descriptor.getChannel();
+            SeekableByteChannel fileChannel = (SeekableByteChannel) descriptor.getChannel();
             clearUngotChars();
             int adj = 0;
             if (reading) {
@@ -876,7 +875,7 @@ public class ChannelStream implements Stream, Finalizable {
 
     private void resetForWrite() throws IOException {
         if (descriptor.isSeekable()) {
-            FileChannel fileChannel = (FileChannel)descriptor.getChannel();
+            SeekableByteChannel fileChannel = (SeekableByteChannel) descriptor.getChannel();
             if (buffer.hasRemaining()) { // we have read ahead, and need to back up
                 fileChannel.position(fileChannel.position() - buffer.remaining());
             }
@@ -919,12 +918,12 @@ public class ChannelStream implements Stream, Finalizable {
 
         // 128K seems to be the minimum at which the stat+seek is faster than reallocation
         final int BULK_THRESHOLD = 128 * 1024;
-        if (number >= BULK_THRESHOLD && descriptor.isSeekable() && descriptor.getChannel() instanceof FileChannel) {
+        if (number >= BULK_THRESHOLD && descriptor.isSeekable() && descriptor.getChannel() instanceof SeekableByteChannel) {
             //
             // If it is a file channel, then we can pre-allocate the output buffer
             // to the total size of buffered + remaining bytes in file
             //
-            FileChannel fileChannel = (FileChannel) descriptor.getChannel();
+            SeekableByteChannel fileChannel = (SeekableByteChannel) descriptor.getChannel();
             resultSize = (int) Math.min(fileChannel.size() - fileChannel.position() + bufferedInputBytesRemaining(), number);
         } else {
             //
@@ -1166,11 +1165,11 @@ public class ChannelStream implements Stream, Finalizable {
     public synchronized void ftruncate(long newLength) throws IOException,
             BadDescriptorException, InvalidValueException {
         Channel ch = descriptor.getChannel();
-        if (!(ch instanceof FileChannel)) {
+        if (!(ch instanceof SeekableByteChannel)) {
             throw new InvalidValueException();
         }
         invalidateBuffer();
-        FileChannel fileChannel = (FileChannel)ch;
+        SeekableByteChannel fileChannel = (SeekableByteChannel) ch;
         long position = fileChannel.position();
         if (newLength > fileChannel.size()) {
             // truncate can't lengthen files, so we save position, seek/write, and go back
@@ -1197,7 +1196,7 @@ public class ChannelStream implements Stream, Finalizable {
         if (reading) {
             buffer.flip();
             // if the read buffer is ahead, back up
-            FileChannel fileChannel = (FileChannel)descriptor.getChannel();
+            SeekableByteChannel fileChannel = (SeekableByteChannel) descriptor.getChannel();
             if (posOverrun != 0) fileChannel.position(fileChannel.position() - posOverrun);
         }
     }
@@ -1359,7 +1358,7 @@ public class ChannelStream implements Stream, Finalizable {
                     selectableChannel.configureBlocking(oldBlocking);
                 }
             }
-        } else if (descriptor.getChannel() instanceof FileChannel) {
+        } else if (descriptor.getChannel() instanceof SeekableByteChannel) {
             return fread(number);
         } else {
             return null;
@@ -1372,7 +1371,7 @@ public class ChannelStream implements Stream, Finalizable {
         if (number == 0) {
             return null;
         }
-        if (descriptor.getChannel() instanceof FileChannel) {
+        if (descriptor.getChannel() instanceof SeekableByteChannel) {
             return fread(number);
         }
 
@@ -1386,7 +1385,7 @@ public class ChannelStream implements Stream, Finalizable {
     }
 
     public synchronized int read(ByteBuffer dst) throws IOException, BadDescriptorException, EOFException {
-        return read(dst, !(descriptor.getChannel() instanceof FileChannel));
+        return read(dst, !(descriptor.getChannel() instanceof SeekableByteChannel));
     }
 
     public synchronized int read(ByteBuffer dst, boolean partial) throws IOException, BadDescriptorException, EOFException {
@@ -1508,7 +1507,7 @@ public class ChannelStream implements Stream, Finalizable {
 
     private static Stream maybeWrapWithLineEndingWrapper(Stream stream, ModeFlags modes) {
         if (modes.isText() || // FIXME: Remove this one textmode is part of transcoding.
-                (Platform.IS_WINDOWS && stream.getDescriptor().getChannel() instanceof FileChannel && !modes.isBinary())) {
+                (Platform.IS_WINDOWS && stream.getDescriptor().getChannel() instanceof SeekableByteChannel && !modes.isBinary())) {
             return new CRLFStreamWrapper(stream);
         }
         return stream;
