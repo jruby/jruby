@@ -49,6 +49,7 @@ import org.joni.exception.JOniException;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.string.StringSupport;
 import org.jruby.truffle.parser.ReOptions;
+import org.jruby.truffle.util.ByteListKey;
 import org.jruby.truffle.util.EncodingUtils;
 import org.jruby.truffle.util.WeakValuedMap;
 import org.jruby.truffle.util.ByteList;
@@ -87,7 +88,7 @@ public class ClassicRegexp implements ReOptions {
         // FIXME: transcode?
     }
 
-    static final WeakValuedMap<ByteList, Regex> patternCache = new WeakValuedMap<>();
+    static final WeakValuedMap<ByteListKey, Regex> patternCache = new WeakValuedMap<>();
 
     private static Regex makeRegexp(RubyContext runtime, ByteList bytes, RegexpOptions options, Encoding enc) {
         try {
@@ -105,11 +106,12 @@ public class ClassicRegexp implements ReOptions {
     }
 
     static Regex getRegexpFromCache(RubyContext runtime, ByteList bytes, Encoding enc, RegexpOptions options) {
-        Regex regex = patternCache.get(bytes);
+        ByteListKey key = new ByteListKey(bytes);
+        Regex regex = patternCache.get(key);
         if (regex != null && regex.getEncoding() == enc && regex.getOptions() == options.toJoniOptions()) return regex;
         regex = makeRegexp(runtime, bytes, options, enc);
         regex.setUserObject(bytes);
-        patternCache.put(bytes, regex);
+        patternCache.put(key, regex);
         return regex;
     }
 

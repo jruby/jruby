@@ -60,8 +60,6 @@ public class ByteList implements Comparable, CharSequence, Serializable {
     private int realSize;
     private Encoding encoding = ASCIIEncoding.INSTANCE;
 
-    int hash;
-
     private static final int DEFAULT_SIZE = 4;
 
     /**
@@ -235,7 +233,6 @@ public class ByteList implements Comparable, CharSequence, Serializable {
         realSize -= len;
 
         System.arraycopy(bytes, start + len, bytes, start, realSize);
-        invalidate();
     }
 
     /**
@@ -249,7 +246,6 @@ public class ByteList implements Comparable, CharSequence, Serializable {
         for ( ; --len >= 0; ) {
             append(b);
         }
-        invalidate();
     }
 
     /**
@@ -266,7 +262,6 @@ public class ByteList implements Comparable, CharSequence, Serializable {
      */
     public ByteList dup() {
         ByteList dup = dup(realSize);
-        dup.hash = hash;
         return dup;
     }
 
@@ -280,7 +275,6 @@ public class ByteList implements Comparable, CharSequence, Serializable {
         dup.realSize = realSize;
         dup.begin = begin;
         dup.encoding = safeEncoding(encoding);
-        dup.hash = hash;
         return dup;
     }
 
@@ -311,7 +305,6 @@ public class ByteList implements Comparable, CharSequence, Serializable {
             System.arraycopy(bytes, begin, tmp, 0, realSize);
             bytes = tmp;
             begin = 0;
-            invalidate();
         }
     }
 
@@ -336,13 +329,6 @@ public class ByteList implements Comparable, CharSequence, Serializable {
     }
 
     /**
-     * Invalidate the hash and stringValue which may have been cached in this ByteList.
-     */
-    public void invalidate() {
-        hash = 0;
-    }
-
-    /**
      * Append a single byte to the ByteList
      *
      * @param b the byte to be added
@@ -352,7 +338,6 @@ public class ByteList implements Comparable, CharSequence, Serializable {
         grow(1);
         bytes[begin + realSize] = b;
         realSize++;
-        invalidate();
         return this;
     }
 
@@ -391,7 +376,6 @@ public class ByteList implements Comparable, CharSequence, Serializable {
         }
 
         realSize += read;
-        invalidate();
         return this;
     }
 
@@ -406,7 +390,6 @@ public class ByteList implements Comparable, CharSequence, Serializable {
         grow(len);
         buffer.get(bytes, begin + realSize, len);
         realSize += len;
-        invalidate();
     }
 
     /**
@@ -420,7 +403,6 @@ public class ByteList implements Comparable, CharSequence, Serializable {
         grow(moreBytes.length);
         System.arraycopy(moreBytes, 0, bytes, begin + realSize, moreBytes.length);
         realSize += moreBytes.length;
-        invalidate();
     }
 
     /**
@@ -461,7 +443,6 @@ public class ByteList implements Comparable, CharSequence, Serializable {
         grow(len);
         System.arraycopy(moreBytes, start, bytes, begin + realSize, len);
         realSize += len;
-        invalidate();
     }
 
     /**
@@ -509,7 +490,6 @@ public class ByteList implements Comparable, CharSequence, Serializable {
         assert begin + index < begin + realSize : "index is too large";
 
         bytes[begin + index] = (byte)b;
-        invalidate();
     }
 
     /**
@@ -563,7 +543,6 @@ public class ByteList implements Comparable, CharSequence, Serializable {
             System.arraycopy(source,sourceOff,bytes,begin+targetOff,sourceLen);
         }
         realSize = newSize;
-        invalidate();
     }
 
     public void insert(int index, int b) {
@@ -571,7 +550,6 @@ public class ByteList implements Comparable, CharSequence, Serializable {
         System.arraycopy(bytes, index, bytes, index + 1, realSize - index);
         bytes[index] = (byte)b;
         realSize++;
-        invalidate();
     }
 
     /**
@@ -707,7 +685,6 @@ public class ByteList implements Comparable, CharSequence, Serializable {
      */
     public boolean equal(ByteList other) {
         if (other == this) return true;
-        if (hash != 0 && other.hash != 0 && hash != other.hash) return false;
 
         int first, last;
         if ((last = realSize) == other.realSize) {
@@ -836,28 +813,6 @@ public class ByteList implements Comparable, CharSequence, Serializable {
             bytes = newBytes;
             begin = 0;
         }
-    }
-
-    /**
-     * @see Object#hashCode()
-     */
-    @Override
-    public int hashCode() {
-        int currentHash = hash;
-        if (currentHash != 0) return currentHash;
-
-        int key = 0;
-        int begin = this.begin, realSize = this.realSize;
-        byte[] bytes = this.bytes;
-
-        int index = begin;
-        final int end = begin + realSize;
-        while (index < end) {
-            // equivalent of: key = key * 65599 + byte;
-            key = ((key << 16) + (key << 6) - key) + (int)(bytes[index++]); // & 0xFF ?
-        }
-        key = key + (key >> 5);
-        return hash = key;
     }
 
     /**
@@ -1065,7 +1020,6 @@ public class ByteList implements Comparable, CharSequence, Serializable {
     public void setUnsafeBytes(byte[] bytes) {
         assert bytes != null;
         this.bytes = bytes;
-        invalidate();
     }
 
     /**
@@ -1081,7 +1035,6 @@ public class ByteList implements Comparable, CharSequence, Serializable {
     public void setBegin(int begin) {
         assert begin >= 0;
         this.begin = begin;
-        invalidate();
     }
 
     /**
@@ -1109,7 +1062,6 @@ public class ByteList implements Comparable, CharSequence, Serializable {
     public void realSize(int realSize) {
         assert realSize >= 0;
         this.realSize = realSize;
-        invalidate();
     }
 
     /**
@@ -1125,7 +1077,6 @@ public class ByteList implements Comparable, CharSequence, Serializable {
     public void setEncoding(Encoding encoding) {
         assert encoding != null;
         this.encoding = safeEncoding(encoding);
-        invalidate();
     }
 
     /**
