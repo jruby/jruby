@@ -42,7 +42,7 @@ public class WeakValuedMap<Key, Value> {
 
     private final Map<Key, KeyedReference<Key, Value>> map = newMap();
     @SuppressWarnings("unchecked")
-    private final ReferenceQueue<Value> deadRefs = new ReferenceQueue();
+    private final ReferenceQueue<Value> deadRefs = new ReferenceQueue<>();
 
     public final void put(Key key, Value value) {
         cleanReferences();

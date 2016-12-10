@@ -44,7 +44,7 @@ public final class UnsafeHolder {
     
     private static sun.misc.Unsafe loadUnsafe() {
         try {
-            Class unsafeClass = Class.forName("sun.misc.Unsafe");
+            Class<?> unsafeClass = Class.forName("sun.misc.Unsafe");
             Field f = unsafeClass.getDeclaredField("theUnsafe");
             f.setAccessible(true);
             return (sun.misc.Unsafe) f.get(null);

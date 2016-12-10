@@ -131,7 +131,7 @@ public class ByteList implements CharSequence {
     public ByteList(byte[] wrap, Encoding encoding, boolean copy) {
         assert wrap != null;
         if (copy) {
-            this.bytes = (byte[])wrap.clone();
+            this.bytes = wrap.clone();
         } else {
             this.bytes = wrap;
         }
@@ -506,6 +506,11 @@ public class ByteList implements CharSequence {
     public boolean equals(Object other) {
         if (other instanceof ByteList) return equal((ByteList)other);
         return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return super.hashCode();
     }
 
     /**

@@ -532,6 +532,7 @@ public class ArgumentProcessor {
                             break;
                         }
                     }
+                    throw new MainExitException(1, "jruby: unknown option " + argument);
                 default:
                     throw new MainExitException(1, "jruby: unknown option " + argument);
             }
@@ -577,8 +578,10 @@ public class ArgumentProcessor {
                 throw new MainExitException(1, "extra argument for -E: " + encodings.get(2));
             case 2:
                 config.setInternalEncoding(encodings.get(1));
+                break;
             case 1:
                 config.setExternalEncoding(encodings.get(0));
+                break;
             // Zero is impossible
         }
     }

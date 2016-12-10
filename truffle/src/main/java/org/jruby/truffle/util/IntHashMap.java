@@ -49,7 +49,7 @@ public class IntHashMap<V> {
         this(initialCapacity, 0.75f);
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "rawtypes"})
     public IntHashMap(int initialCapacity, float loadFactor) {
         super();
         if (initialCapacity < 0) {
@@ -117,6 +117,7 @@ public class IntHashMap<V> {
         return null;
     }
 
+    @SuppressWarnings("rawtypes")
     protected void rehash() {
         int oldCapacity = table.length;
         Entry<V>[] oldMap = table;
@@ -415,6 +416,7 @@ public class IntHashMap<V> {
 
     private static final class NullMap<U> extends IntHashMap<U> {
 
+        @SuppressWarnings("rawtypes")
         static final NullMap INSTANCE = new NullMap();
 
         private NullMap() { super(0); }

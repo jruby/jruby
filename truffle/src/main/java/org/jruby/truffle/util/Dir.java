@@ -152,7 +152,7 @@ public class Dir {
                 if(DOSISH && (pathname && isdirsep(c) && isdirsep(string[s]))) {
                 } else {
                     if (nocase) {
-                        if(Character.toLowerCase((char)c) != Character.toLowerCase((char)string[s])) {
+                        if(Character.toLowerCase(c) != Character.toLowerCase((char)string[s])) {
                             return FNM_NOMATCH;
                         }
 

@@ -100,7 +100,7 @@ public class SourceLoader {
         return Source.newBuilder(new InputStreamReader(stream, StandardCharsets.UTF_8)).name(path).mimeType(RubyLanguage.MIME_TYPE).build();
     }
 
-    private static Class jrubySchemeRelativeClass() {
+    private static Class<?> jrubySchemeRelativeClass() {
         // TODO CS 3-Dec-16 AOT?
 
         try {
