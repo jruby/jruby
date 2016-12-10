@@ -15,7 +15,7 @@ import java.util.Map;
 public class IdProvider {
 
     private long nextId = 0;
-    private final Map<Object, Long> ids = new IdentityHashMap<Object, Long>();
+    private final Map<Object, Long> ids = new IdentityHashMap<>();
 
     public synchronized long getId(Object object) {
         Long id = ids.get(object);

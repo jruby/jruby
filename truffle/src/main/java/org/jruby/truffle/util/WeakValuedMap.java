@@ -46,7 +46,7 @@ public class WeakValuedMap<Key, Value> {
 
     public final void put(Key key, Value value) {
         cleanReferences();
-        map.put(key, new KeyedReference<Key, Value>(value, key, deadRefs));
+        map.put(key, new KeyedReference<>(value, key, deadRefs));
     }
 
     public final Value get(Key key) {
@@ -72,7 +72,7 @@ public class WeakValuedMap<Key, Value> {
      * @return the backing store map
      */
     protected Map<Key, KeyedReference<Key, Value>> newMap() {
-        return new ConcurrentHashMap<Key, KeyedReference<Key, Value>>();
+        return new ConcurrentHashMap<>();
     }
 
     protected static class KeyedReference<Key, Value> extends WeakReference<Value> {

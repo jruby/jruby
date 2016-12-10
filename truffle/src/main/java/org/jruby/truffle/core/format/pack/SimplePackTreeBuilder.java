@@ -250,7 +250,7 @@ public class SimplePackTreeBuilder implements SimplePackListener {
     }
 
     private void pushSequence() {
-        sequenceStack.push(new ArrayList<FormatNode>());
+        sequenceStack.push(new ArrayList<>());
     }
 
     private void appendNode(FormatNode node) {

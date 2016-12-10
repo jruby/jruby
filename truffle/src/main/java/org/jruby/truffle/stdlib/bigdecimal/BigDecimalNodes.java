@@ -847,7 +847,7 @@ public abstract class BigDecimalNodes {
             BigDecimal v = BigDecimal.ONE.divide(TWO.multiply(x), nMC);        // v0 = 1/(2*x)
 
             // Collect iteration precisions beforehand
-            List<Integer> nPrecs = new ArrayList<Integer>();
+            List<Integer> nPrecs = new ArrayList<>();
 
             assert nInit > 3 : "Never ending loop!";                // assume nInit = 16 <= prec
 

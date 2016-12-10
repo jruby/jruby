@@ -1475,7 +1475,7 @@ public final class StringSupport {
                 if (c < StringSupport.TRANS_SIZE) {
                     trans[c] = -1;
                 } else {
-                    if (hash == null) hash = new IntHash<Integer>();
+                    if (hash == null) hash = new IntHash<>();
                     hash.put(c, 1); // QTRUE
                 }
             }
@@ -1498,7 +1498,7 @@ public final class StringSupport {
                     trans[c] = r;
                     if (codeLength(enc, r) != 1) singlebyte = false;
                 } else {
-                    if (hash == null) hash = new IntHash<Integer>();
+                    if (hash == null) hash = new IntHash<>();
                     hash.put(c, r);
                 }
             }

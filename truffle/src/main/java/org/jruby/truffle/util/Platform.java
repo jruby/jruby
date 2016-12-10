@@ -323,7 +323,7 @@ public class Platform {
     private static final String RUBY_AIX = "aix";
 
     /** This is a map from Java's "friendly" OS names to those used by Ruby */
-    public static final Map<String, String> RUBY_OS_NAMES = new HashMap<String, String>();
+    public static final Map<String, String> RUBY_OS_NAMES = new HashMap<>();
     static {
         RUBY_OS_NAMES.put("Mac OS X", RUBY_DARWIN);
         RUBY_OS_NAMES.put("Darwin", RUBY_DARWIN);

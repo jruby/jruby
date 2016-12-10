@@ -22,7 +22,7 @@ public interface SignalManager {
     Set<String> RUBY_18_SIGNALS = get18Signals();
 
     static Set<String> get18Signals() {
-        Set<String> RUBY_18_SIGNALS = new HashSet<String>();
+        Set<String> RUBY_18_SIGNALS = new HashSet<>();
         for (String name : new String[] {
                 "EXIT",
                 "HUP",
@@ -93,7 +93,7 @@ public interface SignalManager {
     void raise(org.jruby.truffle.platform.signal.Signal signal) throws IllegalArgumentException;
 
     static Map<String, Integer> list() {
-        Map<String, Integer> signals = new HashMap<String, Integer>();
+        Map<String, Integer> signals = new HashMap<>();
 
         for (Signal s : Signal.values()) {
             if (!s.description().startsWith(SIGNAME_PREFIX))

@@ -49,7 +49,7 @@ public class HashParseNode extends ParseNode implements ILiteralNode {
     public HashParseNode(ISourcePosition position) {
         super(position, false);
 
-        pairs = new ArrayList<KeyValuePair<ParseNode,ParseNode>>();
+        pairs = new ArrayList<>();
     }
     
     public HashParseNode(ISourcePosition position, KeyValuePair<ParseNode,ParseNode> pair) {
@@ -89,7 +89,7 @@ public class HashParseNode extends ParseNode implements ILiteralNode {
     }
 
     public List<ParseNode> childNodes() {
-        List<ParseNode> children = new ArrayList<ParseNode>();
+        List<ParseNode> children = new ArrayList<>();
 
         for (KeyValuePair<ParseNode,ParseNode> pair: pairs) {
             children.add(pair.getKey());

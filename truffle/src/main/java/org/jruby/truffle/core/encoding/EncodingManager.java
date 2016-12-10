@@ -39,8 +39,8 @@ public class EncodingManager {
 
     private static final int INITIAL_NUMBER_OF_ENCODINGS = EncodingDB.getEncodings().size();
 
-    private final List<DynamicObject> ENCODING_LIST_BY_ENCODING_LIST_INDEX = new ArrayList<DynamicObject>(INITIAL_NUMBER_OF_ENCODINGS);
-    private final List<DynamicObject> ENCODING_LIST_BY_ENCODING_INDEX = new ArrayList<DynamicObject>(INITIAL_NUMBER_OF_ENCODINGS);
+    private final List<DynamicObject> ENCODING_LIST_BY_ENCODING_LIST_INDEX = new ArrayList<>(INITIAL_NUMBER_OF_ENCODINGS);
+    private final List<DynamicObject> ENCODING_LIST_BY_ENCODING_INDEX = new ArrayList<>(INITIAL_NUMBER_OF_ENCODINGS);
     private final Map<String, DynamicObject> LOOKUP = new ConcurrentHashMap<>();
 
     private final RubyContext context;

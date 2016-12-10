@@ -81,7 +81,7 @@ public class RubyLexer extends LexingCommon {
     private static final HashMap<String, Keyword> map;
 
     static {
-        map = new HashMap<String, Keyword>();
+        map = new HashMap<>();
 
         map.put("end", Keyword.END);
         map.put("else", Keyword.ELSE);

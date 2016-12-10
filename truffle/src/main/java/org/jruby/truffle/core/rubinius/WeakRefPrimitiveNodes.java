@@ -24,7 +24,7 @@ public abstract class WeakRefPrimitiveNodes {
 
         @Specialization
         public DynamicObject weakRefNew(Object object) {
-            return Layouts.WEAK_REF_LAYOUT.createWeakRef(coreLibrary().getWeakRefFactory(), new WeakReference<Object>(object));
+            return Layouts.WEAK_REF_LAYOUT.createWeakRef(coreLibrary().getWeakRefFactory(), new WeakReference<>(object));
         }
 
     }
@@ -34,7 +34,7 @@ public abstract class WeakRefPrimitiveNodes {
 
         @Specialization
         public Object weakRefSetObject(DynamicObject weakRef, Object object) {
-            Layouts.WEAK_REF_LAYOUT.setReference(weakRef, new WeakReference<Object>(object));
+            Layouts.WEAK_REF_LAYOUT.setReference(weakRef, new WeakReference<>(object));
             return object;
         }
 

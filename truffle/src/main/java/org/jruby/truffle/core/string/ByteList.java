@@ -657,7 +657,7 @@ public class ByteList implements CharSequence {
     // Work around bad charset handling in JDK. See
     // http://halfbottle.blogspot.com/2009/07/charset-continued-i-wrote-about.html
     private static final ConcurrentMap<String,Charset> charsetsByAlias =
-            new ConcurrentHashMap<String,Charset>();
+            new ConcurrentHashMap<>();
 
     /**
      * Decode byte data into a String with the supplied charsetName.

@@ -1381,7 +1381,7 @@ public class ParserSupport {
         pattern.setLiteral();
         String[] names = pattern.getNames();
         int length = names.length;
-        List<Integer> locals = new ArrayList<Integer>();
+        List<Integer> locals = new ArrayList<>();
         StaticScope scope = getCurrentScope();
 
         for (int i = 0; i < length; i++) {

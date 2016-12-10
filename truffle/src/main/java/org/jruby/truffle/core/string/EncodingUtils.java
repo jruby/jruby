@@ -77,7 +77,7 @@ public class EncodingUtils {
     }
 
     public static List<String> encodingNames(byte[] name, int p, int end) {
-        final List<String> names = new ArrayList<String>();
+        final List<String> names = new ArrayList<>();
 
         Encoding enc = ASCIIEncoding.INSTANCE;
         int s = p;

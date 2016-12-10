@@ -87,7 +87,7 @@ public class RubyInstanceConfig {
     }
 
     private void initEnvironment() {
-        environment = new HashMap<String,String>();
+        environment = new HashMap<>();
         try {
             environment.putAll(System.getenv());
         }
@@ -325,7 +325,7 @@ public class RubyInstanceConfig {
     }
 
     public void setEnvironment(Map<String, String> newEnvironment) {
-        environment = new HashMap<String, String>();
+        environment = new HashMap<>();
         if (newEnvironment != null) {
             environment.putAll(newEnvironment);
         }
@@ -605,16 +605,16 @@ public class RubyInstanceConfig {
     private ClassLoader loader = defaultClassLoader();
 
     // from CommandlineParser
-    private List<String> loadPaths = new ArrayList<String>();
-    private Set<String> excludedMethods = new HashSet<String>();
+    private List<String> loadPaths = new ArrayList<>();
+    private Set<String> excludedMethods = new HashSet<>();
     private StringBuffer inlineScript = new StringBuffer();
     private boolean hasInlineScript = false;
     private String scriptFileName = null;
-    private Collection<String> requiredLibraries = new LinkedHashSet<String>();
+    private Collection<String> requiredLibraries = new LinkedHashSet<>();
     private boolean argvGlobalsOn = false;
     private boolean assumeLoop = false;
     private boolean assumePrinting = false;
-    private Map<String, String> optionGlobals = new HashMap<String, String>();
+    private Map<String, String> optionGlobals = new HashMap<>();
     private boolean processLineEnds = false;
     private boolean split = false;
     private Verbosity verbosity = Verbosity.FALSE;

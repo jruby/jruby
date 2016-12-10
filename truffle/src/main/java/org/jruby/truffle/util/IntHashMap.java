@@ -175,7 +175,7 @@ public class IntHashMap<V> {
         }
 
         // Creates the new entry.
-        Entry<V> e = new Entry<V>(hash, key, value, tab[index]);
+        Entry<V> e = new Entry<>(hash, key, value, tab[index]);
         tab[index] = e;
         count++;
         return null;

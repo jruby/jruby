@@ -133,7 +133,7 @@ public class ArgumentProcessor {
     }
 
     private void processArgv() {
-        ArrayList<String> arglist = new ArrayList<String>();
+        ArrayList<String> arglist = new ArrayList<>();
         for (; argumentIndex < arguments.size(); argumentIndex++) {
             String arg = arguments.get(argumentIndex).originalValue;
             if (config.isArgvGlobalsOn() && arg.startsWith("-")) {

@@ -74,7 +74,7 @@ public class SymbolTable {
             final Rope rope = StringOperations.encodeRope(stringKey, USASCIIEncoding.INSTANCE);
             symbol = getDeduplicatedSymbol(rope);
 
-            stringSymbolMap.put(stringKey, new WeakReference<DynamicObject>(symbol));
+            stringSymbolMap.put(stringKey, new WeakReference<>(symbol));
         } finally {
             lock.writeLock().unlock();
         }
@@ -105,7 +105,7 @@ public class SymbolTable {
             final Rope rope = RopeOperations.flatten(ropeKey);
             symbol = getDeduplicatedSymbol(rope);
 
-            ropeSymbolMap.put(rope, new WeakReference<DynamicObject>(symbol));
+            ropeSymbolMap.put(rope, new WeakReference<>(symbol));
         } finally {
             lock.writeLock().unlock();
         }
@@ -119,7 +119,7 @@ public class SymbolTable {
         final DynamicObject currentSymbol = readRef(symbolSet, newKey);
 
         if (currentSymbol == null) {
-            symbolSet.put(newKey, new WeakReference<DynamicObject>(newSymbol));
+            symbolSet.put(newKey, new WeakReference<>(newSymbol));
             return newSymbol;
         } else {
             return currentSymbol;
