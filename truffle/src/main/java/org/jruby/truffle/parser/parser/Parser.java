@@ -32,6 +32,7 @@
 package org.jruby.truffle.parser.parser;
 
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.string.ByteList;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.parser.RubyWarnings;
 import org.jruby.truffle.parser.ast.ParseNode;
@@ -40,7 +41,6 @@ import org.jruby.truffle.parser.lexer.GetsLexerSource;
 import org.jruby.truffle.parser.lexer.LexerSource;
 import org.jruby.truffle.parser.lexer.SyntaxException;
 import org.jruby.truffle.parser.scope.DynamicScope;
-import org.jruby.truffle.core.string.ByteList;
 
 import java.io.IOException;
 import java.io.InputStream;

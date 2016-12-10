@@ -27,6 +27,7 @@ import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.core.module.ModuleFields;
 import org.jruby.truffle.core.module.ModuleNodes;
 import org.jruby.truffle.core.module.ModuleNodesFactory;
+import org.jruby.truffle.core.string.StringUtils;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.Visibility;
@@ -34,7 +35,6 @@ import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.objects.shared.SharedObjects;
-import org.jruby.truffle.core.string.StringUtils;
 
 @CoreClass("Class")
 public abstract class ClassNodes {

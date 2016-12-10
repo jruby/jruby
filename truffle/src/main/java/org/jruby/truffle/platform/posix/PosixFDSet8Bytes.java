@@ -11,8 +11,8 @@
 package org.jruby.truffle.platform.posix;
 
 import jnr.ffi.Pointer;
-import org.jruby.truffle.platform.FDSet;
 import org.jruby.truffle.core.string.StringUtils;
+import org.jruby.truffle.platform.FDSet;
 
 public class PosixFDSet8Bytes implements FDSet {
 

@@ -28,8 +28,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.ast;
 
-import org.jruby.truffle.parser.lexer.ISourcePosition;
 import org.jruby.truffle.core.string.ByteList;
+import org.jruby.truffle.parser.lexer.ISourcePosition;
 
 /**
  * Represents __FILE__ nodes

@@ -49,6 +49,7 @@ import org.joni.Option;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.regexp.ClassicRegexp;
+import org.jruby.truffle.core.string.ByteList;
 import org.jruby.truffle.core.string.StringSupport;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.parser.RubyWarnings;
@@ -67,7 +68,6 @@ import org.jruby.truffle.parser.parser.ParserSupport;
 import org.jruby.truffle.parser.parser.RubyParser;
 import org.jruby.truffle.parser.parser.Tokens;
 import org.jruby.truffle.util.SafeDoubleParser;
-import org.jruby.truffle.core.string.ByteList;
 
 import java.io.IOException;
 import java.math.BigDecimal;

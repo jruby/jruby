@@ -38,7 +38,6 @@ import org.jcodings.transcode.EConvFlags;
 import org.jcodings.unicode.UnicodeEncoding;
 import org.jruby.truffle.util.Platform;
 
-import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
 

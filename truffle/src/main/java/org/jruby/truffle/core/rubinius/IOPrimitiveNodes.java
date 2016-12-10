@@ -62,6 +62,7 @@ import org.jruby.truffle.core.rope.BytesVisitor;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeConstants;
 import org.jruby.truffle.core.rope.RopeOperations;
+import org.jruby.truffle.core.string.ByteList;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.core.thread.ThreadManager;
 import org.jruby.truffle.core.thread.ThreadManager.ResultWithinTime;
@@ -75,7 +76,6 @@ import org.jruby.truffle.platform.FDSet;
 import org.jruby.truffle.platform.UnsafeGroup;
 import org.jruby.truffle.util.Dir;
 import org.jruby.truffle.util.UnsafeHolder;
-import org.jruby.truffle.core.string.ByteList;
 
 import java.nio.ByteBuffer;
 

@@ -33,12 +33,12 @@ import org.jruby.truffle.builtins.Primitive;
 import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.builtins.PrimitiveNode;
 import org.jruby.truffle.core.cast.DefaultValueNodeGen;
+import org.jruby.truffle.core.string.StringUtils;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.SnippetNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
-import org.jruby.truffle.core.string.StringUtils;
 
 import java.util.Locale;
 

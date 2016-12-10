@@ -38,6 +38,7 @@ import org.jruby.truffle.core.cast.BooleanCastNodeGen;
 import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.core.string.StringUtils;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
@@ -57,7 +58,6 @@ import org.jruby.truffle.language.objects.PropertyFlags;
 import org.jruby.truffle.language.supercall.SuperCallNode;
 import org.jruby.truffle.language.yield.YieldNode;
 import org.jruby.truffle.parser.ParserContext;
-import org.jruby.truffle.core.string.StringUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;

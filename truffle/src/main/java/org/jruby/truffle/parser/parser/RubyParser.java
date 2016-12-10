@@ -40,6 +40,7 @@
 package org.jruby.truffle.parser.parser;
 
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.string.ByteList;
 import org.jruby.truffle.core.string.StringSupport;
 import org.jruby.truffle.interop.ForeignCodeNode;
 import org.jruby.truffle.parser.KeyValuePair;
@@ -129,7 +130,6 @@ import org.jruby.truffle.parser.lexer.LexerSource;
 import org.jruby.truffle.parser.lexer.RubyLexer;
 import org.jruby.truffle.parser.lexer.StrTerm;
 import org.jruby.truffle.parser.lexer.SyntaxException.PID;
-import org.jruby.truffle.core.string.ByteList;
 
 import java.io.IOException;
 

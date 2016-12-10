@@ -39,6 +39,7 @@ import org.jcodings.Encoding;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.regexp.ClassicRegexp;
 import org.jruby.truffle.core.regexp.RegexpOptions;
+import org.jruby.truffle.core.string.ByteList;
 import org.jruby.truffle.core.string.StringSupport;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.parser.KeyValuePair;
@@ -130,7 +131,6 @@ import org.jruby.truffle.parser.lexer.RubyLexer;
 import org.jruby.truffle.parser.lexer.SyntaxException.PID;
 import org.jruby.truffle.parser.scope.DynamicScope;
 import org.jruby.truffle.parser.scope.StaticScope;
-import org.jruby.truffle.core.string.ByteList;
 
 import java.math.BigInteger;
 import java.util.ArrayList;

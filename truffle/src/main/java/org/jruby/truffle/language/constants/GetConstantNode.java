@@ -20,6 +20,7 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.core.string.StringUtils;
 import org.jruby.truffle.language.RubyConstant;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
@@ -27,7 +28,6 @@ import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.loader.RequireNode;
 import org.jruby.truffle.util.IdUtil;
-import org.jruby.truffle.core.string.StringUtils;
 
 @NodeChildren({ @NodeChild("module"), @NodeChild("name"), @NodeChild("constant"), @NodeChild("lookupConstantNode") })
 public abstract class GetConstantNode extends RubyNode {

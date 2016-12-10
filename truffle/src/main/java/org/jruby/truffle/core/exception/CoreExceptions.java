@@ -22,9 +22,9 @@ import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.string.CoreStrings;
 import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.core.string.StringUtils;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.Visibility;
-import org.jruby.truffle.core.string.StringUtils;
 
 import static org.jruby.truffle.core.array.ArrayHelpers.createArray;
 

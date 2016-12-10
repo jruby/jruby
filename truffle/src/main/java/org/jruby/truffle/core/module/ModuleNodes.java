@@ -52,6 +52,7 @@ import org.jruby.truffle.core.cast.ToStrNodeGen;
 import org.jruby.truffle.core.method.MethodFilter;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.core.string.StringUtils;
 import org.jruby.truffle.core.symbol.SymbolTable;
 import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.NotProvided;
@@ -96,7 +97,6 @@ import org.jruby.truffle.parser.ParserContext;
 import org.jruby.truffle.parser.Translator;
 import org.jruby.truffle.platform.UnsafeGroup;
 import org.jruby.truffle.util.IdUtil;
-import org.jruby.truffle.core.string.StringUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;

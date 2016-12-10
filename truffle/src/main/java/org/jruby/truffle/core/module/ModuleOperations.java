@@ -15,6 +15,7 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.string.StringUtils;
 import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.RubyConstant;
 import org.jruby.truffle.language.RubyGuards;
@@ -23,7 +24,6 @@ import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.objects.shared.SharedObjects;
 import org.jruby.truffle.util.IdUtil;
-import org.jruby.truffle.core.string.StringUtils;
 
 import java.util.HashMap;
 import java.util.Map;

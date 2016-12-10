@@ -17,12 +17,12 @@ import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.string.StringUtils;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.loader.SourceLoader;
 import org.jruby.truffle.util.SourceSectionUtils;
-import org.jruby.truffle.core.string.StringUtils;
 
 import java.io.PrintWriter;
 import java.util.ArrayList;

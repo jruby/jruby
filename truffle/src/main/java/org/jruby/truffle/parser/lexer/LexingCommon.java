@@ -31,8 +31,8 @@ import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.joni.Regex;
-import org.jruby.truffle.core.string.StringSupport;
 import org.jruby.truffle.core.string.ByteList;
+import org.jruby.truffle.core.string.StringSupport;
 
 import java.io.IOException;
 import java.nio.charset.Charset;

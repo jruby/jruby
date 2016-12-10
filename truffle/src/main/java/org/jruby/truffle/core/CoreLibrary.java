@@ -87,6 +87,7 @@ import org.jruby.truffle.core.rubinius.RubiniusTypeNodesFactory;
 import org.jruby.truffle.core.rubinius.StatPrimitiveNodesFactory;
 import org.jruby.truffle.core.rubinius.UndefinedPrimitiveNodesFactory;
 import org.jruby.truffle.core.rubinius.WeakRefPrimitiveNodesFactory;
+import org.jruby.truffle.core.string.EncodingUtils;
 import org.jruby.truffle.core.string.StringNodesFactory;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.core.string.TruffleStringNodesFactory;
@@ -134,7 +135,6 @@ import org.jruby.truffle.stdlib.digest.DigestNodesFactory;
 import org.jruby.truffle.stdlib.psych.PsychEmitterNodesFactory;
 import org.jruby.truffle.stdlib.psych.PsychParserNodesFactory;
 import org.jruby.truffle.stdlib.psych.YAMLEncoding;
-import org.jruby.truffle.core.string.EncodingUtils;
 import org.jruby.truffle.util.Platform;
 
 import java.io.File;

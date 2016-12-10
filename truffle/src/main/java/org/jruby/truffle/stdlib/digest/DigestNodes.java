@@ -21,9 +21,9 @@ import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeOperations;
+import org.jruby.truffle.core.string.ByteList;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.control.JavaException;
-import org.jruby.truffle.core.string.ByteList;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;

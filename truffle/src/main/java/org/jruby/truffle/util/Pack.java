@@ -35,13 +35,9 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.util;
 
-import org.jcodings.specific.ASCIIEncoding;
-import org.jcodings.specific.USASCIIEncoding;
-import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.core.string.ByteList;
 
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 
 public class Pack {
 

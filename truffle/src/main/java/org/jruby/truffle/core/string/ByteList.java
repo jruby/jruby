@@ -31,15 +31,15 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.core.string;
 
+import org.jcodings.Encoding;
+import org.jcodings.ascii.AsciiTables;
+import org.jcodings.specific.ASCIIEncoding;
+
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-
-import org.jcodings.Encoding;
-import org.jcodings.ascii.AsciiTables;
-import org.jcodings.specific.ASCIIEncoding;
 
 /**
  * ByteList is simple a collection of bytes in the same way a Java String is a collection

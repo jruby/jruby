@@ -47,12 +47,12 @@ import org.joni.Syntax;
 import org.joni.WarnCallback;
 import org.joni.exception.JOniException;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.string.StringSupport;
-import org.jruby.truffle.parser.ReOptions;
+import org.jruby.truffle.core.string.ByteList;
 import org.jruby.truffle.core.string.ByteListKey;
 import org.jruby.truffle.core.string.EncodingUtils;
+import org.jruby.truffle.core.string.StringSupport;
+import org.jruby.truffle.parser.ReOptions;
 import org.jruby.truffle.util.WeakValuedMap;
-import org.jruby.truffle.core.string.ByteList;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Iterator;

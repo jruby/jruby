@@ -88,6 +88,7 @@ import org.jruby.truffle.core.rope.RopeNodesFactory;
 import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.StringCachingGuards;
 import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.core.string.StringUtils;
 import org.jruby.truffle.core.symbol.SymbolTable;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
@@ -142,7 +143,6 @@ import org.jruby.truffle.language.threadlocal.ThreadLocalObject;
 import org.jruby.truffle.parser.ParserContext;
 import org.jruby.truffle.parser.TranslatorDriver;
 import org.jruby.truffle.platform.UnsafeGroup;
-import org.jruby.truffle.core.string.StringUtils;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
