@@ -29,7 +29,6 @@ import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.dispatch.MissingBehavior;
 import org.jruby.truffle.language.objects.IsTaintedNode;
 import org.jruby.truffle.language.objects.IsTaintedNodeGen;
-import org.jruby.truffle.util.DoubleUtils;
 
 import java.nio.charset.StandardCharsets;
 
@@ -83,7 +82,7 @@ public abstract class ToStringNode extends FormatNode {
     @TruffleBoundary
     @Specialization(guards = "convertNumbersToStrings")
     public byte[] toString(double value) {
-        return DoubleUtils.toString(value).getBytes(StandardCharsets.US_ASCII);
+        return Double.toString(value).getBytes(StandardCharsets.US_ASCII);
     }
 
     @Specialization(guards = "isRubyString(string)")

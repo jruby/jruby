@@ -38,7 +38,6 @@ import org.jruby.truffle.language.SnippetNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
-import org.jruby.truffle.util.DoubleUtils;
 import org.jruby.truffle.core.string.StringUtils;
 
 import java.util.Locale;
@@ -783,7 +782,7 @@ public abstract class FloatNodes {
         @Specialization
         public DynamicObject toS(double value) {
             if (Double.isInfinite(value) || Double.isNaN(value)) {
-                return create7BitString(DoubleUtils.toString(value), USASCIIEncoding.INSTANCE);
+                return create7BitString(Double.toString(value), USASCIIEncoding.INSTANCE);
             }
 
             String str = StringUtils.format(Locale.ENGLISH, "%.15g", value);
