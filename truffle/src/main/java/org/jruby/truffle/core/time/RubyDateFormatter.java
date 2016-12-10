@@ -449,11 +449,11 @@ public class RubyDateFormatter {
                     break;
                 case FORMAT_WEEK_YEAR_M:
                     type = NUMERIC2;
-                    value = formatWeekYear(dt, Calendar.MONDAY);
+                    value = formatWeekOfYear(dt, Calendar.MONDAY);
                     break;
                 case FORMAT_WEEK_YEAR_S:
                     type = NUMERIC2;
-                    value = formatWeekYear(dt, Calendar.SUNDAY);
+                    value = formatWeekOfYear(dt, Calendar.SUNDAY);
                     break;
                 case FORMAT_DAY_WEEK:
                     type = NUMERIC;
@@ -548,7 +548,7 @@ public class RubyDateFormatter {
         return dtCalendar.getWeekYear();
     }
 
-    private int formatWeekYear(ZonedDateTime dt, int firstDayOfWeek) {
+    private int formatWeekOfYear(ZonedDateTime dt, int firstDayOfWeek) {
         Calendar dtCalendar = GregorianCalendar.from(dt);
         dtCalendar.setFirstDayOfWeek(firstDayOfWeek);
         dtCalendar.setMinimalDaysInFirstWeek(7);
