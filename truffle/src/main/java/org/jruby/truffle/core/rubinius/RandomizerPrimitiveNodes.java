@@ -52,7 +52,7 @@ public abstract class RandomizerPrimitiveNodes {
 
         @TruffleBoundary
         protected static org.jruby.truffle.util.Random randomFromLong(long seed) {
-            return org.jruby.truffle.util.Random.RandomType.randomFromLong(seed);
+            return org.jruby.truffle.util.Random.randomFromLong(seed);
         }
 
         public static int N = 624;

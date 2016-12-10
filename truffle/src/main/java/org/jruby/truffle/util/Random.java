@@ -25,7 +25,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.util;
 
-import java.math.BigInteger;
 import java.util.Arrays;
 
 public class Random {
@@ -55,19 +54,6 @@ public class Random {
 
     public Random(int[] initKey) {
         initByArray(initKey);
-    }
-
-    public Random(Random orig) {
-        System.arraycopy(orig.state, 0, this.state, 0, this.state.length);
-        this.left = orig.left;
-    }
-
-    public Random(int[] state, int left) {
-        if (state.length != this.state.length) {
-            throw new IllegalStateException("wrong state length: " + state.length);
-        }
-        System.arraycopy(state, 0, this.state, 0, this.state.length);
-        this.left = left;
     }
 
     @Override
@@ -160,30 +146,6 @@ public class Random {
         return y;
     }
 
-    public double genrandReal() {
-        int a = genrandInt32() >>> 5;
-        int b = genrandInt32() >>> 6;
-        return (a * 67108864.0 + b) * (1.0 / 9007199254740992.0);
-    }
-
-    public double genrandReal2() {
-        int a = genrandInt32();
-        int b = genrandInt32();
-        return intPairToRealInclusive(a, b);
-    }
-
-    private static final BigInteger INTPAIR_CONST = BigInteger.valueOf((1L << 53) + 1);
-    private static final double LDEXP_CONST = Math.pow(2.0, -53);
-
-    // c: ldexp((a<< 32)|b) * ((1<<53)+1) >> 64, -53)
-    // TODO: not enough prec...
-    private double intPairToRealInclusive(int a, int b) {
-        BigInteger c = BigInteger.valueOf(a & 0xffffffffL);
-        BigInteger d = BigInteger.valueOf(b & 0xffffffffL);
-        return c.shiftLeft(32).or(d).multiply(INTPAIR_CONST).shiftRight(64).doubleValue()
-                * LDEXP_CONST;
-    }
-
     public int[] getState() {
         return state;
     }
@@ -192,21 +154,16 @@ public class Random {
         return left;
     }
 
-
-    public static class RandomType {
-
-        public static Random randomFromLong(long seed) {
-            long v = Math.abs(seed);
-            if (v == (v & 0xffffffffL)) {
-                return new Random((int) v);
-            } else {
-                int[] ints = new int[2];
-                ints[0] = (int) v;
-                ints[1] = (int) (v >> 32);
-                return new Random(ints);
-            }
+    public static Random randomFromLong(long seed) {
+        long v = Math.abs(seed);
+        if (v == (v & 0xffffffffL)) {
+            return new Random((int) v);
+        } else {
+            int[] ints = new int[2];
+            ints[0] = (int) v;
+            ints[1] = (int) (v >> 32);
+            return new Random(ints);
         }
-
     }
 
 }
