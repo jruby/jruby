@@ -130,13 +130,4 @@ public class Pack {
         return io2Append;
     }
 
-    public static int safeGet(ByteBuffer encode) {
-        while (encode.hasRemaining()) {
-            int got = encode.get() & 0xff;
-            
-            if (got != 0) return got;
-        }
-        
-        return 0;
-    }
 }

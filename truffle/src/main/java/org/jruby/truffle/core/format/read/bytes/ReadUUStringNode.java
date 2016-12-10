@@ -90,7 +90,7 @@ public abstract class ReadUUStringNode extends FormatNode {
             byte[] hunk = new byte[3];
 
             int len = (s - ' ') & 0x3F;
-            s = Pack.safeGet(encode);
+            s = safeGet(encode);
             total += len;
             if (total > length) {
                 len -= total - length;
@@ -102,28 +102,28 @@ public abstract class ReadUUStringNode extends FormatNode {
 
                 if (encode.hasRemaining() && s >= ' ') {
                     a = (s - ' ') & 0x3F;
-                    s = Pack.safeGet(encode);
+                    s = safeGet(encode);
                 } else {
                     a = 0;
                 }
 
                 if (encode.hasRemaining() && s >= ' ') {
                     b = (s - ' ') & 0x3F;
-                    s = Pack.safeGet(encode);
+                    s = safeGet(encode);
                 } else {
                     b = 0;
                 }
 
                 if (encode.hasRemaining() && s >= ' ') {
                     c = (s - ' ') & 0x3F;
-                    s = Pack.safeGet(encode);
+                    s = safeGet(encode);
                 } else {
                     c = 0;
                 }
 
                 if (encode.hasRemaining() && s >= ' ') {
                     d = (s - ' ') & 0x3F;
-                    s = Pack.safeGet(encode);
+                    s = safeGet(encode);
                 } else {
                     d = 0;
                 }
@@ -140,12 +140,12 @@ public abstract class ReadUUStringNode extends FormatNode {
             }
 
             if (s == '\r') {
-                s = Pack.safeGet(encode);
+                s = safeGet(encode);
             } else if (s == '\n') {
-                s = Pack.safeGet(encode);
+                s = safeGet(encode);
             } else if (encode.hasRemaining()) {
-                if (Pack.safeGet(encode) == '\n') {
-                    Pack.safeGet(encode);
+                if (safeGet(encode) == '\n') {
+                    safeGet(encode);
                 } else if (encode.hasRemaining()) {
                     encode.position(encode.position() - 1);
                 }

@@ -102,26 +102,26 @@ public abstract class ReadBase64StringNode extends FormatNode {
             }
             while (encode.hasRemaining()) {
                 // obtain a
-                s = Pack.safeGet(encode);
+                s = safeGet(encode);
                 a = Pack.b64_xtable[s];
                 if (a == -1) throw new InvalidFormatException("invalid base64");
 
                 // obtain b
-                s = Pack.safeGet(encode);
+                s = safeGet(encode);
                 b = Pack.b64_xtable[s];
                 if (b == -1) throw new InvalidFormatException("invalid base64");
 
                 // obtain c
-                s = Pack.safeGet(encode);
+                s = safeGet(encode);
                 c = Pack.b64_xtable[s];
                 if (s == '=') {
-                    if (Pack.safeGet(encode) != '=') throw new InvalidFormatException("invalid base64");
+                    if (safeGet(encode) != '=') throw new InvalidFormatException("invalid base64");
                     break;
                 }
                 if (c == -1) throw new InvalidFormatException("invalid base64");
 
                 // obtain d
-                s = Pack.safeGet(encode);
+                s = safeGet(encode);
                 d = Pack.b64_xtable[s];
                 if (s == '=') break;
                 if (d == -1) throw new InvalidFormatException("invalid base64");
@@ -151,24 +151,24 @@ public abstract class ReadBase64StringNode extends FormatNode {
                 b = c = -1;
 
                 // obtain a
-                s = Pack.safeGet(encode);
+                s = safeGet(encode);
                 while (((a = Pack.b64_xtable[s]) == -1) && encode.hasRemaining()) {
-                    s = Pack.safeGet(encode);
+                    s = safeGet(encode);
                 }
                 if (a == -1) break;
 
                 // obtain b
-                s = Pack.safeGet(encode);
+                s = safeGet(encode);
                 while (((b = Pack.b64_xtable[s]) == -1) && encode.hasRemaining()) {
-                    s = Pack.safeGet(encode);
+                    s = safeGet(encode);
                 }
                 if (b == -1) break;
 
                 // obtain c
-                s = Pack.safeGet(encode);
+                s = safeGet(encode);
                 while (((c = Pack.b64_xtable[s]) == -1) && encode.hasRemaining()) {
                     if (s == '=') break;
-                    s = Pack.safeGet(encode);
+                    s = safeGet(encode);
                 }
                 if ((s == '=') || c == -1) {
                     if (s == '=') {
@@ -178,10 +178,10 @@ public abstract class ReadBase64StringNode extends FormatNode {
                 }
 
                 // obtain d
-                s = Pack.safeGet(encode);
+                s = safeGet(encode);
                 while (((d = Pack.b64_xtable[s]) == -1) && encode.hasRemaining()) {
                     if (s == '=') break;
-                    s = Pack.safeGet(encode);
+                    s = safeGet(encode);
                 }
                 if ((s == '=') || d == -1) {
                     if (s == '=') {

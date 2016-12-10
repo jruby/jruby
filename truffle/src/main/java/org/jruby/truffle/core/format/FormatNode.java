@@ -21,6 +21,7 @@ import org.jruby.truffle.core.array.ArrayUtils;
 import org.jruby.truffle.core.format.exceptions.TooFewArgumentsException;
 import org.jruby.truffle.core.rope.CodeRange;
 
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 @ImportStatic(FormatGuards.class)
@@ -205,6 +206,16 @@ public abstract class FormatNode extends Node {
 
     protected boolean isNil(Object object) {
         return object == context.getCoreLibrary().getNilObject();
+    }
+
+    public static int safeGet(ByteBuffer encode) {
+        while (encode.hasRemaining()) {
+            int got = encode.get() & 0xff;
+
+            if (got != 0) return got;
+        }
+
+        return 0;
     }
 
 }
