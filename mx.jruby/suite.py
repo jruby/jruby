@@ -140,12 +140,6 @@ suite = {
             "2982d6beb2f8fabe5ac5cc9dec6b4d6a9ffeedb1",
             "MIT"),
 
-        "BYTELIST": mavenLib(
-            "org.jruby.extras:bytelist:1.0.13",
-            "dc54989113128bda0d303c7bf97a7aba65507ddf",
-            "e8f683aa496bf651879d9e3a8a82e053c2df9b99",
-            "EPL-1.0"),
-
         "JCODINGS": mavenLib(
             "org.jruby.jcodings:jcodings:1.0.18",
             "e2c76a19f00128bb1806207e2989139bfb45f49d",
@@ -177,7 +171,6 @@ suite = {
                 "JFFI_NATIVE",
                 "SNAKEYAML",
                 "JONI",
-                "BYTELIST",
                 "JCODINGS",
                 "JODA_TIME",
             ],
