@@ -15,21 +15,15 @@ package org.jruby.truffle.aot;
 
 import com.oracle.truffle.api.source.Source;
 import org.jcodings.exception.InternalException;
-import org.joda.time.DateTimeZone;
 import org.jruby.truffle.RubyLanguage;
 import org.jruby.truffle.language.loader.SourceLoader;
 
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.text.DateFormatSymbols;
-import java.util.Locale;
 
 // Checkstyle: stop
 
@@ -59,29 +53,6 @@ final class Target_org_jcodings_util_ArrayReader {
             throw new InternalException(("entry: /tables/" + name + ".bin not found"));
         }
         return new DataInputStream(new ByteArrayInputStream(table));
-    }
-}
-
-@SuppressWarnings("static-method")
-final class Target_org_joda_time_tz_ZoneInfoProvider {
-    File iFileDir;
-
-    DateTimeZone getZone(String id) {
-        return JRubySupport.allTimeZones.get(id);
-    }
-
-    InputStream openResource(String name) throws IOException {
-        if (iFileDir != null) {
-            return new FileInputStream(new File(iFileDir, name));
-        } else {
-            throw new IllegalArgumentException("Not supported on SubstrateVM");
-        }
-    }
-}
-
-final class Target_org_joda_time_DateTimeUtils {
-    static DateFormatSymbols getDateFormatSymbols(Locale locale) {
-        return DateFormatSymbols.getInstance(locale);
     }
 }
 

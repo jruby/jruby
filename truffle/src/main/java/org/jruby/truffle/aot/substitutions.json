@@ -20,36 +20,6 @@
     ]
   },
   {
-    "annotatedClass": "org.jruby.truffle.aot.Target_org_joda_time_DateTimeUtils",
-    "originalClass": "org.joda.time.DateTimeUtils",
-    "methods": [
-      {
-        "annotatedName": "getDateFormatSymbols",
-        "substitute": true
-      }
-    ]
-  },
-  {
-    "annotatedClass": "org.jruby.truffle.aot.Target_org_joda_time_tz_ZoneInfoProvider",
-    "originalClass": "org.joda.time.tz.ZoneInfoProvider",
-    "methods": [
-      {
-        "annotatedName": "getZone",
-        "substitute": true
-      },
-      {
-        "annotatedName": "openResource",
-        "substitute": true
-      }
-    ],
-    "fields": [
-      {
-        "annotatedName": "iFileDir",
-        "alias": true
-      }
-    ]
-  },
-  {
     "annotatedClass": "org.jruby.truffle.aot.Target_org_jruby_truffle_language_loader_SourceLoader",
     "originalClass": "org.jruby.truffle.language.loader.SourceLoader",
     "methods": [
