@@ -33,13 +33,11 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
-package org.jruby.truffle.util;
+package org.jruby.truffle.core.format.write.bytes;
 
 import org.jruby.truffle.core.string.ByteList;
 
-import java.nio.ByteBuffer;
-
-public class Pack {
+public class EncodeUM {
 
     private static final byte[] uu_table;
     private static final byte[] b64_table;

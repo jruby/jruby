@@ -55,7 +55,6 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.FormatNode;
 import org.jruby.truffle.core.format.read.SourceNode;
 import org.jruby.truffle.core.rope.AsciiOnlyLeafRope;
-import org.jruby.truffle.util.Pack;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;

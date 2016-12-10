@@ -57,7 +57,7 @@ import org.jruby.truffle.core.format.FormatNode;
 import org.jruby.truffle.core.format.exceptions.InvalidFormatException;
 import org.jruby.truffle.core.format.read.SourceNode;
 import org.jruby.truffle.core.rope.AsciiOnlyLeafRope;
-import org.jruby.truffle.util.Pack;
+import org.jruby.truffle.core.format.write.bytes.EncodeUM;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -103,17 +103,17 @@ public abstract class ReadBase64StringNode extends FormatNode {
             while (encode.hasRemaining()) {
                 // obtain a
                 s = safeGet(encode);
-                a = Pack.b64_xtable[s];
+                a = EncodeUM.b64_xtable[s];
                 if (a == -1) throw new InvalidFormatException("invalid base64");
 
                 // obtain b
                 s = safeGet(encode);
-                b = Pack.b64_xtable[s];
+                b = EncodeUM.b64_xtable[s];
                 if (b == -1) throw new InvalidFormatException("invalid base64");
 
                 // obtain c
                 s = safeGet(encode);
-                c = Pack.b64_xtable[s];
+                c = EncodeUM.b64_xtable[s];
                 if (s == '=') {
                     if (safeGet(encode) != '=') throw new InvalidFormatException("invalid base64");
                     break;
@@ -122,7 +122,7 @@ public abstract class ReadBase64StringNode extends FormatNode {
 
                 // obtain d
                 s = safeGet(encode);
-                d = Pack.b64_xtable[s];
+                d = EncodeUM.b64_xtable[s];
                 if (s == '=') break;
                 if (d == -1) throw new InvalidFormatException("invalid base64");
 
@@ -152,21 +152,21 @@ public abstract class ReadBase64StringNode extends FormatNode {
 
                 // obtain a
                 s = safeGet(encode);
-                while (((a = Pack.b64_xtable[s]) == -1) && encode.hasRemaining()) {
+                while (((a = EncodeUM.b64_xtable[s]) == -1) && encode.hasRemaining()) {
                     s = safeGet(encode);
                 }
                 if (a == -1) break;
 
                 // obtain b
                 s = safeGet(encode);
-                while (((b = Pack.b64_xtable[s]) == -1) && encode.hasRemaining()) {
+                while (((b = EncodeUM.b64_xtable[s]) == -1) && encode.hasRemaining()) {
                     s = safeGet(encode);
                 }
                 if (b == -1) break;
 
                 // obtain c
                 s = safeGet(encode);
-                while (((c = Pack.b64_xtable[s]) == -1) && encode.hasRemaining()) {
+                while (((c = EncodeUM.b64_xtable[s]) == -1) && encode.hasRemaining()) {
                     if (s == '=') break;
                     s = safeGet(encode);
                 }
@@ -179,7 +179,7 @@ public abstract class ReadBase64StringNode extends FormatNode {
 
                 // obtain d
                 s = safeGet(encode);
-                while (((d = Pack.b64_xtable[s]) == -1) && encode.hasRemaining()) {
+                while (((d = EncodeUM.b64_xtable[s]) == -1) && encode.hasRemaining()) {
                     if (s == '=') break;
                     s = safeGet(encode);
                 }
