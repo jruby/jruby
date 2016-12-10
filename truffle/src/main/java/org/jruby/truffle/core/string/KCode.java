@@ -26,7 +26,7 @@
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
 
-package org.jruby.truffle.util;
+package org.jruby.truffle.core.string;
 
 import org.jcodings.Encoding;
 

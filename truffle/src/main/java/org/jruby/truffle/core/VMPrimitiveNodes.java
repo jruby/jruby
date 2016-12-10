@@ -80,7 +80,7 @@ import org.jruby.truffle.platform.UnsafeGroup;
 import org.jruby.truffle.platform.signal.Signal;
 import org.jruby.truffle.platform.signal.SignalHandler;
 import org.jruby.truffle.platform.signal.SignalManager;
-import org.jruby.truffle.util.Platform;
+import org.jruby.truffle.platform.Platform;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;

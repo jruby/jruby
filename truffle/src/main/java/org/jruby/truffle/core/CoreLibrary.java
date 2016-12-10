@@ -135,7 +135,7 @@ import org.jruby.truffle.stdlib.digest.DigestNodesFactory;
 import org.jruby.truffle.stdlib.psych.PsychEmitterNodesFactory;
 import org.jruby.truffle.stdlib.psych.PsychParserNodesFactory;
 import org.jruby.truffle.stdlib.psych.YAMLEncoding;
-import org.jruby.truffle.util.Platform;
+import org.jruby.truffle.platform.Platform;
 
 import java.io.File;
 import java.io.IOException;

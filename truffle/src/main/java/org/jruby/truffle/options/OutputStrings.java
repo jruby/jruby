@@ -26,7 +26,7 @@
 package org.jruby.truffle.options;
 
 import org.jruby.truffle.RubyLanguage;
-import org.jruby.truffle.util.Platform;
+import org.jruby.truffle.platform.Platform;
 
 /**
  * Utility methods to generate the command-line output strings for help,

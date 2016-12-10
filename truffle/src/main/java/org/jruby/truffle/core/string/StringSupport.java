@@ -30,7 +30,7 @@ import org.jcodings.ascii.AsciiTables;
 import org.jcodings.constants.CharacterType;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.util.IntHash;
-import org.jruby.truffle.util.IntHashMap;
+import org.jruby.truffle.collections.IntHashMap;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;

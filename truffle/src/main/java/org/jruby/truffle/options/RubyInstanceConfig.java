@@ -32,16 +32,13 @@ import com.oracle.truffle.api.TruffleOptions;
 import jnr.posix.util.Platform;
 import org.jruby.truffle.core.string.StringSupport;
 import org.jruby.truffle.language.control.JavaException;
-import org.jruby.truffle.util.KCode;
+import org.jruby.truffle.core.string.KCode;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Collection;

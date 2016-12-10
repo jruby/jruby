@@ -49,6 +49,7 @@ import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodNode;
 import org.jruby.truffle.builtins.YieldingCoreMethodNode;
 import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.platform.Platform;
 
 import java.lang.reflect.Field;
 import java.util.Set;
@@ -80,7 +81,7 @@ public abstract class TruffleSystemNodes {
 
         @Specialization
         public DynamicObject hostCPU() {
-            return createString(StringOperations.encodeRope(org.jruby.truffle.util.Platform.getArchitecture(), UTF8Encoding.INSTANCE));
+            return createString(StringOperations.encodeRope(Platform.getArchitecture(), UTF8Encoding.INSTANCE));
         }
 
     }
@@ -91,7 +92,7 @@ public abstract class TruffleSystemNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject hostOS() {
-            return createString(StringOperations.encodeRope(org.jruby.truffle.util.Platform.getOSName(), UTF8Encoding.INSTANCE));
+            return createString(StringOperations.encodeRope(Platform.getOSName(), UTF8Encoding.INSTANCE));
         }
 
     }

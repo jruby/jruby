@@ -36,7 +36,7 @@ import org.jcodings.specific.UTF32LEEncoding;
 import org.jcodings.transcode.EConv;
 import org.jcodings.transcode.EConvFlags;
 import org.jcodings.unicode.UnicodeEncoding;
-import org.jruby.truffle.util.Platform;
+import org.jruby.truffle.platform.Platform;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -25,7 +25,7 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.string.ByteList;
 import org.jruby.truffle.core.string.StringOperations;
-import org.jruby.truffle.util.ISO_8859_16;
+import org.jruby.truffle.core.string.ISO_8859_16;
 
 import java.nio.charset.Charset;
 import java.nio.charset.UnsupportedCharsetException;

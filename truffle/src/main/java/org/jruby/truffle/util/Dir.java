@@ -28,6 +28,7 @@
 package org.jruby.truffle.util;
 
 import org.jruby.truffle.core.string.ByteList;
+import org.jruby.truffle.platform.Platform;
 
 import java.util.ArrayList;
 import java.util.List;
