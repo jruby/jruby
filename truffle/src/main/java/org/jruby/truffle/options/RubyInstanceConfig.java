@@ -206,6 +206,16 @@ public class RubyInstanceConfig {
         return inlineScript.toString().getBytes();
     }
 
+    public boolean canGetScriptSource() {
+        if (hasInlineScript) {
+            return true;
+        } else if (isForceStdin() || getScriptFileName() == null) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+
     public InputStream getScriptSource() {
         try {
             // KCode.NONE is used because KCODE does not affect parse in Ruby 1.8
@@ -213,58 +223,14 @@ public class RubyInstanceConfig {
             if (hasInlineScript) {
                 return new ByteArrayInputStream(inlineScript());
             } else if (isForceStdin() || getScriptFileName() == null) {
-                // can't use -v and stdin
-                if (isShowVersion()) {
-                    return null;
-                }
-                return getInput();
+                return null;
             } else {
                 final String script = getScriptFileName();
-
                 return new FileInputStream(script);
-
-                /*FileResource resource = JRubyFile.createRestrictedResource(getCurrentDirectory(), getScriptFileName());
-                if (resource != null && resource.exists()) {
-                    if (resource.canRead() && !resource.isDirectory()) {
-                        if (isXFlag()) {
-                            // search for a shebang line and
-                            // return the script between shebang and __END__ or CTRL-Z (0x1A)
-                            return findScript(resource.inputStream());
-                        }
-                        return resource.inputStream();
-                    }
-                    else {
-                        throw new FileNotFoundException(script + " (Not a file)");
-                    }
-                }
-                else {*/
-                    //throw new FileNotFoundException(script + " (No such file or directory)");
-                //}
             }
         } catch (IOException e) {
             throw new JavaException(e);
         }
-    }
-
-    private static InputStream findScript(InputStream is) throws IOException {
-        StringBuilder buf = new StringBuilder();
-        BufferedReader br = new BufferedReader(new InputStreamReader(is));
-        String currentLine = br.readLine();
-        while (currentLine != null && !isRubyShebangLine(currentLine)) {
-            currentLine = br.readLine();
-        }
-
-        buf.append(currentLine);
-        buf.append("\n");
-
-        do {
-            currentLine = br.readLine();
-            if (currentLine != null) {
-                buf.append(currentLine);
-                buf.append("\n");
-            }
-        } while (!(currentLine == null || currentLine.contains("__END__") || currentLine.contains("\026")));
-        return new BufferedInputStream(new ByteArrayInputStream(buf.toString().getBytes()), 8192);
     }
 
     public String displayedFileName() {
@@ -290,14 +256,6 @@ public class RubyInstanceConfig {
             jrubyHome = calculateJRubyHome();
         }
         return jrubyHome;
-    }
-
-    public void setInput(InputStream newInput) {
-        input = newInput;
-    }
-
-    public InputStream getInput() {
-        return input;
     }
 
     public void setOutput(PrintStream newOutput) {

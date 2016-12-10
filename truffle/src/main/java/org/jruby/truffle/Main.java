@@ -82,7 +82,7 @@ public class Main {
         final int exitCode;
 
         if (config.getShouldRunInterpreter()) {
-            final InputStream in = config.getScriptSource();
+            final boolean in = config.canGetScriptSource();
             final String filename = config.displayedFileName();
 
             final RubyEngine rubyEngine = new RubyEngine(
@@ -101,7 +101,7 @@ public class Main {
 
             printTruffleTimeMetric("before-run");
             try {
-                if (in == null) {
+                if (in == false) {
                     exitCode = 1;
                 } else if (config.isXFlag()) {
                     // no shebang was found and x option is set
@@ -109,7 +109,7 @@ public class Main {
                     exitCode = 1;
                 } else if (config.getShouldCheckSyntax()) {
                     // check syntax only and exit
-                    exitCode = rubyEngine.doCheckSyntax(in, filename);
+                    exitCode = rubyEngine.doCheckSyntax(config.getScriptSource(), filename);
                 } else {
                     exitCode = rubyEngine.execute(filename);
                 }
