@@ -49,8 +49,8 @@ import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodNode;
 import org.jruby.truffle.builtins.YieldingCoreMethodNode;
 import org.jruby.truffle.core.string.StringOperations;
-import org.jruby.truffle.util.UnsafeHolder;
 
+import java.lang.reflect.Field;
 import java.util.Set;
 
 @CoreClass("Truffle::System")
@@ -113,9 +113,27 @@ public abstract class TruffleSystemNodes {
 
         @Specialization
         public Object fullMemoryBarrier() {
-            UnsafeHolder.fullFence();
+            fullFence();
             return nil();
         }
+
+        private static final sun.misc.Unsafe U = loadUnsafe();
+
+        private static sun.misc.Unsafe loadUnsafe() {
+            try {
+                Class<?> unsafeClass = Class.forName("sun.misc.Unsafe");
+                Field f = unsafeClass.getDeclaredField("theUnsafe");
+                f.setAccessible(true);
+                return (sun.misc.Unsafe) f.get(null);
+            } catch (Throwable e) {
+                throw new UnsupportedOperationException(e);
+            }
+        }
+
+        private static void fullFence() {
+            U.fullFence();
+        }
+
     }
 
 }

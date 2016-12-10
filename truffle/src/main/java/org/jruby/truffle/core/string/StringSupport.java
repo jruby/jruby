@@ -33,8 +33,6 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.util.IntHash;
 import org.joni.Matcher;
 import org.jruby.truffle.util.IntHashMap;
-import org.jruby.truffle.util.UnsafeHolder;
-import sun.misc.Unsafe;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;

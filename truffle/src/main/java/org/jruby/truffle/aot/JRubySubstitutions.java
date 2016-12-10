@@ -27,7 +27,7 @@ import java.nio.charset.StandardCharsets;
 
 // Checkstyle: stop
 
-final class Target_org_jruby_truffle_util_UnsafeHolder {
+final class Target_org_jruby_truffle_core_TruffleSystemNodes_FullMemoryBarrierPrimitiveNode  {
     static void fullFence() {
         throw new UnsupportedOperationException();
     }
@@ -51,10 +51,6 @@ final class Target_org_jcodings_util_ArrayReader {
         }
         return new DataInputStream(new ByteArrayInputStream(table));
     }
-}
-
-final class Target_org_jruby_truffle_core_string_StringSupport {
-    static int ARRAY_BYTE_BASE_OFFSET;
 }
 
 @SuppressWarnings("static-method")

@@ -30,41 +30,12 @@
     ]
   },
   {
-    "annotatedClass": "org.jruby.truffle.aot.Target_org_jruby_truffle_core_string_StringSupport",
-    "originalClass": "org.jruby.truffle.core.string.StringSupport",
-    "fields": [
-      {
-        "annotatedName": "ARRAY_BYTE_BASE_OFFSET",
-        "delete": true
-      }
-    ]
-  },
-  {
-    "annotatedClass": "org.jruby.truffle.aot.Target_org_jruby_truffle_util_UnsafeHolder",
-    "originalClass": "org.jruby.truffle.util.UnsafeHolder",
+    "annotatedClass": "org.jruby.truffle.aot.Target_org_jruby_truffle_core_TruffleSystemNodes_FullMemoryBarrierPrimitiveNode",
+    "originalClass": "org.jruby.truffle.core.TruffleSystemNodes.FullMemoryBarrierPrimitiveNode",
     "methods": [
       {
         "annotatedName": "fullFence",
         "substitute": true
-      }
-    ],
-    "fields": [
-      {
-        "annotatedName": "ARRAY_OBJECT_BASE_OFFSET",
-        "alias": true,
-        "kind": "ArrayBaseOffset",
-        "declClassName": "[Ljava.lang.Object;"
-      },
-      {
-        "annotatedName": "ARRAY_OBJECT_INDEX_SCALE",
-        "alias": true,
-        "kind": "ArrayIndexScale",
-        "declClassName": "[Ljava.lang.Object;"
-      },
-      {
-        "annotatedName": "SUPPORTS_FENCES",
-        "alias": true,
-        "kind": "FromAlias"
       }
     ]
   },

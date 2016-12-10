@@ -44,7 +44,6 @@ import org.jruby.truffle.language.constants.LookupConstantNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.objects.MetaClassNode;
-import org.jruby.truffle.util.UnsafeHolder;
 
 import java.util.HashMap;
 import java.util.Map;
