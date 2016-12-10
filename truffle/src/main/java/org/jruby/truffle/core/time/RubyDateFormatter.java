@@ -42,7 +42,6 @@ import com.oracle.truffle.api.nodes.Node;
 import jnr.constants.platform.Errno;
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
-import org.joda.time.DateTime;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.encoding.EncodingManager;
 import org.jruby.truffle.core.string.ByteList;
@@ -510,12 +509,12 @@ public class RubyDateFormatter {
                     formatter = RubyTimeOutputFormatter.DEFAULT_FORMATTER; // no more formatting
                     break;
                 case FORMAT_WEEKYEAR:
-                    value = new DateTime(dt.toInstant().getEpochSecond() * 1_000).getWeekyear();
+                    value = getWeekYear(dt);
                     type = (value >= 0) ? NUMERIC4 : NUMERIC5;
                     break;
                 case FORMAT_WEEKYEAR_SHORT:
+                    value = getWeekYear(dt) % 100;
                     type = NUMERIC2;
-                    value = new DateTime(dt.toInstant().getEpochSecond() * 1_000).getWeekyear() % 100;
                     break;
                 case FORMAT_MICROSEC_EPOCH:
                     // only available for Date
@@ -542,13 +541,20 @@ public class RubyDateFormatter {
         return toAppendTo;
     }
 
+    private int getWeekYear(ZonedDateTime dt) {
+        Calendar dtCalendar = GregorianCalendar.from(dt);
+        dtCalendar.setFirstDayOfWeek(Calendar.MONDAY);
+        dtCalendar.setMinimalDaysInFirstWeek(4);
+        return dtCalendar.getWeekYear();
+    }
+
     private int formatWeekYear(ZonedDateTime dt, int firstDayOfWeek) {
         Calendar dtCalendar = GregorianCalendar.from(dt);
         dtCalendar.setFirstDayOfWeek(firstDayOfWeek);
         dtCalendar.setMinimalDaysInFirstWeek(7);
         int value = dtCalendar.get(Calendar.WEEK_OF_YEAR);
         if ((value == 52 || value == 53) &&
-                (dtCalendar.get(Calendar.MONTH) == Calendar.JANUARY )) {
+                (dtCalendar.get(Calendar.MONTH) == Calendar.JANUARY)) {
             // MRI behavior: Week values are monotonous.
             // So, weeks that effectively belong to previous year,
             // will get the value of 0, not 52 or 53, as in Java.
