@@ -40,6 +40,8 @@ public class SourceLoader {
     public Source loadMain(String path) throws IOException {
         if (path.equals("-e")) {
             return loadFragment(new String(context.getOptions().INLINE_SCRIPT, StandardCharsets.UTF_8), "-e");
+        } else if (path.equals("-")) {
+            return Source.newBuilder(new InputStreamReader(System.in)).name(path).mimeType(RubyLanguage.MIME_TYPE).build();
         } else {
             final File file = new File(path).getCanonicalFile();
             ensureReadable(path, file);
