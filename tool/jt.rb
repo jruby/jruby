@@ -369,19 +369,6 @@ module ShellUtils
     sh *options, './mvnw', *args
   end
 
-  def maven_options(*options)
-    maven_options = []
-    build_pack = options.delete('--build-pack')
-    offline = options.delete('--offline')
-    if build_pack || offline
-      maven_options.push "-Dmaven.repo.local=#{Utilities.find_repo('jruby-build-pack')}/maven"
-    end
-    if offline
-      maven_options.push '--offline'
-    end
-    return [maven_options, options]
-  end
-
   def mx(dir, *args)
     command = ['mx', '-p', dir]
     command.push *args
@@ -444,8 +431,6 @@ module Commands
           cexts [--no-openssl]                       build the cext backend (set SULONG_HOME)
           parser                                     build the parser
           options                                    build the options
-          --build-pack                               use the build pack
-          --offline                                  use the build pack to build offline
       jt clean                                       clean
       jt irb                                         irb
       jt rebuild                                     clean and build
@@ -530,17 +515,15 @@ module Commands
   end
 
   def bootstrap(*options)
-    maven_options, other_options = maven_options(*options)
-    mvn *maven_options, '-Pbootstrap-no-launcher'
+    mvn *options, '-Pbootstrap-no-launcher'
   end
 
   def build(*options)
-    maven_options, other_options = maven_options(*options)
-    project = other_options.first
+    project = options.first
     env = VERBOSE ? {} : {'JRUBY_BUILD_MORE_QUIET' => 'true'}
     case project
     when 'truffle'
-      mvn env, *maven_options, '-pl', 'truffle', 'package'
+      mvn env, '-pl', 'truffle', 'package'
     when 'cexts'
       no_openssl = options.delete('--no-openssl')
       build_ruby_su
@@ -556,7 +539,7 @@ module Commands
     when 'options'
       sh 'tool/truffle/generate-options.rb'
     when nil
-      mvn env, *maven_options, 'package'
+      mvn env, 'package'
     else
       raise ArgumentError, project
     end
@@ -1260,8 +1243,7 @@ module Commands
   end
 
   def tarball(*options)
-    maven_options, other_options = maven_options(*options)
-    mvn *maven_options, '-Pdist'
+    mvn '-Pdist'
     generated_file = "#{JRUBY_DIR}/maven/jruby-dist/target/jruby-dist-#{Utilities.jruby_version}-bin.tar.gz"
     final_file = "#{JRUBY_DIR}/jruby-bin-#{Utilities.jruby_version}.tar.gz"
     FileUtils.copy generated_file, final_file
@@ -1342,7 +1324,7 @@ class JT
       send(args.shift)
     when "build"
       command = [args.shift]
-      while ['truffle', 'cexts', 'parser', 'options', '--offline', '--build-pack', '--no-openssl'].include?(args.first)
+      while ['truffle', 'cexts', 'parser', 'options', '--no-openssl'].include?(args.first)
         command << args.shift
       end
       send(*command)
