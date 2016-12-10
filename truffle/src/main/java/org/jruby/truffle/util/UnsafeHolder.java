@@ -80,28 +80,10 @@ public final class UnsafeHolder {
         return false;
     }
     
-    public static long fieldOffset(Class clazz, String name) {
-        if(U == null)
-            return -1;
-        try {
-            return U.objectFieldOffset(clazz.getDeclaredField(name));
-        } catch (Exception e) {
-            return sun.misc.Unsafe.INVALID_FIELD_OFFSET;
-        }
-    }
-    
     //// The following methods are Java8 only. They will throw undefined method errors if invoked without checking for fence support 
     
     public static void fullFence() {
         U.fullFence();
-    }
-    
-    public static void loadFence() {
-        U.loadFence();
-    }
-    
-    public static void storeFence() {
-        U.storeFence();
     }
 
 
