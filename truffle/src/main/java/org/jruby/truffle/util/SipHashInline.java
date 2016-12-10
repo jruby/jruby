@@ -1,8 +1,6 @@
 package org.jruby.truffle.util;
 
-import sun.misc.Unsafe;
-
-import java.nio.ByteOrder;
+import java.nio.ByteBuffer;
 
 /**
  * SipHash implementation with hand inlining the SIPROUND.
@@ -33,9 +31,11 @@ public class SipHashInline {
             throw new ArrayIndexOutOfBoundsException(src.length);
         }
 
+        final ByteBuffer buffer = ByteBuffer.wrap(src, offset, length);
+
         // processing 8 bytes blocks in data
         while (i < last) {
-            m = LongReader.INSTANCE.getLong(src, i);
+            m = buffer.getLong(i);
             i += 8;
             // MSGROUND {
                 v3 ^= m;
@@ -143,50 +143,4 @@ public class SipHashInline {
         return v0 ^ v1 ^ v2 ^ v3;
     }
 
-    private static abstract class LongReader {
-        public abstract long getLong(byte[] src, int offset);
-
-        public static final LongReader INSTANCE = createBestLongReader();
-
-        private static LongReader createBestLongReader() {
-            try {
-                if (UnsafeHolder.U != null) {
-                    if (ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN) {
-                        return new UnsafeLongReader(UnsafeHolder.U);
-                    }
-                }
-            } catch (Exception e) {
-            }
-            return new FallbackLongReader();
-        }
-
-        private static final class FallbackLongReader extends SipHashInline.LongReader {
-            @Override
-            public long getLong(byte[] src, int offset) {
-                return (long) src[offset++]       |
-                       (long) src[offset++] <<  8 |
-                       (long) src[offset++] << 16 |
-                       (long) src[offset++] << 24 |
-                       (long) src[offset++] << 32 |
-                       (long) src[offset++] << 40 |
-                       (long) src[offset++] << 48 |
-                       (long) src[offset++] << 56 ;
-            }
-        }
-
-        private static final class UnsafeLongReader extends SipHashInline.LongReader {
-            final Unsafe unsafe;
-            final int byteArrayBaseOffset;
-
-            public UnsafeLongReader(Unsafe unsafe) {
-                this.unsafe = unsafe;
-                this.byteArrayBaseOffset = unsafe.arrayBaseOffset(byte[].class);
-            }
-
-            @Override
-            public final long getLong(byte[] src, int offset) {
-                return unsafe.getLong(src, byteArrayBaseOffset + (long)offset);
-            }
-        }
-    }
 }
