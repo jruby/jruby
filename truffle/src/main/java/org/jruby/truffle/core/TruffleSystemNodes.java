@@ -113,11 +113,7 @@ public abstract class TruffleSystemNodes {
 
         @Specialization
         public Object fullMemoryBarrier() {
-            if (UnsafeHolder.SUPPORTS_FENCES) {
-                UnsafeHolder.fullFence();
-            } else {
-                throw new UnsupportedOperationException();
-            }
+            UnsafeHolder.fullFence();
             return nil();
         }
     }

@@ -28,11 +28,8 @@ import java.nio.charset.StandardCharsets;
 // Checkstyle: stop
 
 final class Target_org_jruby_truffle_util_UnsafeHolder {
-    static boolean SUPPORTS_FENCES = false;
-    static long ARRAY_OBJECT_BASE_OFFSET;
-    static long ARRAY_OBJECT_INDEX_SCALE;
-
     static void fullFence() {
+        throw new UnsupportedOperationException();
     }
 }
 

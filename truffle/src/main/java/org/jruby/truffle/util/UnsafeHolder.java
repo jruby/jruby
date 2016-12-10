@@ -27,61 +27,22 @@
 package org.jruby.truffle.util;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 
 public final class UnsafeHolder {
-    
-    private UnsafeHolder(){}
-        
-    /**
-     * Holds a reference to Unsafe if available, null otherwise.    
-     */
+
     public static final sun.misc.Unsafe U = loadUnsafe();
-    
-    public static final boolean SUPPORTS_FENCES = supportsFences();
-    public static final long    ARRAY_OBJECT_BASE_OFFSET = arrayObjectBaseOffset();
-    public static final long    ARRAY_OBJECT_INDEX_SCALE = arrayObjectIndexScale();
-    
+
     private static sun.misc.Unsafe loadUnsafe() {
         try {
             Class<?> unsafeClass = Class.forName("sun.misc.Unsafe");
             Field f = unsafeClass.getDeclaredField("theUnsafe");
             f.setAccessible(true);
             return (sun.misc.Unsafe) f.get(null);
-        } catch (Exception e) {
-            return null;
-        } catch (NoClassDefFoundError ncdfe) {
-            // Google AppEngine raises NCDFE for Unsafe rather than CNFE
+        } catch (Throwable e) {
             return null;
         }
     }
-    
-    private static long arrayObjectBaseOffset() {
-        if(U == null)
-            return 0;
-        return U.arrayBaseOffset(Object[].class);
-    }
-    
-    private static long arrayObjectIndexScale() {
-        if(U == null)
-            return 0;
-        return U.arrayIndexScale(Object[].class);
-    }
-    
-    private static boolean supportsFences() {
-        if(U == null)
-            return false;
-        try {
-            Method m = U.getClass().getDeclaredMethod("fullFence");
-            if(m != null)
-                return true;
-        } catch (Exception e) {
-        }
-        return false;
-    }
-    
-    //// The following methods are Java8 only. They will throw undefined method errors if invoked without checking for fence support 
-    
+
     public static void fullFence() {
         U.fullFence();
     }
