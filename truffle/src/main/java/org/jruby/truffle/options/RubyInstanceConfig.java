@@ -30,18 +30,15 @@ package org.jruby.truffle.options;
 
 import com.oracle.truffle.api.TruffleOptions;
 import jnr.posix.util.Platform;
-import org.jcodings.Encoding;
 import org.jruby.truffle.core.string.StringSupport;
 import org.jruby.truffle.language.control.JavaException;
 import org.jruby.truffle.util.KCode;
-import org.jruby.truffle.util.SafePropertyAccessor;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -79,7 +76,7 @@ public class RubyInstanceConfig {
     }
 
     public static String getFileProperty(String property) {
-        return normalizeSeps(SafePropertyAccessor.getProperty(property, "/"));
+        return normalizeSeps(System.getProperty(property, "/"));
     }
 
     public static String normalizeSeps(String path) {
@@ -139,7 +136,7 @@ public class RubyInstanceConfig {
 
         // try the normal property first
         if (!isSecurityRestricted) {
-            newJRubyHome = SafePropertyAccessor.getProperty("jruby.home");
+            newJRubyHome = System.getProperty("jruby.home", null);
         }
 
         if (!TruffleOptions.AOT && newJRubyHome == null && getLoader().getResource("META-INF/jruby.home/.jrubydir") != null) {
@@ -150,7 +147,7 @@ public class RubyInstanceConfig {
             newJRubyHome = verifyHome(newJRubyHome, error);
         } else {
             try {
-                newJRubyHome = SafePropertyAccessor.getenv("JRUBY_HOME");
+                newJRubyHome = System.getenv("JRUBY_HOME");
             } catch (Exception e) {}
 
             if (newJRubyHome != null) {
@@ -158,7 +155,7 @@ public class RubyInstanceConfig {
                 newJRubyHome = verifyHome(newJRubyHome, error);
             } else {
                 // otherwise fall back on system temp location
-                newJRubyHome = SafePropertyAccessor.getProperty("java.io.tmpdir");
+                newJRubyHome = System.getProperty("java.io.tmpdir", null);
             }
         }
 
@@ -181,7 +178,7 @@ public class RubyInstanceConfig {
             return home;
         }
         if (home.equals(".")) {
-            home = SafePropertyAccessor.getProperty("user.dir");
+            home = System.getProperty("user.dir", null);
         }
         else if (home.startsWith("cp:")) {
             home = home.substring(3);
@@ -194,7 +191,7 @@ public class RubyInstanceConfig {
         else if (!home.contains(".jar!/") && !home.startsWith("uri:")) {
             File file = new File(home);
             if (!file.exists()) {
-                final String tmpdir = SafePropertyAccessor.getProperty("java.io.tmpdir");
+                final String tmpdir = System.getProperty("java.io.tmpdir", null);
                 error.println("Warning: JRuby home \"" + file + "\" does not exist, using " + tmpdir);
                 return tmpdir;
             }

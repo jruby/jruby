@@ -31,7 +31,6 @@ package org.jruby.truffle.options;
 import org.jruby.truffle.core.string.StringSupport;
 import org.jruby.truffle.util.KCode;
 import org.jruby.truffle.util.MainExitException;
-import org.jruby.truffle.util.SafePropertyAccessor;
 
 import java.io.File;
 import java.io.IOException;

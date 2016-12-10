@@ -145,7 +145,7 @@ public class Platform {
             return CPU.ARM;
         } else if ("universal".equals(archString)) {
             // OS X OpenJDK7 builds report "universal" right now
-            String bits = SafePropertyAccessor.getProperty("sun.arch.data.model");
+            String bits = System.getProperty("sun.arch.data.model", null);
             if ("32".equals(bits)) {
                 System.setProperty("os.arch", "i386");
                 return CPU.I386;

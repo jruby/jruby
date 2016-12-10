@@ -27,7 +27,6 @@ package org.jruby.truffle.options;
 
 import org.jruby.truffle.RubyLanguage;
 import org.jruby.truffle.util.Platform;
-import org.jruby.truffle.util.SafePropertyAccessor;
 
 /**
  * Utility methods to generate the command-line output strings for help,
@@ -107,9 +106,9 @@ public class OutputStrings {
                 RubyLanguage.RUBY_VERSION,
                 RubyLanguage.COMPILE_DATE,
                 "unknown",
-                SafePropertyAccessor.getProperty("java.vm.name", "Unknown JVM"),
-                SafePropertyAccessor.getProperty("java.vm.version", "Unknown JVM version"),
-                SafePropertyAccessor.getProperty("java.runtime.version", SafePropertyAccessor.getProperty("java.version", "Unknown version")),
+                System.getProperty("java.vm.name", "Unknown JVM"),
+                System.getProperty("java.vm.version", "Unknown JVM version"),
+                System.getProperty("java.runtime.version", System.getProperty("java.version", "Unknown version")),
                 "",
                 "",
                 Platform.getOSName(),
