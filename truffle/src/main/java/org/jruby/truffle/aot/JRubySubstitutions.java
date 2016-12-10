@@ -13,25 +13,12 @@
  */
 package org.jruby.truffle.aot;
 
-import com.oracle.truffle.api.source.Source;
 import org.jcodings.exception.InternalException;
-import org.jruby.truffle.RubyLanguage;
-import org.jruby.truffle.language.loader.SourceLoader;
 
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 
 // Checkstyle: stop
-
-final class Target_org_jruby_truffle_core_TruffleSystemNodes_FullMemoryBarrierPrimitiveNode  {
-    static void fullFence() {
-        throw new UnsupportedOperationException();
-    }
-}
 
 final class Target_org_jcodings_Encoding {
     static org.jcodings.Encoding load(String name) {
@@ -50,23 +37,6 @@ final class Target_org_jcodings_util_ArrayReader {
             throw new InternalException(("entry: /tables/" + name + ".bin not found"));
         }
         return new DataInputStream(new ByteArrayInputStream(table));
-    }
-}
-
-@SuppressWarnings("static-method")
-final class Target_org_jruby_truffle_language_loader_SourceLoader {
-    Source loadResource(String path) throws IOException {
-        if (!(path.startsWith(SourceLoader.TRUFFLE_SCHEME) || path.startsWith(SourceLoader.JRUBY_SCHEME))) {
-            throw new UnsupportedOperationException();
-        }
-
-        final String canonicalPath = JRubySourceLoaderSupport.canonicalizeResourcePath(path);
-        final JRubySourceLoaderSupport.CoreLibraryFile coreFile = JRubySourceLoaderSupport.allCoreLibraryFiles.get(canonicalPath);
-        if (coreFile == null) {
-            throw new FileNotFoundException(path);
-        }
-
-        return Source.newBuilder(new InputStreamReader(new ByteArrayInputStream(coreFile.code), StandardCharsets.UTF_8)).name(path).mimeType(RubyLanguage.MIME_TYPE).build();
     }
 }
 

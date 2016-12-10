@@ -19,24 +19,4 @@
       }
     ]
   },
-  {
-    "annotatedClass": "org.jruby.truffle.aot.Target_org_jruby_truffle_language_loader_SourceLoader",
-    "originalClass": "org.jruby.truffle.language.loader.SourceLoader",
-    "methods": [
-      {
-        "annotatedName": "loadResource",
-        "substitute": true
-      }
-    ]
-  },
-  {
-    "annotatedClass": "org.jruby.truffle.aot.Target_org_jruby_truffle_core_TruffleSystemNodes_FullMemoryBarrierPrimitiveNode",
-    "originalClass": "org.jruby.truffle.core.TruffleSystemNodes.FullMemoryBarrierPrimitiveNode",
-    "methods": [
-      {
-        "annotatedName": "fullFence",
-        "substitute": true
-      }
-    ]
-  },
 ]

@@ -10,11 +10,13 @@
 package org.jruby.truffle.language.loader;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.TruffleOptions;
 import com.oracle.truffle.api.source.Source;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.RubyLanguage;
 import org.jruby.truffle.core.string.StringUtils;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -75,31 +77,45 @@ public class SourceLoader {
 
     @TruffleBoundary
     private Source loadResource(String path) throws IOException {
-        if (!path.toLowerCase(Locale.ENGLISH).endsWith(".rb")) {
-            throw new FileNotFoundException(path);
-        }
+        if (TruffleOptions.AOT) {
+            if (!(path.startsWith(SourceLoader.TRUFFLE_SCHEME) || path.startsWith(SourceLoader.JRUBY_SCHEME))) {
+                throw new UnsupportedOperationException();
+            }
 
-        final Class<?> relativeClass;
-        final Path relativePath;
+            final String canonicalPath = JRubySourceLoaderSupport.canonicalizeResourcePath(path);
+            final JRubySourceLoaderSupport.CoreLibraryFile coreFile = JRubySourceLoaderSupport.allCoreLibraryFiles.get(canonicalPath);
+            if (coreFile == null) {
+                throw new FileNotFoundException(path);
+            }
 
-        if (path.startsWith(TRUFFLE_SCHEME)) {
-            relativeClass = RubyContext.class;
-            relativePath = FileSystems.getDefault().getPath(path.substring(TRUFFLE_SCHEME.length()));
-        } else if (path.startsWith(JRUBY_SCHEME)) {
-            relativeClass = jrubySchemeRelativeClass();
-            relativePath = FileSystems.getDefault().getPath(path.substring(JRUBY_SCHEME.length()));
+            return Source.newBuilder(new InputStreamReader(new ByteArrayInputStream(coreFile.code), StandardCharsets.UTF_8)).name(path).mimeType(RubyLanguage.MIME_TYPE).build();
         } else {
-            throw new UnsupportedOperationException();
+            if (!path.toLowerCase(Locale.ENGLISH).endsWith(".rb")) {
+                throw new FileNotFoundException(path);
+            }
+
+            final Class<?> relativeClass;
+            final Path relativePath;
+
+            if (path.startsWith(TRUFFLE_SCHEME)) {
+                relativeClass = RubyContext.class;
+                relativePath = FileSystems.getDefault().getPath(path.substring(TRUFFLE_SCHEME.length()));
+            } else if (path.startsWith(JRUBY_SCHEME)) {
+                relativeClass = jrubySchemeRelativeClass();
+                relativePath = FileSystems.getDefault().getPath(path.substring(JRUBY_SCHEME.length()));
+            } else {
+                throw new UnsupportedOperationException();
+            }
+
+            final Path normalizedPath = relativePath.normalize();
+            final InputStream stream = relativeClass.getResourceAsStream(StringUtils.replace(normalizedPath.toString(), '\\', '/'));
+
+            if (stream == null) {
+                throw new FileNotFoundException(path);
+            }
+
+            return Source.newBuilder(new InputStreamReader(stream, StandardCharsets.UTF_8)).name(path).mimeType(RubyLanguage.MIME_TYPE).build();
         }
-
-        final Path normalizedPath = relativePath.normalize();
-        final InputStream stream = relativeClass.getResourceAsStream(StringUtils.replace(normalizedPath.toString(), '\\', '/'));
-
-        if (stream == null) {
-            throw new FileNotFoundException(path);
-        }
-
-        return Source.newBuilder(new InputStreamReader(stream, StandardCharsets.UTF_8)).name(path).mimeType(RubyLanguage.MIME_TYPE).build();
     }
 
     private static Class<?> jrubySchemeRelativeClass() {

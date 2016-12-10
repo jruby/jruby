@@ -38,7 +38,10 @@
  */
 package org.jruby.truffle.core;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.TruffleOptions;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
@@ -114,25 +117,30 @@ public abstract class TruffleSystemNodes {
 
         @Specialization
         public Object fullMemoryBarrier() {
-            fullFence();
+            if (TruffleOptions.AOT) {
+                throw new UnsupportedOperationException();
+            } else {
+                U.fullFence();
+            }
+
             return nil();
         }
 
         private static final sun.misc.Unsafe U = loadUnsafe();
 
         private static sun.misc.Unsafe loadUnsafe() {
-            try {
-                Class<?> unsafeClass = Class.forName("sun.misc.Unsafe");
-                Field f = unsafeClass.getDeclaredField("theUnsafe");
-                f.setAccessible(true);
-                return (sun.misc.Unsafe) f.get(null);
-            } catch (Throwable e) {
-                throw new UnsupportedOperationException(e);
+            if (TruffleOptions.AOT) {
+                return null;
+            } else {
+                try {
+                    Class<?> unsafeClass = Class.forName("sun.misc.Unsafe");
+                    Field f = unsafeClass.getDeclaredField("theUnsafe");
+                    f.setAccessible(true);
+                    return (sun.misc.Unsafe) f.get(null);
+                } catch (Throwable e) {
+                    throw new UnsupportedOperationException(e);
+                }
             }
-        }
-
-        private static void fullFence() {
-            U.fullFence();
         }
 
     }

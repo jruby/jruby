@@ -11,10 +11,11 @@
  * Some of the code in this class is modified from org.jruby.util.StringSupport,
  * licensed under the same EPL1.0/GPL 2.0/LGPL 2.1 used throughout.
  */
-package org.jruby.truffle.aot;
+package org.jruby.truffle.language.loader;
 
 import com.oracle.truffle.api.source.Source;
-import org.jruby.truffle.language.loader.SourceLoader;
+import org.jruby.truffle.aot.RootedFileVisitor;
+import org.jruby.truffle.aot.SimpleRootedFileVisitor;
 
 import java.io.IOException;
 import java.io.Reader;
