@@ -5,7 +5,7 @@ set -x
 
 unset GEM_HOME GEM_PATH
 
-bin/jruby bin/gem install bundler
+jt ruby -rbundler-workarounds bin/gem install bundler
 
 git clone \
     --branch master \
@@ -13,4 +13,3 @@ git clone \
     ../jruby-truffle-gem-test-pack
 
 test/truffle/gem-test-pack-checkout-revision.sh
-
