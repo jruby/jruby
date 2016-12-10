@@ -61,7 +61,7 @@
   },
   {
     "annotatedClass": "org.jruby.truffle.aot.Target_org_jruby_truffle_core_string_StringSupport",
-    "originalClass": "org.jruby.util.StringSupport",
+    "originalClass": "org.jruby.truffle.core.string.StringSupport",
     "fields": [
       {
         "annotatedName": "ARRAY_BYTE_BASE_OFFSET",
@@ -70,8 +70,8 @@
     ]
   },
   {
-    "annotatedClass": "org.jruby.truffle.aot.Target_org_jruby_util_unsafe_UnsafeHolder",
-    "originalClass": "org.jruby.util.unsafe.UnsafeHolder",
+    "annotatedClass": "org.jruby.truffle.aot.Target_org_jruby_truffle_util_UnsafeHolder",
+    "originalClass": "org.jruby.truffle.util.UnsafeHolder",
     "methods": [
       {
         "annotatedName": "fullFence",
