@@ -159,6 +159,7 @@ public class ConvertDouble {
         }
 
         static class LightweightNumberFormatException extends NumberFormatException {
+            private static final long serialVersionUID = 8405843059834590L;
             public LightweightNumberFormatException(String message) {
                 super(message);
             }

@@ -75,6 +75,7 @@ public class Dir {
         return s;
     }
 
+    @SuppressWarnings("fallthrough")
     private static int fnmatch_helper(byte[] bytes, int pstart, int pend, byte[] string, int sstart, int send, int flags) {
         char test;
         int s = sstart;
