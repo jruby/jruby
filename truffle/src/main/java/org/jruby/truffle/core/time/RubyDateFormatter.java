@@ -509,11 +509,11 @@ public class RubyDateFormatter {
                     formatter = RubyTimeOutputFormatter.DEFAULT_FORMATTER; // no more formatting
                     break;
                 case FORMAT_WEEKYEAR:
-                    value = getWeekYear(dt);
+                    value = GregorianCalendar.from(dt).getWeekYear();
                     type = (value >= 0) ? NUMERIC4 : NUMERIC5;
                     break;
                 case FORMAT_WEEKYEAR_SHORT:
-                    value = getWeekYear(dt) % 100;
+                    value = GregorianCalendar.from(dt).getWeekYear() % 100;
                     type = NUMERIC2;
                     break;
                 case FORMAT_MICROSEC_EPOCH:
@@ -539,13 +539,6 @@ public class RubyDateFormatter {
         }
 
         return toAppendTo;
-    }
-
-    private int getWeekYear(ZonedDateTime dt) {
-        Calendar dtCalendar = GregorianCalendar.from(dt);
-        dtCalendar.setFirstDayOfWeek(Calendar.MONDAY);
-        dtCalendar.setMinimalDaysInFirstWeek(4);
-        return dtCalendar.getWeekYear();
     }
 
     private int formatWeekOfYear(ZonedDateTime dt, int firstDayOfWeek) {
