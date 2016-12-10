@@ -22,7 +22,7 @@ import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.loader.SourceLoader;
 import org.jruby.truffle.util.SourceSectionUtils;
-import org.jruby.truffle.util.StringUtils;
+import org.jruby.truffle.core.string.StringUtils;
 
 import java.io.PrintWriter;
 import java.util.ArrayList;

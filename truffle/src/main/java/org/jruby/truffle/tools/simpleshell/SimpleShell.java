@@ -23,7 +23,7 @@ import org.jruby.truffle.language.backtrace.BacktraceFormatter;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.loader.CodeLoader;
 import org.jruby.truffle.parser.ParserContext;
-import org.jruby.truffle.util.StringUtils;
+import org.jruby.truffle.core.string.StringUtils;
 
 import java.io.IOException;
 import java.util.Collections;

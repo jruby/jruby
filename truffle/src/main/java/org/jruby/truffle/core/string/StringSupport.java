@@ -32,13 +32,8 @@ import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.util.IntHash;
 import org.joni.Matcher;
-import org.jruby.truffle.util.ByteListHolder;
-import org.jruby.truffle.util.CodeRangeSupport;
-import org.jruby.truffle.util.CodeRangeable;
-import org.jruby.truffle.util.EncodingUtils;
 import org.jruby.truffle.util.IntHashMap;
 import org.jruby.truffle.util.UnsafeHolder;
-import org.jruby.truffle.util.ByteList;
 import sun.misc.Unsafe;
 
 import java.util.ArrayList;

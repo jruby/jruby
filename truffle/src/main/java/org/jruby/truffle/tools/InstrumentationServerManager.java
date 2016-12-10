@@ -23,7 +23,7 @@ import org.jruby.truffle.language.backtrace.Backtrace;
 import org.jruby.truffle.language.backtrace.BacktraceFormatter;
 import org.jruby.truffle.language.control.JavaException;
 import org.jruby.truffle.tools.simpleshell.SimpleShell;
-import org.jruby.truffle.util.StringUtils;
+import org.jruby.truffle.core.string.StringUtils;
 
 import java.io.IOException;
 import java.io.OutputStream;

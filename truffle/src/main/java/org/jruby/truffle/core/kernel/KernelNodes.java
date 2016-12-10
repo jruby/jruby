@@ -142,7 +142,7 @@ import org.jruby.truffle.language.threadlocal.ThreadLocalObject;
 import org.jruby.truffle.parser.ParserContext;
 import org.jruby.truffle.parser.TranslatorDriver;
 import org.jruby.truffle.platform.UnsafeGroup;
-import org.jruby.truffle.util.StringUtils;
+import org.jruby.truffle.core.string.StringUtils;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;

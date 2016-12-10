@@ -32,7 +32,7 @@ import org.jruby.truffle.core.regexp.RegexpOptions;
 import org.jruby.truffle.parser.ast.RegexpParseNode;
 import org.jruby.truffle.parser.parser.Tokens;
 import org.jruby.truffle.util.KCode;
-import org.jruby.truffle.util.ByteList;
+import org.jruby.truffle.core.string.ByteList;
 
 import java.io.IOException;
 

@@ -18,7 +18,7 @@ import org.jruby.truffle.Layouts;
 import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.interop.RubyMessageResolutionAccessor;
-import org.jruby.truffle.util.StringUtils;
+import org.jruby.truffle.core.string.StringUtils;
 
 public class RubyObjectType extends ObjectType {
 

@@ -23,7 +23,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
-package org.jruby.truffle.util;
+package org.jruby.truffle.core.string;
 
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
@@ -36,8 +36,10 @@ import org.jcodings.specific.UTF32LEEncoding;
 import org.jcodings.transcode.EConv;
 import org.jcodings.transcode.EConvFlags;
 import org.jcodings.unicode.UnicodeEncoding;
+import org.jruby.truffle.core.string.ByteListHolder;
 import org.jruby.truffle.core.string.StringSupport;
-import org.jruby.truffle.util.ByteList;
+import org.jruby.truffle.core.string.ByteList;
+import org.jruby.truffle.util.Platform;
 
 import java.util.ArrayList;
 import java.util.List;

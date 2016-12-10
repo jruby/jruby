@@ -96,7 +96,7 @@ import org.jruby.truffle.parser.ParserContext;
 import org.jruby.truffle.parser.Translator;
 import org.jruby.truffle.platform.UnsafeGroup;
 import org.jruby.truffle.util.IdUtil;
-import org.jruby.truffle.util.StringUtils;
+import org.jruby.truffle.core.string.StringUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;

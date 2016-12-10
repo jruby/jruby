@@ -24,9 +24,7 @@
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
 
-package org.jruby.truffle.util;
-
-import org.jruby.truffle.core.string.StringSupport;
+package org.jruby.truffle.core.string;
 
 public final class CodeRangeSupport {
 

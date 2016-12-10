@@ -9,7 +9,7 @@
  */
 package org.jruby.truffle.language.backtrace;
 
-import org.jruby.truffle.util.StringUtils;
+import org.jruby.truffle.core.string.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;

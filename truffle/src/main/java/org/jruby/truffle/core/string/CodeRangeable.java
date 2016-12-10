@@ -24,12 +24,17 @@
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
 
-package org.jruby.truffle.util;
+package org.jruby.truffle.core.string;
 
-import org.jruby.truffle.util.ByteList;
+import org.jcodings.Encoding;
 
-public interface ByteListHolder {
-    ByteList getByteList();
-    void modify();
-    void modify(int length);
+public interface CodeRangeable extends ByteListHolder {
+    int getCodeRange();
+    int scanForCodeRange();
+    boolean isCodeRangeValid();
+    void setCodeRange(int codeRange);
+    void clearCodeRange();
+    void keepCodeRange();
+    void modifyAndKeepCodeRange();
+    Encoding checkEncoding(CodeRangeable other);
 }

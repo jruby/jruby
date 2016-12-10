@@ -31,7 +31,7 @@ package org.jruby.truffle.parser.lexer;
 
 import org.jcodings.Encoding;
 import org.jruby.truffle.parser.parser.Tokens;
-import org.jruby.truffle.util.ByteList;
+import org.jruby.truffle.core.string.ByteList;
 
 import static org.jruby.truffle.parser.lexer.LexingCommon.EOF;
 import static org.jruby.truffle.parser.lexer.LexingCommon.STR_FUNC_EXPAND;

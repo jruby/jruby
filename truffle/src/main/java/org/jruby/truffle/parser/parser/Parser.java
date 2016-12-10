@@ -41,7 +41,7 @@ import org.jruby.truffle.parser.lexer.LexerSource;
 import org.jruby.truffle.parser.lexer.SyntaxException;
 import org.jruby.truffle.parser.scope.DynamicScope;
 import org.jruby.truffle.util.LoadServiceResourceInputStream;
-import org.jruby.truffle.util.ByteList;
+import org.jruby.truffle.core.string.ByteList;
 
 import java.io.IOException;
 import java.io.InputStream;

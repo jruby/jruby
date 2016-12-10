@@ -7,7 +7,7 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.util;
+package org.jruby.truffle.core.string;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 

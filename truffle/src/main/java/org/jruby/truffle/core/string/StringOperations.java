@@ -44,7 +44,6 @@ import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.language.RubyGuards;
-import org.jruby.truffle.util.ByteList;
 
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;

@@ -15,9 +15,6 @@ import org.jcodings.Encoding;
 import org.jruby.truffle.core.encoding.EncodingNodes;
 import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.language.RubyGuards;
-import org.jruby.truffle.util.CodeRangeable;
-import org.jruby.truffle.util.StringUtils;
-import org.jruby.truffle.util.ByteList;
 
 public class StringCodeRangeableWrapper implements CodeRangeable {
 

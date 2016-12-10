@@ -270,8 +270,8 @@ import org.jruby.truffle.platform.graal.AssertConstantNodeGen;
 import org.jruby.truffle.platform.graal.AssertNotCompiledNodeGen;
 import org.jruby.truffle.tools.ChaosNodeGen;
 import org.jruby.truffle.util.SourceSectionUtils;
-import org.jruby.truffle.util.StringUtils;
-import org.jruby.truffle.util.ByteList;
+import org.jruby.truffle.core.string.StringUtils;
+import org.jruby.truffle.core.string.ByteList;
 
 import java.io.File;
 import java.math.BigInteger;

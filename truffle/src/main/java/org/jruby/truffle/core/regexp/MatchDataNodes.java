@@ -41,8 +41,8 @@ import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.util.StringUtils;
-import org.jruby.truffle.util.ByteList;
+import org.jruby.truffle.core.string.StringUtils;
+import org.jruby.truffle.core.string.ByteList;
 
 import java.util.Arrays;
 
