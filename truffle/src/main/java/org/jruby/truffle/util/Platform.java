@@ -27,7 +27,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.util;
 
-import java.nio.ByteOrder;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -36,26 +35,17 @@ import java.util.regex.Pattern;
  *
  */
 public class Platform {
-    private static final java.util.Locale LOCALE = java.util.Locale.ENGLISH;
     public static final CPU_TYPE CPU = determineCPU();
     public static final OS_TYPE OS = determineOS();
 
-    public static final String LIBPREFIX = OS == OS.WINDOWS ? "" : "lib";
+    public static final String LIBPREFIX = OS == OS_TYPE.WINDOWS ? "" : "lib";
     public static final String LIBSUFFIX = determineLibExt();
     public static final String LIBC = determineLibC();
-    
-    public static final int BIG_ENDIAN = 4321;
-    public static final int LITTLE_ENDIAN = 1234;
-    public static final int BYTE_ORDER = ByteOrder.nativeOrder().equals(ByteOrder.BIG_ENDIAN) ? BIG_ENDIAN : LITTLE_ENDIAN;
-
 
     public static final boolean IS_WINDOWS = OS.equals(OS_TYPE.WINDOWS);
     public static final boolean IS_BSD = OS.equals(OS_TYPE.WINDOWS);
 
-    protected final int addressSize, longSize;
-    private final long addressMask;
     protected final Pattern libPattern;
-    private final int javaVersionMajor;
 
     public enum OS_TYPE {
         DARWIN,
@@ -69,7 +59,7 @@ public class Platform {
 
         UNKNOWN;
         @Override
-        public String toString() { return name().toLowerCase(LOCALE); }
+        public String toString() { return name().toLowerCase(java.util.Locale.ENGLISH); }
     }
 
     public enum CPU_TYPE {
@@ -84,7 +74,7 @@ public class Platform {
         ARM,
         UNKNOWN;
         @Override
-        public String toString() { return name().toLowerCase(LOCALE); }
+        public String toString() { return name().toLowerCase(java.util.Locale.ENGLISH); }
     }
 
     private static final class SingletonHolder {
@@ -124,37 +114,37 @@ public class Platform {
     }
 
     private static final CPU_TYPE determineCPU() {
-        String archString = System.getProperty("os.arch").toLowerCase(LOCALE);
+        String archString = System.getProperty("os.arch").toLowerCase(java.util.Locale.ENGLISH);
         if ("x86".equals(archString) || "i386".equals(archString) || "i86pc".equals(archString)) {
-            return CPU.I386;
+            return CPU_TYPE.I386;
         } else if ("x86_64".equals(archString) || "amd64".equals(archString)) {
-            return CPU.X86_64;
+            return CPU_TYPE.X86_64;
         } else if ("ppc".equals(archString) || "powerpc".equals(archString)) {
-            return CPU.POWERPC;
+            return CPU_TYPE.POWERPC;
         } else if ("ppc64".equals(archString)) {
-            return CPU.POWERPC64;
+            return CPU_TYPE.POWERPC64;
         } else if ("ppc64le".equals(archString)) {
-            return CPU.POWERPC64LE;
+            return CPU_TYPE.POWERPC64LE;
         } else if ("sparc".equals(archString)) {
-            return CPU.SPARC;
+            return CPU_TYPE.SPARC;
         } else if ("sparcv9".equals(archString)) {
-            return CPU.SPARCV9;
+            return CPU_TYPE.SPARCV9;
         } else if ("s390x".equals(archString)) {
-            return CPU.S390X;
+            return CPU_TYPE.S390X;
         } else if ("arm".equals(archString)) {
-            return CPU.ARM;
+            return CPU_TYPE.ARM;
         } else if ("universal".equals(archString)) {
             // OS X OpenJDK7 builds report "universal" right now
             String bits = System.getProperty("sun.arch.data.model", null);
             if ("32".equals(bits)) {
                 System.setProperty("os.arch", "i386");
-                return CPU.I386;
+                return CPU_TYPE.I386;
             } else if ("64".equals(bits)) {
                 System.setProperty("os.arch", "x86_64");
-                return CPU.X86_64;
+                return CPU_TYPE.X86_64;
             }
         }
-        return CPU.UNKNOWN;
+        return CPU_TYPE.UNKNOWN;
     }
 
     private static final String determineLibC() {
@@ -188,28 +178,6 @@ public class Platform {
     }
 
     protected Platform(OS_TYPE os) {
-        int dataModel = Integer.getInteger("sun.arch.data.model");
-        if (dataModel != 32 && dataModel != 64) {
-            switch (CPU) {
-                case I386:
-                case POWERPC:
-                case SPARC:
-                    dataModel = 32;
-                    break;
-                case X86_64:
-                case POWERPC64:
-                case POWERPC64LE:
-                case SPARCV9:
-                case S390X:
-                    dataModel = 64;
-                    break;
-                default:
-                    dataModel = 0;
-            }
-        }
-        addressSize = dataModel;
-        addressMask = addressSize == 32 ? 0xffffffffL : 0xffffffffffffffffL;
-        longSize = os == OS.WINDOWS ? 32 : addressSize; // Windows is LLP64
         String libpattern = null;
         switch (os) {
             case WINDOWS:
@@ -236,7 +204,6 @@ public class Platform {
         } catch (Exception ex) {
             version = 0;
         }
-        javaVersionMajor = version;
     }
 
     /**
@@ -258,78 +225,6 @@ public class Platform {
     }
 
     /**
-     * Gets the current processor architecture the JVM is running on.
-     *
-     * @return A <tt>CPU</tt> value representing the current processor architecture.
-     */
-    public final CPU_TYPE getCPU() {
-        return CPU;
-    }
-
-    /**
-     * Gets the version of the Java Virtual Machine (JVM) jffi is running on.
-     *
-     * @return A number representing the java version.  e.g. 5 for java 1.5, 6 for java 1.6
-     */
-    public final int getJavaMajorVersion() {
-        return javaVersionMajor;
-    }
-    public final boolean isBSD() {
-        return OS == OS.FREEBSD || OS == OS.OPENBSD || OS == OS.NETBSD || OS == OS.DARWIN;
-    }
-    public final boolean isUnix() {
-        return OS != OS.WINDOWS;
-    }
-    public final boolean isSupported() {
-        return OS != OS.UNKNOWN 
-                && CPU != CPU.UNKNOWN
-                && (addressSize == 32 || addressSize == 64)
-                && javaVersionMajor >= 5;
-    }
-    /**
-     * An extension over <code>System.getProperty</code> method.
-     * Handles security restrictions, and returns the default
-     * value if the access to the property is restricted.
-     * @param property The system property name.
-     * @param defValue The default value.
-     * @return The value of the system property,
-     *         or the default value.
-     */
-    public static String getProperty(String property, String defValue) {
-        try {
-            return System.getProperty(property, defValue);
-        } catch (SecurityException se) {
-            return defValue;
-        }
-    }
-    /**
-     * Gets the size of a C 'long' on the native platform.
-     *
-     * @return the size of a long in bits
-     */
-    public final int longSize() {
-        return longSize;
-    }
-
-    /**
-     * Gets the size of a C address/pointer on the native platform.
-     *
-     * @return the size of a pointer in bits
-     */
-    public final int addressSize() {
-        return addressSize;
-    }
-    
-    /**
-     * Gets the 32/64bit mask of a C address/pointer on the native platform.
-     *
-     * @return the size of a pointer in bits
-     */
-    public final long addressMask() {
-        return addressMask;
-    }
-
-    /**
      * Gets the name of this <tt>Platform</tt>.
      *
      * @return The name of this platform.
@@ -338,15 +233,6 @@ public class Platform {
         return CPU + "-" + OS;
     }
 
-    public String mapLibraryName(String libName) {
-        //
-        // A specific version was requested - use as is for search
-        //
-        if (libPattern.matcher(libName).find()) {
-            return libName;
-        }
-        return System.mapLibraryName(libName);
-    }
     private static class Supported extends Platform {
         public Supported(OS_TYPE os) {
             super(os);
@@ -370,18 +256,7 @@ public class Platform {
     private static final class Darwin extends Supported {
 
         public Darwin() {
-            super(OS.DARWIN);
-        }
-
-        @Override
-        public String mapLibraryName(String libName) {
-            //
-            // A specific version was requested - use as is for search
-            //
-            if (libPattern.matcher(libName).find()) {
-                return libName;
-            }
-            return "lib" + libName + ".dylib";
+            super(OS_TYPE.DARWIN);
         }
     }
 
@@ -391,15 +266,7 @@ public class Platform {
     private static final class Linux extends Supported {
 
         public Linux() {
-            super(OS.LINUX);
-        }
-
-        
-        @Override
-        public String mapLibraryName(String libName) {
-            // Older JDK on linux map 'c' to 'libc.so' which doesn't work
-            return "c".equals(libName) || "libc.so".equals(libName)
-                    ? "libc.so.6" : super.mapLibraryName(libName);
+            super(OS_TYPE.LINUX);
         }
     }
 
@@ -409,14 +276,7 @@ public class Platform {
     private static final class AIX extends Supported {
 
         public AIX() {
-            super(OS.AIX);
-        }
-
-
-        @Override
-        public String mapLibraryName(String libName) {
-            return "c".equals(libName) || "libc.so".equals(libName)
-                    ? LIBC : super.mapLibraryName(libName);
+            super(OS_TYPE.AIX);
         }
     }
 
@@ -426,14 +286,14 @@ public class Platform {
     private static class Windows extends Supported {
 
         public Windows() {
-            super(OS.WINDOWS);
+            super(OS_TYPE.WINDOWS);
         }
     }
 
     private static boolean startsWithIgnoreCase(String s1, String s2) {
         return s1.startsWith(s2)
-            || s1.toUpperCase(LOCALE).startsWith(s2.toUpperCase(LOCALE))
-            || s1.toLowerCase(LOCALE).startsWith(s2.toLowerCase(LOCALE));
+            || s1.toUpperCase(java.util.Locale.ENGLISH).startsWith(s2.toUpperCase(java.util.Locale.ENGLISH))
+            || s1.toLowerCase(java.util.Locale.ENGLISH).startsWith(s2.toLowerCase(java.util.Locale.ENGLISH));
     }
 
     public static String getOSName() {

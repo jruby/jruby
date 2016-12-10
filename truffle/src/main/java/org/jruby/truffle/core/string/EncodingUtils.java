@@ -36,11 +36,9 @@ import org.jcodings.specific.UTF32LEEncoding;
 import org.jcodings.transcode.EConv;
 import org.jcodings.transcode.EConvFlags;
 import org.jcodings.unicode.UnicodeEncoding;
-import org.jruby.truffle.core.string.ByteListHolder;
-import org.jruby.truffle.core.string.StringSupport;
-import org.jruby.truffle.core.string.ByteList;
 import org.jruby.truffle.util.Platform;
 
+import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -174,16 +172,6 @@ public class EncodingUtils {
          * @return true if the character was successfully replaced; false otherwise
          */
         boolean call(State context, Data fallback, EConv ec);
-    }
-
-    public static Encoding getUTF16ForPlatform() {
-        Encoding encoding;// This may be inefficient if we aren't matching endianness right
-        if (Platform.BYTE_ORDER == Platform.LITTLE_ENDIAN) {
-            encoding = UTF16LEEncoding.INSTANCE;
-        } else {
-            encoding = UTF16BEEncoding.INSTANCE;
-        }
-        return encoding;
     }
 
     public static void strBufCat(ByteList str, byte[] ptrBytes, int ptr, int len) {
