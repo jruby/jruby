@@ -570,6 +570,7 @@ public class ArgumentProcessor {
         throw mee;
     }
 
+    @SuppressWarnings("fallthrough")
     private void processEncodingOption(String value) {
         List<String> encodings = StringSupport.split(value, ':', 3);
         switch (encodings.size()) {
@@ -577,10 +578,8 @@ public class ArgumentProcessor {
                 throw new MainExitException(1, "extra argument for -E: " + encodings.get(2));
             case 2:
                 config.setInternalEncoding(encodings.get(1));
-                break;
             case 1:
                 config.setExternalEncoding(encodings.get(0));
-                break;
             // Zero is impossible
         }
     }
