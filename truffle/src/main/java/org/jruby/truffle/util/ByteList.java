@@ -218,23 +218,6 @@ public class ByteList implements CharSequence {
     }
 
     /**
-     * Delete len bytes from start index.  This does no bullet-proofing so it is your
-     * responsibility to ensure you do not run off the backing store array.
-     *
-     * @param start index to delete from
-     * @param len number of bytes to delete
-     */
-    public void delete(int start, int len) {
-        assert start >= begin && start < realSize : "'start' is at invalid index";
-        assert len >= 0 : "'len' must be positive";
-        assert start + len <= begin + realSize : "too many bytes requested";
-
-        realSize -= len;
-
-        System.arraycopy(bytes, start + len, bytes, start, realSize);
-    }
-
-    /**
      * Append the byte b up to len times onto the end of the current ByteList.
      *
      * @param b is byte to be appended
@@ -344,46 +327,6 @@ public class ByteList implements CharSequence {
     }
 
     /**
-     * Append up to length bytes from InputStream to the ByteList.   If no bytes are read from the
-     * stream then throw an IOException.
-     *
-     * @param input the stream to read bytes from
-     * @param length how many byte to try and read
-     * @return this instance
-     * @throws IOException when no bytes are read
-     */
-    public ByteList append(InputStream input, int length) throws IOException {
-        grow(length);
-        int read = 0;
-        int n;
-        int start = begin + realSize;
-        while (read < length) {
-            n = input.read(bytes, start + read, length - read);
-            if (n == -1) {
-                if (read == 0) throw new java.io.EOFException();
-                break;
-            }
-            read += n;
-        }
-
-        realSize += read;
-        return this;
-    }
-
-    /**
-     * Append contents of the supplied nio ByteList up to len length onto the end of this
-     * ByteBuffer.
-     *
-     * @param buffer to be appended
-     * @param len is number of bytes you hoping to get from the ByteBuffer
-     */
-    public void append(ByteBuffer buffer, int len) {
-        grow(len);
-        buffer.get(bytes, begin + realSize, len);
-        realSize += len;
-    }
-
-    /**
      * Append moreBytes onto the end of the current ByteList.
      *
      * @param moreBytes to be added.
@@ -484,76 +427,6 @@ public class ByteList implements CharSequence {
     }
 
     /**
-     * Replace all bytes in this ByteList with bytes from the given array.
-     *
-     * @param source bytes to use for replacement
-     */
-    public void replace(byte[] source) {
-        replace(0, realSize, source, 0, source.length);
-    }
-
-    /**
-     * Replace a region of bytes in this ByteList with bytes from the given ByteList.
-     *
-     * @param targetOff offset of target region in this ByteList
-     * @param targetLen length of target region in this ByteList
-     * @param source ByteList to use for replacement
-     */
-    public void replace(int targetOff, int targetLen, ByteList source) {
-        replace(targetOff, targetLen, source.bytes, source.begin, source.realSize);
-    }
-
-    /**
-     * Replace a region of bytes in this ByteList with bytes from the given array.
-     *
-     * @param targetOff offset of target region in this ByteList
-     * @param targetLen length of target region in this ByteList
-     * @param source bytes to use for replacement
-     */
-    public void replace(int targetOff, int targetLen, byte[] source) {
-        replace(targetOff, targetLen, source, 0, source.length);
-    }
-
-    /**
-     * Replace a region of bytes in this ByteList with a region of bytes from the given array.
-     *
-     * @param targetOff offset of target region in this ByteList
-     * @param targetLen length of target region in this ByteList
-     * @param source bytes to use for replacement
-     * @param sourceOff offset of source region in the replacement bytes
-     * @param sourceLen length of source region in the replacement bytes
-     */
-    public void replace(int targetOff, int targetLen, byte[] source, int sourceOff, int sourceLen) {
-        int newSize = realSize - targetLen + sourceLen;
-        ensure(newSize);
-        int tailSize = realSize - (targetLen + targetOff);
-        if (tailSize != 0) {
-            System.arraycopy(bytes,begin+targetOff+targetLen,bytes,begin+targetOff+sourceLen,tailSize);
-        }
-        if (sourceLen != 0) {
-            System.arraycopy(source,sourceOff,bytes,begin+targetOff,sourceLen);
-        }
-        realSize = newSize;
-    }
-
-    public void insert(int index, int b) {
-        grow(1);
-        System.arraycopy(bytes, index, bytes, index + 1, realSize - index);
-        bytes[index] = (byte)b;
-        realSize++;
-    }
-
-    /**
-     * Get the index of first occurrence of c in ByteList from the beginning of the ByteList.
-     *
-     * @param c byte to be looking for
-     * @return the index of the byte or -1 if not found
-     */
-    public int indexOf(int c) {
-        return indexOf(c, 0);
-    }
-
-    /**
      * Get the index of first occurrence of c in ByteList from the pos offset of the ByteList.
      *
      * @param c byte to be looking for
@@ -623,39 +496,6 @@ public class ByteList implements CharSequence {
         return -1;
     }
 
-    public boolean startsWith(ByteList other, int toffset) {
-        if (realSize == 0 || this.realSize < other.realSize + toffset) return false;
-
-        byte[]ta = bytes;
-        int to = begin + toffset;
-        byte[]pa = other.bytes;
-        int po = other.begin;
-        int pc = other.realSize;
-
-        while (--pc >= 0) if (ta[to++] != pa[po++]) return false;
-        return true;
-    }
-
-    /**
-     * Does this ByteList start with the supplied ByteList?
-     *
-     * @param other is the bytelist to compare with
-     * @return true is this ByteList starts with other
-     */
-    public boolean startsWith(ByteList other) {
-        return startsWith(other, 0);
-    }
-
-    /**
-     * Does this ByteList end with the supplied ByteList?
-     *
-     * @param other is the bytelist to compare with
-     * @return true is this ByteList starts with other
-     */
-    public boolean endsWith(ByteList other) {
-        return startsWith(other, realSize - other.realSize);
-    }
-
     /**
      * Does this ByteList equal the other ByteList?
      *
@@ -695,27 +535,6 @@ public class ByteList implements CharSequence {
             return first >= last;
         }
         return false;
-    }
-
-    /**
-     * This comparison matches MRI comparison of Strings (rb_str_cmp).
-     */
-    public int cmp(final ByteList other) {
-        if (other == this) return 0;
-        final int size = realSize;
-        final int len =  Math.min(size, other.realSize);
-        int offset = -1;
-        // a bit of VM/JIT weirdness here: though in most cases
-        // performance is improved if array references are kept in
-        // a local variable (saves an instruction per access, as I
-        // [slightly] understand it), in some cases, when two (or more?)
-        // arrays are being accessed, the member reference is actually
-        // faster.  this is one of those cases...
-        for (  ; ++offset < len && bytes[begin + offset] == other.bytes[other.begin + offset]; ) ;
-        if (offset < len) {
-            return (bytes[begin + offset]&0xFF) > (other.bytes[other.begin + offset]&0xFF) ? 1 : -1;
-        }
-        return size == other.realSize ? 0 : size == len ? -1 : 1;
     }
 
     /**
@@ -833,55 +652,6 @@ public class ByteList implements CharSequence {
         return bytes;
     }
 
-    /**
-     * Create a byte[] from a char[] assuming a raw/ISO-8859-1 encoding
-     *
-     * @param s the CharSequence to convert
-     * @return a byte[]
-     */
-    public static byte[] plain(char[] s) {
-        byte[] bytes = new byte[s.length];
-        for (int i = 0; i < s.length; i++) {
-            bytes[i] = (byte) s[i];
-        }
-        return bytes;
-    }
-
-    /**
-     * Create a char[] from a byte[] assuming a raw/ISO-8859-1 encoding
-     *
-     * @param b the source byte[]
-     * @param start index to start converting to char's
-     * @param length how many bytes to convert to char's
-     * @return a byte[]
-     */
-    public static char[] plain(byte[] b, int start, int length) {
-        assert b != null : "byte array cannot be null";
-        assert start >= 0 && start + length <= b.length : "Invalid start or start+length too long";
-
-        char[] chars = new char[length];
-        for (int i = 0; i < length; i++) {
-            chars[i] = (char) (b[start + i] & 0xFF);
-        }
-        return chars;
-    }
-
-    /**
-     * Create a char[] from a byte[] assuming a raw/ISO-8859-1 encoding
-     *
-     * @param b the source byte[]
-     * @return a byte[]
-     */
-    public static char[] plain(byte[] b) {
-        assert b != null : "byte array cannot be null";
-
-        char[] chars = new char[b.length];
-        for (int i = 0; i < b.length; i++) {
-            chars[i] = (char) (b[i] & 0xFF);
-        }
-        return chars;
-    }
-
     // Work around bad charset handling in JDK. See
     // http://halfbottle.blogspot.com/2009/07/charset-continued-i-wrote-about.html
     private static final ConcurrentMap<String,Charset> charsetsByAlias =
@@ -898,17 +668,6 @@ public class ByteList implements CharSequence {
      */
     public static String decode(byte[] data, int offset, int length, String charsetName) {
         return lookup(charsetName).decode(ByteBuffer.wrap(data, offset, length)).toString();
-    }
-
-    /**
-     * Decode byte data into a String with the supplied charsetName.
-     *
-     * @param data to be decoded
-     * @param charsetName used to make the resulting String
-     * @return the new String
-     */
-    public static String decode(byte[] data, String charsetName) {
-        return lookup(charsetName).decode(ByteBuffer.wrap(data)).toString();
     }
 
     /**
