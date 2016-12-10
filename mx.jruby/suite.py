@@ -145,12 +145,6 @@ suite = {
             "e2c76a19f00128bb1806207e2989139bfb45f49d",
             "201985f0f15af95f03494ab9ef0400e849090d6c",
             "MIT"),
-
-        "JODA_TIME": mavenLib(
-            "joda-time:joda-time:2.8.2",
-            "d27c24204c5e507b16fec01006b3d0f1ec42aed4",
-            "65dd2b998571ea61a3cee68c99a1dde729b14a7e",
-            "Apache-2.0"),
     },
 
     "projects": {
@@ -172,7 +166,6 @@ suite = {
                 "SNAKEYAML",
                 "JONI",
                 "JCODINGS",
-                "JODA_TIME",
             ],
             "annotationProcessors": ["truffle:TRUFFLE_DSL_PROCESSOR"],
             "javaCompliance": "1.8",
