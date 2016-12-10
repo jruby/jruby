@@ -13,6 +13,7 @@ import jnr.ffi.provider.MemoryManager;
 import org.jruby.truffle.core.queue.ArrayBlockingQueueLocksConditions;
 import org.jruby.truffle.core.queue.LinkedBlockingQueueLocksConditions;
 import org.jruby.truffle.platform.posix.ClockGetTime;
+import org.jruby.truffle.platform.posix.MallocFree;
 import org.jruby.truffle.platform.posix.Sockets;
 import org.jruby.truffle.platform.posix.TrufflePosix;
 import org.jruby.truffle.platform.signal.SignalManager;
@@ -30,6 +31,8 @@ public interface NativePlatform {
     Sockets getSockets();
 
     ClockGetTime getClockGetTime();
+
+    MallocFree getMallocFree();
 
     RubiniusConfiguration getRubiniusConfiguration();
 

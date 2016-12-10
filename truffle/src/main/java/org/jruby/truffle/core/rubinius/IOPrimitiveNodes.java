@@ -577,14 +577,14 @@ public abstract class IOPrimitiveNodes {
             final int fd = Layouts.IO.getDescriptor(io);
 
             final int[] addressLength = { 16 };
-            final long address = UnsafeHolder.U.allocateMemory(addressLength[0]);
+            final long address = getContext().getNativePlatform().getMallocFree().malloc(addressLength[0]);
 
             final int newFd;
 
             try {
                 newFd = ensureSuccessful(nativeSockets().accept(fd, memoryManager().newPointer(address), addressLength));
             } finally {
-                UnsafeHolder.U.freeMemory(address);
+                getContext().getNativePlatform().getMallocFree().free(address);
             }
 
             return newFd;

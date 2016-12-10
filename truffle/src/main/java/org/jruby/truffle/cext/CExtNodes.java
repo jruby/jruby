@@ -410,8 +410,8 @@ public class CExtNodes {
         public long toNativeHandle(DynamicObject object) {
             synchronized (handlesLock) {
                 return toNative.computeIfAbsent(object, (k) -> {
-                    final long handle = UnsafeHolder.U.allocateMemory(Long.BYTES);
-                    UnsafeHolder.U.putLong(handle, 0xdeadbeef);
+                    final long handle = getContext().getNativePlatform().getMallocFree().malloc(Long.BYTES);
+                    memoryManager().newPointer(handle).putLong(0, 0xdeadbeef);
                     System.err.printf("native handle 0x%x -> %s%n", handle, object);
                     toManaged.put(handle, object);
                     return handle;

@@ -71,7 +71,7 @@ public abstract class PointerPrimitiveNodes {
         @SuppressWarnings("restriction")
         @Specialization
         public DynamicObject malloc(DynamicObject pointerClass, long size) {
-            return allocateObjectNode.allocate(pointerClass, memoryManager().newPointer(UnsafeHolder.U.allocateMemory(size)));
+            return allocateObjectNode.allocate(pointerClass, memoryManager().newPointer(getContext().getNativePlatform().getMallocFree().malloc(size)));
         }
 
     }
@@ -82,7 +82,7 @@ public abstract class PointerPrimitiveNodes {
         @SuppressWarnings("restriction")
         @Specialization
         public DynamicObject free(DynamicObject pointer) {
-            UnsafeHolder.U.freeMemory(Layouts.POINTER.getPointer(pointer).address());
+            getContext().getNativePlatform().getMallocFree().free(Layouts.POINTER.getPointer(pointer).address());
             return pointer;
         }
 
