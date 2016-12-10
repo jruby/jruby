@@ -25,7 +25,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.options;
 
-import org.jruby.truffle.util.Constants;
+import org.jruby.truffle.RubyLanguage;
 import org.jruby.truffle.util.Platform;
 import org.jruby.truffle.util.SafePropertyAccessor;
 
@@ -103,10 +103,10 @@ public class OutputStrings {
         return String.format(
             "jruby%s %s (%s) %s %s %s %s on %s%s%s [%s-%s]",
                 "+truffle",
-                Constants.VERSION,
-                Constants.RUBY_VERSION,
-                Constants.COMPILE_DATE,
-                Constants.REVISION,
+                RubyLanguage.VERSION,
+                RubyLanguage.RUBY_VERSION,
+                RubyLanguage.COMPILE_DATE,
+                "unknown",
                 SafePropertyAccessor.getProperty("java.vm.name", "Unknown JVM"),
                 SafePropertyAccessor.getProperty("java.vm.version", "Unknown JVM version"),
                 SafePropertyAccessor.getProperty("java.runtime.version", SafePropertyAccessor.getProperty("java.version", "Unknown version")),

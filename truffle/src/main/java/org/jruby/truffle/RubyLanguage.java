@@ -21,13 +21,12 @@ import org.jruby.truffle.core.kernel.TraceManager;
 import org.jruby.truffle.language.LazyRubyRootNode;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.stdlib.CoverageManager;
-import org.jruby.truffle.util.Constants;
 
 import java.io.IOException;
 
 @TruffleLanguage.Registration(
         name = "Ruby",
-        version = Constants.RUBY_VERSION,
+        version = RubyLanguage.RUBY_VERSION,
         mimeType = RubyLanguage.MIME_TYPE)
 @ProvidedTags({
         CoverageManager.LineTag.class,
@@ -39,6 +38,13 @@ import java.io.IOException;
         StandardTags.CallTag.class
 })
 public class RubyLanguage extends TruffleLanguage<RubyContext> {
+
+    public static final String PLATFORM = "java";
+    public static final String RUBY_VERSION = "2.3.1";
+    public static final int    RUBY_REVISION = 54768;
+    public static final String COMPILE_DATE = "2016-12-03";
+    public static final String VERSION = "9.1.7.0-SNAPSHOT";
+    public static final String ENGINE = "jruby+truffle";
 
     public static final String MIME_TYPE = "application/x-ruby";
     public static final String EXTENSION = ".rb";
