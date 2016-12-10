@@ -410,7 +410,7 @@ test-ecosystem: ${gem-test-pack} {
   setup: ${common.setup} ${gem-test-pack.setup}
 
   run: [
-    [bin/jruby, bin/gem, install, "$GEM_HOME/cache/bundler-1.12.5.gem"],
+    ${jt} [ruby, -rbundler-workarounds, bin/gem, install, "$GEM_HOME/cache/bundler-1.12.5.gem"],
     ${jt} [test, ecosystem]
   ]
 }
