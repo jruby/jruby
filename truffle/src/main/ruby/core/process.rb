@@ -162,7 +162,14 @@ module Process
       raise "Did not find the main class in args" unless main_index
       needle = command[0...main_index]
       i = haystack.index("\x00\x00#{needle}")
-      raise "argv[0] not found" unless i
+      unless i
+        puts
+        p needle
+        puts
+        p haystack
+        puts
+        raise "argv[0] not found"
+      end
       i += 2
 
       @_argv0_max_length = needle.bytesize
