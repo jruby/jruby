@@ -40,7 +40,6 @@ import org.jruby.truffle.parser.lexer.GetsLexerSource;
 import org.jruby.truffle.parser.lexer.LexerSource;
 import org.jruby.truffle.parser.lexer.SyntaxException;
 import org.jruby.truffle.parser.scope.DynamicScope;
-import org.jruby.truffle.util.LoadServiceResourceInputStream;
 import org.jruby.truffle.core.string.ByteList;
 
 import java.io.IOException;
@@ -88,18 +87,14 @@ public class Parser {
     @SuppressWarnings("unchecked")
     public ParseNode parse(String file, InputStream content, DynamicScope blockScope,
                            ParserConfiguration configuration) {
-        if (content instanceof LoadServiceResourceInputStream) {
-            return parse(file, ((LoadServiceResourceInputStream) content).getBytes(), blockScope, configuration);
-        } else {
-            List<ByteList> list = getLines(configuration, file);
+        List<ByteList> list = getLines(configuration, file);
             /*if (content instanceof FileInputStream) {
                 io = new RubyFile(context.getJRubyRuntime(), file, ((FileInputStream) content).getChannel());
             } else {
                 io = RubyIO.newIO(context.getJRubyRuntime(), Channels.newChannel(content));
             }*/
-            LexerSource lexerSource = new GetsLexerSource(file, configuration.getLineNumber(), null, list, configuration.getDefaultEncoding());
-            return parse(file, lexerSource, blockScope, configuration);
-        }
+        LexerSource lexerSource = new GetsLexerSource(file, configuration.getLineNumber(), null, list, configuration.getDefaultEncoding());
+        return parse(file, lexerSource, blockScope, configuration);
     }
 
     @SuppressWarnings("unchecked")
