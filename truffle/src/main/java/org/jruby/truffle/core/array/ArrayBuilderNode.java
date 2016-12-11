@@ -14,6 +14,9 @@ import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
+
+import java.util.Arrays;
+
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 
@@ -414,7 +417,9 @@ public abstract class ArrayBuilderNode extends Node {
         public Object start(int length) {
             if (length > expectedLength) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                return restart(length, length + " > " + expectedLength + " (expected)");
+                final ArrayBuilderNode newNode = new ObjectArrayBuilderNode(getContext(), length);
+                replace(newNode, length + " > " + expectedLength + " (expected)");
+                return newNode.start(length);
             }
 
             return new Object[expectedLength];
@@ -424,11 +429,9 @@ public abstract class ArrayBuilderNode extends Node {
         public Object ensure(Object store, int length) {
             if (length > ((Object[]) store).length) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-
-                final UninitializedArrayBuilderNode newNode = new UninitializedArrayBuilderNode(getContext());
-                replace(newNode);
-                newNode.resume((Object[]) store);
-                return newNode.ensure(store, length);
+                final ArrayBuilderNode newNode = new ObjectArrayBuilderNode(getContext(), length);
+                replace(newNode, length + " > " + expectedLength + " (expected)");
+                return newNode.ensure(Arrays.copyOf((Object[]) store, length), length);
             }
 
             return store;
