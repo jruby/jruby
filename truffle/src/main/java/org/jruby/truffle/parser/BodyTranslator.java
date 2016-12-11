@@ -21,6 +21,7 @@ import org.joni.Regex;
 import org.joni.Syntax;
 import org.jruby.truffle.Log;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.RubyLanguage;
 import org.jruby.truffle.builtins.PrimitiveNodeConstructor;
 import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.truffle.core.IsNilNode;
@@ -271,7 +272,6 @@ import org.jruby.truffle.parser.scope.StaticScope;
 import org.jruby.truffle.platform.graal.AssertConstantNodeGen;
 import org.jruby.truffle.platform.graal.AssertNotCompiledNodeGen;
 import org.jruby.truffle.tools.ChaosNodeGen;
-import org.jruby.truffle.util.SourceSectionUtils;
 
 import java.io.File;
 import java.math.BigInteger;
@@ -1143,7 +1143,7 @@ public class BodyTranslator extends Translator {
         if (node instanceof Colon2ImplicitParseNode) { // use current lexical scope
             if (environment.getParseEnvironment().isDynamicConstantLookup()) {
                 if (context.getOptions().LOG_DYNAMIC_CONSTANT_LOOKUP) {
-                    Log.info("dynamic constant lookup at " + SourceSectionUtils.fileLine(fullSourceSection));
+                    Log.info("dynamic constant lookup at " + RubyLanguage.fileLine(fullSourceSection));
                 }
                 ret = new DynamicLexicalScopeNode(context, fullSourceSection);
             } else {
@@ -1180,7 +1180,7 @@ public class BodyTranslator extends Translator {
         if (constNode == null || constNode instanceof Colon2ImplicitParseNode) {
             if (environment.getParseEnvironment().isDynamicConstantLookup()) {
                 if (context.getOptions().LOG_DYNAMIC_CONSTANT_LOOKUP) {
-                    Log.info("set dynamic constant at " + SourceSectionUtils.fileLine(sourceSection.toSourceSection(source)));
+                    Log.info("set dynamic constant at " + RubyLanguage.fileLine(sourceSection.toSourceSection(source)));
                 }
                 moduleNode = new DynamicLexicalScopeNode(context, sourceSection.toSourceSection(source));
             } else {
@@ -1263,7 +1263,7 @@ public class BodyTranslator extends Translator {
         final RubyNode ret;
         if (environment.getParseEnvironment().isDynamicConstantLookup()) {
             if (context.getOptions().LOG_DYNAMIC_CONSTANT_LOOKUP) {
-                Log.info("dynamic constant lookup at " + SourceSectionUtils.fileLine(fullSourceSection));
+                Log.info("dynamic constant lookup at " + RubyLanguage.fileLine(fullSourceSection));
             }
             ret = new ReadConstantWithDynamicScopeNode(context, fullSourceSection, name);
         } else {
@@ -3068,7 +3068,7 @@ public class BodyTranslator extends Translator {
                 // Switch to dynamic constant lookup
                 environment.getParseEnvironment().setDynamicConstantLookup(true);
                 if (context.getOptions().LOG_DYNAMIC_CONSTANT_LOOKUP) {
-                    Log.info("start dynamic constant lookup at " + SourceSectionUtils.fileLine(fullSourceSection));
+                    Log.info("start dynamic constant lookup at " + RubyLanguage.fileLine(fullSourceSection));
                 }
             }
         }

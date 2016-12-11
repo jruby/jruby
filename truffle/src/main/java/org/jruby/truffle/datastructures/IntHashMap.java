@@ -1,4 +1,4 @@
-package org.jruby.truffle.collections;
+package org.jruby.truffle.datastructures;
 
 import java.util.AbstractCollection;
 import java.util.AbstractSet;

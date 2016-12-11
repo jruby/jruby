@@ -7,7 +7,7 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.collections;
+package org.jruby.truffle.datastructures;
 
 public class Memo<T> {
 

@@ -12,9 +12,9 @@ package org.jruby.truffle.language.methods;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.Layouts;
+import org.jruby.truffle.RubyLanguage;
 import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.parser.ArgumentDescriptor;
-import org.jruby.truffle.util.SourceSectionUtils;
 
 /**
  * {@link InternalMethod} objects are copied as properties such as visibility are changed.
@@ -145,7 +145,7 @@ public class SharedMethodInfo {
         if (sourceSection == null || !sourceSection.isAvailable()) {
             return getDescriptiveName();
         } else {
-            return getDescriptiveName() + " " + SourceSectionUtils.fileLine(sourceSection);
+            return getDescriptiveName() + " " + RubyLanguage.fileLine(sourceSection);
         }
     }
 

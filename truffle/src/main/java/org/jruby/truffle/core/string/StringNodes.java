@@ -143,7 +143,6 @@ import org.jruby.truffle.language.objects.IsTaintedNodeGen;
 import org.jruby.truffle.language.objects.TaintNode;
 import org.jruby.truffle.language.objects.TaintNodeGen;
 import org.jruby.truffle.platform.posix.TrufflePosix;
-import org.jruby.truffle.util.ConvertDouble;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
@@ -2231,7 +2230,7 @@ public abstract class StringNodes {
 
         @TruffleBoundary
         private double convertToDouble(DynamicObject string) {
-            return ConvertDouble.byteListToDouble19(StringOperations.getByteListReadOnly(string), false);
+            return new DoubleConverter().parse(StringOperations.getByteListReadOnly(string), false, true);
         }
     }
 
@@ -3478,7 +3477,7 @@ public abstract class StringNodes {
                 }
             }
             try {
-                return ConvertDouble.byteListToDouble19(byteList, strict);
+                return new DoubleConverter().parse(byteList, strict, true);
             } catch (NumberFormatException e) {
                 if (strict) {
                     throw new RaiseException(coreExceptions().argumentError("invalid value for Float()", this));

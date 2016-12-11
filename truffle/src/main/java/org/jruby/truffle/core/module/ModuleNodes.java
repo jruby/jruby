@@ -96,7 +96,7 @@ import org.jruby.truffle.language.yield.YieldNode;
 import org.jruby.truffle.parser.ParserContext;
 import org.jruby.truffle.parser.Translator;
 import org.jruby.truffle.platform.UnsafeGroup;
-import org.jruby.truffle.util.IdUtil;
+import org.jruby.truffle.parser.Identifiers;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -532,7 +532,7 @@ public abstract class ModuleNodes {
         @TruffleBoundary
         @Specialization(guards = "isRubyString(filename)")
         public DynamicObject autoload(DynamicObject module, String name, DynamicObject filename) {
-            if (!IdUtil.isValidConstantName19(name)) {
+            if (!Identifiers.isValidConstantName19(name)) {
                 throw new RaiseException(coreExceptions().nameError(StringUtils.format("autoload must be constant name: %s", name), module, name, this));
             }
 
@@ -975,7 +975,7 @@ public abstract class ModuleNodes {
         @TruffleBoundary
         @Specialization
         public Object setConstant(DynamicObject module, String name, Object value) {
-            if (!IdUtil.isValidConstantName19(name)) {
+            if (!Identifiers.isValidConstantName19(name)) {
                 throw new RaiseException(coreExceptions().nameError(StringUtils.format("wrong constant name %s", name), module, name, this));
             }
 

@@ -27,7 +27,7 @@ import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.loader.RequireNode;
-import org.jruby.truffle.util.IdUtil;
+import org.jruby.truffle.parser.Identifiers;
 
 @NodeChildren({ @NodeChild("module"), @NodeChild("name"), @NodeChild("constant"), @NodeChild("lookupConstantNode") })
 public abstract class GetConstantNode extends RubyNode {
@@ -112,7 +112,7 @@ public abstract class GetConstantNode extends RubyNode {
     }
 
     protected boolean isValidConstantName(String name) {
-        return IdUtil.isValidConstantName19(name);
+        return Identifiers.isValidConstantName19(name);
     }
 
     protected CallDispatchHeadNode createConstMissingNode() {

@@ -49,9 +49,8 @@ import org.jruby.truffle.options.OptionsBuilder;
 import org.jruby.truffle.options.OptionsCatalog;
 import org.jruby.truffle.options.OutputStrings;
 import org.jruby.truffle.options.RubyInstanceConfig;
-import org.jruby.truffle.util.MainExitException;
+import org.jruby.truffle.options.MainExitException;
 
-import java.io.InputStream;
 import java.lang.management.ManagementFactory;
 
 public class Main {

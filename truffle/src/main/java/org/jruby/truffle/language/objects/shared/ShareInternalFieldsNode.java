@@ -20,7 +20,7 @@ import org.jruby.truffle.Layouts;
 import org.jruby.truffle.core.array.ArrayGuards;
 import org.jruby.truffle.core.queue.LinkedBlockingQueueLocksConditions;
 import org.jruby.truffle.language.objects.ShapeCachingGuards;
-import org.jruby.truffle.util.BoundaryUtils.BoundaryIterable;
+import org.jruby.truffle.datastructures.BoundaryIterable;
 
 /**
  * Share the internal field of an object, accessible by its Layout

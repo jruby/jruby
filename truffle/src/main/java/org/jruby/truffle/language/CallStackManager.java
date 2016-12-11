@@ -29,7 +29,7 @@ import org.jruby.truffle.language.backtrace.InternalRootNode;
 import org.jruby.truffle.language.exceptions.DisablingBacktracesNode;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.methods.SharedMethodInfo;
-import org.jruby.truffle.collections.Memo;
+import org.jruby.truffle.datastructures.Memo;
 
 import java.util.ArrayList;
 

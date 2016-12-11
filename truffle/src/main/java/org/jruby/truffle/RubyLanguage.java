@@ -10,6 +10,7 @@
 package org.jruby.truffle;
 
 import com.oracle.truffle.api.CallTarget;
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.TruffleLanguage;
 import com.oracle.truffle.api.frame.MaterializedFrame;
@@ -17,6 +18,7 @@ import com.oracle.truffle.api.instrumentation.ProvidedTags;
 import com.oracle.truffle.api.instrumentation.StandardTags;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
+import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.core.kernel.TraceManager;
 import org.jruby.truffle.language.LazyRubyRootNode;
 import org.jruby.truffle.language.RubyGuards;
@@ -56,6 +58,16 @@ public class RubyLanguage extends TruffleLanguage<RubyContext> {
     }
 
     public static final RubyLanguage INSTANCE = new RubyLanguage();
+
+    @CompilerDirectives.TruffleBoundary
+    public static String fileLine(SourceSection section) {
+        Source source = section.getSource();
+        if (section.isAvailable()) {
+            return String.format("%s:%d", source.getName(), section.getStartLine());
+        } else {
+            return source.getName();
+        }
+    }
 
     @Override
     public RubyContext createContext(Env env) {

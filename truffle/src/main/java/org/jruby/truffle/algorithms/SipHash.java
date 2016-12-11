@@ -1,4 +1,4 @@
-package org.jruby.truffle.util;
+package org.jruby.truffle.algorithms;
 
 import java.nio.ByteBuffer;
 
@@ -10,7 +10,7 @@ import java.nio.ByteBuffer;
  *
  * @author nahi@ruby-lang.org
  */
-public class SipHashInline {
+public class SipHash {
 
     public static long hash24(long k0, long k1, byte[] data) {
         return hash24(k0, k1, data, 0, data.length);

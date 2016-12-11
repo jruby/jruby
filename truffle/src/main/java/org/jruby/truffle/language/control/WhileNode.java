@@ -18,10 +18,10 @@ import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.profiles.LoopConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.RubyLanguage;
 import org.jruby.truffle.core.cast.BooleanCastNode;
 import org.jruby.truffle.core.cast.BooleanCastNodeGen;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.util.SourceSectionUtils;
 
 public final class WhileNode extends RubyNode {
 
@@ -69,7 +69,7 @@ public final class WhileNode extends RubyNode {
         public String toString() {
             SourceSection sourceSection = getEncapsulatingSourceSection();
             if (sourceSection != null && sourceSection.isAvailable()) {
-                return "while loop at " + SourceSectionUtils.fileLine(sourceSection);
+                return "while loop at " + RubyLanguage.fileLine(sourceSection);
             } else {
                 return "while loop";
             }

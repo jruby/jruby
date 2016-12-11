@@ -31,7 +31,7 @@ import org.jruby.truffle.language.loader.SourceLoader;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.parser.ParserContext;
 import org.jruby.truffle.parser.TranslatorDriver;
-import org.jruby.truffle.collections.Memo;
+import org.jruby.truffle.datastructures.Memo;
 
 import java.io.IOException;
 import java.io.InputStream;

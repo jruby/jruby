@@ -23,7 +23,7 @@ import org.jruby.truffle.language.Visibility;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.objects.shared.SharedObjects;
-import org.jruby.truffle.util.IdUtil;
+import org.jruby.truffle.parser.Identifiers;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -183,7 +183,7 @@ public abstract class ModuleOperations {
         }
 
         final String lastSegment = fullName.substring(start);
-        if (!IdUtil.isValidConstantName19(lastSegment)) {
+        if (!Identifiers.isValidConstantName19(lastSegment)) {
             throw new RaiseException(context.getCoreExceptions().nameError(StringUtils.format("wrong constant name %s", fullName), module, fullName, currentNode));
         }
 
@@ -194,7 +194,7 @@ public abstract class ModuleOperations {
     public static RubyConstant lookupConstantWithInherit(RubyContext context, DynamicObject module, String name, boolean inherit, Node currentNode) {
         assert RubyGuards.isRubyModule(module);
 
-        if (!IdUtil.isValidConstantName19(name)) {
+        if (!Identifiers.isValidConstantName19(name)) {
             throw new RaiseException(context.getCoreExceptions().nameError(StringUtils.format("wrong constant name %s", name), module, name, currentNode));
         }
 

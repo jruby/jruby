@@ -36,7 +36,7 @@ import org.jruby.truffle.language.Visibility;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
-import org.jruby.truffle.util.SafeDoubleParser;
+import org.jruby.truffle.parser.SafeDoubleParser;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;

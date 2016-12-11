@@ -13,7 +13,7 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.object.dsl.Layout;
 import org.jruby.truffle.core.basicobject.BasicObjectLayout;
-import org.jruby.truffle.util.Random;
+import org.jruby.truffle.algorithms.Random;
 
 @Layout
 public interface RandomizerLayout extends BasicObjectLayout {

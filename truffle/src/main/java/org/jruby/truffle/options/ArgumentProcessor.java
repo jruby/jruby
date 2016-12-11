@@ -30,7 +30,6 @@ package org.jruby.truffle.options;
 
 import org.jruby.truffle.core.string.StringSupport;
 import org.jruby.truffle.core.string.KCode;
-import org.jruby.truffle.util.MainExitException;
 
 import java.io.File;
 import java.io.IOException;
