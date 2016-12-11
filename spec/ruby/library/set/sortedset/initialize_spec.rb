@@ -21,4 +21,8 @@ describe "SortedSet#initialize" do
     s.should include(4)
     s.should include(9)
   end
+
+  it "raises on incompatible <=> comparison" do
+    lambda { SortedSet.new(['00', nil]) }.should raise_error(ArgumentError)
+  end
 end
