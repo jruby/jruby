@@ -488,6 +488,7 @@ module Commands
               benchmark bench/mri/bm_vm1_not.rb --cache
               jt benchmark bench/mri/bm_vm1_not.rb --use-cache
       jt where repos ...                            find these repositories
+      jt next                                       tell you what to work on next (give you a random core library spec)
 
       you can also put build or rebuild in front of any command
 
@@ -1290,6 +1291,10 @@ module Commands
         puts Utilities.find_repo(a)
       end
     end
+  end
+  
+  def next(*args)
+    puts `cat spec/truffle/tags/core/**/**.txt | grep 'fails:'`.lines.sample
   end
 
   def check_ambiguous_arguments
