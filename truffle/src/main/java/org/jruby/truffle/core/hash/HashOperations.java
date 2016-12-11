@@ -15,7 +15,7 @@ import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.string.StringUtils;
 import org.jruby.truffle.language.RubyGuards;
-import org.jruby.truffle.datastructures.BoundaryIterable;
+import org.jruby.truffle.collections.BoundaryIterable;
 
 import java.util.Collections;
 import java.util.Iterator;

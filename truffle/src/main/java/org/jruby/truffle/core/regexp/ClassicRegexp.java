@@ -52,7 +52,7 @@ import org.jruby.truffle.core.string.ByteListKey;
 import org.jruby.truffle.core.string.EncodingUtils;
 import org.jruby.truffle.core.string.StringSupport;
 import org.jruby.truffle.parser.ReOptions;
-import org.jruby.truffle.datastructures.WeakValuedMap;
+import org.jruby.truffle.collections.WeakValuedMap;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Iterator;

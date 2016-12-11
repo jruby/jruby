@@ -74,7 +74,7 @@ import org.jruby.truffle.language.objects.ReadObjectFieldNode;
 import org.jruby.truffle.language.objects.ReadObjectFieldNodeGen;
 import org.jruby.truffle.language.objects.TaintNode;
 import org.jruby.truffle.language.objects.TaintNodeGen;
-import org.jruby.truffle.datastructures.BoundaryIterable;
+import org.jruby.truffle.collections.BoundaryIterable;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.error.Mark;
 import org.yaml.snakeyaml.events.AliasEvent;

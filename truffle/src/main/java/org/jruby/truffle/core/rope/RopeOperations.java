@@ -36,7 +36,7 @@ import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.core.string.StringSupport;
 import org.jruby.truffle.core.string.StringUtils;
 import org.jruby.truffle.language.RubyGuards;
-import org.jruby.truffle.datastructures.Memo;
+import org.jruby.truffle.collections.Memo;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
