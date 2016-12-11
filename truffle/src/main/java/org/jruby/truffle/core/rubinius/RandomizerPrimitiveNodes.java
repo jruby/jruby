@@ -14,6 +14,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.truffle.Layouts;
+import org.jruby.truffle.algorithms.Randomizer;
 import org.jruby.truffle.builtins.Primitive;
 import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.core.rope.CodeRange;
@@ -30,7 +31,7 @@ public abstract class RandomizerPrimitiveNodes {
 
         @Specialization
         public DynamicObject randomizerAllocate() {
-            return Layouts.RANDOMIZER.createRandomizer(coreLibrary().getRandomizerFactory(), new org.jruby.truffle.algorithms.Random());
+            return Layouts.RANDOMIZER.createRandomizer(coreLibrary().getRandomizerFactory(), new Randomizer());
         }
 
     }
@@ -40,25 +41,25 @@ public abstract class RandomizerPrimitiveNodes {
 
         @Specialization(guards = "isRubyBignum(seed)")
         public DynamicObject randomizerSeed(DynamicObject randomizer, DynamicObject seed) {
-            Layouts.RANDOMIZER.setRandom(randomizer, randomFromBigInteger(Layouts.BIGNUM.getValue(seed)));
+            Layouts.RANDOMIZER.setRandomizer(randomizer, randomFromBigInteger(Layouts.BIGNUM.getValue(seed)));
             return randomizer;
         }
 
         @Specialization
         public DynamicObject randomizerSeed(DynamicObject randomizer, long seed) {
-            Layouts.RANDOMIZER.setRandom(randomizer, randomFromLong(seed));
+            Layouts.RANDOMIZER.setRandomizer(randomizer, randomFromLong(seed));
             return randomizer;
         }
 
         @TruffleBoundary
-        protected static org.jruby.truffle.algorithms.Random randomFromLong(long seed) {
-            return org.jruby.truffle.algorithms.Random.randomFromLong(seed);
+        protected static Randomizer randomFromLong(long seed) {
+            return Randomizer.randomFromLong(seed);
         }
 
         public static int N = 624;
 
         @TruffleBoundary
-        public static org.jruby.truffle.algorithms.Random randomFromBigInteger(BigInteger big) {
+        public static Randomizer randomFromBigInteger(BigInteger big) {
             if (big.signum() < 0) {
                 big = big.abs();
             }
@@ -70,9 +71,9 @@ public abstract class RandomizerPrimitiveNodes {
             int len = Math.min((buflen + 3) / 4, N);
             int[] ints = bigEndianToInts(buf, len);
             if (len <= 1) {
-                return new org.jruby.truffle.algorithms.Random(ints[0]);
+                return new Randomizer(ints[0]);
             } else {
-                return new org.jruby.truffle.algorithms.Random(ints);
+                return new Randomizer(ints);
             }
         }
 
@@ -110,7 +111,7 @@ public abstract class RandomizerPrimitiveNodes {
         @Specialization
         public double randomizerRandFloat(DynamicObject randomizer) {
             // Logic copied from org.jruby.util.Random
-            final org.jruby.truffle.algorithms.Random r = Layouts.RANDOMIZER.getRandom(randomizer);
+            final Randomizer r = Layouts.RANDOMIZER.getRandomizer(randomizer);
             final int a = randomInt(r) >>> 5;
             final int b = randomInt(r) >>> 6;
             return (a * 67108864.0 + b) * (1.0 / 9007199254740992.0);
@@ -123,22 +124,22 @@ public abstract class RandomizerPrimitiveNodes {
 
         @Specialization
         public int randomizerRandInt(DynamicObject randomizer, int limit) {
-            final org.jruby.truffle.algorithms.Random r = Layouts.RANDOMIZER.getRandom(randomizer);
+            final Randomizer r = Layouts.RANDOMIZER.getRandomizer(randomizer);
             return (int) randInt(r, (long) limit);
         }
 
         @Specialization
         public long randomizerRandInt(DynamicObject randomizer, long limit) {
-            final org.jruby.truffle.algorithms.Random r = Layouts.RANDOMIZER.getRandom(randomizer);
+            final Randomizer r = Layouts.RANDOMIZER.getRandomizer(randomizer);
             return randInt(r, limit);
         }
 
         @TruffleBoundary
-        protected static long randInt(org.jruby.truffle.algorithms.Random r, long limit) {
+        protected static long randInt(Randomizer r, long limit) {
             return randLimitedFixnumInner(r, limit);
         }
 
-        public static long randLimitedFixnumInner(org.jruby.truffle.algorithms.Random random, long limit) {
+        public static long randLimitedFixnumInner(Randomizer randomizer, long limit) {
             long val;
             if (limit == 0) {
                 val = 0;
@@ -149,7 +150,7 @@ public abstract class RandomizerPrimitiveNodes {
                     val = 0;
                     for (int i = 1; 0 <= i; --i) {
                         if (((mask >>> (i * 32)) & 0xffffffffL) != 0) {
-                            val |= (random.genrandInt32() & 0xffffffffL) << (i * 32);
+                            val |= (randomizer.genrandInt32() & 0xffffffffL) << (i * 32);
                             val &= mask;
                         }
                         if (limit < val) {
@@ -203,7 +204,7 @@ public abstract class RandomizerPrimitiveNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject genRandBytes(DynamicObject randomizer, int length) {
-            final org.jruby.truffle.algorithms.Random random = Layouts.RANDOMIZER.getRandom(randomizer);
+            final Randomizer random = Layouts.RANDOMIZER.getRandomizer(randomizer);
             final byte[] bytes = new byte[length];
             int idx = 0;
             for (; length >= 4; length -= 4) {
@@ -225,8 +226,8 @@ public abstract class RandomizerPrimitiveNodes {
     }
 
     @TruffleBoundary
-    private static int randomInt(org.jruby.truffle.algorithms.Random random) {
-        return random.genrandInt32();
+    private static int randomInt(Randomizer randomizer) {
+        return randomizer.genrandInt32();
     }
 
 }

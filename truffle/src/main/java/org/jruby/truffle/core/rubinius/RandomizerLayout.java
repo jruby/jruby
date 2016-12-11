@@ -12,8 +12,8 @@ package org.jruby.truffle.core.rubinius;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.object.dsl.Layout;
+import org.jruby.truffle.algorithms.Randomizer;
 import org.jruby.truffle.core.basicobject.BasicObjectLayout;
-import org.jruby.truffle.algorithms.Random;
 
 @Layout
 public interface RandomizerLayout extends BasicObjectLayout {
@@ -22,9 +22,9 @@ public interface RandomizerLayout extends BasicObjectLayout {
                                                DynamicObject metaClass);
 
     DynamicObject createRandomizer(DynamicObjectFactory factory,
-                                   Random random);
+                                   Randomizer randomizer);
 
-    Random getRandom(DynamicObject object);
-    void setRandom(DynamicObject object, Random value);
+    Randomizer getRandomizer(DynamicObject object);
+    void setRandomizer(DynamicObject object, Randomizer value);
 
 }
