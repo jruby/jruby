@@ -91,11 +91,10 @@ public class RubySortedSet extends RubySet implements SortedSet {
 
     @Override
     protected void addImpl(final Ruby runtime, final IRubyObject obj) {
-
-        if ( ! obj.respondsTo("<=>") ) { // TODO site-cache
-            throw runtime.newArgumentError("value must respond to <=>");
-        }
-
+        // NOTE: we're able to function without the check - comparator will raise ArgumentError
+        //if ( ! obj.respondsTo("<=>") ) {
+        //    throw runtime.newArgumentError("value must respond to <=>");
+        //}
         super.addImpl(runtime, obj); // @hash[obj] = true
         order.add(obj);
     }
