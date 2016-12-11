@@ -112,6 +112,7 @@ public abstract class TruffleSystemNodes {
         }
     }
 
+    // Used by concurrent-ruby
     @CoreMethod(names = "full_memory_barrier", isModuleFunction = true)
     public abstract static class FullMemoryBarrierPrimitiveNode extends CoreMethodNode {
 
