@@ -10,6 +10,7 @@
 package org.jruby.truffle.core.format.printf;
 
 import org.jruby.truffle.core.format.exceptions.InvalidFormatException;
+import org.jruby.truffle.language.RubyGuards;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,9 +18,11 @@ import java.util.List;
 public class PrintfSimpleParser {
 
     private final char[] source;
+    private final Object[] arguments;
 
-    public PrintfSimpleParser(char[] source) {
+    public PrintfSimpleParser(char[] source, Object[] arguments) {
         this.source = source;
+        this.arguments = arguments;
     }
 
     @SuppressWarnings("fallthrough")
@@ -28,6 +31,7 @@ public class PrintfSimpleParser {
         ArgType argType = ArgType.NONE;
 
         final int end = source.length;
+        int argumentIndex = 0;
 
         for (int i = 0; i < end; ) {
 
@@ -128,6 +132,7 @@ public class PrintfSimpleParser {
                         config.setNamesBytes(charsToBytes(nameBytes));
                         i = j + 1;
                         checkNameArg(argType, nameBytes);
+                        checkHash(arguments, argumentIndex);
                         argType = ArgType.NAMED;
                         argTypeSet = true;
                         if (term == '}') {
@@ -250,10 +255,17 @@ public class PrintfSimpleParser {
                         throw new InvalidFormatException("malformed format string - %" + p);
                 }
             }
+            argumentIndex += 1;
         }
         return configs;
     }
 
+    private static void checkHash(Object[] arguments, int argumentIndex) {
+        if(argumentIndex >= arguments.length  ||
+            !RubyGuards.isRubyHash(arguments[argumentIndex])) {
+            throw new InvalidFormatException("one hash required");
+        }
+    }
 
     private static void checkNextArg(ArgType argType, int nextArgumentIndex) {
         switch (argType) {

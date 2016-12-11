@@ -1785,7 +1785,7 @@ public abstract class KernelNodes {
                 Object[] arguments,
                 @Cached("privatizeRope(format)") Rope cachedFormat,
                 @Cached("ropeLength(cachedFormat)") int cachedFormatLength,
-                @Cached("create(compileFormat(format))") DirectCallNode callPackNode) {
+                @Cached("create(compileFormat(format, arguments))") DirectCallNode callPackNode) {
             final BytesResult result;
 
             try {
@@ -1808,7 +1808,7 @@ public abstract class KernelNodes {
             final BytesResult result;
 
             try {
-                result = (BytesResult) callPackNode.call(frame, compileFormat(format),
+                result = (BytesResult) callPackNode.call(frame, compileFormat(format, arguments),
                         new Object[]{ arguments, arguments.length });
             } catch (FormatException e) {
                 exceptionProfile.enter();
@@ -1849,12 +1849,12 @@ public abstract class KernelNodes {
         }
 
         @TruffleBoundary
-        protected CallTarget compileFormat(DynamicObject format) {
+        protected CallTarget compileFormat(DynamicObject format, Object[] arguments) {
             assert RubyGuards.isRubyString(format);
 
             try {
                 return new PrintfCompiler(getContext(), this)
-                        .compile(Layouts.STRING.getRope(format).getBytes());
+                        .compile(Layouts.STRING.getRope(format).getBytes(), arguments);
             } catch (InvalidFormatException e) {
                 throw new RaiseException(coreExceptions().argumentError(e.getMessage(), this));
             }
