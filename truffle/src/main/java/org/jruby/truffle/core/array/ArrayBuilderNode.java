@@ -45,9 +45,9 @@ public abstract class ArrayBuilderNode extends Node {
         return context;
     }
 
-    protected Object restart(int length) {
+    protected Object restart(int length, String reason) {
         final UninitializedArrayBuilderNode newNode = new UninitializedArrayBuilderNode(getContext());
-        replace(newNode);
+        replace(newNode, reason);
         return newNode.start(length);
     }
 
@@ -131,18 +131,19 @@ public abstract class ArrayBuilderNode extends Node {
 
         @Override
         public Object finish(Object store, int length) {
+            Object[] storeArray = (Object[]) store;
             if (couldUseInteger) {
-                replace(new IntegerArrayBuilderNode(getContext(), length));
-                return ArrayUtils.unboxInteger((Object[]) store, length);
+                replace(new IntegerArrayBuilderNode(getContext(), storeArray.length));
+                return ArrayUtils.unboxInteger(storeArray, length);
             } else if (couldUseLong) {
-                replace(new LongArrayBuilderNode(getContext(), length));
-                return ArrayUtils.unboxLong((Object[]) store, length);
+                replace(new LongArrayBuilderNode(getContext(), storeArray.length));
+                return ArrayUtils.unboxLong(storeArray, length);
             } else if (couldUseDouble) {
-                replace(new DoubleArrayBuilderNode(getContext(), length));
-                return ArrayUtils.unboxDouble((Object[]) store, length);
+                replace(new DoubleArrayBuilderNode(getContext(), storeArray.length));
+                return ArrayUtils.unboxDouble(storeArray, length);
             } else {
-                replace(new ObjectArrayBuilderNode(getContext(), length));
-                return store;
+                replace(new ObjectArrayBuilderNode(getContext(), storeArray.length));
+                return storeArray;
             }
         }
 
@@ -184,7 +185,7 @@ public abstract class ArrayBuilderNode extends Node {
         public Object start(int length) {
             if (length > expectedLength) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                return restart(length);
+                return restart(length, length + " > " + expectedLength + " (expected)");
             }
 
             return new int[expectedLength];
@@ -262,7 +263,7 @@ public abstract class ArrayBuilderNode extends Node {
         public Object start(int length) {
             if (length > expectedLength) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                return restart(length);
+                return restart(length, length + " > " + expectedLength + " (expected)");
             }
 
             return new long[expectedLength];
@@ -334,7 +335,7 @@ public abstract class ArrayBuilderNode extends Node {
         public Object start(int length) {
             if (length > expectedLength) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                return restart(length);
+                return restart(length, length + " > " + expectedLength + " (expected)");
             }
 
             return new double[expectedLength];
@@ -413,7 +414,7 @@ public abstract class ArrayBuilderNode extends Node {
         public Object start(int length) {
             if (length > expectedLength) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                return restart(length);
+                return restart(length, length + " > " + expectedLength + " (expected)");
             }
 
             return new Object[expectedLength];
