@@ -336,7 +336,11 @@ public class PrintfSimpleParser {
 
         Integer result;
         if (sb.length() > 0) {
-            result = Integer.parseInt(sb.toString());
+            try {
+                result = Integer.parseInt(sb.toString());
+            } catch (NumberFormatException nfe) {
+                throw new InvalidFormatException("precision too big");
+            }
         } else {
             result = null;
         }
