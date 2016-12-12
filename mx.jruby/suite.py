@@ -150,7 +150,7 @@ suite = {
             "jline:jline:2.11",
             "9504d5e2da5d78237239c5226e8200ec21182040",
             "ef2539b992e5605be966b6db7cfc83930f0da39b",
-            "BSD-simplified"
+            "BSD-new"
         )
     },
 
