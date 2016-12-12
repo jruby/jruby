@@ -39,6 +39,7 @@ import org.jcodings.Encoding;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.regexp.ClassicRegexp;
 import org.jruby.truffle.core.regexp.RegexpOptions;
+import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.string.ByteList;
 import org.jruby.truffle.core.string.StringSupport;
 import org.jruby.truffle.language.control.RaiseException;
@@ -1542,7 +1543,7 @@ public class ParserSupport {
         buffer.setEncoding(newEncoding);
         
         if (codeRange != StringSupport.CR_7BIT || !newEncoding.isAsciiCompatible()) {
-            return StringSupport.CR_UNKNOWN;
+            return CodeRange.CR_UNKNOWN.toInt();
         }
         
         return codeRange;

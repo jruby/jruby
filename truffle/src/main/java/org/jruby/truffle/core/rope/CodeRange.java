@@ -17,7 +17,7 @@ package org.jruby.truffle.core.rope;
 import org.jruby.truffle.core.string.StringSupport;
 
 public enum CodeRange {
-    CR_UNKNOWN(StringSupport.CR_UNKNOWN),
+    CR_UNKNOWN(0),
     CR_7BIT(StringSupport.CR_7BIT),
     CR_VALID(StringSupport.CR_VALID),
     CR_BROKEN(StringSupport.CR_BROKEN);
@@ -34,7 +34,7 @@ public enum CodeRange {
 
     public static CodeRange fromInt(int codeRange) {
         switch(codeRange) {
-            case StringSupport.CR_UNKNOWN: return CR_UNKNOWN;
+            case 0: return CR_UNKNOWN;
             case StringSupport.CR_7BIT: return CR_7BIT;
             case StringSupport.CR_VALID: return CR_VALID;
             case StringSupport.CR_BROKEN: return CR_BROKEN;

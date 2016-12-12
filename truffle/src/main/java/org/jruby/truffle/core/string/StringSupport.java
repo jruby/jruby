@@ -38,18 +38,12 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-public final class StringSupport {
-    public static final int CR_7BIT_F    = 16;
-    public static final int CR_VALID_F   = 32;
-    public static final int CR_UNKNOWN   = 0;
+import static org.jruby.truffle.core.rope.CodeRange.CR_UNKNOWN;
 
+public final class StringSupport {
     // We hardcode these so they can be used in a switch below. The assert verifies they match FlagRegistry's value.
     public static final int CR_7BIT      = 16;
     public static final int CR_VALID     = 32;
-    static {
-        assert CR_7BIT == CR_7BIT_F : "CR_7BIT = " + CR_7BIT + " but should be " + CR_7BIT_F;
-        assert CR_VALID == CR_VALID_F : "CR_VALID = " + CR_VALID + " but should be " + CR_VALID_F;
-    }
 
     public static final int CR_BROKEN    = CR_7BIT | CR_VALID;
 
@@ -238,7 +232,7 @@ public final class StringSupport {
 
     // MRI: rb_enc_strlen
     public static int strLength(Encoding enc, byte[]bytes, int p, int end) {
-        return strLength(enc, bytes, p, end, CR_UNKNOWN);
+        return strLength(enc, bytes, p, end, CR_UNKNOWN.toInt());
     }
 
     // MRI: enc_strlen
