@@ -500,6 +500,18 @@ public class Helpers {
         return method.call(context, self, superClass, name, args, block);
     }
 
+    public static IRubyObject invokeSuper(ThreadContext context, IRubyObject self, RubyModule klass, String name, IRubyObject arg0, Block block) {
+        checkSuperDisabledOrOutOfMethod(context, klass, name);
+
+        RubyClass superClass = findImplementerIfNecessary(self.getMetaClass(), klass).getSuperClass();
+        DynamicMethod method = superClass != null ? superClass.searchMethod(name) : UndefinedMethod.INSTANCE;
+
+        if (method.isUndefined()) {
+            return callMethodMissing(context, self, method.getVisibility(), name, CallType.SUPER, arg0, block);
+        }
+        return method.call(context, self, superClass, name, arg0, block);
+    }
+
     public static IRubyObject invokeSuper(ThreadContext context, IRubyObject self, Block block) {
         checkSuperDisabledOrOutOfMethod(context);
         RubyModule klazz = context.getFrameKlazz();
