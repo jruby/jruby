@@ -34,6 +34,7 @@
 package org.jruby.truffle.core.rubinius;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jcodings.specific.ASCIIEncoding;
@@ -41,6 +42,7 @@ import org.jruby.truffle.Layouts;
 import org.jruby.truffle.algorithms.Randomizer;
 import org.jruby.truffle.builtins.Primitive;
 import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
+import org.jruby.truffle.core.numeric.FixnumOrBignumNode;
 import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.rope.RopeOperations;
 
@@ -159,9 +161,10 @@ public abstract class RandomizerPrimitiveNodes {
         }
 
         @Specialization(guards = "isRubyBignum(limit)")
-        public DynamicObject randomizerRandInt(DynamicObject randomizer, DynamicObject limit) {
+        public Object randomizerRandInt(DynamicObject randomizer, DynamicObject limit,
+                @Cached("new()") FixnumOrBignumNode fixnumOrBignum) {
             final Randomizer r = Layouts.RANDOMIZER.getRandomizer(randomizer);
-            return createBignum(randLimitedBignum(r, Layouts.BIGNUM.getValue(limit)));
+            return fixnumOrBignum.fixnumOrBignum(randLimitedBignum(r, Layouts.BIGNUM.getValue(limit)));
         }
 
         @TruffleBoundary
