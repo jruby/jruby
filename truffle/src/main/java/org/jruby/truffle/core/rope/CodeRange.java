@@ -20,14 +20,14 @@ public enum CodeRange {
     CR_VALID(2),
     CR_BROKEN(3);
 
-    private final int jrubyValue;
+    private final int value;
 
-    CodeRange(int jrubyValue) {
-        this.jrubyValue = jrubyValue;
+    CodeRange(int value) {
+        this.value = value;
     }
 
     public int toInt() {
-        return jrubyValue;
+        return value;
     }
 
     public static CodeRange fromInt(int codeRange) {
