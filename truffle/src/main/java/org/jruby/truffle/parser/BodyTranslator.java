@@ -143,8 +143,9 @@ import org.jruby.truffle.language.methods.GetCurrentVisibilityNode;
 import org.jruby.truffle.language.methods.GetDefaultDefineeNode;
 import org.jruby.truffle.language.methods.MethodDefinitionNode;
 import org.jruby.truffle.language.methods.ModuleBodyDefinitionNode;
-import org.jruby.truffle.language.methods.SharedMethodInfo;
+import org.jruby.truffle.language.methods.NamedSharedMethodInfo;
 import org.jruby.truffle.language.methods.UnsupportedOperationBehavior;
+import org.jruby.truffle.language.methods.SharedMethodInfo;
 import org.jruby.truffle.language.objects.DefineClassNode;
 import org.jruby.truffle.language.objects.DefineModuleNode;
 import org.jruby.truffle.language.objects.DefineModuleNodeGen;
@@ -993,17 +994,18 @@ public class BodyTranslator extends Translator {
 
         LexicalScope newLexicalScope = environment.pushLexicalScope();
         try {
-            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(
-                    fullSourceSection,
-                    newLexicalScope,
-                    Arity.NO_ARGUMENTS,
-                    null,
+            final NamedSharedMethodInfo namedSharedMethodInfo = new NamedSharedMethodInfo(
+                    new SharedMethodInfo(
+                            fullSourceSection,
+                            newLexicalScope,
+                        Arity.NO_ARGUMENTS,
+                        null,
+                        null,
+                        false,
+                        false,
+                        false),
                     name,
-                    sclass ? "class body" : "module body",
-                    null,
-                    false,
-                    false,
-                    false);
+                    sclass ? "class body" : "module body");
 
             final ReturnID returnId;
 
@@ -1014,7 +1016,7 @@ public class BodyTranslator extends Translator {
             }
 
             final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(context, environment, environment.getParseEnvironment(),
-                            returnId, true, true, true, sharedMethodInfo, name, 0, null);
+                            returnId, true, true, true, namedSharedMethodInfo, name, 0, null);
 
             final BodyTranslator moduleTranslator = new BodyTranslator(currentNode, context, this, newEnvironment, source, false);
 
@@ -1058,13 +1060,13 @@ public class BodyTranslator extends Translator {
 
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
-        final RubyRootNode rootNode = new RubyRootNode(context, fullSourceSection, environment.getFrameDescriptor(), environment.getSharedMethodInfo(), body, environment.needsDeclarationFrame());
+        final RubyRootNode rootNode = new RubyRootNode(context, fullSourceSection, environment.getFrameDescriptor(), environment.getNamedSharedMethodInfo(), body, environment.needsDeclarationFrame());
 
         final ModuleBodyDefinitionNode definitionNode = new ModuleBodyDefinitionNode(
                 context,
                 fullSourceSection,
-                environment.getSharedMethodInfo().getName(),
-                environment.getSharedMethodInfo(),
+                environment.getNamedSharedMethodInfo().getName(),
+                environment.getNamedSharedMethodInfo(),
                 Truffle.getRuntime().createCallTarget(rootNode),
                 sclass,
                 environment.isDynamicConstantLookup());
@@ -1408,26 +1410,27 @@ public class BodyTranslator extends Translator {
         final Arity arity = MethodTranslator.getArity(argsNode);
         final ArgumentDescriptor[] argumentDescriptors = Helpers.argsNodeToArgumentDescriptors(argsNode);
 
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(
-                sourceSection.toSourceSection(source),
-                environment.getLexicalScopeOrNull(),
-                arity,
-                null,
+        final NamedSharedMethodInfo namedSharedMethodInfo = new NamedSharedMethodInfo(
+                new SharedMethodInfo(
+                        sourceSection.toSourceSection(source),
+                        environment.getLexicalScopeOrNull(),
+                        arity,
+                        null,
+                        argumentDescriptors,
+                        false,
+                        false,
+                        false),
                 methodName,
-                null,
-                argumentDescriptors,
-                false,
-                false,
-                false);
+                null);
 
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
-                        context, environment, environment.getParseEnvironment(), environment.getParseEnvironment().allocateReturnID(), true, true, false, sharedMethodInfo, methodName, 0, null);
+                        context, environment, environment.getParseEnvironment(), environment.getParseEnvironment().allocateReturnID(), true, true, false, namedSharedMethodInfo, methodName, 0, null);
 
         // ownScopeForAssignments is the same for the defined method as the current one.
 
         final MethodTranslator methodCompiler = new MethodTranslator(currentNode, context, this, newEnvironment, false, source, argsNode);
 
-        final MethodDefinitionNode methodDefinitionNode = methodCompiler.compileMethodNode(sourceSection, methodName, bodyNode, sharedMethodInfo);
+        final MethodDefinitionNode methodDefinitionNode = methodCompiler.compileMethodNode(sourceSection, methodName, bodyNode, namedSharedMethodInfo);
 
         final RubyNode visibilityNode;
         if (isDefs) {
@@ -2013,26 +2016,27 @@ public class BodyTranslator extends Translator {
 
         final boolean isProc = !isLambda;
 
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(
-                sourceSection.toSourceSection(source),
-                environment.getLexicalScopeOrNull(),
-                MethodTranslator.getArity(argsNode),
+        final NamedSharedMethodInfo namedSharedMethodInfo = new NamedSharedMethodInfo(
+                new SharedMethodInfo(
+                        sourceSection.toSourceSection(source),
+                        environment.getLexicalScopeOrNull(),
+                        MethodTranslator.getArity(argsNode),
+                        null,
+                        Helpers.argsNodeToArgumentDescriptors(argsNode),
+                        false,
+                        false,
+                        false),
                 null,
-                null,
-                isLambda ? "lambda" : getIdentifierInNewEnvironment(true, currentCallMethodName),
-                Helpers.argsNodeToArgumentDescriptors(argsNode),
-                false,
-                false,
-                false);
+                isLambda ? "lambda" : getIdentifierInNewEnvironment(true, currentCallMethodName));
 
-        final String namedMethodName = isLambda ? sharedMethodInfo.getName(): environment.getNamedMethodName();
+        final String namedMethodName = isLambda ? namedSharedMethodInfo.getName(): environment.getNamedMethodName();
 
         final ParseEnvironment parseEnvironment = environment.getParseEnvironment();
         final ReturnID returnID = isLambda ? parseEnvironment.allocateReturnID() : environment.getReturnID();
 
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
                 context, environment, parseEnvironment, returnID, hasOwnScope, false,
-                        false, sharedMethodInfo, namedMethodName, environment.getBlockDepth() + 1, parseEnvironment.allocateBreakID());
+                        false, namedSharedMethodInfo, namedMethodName, environment.getBlockDepth() + 1, parseEnvironment.allocateBreakID());
         final MethodTranslator methodCompiler = new MethodTranslator(currentNode, context, this, newEnvironment, true, source, argsNode);
 
         if (isProc) {
@@ -2050,7 +2054,7 @@ public class BodyTranslator extends Translator {
         final RubyNode definitionNode;
 
         try {
-            definitionNode = methodCompiler.compileBlockNode(sourceSection, sharedMethodInfo.getName(), node.getBodyNode(), sharedMethodInfo, type, node.getScope().getVariables());
+            definitionNode = methodCompiler.compileBlockNode(sourceSection, namedSharedMethodInfo.getName(), node.getBodyNode(), namedSharedMethodInfo, type, node.getScope().getVariables());
         } finally {
             if (isLambda) {
                 frameOnStackMarkerSlotStack.pop();

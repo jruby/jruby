@@ -41,6 +41,7 @@ import org.jruby.truffle.language.arguments.ReadSelfNode;
 import org.jruby.truffle.language.methods.Arity;
 import org.jruby.truffle.language.methods.ExceptionTranslatingNode;
 import org.jruby.truffle.language.methods.InternalMethod;
+import org.jruby.truffle.language.methods.NamedSharedMethodInfo;
 import org.jruby.truffle.language.methods.SharedMethodInfo;
 import org.jruby.truffle.language.objects.SingletonClassNode;
 import org.jruby.truffle.options.Options;
@@ -139,20 +140,20 @@ public class CoreMethodNodeManager {
             System.err.println("WARNING: Either onSingleton or constructor for " + methodDetails.getIndicativeName());
         }
 
-        final SharedMethodInfo sharedMethodInfo = makeSharedMethodInfo(context, module, methodDetails);
-        final CallTarget callTarget = makeGenericMethod(context, methodDetails, sharedMethodInfo);
+        final NamedSharedMethodInfo namedSharedMethodInfo = makeSharedMethodInfo(context, module, methodDetails);
+        final CallTarget callTarget = makeGenericMethod(context, methodDetails, namedSharedMethodInfo);
 
         if (method.isModuleFunction()) {
-            addMethod(context, module, sharedMethodInfo, callTarget, names, Visibility.PRIVATE);
-            addMethod(context, getSingletonClass(module), sharedMethodInfo, callTarget, names, Visibility.PUBLIC);
+            addMethod(context, module, namedSharedMethodInfo, callTarget, names, Visibility.PRIVATE);
+            addMethod(context, getSingletonClass(module), namedSharedMethodInfo, callTarget, names, Visibility.PUBLIC);
         } else if (method.onSingleton() || method.constructor()) {
-            addMethod(context, getSingletonClass(module), sharedMethodInfo, callTarget, names, visibility);
+            addMethod(context, getSingletonClass(module), namedSharedMethodInfo, callTarget, names, visibility);
         } else {
-            addMethod(context, module, sharedMethodInfo, callTarget, names, visibility);
+            addMethod(context, module, namedSharedMethodInfo, callTarget, names, visibility);
         }
     }
 
-    private static void addMethod(RubyContext context, DynamicObject module, SharedMethodInfo sharedMethodInfo, CallTarget callTarget, String[] names, Visibility originalVisibility) {
+    private static void addMethod(RubyContext context, DynamicObject module, NamedSharedMethodInfo namedSharedMethodInfo, CallTarget callTarget, String[] names, Visibility originalVisibility) {
         assert RubyGuards.isRubyModule(module);
 
         for (String name : names) {
@@ -160,33 +161,34 @@ public class CoreMethodNodeManager {
             if (ModuleOperations.isMethodPrivateFromName(name)) {
                 visibility = Visibility.PRIVATE;
             }
-            final InternalMethod method = new InternalMethod(context, sharedMethodInfo, sharedMethodInfo.getLexicalScope(), name, module, visibility, callTarget);
+            final InternalMethod method = new InternalMethod(context, namedSharedMethodInfo, namedSharedMethodInfo.getLexicalScope(), name, module, visibility, callTarget);
 
             Layouts.MODULE.getFields(module).addMethod(context, null, method);
         }
     }
 
-    private static SharedMethodInfo makeSharedMethodInfo(RubyContext context, DynamicObject module, MethodDetails methodDetails) {
+    private static NamedSharedMethodInfo makeSharedMethodInfo(RubyContext context, DynamicObject module, MethodDetails methodDetails) {
         final CoreMethod method = methodDetails.getMethodAnnotation();
         final LexicalScope lexicalScope = new LexicalScope(context.getRootLexicalScope(), module);
 
-        return new SharedMethodInfo(
-                context.getCoreLibrary().getSourceSection(),
-                lexicalScope,
-                new Arity(method.required(), method.optional(), method.rest()),
-                module,
+        return new NamedSharedMethodInfo(
+                new SharedMethodInfo(
+                        context.getCoreLibrary().getSourceSection(),
+                        lexicalScope,
+                        new Arity(method.required(), method.optional(), method.rest()),
+                        module,
+                        null,
+                        context.getOptions().CORE_ALWAYS_CLONE,
+                        method.needsCallerFrame() && context.getOptions().INLINE_NEEDS_CALLER_FRAME,
+                        method.needsCallerFrame()),
                 methodDetails.getPrimaryName(),
-                "builtin",
-                null,
-                context.getOptions().CORE_ALWAYS_CLONE,
-                method.needsCallerFrame() && context.getOptions().INLINE_NEEDS_CALLER_FRAME,
-                method.needsCallerFrame());
+                "builtin");
     }
 
-    private static CallTarget makeGenericMethod(RubyContext context, MethodDetails methodDetails, SharedMethodInfo sharedMethodInfo) {
+    private static CallTarget makeGenericMethod(RubyContext context, MethodDetails methodDetails, NamedSharedMethodInfo namedSharedMethodInfo) {
         final CoreMethod method = methodDetails.getMethodAnnotation();
 
-        final SourceSection sourceSection = sharedMethodInfo.getSourceSection();
+        final SourceSection sourceSection = namedSharedMethodInfo.getSourceSection();
         final RubySourceSection rubySourceSection = new RubySourceSection(sourceSection);
 
         final RubyNode methodNode = createCoreMethodNode(context, sourceSection, methodDetails.getNodeFactory(), method);
@@ -195,7 +197,7 @@ public class CoreMethodNodeManager {
             AmbiguousOptionalArgumentChecker.verifyNoAmbiguousOptionalArguments(methodDetails);
         }
 
-        final RubyNode checkArity = Translator.createCheckArityNode(context, sourceSection.getSource(), rubySourceSection, sharedMethodInfo.getArity());
+        final RubyNode checkArity = Translator.createCheckArityNode(context, sourceSection.getSource(), rubySourceSection, namedSharedMethodInfo.getArity());
 
         RubyNode node;
         if (!isSafe(context, method.unsafe())) {
@@ -211,7 +213,7 @@ public class CoreMethodNodeManager {
             bodyNode = ChaosNodeGen.create(bodyNode);
         }
 
-        final RubyRootNode rootNode = new RubyRootNode(context, sourceSection, null, sharedMethodInfo, bodyNode, false);
+        final RubyRootNode rootNode = new RubyRootNode(context, sourceSection, null, namedSharedMethodInfo, bodyNode, false);
 
         return Truffle.getRuntime().createCallTarget(rootNode);
     }

@@ -83,6 +83,7 @@ import org.jruby.truffle.language.methods.CanBindMethodToModuleNodeGen;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.methods.GetCurrentVisibilityNode;
 import org.jruby.truffle.language.methods.InternalMethod;
+import org.jruby.truffle.language.methods.NamedSharedMethodInfo;
 import org.jruby.truffle.language.methods.SharedMethodInfo;
 import org.jruby.truffle.language.objects.IsANode;
 import org.jruby.truffle.language.objects.IsANodeGen;
@@ -384,17 +385,18 @@ public abstract class ModuleNodes {
             final RubyNode checkArity = Translator.createCheckArityNode(getContext(), sourceSection.getSource(), rubySourceSection, arity);
 
             final LexicalScope lexicalScope = new LexicalScope(getContext().getRootLexicalScope(), module);
-            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(
-                    sourceSection,
-                    lexicalScope,
-                    arity,
-                    module,
+            final NamedSharedMethodInfo namedSharedMethodInfo = new NamedSharedMethodInfo(
+                    new SharedMethodInfo(
+                        sourceSection,
+                        lexicalScope,
+                        arity,
+                        module,
+                        null,
+                        false,
+                        false,
+                        false),
                     accessorName,
-                    "attr_" + (isGetter ? "reader" : "writer"),
-                    null,
-                    false,
-                    false,
-                    false);
+                    "attr_" + (isGetter ? "reader" : "writer"));
 
             final RubyNode self = new ProfileArgumentNode(new ReadSelfNode());
             final RubyNode accessInstanceVariable;
@@ -405,9 +407,9 @@ public abstract class ModuleNodes {
                 accessInstanceVariable = new WriteInstanceVariableNode(getContext(), sourceSection, ivar, self, readArgument);
             }
             final RubyNode sequence = Translator.sequence(getContext(), sourceSection.getSource(), rubySourceSection, Arrays.asList(checkArity, accessInstanceVariable));
-            final RubyRootNode rootNode = new RubyRootNode(getContext(), sourceSection, null, sharedMethodInfo, sequence, false);
+            final RubyRootNode rootNode = new RubyRootNode(getContext(), sourceSection, null, namedSharedMethodInfo, sequence, false);
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
-            final InternalMethod method = new InternalMethod(getContext(), sharedMethodInfo, lexicalScope, accessorName, module, visibility, callTarget);
+            final InternalMethod method = new InternalMethod(getContext(), namedSharedMethodInfo, lexicalScope, accessorName, module, visibility, callTarget);
 
             Layouts.MODULE.getFields(module).addMethod(getContext(), this, method);
         }
@@ -1062,7 +1064,7 @@ public abstract class ModuleNodes {
         private DynamicObject defineMethod(DynamicObject module, String name, DynamicObject proc) {
             final RootCallTarget callTarget = (RootCallTarget) Layouts.PROC.getCallTargetForLambdas(proc);
             final RubyRootNode rootNode = (RubyRootNode) callTarget.getRootNode();
-            final SharedMethodInfo info = Layouts.PROC.getSharedMethodInfo(proc).withName(name);
+            final NamedSharedMethodInfo info = Layouts.PROC.getNamedSharedMethodInfo(proc).withName(name);
 
             final RubyNode body = NodeUtil.cloneNode(rootNode.getBody());
             final RubyNode newBody = new CallMethodWithProcBody(getContext(), info.getSourceSection(), Layouts.PROC.getDeclarationFrame(proc), body);
@@ -1314,7 +1316,7 @@ public abstract class ModuleNodes {
             final List<DynamicObject> modules = new ArrayList<>();
 
             InternalMethod method = getContext().getCallStack().getCallingMethodIgnoringSend();
-            LexicalScope lexicalScope = method == null ? null : method.getSharedMethodInfo().getLexicalScope();
+            LexicalScope lexicalScope = method == null ? null : method.getNamedSharedMethodInfo().getLexicalScope();
             DynamicObject object = coreLibrary().getObjectClass();
 
             while (lexicalScope != null) {

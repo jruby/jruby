@@ -88,9 +88,9 @@ public class CodeLoader {
 
         final InternalMethod method = new InternalMethod(
                 context,
-                rootNode.getSharedMethodInfo(),
+                rootNode.getNamedSharedMethodInfo(),
                 lexicalScope,
-                rootNode.getSharedMethodInfo().getName(),
+                rootNode.getNamedSharedMethodInfo().getName(),
                 declaringModule,
                 Visibility.PUBLIC,
                 callTarget);

@@ -62,7 +62,7 @@ public class SuperCallNode extends RubyNode {
         final InternalMethod superMethod = lookupSuperMethodNode.executeLookupSuperMethod(frame, self);
 
         if (missingProfile.profile(superMethod == null)) {
-            final String name = RubyArguments.getMethod(frame).getSharedMethodInfo().getName(); // use the original name
+            final String name = RubyArguments.getMethod(frame).getNamedSharedMethodInfo().getName(); // use the original name
             final Object[] methodMissingArguments = ArrayUtils.unshift(superArguments, getContext().getSymbolTable().getSymbol(name));
             return callMethodMissing(frame, self, blockObject, methodMissingArguments);
         }

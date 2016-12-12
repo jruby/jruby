@@ -88,7 +88,7 @@ public class ThreadBacktraceLocationNodes {
         public DynamicObject label(DynamicObject threadBacktraceLocation) {
             final Activation activation = ThreadBacktraceLocationLayoutImpl.INSTANCE.getActivation(threadBacktraceLocation);
             // TODO eregon 8 Nov. 2016 This does not handle blocks
-            final String methodName = activation.getMethod().getSharedMethodInfo().getName();
+            final String methodName = activation.getMethod().getNamedSharedMethodInfo().getName();
 
             return StringOperations.createString(getContext(), StringOperations.encodeRope(methodName, UTF8Encoding.INSTANCE));
         }

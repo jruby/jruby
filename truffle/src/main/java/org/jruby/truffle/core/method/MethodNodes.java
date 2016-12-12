@@ -69,7 +69,7 @@ public abstract class MethodNodes {
 
         @Specialization
         public int arity(DynamicObject method) {
-            return Layouts.METHOD.getMethod(method).getSharedMethodInfo().getArity().getArityNumber();
+            return Layouts.METHOD.getMethod(method).getNamedSharedMethodInfo().getArity().getArityNumber();
         }
 
     }
@@ -110,7 +110,7 @@ public abstract class MethodNodes {
             final InternalMethod method = Layouts.METHOD.getMethod(rubyMethod);
             long h = Hashing.start(method.getDeclaringModule().hashCode());
             h = Hashing.update(h, Layouts.METHOD.getReceiver(rubyMethod).hashCode());
-            h = Hashing.update(h, method.getSharedMethodInfo().hashCode());
+            h = Hashing.update(h, method.getNamedSharedMethodInfo().hashCode());
             return Hashing.end(h);
         }
 
@@ -132,7 +132,7 @@ public abstract class MethodNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject parameters(DynamicObject method) {
-            final ArgumentDescriptor[] argsDesc = Layouts.METHOD.getMethod(method).getSharedMethodInfo().getArgumentDescriptors();
+            final ArgumentDescriptor[] argsDesc = Layouts.METHOD.getMethod(method).getNamedSharedMethodInfo().getArgumentDescriptors();
 
             return ArgumentDescriptorUtils.argumentDescriptorsToParameters(getContext(), argsDesc, true);
         }
@@ -155,7 +155,7 @@ public abstract class MethodNodes {
         @TruffleBoundary
         @Specialization
         public Object sourceLocation(DynamicObject method) {
-            SourceSection sourceSection = Layouts.METHOD.getMethod(method).getSharedMethodInfo().getSourceSection();
+            SourceSection sourceSection = Layouts.METHOD.getMethod(method).getNamedSharedMethodInfo().getSourceSection();
 
             if (sourceSection.getSource() == null) {
                 return nil();
@@ -204,7 +204,7 @@ public abstract class MethodNodes {
             return ProcOperations.createRubyProc(
                     coreLibrary().getProcFactory(),
                     ProcType.LAMBDA,
-                    method.getSharedMethodInfo(),
+                    method.getNamedSharedMethodInfo(),
                     callTarget,
                     callTarget,
                     null,
@@ -220,11 +220,11 @@ public abstract class MethodNodes {
             // We need to preserve the method receiver and we want to have the same argument list
 
             final InternalMethod method = Layouts.METHOD.getMethod(methodObject);
-            final SourceSection sourceSection = method.getSharedMethodInfo().getSourceSection();
+            final SourceSection sourceSection = method.getNamedSharedMethodInfo().getSourceSection();
             final RootNode oldRootNode = ((RootCallTarget) method.getCallTarget()).getRootNode();
 
             final SetReceiverNode setReceiverNode = new SetReceiverNode(getContext(), sourceSection, Layouts.METHOD.getReceiver(methodObject), method.getCallTarget());
-            final RootNode newRootNode = new RubyRootNode(getContext(), sourceSection, oldRootNode.getFrameDescriptor(), method.getSharedMethodInfo(), setReceiverNode, false);
+            final RootNode newRootNode = new RubyRootNode(getContext(), sourceSection, oldRootNode.getFrameDescriptor(), method.getNamedSharedMethodInfo(), setReceiverNode, false);
             return Truffle.getRuntime().createCallTarget(newRootNode);
         }
 

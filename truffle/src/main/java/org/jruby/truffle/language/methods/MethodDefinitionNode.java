@@ -28,15 +28,15 @@ import org.jruby.truffle.language.arguments.RubyArguments;
 public class MethodDefinitionNode extends RubyNode {
 
     private final String name;
-    private final SharedMethodInfo sharedMethodInfo;
+    private final NamedSharedMethodInfo namedSharedMethodInfo;
     private final CallTarget callTarget;
 
     @Child private GetDefaultDefineeNode getDefaultDefineeNode;
 
-    public MethodDefinitionNode(RubyContext context, SourceSection sourceSection, String name, SharedMethodInfo sharedMethodInfo, CallTarget callTarget) {
+    public MethodDefinitionNode(RubyContext context, SourceSection sourceSection, String name, NamedSharedMethodInfo namedSharedMethodInfo, CallTarget callTarget) {
         super(context, sourceSection);
         this.name = name;
-        this.sharedMethodInfo = sharedMethodInfo;
+        this.namedSharedMethodInfo = namedSharedMethodInfo;
         this.callTarget = callTarget;
     }
 
@@ -56,7 +56,7 @@ public class MethodDefinitionNode extends RubyNode {
         }
 
         final LexicalScope lexicalScope = RubyArguments.getMethod(frame).getLexicalScope();
-        return new InternalMethod(getContext(), sharedMethodInfo, lexicalScope, name, dummyModule, dummyVisibility, false, null, callTarget,
+        return new InternalMethod(getContext(), namedSharedMethodInfo, lexicalScope, name, dummyModule, dummyVisibility, false, null, callTarget,
                         null, capturedDefaultDefinee);
     }
 

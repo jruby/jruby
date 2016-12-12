@@ -73,7 +73,7 @@ public class DeclarationContext {
     public DynamicObject getModuleToDefineMethods(Object self, InternalMethod method, RubyContext context, SingletonClassNode singletonClassNode) {
         switch (defaultDefinee) {
         case LEXICAL_SCOPE:
-            return method.getSharedMethodInfo().getLexicalScope().getLiveModule();
+            return method.getNamedSharedMethodInfo().getLexicalScope().getLiveModule();
         case SINGLETON_CLASS:
             return singletonClassNode.executeSingletonClass(self);
         case SELF:

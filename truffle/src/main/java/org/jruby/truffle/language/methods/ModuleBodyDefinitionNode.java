@@ -35,17 +35,17 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ModuleBodyDefinitionNode extends RubyNode {
 
     private final String name;
-    private final SharedMethodInfo sharedMethodInfo;
+    private final NamedSharedMethodInfo namedSharedMethodInfo;
     private final CallTarget callTarget;
     private final boolean captureBlock;
     private final boolean dynamicLexicalScope;
     private final Map<DynamicObject, LexicalScope> lexicalScopes;
 
-    public ModuleBodyDefinitionNode(RubyContext context, SourceSection sourceSection, String name, SharedMethodInfo sharedMethodInfo,
+    public ModuleBodyDefinitionNode(RubyContext context, SourceSection sourceSection, String name, NamedSharedMethodInfo namedSharedMethodInfo,
                     CallTarget callTarget, boolean captureBlock, boolean dynamicLexicalScope) {
         super(context, sourceSection);
         this.name = name;
-        this.sharedMethodInfo = sharedMethodInfo;
+        this.namedSharedMethodInfo = namedSharedMethodInfo;
         this.callTarget = callTarget;
         this.captureBlock = captureBlock;
         this.dynamicLexicalScope = dynamicLexicalScope;
@@ -53,7 +53,7 @@ public class ModuleBodyDefinitionNode extends RubyNode {
     }
 
     public ModuleBodyDefinitionNode(ModuleBodyDefinitionNode node) {
-        this(node.getContext(), node.getSourceSection(), node.name, node.sharedMethodInfo, node.callTarget, node.captureBlock, node.dynamicLexicalScope);
+        this(node.getContext(), node.getSourceSection(), node.name, node.namedSharedMethodInfo, node.callTarget, node.captureBlock, node.dynamicLexicalScope);
     }
 
     public InternalMethod createMethod(VirtualFrame frame, LexicalScope staticLexicalScope, DynamicObject module) {
@@ -67,7 +67,7 @@ public class ModuleBodyDefinitionNode extends RubyNode {
 
         final LexicalScope parentLexicalScope = RubyArguments.getMethod(frame).getLexicalScope();
         final LexicalScope lexicalScope = prepareLexicalScope(staticLexicalScope, parentLexicalScope, module);
-        return new InternalMethod(getContext(), sharedMethodInfo, lexicalScope, name, module, Visibility.PUBLIC, false, null, callTarget, capturedBlock, null);
+        return new InternalMethod(getContext(), namedSharedMethodInfo, lexicalScope, name, module, Visibility.PUBLIC, false, null, callTarget, capturedBlock, null);
     }
 
     @TruffleBoundary

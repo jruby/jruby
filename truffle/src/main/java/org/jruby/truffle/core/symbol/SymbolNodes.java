@@ -31,6 +31,7 @@ import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.methods.Arity;
 import org.jruby.truffle.language.methods.InternalMethod;
+import org.jruby.truffle.language.methods.NamedSharedMethodInfo;
 import org.jruby.truffle.language.methods.SharedMethodInfo;
 import org.jruby.truffle.language.methods.SymbolProcNode;
 import org.jruby.truffle.parser.ArgumentDescriptor;
@@ -110,17 +111,18 @@ public abstract class SymbolNodes {
                     .getCallNode().getEncapsulatingSourceSection();
             final RubySourceSection rubySourceSection = new RubySourceSection(sourceSection);
 
-            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(
-                    sourceSection,
-                    method.getLexicalScope(),
-                    Arity.AT_LEAST_ONE,
-                    null,
+            final NamedSharedMethodInfo sharedMethodInfo = new NamedSharedMethodInfo(
+                    new SharedMethodInfo(
+                            sourceSection,
+                            method.getLexicalScope(),
+                            Arity.AT_LEAST_ONE,
+                            null,
+                            ArgumentDescriptor.ANON_REST,
+                            false,
+                            false,
+                            false),
                     Layouts.SYMBOL.getString(symbol),
-                    "proc",
-                    ArgumentDescriptor.ANON_REST,
-                    false,
-                    false,
-                    false);
+                    "proc");
 
             final RubyRootNode rootNode = new RubyRootNode(getContext(), sourceSection, new FrameDescriptor(nil()), sharedMethodInfo, Translator.sequence(getContext(), sourceSection.getSource(), rubySourceSection, Arrays.asList(Translator.createCheckArityNode(getContext(), sourceSection.getSource(), rubySourceSection, Arity.AT_LEAST_ONE), new SymbolProcNode(getContext(), sourceSection, Layouts.SYMBOL.getString(symbol)))), false);
 

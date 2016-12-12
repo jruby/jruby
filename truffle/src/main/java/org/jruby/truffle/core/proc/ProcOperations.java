@@ -19,7 +19,7 @@ import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.control.FrameOnStackMarker;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.methods.InternalMethod;
-import org.jruby.truffle.language.methods.SharedMethodInfo;
+import org.jruby.truffle.language.methods.NamedSharedMethodInfo;
 
 public abstract class ProcOperations {
 
@@ -42,7 +42,7 @@ public abstract class ProcOperations {
     public static DynamicObject createRubyProc(
             DynamicObjectFactory instanceFactory,
             ProcType type,
-            SharedMethodInfo sharedMethodInfo,
+            NamedSharedMethodInfo namedSharedMethodInfo,
             CallTarget callTargetForProcs,
             CallTarget callTargetForLambdas,
             MaterializedFrame declarationFrame,
@@ -52,7 +52,7 @@ public abstract class ProcOperations {
         return createRubyProc(
                 instanceFactory,
                 type,
-                sharedMethodInfo,
+                namedSharedMethodInfo,
                 callTargetForProcs,
                 callTargetForLambdas,
                 declarationFrame,
@@ -65,7 +65,7 @@ public abstract class ProcOperations {
     public static DynamicObject createRubyProc(
             DynamicObjectFactory instanceFactory,
             ProcType type,
-            SharedMethodInfo sharedMethodInfo,
+            NamedSharedMethodInfo namedSharedMethodInfo,
             CallTarget callTargetForProcs,
             CallTarget callTargetForLambdas,
             MaterializedFrame declarationFrame,
@@ -90,7 +90,7 @@ public abstract class ProcOperations {
         return Layouts.PROC.createProc(
                 instanceFactory,
                 type,
-                sharedMethodInfo,
+                namedSharedMethodInfo,
                 callTargetForType,
                 callTargetForLambdas,
                 declarationFrame,

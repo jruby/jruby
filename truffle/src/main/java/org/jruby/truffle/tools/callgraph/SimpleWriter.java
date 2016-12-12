@@ -10,7 +10,7 @@
 package org.jruby.truffle.tools.callgraph;
 
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.language.methods.SharedMethodInfo;
+import org.jruby.truffle.language.methods.NamedSharedMethodInfo;
 
 import java.io.PrintStream;
 import java.util.Map;
@@ -35,7 +35,7 @@ public class SimpleWriter {
     }
 
     private void write(Method method) {
-        final SharedMethodInfo sharedInfo = method.getSharedInfo();
+        final NamedSharedMethodInfo sharedInfo = method.getSharedInfo();
 
         // Can't use the SourceSection from SharedMethodInfo as it is created before we translate and so can make a covering source section
         final SourceSection sourceSection = method.getVersions().get(0).getRootNode().getSourceSection();

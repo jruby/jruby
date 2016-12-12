@@ -20,7 +20,7 @@ import org.jruby.truffle.language.control.ReturnID;
 import org.jruby.truffle.language.locals.LocalVariableType;
 import org.jruby.truffle.language.locals.ReadDeclarationVariableNode;
 import org.jruby.truffle.language.locals.ReadLocalVariableNode;
-import org.jruby.truffle.language.methods.SharedMethodInfo;
+import org.jruby.truffle.language.methods.NamedSharedMethodInfo;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -46,7 +46,7 @@ public class TranslatorEnvironment {
 
     protected final TranslatorEnvironment parent;
     private boolean needsDeclarationFrame = false; // We keep the logic as we might do it differently one day.
-    private final SharedMethodInfo sharedMethodInfo;
+    private final NamedSharedMethodInfo namedSharedMethodInfo;
 
     private final String namedMethodName;
 
@@ -56,9 +56,9 @@ public class TranslatorEnvironment {
     public boolean hasRestParameter = false;
 
     public TranslatorEnvironment(RubyContext context, TranslatorEnvironment parent, ParseEnvironment parseEnvironment,
-            ReturnID returnID, boolean ownScopeForAssignments, boolean neverAssignInParentScope,
-            boolean isModuleBody, SharedMethodInfo sharedMethodInfo, String namedMethodName, int blockDepth,
-            BreakID breakID, FrameDescriptor frameDescriptor) {
+                                 ReturnID returnID, boolean ownScopeForAssignments, boolean neverAssignInParentScope,
+                                 boolean isModuleBody, NamedSharedMethodInfo namedSharedMethodInfo, String namedMethodName, int blockDepth,
+                                 BreakID breakID, FrameDescriptor frameDescriptor) {
         this.context = context;
         this.parent = parent;
         this.frameDescriptor = frameDescriptor;
@@ -67,16 +67,16 @@ public class TranslatorEnvironment {
         this.ownScopeForAssignments = ownScopeForAssignments;
         this.neverAssignInParentScope = neverAssignInParentScope;
         this.isModuleBody = isModuleBody;
-        this.sharedMethodInfo = sharedMethodInfo;
+        this.namedSharedMethodInfo = namedSharedMethodInfo;
         this.namedMethodName = namedMethodName;
         this.blockDepth = blockDepth;
         this.breakID = breakID;
     }
 
     public TranslatorEnvironment(RubyContext context, TranslatorEnvironment parent, ParseEnvironment parseEnvironment,
-            ReturnID returnID, boolean ownScopeForAssignments, boolean neverAssignInParentScope,
-            boolean isModuleBody, SharedMethodInfo sharedMethodInfo, String namedMethodName, int blockDepth, BreakID breakID) {
-        this(context, parent, parseEnvironment, returnID, ownScopeForAssignments, neverAssignInParentScope, isModuleBody, sharedMethodInfo, namedMethodName, blockDepth,
+                                 ReturnID returnID, boolean ownScopeForAssignments, boolean neverAssignInParentScope,
+                                 boolean isModuleBody, NamedSharedMethodInfo namedSharedMethodInfo, String namedMethodName, int blockDepth, BreakID breakID) {
+        this(context, parent, parseEnvironment, returnID, ownScopeForAssignments, neverAssignInParentScope, isModuleBody, namedSharedMethodInfo, namedMethodName, blockDepth,
                 breakID, new FrameDescriptor(context.getCoreLibrary().getNilObject()));
     }
 
@@ -213,8 +213,8 @@ public class TranslatorEnvironment {
         return isModuleBody;
     }
 
-    public SharedMethodInfo getSharedMethodInfo() {
-        return sharedMethodInfo;
+    public NamedSharedMethodInfo getNamedSharedMethodInfo() {
+        return namedSharedMethodInfo;
     }
 
     public List<FrameSlot> getFlipFlopStates() {

@@ -39,8 +39,9 @@ import org.jruby.truffle.language.methods.CatchRetryAsErrorNode;
 import org.jruby.truffle.language.methods.CatchReturnAsErrorNode;
 import org.jruby.truffle.language.methods.ExceptionTranslatingNode;
 import org.jruby.truffle.language.methods.InternalMethod;
-import org.jruby.truffle.language.methods.SharedMethodInfo;
+import org.jruby.truffle.language.methods.NamedSharedMethodInfo;
 import org.jruby.truffle.language.methods.UnsupportedOperationBehavior;
+import org.jruby.truffle.language.methods.SharedMethodInfo;
 import org.jruby.truffle.parser.ast.NilParseNode;
 import org.jruby.truffle.parser.ast.RootParseNode;
 import org.jruby.truffle.parser.parser.ParserConfiguration;
@@ -135,8 +136,8 @@ public class TranslatorDriver {
 
         final InternalMethod parentMethod = parentFrame == null ? null : RubyArguments.getMethod(parentFrame);
         LexicalScope lexicalScope;
-        if (parentMethod != null && parentMethod.getSharedMethodInfo().getLexicalScope() != null) {
-            lexicalScope = parentMethod.getSharedMethodInfo().getLexicalScope();
+        if (parentMethod != null && parentMethod.getNamedSharedMethodInfo().getLexicalScope() != null) {
+            lexicalScope = parentMethod.getNamedSharedMethodInfo().getLexicalScope();
         } else {
             lexicalScope = context.getRootLexicalScope();
         }
@@ -147,22 +148,23 @@ public class TranslatorDriver {
         parseEnvironment.resetLexicalScope(lexicalScope);
 
         // TODO (10 Feb. 2015): name should be "<top (required)> for the require-d/load-ed files.
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(
-                sourceSection,
-                parseEnvironment.getLexicalScope(),
-                Arity.NO_ARGUMENTS,
-                null,
+        final NamedSharedMethodInfo namedSharedMethodInfo = new NamedSharedMethodInfo(
+                new SharedMethodInfo(
+                        sourceSection,
+                        parseEnvironment.getLexicalScope(),
+                        Arity.NO_ARGUMENTS,
+                        null,
+                        null,
+                        false,
+                        false,
+                        false),
                 "<main>",
-                null,
-                null,
-                false,
-                false,
-                false);
+                null);
 
         final boolean topLevel = parserContext == ParserContext.TOP_LEVEL_FIRST || parserContext == ParserContext.TOP_LEVEL;
         final boolean isModuleBody = topLevel;
         final TranslatorEnvironment environment = new TranslatorEnvironment(context, parentEnvironment,
-                        parseEnvironment, parseEnvironment.allocateReturnID(), ownScopeForAssignments, false, isModuleBody, sharedMethodInfo, sharedMethodInfo.getName(), 0, null);
+                        parseEnvironment, parseEnvironment.allocateReturnID(), ownScopeForAssignments, false, isModuleBody, namedSharedMethodInfo, namedSharedMethodInfo.getName(), 0, null);
 
         // Declare arguments as local variables in the top-level environment - we'll put the values there in a prelude
 
@@ -244,45 +246,47 @@ public class TranslatorDriver {
             truffleNode = new TopLevelRaiseHandler(context, sourceSection, truffleNode);
         }
 
-        return new RubyRootNode(context, truffleNode.getRubySourceSection().toSourceSection(source), environment.getFrameDescriptor(), sharedMethodInfo, truffleNode, environment.needsDeclarationFrame());
+        return new RubyRootNode(context, truffleNode.getRubySourceSection().toSourceSection(source), environment.getFrameDescriptor(), namedSharedMethodInfo, truffleNode, environment.needsDeclarationFrame());
     }
 
     private TranslatorEnvironment environmentForFrameDescriptor(RubyContext context, FrameDescriptor frameDescriptor) {
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(
-                context.getCoreLibrary().getSourceSection(),
-                context.getRootLexicalScope(),
-                Arity.NO_ARGUMENTS,
-                null,
-                null,
+        final NamedSharedMethodInfo namedSharedMethodInfo = new NamedSharedMethodInfo(
+                new SharedMethodInfo(
+                        context.getCoreLibrary().getSourceSection(),
+                        context.getRootLexicalScope(),
+                        Arity.NO_ARGUMENTS,
+                        null,
+                        null,
+                        false,
+                        false,
+                        false),
                 "external",
-                null,
-                false,
-                false,
-                false);
+                null);
             // TODO(CS): how do we know if the frame is a block or not?
             return new TranslatorEnvironment(context, null, parseEnvironment,
-                        parseEnvironment.allocateReturnID(), true, true, false, sharedMethodInfo, sharedMethodInfo.getName(), 0, null, frameDescriptor);
+                        parseEnvironment.allocateReturnID(), true, true, false, namedSharedMethodInfo, namedSharedMethodInfo.getName(), 0, null, frameDescriptor);
     }
 
     private TranslatorEnvironment environmentForFrame(RubyContext context, MaterializedFrame frame) {
         if (frame == null) {
             return null;
         } else {
-            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(
-                    context.getCoreLibrary().getSourceSection(),
-                    context.getRootLexicalScope(),
-                    Arity.NO_ARGUMENTS,
-                    null,
-                    null,
+            final NamedSharedMethodInfo namedSharedMethodInfo = new NamedSharedMethodInfo(
+                    new SharedMethodInfo(
+                            context.getCoreLibrary().getSourceSection(),
+                            context.getRootLexicalScope(),
+                            Arity.NO_ARGUMENTS,
+                            null,
+                            null,
+                            false,
+                            false,
+                            false),
                     "external",
-                    null,
-                    false,
-                    false,
-                    false);
+                    null);
             final MaterializedFrame parent = RubyArguments.getDeclarationFrame(frame);
             // TODO(CS): how do we know if the frame is a block or not?
             return new TranslatorEnvironment(context, environmentForFrame(context, parent), parseEnvironment,
-                            parseEnvironment.allocateReturnID(), true, true, false, sharedMethodInfo, sharedMethodInfo.getName(), 0, null, frame.getFrameDescriptor());
+                            parseEnvironment.allocateReturnID(), true, true, false, namedSharedMethodInfo, namedSharedMethodInfo.getName(), 0, null, frame.getFrameDescriptor());
         }
     }
 

@@ -40,7 +40,7 @@ public abstract class LookupForExistingModuleNode extends RubyNode {
     public RubyConstant lookupForExistingModule(VirtualFrame frame, String name, DynamicObject lexicalParent,
             @Cached("createBinaryProfile()") ConditionProfile autoloadProfile,
             @Cached("createBinaryProfile()") ConditionProfile warnProfile) {
-        final LexicalScope lexicalScope = RubyArguments.getMethod(frame).getSharedMethodInfo().getLexicalScope();
+        final LexicalScope lexicalScope = RubyArguments.getMethod(frame).getNamedSharedMethodInfo().getLexicalScope();
         RubyConstant constant = deepConstantSearch(name,
                 lexicalScope, lexicalParent);
 

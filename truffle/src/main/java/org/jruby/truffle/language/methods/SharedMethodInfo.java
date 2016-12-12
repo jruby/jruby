@@ -11,14 +11,12 @@ package org.jruby.truffle.language.methods;
 
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.Layouts;
-import org.jruby.truffle.RubyLanguage;
 import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.parser.ArgumentDescriptor;
 
 /**
  * {@link InternalMethod} objects are copied as properties such as visibility are changed.
- * {@link SharedMethodInfo} stores the state that does not change, such as where the method was defined.
+ * {@link NamedSharedMethodInfo} stores the state that does not change, such as where the method was defined.
  */
 public class SharedMethodInfo {
 
@@ -26,9 +24,6 @@ public class SharedMethodInfo {
     private final LexicalScope lexicalScope;
     private final Arity arity;
     private final DynamicObject definitionModule;
-    /** The original name of the method. Does not change when aliased. */
-    private final String name;
-    private final String notes;
     private final ArgumentDescriptor[] argumentDescriptors;
     private final boolean alwaysClone;
     private final boolean alwaysInline;
@@ -39,8 +34,6 @@ public class SharedMethodInfo {
             LexicalScope lexicalScope,
             Arity arity,
             DynamicObject definitionModule,
-            String name,
-            String notes,
             ArgumentDescriptor[] argumentDescriptors,
             boolean alwaysClone,
             boolean alwaysInline,
@@ -54,8 +47,6 @@ public class SharedMethodInfo {
         this.lexicalScope = lexicalScope;
         this.arity = arity;
         this.definitionModule = definitionModule;
-        this.name = name;
-        this.notes = notes;
         this.argumentDescriptors = argumentDescriptors;
         this.alwaysClone = alwaysClone;
         this.alwaysInline = alwaysInline;
@@ -74,14 +65,6 @@ public class SharedMethodInfo {
         return arity;
     }
 
-    public String getName() {
-        return name;
-    }
-
-    public String getNotes() {
-        return notes;
-    }
-
     public ArgumentDescriptor[] getArgumentDescriptors() {
         return argumentDescriptors;
     }
@@ -98,55 +81,7 @@ public class SharedMethodInfo {
         return needsCallerFrame;
     }
 
-    public SharedMethodInfo withName(String newName) {
-        return new SharedMethodInfo(
-                sourceSection,
-                lexicalScope,
-                arity,
-                definitionModule,
-                newName,
-                notes,
-                argumentDescriptors,
-                alwaysClone,
-                alwaysInline,
-                needsCallerFrame);
+    public DynamicObject getDefinitionModule() {
+        return definitionModule;
     }
-
-    public String getDescriptiveName() {
-        final StringBuilder descriptiveName = new StringBuilder();
-
-        if (definitionModule != null) {
-            descriptiveName.append(Layouts.MODULE.getFields(definitionModule).getName());
-        }
-
-        if (name != null) {
-            descriptiveName.append('#');
-            descriptiveName.append(name);
-        }
-
-        if (notes != null) {
-            final boolean parens = descriptiveName.length() > 0;
-
-            if (parens) {
-                descriptiveName.append(" (");
-            }
-
-            descriptiveName.append(notes);
-
-            if (parens) {
-                descriptiveName.append(')');
-            }
-        }
-
-        return descriptiveName.toString();
-    }
-
-    public String getDescriptiveNameAndSource() {
-        if (sourceSection == null || !sourceSection.isAvailable()) {
-            return getDescriptiveName();
-        } else {
-            return getDescriptiveName() + " " + RubyLanguage.fileLine(sourceSection);
-        }
-    }
-
 }

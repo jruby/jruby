@@ -114,7 +114,7 @@ import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.methods.LookupMethodNode;
 import org.jruby.truffle.language.methods.LookupMethodNodeGen;
-import org.jruby.truffle.language.methods.SharedMethodInfo;
+import org.jruby.truffle.language.methods.NamedSharedMethodInfo;
 import org.jruby.truffle.language.objects.FreezeNode;
 import org.jruby.truffle.language.objects.FreezeNodeGen;
 import org.jruby.truffle.language.objects.IsANode;
@@ -625,9 +625,9 @@ public abstract class KernelNodes {
 
             final InternalMethod method = new InternalMethod(
                     getContext(),
-                    cachedRootNode.getRootNode().getSharedMethodInfo(),
+                    cachedRootNode.getRootNode().getNamedSharedMethodInfo(),
                     RubyArguments.getMethod(parentFrame).getLexicalScope(),
-                    cachedRootNode.getRootNode().getSharedMethodInfo().getName(),
+                    cachedRootNode.getRootNode().getNamedSharedMethodInfo().getName(),
                     RubyArguments.getMethod(parentFrame).getDeclaringModule(),
                     Visibility.PUBLIC,
                     cachedCallTarget);
@@ -1184,7 +1184,7 @@ public abstract class KernelNodes {
             return ProcOperations.createRubyProc(
                     coreLibrary().getProcFactory(),
                     ProcType.LAMBDA,
-                    Layouts.PROC.getSharedMethodInfo(block),
+                    Layouts.PROC.getNamedSharedMethodInfo(block),
                     Layouts.PROC.getCallTargetForLambdas(block),
                     Layouts.PROC.getCallTargetForLambdas(block),
                     Layouts.PROC.getDeclarationFrame(block),
@@ -1212,7 +1212,7 @@ public abstract class KernelNodes {
         @Specialization
         public DynamicObject methodName() {
             // the "original/definition name" of the method.
-            return getSymbol(getContext().getCallStack().getCallingMethodIgnoringSend().getSharedMethodInfo().getName());
+            return getSymbol(getContext().getCallStack().getCallingMethodIgnoringSend().getNamedSharedMethodInfo().getName());
         }
 
     }
@@ -1261,7 +1261,7 @@ public abstract class KernelNodes {
 
         @TruffleBoundary
         private InternalMethod createMissingMethod(Object self, DynamicObject name, String normalizedName, InternalMethod methodMissing) {
-            final SharedMethodInfo info = methodMissing.getSharedMethodInfo().withName(normalizedName);
+            final NamedSharedMethodInfo info = methodMissing.getNamedSharedMethodInfo().withName(normalizedName);
 
             final RubyNode newBody = new CallMethodMissingWithStaticName(getContext(), info.getSourceSection(), name);
             final RubyRootNode newRootNode = new RubyRootNode(getContext(), info.getSourceSection(), new FrameDescriptor(nil()), info, newBody, false);

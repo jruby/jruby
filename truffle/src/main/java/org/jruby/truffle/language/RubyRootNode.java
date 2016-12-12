@@ -17,23 +17,23 @@ import com.oracle.truffle.api.nodes.RootNode;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.RubyLanguage;
-import org.jruby.truffle.language.methods.SharedMethodInfo;
+import org.jruby.truffle.language.methods.NamedSharedMethodInfo;
 
 public class RubyRootNode extends RootNode {
 
     private final RubyContext context;
-    private final SharedMethodInfo sharedMethodInfo;
+    private final NamedSharedMethodInfo namedSharedMethodInfo;
     private final boolean needsDeclarationFrame;
 
     @Child private RubyNode body;
 
     public RubyRootNode(RubyContext context, SourceSection sourceSection, FrameDescriptor frameDescriptor,
-                        SharedMethodInfo sharedMethodInfo, RubyNode body, boolean needsDeclarationFrame) {
+                        NamedSharedMethodInfo namedSharedMethodInfo, RubyNode body, boolean needsDeclarationFrame) {
         super(RubyLanguage.class, sourceSection, frameDescriptor);
         assert sourceSection != null;
         assert body != null;
         this.context = context;
-        this.sharedMethodInfo = sharedMethodInfo;
+        this.namedSharedMethodInfo = namedSharedMethodInfo;
         this.needsDeclarationFrame = needsDeclarationFrame;
         this.body = body;
 
@@ -74,20 +74,20 @@ public class RubyRootNode extends RootNode {
 
     @Override
     public String getName() {
-        if (sharedMethodInfo.getName() != null) {
-            return sharedMethodInfo.getName();
+        if (namedSharedMethodInfo.getName() != null) {
+            return namedSharedMethodInfo.getName();
         } else {
-            return sharedMethodInfo.getNotes();
+            return namedSharedMethodInfo.getNotes();
         }
     }
 
     @Override
     public String toString() {
-        return sharedMethodInfo.getDescriptiveNameAndSource();
+        return namedSharedMethodInfo.getDescriptiveNameAndSource();
     }
 
-    public SharedMethodInfo getSharedMethodInfo() {
-        return sharedMethodInfo;
+    public NamedSharedMethodInfo getNamedSharedMethodInfo() {
+        return namedSharedMethodInfo;
     }
 
     public RubyNode getBody() {
