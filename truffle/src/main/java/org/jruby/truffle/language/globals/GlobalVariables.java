@@ -27,11 +27,6 @@ public class GlobalVariables {
         this.defaultValue = defaultValue;
     }
 
-    public Object getOrDefault(String key, Object defaultValue) {
-        final Object value = get(key);
-        return (value != null) ? value : defaultValue;
-    }
-
     public Object get(String key) {
         return getStorage(key).getValue();
     }
@@ -71,4 +66,7 @@ public class GlobalVariables {
         return values;
     }
 
+    public void clear() {
+        variables.clear();
+    }
 }
