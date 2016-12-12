@@ -96,9 +96,9 @@ describe "Random#rand with Fixnum" do
 end
 
 describe "Random#rand with Bignum" do
-  it "always returns a Bignum" do
+  it "typically returns a Bignum" do
     rnd = Random.new(1)
-    10.times.map{ rnd.rand(bignum_value) }.min.should be_an_instance_of(Bignum)
+    10.times.map{ rnd.rand(bignum_value) }.max.should be_an_instance_of(Bignum)
   end
 
   it "returns a Bignum greater than or equal to 0" do
