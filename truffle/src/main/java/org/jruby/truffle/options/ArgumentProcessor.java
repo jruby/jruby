@@ -615,7 +615,7 @@ public class ArgumentProcessor {
         return null;
     }
 
-    private String resolveScript(String scriptName) {
+    public String resolveScript(String scriptName) {
         // These try/catches are to allow failing over to the "commands" logic
         // when running from within a jruby-complete jar file, which has
         // jruby.home = a jar file URL that does not resolve correctly with

@@ -93,8 +93,12 @@ public class RubyInstanceConfig {
     }
 
     public void processArguments(String[] arguments) {
-        new ArgumentProcessor(arguments, this).processArguments();
+        final ArgumentProcessor processor = new ArgumentProcessor(arguments, this);
+        processor.processArguments();
         tryProcessArgumentsWithRubyopts();
+        if (getInlineScript() == null && getScriptFileName() == null && System.console() != null) {
+            setScriptFileName(processor.resolveScript("irb"));
+        }
     }
 
     public void tryProcessArgumentsWithRubyopts() {
