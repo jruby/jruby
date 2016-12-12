@@ -1314,6 +1314,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     public final RubyString cat(byte[] str, int beg, int len) {
         modify(value.getRealSize() + len);
+        if (len == 0) return this;
         System.arraycopy(str, beg, value.getUnsafeBytes(), value.getBegin() + value.getRealSize(), len);
         value.setRealSize(value.getRealSize() + len);
         return this;
