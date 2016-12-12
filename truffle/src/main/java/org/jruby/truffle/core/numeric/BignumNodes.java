@@ -584,27 +584,6 @@ public abstract class BignumNodes {
 
     }
 
-    @CoreMethod(names = "coerce", required = 1)
-    public abstract static class CoerceNode extends CoreMethodArrayArgumentsNode {
-
-        // NOTE (eregon, 16 Feb. 2015): In other implementations, b is converted to a Bignum here,
-        // even if it fits in a Fixnum. We avoid it for implementation sanity
-        // and to keep the representations strictly distinct over the range of values.
-
-        @Specialization
-        public DynamicObject coerce(DynamicObject a, long b) {
-            Object[] store = new Object[] { b, a };
-            return createArray(store, store.length);
-        }
-
-        @Specialization(guards = "isRubyBignum(b)")
-        public DynamicObject coerce(DynamicObject a, DynamicObject b) {
-            Object[] store = new Object[] { b, a };
-            return createArray(store, store.length);
-        }
-
-    }
-
     @NonStandard
     @CoreMethod(names = "force_coerce", required = 1)
     public abstract static class ForceCoerceNode extends CoreMethodArrayArgumentsNode {
