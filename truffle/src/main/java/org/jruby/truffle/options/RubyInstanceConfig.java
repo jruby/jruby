@@ -96,7 +96,7 @@ public class RubyInstanceConfig {
         final ArgumentProcessor processor = new ArgumentProcessor(arguments, this);
         processor.processArguments();
         tryProcessArgumentsWithRubyopts();
-        if (getInlineScript() == null && getScriptFileName() == null && System.console() != null) {
+        if (!hasScriptArgv && System.console() != null) {
             setScriptFileName(processor.resolveScript("irb"));
         }
     }
