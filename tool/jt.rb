@@ -547,6 +547,7 @@ module Commands
   end
 
   def clean
+    mx(JRUBY_DIR, 'clean') if Utilities.mx?
     mvn 'clean'
   end
 
