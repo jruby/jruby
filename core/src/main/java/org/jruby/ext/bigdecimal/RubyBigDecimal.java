@@ -1354,14 +1354,12 @@ public class RubyBigDecimal extends RubyNumeric {
 
     @JRubyMethod(name = "round", optional = 2)
     public IRubyObject round(ThreadContext context, IRubyObject[] args) {
-        final int scale = args.length > 0 ? num2int(args[0]) : 0;
-
         // Special treatment for BigDecimal::NAN and BigDecimal::INFINITY
         //
         // If round is called without any argument, we should raise a
         // FloatDomainError. Otherwise, we don't have to call round ;
         // we can simply return the number itself.
-        if (scale == 0 && isInfinity()) {
+        if (args.length == 0 && isInfinity()) {
             StringBuilder message = new StringBuilder("Computation results to ");
             message.append('\'').append(callMethod(context, "to_s")).append('\'');
 
@@ -1373,6 +1371,7 @@ public class RubyBigDecimal extends RubyNumeric {
             }
         }
 
+        final int scale = args.length > 0 ? num2int(args[0]) : 0;
         RoundingMode mode = (args.length > 1) ? javaRoundingModeFromRubyRoundingMode(context.runtime, args[1]) : getRoundingMode(context.runtime);
         // JRUBY-914: Java 1.4 BigDecimal does not allow a negative scale, so we have to simulate it
         final RubyBigDecimal bigDecimal;
