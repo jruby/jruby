@@ -91,7 +91,7 @@ public class RubyEngine {
             status = status && checkFileSyntax(arg);
         }
 
-        return status ? 0 : -1;
+        return status ? 0 : 1;
     }
 
     private boolean checkFileSyntax(String filename) {
