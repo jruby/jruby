@@ -432,22 +432,6 @@ end
 
 module OpenSSL
 
-  module Cipher
-
-    cipher_new = <<-HEREDOC
-      ==========================================
-      Workaround: Stub OpenSSL::Cipher.new
-      Called here:
-        lib/ruby/stdlib/rubygems/security.rb:372
-    HEREDOC
-    puts cipher_new if $VERBOSE
-
-    def self.new(enc)
-
-    end
-
-  end
-
   verify_peer = <<-HEREDOC
       ==========================================
       Workaround: Stub OpenSSL::SSL::VERIFY_PEER
