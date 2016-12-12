@@ -23,6 +23,7 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.builtins.NonStandard;
 import org.jruby.truffle.builtins.Primitive;
 import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.builtins.UnaryCoreMethodNode;
@@ -591,15 +592,32 @@ public abstract class BignumNodes {
         // and to keep the representations strictly distinct over the range of values.
 
         @Specialization
-        public DynamicObject coerce(DynamicObject a, int b) {
+        public DynamicObject coerce(DynamicObject a, long b) {
             Object[] store = new Object[] { b, a };
             return createArray(store, store.length);
         }
 
-        @Specialization
-        public DynamicObject coerce(DynamicObject a, long b) {
+        @Specialization(guards = "isRubyBignum(b)")
+        public DynamicObject coerce(DynamicObject a, DynamicObject b) {
             Object[] store = new Object[] { b, a };
             return createArray(store, store.length);
+        }
+
+    }
+
+    @NonStandard
+    @CoreMethod(names = "force_coerce", required = 1)
+    public abstract static class ForceCoerceNode extends CoreMethodArrayArgumentsNode {
+
+        @Specialization
+        public DynamicObject coerce(DynamicObject a, long b) {
+            Object[] store = new Object[] { Layouts.BIGNUM.createBignum(coreLibrary().getBignumFactory(), toBigInteger(b)), a };
+            return createArray(store, store.length);
+        }
+
+        @TruffleBoundary
+        private static BigInteger toBigInteger(long value) {
+            return BigInteger.valueOf(value);
         }
 
         @Specialization(guards = "isRubyBignum(b)")
