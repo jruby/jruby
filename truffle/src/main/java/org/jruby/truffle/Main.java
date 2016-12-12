@@ -69,14 +69,14 @@ public class Main {
             if (!mee.isAborted()) {
                 config.getError().println(mee.getMessage());
                 if (mee.isUsageError()) {
-                    doPrintUsage(config, true);
+                    printUsage(config, true);
                 }
             }
             System.exit(mee.getStatus());
         }
 
-        doShowVersion(config);
-        doShowCopyright(config);
+        showVersion(config);
+        showCopyright(config);
 
         final int exitCode;
 
@@ -105,7 +105,7 @@ public class Main {
                     exitCode = 1;
                 } else if (config.getShouldCheckSyntax()) {
                     // check syntax only and exit
-                    exitCode = rubyEngine.doCheckSyntax(config.getScriptSource(), filename);
+                    exitCode = rubyEngine.checkSyntax(config.getScriptSource(), filename);
                 } else {
                     exitCode = rubyEngine.execute(filename);
                 }
@@ -114,7 +114,7 @@ public class Main {
                 rubyEngine.dispose();
             }
         } else {
-            doPrintUsage(config, false);
+            printUsage(config, false);
             exitCode = 1;
         }
 
@@ -123,19 +123,19 @@ public class Main {
         System.exit(exitCode);
     }
 
-    private static void doPrintUsage(RubyInstanceConfig config, boolean force) {
+    private static void printUsage(RubyInstanceConfig config, boolean force) {
         if (config.getShouldPrintUsage() || force) {
             config.getOutput().print(OutputStrings.getBasicUsageHelp());
         }
     }
 
-    private static void doShowCopyright(RubyInstanceConfig config) {
+    private static void showCopyright(RubyInstanceConfig config) {
         if (config.isShowCopyright()) {
             config.getOutput().println(OutputStrings.getCopyrightString());
         }
     }
 
-    private static void doShowVersion(RubyInstanceConfig config) {
+    private static void showVersion(RubyInstanceConfig config) {
         if (config.isShowVersion()) {
             config.getOutput().println(OutputStrings.getVersionString());
         }

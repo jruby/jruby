@@ -82,9 +82,9 @@ public class RubyEngine {
         return Source.newBuilder(source).name(name).mimeType(RubyLanguage.MIME_TYPE).build();
     }
 
-    public int doCheckSyntax(InputStream in, String filename) {
+    public int checkSyntax(InputStream in, String filename) {
         // check primary script
-        boolean status = checkSyntax(in, filename);
+        boolean status = runCheckSyntax(in, filename);
 
         // check other scripts specified on argv
         for (String arg : context.getOptions().ARGUMENTS) {
@@ -98,7 +98,7 @@ public class RubyEngine {
         File file = new File(filename);
         if (file.exists()) {
             try {
-                return checkSyntax(new FileInputStream(file), filename);
+                return runCheckSyntax(new FileInputStream(file), filename);
             } catch (FileNotFoundException fnfe) {
                 System.err.println("File not found: " + filename);
                 return false;
@@ -108,7 +108,7 @@ public class RubyEngine {
         }
     }
 
-    public boolean checkSyntax(InputStream in, String filename) {
+    private boolean runCheckSyntax(InputStream in, String filename) {
         context.setSyntaxCheckInputStream(in);
         context.setOriginalInputFile(filename);
 
