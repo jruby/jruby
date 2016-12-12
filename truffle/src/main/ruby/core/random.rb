@@ -84,7 +84,7 @@ class Rubinius::Randomizer
   end
 
   def as_bignum(integer)
-    0xffff_ffff_ffff_ffff_ffff.force_coerce(integer)[0]
+    0xffff_ffff_ffff_ffff_ffff.coerce(integer)[0]
   end
 
   # Generate a random Float, in the range 0...1.0
