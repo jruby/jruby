@@ -116,7 +116,7 @@ public class RubyContext extends ExecutionContext {
         optionsBuilder.set(System.getProperties());
         options = optionsBuilder.build();
 
-        this.jrubyHome = setupJRubyHome();
+        this.jrubyHome = findJRubyHome();
         this.currentDirectory = System.getProperty("user.dir");
 
         if (options.CALL_GRAPH) {
@@ -207,11 +207,6 @@ public class RubyContext extends ExecutionContext {
         }
     }
 
-    private String setupJRubyHome() {
-        String jrubyHome = findJRubyHome();
-        return jrubyHome;
-    }
-
     private CodeSource getCodeSource() {
         try {
             return Class.forName("org.jruby.Ruby").getProtectionDomain().getCodeSource();
@@ -221,8 +216,22 @@ public class RubyContext extends ExecutionContext {
     }
 
     private String findJRubyHome() {
-        if (!TruffleOptions.AOT && System.getenv("JRUBY_HOME") == null && System.getProperty("jruby.home") == null) {
-            // Set JRuby home automatically for GraalVM
+        if (options.HOME != null) {
+            return options.HOME;
+        }
+
+        String fromENV = System.getenv("JRUBY_HOME");
+        if (fromENV != null) {
+            return fromENV;
+        }
+
+        String fromProperty = System.getProperty("jruby.home");
+        if (fromProperty != null) {
+            return fromProperty;
+        }
+
+        if (!TruffleOptions.AOT) {
+            // Set JRuby home automatically for GraalVM and mx from the current jar path
             final CodeSource codeSource = getCodeSource();
             if (codeSource != null) {
                 final File currentJarFile;
@@ -252,7 +261,7 @@ public class RubyContext extends ExecutionContext {
             }
         }
 
-        return options.HOME;
+        return null;
     }
 
     public Object send(Object object, String methodName, DynamicObject block, Object... arguments) {
