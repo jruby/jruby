@@ -16,9 +16,9 @@ package org.jruby.truffle.core.rope;
 
 public enum CodeRange {
     CR_UNKNOWN(0),
-    CR_7BIT(16),
-    CR_VALID(32),
-    CR_BROKEN(48);
+    CR_7BIT(1),
+    CR_VALID(2),
+    CR_BROKEN(3);
 
     private final int jrubyValue;
 
@@ -33,9 +33,9 @@ public enum CodeRange {
     public static CodeRange fromInt(int codeRange) {
         switch(codeRange) {
             case 0: return CR_UNKNOWN;
-            case 16: return CR_7BIT;
-            case 32: return CR_VALID;
-            case 48: return CR_BROKEN;
+            case 1: return CR_7BIT;
+            case 2: return CR_VALID;
+            case 3: return CR_BROKEN;
             default: throw new UnsupportedOperationException("Don't know how to convert code range: " + codeRange);
         }
     }
