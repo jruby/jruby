@@ -31,7 +31,6 @@ public class PrintfSimpleParser {
         ArgType argType = ArgType.NONE;
 
         final int end = source.length;
-        int argumentIndex = 0;
 
         for (int i = 0; i < end; ) {
 
@@ -132,7 +131,7 @@ public class PrintfSimpleParser {
                         config.setNamesBytes(charsToBytes(nameBytes));
                         i = j + 1;
                         checkNameArg(argType, nameBytes);
-                        checkHash(arguments, argumentIndex);
+                        checkHash(arguments);
                         argType = ArgType.NAMED;
                         argTypeSet = true;
                         if (term == '}') {
@@ -255,14 +254,13 @@ public class PrintfSimpleParser {
                         throw new InvalidFormatException("malformed format string - %" + p);
                 }
             }
-            argumentIndex += 1;
         }
         return configs;
     }
 
-    private static void checkHash(Object[] arguments, int argumentIndex) {
-        if(argumentIndex >= arguments.length  ||
-            !RubyGuards.isRubyHash(arguments[argumentIndex])) {
+    private static void checkHash(Object[] arguments) {
+        if(arguments.length != 1  ||
+            !RubyGuards.isRubyHash(arguments[0])) {
             throw new InvalidFormatException("one hash required");
         }
     }
