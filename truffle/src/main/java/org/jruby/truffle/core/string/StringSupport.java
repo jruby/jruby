@@ -1017,7 +1017,7 @@ public final class StringSupport {
         final ByteList value = string.getByteList();
 
         if (value.getEncoding() != enc) {
-            if (!CodeRangeSupport.isCodeRangeAsciiOnly(string) || !enc.isAsciiCompatible()) string.clearCodeRange();
+            if ((string.getCodeRange() != CR_7BIT) || !enc.isAsciiCompatible()) string.clearCodeRange();
             value.setEncoding(enc);
         }
     }
