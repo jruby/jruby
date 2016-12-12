@@ -252,4 +252,14 @@ public abstract class ProcNodes {
 
     }
 
+    @CoreMethod(names = "hash")
+    public abstract static class HashNode extends CoreMethodArrayArgumentsNode {
+
+        @Specialization
+        public int hash(DynamicObject proc) {
+            return Layouts.PROC.getNamedSharedMethodInfo(proc).getSharedMethodInfo().hashCode();
+        }
+
+    }
+
 }
