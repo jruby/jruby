@@ -207,16 +207,6 @@ public class RubyInstanceConfig {
         return inlineScript.toString().getBytes();
     }
 
-    public boolean canGetScriptSource() {
-        if (hasInlineScript) {
-            return true;
-        } else if (isForceStdin() || getScriptFileName() == null) {
-            return false;
-        } else {
-            return true;
-        }
-    }
-
     public InputStream getScriptSource() {
         try {
             // KCode.NONE is used because KCODE does not affect parse in Ruby 1.8
@@ -224,7 +214,7 @@ public class RubyInstanceConfig {
             if (hasInlineScript) {
                 return new ByteArrayInputStream(inlineScript());
             } else if (isForceStdin() || getScriptFileName() == null) {
-                return null;
+                return System.in;
             } else {
                 final String script = getScriptFileName();
                 return new FileInputStream(script);

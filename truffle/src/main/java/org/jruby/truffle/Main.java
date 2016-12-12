@@ -81,7 +81,6 @@ public class Main {
         final int exitCode;
 
         if (config.getShouldRunInterpreter()) {
-            final boolean in = config.canGetScriptSource();
             final String filename = config.displayedFileName();
 
             final RubyEngine rubyEngine = new RubyEngine(
@@ -100,9 +99,7 @@ public class Main {
 
             printTruffleTimeMetric("before-run");
             try {
-                if (in == false) {
-                    exitCode = 1;
-                } else if (config.isXFlag()) {
+                if (config.isXFlag()) {
                     // no shebang was found and x option is set
                     config.getError().println("jruby: no Ruby script found in input (LoadError)");
                     exitCode = 1;
