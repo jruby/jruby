@@ -1,0 +1,2 @@
+fails:Readline.filename_quote_characters returns nil
+fails:Readline.filename_quote_characters= returns the passed string

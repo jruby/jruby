@@ -145,6 +145,13 @@ suite = {
             "e2c76a19f00128bb1806207e2989139bfb45f49d",
             "201985f0f15af95f03494ab9ef0400e849090d6c",
             "MIT"),
+
+        "JLINE": mavenLib(
+            "jline:jline:2.11",
+            "9504d5e2da5d78237239c5226e8200ec21182040",
+            "ef2539b992e5605be966b6db7cfc83930f0da39b",
+            "BSD-simplified"
+        )
     },
 
     "projects": {
@@ -224,9 +231,6 @@ suite = {
             "dependencies": [
                 "jruby-truffle",
                 "jruby-truffle-ruby",
-            ],
-            "exclude": [
-                "truffle:JLINE",
             ],
             "distDependencies": [
                 "truffle:TRUFFLE_API",

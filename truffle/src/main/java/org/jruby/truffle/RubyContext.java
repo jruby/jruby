@@ -49,6 +49,7 @@ import org.jruby.truffle.options.OptionsBuilder;
 import org.jruby.truffle.platform.NativePlatform;
 import org.jruby.truffle.platform.NativePlatformFactory;
 import org.jruby.truffle.stdlib.CoverageManager;
+import org.jruby.truffle.stdlib.readline.ConsoleHolder;
 import org.jruby.truffle.tools.InstrumentationServerManager;
 import org.jruby.truffle.tools.callgraph.CallGraph;
 import org.jruby.truffle.tools.callgraph.SimpleWriter;
@@ -103,6 +104,7 @@ public class RubyContext extends ExecutionContext {
     private final CallGraph callGraph;
     private final PrintStream debugStandardOut;
     private final CoverageManager coverageManager;
+    private final ConsoleHolder consoleHolder;
 
     private final Object classVariableDefinitionLock = new Object();
 
@@ -200,6 +202,8 @@ public class RubyContext extends ExecutionContext {
         coverageManager = new CoverageManager(this, instrumenter);
 
         coreLibrary.initializePostBoot();
+
+        consoleHolder = new ConsoleHolder();
 
         // Share once everything is loaded
         if (options.SHARED_OBJECTS_ENABLED && options.SHARED_OBJECTS_FORCE) {
@@ -479,6 +483,10 @@ public class RubyContext extends ExecutionContext {
 
     public void setSyntaxCheckInputStream(InputStream syntaxCheckInputStream) {
         this.syntaxCheckInputStream = syntaxCheckInputStream;
+    }
+
+    public ConsoleHolder getConsoleHolder() {
+        return consoleHolder;
     }
 
 }

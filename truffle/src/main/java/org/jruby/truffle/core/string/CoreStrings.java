@@ -20,6 +20,7 @@ public class CoreStrings {
     public final CoreString CANT_COMPRESS_NEGATIVE;
     public final CoreString CLASS;
     public final CoreString CLASS_VARIABLE;
+    public final CoreString EMPTY_STRING;
     public final CoreString EXPRESSION;
     public final CoreString FALSE;
     public final CoreString GLOBAL_VARIABLE;
@@ -50,6 +51,7 @@ public class CoreStrings {
         CANT_COMPRESS_NEGATIVE = new CoreString(context, "can't compress negative numbers");
         CLASS = new CoreString(context, "class");
         CLASS_VARIABLE = new CoreString(context, "class variable");
+        EMPTY_STRING = new CoreString(context, "");
         EXPRESSION = new CoreString(context, "expression");
         FALSE = new CoreString(context, "false");
         GLOBAL_VARIABLE = new CoreString(context, "global-variable");

@@ -280,6 +280,11 @@ public class CoreExceptions {
         return indexError(StringUtils.format("negative length (%d)", length), currentNode);
     }
 
+    @TruffleBoundary
+    public DynamicObject indexErrorInvalidIndex(Node currentNode) {
+        return indexError("invalid index", currentNode);
+    }
+
     // LocalJumpError
 
     @TruffleBoundary

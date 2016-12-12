@@ -136,6 +136,8 @@ import org.jruby.truffle.stdlib.psych.PsychEmitterNodesFactory;
 import org.jruby.truffle.stdlib.psych.PsychParserNodesFactory;
 import org.jruby.truffle.stdlib.psych.YAMLEncoding;
 import org.jruby.truffle.platform.Platform;
+import org.jruby.truffle.stdlib.readline.ReadlineHistoryNodesFactory;
+import org.jruby.truffle.stdlib.readline.ReadlineNodesFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -600,6 +602,8 @@ public class CoreLibrary {
         defineModule(truffleModule, "Process");
         defineModule(truffleModule, "Binding");
         defineModule(truffleModule, "POSIX");
+        defineModule(truffleModule, "Readline");
+        defineModule(truffleModule, "ReadlineHistory");
         psychModule = defineModule("Psych");
         psychParserClass = defineClass(psychModule, objectClass, "Parser");
         final DynamicObject psychHandlerClass = defineClass(psychModule, objectClass, "Handler");
@@ -744,6 +748,8 @@ public class CoreLibrary {
                 QueueNodesFactory.getFactories(),
                 RandomizerPrimitiveNodesFactory.getFactories(),
                 RangeNodesFactory.getFactories(),
+                ReadlineNodesFactory.getFactories(),
+                ReadlineHistoryNodesFactory.getFactories(),
                 RegexpNodesFactory.getFactories(),
                 RubiniusTypeNodesFactory.getFactories(),
                 SizedQueueNodesFactory.getFactories(),
@@ -1099,6 +1105,7 @@ public class CoreLibrary {
                 throw new TruffleFatalException("couldn't load the post-boot code", e);
             }
         }
+
     }
 
     private void initializeEncodings() {
