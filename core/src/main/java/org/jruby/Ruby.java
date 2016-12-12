@@ -1721,6 +1721,8 @@ public final class Ruby implements Constantizable {
                 runtime.getLoadService().require("jruby/win32ole/stub");
             }
         });
+
+        addLazyBuiltin("cgi/escape.jar", "cgi/escape", "org.jruby.ext.cgi.escape.CGIEscape");
     }
 
     private void initRubyKernel() {
