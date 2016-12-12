@@ -68,23 +68,15 @@ class Rubinius::Randomizer
         limit_int = Rubinius::Type.coerce_to limit, Integer, :to_int
         raise ArgumentError, "invalid argument - #{limit}" if limit_int <= 0
 
-        if limit.is_a?(Bignum)
-          as_bignum(random_integer(limit - 1))
-        elsif limit.is_a?(Integer)
+        if limit.is_a?(Integer)
           random_integer(limit - 1)
         elsif limit.respond_to?(:to_f)
           random_float * limit
-        elsif limit_int.is_a?(Bignum)
-          as_bignum(random_integer(limit_int - 1))
         else
           random_integer(limit_int - 1)
         end
       end
     end
-  end
-
-  def as_bignum(integer)
-    0xffff_ffff_ffff_ffff_ffff.coerce(integer)[0]
   end
 
   # Generate a random Float, in the range 0...1.0
