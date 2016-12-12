@@ -66,7 +66,4 @@ public class GlobalVariables {
         return values;
     }
 
-    public void clear() {
-        variables.clear();
-    }
 }
