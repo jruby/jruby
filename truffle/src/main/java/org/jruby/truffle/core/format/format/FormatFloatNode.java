@@ -114,7 +114,7 @@ public abstract class FormatFloatNode extends FormatNode {
             }
             width -= len;
 
-            if (width > 0 && !hasZeroFlag && !hasMinusFlag) {
+            if (width > 0 && !hasMinusFlag) {
                 buf.fill(' ', width);
                 width = 0;
             }
