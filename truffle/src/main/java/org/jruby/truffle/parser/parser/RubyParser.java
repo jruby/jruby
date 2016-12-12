@@ -40,8 +40,8 @@
 package org.jruby.truffle.parser.parser;
 
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.string.ByteList;
-import org.jruby.truffle.core.string.StringSupport;
 import org.jruby.truffle.interop.ForeignCodeNode;
 import org.jruby.truffle.parser.KeyValuePair;
 import org.jruby.truffle.parser.RubyWarnings;
@@ -3649,7 +3649,7 @@ states[460] = new ParserState() {
 		    lexer.setHeredocIndent(0);
 
                     if (((ParseNode)yyVals[-1+yyTop]) == null) {
-                        yyVal = new XStrParseNode(position, null, StringSupport.CR_7BIT);
+                        yyVal = new XStrParseNode(position, null, CodeRange.CR_7BIT);
                     } else if (((ParseNode)yyVals[-1+yyTop]) instanceof StrParseNode) {
                         yyVal = new XStrParseNode(position, ((StrParseNode)yyVals[-1+yyTop]).getValue().dup(), ((StrParseNode)yyVals[-1+yyTop]).getCodeRange());
                     } else if (((ParseNode)yyVals[-1+yyTop]) instanceof DStrParseNode) {

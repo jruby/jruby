@@ -31,6 +31,7 @@ import org.jcodings.constants.CharacterType;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.util.IntHash;
 import org.jruby.truffle.collections.IntHashMap;
+import org.jruby.truffle.core.rope.CodeRange;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -39,14 +40,11 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.jruby.truffle.core.rope.CodeRange.CR_UNKNOWN;
+import static org.jruby.truffle.core.rope.CodeRange.CR_7BIT;
+import static org.jruby.truffle.core.rope.CodeRange.CR_VALID;
+import static org.jruby.truffle.core.rope.CodeRange.CR_BROKEN;
 
 public final class StringSupport {
-    // We hardcode these so they can be used in a switch below. The assert verifies they match FlagRegistry's value.
-    public static final int CR_7BIT      = 16;
-    public static final int CR_VALID     = 32;
-
-    public static final int CR_BROKEN    = CR_7BIT | CR_VALID;
-
     public static final int TRANS_SIZE = 256;
 
     public static final String[] EMPTY_STRING_ARRAY = new String[0];
@@ -151,7 +149,7 @@ public final class StringSupport {
         return -1;
     }
 
-    public static int codeRangeScan(Encoding enc, byte[]bytes, int p, int len) {
+    public static CodeRange codeRangeScan(Encoding enc, byte[]bytes, int p, int len) {
         if (enc == ASCIIEncoding.INSTANCE) {
             return searchNonAscii(bytes, p, p + len) != -1 ? CR_VALID : CR_7BIT;
         }
@@ -161,7 +159,7 @@ public final class StringSupport {
         return codeRangeScanNonAsciiCompatible(enc, bytes, p, len);
     }
 
-    private static int codeRangeScanAsciiCompatible(Encoding enc, byte[]bytes, int p, int len) {
+    private static CodeRange codeRangeScanAsciiCompatible(Encoding enc, byte[]bytes, int p, int len) {
         int end = p + len;
         p = searchNonAscii(bytes, p, end);
         if (p == -1) return CR_7BIT;
@@ -178,7 +176,7 @@ public final class StringSupport {
         return p > end ? CR_BROKEN : CR_VALID;
     }
 
-    private static int codeRangeScanNonAsciiCompatible(Encoding enc, byte[]bytes, int p, int len) {
+    private static CodeRange codeRangeScanNonAsciiCompatible(Encoding enc, byte[]bytes, int p, int len) {
         int end = p + len;
         while (p < end) {
             int cl = preciseLength(enc, bytes, p, end);
@@ -188,7 +186,7 @@ public final class StringSupport {
         return p > end ? CR_BROKEN : CR_VALID;
     }
 
-    public static int codeRangeScan(Encoding enc, ByteList bytes) {
+    public static CodeRange codeRangeScan(Encoding enc, ByteList bytes) {
         return codeRangeScan(enc, bytes.getUnsafeBytes(), bytes.getBegin(), bytes.getRealSize());
     }
 
@@ -232,11 +230,11 @@ public final class StringSupport {
 
     // MRI: rb_enc_strlen
     public static int strLength(Encoding enc, byte[]bytes, int p, int end) {
-        return strLength(enc, bytes, p, end, CR_UNKNOWN.toInt());
+        return strLength(enc, bytes, p, end, CR_UNKNOWN);
     }
 
     // MRI: enc_strlen
-    public static int strLength(Encoding enc, byte[]bytes, int p, int e, int cr) {
+    public static int strLength(Encoding enc, byte[]bytes, int p, int e, CodeRange cr) {
         int c;
         if (enc.isFixedWidth()) {
             return (e - p + enc.minLength() - 1) / enc.minLength();
@@ -285,17 +283,20 @@ public final class StringSupport {
     }
 
     public static long strLengthWithCodeRangeAsciiCompatible(Encoding enc, byte[]bytes, int p, int end) {
-        int cr = 0, c = 0;
+        CodeRange cr = CR_UNKNOWN;
+        int c = 0;
         while (p < end) {
             if (Encoding.isAscii(bytes[p])) {
                 int q = searchNonAscii(bytes, p, end);
-                if (q == -1) return pack(c + (end - p), cr == 0 ? CR_7BIT : cr);
+                if (q == -1) return pack(c + (end - p), cr == CR_UNKNOWN ? CR_7BIT.toInt() : cr.toInt());
                 c += q - p;
                 p = q;
             }
             int cl = preciseLength(enc, bytes, p, end);
             if (cl > 0) {
-                cr |= CR_VALID;
+                if (cr != CR_BROKEN) {
+                    cr = CR_VALID;
+                }
                 p += cl;
             } else {
                 cr = CR_BROKEN;
@@ -303,22 +304,25 @@ public final class StringSupport {
             }
             c++;
         }
-        return pack(c, cr == 0 ? CR_7BIT : cr);
+        return pack(c, cr == CR_UNKNOWN ? CR_7BIT.toInt() : cr.toInt());
     }
 
     public static long strLengthWithCodeRangeNonAsciiCompatible(Encoding enc, byte[]bytes, int p, int end) {
-        int cr = 0, c;
+        CodeRange cr = CR_UNKNOWN;
+        int c;
         for (c = 0; p < end; c++) {
             int cl = preciseLength(enc, bytes, p, end);
             if (cl > 0) {
-                cr |= CR_VALID;
+                if (cr != CR_BROKEN) {
+                    cr = CR_VALID;
+                }
                 p += cl;
             } else {
                 cr = CR_BROKEN;
                 p++;
             }
         }
-        return pack(c, cr == 0 ? CR_7BIT : cr);
+        return pack(c, cr == CR_UNKNOWN ? CR_7BIT.toInt() : cr.toInt());
     }
 
     public static long strLengthWithCodeRange(ByteList bytes, Encoding enc) {
@@ -562,8 +566,8 @@ public final class StringSupport {
         if (string.isCodeRangeValid() && enc.isUTF8()) return utf8Length(bytes);
 
         long lencr = strLengthWithCodeRange(bytes, enc);
-        int cr = unpackArg(lencr);
-        if (cr != 0) string.setCodeRange(cr);
+        CodeRange cr = CodeRange.fromInt(unpackArg(lencr));
+        if (cr != CR_UNKNOWN) string.setCodeRange(cr);
         return unpackResult(lencr);
     }
 
@@ -1031,7 +1035,7 @@ public final class StringSupport {
         byte[]bytes = value.getUnsafeBytes();
         boolean modify = false;
         boolean asciiCompatible = enc.isAsciiCompatible();
-        int cr = asciiCompatible ? CR_7BIT : CR_VALID;
+        CodeRange cr = asciiCompatible ? CR_7BIT : CR_VALID;
         while (s < send) {
             int c;
             if (asciiCompatible && Encoding.isAscii(c = bytes[s] & 0xff)) {
@@ -1080,7 +1084,7 @@ public final class StringSupport {
         final ByteList srcList = srcStr.getByteList();
         final ByteList replList = replStr.getByteList();
 
-        int cr = self.getCodeRange();
+        CodeRange cr = self.getCodeRange();
         Encoding e1 = self.checkEncoding(srcStr);
         Encoding e2 = self.checkEncoding(replStr);
         Encoding enc = e1 == e2 ? e1 : srcStr.checkEncoding(replStr);

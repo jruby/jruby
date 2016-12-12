@@ -37,7 +37,7 @@
 package org.jruby.truffle.parser.parser;
 
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.string.StringSupport;
+import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.interop.ForeignCodeNode;
 import org.jruby.truffle.parser.KeyValuePair;
 import org.jruby.truffle.parser.RubyWarnings;
@@ -1921,7 +1921,7 @@ xstring         : tXSTRING_BEG xstring_contents tSTRING_END {
 		    lexer.setHeredocIndent(0);
 
                     if ($2 == null) {
-                        $$ = new XStrParseNode(position, null, StringSupport.CR_7BIT);
+                        $$ = new XStrParseNode(position, null, CodeRange.CR_7BIT);
                     } else if ($2 instanceof StrParseNode) {
                         $$ = new XStrParseNode(position, $<StrParseNode>2.getValue().dup(), $<StrParseNode>2.getCodeRange());
                     } else if ($2 instanceof DStrParseNode) {

@@ -61,6 +61,7 @@ import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.core.adapaters.InputStreamAdapter;
 import org.jruby.truffle.core.cast.ToStrNode;
 import org.jruby.truffle.core.cast.ToStrNodeGen;
+import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.string.ByteList;
 import org.jruby.truffle.core.string.EncodingUtils;
 import org.jruby.truffle.core.string.StringOperations;
@@ -530,10 +531,10 @@ public abstract class PsychParserNodes {
         }
 
         private static boolean isAsciiOnly(ByteList string) {
-            return string.getEncoding().isAsciiCompatible() && scanForCodeRange(string) == StringSupport.CR_7BIT;
+            return string.getEncoding().isAsciiCompatible() && scanForCodeRange(string) == CodeRange.CR_7BIT;
         }
 
-        private static int scanForCodeRange(ByteList string) {
+        private static CodeRange scanForCodeRange(ByteList string) {
             return StringSupport.codeRangeScan(EncodingUtils.getActualEncoding(string.getEncoding(), string), string);
         }
 

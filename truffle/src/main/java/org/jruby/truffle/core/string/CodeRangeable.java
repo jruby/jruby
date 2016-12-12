@@ -27,12 +27,13 @@
 package org.jruby.truffle.core.string;
 
 import org.jcodings.Encoding;
+import org.jruby.truffle.core.rope.CodeRange;
 
 public interface CodeRangeable extends ByteListHolder {
-    int getCodeRange();
-    int scanForCodeRange();
+    CodeRange getCodeRange();
+    CodeRange scanForCodeRange();
     boolean isCodeRangeValid();
-    void setCodeRange(int codeRange);
+    void setCodeRange(CodeRange codeRange);
     void clearCodeRange();
     void keepCodeRange();
     void modifyAndKeepCodeRange();

@@ -539,9 +539,9 @@ public class BodyTranslator extends Translator {
         if (receiver instanceof StrParseNode && methodName.equals("freeze")) {
             final StrParseNode strNode = (StrParseNode) receiver;
             final ByteList byteList = strNode.getValue();
-            final int codeRange = strNode.getCodeRange();
+            final CodeRange codeRange = strNode.getCodeRange();
 
-            final Rope rope = context.getRopeTable().getRope(byteList.bytes(), byteList.getEncoding(), CodeRange.fromInt(codeRange));
+            final Rope rope = context.getRopeTable().getRope(byteList.bytes(), byteList.getEncoding(), codeRange);
 
             final DynamicObject frozenString = context.getFrozenStrings().getFrozenString(rope);
 
@@ -3112,8 +3112,8 @@ public class BodyTranslator extends Translator {
         final RubySourceSection sourceSection = translate(node.getPosition());
 
         final ByteList byteList = node.getValue();
-        final int codeRange = node.getCodeRange();
-        final Rope rope = context.getRopeTable().getRope(byteList.bytes(), byteList.getEncoding(), CodeRange.fromInt(codeRange));
+        final CodeRange codeRange = node.getCodeRange();
+        final Rope rope = context.getRopeTable().getRope(byteList.bytes(), byteList.getEncoding(), codeRange);
 
         final RubyNode ret;
 

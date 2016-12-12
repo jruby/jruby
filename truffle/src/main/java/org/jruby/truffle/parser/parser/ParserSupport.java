@@ -1405,7 +1405,7 @@ public class ParserSupport {
     }
 
     private boolean is7BitASCII(ByteList value) {
-        return StringSupport.codeRangeScan(value.getEncoding(), value) == StringSupport.CR_7BIT;
+        return StringSupport.codeRangeScan(value.getEncoding(), value) == CodeRange.CR_7BIT;
     }
 
     // TODO: Put somewhere more consolidated (similiar
@@ -1533,7 +1533,7 @@ public class ParserSupport {
     
     // FIXME:  This logic is used by many methods in MRI, but we are only using it in lexer
     // currently.  Consolidate this when we tackle a big encoding refactoring
-    public static int associateEncoding(ByteList buffer, Encoding newEncoding, int codeRange) {
+    public static CodeRange associateEncoding(ByteList buffer, Encoding newEncoding, CodeRange codeRange) {
         Encoding bufferEncoding = buffer.getEncoding();
                 
         if (newEncoding == bufferEncoding) return codeRange;
@@ -1542,8 +1542,8 @@ public class ParserSupport {
         
         buffer.setEncoding(newEncoding);
         
-        if (codeRange != StringSupport.CR_7BIT || !newEncoding.isAsciiCompatible()) {
-            return CodeRange.CR_UNKNOWN.toInt();
+        if (codeRange != CodeRange.CR_7BIT || !newEncoding.isAsciiCompatible()) {
+            return CodeRange.CR_UNKNOWN;
         }
         
         return codeRange;

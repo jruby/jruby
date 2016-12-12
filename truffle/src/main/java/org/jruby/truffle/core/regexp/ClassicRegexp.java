@@ -47,6 +47,7 @@ import org.joni.Syntax;
 import org.joni.WarnCallback;
 import org.joni.exception.JOniException;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.string.ByteList;
 import org.jruby.truffle.core.string.ByteListKey;
 import org.jruby.truffle.core.string.EncodingUtils;
@@ -57,7 +58,8 @@ import org.jruby.truffle.collections.WeakValuedMap;
 import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 
-import static org.jruby.truffle.core.string.StringSupport.CR_BROKEN;
+import static org.jruby.truffle.core.rope.CodeRange.CR_7BIT;
+import static org.jruby.truffle.core.rope.CodeRange.CR_BROKEN;
 import static org.jruby.truffle.core.string.StringSupport.EMPTY_STRING_ARRAY;
 import static org.jruby.truffle.core.string.StringSupport.codeRangeScan;
 
@@ -532,7 +534,7 @@ public class ClassicRegexp implements ReOptions {
         Encoding strEnc = str.getEncoding();
 
         if (options.isEncodingNone() && strEnc != ASCIIEncoding.INSTANCE) {
-            if (scanForCodeRange(str) != StringSupport.CR_7BIT) {
+            if (scanForCodeRange(str) != CR_7BIT) {
                 throw new org.jruby.truffle.language.control.RaiseException(context.getCoreExceptions().regexpError("/.../n has a non escaped non ASCII character in non ASCII-8BIT script", null));
             }
             strEnc = ASCIIEncoding.INSTANCE;
@@ -552,8 +554,8 @@ public class ClassicRegexp implements ReOptions {
         return regexpEnc;
     }
 
-    private static int scanForCodeRange(ByteList str) {
-        int cr;
+    private static CodeRange scanForCodeRange(ByteList str) {
+        CodeRange cr;
         Encoding enc = str.getEncoding();
         if (enc.minLength() > 1 && enc.isDummy()) {
             cr = CR_BROKEN;

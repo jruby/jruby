@@ -68,15 +68,15 @@ public abstract class StringOperations {
                                                                        final EncodingNodes.CheckEncodingNode checkEncodingNode) {
         return new StringCodeRangeableWrapper(string, checkEncodingNode) {
             private final ByteList byteList = RopeOperations.toByteListCopy(StringOperations.rope(string));
-            int codeRange = StringOperations.codeRange(string).toInt();
+            CodeRange codeRange = StringOperations.codeRange(string);
 
             @Override
-            public void setCodeRange(int newCodeRange) {
+            public void setCodeRange(CodeRange newCodeRange) {
                 this.codeRange = newCodeRange;
             }
 
             @Override
-            public int getCodeRange() {
+            public CodeRange getCodeRange() {
                 return codeRange;
             }
 

@@ -49,6 +49,7 @@ import org.joni.Option;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.regexp.ClassicRegexp;
+import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.string.ByteList;
 import org.jruby.truffle.core.string.StringSupport;
 import org.jruby.truffle.language.control.RaiseException;
@@ -479,11 +480,11 @@ public class RubyLexer extends LexingCommon {
     // STR_NEW3/parser_str_new
     public StrParseNode createStr(ByteList buffer, int flags) {
         Encoding bufferEncoding = buffer.getEncoding();
-        int codeRange = StringSupport.codeRangeScan(bufferEncoding, buffer);
+        CodeRange codeRange = StringSupport.codeRangeScan(bufferEncoding, buffer);
 
         if ((flags & STR_FUNC_REGEXP) == 0 && bufferEncoding.isAsciiCompatible()) {
             // If we have characters outside 7-bit range and we are still ascii then change to ascii-8bit
-            if (codeRange == StringSupport.CR_7BIT) {
+            if (codeRange == CodeRange.CR_7BIT) {
                 // Do nothing like MRI
             } else if (getEncoding() == USASCII_ENCODING &&
                     bufferEncoding != UTF8_ENCODING) {
