@@ -173,6 +173,7 @@ suite = {
                 "SNAKEYAML",
                 "JONI",
                 "JCODINGS",
+                "JLINE",
             ],
             "annotationProcessors": ["truffle:TRUFFLE_DSL_PROCESSOR"],
             "javaCompliance": "1.8",
