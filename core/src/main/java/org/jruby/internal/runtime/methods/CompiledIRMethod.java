@@ -142,6 +142,71 @@ public class CompiledIRMethod extends AbstractIRMethod {
         }
     }
 
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
+        if (hasKwargs) args = IRRuntimeHelpers.frobnicateKwargsArgument(context, args, getSignature().required());
+
+        try {
+            return (IRubyObject) this.variable.invokeExact(context, staticScope, self, args, Block.NULL_BLOCK, implementationClass, name);
+        }
+        catch (Throwable t) {
+            Helpers.throwException(t);
+            return null; // not reached
+        }
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
+        if (specificArity != 0) return call(context, self, clazz, name, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
+
+        try {
+            return (IRubyObject) this.specific.invokeExact(context, staticScope, self, Block.NULL_BLOCK, implementationClass, name);
+        }
+        catch (Throwable t) {
+            Helpers.throwException(t);
+            return null; // not reached
+        }
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0) {
+        if (specificArity != 1) return call(context, self, clazz, name, new IRubyObject[]{arg0}, Block.NULL_BLOCK);
+
+        try {
+            return (IRubyObject) this.specific.invokeExact(context, staticScope, self, arg0, Block.NULL_BLOCK, implementationClass, name);
+        }
+        catch (Throwable t) {
+            Helpers.throwException(t);
+            return null; // not reached
+        }
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1) {
+        if (specificArity != 2) return call(context, self, clazz, name, new IRubyObject[] {arg0, arg1}, Block.NULL_BLOCK);
+
+        try {
+            return (IRubyObject) this.specific.invokeExact(context, staticScope, self, arg0, arg1, Block.NULL_BLOCK, implementationClass, name);
+        }
+        catch (Throwable t) {
+            Helpers.throwException(t);
+            return null; // not reached
+        }
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        if (specificArity != 3) return call(context, self, clazz, name, new IRubyObject[] {arg0, arg1, arg2 }, Block.NULL_BLOCK);
+
+        try {
+            return (IRubyObject) this.specific.invokeExact(context, staticScope, self, arg0, arg1, arg2, Block.NULL_BLOCK, implementationClass, name);
+        }
+        catch (Throwable t) {
+            Helpers.throwException(t);
+            return null; // not reached
+        }
+    }
+
     public String getFile() {
         return method.getFileName();
     }
