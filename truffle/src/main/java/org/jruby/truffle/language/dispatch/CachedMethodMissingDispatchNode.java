@@ -53,7 +53,7 @@ public class CachedMethodMissingDispatchNode extends CachedDispatchNode {
          */
 
         if (callNode.isCallTargetCloningAllowed()
-                && (getContext().getOptions().METHODMISSING_ALWAYS_CLONE || method.getNamedSharedMethodInfo().shouldAlwaysClone())) {
+                && (getContext().getOptions().METHODMISSING_ALWAYS_CLONE || method.getSharedMethodInfo().shouldAlwaysClone())) {
             insert(callNode);
             callNode.cloneCallTarget();
         }

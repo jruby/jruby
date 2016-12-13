@@ -119,7 +119,7 @@ import org.jruby.truffle.language.loader.CodeLoader;
 import org.jruby.truffle.language.loader.SourceLoader;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.methods.InternalMethod;
-import org.jruby.truffle.language.methods.NamedSharedMethodInfo;
+import org.jruby.truffle.language.methods.SharedMethodInfo;
 import org.jruby.truffle.language.objects.FreezeNode;
 import org.jruby.truffle.language.objects.FreezeNodeGen;
 import org.jruby.truffle.language.objects.SingletonClassNode;
@@ -1533,8 +1533,8 @@ public class CoreLibrary {
         return callTarget == basicObjectSendMethod.getCallTarget();
     }
 
-    public boolean isTruffleBootMainMethod(NamedSharedMethodInfo info) {
-        return info == truffleBootMainMethod.getNamedSharedMethodInfo();
+    public boolean isTruffleBootMainMethod(SharedMethodInfo info) {
+        return info == truffleBootMainMethod.getSharedMethodInfo();
     }
 
     public boolean isCloningEnabled() {

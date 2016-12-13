@@ -19,7 +19,7 @@ import com.oracle.truffle.api.object.dsl.Nullable;
 import org.jruby.truffle.core.basicobject.BasicObjectLayout;
 import org.jruby.truffle.language.control.FrameOnStackMarker;
 import org.jruby.truffle.language.methods.InternalMethod;
-import org.jruby.truffle.language.methods.NamedSharedMethodInfo;
+import org.jruby.truffle.language.methods.SharedMethodInfo;
 
 // A instance of Proc behaves either as a proc or lambda (its type).
 // Kernel#lambda is the only primitive which can produce a lambda-semantics Proc from a proc-semantics one.
@@ -37,7 +37,7 @@ public interface ProcLayout extends BasicObjectLayout {
     DynamicObject createProc(
             DynamicObjectFactory factory,
             ProcType type,
-            NamedSharedMethodInfo namedSharedMethodInfo,
+            SharedMethodInfo sharedMethodInfo,
             CallTarget callTargetForType,
             CallTarget callTargetForLambdas,
             @Nullable MaterializedFrame declarationFrame,
@@ -52,7 +52,7 @@ public interface ProcLayout extends BasicObjectLayout {
 
     ProcType getType(DynamicObject object);
 
-    NamedSharedMethodInfo getNamedSharedMethodInfo(DynamicObject object);
+    SharedMethodInfo getSharedMethodInfo(DynamicObject object);
 
     CallTarget getCallTargetForType(DynamicObject object);
 

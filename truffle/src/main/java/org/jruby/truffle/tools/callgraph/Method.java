@@ -11,7 +11,7 @@ package org.jruby.truffle.tools.callgraph;
 
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.language.methods.NamedSharedMethodInfo;
+import org.jruby.truffle.language.methods.SharedMethodInfo;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -21,11 +21,11 @@ import java.util.Map;
 public class Method {
 
     private final CallGraph callGraph;
-    private final NamedSharedMethodInfo sharedInfo;
+    private final SharedMethodInfo sharedInfo;
     private final List<MethodVersion> versions = new ArrayList<>();
     private final Map<SourceSection, CallSite> callSites = new HashMap<>();
 
-    public Method(CallGraph callGraph, NamedSharedMethodInfo sharedInfo) {
+    public Method(CallGraph callGraph, SharedMethodInfo sharedInfo) {
         this.callGraph = callGraph;
         this.sharedInfo = sharedInfo;
     }
@@ -34,7 +34,7 @@ public class Method {
         return versions;
     }
 
-    public NamedSharedMethodInfo getSharedInfo() {
+    public SharedMethodInfo getSharedInfo() {
         return sharedInfo;
     }
 

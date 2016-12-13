@@ -30,7 +30,7 @@ import org.jruby.truffle.language.locals.ReadFrameSlotNodeGen;
 public class BlockDefinitionNode extends RubyNode {
 
     private final ProcType type;
-    private final NamedSharedMethodInfo namedSharedMethodInfo;
+    private final SharedMethodInfo sharedMethodInfo;
 
     // TODO(CS, 10-Jan-15) having two call targets isn't ideal, but they all have different semantics, and we don't
     // want to move logic into the call site
@@ -42,11 +42,11 @@ public class BlockDefinitionNode extends RubyNode {
 
     @Child private ReadFrameSlotNode readFrameOnStackMarkerNode;
 
-    public BlockDefinitionNode(RubyContext context, SourceSection sourceSection, ProcType type, NamedSharedMethodInfo namedSharedMethodInfo,
+    public BlockDefinitionNode(RubyContext context, SourceSection sourceSection, ProcType type, SharedMethodInfo sharedMethodInfo,
                                CallTarget callTargetForProcs, CallTarget callTargetForLambdas, BreakID breakID, FrameSlot frameOnStackMarkerSlot) {
         super(context, sourceSection);
         this.type = type;
-        this.namedSharedMethodInfo = namedSharedMethodInfo;
+        this.sharedMethodInfo = sharedMethodInfo;
 
         this.callTargetForProcs = callTargetForProcs;
         this.callTargetForLambdas = callTargetForLambdas;
@@ -79,7 +79,7 @@ public class BlockDefinitionNode extends RubyNode {
             }
         }
 
-        return ProcOperations.createRubyProc(coreLibrary().getProcFactory(), type, namedSharedMethodInfo,
+        return ProcOperations.createRubyProc(coreLibrary().getProcFactory(), type, sharedMethodInfo,
                 callTargetForProcs, callTargetForLambdas, frame.materialize(),
                 RubyArguments.getMethod(frame),
                 RubyArguments.getSelf(frame),

@@ -347,7 +347,7 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
         if (context.getCoreLibrary().isLoadingRubyCore()) {
             final InternalMethod currentMethod = methods.get(method.getName());
 
-            if (currentMethod != null && currentMethod.getNamedSharedMethodInfo().getSourceSection().getSource() == null) {
+            if (currentMethod != null && currentMethod.getSharedMethodInfo().getSourceSection().getSource() == null) {
                 return;
             }
         }

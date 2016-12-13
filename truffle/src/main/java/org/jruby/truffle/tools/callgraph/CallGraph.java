@@ -11,7 +11,7 @@ package org.jruby.truffle.tools.callgraph;
 
 import com.oracle.truffle.api.TruffleOptions;
 import org.jruby.truffle.language.RubyRootNode;
-import org.jruby.truffle.language.methods.NamedSharedMethodInfo;
+import org.jruby.truffle.language.methods.SharedMethodInfo;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -22,7 +22,7 @@ import java.util.Set;
 
 public class CallGraph {
 
-    private final Map<NamedSharedMethodInfo, Method> sharedMethodInfoToMethod = new HashMap<>();
+    private final Map<SharedMethodInfo, Method> sharedMethodInfoToMethod = new HashMap<>();
     private final Map<RubyRootNode, MethodVersion> rootNodeToMethodVersion = new HashMap<>();
     private final Map<RubyRootNode, Map<String, Set<String>>> localTypes = new HashMap<>();
 
@@ -44,12 +44,12 @@ public class CallGraph {
         rootNodeLocalTypeSet.add(type);
     }
 
-    public Method sharedMethodInfoToMethod(NamedSharedMethodInfo namedSharedMethodInfo) {
-        Method method = sharedMethodInfoToMethod.get(namedSharedMethodInfo);
+    public Method sharedMethodInfoToMethod(SharedMethodInfo sharedMethodInfo) {
+        Method method = sharedMethodInfoToMethod.get(sharedMethodInfo);
 
         if (method == null) {
-            method = new Method(this, namedSharedMethodInfo);
-            sharedMethodInfoToMethod.put(namedSharedMethodInfo, method);
+            method = new Method(this, sharedMethodInfo);
+            sharedMethodInfoToMethod.put(sharedMethodInfo, method);
         }
 
         return method;
@@ -59,7 +59,7 @@ public class CallGraph {
         MethodVersion methodVersion = rootNodeToMethodVersion.get(rootNode);
 
         if (methodVersion == null) {
-            methodVersion = new MethodVersion(sharedMethodInfoToMethod(rootNode.getNamedSharedMethodInfo()), rootNode);
+            methodVersion = new MethodVersion(sharedMethodInfoToMethod(rootNode.getSharedMethodInfo()), rootNode);
             rootNodeToMethodVersion.put(rootNode, methodVersion);
         }
 

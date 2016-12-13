@@ -43,7 +43,7 @@ import org.jruby.truffle.language.methods.CatchForMethodNode;
 import org.jruby.truffle.language.methods.CatchForProcNode;
 import org.jruby.truffle.language.methods.ExceptionTranslatingNode;
 import org.jruby.truffle.language.methods.MethodDefinitionNode;
-import org.jruby.truffle.language.methods.NamedSharedMethodInfo;
+import org.jruby.truffle.language.methods.SharedMethodInfo;
 import org.jruby.truffle.language.methods.UnsupportedOperationBehavior;
 import org.jruby.truffle.language.supercall.ReadSuperArgumentsNode;
 import org.jruby.truffle.language.supercall.ReadZSuperArgumentsNode;
@@ -73,7 +73,7 @@ public class MethodTranslator extends BodyTranslator {
         this.argsNode = argsNode;
     }
 
-    public BlockDefinitionNode compileBlockNode(RubySourceSection sourceSection, String methodName, ParseNode bodyNode, NamedSharedMethodInfo namedSharedMethodInfo, ProcType type, String[] variables) {
+    public BlockDefinitionNode compileBlockNode(RubySourceSection sourceSection, String methodName, ParseNode bodyNode, SharedMethodInfo sharedMethodInfo, ProcType type, String[] variables) {
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
         declareArguments();
@@ -153,7 +153,7 @@ public class MethodTranslator extends BodyTranslator {
         // Procs
         final RubyNode bodyProc = new CatchForProcNode(context, translateSourceSection(source, enclosing(sourceSection, body)), composeBody(sourceSection, preludeProc, NodeUtil.cloneNode(body)));
 
-        final RubyRootNode newRootNodeForProcs = new RubyRootNode(context, translateSourceSection(source, considerExtendingMethodToCoverEnd(sourceSection)), environment.getFrameDescriptor(), environment.getNamedSharedMethodInfo(),
+        final RubyRootNode newRootNodeForProcs = new RubyRootNode(context, translateSourceSection(source, considerExtendingMethodToCoverEnd(sourceSection)), environment.getFrameDescriptor(), environment.getSharedMethodInfo(),
                 bodyProc, environment.needsDeclarationFrame());
 
         // Lambdas
@@ -162,7 +162,7 @@ public class MethodTranslator extends BodyTranslator {
 
         final RubyRootNode newRootNodeForLambdas = new RubyRootNode(
                 context, translateSourceSection(source, considerExtendingMethodToCoverEnd(sourceSection)),
-                environment.getFrameDescriptor(), environment.getNamedSharedMethodInfo(),
+                environment.getFrameDescriptor(), environment.getSharedMethodInfo(),
                 bodyLambda,
                 environment.needsDeclarationFrame());
 
@@ -183,7 +183,7 @@ public class MethodTranslator extends BodyTranslator {
             }
         }
 
-        return new BlockDefinitionNode(context, newRootNodeForProcs.getSourceSection(), type, environment.getNamedSharedMethodInfo(),
+        return new BlockDefinitionNode(context, newRootNodeForProcs.getSourceSection(), type, environment.getSharedMethodInfo(),
                 callTargetAsProc, callTargetAsLambda, environment.getBreakID(), (FrameSlot) frameOnStackMarkerSlot);
     }
 
@@ -219,11 +219,11 @@ public class MethodTranslator extends BodyTranslator {
      * method parsing. The substitution returns a node which performs
      * the parsing lazily and then calls doCompileMethodBody.
      */
-    public RubyNode compileMethodBody(RubySourceSection sourceSection, String methodName, ParseNode bodyNode, NamedSharedMethodInfo namedSharedMethodInfo) {
-        return doCompileMethodBody(sourceSection, methodName, bodyNode, namedSharedMethodInfo);
+    public RubyNode compileMethodBody(RubySourceSection sourceSection, String methodName, ParseNode bodyNode, SharedMethodInfo sharedMethodInfo) {
+        return doCompileMethodBody(sourceSection, methodName, bodyNode, sharedMethodInfo);
     }
 
-    public RubyNode doCompileMethodBody(RubySourceSection sourceSection, String methodName, ParseNode bodyNode, NamedSharedMethodInfo namedSharedMethodInfo) {
+    public RubyNode doCompileMethodBody(RubySourceSection sourceSection, String methodName, ParseNode bodyNode, SharedMethodInfo sharedMethodInfo) {
         declareArguments();
         final Arity arity = getArity(argsNode);
 
@@ -268,8 +268,8 @@ public class MethodTranslator extends BodyTranslator {
         return body;
     }
 
-    public MethodDefinitionNode compileMethodNode(RubySourceSection sourceSection, String methodName, ParseNode bodyNode, NamedSharedMethodInfo namedSharedMethodInfo) {
-        final RubyNode body = compileMethodBody(sourceSection, methodName, bodyNode, namedSharedMethodInfo);
+    public MethodDefinitionNode compileMethodNode(RubySourceSection sourceSection, String methodName, ParseNode bodyNode, SharedMethodInfo sharedMethodInfo) {
+        final RubyNode body = compileMethodBody(sourceSection, methodName, bodyNode, sharedMethodInfo);
 
         final SourceSection extendedBodySourceSection;
 
@@ -280,10 +280,10 @@ public class MethodTranslator extends BodyTranslator {
         }
 
         final RubyRootNode rootNode = new RubyRootNode(
-                context, extendedBodySourceSection, environment.getFrameDescriptor(), environment.getNamedSharedMethodInfo(), body, environment.needsDeclarationFrame());
+                context, extendedBodySourceSection, environment.getFrameDescriptor(), environment.getSharedMethodInfo(), body, environment.needsDeclarationFrame());
 
         final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
-        return new MethodDefinitionNode(context, translateSourceSection(source, body.getRubySourceSection()), methodName, environment.getNamedSharedMethodInfo(), callTarget);
+        return new MethodDefinitionNode(context, translateSourceSection(source, body.getRubySourceSection()), methodName, environment.getSharedMethodInfo(), callTarget);
     }
 
     private void declareArguments() {

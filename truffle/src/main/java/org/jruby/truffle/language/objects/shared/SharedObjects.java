@@ -75,7 +75,7 @@ public class SharedObjects {
         final Deque<DynamicObject> stack = new ArrayDeque<>();
 
         if (DEBUG) {
-            final SourceSection sourceSection = Layouts.PROC.getNamedSharedMethodInfo(block).getSourceSection();
+            final SourceSection sourceSection = Layouts.PROC.getSharedMethodInfo(block).getSourceSection();
             System.err.println("Sharing decl frame of " + RubyLanguage.fileLine(sourceSection));
         }
 

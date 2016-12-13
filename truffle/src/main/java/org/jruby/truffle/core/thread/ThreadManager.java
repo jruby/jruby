@@ -97,7 +97,7 @@ public class ThreadManager {
             SharedObjects.shareDeclarationFrame(block);
         }
 
-        final SourceSection sourceSection = Layouts.PROC.getNamedSharedMethodInfo(block).getSourceSection();
+        final SourceSection sourceSection = Layouts.PROC.getSharedMethodInfo(block).getSourceSection();
         final String info = RubyLanguage.fileLine(sourceSection);
         initialize(thread, context, currentNode, info, () -> {
             final Object value = ProcOperations.rootCall(block, arguments);

@@ -83,20 +83,20 @@ public abstract class CachedDispatchNode extends DispatchNode {
     }
 
     protected void applySplittingInliningStrategy(DirectCallNode callNode, InternalMethod method) {
-        if (callNode.isCallTargetCloningAllowed() && method.getNamedSharedMethodInfo().shouldAlwaysClone()) {
+        if (callNode.isCallTargetCloningAllowed() && method.getSharedMethodInfo().shouldAlwaysClone()) {
             insert(callNode);
             callNode.cloneCallTarget();
         }
 
-        if (method.getNamedSharedMethodInfo().shouldAlwaysInline() && callNode.isInlinable()) {
+        if (method.getSharedMethodInfo().shouldAlwaysInline() && callNode.isInlinable()) {
             callNode.forceInlining();
         }
     }
 
     protected static Object call(DirectCallNode callNode, VirtualFrame frame, InternalMethod method, Object receiver, DynamicObject block, Object[] arguments) {
-        CompilerAsserts.compilationConstant(method.getNamedSharedMethodInfo().needsCallerFrame());
+        CompilerAsserts.compilationConstant(method.getSharedMethodInfo().needsCallerFrame());
 
-        MaterializedFrame callerFrame = method.getNamedSharedMethodInfo().needsCallerFrame() ? frame.materialize() : null;
+        MaterializedFrame callerFrame = method.getSharedMethodInfo().needsCallerFrame() ? frame.materialize() : null;
         return callNode.call(
                 frame,
                 RubyArguments.pack(null, callerFrame, method, DeclarationContext.METHOD, null, receiver, block, arguments));

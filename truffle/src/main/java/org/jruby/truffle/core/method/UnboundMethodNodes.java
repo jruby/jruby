@@ -58,7 +58,7 @@ public abstract class UnboundMethodNodes {
 
         @Specialization
         public int arity(DynamicObject method) {
-            return Layouts.UNBOUND_METHOD.getMethod(method).getNamedSharedMethodInfo().getArity().getArityNumber();
+            return Layouts.UNBOUND_METHOD.getMethod(method).getSharedMethodInfo().getArity().getArityNumber();
         }
 
     }
@@ -110,7 +110,7 @@ public abstract class UnboundMethodNodes {
             final InternalMethod method = Layouts.UNBOUND_METHOD.getMethod(rubyMethod);
             long h = Hashing.start(method.getDeclaringModule().hashCode());
             h = Hashing.update(h, Layouts.UNBOUND_METHOD.getOrigin(rubyMethod).hashCode());
-            h = Hashing.update(h, method.getNamedSharedMethodInfo().hashCode());
+            h = Hashing.update(h, method.getSharedMethodInfo().hashCode());
             return Hashing.end(h);
         }
 
@@ -153,7 +153,7 @@ public abstract class UnboundMethodNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject parameters(DynamicObject method) {
-            final ArgumentDescriptor[] argsDesc = Layouts.UNBOUND_METHOD.getMethod(method).getNamedSharedMethodInfo().getArgumentDescriptors();
+            final ArgumentDescriptor[] argsDesc = Layouts.UNBOUND_METHOD.getMethod(method).getSharedMethodInfo().getArgumentDescriptors();
 
             return ArgumentDescriptorUtils.argumentDescriptorsToParameters(getContext(), argsDesc, true);
         }
@@ -166,7 +166,7 @@ public abstract class UnboundMethodNodes {
         @TruffleBoundary
         @Specialization
         public Object sourceLocation(DynamicObject unboundMethod) {
-            SourceSection sourceSection = Layouts.UNBOUND_METHOD.getMethod(unboundMethod).getNamedSharedMethodInfo().getSourceSection();
+            SourceSection sourceSection = Layouts.UNBOUND_METHOD.getMethod(unboundMethod).getSharedMethodInfo().getSourceSection();
 
             if (sourceSection.getSource() == null) {
                 return nil();

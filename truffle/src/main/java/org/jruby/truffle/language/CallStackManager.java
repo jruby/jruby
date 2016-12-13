@@ -28,7 +28,7 @@ import org.jruby.truffle.language.backtrace.BacktraceFormatter;
 import org.jruby.truffle.language.backtrace.InternalRootNode;
 import org.jruby.truffle.language.exceptions.DisablingBacktracesNode;
 import org.jruby.truffle.language.methods.InternalMethod;
-import org.jruby.truffle.language.methods.NamedSharedMethodInfo;
+import org.jruby.truffle.language.methods.SharedMethodInfo;
 import org.jruby.truffle.collections.Memo;
 
 import java.util.ArrayList;
@@ -240,8 +240,8 @@ public class CallStackManager {
 
         // Ignore the call to Truffle::Boot.main
         if (rootNode instanceof RubyRootNode) {
-            NamedSharedMethodInfo namedSharedMethodInfo = ((RubyRootNode) rootNode).getNamedSharedMethodInfo();
-            if (context.getCoreLibrary().isTruffleBootMainMethod(namedSharedMethodInfo)) {
+            SharedMethodInfo sharedMethodInfo = ((RubyRootNode) rootNode).getSharedMethodInfo();
+            if (context.getCoreLibrary().isTruffleBootMainMethod(sharedMethodInfo)) {
                 return true;
             }
         }
@@ -270,7 +270,7 @@ public class CallStackManager {
     private Node getCallNode(FrameInstance frameInstance, final InternalMethod method) {
         Node callNode = frameInstance.getCallNode();
         if (callNode == null && method != null &&
-                BacktraceFormatter.isCore(context, method.getNamedSharedMethodInfo().getSourceSection())) {
+                BacktraceFormatter.isCore(context, method.getSharedMethodInfo().getSourceSection())) {
             callNode = ((RootCallTarget) method.getCallTarget()).getRootNode();
         }
         return callNode;

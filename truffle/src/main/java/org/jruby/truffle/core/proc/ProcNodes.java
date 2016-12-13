@@ -101,7 +101,7 @@ public abstract class ProcNodes {
             final DynamicObject proc = getAllocateObjectNode().allocate(
                     procClass,
                     Layouts.PROC.getType(block),
-                    Layouts.PROC.getNamedSharedMethodInfo(block),
+                    Layouts.PROC.getSharedMethodInfo(block),
                     Layouts.PROC.getCallTargetForType(block),
                     Layouts.PROC.getCallTargetForLambdas(block),
                     Layouts.PROC.getDeclarationFrame(block),
@@ -149,7 +149,7 @@ public abstract class ProcNodes {
             final DynamicObject copy = getAllocateObjectNode().allocate(
                     Layouts.BASIC_OBJECT.getLogicalClass(proc),
                     Layouts.PROC.getType(proc),
-                    Layouts.PROC.getNamedSharedMethodInfo(proc),
+                    Layouts.PROC.getSharedMethodInfo(proc),
                     Layouts.PROC.getCallTargetForType(proc),
                     Layouts.PROC.getCallTargetForLambdas(proc),
                     Layouts.PROC.getDeclarationFrame(proc),
@@ -177,7 +177,7 @@ public abstract class ProcNodes {
 
         @Specialization
         public int arity(DynamicObject proc) {
-            return Layouts.PROC.getNamedSharedMethodInfo(proc).getArity().getArityNumber();
+            return Layouts.PROC.getSharedMethodInfo(proc).getArity().getArityNumber();
         }
 
     }
@@ -224,7 +224,7 @@ public abstract class ProcNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject parameters(DynamicObject proc) {
-            final ArgumentDescriptor[] argsDesc = Layouts.PROC.getNamedSharedMethodInfo(proc).getArgumentDescriptors();
+            final ArgumentDescriptor[] argsDesc = Layouts.PROC.getSharedMethodInfo(proc).getArgumentDescriptors();
             final boolean isLambda = Layouts.PROC.getType(proc) == ProcType.LAMBDA;
             return ArgumentDescriptorUtils.argumentDescriptorsToParameters(getContext(), argsDesc, isLambda);
         }
@@ -237,7 +237,7 @@ public abstract class ProcNodes {
         @TruffleBoundary
         @Specialization
         public Object sourceLocation(DynamicObject proc) {
-            SourceSection sourceSection = Layouts.PROC.getNamedSharedMethodInfo(proc).getSourceSection();
+            SourceSection sourceSection = Layouts.PROC.getSharedMethodInfo(proc).getSourceSection();
 
             if (sourceSection.getSource() == null) {
                 return nil();
@@ -248,16 +248,6 @@ public abstract class ProcNodes {
                 final Object[] objects = new Object[]{file, sourceSection.getStartLine()};
                 return createArray(objects, objects.length);
             }
-        }
-
-    }
-
-    @CoreMethod(names = "hash")
-    public abstract static class HashNode extends CoreMethodArrayArgumentsNode {
-
-        @Specialization
-        public int hash(DynamicObject proc) {
-            return Layouts.PROC.getNamedSharedMethodInfo(proc).getSharedMethodInfo().hashCode();
         }
 
     }

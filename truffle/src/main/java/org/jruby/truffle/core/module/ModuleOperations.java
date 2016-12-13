@@ -303,7 +303,7 @@ public abstract class ModuleOperations {
 
     public static InternalMethod lookupSuperMethod(InternalMethod currentMethod, DynamicObject objectMetaClass) {
         assert RubyGuards.isRubyClass(objectMetaClass);
-        final String name = currentMethod.getNamedSharedMethodInfo().getName(); // use the original name
+        final String name = currentMethod.getSharedMethodInfo().getName(); // use the original name
         return lookupSuperMethod(currentMethod.getDeclaringModule(), name, objectMetaClass);
     }
 
