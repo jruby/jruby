@@ -139,7 +139,6 @@ public class RubySystemCallError extends RubyException {
     
     private static final ObjectMarshal SYSTEM_CALL_ERROR_MARSHAL = new ObjectMarshal() {
         @Override
-        @SuppressWarnings("deprecation")
         public void marshalTo(Ruby runtime, Object obj, RubyClass type,
                               MarshalStream marshalStream) throws IOException {
             RubySystemCallError exc = (RubySystemCallError) obj;
@@ -163,7 +162,7 @@ public class RubySystemCallError extends RubyException {
             // just use real vars all the time for these?
             unmarshalStream.defaultVariablesUnmarshal(exc);
             
-            exc.setMessage((IRubyObject)exc.removeInternalVariable("mesg"));
+            exc.message = (IRubyObject)exc.removeInternalVariable("mesg");
             exc.errno = (IRubyObject)exc.removeInternalVariable("errno");
             exc.set_backtrace((IRubyObject)exc.removeInternalVariable("bt"));
             
@@ -255,7 +254,7 @@ public class RubySystemCallError extends RubyException {
             val += " - " + msg.convertToString();
         }
 
-        setMessage(runtime.newString(val));
+        message = runtime.newString(val);
         return this;
     }
 
