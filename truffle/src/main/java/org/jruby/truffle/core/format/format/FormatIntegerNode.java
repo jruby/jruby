@@ -170,7 +170,7 @@ public abstract class FormatIntegerNode extends FormatNode {
             }
         } else if (negative) {
             if (base == 10) {
-//                warning(ID.NEGATIVE_NUMBER_FOR_U, args, "negative number for %u specifier");
+                // warning(ID.NEGATIVE_NUMBER_FOR_U, args, "negative number for %u specifier");
                 leadChar = '.';
                 len += 2;
             } else {

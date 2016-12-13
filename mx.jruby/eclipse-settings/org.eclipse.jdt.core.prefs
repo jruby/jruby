@@ -6,3 +6,5 @@ org.eclipse.jdt.core.compiler.problem.reportMethodCanBeStatic=ignore
 org.eclipse.jdt.core.compiler.problem.localVariableHiding=ignore
 org.eclipse.jdt.core.formatter.insert_space_after_opening_brace_in_array_initializer=insert
 org.eclipse.jdt.core.formatter.insert_space_before_closing_brace_in_array_initializer=insert
+org.eclipse.jdt.core.formatter.never_indent_block_comments_on_first_column=false
+org.eclipse.jdt.core.formatter.never_indent_line_comments_on_first_column=false
