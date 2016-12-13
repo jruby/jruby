@@ -5,7 +5,7 @@ set -x
 
 unset GEM_HOME GEM_PATH
 
-tool/jt.rb ruby -rbundler-workarounds bin/gem install bundler
+jt ruby -rbundler-workarounds bin/gem install bundler
 
 git clone \
     --branch master \
