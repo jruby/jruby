@@ -19,10 +19,12 @@ public class PrintfSimpleParser {
 
     private final char[] source;
     private final Object[] arguments;
+    private final boolean isDebug;
 
-    public PrintfSimpleParser(char[] source, Object[] arguments) {
+    public PrintfSimpleParser(char[] source, Object[] arguments, boolean isDebug) {
         this.source = source;
         this.arguments = arguments;
+        this.isDebug = isDebug;
     }
 
     @SuppressWarnings("fallthrough")
@@ -31,6 +33,7 @@ public class PrintfSimpleParser {
         ArgType argType = ArgType.NONE;
 
         final int end = source.length;
+        int argCount = 0;
 
         for (int i = 0; i < end; ) {
 
@@ -152,6 +155,7 @@ public class PrintfSimpleParser {
                             i = numberDollarWidth.getNextI();
                         } else {
                             checkNextArg(argType, 1); // TODO index next args
+                            argCount += 1;
                             argType = ArgType.UNNUMBERED;
                             config.setWidthStar(true);
                             i++;
@@ -172,6 +176,7 @@ public class PrintfSimpleParser {
                                 i = numberDollar.getNextI();
                             } else {
                                 checkNextArg(argType, 1); // TODO idx
+                                argCount += 1;
                                 argType = ArgType.UNNUMBERED;
                                 config.setPrecisionStar(true);
                                 i += 2;
@@ -202,6 +207,7 @@ public class PrintfSimpleParser {
                         i++;
                         if (!argTypeSet) {
                             checkNextArg(argType, 1);
+                            argCount += 1;
                             argType = ArgType.UNNUMBERED;
                         }
                         finished = true;
@@ -213,6 +219,7 @@ public class PrintfSimpleParser {
                         i++;
                         if (!argTypeSet) { // Speculative
                             checkNextArg(argType, 1);
+                            argCount += 1;
                             argType = ArgType.UNNUMBERED;
                         }
                         finished = true;
@@ -227,6 +234,7 @@ public class PrintfSimpleParser {
                     case 'u':
                         if (!argTypeSet) {
                             checkNextArg(argType, 1); // TODO idx correctly
+                            argCount += 1;
                             argType = ArgType.UNNUMBERED;
                         }
                         config.setFormatType(SprintfConfig.FormatType.INTEGER);
@@ -243,6 +251,7 @@ public class PrintfSimpleParser {
                     case 'f':
                         if (!argTypeSet) {
                             checkNextArg(argType, 1);
+                            argCount += 1;
                             argType = ArgType.UNNUMBERED;
                         }
                         config.setFormatType(SprintfConfig.FormatType.FLOAT);
@@ -255,6 +264,13 @@ public class PrintfSimpleParser {
                 }
             }
         }
+        if ((argType == ArgType.UNNUMBERED || argType == ArgType.NONE) &&
+            arguments.length > argCount) {
+            if (isDebug) {
+                throw new InvalidFormatException("too many arguments for format string");
+            }
+        }
+
         return configs;
     }
 
