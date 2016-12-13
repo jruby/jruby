@@ -98,7 +98,7 @@ public abstract class BasicObjectNodes {
 
     }
 
-    @CoreMethod(names = { "equal?", "==" }, required = 1)
+    @CoreMethod(names = {"equal?", "=="}, required = 1)
     public abstract static class ReferenceEqualNode extends CoreMethodArrayArgumentsNode {
 
         public static ReferenceEqualNode create() {
@@ -132,8 +132,8 @@ public abstract class BasicObjectNodes {
             return a == b;
         }
 
-        @Specialization(guards = { "isNotDynamicObject(a)", "isNotDynamicObject(b)", "notSameClass(a, b)" })
-        public boolean equal(Object a, Object b) {
+        @Specialization(guards = {"isNotDynamicObject(a)", "isNotDynamicObject(b)", "notSameClass(a, b)", "isNotIntLong(a) || isNotIntLong(b)"})
+        public boolean equalIncompatiblePrimitiveTypes(Object a, Object b) {
             return false;
         }
 
@@ -153,6 +153,10 @@ public abstract class BasicObjectNodes {
 
         protected boolean notSameClass(Object a, Object b) {
             return a.getClass() != b.getClass();
+        }
+
+        protected boolean isNotIntLong(Object v) {
+            return !(v instanceof Integer) && !(v instanceof Long);
         }
 
     }
