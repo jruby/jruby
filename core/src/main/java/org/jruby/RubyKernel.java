@@ -1268,19 +1268,13 @@ public class RubyKernel {
         }
     }
 
-    @JRubyMethod(name = "proc", module = true, visibility = PRIVATE, reads = BLOCK)
+    @JRubyMethod(name = "proc", module = true, visibility = PRIVATE)
     public static RubyProc proc(ThreadContext context, IRubyObject recv, Block block) {
-        // No passed in block, lets check next outer frame for one ('Proc.new')
-        if (!block.isGiven()) block = context.getCurrentFrame().getBlock();
-
         return context.runtime.newProc(Block.Type.PROC, block);
     }
 
-    @JRubyMethod(module = true, visibility = PRIVATE, reads = BLOCK)
+    @JRubyMethod(module = true, visibility = PRIVATE)
     public static RubyProc lambda(ThreadContext context, IRubyObject recv, Block block) {
-        // No passed in block, lets check next outer frame for one ('Proc.new')
-        if (!block.isGiven()) block = context.getCurrentFrame().getBlock();
-
         // If we encounter a amp'd proc we leave it a proc for some reason.
         Block.Type type = block.type == Block.Type.PROC ? block.type : Block.Type.LAMBDA;
 
