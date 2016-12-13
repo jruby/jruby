@@ -1,1 +1,0 @@
-fails:Kernel#warn does not append line-end if last character is line-end
