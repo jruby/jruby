@@ -28,8 +28,8 @@ public class PrintfCompiler {
         this.currentNode = currentNode;
     }
 
-    public CallTarget compile(byte[] format, Object[] arguments) {
-        final PrintfSimpleParser parser = new PrintfSimpleParser(bytesToChars(format), arguments);
+    public CallTarget compile(byte[] format, Object[] arguments, boolean isDebug) {
+        final PrintfSimpleParser parser = new PrintfSimpleParser(bytesToChars(format), arguments, isDebug);
         final List<SprintfConfig> configs = parser.parse();
         final PrintfSimpleTreeBuilder builder = new PrintfSimpleTreeBuilder(context, configs);
 

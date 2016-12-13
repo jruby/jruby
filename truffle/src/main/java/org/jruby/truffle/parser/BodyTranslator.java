@@ -1832,7 +1832,7 @@ public class BodyTranslator extends Translator {
             // Instead, it reads the backtrace field of the thread-local $! value.
             ret = new ReadLastBacktraceNode(context, fullSourceSection);
         } else {
-            ret = ReadGlobalVariableNodeGen.create(context, fullSourceSection, name);
+            ret = ReadGlobalVariableNodeGen.create(name);
         }
 
         return addNewlineIfNeeded(node, ret);

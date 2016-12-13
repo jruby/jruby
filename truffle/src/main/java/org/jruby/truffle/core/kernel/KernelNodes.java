@@ -58,6 +58,8 @@ import org.jruby.truffle.core.basicobject.BasicObjectNodes;
 import org.jruby.truffle.core.basicobject.BasicObjectNodes.ReferenceEqualNode;
 import org.jruby.truffle.core.basicobject.BasicObjectNodesFactory;
 import org.jruby.truffle.core.binding.BindingNodes;
+import org.jruby.truffle.core.cast.BooleanCastNode;
+import org.jruby.truffle.core.cast.BooleanCastNodeGen;
 import org.jruby.truffle.core.cast.BooleanCastWithDefaultNodeGen;
 import org.jruby.truffle.core.cast.DurationToMillisecondsNodeGen;
 import org.jruby.truffle.core.cast.NameToJavaStringNode;
@@ -109,6 +111,8 @@ import org.jruby.truffle.language.dispatch.DispatchNode;
 import org.jruby.truffle.language.dispatch.DoesRespondDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.MissingBehavior;
 import org.jruby.truffle.language.dispatch.RubyCallNode;
+import org.jruby.truffle.language.globals.ReadGlobalVariableNode;
+import org.jruby.truffle.language.globals.ReadGlobalVariableNodeGen;
 import org.jruby.truffle.language.loader.CodeLoader;
 import org.jruby.truffle.language.loader.RequireNode;
 import org.jruby.truffle.language.loader.SourceLoader;
@@ -1837,18 +1841,25 @@ public abstract class KernelNodes {
 
         @Child private RopeNodes.MakeLeafRopeNode makeLeafRopeNode;
         @Child private TaintNode taintNode;
+        @Child private BooleanCastNode readDebugGlobalNode;
 
         private final BranchProfile exceptionProfile = BranchProfile.create();
         private final ConditionProfile resizeProfile = ConditionProfile.createBinaryProfile();
 
-        @Specialization(guards = { "isRubyString(format)", "ropesEqual(format, cachedFormat)" })
+        public SprintfNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            this.readDebugGlobalNode = BooleanCastNodeGen.create(ReadGlobalVariableNodeGen.create("$DEBUG"));
+        }
+
+        @Specialization(guards = { "isRubyString(format)", "ropesEqual(format, cachedFormat)", "isDebug(frame) == cachedIsDebug" })
         public DynamicObject formatCached(
                 VirtualFrame frame,
                 DynamicObject format,
                 Object[] arguments,
+                @Cached("isDebug(frame)") boolean cachedIsDebug,
                 @Cached("privatizeRope(format)") Rope cachedFormat,
                 @Cached("ropeLength(cachedFormat)") int cachedFormatLength,
-                @Cached("create(compileFormat(format, arguments))") DirectCallNode callPackNode) {
+                @Cached("create(compileFormat(format, arguments, isDebug(frame)))") DirectCallNode callPackNode) {
             final BytesResult result;
 
             try {
@@ -1870,8 +1881,10 @@ public abstract class KernelNodes {
                 @Cached("create()") IndirectCallNode callPackNode) {
             final BytesResult result;
 
+            final boolean isDebug = readDebugGlobalNode.executeBoolean(frame);
+
             try {
-                result = (BytesResult) callPackNode.call(frame, compileFormat(format, arguments),
+                result = (BytesResult) callPackNode.call(frame, compileFormat(format, arguments, isDebug),
                         new Object[]{ arguments, arguments.length });
             } catch (FormatException e) {
                 exceptionProfile.enter();
@@ -1912,15 +1925,19 @@ public abstract class KernelNodes {
         }
 
         @TruffleBoundary
-        protected CallTarget compileFormat(DynamicObject format, Object[] arguments) {
+        protected CallTarget compileFormat(DynamicObject format, Object[] arguments, boolean isDebug) {
             assert RubyGuards.isRubyString(format);
 
             try {
                 return new PrintfCompiler(getContext(), this)
-                        .compile(Layouts.STRING.getRope(format).getBytes(), arguments);
+                        .compile(Layouts.STRING.getRope(format).getBytes(), arguments, isDebug);
             } catch (InvalidFormatException e) {
                 throw new RaiseException(coreExceptions().argumentError(e.getMessage(), this));
             }
+        }
+
+        protected boolean isDebug(VirtualFrame frame) {
+            return readDebugGlobalNode.executeBoolean(frame);
         }
 
     }
