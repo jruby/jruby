@@ -29,16 +29,14 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
-package org.jruby.truffle.parser;
+package org.jruby.truffle.collections;
 
-/**
- * Simple key-value pair object.
- */
-public class KeyValuePair<K,V> {
-    private K key;
-    private V value;
+public class Tuple<K,V> {
 
-    public KeyValuePair(K key, V value) {
+    private final K key;
+    private final V value;
+
+    public Tuple(K key, V value) {
         this.key = key;
         this.value = value;
     }
@@ -55,4 +53,5 @@ public class KeyValuePair<K,V> {
     public String toString() {
         return key + "=>" + value;
     }
+
 }

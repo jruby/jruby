@@ -31,7 +31,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.ast;
 
-import org.jruby.truffle.parser.KeyValuePair;
+import org.jruby.truffle.collections.Tuple;
 import org.jruby.truffle.parser.ast.types.ILiteralNode;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
 import org.jruby.truffle.parser.lexer.ISourcePosition;
@@ -44,7 +44,7 @@ import java.util.List;
  * of default values in a method call.
  */
 public class HashParseNode extends ParseNode implements ILiteralNode {
-    private final List<KeyValuePair<ParseNode,ParseNode>> pairs;
+    private final List<Tuple<ParseNode,ParseNode>> pairs;
 
     public HashParseNode(ISourcePosition position) {
         super(position, false);
@@ -52,7 +52,7 @@ public class HashParseNode extends ParseNode implements ILiteralNode {
         pairs = new ArrayList<>();
     }
     
-    public HashParseNode(ISourcePosition position, KeyValuePair<ParseNode,ParseNode> pair) {
+    public HashParseNode(ISourcePosition position, Tuple<ParseNode,ParseNode> pair) {
         this(position);
 
         pairs.add(pair);
@@ -62,7 +62,7 @@ public class HashParseNode extends ParseNode implements ILiteralNode {
         return NodeType.HASHNODE;
     }
 
-    public HashParseNode add(KeyValuePair<ParseNode,ParseNode> pair) {
+    public HashParseNode add(Tuple<ParseNode,ParseNode> pair) {
         if (pair.getKey() != null && pair.getKey().containsVariableAssignment() ||
                 pair.getValue() != null && pair.getValue().containsVariableAssignment()) {
             containsVariableAssignment = true;
@@ -84,14 +84,14 @@ public class HashParseNode extends ParseNode implements ILiteralNode {
         return pairs.isEmpty();
     }
 
-    public List<KeyValuePair<ParseNode,ParseNode>> getPairs() {
+    public List<Tuple<ParseNode,ParseNode>> getPairs() {
         return pairs;
     }
 
     public List<ParseNode> childNodes() {
         List<ParseNode> children = new ArrayList<>();
 
-        for (KeyValuePair<ParseNode,ParseNode> pair: pairs) {
+        for (Tuple<ParseNode,ParseNode> pair: pairs) {
             children.add(pair.getKey());
             children.add(pair.getValue());
         }

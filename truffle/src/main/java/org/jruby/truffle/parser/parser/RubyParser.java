@@ -43,7 +43,7 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.string.ByteList;
 import org.jruby.truffle.interop.ForeignCodeNode;
-import org.jruby.truffle.parser.KeyValuePair;
+import org.jruby.truffle.collections.Tuple;
 import org.jruby.truffle.parser.RubyWarnings;
 import org.jruby.truffle.parser.ast.ArgsParseNode;
 import org.jruby.truffle.parser.ast.ArgumentParseNode;
@@ -4578,13 +4578,13 @@ states[607] = new ParserState() {
 };
 states[608] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = new HashParseNode(lexer.getPosition(), ((KeyValuePair)yyVals[0+yyTop]));
+                    yyVal = new HashParseNode(lexer.getPosition(), ((Tuple)yyVals[0+yyTop]));
     return yyVal;
   }
 };
 states[609] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = ((HashParseNode)yyVals[-2+yyTop]).add(((KeyValuePair)yyVals[0+yyTop]));
+                    yyVal = ((HashParseNode)yyVals[-2+yyTop]).add(((Tuple)yyVals[0+yyTop]));
     return yyVal;
   }
 };

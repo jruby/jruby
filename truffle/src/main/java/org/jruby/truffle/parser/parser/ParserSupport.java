@@ -43,7 +43,7 @@ import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.string.ByteList;
 import org.jruby.truffle.core.string.StringSupport;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.parser.KeyValuePair;
+import org.jruby.truffle.collections.Tuple;
 import org.jruby.truffle.parser.RubyWarnings;
 import org.jruby.truffle.parser.Signature;
 import org.jruby.truffle.parser.ast.AliasParseNode;
@@ -136,6 +136,7 @@ import org.jruby.truffle.parser.scope.StaticScope;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static org.jruby.truffle.parser.lexer.LexingCommon.ASCII8BIT_ENCODING;
 import static org.jruby.truffle.parser.lexer.LexingCommon.USASCII_ENCODING;
@@ -644,7 +645,7 @@ public class ParserSupport {
     private boolean isStaticContent(ParseNode node) {
         if (node instanceof HashParseNode) {
             HashParseNode hash = (HashParseNode) node;
-            for (KeyValuePair<ParseNode, ParseNode> pair : hash.getPairs()) {
+            for (Tuple<ParseNode, ParseNode> pair : hash.getPairs()) {
                 if (!isStaticContent(pair.getKey()) || !isStaticContent(pair.getValue())) return false;
             }
             return true;
@@ -1035,10 +1036,10 @@ public class ParserSupport {
         return dstr;
     }
 
-    public KeyValuePair<ParseNode, ParseNode> createKeyValue(ParseNode key, ParseNode value) {
+    public Tuple<ParseNode, ParseNode> createKeyValue(ParseNode key, ParseNode value) {
         if (key != null && key instanceof StrParseNode) ((StrParseNode) key).setFrozen(true);
 
-        return new KeyValuePair<>(key, value);
+        return new Tuple<>(key, value);
     }
 
     public ParseNode asSymbol(ISourcePosition position, String value) {
@@ -1207,7 +1208,7 @@ public class ParserSupport {
     public ParseNode remove_duplicate_keys(HashParseNode hash) {
         List<ParseNode> encounteredKeys = new ArrayList<>();
 
-        for (KeyValuePair<ParseNode,ParseNode> pair: hash.getPairs()) {
+        for (Tuple<ParseNode,ParseNode> pair: hash.getPairs()) {
             ParseNode key = pair.getKey();
             if (key == null) continue;
             int index = encounteredKeys.indexOf(key);

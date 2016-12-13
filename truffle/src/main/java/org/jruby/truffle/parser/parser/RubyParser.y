@@ -39,7 +39,7 @@ package org.jruby.truffle.parser.parser;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.interop.ForeignCodeNode;
-import org.jruby.truffle.parser.KeyValuePair;
+import org.jruby.truffle.collections.Tuple;
 import org.jruby.truffle.parser.RubyWarnings;
 import org.jruby.truffle.parser.ast.ArgsParseNode;
 import org.jruby.truffle.parser.ast.ArgumentParseNode;
@@ -254,7 +254,7 @@ public class RubyParser {
    // ENEBO: missing when_args
 %type <HashParseNode> assoc_list
 %type <HashParseNode> assocs
-%type <KeyValuePair> assoc
+%type <Tuple> assoc
 %type <ListParseNode> mlhs_head mlhs_post
 %type <ListParseNode> f_block_optarg
 %type <BlockPassParseNode> opt_block_arg block_arg none_block_pass
