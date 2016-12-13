@@ -1217,6 +1217,7 @@ public abstract class KernelNodes {
             return block;
         }
 
+        @TruffleBoundary
         protected boolean isLiteralBlock(DynamicObject block) {
             Node callNode = getContext().getCallStack().getCallerFrameIgnoringSend().getCallNode();
             return isLiteralBlock(callNode);
