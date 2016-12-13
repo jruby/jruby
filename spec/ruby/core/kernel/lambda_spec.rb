@@ -72,7 +72,7 @@ describe "Kernel.lambda" do
   it "returns from the lambda itself, not the creation site of the lambda" do
     @reached_end_of_method = nil
     def test
-      send(@method) { return }.call
+      send(:lambda) { return }.call
       @reached_end_of_method = true
     end
     test
@@ -80,7 +80,7 @@ describe "Kernel.lambda" do
   end
 
   it "allows long returns to flow through it" do
-    KernelSpecs::Lambda.new.outer(@method).should == :good
+    KernelSpecs::Lambda.new.outer.should == :good
   end
 end
 
