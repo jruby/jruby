@@ -306,7 +306,7 @@ public abstract class ReadlineNodes {
             return index;
         }
 
-        public int complete(String buffer, int cursor, List candidates) {
+        public int complete(String buffer, int cursor, List<CharSequence> candidates) {
             throw new UnsupportedOperationException("auto-completion via proc not yet supported");
         }
     }
@@ -317,7 +317,7 @@ public abstract class ReadlineNodes {
 
         @TruffleBoundary
         @Override
-        public int complete(String buffer, int cursor, List candidates) {
+        public int complete(String buffer, int cursor, List<CharSequence> candidates) {
             buffer = buffer.substring(0, cursor);
             int index = buffer.lastIndexOf(" ");
             if (index != -1) {
