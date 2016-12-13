@@ -621,7 +621,7 @@ public class RubyKernel {
 
     /** Returns value of $_.
      *
-     * @throws TypeError if $_ is not a String or nil.
+     * @throws RaiseException TypeError if $_ is not a String or nil.
      * @return value of $_ as String.
      */
     private static RubyString getLastlineString(ThreadContext context, Ruby runtime) {
