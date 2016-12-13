@@ -1383,6 +1383,25 @@ public abstract class KernelNodes {
         }
     }
 
+    // A basic Kernel#p for debugging core, overridden later in kernel.rb
+    @CoreMethod(names = "p", needsSelf = false, required = 1, unsafe = UnsafeGroup.IO)
+    public abstract static class DebugPrintNode extends CoreMethodArrayArgumentsNode {
+
+        @Child CallDispatchHeadNode callInspectNode = CallDispatchHeadNode.createMethodCall();
+
+        @Specialization
+        public Object p(VirtualFrame frame, Object value) {
+            Object inspected = callInspectNode.call(frame, value, "inspect");
+            print(inspected);
+            return value;
+        }
+
+        @TruffleBoundary
+        private void print(Object inspected) {
+            System.out.println(inspected.toString());
+        }
+    }
+
     @CoreMethod(names = "private_methods", optional = 1)
     @NodeChildren({
             @NodeChild(type = RubyNode.class, value = "object"),
@@ -1976,7 +1995,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "to_s")
+    @CoreMethod(names = {"to_s", "inspect"}) // Basic inspect, refined later in core
     public abstract static class ToSNode extends CoreMethodArrayArgumentsNode {
 
         @Child private LogicalClassNode classNode;
