@@ -838,8 +838,8 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "strategy.matches(array)", limit = "ARRAY_STRATEGIES")
         public long hash(VirtualFrame frame, DynamicObject array,
-                         @Cached("of(array)") ArrayStrategy strategy,
-                         @Cached("createMethodCall()") CallDispatchHeadNode toHashNode) {
+                @Cached("of(array)") ArrayStrategy strategy,
+                @Cached("createMethodCall()") CallDispatchHeadNode toHashNode) {
             final int size = strategy.getSize(array);
             // TODO BJF Jul 4, 2016 Seed could be chosen in advance to avoid branching
             long h = Hashing.start(size);
