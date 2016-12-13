@@ -1182,7 +1182,7 @@ public class RubyKernel {
         return context.nil;
     }
 
-    @JRubyMethod(module = true, required = 1, rest = true, visibility = PRIVATE)
+    @JRubyMethod(module = true, rest = true, visibility = PRIVATE)
     public static IRubyObject warn(ThreadContext context, IRubyObject recv, IRubyObject... messages) {
         for (IRubyObject message : messages) warn(context, recv, message);
         return context.nil;
