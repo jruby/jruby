@@ -132,7 +132,7 @@ public abstract class BasicObjectNodes {
             return a == b;
         }
 
-        @Specialization(guards = {"isNotDynamicObject(a)", "isNotDynamicObject(b)", "notSameClass(a, b)", "isNotIntLong(a) || isNotIntLong(b)"})
+        @Specialization(guards = { "isNotDynamicObject(a)", "isNotDynamicObject(b)", "notSameClass(a, b)", "isNotIntLong(a) || isNotIntLong(b)" })
         public boolean equalIncompatiblePrimitiveTypes(Object a, Object b) {
             return false;
         }
