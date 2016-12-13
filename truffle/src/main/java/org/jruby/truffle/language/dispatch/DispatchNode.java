@@ -10,6 +10,7 @@
 package org.jruby.truffle.language.dispatch;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.RubyContext;
@@ -73,6 +74,16 @@ public abstract class DispatchNode extends RubyNode {
 
     protected DispatchHeadNode getHeadNode() {
         return NodeUtil.findParent(this, DispatchHeadNode.class);
+    }
+
+    public RubyCallNode findRubyCallNode() {
+        DispatchHeadNode headNode = getHeadNode();
+        Node parent = headNode.getParent();
+        if (parent instanceof RubyCallNode) {
+            return (RubyCallNode) parent;
+        } else {
+            return null;
+        }
     }
 
     @Override

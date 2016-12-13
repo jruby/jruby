@@ -24,6 +24,7 @@ import org.jruby.truffle.core.cast.ProcOrNullNodeGen;
 import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
+import org.jruby.truffle.language.methods.BlockDefinitionNode;
 import org.jruby.truffle.language.methods.InternalMethod;
 
 public class RubyCallNode extends RubyNode {
@@ -199,6 +200,11 @@ public class RubyCallNode extends RubyNode {
 
     public boolean isVCall() {
         return isVCall;
+    }
+
+    public boolean hasLiteralBlock() {
+        assert block != null;
+        return block.getChild() instanceof BlockDefinitionNode;
     }
 
 }

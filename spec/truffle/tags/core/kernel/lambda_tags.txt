@@ -1,2 +1,1 @@
 fails:Kernel.lambda allows long returns to flow through it
-fails:Kernel.lambda returned the passed Proc if given an existing Proc

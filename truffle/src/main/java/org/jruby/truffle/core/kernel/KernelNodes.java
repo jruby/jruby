@@ -105,8 +105,10 @@ import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchAction;
 import org.jruby.truffle.language.dispatch.DispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
+import org.jruby.truffle.language.dispatch.DispatchNode;
 import org.jruby.truffle.language.dispatch.DoesRespondDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.MissingBehavior;
+import org.jruby.truffle.language.dispatch.RubyCallNode;
 import org.jruby.truffle.language.loader.CodeLoader;
 import org.jruby.truffle.language.loader.RequireNode;
 import org.jruby.truffle.language.loader.SourceLoader;
@@ -1169,28 +1171,69 @@ public abstract class KernelNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject lambda(NotProvided block) {
-            final Frame parentFrame = getContext().getCallStack().getCallerFrameIgnoringSend().getFrame(FrameAccess.READ_ONLY, true);
+            final Frame parentFrame = getContext().getCallStack().getCallerFrameIgnoringSend(0).getFrame(FrameAccess.READ_ONLY, true);
             final DynamicObject parentBlock = RubyArguments.getBlock(parentFrame);
 
             if (parentBlock == null) {
                 throw new RaiseException(coreExceptions().argumentError("tried to create Proc object without a block", this));
             }
 
-            return lambda(parentBlock);
+            Node callNode = getContext().getCallStack().getCallerFrameIgnoringSend(1).getCallNode();
+            if (isLiteralBlock(callNode)) {
+                return lambdaFromBlock(parentBlock);
+            } else {
+                return parentBlock;
+            }
         }
 
-        @Specialization
-        public DynamicObject lambda(DynamicObject block) {
+        @Specialization(guards = {"isCloningEnabled()", "isLiteralBlock"})
+        public DynamicObject lambdaFromBlockCloning(DynamicObject block,
+                        @Cached("isLiteralBlock(block)") boolean isLiteralBlock) {
+            return lambdaFromBlock(block);
+        }
+
+        @Specialization(guards = {"isCloningEnabled()", "!isLiteralBlock"})
+        public DynamicObject lambdaFromExistingProcCloning(DynamicObject block,
+                        @Cached("isLiteralBlock(block)") boolean isLiteralBlock) {
+            return block;
+        }
+
+        @Specialization(guards = "isLiteralBlock(block)")
+        public DynamicObject lambdaFromBlock(DynamicObject block) {
             return ProcOperations.createRubyProc(
-                    coreLibrary().getProcFactory(),
-                    ProcType.LAMBDA,
-                    Layouts.PROC.getNamedSharedMethodInfo(block),
-                    Layouts.PROC.getCallTargetForLambdas(block),
-                    Layouts.PROC.getCallTargetForLambdas(block),
-                    Layouts.PROC.getDeclarationFrame(block),
-                    Layouts.PROC.getMethod(block),
-                    Layouts.PROC.getSelf(block),
-                    Layouts.PROC.getBlock(block));
+                            coreLibrary().getProcFactory(),
+                            ProcType.LAMBDA,
+                            Layouts.PROC.getNamedSharedMethodInfo(block),
+                            Layouts.PROC.getCallTargetForLambdas(block),
+                            Layouts.PROC.getCallTargetForLambdas(block),
+                            Layouts.PROC.getDeclarationFrame(block),
+                            Layouts.PROC.getMethod(block),
+                            Layouts.PROC.getSelf(block),
+                            Layouts.PROC.getBlock(block));
+        }
+
+        @Specialization(guards = "!isLiteralBlock(block)")
+        public DynamicObject lambdaFromExistingProc(DynamicObject block) {
+            return block;
+        }
+
+        protected boolean isLiteralBlock(DynamicObject block) {
+            Node callNode = getContext().getCallStack().getCallerFrameIgnoringSend().getCallNode();
+            return isLiteralBlock(callNode);
+        }
+
+        private boolean isLiteralBlock(Node callNode) {
+            if (callNode.getParent() instanceof DispatchNode) {
+                RubyCallNode rubyCallNode = ((DispatchNode) callNode.getParent()).findRubyCallNode();
+                if (rubyCallNode != null) {
+                    return rubyCallNode.hasLiteralBlock();
+                }
+            }
+            return false;
+        }
+
+        protected boolean isCloningEnabled() {
+            return coreLibrary().isCloningEnabled();
         }
     }
 

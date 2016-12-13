@@ -11,6 +11,7 @@ package org.jruby.truffle.core;
 
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.TruffleOptions;
@@ -287,6 +288,7 @@ public class CoreLibrary {
 
     private final Map<Errno, DynamicObject> errnoClasses = new HashMap<>();
 
+    @CompilationFinal private boolean cloningEnabled;
     @CompilationFinal private InternalMethod basicObjectSendMethod;
     @CompilationFinal private InternalMethod truffleBootMainMethod;
 
@@ -820,6 +822,8 @@ public class CoreLibrary {
 
         basicObjectSendMethod = getMethod(basicObjectClass, "__send__");
         truffleBootMainMethod = getMethod(node.getSingletonClass(truffleBootModule), "main");
+
+        cloningEnabled = Truffle.getRuntime().createDirectCallNode(getMethod(kernelModule, "lambda").getCallTarget()).isCallTargetCloningAllowed();
     }
 
     private InternalMethod getMethod(DynamicObject module, String name) {
@@ -1531,6 +1535,10 @@ public class CoreLibrary {
 
     public boolean isTruffleBootMainMethod(NamedSharedMethodInfo info) {
         return info == truffleBootMainMethod.getNamedSharedMethodInfo();
+    }
+
+    public boolean isCloningEnabled() {
+        return cloningEnabled;
     }
 
     public DynamicObjectFactory getIntRangeFactory() {
