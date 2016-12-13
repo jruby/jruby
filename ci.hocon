@@ -5,6 +5,7 @@ common: {
     git:        ">=1.8.3"
     mercurial:  ">=3.2.4"
     ruby:       ">=2.1.0"
+    maven:      ">=3.3.9" # Only while we run Maven in setup, below
   }
 
   downloads : {
@@ -25,6 +26,7 @@ common: {
     [mx, sclone, --kind, git, "https://github.com/jruby/jruby-build-pack.git", jruby-build-pack],
     [cp, bin/jruby.bash, bin/jruby],
     [chmod, "+x", bin/jruby],
+    [mvn, package], # We do this so classic will run so we can use it in ecosystem tests
     [mx, build, --force-javac]
   ]
 
@@ -410,7 +412,7 @@ test-ecosystem: ${gem-test-pack} {
   setup: ${common.setup} ${gem-test-pack.setup}
 
   run: [
-    ${jt} [ruby, -rbundler-workarounds, bin/gem, install, "$GEM_HOME/cache/bundler-1.12.5.gem"],
+    [bin/jruby, bin/gem, install, "$GEM_HOME/cache/bundler-1.12.5.gem"],
     ${jt} [test, ecosystem]
   ]
 }
