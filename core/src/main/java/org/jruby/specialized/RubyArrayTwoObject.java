@@ -93,21 +93,6 @@ public class RubyArrayTwoObject extends RubyArraySpecialized {
     }
 
     @Override
-    public IRubyObject collect(ThreadContext context, Block block) {
-        if (!packed()) return super.collect(context, block);
-
-        IRubyObject elt0 = block.yield(context, car);
-
-        if (!packed()) return collectFrom(context, arrayOf(elt0), 1, block);
-
-        IRubyObject elt1 = block.yield(context, cdr);
-
-        if (!packed()) return collectFrom(context, arrayOf(elt0, elt1), 2, block);
-
-        return new RubyArrayTwoObject(getRuntime(), block.yield(context, car), block.yield(context, cdr));
-    }
-
-    @Override
     public void copyInto(IRubyObject[] target, int start) {
         if (!packed()) {
             super.copyInto(target, start);

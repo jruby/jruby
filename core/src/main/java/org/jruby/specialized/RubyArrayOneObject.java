@@ -84,17 +84,6 @@ public class RubyArrayOneObject extends RubyArraySpecialized {
     }
 
     @Override
-    public IRubyObject collect(ThreadContext context, Block block) {
-        if (!packed()) return super.collect(context, block);
-
-        IRubyObject elt0 = block.yield(context, value);
-
-        if (!packed()) return collectFrom(context, arrayOf(elt0), 1, block);
-
-        return new RubyArrayOneObject(getRuntime(), elt0);
-    }
-
-    @Override
     public void copyInto(IRubyObject[] target, int start) {
         if (!packed()) {
             super.copyInto(target, start);
