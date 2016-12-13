@@ -1174,11 +1174,8 @@ public class RubyKernel {
     public static IRubyObject warn(ThreadContext context, IRubyObject recv, IRubyObject message) {
         final Ruby runtime = context.runtime;
 
-        if (runtime.warningsEnabled()) {
-            IRubyObject out = runtime.getGlobalVariables().get("$stderr");
-            sites(context).write.call(context, out, out, message);
-            sites(context).write.call(context, out, out, runtime.getGlobalVariables().getDefaultSeparator());
-        }
+        if (runtime.warningsEnabled()) RubyIO.puts1(context, runtime.getGlobalVariables().get("$stderr"), message);
+
         return context.nil;
     }
 
