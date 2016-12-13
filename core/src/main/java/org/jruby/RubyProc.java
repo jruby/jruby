@@ -50,6 +50,8 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.DataType;
 
+import static org.jruby.anno.FrameField.BLOCK;
+
 /**
  * @author  jpetersen
  */
@@ -136,7 +138,7 @@ public class RubyProc extends RubyObject implements DataType {
      * since we need to deal with special case of Proc.new with no arguments or block arg.  In
      * this case, we need to check previous frame for a block to consume.
      */
-    @JRubyMethod(name = "new", rest = true, meta = true)
+    @JRubyMethod(name = "new", rest = true, meta = true, reads = BLOCK)
     public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         // No passed in block, lets check next outer frame for one ('Proc.new')
         if (!block.isGiven()) block = context.getCurrentFrame().getBlock();
