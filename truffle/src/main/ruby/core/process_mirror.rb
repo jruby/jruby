@@ -355,7 +355,13 @@ module Rubinius
           end
 
           if args.empty?
-            split_command, *split_args = command.strip.split(' ')
+            # If the command contains both the binary to run and the arguments, we need to split them apart. We have
+            # two basic cases here: 1) a fully qualified command; and 2) a simple name expected to be found on the PATH.
+            # Both cases require the split. In the event of a fully qualified command, we exec the command directly,
+            # but the signature for exec requires the command and arguments to all be split. In the other case, where
+            # we have a command to search on the PATH, we must split the command apart from the arguments in order to
+            # perform the search (a poor man's version of shell processing). If we can find it on the PATH, then we
+            # run the whole thing through a shell to get proper shell processing.
 
             if should_search_path?(split_command)
               resolved_command = resolve_in_path(split_command)
@@ -370,6 +376,9 @@ module Rubinius
               args = [split_command] + split_args
             end
           else
+            # If arguments are explicitly passed, the semantics of this method (defined in Ruby) are to run the
+            # command directly. Thus, we must find the full path to the command, if not specified, because we can't
+            # allow the shell to do it for us.
             if should_search_path?(command)
               resolved_command = resolve_in_path(command)
 
