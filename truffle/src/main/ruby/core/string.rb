@@ -508,7 +508,7 @@ class String
       end
     end
 
-    if undefined.equal? to_enc
+    if false == to_enc
       raise Encoding::ConverterNotFoundError, "undefined code converter (#{from} to #{to})"
     end
 

@@ -485,7 +485,7 @@ module Rubinius
         return index && Truffle.invoke_primitive(:encoding_get_encoding_by_index, index)
       end
 
-      return undefined
+      false
     end
 
     def self.coerce_to_path(obj)
