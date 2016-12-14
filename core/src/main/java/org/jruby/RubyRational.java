@@ -706,7 +706,7 @@ public class RubyRational extends RubyNumeric {
         } else if (other instanceof RubyRational) {
             return runtime.newArray(other, this);
         }
-        throw runtime.newTypeError(other.getMetaClass() + " can't be coerced into " + getMetaClass());
+        return context.nil;
     }
 
     /** nurat_idiv

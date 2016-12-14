@@ -421,8 +421,7 @@ public class RubyNumeric extends RubyObject {
         final IRubyObject result;
         try {
             result = sites(context).coerce.call(context, other, other, this);
-        }
-        catch (RaiseException e) { // e.g. NoMethodError: undefined method `coerce'
+        } catch (RaiseException e) { // e.g. NoMethodError: undefined method `coerce'
             context.setErrorInfo($ex); // restore $!
 
             if (error) {
@@ -492,16 +491,15 @@ public class RubyNumeric extends RubyObject {
         final IRubyObject result;
         try {
             result = coerceBody(context, other);
-        }
-        catch (RaiseException e) { // e.g. NoMethodError: undefined method `coerce'
+        } catch (RaiseException e) { // e.g. NoMethodError: undefined method `coerce'
             if (context.runtime.getStandardError().isInstance( e.getException() )) {
                 context.setErrorInfo($ex); // restore $!
-                RubyWarnings warnings = context.runtime.getWarnings();
-                warnings.warn("Numerical comparison operators will no more rescue exceptions of #coerce");
-                warnings.warn("in the next release. Return nil in #coerce if the coercion is impossible.");
                 if (err) {
                     coerceFailed(context, other);
                 }
+                RubyWarnings warnings = context.runtime.getWarnings();
+                warnings.warn("Numerical comparison operators will no more rescue exceptions of #coerce");
+                warnings.warn("in the next release. Return nil in #coerce if the coercion is impossible.");
                 return null;
             }
             throw e;
