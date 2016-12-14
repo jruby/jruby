@@ -59,7 +59,6 @@ project 'JRuby Core' do
 
   jar 'com.headius:invokebinder:1.7'
   jar 'com.headius:options:1.4'
-  jar 'com.headius:coro-mock:1.0', :scope => 'provided'
   jar 'com.headius:unsafe-fences:1.0-SNAPSHOT'
 
   jar 'bsf:bsf:2.4.0', :scope => 'provided'
