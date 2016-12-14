@@ -270,6 +270,8 @@ module Rubinius
         }
 
         def spawn_setup
+          require 'fcntl'
+
           env = options&.delete(:unsetenv_others) ? {} : ENV.to_hash
           if add_to_env = options&.delete(:env)
             env.merge! Hash[add_to_env]
@@ -300,16 +302,33 @@ module Rubinius
 
             assign_fd = options[:assign_fd]
             if assign_fd
-              warn 'spawn_setup: assign_fd not yet implemented'
+              assign_fd.each_slice(4) do |from, name, mode, perm|
+                to = IO.open_with_mode(name, mode | Fcntl::FD_CLOEXEC, perm)
+                redirect_file_descriptor(from, to)
+              end
             end
 
             redirect_fd = options[:redirect_fd]
             if redirect_fd
-              warn 'spawn_setup: redirect_fd not yet implemented'
+              redirect_fd.each_slice(2) do |from, to|
+                redirect_file_descriptor(from, to)
+              end
             end
           end
 
           nil
+        end
+
+        def redirect_file_descriptor(from, to)
+          to = (-to + 1) if to < 0
+
+          result = Truffle::POSIX.dup2(to, from)
+          Errno.handle if result < 0
+
+          flags = Truffle::POSIX.fcntl(from, Fcntl::F_GETFD, nil)
+          Errno.handle if flags < 0
+
+          Truffle::POSIX.fcntl(from, Fcntl::F_SETFD, flags & ~Fcntl::FD_CLOEXEC)
         end
 
         def spawn(options, command, arguments)
@@ -336,18 +355,19 @@ module Rubinius
           end
 
           if args.empty?
-            split_command, *args = command.strip.split(' ')
+            split_command, *split_args = command.strip.split(' ')
 
             if should_search_path?(split_command)
               resolved_command = resolve_in_path(split_command)
 
               if resolved_command
-                command, args = '/bin/sh', ['/bin/sh', '-c', command] + args
+                command, args = '/bin/sh', ['/bin/sh', '-c', command]
               else
                 raise Errno::ENOENT.new("No such file or directory - #{command}")
               end
             else
-              args = [command]
+              command = split_command
+              args = [split_command] + split_args
             end
           elsif should_search_path?(command)
             resolved_command = resolve_in_path(command)
@@ -360,8 +380,7 @@ module Rubinius
           end
 
           Truffle.invoke_primitive :vm_exec, command, args, env_array
-          raise PrimitiveFailure,
-            "Rubinius::Mirror::Process::Execute#exec primitive failed"
+          raise PrimitiveFailure, "Rubinius::Mirror::Process::Execute#exec primitive failed"
         end
 
         def should_search_path?(command)
