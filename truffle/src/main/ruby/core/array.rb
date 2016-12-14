@@ -347,7 +347,10 @@ class Array
       two = c
     end
 
-    if one.kind_of? Range
+    if undefined.equal?(one) || !one
+      left = 0
+      right = size
+    elsif one.kind_of? Range
       raise TypeError, "length invalid with range" unless undefined.equal?(two)
 
       left = Rubinius::Type.coerce_to_collection_length one.begin
@@ -359,12 +362,12 @@ class Array
       right += 1 unless one.exclude_end?
       return self if right <= left           # Nothing to modify
 
-    elsif one and !undefined.equal?(one)
+    elsif one
       left = Rubinius::Type.coerce_to_collection_length one
       left += size if left < 0
       left = 0 if left < 0
 
-      if two and !undefined.equal?(two)
+      if !undefined.equal?(two) and two
         begin
           right = Rubinius::Type.coerce_to_collection_length two
         rescue ArgumentError
@@ -378,9 +381,6 @@ class Array
       else
         right = size
       end
-    else
-      left = 0
-      right = size
     end
 
     if left >= Fixnum::MAX || right > Fixnum::MAX
