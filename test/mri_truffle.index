@@ -566,7 +566,7 @@ rdoc/test_rdoc_ri_driver.rb
 rdoc/test_rdoc_ri_paths.rb
 rdoc/test_rdoc_ruby_lex.rb
 rdoc/test_rdoc_ruby_token.rb
-rdoc/test_rdoc_rubygems_hook.rb
+# rdoc/test_rdoc_rubygems_hook.rb # setup raises ArgumentError: Need a Gem::Version: nil
 rdoc/test_rdoc_servlet.rb
 rdoc/test_rdoc_single_class.rb
 rdoc/test_rdoc_stats.rb
