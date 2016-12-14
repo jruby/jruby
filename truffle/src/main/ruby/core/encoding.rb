@@ -81,8 +81,8 @@ class Encoding
   TranscodingMap = Encoding::Converter.transcoding_map
   EncodingMap = build_encoding_map
 
-  @default_external = undefined
-  @default_internal = undefined
+  @default_external = Truffle::Encoding.get_default_encoding('external')
+  @default_internal = Truffle::Encoding.get_default_encoding('internal')
 
   class UndefinedConversionError < EncodingError
     attr_accessor :source_encoding_name
@@ -576,31 +576,27 @@ class Encoding
   private_class_method :set_alias_index
 
   def self.default_external
-    if undefined.equal? @default_external
-      @default_external = find "external"
-    end
     @default_external
   end
 
   def self.default_external=(enc)
     raise ArgumentError, "default external encoding cannot be nil" if enc.nil?
 
+    enc = find(enc)
     set_alias_index "external", enc
     set_alias_index "filesystem", enc
-    @default_external = undefined
+    @default_external = enc
     Truffle::Encoding.default_external = enc
   end
 
   def self.default_internal
-    if undefined.equal? @default_internal
-      @default_internal = find "internal"
-    end
     @default_internal
   end
 
   def self.default_internal=(enc)
+    enc = find(enc) unless enc.nil?
     set_alias_index "internal", enc
-    @default_internal = undefined
+    @default_internal = enc
     Truffle::Encoding.default_internal = enc
   end
 
