@@ -93,4 +93,10 @@ describe "Kernel#clone" do
 
     cloned.bar.should == ['a']
   end
+
+  it 'copies frozen? and tainted?' do
+    o = ''.taint.freeze.clone
+    o.frozen?.should be_true
+    o.tainted?.should be_true
+  end
 end

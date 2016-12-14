@@ -488,13 +488,15 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "clone", taintFrom = 0)
+    @CoreMethod(names = "clone")
     public abstract static class CloneNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CopyNode copyNode;
         @Child private CallDispatchHeadNode initializeCloneNode;
         @Child private IsFrozenNode isFrozenNode;
         @Child private FreezeNode freezeNode;
+        @Child private IsTaintedNode isTaintedNode;
+        @Child private TaintNode taintNode;
         @Child private SingletonClassNode singletonClassNode;
 
         public CloneNode(RubyContext context, SourceSection sourceSection) {
@@ -503,7 +505,7 @@ public abstract class KernelNodes {
             // Calls private initialize_clone on the new copy.
             initializeCloneNode = DispatchHeadNodeFactory.createMethodCallOnSelf(context);
             isFrozenNode = IsFrozenNodeGen.create(context, sourceSection, null);
-            freezeNode = FreezeNodeGen.create(context, sourceSection, null);
+            isTaintedNode = IsTaintedNodeGen.create(null, null, null);
             singletonClassNode = SingletonClassNodeGen.create(context, sourceSection, null);
         }
 
@@ -511,6 +513,7 @@ public abstract class KernelNodes {
         public DynamicObject clone(VirtualFrame frame, DynamicObject self,
                 @Cached("createBinaryProfile()") ConditionProfile isSingletonProfile,
                 @Cached("createBinaryProfile()") ConditionProfile isFrozenProfile,
+                @Cached("createBinaryProfile()") ConditionProfile taintProfile,
                 @Cached("createBinaryProfile()") ConditionProfile isRubyClass) {
             final DynamicObject newObject = copyNode.executeCopy(frame, self);
 
@@ -523,7 +526,21 @@ public abstract class KernelNodes {
 
             initializeCloneNode.call(frame, newObject, "initialize_clone", self);
 
+            if (taintProfile.profile(isTaintedNode.executeIsTainted(self))) {
+                if (taintNode == null) {
+                    CompilerDirectives.transferToInterpreterAndInvalidate();
+                    taintNode = insert(TaintNodeGen.create(null, null, null));
+                }
+
+                taintNode.executeTaint(newObject);
+            }
+
             if (isFrozenProfile.profile(isFrozenNode.executeIsFrozen(self))) {
+                if (freezeNode == null) {
+                    CompilerDirectives.transferToInterpreterAndInvalidate();
+                    freezeNode = insert(FreezeNodeGen.create(null, null, null));
+                }
+
                 freezeNode.executeFreeze(newObject);
             }
 
