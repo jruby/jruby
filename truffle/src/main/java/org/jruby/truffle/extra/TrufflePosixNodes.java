@@ -94,6 +94,16 @@ public abstract class TrufflePosixNodes {
 
     }
 
+    @CoreMethod(names = "dup2", isModuleFunction = true, required = 2, lowerFixnum = { 1, 2 }, unsafe = UnsafeGroup.IO)
+    public abstract static class Dup2Node extends CoreMethodArrayArgumentsNode {
+
+        @Specialization
+        public int dup2(int oldFd, int newFd) {
+            return posix().dup2(oldFd, newFd);
+        }
+
+    }
+
     @CoreMethod(names = "fchmod", isModuleFunction = true, required = 2, lowerFixnum = {1, 2}, unsafe = UnsafeGroup.IO)
     public abstract static class FchmodNode extends CoreMethodArrayArgumentsNode {
 

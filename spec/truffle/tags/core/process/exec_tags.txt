@@ -1,4 +1,3 @@
-fails:Process.exec with an options Hash with Integer option keys maps the key to a file descriptor in the child that inherits the file descriptor from the parent specified by the value
 slow:Process.exec raises Errno::ENOENT for an empty string
 slow:Process.exec raises Errno::ENOENT for a command which does not exist
 slow:Process.exec raises an ArgumentError if the command includes a null byte
