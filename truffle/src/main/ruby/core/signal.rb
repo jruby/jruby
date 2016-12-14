@@ -108,4 +108,10 @@ module Signal
   def self.list
     Names.dup
   end
+
+  def self.signame(signo)
+    index = Rubinius::Type.coerce_to signo, Fixnum, :to_int
+
+    Numbers[index]
+  end
 end

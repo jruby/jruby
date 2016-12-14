@@ -10,7 +10,8 @@
 package org.jruby.truffle.language;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
-import org.jruby.util.cli.Options;
+import org.jruby.truffle.options.OptionsBuilder;
+import org.jruby.truffle.options.OptionsCatalog;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -19,7 +20,7 @@ public class PerformanceWarnings {
 
     public static final String KWARGS_NOT_OPTIMIZED_YET = "Ruby keyword arguments are not yet optimized";
 
-    private static final boolean ENABLED = Options.TRUFFLE_PERF_WARNING.load();
+    private static final boolean ENABLED = OptionsBuilder.readSystemProperty(OptionsCatalog.PERF_WARNING);
     private static final Set<String> DISPLAYED_WARNINGS = new HashSet<>();
 
     public static void warn(String message) {

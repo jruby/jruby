@@ -42,8 +42,9 @@ public class GlobalVariables {
     }
 
     public GlobalVariableStorage put(String key, Object value) {
-        GlobalVariableStorage storage = getStorage(key);
-        storage.setValue(value);
+        assert !variables.containsKey(key);
+        final GlobalVariableStorage storage = new GlobalVariableStorage(value);
+        variables.put(key, storage);
         return storage;
     }
 

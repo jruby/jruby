@@ -36,13 +36,13 @@
 package org.jruby.truffle.parser.parser;
 
 import org.jcodings.Encoding;
-import org.jruby.RubyBignum;
-import org.jruby.common.IRubyWarnings;
-import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.regexp.ClassicRegexp;
 import org.jruby.truffle.core.regexp.RegexpOptions;
+import org.jruby.truffle.core.string.StringSupport;
 import org.jruby.truffle.language.control.RaiseException;
+import org.jruby.truffle.parser.KeyValuePair;
+import org.jruby.truffle.parser.RubyWarnings;
 import org.jruby.truffle.parser.Signature;
 import org.jruby.truffle.parser.ast.AliasParseNode;
 import org.jruby.truffle.parser.ast.AndParseNode;
@@ -130,10 +130,7 @@ import org.jruby.truffle.parser.lexer.RubyLexer;
 import org.jruby.truffle.parser.lexer.SyntaxException.PID;
 import org.jruby.truffle.parser.scope.DynamicScope;
 import org.jruby.truffle.parser.scope.StaticScope;
-import org.jruby.util.ByteList;
-import org.jruby.util.KeyValuePair;
-import org.jruby.util.StringSupport;
-import org.jruby.util.cli.Options;
+import org.jruby.truffle.util.ByteList;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -158,7 +155,7 @@ public class ParserSupport {
     // Is the parser currently within a method definition
     private boolean inDefinition;
 
-    protected IRubyWarnings warnings;
+    protected RubyWarnings warnings;
 
     protected ParserConfiguration configuration;
     private RubyParserResult result;
@@ -228,7 +225,7 @@ public class ParserSupport {
         case LOCALASGNNODE:
             String name = ((INameNode) node).getName();
             if (name.equals(lexer.getCurrentArg())) {
-                warn(ID.AMBIGUOUS_ARGUMENT, node.getPosition(), "circular argument reference - " + name);
+                warn(RubyWarnings.ID.AMBIGUOUS_ARGUMENT, node.getPosition(), "circular argument reference - " + name);
             }
             return currentScope.declare(node.getPosition(), name);
         case CONSTDECLNODE: // CONSTANT
@@ -248,7 +245,7 @@ public class ParserSupport {
 
     public ParseNode declareIdentifier(String name) {
         if (name.equals(lexer.getCurrentArg())) {
-            warn(ID.AMBIGUOUS_ARGUMENT, lexer.getPosition(), "circular argument reference - " + name);
+            warn(RubyWarnings.ID.AMBIGUOUS_ARGUMENT, lexer.getPosition(), "circular argument reference - " + name);
         }
         return currentScope.declare(lexer.tokline, name);
     }
@@ -320,8 +317,8 @@ public class ParserSupport {
             head = new BlockParseNode(head.getPosition()).add(head);
         }
 
-        if (warnings.isVerbose() && isBreakStatement(((ListParseNode) head).getLast()) && Options.PARSER_WARN_NOT_REACHED.load()) {
-            warnings.warning(ID.STATEMENT_NOT_REACHED, tail.getPosition().getFile(), tail.getPosition().getLine(), "statement not reached");
+        if (warnings.isVerbose() && isBreakStatement(((ListParseNode) head).getLast())) {
+            warnings.warning(RubyWarnings.ID.STATEMENT_NOT_REACHED, tail.getPosition().getFile(), tail.getPosition().getLine(), "statement not reached");
         }
 
         // Assumption: tail is never a list node
@@ -488,13 +485,13 @@ public class ParserSupport {
         } while (true);
     }
 
-    public void warnUnlessEOption(ID id, ParseNode node, String message) {
+    public void warnUnlessEOption(RubyWarnings.ID id, ParseNode node, String message) {
         if (!configuration.isInlineSource()) {
             warnings.warn(id, node.getPosition().getFile(), node.getPosition().getLine(), message);
         }
     }
 
-    public void warningUnlessEOption(ID id, ParseNode node, String message) {
+    public void warningUnlessEOption(RubyWarnings.ID id, ParseNode node, String message) {
         if (warnings.isVerbose() && !configuration.isInlineSource()) {
             warnings.warning(id, node.getPosition().getFile(), node.getPosition().getLine(), message);
         }
@@ -548,9 +545,7 @@ public class ParserSupport {
     }
 
     private void handleUselessWarn(ParseNode node, String useless) {
-        if (Options.PARSER_WARN_USELESSS_USE_OF.load()) {
-            warnings.warn(ID.USELESS_EXPRESSION, node.getPosition().getFile(), node.getPosition().getLine(), "Useless use of " + useless + " in void context.");
-        }
+        warnings.warn(RubyWarnings.ID.USELESS_EXPRESSION, node.getPosition().getFile(), node.getPosition().getLine(), "Useless use of " + useless + " in void context.");
     }
 
     /**
@@ -636,7 +631,7 @@ public class ParserSupport {
         } else if (node instanceof LocalAsgnParseNode || node instanceof DAsgnParseNode || node instanceof GlobalAsgnParseNode || node instanceof InstAsgnParseNode) {
             ParseNode valueNode = ((AssignableParseNode) node).getValueNode();
             if (isStaticContent(valueNode)) {
-                warnings.warn(ID.ASSIGNMENT_IN_CONDITIONAL, node.getPosition().getFile(), node.getPosition().getLine(), "found = in conditional, should be ==");
+                warnings.warn(RubyWarnings.ID.ASSIGNMENT_IN_CONDITIONAL, node.getPosition().getFile(), node.getPosition().getLine(), "found = in conditional, should be ==");
             }
             return true;
         }
@@ -710,10 +705,7 @@ public class ParserSupport {
                     dotNode.isExclusive(), slot);
         }
         case REGEXPNODE:
-            if (Options.PARSER_WARN_REGEX_CONDITION.load()) {
-                warningUnlessEOption(ID.REGEXP_LITERAL_IN_CONDITION, node, "regex literal in condition");
-            }
-
+            warningUnlessEOption(RubyWarnings.ID.REGEXP_LITERAL_IN_CONDITION, node, "regex literal in condition");
             return new MatchParseNode(node.getPosition(), node);
         }
 
@@ -735,7 +727,7 @@ public class ParserSupport {
         node = getConditionNode(node);
 
         if (node instanceof FixnumParseNode) {
-            warnUnlessEOption(ID.LITERAL_IN_CONDITIONAL_RANGE, node, "integer literal in conditional range");
+            warnUnlessEOption(RubyWarnings.ID.LITERAL_IN_CONDITIONAL_RANGE, node, "integer literal in conditional range");
             return getOperatorCallNode(node, "==", new GlobalVarParseNode(node.getPosition(), "$."));
         }
 
@@ -1028,7 +1020,7 @@ public class ParserSupport {
 
     }
 
-    public void setWarnings(IRubyWarnings warnings) {
+    public void setWarnings(RubyWarnings warnings) {
         this.warnings = warnings;
     }
 
@@ -1146,7 +1138,7 @@ public class ParserSupport {
             BigInteger value = bignumNode.getValue().negate();
 
             // Negating a bignum will make the last negative value of our bignum
-            if (value.compareTo(RubyBignum.LONG_MIN) >= 0) {
+            if (value.compareTo(LONG_MIN) >= 0) {
                 return new FixnumParseNode(bignumNode.getPosition(), value.longValue());
             }
 
@@ -1155,6 +1147,10 @@ public class ParserSupport {
 
         return integerNode;
     }
+
+    private static final int BIT_SIZE = 64;
+    private static final long MAX = (1L << (BIT_SIZE - 1)) - 1;
+    public static final BigInteger LONG_MIN = BigInteger.valueOf(-MAX - 1);
 
     public FloatParseNode negateFloat(FloatParseNode floatNode) {
         floatNode.setValue(-floatNode.getValue());
@@ -1215,7 +1211,7 @@ public class ParserSupport {
             if (key == null) continue;
             int index = encounteredKeys.indexOf(key);
             if (index >= 0) {
-                warn(ID.AMBIGUOUS_ARGUMENT, hash.getPosition(), "key " + key +
+                warn(RubyWarnings.ID.AMBIGUOUS_ARGUMENT, hash.getPosition(), "key " + key +
                         " is duplicated and overwritten on line " + (encounteredKeys.get(index).getLine() + 1));
             } else {
                 encounteredKeys.add(key);
@@ -1253,11 +1249,11 @@ public class ParserSupport {
         return start != null ? lexer.getPosition(start.getPosition()) : lexer.getPosition();
     }
 
-    public void warn(ID id, ISourcePosition position, String message, Object... data) {
+    public void warn(RubyWarnings.ID id, ISourcePosition position, String message, Object... data) {
         warnings.warn(id, position.getFile(), position.getLine(), message);
     }
 
-    public void warning(ID id, ISourcePosition position, String message, Object... data) {
+    public void warning(RubyWarnings.ID id, ISourcePosition position, String message, Object... data) {
         if (warnings.isVerbose()) warnings.warning(id, position.getFile(), position.getLine(), message);
     }
 
@@ -1317,10 +1313,9 @@ public class ParserSupport {
             if (current.exists(name) >= 0) yyerror("duplicated argument name");
 
             if (warnings.isVerbose() && current.isDefined(name) >= 0 &&
-                    Options.PARSER_WARN_LOCAL_SHADOWING.load() &&
-                    !ParserSupport.skipTruffleRubiniusWarnings(lexer)) {
+                    !skipTruffleRubiniusWarnings(lexer)) {
 
-                warnings.warning(ID.STATEMENT_NOT_REACHED, lexer.getPosition().getFile(), lexer.getPosition().getLine(),
+                warnings.warning(RubyWarnings.ID.STATEMENT_NOT_REACHED, lexer.getPosition().getFile(), lexer.getPosition().getLine(),
                         "shadowing outer local variable - " + name);
             }
         } else if (current.exists(name) >= 0) {
@@ -1396,7 +1391,7 @@ public class ParserSupport {
                 if (slot >= 0) {
                     // If verbose and the variable is not just another named capture, warn
                     if (warnings.isVerbose() && !scope.isNamedCapture(slot)) {
-                        warn(ID.AMBIGUOUS_ARGUMENT, getPosition(regexpNode), "named capture conflicts a local variable - " + names[i]);
+                        warn(RubyWarnings.ID.AMBIGUOUS_ARGUMENT, getPosition(regexpNode), "named capture conflicts a local variable - " + names[i]);
                     }
                     locals.add(slot);
                 } else {
@@ -1494,7 +1489,7 @@ public class ParserSupport {
             regexpFragmentCheck(end, newValue);
             return new RegexpParseNode(position, newValue, options.withoutOnce());
         } else if (contents instanceof StrParseNode) {
-            ByteList meat = (ByteList) ((StrParseNode) contents).getValue().clone();
+            ByteList meat = ((StrParseNode) contents).getValue().dup();
             regexpFragmentCheck(end, meat);
             checkRegexpSyntax(meat, options.withoutOnce());
             return new RegexpParseNode(contents.getPosition(), meat, options.withoutOnce());
@@ -1582,7 +1577,7 @@ public class ParserSupport {
         return "";
     }
 
-    public static boolean skipTruffleRubiniusWarnings(RubyLexer lexer) {
-        return lexer.getFile().startsWith(Options.TRUFFLE_CORE_LOAD_PATH.load());
+    public boolean skipTruffleRubiniusWarnings(RubyLexer lexer) {
+        return lexer.getFile().startsWith(context.getOptions().CORE_LOAD_PATH);
     }
 }

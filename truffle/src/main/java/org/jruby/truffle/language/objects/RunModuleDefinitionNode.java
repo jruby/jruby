@@ -9,13 +9,11 @@
  */
 package org.jruby.truffle.language.objects;
 
-import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.RubyNode;
@@ -44,17 +42,11 @@ public class RunModuleDefinitionNode extends RubyNode {
     @Override
     public Object execute(VirtualFrame frame) {
         final DynamicObject module = (DynamicObject) definingModule.execute(frame);
-        final InternalMethod definition = prepareLexicalScope(module, definitionMethod.executeMethod(frame));
+        definitionMethod.execute(frame); // for tracing
+        final InternalMethod definition = definitionMethod.createMethod(frame, lexicalScope, module);
 
         return callModuleDefinitionNode.call(frame, definition.getCallTarget(), RubyArguments.pack(
                 null, null, definition, DeclarationContext.MODULE, null, module, null, new Object[]{}));
-    }
-
-    @TruffleBoundary
-    private InternalMethod prepareLexicalScope(DynamicObject module, InternalMethod definition) {
-        lexicalScope.unsafeSetLiveModule(module);
-        Layouts.MODULE.getFields(lexicalScope.getParent().getLiveModule()).addLexicalDependent(module);
-        return definition.withDeclaringModule(module);
     }
 
 }

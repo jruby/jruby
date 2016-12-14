@@ -17,12 +17,11 @@ import com.oracle.truffle.api.instrumentation.ProvidedTags;
 import com.oracle.truffle.api.instrumentation.StandardTags;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
-import org.jruby.RubyInstanceConfig;
-import org.jruby.runtime.Constants;
 import org.jruby.truffle.core.kernel.TraceManager;
 import org.jruby.truffle.language.LazyRubyRootNode;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.stdlib.CoverageManager;
+import org.jruby.truffle.util.Constants;
 
 import java.io.IOException;
 
@@ -54,15 +53,8 @@ public class RubyLanguage extends TruffleLanguage<RubyContext> {
 
     @Override
     public RubyContext createContext(Env env) {
-        RubyInstanceConfig instanceConfig = (RubyInstanceConfig) env.getConfig().get(RubyEngine.INSTANCE_CONFIG_KEY);
-
-        if (instanceConfig == null) {
-            instanceConfig = new RubyInstanceConfig();
-            instanceConfig.processArgumentsWithRubyopts();
-            instanceConfig.setCompileMode(RubyInstanceConfig.CompileMode.TRUFFLE);
-        }
-
-        return new RubyContext(instanceConfig, env);
+        // TODO CS 3-Dec-16 need to parse RUBY_OPT here if it hasn't been already?
+        return new RubyContext(env);
     }
 
     @Override

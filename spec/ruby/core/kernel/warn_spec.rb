@@ -55,6 +55,13 @@ describe "Kernel#warn" do
     }.should output(nil, "line 1\nline 2\n")
   end
 
+  it "writes each array element on a line when passes an array" do
+    lambda {
+      $VERBOSE = true
+      warn(["line 1", "line 2"])
+    }.should output(nil, "line 1\nline 2\n")
+  end
+
   it "does not write strings when passed no arguments" do
     lambda {
       $VERBOSE = true

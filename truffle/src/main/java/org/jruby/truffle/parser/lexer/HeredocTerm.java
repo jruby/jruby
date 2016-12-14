@@ -31,7 +31,7 @@ package org.jruby.truffle.parser.lexer;
 
 import org.jcodings.Encoding;
 import org.jruby.truffle.parser.parser.Tokens;
-import org.jruby.util.ByteList;
+import org.jruby.truffle.util.ByteList;
 
 import static org.jruby.truffle.parser.lexer.LexingCommon.EOF;
 import static org.jruby.truffle.parser.lexer.LexingCommon.STR_FUNC_EXPAND;
@@ -140,7 +140,7 @@ public class HeredocTerm extends StrTerm {
                 lexer.lex_goto_eol();
 
                 if (lexer.getHeredocIndent() > 0) {
-                    lexer.setValue(str);
+                    lexer.setValue(lexer.createStr(str, 0));
                     return Tokens.tSTRING_CONTENT;
                 }
                 // MRI null checks str in this case but it is unconditionally non-null?

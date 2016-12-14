@@ -31,8 +31,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.parser;
 
-import org.jruby.RubyIO;
-import org.jruby.runtime.load.LoadServiceResourceInputStream;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.parser.RubyWarnings;
@@ -42,7 +40,8 @@ import org.jruby.truffle.parser.lexer.GetsLexerSource;
 import org.jruby.truffle.parser.lexer.LexerSource;
 import org.jruby.truffle.parser.lexer.SyntaxException;
 import org.jruby.truffle.parser.scope.DynamicScope;
-import org.jruby.util.ByteList;
+import org.jruby.truffle.util.LoadServiceResourceInputStream;
+import org.jruby.truffle.util.ByteList;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -93,13 +92,12 @@ public class Parser {
             return parse(file, ((LoadServiceResourceInputStream) content).getBytes(), blockScope, configuration);
         } else {
             List<ByteList> list = getLines(configuration, file);
-            RubyIO io = null;
             /*if (content instanceof FileInputStream) {
                 io = new RubyFile(context.getJRubyRuntime(), file, ((FileInputStream) content).getChannel());
             } else {
                 io = RubyIO.newIO(context.getJRubyRuntime(), Channels.newChannel(content));
             }*/
-            LexerSource lexerSource = new GetsLexerSource(file, configuration.getLineNumber(), io, list, configuration.getDefaultEncoding());
+            LexerSource lexerSource = new GetsLexerSource(file, configuration.getLineNumber(), null, list, configuration.getDefaultEncoding());
             return parse(file, lexerSource, blockScope, configuration);
         }
     }

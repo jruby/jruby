@@ -48,7 +48,7 @@ public class AttrAssignParseNode extends ParseNode implements INameNode, IArgume
 
         assert receiverNode != null : "receiverNode is not null";
         // TODO: At least ParserSupport.attrset passes argsNode as null.  ImplicitNil is wrong magic for
-        // setupArgs since it will IRubyObject[] { nil }.  So we need to figure out a nice fast
+        // setupArgs since it will Object[] { nil }.  So we need to figure out a nice fast
         // null pattern for setupArgs.
         // assert argsNode != null : "receiverNode is not null";
 

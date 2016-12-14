@@ -125,7 +125,7 @@ public class RubyComparable {
         return invcmp(context, DEFAULT_INVCMP, recv, other);
     }
 
-    private static final Ruby.RecursiveFunctionEx DEFAULT_INVCMP = new Ruby.RecursiveFunctionEx<IRubyObject>() {
+    private static final ThreadContext.RecursiveFunctionEx DEFAULT_INVCMP = new ThreadContext.RecursiveFunctionEx<IRubyObject>() {
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject recv, IRubyObject other, boolean recur) {
             if (recur || !sites(context).respond_to_op_cmp.respondsTo(context, other, other)) return context.runtime.getNil();
@@ -136,12 +136,11 @@ public class RubyComparable {
     /** rb_invcmp
      *
      */
-    public static IRubyObject invcmp(final ThreadContext context, Ruby.RecursiveFunctionEx func, IRubyObject recv, IRubyObject other) {
-        final Ruby runtime = context.runtime;
-        IRubyObject result = runtime.safeRecurse(func, context, recv, other, "<=>", true);
+    public static IRubyObject invcmp(final ThreadContext context, ThreadContext.RecursiveFunctionEx func, IRubyObject recv, IRubyObject other) {
+        IRubyObject result = context.safeRecurse(func, recv, other, "<=>", true);
 
         if (result.isNil()) return result;
-        return RubyFixnum.newFixnum(runtime, -cmpint(context, result, recv, other));
+        return RubyFixnum.newFixnum(context.runtime, -cmpint(context, result, recv, other));
     }
 
     /*  ================
@@ -164,17 +163,9 @@ public class RubyComparable {
     private static IRubyObject callCmpMethod(final ThreadContext context, final IRubyObject recv, final IRubyObject other, IRubyObject returnValueOnError) {
         final Ruby runtime = context.runtime;
 
-        if (recv == other) return runtime.getTrue();
+        if (recv == other) return context.tru;
 
-        final IRubyObject $ex = context.getErrorInfo();
-
-        IRubyObject result = runtime.execRecursiveOuter(new Ruby.RecursiveFunction() {
-            @Override
-            public IRubyObject call(IRubyObject obj, boolean recur) {
-                if (recur) return runtime.getNil();
-                return sites(context).op_cmp.call(context, recv, recv, other);
-            }
-        }, recv);
+        IRubyObject result = context.safeRecurse(CMP_RECURSIVE, other, recv, "<=>", true);
 
         // This is only to prevent throwing exceptions by cmperr - it has poor performance
         if ( result.isNil() ) return returnValueOnError;
@@ -271,4 +262,14 @@ public class RubyComparable {
     private static ComparableSites sites(ThreadContext context) {
         return context.sites.Comparable;
     }
+
+    private static class CmpRecursive implements ThreadContext.RecursiveFunctionEx<IRubyObject> {
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject other, IRubyObject self, boolean recur) {
+            if (recur) return context.nil;
+            return sites(context).op_cmp.call(context, self, self, other);
+        }
+    }
+
+    private static final CmpRecursive CMP_RECURSIVE = new CmpRecursive();
 }

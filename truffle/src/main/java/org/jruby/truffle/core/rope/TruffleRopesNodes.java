@@ -102,6 +102,57 @@ public abstract class TruffleRopesNodes {
 
             return debugPrintRopeNode.executeDebugPrint(StringOperations.rope(string), 0, printString);
         }
+    }
+
+    /**
+     * The returned string (when evaluated) will create a string with the same
+     * Rope structure as the string which is passed as argument.
+     */
+    @CoreMethod(names = "debug_get_structure_creation", onSingleton = true, required = 1)
+    public abstract static class DebugGetStructureCreationNode extends CoreMethodArrayArgumentsNode {
+
+
+        public DebugGetStructureCreationNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @TruffleBoundary
+        @Specialization(guards = "isRubyString(string)")
+        public DynamicObject getStructure(DynamicObject string) {
+            Rope rope = StringOperations.rope(string);
+            String result = getStructure(rope);
+            return createString(RopeOperations.create(result.getBytes(), rope.getEncoding(), CodeRange.CR_7BIT));
+        }
+
+        protected static String getStructure(Rope rope) {
+            if (rope instanceof LeafRope) {
+                return getStructure((LeafRope) rope);
+            } else if (rope instanceof ConcatRope) {
+                return getStructure((ConcatRope) rope);
+            } else if (rope instanceof SubstringRope) {
+                return getStructure((SubstringRope) rope);
+            } else if (rope instanceof RepeatingRope) {
+                return getStructure((RepeatingRope) rope);
+            } else {
+                return "(unknown rope class: " + rope.getClass() + ")";
+            }
+        }
+
+        private static String getStructure(LeafRope rope) {
+            return "\"" + rope.toString() + "\"";
+        }
+
+        private static String getStructure(ConcatRope rope) {
+            return "(" + getStructure(rope.getLeft()) + " + " + getStructure(rope.getRight()) + ")";
+        }
+
+        private static String getStructure(SubstringRope rope) {
+            return getStructure(rope.getChild()) + "[" + rope.getOffset() + ", " + rope.characterLength() + "]";
+        }
+
+        private static String getStructure(RepeatingRope rope) {
+            return "(" + getStructure(rope.getChild()) + "*" + rope.getTimes() + ")";
+        }
 
     }
 

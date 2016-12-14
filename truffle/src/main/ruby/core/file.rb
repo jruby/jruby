@@ -79,6 +79,10 @@ class File < IO
     NONBLOCK = Rubinius::Config['rbx.platform.file.O_NONBLOCK']
     SYNC     = Rubinius::Config['rbx.platform.file.O_SYNC']
 
+    if Rubinius::Config['rbx.platform.file.O_TMPFILE']
+      TMPFILE = Rubinius::Config['rbx.platform.file.O_TMPFILE']
+    end
+
     # TODO: these flags should probably be imported from Platform
     LOCK_SH  = 0x01
     LOCK_EX  = 0x02

@@ -28,10 +28,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.scope;
 
-import org.jruby.RubyModule;
-import org.jruby.RubyObject;
-import org.jruby.ir.IRScopeType;
-import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.truffle.parser.IRScopeType;
 import org.jruby.truffle.parser.Signature;
 import org.jruby.truffle.parser.ast.AssignableParseNode;
 import org.jruby.truffle.parser.ast.DAsgnParseNode;
@@ -64,7 +61,7 @@ public class StaticScope implements Serializable {
     final protected StaticScope enclosingScope;
 
     // Live reference to module
-    private transient RubyModule cref = null;
+    private transient Object cref = null;
 
     // Next CRef down the lexical structure
     private StaticScope previousCRefScope = null;
@@ -235,38 +232,41 @@ public class StaticScope implements Serializable {
      * As it is for defined? we will not forced resolution of autoloads nor
      * call const_defined
      */
-    public IRubyObject getConstantDefined(String internedName) {
-        IRubyObject result = cref.fetchConstant(internedName);
+    public Object getConstantDefined(String internedName) {
+        /*Object result = cref.fetchConstant(internedName);
 
         if (result != null) return result;
 
-        return previousCRefScope == null ? null : previousCRefScope.getConstantDefinedNoObject(internedName);
+        return previousCRefScope == null ? null : previousCRefScope.getConstantDefinedNoObject(internedName);*/
+        throw new UnsupportedOperationException();
     }
 
-    public IRubyObject getConstantDefinedNoObject(String internedName) {
+    public Object getConstantDefinedNoObject(String internedName) {
         if (previousCRefScope == null) return null;
 
         return getConstantDefined(internedName);
     }
 
-    public IRubyObject getConstant(String internedName) {
-        IRubyObject result = getConstantInner(internedName);
+    public Object getConstant(String internedName) {
+        /*Object result = getConstantInner(internedName);
 
         // If we could not find the constant from cref..then try getting from inheritence hierarchy
-        return result == null ? cref.getConstantNoConstMissing(internedName) : result;
+        return result == null ? cref.getConstantNoConstMissing(internedName) : result;*/
+        throw new UnsupportedOperationException();
     }
 
-    public IRubyObject getConstantInner(String internedName) {
-        IRubyObject result = cref.fetchConstant(internedName);
+    public Object getConstantInner(String internedName) {
+        /*Object result = cref.fetchConstant(internedName);
 
         if (result != null) {
             return result == RubyObject.UNDEF ? cref.resolveUndefConstant(internedName) : result;
         }
 
-        return previousCRefScope == null ? null : previousCRefScope.getConstantInnerNoObject(internedName);
+        return previousCRefScope == null ? null : previousCRefScope.getConstantInnerNoObject(internedName);*/
+        throw new UnsupportedOperationException();
     }
 
-    private IRubyObject getConstantInnerNoObject(String internedName) {
+    private Object getConstantInnerNoObject(String internedName) {
         if (previousCRefScope == null) return null;
 
         return getConstantInner(internedName);
@@ -425,7 +425,7 @@ public class StaticScope implements Serializable {
      *
      * @return the current cref, though this is largely an implementation detail
      */
-    public RubyModule determineModule() {
+    public Object determineModule() {
         if (cref == null) {
             cref = getEnclosingScope().determineModule();
 

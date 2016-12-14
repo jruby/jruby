@@ -23,6 +23,7 @@ import org.jruby.runtime.Helpers;
 import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.Signature;
 import org.jruby.util.ByteList;
+import org.jruby.util.DefinedMessage;
 import org.jruby.util.KeyValuePair;
 
 import java.io.File;
@@ -1590,24 +1591,21 @@ public class IRBuilder {
         case DASGNNODE: case GLOBALASGNNODE: case LOCALASGNNODE:
         case MULTIPLEASGNNODE: case OPASGNNODE: case OPASGNANDNODE: case OPASGNORNODE:
         case OPELEMENTASGNNODE: case INSTASGNNODE:
-            return new FrozenString("assignment");
-        case ORNODE: case ANDNODE:
-            return new FrozenString("expression");
+            return new FrozenString(DefinedMessage.ASSIGNMENT.getText());
+        case ORNODE: case ANDNODE: case DREGEXPNODE: case DSTRNODE:
+            return new FrozenString(DefinedMessage.EXPRESSION.getText());
         case FALSENODE:
-            return new FrozenString("false");
+            return new FrozenString(DefinedMessage.FALSE.getText());
         case LOCALVARNODE: case DVARNODE:
-            return new FrozenString("local-variable");
+            return new FrozenString(DefinedMessage.LOCAL_VARIABLE.getText());
         case MATCH2NODE: case MATCH3NODE:
-            return new FrozenString("method");
+            return new FrozenString(DefinedMessage.METHOD.getText());
         case NILNODE:
-            return new FrozenString("nil");
+            return new FrozenString(DefinedMessage.NIL.getText());
         case SELFNODE:
-            return new FrozenString("self");
+            return new FrozenString(DefinedMessage.SELF.getText());
         case TRUENODE:
-            return new FrozenString("true");
-        case DREGEXPNODE: case DSTRNODE: {
-            return new FrozenString("expression");
-        }
+            return new FrozenString(DefinedMessage.TRUE.getText());
         case ARRAYNODE: { // If all elts of array are defined the array is as well
             ArrayNode array = (ArrayNode) node;
             Label undefLabel = getNewLabel();
@@ -1620,7 +1618,7 @@ public class IRBuilder {
                 addInstr(BEQInstr.create(result, manager.getNil(), undefLabel));
             }
 
-            addInstr(new CopyInstr(tmpVar, new FrozenString("expression")));
+            addInstr(new CopyInstr(tmpVar, new FrozenString(DefinedMessage.EXPRESSION.getText())));
             addInstr(new JumpInstr(doneLabel));
             addInstr(new LabelInstr(undefLabel));
             addInstr(new CopyInstr(tmpVar, manager.getNil()));
@@ -1629,36 +1627,102 @@ public class IRBuilder {
             return tmpVar;
         }
         case BACKREFNODE:
-            return addResultInstr(new RuntimeHelperCall(createTemporaryVariable(), IS_DEFINED_BACKREF, Operand.EMPTY_ARRAY));
+            return addResultInstr(
+                    new RuntimeHelperCall(
+                            createTemporaryVariable(),
+                            IS_DEFINED_BACKREF,
+                            new Operand[] {new FrozenString(DefinedMessage.GLOBAL_VARIABLE.getText())}
+                    )
+            );
         case GLOBALVARNODE:
-            return addResultInstr(new RuntimeHelperCall(createTemporaryVariable(), IS_DEFINED_GLOBAL,
-                    new Operand[] { new FrozenString(((GlobalVarNode) node).getName()) }));
+            return addResultInstr(
+                    new RuntimeHelperCall(
+                            createTemporaryVariable(),
+                            IS_DEFINED_GLOBAL,
+                            new Operand[] {
+                                    new FrozenString(((GlobalVarNode) node).getName()),
+                                    new FrozenString(DefinedMessage.GLOBAL_VARIABLE.getText())
+                            }
+                    )
+            );
         case NTHREFNODE: {
-            return addResultInstr(new RuntimeHelperCall(createTemporaryVariable(), IS_DEFINED_NTH_REF,
-                    new Operand[] { new Fixnum(((NthRefNode) node).getMatchNumber()) }));
+            return addResultInstr(
+                    new RuntimeHelperCall(
+                            createTemporaryVariable(),
+                            IS_DEFINED_NTH_REF,
+                            new Operand[] {
+                                    new Fixnum(((NthRefNode) node).getMatchNumber()),
+                                    new FrozenString(DefinedMessage.GLOBAL_VARIABLE.getText())
+                            }
+                    )
+            );
         }
         case INSTVARNODE:
-            return addResultInstr(new RuntimeHelperCall(createTemporaryVariable(), IS_DEFINED_INSTANCE_VAR,
-                    new Operand[] { buildSelf(), new FrozenString(((InstVarNode) node).getName()) }));
+            return addResultInstr(
+                    new RuntimeHelperCall(
+                            createTemporaryVariable(),
+                            IS_DEFINED_INSTANCE_VAR,
+                            new Operand[] {
+                                    buildSelf(),
+                                    new FrozenString(((InstVarNode) node).getName()),
+                                    new FrozenString(DefinedMessage.INSTANCE_VARIABLE.getText())
+                            }
+                    )
+            );
         case CLASSVARNODE:
-            return addResultInstr(new RuntimeHelperCall(createTemporaryVariable(), IS_DEFINED_CLASS_VAR,
-                    new Operand[]{classVarDefinitionContainer(), new FrozenString(((ClassVarNode) node).getName())}));
+            return addResultInstr(
+                    new RuntimeHelperCall(
+                            createTemporaryVariable(),
+                            IS_DEFINED_CLASS_VAR,
+                            new Operand[]{
+                                    classVarDefinitionContainer(),
+                                    new FrozenString(((ClassVarNode) node).getName()),
+                                    new FrozenString(DefinedMessage.CLASS_VARIABLE.getText())
+                            }
+                    )
+            );
         case SUPERNODE: {
             Label undefLabel = getNewLabel();
-            Variable tmpVar  = addResultInstr(new RuntimeHelperCall(createTemporaryVariable(), IS_DEFINED_SUPER,
-                    new Operand[] { buildSelf() }));
+            Variable tmpVar  = addResultInstr(
+                    new RuntimeHelperCall(
+                            createTemporaryVariable(),
+                            IS_DEFINED_SUPER,
+                            new Operand[] {
+                                    buildSelf(),
+                                    new FrozenString(DefinedMessage.SUPER.getText())
+                            }
+                    )
+            );
             addInstr(BEQInstr.create(tmpVar, manager.getNil(), undefLabel));
-            Operand superDefnVal = buildGetArgumentDefinition(((SuperNode) node).getArgsNode(), "super");
+            Operand superDefnVal = buildGetArgumentDefinition(((SuperNode) node).getArgsNode(), DefinedMessage.SUPER.getText());
             return buildDefnCheckIfThenPaths(undefLabel, superDefnVal);
         }
         case VCALLNODE:
-            return addResultInstr(new RuntimeHelperCall(createTemporaryVariable(), IS_DEFINED_METHOD,
-                    new Operand[] { buildSelf(), new FrozenString(((VCallNode) node).getName()), manager.getFalse()}));
+            return addResultInstr(
+                    new RuntimeHelperCall(
+                            createTemporaryVariable(),
+                            IS_DEFINED_METHOD,
+                            new Operand[] {
+                                    buildSelf(),
+                                    new FrozenString(((VCallNode) node).getName()),
+                                    manager.getFalse(),
+                                    new FrozenString(DefinedMessage.METHOD.getText())
+                            }
+                    )
+            );
         case YIELDNODE:
-            return buildDefinitionCheck(new BlockGivenInstr(createTemporaryVariable(), scope.getYieldClosureVariable()), "yield");
+            return buildDefinitionCheck(new BlockGivenInstr(createTemporaryVariable(), scope.getYieldClosureVariable()), DefinedMessage.YIELD.getText());
         case ZSUPERNODE:
-            return addResultInstr(new RuntimeHelperCall(createTemporaryVariable(), IS_DEFINED_SUPER,
-                    new Operand[] { buildSelf() } ));
+            return addResultInstr(
+                    new RuntimeHelperCall(
+                            createTemporaryVariable(),
+                            IS_DEFINED_SUPER,
+                            new Operand[] {
+                                    buildSelf(),
+                                    new FrozenString(DefinedMessage.SUPER.getText())
+                            }
+                    )
+            );
         case CONSTNODE: {
             Label defLabel = getNewLabel();
             Label doneLabel = getNewLabel();
@@ -1671,7 +1735,7 @@ public class IRBuilder {
             addInstr(new CopyInstr(tmpVar, manager.getNil()));
             addInstr(new JumpInstr(doneLabel));
             addInstr(new LabelInstr(defLabel));
-            addInstr(new CopyInstr(tmpVar, new FrozenString("constant")));
+            addInstr(new CopyInstr(tmpVar, new FrozenString(DefinedMessage.CONSTANT.getText())));
             addInstr(new LabelInstr(doneLabel));
             return tmpVar;
         }
@@ -1691,8 +1755,18 @@ public class IRBuilder {
             CodeBlock protectedCode = new CodeBlock() {
                 public Operand run() {
                     if (!(colon instanceof Colon2Node)) { // colon3 (weird inheritance)
-                        return addResultInstr(new RuntimeHelperCall(createTemporaryVariable(),
-                                IS_DEFINED_CONSTANT_OR_METHOD, new Operand[] {new ObjectClass(), new FrozenString(name)}));
+                        return addResultInstr(
+                                new RuntimeHelperCall(
+                                        createTemporaryVariable(),
+                                        IS_DEFINED_CONSTANT_OR_METHOD,
+                                        new Operand[] {
+                                                new ObjectClass(),
+                                                new FrozenString(name),
+                                                new FrozenString(DefinedMessage.CONSTANT.getText()),
+                                                new FrozenString(DefinedMessage.METHOD.getText())
+                                        }
+                                )
+                        );
                     }
 
                     Label bad = getNewLabel();
@@ -1701,7 +1775,18 @@ public class IRBuilder {
                     Operand test = buildGetDefinition(((Colon2Node) colon).getLeftNode());
                     addInstr(BEQInstr.create(test, manager.getNil(), bad));
                     Operand lhs = build(((Colon2Node) colon).getLeftNode());
-                    addInstr(new RuntimeHelperCall(result, IS_DEFINED_CONSTANT_OR_METHOD, new Operand[] {lhs, new FrozenString(name)}));
+                    addInstr(
+                            new RuntimeHelperCall(
+                                    result,
+                                    IS_DEFINED_CONSTANT_OR_METHOD,
+                                    new Operand[] {
+                                            lhs,
+                                            new FrozenString(name),
+                                            new FrozenString(DefinedMessage.CONSTANT.getText()),
+                                            new FrozenString(DefinedMessage.METHOD.getText())
+                                    }
+                            )
+                    );
                     addInstr(new JumpInstr(done));
                     addInstr(new LabelInstr(bad));
                     addInstr(new CopyInstr(result, manager.getNil()));
@@ -1731,8 +1816,18 @@ public class IRBuilder {
              *    return mc.methodBound(meth) ? buildGetArgumentDefn(..) : false
              * ----------------------------------------------------------------- */
             Label undefLabel = getNewLabel();
-            Variable tmpVar = addResultInstr(new RuntimeHelperCall(createTemporaryVariable(), IS_DEFINED_METHOD,
-                    new Operand[]{buildSelf(), new FrozenString(((FCallNode) node).getName()), manager.getFalse()}));
+            Variable tmpVar = addResultInstr(
+                    new RuntimeHelperCall(
+                            createTemporaryVariable(),
+                            IS_DEFINED_METHOD,
+                            new Operand[]{
+                                    buildSelf(),
+                                    new FrozenString(((FCallNode) node).getName()),
+                                    manager.getFalse(),
+                                    new FrozenString(DefinedMessage.METHOD.getText())
+                            }
+                    )
+            );
             addInstr(BEQInstr.create(tmpVar, manager.getNil(), undefLabel));
             Operand argsCheckDefn = buildGetArgumentDefinition(((FCallNode) node).getArgsNode(), "method");
             return buildDefnCheckIfThenPaths(undefLabel, argsCheckDefn);
@@ -1747,8 +1842,17 @@ public class IRBuilder {
                     Operand receiverDefn = buildGetDefinition(callNode.getReceiverNode());
                     addInstr(BEQInstr.create(receiverDefn, manager.getNil(), undefLabel));
                     Variable tmpVar = createTemporaryVariable();
-                    addInstr(new RuntimeHelperCall(tmpVar, IS_DEFINED_CALL,
-                            new Operand[]{build(callNode.getReceiverNode()), new StringLiteral(callNode.getName())}));
+                    addInstr(
+                            new RuntimeHelperCall(
+                                    tmpVar,
+                                    IS_DEFINED_CALL,
+                                    new Operand[]{
+                                            build(callNode.getReceiverNode()),
+                                            new StringLiteral(callNode.getName()),
+                                            new FrozenString(DefinedMessage.METHOD.getText())
+                                    }
+                            )
+                    );
                     return buildDefnCheckIfThenPaths(undefLabel, tmpVar);
                 }
             };
@@ -1786,8 +1890,18 @@ public class IRBuilder {
                      * ------------------------------------------------------------------------------ */
                     Variable tmpVar     = createTemporaryVariable();
                     Operand  receiver   = build(attrAssign.getReceiverNode());
-                    addInstr(new RuntimeHelperCall(tmpVar, IS_DEFINED_METHOD,
-                            new Operand[] { receiver, new StringLiteral(attrAssign.getName()), manager.getTrue() }));
+                    addInstr(
+                            new RuntimeHelperCall(
+                                    tmpVar,
+                                    IS_DEFINED_METHOD,
+                                    new Operand[] {
+                                            receiver,
+                                            new StringLiteral(attrAssign.getName()),
+                                            manager.getTrue(),
+                                            new FrozenString(DefinedMessage.METHOD.getText())
+                                    }
+                            )
+                    );
                     addInstr(BEQInstr.create(tmpVar, manager.getNil(), undefLabel));
                     Operand argsCheckDefn = buildGetArgumentDefinition(attrAssign.getArgsNode(), "assignment");
                     return buildDefnCheckIfThenPaths(undefLabel, argsCheckDefn);
@@ -1979,9 +2093,11 @@ public class IRBuilder {
         return scope instanceof IRFor ? getLocalVariable(name, depth) : getNewLocalVariable(name, 0);
     }
 
-    private void addArgReceiveInstr(Variable v, int argIndex, boolean post, int numPreReqd, int numPostRead) {
+    private void addArgReceiveInstr(Variable v, int argIndex, Signature signature) {
+        boolean post = signature != null;
+
         if (post) {
-            addInstr(new ReceivePostReqdArgInstr(v, argIndex, numPreReqd, numPostRead));
+            addInstr(new ReceivePostReqdArgInstr(v, argIndex, signature.pre(), signature.opt(), signature.hasRest(), signature.post()));
         } else {
             addInstr(new ReceivePreReqdArgInstr(v, argIndex));
         }
@@ -2002,20 +2118,20 @@ public class IRBuilder {
         }
     }
 
-    public void receiveRequiredArg(Node node, int argIndex, boolean post, int numPreReqd, int numPostRead) {
+    public void receiveRequiredArg(Node node, int argIndex, Signature signature) {
         switch (node.getNodeType()) {
             case ARGUMENTNODE: {
                 String argName = ((ArgumentNode)node).getName();
 
                 if (scope instanceof IRMethod) addArgumentDescription(ArgumentType.req, argName);
 
-                addArgReceiveInstr(argumentResult(argName), argIndex, post, numPreReqd, numPostRead);
+                addArgReceiveInstr(argumentResult(argName), argIndex, signature);
                 break;
             }
             case MULTIPLEASGNNODE: {
                 MultipleAsgnNode childNode = (MultipleAsgnNode) node;
                 Variable v = createTemporaryVariable();
-                addArgReceiveInstr(v, argIndex, post, numPreReqd, numPostRead);
+                addArgReceiveInstr(v, argIndex, signature);
                 if (scope instanceof IRMethod) addArgumentDescription(ArgumentType.anonreq, null);
                 Variable tmp = createTemporaryVariable();
                 addInstr(new ToAryInstr(tmp, v));
@@ -2054,7 +2170,7 @@ public class IRBuilder {
         Node[] args = argsNode.getArgs();
         int preCount = signature.pre();
         for (int i = 0; i < preCount; i++, argIndex++) {
-            receiveRequiredArg(args[i], argIndex, false, -1, -1);
+            receiveRequiredArg(args[i], argIndex, null);
         }
 
         // Fixup opt/rest
@@ -2106,7 +2222,7 @@ public class IRBuilder {
         int postCount = argsNode.getPostCount();
         int postIndex = argsNode.getPostIndex();
         for (int i = 0; i < postCount; i++) {
-            receiveRequiredArg(args[postIndex + i], i, true, signature.pre(), postCount);
+            receiveRequiredArg(args[postIndex + i], i, signature);
         }
     }
 

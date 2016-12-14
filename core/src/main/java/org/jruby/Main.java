@@ -46,7 +46,6 @@ import org.jruby.platform.Platform;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.SafePropertyAccessor;
-import org.jruby.util.cli.Options;
 import org.jruby.util.cli.OutputStrings;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -60,7 +59,6 @@ import java.io.InputStream;
 import java.io.PrintStream;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
@@ -192,8 +190,6 @@ public class Main {
      * @param args command-line args, provided by the JVM.
      */
     public static void main(String[] args) {
-        printTruffleTimeMetric("before-main");
-
         doGCJCheck();
 
         Main main;
@@ -207,9 +203,6 @@ public class Main {
         try {
             Status status = main.run(args);
 
-            printTruffleTimeMetric("after-main");
-            printTruffleMemoryMetric();
-
             if (status.isExit()) {
                 System.exit(status.getStatus());
             }
@@ -221,19 +214,12 @@ public class Main {
             System.exit( handleUnexpectedJump(ex) );
         }
         catch (Throwable t) {
-            // If a Truffle exception gets this far it's a hard failure - don't try and dress it up as a Ruby exception
-
-            if (main.isTruffle()) {
-                System.err.println("Truffle internal error: " + t);
-                t.printStackTrace(System.err);
-            } else {
-                // print out as a nice Ruby backtrace
-                System.err.println("Unhandled Java exception: " + t);
+            // print out as a nice Ruby backtrace
+            System.err.println("Unhandled Java exception: " + t);
+            System.err.println(ThreadContext.createRawBacktraceStringFromThrowable(t, false));
+            while ((t = t.getCause()) != null) {
+                System.err.println("Caused by:");
                 System.err.println(ThreadContext.createRawBacktraceStringFromThrowable(t, false));
-                while ((t = t.getCause()) != null) {
-                    System.err.println("Caused by:");
-                    System.err.println(ThreadContext.createRawBacktraceStringFromThrowable(t, false));
-                }
             }
 
             System.exit(1);
@@ -277,16 +263,12 @@ public class Main {
 
         Ruby _runtime;
 
-        if (isTruffle()) {
-            _runtime = null;
+        if (DripMain.DRIP_RUNTIME != null) {
+            // use drip's runtime, reinitializing config
+            _runtime = DripMain.DRIP_RUNTIME;
+            _runtime.reinitialize(true);
         } else {
-            if (DripMain.DRIP_RUNTIME != null) {
-                // use drip's runtime, reinitializing config
-                _runtime = DripMain.DRIP_RUNTIME;
-                _runtime.reinitialize(true);
-            } else {
-                _runtime = Ruby.newInstance(config);
-            }
+            _runtime = Ruby.newInstance(config);
         }
 
         final Ruby runtime = _runtime;
@@ -317,35 +299,10 @@ public class Main {
                 throw new MainExitException(1, "jruby: no Ruby script found in input (LoadError)");
             } else if (config.getShouldCheckSyntax()) {
                 // check syntax only and exit
-                if (isTruffle()) {
-                    final TruffleRubyEngineInterface truffle = loadTruffle();
-
-                    try {
-                        final int exitCode = truffle.doCheckSyntax(in, filename);
-                        return new Status(exitCode);
-                    } finally {
-                        truffle.dispose();
-                    }
-                } else {
-                    return doCheckSyntax(runtime, in, filename);
-                }
+                return doCheckSyntax(runtime, in, filename);
             } else {
                 // proceed to run the script
-                if (isTruffle()) {
-                    final TruffleRubyEngineInterface truffle = loadTruffle();
-
-                    printTruffleTimeMetric("before-run");
-
-                    try {
-                        final int exitCode = truffle.execute(filename);
-                        return new Status(exitCode);
-                    } finally {
-                        printTruffleTimeMetric("after-run");
-                        truffle.dispose();
-                    }
-                } else {
-                    return doRunFromMain(runtime, in, filename);
-                }
+                return doRunFromMain(runtime, in, filename);
             }
         } finally {
             if (runtime != null && didTeardown.compareAndSet(false, true)) {
@@ -610,73 +567,6 @@ public class Main {
         
         // TODO: should match MRI (>= 2.2.3) exit status - @see ruby/test_enum.rb#test_first
         return 2;
-    }
-
-    private boolean isTruffle() {
-        return config.getCompileMode().isTruffle();
-    }
-
-    private TruffleRubyEngineInterface loadTruffle() {
-        Main.printTruffleTimeMetric("before-load-context");
-
-        String javaVersion = System.getProperty("java.version");
-        String[] parts = javaVersion.split("\\D+");
-        int firstPart = Integer.valueOf(parts[0]);
-        if (!(firstPart >= 9 || Integer.valueOf(parts[1]) >= 8)) {
-            System.err.println("JRuby+Truffle needs Java 8 to run (found " + javaVersion + ").");
-            System.exit(1);
-        }
-
-        final Class<?> truffleRubyEngineClass;
-
-        try {
-            truffleRubyEngineClass = Class.forName("org.jruby.truffle.RubyEngine");
-        } catch (Exception e) {
-            throw new RuntimeException("JRuby's Truffle backend not available - either it was not compiled because JRuby was built with Java 7, or it has been removed", e);
-        }
-
-        final TruffleRubyEngineInterface truffleEngine;
-
-        try {
-            final Object truffleEngineInstance = truffleRubyEngineClass.getConstructor(RubyInstanceConfig.class).newInstance(config);
-
-            truffleEngine = (TruffleRubyEngineInterface) Proxy.newProxyInstance(getClass().getClassLoader(), new Class[]{TruffleRubyEngineInterface.class}, new InvocationHandler() {
-
-                @Override
-                public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-                    return truffleRubyEngineClass.getMethod(method.getName(), method.getParameterTypes()).invoke(truffleEngineInstance, args);
-                }
-
-            });
-        } catch (Exception e) {
-            throw new RuntimeException("Error while calling the constructor of Truffle's RubyContext", e);
-        }
-
-        Main.printTruffleTimeMetric("after-load-context");
-
-        return truffleEngine;
-    }
-    
-    public static void printTruffleTimeMetric(String id) {
-        if (Options.TRUFFLE_METRICS_TIME.load()) {
-            final long millis = System.currentTimeMillis();
-            System.err.printf("%s %d.%03d%n", id, millis / 1000, millis % 1000);
-        }
-    }
-
-    private static void printTruffleMemoryMetric() {
-        if (Options.TRUFFLE_METRICS_MEMORY_USED_ON_EXIT.load()) {
-            for (int n = 0; n < 10; n++) {
-                System.gc();
-            }
-
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-            }
-
-            System.err.printf("allocated %d%n", ManagementFactory.getMemoryMXBean().getHeapMemoryUsage().getUsed());
-        }
     }
 
     private final RubyInstanceConfig config;

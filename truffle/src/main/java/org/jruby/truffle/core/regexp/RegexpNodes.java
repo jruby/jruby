@@ -74,9 +74,7 @@ import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.threadlocal.ThreadLocalObject;
 import org.jruby.truffle.util.StringUtils;
-import org.jruby.util.ByteList;
-import org.jruby.util.RegexpSupport;
-import org.jruby.util.RegexpSupport.ErrorMode;
+import org.jruby.truffle.util.ByteList;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -94,7 +92,7 @@ public abstract class RegexpNodes {
         if (regex.getEncoding() != enc) {
             final Encoding[] fixedEnc = new Encoding[] { null };
             final ByteList sourceByteList = RopeOperations.getByteListReadOnly(Layouts.REGEXP.getSource(regexp));
-            final ByteList preprocessed = ClassicRegexp.preprocess(context, sourceByteList, enc, fixedEnc, ErrorMode.RAISE);
+            final ByteList preprocessed = ClassicRegexp.preprocess(context, sourceByteList, enc, fixedEnc, RegexpSupport.ErrorMode.RAISE);
             final RegexpOptions options = Layouts.REGEXP.getOptions(regexp);
             final Encoding newEnc = checkEncoding(regexp, stringRope, true);
             regex = new Regex(preprocessed.getUnsafeBytes(), preprocessed.getBegin(), preprocessed.getBegin() + preprocessed.getRealSize(),

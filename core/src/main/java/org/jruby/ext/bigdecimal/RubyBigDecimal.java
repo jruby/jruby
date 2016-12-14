@@ -486,7 +486,12 @@ public class RubyBigDecimal extends RubyNumeric {
     private static RubyBigDecimal newInstance(ThreadContext context, RubyRational arg, MathContext mathContext) {
         BigDecimal num = new BigDecimal(arg.numerator(context).convertToInteger().getLongValue());
         BigDecimal den = new BigDecimal(arg.denominator(context).convertToInteger().getLongValue());
-        BigDecimal value = num.divide(den, mathContext);
+        BigDecimal value;
+        try {
+          value = num.divide(den, mathContext);
+        } catch (ArithmeticException e){
+          value = num.divide(den, MathContext.DECIMAL64);
+        };
 
         return new RubyBigDecimal(context.runtime, value);
     }
@@ -549,7 +554,7 @@ public class RubyBigDecimal extends RubyNumeric {
         else if ( ( idx = matcher.start(3) ) > 0 ) {
             strValue = strValue.substring(0, idx); // ignored tail junk e.g. "5-6" -> "-6"
         }
-        
+
         BigDecimal decimal;
         try {
             decimal = new BigDecimal(strValue, mathContext);
@@ -1381,7 +1386,7 @@ public class RubyBigDecimal extends RubyNumeric {
         } else {
           bigDecimal = new RubyBigDecimal(context.runtime, value.setScale(scale, mode));
         }
-        
+
         return args.length == 0 ? bigDecimal.to_int() : bigDecimal;
     }
 

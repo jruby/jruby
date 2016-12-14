@@ -38,7 +38,6 @@ public enum Category {
     INVOKEDYNAMIC("invokedynamic"),
     JIT("jit"),
     IR("intermediate representation"),
-    TRUFFLE("truffle"),
     NATIVE("native"),
     THREADPOOL("thread pooling"),
     MISCELLANEOUS("miscellaneous"),

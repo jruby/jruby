@@ -75,6 +75,7 @@ class TestBigDecimal < Test::Unit::TestCase
   end
 
   def test_global_new_with_rational
+    assert_equal(BigDecimal("0.3333333333333333E0"), BigDecimal(Rational(1, 3), 0))
     assert_equal(BigDecimal("0.333333333333333333333"), BigDecimal(1.quo(3), 21))
     assert_equal(BigDecimal("-0.333333333333333333333"), BigDecimal(-1.quo(3), 21))
     assert_raise(ArgumentError) { BigDecimal(1.quo(3)) }

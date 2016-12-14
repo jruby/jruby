@@ -13,6 +13,7 @@ import com.kenai.jffi.Platform;
 import com.kenai.jffi.Platform.OS;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.TruffleOptions;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
@@ -193,6 +194,10 @@ public abstract class TrufflePosixNodes {
 
         @TruffleBoundary
         private static long[] getGroups() {
+            if (TruffleOptions.AOT) {
+                throw new UnsupportedOperationException("UnixSystem is not supported with AOT.");
+            }
+
             return new UnixSystem().getGroups();
         }
     }
@@ -358,7 +363,7 @@ public abstract class TrufflePosixNodes {
         @CompilerDirectives.TruffleBoundary
         @Specialization(guards = "isRubyString(path)")
         public int mkdir(DynamicObject path, int mode) {
-            return posix().mkdir(path.toString(), mode);
+            return posix().mkdir(StringOperations.decodeUTF8(path), mode);
         }
 
     }
@@ -369,7 +374,7 @@ public abstract class TrufflePosixNodes {
         @CompilerDirectives.TruffleBoundary
         @Specialization(guards = "isRubyString(path)")
         public int chdir(DynamicObject path) {
-            final String pathString = path.toString();
+            final String pathString = StringOperations.decodeUTF8(path);
 
             final int result = posix().chdir(pathString);
 
@@ -559,7 +564,7 @@ public abstract class TrufflePosixNodes {
         @CompilerDirectives.TruffleBoundary
         @Specialization(guards = "isRubyString(path)")
         public int rmdir(DynamicObject path) {
-            return posix().rmdir(path.toString());
+            return posix().rmdir(StringOperations.decodeUTF8(path));
         }
 
     }
@@ -682,7 +687,7 @@ public abstract class TrufflePosixNodes {
         @CompilerDirectives.TruffleBoundary
         @Specialization(guards = {"isRubyString(first)", "isRubyString(second)"})
         public int symlink(DynamicObject first, DynamicObject second) {
-            return posix().symlink(first.toString(), second.toString());
+            return posix().symlink(StringOperations.decodeUTF8(first), StringOperations.decodeUTF8(second));
         }
 
     }
@@ -700,8 +705,8 @@ public abstract class TrufflePosixNodes {
         @Specialization(guards = {"isRubyString(hostName)", "isRubyString(serviceName)", "isRubyPointer(hintsPointer)", "isRubyPointer(resultsPointer)"})
         public int getaddrinfoString(DynamicObject hostName, DynamicObject serviceName, DynamicObject hintsPointer, DynamicObject resultsPointer) {
             return nativeSockets().getaddrinfo(
-                    StringOperations.rope(hostName).toString(),
-                    StringOperations.rope(serviceName).toString(),
+                    StringOperations.decodeUTF8(hostName),
+                    StringOperations.decodeUTF8(serviceName),
                     Layouts.POINTER.getPointer(hintsPointer),
                     Layouts.POINTER.getPointer(resultsPointer));
         }
@@ -710,7 +715,7 @@ public abstract class TrufflePosixNodes {
         @Specialization(guards = {"isRubyString(hostName)", "isNil(serviceName)", "isRubyPointer(hintsPointer)", "isRubyPointer(resultsPointer)"})
         public int getaddrinfo(DynamicObject hostName, DynamicObject serviceName, DynamicObject hintsPointer, DynamicObject resultsPointer) {
             return nativeSockets().getaddrinfo(
-                    StringOperations.rope(hostName).toString(),
+                    StringOperations.decodeUTF8(hostName),
                     null,
                     Layouts.POINTER.getPointer(hintsPointer),
                     Layouts.POINTER.getPointer(resultsPointer));

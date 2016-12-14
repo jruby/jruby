@@ -22,8 +22,6 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.runtime.Visibility;
-import org.jruby.truffle.Options;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.RubyLanguage;
 import org.jruby.truffle.language.arguments.RubyArguments;
@@ -77,8 +75,8 @@ public class LazyRubyRootNode extends RootNode implements InternalRootNode {
             callNode.forceInlining();
 
             mainObject = context.getCoreLibrary().getMainObject();
-            method = new InternalMethod(context, rootNode.getSharedMethodInfo(), rootNode.getSharedMethodInfo().getName(),
-                    context.getCoreLibrary().getObjectClass(), Visibility.PUBLIC, callTarget);
+            method = new InternalMethod(context, rootNode.getSharedMethodInfo(), rootNode.getSharedMethodInfo().getLexicalScope(),
+                    rootNode.getSharedMethodInfo().getName(), context.getCoreLibrary().getObjectClass(), Visibility.PUBLIC, callTarget);
         }
 
         Object[] arguments = RubyArguments.pack(
@@ -93,7 +91,7 @@ public class LazyRubyRootNode extends RootNode implements InternalRootNode {
         final Object value = callNode.call(frame, arguments);
 
         // The return value will be leaked to Java, share it.
-        if (Options.SHARED_OBJECTS) {
+        if (SharedObjects.ENABLED) {
             SharedObjects.writeBarrier(value);
         }
 

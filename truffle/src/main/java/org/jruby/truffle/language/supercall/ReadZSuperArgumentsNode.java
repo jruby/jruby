@@ -30,11 +30,11 @@ public class ReadZSuperArgumentsNode extends RubyNode {
     @Children private final RubyNode[] reloadNodes;
     @Child private ArrayToObjectArrayNode unsplatNode;
 
-    private final boolean hasRestParameter;
+    private final int restArgIndex;
 
-    public ReadZSuperArgumentsNode(RubyContext context, SourceSection sourceSection, boolean hasRestParameter, RubyNode[] reloadNodes) {
+    public ReadZSuperArgumentsNode(RubyContext context, SourceSection sourceSection, int restArgIndex, RubyNode[] reloadNodes) {
         super(context, sourceSection);
-        this.hasRestParameter = hasRestParameter;
+        this.restArgIndex = restArgIndex;
         this.reloadNodes = reloadNodes;
 
     }
@@ -50,14 +50,15 @@ public class ReadZSuperArgumentsNode extends RubyNode {
             superArguments[n] = reloadNodes[n].execute(frame);
         }
 
-        if (hasRestParameter) {
-            // TODO (eregon, 22 July 2015): Assumes rest arg is last, not true if post or keyword args.
-            final int restArgIndex = reloadNodes.length - 1;
+        if (restArgIndex != -1) {
             final Object restArg = superArguments[restArgIndex];
             assert RubyGuards.isRubyArray(restArg);
             final Object[] restArgs = unsplat((DynamicObject) restArg);
-            superArguments = ArrayUtils.copyOf(superArguments, restArgIndex + restArgs.length);
-            ArrayUtils.arraycopy(restArgs, 0, superArguments, restArgIndex, restArgs.length);
+            final int after = superArguments.length - (restArgIndex + 1);
+            Object[] splattedArguments = ArrayUtils.copyOf(superArguments, superArguments.length + restArgs.length - 1);
+            ArrayUtils.arraycopy(superArguments, restArgIndex + 1, splattedArguments, restArgIndex + restArgs.length, after);
+            ArrayUtils.arraycopy(restArgs, 0, splattedArguments, restArgIndex, restArgs.length);
+            superArguments = splattedArguments;
         }
 
         return superArguments;

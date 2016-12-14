@@ -18,8 +18,6 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.runtime.Helpers;
-import org.jruby.runtime.Visibility;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreClass;
@@ -34,8 +32,10 @@ import org.jruby.truffle.core.time.RubyDateFormatter.Token;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.SnippetNode;
+import org.jruby.truffle.language.Visibility;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
+import org.jruby.truffle.parser.Helpers;
 import org.jruby.truffle.util.StringUtils;
 
 import java.time.DateTimeException;
@@ -194,10 +194,15 @@ public abstract class TimeNodes {
 
             Layouts.TIME.setIsUtc(time, true);
             Layouts.TIME.setRelativeOffset(time, false);
-            Layouts.TIME.setZone(time, create7BitString(UTC.getDisplayName(TextStyle.NARROW, Locale.ENGLISH), USASCIIEncoding.INSTANCE));
+            Layouts.TIME.setZone(time, create7BitString(getUTCDisplayName(), USASCIIEncoding.INSTANCE));
             Layouts.TIME.setDateTime(time, inUTC(dateTime));
 
             return time;
+        }
+
+        @TruffleBoundary
+        private String getUTCDisplayName() {
+            return UTC.getDisplayName(TextStyle.NARROW, Locale.ENGLISH);
         }
 
         @TruffleBoundary

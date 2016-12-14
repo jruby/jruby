@@ -36,8 +36,8 @@ import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channel;
 import java.nio.channels.Channels;
-import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.SeekableByteChannel;
 import java.nio.channels.WritableByteChannel;
 import java.util.Collections;
 import java.util.HashMap;
@@ -164,7 +164,7 @@ public class ChannelDescriptor {
         
         this.readableChannel = channel instanceof ReadableByteChannel;
         this.writableChannel = channel instanceof WritableByteChannel;
-        this.seekableChannel = channel instanceof FileChannel;
+        this.seekableChannel = channel instanceof SeekableByteChannel;
 
         registerDescriptor(this);
     }
@@ -328,7 +328,7 @@ public class ChannelDescriptor {
 
     /**
      * Whether the channel associated with this descriptor is seekable (i.e.
-     * whether it is instanceof FileChannel).
+     * whether it is instanceof SeekableByteChannel).
      * 
      * @return true if the associated channel is seekable, false otherwise
      */
@@ -338,7 +338,7 @@ public class ChannelDescriptor {
     
     /**
      * Set the channel to be explicitly seekable or not, for streams that appear
-     * to be seekable with the instanceof FileChannel check.
+     * to be seekable with the instanceof SeekableByteChannel check.
      * 
      * @param canBeSeekable Whether the channel is seekable or not.
      */
@@ -490,7 +490,7 @@ public class ChannelDescriptor {
     
     /**
      * Perform a low-level seek operation on the associated channel if it is
-     * instanceof FileChannel, or raise PipeException if it is not a FileChannel.
+     * instanceof SeekableByteChannel, or raise PipeException if it is not a SeekableByteChannel.
      * Calls checkOpen to confirm the target channel is open. This is equivalent
      * to the lseek(2) POSIX function, and like that function it bypasses any
      * buffer flushing or invalidation as in ChannelStream.fseek.
@@ -503,27 +503,27 @@ public class ChannelDescriptor {
      * @throws org.jruby.util.io.PipeException If the target channel is not seekable
      * @throws org.jruby.util.io.BadDescriptorException If the target channel is
      * already closed.
-     * @return the new offset into the FileChannel.
+     * @return the new offset into the SeekableByteChannel.
      */
     public long lseek(long offset, int whence) throws IOException, InvalidValueException, PipeException, BadDescriptorException {
         if (seekableChannel) {
             checkOpen();
             
-            FileChannel fileChannel = (FileChannel)channel;
+            SeekableByteChannel channel = (SeekableByteChannel) this.channel;
             try {
                 long pos;
                 switch (whence) {
                 case PosixShim.SEEK_SET:
                     pos = offset;
-                    fileChannel.position(pos);
+                    channel.position(pos);
                     break;
                 case PosixShim.SEEK_CUR:
-                    pos = fileChannel.position() + offset;
-                    fileChannel.position(pos);
+                    pos = channel.position() + offset;
+                    channel.position(pos);
                     break;
                 case PosixShim.SEEK_END:
-                    pos = fileChannel.size() + offset;
-                    fileChannel.position(pos);
+                    pos = channel.size() + offset;
+                    channel.position(pos);
                     break;
                 default:
                     throw new InvalidValueException();
@@ -619,7 +619,7 @@ public class ChannelDescriptor {
         if (isSeekable() && originalModes.isAppendable()) {
             // if already in append mode, we don't do our own seeking
             if (!isInAppendMode) {
-                FileChannel fileChannel = (FileChannel)channel;
+                SeekableByteChannel fileChannel = (SeekableByteChannel) channel;
                 fileChannel.position(fileChannel.size());
             }
         }

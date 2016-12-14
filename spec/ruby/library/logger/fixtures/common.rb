@@ -6,7 +6,9 @@ module LoggerSpecs
     str.gsub(/[A-Z].*\[.*\]/, "").lstrip
   end
 
-  ruby_version_is ''...'2.2' do
+  # Use defined? so that even with --unguarded this fixture can load
+  # ruby_version_is ''...'2.2' do
+  if defined?(Logger::Application)
     class TestApp < Logger::Application
       def initialize(appname, log_file=nil)
         super(appname)

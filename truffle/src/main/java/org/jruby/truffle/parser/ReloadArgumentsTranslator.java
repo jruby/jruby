@@ -13,18 +13,25 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.hash.ConcatHashLiteralNode;
+import org.jruby.truffle.core.hash.HashLiteralNode;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubySourceSection;
 import org.jruby.truffle.language.arguments.MissingArgumentBehavior;
 import org.jruby.truffle.language.arguments.ProfileArgumentNode;
 import org.jruby.truffle.language.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.language.control.SequenceNode;
+import org.jruby.truffle.language.literal.ObjectLiteralNode;
 import org.jruby.truffle.parser.ast.ArgsParseNode;
 import org.jruby.truffle.parser.ast.ArgumentParseNode;
+import org.jruby.truffle.parser.ast.AssignableParseNode;
+import org.jruby.truffle.parser.ast.KeywordArgParseNode;
+import org.jruby.truffle.parser.ast.KeywordRestArgParseNode;
 import org.jruby.truffle.parser.ast.MultipleAsgnParseNode;
 import org.jruby.truffle.parser.ast.OptArgParseNode;
 import org.jruby.truffle.parser.ast.ParseNode;
 import org.jruby.truffle.parser.ast.RestArgParseNode;
+import org.jruby.truffle.parser.ast.types.INameNode;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -40,11 +47,15 @@ public class ReloadArgumentsTranslator extends Translator {
     private final BodyTranslator methodBodyTranslator;
 
     private int index = 0;
-    private boolean hasRestParameter = false;
+    private int restParameterIndex = -1;
 
     public ReloadArgumentsTranslator(Node currentNode, RubyContext context, Source source, BodyTranslator methodBodyTranslator) {
         super(currentNode, context, source);
         this.methodBodyTranslator = methodBodyTranslator;
+    }
+
+    public int getRestParameterIndex() {
+        return restParameterIndex;
     }
 
     @Override
@@ -72,7 +83,7 @@ public class ReloadArgumentsTranslator extends Translator {
         }
 
         if (node.hasRestArg()) {
-            hasRestParameter = true;
+            restParameterIndex = node.getPostIndex();
             sequence.add(node.getRestArgNode().accept(this));
         }
 
@@ -82,8 +93,36 @@ public class ReloadArgumentsTranslator extends Translator {
             System.err.printf("WARNING: post args in zsuper not yet implemented at %s:%d%n", sourceSectionX.getSource().getName(), sourceSectionX.getStartLine());
         }
 
-        if (node.hasKwargs() && !source.getName().endsWith("/language/fixtures/super.rb")) {
-            System.err.printf("WARNING: kwargs in zsuper not yet implemented at %s:%d%n", sourceSectionX.getSource().getName(), sourceSectionX.getStartLine());
+        RubyNode kwArgsNode = null;
+
+        if (node.hasKwargs()) {
+            final int keywordIndex = node.getKeywordsIndex();
+            final int keywordCount = node.getKeywordCount();
+            RubyNode[] keyValues = new RubyNode[keywordCount * 2];
+
+            for (int i = 0; i < keywordCount; i++) {
+                final KeywordArgParseNode kwArg = (KeywordArgParseNode) args[keywordIndex + i];
+                final RubyNode value = kwArg.accept(this);
+                final String name = ((INameNode) kwArg.getAssignable()).getName();
+                RubyNode key = new ObjectLiteralNode(context, sourceSectionX, context.getSymbolTable().getSymbol(name));
+                keyValues[2 * i] = key;
+                keyValues[2 * i + 1] = value;
+            }
+            kwArgsNode = HashLiteralNode.create(context, sourceSectionX, keyValues);
+        }
+
+        if (node.hasKeyRest()) {
+            final RubyNode keyRest = node.getKeyRest().accept(this);
+            if (kwArgsNode == null) {
+                kwArgsNode = keyRest;
+            } else {
+                kwArgsNode = new ConcatHashLiteralNode(context, sourceSectionX, new RubyNode[]{kwArgsNode, keyRest});
+            }
+
+        }
+
+        if (kwArgsNode != null) {
+            sequence.add(kwArgsNode);
         }
 
         return new SequenceNode(sourceSection.toSourceSection(source), sequence.toArray(new RubyNode[sequence.size()]));
@@ -113,13 +152,23 @@ public class ReloadArgumentsTranslator extends Translator {
     }
 
     @Override
+    public RubyNode visitKeywordArgNode(KeywordArgParseNode node) {
+        final RubySourceSection sourceSection = translate(node.getPosition());
+        final AssignableParseNode asgnNode = node.getAssignable();
+        final String name = ((INameNode) asgnNode).getName();
+        return methodBodyTranslator.getEnvironment().findLocalVarNode(name, source, sourceSection);
+    }
+
+    @Override
+    public RubyNode visitKeywordRestArgNode(KeywordRestArgParseNode node) {
+        final RubySourceSection sourceSection = translate(node.getPosition());
+        return methodBodyTranslator.getEnvironment().findLocalVarNode(node.getName(), source, sourceSection);
+    }
+
+    @Override
     protected RubyNode defaultVisit(ParseNode node) {
         final RubySourceSection sourceSection = translate(node.getPosition());
         return nilNode(source, sourceSection);
-    }
-
-    public boolean isSplatted() {
-        return hasRestParameter;
     }
 
 }

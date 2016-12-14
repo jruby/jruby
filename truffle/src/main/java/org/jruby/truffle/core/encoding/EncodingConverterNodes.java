@@ -18,14 +18,11 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.Encoding;
 import org.jcodings.Ptr;
-import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.transcode.EConv;
 import org.jcodings.transcode.EConvFlags;
 import org.jcodings.transcode.EConvResult;
-import org.jcodings.transcode.TranscoderDB;
-import org.jcodings.util.CaseInsensitiveBytesHash;
-import org.jcodings.util.Hash;
-import org.jruby.runtime.Visibility;
+import org.jcodings.transcode.Transcoder;
+import org.jcodings.transcode.TranscodingManager;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreClass;
@@ -42,12 +39,15 @@ import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
+import org.jruby.truffle.language.Visibility;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.util.StringUtils;
-import org.jruby.util.ByteList;
+import org.jruby.truffle.util.ByteList;
+
+import java.util.Map;
 
 import static org.jruby.truffle.core.string.StringOperations.rope;
 
@@ -69,11 +69,8 @@ public abstract class EncodingConverterNodes {
 
             Encoding sourceEncoding = Layouts.ENCODING.getEncoding(source);
             Encoding destinationEncoding = Layouts.ENCODING.getEncoding(destination);
-            final byte[] sourceEncodingName = sourceEncoding.getName();
-            final byte[] destinationEncodingName = destinationEncoding.getName();
 
-            final EConv econv = TranscoderDB.open(sourceEncodingName, destinationEncodingName, rubiniusToJRubyFlags(options));
-
+            final EConv econv = TranscodingManager.create(sourceEncoding, destinationEncoding, options);
             econv.sourceEncoding = sourceEncoding;
             econv.destinationEncoding = destinationEncoding;
 
@@ -124,25 +121,18 @@ public abstract class EncodingConverterNodes {
         public Object transcodingMap(VirtualFrame frame) {
             final Object ret = newLookupTableNode.call(frame, coreLibrary().getLookupTableClass(), "new");
 
-            for (CaseInsensitiveBytesHash<TranscoderDB.Entry> sourceEntry : TranscoderDB.transcoders) {
-                Object key = null;
-                final Object value = newLookupTableNode.call(frame, coreLibrary().getLookupTableClass(), "new");
+            for (Map.Entry<String, Map<String, Transcoder>> sourceEntry : TranscodingManager.allTranscoders.entrySet()) {
+                final DynamicObject source = getContext().getSymbolTable().getSymbol(sourceEntry.getKey());
+                final Object destinations = newLookupTableNode.call(frame, coreLibrary().getLookupTableClass(), "new");
 
-                for (Hash.HashEntry<TranscoderDB.Entry> destinationEntry : sourceEntry.entryIterator()) {
-                    final TranscoderDB.Entry e = destinationEntry.value;
+                for (Map.Entry<String, Transcoder> destinationEntry : sourceEntry.getValue().entrySet()) {
+                    final DynamicObject destination = getContext().getSymbolTable().getSymbol(destinationEntry.getKey());
+                    final Object lookupTableValue = newTranscodingNode.call(frame, coreLibrary().getTranscodingClass(), "create", source, destination);
 
-                    if (key == null) {
-                        final Object upcased = upcaseNode.call(frame, createString(e.getSource(), USASCIIEncoding.INSTANCE), "upcase");
-                        key = toSymNode.call(frame, upcased, "to_sym");
-                    }
-
-                    final Object upcasedLookupTableKey = upcaseNode.call(frame, createString(e.getDestination(), USASCIIEncoding.INSTANCE), "upcase");
-                    final Object lookupTableKey = toSymNode.call(frame, upcasedLookupTableKey, "to_sym");
-                    final Object lookupTableValue = newTranscodingNode.call(frame, coreLibrary().getTranscodingClass(), "create", key, lookupTableKey);
-                    lookupTableWriteNode.call(frame, value, "[]=", lookupTableKey, lookupTableValue);
+                    lookupTableWriteNode.call(frame, destinations, "[]=", destination, lookupTableValue);
                 }
 
-                lookupTableWriteNode.call(frame, ret, "[]=", key, value);
+                lookupTableWriteNode.call(frame, ret, "[]=", source, destinations);
             }
 
             return ret;
@@ -247,7 +237,7 @@ public abstract class EncodingConverterNodes {
                 inPtr.p = 0;
                 outPtr.p = offset;
                 int os = outPtr.p + size;
-                EConvResult res = ec.convert(sourceRope.getBytes(), inPtr, sourceRope.byteLength() + inPtr.p, outBytes.getUnsafeBytes(), outPtr, os, options);
+                EConvResult res = TranscodingManager.convert(ec, sourceRope.getBytes(), inPtr, sourceRope.byteLength() + inPtr.p, outBytes.getUnsafeBytes(), outPtr, os, options);
 
                 outBytes.setRealSize(outPtr.p - outBytes.begin());
 

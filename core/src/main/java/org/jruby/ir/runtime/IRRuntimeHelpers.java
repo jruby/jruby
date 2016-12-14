@@ -616,34 +616,34 @@ public class IRRuntimeHelpers {
         return minArgsLength < n ? rubyArray.entry(index) : UndefinedValue.UNDEFINED;
     }
 
-    @JIT
-    public static IRubyObject isDefinedBackref(ThreadContext context) {
+    @JIT @Interp
+    public static IRubyObject isDefinedBackref(ThreadContext context, IRubyObject definedMessage) {
         return RubyMatchData.class.isInstance(context.getBackRef()) ?
-                context.runtime.getDefinedMessage(DefinedMessage.GLOBAL_VARIABLE) : context.nil;
+                definedMessage : context.nil;
     }
 
-    @JIT
-    public static IRubyObject isDefinedGlobal(ThreadContext context, String name) {
+    @JIT @Interp
+    public static IRubyObject isDefinedGlobal(ThreadContext context, String name, IRubyObject definedMessage) {
         return context.runtime.getGlobalVariables().isDefined(name) ?
-                context.runtime.getDefinedMessage(DefinedMessage.GLOBAL_VARIABLE) : context.nil;
+                definedMessage : context.nil;
     }
 
     // FIXME: This checks for match data differently than isDefinedBackref.  Seems like they should use same mechanism?
-    @JIT
-    public static IRubyObject isDefinedNthRef(ThreadContext context, int matchNumber) {
+    @JIT @Interp
+    public static IRubyObject isDefinedNthRef(ThreadContext context, int matchNumber, IRubyObject definedMessage) {
         IRubyObject backref = context.getBackRef();
 
         if (backref instanceof RubyMatchData) {
             if (!((RubyMatchData) backref).group(matchNumber).isNil()) {
-                return context.runtime.getDefinedMessage(DefinedMessage.GLOBAL_VARIABLE);
+                return definedMessage;
             }
         }
 
         return context.nil;
     }
 
-    @JIT
-    public static IRubyObject isDefinedClassVar(ThreadContext context, RubyModule receiver, String name) {
+    @JIT @Interp
+    public static IRubyObject isDefinedClassVar(ThreadContext context, RubyModule receiver, String name, IRubyObject definedMessage) {
         boolean defined = receiver.isClassVarDefined(name);
 
         if (!defined && receiver.isSingleton()) { // Look for class var in singleton if it is one.
@@ -652,31 +652,31 @@ public class IRRuntimeHelpers {
             if (attached instanceof RubyModule) defined = ((RubyModule) attached).isClassVarDefined(name);
         }
 
-        return defined ? context.runtime.getDefinedMessage(DefinedMessage.CLASS_VARIABLE) : context.nil;
+        return defined ? definedMessage : context.nil;
     }
 
-    @JIT
-    public static IRubyObject isDefinedInstanceVar(ThreadContext context, IRubyObject receiver, String name) {
+    @JIT @Interp
+    public static IRubyObject isDefinedInstanceVar(ThreadContext context, IRubyObject receiver, String name, IRubyObject definedMessage) {
         return receiver.getInstanceVariables().hasInstanceVariable(name) ?
-                context.runtime.getDefinedMessage(DefinedMessage.INSTANCE_VARIABLE) : context.nil;
+                definedMessage : context.nil;
     }
 
-    @JIT
-    public static IRubyObject isDefinedCall(ThreadContext context, IRubyObject self, IRubyObject receiver, String name) {
-        RubyString boundValue = Helpers.getDefinedCall(context, self, receiver, name);
+    @JIT @Interp
+    public static IRubyObject isDefinedCall(ThreadContext context, IRubyObject self, IRubyObject receiver, String name, IRubyObject definedMessage) {
+        IRubyObject boundValue = Helpers.getDefinedCall(context, self, receiver, name, definedMessage);
 
         return boundValue == null ? context.nil : boundValue;
     }
 
-    @JIT
-    public static IRubyObject isDefinedConstantOrMethod(ThreadContext context, IRubyObject receiver, String name) {
-        RubyString definedType = Helpers.getDefinedConstantOrBoundMethod(receiver, name);
+    @JIT @Interp
+    public static IRubyObject isDefinedConstantOrMethod(ThreadContext context, IRubyObject receiver, String name, IRubyObject definedConstantMessage, IRubyObject definedMethodMessage) {
+        IRubyObject definedType = Helpers.getDefinedConstantOrBoundMethod(receiver, name, definedConstantMessage, definedMethodMessage);
 
         return definedType == null ? context.nil : definedType;
     }
 
-    @JIT
-    public static IRubyObject isDefinedMethod(ThreadContext context, IRubyObject receiver, String name, boolean checkIfPublic) {
+    @JIT @Interp
+    public static IRubyObject isDefinedMethod(ThreadContext context, IRubyObject receiver, String name, boolean checkIfPublic, IRubyObject definedMessage) {
         DynamicMethod method = receiver.getMetaClass().searchMethod(name);
 
         boolean defined = !method.isUndefined();
@@ -689,23 +689,24 @@ public class IRRuntimeHelpers {
             defined = receiver.respondsToMissing(name, checkIfPublic);
         }
 
-        if (defined) return context.runtime.getDefinedMessage(DefinedMessage.METHOD);
+        return defined ? definedMessage : context.nil;
+    }
 
-        return context.nil;
+    @Interp
+    public static IRubyObject isDefinedSuper(ThreadContext context, IRubyObject receiver, IRubyObject definedMessage) {
+        return isDefinedSuper(context, receiver, context.getFrameName(), context.getFrameKlazz(), definedMessage);
     }
 
     @JIT
-    public static IRubyObject isDefinedSuper(ThreadContext context, IRubyObject receiver) {
+    public static IRubyObject isDefinedSuper(ThreadContext context, IRubyObject receiver, String frameName, RubyModule frameClass, IRubyObject definedMessage) {
         boolean flag = false;
-        String frameName = context.getFrameName();
 
         if (frameName != null) {
-            RubyModule frameClass = context.getFrameKlazz();
             if (frameClass != null) {
                 flag = Helpers.findImplementerIfNecessary(receiver.getMetaClass(), frameClass).getSuperClass().isMethodBound(frameName, false);
             }
         }
-        return flag ? context.runtime.getDefinedMessage(DefinedMessage.SUPER) : context.nil;
+        return flag ? definedMessage : context.nil;
     }
 
     public static IRubyObject nthMatch(ThreadContext context, int matchNumber) {
@@ -897,14 +898,33 @@ public class IRRuntimeHelpers {
         return RubyArray.newArrayMayCopy(context.runtime, args, argIndex, remainingArguments);
     }
 
-    @JIT
-    public static IRubyObject receivePostReqdArg(ThreadContext context, IRubyObject[] args, int preReqdArgsCount, int postReqdArgsCount, int argIndex, boolean acceptsKeywordArgument) {
-        boolean kwargs = extractKwargsHash(args, preReqdArgsCount + postReqdArgsCount, acceptsKeywordArgument) != null;
+    @JIT @Interp
+    public static IRubyObject receivePostReqdArg(ThreadContext context, IRubyObject[] args, int pre,
+                                                 int opt, boolean rest, int post,
+                                                 int argIndex, boolean acceptsKeywordArgument) {
+        int required = pre + post;
+        // FIXME: Once we extract kwargs from rest of args processing we can delete this extract and n calc.
+        boolean kwargs = extractKwargsHash(args, required, acceptsKeywordArgument) != null;
         int n = kwargs ? args.length - 1 : args.length;
-        int remaining = n - preReqdArgsCount;
-        if (remaining <= argIndex) return context.nil;
+        int remaining = n - pre;       // we know we have received all pre args by post receives.
 
-        return (remaining > postReqdArgsCount) ? args[n - postReqdArgsCount + argIndex] : args[preReqdArgsCount + argIndex];
+        if (remaining < post) {        // less args available than post args need
+            if (pre + argIndex >= n) { // argument is past end of arg list
+                return context.nil;
+            } else {
+                return args[pre + argIndex];
+            }
+        }
+
+        // At this point we know we have enough arguments left for post without worrying about AIOOBE.
+
+        if (rest) {                      // we can read from back since we will take all args we can get.
+            return args[n - post + argIndex];
+        } else if (n > required + opt) { // we filled all opt so we can read from front (and avoid excess args case from proc).
+            return args[pre + opt + argIndex];
+        } else {                         // partial opts filled in too few args so we can read from end.
+            return args[n - post + argIndex];
+        }
     }
 
     public static IRubyObject receiveOptArg(IRubyObject[] args, int requiredArgs, int preArgs, int argIndex, boolean acceptsKeywordArgument) {
@@ -1612,7 +1632,7 @@ public class IRRuntimeHelpers {
         return context.runtime.newFixnum(i);
     }
 
-    private static IRubyObject[] toAry(ThreadContext context, IRubyObject[] args) {
+    public static IRubyObject[] toAry(ThreadContext context, IRubyObject[] args) {
         if (args.length == 1 && args[0].respondsTo("to_ary")) {
             IRubyObject newAry = Helpers.aryToAry(args[0]);
             if (newAry.isNil()) {

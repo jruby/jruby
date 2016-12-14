@@ -33,7 +33,6 @@ package org.jruby.truffle.parser.ast;
 
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
 import org.jruby.truffle.parser.lexer.ISourcePosition;
-import org.jruby.util.DefinedMessage;
 
 import java.util.List;
 
@@ -50,13 +49,9 @@ public class BackRefParseNode extends ParseNode {
      **/
     private final char type;
 
-    /** ByteList for the name of this backref global */
-    private final DefinedMessage definedMessage;
-
     public BackRefParseNode(ISourcePosition position, int type) {
         super(position, false);
         this.type = (char) type;
-        this.definedMessage = DefinedMessage.byText("$" + (char)type);
     }
 
     public NodeType getNodeType() {

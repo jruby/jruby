@@ -1,0 +1,1 @@
+fails:Kernel#warn writes each array element on a line when passes an array

@@ -903,6 +903,10 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
             return array;
         }
 
+        public int size() {
+            return size;
+        }
+
         private SymbolEntry[] rehash() {
             SymbolEntry[] oldTable = symbolTable;
             int oldCapacity = oldTable.length;

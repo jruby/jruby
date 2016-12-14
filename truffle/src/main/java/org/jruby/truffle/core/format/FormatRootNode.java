@@ -18,8 +18,8 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.RubyLanguage;
 import org.jruby.truffle.core.rope.CodeRange;
+import org.jruby.truffle.core.string.StringSupport;
 import org.jruby.truffle.language.backtrace.InternalRootNode;
-import org.jruby.util.StringSupport;
 
 /**
  * The node at the root of a pack expression.

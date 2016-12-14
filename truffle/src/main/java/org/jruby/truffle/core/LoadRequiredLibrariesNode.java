@@ -9,7 +9,6 @@
  */
 package org.jruby.truffle.core;
 
-import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
@@ -19,8 +18,6 @@ import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
-
-import java.util.Collection;
 
 /** Load libraries required from the command line (-r LIBRARY) */
 public class LoadRequiredLibrariesNode extends RubyNode {
@@ -36,16 +33,11 @@ public class LoadRequiredLibrariesNode extends RubyNode {
     public Object execute(VirtualFrame frame) {
         Object self = RubyArguments.getSelf(frame);
 
-        for (String requiredLibrary : getRequiredLibraries()) {
+        for (String requiredLibrary : getContext().getOptions().REQUIRED_LIBRARIES) {
             requireNode.call(frame, self, "require", createString(StringOperations.encodeRope(requiredLibrary, UTF8Encoding.INSTANCE)));
         }
 
         return nil();
-    }
-
-    @TruffleBoundary
-    private Collection<String> getRequiredLibraries() {
-        return getContext().getInstanceConfig().getRequiredLibraries();
     }
 
 }

@@ -15,7 +15,6 @@ import com.oracle.truffle.api.object.DynamicObject;
 import jnr.constants.platform.Errno;
 import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.runtime.Visibility;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.encoding.EncodingOperations;
@@ -24,6 +23,7 @@ import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.string.CoreStrings;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyGuards;
+import org.jruby.truffle.language.Visibility;
 import org.jruby.truffle.util.StringUtils;
 
 import static org.jruby.truffle.core.array.ArrayHelpers.createArray;

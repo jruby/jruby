@@ -288,19 +288,8 @@ public class LoadArgumentsTranslator extends Translator {
         final RubySourceSection sourceSection = translate(node.getPosition());
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
-        final ParseNode firstChild = node.childNodes().get(0);
-        final AssignableParseNode asgnNode;
-        final String name;
-
-        if (firstChild instanceof LocalAsgnParseNode) {
-            asgnNode = (LocalAsgnParseNode) firstChild;
-            name = ((LocalAsgnParseNode) firstChild).getName();
-        } else if (firstChild instanceof DAsgnParseNode) {
-            asgnNode = (DAsgnParseNode) firstChild;
-            name = ((DAsgnParseNode) firstChild).getName();
-        } else {
-            throw new UnsupportedOperationException("unsupported keyword arg " + node);
-        }
+        final AssignableParseNode asgnNode = node.getAssignable();
+        final String name = ((INameNode) asgnNode).getName();
 
         final FrameSlot slot = methodBodyTranslator.getEnvironment().getFrameDescriptor().findOrAddFrameSlot(name);
 

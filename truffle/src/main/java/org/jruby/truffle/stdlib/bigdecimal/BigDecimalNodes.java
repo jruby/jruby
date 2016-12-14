@@ -20,8 +20,6 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.ext.bigdecimal.RubyBigDecimal;
-import org.jruby.runtime.Visibility;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
@@ -34,14 +32,18 @@ import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.SnippetNode;
+import org.jruby.truffle.language.Visibility;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
+import org.jruby.truffle.util.SafeDoubleParser;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.MathContext;
 import java.math.RoundingMode;
+import java.util.ArrayList;
+import java.util.List;
 
 @CoreClass("Truffle::BigDecimal")
 public abstract class BigDecimalNodes {
@@ -798,7 +800,83 @@ public abstract class BigDecimalNodes {
 
         @TruffleBoundary
         private BigDecimal sqrt(BigDecimal value, MathContext mathContext) {
-            return RubyBigDecimal.bigSqrt(value, mathContext);
+            return bigSqrt(value, mathContext);
+        }
+
+        private static final BigDecimal TWO = new BigDecimal(2);
+        private static final double SQRT_10 = 3.162277660168379332;
+
+        public static BigDecimal bigSqrt(BigDecimal squarD, MathContext rootMC) {
+            // General number and precision checking
+            int sign = squarD.signum();
+            if (sign == -1) throw new ArithmeticException("Square root of a negative number: " + squarD);
+            if (sign == 0) return squarD.round(rootMC);
+
+            int prec = rootMC.getPrecision();           // the requested precision
+            if (prec == 0) throw new IllegalArgumentException("Most roots won't have infinite precision = 0");
+
+            // Initial precision is that of double numbers 2^63/2 ~ 4E18
+            int BITS = 62;                              // 63-1 an even number of number bits
+            int nInit = 16;                             // precision seems 16 to 18 digits
+            MathContext nMC = new MathContext(18, RoundingMode.HALF_DOWN);
+
+            // Estimate the square root with the foremost 62 bits of squarD
+            BigInteger bi = squarD.unscaledValue();     // bi and scale are a tandem
+            int biLen = bi.bitLength();
+            int shift = Math.max(0, biLen - BITS + (biLen%2 == 0 ? 0 : 1));   // even shift..
+            bi = bi.shiftRight(shift);                  // ..floors to 62 or 63 bit BigInteger
+
+            double root = Math.sqrt(SafeDoubleParser.doubleValue(bi));
+            BigDecimal halfBack = new BigDecimal(BigInteger.ONE.shiftLeft(shift/2));
+
+            int scale = squarD.scale();
+            if (scale % 2 == 1) root *= SQRT_10; // 5 -> 2, -5 -> -3 need half a scale more..
+
+            scale = (int) Math.ceil(scale/2.);         // ..where 100 -> 10 shifts the scale
+
+            // Initial x - use double root - multiply by halfBack to unshift - set new scale
+            BigDecimal x = new BigDecimal(root, nMC);
+            x = x.multiply(halfBack, nMC);              // x0 ~ sqrt()
+            if (scale != 0) x = x.movePointLeft(scale);
+
+            if (prec < nInit) {                // for prec 15 root x0 must surely be OK
+                return x.round(rootMC);        // return small prec roots without iterations
+            }
+
+            // Initial v - the reciprocal
+            BigDecimal v = BigDecimal.ONE.divide(TWO.multiply(x), nMC);        // v0 = 1/(2*x)
+
+            // Collect iteration precisions beforehand
+            List<Integer> nPrecs = new ArrayList<Integer>();
+
+            assert nInit > 3 : "Never ending loop!";                // assume nInit = 16 <= prec
+
+            // Let m be the exact digits precision in an earlier! loop
+            for (int m = prec + 1; m > nInit; m = m/2 + (m > 100 ? 1 : 2)) {
+                nPrecs.add(m);
+            }
+
+            // The loop of "Square Root by Coupled Newton Iteration"
+            for (int i = nPrecs.size() - 1; i > -1; i--) {
+                // Increase precision - next iteration supplies n exact digits
+                nMC = new MathContext(nPrecs.get(i), i%2 == 1 ? RoundingMode.HALF_UP : RoundingMode.HALF_DOWN);
+
+                // Next x                                        // e = d - x^2
+                BigDecimal e = squarD.subtract(x.multiply(x, nMC), nMC);
+                if (i != 0) {
+                    x = x.add(e.multiply(v, nMC));               // x += e*v     ~ sqrt()
+                } else {
+                    x = x.add(e.multiply(v, rootMC), rootMC);    // root x is ready!
+                    break;
+                }
+
+                // Next v                                        // g = 1 - 2*x*v
+                BigDecimal g = BigDecimal.ONE.subtract(TWO.multiply(x).multiply(v, nMC));
+
+                v = v.add(g.multiply(v, nMC));                   // v += g*v     ~ 1/2/sqrt()
+            }
+
+            return x;                      // return sqrt(squarD) with precision of rootMC
         }
 
         @Specialization(guards = "precision < 0")

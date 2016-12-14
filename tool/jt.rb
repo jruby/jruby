@@ -13,6 +13,8 @@
 
 # Recommended: function jt { ruby tool/jt.rb "$@"; }
 
+abort "Do not run #{$0} with JRuby+Truffle itself, use MRI or some other Ruby." if RUBY_ENGINE == "jruby+truffle"
+
 require 'fileutils'
 require 'json'
 require 'timeout'
@@ -28,7 +30,7 @@ SULONG_HOME = ENV['SULONG_HOME']
 JDEBUG_PORT = 51819
 JDEBUG = "-J-agentlib:jdwp=transport=dt_socket,server=y,address=#{JDEBUG_PORT},suspend=y"
 JDEBUG_TEST = "-Dmaven.surefire.debug=-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=#{JDEBUG_PORT} -Xnoagent -Djava.compiler=NONE"
-JEXCEPTION = "-Xtruffle.exceptions.print_java=true"
+JEXCEPTION = "-Xtruffle.exceptions.print_uncaught_java=true"
 METRICS_REPS = 10
 
 VERBOSE = ENV.include? 'V'
@@ -124,6 +126,7 @@ module Utilities
         vm_args << '-cp'
         vm_args << [nfi_classes, sulong_dependencies, *sulong_jars].join(':')
         vm_args << '-XX:-UseJVMCIClassLoader'
+        vm_args << "-Dsulong.DynamicBitcodeLibraries=#{Dir.glob("#{graal_home}/mxbuild/projects/com.oracle.truffle.llvm.libraries/bin/*.bc").join(':')}"
       end
       options = []
     else
@@ -146,8 +149,7 @@ module Utilities
 
   def self.mx?
     mx_ruby_jar = "#{JRUBY_DIR}/mxbuild/dists/ruby.jar"
-    constants_file = "#{JRUBY_DIR}/core/src/main/java/org/jruby/runtime/Constants.java"
-    File.exist?(mx_ruby_jar) && File.mtime(mx_ruby_jar) >= File.mtime(constants_file)
+    File.exist?(mx_ruby_jar)
   end
 
   def self.find_ruby
@@ -392,19 +394,13 @@ module ShellUtils
   end
 
   def clang(*args)
-    if ENV['USE_SYSTEM_CLANG']
-      sh 'clang', *args
-    else
-      mx_sulong 'su-clang', *args
-    end
+    clang = ENV['JT_CLANG'] || 'clang'
+    sh clang, *args
   end
 
   def llvm_opt(*args)
-    if ENV['USE_SYSTEM_CLANG']
-      sh 'opt', *args
-    else
-      mx_sulong 'su-opt', *args
-    end
+    opt = ENV['JT_OPT'] || 'opt'
+    sh opt, *args
   end
 
   def sulong_run(*args)
@@ -445,8 +441,9 @@ module Commands
       jt build [options]                             build
       jt rebuild [options]                           clean and build
           truffle                                    build only the Truffle part, assumes the rest is up-to-date
-          cexts [--no-openssl]                       build the cext backend (set SULONG_HOME and maybe USE_SYSTEM_CLANG)
+          cexts [--no-openssl]                       build the cext backend (set SULONG_HOME)
           parser                                     build the parser
+          options                                    build the options
           --build-pack                               use the build pack
           --offline                                  use the build pack to build offline
       jt clean                                       clean
@@ -470,7 +467,7 @@ module Commands
       jt e 14 + 2                                    evaluate an expression
       jt puts 14 + 2                                 evaluate and print an expression
       jt cextc directory clang-args                  compile the C extension in directory, with optional extra clang arguments
-      jt test                                        run all mri tests, specs and integration tests (set SULONG_HOME, and maybe USE_SYSTEM_CLANG)
+      jt test                                        run all mri tests, specs and integration tests (set SULONG_HOME)
       jt test tck [--jdebug]                         run the Truffle Compatibility Kit tests
       jt test mri                                    run mri tests
           --graal         use Graal (set either GRAALVM_BIN, JVMCI_BIN or GRAAL_HOME)
@@ -494,6 +491,7 @@ module Commands
       jt tag all spec/ruby/language                  tag all specs in this file, without running them
       jt untag spec/ruby/language                    untag passing specs in this directory
       jt untag spec/ruby/language/while_spec.rb      untag passing specs in this file
+      jt mspec ...                                   run MSpec with the JRuby+Truffle configuration and custom arguments
       jt metrics alloc [--json] ...                  how much memory is allocated running a program (use -Xclassic to test normal JRuby on this metric and others)
       jt metrics minheap ...                         what is the smallest heap you can use to run an application
       jt metrics time ...                            how long does it take to run a command, broken down into different phases
@@ -518,11 +516,11 @@ module Commands
         GRAALVM_RELEASE_BIN                          Default GraalVM executable when using a released version of Truffle (such as on master)
         GRAAL_HOME_TRUFFLE_HEAD                      Default Graal directory when using a snapshot version of Truffle (such as on truffle-head)
         SULONG_HOME                                  The Sulong source repository, if you want to run cextc
-        USE_SYSTEM_CLANG                             Use the system clang rather than Sulong\'s when compiling C extensions
         GRAAL_JS_JAR                                 The location of trufflejs.jar
         SL_JAR                                       The location of truffle-sl.jar
         LIBXML_HOME, LIBXML_INCLUDE, LIBXML_LIB      The location of libxml2 (the directory containing include etc), and the direct include directory and library file
         OPENSSL_HOME, OPENSSL_INCLUDE, OPENSSL_LIB               ... OpenSSL ...
+        JT_CLANG, JT_OPT                             LLVM binaries to use
     TXT
   end
 
@@ -555,6 +553,8 @@ module Commands
       sh 'sh', 'tool/truffle/generate_parser'
       yytables = 'truffle/src/main/java/org/jruby/truffle/parser/parser/YyTables.java'
       File.write(yytables, File.read(yytables).gsub('package org.jruby.parser;', 'package org.jruby.truffle.parser.parser;'))
+    when 'options'
+      sh 'tool/truffle/generate-options.rb'
     when nil
       mvn env, *maven_options, 'package'
     else
@@ -788,7 +788,7 @@ module Commands
     env_vars = {
       "EXCLUDES" => "test/mri/excludes_truffle"
     }
-    jruby_args = %w[-J-Xmx2G -Xtruffle.exceptions.print_java]
+    jruby_args = %w[-J-Xmx2G -Xtruffle.exceptions.print_java=true]
 
     if args.count { |arg| !arg.start_with?('-') } == 0
       args += File.readlines("#{JRUBY_DIR}/test/mri_truffle.index").grep(/^[^#]\w+/).map(&:chomp)
@@ -812,7 +812,9 @@ module Commands
     env = { "JRUBY_OPTS" => jruby_opts.join(' ') }
 
     Dir["#{JRUBY_DIR}/test/truffle/compiler/*.sh"].sort.each do |test_script|
-      sh env, test_script
+      if args.empty? or args.include?(File.basename(test_script, ".*"))
+        sh env, test_script
+      end
     end
   end
   private :test_compiler
@@ -824,29 +826,29 @@ module Commands
     # Test that we can compile and run some basic C code that uses libxml and openssl
 
     unless no_libxml
-      clang '-S', '-emit-llvm', "-I#{LIBXML_INCLUDE}", 'test/truffle/cexts/xml/main.c', '-o', 'test/truffle/cexts/xml/main.ll'
-      out, _ = sulong_run("-l#{LIBXML_LIB}", 'test/truffle/cexts/xml/main.ll', {capture: true})
-      raise unless out == "7\n"
+      clang '-c', '-emit-llvm', "-I#{LIBXML_INCLUDE}", 'test/truffle/cexts/xml/main.c', '-o', 'test/truffle/cexts/xml/main.bc'
+      out, _ = sulong_run("-l#{LIBXML_LIB}", 'test/truffle/cexts/xml/main.bc', {capture: true})
+      raise out.inspect unless out == "7\n"
     end
 
     unless no_openssl
-      clang '-S', '-emit-llvm', "-I#{OPENSSL_INCLUDE}", 'test/truffle/cexts/xopenssl/main.c', '-o', 'test/truffle/cexts/xopenssl/main.ll'
-      out, _ = sulong_run("-l#{OPENSSL_LIB}", 'test/truffle/cexts/xopenssl/main.ll', {capture: true})
-      raise unless out == "5d41402abc4b2a76b9719d911017c592\n"
+      clang '-c', '-emit-llvm', "-I#{OPENSSL_INCLUDE}", 'test/truffle/cexts/xopenssl/main.c', '-o', 'test/truffle/cexts/xopenssl/main.bc'
+      out, _ = sulong_run("-l#{OPENSSL_LIB}", 'test/truffle/cexts/xopenssl/main.bc', {capture: true})
+      raise out.inspect unless out == "5d41402abc4b2a76b9719d911017c592\n"
     end
 
     # Test that we can run those same test when they're build as a .su and we load the code and libraries from that
 
     unless no_libxml
-      sulong_link '-o', 'test/truffle/cexts/xml/main.su', '-l', "#{LIBXML_LIB}", 'test/truffle/cexts/xml/main.ll'
+      sulong_link '-o', 'test/truffle/cexts/xml/main.su', '-l', "#{LIBXML_LIB}", 'test/truffle/cexts/xml/main.bc'
       out, _ = sulong_run('test/truffle/cexts/xml/main.su', {capture: true})
-      raise unless out == "7\n"
+      raise out.inspect unless out == "7\n"
     end
 
     unless no_openssl
-      sulong_link '-o', 'test/truffle/cexts/xopenssl/main.su', '-l', "#{OPENSSL_LIB}", 'test/truffle/cexts/xopenssl/main.ll'
+      sulong_link '-o', 'test/truffle/cexts/xopenssl/main.su', '-l', "#{OPENSSL_LIB}", 'test/truffle/cexts/xopenssl/main.bc'
       out, _ = sulong_run('test/truffle/cexts/xopenssl/main.su', {capture: true})
-      raise unless out == "5d41402abc4b2a76b9719d911017c592\n"
+      raise out.inspect unless out == "5d41402abc4b2a76b9719d911017c592\n"
     end
 
     # Test that we can compile and run some very basic C extensions
@@ -1016,6 +1018,10 @@ module Commands
     end
   end
 
+  def mspec(*args)
+    super(*args)
+  end
+
   def test_specs(command, *args)
     env_vars = {}
     options = []
@@ -1038,7 +1044,9 @@ module Commands
     if args.first == 'fast'
       args.shift
       options += %w[--excl-tag slow]
-      options << "-T-Xtruffle.backtraces.limit=4" unless args[-2..-1] == %w[-t ruby]
+      if args[-2..-1] != %w[-t ruby] and !args.delete('--backtrace')
+        options << "-T-Xtruffle.backtraces.limit=4"
+      end
     end
 
     if args.delete('--graal')
@@ -1334,7 +1342,7 @@ class JT
       send(args.shift)
     when "build"
       command = [args.shift]
-      while ['truffle', 'cexts', 'parser', '--offline', '--build-pack', '--no-openssl'].include?(args.first)
+      while ['truffle', 'cexts', 'parser', 'options', '--offline', '--build-pack', '--no-openssl'].include?(args.first)
         command << args.shift
       end
       send(*command)

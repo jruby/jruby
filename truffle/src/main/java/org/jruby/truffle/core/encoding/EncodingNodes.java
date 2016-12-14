@@ -311,7 +311,7 @@ public abstract class EncodingNodes {
         }
 
         protected int getCacheLimit() {
-            return getContext().getOptions().ENCODING_COMPATIBILE_QUERY_CACHE;
+            return getContext().getOptions().ENCODING_COMPATIBLE_QUERY_CACHE;
         }
 
     }

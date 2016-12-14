@@ -1,7 +1,1 @@
 fails:File.expand_path does not replace multiple '/' at the beginning of the path
-fails(windows):File.expand_path expands C:/./dir to C:/dir
-windows:File.expand_path converts a pathname to an absolute pathname, Ruby-Talk:18512
-windows:File.expand_path converts a pathname to an absolute pathname, using a complete path
-windows:File.expand_path raises a TypeError if not passed a String type
-windows:File.expand_path does not modify the string argument
-windows:File.expand_path returns a String when passed a String subclass

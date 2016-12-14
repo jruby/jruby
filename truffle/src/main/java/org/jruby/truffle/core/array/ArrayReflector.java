@@ -29,7 +29,7 @@ public abstract class ArrayReflector {
 
     public static ArrayMirror reflect(Object array) {
         if (array == null) {
-            return new EmptyArrayMirror();
+            return EmptyArrayMirror.INSTANCE;
         } else if (array instanceof int[]) {
             return reflect((int[]) array);
         } else if (array instanceof long[]) {

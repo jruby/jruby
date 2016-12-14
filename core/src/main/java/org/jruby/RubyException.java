@@ -134,7 +134,6 @@ public class RubyException extends RubyObject {
     }
 
     @JRubyMethod(name = "to_s")
-    @SuppressWarnings("deprecation")
     public IRubyObject to_s(ThreadContext context) {
         final IRubyObject msg = getMessage();
         if ( ! msg.isNil() ) return msg.asString();
@@ -273,7 +272,7 @@ public class RubyException extends RubyObject {
     }
 
     @Override
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("deprecated")
     public void copySpecialInstanceVariables(IRubyObject clone) {
         RubyException exception = (RubyException)clone;
         exception.backtraceData = backtraceData;
@@ -393,7 +392,7 @@ public class RubyException extends RubyObject {
     /**
      * @return error message if provided or nil
      */
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("deprecated")
     public IRubyObject getMessage() {
         return message == null ? getRuntime().getNil() : message;
     }
@@ -402,7 +401,7 @@ public class RubyException extends RubyObject {
      * Set the message for this NameError.
      * @param message the message
      */
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("deprecated")
     public void setMessage(IRubyObject message) {
         this.message = message;
     }
@@ -414,9 +413,8 @@ public class RubyException extends RubyObject {
 
     private BacktraceData backtraceData;
     private IRubyObject backtrace;
-    @Deprecated
-    public IRubyObject message;
-    protected IRubyObject cause;
+    IRubyObject message;
+    IRubyObject cause;
 
     public static final int TRACE_HEAD = 8;
     public static final int TRACE_TAIL = 4;

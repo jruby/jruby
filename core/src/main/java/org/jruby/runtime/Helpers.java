@@ -28,6 +28,8 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.internal.runtime.methods.*;
 import org.jruby.ir.IRScopeType;
+import org.jruby.ir.Interp;
+import org.jruby.ir.JIT;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.javasupport.JavaClass;
@@ -526,6 +528,18 @@ public class Helpers {
             return callMethodMissing(context, self, method.getVisibility(), name, CallType.SUPER, args, block);
         }
         return method.call(context, self, superClass, name, args, block);
+    }
+
+    public static IRubyObject invokeSuper(ThreadContext context, IRubyObject self, RubyModule klass, String name, IRubyObject arg0, Block block) {
+        checkSuperDisabledOrOutOfMethod(context, klass, name);
+
+        RubyClass superClass = findImplementerIfNecessary(self.getMetaClass(), klass).getSuperClass();
+        DynamicMethod method = superClass != null ? superClass.searchMethod(name) : UndefinedMethod.INSTANCE;
+
+        if (method.isUndefined()) {
+            return callMethodMissing(context, self, method.getVisibility(), name, CallType.SUPER, arg0, block);
+        }
+        return method.call(context, self, superClass, name, arg0, block);
     }
 
     public static IRubyObject invokeSuper(ThreadContext context, IRubyObject self, Block block) {
@@ -2186,9 +2200,10 @@ public class Helpers {
         return left instanceof RubyModule && ((RubyModule) left).getConstantFromNoConstMissing(name, false) != null;
     }
 
-    public static RubyString getDefinedConstantOrBoundMethod(IRubyObject left, String name) {
-        if (isModuleAndHasConstant(left, name)) return left.getRuntime().getDefinedMessage(DefinedMessage.CONSTANT);
-        if (left.getMetaClass().isMethodBound(name, true)) return left.getRuntime().getDefinedMessage(DefinedMessage.METHOD);
+    @JIT @Interp
+    public static IRubyObject getDefinedConstantOrBoundMethod(IRubyObject left, String name, IRubyObject definedConstantMessage, IRubyObject definedMethodMessage) {
+        if (isModuleAndHasConstant(left, name)) return definedConstantMessage;
+        if (left.getMetaClass().isMethodBound(name, true)) return definedMethodMessage;
         return null;
     }
 
@@ -2461,19 +2476,19 @@ public class Helpers {
         return argumentDescriptorsToParameters(runtime, methodToArgumentDescriptors(method), true);
     }
 
-    public static RubyString getDefinedCall(ThreadContext context, IRubyObject self, IRubyObject receiver, String name) {
+    public static IRubyObject getDefinedCall(ThreadContext context, IRubyObject self, IRubyObject receiver, String name, IRubyObject definedMessage) {
         RubyClass metaClass = receiver.getMetaClass();
         DynamicMethod method = metaClass.searchMethod(name);
         Visibility visibility = method.getVisibility();
 
         if (visibility != Visibility.PRIVATE &&
                 (visibility != Visibility.PROTECTED || metaClass.getRealClass().isInstance(self)) && !method.isUndefined()) {
-            return context.runtime.getDefinedMessage(DefinedMessage.METHOD);
+            return definedMessage;
         }
 
         if (receiver.callMethod(context, "respond_to_missing?",
             new IRubyObject[]{context.runtime.newSymbol(name), context.runtime.getFalse()}).isTrue()) {
-            return context.runtime.getDefinedMessage(DefinedMessage.METHOD);
+            return definedMessage;
         }
         return null;
     }
@@ -2767,7 +2782,7 @@ public class Helpers {
     // MRI: rb_hash
     public static RubyFixnum safeHash(final ThreadContext context, IRubyObject obj) {
         Ruby runtime = context.runtime;
-        IRubyObject hval = runtime.safeRecurse(sites(context).recursive_hash, context, runtime, obj, "hash", true);
+        IRubyObject hval = context.safeRecurse(sites(context).recursive_hash, runtime, obj, "hash", true);
 
         while (!(hval instanceof RubyFixnum)) {
             if (hval instanceof RubyBignum) {

@@ -1743,6 +1743,7 @@ public class PopenExecutor {
         return prog;
     }
 
+    private static final int posix_sh_cmd_length = 8;
     private static final String posix_sh_cmds[] = {
             "!",		/* reserved */
             ".",		/* special built-in */
@@ -1869,7 +1870,7 @@ public class PopenExecutor {
                 }
                 if (!has_meta && first.getUnsafeBytes() != DUMMY_ARRAY) {
                     if (first.length() == 0) first.setRealSize(p - first.getBegin());
-                    if (first.length() > 0 && first.length() <= posix_sh_cmds[0].length() &&
+                    if (first.length() > 0 && first.length() <= posix_sh_cmd_length &&
                         Arrays.binarySearch(posix_sh_cmds, first.toString(), StringComparator.INSTANCE) >= 0)
                         has_meta = true;
                 }

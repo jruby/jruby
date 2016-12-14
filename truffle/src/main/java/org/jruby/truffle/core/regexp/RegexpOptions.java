@@ -1,20 +1,27 @@
 /*
+ * Copyright (c) 2016 Oracle and/or its affiliates. All rights reserved. This
+ * code is released under a tri EPL/GPL/LGPL license. You can use it,
+ * redistribute it and/or modify it under the terms of the:
+ *
+ * Eclipse Public License version 1.0
+ * GNU General Public License version 2
+ * GNU Lesser General Public License version 2.1
+ */
+/*
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-
 package org.jruby.truffle.core.regexp;
 
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.EUCJPEncoding;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.Ruby;
-import org.jruby.RubyRegexp;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
-import org.jruby.util.ByteList;
-import org.jruby.util.KCode;
+import org.jruby.truffle.parser.ReOptions;
+import org.jruby.truffle.util.KCode;
+import org.jruby.truffle.util.ByteList;
 
 public class RegexpOptions implements Cloneable {
     private static ByteList WINDOWS31J = new ByteList(new byte[] {'W', 'i', 'n', 'd', 'o', 'w', 's', '-', '3', '1', 'J'});
@@ -132,37 +139,6 @@ public class RegexpOptions implements Cloneable {
     public boolean isEmbeddable() {
         return multiline && ignorecase && extended;
     }
-    
-    
-    /**
-     * Calculate the encoding based on kcode option set via 'nesu'.  Also as
-     * side-effects:
-     * 1.set whether this marks the soon to be made regexp as  'fixed'. 
-     * 2.kcode.none will set 'none' option
-     * @return null if no explicit encoding is specified.
-     */
-    public Encoding setup(Ruby runtime) {
-        KCode explicitKCode = getExplicitKCode();
-        
-        // None will not set fixed
-        if (explicitKCode == KCode.NONE) {
-            setEncodingNone(true);
-            return ASCIIEncoding.INSTANCE;
-        }
-        
-        if (explicitKCode == KCode.EUC) {
-            setFixed(true);
-            return EUCJPEncoding.INSTANCE;
-        } else if (explicitKCode == KCode.SJIS) {
-            setFixed(true);
-            return runtime.getEncodingService().loadEncoding(WINDOWS31J);
-        } else if (explicitKCode == KCode.UTF8) {
-            setFixed(true);
-            return UTF8Encoding.INSTANCE;
-        }
-        
-        return null;
-    }
 
     public Encoding setup(RubyContext runtime) {
         KCode explicitKCode = getExplicitKCode();
@@ -197,11 +173,11 @@ public class RegexpOptions implements Cloneable {
     public int toEmbeddedOptions() {
         int options = toJoniOptions();
 
-        if (once) options |= RubyRegexp.RE_OPTION_ONCE;
-        if (literal) options |= RubyRegexp.RE_LITERAL;
-        if (kcodeDefault) options |= RubyRegexp.RE_DEFAULT;
-        if (fixed) options |= RubyRegexp.RE_FIXED;
-        if (encodingNone) options |= RubyRegexp.ARG_ENCODING_NONE;
+        if (once) options |= ReOptions.RE_OPTION_ONCE;
+        if (literal) options |= ReOptions.RE_LITERAL;
+        if (kcodeDefault) options |= ReOptions.RE_DEFAULT;
+        if (fixed) options |= ReOptions.RE_FIXED;
+        if (encodingNone) options |= ReOptions.ARG_ENCODING_NONE;
 
         return options;
     }
@@ -214,9 +190,9 @@ public class RegexpOptions implements Cloneable {
     public int toJoniOptions() {
         int options = 0;
         // Note: once is not an option that is pertinent to Joni so we exclude it.
-        if (multiline) options |= RubyRegexp.RE_OPTION_MULTILINE;
-        if (ignorecase) options |= RubyRegexp.RE_OPTION_IGNORECASE;
-        if (extended) options |= RubyRegexp.RE_OPTION_EXTENDED;
+        if (multiline) options |= ReOptions.RE_OPTION_MULTILINE;
+        if (ignorecase) options |= ReOptions.RE_OPTION_IGNORECASE;
+        if (extended) options |= ReOptions.RE_OPTION_EXTENDED;
         return options;
     }
     
@@ -225,33 +201,33 @@ public class RegexpOptions implements Cloneable {
      */
     public int toOptions() {
         int options = 0;
-        if (multiline) options |= RubyRegexp.RE_OPTION_MULTILINE;
-        if (ignorecase) options |= RubyRegexp.RE_OPTION_IGNORECASE;
-        if (extended) options |= RubyRegexp.RE_OPTION_EXTENDED;
-        if (fixed) options |= RubyRegexp.RE_FIXED;
-        if (encodingNone) options |= RubyRegexp.RE_NONE;
+        if (multiline) options |= ReOptions.RE_OPTION_MULTILINE;
+        if (ignorecase) options |= ReOptions.RE_OPTION_IGNORECASE;
+        if (extended) options |= ReOptions.RE_OPTION_EXTENDED;
+        if (fixed) options |= ReOptions.RE_FIXED;
+        if (encodingNone) options |= ReOptions.RE_NONE;
         return options;
     }
 
     public static RegexpOptions fromEmbeddedOptions(int embeddedOptions) {
         RegexpOptions options = fromJoniOptions(embeddedOptions);
 
-        options.kcodeDefault = (embeddedOptions & RubyRegexp.RE_DEFAULT) != 0;        
-        options.setOnce((embeddedOptions & RubyRegexp.RE_OPTION_ONCE) != 0);
-        options.setLiteral((embeddedOptions & RubyRegexp.RE_LITERAL) != 0);
-        options.setFixed((embeddedOptions & RubyRegexp.RE_FIXED) != 0);
-        options.setEncodingNone((embeddedOptions & RubyRegexp.RE_NONE) != 0);
+        options.kcodeDefault = (embeddedOptions & ReOptions.RE_DEFAULT) != 0;
+        options.setOnce((embeddedOptions & ReOptions.RE_OPTION_ONCE) != 0);
+        options.setLiteral((embeddedOptions & ReOptions.RE_LITERAL) != 0);
+        options.setFixed((embeddedOptions & ReOptions.RE_FIXED) != 0);
+        options.setEncodingNone((embeddedOptions & ReOptions.RE_NONE) != 0);
         
         return options;
     }
 
     public static RegexpOptions fromJoniOptions(int joniOptions) {
         RegexpOptions options = new RegexpOptions();
-        options.setMultiline((joniOptions & RubyRegexp.RE_OPTION_MULTILINE) != 0);
-        options.setIgnorecase((joniOptions & RubyRegexp.RE_OPTION_IGNORECASE) != 0);
-        options.setExtended((joniOptions & RubyRegexp.RE_OPTION_EXTENDED) != 0);
-        options.setFixed((joniOptions & RubyRegexp.RE_FIXED) != 0);
-        options.setOnce((joniOptions & RubyRegexp.RE_OPTION_ONCE) != 0);
+        options.setMultiline((joniOptions & ReOptions.RE_OPTION_MULTILINE) != 0);
+        options.setIgnorecase((joniOptions & ReOptions.RE_OPTION_IGNORECASE) != 0);
+        options.setExtended((joniOptions & ReOptions.RE_OPTION_EXTENDED) != 0);
+        options.setFixed((joniOptions & ReOptions.RE_FIXED) != 0);
+        options.setOnce((joniOptions & ReOptions.RE_OPTION_ONCE) != 0);
 
         return options;
     }

@@ -80,7 +80,7 @@ import org.jruby.truffle.platform.UnsafeGroup;
 import org.jruby.truffle.platform.signal.Signal;
 import org.jruby.truffle.platform.signal.SignalHandler;
 import org.jruby.truffle.platform.signal.SignalManager;
-import org.jruby.util.io.PosixShim;
+import org.jruby.truffle.util.Platform;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
@@ -579,16 +579,117 @@ public abstract class VMPrimitiveNodes {
 
             final int status = statusReference[0];
 
-            if (PosixShim.WAIT_MACROS.WIFEXITED(status)) {
-                output = PosixShim.WAIT_MACROS.WEXITSTATUS(status);
-            } else if (PosixShim.WAIT_MACROS.WIFSIGNALED(status)) {
-                termsig = PosixShim.WAIT_MACROS.WTERMSIG(status);
-            } else if (PosixShim.WAIT_MACROS.WIFSTOPPED(status)) {
-                stopsig = PosixShim.WAIT_MACROS.WSTOPSIG(status);
+            if (WAIT_MACROS.WIFEXITED(status)) {
+                output = WAIT_MACROS.WEXITSTATUS(status);
+            } else if (WAIT_MACROS.WIFSIGNALED(status)) {
+                termsig = WAIT_MACROS.WTERMSIG(status);
+            } else if (WAIT_MACROS.WIFSTOPPED(status)) {
+                stopsig = WAIT_MACROS.WSTOPSIG(status);
             }
 
             Object[] objects = new Object[]{ output, termsig, stopsig, pid };
             return createArray(objects, objects.length);
+        }
+
+        public interface WaitMacros {
+            public abstract boolean WIFEXITED(long status);
+            public abstract boolean WIFSIGNALED(long status);
+            public abstract int WTERMSIG(long status);
+            public abstract int WEXITSTATUS(long status);
+            public abstract int WSTOPSIG(long status);
+            public abstract boolean WIFSTOPPED(long status);
+            public abstract boolean WCOREDUMP(long status);
+        }
+
+        public static class BSDWaitMacros implements WaitMacros {
+            public final long _WSTOPPED = 0177;
+
+            // Only confirmed on Darwin
+            public final long WCOREFLAG = 0200;
+
+            public long _WSTATUS(long status) {
+                return status & _WSTOPPED;
+            }
+
+            public boolean WIFEXITED(long status) {
+                return _WSTATUS(status) == 0;
+            }
+
+            public boolean WIFSIGNALED(long status) {
+                return _WSTATUS(status) != _WSTOPPED && _WSTATUS(status) != 0;
+            }
+
+            public int WTERMSIG(long status) {
+                return (int)_WSTATUS(status);
+            }
+
+            public int WEXITSTATUS(long status) {
+                // not confirmed on all platforms
+                return (int)((status >>> 8) & 0xFF);
+            }
+
+            public int WSTOPSIG(long status) {
+                return (int)(status >>> 8);
+            }
+
+            public boolean WIFSTOPPED(long status) {
+                return _WSTATUS(status) == _WSTOPPED && WSTOPSIG(status) != 0x13;
+            }
+
+            public boolean WCOREDUMP(long status) {
+                return (status & WCOREFLAG) != 0;
+            }
+        }
+
+        public static class LinuxWaitMacros implements WaitMacros {
+            private int __WAIT_INT(long status) { return (int)status; }
+
+            private int __W_EXITCODE(int ret, int sig) { return (ret << 8) | sig; }
+            private int __W_STOPCODE(int sig) { return (sig << 8) | 0x7f; }
+            private static int __W_CONTINUED = 0xffff;
+            private static int __WCOREFLAG = 0x80;
+
+            /* If WIFEXITED(STATUS), the low-order 8 bits of the status.  */
+            private int __WEXITSTATUS(long status) { return (int)((status & 0xff00) >> 8); }
+
+            /* If WIFSIGNALED(STATUS), the terminating signal.  */
+            private int __WTERMSIG(long status) { return (int)(status & 0x7f); }
+
+            /* If WIFSTOPPED(STATUS), the signal that stopped the child.  */
+            private int __WSTOPSIG(long status) { return __WEXITSTATUS(status); }
+
+            /* Nonzero if STATUS indicates normal termination.  */
+            private boolean __WIFEXITED(long status) { return __WTERMSIG(status) == 0; }
+
+            /* Nonzero if STATUS indicates termination by a signal.  */
+            private boolean __WIFSIGNALED(long status) {
+                return ((status & 0x7f) + 1) >> 1 > 0;
+            }
+
+            /* Nonzero if STATUS indicates the child is stopped.  */
+            private boolean __WIFSTOPPED(long status) { return (status & 0xff) == 0x7f; }
+
+            /* Nonzero if STATUS indicates the child dumped core.  */
+            private boolean __WCOREDUMP(long status) { return (status & __WCOREFLAG) != 0; }
+
+            /* Macros for constructing status values.  */
+            public int WEXITSTATUS(long status) { return __WEXITSTATUS (__WAIT_INT (status)); }
+            public int WTERMSIG(long status) { return __WTERMSIG(__WAIT_INT(status)); }
+            public int WSTOPSIG(long status) { return __WSTOPSIG(__WAIT_INT(status)); }
+            public boolean WIFEXITED(long status) { return __WIFEXITED(__WAIT_INT(status)); }
+            public boolean WIFSIGNALED(long status) { return __WIFSIGNALED(__WAIT_INT(status)); }
+            public boolean WIFSTOPPED(long status) { return __WIFSTOPPED(__WAIT_INT(status)); }
+            public boolean WCOREDUMP(long status) { return __WCOREDUMP(__WAIT_INT(status)); }
+        }
+
+        public static final WaitMacros WAIT_MACROS;
+        static {
+            if (Platform.IS_BSD) {
+                WAIT_MACROS = new BSDWaitMacros();
+            } else {
+                // need other platforms
+                WAIT_MACROS = new LinuxWaitMacros();
+            }
         }
 
     }

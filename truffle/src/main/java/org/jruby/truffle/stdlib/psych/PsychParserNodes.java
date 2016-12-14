@@ -52,10 +52,8 @@ import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.transcode.EConv;
 import org.jcodings.transcode.EConvResult;
-import org.jcodings.transcode.TranscoderDB;
+import org.jcodings.transcode.TranscodingManager;
 import org.jcodings.unicode.UnicodeEncoding;
-import org.jruby.RubyEncoding;
-import org.jruby.runtime.Helpers;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
@@ -64,6 +62,7 @@ import org.jruby.truffle.core.adapaters.InputStreamAdapter;
 import org.jruby.truffle.core.cast.ToStrNode;
 import org.jruby.truffle.core.cast.ToStrNodeGen;
 import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.core.string.StringSupport;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.SnippetNode;
@@ -74,9 +73,8 @@ import org.jruby.truffle.language.objects.ReadObjectFieldNodeGen;
 import org.jruby.truffle.language.objects.TaintNode;
 import org.jruby.truffle.language.objects.TaintNodeGen;
 import org.jruby.truffle.util.BoundaryUtils.BoundaryIterable;
-import org.jruby.util.ByteList;
-import org.jruby.util.StringSupport;
-import org.jruby.util.io.EncodingUtils;
+import org.jruby.truffle.util.EncodingUtils;
+import org.jruby.truffle.util.ByteList;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.error.Mark;
 import org.yaml.snakeyaml.events.AliasEvent;
@@ -97,6 +95,7 @@ import org.yaml.snakeyaml.scanner.ScannerException;
 import java.io.ByteArrayInputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -285,11 +284,20 @@ public abstract class PsychParserNodes {
                         "context", toString(re) == null ? nil() : createUTF8String(toString(re)));
             } catch (Throwable t) {
                 errorProfile.enter();
-                Helpers.throwException(t);
+                throwException(t);
                 return parserObject;
             }
 
             return parserObject;
+        }
+
+        public static void throwException(final Throwable e) {
+            throwsUnchecked(e);
+        }
+
+        @SuppressWarnings("unchecked")
+        private static <T extends Throwable> void throwsUnchecked(final Throwable e) throws T {
+            throw (T) e;
         }
 
         @TruffleBoundary
@@ -421,7 +429,7 @@ public abstract class PsychParserNodes {
                 encoding = UTF8Encoding.INSTANCE;
             }
 
-            Charset charset = RubyEncoding.UTF8;
+            Charset charset = StandardCharsets.UTF_8;
 
             if (encoding.getCharset() != null) {
                 charset = encoding.getCharset();
@@ -463,7 +471,7 @@ public abstract class PsychParserNodes {
             ByteList newStr = new ByteList(len);
             int olen = len;
 
-            EConv ec = econvOpenOpts(context, fromEncoding.getName(), toEncoding.getName(), ecflags, ecopts);
+            EConv ec = econvOpenOpts(context, fromEncoding, toEncoding, ecflags, ecopts);
             if (ec == null) return str;
 
             byte[] sbytes = strByteList.getUnsafeBytes();
@@ -479,7 +487,7 @@ public abstract class PsychParserNodes {
             destbytes = newStr.getUnsafeBytes();
             int dest = newStr.begin();
             dp.p = dest + convertedOutput;
-            ret = ec.convert(sbytes, sp, start + len, destbytes, dp, dest + olen, 0);
+            ret = TranscodingManager.convert(ec, sbytes, sp, start + len, destbytes, dp, dest + olen, 0);
 
             while (ret == EConvResult.DestinationBufferFull) {
                 int convertedInput = sp.p - start;
@@ -499,7 +507,7 @@ public abstract class PsychParserNodes {
                 destbytes = newStr.getUnsafeBytes();
                 dest = newStr.begin();
                 dp.p = dest + convertedOutput;
-                ret = ec.convert(sbytes, sp, start + len, destbytes, dp, dest + olen, 0);
+                ret = TranscodingManager.convert(ec, sbytes, sp, start + len, destbytes, dp, dest + olen, 0);
             }
             ec.close();
 
@@ -516,8 +524,8 @@ public abstract class PsychParserNodes {
             }
         }
 
-        private static EConv econvOpenOpts(RubyContext context, byte[] sourceEncoding, byte[] destinationEncoding, int ecflags, Object opthash) {
-            EConv ec = TranscoderDB.open(sourceEncoding, destinationEncoding, ecflags);
+        private static EConv econvOpenOpts(RubyContext context, Encoding sourceEncoding, Encoding destinationEncoding, int ecflags, Object opthash) {
+            EConv ec = TranscodingManager.create(sourceEncoding, destinationEncoding, ecflags);
             return ec;
         }
 

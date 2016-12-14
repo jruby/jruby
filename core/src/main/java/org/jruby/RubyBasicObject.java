@@ -570,8 +570,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * @see org.jruby.runtime.builtin.IRubyObject#getType()
      */
     @Override
-    public RubyClass getType() {
-        return getMetaClass().getRealClass();
+    public final RubyClass getType() {
+        return metaClass.getRealClass();
     }
 
     /**

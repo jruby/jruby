@@ -45,26 +45,39 @@
 package org.jruby.truffle;
 
 import com.oracle.truffle.api.TruffleOptions;
-import org.jruby.RubyInstanceConfig;
-import org.jruby.util.cli.Options;
-import org.jruby.util.cli.OutputStrings;
+import org.jruby.truffle.options.OptionsBuilder;
+import org.jruby.truffle.options.OptionsCatalog;
+import org.jruby.truffle.options.OutputStrings;
+import org.jruby.truffle.options.RubyInstanceConfig;
+import org.jruby.truffle.util.MainExitException;
 
 import java.io.InputStream;
 import java.lang.management.ManagementFactory;
 
 public class Main {
 
+    private static final boolean METRICS_TIME = OptionsBuilder.readSystemProperty(OptionsCatalog.METRICS_TIME);
+    private static final boolean METRICS_MEMORY_USED_ON_EXIT = OptionsBuilder.readSystemProperty(OptionsCatalog.METRICS_MEMORY_USED_ON_EXIT);
+
     public static void main(String[] args) {
         printTruffleTimeMetric("before-main");
 
         final RubyInstanceConfig config = new RubyInstanceConfig(false);
-        config.setHardExit(true);
-        config.processArguments(args);
-        config.setCompileMode(RubyInstanceConfig.CompileMode.TRUFFLE);
+
+        try {
+            config.processArguments(args);
+        } catch (MainExitException mee) {
+            if (!mee.isAborted()) {
+                config.getError().println(mee.getMessage());
+                if (mee.isUsageError()) {
+                    doPrintUsage(config, true);
+                }
+            }
+            System.exit(mee.getStatus());
+        }
 
         doShowVersion(config);
         doShowCopyright(config);
-        doPrintProperties(config);
 
         final int exitCode;
 
@@ -72,13 +85,25 @@ public class Main {
             final InputStream in = config.getScriptSource();
             final String filename = config.displayedFileName();
 
-            final RubyEngine rubyEngine = new RubyEngine(config);
+            final RubyEngine rubyEngine = new RubyEngine(
+                    config.getJRubyHome(),
+                    config.getLoadPaths().toArray(new String[]{}),
+                    config.getRequiredLibraries().toArray(new String[]{}),
+                    config.inlineScript(),
+                    config.getArgv(),
+                    config.displayedFileName(),
+                    config.isDebug(),
+                    config.getVerbosity().ordinal(),
+                    config.isFrozenStringLiteral(),
+                    config.isDisableGems(),
+                    config.getInternalEncoding(),
+                    config.getExternalEncoding());
 
             printTruffleTimeMetric("before-run");
             try {
                 if (in == null) {
                     exitCode = 1;
-                } else if (config.isXFlag() && !config.hasShebangLine()) {
+                } else if (config.isXFlag()) {
                     // no shebang was found and x option is set
                     config.getError().println("jruby: no Ruby script found in input (LoadError)");
                     exitCode = 1;
@@ -102,16 +127,9 @@ public class Main {
         System.exit(exitCode);
     }
 
-    private static void doPrintProperties(RubyInstanceConfig config) {
-        if (config.getShouldPrintProperties()) {
-            config.getOutput().print(OutputStrings.getPropertyHelp());
-        }
-    }
-
     private static void doPrintUsage(RubyInstanceConfig config, boolean force) {
         if (config.getShouldPrintUsage() || force) {
             config.getOutput().print(OutputStrings.getBasicUsageHelp());
-            config.getOutput().print(OutputStrings.getFeaturesHelp());
         }
     }
 
@@ -128,7 +146,7 @@ public class Main {
     }
 
     public static void printTruffleTimeMetric(String id) {
-        if (Options.TRUFFLE_METRICS_TIME.load()) {
+        if (METRICS_TIME) {
             final long millis = System.currentTimeMillis();
             System.err.printf("%s %d.%03d%n", id, millis / 1000, millis % 1000);
         }
@@ -136,7 +154,7 @@ public class Main {
 
     private static void printTruffleMemoryMetric() {
         // Memory stats aren't available on AOT.
-        if (!TruffleOptions.AOT && Options.TRUFFLE_METRICS_MEMORY_USED_ON_EXIT.load()) {
+        if (!TruffleOptions.AOT && METRICS_MEMORY_USED_ON_EXIT) {
             for (int n = 0; n < 10; n++) {
                 System.gc();
             }
@@ -144,6 +162,7 @@ public class Main {
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
             }
 
             System.err.printf("allocated %d%n", ManagementFactory.getMemoryMXBean().getHeapMemoryUsage().getUsed());

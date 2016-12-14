@@ -223,6 +223,9 @@ $ export SULONG_HOME=.../sulong
 $ export GRAAL_HOME=$SULONG_HOME
 ```
 
+You need LLVM installed. Version 3.3 seems to work best. You can set `JT_CLANG`
+and `JT_OPT` to those binaries if you need to use a non-system version.
+
 You can now build the C extension support. Building the OpenSSL C extension is
 incomplete, so most people probably want to disable that.
 

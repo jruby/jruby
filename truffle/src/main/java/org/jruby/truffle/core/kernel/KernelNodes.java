@@ -41,7 +41,6 @@ import com.oracle.truffle.api.source.SourceSection;
 import jnr.constants.platform.Errno;
 import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.runtime.Visibility;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreClass;
@@ -95,6 +94,7 @@ import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.SnippetNode;
+import org.jruby.truffle.language.Visibility;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.backtrace.Activation;
 import org.jruby.truffle.language.backtrace.Backtrace;
@@ -626,6 +626,7 @@ public abstract class KernelNodes {
             final InternalMethod method = new InternalMethod(
                     getContext(),
                     cachedRootNode.getRootNode().getSharedMethodInfo(),
+                    RubyArguments.getMethod(parentFrame).getLexicalScope(),
                     cachedRootNode.getRootNode().getSharedMethodInfo().getName(),
                     RubyArguments.getMethod(parentFrame).getDeclaringModule(),
                     Visibility.PUBLIC,
@@ -889,7 +890,7 @@ public abstract class KernelNodes {
         @Specialization
         public DynamicObject gets() {
             // TODO(CS): having some trouble interacting with JRuby stdin - so using this hack
-            final InputStream in = getContext().getInstanceConfig().getInput();
+            final InputStream in = System.in;
 
             Encoding encoding = getContext().getEncodingManager().getDefaultExternalEncoding();
 
@@ -1267,7 +1268,7 @@ public abstract class KernelNodes {
             final CallTarget newCallTarget = Truffle.getRuntime().createCallTarget(newRootNode);
 
             final DynamicObject module = coreLibrary().getMetaClass(self);
-            return new InternalMethod(getContext(), info, normalizedName, module, Visibility.PUBLIC, newCallTarget);
+            return new InternalMethod(getContext(), info, methodMissing.getLexicalScope(), normalizedName, module, Visibility.PUBLIC, newCallTarget);
         }
 
         private static class CallMethodMissingWithStaticName extends RubyNode {

@@ -58,8 +58,9 @@ public final class Constants {
     
     public static final String JODA_TIME_VERSION = "@joda.time.version@";
     public static final String TZDATA_VERSION = "@tzdata.version@";
-    
-    public static final String DEFAULT_RUBY_VERSION = "2.1";
+
+    @Deprecated
+    public static final String DEFAULT_RUBY_VERSION = RUBY_MAJOR_VERSION;
     
     /**
      * Default size for chained compilation.

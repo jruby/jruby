@@ -1155,5 +1155,41 @@ modes.each do |mode|
         expect(x).to eq(1)
       end
     end
+
+    it "handles defined? super forms" do
+      run('a = Class.new { def a; end }; b = Class.new(a) { def a; [defined? super, defined? super()]; end }.new; b.a') do |x|
+        expect(x).to eq(["super", "super"])
+      end
+    end
+
+    it "handles defined? method forms" do
+      run('a = Class.new { def a; [defined? a, defined? a()]; end }.new; [a.a, defined? a.a]') do |x|
+        expect(x).to eq([["method", "method"], "method"])
+      end
+    end
+
+    it "handles defined? a.b= forms" do
+      run('a = Class.new { attr_writer :b; def []=(_,_); end; def a; [defined? self.b=0, defined? self[0]=0]; end }.new; [a.a, defined? a.b = 0, defined? a[0] = 0]') do |x|
+        expect(x).to eq([["assignment", "assignment"], "assignment", "assignment"])
+      end
+    end
+
+    it "handles defined? Foo::xxx forms" do
+      run('DefinedConstant ||= 1; o = Object.new; def o.foo; end; [defined? Object::DefinedConstant, defined? o::foo]') do |x|
+        expect(x).to eq(["constant", "method"])
+      end
+    end
+
+    it "handles defined? $~ forms" do
+      run('/(foo)/ =~ "barfoobaz"; [defined? $~, defined? $1, defined? $`, defined? $\', defined? $&, defined? $+]') do |x|
+        expect(x).to eq(%w[global-variable] * 6)
+      end
+    end
+
+    it "handles defined? $global" do
+      run('defined? $"') do |x|
+        expect(x).to eq("global-variable")
+      end
+    end
   end
 end

@@ -34,7 +34,6 @@ import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.runtime.Visibility;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreClass;
@@ -62,6 +61,7 @@ import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.RubySourceSection;
 import org.jruby.truffle.language.SnippetNode;
+import org.jruby.truffle.language.Visibility;
 import org.jruby.truffle.language.arguments.MissingArgumentBehavior;
 import org.jruby.truffle.language.arguments.ProfileArgumentNode;
 import org.jruby.truffle.language.arguments.ReadPreArgumentNode;
@@ -95,8 +95,8 @@ import org.jruby.truffle.language.yield.YieldNode;
 import org.jruby.truffle.parser.ParserContext;
 import org.jruby.truffle.parser.Translator;
 import org.jruby.truffle.platform.UnsafeGroup;
+import org.jruby.truffle.util.IdUtil;
 import org.jruby.truffle.util.StringUtils;
-import org.jruby.util.IdUtil;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -383,9 +383,10 @@ public abstract class ModuleNodes {
 
             final RubyNode checkArity = Translator.createCheckArityNode(getContext(), sourceSection.getSource(), rubySourceSection, arity);
 
+            final LexicalScope lexicalScope = new LexicalScope(getContext().getRootLexicalScope(), module);
             final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(
                     sourceSection,
-                    LexicalScope.NONE,
+                    lexicalScope,
                     arity,
                     module,
                     accessorName,
@@ -406,7 +407,7 @@ public abstract class ModuleNodes {
             final RubyNode sequence = Translator.sequence(getContext(), sourceSection.getSource(), rubySourceSection, Arrays.asList(checkArity, accessInstanceVariable));
             final RubyRootNode rootNode = new RubyRootNode(getContext(), sourceSection, null, sharedMethodInfo, sequence, false);
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
-            final InternalMethod method = new InternalMethod(getContext(), sharedMethodInfo, accessorName, module, visibility, callTarget);
+            final InternalMethod method = new InternalMethod(getContext(), sharedMethodInfo, lexicalScope, accessorName, module, visibility, callTarget);
 
             Layouts.MODULE.getFields(module).addMethod(getContext(), this, method);
         }
@@ -668,7 +669,7 @@ public abstract class ModuleNodes {
             yield = new YieldNode(context, DeclarationContext.CLASS_EVAL);
         }
 
-        public abstract Object executeClassExec(VirtualFrame frame, DynamicObject self, Object[] args, DynamicObject block);
+        public abstract Object executeClassExec(VirtualFrame frame, DynamicObject self, Object[] args, Object block);
 
         @Specialization
         public Object classExec(VirtualFrame frame, DynamicObject self, Object[] args, DynamicObject block) {
@@ -1135,7 +1136,7 @@ public abstract class ModuleNodes {
 
         @Child private ModuleNodes.ClassExecNode classExecNode;
 
-        public abstract DynamicObject executeInitialize(VirtualFrame frame, DynamicObject module, DynamicObject block);
+        public abstract DynamicObject executeInitialize(VirtualFrame frame, DynamicObject module, Object block);
 
         void classEval(VirtualFrame frame, DynamicObject module, DynamicObject block) {
             if (classExecNode == null) {

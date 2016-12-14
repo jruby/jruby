@@ -36,10 +36,11 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.parser;
 
-import org.jruby.common.IRubyWarnings;
-import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.string.StringSupport;
 import org.jruby.truffle.interop.ForeignCodeNode;
+import org.jruby.truffle.parser.KeyValuePair;
+import org.jruby.truffle.parser.RubyWarnings;
 import org.jruby.truffle.parser.ast.ArgsParseNode;
 import org.jruby.truffle.parser.ast.ArgumentParseNode;
 import org.jruby.truffle.parser.ast.ArrayParseNode;
@@ -125,9 +126,7 @@ import org.jruby.truffle.parser.lexer.LexerSource;
 import org.jruby.truffle.parser.lexer.RubyLexer;
 import org.jruby.truffle.parser.lexer.StrTerm;
 import org.jruby.truffle.parser.lexer.SyntaxException.PID;
-import org.jruby.util.ByteList;
-import org.jruby.util.KeyValuePair;
-import org.jruby.util.StringSupport;
+import org.jruby.truffle.util.ByteList;
 
 import java.io.IOException;
 
@@ -137,19 +136,20 @@ import static org.jruby.truffle.parser.lexer.LexingCommon.EXPR_ENDARG;
 import static org.jruby.truffle.parser.lexer.LexingCommon.EXPR_ENDFN;
 import static org.jruby.truffle.parser.lexer.LexingCommon.EXPR_FNAME;
 import static org.jruby.truffle.parser.lexer.LexingCommon.EXPR_LABEL;
- 
+
+@SuppressWarnings({"unchecked", "fallthrough"})
 public class RubyParser {
     protected final ParserSupport support;
     protected final RubyLexer lexer;
 
-    public RubyParser(RubyContext context, LexerSource source, IRubyWarnings warnings) {
+    public RubyParser(RubyContext context, LexerSource source, RubyWarnings warnings) {
         this.support = new ParserSupport(context);
         this.lexer = new RubyLexer(support, source, warnings);
         support.setLexer(lexer);
         support.setWarnings(warnings);
     }
 
-    public void setWarnings(IRubyWarnings warnings) {
+    public void setWarnings(RubyWarnings warnings) {
         support.setWarnings(warnings);
         lexer.setWarnings(warnings);
     }
@@ -369,7 +369,7 @@ bodystmt      : compstmt opt_rescue opt_else opt_ensure {
                   if ($2 != null) {
                       node = new RescueParseNode(support.getPosition($1), $1, $2, $3);
                   } else if ($3 != null) {
-                      support.warn(ID.ELSE_WITHOUT_RESCUE, support.getPosition($1), "else without rescue is useless");
+                      support.warn(RubyWarnings.ID.ELSE_WITHOUT_RESCUE, support.getPosition($1), "else without rescue is useless");
                       node = support.appendToBlock($1, $3);
                   }
                   if ($4 != null) {
@@ -453,7 +453,7 @@ stmt            : kALIAS fitem {
                 }
                 | klEND tLCURLY compstmt tRCURLY {
                     if (support.isInDef() || support.isInSingle()) {
-                        support.warn(ID.END_IN_METHOD, $1, "END in method; use at_exit");
+                        support.warn(RubyWarnings.ID.END_IN_METHOD, $1, "END in method; use at_exit");
                     }
                     $$ = new PostExeParseNode($1, $3);
                 }
@@ -1923,7 +1923,7 @@ xstring         : tXSTRING_BEG xstring_contents tSTRING_END {
                     if ($2 == null) {
                         $$ = new XStrParseNode(position, null, StringSupport.CR_7BIT);
                     } else if ($2 instanceof StrParseNode) {
-                        $$ = new XStrParseNode(position, (ByteList) $<StrParseNode>2.getValue().clone(), $<StrParseNode>2.getCodeRange());
+                        $$ = new XStrParseNode(position, $<StrParseNode>2.getValue().dup(), $<StrParseNode>2.getCodeRange());
                     } else if ($2 instanceof DStrParseNode) {
                         $$ = new DXStrParseNode(position, $<DStrParseNode>2);
 
@@ -1934,7 +1934,7 @@ xstring         : tXSTRING_BEG xstring_contents tSTRING_END {
                 }
 
 regexp          : tREGEXP_BEG regexp_contents tREGEXP_END {
-                    $$ = support.newRegexpNode(support.getPosition($2), $2, (RegexpParseNode) $3);
+                    $$ = support.newRegexpNode(support.getPosition($2), $2, $3);
                 }
 
 words           : tWORDS_BEG ' ' tSTRING_END {

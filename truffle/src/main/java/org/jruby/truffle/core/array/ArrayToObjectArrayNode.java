@@ -14,7 +14,6 @@ import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
-import org.jruby.truffle.Layouts;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 
@@ -30,15 +29,10 @@ public abstract class ArrayToObjectArrayNode extends RubyNode {
 
     public abstract Object[] executeToObjectArray(DynamicObject array);
 
-    @Specialization(guards = "isNullArray(array)")
-    public Object[] toObjectArrayNull(DynamicObject array) {
-        return ArrayUtils.EMPTY_ARRAY;
-    }
-
     @Specialization(guards = "strategy.matches(array)", limit = "ARRAY_STRATEGIES")
     public Object[] toObjectArrayOther(DynamicObject array,
             @Cached("of(array)") ArrayStrategy strategy) {
-        final int size = Layouts.ARRAY.getSize(array);
+        final int size = strategy.getSize(array);
         return strategy.newMirror(array).getBoxedCopy(size);
     }
 

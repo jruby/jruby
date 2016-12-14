@@ -1,4 +1,4 @@
-# Copyright (c) 2015 Oracle and/or its affiliates. All rights reserved. This
+# Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
 # code is released under a tri EPL/GPL/LGPL license. You can use it,
 # redistribute it and/or modify it under the terms of the:
 #
@@ -1553,6 +1553,16 @@ class String
 
     m = Rubinius::Mirror.reflect self
     m.character_index str, start
+  end
+
+  def initialize(other = undefined, encoding: nil)
+    unless undefined.equal?(other)
+      Truffle.check_frozen
+      Truffle.invoke_primitive(:string_initialize, self, other)
+      taint if other.tainted?
+    end
+    self.force_encoding(encoding) if encoding
+    self
   end
 
   def rindex(sub, finish=undefined)

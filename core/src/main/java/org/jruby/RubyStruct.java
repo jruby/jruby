@@ -120,24 +120,19 @@ public class RubyStruct extends RubyObject {
     }
 
     @JRubyMethod
-    public RubyFixnum hash(final ThreadContext context) {
-        final Ruby runtime = context.runtime;
-        int h = getMetaClass().getRealClass().hashCode();
+    public RubyFixnum hash(ThreadContext context) {
+        Ruby runtime = context.runtime;
 
+        int h = getType().hashCode();
 
+        IRubyObject[] values = this.values;
         for (int i = 0; i < values.length; i++) {
             h = (h << 1) | (h < 0 ? 1 : 0);
-            IRubyObject hash = runtime.execRecursiveOuter(new Ruby.RecursiveFunction() {
-                @Override
-                public IRubyObject call(IRubyObject obj, boolean recur) {
-                    if (recur) return RubyFixnum.zero(runtime);
-                    return invokedynamic(context, obj, HASH);
-                }
-            }, values[i]);
+            IRubyObject hash = context.safeRecurse(HASH_RECURSIVE, runtime, values[i], "hash", true);
             h ^= RubyNumeric.num2long(hash);
         }
 
-        return context.runtime.newFixnum(h);
+        return runtime.newFixnum(h);
     }
 
     private IRubyObject setByName(String name, IRubyObject value) {
@@ -467,57 +462,31 @@ public class RubyStruct extends RubyObject {
 
     @JRubyMethod(name = "==", required = 1)
     @Override
-    public IRubyObject op_equal(final ThreadContext context, IRubyObject other) {
-        if (this == other) return context.runtime.getTrue();
-        if (!(other instanceof RubyStruct)) return context.runtime.getFalse();
-        if (getMetaClass().getRealClass() != other.getMetaClass().getRealClass()) {
-            return context.runtime.getFalse();
+    public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
+        if (this == other) return context.tru;
+        if (!(other instanceof RubyStruct)) return context.fals;
+        if (getType() != other.getType()) {
+            return context.fals;
         }
 
-        if (other == this) return context.runtime.getTrue();
-
-        final Ruby runtime = context.runtime;
-        final RubyStruct otherStruct = (RubyStruct)other;
+        if (other == this) return context.tru;
 
         // recursion guard
-        return runtime.execRecursiveOuter(new Ruby.RecursiveFunction() {
-            @Override
-            public IRubyObject call(IRubyObject obj, boolean recur) {
-                if (recur) return runtime.getTrue();
-
-                for (int i = 0; i < values.length; i++) {
-                    if (!equalInternal(context, values[i], otherStruct.values[i])) return runtime.getFalse();
-                }
-                return runtime.getTrue();
-            }
-        }, this);
+        return context.safeRecurse(EQUAL_RECURSIVE, other, this, "==", true);
     }
 
     @JRubyMethod(name = "eql?", required = 1)
-    public IRubyObject eql_p(final ThreadContext context, IRubyObject other) {
-        if (this == other) return context.runtime.getTrue();
-        if (!(other instanceof RubyStruct)) return context.runtime.getFalse();
+    public IRubyObject eql_p(ThreadContext context, IRubyObject other) {
+        if (this == other) return context.tru;
+        if (!(other instanceof RubyStruct)) return context.fals;
         if (getMetaClass() != other.getMetaClass()) {
-            return context.runtime.getFalse();
+            return context.fals;
         }
 
-        if (other == this) return context.runtime.getTrue();
-
-        final Ruby runtime = context.runtime;
-        final RubyStruct otherStruct = (RubyStruct)other;
+        if (other == this) return context.tru;
 
         // recursion guard
-        return runtime.execRecursiveOuter(new Ruby.RecursiveFunction() {
-            @Override
-            public IRubyObject call(IRubyObject obj, boolean recur) {
-                if (recur) return runtime.getTrue();
-
-                for (int i = 0; i < values.length; i++) {
-                    if (!eqlInternal(context, values[i], otherStruct.values[i])) return runtime.getFalse();
-                }
-                return runtime.getTrue();
-            }
-        }, this);
+        return context.safeRecurse(EQL_RECURSIVE, other, this, "eql?", true);
     }
 
     private static final byte[] STRUCT_BEG = { '#','<','s','t','r','u','c','t',' ' };
@@ -566,16 +535,9 @@ public class RubyStruct extends RubyObject {
 
     @JRubyMethod(name = {"inspect", "to_s"})
     public RubyString inspect(final ThreadContext context) {
-        final Ruby runtime = context.runtime;
         // recursion guard
-        return (RubyString) runtime.safeRecurse(RECURSIVE_INSPECT, context, this, this, "inspect", false);
+        return (RubyString) context.safeRecurse(INSPECT_RECURSIVE, this, this, "inspect", false);
     }
-
-    private static final Ruby.RecursiveFunctionEx RECURSIVE_INSPECT = new Ruby.RecursiveFunctionEx<RubyStruct>() {
-        public IRubyObject call(ThreadContext context, RubyStruct self, IRubyObject obj, boolean recur) {
-            return self.inspectStruct(context, recur);
-        }
-    };
 
     @JRubyMethod(name = {"to_a", "values"})
     @Override
@@ -854,4 +816,54 @@ public class RubyStruct extends RubyObject {
     public static RubyArray members19(IRubyObject recv, Block block) {
         return members(recv, block);
     }
+
+    private static class EqlRecursive implements ThreadContext.RecursiveFunctionEx<IRubyObject> {
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject other, IRubyObject self, boolean recur) {
+            if (recur) return context.tru;
+
+            IRubyObject[] values = ((RubyStruct) self).values;
+            IRubyObject[] otherValues = ((RubyStruct) other).values;
+            for (int i = 0; i < values.length; i++) {
+                if (!eqlInternal(context, values[i], otherValues[i])) return context.fals;
+            }
+            return context.tru;
+        }
+    }
+
+    private static final EqlRecursive EQL_RECURSIVE = new EqlRecursive();
+
+    private static class HashRecursive implements ThreadContext.RecursiveFunctionEx<Ruby> {
+        @Override
+        public IRubyObject call(ThreadContext context, Ruby runtime, IRubyObject obj, boolean recur) {
+            if (recur) return RubyFixnum.zero(runtime);
+            return invokedynamic(context, obj, HASH);
+        }
+    }
+
+    private static final HashRecursive HASH_RECURSIVE = new HashRecursive();
+
+    private static class EqualRecursive implements ThreadContext.RecursiveFunctionEx<IRubyObject> {
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject other, IRubyObject self, boolean recur) {
+            if (recur) return context.tru;
+
+            IRubyObject[] values = ((RubyStruct) self).values;
+            IRubyObject[] otherValues = ((RubyStruct) other).values;
+            for (int i = 0; i < values.length; i++) {
+                if (!equalInternal(context, values[i], otherValues[i])) return context.fals;
+            }
+            return context.tru;
+        }
+    }
+
+    private static final EqualRecursive EQUAL_RECURSIVE = new EqualRecursive();
+
+    private static class InspectRecursive implements ThreadContext.RecursiveFunctionEx<RubyStruct> {
+        public IRubyObject call(ThreadContext context, RubyStruct self, IRubyObject obj, boolean recur) {
+            return self.inspectStruct(context, recur);
+        }
+    }
+
+    private static final ThreadContext.RecursiveFunctionEx INSPECT_RECURSIVE = new InspectRecursive();
 }

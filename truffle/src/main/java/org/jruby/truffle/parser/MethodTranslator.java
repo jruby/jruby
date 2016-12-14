@@ -377,7 +377,7 @@ public class MethodTranslator extends BodyTranslator {
         final SequenceNode reloadSequence = (SequenceNode) reloadTranslator.visitArgsNode(argsNode);
 
         final RubyNode arguments = new ReadZSuperArgumentsNode(context, fullSourceSection,
-                reloadTranslator.isSplatted(),
+                reloadTranslator.getRestParameterIndex(),
                 reloadSequence.getSequence());
         final RubyNode block = executeOrInheritBlock(blockNode);
         return new SuperCallNode(context, fullSourceSection, arguments, block);

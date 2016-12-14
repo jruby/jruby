@@ -31,12 +31,12 @@ import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.encoding.EncodingManager;
 import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.core.string.StringSupport;
 import org.jruby.truffle.language.RubyGuards;
+import org.jruby.truffle.util.EncodingUtils;
+import org.jruby.truffle.util.Memo;
 import org.jruby.truffle.util.StringUtils;
-import org.jruby.util.ByteList;
-import org.jruby.util.Memo;
-import org.jruby.util.StringSupport;
-import org.jruby.util.io.EncodingUtils;
+import org.jruby.truffle.util.ByteList;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
@@ -330,11 +330,6 @@ public class RopeOperations {
             } else if (current instanceof SubstringRope) {
                 final SubstringRope substringRope = (SubstringRope) current;
 
-                // If this SubstringRope is a descendant of another SubstringRope, we need to increment the offset
-                // so that when we finally reach a rope with its byte[] filled, we're extracting bytes from the correct
-                // location.
-                offset += substringRope.getOffset();
-
                 workStack.push(substringRope.getChild());
 
                 // Either we haven't seen another SubstringRope or it's been cleared off the work queue. In either case,
@@ -344,7 +339,7 @@ public class RopeOperations {
                 } else {
                     // Since we may be taking a substring of a substring, we need to note that we're not extracting the
                     // entirety of the current SubstringRope.
-                    final int adjustedByteLength = substringRope.byteLength() - (offset - substringRope.getOffset());
+                    final int adjustedByteLength = substringRope.byteLength() - offset;
 
                     // We have to do some bookkeeping once we encounter multiple SubstringRopes along the same ancestry
                     // chain. The top of the stack always indicates the number of bytes to extract from any descendants.
@@ -370,30 +365,33 @@ public class RopeOperations {
                         substringLengths.push(adjustedByteLength);
                     }
                 }
+
+                // If this SubstringRope is a descendant of another SubstringRope, we need to increment the offset
+                // so that when we finally reach a rope with its byte[] filled, we're extracting bytes from the correct
+                // location.
+                offset += substringRope.getOffset();
             } else if (current instanceof RepeatingRope) {
                 final RepeatingRope repeatingRope = (RepeatingRope) current;
+                final Rope child = repeatingRope.getChild();
 
                 // In the absence of any SubstringRopes, we always take the full contents of the RepeatingRope.
                 if (substringLengths.isEmpty()) {
                     // TODO (nirvdrum 06-Apr-16) Rather than process the same child over and over, there may be opportunity to re-use the results from a single pass.
                     for (int i = 0; i < repeatingRope.getTimes(); i++) {
-                        workStack.push(repeatingRope.getChild());
+                        workStack.push(child);
                     }
                 } else {
                     final int bytesToCopy = substringLengths.peek();
-                    final int patternLength = repeatingRope.getChild().byteLength();
+                    final int patternLength = child.byteLength();
 
                     // Fix the offset to be appropriate for a given child. The offset is reset the first time it is
                     // consumed, so there's no need to worry about adversely affecting anything by adjusting it here.
-                    offset %= repeatingRope.getChild().byteLength();
+                    offset %= child.byteLength();
 
-                    // The loopCount has to be precisely determined so every repetion has at least some parts used.
-                    // It has to account for the begging we don't need (offset), has to reach the end but, and must not
-                    // have extra repetitions.
-                    int loopCount = (offset + bytesToCopy + patternLength - 1 ) / patternLength;
+                    final int loopCount = computeLoopCount(offset, repeatingRope.getTimes(), bytesToCopy, patternLength);
 
                     // TODO (nirvdrum 25-Aug-2016): Flattening the rope with CR_VALID will cause a character length recalculation, even though we already know what it is. That operation should be made more optimal.
-                    final Rope flattenedChild = flatten(repeatingRope.getChild());
+                    final Rope flattenedChild = flatten(child);
                     for (int i = 0; i < loopCount; i++) {
                         workStack.push(flattenedChild);
                     }
@@ -404,6 +402,18 @@ public class RopeOperations {
         }
 
         return buffer;
+    }
+
+    private static int computeLoopCount(int offset, int times, int length, int patternLength) {
+        // The loopCount has to be precisely determined so every repetition has at least some parts used.
+        // It has to account for the beginning we don't need (offset), has to reach the end but, and must not
+        // have extra repetitions. However it cannot be ever longer then repeatingRope.getTimes()
+        return Integer.min(
+                times,
+                (offset
+                        + patternLength * length / patternLength
+                        + patternLength - 1
+                ) / patternLength);
     }
 
     public static int hashCodeForLeafRope(byte[] bytes, int startingHashCode, int offset, int length) {
@@ -454,21 +464,23 @@ public class RopeOperations {
             final RepeatingRope repeatingRope = (RepeatingRope) rope;
             final Rope child = repeatingRope.getChild();
 
-            int remainingLength = length;
+            int bytesToHash = length;
             final int patternLength = child.byteLength();
-            int loopCount = (length + patternLength - 1) / patternLength;
 
+            // Fix the offset to be appropriate for a given child. The offset is reset the first time it is
+            // consumed, so there's no need to worry about adversely affecting anything by adjusting it here.
             offset %= child.byteLength();
 
-            // Adjust the loop count in case we're straddling two boundaries.
-            if (offset > 0 && ((length - (patternLength - offset)) % patternLength) > 0) {
-                loopCount++;
-            }
+            final int loopCount = computeLoopCount(offset, repeatingRope.getTimes(), bytesToHash, patternLength);
 
             int hash = startingHashCode;
             for (int i = 0; i < loopCount; i++) {
-                hash = hashForRange(child, hash, offset, remainingLength >= child.byteLength() ? child.byteLength() : remainingLength % child.byteLength());
-                remainingLength = child.byteLength() - offset;
+                hash = hashForRange(
+                        child,
+                        hash,
+                        offset,
+                        bytesToHash >= child.byteLength() ? child.byteLength() : bytesToHash % child.byteLength());
+                bytesToHash = child.byteLength() - offset;
                 offset = 0;
             }
 

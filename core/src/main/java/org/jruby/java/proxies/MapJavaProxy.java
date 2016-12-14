@@ -556,8 +556,8 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
      *
      */
     @JRubyMethod(name = {"has_key?", "key?", "include?", "member?"}, required = 1)
-    public RubyBoolean has_key_p(IRubyObject key) {
-        return getOrCreateRubyHashMap().has_key_p(key);
+    public RubyBoolean has_key_p(ThreadContext context, IRubyObject key) {
+        return getOrCreateRubyHashMap().has_key_p(context, key);
     }
 
     /** rb_hash_has_value

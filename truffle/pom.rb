@@ -12,11 +12,8 @@ project 'JRuby Truffle' do
               # Must be the same as in mx.jruby/suite.py (except for the -SNAPSHOT part only in this file, and here we can use a release name)
               'truffle.version' => '0.20',
               'jruby.basedir' => '${basedir}/..',
-              'maven.test.skip' => 'true' )
-
-  jar 'org.yaml:snakeyaml:1.14'
-
-  jar 'org.jruby:jruby-core', '${project.version}', :scope => 'provided'
+              'maven.test.skip' => 'true'
+  )
 
   repository(:url => 'http://lafo.ssw.uni-linz.ac.at/nexus/content/repositories/snapshots/', :id => 'truffle')
 
@@ -25,6 +22,17 @@ project 'JRuby Truffle' do
   jar 'com.oracle.truffle:truffle-debug:' + truffle_version
   jar 'com.oracle.truffle:truffle-dsl-processor:' + truffle_version, :scope => 'provided'
   jar 'com.oracle.truffle:truffle-tck:' + truffle_version, :scope => 'test'
+  
+  jar 'com.github.jnr:jnr-posix:3.0.32'
+  jar 'com.github.jnr:jnr-constants:0.9.6'
+  jar 'com.github.jnr:jnr-ffi:2.1.1'
+  jar 'com.github.jnr:jffi:1.2.13'
+  jar 'com.github.jnr:jffi:1.2.13:native'
+  
+  jar 'org.yaml:snakeyaml:1.14'
+  jar 'org.jruby.joni:joni:2.1.11'
+  jar 'org.jruby.jcodings:jcodings:1.0.18'
+  jar 'joda-time:joda-time:2.8.2'
   
   jar 'junit:junit', :scope => 'test'
 

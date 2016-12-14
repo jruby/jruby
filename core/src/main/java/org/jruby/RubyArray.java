@@ -1753,7 +1753,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     public IRubyObject each(ThreadContext context, Block block) {
         if (!block.isGiven()) return enumeratorizeWithSize(context, this, "each", enumLengthFn());
 
-        for (int i = 0; i < realLength; i++) {
+        for (int i = 0; i < size(); i++) {
             // do not coarsen the "safe" catch, since it will misinterpret AIOOBE from the yielded code.
             // See JRUBY-5434
             block.yield(context, eltOk(i));
@@ -1936,15 +1936,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
 
         if (ary == this) throw runtime.newArgumentError("recursive array join");
 
-        runtime.safeRecurse(new Ruby.RecursiveFunctionEx<Ruby>() {
-            public IRubyObject call(ThreadContext context, Ruby runtime, IRubyObject obj, boolean recur) {
-                if (recur) throw runtime.newArgumentError("recursive array join");
-
-                RubyArray recAry = ((RubyArray) ary);
-                recAry.joinAny(context, outValue, sep, 0, result);
-
-                return runtime.getNil();
-            }}, context, runtime, outValue, "join", true);
+        context.safeRecurse(JOIN_RECURSIVE, new JoinRecursive.State(ary, outValue, sep, result), outValue, "join", true);
     }
 
     /** rb_ary_join
@@ -2223,6 +2215,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     }
 
     protected IRubyObject fillCommon(ThreadContext context, int beg, long len, IRubyObject item) {
+        unpack();
         modify();
 
         // See [ruby-core:17483]
@@ -2249,6 +2242,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     }
 
     protected IRubyObject fillCommon(ThreadContext context, int beg, long len, Block block) {
+        unpack();
         modify();
 
         // See [ruby-core:17483]
@@ -2496,7 +2490,10 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
 
         IRubyObject[] arr = new IRubyObject[realLength];
 
-        int i;
+        return collectFrom(context, arr, 0, block);
+    }
+
+    protected IRubyObject collectFrom(ThreadContext context, IRubyObject[] arr, int i, Block block) {
         for (i = 0; i < realLength; i++) {
             // Do not coarsen the "safe" check, since it will misinterpret AIOOBE from the yield
             // See JRUBY-5434
@@ -2504,7 +2501,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         }
 
         // use iteration count as new size in case something was deleted along the way
-        return newArrayMayCopy(runtime, arr, 0, i);
+        return newArrayMayCopy(context.runtime, arr, 0, i);
     }
 
     @JRubyMethod(name = {"collect"})
@@ -3535,6 +3532,8 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     }
 
     protected IRubyObject sortInternal(final ThreadContext context, final Block block) {
+        // block code can modify, so we need to iterate
+        unpack();
         IRubyObject[] newValues = new IRubyObject[realLength];
         int length = realLength;
 
@@ -4985,6 +4984,33 @@ float_loop:
 
         return -1;
     }
+
+    private static class JoinRecursive implements ThreadContext.RecursiveFunctionEx<JoinRecursive.State> {
+        protected static class State {
+            private final IRubyObject ary;
+            private final IRubyObject outValue;
+            private final RubyString sep;
+            private final RubyString result;
+
+            public State(IRubyObject ary, IRubyObject outValue, RubyString sep, RubyString result) {
+                this.ary = ary;
+                this.outValue = outValue;
+                this.sep = sep;
+                this.result = result;
+            }
+        }
+
+        public IRubyObject call(ThreadContext context, State state, IRubyObject obj, boolean recur) {
+            if (recur) throw context.runtime.newArgumentError("recursive array join");
+
+            RubyArray recAry = ((RubyArray) state.ary);
+            recAry.joinAny(context, state.outValue, state.sep, 0, state.result);
+
+            return context.nil;
+        }
+    }
+
+    private static final JoinRecursive JOIN_RECURSIVE = new JoinRecursive();
 
     public class RubyArrayConversionIterator implements Iterator {
         protected int index = 0;

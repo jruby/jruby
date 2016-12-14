@@ -138,18 +138,15 @@ import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
-import org.jruby.truffle.language.objects.IsFrozenNode;
-import org.jruby.truffle.language.objects.IsFrozenNodeGen;
 import org.jruby.truffle.language.objects.IsTaintedNode;
 import org.jruby.truffle.language.objects.IsTaintedNodeGen;
 import org.jruby.truffle.language.objects.TaintNode;
 import org.jruby.truffle.language.objects.TaintNodeGen;
 import org.jruby.truffle.platform.posix.TrufflePosix;
+import org.jruby.truffle.util.CodeRangeable;
+import org.jruby.truffle.util.ConvertDouble;
 import org.jruby.truffle.util.StringUtils;
-import org.jruby.util.ByteList;
-import org.jruby.util.CodeRangeable;
-import org.jruby.util.ConvertDouble;
-import org.jruby.util.StringSupport;
+import org.jruby.truffle.util.ByteList;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
@@ -1272,34 +1269,24 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(names = "initialize", optional = 1, taintFrom = 1)
+    @Primitive(name = "string_initialize")
     public abstract static class InitializeNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private IsFrozenNode isFrozenNode;
         @Child private ToStrNode toStrNode;
 
         @Specialization
-        public DynamicObject initialize(DynamicObject self, NotProvided from) {
-            return self;
-        }
-
-        @Specialization
         public DynamicObject initializeJavaString(DynamicObject self, String from) {
-            raiseIfFrozen(self);
             StringOperations.setRope(self, StringOperations.encodeRope(from, ASCIIEncoding.INSTANCE));
             return self;
         }
 
         @Specialization(guards = "isRubyString(from)")
         public DynamicObject initialize(DynamicObject self, DynamicObject from) {
-            raiseIfFrozen(self);
-
             StringOperations.setRope(self, rope(from));
-
             return self;
         }
 
-        @Specialization(guards = { "!isRubyString(from)", "!isString(from)", "wasProvided(from)" })
+        @Specialization(guards = {"!isRubyString(from)", "!isString(from)"})
         public DynamicObject initialize(VirtualFrame frame, DynamicObject self, Object from) {
             if (toStrNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
@@ -1307,14 +1294,6 @@ public abstract class StringNodes {
             }
 
             return initialize(self, toStrNode.executeToStr(frame, from));
-        }
-
-        protected void raiseIfFrozen(Object object) {
-            if (isFrozenNode == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                isFrozenNode = insert(IsFrozenNodeGen.create(getContext(), null, null));
-            }
-            isFrozenNode.raiseIfFrozen(object);
         }
 
     }

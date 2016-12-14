@@ -52,15 +52,6 @@ public abstract class ArrayReadSliceNormalizedNode extends RubyNode {
         return nil();
     }
 
-    // If these guards pass for a null array you can only get an empty array
-
-    @Specialization(
-            guards = { "indexInBounds(array, index)", "lengthPositive(length)", "isNullArray(array)" }
-    )
-    public DynamicObject readNull(DynamicObject array, int index, int length) {
-        return createArrayOfSameClass(array, null, 0);
-    }
-
     // Reading within bounds on an array with actual storage
 
     @Specialization(guards = {
@@ -81,7 +72,7 @@ public abstract class ArrayReadSliceNormalizedNode extends RubyNode {
     }, limit = "ARRAY_STRATEGIES")
     public DynamicObject readOutOfBounds(DynamicObject array, int index, int length,
             @Cached("of(array)") ArrayStrategy strategy) {
-        final int end = getSize(array);
+        final int end = strategy.getSize(array);
         final Object store = strategy.newMirror(array).extractRange(index, end).getArray();
         return createArrayOfSameClass(array, store, end - index);
     }

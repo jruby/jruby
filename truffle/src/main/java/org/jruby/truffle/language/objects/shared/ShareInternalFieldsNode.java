@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -39,23 +39,23 @@ public abstract class ShareInternalFieldsNode extends Node {
     public abstract void executeShare(DynamicObject object);
 
     @Specialization(
-            guards = { "object.getShape() == cachedShape", "isArrayShape(cachedShape)", "isObjectArray(object)" },
+            guards = {"array.getShape() == cachedShape", "isArrayShape(cachedShape)", "isObjectArray(array)"},
             assumptions = "cachedShape.getValidAssumption()", limit = "CACHE_LIMIT")
-    protected void shareCachedObjectArray(DynamicObject object,
-            @Cached("object.getShape()") Shape cachedShape,
+    protected void shareCachedObjectArray(DynamicObject array,
+            @Cached("array.getShape()") Shape cachedShape,
             @Cached("createWriteBarrierNode()") WriteBarrierNode writeBarrierNode) {
-        final int size = Layouts.ARRAY.getSize(object);
-        final Object[] store = (Object[]) Layouts.ARRAY.getStore(object);
+        final int size = Layouts.ARRAY.getSize(array);
+        final Object[] store = (Object[]) Layouts.ARRAY.getStore(array);
         for (int i = 0; i < size; i++) {
             writeBarrierNode.executeWriteBarrier(store[i]);
         }
     }
 
     @Specialization(
-            guards = { "object.getShape() == cachedShape", "isArrayShape(cachedShape)", "!isObjectArray(object)" },
+            guards = {"array.getShape() == cachedShape", "isArrayShape(cachedShape)", "!isObjectArray(array)"},
             assumptions = "cachedShape.getValidAssumption()", limit = "CACHE_LIMIT")
-    protected void shareCachedOtherArray(DynamicObject object,
-            @Cached("object.getShape()") Shape cachedShape) {
+    protected void shareCachedOtherArray(DynamicObject array,
+            @Cached("array.getShape()") Shape cachedShape) {
         /* null, int[], long[] or double[] storage */
     }
 

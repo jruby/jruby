@@ -39,10 +39,11 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.parser;
 
-import org.jruby.common.IRubyWarnings;
-import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.string.StringSupport;
 import org.jruby.truffle.interop.ForeignCodeNode;
+import org.jruby.truffle.parser.KeyValuePair;
+import org.jruby.truffle.parser.RubyWarnings;
 import org.jruby.truffle.parser.ast.ArgsParseNode;
 import org.jruby.truffle.parser.ast.ArgumentParseNode;
 import org.jruby.truffle.parser.ast.ArrayParseNode;
@@ -128,9 +129,7 @@ import org.jruby.truffle.parser.lexer.LexerSource;
 import org.jruby.truffle.parser.lexer.RubyLexer;
 import org.jruby.truffle.parser.lexer.StrTerm;
 import org.jruby.truffle.parser.lexer.SyntaxException.PID;
-import org.jruby.util.ByteList;
-import org.jruby.util.KeyValuePair;
-import org.jruby.util.StringSupport;
+import org.jruby.truffle.util.ByteList;
 
 import java.io.IOException;
 
@@ -140,23 +139,24 @@ import static org.jruby.truffle.parser.lexer.LexingCommon.EXPR_ENDARG;
 import static org.jruby.truffle.parser.lexer.LexingCommon.EXPR_ENDFN;
 import static org.jruby.truffle.parser.lexer.LexingCommon.EXPR_FNAME;
 import static org.jruby.truffle.parser.lexer.LexingCommon.EXPR_LABEL;
- 
+
+@SuppressWarnings({"unchecked", "fallthrough"})
 public class RubyParser {
     protected final ParserSupport support;
     protected final RubyLexer lexer;
 
-    public RubyParser(RubyContext context, LexerSource source, IRubyWarnings warnings) {
+    public RubyParser(RubyContext context, LexerSource source, RubyWarnings warnings) {
         this.support = new ParserSupport(context);
         this.lexer = new RubyLexer(support, source, warnings);
         support.setLexer(lexer);
         support.setWarnings(warnings);
     }
 
-    public void setWarnings(IRubyWarnings warnings) {
+    public void setWarnings(RubyWarnings warnings) {
         support.setWarnings(warnings);
         lexer.setWarnings(warnings);
     }
-					// line 160 "-"
+					// line 161 "-"
   // %token constants
   public static final int kCLASS = 257;
   public static final int kMODULE = 258;
@@ -1095,7 +1095,7 @@ states[11] = new ParserState() {
                   if (((RescueBodyParseNode)yyVals[-2+yyTop]) != null) {
                       node = new RescueParseNode(support.getPosition(((ParseNode)yyVals[-3+yyTop])), ((ParseNode)yyVals[-3+yyTop]), ((RescueBodyParseNode)yyVals[-2+yyTop]), ((ParseNode)yyVals[-1+yyTop]));
                   } else if (((ParseNode)yyVals[-1+yyTop]) != null) {
-                      support.warn(ID.ELSE_WITHOUT_RESCUE, support.getPosition(((ParseNode)yyVals[-3+yyTop])), "else without rescue is useless");
+                      support.warn(RubyWarnings.ID.ELSE_WITHOUT_RESCUE, support.getPosition(((ParseNode)yyVals[-3+yyTop])), "else without rescue is useless");
                       node = support.appendToBlock(((ParseNode)yyVals[-3+yyTop]), ((ParseNode)yyVals[-1+yyTop]));
                   }
                   if (((ParseNode)yyVals[0+yyTop]) != null) {
@@ -1232,7 +1232,7 @@ states[30] = new ParserState() {
 states[31] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
                     if (support.isInDef() || support.isInSingle()) {
-                        support.warn(ID.END_IN_METHOD, ((ISourcePosition)yyVals[-3+yyTop]), "END in method; use at_exit");
+                        support.warn(RubyWarnings.ID.END_IN_METHOD, ((ISourcePosition)yyVals[-3+yyTop]), "END in method; use at_exit");
                     }
                     yyVal = new PostExeParseNode(((ISourcePosition)yyVals[-3+yyTop]), ((ParseNode)yyVals[-1+yyTop]));
     return yyVal;
@@ -3651,7 +3651,7 @@ states[460] = new ParserState() {
                     if (((ParseNode)yyVals[-1+yyTop]) == null) {
                         yyVal = new XStrParseNode(position, null, StringSupport.CR_7BIT);
                     } else if (((ParseNode)yyVals[-1+yyTop]) instanceof StrParseNode) {
-                        yyVal = new XStrParseNode(position, (ByteList) ((StrParseNode)yyVals[-1+yyTop]).getValue().clone(), ((StrParseNode)yyVals[-1+yyTop]).getCodeRange());
+                        yyVal = new XStrParseNode(position, ((StrParseNode)yyVals[-1+yyTop]).getValue().dup(), ((StrParseNode)yyVals[-1+yyTop]).getCodeRange());
                     } else if (((ParseNode)yyVals[-1+yyTop]) instanceof DStrParseNode) {
                         yyVal = new DXStrParseNode(position, ((DStrParseNode)yyVals[-1+yyTop]));
 
@@ -3664,7 +3664,7 @@ states[460] = new ParserState() {
 };
 states[461] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = support.newRegexpNode(support.getPosition(((ParseNode)yyVals[-1+yyTop])), ((ParseNode)yyVals[-1+yyTop]), (RegexpParseNode) ((RegexpParseNode)yyVals[0+yyTop]));
+                    yyVal = support.newRegexpNode(support.getPosition(((ParseNode)yyVals[-1+yyTop])), ((ParseNode)yyVals[-1+yyTop]), ((RegexpParseNode)yyVals[0+yyTop]));
     return yyVal;
   }
 };
@@ -4024,7 +4024,7 @@ states[519] = new ParserState() {
 };
 states[520] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-      yyVal = new FileParseNode(lexer.getPosition(), new ByteList(lexer.getFile().getBytes(),
+                    yyVal = new FileParseNode(lexer.getPosition(), new ByteList(lexer.getFile().getBytes(),
                     support.getConfiguration().getContext().getEncodingManager().getLocaleEncoding()));
     return yyVal;
   }
@@ -4665,7 +4665,7 @@ states[644] = new ParserState() {
   }
 };
 }
-					// line 2576 "RubyParser.y"
+					// line 2577 "RubyParser.y"
 
     /** The parse method use an lexer stream and parse it to an AST node 
      * structure
@@ -4680,4 +4680,4 @@ states[644] = new ParserState() {
         return support.getResult();
     }
 }
-					// line 10086 "-"
+					// line 10087 "-"
