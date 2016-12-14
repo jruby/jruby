@@ -23,6 +23,10 @@ class TC_OpenStruct < Test::Unit::TestCase
     assert_respond_to(o, :a=)
   end
 
+  def test_respond_to_allocated
+    assert_not_respond_to(OpenStruct.allocate, :a)
+  end
+
   def test_equality
     o1 = OpenStruct.new
     o2 = OpenStruct.new
@@ -159,5 +163,22 @@ class TC_OpenStruct < Test::Unit::TestCase
     assert_match(/#{__callee__}/, e.backtrace[0])
     e = assert_raise(ArgumentError) { os.send :foo=, true, true }
     assert_match(/#{__callee__}/, e.backtrace[0])
+  end
+
+  def test_accessor_defines_method
+    os = OpenStruct.new(foo: 42)
+    assert os.respond_to? :foo
+    assert_equal([], os.singleton_methods)
+    assert_equal(42, os.foo)
+    assert_equal([:foo, :foo=], os.singleton_methods)
+  end
+
+  def test_does_not_redefine
+    os = OpenStruct.new(foo: 42)
+    def os.foo
+      43
+    end
+    os.foo = 44
+    assert_equal(43, os.foo)
   end
 end

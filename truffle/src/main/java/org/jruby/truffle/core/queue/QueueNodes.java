@@ -18,7 +18,6 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.runtime.Visibility;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreClass;
@@ -29,9 +28,10 @@ import org.jruby.truffle.builtins.NonStandard;
 import org.jruby.truffle.core.cast.BooleanCastWithDefaultNodeGen;
 import org.jruby.truffle.core.thread.ThreadManager.BlockingAction;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.Visibility;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
-import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
+import org.jruby.truffle.language.objects.shared.PropagateSharingNode;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -47,7 +47,7 @@ public abstract class QueueNodes {
 
         public AllocateNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            allocateNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
+            allocateNode = AllocateObjectNode.create();
         }
 
         @Specialization
@@ -60,10 +60,13 @@ public abstract class QueueNodes {
     @CoreMethod(names = { "push", "<<", "enq" }, required = 1)
     public abstract static class PushNode extends CoreMethodArrayArgumentsNode {
 
+        @Child PropagateSharingNode propagateSharingNode = PropagateSharingNode.create();
+
         @Specialization
         public DynamicObject push(DynamicObject self, final Object value) {
             final BlockingQueue<Object> queue = Layouts.QUEUE.getQueue(self);
 
+            propagateSharingNode.propagate(self, value);
             doPush(value, queue);
 
             return self;
@@ -97,12 +100,7 @@ public abstract class QueueNodes {
 
         @TruffleBoundary
         private Object doPop(final BlockingQueue<Object> queue) {
-            return getContext().getThreadManager().runUntilResult(this, new BlockingAction<Object>() {
-                @Override
-                public Object block() throws InterruptedException {
-                    return queue.take();
-                }
-            });
+            return getContext().getThreadManager().runUntilResult(this, () -> queue.take());
         }
 
         @Specialization(guards = "nonBlocking")
@@ -146,27 +144,24 @@ public abstract class QueueNodes {
             final long durationInMillis = (long) (duration * 1000.0);
             final long start = System.currentTimeMillis();
 
-            return getContext().getThreadManager().runUntilResult(this, new BlockingAction<Object>() {
-                @Override
-                public Object block() throws InterruptedException {
-                    long now = System.currentTimeMillis();
-                    long waited = now - start;
-                    if (waited >= durationInMillis) {
-                        // Try again to make sure we at least tried once
-                        final Object result = queue.poll();
-                        if (result == null) {
-                            return false;
-                        } else {
-                            return result;
-                        }
-                    }
-
-                    final Object result = queue.poll(durationInMillis, TimeUnit.MILLISECONDS);
+            return getContext().getThreadManager().runUntilResult(this, () -> {
+                long now = System.currentTimeMillis();
+                long waited = now - start;
+                if (waited >= durationInMillis) {
+                    // Try again to make sure we at least tried once
+                    final Object result = queue.poll();
                     if (result == null) {
                         return false;
                     } else {
                         return result;
                     }
+                }
+
+                final Object result = queue.poll(durationInMillis, TimeUnit.MILLISECONDS);
+                if (result == null) {
+                    return false;
+                } else {
+                    return result;
                 }
             });
         }

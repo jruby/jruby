@@ -9,6 +9,10 @@ describe "Regexp#source" do
     /x(.)xz/.source.should == "x(.)xz"
   end
 
+  it "will remove escape characters" do
+    /foo\/bar/.source.should == "foo/bar"
+  end
+
   not_supported_on :opal do
     it "has US-ASCII encoding when created from an ASCII-only \\u{} literal" do
       re = /[\u{20}-\u{7E}]/

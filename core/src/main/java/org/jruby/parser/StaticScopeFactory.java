@@ -51,6 +51,7 @@ public class StaticScopeFactory {
         return new StaticScope(StaticScope.Type.BLOCK, parent);
     }
 
+    @Deprecated
     public static StaticScope newStaticScope(StaticScope parent, StaticScope.Type type, String[] names) {
         if(names == null) {
             return new StaticScope(type, parent);
@@ -58,6 +59,15 @@ public class StaticScopeFactory {
             return new StaticScope(type, parent, names);
         }
     }
+
+    public static StaticScope newStaticScope(StaticScope parent, StaticScope.Type type, String[] names, int keywordArgIndex) {
+        if(names == null) {
+            return new StaticScope(type, parent);
+        } else {
+            return new StaticScope(type, parent, names, keywordArgIndex);
+        }
+    }
+
 
     public StaticScope getDummyScope() {
         return dummyScope;

@@ -1,4 +1,4 @@
-# Copyright (c) 2015 Oracle and/or its affiliates. All rights reserved. This
+# Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
 # code is released under a tri EPL/GPL/LGPL license. You can use it,
 # redistribute it and/or modify it under the terms of the:
 #
@@ -1154,7 +1154,7 @@ module Marshal
         when :bt
           obj.__instance_variable_set__ :@custom_backtrace, value
         when :mesg
-          obj.__instance_variable_set__ :@reason_message, value
+          Truffle.invoke_primitive :exception_set_message, obj, value
         end
       end
     end

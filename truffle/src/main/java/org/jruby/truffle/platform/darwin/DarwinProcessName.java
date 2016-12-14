@@ -1,5 +1,15 @@
+/*
+ * Copyright (c) 2016 Oracle and/or its affiliates. All rights reserved. This
+ * code is released under a tri EPL/GPL/LGPL license. You can use it,
+ * redistribute it and/or modify it under the terms of the:
+ *
+ * Eclipse Public License version 1.0
+ * GNU General Public License version 2
+ * GNU Lesser General Public License version 2.1
+ */
 package org.jruby.truffle.platform.darwin;
 
+import com.oracle.truffle.api.TruffleOptions;
 import jnr.ffi.LibraryLoader;
 import jnr.ffi.Pointer;
 import org.jruby.truffle.platform.ProcessName;
@@ -20,12 +30,16 @@ public class DarwinProcessName implements ProcessName {
     private final CrtExterns crtExterns;
 
     public DarwinProcessName() {
-        crtExterns = LibraryLoader.create(CrtExterns.class).failImmediately().library("libSystem.B.dylib").load();
+        if (TruffleOptions.AOT) {
+            crtExterns = null;
+        } else {
+            crtExterns = LibraryLoader.create(CrtExterns.class).failImmediately().library("libSystem.B.dylib").load();
+        }
     }
 
     @Override
     public boolean canSet() {
-        return true;
+        return !TruffleOptions.AOT;
     }
 
     @Override

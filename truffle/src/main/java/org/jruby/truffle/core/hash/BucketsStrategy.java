@@ -15,10 +15,8 @@ import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyGuards;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.NoSuchElementException;
 
 public abstract class BucketsStrategy {
@@ -31,10 +29,17 @@ public abstract class BucketsStrategy {
 
     public static final int SIGN_BIT_MASK = ~(1 << 31);
 
-    private static final int[] CAPACITIES = Arrays.copyOf(org.jruby.RubyHash.MRI_PRIMES, org.jruby.RubyHash.MRI_PRIMES.length - 1);
+    private static final int MRI_PRIMES[] = {
+                    8 + 3, 16 + 3, 32 + 5, 64 + 3, 128 + 3, 256 + 27, 512 + 9, 1024 + 9, 2048 + 5, 4096 + 3,
+                    8192 + 27, 16384 + 43, 32768 + 3, 65536 + 45, 131072 + 29, 262144 + 3, 524288 + 21, 1048576 + 7,
+                    2097152 + 17, 4194304 + 15, 8388608 + 9, 16777216 + 43, 33554432 + 35, 67108864 + 15,
+                    134217728 + 29, 268435456 + 3, 536870912 + 11, 1073741824 + 85
+    };
+
+    private static final int[] CAPACITIES = MRI_PRIMES;
 
     @TruffleBoundary
-    public static DynamicObject create(RubyContext context, Collection<Map.Entry<Object, Object>> entries, boolean byIdentity) {
+    public static DynamicObject create(RubyContext context, Collection<KeyValue> entries, boolean byIdentity) {
         int actualSize = entries.size();
 
         final int bucketsCount = capacityGreaterThan(entries.size()) * OVERALLOCATE_FACTOR;
@@ -43,7 +48,7 @@ public abstract class BucketsStrategy {
         Entry firstInSequence = null;
         Entry lastInSequence = null;
 
-        for (Map.Entry<Object, Object> entry : entries) {
+        for (KeyValue entry : entries) {
             Object key = entry.getKey();
 
             if (!byIdentity && RubyGuards.isRubyString(key)) {
@@ -203,8 +208,8 @@ public abstract class BucketsStrategy {
         assert HashOperations.verifyStore(context, hash);
     }
 
-    public static Iterator<Map.Entry<Object, Object>> iterateKeyValues(final Entry firstInSequence) {
-        return new Iterator<Map.Entry<Object, Object>>() {
+    public static Iterator<KeyValue> iterateKeyValues(final Entry firstInSequence) {
+        return new Iterator<KeyValue>() {
 
             private Entry entry = firstInSequence;
 
@@ -214,31 +219,12 @@ public abstract class BucketsStrategy {
             }
 
             @Override
-            public Map.Entry<Object, Object> next() {
+            public KeyValue next() {
                 if (!hasNext()) {
                     throw new NoSuchElementException();
                 }
 
-                final Entry finalEntry = entry;
-
-                final Map.Entry<Object, Object> entryResult = new Map.Entry<Object, Object>() {
-
-                    @Override
-                    public Object getKey() {
-                        return finalEntry.getKey();
-                    }
-
-                    @Override
-                    public Object getValue() {
-                        return finalEntry.getValue();
-                    }
-
-                    @Override
-                    public Object setValue(Object value) {
-                        throw new UnsupportedOperationException();
-                    }
-
-                };
+                final KeyValue entryResult = new KeyValue(entry.getKey(), entry.getValue());
 
                 entry = entry.getNextInSequence();
 
@@ -253,15 +239,8 @@ public abstract class BucketsStrategy {
         };
     }
 
-    public static Iterable<Map.Entry<Object, Object>> iterableKeyValues(final Entry firstInSequence) {
-        return new Iterable<Map.Entry<Object, Object>>() {
-
-            @Override
-            public Iterator<Map.Entry<Object, Object>> iterator() {
-                return iterateKeyValues(firstInSequence);
-            }
-
-        };
+    public static Iterable<KeyValue> iterableKeyValues(final Entry firstInSequence) {
+        return () -> iterateKeyValues(firstInSequence);
     }
 
     public static void copyInto(RubyContext context, DynamicObject from, DynamicObject to) {

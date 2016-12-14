@@ -12,9 +12,9 @@ package org.jruby.truffle.core.thread;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.source.SourceSection;
 import jnr.posix.DefaultNativeTimeval;
 import jnr.posix.Timeval;
-import org.jruby.RubyThread.Status;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.InterruptMode;
@@ -28,6 +28,8 @@ import org.jruby.truffle.language.backtrace.BacktraceFormatter;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.control.ReturnException;
 import org.jruby.truffle.language.control.ThreadExitException;
+import org.jruby.truffle.language.objects.shared.SharedObjects;
+import org.jruby.truffle.util.SourceSectionUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -53,7 +55,7 @@ public class ThreadManager {
     }
 
     public static final InterruptMode DEFAULT_INTERRUPT_MODE = InterruptMode.IMMEDIATE;
-    public static final Status DEFAULT_STATUS = Status.RUN;
+    public static final ThreadStatus DEFAULT_STATUS = ThreadStatus.RUN;
 
     public static DynamicObject createRubyThread(RubyContext context) {
         final DynamicObject object = Layouts.THREAD.createThread(
@@ -69,7 +71,9 @@ public class ThreadManager {
                 null,
                 null,
                 new AtomicBoolean(false),
-                0);
+                0,
+                context.getCoreLibrary().getNilObject(),
+                context.getCoreLibrary().getNilObject());
 
         Layouts.THREAD.setFiberManagerUnsafe(object, new FiberManager(context, object)); // Because it is cyclic
 
@@ -84,30 +88,26 @@ public class ThreadManager {
     public static DynamicObject createThreadLocals(RubyContext context) {
         final DynamicObject threadLocals = Layouts.BASIC_OBJECT.createBasicObject(context.getCoreLibrary().getObjectFactory());
         threadLocals.define("$!", context.getCoreLibrary().getNilObject(), 0);
-        threadLocals.define("$~", context.getCoreLibrary().getNilObject(), 0);
         threadLocals.define("$?", context.getCoreLibrary().getNilObject(), 0);
         return threadLocals;
     }
 
     public static void initialize(final DynamicObject thread, RubyContext context, Node currentNode, final Object[] arguments, final DynamicObject block) {
-        String info = Layouts.PROC.getSharedMethodInfo(block).getSourceSection().getShortDescription();
-        initialize(thread, context, currentNode, info, new Runnable() {
-            @Override
-            public void run() {
-                final Object value = ProcOperations.rootCall(block, arguments);
-                Layouts.THREAD.setValue(thread, value);
-            }
+        if (SharedObjects.ENABLED) {
+            SharedObjects.shareDeclarationFrame(block);
+        }
+
+        final SourceSection sourceSection = Layouts.PROC.getSharedMethodInfo(block).getSourceSection();
+        final String info = SourceSectionUtils.fileLine(sourceSection);
+        initialize(thread, context, currentNode, info, () -> {
+            final Object value = ProcOperations.rootCall(block, arguments);
+            Layouts.THREAD.setValue(thread, value);
         });
     }
 
     public static void initialize(final DynamicObject thread, final RubyContext context, final Node currentNode, final String info, final Runnable task) {
         assert RubyGuards.isRubyThread(thread);
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                ThreadManager.run(thread, context, currentNode, info, task);
-            }
-        }).start();
+        new Thread(() -> run(thread, context, currentNode, info, task)).start();
 
         FiberNodes.waitForInitialization(context, Layouts.THREAD.getFiberManager(thread).getRootFiber(), currentNode);
     }
@@ -124,7 +124,7 @@ public class ThreadManager {
         try {
             task.run();
         } catch (ThreadExitException e) {
-            Layouts.THREAD.setValue(thread, context.getCoreLibrary().getNilObject());
+            setThreadValue(thread, context.getCoreLibrary().getNilObject());
             return;
         } catch (RaiseException e) {
             setException(context, thread, e.getException(), currentNode);
@@ -136,12 +136,19 @@ public class ThreadManager {
         }
     }
 
+    private static void setThreadValue(final DynamicObject thread, final Object value) {
+        // A Thread is always shared (Thread.list)
+        SharedObjects.propagate(thread, value);
+        Layouts.THREAD.setValue(thread, value);
+    }
+
     private static void setException(RubyContext context, DynamicObject thread, DynamicObject exception, Node currentNode) {
         final DynamicObject mainThread = context.getThreadManager().getRootThread();
         final boolean isSystemExit = Layouts.BASIC_OBJECT.getLogicalClass(exception) == context.getCoreLibrary().getSystemExitClass();
         if (thread != mainThread && (isSystemExit || Layouts.THREAD.getAbortOnException(thread))) {
             ThreadNodes.ThreadRaisePrimitiveNode.raiseInThread(context, mainThread, exception, currentNode);
         }
+        SharedObjects.propagate(thread, exception);
         Layouts.THREAD.setException(thread, exception);
     }
 
@@ -154,10 +161,10 @@ public class ThreadManager {
     public static void cleanup(RubyContext context, DynamicObject thread) {
         assert RubyGuards.isRubyThread(thread);
 
-        Layouts.THREAD.setStatus(thread, Status.ABORTING);
+        Layouts.THREAD.setStatus(thread, ThreadStatus.ABORTING);
         context.getThreadManager().unregisterThread(thread);
 
-        Layouts.THREAD.setStatus(thread, Status.DEAD);
+        Layouts.THREAD.setStatus(thread, ThreadStatus.DEAD);
         Layouts.THREAD.setThread(thread, null);
         assert RubyGuards.isRubyThread(thread);
         for (Lock lock : Layouts.THREAD.getOwnedLocks(thread)) {
@@ -210,13 +217,13 @@ public class ThreadManager {
         T result = null;
 
         do {
-            Layouts.THREAD.setStatus(runningThread, Status.SLEEP);
+            Layouts.THREAD.setStatus(runningThread, ThreadStatus.SLEEP);
 
             try {
                 try {
                     result = action.block();
                 } finally {
-                    Layouts.THREAD.setStatus(runningThread, Status.RUN);
+                    Layouts.THREAD.setStatus(runningThread, ThreadStatus.RUN);
                 }
             } catch (InterruptedException e) {
                 // We were interrupted, possibly by the SafepointManager.
@@ -269,14 +276,7 @@ public class ThreadManager {
         if (timeoutMicros == 0) {
             timeoutToUse.setTime(new long[]{0, 0});
 
-            return new ResultWithinTime<>(runUntilResult(currentNode, new BlockingAction<T>() {
-
-                @Override
-                public T block() throws InterruptedException {
-                    return action.block(timeoutToUse);
-                }
-
-            }));
+            return new ResultWithinTime<>(runUntilResult(currentNode, () -> action.block(timeoutToUse)));
         } else {
             final int pollTime = 500_000_000;
             final long requestedTimeoutAt = System.nanoTime() + timeoutMicros * 1_000L;
@@ -330,6 +330,11 @@ public class ThreadManager {
         assert RubyGuards.isRubyThread(thread);
         initializeCurrentThread(thread);
         runningRubyThreads.add(thread);
+
+        if (SharedObjects.ENABLED && runningRubyThreads.size() > 1) {
+            context.getSharedObjects().startSharing();
+            SharedObjects.writeBarrier(thread);
+        }
     }
 
     public synchronized void unregisterThread(DynamicObject thread) {
@@ -354,6 +359,11 @@ public class ThreadManager {
     @TruffleBoundary
     public Object[] getThreadList() {
         return runningRubyThreads.toArray(new Object[runningRubyThreads.size()]);
+    }
+
+    @TruffleBoundary
+    public Iterable<DynamicObject> iterateThreads() {
+        return runningRubyThreads;
     }
 
     @TruffleBoundary

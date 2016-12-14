@@ -1,9 +1,9 @@
 /javascript.rb:19:in `foo'
-(eval):1
+(eval):1:in `bar'
 /javascript.rb:31:in `execute'
 /javascript.rb:31:in `bar'
 /javascript.rb:31:in `baz'
-(eval):1
+(eval):1:in `bob'
 /javascript.rb:55:in `execute'
 /javascript.rb:55:in `bob'
 /javascript.rb:55:in `block in <main>'

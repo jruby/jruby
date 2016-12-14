@@ -10,7 +10,6 @@
 package org.jruby.truffle.interop;
 
 import com.oracle.truffle.api.CallTarget;
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.CreateCast;
@@ -32,7 +31,7 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.Source;
-import org.jruby.truffle.Layouts;
+import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
@@ -42,10 +41,13 @@ import org.jruby.truffle.core.cast.NameToJavaStringNodeGen;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.string.StringCachingGuards;
 import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.language.PerformanceWarnings;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SnippetNode;
 import org.jruby.truffle.language.control.JavaException;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.util.ByteList;
+
+import java.io.File;
 import java.io.IOException;
 
 @CoreClass("Truffle::Interop")
@@ -58,7 +60,7 @@ public abstract class InteropNodes {
         @Specialization(guards = "isRubyString(fileName)")
         public Object importFile(DynamicObject fileName) {
             try {
-                final Source sourceObject = Source.fromFileName(fileName.toString());
+                final Source sourceObject = Source.newBuilder(new File(fileName.toString())).build();
                 getContext().getEnv().parse(sourceObject).call();
             } catch (IOException e) {
                 throw new JavaException(e);
@@ -116,7 +118,7 @@ public abstract class InteropNodes {
                 VirtualFrame frame,
                 TruffleObject receiver,
                 Object[] args) {
-            CompilerDirectives.bailout("can't compile megamorphic interop EXECUTE message sends");
+            PerformanceWarnings.warn("megamorphic interop EXECUTE message send");
 
             final Node executeNode = createExecuteNode(args.length);
 
@@ -127,6 +129,7 @@ public abstract class InteropNodes {
             }
         }
 
+        @TruffleBoundary
         protected Node createExecuteNode(int argsLength) {
             return Message.createExecute(argsLength).createNode();
         }
@@ -181,7 +184,7 @@ public abstract class InteropNodes {
                 TruffleObject receiver,
                 DynamicObject identifier,
                 Object[] args) {
-            CompilerDirectives.bailout("can't compile megamorphic interop INVOKE message sends");
+            PerformanceWarnings.warn("megamorphic interop INVOKE message send");
 
             final Node invokeNode = createInvokeNode(args.length);
 
@@ -195,6 +198,7 @@ public abstract class InteropNodes {
             }
         }
 
+        @TruffleBoundary
         protected Node createInvokeNode(int argsLength) {
             return Message.createInvoke(argsLength).createNode();
         }
@@ -316,12 +320,11 @@ public abstract class InteropNodes {
     @CoreMethod(names = "unbox", isModuleFunction = true, required = 1)
     public abstract static class UnboxNode extends CoreMethodArrayArgumentsNode {
 
+        @TruffleBoundary
         @Specialization
         public DynamicObject unbox(CharSequence receiver) {
             // TODO CS-21-Dec-15 this shouldn't be needed - we need to convert j.l.String to Ruby's String automatically
-
-            return Layouts.STRING.createString(coreLibrary().getStringFactory(),
-                    StringOperations.ropeFromByteList(ByteList.create(receiver)));
+            return StringOperations.createString(getContext(), StringOperations.encodeRope(receiver, ASCIIEncoding.INSTANCE));
         }
 
         @Specialization
@@ -559,6 +562,32 @@ public abstract class InteropNodes {
 
     }
 
+    @CoreMethod(names = "keys", isModuleFunction = true, required = 1)
+    public abstract static class KeysNode extends CoreMethodArrayArgumentsNode {
+
+        @Specialization
+        public Object size(
+                VirtualFrame frame,
+                TruffleObject receiver,
+                @Cached("createKeysNode()") Node keysNode,
+                @Cached("new()") SnippetNode snippetNode,
+                @Cached("create()") BranchProfile exceptionProfile) {
+            try {
+                return snippetNode.execute(frame,
+                        "Truffle::Interop.enumerable(keys).map { |key| Truffle::Interop.from_java_string(key) }",
+                        "keys", ForeignAccess.sendKeys(keysNode, frame, receiver));
+            } catch (UnsupportedMessageException e) {
+                exceptionProfile.enter();
+                throw new JavaException(e);
+            }
+        }
+
+        protected Node createKeysNode() {
+            return Message.KEYS.createNode();
+        }
+
+    }
+
     @CoreMethod(names = "export", isModuleFunction = true, required = 2)
     public abstract static class ExportNode extends CoreMethodArrayArgumentsNode {
 
@@ -639,14 +668,8 @@ public abstract class InteropNodes {
         @TruffleBoundary
         protected CallTarget parse(DynamicObject mimeType, DynamicObject source) {
             final String mimeTypeString = mimeType.toString();
-            final Source sourceObject = Source.fromText(source.toString(), "(eval)").withMimeType(mimeTypeString);
-
-            try {
-                return getContext().getEnv().parse(sourceObject);
-            } catch (IOException e) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                throw new JavaException(e);
-            }
+            final Source sourceObject = Source.newBuilder(source.toString()).name("(eval)").mimeType(mimeTypeString).build();
+            return getContext().getEnv().parse(sourceObject);
         }
 
         protected int getCacheLimit() {

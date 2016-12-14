@@ -10,6 +10,10 @@ class MSpecScript
     RbConfig::CONFIG['host_os'] == 'linux'
   end
 
+  def self.solaris?
+    RbConfig::CONFIG['host_os'] == 'solaris'
+  end
+
   JRUBY_DIR = File.expand_path('../../..', __FILE__)
 
   set :target, "#{JRUBY_DIR}/bin/jruby#{windows? ? '.bat' : ''}"
@@ -23,7 +27,10 @@ class MSpecScript
       -Xtruffle.graal.warn_unless=false
     ]
     core_path = "#{JRUBY_DIR}/truffle/src/main/ruby"
-    flags << "-Xtruffle.core.load_path=#{core_path}" if File.directory?(core_path)
+    if File.directory?(core_path)
+      flags << "-Xtruffle.core.load_path=#{core_path}"
+      flags << "-Xtruffle.backtraces.hide_core_files=false"
+    end
     set :flags, flags
   end
 
@@ -36,7 +43,7 @@ class MSpecScript
   ]
 
   set :core, [
-    "spec/ruby/core"
+    "spec/ruby/core",
   ]
 
   set :library, [
@@ -77,6 +84,9 @@ class MSpecScript
 
   set :capi, [
     "spec/ruby/optional/capi",
+
+    # Global variables
+    "^spec/ruby/optional/capi/gc_spec.rb",
 
     # Fixnum boundaries do not match
     "^spec/ruby/optional/capi/bignum_spec.rb",
@@ -138,6 +148,11 @@ class MSpecScript
     set :xtags, (get(:xtags) || []) + ['linux']
   end
 
+  if solaris?
+    # exclude specs tagged with 'solaris'
+    set :xtags, (get(:xtags) || []) + ['solaris']
+  end
+
   # Enable features
   MSpec.enable_feature :fiber
   MSpec.enable_feature :fiber_library
@@ -148,8 +163,10 @@ class MSpecScript
   set :files, get(:language) + get(:core) + get(:library) + get(:truffle)
 end
 
-is_child_process = respond_to?(:ruby_exe)
+is_child_process = ENV.key? "MSPEC_RUNNER"
 if i = ARGV.index('slow') and ARGV[i-1] == '--excl-tag' and is_child_process
+  require 'mspec'
+
   class SlowSpecsTagger
     def initialize
       MSpec.register :exception, self
@@ -157,7 +174,9 @@ if i = ARGV.index('slow') and ARGV[i-1] == '--excl-tag' and is_child_process
 
     def exception(state)
       if state.exception.is_a? SlowSpecException
-        tag = SpecTag.new("slow:#{state.describe} #{state.it}")
+        tag = SpecTag.new
+        tag.tag = 'slow'
+        tag.description = "#{state.describe} #{state.it}"
         MSpec.write_tag(tag)
       end
     end

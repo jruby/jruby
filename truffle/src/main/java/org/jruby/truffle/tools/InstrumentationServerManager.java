@@ -21,10 +21,14 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.SafepointAction;
 import org.jruby.truffle.language.backtrace.Backtrace;
 import org.jruby.truffle.language.backtrace.BacktraceFormatter;
+import org.jruby.truffle.language.control.JavaException;
 import org.jruby.truffle.tools.simpleshell.SimpleShell;
+import org.jruby.truffle.util.StringUtils;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.BindException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.List;
 
@@ -39,12 +43,15 @@ public class InstrumentationServerManager {
     public InstrumentationServerManager(RubyContext context, int port) {
         this.context = context;
 
+        final InetAddress host = InetAddress.getLoopbackAddress();
         HttpServer server = null;
-
         try {
-            server = HttpServer.create(new InetSocketAddress(port), 0);
+            server = HttpServer.create(new InetSocketAddress(host, port), 0);
+        } catch (BindException e) {
+            System.err.println("Port " + port + " was already in use: " + e);
+            throw new JavaException(e);
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new JavaException(e);
         }
 
         this.server = server;
@@ -68,7 +75,7 @@ public class InstrumentationServerManager {
                                     final List<String> lines = BacktraceFormatter.createDefaultFormatter(context)
                                             .formatBacktrace(context, null, backtrace);
 
-                                    builder.append(String.format("#%d %s",
+                                    builder.append(StringUtils.format("#%d %s",
                                             Thread.currentThread().getId(),
                                             Thread.currentThread().getName()));
 
@@ -106,37 +113,25 @@ public class InstrumentationServerManager {
 
         });
 
-        server.createContext("/break", new HttpHandler() {
+        server.createContext("/break", httpExchange -> {
+            try {
+                final Thread mainThread = Layouts.FIBER.getThread(
+                        Layouts.THREAD.getFiberManager(context.getThreadManager().getRootThread())
+                                .getCurrentFiber());
 
-            @Override
-            public void handle(HttpExchange httpExchange) {
-                try {
-                    final Thread mainThread = Layouts.FIBER.getThread(
-                            Layouts.THREAD.getFiberManager(context.getThreadManager().getRootThread())
-                                    .getCurrentFiber());
+                context.getSafepointManager().pauseThreadAndExecuteLaterFromNonRubyThread(mainThread, (thread, currentNode) -> new SimpleShell(context).run(Truffle.getRuntime().getCurrentFrame()
+                        .getFrame(FrameInstance.FrameAccess.MATERIALIZE, true).materialize(), currentNode));
 
-                    context.getSafepointManager().pauseThreadAndExecuteLaterFromNonRubyThread(mainThread, new SafepointAction() {
-
-                        @Override
-                        public void run(DynamicObject thread, final Node currentNode) {
-                            new SimpleShell(context).run(Truffle.getRuntime().getCurrentFrame()
-                                    .getFrame(FrameInstance.FrameAccess.MATERIALIZE, true).materialize(), currentNode);
-                        }
-
-                    });
-
-                    httpExchange.getResponseHeaders().set("Content-Type", "text/plain");
-                    httpExchange.sendResponseHeaders(200, 0);
-                    httpExchange.getResponseBody().close();
-                } catch (IOException e) {
-                    if (shuttingDown) {
-                        return;
-                    }
-
-                    e.printStackTrace();
+                httpExchange.getResponseHeaders().set("Content-Type", "text/plain");
+                httpExchange.sendResponseHeaders(200, 0);
+                httpExchange.getResponseBody().close();
+            } catch (IOException e) {
+                if (shuttingDown) {
+                    return;
                 }
-            }
 
+                e.printStackTrace();
+            }
         });
 
         server.start();

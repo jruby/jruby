@@ -12,6 +12,8 @@ package org.jruby.truffle.core;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.profiles.BranchProfile;
+import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.objects.IsFrozenNode;
@@ -24,10 +26,10 @@ public class RaiseIfFrozenNode extends RubyNode {
     @Child private RubyNode child;
     @Child private IsFrozenNode isFrozenNode;
 
-    public RaiseIfFrozenNode(RubyNode child) {
-        super(child.getContext(), child.getEncapsulatingSourceSection());
+    public RaiseIfFrozenNode(RubyContext context, SourceSection sourceSection, RubyNode child) {
+        super(context, sourceSection);
         this.child = child;
-        isFrozenNode = IsFrozenNodeGen.create(child.getContext(), child.getEncapsulatingSourceSection(), null);
+        isFrozenNode = IsFrozenNodeGen.create(context, sourceSection, null);
     }
 
     @Override

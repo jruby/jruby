@@ -413,11 +413,7 @@ public class RubyException extends RubyObject {
 
     private BacktraceData backtraceData;
     private IRubyObject backtrace;
-    /**
-     * @deprecated do not access the field directly
-     * @see #getMessage()
-     */
-    public IRubyObject message;
+    IRubyObject message;
     IRubyObject cause;
 
     public static final int TRACE_HEAD = 8;

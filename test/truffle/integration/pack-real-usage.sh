@@ -1,3 +1,5 @@
 #!/usr/bin/env bash
 
-ruby -X+T test/truffle/integration/pack-real-usage/pack-real-usage.rb
+source test/truffle/common.sh.inc
+
+jt ruby test/truffle/integration/pack-real-usage/pack-real-usage.rb

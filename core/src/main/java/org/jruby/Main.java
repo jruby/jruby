@@ -46,7 +46,6 @@ import org.jruby.platform.Platform;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.SafePropertyAccessor;
-import org.jruby.util.cli.Options;
 import org.jruby.util.cli.OutputStrings;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -60,6 +59,9 @@ import java.io.InputStream;
 import java.io.PrintStream;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -188,8 +190,6 @@ public class Main {
      * @param args command-line args, provided by the JVM.
      */
     public static void main(String[] args) {
-        printTruffleTimeMetric("before-main");
-
         doGCJCheck();
 
         Main main;
@@ -203,9 +203,6 @@ public class Main {
         try {
             Status status = main.run(args);
 
-            printTruffleTimeMetric("after-main");
-            printTruffleMemoryMetric();
-
             if (status.isExit()) {
                 System.exit(status.getStatus());
             }
@@ -217,19 +214,12 @@ public class Main {
             System.exit( handleUnexpectedJump(ex) );
         }
         catch (Throwable t) {
-            // If a Truffle exception gets this far it's a hard failure - don't try and dress it up as a Ruby exception
-
-            if (main.config.getCompileMode() == RubyInstanceConfig.CompileMode.TRUFFLE) {
-                System.err.println("Truffle internal error: " + t);
-                t.printStackTrace(System.err);
-            } else {
-                // print out as a nice Ruby backtrace
-                System.err.println("Unhandled Java exception: " + t);
+            // print out as a nice Ruby backtrace
+            System.err.println("Unhandled Java exception: " + t);
+            System.err.println(ThreadContext.createRawBacktraceStringFromThrowable(t, false));
+            while ((t = t.getCause()) != null) {
+                System.err.println("Caused by:");
                 System.err.println(ThreadContext.createRawBacktraceStringFromThrowable(t, false));
-                while ((t = t.getCause()) != null) {
-                    System.err.println("Caused by:");
-                    System.err.println(ThreadContext.createRawBacktraceStringFromThrowable(t, false));
-                }
             }
 
             System.exit(1);
@@ -284,7 +274,7 @@ public class Main {
         final Ruby runtime = _runtime;
         final AtomicBoolean didTeardown = new AtomicBoolean();
 
-        if (config.isHardExit()) {
+        if (runtime != null && config.isHardExit()) {
             // we're the command-line JRuby, and should set a shutdown hook for
             // teardown.
             Runtime.getRuntime().addShutdownHook(new Thread() {
@@ -297,7 +287,9 @@ public class Main {
         }
 
         try {
-            doSetContextClassLoader(runtime);
+            if (runtime != null) {
+                doSetContextClassLoader(runtime);
+            }
 
             if (in == null) {
                 // no script to run, return success
@@ -313,7 +305,7 @@ public class Main {
                 return doRunFromMain(runtime, in, filename);
             }
         } finally {
-            if (didTeardown.compareAndSet(false, true)) {
+            if (runtime != null && didTeardown.compareAndSet(false, true)) {
                 runtime.tearDown();
             }
         }
@@ -575,28 +567,6 @@ public class Main {
         
         // TODO: should match MRI (>= 2.2.3) exit status - @see ruby/test_enum.rb#test_first
         return 2;
-    }
-    
-    public static void printTruffleTimeMetric(String id) {
-        if (Options.TRUFFLE_METRICS_TIME.load()) {
-            final long millis = System.currentTimeMillis();
-            System.err.printf("%s %d.%03d%n", id, millis / 1000, millis % 1000);
-        }
-    }
-
-    private static void printTruffleMemoryMetric() {
-        if (Options.TRUFFLE_METRICS_MEMORY_USED_ON_EXIT.load()) {
-            for (int n = 0; n < 10; n++) {
-                System.gc();
-            }
-
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-            }
-
-            System.err.printf("allocated %d%n", ManagementFactory.getMemoryMXBean().getHeapMemoryUsage().getUsed());
-        }
     }
 
     private final RubyInstanceConfig config;

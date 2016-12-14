@@ -15,6 +15,7 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.queue.ArrayBlockingQueueLocksConditions;
 import org.jruby.truffle.core.queue.LinkedBlockingQueueLocksConditions;
 import org.jruby.truffle.platform.DefaultRubiniusConfiguration;
+import org.jruby.truffle.platform.FDSet;
 import org.jruby.truffle.platform.NativePlatform;
 import org.jruby.truffle.platform.ProcessName;
 import org.jruby.truffle.platform.RubiniusConfiguration;
@@ -22,6 +23,7 @@ import org.jruby.truffle.platform.linux.LinuxRubiniusConfiguration;
 import org.jruby.truffle.platform.openjdk.OpenJDKArrayBlockingQueueLocksConditions;
 import org.jruby.truffle.platform.openjdk.OpenJDKLinkedBlockingQueueLocksConditions;
 import org.jruby.truffle.platform.posix.ClockGetTime;
+import org.jruby.truffle.platform.posix.PosixFDSet4Bytes;
 import org.jruby.truffle.platform.posix.Sockets;
 import org.jruby.truffle.platform.posix.TrufflePosix;
 import org.jruby.truffle.platform.posix.TrufflePosixHandler;
@@ -83,6 +85,11 @@ public class JavaPlatform implements NativePlatform {
     @Override
     public RubiniusConfiguration getRubiniusConfiguration() {
         return rubiniusConfiguration;
+    }
+
+    @Override
+    public FDSet createFDSet() {
+        return new PosixFDSet4Bytes();
     }
 
     @Override

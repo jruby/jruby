@@ -30,6 +30,7 @@ import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.truffle.core.cast.BooleanCastNode;
 import org.jruby.truffle.core.cast.BooleanCastNodeGen;
 import org.jruby.truffle.core.cast.ToIntNode;
+import org.jruby.truffle.core.numeric.BignumNodesFactory.DivNodeFactory;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.SnippetNode;
 import org.jruby.truffle.language.control.RaiseException;
@@ -48,7 +49,7 @@ public abstract class BignumNodes {
         public Object fixnumOrBignum(BigInteger value) {
             if (fixnumOrBignum == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                fixnumOrBignum = insert(new FixnumOrBignumNode(getContext(), getSourceSection()));
+                fixnumOrBignum = insert(new FixnumOrBignumNode(getContext(), null));
             }
             return fixnumOrBignum.fixnumOrBignum(value);
         }
@@ -136,12 +137,17 @@ public abstract class BignumNodes {
 
     }
 
-    @CoreMethod(names = {"/", "__slash__"}, required = 1)
+    @CoreMethod(names = { "/", "__slash__" }, required = 1)
     public abstract static class DivNode extends BignumCoreMethodNode {
+
+        public abstract Object executeDiv(VirtualFrame frame, Object a, Object b);
 
         @TruffleBoundary
         @Specialization
         public Object div(DynamicObject a, long b) {
+            if (b == 0) {
+                throw new RaiseException(coreExceptions().zeroDivisionError(this));
+            }
             final BigInteger bBigInt = BigInteger.valueOf(b);
             final BigInteger aBigInt = Layouts.BIGNUM.getValue(a);
             final BigInteger result = aBigInt.divide(bBigInt);
@@ -163,11 +169,37 @@ public abstract class BignumNodes {
         public Object div(DynamicObject a, DynamicObject b) {
             final BigInteger aBigInt = Layouts.BIGNUM.getValue(a);
             final BigInteger bBigInt = Layouts.BIGNUM.getValue(b);
+            if (b.equals(BigInteger.ZERO)) {
+                throw new RaiseException(coreExceptions().zeroDivisionError(this));
+            }
             final BigInteger result = aBigInt.divide(bBigInt);
             if (result.signum() == -1 && !aBigInt.mod(bBigInt.abs()).equals(BigInteger.ZERO)) {
                 return fixnumOrBignum(result.subtract(BigInteger.ONE));
             } else {
                 return fixnumOrBignum(result);
+            }
+        }
+
+    }
+
+    // Defined in Java as we need to statically call #/
+    @CoreMethod(names = "div", required = 1)
+    public abstract static class IDivNode extends BignumNodes.BignumCoreMethodNode {
+
+        @Child DivNode divNode = DivNodeFactory.create(null);
+        @Child FloatNodes.FloorNode floorNode = FloatNodesFactory.FloorNodeFactory.create(null, null, null);
+
+        @Specialization
+        public Object idiv(VirtualFrame frame, Object a, Object b,
+                @Cached("createBinaryProfile()") ConditionProfile zeroProfile) {
+            Object quotient = divNode.executeDiv(frame, a, b);
+            if (quotient instanceof Double) {
+                if (zeroProfile.profile((double) b == 0.0)) {
+                    throw new RaiseException(coreExceptions().zeroDivisionError(this));
+                }
+                return floorNode.executeFloor((double) quotient);
+            } else {
+                return quotient;
             }
         }
 
@@ -409,6 +441,12 @@ public abstract class BignumNodes {
         public Object bitAnd(DynamicObject a, DynamicObject b) {
             return fixnumOrBignum(Layouts.BIGNUM.getValue(a).and(Layouts.BIGNUM.getValue(b)));
         }
+
+        @Specialization(guards = { "!isInteger(b)", "!isLong(b)", "!isRubyBignum(b)" })
+        public Object bitAnd(VirtualFrame frame, DynamicObject a, Object b,
+                             @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "self & bit_coerce(b)[1]", "b", b);
+        }
     }
 
     @CoreMethod(names = "|", required = 1)
@@ -422,6 +460,12 @@ public abstract class BignumNodes {
         @Specialization(guards = "isRubyBignum(b)")
         public Object bitOr(DynamicObject a, DynamicObject b) {
             return fixnumOrBignum(Layouts.BIGNUM.getValue(a).or(Layouts.BIGNUM.getValue(b)));
+        }
+
+        @Specialization(guards = { "!isInteger(b)", "!isLong(b)", "!isRubyBignum(b)" })
+        public Object bitAnd(VirtualFrame frame, DynamicObject a, Object b,
+                @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "self | bit_coerce(b)[1]", "b", b);
         }
     }
 
@@ -437,6 +481,13 @@ public abstract class BignumNodes {
         public Object bitXOr(DynamicObject a, DynamicObject b) {
             return fixnumOrBignum(Layouts.BIGNUM.getValue(a).xor(Layouts.BIGNUM.getValue(b)));
         }
+
+        @Specialization(guards = { "!isInteger(b)", "!isLong(b)", "!isRubyBignum(b)" })
+        public Object bitAnd(VirtualFrame frame, DynamicObject a, Object b,
+                @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "self ^ bit_coerce(b)[1]", "b", b);
+        }
+
     }
 
     @CoreMethod(names = "<<", required = 1, lowerFixnum = 1)
@@ -542,19 +593,19 @@ public abstract class BignumNodes {
         @Specialization
         public DynamicObject coerce(DynamicObject a, int b) {
             Object[] store = new Object[] { b, a };
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), store, store.length);
+            return createArray(store, store.length);
         }
 
         @Specialization
         public DynamicObject coerce(DynamicObject a, long b) {
             Object[] store = new Object[] { b, a };
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), store, store.length);
+            return createArray(store, store.length);
         }
 
         @Specialization(guards = "isRubyBignum(b)")
         public DynamicObject coerce(DynamicObject a, DynamicObject b) {
             Object[] store = new Object[] { b, a };
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), store, store.length);
+            return createArray(store, store.length);
         }
 
     }

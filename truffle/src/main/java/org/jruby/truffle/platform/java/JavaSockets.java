@@ -13,6 +13,8 @@ import jnr.ffi.Pointer;
 import jnr.posix.Timeval;
 import org.jruby.truffle.platform.posix.Sockets;
 
+import java.nio.ByteBuffer;
+
 public class JavaSockets implements Sockets {
 
     @Override
@@ -82,6 +84,16 @@ public class JavaSockets implements Sockets {
 
     @Override
     public int connect(int socket, Pointer address, int address_len) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public int recvfrom(int sockfd, ByteBuffer buf, int len, int flags, Pointer src_addr, Pointer addrlen) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public int send(int sockfd, Pointer buf, int len, int flags) {
         throw new UnsupportedOperationException();
     }
 

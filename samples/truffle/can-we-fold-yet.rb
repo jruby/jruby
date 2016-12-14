@@ -6,7 +6,7 @@
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
 
-# Use -J-G:+TruffleIterativePartialEscape
+# Use -J-Dgraal.TruffleIterativePartialEscape=true
 
 unless Truffle.graal?
   puts 'You need Graal to run this'

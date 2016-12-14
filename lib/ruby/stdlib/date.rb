@@ -1402,14 +1402,22 @@ class Date
   # two DateTime instances.  When comparing a DateTime instance
   # with a Date instance, the time of the latter will be
   # considered as falling on midnight UTC.
+  class org::joda::time::DateTime
+    java_alias :compareDT, :compareTo, [org.joda.time.ReadableInstant]
+  end
   def <=> (other)
-    case other
-    when Numeric
-      ajd <=> other
-    when Date
+    if other.kind_of?(Date)
       # The method compareTo doesn't compare the sub milliseconds so after compare the two dates
       # then we have to compare the sub milliseconds to make sure that both are exactly equal.
-      @dt.compareTo(other.dt).nonzero? || @sub_millis <=> other.sub_millis
+      @dt.compareDT(other.dt).nonzero? || @sub_millis <=> other.sub_millis
+    else
+       __internal_cmp(other)
+    end
+  end
+
+  private def __internal_cmp(other)
+    if other.kind_of? Numeric
+      ajd <=> other
     else
       begin
         l, r = other.coerce(self)

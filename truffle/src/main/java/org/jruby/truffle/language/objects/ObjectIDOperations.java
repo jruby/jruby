@@ -10,12 +10,12 @@
 package org.jruby.truffle.language.objects;
 
 import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.ExactMath;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.Property;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.numeric.BignumOperations;
+import org.jruby.truffle.language.objects.shared.SharedObjects;
 
 import java.math.BigInteger;
 
@@ -60,7 +60,7 @@ public abstract class ObjectIDOperations {
     }
 
     public static long smallFixnumToIDOverflow(long fixnum) throws ArithmeticException {
-        return ExactMath.addExact(ExactMath.multiplyExact(fixnum, 2), 1);
+        return Math.addExact(Math.multiplyExact(fixnum, 2), 1);
     }
 
     public static long smallFixnumToID(long fixnum) {
@@ -120,7 +120,16 @@ public abstract class ObjectIDOperations {
         }
 
         final long objectID = context.getObjectSpaceManager().getNextObjectID();
-        object.define(Layouts.OBJECT_ID_IDENTIFIER, objectID, 0);
+
+        if (SharedObjects.isShared(object)) {
+            synchronized (object) {
+                // no need for a write barrier here, objectID is a long.
+                object.define(Layouts.OBJECT_ID_IDENTIFIER, objectID, 0);
+            }
+        } else {
+            object.define(Layouts.OBJECT_ID_IDENTIFIER, objectID, 0);
+        }
+
         return objectID;
     }
 }

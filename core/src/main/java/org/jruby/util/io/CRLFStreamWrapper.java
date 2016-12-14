@@ -17,6 +17,7 @@ import org.jruby.util.ByteList;
  * Wrapper around Stream that packs and unpacks LF <=> CRLF.
  * @author nicksieger
  */
+@Deprecated
 public class CRLFStreamWrapper implements Stream {
     private final Stream stream;
     private final boolean isWindows;

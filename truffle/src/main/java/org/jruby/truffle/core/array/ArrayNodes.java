@@ -12,15 +12,12 @@ package org.jruby.truffle.core.array;
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
-import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.CreateCast;
 import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
-import com.oracle.truffle.api.frame.FrameDescriptor;
-import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
@@ -31,18 +28,14 @@ import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.runtime.Helpers;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.builtins.CoreMethodNode;
-import org.jruby.truffle.builtins.Primitive;
-import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.builtins.YieldingCoreMethodNode;
-import org.jruby.truffle.core.array.ArrayNodesFactory.MaxBlockNodeFactory;
-import org.jruby.truffle.core.array.ArrayNodesFactory.MinBlockNodeFactory;
+import org.jruby.truffle.core.Hashing;
 import org.jruby.truffle.core.array.ArrayNodesFactory.RejectInPlaceNodeFactory;
 import org.jruby.truffle.core.array.ArrayNodesFactory.ReplaceNodeFactory;
 import org.jruby.truffle.core.cast.ToAryNodeGen;
@@ -57,7 +50,6 @@ import org.jruby.truffle.core.kernel.KernelNodes;
 import org.jruby.truffle.core.kernel.KernelNodesFactory;
 import org.jruby.truffle.core.numeric.FixnumLowerNodeGen;
 import org.jruby.truffle.core.proc.ProcOperations;
-import org.jruby.truffle.core.proc.ProcType;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeNodes;
 import org.jruby.truffle.core.rope.RopeNodesFactory;
@@ -66,34 +58,22 @@ import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.SnippetNode;
-import org.jruby.truffle.language.arguments.MissingArgumentBehavior;
-import org.jruby.truffle.language.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.dispatch.MissingBehavior;
-import org.jruby.truffle.language.locals.LocalVariableType;
-import org.jruby.truffle.language.locals.ReadDeclarationVariableNode;
-import org.jruby.truffle.language.methods.Arity;
-import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.methods.InternalMethod;
-import org.jruby.truffle.language.methods.SharedMethodInfo;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
-import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.language.objects.IsFrozenNode;
 import org.jruby.truffle.language.objects.IsFrozenNodeGen;
 import org.jruby.truffle.language.objects.TaintNode;
 import org.jruby.truffle.language.objects.TaintNodeGen;
 import org.jruby.truffle.language.yield.YieldNode;
-import org.jruby.util.Memo;
 
 import java.util.Arrays;
-import java.util.Comparator;
 
-import static org.jruby.truffle.core.array.ArrayHelpers.createArray;
 import static org.jruby.truffle.core.array.ArrayHelpers.getSize;
 import static org.jruby.truffle.core.array.ArrayHelpers.getStore;
 import static org.jruby.truffle.core.array.ArrayHelpers.setSize;
@@ -109,7 +89,7 @@ public abstract class ArrayNodes {
 
         public AllocateNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            allocateNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
+            allocateNode = AllocateObjectNode.create();
         }
 
         @Specialization
@@ -131,41 +111,18 @@ public abstract class ArrayNodes {
             return ToAryNodeGen.create(null, null, other);
         }
 
-        // One array has null storage, just copy the other.
-
-        @Specialization(guards = { "isNullArray(a)", "isNullArray(b)" })
-        public DynamicObject addNullNull(DynamicObject a, DynamicObject b) {
-            return createArray(getContext(), null, 0);
-        }
-
-        @Specialization(guards = { "isNullArray(a)", "!isNullArray(b)", "strategy.matches(b)" }, limit = "ARRAY_STRATEGIES")
-        public DynamicObject addNullOther(DynamicObject a, DynamicObject b,
-                @Cached("of(b)") ArrayStrategy strategy) {
-            final int size = getSize(b);
-            final ArrayMirror mirror = strategy.newMirror(b).extractRange(0, size);
-            return createArray(getContext(), mirror.getArray(), size);
-        }
-
-        @Specialization(guards = { "!isNullArray(a)", "isNullArray(b)", "strategy.matches(a)" }, limit = "ARRAY_STRATEGIES")
-        public DynamicObject addOtherNull(DynamicObject a, DynamicObject b,
-                @Cached("of(a)") ArrayStrategy strategy) {
-            final int size = getSize(a);
-            final ArrayMirror mirror = strategy.newMirror(a).extractRange(0, size);
-            return createArray(getContext(), mirror.getArray(), size);
-        }
-
         // Same storage
 
         @Specialization(guards = { "strategy.matches(a)", "strategy.matches(b)" }, limit = "ARRAY_STRATEGIES")
         public DynamicObject addSameType(DynamicObject a, DynamicObject b,
                 @Cached("of(a)") ArrayStrategy strategy) {
-            final int aSize = getSize(a);
-            final int bSize = getSize(b);
+            final int aSize = strategy.getSize(a);
+            final int bSize = strategy.getSize(b);
             final int combinedSize = aSize + bSize;
             final ArrayMirror mirror = strategy.newArray(combinedSize);
             strategy.newMirror(a).copyTo(mirror, 0, 0, aSize);
             strategy.newMirror(b).copyTo(mirror, 0, aSize, bSize);
-            return createArray(getContext(), mirror.getArray(), combinedSize);
+            return createArray(mirror.getArray(), combinedSize);
         }
 
         // Generalizations
@@ -175,13 +132,13 @@ public abstract class ArrayNodes {
                 @Cached("of(a)") ArrayStrategy aStrategy,
                 @Cached("of(b)") ArrayStrategy bStrategy,
                 @Cached("aStrategy.generalize(bStrategy)") ArrayStrategy generalized) {
-            final int aSize = getSize(a);
-            final int bSize = getSize(b);
+            final int aSize = aStrategy.getSize(a);
+            final int bSize = bStrategy.getSize(b);
             final int combinedSize = aSize + bSize;
             final ArrayMirror mirror = generalized.newArray(combinedSize);
             aStrategy.newMirror(a).copyTo(mirror, 0, 0, aSize);
             bStrategy.newMirror(b).copyTo(mirror, 0, aSize, bSize);
-            return createArray(getContext(), mirror.getArray(), combinedSize);
+            return createArray(mirror.getArray(), combinedSize);
         }
 
     }
@@ -191,26 +148,11 @@ public abstract class ArrayNodes {
 
         @Child private KernelNodes.RespondToNode respondToToStrNode;
         @Child private ToIntNode toIntNode;
-        @Child private AllocateObjectNode allocateObjectNode;
-
-        public MulNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
-        }
+        @Child private AllocateObjectNode allocateObjectNode = AllocateObjectNode.create();
 
         protected abstract Object executeMul(VirtualFrame frame, DynamicObject array, int count);
 
-        @Specialization(guards = "isNullArray(array)")
-        public DynamicObject mulEmpty(DynamicObject array, int count,
-                @Cached("create()") BranchProfile errorProfile) {
-            if (count < 0) {
-                errorProfile.enter();
-                throw new RaiseException(coreExceptions().argumentError("negative argument", this));
-            }
-            return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(array), null, 0);
-        }
-
-        @Specialization(guards = { "strategy.matches(array)", "!isNullArray(array)" }, limit = "ARRAY_STRATEGIES")
+        @Specialization(guards = "strategy.matches(array)", limit = "ARRAY_STRATEGIES")
         public DynamicObject mulOther(DynamicObject array, int count,
                 @Cached("of(array)") ArrayStrategy strategy,
                 @Cached("create()") BranchProfile errorProfile) {
@@ -219,7 +161,7 @@ public abstract class ArrayNodes {
                 throw new RaiseException(coreExceptions().argumentError("negative argument", this));
             }
 
-            final int size = getSize(array);
+            final int size = strategy.getSize(array);
             final int newSize = size * count;
             final ArrayMirror store = strategy.newMirror(array);
             final ArrayMirror newStore = strategy.newArray(newSize);
@@ -259,7 +201,7 @@ public abstract class ArrayNodes {
         public boolean respondToToStr(VirtualFrame frame, Object object) {
             if (respondToToStrNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                respondToToStrNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), null, null, null));
+                respondToToStrNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), null, null, null, null));
             }
             return respondToToStrNode.doesRespondToString(frame, object, create7BitString("to_str", UTF8Encoding.INSTANCE), false);
         }
@@ -273,18 +215,13 @@ public abstract class ArrayNodes {
         @Child protected ArrayReadSliceDenormalizedNode readSliceNode;
         @Child protected ArrayReadSliceNormalizedNode readNormalizedSliceNode;
         @Child protected CallDispatchHeadNode fallbackNode;
-        @Child protected AllocateObjectNode allocateObjectNode;
-
-        public IndexNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
-        }
+        @Child protected AllocateObjectNode allocateObjectNode = AllocateObjectNode.create();
 
         @Specialization
         public Object index(DynamicObject array, int index, NotProvided length) {
             if (readNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                readNode = insert(ArrayReadDenormalizedNodeGen.create(getContext(), getSourceSection(), null, null));
+                readNode = insert(ArrayReadDenormalizedNodeGen.create(getContext(), null, null, null));
             }
             return readNode.executeRead(array, index);
         }
@@ -297,7 +234,7 @@ public abstract class ArrayNodes {
 
             if (readSliceNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                readSliceNode = insert(ArrayReadSliceDenormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null));
+                readSliceNode = insert(ArrayReadSliceDenormalizedNodeGen.create(getContext(), null, null, null, null));
             }
 
             return readSliceNode.executeReadSlice(array, start, length);
@@ -324,7 +261,7 @@ public abstract class ArrayNodes {
 
                 if (readNormalizedSliceNode == null) {
                     CompilerDirectives.transferToInterpreterAndInvalidate();
-                    readNormalizedSliceNode = insert(ArrayReadSliceNormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null));
+                    readNormalizedSliceNode = insert(ArrayReadSliceNormalizedNodeGen.create(getContext(), null, null, null, null));
                 }
 
                 return readNormalizedSliceNode.executeReadSlice(array, normalizedIndex, length);
@@ -334,13 +271,13 @@ public abstract class ArrayNodes {
         @Specialization(guards = { "!isInteger(a)", "!isIntRange(a)" })
         public Object fallbackIndex(VirtualFrame frame, DynamicObject array, Object a, NotProvided length) {
             Object[] objects = new Object[] { a };
-            return fallback(frame, array, createArray(getContext(), objects, objects.length));
+            return fallback(frame, array, createArray(objects, objects.length));
         }
 
         @Specialization(guards = { "!isIntRange(a)", "wasProvided(b)" })
         public Object fallbackSlice(VirtualFrame frame, DynamicObject array, Object a, Object b) {
             Object[] objects = new Object[] { a, b };
-            return fallback(frame, array, createArray(getContext(), objects, objects.length));
+            return fallback(frame, array, createArray(objects, objects.length));
         }
 
         public Object fallback(VirtualFrame frame, DynamicObject array, DynamicObject args) {
@@ -409,7 +346,7 @@ public abstract class ArrayNodes {
                 // Passing a non-array as value is the same as assigning a single-element array
                 ArrayMirror mirror = strategy.newArray(1);
                 mirror.set(0, value);
-                ary = createArray(getContext(), mirror.getArray(), 1);
+                ary = createArray(mirror.getArray(), 1);
             }
 
             return executeSet(frame, array, start, length, ary);
@@ -561,7 +498,7 @@ public abstract class ArrayNodes {
         private Object read(DynamicObject array, int index) {
             if (readNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                readNode = insert(ArrayReadNormalizedNodeGen.create(getContext(), getSourceSection(), null, null));
+                readNode = insert(ArrayReadNormalizedNodeGen.create(getContext(), null, null, null));
             }
             return readNode.executeRead(array, index);
         }
@@ -569,7 +506,7 @@ public abstract class ArrayNodes {
         private Object write(DynamicObject array, int index, Object value) {
             if (writeNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                writeNode = insert(ArrayWriteNormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null));
+                writeNode = insert(ArrayWriteNormalizedNodeGen.create(getContext(), null, null, null, null));
             }
             return writeNode.executeWrite(array, index, value);
         }
@@ -577,7 +514,7 @@ public abstract class ArrayNodes {
         private DynamicObject readSlice(DynamicObject array, int start, int length) {
             if (readSliceNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                readSliceNode = insert(ArrayReadSliceNormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null));
+                readSliceNode = insert(ArrayReadSliceNormalizedNodeGen.create(getContext(), null, null, null, null));
             }
             return readSliceNode.executeReadSlice(array, start, length);
         }
@@ -609,7 +546,7 @@ public abstract class ArrayNodes {
         public Object at(DynamicObject array, int index) {
             if (readNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                readNode = insert(ArrayReadDenormalizedNodeGen.create(getContext(), getSourceSection(), null, null));
+                readNode = insert(ArrayReadDenormalizedNodeGen.create(getContext(), null, null, null));
             }
             return readNode.executeRead(array, index);
         }
@@ -631,26 +568,22 @@ public abstract class ArrayNodes {
     @ImportStatic(ArrayGuards.class)
     public abstract static class CompactNode extends ArrayCoreMethodNode {
 
-        @Specialization(guards = "isNullArray(array)")
-        public Object compactNull(DynamicObject array) {
-            return createArray(getContext(), null, 0);
-        }
-
-        @Specialization(guards = { "!isObjectArray(array)", "strategy.matches(array)" }, limit = "ARRAY_STRATEGIES")
+        @Specialization(guards = {"strategy.matches(array)", "!strategy.accepts(nil())"}, limit = "ARRAY_STRATEGIES")
         public DynamicObject compactPrimitive(DynamicObject array,
                 @Cached("of(array)") ArrayStrategy strategy) {
-            final int size = getSize(array);
+            final int size = strategy.getSize(array);
             Object store = strategy.newMirror(array).extractRange(0, size).getArray();
-            return createArray(getContext(), store, size);
+            return createArray(store, size);
         }
 
-        @Specialization(guards = "isObjectArray(array)")
-        public Object compactObjects(DynamicObject array) {
+        @Specialization(guards = {"strategy.matches(array)", "strategy.accepts(nil())"}, limit = "ARRAY_STRATEGIES")
+        public Object compactObjects(DynamicObject array,
+                @Cached("of(array)") ArrayStrategy strategy) {
             // TODO CS 9-Feb-15 by removing nil we could make this array suitable for a primitive array storage class
 
             final Object[] store = (Object[]) getStore(array);
             final Object[] newStore = new Object[store.length];
-            final int size = getSize(array);
+            final int size = strategy.getSize(array);
 
             int m = 0;
 
@@ -661,7 +594,7 @@ public abstract class ArrayNodes {
                 }
             }
 
-            return createArray(getContext(), newStore, m);
+            return createArray(newStore, m);
         }
 
     }
@@ -669,15 +602,17 @@ public abstract class ArrayNodes {
     @CoreMethod(names = "compact!", raiseIfFrozenSelf = true)
     public abstract static class CompactBangNode extends ArrayCoreMethodNode {
 
-        @Specialization(guards = "!isObjectArray(array)")
-        public DynamicObject compactNotObjects(DynamicObject array) {
+        @Specialization(guards = {"strategy.matches(array)", "!strategy.accepts(nil())"}, limit = "ARRAY_STRATEGIES")
+        public DynamicObject compactNotObjects(DynamicObject array,
+                @Cached("of(array)") ArrayStrategy strategy) {
             return nil();
         }
 
-        @Specialization(guards = "isObjectArray(array)")
-        public Object compactObjects(DynamicObject array) {
+        @Specialization(guards = {"strategy.matches(array)", "strategy.accepts(nil())"}, limit = "ARRAY_STRATEGIES")
+        public Object compactObjects(DynamicObject array,
+                @Cached("of(array)") ArrayStrategy strategy) {
             final Object[] store = (Object[]) getStore(array);
-            final int size = getSize(array);
+            final int size = strategy.getSize(array);
 
             int m = 0;
 
@@ -707,12 +642,7 @@ public abstract class ArrayNodes {
     @ImportStatic(ArrayGuards.class)
     public abstract static class ConcatNode extends CoreMethodNode {
 
-        @Child private ArrayAppendManyNode appendManyNode;
-
-        public ConcatNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            appendManyNode = ArrayAppendManyNodeGen.create(context, sourceSection, null, null);
-        }
+        @Child private ArrayAppendManyNode appendManyNode = ArrayAppendManyNodeGen.create(null, null);
 
         @CreateCast("other") public RubyNode coerceOtherToAry(RubyNode other) {
             return ToAryNodeGen.create(null, null, other);
@@ -730,23 +660,8 @@ public abstract class ArrayNodes {
     @ImportStatic(ArrayGuards.class)
     public abstract static class DeleteNode extends YieldingCoreMethodNode {
 
-        @Child private KernelNodes.SameOrEqualNode equalNode;
+        @Child private KernelNodes.SameOrEqualNode equalNode = KernelNodesFactory.SameOrEqualNodeFactory.create(null);
         @Child private IsFrozenNode isFrozenNode;
-
-        public DeleteNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            equalNode = KernelNodesFactory.SameOrEqualNodeFactory.create(null);
-        }
-
-        @Specialization(guards = "isNullArray(array)")
-        public Object deleteNull(VirtualFrame frame, DynamicObject array, Object value, NotProvided block) {
-            return nil();
-        }
-
-        @Specialization(guards = "isNullArray(array)")
-        public Object deleteNull(VirtualFrame frame, DynamicObject array, Object value, DynamicObject block) {
-            return yield(frame, block, value);
-        }
 
         @Specialization(guards = "strategy.matches(array)", limit = "ARRAY_STRATEGIES")
         public Object delete(VirtualFrame frame, DynamicObject array, Object value, Object maybeBlock,
@@ -757,7 +672,7 @@ public abstract class ArrayNodes {
 
             int i = 0;
             int n = 0;
-            while (n < getSize(array)) {
+            while (n < strategy.getSize(array)) {
                 final Object stored = store.get(n);
 
                 if (equalNode.executeSameOrEqual(frame, stored, value)) {
@@ -789,7 +704,7 @@ public abstract class ArrayNodes {
         public void checkFrozen(Object object) {
             if (isFrozenNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                isFrozenNode = insert(IsFrozenNodeGen.create(getContext(), getSourceSection(), null));
+                isFrozenNode = insert(IsFrozenNodeGen.create(getContext(), null, null));
             }
             isFrozenNode.raiseIfFrozen(object);
         }
@@ -808,21 +723,15 @@ public abstract class ArrayNodes {
             return ToIntNodeGen.create(index);
         }
 
-        @Specialization(guards = "isEmptyArray(array)")
-        public Object deleteAtNullOrEmpty(DynamicObject array, int index) {
-            return nil();
-        }
-
         @Specialization(guards = "strategy.matches(array)", limit = "ARRAY_STRATEGIES")
         public Object deleteAt(DynamicObject array, int index,
                 @Cached("of(array)") ArrayStrategy strategy,
                 @Cached("createBinaryProfile()") ConditionProfile negativeIndexProfile,
-                @Cached("create()") BranchProfile notInBoundsProfile) {
-            final int size = getSize(array);
+                @Cached("createBinaryProfile()") ConditionProfile notInBoundsProfile) {
+            final int size = strategy.getSize(array);
             final int i = ArrayOperations.normalizeIndex(size, index, negativeIndexProfile);
 
-            if (i < 0 || i >= size) {
-                notInBoundsProfile.enter();
+            if (notInBoundsProfile.profile(i < 0 || i >= size)) {
                 return nil();
             } else {
                 final ArrayMirror store = strategy.newMirror(array);
@@ -841,15 +750,6 @@ public abstract class ArrayNodes {
 
         @Child private CallDispatchHeadNode toEnumNode;
 
-        public EachNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @Specialization(guards = "isNullArray(array)")
-        public Object eachNull(VirtualFrame frame, DynamicObject array, DynamicObject block) {
-            return array;
-        }
-
         @Specialization(guards = "strategy.matches(array)", limit = "ARRAY_STRATEGIES")
         public Object eachOther(VirtualFrame frame, DynamicObject array, DynamicObject block,
                 @Cached("of(array)") ArrayStrategy strategy) {
@@ -857,7 +757,7 @@ public abstract class ArrayNodes {
 
             int n = 0;
             try {
-                for (; n < getSize(array); n++) {
+                for (; n < strategy.getSize(array); n++) {
                     yield(frame, block, store.get(n));
                 }
             } finally {
@@ -875,11 +775,6 @@ public abstract class ArrayNodes {
     @ImportStatic(ArrayGuards.class)
     public abstract static class EachWithIndexNode extends YieldingCoreMethodNode {
 
-        @Specialization(guards = "isNullArray(array)")
-        public DynamicObject eachWithIndexNull(DynamicObject array, DynamicObject block) {
-            return array;
-        }
-
         @Specialization(guards = "strategy.matches(array)", limit = "ARRAY_STRATEGIES")
         public Object eachWithIndexOther(VirtualFrame frame, DynamicObject array, DynamicObject block,
                 @Cached("of(array)") ArrayStrategy strategy) {
@@ -887,7 +782,7 @@ public abstract class ArrayNodes {
 
             int n = 0;
             try {
-                for (; n < getSize(array); n++) {
+                for (; n < strategy.getSize(array); n++) {
                     yield(frame, block, store.get(n), n);
                 }
             } finally {
@@ -906,10 +801,10 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = { "args.length == 1", "strategy.matches(array)", "strategy.accepts(value(args))" }, limit = "ARRAY_STRATEGIES")
         protected DynamicObject fill(DynamicObject array, Object[] args, NotProvided block,
-                @Cached("of(array, value(args))") ArrayStrategy strategy) {
+                @Cached("of(array)") ArrayStrategy strategy) {
             final Object value = args[0];
             final ArrayMirror store = strategy.newMirror(array);
-            final int size = getSize(array);
+            final int size = strategy.getSize(array);
             for (int i = 0; i < size; i++) {
                 store.set(i, value);
             }
@@ -937,33 +832,27 @@ public abstract class ArrayNodes {
     @CoreMethod(names = "hash_internal")
     public abstract static class HashNode extends ArrayCoreMethodNode {
 
-        @Child private ToIntNode toIntNode;
+        private static final int MURMUR_ARRAY_SEED = System.identityHashCode(ArrayNodes.class);
 
-        @Specialization(guards = "isNullArray(array)")
-        public long hashNull(DynamicObject array) {
-            final int size = 0;
-            long h = Helpers.hashStart(getContext().getJRubyRuntime(), size);
-            h = Helpers.murmurCombine(h, System.identityHashCode(ArrayNodes.class));
-            return Helpers.hashEnd(h);
-        }
+        @Child private ToIntNode toIntNode;
 
         @Specialization(guards = "strategy.matches(array)", limit = "ARRAY_STRATEGIES")
         public long hash(VirtualFrame frame, DynamicObject array,
                          @Cached("of(array)") ArrayStrategy strategy,
                          @Cached("createMethodCall()") CallDispatchHeadNode toHashNode) {
-            final int size = getSize(array);
+            final int size = strategy.getSize(array);
             // TODO BJF Jul 4, 2016 Seed could be chosen in advance to avoid branching
-            long h = Helpers.hashStart(getContext().getJRubyRuntime(), size);
-            h = Helpers.murmurCombine(h, System.identityHashCode(ArrayNodes.class));
+            long h = Hashing.start(size);
+            h = Hashing.update(h, MURMUR_ARRAY_SEED);
             final ArrayMirror store = strategy.newMirror(array);
 
             for (int n = 0; n < size; n++) {
                 final Object value = store.get(n);
                 final long valueHash = toLong(frame, toHashNode.call(frame, value, "hash"));
-                h = Helpers.murmurCombine(h, valueHash);
+                h = Hashing.update(h, valueHash);
             }
 
-            return Helpers.hashEnd(h);
+            return Hashing.end(h);
         }
 
         private long toLong(VirtualFrame frame, Object indexObject) {
@@ -973,7 +862,7 @@ public abstract class ArrayNodes {
             }
             final Object result = toIntNode.executeIntOrLong(frame, indexObject);
             if (result instanceof Integer) {
-                return (long) (int) result;
+                return (int) result;
             } else {
                 return (long) result;
             }
@@ -984,24 +873,14 @@ public abstract class ArrayNodes {
     @CoreMethod(names = "include?", required = 1)
     public abstract static class IncludeNode extends ArrayCoreMethodNode {
 
-        @Child private KernelNodes.SameOrEqualNode equalNode;
-
-        public IncludeNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            equalNode = KernelNodesFactory.SameOrEqualNodeFactory.create(null);
-        }
-
-        @Specialization(guards = "isNullArray(array)")
-        public boolean includeNull(VirtualFrame frame, DynamicObject array, Object value) {
-            return false;
-        }
+        @Child private KernelNodes.SameOrEqualNode equalNode = KernelNodesFactory.SameOrEqualNodeFactory.create(null);
 
         @Specialization(guards = "strategy.matches(array)", limit = "ARRAY_STRATEGIES")
         public boolean include(VirtualFrame frame, DynamicObject array, Object value,
                 @Cached("of(array)") ArrayStrategy strategy) {
             final ArrayMirror store = strategy.newMirror(array);
 
-            for (int n = 0; n < getSize(array); n++) {
+            for (int n = 0; n < strategy.getSize(array); n++) {
                 final Object stored = store.get(n);
 
                 if (equalNode.executeSameOrEqual(frame, stored, value)) {
@@ -1134,7 +1013,7 @@ public abstract class ArrayNodes {
         public boolean respondToToAry(VirtualFrame frame, Object object) {
             if (respondToToAryNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                respondToToAryNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), null, null, null));
+                respondToToAryNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), null, null, null, null));
             }
             return respondToToAryNode.doesRespondToString(frame, object, create7BitString("to_ary", UTF8Encoding.INSTANCE), true);
         }
@@ -1290,22 +1169,17 @@ public abstract class ArrayNodes {
     @ImportStatic(ArrayGuards.class)
     public abstract static class MapNode extends YieldingCoreMethodNode {
 
-        @Specialization(guards = "isNullArray(array)")
-        public DynamicObject mapNull(DynamicObject array, DynamicObject block) {
-            return createArray(getContext(), null, 0);
-        }
-
         @Specialization(guards = "strategy.matches(array)", limit = "ARRAY_STRATEGIES")
         public Object map(VirtualFrame frame, DynamicObject array, DynamicObject block,
                 @Cached("of(array)") ArrayStrategy strategy,
                 @Cached("create(getContext())") ArrayBuilderNode arrayBuilder) {
             final ArrayMirror store = strategy.newMirror(array);
-            final int size = getSize(array);
+            final int size = strategy.getSize(array);
             Object mappedStore = arrayBuilder.start(size);
 
             int n = 0;
             try {
-                for (; n < getSize(array); n++) {
+                for (; n < strategy.getSize(array); n++) {
                     final Object mappedValue = yield(frame, block, store.get(n));
                     mappedStore = arrayBuilder.appendValue(mappedStore, n, mappedValue);
                 }
@@ -1315,7 +1189,7 @@ public abstract class ArrayNodes {
                 }
             }
 
-            return createArray(getContext(), arrayBuilder.finish(mappedStore, size), size);
+            return createArray(arrayBuilder.finish(mappedStore, size), size);
         }
 
     }
@@ -1326,11 +1200,6 @@ public abstract class ArrayNodes {
 
         @Child private ArrayWriteNormalizedNode writeNode;
 
-        @Specialization(guards = "isNullArray(array)")
-        public DynamicObject mapInPlaceNull(DynamicObject array, DynamicObject block) {
-            return array;
-        }
-
         @Specialization(guards = "strategy.matches(array)", limit = "ARRAY_STRATEGIES")
         public Object map(VirtualFrame frame, DynamicObject array, DynamicObject block,
                 @Cached("of(array)") ArrayStrategy strategy,
@@ -1339,7 +1208,7 @@ public abstract class ArrayNodes {
 
             int n = 0;
             try {
-                for (; n < getSize(array); n++) {
+                for (; n < strategy.getSize(array); n++) {
                     writeNode.executeWrite(array, n, yield(frame, block, store.get(n)));
                 }
             } finally {
@@ -1352,255 +1221,9 @@ public abstract class ArrayNodes {
         }
 
         protected ArrayWriteNormalizedNode createWriteNode() {
-            return ArrayWriteNormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null);
+            return ArrayWriteNormalizedNodeGen.create(getContext(), null, null, null, null);
         }
 
-    }
-
-    // TODO: move into Enumerable?
-
-    @CoreMethod(names = "max", needsBlock = true)
-    public abstract static class MaxNode extends ArrayCoreMethodNode {
-
-        @Child private CallDispatchHeadNode eachNode;
-        private final MaxBlock maxBlock;
-
-        public MaxNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            eachNode = DispatchHeadNodeFactory.createMethodCall(context);
-            maxBlock = context.getCoreLibrary().getArrayMaxBlock();
-        }
-
-        @Specialization
-        public Object max(VirtualFrame frame, DynamicObject array, NotProvided blockNotProvided) {
-            // TODO: can we just write to the frame instead of having this indirect object?
-
-            final Memo<Object> maximum = new Memo<>();
-
-            final InternalMethod method = RubyArguments.getMethod(frame);
-            final VirtualFrame maximumClosureFrame = Truffle.getRuntime().createVirtualFrame(
-                    RubyArguments.pack(null, null, method, DeclarationContext.BLOCK, null, array, null, new Object[]{}), maxBlock.getFrameDescriptor());
-            maximumClosureFrame.setObject(maxBlock.getFrameSlot(), maximum);
-
-            final DynamicObject block = ProcOperations.createRubyProc(coreLibrary().getProcFactory(), ProcType.PROC,
-                    maxBlock.getSharedMethodInfo(), maxBlock.getCallTarget(), maxBlock.getCallTarget(),
-                    maximumClosureFrame.materialize(), method, array, null);
-
-            eachNode.callWithBlock(frame, array, "each", block);
-
-            if (maximum.get() == null) {
-                return nil();
-            } else {
-                return maximum.get();
-            }
-        }
-
-        @Specialization
-        public Object max(
-                VirtualFrame frame,
-                DynamicObject array,
-                DynamicObject block,
-                @Cached("createMethodCall()") CallDispatchHeadNode callNode) {
-            return callNode.callWithBlock(frame, array, "max_internal", block);
-        }
-
-    }
-
-    public abstract static class MaxBlockNode extends CoreMethodArrayArgumentsNode {
-
-        @Child private CallDispatchHeadNode compareNode;
-
-        private final BranchProfile errorProfile = BranchProfile.create();
-
-        public MaxBlockNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            compareNode = DispatchHeadNodeFactory.createMethodCall(context);
-        }
-
-        @Specialization
-        public DynamicObject max(VirtualFrame frame, Object maximumObject, Object value) {
-            @SuppressWarnings("unchecked")
-            final Memo<Object> maximum = (Memo<Object>) maximumObject;
-
-            final Object current = maximum.get();
-
-            if (current == null) {
-                maximum.set(value);
-            } else {
-                final Object compared = compareNode.call(frame, value, "<=>", current);
-
-                if (compared instanceof Integer) {
-                    if ((int) compared > 0) {
-                        maximum.set(value);
-                    }
-                } else {
-                    errorProfile.enter();
-                    // Should be the actual type and object in this string - but this method should go away soon
-                    throw new RaiseException(coreExceptions().argumentError("comparison of X with Y failed", this));
-                }
-            }
-
-            return nil();
-        }
-
-    }
-
-    public static class MaxBlock {
-
-        private final FrameDescriptor frameDescriptor;
-        private final FrameSlot frameSlot;
-        private final SharedMethodInfo sharedMethodInfo;
-        private final CallTarget callTarget;
-
-        public MaxBlock(RubyContext context) {
-            frameDescriptor = new FrameDescriptor(context.getCoreLibrary().getNilObject());
-            frameSlot = frameDescriptor.addFrameSlot("maximum_memo");
-
-            sharedMethodInfo = new SharedMethodInfo(SourceSection.createUnavailable(null, "Array#max block"), null, Arity.NO_ARGUMENTS, "max", false, null, false, false, false);
-
-            callTarget = Truffle.getRuntime().createCallTarget(new RubyRootNode(context, null, null, sharedMethodInfo, MaxBlockNodeFactory.create(context, null, new RubyNode[]{
-                                        new ReadDeclarationVariableNode(context, null, LocalVariableType.FRAME_LOCAL, 1, frameSlot),
-                                        new ReadPreArgumentNode(0, MissingArgumentBehavior.RUNTIME_ERROR)
-                                }), false));
-        }
-
-        public FrameDescriptor getFrameDescriptor() {
-            return frameDescriptor;
-        }
-
-        public FrameSlot getFrameSlot() {
-            return frameSlot;
-        }
-
-        public SharedMethodInfo getSharedMethodInfo() {
-            return sharedMethodInfo;
-        }
-
-        public CallTarget getCallTarget() {
-            return callTarget;
-        }
-    }
-
-    @CoreMethod(names = "min", needsBlock = true)
-    public abstract static class MinNode extends ArrayCoreMethodNode {
-
-        @Child private CallDispatchHeadNode eachNode;
-        private final MinBlock minBlock;
-
-        public MinNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            eachNode = DispatchHeadNodeFactory.createMethodCall(context);
-            minBlock = context.getCoreLibrary().getArrayMinBlock();
-        }
-
-        @Specialization
-        public Object min(VirtualFrame frame, DynamicObject array, NotProvided blockNotProvided) {
-            // TODO: can we just write to the frame instead of having this indirect object?
-
-            final Memo<Object> minimum = new Memo<>();
-
-            final InternalMethod method = RubyArguments.getMethod(frame);
-            final VirtualFrame minimumClosureFrame = Truffle.getRuntime().createVirtualFrame(
-                    RubyArguments.pack(null, null, method, DeclarationContext.BLOCK, null, array, null, new Object[]{}), minBlock.getFrameDescriptor());
-            minimumClosureFrame.setObject(minBlock.getFrameSlot(), minimum);
-
-            final DynamicObject block = ProcOperations.createRubyProc(coreLibrary().getProcFactory(), ProcType.PROC,
-                    minBlock.getSharedMethodInfo(), minBlock.getCallTarget(), minBlock.getCallTarget(),
-                    minimumClosureFrame.materialize(), method, array, null);
-
-            eachNode.callWithBlock(frame, array, "each", block);
-
-            if (minimum.get() == null) {
-                return nil();
-            } else {
-                return minimum.get();
-            }
-        }
-
-        @Specialization
-        public Object min(
-                VirtualFrame frame,
-                DynamicObject array,
-                DynamicObject block,
-                @Cached("new()") SnippetNode snippetNode) {
-            return snippetNode.execute(frame, "array.min_internal(&block)", "array", array, "block", block);
-        }
-
-    }
-
-    public abstract static class MinBlockNode extends CoreMethodArrayArgumentsNode {
-
-        @Child private CallDispatchHeadNode compareNode;
-
-        private final BranchProfile errorProfile = BranchProfile.create();
-
-        public MinBlockNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            compareNode = DispatchHeadNodeFactory.createMethodCall(context);
-        }
-
-        @Specialization
-        public DynamicObject min(VirtualFrame frame, Object minimumObject, Object value) {
-            @SuppressWarnings("unchecked")
-            final Memo<Object> minimum = (Memo<Object>) minimumObject;
-
-            final Object current = minimum.get();
-
-            if (current == null) {
-                minimum.set(value);
-            } else {
-                final Object compared = compareNode.call(frame, value, "<=>", current);
-
-                if (compared instanceof Integer) {
-                    if ((int) compared < 0) {
-                        minimum.set(value);
-                    }
-                } else {
-                    errorProfile.enter();
-                    // Should be the actual type and object in this string - but this method should go away soon
-                    throw new RaiseException(coreExceptions().argumentError("comparison of X with Y failed", this));
-                }
-            }
-
-            return nil();
-        }
-
-    }
-
-    public static class MinBlock {
-
-        private final FrameDescriptor frameDescriptor;
-        private final FrameSlot frameSlot;
-        private final SharedMethodInfo sharedMethodInfo;
-        private final CallTarget callTarget;
-
-        public MinBlock(RubyContext context) {
-            frameDescriptor = new FrameDescriptor(context.getCoreLibrary().getNilObject());
-            frameSlot = frameDescriptor.addFrameSlot("minimum_memo");
-
-            sharedMethodInfo = new SharedMethodInfo(SourceSection.createUnavailable(null, "Array#min block"), null, Arity.NO_ARGUMENTS, "min", false, null, false, false, false);
-
-            callTarget = Truffle.getRuntime().createCallTarget(new RubyRootNode(context, null, null, sharedMethodInfo, MinBlockNodeFactory.create(context, null, new RubyNode[]{
-                                        new ReadDeclarationVariableNode(context, null, LocalVariableType.FRAME_LOCAL, 1, frameSlot),
-                                        new ReadPreArgumentNode(0, MissingArgumentBehavior.RUNTIME_ERROR)
-                                }), false));
-        }
-
-        public FrameDescriptor getFrameDescriptor() {
-            return frameDescriptor;
-        }
-
-        public FrameSlot getFrameSlot() {
-            return frameSlot;
-        }
-
-        public SharedMethodInfo getSharedMethodInfo() {
-            return sharedMethodInfo;
-        }
-
-        public CallTarget getCallTarget() {
-            return callTarget;
-        }
     }
 
     @CoreMethod(names = "pack", required = 1, taintFrom = 1)
@@ -1680,7 +1303,7 @@ public abstract class ArrayNodes {
             if (result.isTainted()) {
                 if (taintNode == null) {
                     CompilerDirectives.transferToInterpreterAndInvalidate();
-                    taintNode = insert(TaintNodeGen.create(getContext(), getEncapsulatingSourceSection(), null));
+                    taintNode = insert(TaintNodeGen.create(getContext(), null, null));
                 }
 
                 taintNode.executeTaint(string);
@@ -1715,7 +1338,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "pop", raiseIfFrozenSelf = true, optional = 1)
+    @CoreMethod(names = "pop", raiseIfFrozenSelf = true, optional = 1, lowerFixnum = 1)
     public abstract static class PopNode extends ArrayCoreMethodNode {
 
         @Child private ToIntNode toIntNode;
@@ -1727,7 +1350,7 @@ public abstract class ArrayNodes {
         public Object pop(DynamicObject array, NotProvided n) {
             if (popOneNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                popOneNode = insert(ArrayPopOneNodeGen.create(getContext(), getEncapsulatingSourceSection(), null));
+                popOneNode = insert(ArrayPopOneNodeGen.create(getContext(), null, null));
             }
 
             return popOneNode.executePopOne(array);
@@ -1740,19 +1363,19 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = { "n >= 0", "isEmptyArray(array)" })
         public Object popEmpty(VirtualFrame frame, DynamicObject array, int n) {
-            return createArray(getContext(), null, 0);
+            return createArray(null, 0);
         }
 
         @Specialization(guards = { "n == 0", "!isEmptyArray(array)" })
         public Object popZeroNotEmpty(DynamicObject array, int n) {
-            return createArray(getContext(), null, 0);
+            return createArray(null, 0);
         }
 
         @Specialization(guards = { "n > 0", "!isEmptyArray(array)", "strategy.matches(array)" }, limit = "ARRAY_STRATEGIES")
         public Object popNotEmpty(DynamicObject array, int n,
                 @Cached("of(array)") ArrayStrategy strategy,
                 @Cached("createBinaryProfile()") ConditionProfile minProfile) {
-            final int size = getSize(array);
+            final int size = strategy.getSize(array);
             final int numPop = minProfile.profile(size < n) ? size : n;
             final ArrayMirror store = strategy.newMirror(array);
 
@@ -1764,7 +1387,7 @@ public abstract class ArrayNodes {
             filler.copyTo(store, 0, size - numPop, numPop);
             setSize(array, size - numPop);
 
-            return createArray(getContext(), popped.getArray(), numPop);
+            return createArray(popped.getArray(), numPop);
         }
 
         @Specialization(guards = { "wasProvided(n)", "!isInteger(n)", "!isLong(n)" })
@@ -1783,17 +1406,12 @@ public abstract class ArrayNodes {
     }
 
     @CoreMethod(names = "<<", raiseIfFrozenSelf = true, required = 1)
-    public abstract static class LeftShiftNode extends ArrayCoreMethodNode {
+    public abstract static class AppendNode extends ArrayCoreMethodNode {
 
-        @Child private ArrayAppendOneNode appendOneNode;
-
-        public LeftShiftNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            appendOneNode = ArrayAppendOneNodeGen.create(context, sourceSection, null, null);
-        }
+        @Child private ArrayAppendOneNode appendOneNode = ArrayAppendOneNode.create();
 
         @Specialization
-        public DynamicObject leftShift(DynamicObject array, Object value) {
+        public DynamicObject append(DynamicObject array, Object value) {
             return appendOneNode.executeAppendOne(array, value);
         }
 
@@ -1802,12 +1420,7 @@ public abstract class ArrayNodes {
     @CoreMethod(names = { "push", "__append__" }, rest = true, optional = 1, raiseIfFrozenSelf = true)
     public abstract static class PushNode extends ArrayCoreMethodNode {
 
-        @Child private ArrayAppendOneNode appendOneNode;
-
-        public PushNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            appendOneNode = ArrayAppendOneNodeGen.create(context, sourceSection, null, null);
-        }
+        @Child private ArrayAppendOneNode appendOneNode = ArrayAppendOneNode.create();
 
         @Specialization(guards = "rest.length == 0")
         public DynamicObject pushZero(DynamicObject array, NotProvided unusedValue, Object[] rest) {
@@ -1836,23 +1449,18 @@ public abstract class ArrayNodes {
     @ImportStatic(ArrayGuards.class)
     public abstract static class RejectNode extends YieldingCoreMethodNode {
 
-        @Specialization(guards = "isNullArray(array)")
-        public Object rejectNull(DynamicObject array, DynamicObject block) {
-            return createArray(getContext(), null, 0);
-        }
-
         @Specialization(guards = "strategy.matches(array)", limit = "ARRAY_STRATEGIES")
         public Object rejectOther(VirtualFrame frame, DynamicObject array, DynamicObject block,
                 @Cached("of(array)") ArrayStrategy strategy,
                 @Cached("create(getContext())") ArrayBuilderNode arrayBuilder) {
             final ArrayMirror store = strategy.newMirror(array);
 
-            Object selectedStore = arrayBuilder.start(getSize(array));
+            Object selectedStore = arrayBuilder.start(strategy.getSize(array));
             int selectedSize = 0;
 
             int n = 0;
             try {
-                for (; n < getSize(array); n++) {
+                for (; n < strategy.getSize(array); n++) {
                     final Object value = store.get(n);
 
                     if (!yieldIsTruthy(frame, block, value)) {
@@ -1866,7 +1474,7 @@ public abstract class ArrayNodes {
                 }
             }
 
-            return createArray(getContext(), arrayBuilder.finish(selectedStore, selectedSize), selectedSize);
+            return createArray(arrayBuilder.finish(selectedStore, selectedSize), selectedSize);
         }
 
     }
@@ -1895,11 +1503,6 @@ public abstract class ArrayNodes {
 
         public abstract Object executeRejectInPlace(VirtualFrame frame, DynamicObject array, DynamicObject block);
 
-        @Specialization(guards = "isNullArray(array)")
-        public Object rejectInPlaceNull(DynamicObject array, DynamicObject block) {
-            return nil();
-        }
-
         @Specialization(guards = "strategy.matches(array)", limit = "ARRAY_STRATEGIES")
         public Object rejectInPlaceOther(VirtualFrame frame, DynamicObject array, DynamicObject block,
                 @Cached("of(array)") ArrayStrategy strategy) {
@@ -1908,7 +1511,7 @@ public abstract class ArrayNodes {
             int i = 0;
             int n = 0;
             try {
-                for (; n < getSize(array); n++) {
+                for (; n < strategy.getSize(array); n++) {
                     final Object value = store.get(n);
                     if (yieldIsTruthy(frame, block, value)) {
                         continue;
@@ -1954,16 +1557,10 @@ public abstract class ArrayNodes {
             return ToAryNodeGen.create(null, null, index);
         }
 
-        @Specialization(guards = "isNullArray(other)")
-        public DynamicObject replace(DynamicObject array, DynamicObject other) {
-            setStoreAndSize(array, null, 0);
-            return array;
-        }
-
         @Specialization(guards = "strategy.matches(other)", limit = "ARRAY_STRATEGIES")
         public DynamicObject replace(DynamicObject array, DynamicObject other,
                 @Cached("of(other)") ArrayStrategy strategy) {
-            final int size = getSize(other);
+            final int size = strategy.getSize(other);
             final ArrayMirror copy = strategy.newMirror(other).copyArrayAndMirror();
             setStoreAndSize(array, copy.getArray(), size);
             return array;
@@ -1975,23 +1572,18 @@ public abstract class ArrayNodes {
     @ImportStatic(ArrayGuards.class)
     public abstract static class SelectNode extends YieldingCoreMethodNode {
 
-        @Specialization(guards = "isNullArray(array)")
-        public Object selectNull(DynamicObject array, DynamicObject block) {
-            return createArray(getContext(), null, 0);
-        }
-
         @Specialization(guards = "strategy.matches(array)", limit = "ARRAY_STRATEGIES")
         public Object selectOther(VirtualFrame frame, DynamicObject array, DynamicObject block,
                 @Cached("of(array)") ArrayStrategy strategy,
                 @Cached("create(getContext())") ArrayBuilderNode arrayBuilder) {
             final ArrayMirror store = strategy.newMirror(array);
 
-            Object selectedStore = arrayBuilder.start(getSize(array));
+            Object selectedStore = arrayBuilder.start(strategy.getSize(array));
             int selectedSize = 0;
 
             int n = 0;
             try {
-                for (; n < getSize(array); n++) {
+                for (; n < strategy.getSize(array); n++) {
                     final Object value = store.get(n);
 
                     if (yieldIsTruthy(frame, block, value)) {
@@ -2005,7 +1597,7 @@ public abstract class ArrayNodes {
                 }
             }
 
-            return createArray(getContext(), arrayBuilder.finish(selectedStore, selectedSize), selectedSize);
+            return createArray(arrayBuilder.finish(selectedStore, selectedSize), selectedSize);
         }
 
     }
@@ -2033,7 +1625,7 @@ public abstract class ArrayNodes {
         public Object shiftOther(DynamicObject array, NotProvided n,
                 @Cached("of(array)") ArrayStrategy strategy) {
             final ArrayMirror store = strategy.newMirror(array);
-            final int size = getSize(array);
+            final int size = strategy.getSize(array);
             final Object value = store.get(0);
             store.copyTo(store, 1, 0, size - 1);
 
@@ -2054,19 +1646,19 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "n == 0")
         public Object shiftZero(DynamicObject array, int n) {
-            return createArray(getContext(), null, 0);
+            return createArray(null, 0);
         }
 
         @Specialization(guards = { "n > 0", "isEmptyArray(array)" })
         public Object shiftManyEmpty(DynamicObject array, int n) {
-            return createArray(getContext(), null, 0);
+            return createArray(null, 0);
         }
 
         @Specialization(guards = { "n > 0", "strategy.matches(array)", "!isEmptyArray(array)" }, limit = "ARRAY_STRATEGIES")
         public Object shiftMany(DynamicObject array, int n,
                 @Cached("of(array)") ArrayStrategy strategy,
                 @Cached("createBinaryProfile()") ConditionProfile minProfile) {
-            final int size = getSize(array);
+            final int size = strategy.getSize(array);
             final int numShift = minProfile.profile(size < n) ? size : n;
             final ArrayMirror store = strategy.newMirror(array);
 
@@ -2081,7 +1673,7 @@ public abstract class ArrayNodes {
             filler.copyTo(store, 0, size - numShift, numShift);
             setSize(array, size - numShift);
 
-            return createArray(getContext(), result.getArray(), numShift);
+            return createArray(result.getArray(), numShift);
         }
 
         @Specialization(guards = { "wasProvided(n)", "!isInteger(n)", "!isLong(n)" })
@@ -2102,9 +1694,10 @@ public abstract class ArrayNodes {
     @CoreMethod(names = { "size", "length" })
     public abstract static class SizeNode extends ArrayCoreMethodNode {
 
-        @Specialization
-        public int size(DynamicObject array) {
-            return getSize(array);
+        @Specialization(guards = "strategy.matches(array)", limit = "ARRAY_STRATEGIES")
+        public int size(DynamicObject array,
+                        @Cached("of(array)") ArrayStrategy strategy) {
+            return strategy.getSize(array);
         }
 
     }
@@ -2123,18 +1716,18 @@ public abstract class ArrayNodes {
             yieldNode = new YieldNode(context);
         }
 
-        @Specialization(guards = "isNullArray(array)")
+        @Specialization(guards = "isEmptyArray(array)")
         public DynamicObject sortNull(DynamicObject array, Object unusedBlock) {
-            return createArray(getContext(), null, 0);
+            return createArray(null, 0);
         }
 
         @ExplodeLoop
-        @Specialization(guards = { "!isNullArray(array)", "isSmall(array)", "strategy.matches(array)" }, limit = "ARRAY_STRATEGIES")
+        @Specialization(guards = {"!isEmptyArray(array)", "isSmall(array)", "strategy.matches(array)"}, limit = "ARRAY_STRATEGIES")
         public DynamicObject sortVeryShort(VirtualFrame frame, DynamicObject array, NotProvided block,
                 @Cached("of(array)") ArrayStrategy strategy) {
             final ArrayMirror originalStore = strategy.newMirror(array);
             final ArrayMirror store = strategy.newArray(getContext().getOptions().ARRAY_SMALL);
-            final int size = getSize(array);
+            final int size = strategy.getSize(array);
 
             // Copy with a exploded loop for PE
 
@@ -2161,35 +1754,30 @@ public abstract class ArrayNodes {
                 }
             }
 
-            return createArray(getContext(), store.getArray(), size);
+            return createArray(store.getArray(), size);
         }
 
-        @Specialization(guards = { "!isNullArray(array)", "!isSmall(array)" })
+        @Specialization(guards = {"!isEmptyArray(array)", "!isSmall(array)"})
         public Object sortLargeArray(VirtualFrame frame, DynamicObject array, NotProvided block,
                 @Cached("new()") SnippetNode snippetNode) {
             return snippetNode.execute(frame,
                     "sorted = dup; Truffle.privately { sorted.mergesort! }; sorted");
         }
 
-        @Specialization(guards = { "isObjectArray(array)" })
+        @Specialization(guards = {"!isEmptyArray(array)", "isObjectArray(array)"})
         public Object sortObjectWithBlock(DynamicObject array, DynamicObject block) {
             final int size = getSize(array);
             Object[] copy = ((Object[]) getStore(array)).clone();
             doSort(copy, size, block);
-            return createArray(getContext(), copy, size);
+            return createArray(copy, size);
         }
 
         @TruffleBoundary
         private void doSort(Object[] copy, int size, DynamicObject block) {
-            Arrays.sort(copy, 0, size, new Comparator<Object>() {
-                @Override
-                public int compare(Object a, Object b) {
-                    return castSortValue(ProcOperations.rootCall(block, a, b));
-                }
-            });
+            Arrays.sort(copy, 0, size, (a, b) -> castSortValue(ProcOperations.rootCall(block, a, b)));
         }
 
-        @Specialization(guards = { "!isNullArray(array)", "!isObjectArray(array)" })
+        @Specialization(guards = {"!isEmptyArray(array)", "!isObjectArray(array)"})
         public Object sortWithBlock(VirtualFrame frame, DynamicObject array, DynamicObject block,
                 @Cached("new()") SnippetNode snippet) {
             return snippet.execute(frame,
@@ -2229,8 +1817,8 @@ public abstract class ArrayNodes {
             final ArrayMirror a = aStrategy.newMirror(array);
             final ArrayMirror b = bStrategy.newMirror(other);
 
-            final int bSize = getSize(other);
-            final int zippedLength = getSize(array);
+            final int bSize = bStrategy.getSize(other);
+            final int zippedLength = aStrategy.getSize(array);
             final Object[] zipped = new Object[zippedLength];
 
             for (int n = 0; n < zippedLength; n++) {
@@ -2238,16 +1826,16 @@ public abstract class ArrayNodes {
                     final ArrayMirror pair = generalized.newArray(2);
                     pair.set(0, a.get(n));
                     pair.set(1, b.get(n));
-                    zipped[n] = createArray(getContext(), pair.getArray(), 2);
+                    zipped[n] = createArray(pair.getArray(), 2);
                 } else {
-                    zipped[n] = createArray(getContext(), new Object[] { a.get(n), nil() }, 2);
+                    zipped[n] = createArray(new Object[] { a.get(n), nil() }, 2);
                 }
             }
 
-            return createArray(getContext(), zipped, zippedLength);
+            return createArray(zipped, zippedLength);
         }
 
-        @Specialization(guards = { "isRubyArray(other)", "fallback(array, other, others)" })
+        @Specialization(guards = {"isRubyArray(other)", "others.length > 0"})
         public Object zipObjectObjectNotSingleObject(VirtualFrame frame, DynamicObject array, DynamicObject other, Object[] others, NotProvided block) {
             return zipRuby(frame, array, null);
         }
@@ -2269,12 +1857,7 @@ public abstract class ArrayNodes {
             }
 
             final Object[] others = RubyArguments.getArguments(frame);
-
             return zipInternalCall.callWithBlock(frame, array, "zip_internal", block, others);
-        }
-
-        protected static boolean fallback(DynamicObject array, DynamicObject other, Object[] others) {
-            return ArrayGuards.isNullArray(array) || ArrayGuards.isNullArray(other) || others.length > 0;
         }
 
     }

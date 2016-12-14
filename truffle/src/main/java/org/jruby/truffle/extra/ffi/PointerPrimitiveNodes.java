@@ -12,11 +12,13 @@ package org.jruby.truffle.extra.ffi;
 import com.kenai.jffi.MemoryIO;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.TruffleOptions;
 import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.ffi.Pointer;
+import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
@@ -26,11 +28,10 @@ import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeConstants;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
-import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.platform.RubiniusTypes;
 import org.jruby.truffle.platform.UnsafeGroup;
-import org.jruby.util.ByteList;
-import org.jruby.util.unsafe.UnsafeHolder;
+import org.jruby.truffle.util.UnsafeHolder;
+import org.jruby.truffle.util.ByteList;
 
 public abstract class PointerPrimitiveNodes {
     public static final Pointer NULL_POINTER = jnr.ffi.Runtime.getSystemRuntime().getMemoryManager().newOpaquePointer(0);
@@ -42,7 +43,7 @@ public abstract class PointerPrimitiveNodes {
 
         public PointerAllocatePrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
+            allocateObjectNode = AllocateObjectNode.create();
         }
 
         @Specialization
@@ -59,7 +60,7 @@ public abstract class PointerPrimitiveNodes {
 
         public PointerMallocPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
+            allocateObjectNode = AllocateObjectNode.create();
         }
 
         @Specialization
@@ -110,7 +111,7 @@ public abstract class PointerPrimitiveNodes {
 
         public PointerAddPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
+            allocateObjectNode = AllocateObjectNode.create();
         }
 
         @Specialization
@@ -199,12 +200,14 @@ public abstract class PointerPrimitiveNodes {
 
         public PointerReadPointerPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
+            allocateObjectNode = AllocateObjectNode.create();
         }
 
         @Specialization
         public DynamicObject readPointer(DynamicObject pointer) {
-            Pointer readPointer = Layouts.POINTER.getPointer(pointer).getPointer(0);
+            Pointer ptr = Layouts.POINTER.getPointer(pointer);
+            assert ptr.address() != 0 : "Attempt to dereference a null pointer";
+            Pointer readPointer = ptr.getPointer(0);
 
             if (readPointer == null) {
                 readPointer = NULL_POINTER;
@@ -281,7 +284,7 @@ public abstract class PointerPrimitiveNodes {
         public DynamicObject getAtOffsetPointer(DynamicObject pointer, int offset, int type) {
             if (allocateObjectNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                allocateObjectNode = insert(AllocateObjectNodeGen.create(getContext(), getEncapsulatingSourceSection(), null, null));
+                allocateObjectNode = insert(AllocateObjectNode.create());
             }
 
             final Pointer readPointer = Layouts.POINTER.getPointer(pointer).getPointer(offset);
@@ -319,7 +322,17 @@ public abstract class PointerPrimitiveNodes {
         @TruffleBoundary
         @Specialization(guards = "!isNullPointer(pointer)")
         public DynamicObject readStringToNull(DynamicObject pointer) {
-            return createString(new ByteList(MemoryIO.getInstance().getZeroTerminatedByteArray(Layouts.POINTER.getPointer(pointer).address())));
+            if (TruffleOptions.AOT) {
+                final jnr.ffi.Pointer ptr = Layouts.POINTER.getPointer(pointer);
+                final int nullOffset = ptr.indexOf(0, (byte) 0);
+                final byte[] bytes = new byte[nullOffset];
+
+                ptr.get(0, bytes, 0, bytes.length);
+
+                return StringOperations.createString(getContext(), new ByteList(bytes));
+            }
+
+            return createString(MemoryIO.getInstance().getZeroTerminatedByteArray(Layouts.POINTER.getPointer(pointer).address()), ASCIIEncoding.INSTANCE);
         }
 
     }

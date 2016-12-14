@@ -89,7 +89,7 @@ public abstract class ToIntNode extends RubyNode {
     public Object coerceDouble(VirtualFrame frame, double value) {
         if (floatToIntNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            floatToIntNode = insert(FloatNodesFactory.ToINodeFactory.create(getContext(), getSourceSection(), null));
+            floatToIntNode = insert(FloatNodesFactory.ToINodeFactory.create(getContext(), null, null));
         }
         return floatToIntNode.executeToI(frame, value);
     }

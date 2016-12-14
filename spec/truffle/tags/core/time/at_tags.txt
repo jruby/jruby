@@ -1,4 +1,3 @@
-fails:Time.at passed Numeric returns a subclass instance on a Time subclass
 fails:Time.at passed Time returns a subclass instance
 fails:Time.at passed Numeric roundtrips a Rational produced by #to_r
 fails:Time.at passed Numeric passed BigDecimal doesn't round input value

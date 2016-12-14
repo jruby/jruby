@@ -241,6 +241,10 @@ public abstract class RubyGuards {
         return Layouts.TRACE_POINT.isTracePoint(object);
     }
 
+    public static boolean isRubyIO(DynamicObject object) {
+        return Layouts.IO.isIO(object);
+    }
+
     public static boolean isNullPointer(DynamicObject pointer) {
         return Layouts.POINTER.getPointer(pointer) == PointerPrimitiveNodes.NULL_POINTER;
     }
@@ -287,6 +291,12 @@ public abstract class RubyGuards {
 
     public static boolean isInfinity(double value) {
         return Double.isInfinite(value);
+    }
+
+    // Composite
+
+    public static boolean isSingletonClass(DynamicObject value) {
+        return isRubyClass(value) && Layouts.CLASS.getIsSingleton(value);
     }
 
 }

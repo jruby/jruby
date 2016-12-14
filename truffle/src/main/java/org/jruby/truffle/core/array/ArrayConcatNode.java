@@ -19,10 +19,8 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 
-import static org.jruby.truffle.core.array.ArrayHelpers.createArray;
-
 /**
- * Concatenate argument arrays (translating a org.jruby.ast.ArgsCatNode).
+ * Concatenate argument arrays (translating a org.jruby.ast.ArgsCatParseNode).
  */
 public final class ArrayConcatNode extends RubyNode {
 
@@ -63,7 +61,7 @@ public final class ArrayConcatNode extends RubyNode {
             store = arrayBuilderNode.ensure(store, 1);
             store = arrayBuilderNode.appendValue(store, 0, childObject);
         }
-        return createArray(getContext(), arrayBuilderNode.finish(store, size), size);
+        return createArray(arrayBuilderNode.finish(store, size), size);
     }
 
     @ExplodeLoop
@@ -87,7 +85,7 @@ public final class ArrayConcatNode extends RubyNode {
             }
         }
 
-        return createArray(getContext(), arrayBuilderNode.finish(store, length), length);
+        return createArray(arrayBuilderNode.finish(store, length), length);
     }
 
     @ExplodeLoop

@@ -6,6 +6,37 @@
  * Eclipse Public License version 1.0
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
+ *
+ * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Eclipse Public
+ * License Version 1.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of
+ * the License at http://www.eclipse.org/legal/epl-v10.html
+ *
+ * Software distributed under the License is distributed on an "AS
+ * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * rights and limitations under the License.
+ *
+ * Copyright (C) 2002 Jason Voegele <jason@jvoegele.com>
+ * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
+ * Copyright (C) 2002-2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2004-2005 Charles O Nutter <headius@headius.com>
+ * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either of the GNU General Public License Version 2 or later (the "GPL"),
+ * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the EPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the EPL, the GPL or the LGPL.
  */
 package org.jruby.truffle.core.thread;
 
@@ -19,8 +50,7 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.RubyThread.Status;
-import org.jruby.runtime.Visibility;
+import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreClass;
@@ -35,16 +65,14 @@ import org.jruby.truffle.core.exception.ExceptionOperations;
 import org.jruby.truffle.core.fiber.FiberManager;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.SafepointAction;
+import org.jruby.truffle.language.Visibility;
 import org.jruby.truffle.language.backtrace.Backtrace;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
-import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
-import org.jruby.truffle.language.objects.ReadInstanceVariableNode;
 import org.jruby.truffle.language.objects.ReadObjectFieldNode;
 import org.jruby.truffle.language.objects.ReadObjectFieldNodeGen;
 import org.jruby.truffle.platform.UnsafeGroup;
-import org.jruby.util.Memo;
+import org.jruby.truffle.util.Memo;
 
 import java.util.ArrayList;
 import java.util.concurrent.CountDownLatch;
@@ -52,11 +80,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-
-import static org.jruby.RubyThread.RUBY_MAX_THREAD_PRIORITY;
-import static org.jruby.RubyThread.RUBY_MIN_THREAD_PRIORITY;
-import static org.jruby.RubyThread.javaPriorityToRubyPriority;
-import static org.jruby.RubyThread.rubyPriorityToJavaPriority;
 
 @CoreClass("Thread")
 public abstract class ThreadNodes {
@@ -66,8 +89,8 @@ public abstract class ThreadNodes {
 
         @Specialization
         public boolean alive(DynamicObject thread) {
-            final Status status = Layouts.THREAD.getStatus(thread);
-            return status != Status.ABORTING && status != Status.DEAD;
+            final ThreadStatus status = Layouts.THREAD.getStatus(thread);
+            return status != ThreadStatus.ABORTING && status != ThreadStatus.DEAD;
         }
 
     }
@@ -82,14 +105,9 @@ public abstract class ThreadNodes {
 
             final Memo<DynamicObject> result = new Memo<>(null);
 
-            getContext().getSafepointManager().pauseThreadAndExecute(thread, this, new SafepointAction() {
-
-                @Override
-                public void run(DynamicObject thread, Node currentNode) {
-                    final Backtrace backtrace = getContext().getCallStack().getBacktrace(currentNode);
-                    result.set(ExceptionOperations.backtraceAsRubyStringArray(getContext(), null, backtrace));
-                }
-
+            getContext().getSafepointManager().pauseThreadAndExecute(thread, this, (thread1, currentNode) -> {
+                final Backtrace backtrace = getContext().getCallStack().getBacktrace(currentNode);
+                result.set(ExceptionOperations.backtraceAsRubyStringArray(getContext(), null, backtrace));
             });
 
             // If the thread id dead or aborting the SafepointAction will not run
@@ -113,6 +131,16 @@ public abstract class ThreadNodes {
 
     }
 
+    @CoreMethod(names = "group")
+    public abstract static class GroupNode extends CoreMethodArrayArgumentsNode {
+
+        @Specialization
+        public DynamicObject group(DynamicObject thread) {
+            return Layouts.THREAD.getThreadGroup(thread);
+        }
+
+    }
+
     @CoreMethod(names = { "kill", "exit", "terminate" }, unsafe = UnsafeGroup.THREADS)
     public abstract static class KillNode extends CoreMethodArrayArgumentsNode {
 
@@ -126,14 +154,7 @@ public abstract class ThreadNodes {
                 return rubyThread;
             }
 
-            getContext().getSafepointManager().pauseThreadAndExecuteLater(toKill, this, new SafepointAction() {
-
-                @Override
-                public void run(DynamicObject currentThread, Node currentNode) {
-                    ThreadManager.shutdown(getContext(), currentThread, currentNode);
-                }
-
-            });
+            getContext().getSafepointManager().pauseThreadAndExecuteLater(toKill, this, (currentThread, currentNode) -> ThreadManager.shutdown(getContext(), currentThread, currentNode));
 
             return rubyThread;
         }
@@ -271,19 +292,14 @@ public abstract class ThreadNodes {
         private boolean doJoinMillis(final DynamicObject thread, final int timeoutInMillis) {
             final long start = System.currentTimeMillis();
 
-            final boolean joined = getContext().getThreadManager().runUntilResult(this, new ThreadManager.BlockingAction<Boolean>() {
-
-                @Override
-                public Boolean block() throws InterruptedException {
-                    long now = System.currentTimeMillis();
-                    long waited = now - start;
-                    if (waited >= timeoutInMillis) {
-                        // We need to know whether countDown() was called and we do not want to block.
-                        return Layouts.THREAD.getFinishedLatch(thread).getCount() == 0;
-                    }
-                    return Layouts.THREAD.getFinishedLatch(thread).await(timeoutInMillis - waited, TimeUnit.MILLISECONDS);
+            final boolean joined = getContext().getThreadManager().runUntilResult(this, () -> {
+                long now = System.currentTimeMillis();
+                long waited = now - start;
+                if (waited >= timeoutInMillis) {
+                    // We need to know whether countDown() was called and we do not want to block.
+                    return Layouts.THREAD.getFinishedLatch(thread).getCount() == 0;
                 }
-
+                return Layouts.THREAD.getFinishedLatch(thread).await(timeoutInMillis - waited, TimeUnit.MILLISECONDS);
             });
 
             if (joined && Layouts.THREAD.getException(thread) != null) {
@@ -322,16 +338,15 @@ public abstract class ThreadNodes {
         @Specialization
         public Object status(DynamicObject self) {
             // TODO: slightly hackish
-            final Status status = Layouts.THREAD.getStatus(self);
-            if (status == Status.DEAD) {
+            final ThreadStatus status = Layouts.THREAD.getStatus(self);
+            if (status == ThreadStatus.DEAD) {
                 if (Layouts.THREAD.getException(self) != null) {
                     return nil();
                 } else {
                     return false;
                 }
             }
-
-            return createString(status.bytes);
+            return create7BitString(status.toString().toLowerCase(), USASCIIEncoding.INSTANCE);
         }
 
     }
@@ -341,8 +356,8 @@ public abstract class ThreadNodes {
 
         @Specialization
         public boolean stop(DynamicObject self) {
-            final Status status = Layouts.THREAD.getStatus(self);
-            return status == Status.DEAD || status == Status.SLEEP;
+            final ThreadStatus status = Layouts.THREAD.getStatus(self);
+            return status == ThreadStatus.DEAD || status == ThreadStatus.SLEEP;
         }
 
     }
@@ -364,7 +379,7 @@ public abstract class ThreadNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject wakeup(final DynamicObject thread) {
-            if (Layouts.THREAD.getStatus(thread) == Status.DEAD) {
+            if (Layouts.THREAD.getStatus(thread) == ThreadStatus.DEAD) {
                 throw new RaiseException(coreExceptions().threadErrorKilledThread(this));
             }
 
@@ -410,8 +425,9 @@ public abstract class ThreadNodes {
         @Specialization
         public DynamicObject allocate(
                 DynamicObject rubyClass,
-                @Cached("createAllocateObjectNode()") AllocateObjectNode allocateObjectNode,
+                @Cached("create()") AllocateObjectNode allocateObjectNode,
                 @Cached("createReadAbortOnExceptionNode()") ReadObjectFieldNode readAbortOnException ) {
+            final DynamicObject currentGroup = Layouts.THREAD.getThreadGroup(getContext().getThreadManager().getCurrentThread());
             final DynamicObject object = allocateObjectNode.allocate(
                     rubyClass,
                     ThreadManager.createThreadLocals(getContext()),
@@ -425,15 +441,13 @@ public abstract class ThreadNodes {
                     new AtomicReference<>(null),
                     new AtomicReference<>(null),
                     new AtomicBoolean(false),
-                    new AtomicInteger(0));
+                    new AtomicInteger(0),
+                    currentGroup,
+                    nil());
 
             Layouts.THREAD.setFiberManagerUnsafe(object, new FiberManager(getContext(), object)); // Because it is cyclic
 
             return object;
-        }
-
-        protected AllocateObjectNode createAllocateObjectNode() {
-            return AllocateObjectNodeGen.create(null, null);
         }
 
         protected ReadObjectFieldNode createReadAbortOnExceptionNode() {
@@ -448,7 +462,7 @@ public abstract class ThreadNodes {
         @Specialization
         public DynamicObject list() {
             final Object[] threads = getContext().getThreadManager().getThreadList();
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), threads, threads.length);
+            return createArray(threads, threads.length);
         }
     }
 
@@ -465,18 +479,40 @@ public abstract class ThreadNodes {
         public static void raiseInThread(final RubyContext context, DynamicObject rubyThread, final DynamicObject exception, Node currentNode) {
             final Thread javaThread = Layouts.FIBER.getThread((Layouts.THREAD.getFiberManager(rubyThread).getCurrentFiber()));
 
-            context.getSafepointManager().pauseThreadAndExecuteLater(javaThread, currentNode, new SafepointAction() {
-                @Override
-                public void run(DynamicObject currentThread, Node currentNode) {
-                    if (Layouts.EXCEPTION.getBacktrace(exception) == null) {
-                        Backtrace backtrace = context.getCallStack().getBacktrace(currentNode);
-                        Layouts.EXCEPTION.setBacktrace(exception, backtrace);
-                    }
-                    throw new RaiseException(exception);
+            context.getSafepointManager().pauseThreadAndExecuteLater(javaThread, currentNode, (currentThread, currentNode1) -> {
+                if (Layouts.EXCEPTION.getBacktrace(exception) == null) {
+                    Backtrace backtrace = context.getCallStack().getBacktrace(currentNode1);
+                    Layouts.EXCEPTION.setBacktrace(exception, backtrace);
                 }
+                throw new RaiseException(exception);
             });
         }
 
+    }
+
+    @Primitive(name = "thread_get_name")
+    public static abstract class ThreadGetNamePrimitiveNode extends PrimitiveArrayArgumentsNode {
+        public ThreadGetNamePrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization(guards = "isRubyThread(thread)")
+        public DynamicObject getName(DynamicObject thread) {
+            return Layouts.THREAD.getName(thread);
+        }
+    }
+
+    @Primitive(name = "thread_set_name")
+    public static abstract class ThreadSetNamePrimitiveNode extends PrimitiveArrayArgumentsNode {
+        public ThreadSetNamePrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization(guards = "isRubyThread(thread)")
+        public DynamicObject setName(DynamicObject thread, DynamicObject name) {
+            Layouts.THREAD.setName(thread, name);
+            return name;
+        }
     }
 
     @Primitive(name = "thread_get_priority", unsafe = UnsafeGroup.THREADS)
@@ -495,10 +531,24 @@ public abstract class ThreadNodes {
                 return Layouts.THREAD.getPriority(thread);
             }
         }
+
+        /*
+         * helper methods to translate Java thread priority (1-10) to Ruby thread priority (-3 to 3)
+         * using a quadratic polynomial ant its inverse passing by (Ruby,Java): (-3,1), (0,5) and
+         * (3,10) i.e., j = r^2/18 + 3*r/2 + 5 r = 3/2*sqrt(8*j + 41) - 27/2
+         */
+        private static int javaPriorityToRubyPriority(int javaPriority) {
+            double d = 1.5 * Math.sqrt(8.0 * javaPriority + 41) - 13.5;
+            return Math.round((float) d);
+        }
     }
 
     @Primitive(name = "thread_set_priority", unsafe = UnsafeGroup.THREADS)
     public static abstract class ThreadSetPriorityPrimitiveNode extends PrimitiveArrayArgumentsNode {
+
+        static final int RUBY_MIN_THREAD_PRIORITY = -3;
+        static final int RUBY_MAX_THREAD_PRIORITY = 3;
+
         public ThreadSetPriorityPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -518,6 +568,25 @@ public abstract class ThreadNodes {
             }
             Layouts.THREAD.setPriority(thread, rubyPriority);
             return rubyPriority;
+        }
+
+        private static int rubyPriorityToJavaPriority(int rubyPriority) {
+            double d = (rubyPriority * rubyPriority) / 18.0 + 1.5 * rubyPriority + 5;
+            return Math.round((float) d);
+        }
+
+    }
+
+    @Primitive(name = "thread_set_group")
+    public static abstract class ThreadSetGroupPrimitiveNode extends PrimitiveArrayArgumentsNode {
+        public ThreadSetGroupPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization(guards = "isRubyThread(thread)")
+        public DynamicObject setGroup(DynamicObject thread, DynamicObject threadGroup) {
+            Layouts.THREAD.setThreadGroup(thread, threadGroup);
+            return threadGroup;
         }
     }
 

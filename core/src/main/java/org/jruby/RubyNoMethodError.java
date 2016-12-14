@@ -33,6 +33,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.Visibility;
+import org.jruby.util.ArraySupport;
 
 @JRubyClass(name="NoMethodError", parent="NameError")
 public class RubyNoMethodError extends RubyNameError {
@@ -75,10 +76,8 @@ public class RubyNoMethodError extends RubyNameError {
     @Override
     public IRubyObject initialize(IRubyObject[] args, Block block) {
         if (args.length > 2) {
-            this.args = args[args.length - 1];
-            IRubyObject []tmpArgs = new IRubyObject[args.length - 1];
-            System.arraycopy(args, 0, tmpArgs, 0, tmpArgs.length);
-            args = tmpArgs;
+            this.args = args[ args.length - 1 ];
+            args = ArraySupport.newCopy(args, args.length - 1);
         } else {
             this.args = getRuntime().getNil();
         }

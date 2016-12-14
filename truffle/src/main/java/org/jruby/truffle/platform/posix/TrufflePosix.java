@@ -35,13 +35,13 @@ public interface TrufflePosix {
     int exec(String path, String[] argv, String[] envp);
     int fork();
     int fstat(int fd, FileStat stat);
-    Pointer environ();
     String getenv(String envName);
     int getegid();
     int geteuid();
     int seteuid(int euid);
     int getgid();
     int getpgid(int pid);
+    int setpgid(int pid, int pgid);
     int getpgrp();
     int getpid();
     int getppid();
@@ -53,6 +53,7 @@ public interface TrufflePosix {
     boolean isatty(FileDescriptor descriptor);
     int kill(int pid, int signal);
     int kill(long pid, int signal);
+    int lchmod(String filename, int mode);
     SignalHandler signal(Signal sig, SignalHandler handler);
     int link(String oldpath,String newpath);
     int lstat(String path, FileStat stat);
@@ -78,7 +79,7 @@ public interface TrufflePosix {
     int chdir(String path);
     long sysconf(Sysconf name);
     Times times();
-    long posix_spawnp(String path, Collection<? extends SpawnFileAction> fileActions, Collection<? extends CharSequence> argv, Collection<? extends CharSequence> envp);
+    int posix_spawnp(String path, Collection<? extends SpawnFileAction> fileActions, Collection<? extends CharSequence> argv, Collection<? extends CharSequence> envp);
     int flock(int fd, int operation);
     int dup(int fd);
     int dup2(int oldFd, int newFd);
@@ -100,5 +101,8 @@ public interface TrufflePosix {
     String getcwd();
     int fsync(int fd);
     int isatty(int fd);
+    int mkfifo(String path, int mode);
+    long[] getgroups();
+    String nl_langinfo(int item);
 
 }

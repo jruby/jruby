@@ -33,6 +33,7 @@ import org.jruby.runtime.BlockCallback;
 import org.jruby.runtime.CallBlock19;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -72,7 +73,7 @@ public class RubyYielder extends RubyObject {
         yielder.initialize(context, CallBlock19.newCallClosure(
                 yielder,
                 yielder.metaClass,
-                Arity.NO_ARGUMENTS,
+                Signature.NO_ARGUMENTS,
                 new BlockCallback() {
             public IRubyObject call(ThreadContext context, IRubyObject[] args, Block inner) {
                 return block.call(context, args, inner);

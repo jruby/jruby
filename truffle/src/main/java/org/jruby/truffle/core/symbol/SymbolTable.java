@@ -20,8 +20,8 @@ import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.util.ByteList;
-import org.jruby.util.IdUtil;
+import org.jruby.truffle.util.IdUtil;
+
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -33,8 +33,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class SymbolTable {
 
-    private final RubyContext context;
-    private DynamicObjectFactory symbolFactory;
+    private final DynamicObjectFactory symbolFactory;
 
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
 
@@ -46,8 +45,8 @@ public class SymbolTable {
     // deduplicate symbols
     private final Map<SymbolEquality, Reference<DynamicObject>> symbolSet = new WeakHashMap<>();
 
-    public SymbolTable(RubyContext context) {
-        this.context = context;
+    public SymbolTable(DynamicObjectFactory symbolFactory) {
+        this.symbolFactory = symbolFactory;
     }
 
     @TruffleBoundary
@@ -70,7 +69,9 @@ public class SymbolTable {
                 return symbol;
             }
 
-            final Rope rope = StringOperations.createRope(stringKey, USASCIIEncoding.INSTANCE);
+            // TODO (eregon, 8 Nov. 2016): This doesn't sound right,
+            // maybe it should become UTF-8 if it's not 7-bit?
+            final Rope rope = StringOperations.encodeRope(stringKey, USASCIIEncoding.INSTANCE);
             symbol = getDeduplicatedSymbol(rope);
 
             stringSymbolMap.put(stringKey, new WeakReference<DynamicObject>(symbol));
@@ -126,11 +127,11 @@ public class SymbolTable {
     }
 
     private DynamicObject createSymbol(Rope rope) {
-        final String string = ByteList.decode(rope.getBytes(), 0, rope.byteLength(), "ISO-8859-1");
+        final String string = RopeOperations.decodeRope(rope);
         // Symbol has to have reference to its SymbolEquality otherwise it would be GCed.
         final SymbolEquality equalityWrapper = new SymbolEquality();
         final DynamicObject symbol = Layouts.SYMBOL.createSymbol(
-                getSymbolFactory(),
+                symbolFactory,
                 string,
                 rope,
                 string.hashCode(),
@@ -138,13 +139,6 @@ public class SymbolTable {
 
         equalityWrapper.setSymbol(symbol);
         return symbol;
-    }
-
-    private DynamicObjectFactory getSymbolFactory() {
-        if (symbolFactory == null) {
-            symbolFactory = Layouts.CLASS.getInstanceFactory(context.getCoreLibrary().getSymbolClass());
-        }
-        return symbolFactory;
     }
 
     private <K, V> V readRef(Map<K, Reference<V>> map, K key) {
@@ -181,6 +175,7 @@ public class SymbolTable {
     public static String checkInstanceVariableName(
             RubyContext context,
             String name,
+            Object receiver,
             Node currentNode) {
         // if (!IdUtil.isValidInstanceVariableName(name)) {
 
@@ -188,6 +183,7 @@ public class SymbolTable {
         if (!(name.startsWith("@") && name.length() > 1 && IdUtil.isInitialCharacter(name.charAt(1)))) {
             throw new RaiseException(context.getCoreExceptions().nameErrorInstanceNameNotAllowable(
                     name,
+                    receiver,
                     currentNode));
         }
         return name;
@@ -197,10 +193,12 @@ public class SymbolTable {
     public static String checkClassVariableName(
             RubyContext context,
             String name,
+            Object receiver,
             Node currentNode) {
         if (!IdUtil.isValidClassVariableName(name)) {
             throw new RaiseException(context.getCoreExceptions().nameErrorInstanceNameNotAllowable(
                     name,
+                    receiver,
                     currentNode));
         }
         return name;

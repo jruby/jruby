@@ -83,9 +83,9 @@ describe JUnitFormatter, "#finish" do
 
   it "outputs a failure message and backtrace" do
     @formatter.finish
-    $stdout.should =~ /message="error in describe it" type="error"/
-    $stdout.should =~ /MSpecExampleError: broken\n/
-    $stdout.should =~ %r[path/to/some/file.rb:35:in method]
+    $stdout.should include 'message="error in describe it" type="error"'
+    $stdout.should include "MSpecExampleError: broken\n"
+    $stdout.should include "path/to/some/file.rb:35:in method"
   end
 
   it "encodes message and backtrace in latin1 for jenkins" do
@@ -100,48 +100,48 @@ describe JUnitFormatter, "#finish" do
   it "outputs an elapsed time" do
     @timer.should_receive(:elapsed).and_return(4.2)
     @formatter.finish
-    $stdout.should =~ /time="4.2"/
+    $stdout.should include 'time="4.2"'
   end
 
   it "outputs overall elapsed time" do
     @timer.should_receive(:elapsed).and_return(4.2)
     @formatter.finish
-    $stdout.should =~ /timeCount="4.2"/
+    $stdout.should include 'timeCount="4.2"'
   end
 
   it "outputs the number of examples as test count" do
     @counter.should_receive(:examples).and_return(9)
     @formatter.finish
-    $stdout.should =~ /tests="9"/
+    $stdout.should include 'tests="9"'
   end
 
   it "outputs overall number of examples as test count" do
     @counter.should_receive(:examples).and_return(9)
     @formatter.finish
-    $stdout.should =~ /testCount="9"/
+    $stdout.should include 'testCount="9"'
   end
 
   it "outputs a failure count" do
     @counter.should_receive(:failures).and_return(2)
     @formatter.finish
-    $stdout.should =~ /failureCount="2"/
+    $stdout.should include 'failureCount="2"'
   end
 
   it "outputs overall failure count" do
     @counter.should_receive(:failures).and_return(2)
     @formatter.finish
-    $stdout.should =~ /failures="2"/
+    $stdout.should include 'failures="2"'
   end
 
   it "outputs an error count" do
     @counter.should_receive(:errors).and_return(1)
     @formatter.finish
-    $stdout.should =~ /errors="1"/
+    $stdout.should include 'errors="1"'
   end
 
   it "outputs overall error count" do
     @counter.should_receive(:errors).and_return(1)
     @formatter.finish
-    $stdout.should =~ /errorCount="1"/
+    $stdout.should include 'errorCount="1"'
   end
 end

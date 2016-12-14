@@ -9,7 +9,7 @@ import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.ast.util.SexpMaker;
 import org.jruby.compiler.Compilable;
-import org.jruby.compiler.JITCompiler.MethodJITClassGenerator;
+import org.jruby.compiler.MethodJITClassGenerator;
 import org.jruby.internal.runtime.methods.CompiledIRMethod;
 import org.jruby.internal.runtime.methods.MixedModeIRMethod;
 import org.jruby.ir.dataflow.analyses.LiveVariablesProblem;

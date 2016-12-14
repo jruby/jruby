@@ -8,8 +8,13 @@ describe "Float#round" do
     -1.4.round.should == -1
     -2.8.round.should == -3
     0.0.round.should == 0
-    0.49999999999999994.round.should == 0 # see http://jira.codehaus.org/browse/JRUBY-5048
-    -0.49999999999999994.round.should == 0
+  end
+
+  platform_is_not "x64-mingw32" do
+    it "returns the nearest Integer for Float near the limit" do
+      0.49999999999999994.round.should == 0
+      -0.49999999999999994.round.should == 0
+    end
   end
 
   it "raises FloatDomainError for exceptional values" do
@@ -65,11 +70,23 @@ describe "Float#round" do
     0.42.round(2.0**30).should == 0.42
   end
 
+  ruby_version_is ""..."2.4" do
+    it "returns big values rounded to nearest" do
+      +2.5e20.round(-20).should   eql( +3 * 10 ** 20  )
+      -2.5e20.round(-20).should   eql( -3 * 10 ** 20  )
+    end
+  end
+
+  ruby_version_is "2.4" do
+    it "returns big values rounded to nearest even" do
+      +2.5e20.round(-20).should   eql( +2 * 10 ** 20  )
+      -2.5e20.round(-20).should   eql( -2 * 10 ** 20  )
+    end
+  end
+
   # redmine #5272
   it "returns rounded values for big values" do
-    +2.5e20.round(-20).should   eql( +3 * 10 ** 20  )
     +2.4e20.round(-20).should   eql( +2 * 10 ** 20  )
-    -2.5e20.round(-20).should   eql( -3 * 10 ** 20  )
     -2.4e20.round(-20).should   eql( -2 * 10 ** 20  )
     +2.5e200.round(-200).should eql( +3 * 10 ** 200 )
     +2.4e200.round(-200).should eql( +2 * 10 ** 200 )

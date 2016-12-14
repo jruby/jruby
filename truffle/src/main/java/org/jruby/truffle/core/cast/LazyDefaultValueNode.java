@@ -17,17 +17,18 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.util.func.Function0;
+
+import java.util.function.Supplier;
 
 @NodeChild(value = "value", type = RubyNode.class)
 public abstract class LazyDefaultValueNode extends RubyNode {
 
-    private final Function0<Object> defaultValueProducer;
+    private final Supplier<Object> defaultValueProducer;
 
     @CompilationFinal private boolean hasDefault;
     @CompilationFinal private Object defaultValue;
 
-    public LazyDefaultValueNode(RubyContext context, SourceSection sourceSection, Function0<Object> defaultValueProducer) {
+    public LazyDefaultValueNode(RubyContext context, SourceSection sourceSection, Supplier<Object> defaultValueProducer) {
         super(context, sourceSection);
         this.defaultValueProducer = defaultValueProducer;
     }
@@ -36,7 +37,7 @@ public abstract class LazyDefaultValueNode extends RubyNode {
     public Object doDefault(NotProvided value) {
         if (!hasDefault) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            defaultValue = defaultValueProducer.apply();
+            defaultValue = defaultValueProducer.get();
             hasDefault = true;
         }
 

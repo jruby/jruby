@@ -16,7 +16,7 @@ describe "Array#hash" do
     lambda { empty.hash }.should_not raise_error
 
     array = ArraySpecs.recursive_array
-    lambda { empty.hash }.should_not raise_error
+    lambda { array.hash }.should_not raise_error
   end
 
   it "returns the same hash for equal recursive arrays" do

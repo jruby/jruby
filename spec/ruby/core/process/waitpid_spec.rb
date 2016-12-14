@@ -7,6 +7,7 @@ describe "Process.waitpid" do
     pid = spawn("sleep 5")
     begin
       Process.waitpid(pid, Process::WNOHANG).should == nil
+      Process.kill("KILL", pid)
     ensure
       Process.wait(pid)
     end

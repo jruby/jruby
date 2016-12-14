@@ -206,6 +206,33 @@ describe "Invoking a method" do
 
 end
 
+describe "Invoking a public setter method" do
+  it 'returns the set value' do
+    klass = Class.new do
+      def foobar=(*)
+        1
+      end
+    end
+
+    (klass.new.foobar = 'bar').should == 'bar'
+    (klass.new.foobar = 'bar', 'baz').should == ["bar", "baz"]
+  end
+end
+
+describe "Invoking []= methods" do
+  it 'returns the set value' do
+    klass = Class.new do
+      def []=(*)
+        1
+      end
+    end
+
+    (klass.new[33] = 'bar').should == 'bar'
+    (klass.new[33] = 'bar', 'baz').should == ['bar', 'baz']
+    (klass.new[33, 34] = 'bar', 'baz').should == ['bar', 'baz']
+  end
+end
+
 describe "Invoking a private setter method" do
   describe "permits self as a receiver" do
     it "for normal assignment" do

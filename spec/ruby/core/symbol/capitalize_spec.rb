@@ -36,7 +36,7 @@ describe "Symbol#capitalize" do
   ruby_version_is ''...'2.4' do
     it "leaves uppercase Unicode characters as they were" do
       "a\u{00DE}c".to_sym.capitalize.should == :"AÞc"
-    end  
+    end
   end
 
   it "leaves lowercase Unicode characters (except in first position) as they were" do

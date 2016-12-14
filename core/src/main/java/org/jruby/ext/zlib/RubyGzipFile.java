@@ -38,6 +38,8 @@ import org.jruby.RubyTime;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.Helpers;
+import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -111,6 +113,31 @@ public class RubyGzipFile extends RubyObject implements IOEncodable {
         result.callInit(new IRubyObject[0], block);
 
         return result;
+    }
+
+    // These methods are here to avoid defining a singleton #path on every instance, as in MRI
+
+    @JRubyMethod
+    public IRubyObject path(ThreadContext context) {
+        return this.realIo.callMethod(context, "path");
+    }
+
+    @JRubyMethod(name = "respond_to?", frame = true)
+    public IRubyObject respond_to(ThreadContext context, IRubyObject name) {
+        if (name.asJavaString().equals("path")) {
+            return sites(context).reader_respond_to.call(context, this, this.realIo, name);
+        }
+
+        return Helpers.invokeSuper(context, this, name, Block.NULL_BLOCK);
+    }
+
+    @JRubyMethod(name = "respond_to?", frame = true)
+    public IRubyObject respond_to(ThreadContext context, IRubyObject name, IRubyObject includePrivate) {
+        if (name.asJavaString().equals("path")) {
+            return sites(context).reader_respond_to.call(context, this, this.realIo, name, includePrivate);
+        }
+
+        return Helpers.invokeSuper(context, this, name, Block.NULL_BLOCK);
     }
     
     public RubyGzipFile(Ruby runtime, RubyClass type) {
@@ -276,6 +303,10 @@ public class RubyGzipFile extends RubyObject implements IOEncodable {
     @Override
     public boolean getBOM() {
         return hasBOM;
+    }
+
+    private static JavaSites.ZlibSites sites(ThreadContext context) {
+        return context.sites.Zlib;
     }
     
     protected boolean closed = false;

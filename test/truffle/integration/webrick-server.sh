@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
+source test/truffle/common.sh.inc
+
 set -e
 
-source test/truffle/common/test_server.sh.inc
-ruby -X+T test/truffle/integration/webrick-server/webrick-server.rb & test_server
+jt ruby test/truffle/integration/webrick-server/webrick-server.rb & test_server

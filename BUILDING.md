@@ -101,65 +101,74 @@ mvn -pl core
 mvn -pl truffle
 ```
 
-
 ### Day to Day Testing
 
-For normal day-to-day testing, we recommend running the Ruby (MRI) tests
+For normal day-to-day testing, we recommend running the Ruby specs. We have set aside a
+"fast" grouping that takes only a couple minutes to run:
+
+```
+jruby -S rake spec:ruby:fast
+```
+
+For a more intensive workout, you can also run the Ruby (MRI) tests
 via the following rake command:
 
 ```
-bin/jruby -S rake test:mri
+jruby -S rake test:mri
 ```
 
 This suite takes a while to complete, so if you want to run an individual file
 from MRI's tests (under test/mri), use one of the following commands:
 
-# Run a specific test method in a specific file
+#### Run a specific test from the MRI suite
+
+The MRI suite (under `test/mri`) has a runner script in `test/mri/runner.rb` that sets up
+an appropriate test environment. Many of the MRI tests will need to be run via this script.
 ```
-jruby <test file> -n <specific test method>
+jruby -r ./test/mri_test_env.rb test/mri/runner.rb test/mri/<path to test>
 ```
 
-# Run a test file with known-failing tests excluded
-```
-EXCLUDES=test/mri/excludes bin/jruby -r test/mri_test_env.rb test/mri/runner.rb -q -- <test file>
-```
-#### Run a single spec
-```
-bin/jruby spec/mspec/bin/mspec run spec/ruby/core/symbol/length_spec.rb
-```
+You can pass `-v` to the runner for verbose output or `-n test_method_name` to only run a single test method.  If you are interested in all failures you can exlude the -r option (of mri_test_env.rb).  Some excluded tests are inherent limitations of JRuby and some are just problems we have not gotten to yet.
 
-#### Run a single spec with remote debugging
-```
-bin/jruby spec/mspec/bin/mspec run -T-J-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005 spec/ruby/core/symbol/length_spec.rb
-```
+#### Run a test file with known-failing tests excluded
 
-Additional tests may be run through mspec.
-```
-bin/jruby -S mspec -B spec/jruby.2.2.mspec -t bin/jruby -G fails ci <test files>
-```
+The runner script provides a mechanism for "excluding" known failing tests. Ruby scripts under `test/mri/exclude`, named based on the name of the test case's class, exclude with comment tests known to fail.
 
-For more complete assurance, you can also run 1.9 RubySpecs via the
-following command:
+To run a given test with these excludes enabled, you can use the EXCLUDES environment variable:
 
 ```
-jruby spec/mspec/bin/mspec ci
+EXCLUDES=test/mri/excludes bin/jruby test/mri/runner.rb <test file>
 ```
 
-And if you are making changes that would affect JRuby's core runtime
+#### Run a single Ruby spec
+
+Individual specs can be run with the mspec tool:
+
+```
+jruby spec/mspec/bin/mspec ci spec/ruby/<path to spec>
+```
+
+If `ci` is omitted or replaced with `run` you will see any specs known to fail. The `ci` command
+avoids running those specs.
+
+#### Run JRuby with with remote debugging
+
+If you are familiar with Java debuggers, you can attach one to a JRuby process using the JDWP agent.
+The exact flag may vary with debugger and platform:
+
+```
+bin/jruby -T-J-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005 <rest of arguments>
+```
+#### JRuby internal unit tests
+
+If you are making changes that would affect JRuby's core runtime
 or embedding APIs, you should run JRuby's Java-based unit tests via
 
 ```
 mvn -Ptest
 ```
 
-On travis the following tests will run
-
-```
-mvn -Ptest
-mvn -Prake -Dtask=test:extended
-mvn -Prake -Dtask=spec:ci\_interpreted\_travis
-mvn -Ptruffle
-```
+#### Tests for other ways of deploying and packaging JRuby
 
 There are some maven integration tests (i.e. consistency test if all gems are included, osgi test, etc) for the various distributions of JRuby which can be invoked with
 
@@ -169,21 +178,11 @@ mvn -Pcomplete -Dinvoker.skip=false
 mvn -Pdist -Dinvoker.skip=false
 ```
 
-### Just Like CI
+#### Just Like CI
 
-Our [CI](https://travis-ci.org/jruby/jruby) runs the following three commands (in essence):
+JRuby runs CI tests on TravisCI. See [.travis.yml](https://github.com/jruby/jruby/blob/master/.travis.yml).
 
-```
-rake test:extended
-jruby spec/mspec/bin/mspec ci
-jruby --1.8 spec/mspec/bin/mspec ci
-```
-
-The complete CI test suite will take anywhere from 20 to 45 minutes to
-complete, but provides the most accurate indication of the stability of
-your local JRuby source.
-
-### maven integration tests - -Pjruby-complete or -Pmain
+#### maven integration tests - -Pjruby-complete or -Pmain
 
 maven integration test will use the packed maven artifact to run the tests in a forked maven instance. these maven projects are locatated in
 

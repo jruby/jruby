@@ -61,7 +61,6 @@ public class OSGiLoadService extends LoadService {
      */
     public OSGiLoadService(Ruby runtime) {
         super(runtime);
-//        super.searchers.add(new OSGiBundlesSearcher());
     }
     
     protected Library findLibraryBySearchState(SearchState state) {
@@ -115,6 +114,7 @@ public class OSGiLoadService extends LoadService {
      * Support for 'bundle:/' to look for libraries in osgi bundles.
      */
     @Override
+    @Deprecated
     protected Library createLibrary(SearchState state, LoadServiceResource resource) {
         if (resource == null) {
             return null;

@@ -240,8 +240,7 @@ describe "C-API Class function" do
 
     it "calls #inherited on the superclass" do
       CApiClassSpecs::Super.should_receive(:inherited)
-      cls = @s.rb_define_class_under(CApiClassSpecs,
-                                     "ClassUnder4", CApiClassSpecs::Super)
+      @s.rb_define_class_under(CApiClassSpecs, "ClassUnder4", CApiClassSpecs::Super)
     end
 
     it "raises a TypeError when given a non class object to superclass" do

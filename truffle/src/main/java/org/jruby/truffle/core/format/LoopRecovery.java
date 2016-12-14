@@ -11,6 +11,8 @@ package org.jruby.truffle.core.format;
 
 public abstract class LoopRecovery {
 
+    private static final String DIRECTIVES = "CSLQcslqInjJNvVUwDdFfEeFfAaZBbHhuMmpPXx@";
+
     /**
      * Format strings can sometimes be dynamically generated with code such as:
      * <p>
@@ -32,20 +34,20 @@ public abstract class LoopRecovery {
      * for one simple loop.
      * <p>
      * To do that, for each character we look 1..n characters behind and see if
-     * that pattern is repeated. If it is we have the loop. Nothing more
-     * complicated than that.
+     * that pattern is repeated. If it is we have the loop. We then keep going
+     * and see how many more times we can loop. Nothing more complicated than that.
      */
     public static String recoverLoop(String format) {
         // The index is the point in the format string where we look backwards for loops from
 
         int index = 0;
 
-        // Keep going until we reach the end of hte format string
+        // Keep going until we reach the end of the format string
 
         while (index < format.length()) {
             // If we aren't at the start of a new directive, step forward one
 
-            if ("CSLQcslqInNvVUwDdFfEeFfAaZBbHhuMmpPXx@".indexOf(format.charAt(index)) == -1) {
+            if (DIRECTIVES.indexOf(format.charAt(index)) == -1) {
                 index++;
                 continue;
             }
@@ -58,17 +60,22 @@ public abstract class LoopRecovery {
 
             int successfulLengthOfLoopedString = -1;
 
-            // Increase the size of the string that will be tried to belooped - but only as far as there is that much
+            // Increase the size of the string that will be tried to be looped - but only as far as there is that much
             // string both before and after the index
 
             while (tryLengthOfLoopedString <= index && index + tryLengthOfLoopedString <= format.length()) {
                 // If that length of string exists both before and after the index then that's a successful length
-                // to use for looping
+                // to use for looping. The loop must be followed by a new directive. We don't handle whitespace well
+                // here at the moment, as the whitespace won't count as a new directive.
 
                 final String beforeIndex = format.substring(index - tryLengthOfLoopedString, index);
                 final String afterIndex = format.substring(index, index + tryLengthOfLoopedString);
 
-                if (beforeIndex.equals(afterIndex)) {
+                final boolean repetitionExists = beforeIndex.equals(afterIndex);
+                final boolean charactersAfterRepetition = index + tryLengthOfLoopedString < format.length();
+
+                if (repetitionExists && !(charactersAfterRepetition
+                        && DIRECTIVES.indexOf(format.charAt(index + tryLengthOfLoopedString)) == -1)) {
                     successfulLengthOfLoopedString = tryLengthOfLoopedString;
                 }
 
@@ -88,19 +95,28 @@ public abstract class LoopRecovery {
 
                 int repetitionsCount = 2;
 
-                // Where in the string the 2 repititions end
+                // Where in the string the 2 repetitions end
 
-                int indexOfEndOfRepititions = index + successfulLengthOfLoopedString;
+                int indexOfEndOfRepetitions = index + successfulLengthOfLoopedString;
 
                 // Loop to find out how many times the string appears after the 2 initial instances
 
-                while (indexOfEndOfRepititions + successfulLengthOfLoopedString <= format.length()) {
-                    if (!format.substring(indexOfEndOfRepititions, indexOfEndOfRepititions + successfulLengthOfLoopedString).equals(repeated)) {
+                while (indexOfEndOfRepetitions + successfulLengthOfLoopedString <= format.length()) {
+                    // If there isn't another repetition of the string, stop looking
+
+                    if (!format.substring(indexOfEndOfRepetitions, indexOfEndOfRepetitions + successfulLengthOfLoopedString).equals(repeated)) {
+                        break;
+                    }
+
+                    // If this repetition isn't followed by a directive, stop looking
+
+                    if (indexOfEndOfRepetitions + successfulLengthOfLoopedString < format.length()
+                            && DIRECTIVES.indexOf(format.charAt(indexOfEndOfRepetitions + successfulLengthOfLoopedString)) == -1) {
                         break;
                     }
 
                     repetitionsCount++;
-                    indexOfEndOfRepititions += successfulLengthOfLoopedString;
+                    indexOfEndOfRepetitions += successfulLengthOfLoopedString;
                 }
 
                 // Replace 'nnn' with 'n3'
@@ -111,7 +127,7 @@ public abstract class LoopRecovery {
                 builder.append(repeated);
                 builder.append(')');
                 builder.append(repetitionsCount);
-                builder.append(format.substring(indexOfEndOfRepititions));
+                builder.append(format.substring(indexOfEndOfRepetitions));
 
                 format = builder.toString();
             }

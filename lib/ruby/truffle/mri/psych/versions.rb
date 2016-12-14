@@ -1,1 +1,3 @@
-require_relative '../../../stdlib/psych/' + File.basename(__FILE__)
+module Psych
+  DEFAULT_SNAKEYAML_VERSION = '1.14'.freeze
+end

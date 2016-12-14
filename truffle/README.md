@@ -1,4 +1,4 @@
-# JRuby+Truffle - a High-Performance Truffle Backend for JRuby
+# JRuby+Truffle - a High-Performance Implementation of Ruby using Truffle and Graal
 
 The Truffle runtime of JRuby is an experimental implementation of an interpreter
 for JRuby using the Truffle AST interpreting framework and the Graal compiler.
@@ -16,118 +16,266 @@ University Linz](http://ssw.jku.at).
 * Benoit Daloze
 * Kevin Menard
 * Petr Chalupa
+* Brandon Fish
 * Thomas Würthinger
 * Matthias Grimmer
 * Josef Haider
 * Fabio Niephaus
 * Matthias Springer
-* Brandon Fish
 * Lucas Allan Amorim
 * Aditya Bhardwaj
 
+And others.
+
 The best way to get in touch with us is to join us in `#jruby` on Freenode, but 
-you can also Tweet to @chrisgseaton, @nirvdrum, @eregontp or @pitr-ch, or email
-chris.seaton@oracle.com.
+you can also Tweet to @chrisgseaton, or email chris.seaton@oracle.com.
 
-## Using Truffle
+## User Documentation
 
-To run JRuby in Truffle mode, pass the `-X+T` option.
+The [JRuby wiki](https://github.com/jruby/jruby/wiki/Truffle) includes general
+user documentation for JRuby+Truffle. This file is documentation for working on
+the development of JRuby+Truffle.
 
-JRuby+Truffle is designed to be run with a JVM that has the Graal compiler. The
-easiest way to get this is via the GraalVM, available from the Oracle
-Technology Network.
+## Developer Documentation
 
-https://github.com/jruby/jruby/wiki/Downloading-GraalVM
+Normally you want to use the `truffle-head` branch. We merge to `master` once
+with every release of GraalVM, so that it is stable when the JRuby classic
+team make their releases.
 
-But you can also build it yourself, which you will need to do if you are on the
-`truffle-head` branch.
+### Requirements
 
-https://github.com/jruby/jruby/wiki/Building-Graal
+You will need:
 
-You then need to set the `JAVACMD` environment variable as described on those
-pages, and tell the JVM to use the Graal compiler.
+* Java 8 (not 9 EA)
+* Ruby 2
+
+### Developer tool
+
+We use a Ruby script to run most commands.
 
 ```
-$ JAVACMD=... bin/jruby -X+T -J-Djvmci.Compiler=graal ...
+$ ruby tool/jt.rb --help
 ```
 
-### What to expect
+Most of us create a symlink to this executable somewhere on our `$PATH` so
+that we can simply run.
 
-JRuby+Truffle is a research project and is not yet a finished product. Arbitrary
-programs are very unlikely to run due to missing functionality, and if they do
-run they are unlikely to run fast yet due to requiring new functionality to be
-tuned. We are at least a year away from being able to run significant programs
-without needing new methods to be implemented.
+```
+$ jt --help
+```
 
-Windows is currently not supported.
+### Building
 
-### How we benchmark
+```
+$ jt build
+```
 
-We use the [bench9000](https://github.com/jruby/bench9000) benchmarking tool.
-This includes classic synthetic benchmarks such as mandelbrot, n-body and
-fannkuch, and also kernels from two real-word Ruby gems,
-[chunky_png](https://github.com/wvanbergen/chunky_png) and
-[psd.rb](https://github.com/layervault/psd.rb).
+### Testing
 
-## Research
+We have 'specs' which come from the Ruby Spec Suite. These are usually high
+quality, small tests, and are our priority at the moment. We also have MRI's
+unit tests, which are often very complex and we aren't actively working on now.
+Finally, we have tests of our own. The integration tests test more macro use of
+Ruby. The ecosystem tests test commands related to Ruby. The gems tests test a
+small number of key Ruby 3rd party modules.
 
-* [Chris Seaton's blog posts](http://www.chrisseaton.com/rubytruffle/)
-* C. Seaton. **[Specialising Dynamic Techniques for Implementing the Ruby Programming Language](http://chrisseaton.com/phd/)**. PhD thesis, University of Manchester, 2015.
-* M. Grimmer, C. Seaton, R. Schatz, T. Würthinger, H. Mössenböck. **[High-Performance Cross-Language Interoperability in a Multi-Language Runtime](http://chrisseaton.com/rubytruffle/dls15-interop/dls15-interop.pdf)**. In Proceedings of 11th Dynamic Languages Symposium (DLS).
-* F. Niephaus, M. Springer, T. Felgentreff, T. Pape, R. Hirschfeld. **[Call-target-specific Method Arguments](https://github.com/HPI-SWA-Lab/TargetSpecific-ICOOOLPS/raw/gh-pages/call_target_specific_method_arguments.pdf)**. In Proceedings of the 10th Implementation, Compilation, Optimization of Object-Oriented Languages, Programs and Systems Workshop (ICOOOLPS), 2015.
-* B. Daloze, C. Seaton, D. Bonetta, H. Mössenböck. **[Techniques and Applications for Guest-Language Safepoints](http://chrisseaton.com/rubytruffle/icooolps15-safepoints/safepoints.pdf)**. In Proceedings of the 10th Implementation, Compilation, Optimization of Object-Oriented Languages, Programs and Systems Workshop (ICOOOLPS), 2015.
-* M. Grimmer, C. Seaton, T. Würthinger, H. Mössenböck. **[Dynamically Composing Languages in a Modular Way: Supporting C Extensions for Dynamic Languages](http://www.chrisseaton.com/rubytruffle/modularity15/rubyextensions.pdf)**. In Proceedings of the 14th International Conference on Modularity, 2015.
-* A. Wöß, C. Wirth, D. Bonetta, C. Seaton, C. Humer, and H. Mössenböck. **[An object storage model for the Truffle language implementation framework](http://www.chrisseaton.com/rubytruffle/pppj14-om/pppj14-om.pdf)**. In Proceedings of the International Conference on Principles and Practices of Programming on the Java Platform (PPPJ), 2014.
-* C. Seaton, M. L. Van De Vanter, and M. Haupt. **[Debugging at full speed](http://www.lifl.fr/dyla14/papers/dyla14-3-Debugging_at_Full_Speed.pdf)**. In Proceedings of the 8th Workshop on Dynamic Languages and Applications (DYLA), 2014.
+The basic test to run every time you make changes is a subset of specs which
+runs in reasonable time.
 
-Also see the [Ruby Bibliography](http://rubybib.org), and
-[publications specifically on Truffle and Graal](https://wiki.openjdk.java.net/display/Graal/Publications+and+Presentations).
+```
+$ jt test fast
+```
 
-## Truffle-Specific Functionality
+You may also want to regularly run the integration tests.
+
+```
+$ jt test integration
+```
+
+Other tests can be hard to set up and can require other repositories, so we
+don't normally run them locally unless we're working on that functionality.
+
+### Running
+
+`jt ruby` runs JRuby+Truffle. You can use it exactly as you'd run the MRI `ruby`
+command. Although it does set a couple of extra options to help you when
+developing, such as loading the core lirbary from disk rather than the JAR. `jt
+ruby` prints the real command it's running as it starts.
+
+```
+$ ruby ...
+$ jt ruby ...
+```
+
+Note that running Ruby without any arguments does not start a shell. You should
+run `jt irb` if you want an interactive shell, or `irb` to run the shell of your
+system Ruby or a GraalVM tarball.
 
 ### Options
 
-There are runtime configuration options that can be set on the command line with
-`-Xtrufle.option=value`. To see a list of these run `-Xtruffle...`.
+Specify JVM options with `-J-option`.
 
-### Truffle Module
+```
+$ jt ruby -J-Xmx1G test.rb
+```
 
-The `Truffle`, `Truffle::Debug` and `Truffle::Interop` modules include
-Truffle-specific functionality. They're documented for the current development
-version at http://lafo.ssw.uni-linz.ac.at/graalvm/jruby/doc/.
+JRuby+Truffle options are set with `-Xtruffle...=...`. For example
+`-Xtruffle.exceptions.print_java=true` to print Java exceptions before
+translating them to Ruby exceptions.
 
-### Debugger
+To see all options run `jt ruby -Xtruffle...` (literally, with the three dots).
 
-See the documentation of the `Truffle::Debug` module at
-http://lafo.ssw.uni-linz.ac.at/graalvm/jruby/doc/. `Truffle::Debug.break` will
-enter a shell and allow to introspect the program.
+You can also set JVM options in the `JAVA_OPTS` environment variable (don't
+prefix with `-J`), or the `JRUBY_OPTS` variable (do prefix with `-J`). Ruby
+command line options and arguments can also be set in `JRUBY_OPTS` or `RUBYOPT`
+if they aren't JRuby-specific.
 
-If you don't want to modify the program to include a call to
-`Truffle::Debug.break` you can break the main thread externally. Run with the
-instrumentation server enabled, `-Xtruffle.instrumentation_server_port=8080`.
-Then you can send a message to the runtime to break at the current location:
+### Running with Graal
 
-    curl http://localhost:8080/break
+To run with a GraalVM binary tarball, set the `GRAALVM_BIN` environment variable
+and run with the `--graal` option.
 
-### Stack Server
+```
+$ export GRAALVM_BIN=.../graalvm-0.18-re/bin/java
+$ jt ruby --graal ...
+```
 
-To dump the call stacks of a running Ruby program in Truffle, run with the
-instrumentation server enabled and the `passalot` option,
-`-Xtruffle.instrumentation_server_port=8080 -Xtruffle.passalot=1`. Then you can
-dump the current call stack of all threads:
+You can check this is working by printing the value of `Truffle::Graal.graal?`.
 
-    curl http://localhost:8080/stacks
+```
+$ export GRAALVM_BIN=.../graalvm-0.18-re/bin/java
+$ jt ruby --graal -e 'p Truffle::Graal.graal?'
+```
 
-## Workflow Tool
+To run with Graal built from source, set `GRAAL_HOME`.
 
-Truffle is built as part of JRuby, but if you are working on the Truffle code
-base you may appreciate the `jt` tool. To use it alias it in your shell
-`function jt { ruby tool/jt.rb $@; }`, then run `jt --help` to see the commands
-available. You need a standard `ruby` from your system to run the tool.
+```
+$ export GRAAL_HOME=.../graal-core
+$ jt ruby --graal ...
+```
 
-For example:
+Set Graal options as any other JVM option.
 
-* `jt build` builds JRuby and Truffle
-* `jt run args...` runs JRuby in Truffle mode
-* `jt run --graal args...` runs JRuby in Truffle mode, using Graal
-* `jt test fast` runs a subset of Truffle tests
+```
+$ jt ruby --graal -J-Dgraal.TraceTruffleCompilation=true ...
+```
+
+We have flags in `jt` to set some options, such as `--trace` for
+`-J-Dgraal.TraceTruffleCompilation=true` and `--igv` for
+`-J-Dgraal.Dump=Truffle`.
+
+### Testing with Graal
+
+The basic test for Graal is to run our compiler tests. This includes tests that
+things partially evaluate as we expect, that things optimise as we'd expect,
+that on-stack-replacement works and so on.
+
+```
+$ jt test compiler
+```
+
+### Benchmarking with Graal
+
+Checkout the `all-ruby-benchmarks` and `benchmark-interface` repositories above
+your checkout of JRuby. We usually run like this.
+
+```
+$ jt benchmark .../all-ruby-benchmarks/classic/mandelbrot.rb --simple
+```
+
+Output is iterations per second, printed roughly every second (more frequently
+for the first few iterations).
+
+THe best way to set JVM options here is to use `JAVA_OPTS`.
+
+### Benchmarking without Graal
+
+You can turn off Graal if you want using `--no-graal`.
+
+```
+$ jt benchmark --no-graal .../all-ruby-benchmarks/classic/mandelbrot.rb --simple
+```
+
+You can benchmark JRuby Classic using `-Xclassic` in `JRUBY_OPTS`.
+
+```
+$ JRUBY_OPTS=-Xclassic jt benchmark .../all-ruby-benchmarks/classic/mandelbrot.rb --simple
+```
+
+You can benchmark an entirely different implementation using the
+`JT_BENCHMARK_RUBY` environment variable.
+
+```
+$ JT_BENCHMARK_RUBY=ruby jt benchmark .../all-ruby-benchmarks/classic/mandelbrot.rb --simple
+```
+
+### Sulong and C extensions
+
+JRuby runs C extension using Sulong. You should build Sulong from source.
+
+https://github.com/graalvm/sulong
+
+Then set `SULONG_HOME` and `GRAAL_HOME` environment variables to the Sulong
+repository.
+
+```
+$ export SULONG_HOME=.../sulong
+$ export GRAAL_HOME=$SULONG_HOME
+```
+
+You need LLVM installed. Version 3.3 seems to work best. You can set `JT_CLANG`
+and `JT_OPT` to those binaries if you need to use a non-system version.
+
+You can now build the C extension support. Building the OpenSSL C extension is
+incomplete, so most people probably want to disable that.
+
+```
+$ jt build cexts --no-openssl
+```
+
+Get the `jruby-truffle-gem-test-pack` repository.
+
+https://github.com/jruby/jruby-truffle-gem-test-pack
+
+You can then test C extension support.
+
+```
+$ export GEM_HOME=../jruby-truffle-gem-test-pack/gems
+$ jt test cexts --no-libxml --no-openssl
+```
+
+If you want to test `libxml`, remove that flag and set either `LIBXML_HOME` or
+`LIBXML_INCLUDE` and `LIBXML_LIB`. Try the same with `OPENSSL_` if you are
+adventurous.
+
+To run C extension bechmarks, you first need to compile them.
+
+```
+$ jt cextc .../all-ruby-benchmarks/chunky_png/oily_png/
+```
+
+Then follow the instructions for benchmarking above, and then try:
+
+```
+$  USE_CEXTS=true JRUBY_OPTS=-Xtruffle.cexts.log.load=true jt benchmark .../all-ruby-benchmarks/chunky_png/chunky-color-r.rb --simple
+```
+
+These benchmarks have Ruby fallbacks, so we should carefully check that the
+C extension is actually being used by looking for these log lines.
+
+```
+[ruby] INFO loading cext module ...
+```
+
+### mx and integrating with other Graal projects
+
+JRuby can also be built and run using `mx`, like the other Graal projects. This
+is intended for special cases such as integrating with other Graal projects, and
+we wouldn't recommend using it for normal development. If you do use it, you
+should clean before using `jt` again as having built it with `mx` will change
+some behaviour.
+
+###  IDEs
+
+The majority of us use IntelliJ IDEA, but it's also [possible to use
+Eclipse](https://github.com/jruby/jruby/wiki/Using-Eclipse-with-JRuby-Truffle).

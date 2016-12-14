@@ -13,7 +13,7 @@ describe "Math.frexp" do
   end
 
   it "returns NaN given NaN" do
-    frac, exp = Math.frexp(nan_value)
+    frac, _exp = Math.frexp(nan_value)
     frac.nan?.should be_true
   end
 

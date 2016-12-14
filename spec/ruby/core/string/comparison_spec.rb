@@ -70,8 +70,10 @@ describe "String#<=> with String" do
   end
 
   it "compares the indices of the encodings when the strings have identical non-ASCII-compatible bytes" do
-    ("\xff".force_encoding("utf-8") <=> "\xff".force_encoding("iso-8859-1")).should == -1
-    ("\xff".force_encoding("iso-8859-1") <=> "\xff".force_encoding("utf-8")).should == 1
+    xff_1 = [0xFF].pack('C').force_encoding("utf-8")
+    xff_2 = [0xFF].pack('C').force_encoding("iso-8859-1")
+    (xff_1 <=> xff_2).should == -1
+    (xff_2 <=> xff_1).should ==  1
   end
 end
 

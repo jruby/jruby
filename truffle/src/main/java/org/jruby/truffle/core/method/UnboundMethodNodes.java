@@ -16,22 +16,24 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.runtime.ArgumentDescriptor;
-import org.jruby.runtime.Visibility;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.builtins.UnaryCoreMethodNode;
+import org.jruby.truffle.core.Hashing;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyGuards;
+import org.jruby.truffle.language.Visibility;
 import org.jruby.truffle.language.arguments.ArgumentDescriptorUtils;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.methods.CanBindMethodToModuleNode;
 import org.jruby.truffle.language.methods.CanBindMethodToModuleNodeGen;
+import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.objects.MetaClassNode;
 import org.jruby.truffle.language.objects.MetaClassNodeGen;
+import org.jruby.truffle.parser.ArgumentDescriptor;
 
 @CoreClass("UnboundMethod")
 public abstract class UnboundMethodNodes {
@@ -81,7 +83,7 @@ public abstract class UnboundMethodNodes {
             if (!canBindMethodToModuleNode.executeCanBindMethodToModule(Layouts.UNBOUND_METHOD.getMethod(unboundMethod), objectMetaClass)) {
                 errorProfile.enter();
                 final DynamicObject declaringModule = Layouts.UNBOUND_METHOD.getMethod(unboundMethod).getDeclaringModule();
-                if (RubyGuards.isRubyClass(declaringModule) && Layouts.CLASS.getIsSingleton(declaringModule)) {
+                if (RubyGuards.isSingletonClass(declaringModule)) {
                     throw new RaiseException(coreExceptions().typeError(
                             "singleton method called for a different object", this));
                 } else {
@@ -95,6 +97,21 @@ public abstract class UnboundMethodNodes {
 
         protected DynamicObject metaClass(Object object) {
             return metaClassNode.executeMetaClass(object);
+        }
+
+    }
+
+    @CoreMethod(names = "hash")
+    public abstract static class HashNode extends CoreMethodArrayArgumentsNode {
+
+        @TruffleBoundary
+        @Specialization
+        public long hash(DynamicObject rubyMethod) {
+            final InternalMethod method = Layouts.UNBOUND_METHOD.getMethod(rubyMethod);
+            long h = Hashing.start(method.getDeclaringModule().hashCode());
+            h = Hashing.update(h, Layouts.UNBOUND_METHOD.getOrigin(rubyMethod).hashCode());
+            h = Hashing.update(h, method.getSharedMethodInfo().hashCode());
+            return Hashing.end(h);
         }
 
     }
@@ -156,7 +173,7 @@ public abstract class UnboundMethodNodes {
             } else {
                 DynamicObject file = createString(StringOperations.encodeRope(sourceSection.getSource().getName(), UTF8Encoding.INSTANCE));
                 Object[] objects = new Object[]{file, sourceSection.getStartLine()};
-                return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), objects, objects.length);
+                return createArray(objects, objects.length);
             }
         }
 

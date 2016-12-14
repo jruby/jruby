@@ -6,6 +6,7 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.specialized.OneArgOperandAttrAssignInstr;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.operands.Self;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
@@ -16,7 +17,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import static org.jruby.ir.IRFlags.*;
 
 // Instruction representing Ruby code of the form: "a[i] = 5"
-// which is equivalent to: a.[](i,5)
+// which is equivalent to: a.[]=(i,5)
 public class AttrAssignInstr extends NoResultCallInstr {
     public static AttrAssignInstr create(Operand obj, String attr, Operand[] args, boolean isPotentiallyRefined) {
         if (!containsArgSplat(args) && args.length == 1) {
@@ -27,7 +28,7 @@ public class AttrAssignInstr extends NoResultCallInstr {
     }
 
     public AttrAssignInstr(Operand obj, String attr, Operand[] args, boolean isPotentiallyRefined) {
-        super(Operation.ATTR_ASSIGN, CallType.UNKNOWN, attr, obj, args, null, isPotentiallyRefined);
+        super(Operation.ATTR_ASSIGN, obj instanceof Self ? CallType.FUNCTIONAL : CallType.NORMAL, attr, obj, args, null, isPotentiallyRefined);
     }
 
     @Override
@@ -67,8 +68,8 @@ public class AttrAssignInstr extends NoResultCallInstr {
         IRubyObject object = (IRubyObject) getReceiver().retrieve(context, self, currScope, dynamicScope, temp);
         IRubyObject[] values = prepareArguments(context, self, currScope, dynamicScope, temp);
 
-        CallType callType = self == object ? CallType.FUNCTIONAL : CallType.NORMAL;
-        Helpers.invoke(context, object, getName(), values, callType, Block.NULL_BLOCK);
+        callSite.call(context, self, object, values);
+
         return null;
     }
 

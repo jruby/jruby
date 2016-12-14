@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.tools.callgraph;
 
+import com.oracle.truffle.api.TruffleOptions;
 import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.methods.SharedMethodInfo;
 
@@ -73,13 +74,16 @@ public class CallGraph {
         final Map<String, Set<String>> rootNodeLocalTypes = localTypes.get(rootNode);
 
         if (rootNodeLocalTypes == null) {
-            return Collections.EMPTY_MAP;
+            return Collections.<String, Set<String>>emptyMap();
         } else {
             return rootNodeLocalTypes;
         }
     }
 
     public void resolve() {
-        rootNodeToMethodVersion.values().forEach(MethodVersion::resolve);
+        // Call graph currently doesn't work with AOT due to runtime reflection.
+        if (!TruffleOptions.AOT) {
+            rootNodeToMethodVersion.values().forEach(MethodVersion::resolve);
+        }
     }
 }

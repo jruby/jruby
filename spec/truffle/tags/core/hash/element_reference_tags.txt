@@ -1,1 +1,0 @@
-fails:Hash#[] finds a value via an identical key even when its #eql? isn't reflexive

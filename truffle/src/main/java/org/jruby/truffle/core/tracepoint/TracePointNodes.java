@@ -9,13 +9,10 @@
  */
 package org.jruby.truffle.core.tracepoint;
 
-import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.instrumentation.EventBinding;
-import com.oracle.truffle.api.instrumentation.EventContext;
-import com.oracle.truffle.api.instrumentation.ExecutionEventNode;
-import com.oracle.truffle.api.instrumentation.ExecutionEventNodeFactory;
 import com.oracle.truffle.api.instrumentation.SourceSectionFilter;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
@@ -29,7 +26,6 @@ import org.jruby.truffle.builtins.YieldingCoreMethodNode;
 import org.jruby.truffle.core.kernel.TraceManager;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
-import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
 
 @CoreClass("TracePoint")
 public abstract class TracePointNodes {
@@ -41,7 +37,7 @@ public abstract class TracePointNodes {
 
         public AllocateNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            allocateNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
+            allocateNode = AllocateObjectNode.create();
         }
 
         @Specialization
@@ -80,10 +76,8 @@ public abstract class TracePointNodes {
         }
 
         @Specialization(guards = "isTracePoint(tracePoint)")
-        public boolean enable(VirtualFrame frame, final DynamicObject tracePoint, DynamicObject block) {
-            CompilerDirectives.bailout("TracePoint#enable can't be compiled");
-
-            EventBinding<?> eventBinding = Layouts.TRACE_POINT.getEventBinding(tracePoint);
+        public boolean enable(VirtualFrame frame, DynamicObject tracePoint, DynamicObject block) {
+            EventBinding<?> eventBinding = (EventBinding<?>) Layouts.TRACE_POINT.getEventBinding(tracePoint);
             final boolean alreadyEnabled = eventBinding != null;
 
             if (!alreadyEnabled) {
@@ -96,7 +90,7 @@ public abstract class TracePointNodes {
                     yield(frame, block);
                 } finally {
                     if (!alreadyEnabled) {
-                        eventBinding.dispose();
+                        dispose(eventBinding);
                         Layouts.TRACE_POINT.setEventBinding(tracePoint, null);
                     }
                 }
@@ -105,13 +99,14 @@ public abstract class TracePointNodes {
             return alreadyEnabled;
         }
 
+        @TruffleBoundary
         public static EventBinding<?> createEventBinding(final RubyContext context, final DynamicObject tracePoint) {
-            return context.getInstrumenter().attachFactory(SourceSectionFilter.newBuilder().tagIs(Layouts.TRACE_POINT.getTags(tracePoint)).build(), new ExecutionEventNodeFactory() {
-                @Override
-                public ExecutionEventNode create(EventContext eventContext) {
-                    return new TracePointEventNode(context, tracePoint);
-                }
-            });
+            return context.getInstrumenter().attachFactory(SourceSectionFilter.newBuilder().tagIs((Class<?>[]) Layouts.TRACE_POINT.getTags(tracePoint)).build(), eventContext -> new TracePointEventNode(context, tracePoint));
+        }
+
+        @TruffleBoundary
+        public static void dispose(EventBinding<?> eventBinding) {
+            eventBinding.dispose();
         }
 
     }
@@ -129,14 +124,12 @@ public abstract class TracePointNodes {
         }
 
         @Specialization(guards = "isTracePoint(tracePoint)")
-        public boolean disable(VirtualFrame frame, final DynamicObject tracePoint, DynamicObject block) {
-            CompilerDirectives.bailout("TracePoint#disable can't be compiled");
-
-            EventBinding<?> eventBinding = Layouts.TRACE_POINT.getEventBinding(tracePoint);
+        public boolean disable(VirtualFrame frame, DynamicObject tracePoint, DynamicObject block) {
+            EventBinding<?> eventBinding = (EventBinding<?>) Layouts.TRACE_POINT.getEventBinding(tracePoint);
             final boolean alreadyEnabled = eventBinding != null;
 
             if (alreadyEnabled) {
-                eventBinding.dispose();
+                EnableNode.dispose(eventBinding);
                 Layouts.TRACE_POINT.setEventBinding(tracePoint, null);
             }
 

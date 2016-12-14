@@ -1,3 +1,4 @@
+# -*- encoding: binary -*-
 require File.expand_path('../../fixtures/marshal_data', __FILE__)
 require 'stringio'
 
@@ -483,7 +484,7 @@ describe :marshal_load, shared: true do
     end
 
     it "loads a user_object" do
-      obj = UserObject.new
+      UserObject.new
       Marshal.send(@method, "\004\bo:\017UserObject\000").should be_kind_of(UserObject)
     end
 

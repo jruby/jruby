@@ -11,6 +11,7 @@ package org.jruby.truffle.language.backtrace;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.nodes.RootNode;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
@@ -20,6 +21,9 @@ import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.loader.SourceLoader;
+import org.jruby.truffle.util.SourceSectionUtils;
+import org.jruby.truffle.util.StringUtils;
+
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -51,15 +55,16 @@ public class BacktraceFormatter {
         return new BacktraceFormatter(context, flags);
     }
 
-    // For debugging
-    public static List<String> rubyBacktrace(RubyContext context) {
-        return BacktraceFormatter.createDefaultFormatter(context).formatBacktrace(context, null, context.getCallStack().getBacktrace(null));
+    private static List<String> rubyBacktrace(RubyContext context, Node node) {
+        return new BacktraceFormatter(context, EnumSet.of(FormattingFlags.INCLUDE_CORE_FILES)).
+                        formatBacktrace(context, null, context.getCallStack().getBacktrace(node));
     }
 
-    // For debugging
-    public static String printableRubyBacktrace(RubyContext context) {
+    // For debugging:
+    // org.jruby.truffle.language.backtrace.BacktraceFormatter.printableRubyBacktrace(getContext(), this)
+    public static String printableRubyBacktrace(RubyContext context, Node node) {
         final StringBuilder builder = new StringBuilder();
-        for (String line : rubyBacktrace(context)) {
+        for (String line : rubyBacktrace(context, node)) {
             builder.append("\n");
             builder.append(line);
         }
@@ -99,7 +104,7 @@ public class BacktraceFormatter {
                     e.printStackTrace();
                 }
 
-                lines.add(String.format("(exception %s %s", e.getMessage(), e.getStackTrace()[0].toString()));
+                lines.add(StringUtils.format("(exception %s %s", e.getMessage(), e.getStackTrace()[0].toString()));
             }
         }
 
@@ -127,26 +132,26 @@ public class BacktraceFormatter {
             builder.append("\tfrom ");
         }
 
-        if (activation.getCallNode().getRootNode() instanceof RubyRootNode) {
+        final RootNode rootNode = activation.getCallNode().getRootNode().getRootNode();
+
+        if (rootNode instanceof RubyRootNode) {
             final SourceSection sourceSection = activation.getCallNode().getEncapsulatingSourceSection();
             final SourceSection reportedSourceSection;
             String reportedName;
 
             if (isJavaCore(sourceSection) ||
-                    (isCore(sourceSection) && !flags.contains(FormattingFlags.INCLUDE_CORE_FILES))) {
+                    (isCore(context, sourceSection) && !flags.contains(FormattingFlags.INCLUDE_CORE_FILES))) {
                 final SourceSection nextUserSourceSection = nextUserSourceSection(activations, n);
                 // if there is no next source section use a core one to avoid ???
                 reportedSourceSection = nextUserSourceSection != null ? nextUserSourceSection : sourceSection;
                 reportedName = getMethodNameFromActivation(activation);
             } else {
                 reportedSourceSection = sourceSection;
-                reportedName = sourceSection.getIdentifier();
+                reportedName = rootNode.getName();
             }
 
             if (reportedSourceSection == null) {
                 builder.append("???");
-            } else if (reportedSourceSection.getSource() == null) {
-                builder.append(reportedSourceSection.getShortDescription());
             } else {
                 builder.append(reportedSourceSection.getSource().getName());
                 builder.append(":");
@@ -198,7 +203,7 @@ public class BacktraceFormatter {
             if (callNode != null) {
                 final SourceSection sourceSection = callNode.getEncapsulatingSourceSection();
 
-                if (!isCore(sourceSection)) {
+                if (!isCore(context, sourceSection)) {
                     return sourceSection;
                 }
             }
@@ -208,12 +213,16 @@ public class BacktraceFormatter {
         return null;
     }
 
-    public static boolean isJavaCore(SourceSection sourceSection) {
-        return sourceSection != null && sourceSection.getSource() == null;
+    public boolean isJavaCore(SourceSection sourceSection) {
+        return sourceSection == context.getCoreLibrary().getSourceSection();
     }
 
-    public static boolean isCore(SourceSection sourceSection) {
+    public static boolean isCore(RubyContext context, SourceSection sourceSection) {
         if (sourceSection == null) {
+            return true;
+        }
+
+        if (sourceSection.getSource() == context.getCoreLibrary().getSource()) {
             return true;
         }
 
@@ -237,7 +246,7 @@ public class BacktraceFormatter {
 
     /** For debug purposes. */
     public static boolean isUserSourceSection(RubyContext context, SourceSection sourceSection) {
-        if (!BacktraceFormatter.isCore(sourceSection)) {
+        if (!BacktraceFormatter.isCore(context, sourceSection)) {
             return false;
         }
 
@@ -255,18 +264,18 @@ public class BacktraceFormatter {
         final SourceSection sourceSection = callNode.getEncapsulatingSourceSection();
 
         if (sourceSection != null) {
-            final String shortDescription = sourceSection.getShortDescription();
+            final String shortDescription = SourceSectionUtils.fileLine(sourceSection);
 
-            if (shortDescription.trim().equals(":")) {
-                builder.append(getRootOrTopmostNode(callNode).getClass().getSimpleName());
-            } else {
-                builder.append(sourceSection.getShortDescription());
 
-                if (sourceSection.getIdentifier() != null && !sourceSection.getIdentifier().isEmpty()) {
-                    builder.append(":in `");
-                    builder.append(sourceSection.getIdentifier());
-                    builder.append("'");
-                }
+            builder.append(shortDescription);
+
+            final RootNode rootNode = callNode.getRootNode();
+            final String identifier = rootNode.getName();
+
+            if (identifier != null && !identifier.isEmpty()) {
+                builder.append(":in `");
+                builder.append(identifier);
+                builder.append("'");
             }
         } else {
             builder.append(getRootOrTopmostNode(callNode).getClass().getSimpleName());

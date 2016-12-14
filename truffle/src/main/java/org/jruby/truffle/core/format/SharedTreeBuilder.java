@@ -14,7 +14,7 @@ import org.jruby.truffle.core.format.control.RepeatExplodedNode;
 import org.jruby.truffle.core.format.control.RepeatLoopNode;
 import org.jruby.truffle.core.format.control.SequenceNode;
 import org.jruby.truffle.core.format.control.StarNode;
-import org.jruby.truffle.core.format.pack.PackParser;
+import org.jruby.truffle.core.format.pack.SimplePackParser;
 
 import java.util.Deque;
 import java.util.List;
@@ -27,24 +27,27 @@ public class SharedTreeBuilder {
         this.context = context;
     }
 
-    public FormatNode finishSubSequence(Deque<List<FormatNode>> sequenceStack, PackParser.SubSequenceContext ctx) {
+    public FormatNode finishSubSequence(Deque<List<FormatNode>> sequenceStack, int count) {
         final List<FormatNode> sequence = sequenceStack.pop();
         final SequenceNode sequenceNode = new SequenceNode(context, sequence.toArray(new FormatNode[sequence.size()]));
 
-        if (ctx.INT() == null) {
+        if (count == SimplePackParser.COUNT_NONE) {
             return sequenceNode;
         } else {
-            return createRepeatNode(Integer.parseInt(ctx.INT().getText()), sequenceNode);
+            return createRepeatNode(count, sequenceNode);
         }
     }
 
-    public FormatNode applyCount(PackParser.CountContext count, FormatNode node) {
-        if (count == null) {
-            return node;
-        } else if (count.INT() != null) {
-            return createRepeatNode(Integer.parseInt(count.INT().getText()), node);
-        } else {
-            return new StarNode(context, node);
+    public FormatNode applyCount(int count, FormatNode node) {
+        switch (count) {
+            case SimplePackParser.COUNT_NONE:
+                return node;
+
+            case SimplePackParser.COUNT_STAR:
+                return new StarNode(context, node);
+
+            default:
+                return createRepeatNode(count, node);
         }
     }
 
@@ -56,19 +59,19 @@ public class SharedTreeBuilder {
         }
     }
 
-    public StarLength parseCountContext(PackParser.CountContext ctx) {
+    public StarLength parseCountContext(int count) {
         final boolean star;
         final int length;
 
-        if (ctx == null) {
+        if (count == SimplePackParser.COUNT_NONE) {
             star = false;
             length = 1;
-        } else if (ctx.INT() == null) {
+        } else if (count == SimplePackParser.COUNT_STAR) {
             star = true;
             length = 0;
         } else {
             star = false;
-            length = Integer.parseInt(ctx.INT().getText());
+            length = count;
         }
 
         return new StarLength(star, length);

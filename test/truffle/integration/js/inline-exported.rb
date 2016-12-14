@@ -11,7 +11,7 @@ unless Truffle::Interop.mime_type_supported?('application/javascript')
   exit
 end
 
-Truffle::Interop.eval('application/javascript', %{
+Truffle::Interop.eval 'application/javascript', %{
 function clamp(min, max, value) {
   if (value < min) {
     return min;
@@ -22,9 +22,9 @@ function clamp(min, max, value) {
   }
 }
 Interop.export('clamp', clamp.bind(this));
-})
+}
 
-Truffle::Interop.import_method(:clamp)
+Truffle::Interop.import_method :clamp
 
 if clamp(10, 90, 46) != 46
   abort 'result not as expected'

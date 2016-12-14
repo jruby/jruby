@@ -4,25 +4,7 @@ fails:Kernel#require_relative with a relative path calls #to_str on non-String o
 fails:Kernel#require_relative with a relative path raises a TypeError if #to_str does not return a String
 fails:Kernel#require_relative with a relative path calls #to_path on non-String objects
 fails:Kernel#require_relative with a relative path calls #to_str on non-String objects returned by #to_path
-fails:Kernel#require_relative with a relative path when file is a symlink loads a path relative to current file
-fails:Kernel#require_relative with a relative path (file extensions) loads a .rb extensioned file when passed a non-extensioned path
-fails:Kernel#require_relative with a relative path (file extensions) does not load a C-extension file if a .rb extensioned file is already loaded
-fails:Kernel#require_relative with a relative path (file extensions) loads a .rb extensioned file when passed a non-.rb extensioned path
-fails:Kernel#require_relative with a relative path (file extensions) loads a .rb extensioned file when a complex-extensioned C-extension file of the same name is loaded
-fails:Kernel#require_relative with a relative path (file extensions) does not load a C-extension file if a complex-extensioned .rb file is already loaded
-fails:Kernel#require_relative with an absolute path stores the missing path in a LoadError object
 fails:Kernel#require_relative with an absolute path calls #to_str on non-String objects
 fails:Kernel#require_relative with an absolute path raises a TypeError if #to_str does not return a String
 fails:Kernel#require_relative with an absolute path calls #to_path on non-String objects
 fails:Kernel#require_relative with an absolute path calls #to_str on non-String objects returned by #to_path
-fails:Kernel#require_relative with an absolute path (file extensions) loads a .rb extensioned file when passed a non-extensioned path
-fails:Kernel#require_relative with an absolute path (file extensions) does not load a C-extension file if a .rb extensioned file is already loaded
-fails:Kernel#require_relative with an absolute path (file extensions) loads a .rb extensioned file when passed a non-.rb extensioned path
-fails:Kernel#require_relative with an absolute path (file extensions) loads a .rb extensioned file when a complex-extensioned C-extension file of the same name is loaded
-fails:Kernel#require_relative with an absolute path (file extensions) does not load a C-extension file if a complex-extensioned .rb file is already loaded
-fails:Kernel#require_relative with an absolute path ($LOAD_FEATURES) does not store the path if the load fails
-fails:Kernel#require_relative with an absolute path ($LOAD_FEATURES) does not load an absolute path that is already stored
-fails:Kernel#require_relative with an absolute path ($LOAD_FEATURES) adds the suffix of the resolved filename
-fails:Kernel#require_relative with a relative path ($LOADED_FEATURES) does not store the path if the load fails
-fails:Kernel#require_relative with a relative path ($LOADED_FEATURES) does not load an absolute path that is already stored
-fails:Kernel#require_relative with a relative path ($LOADED_FEATURES) adds the suffix of the resolved filename

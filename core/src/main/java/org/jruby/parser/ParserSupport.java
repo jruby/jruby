@@ -167,9 +167,14 @@ public class ParserSupport {
         return currentScope.assign(lexer.getPosition(), name.intern(), makeNullNil(value));
     }
 
+    // We know it has to be tLABEL or tIDENTIFIER so none of the other assignable logic is needed
+    public AssignableNode assignableKeyword(String name, Node value) {
+        return currentScope.assignKeyword(lexer.getPosition(), name.intern(), makeNullNil(value));
+    }
+
     // Only calls via f_kw so we know it has to be tLABEL
     public AssignableNode assignableLabel(String name, Node value) {
-        return currentScope.assign(lexer.getPosition(), name, makeNullNil(value));
+        return currentScope.assignKeyword(lexer.getPosition(), name, makeNullNil(value));
     }
     
     protected void getterIdentifierError(ISourcePosition position, String identifier) {
@@ -1196,22 +1201,8 @@ public class ParserSupport {
         return arg_var(identifier);
     }
 
-    // 1.9
     public ArgumentNode arg_var(String name) {
-        StaticScope current = getCurrentScope();
-
-        // Multiple _ arguments are allowed.  To not screw with tons of arity
-        // issues in our runtime we will allocate unnamed bogus vars so things
-        // still work. MRI does not use name as intern'd value so they don't
-        // have this issue.
-        if (name == "_") {
-            int count = 0;
-            while (current.exists(name) >= 0) {
-                name = ("_$" + count++).intern();
-            }
-        }
-        
-        return new ArgumentNode(lexer.getPosition(), name, current.addVariableThisScope(name));
+        return new ArgumentNode(lexer.getPosition(), name, getCurrentScope().addVariableThisScope(name));
     }
 
     public String formal_argument(String identifier) {
@@ -1225,18 +1216,11 @@ public class ParserSupport {
         if (name == "_") return name;
 
         StaticScope current = getCurrentScope();
-        if (current.isBlockScope()) {
-            if (current.exists(name) >= 0) yyerror("duplicated argument name");
+        if (current.exists(name) >= 0) yyerror("duplicated argument name");
 
-            if (warnings.isVerbose() && current.isDefined(name) >= 0 &&
-                    Options.PARSER_WARN_LOCAL_SHADOWING.load() &&
-                    !ParserSupport.skipTruffleRubiniusWarnings(lexer)) {
-
-                warnings.warning(ID.STATEMENT_NOT_REACHED, lexer.getPosition(),
-                        "shadowing outer local variable - " + name);
-            }
-        } else if (current.exists(name) >= 0) {
-            yyerror("duplicated argument name");
+        if (current.isBlockScope() && warnings.isVerbose() && current.isDefined(name) >= 0 &&
+                Options.PARSER_WARN_LOCAL_SHADOWING.load()) {
+            warnings.warning(ID.STATEMENT_NOT_REACHED, lexer.getPosition(), "shadowing outer local variable - " + name);
         }
 
         return name;
@@ -1337,7 +1321,7 @@ public class ParserSupport {
     public void compile_error(String message) { // mri: rb_compile_error_with_enc
         String line = lexer.getCurrentLine();
         ISourcePosition position = lexer.getPosition();
-        String errorMessage = lexer.getFile() + ":" + position.getLine() + ": ";
+        String errorMessage = lexer.getFile() + ":" + (position.getLine() + 1) + ": ";
 
         if (line != null && line.length() > 5) {
             boolean addNewline = message != null && ! message.endsWith("\n");
@@ -1384,7 +1368,13 @@ public class ParserSupport {
         // Joni doesn't support these modifiers - but we can fix up in some cases - let the error delay until we try that
         if (stringValue.startsWith("(?u)") || stringValue.startsWith("(?a)") || stringValue.startsWith("(?d)"))
             return;
-        RubyRegexp.newRegexp(getConfiguration().getRuntime(), value, options);
+
+        try {
+            // This is only for syntax checking but this will as a side-effect create an entry in the regexp cache.
+            RubyRegexp.newRegexpParser(getConfiguration().getRuntime(), value, (RegexpOptions)options.clone());
+        } catch (RaiseException re) {
+            compile_error(re.getMessage());
+        }
     }
 
     public Node newRegexpNode(ISourcePosition position, Node contents, RegexpNode end) {
@@ -1488,7 +1478,4 @@ public class ParserSupport {
         return "";
     }
 
-    public static boolean skipTruffleRubiniusWarnings(RubyLexer lexer) {
-        return lexer.getFile().startsWith(Options.TRUFFLE_CORE_LOAD_PATH.load());
-    }
 }

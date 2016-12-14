@@ -23,6 +23,11 @@ public abstract class ReceiveArgBase extends NoOperandResultBaseInstr {
         return argIndex;
     }
 
+    @Override
+    public String[] toStringNonOperandArgs() {
+        return new String[] { "i:" + argIndex };
+    }
+
     public IRubyObject receiveArg(ThreadContext context, IRubyObject[] args, boolean keywordArgumentSupplied) {
         throw new RuntimeException("ReceiveArgBase.interpret called! " + this.getClass().getName() + " does not define receiveArg");
     }

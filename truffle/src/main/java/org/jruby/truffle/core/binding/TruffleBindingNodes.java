@@ -13,13 +13,12 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.FrameInstance;
-import com.oracle.truffle.api.frame.FrameInstanceVisitor;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
-import org.jruby.util.Memo;
+import org.jruby.truffle.util.Memo;
 
 @CoreClass("Truffle::Binding")
 public abstract class TruffleBindingNodes {
@@ -37,18 +36,13 @@ public abstract class TruffleBindingNodes {
 
             final Memo<Integer> frameCount = new Memo<>(0);
 
-            final MaterializedFrame frame = Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<MaterializedFrame>() {
-
-                @Override
-                public MaterializedFrame visitFrame(FrameInstance frameInstance) {
-                    if (frameCount.get() == 2) {
-                        return frameInstance.getFrame(FrameInstance.FrameAccess.READ_WRITE, false).materialize();
-                    } else {
-                        frameCount.set(frameCount.get() + 1);
-                        return null;
-                    }
+            final MaterializedFrame frame = Truffle.getRuntime().iterateFrames(frameInstance -> {
+                if (frameCount.get() == 2) {
+                    return frameInstance.getFrame(FrameInstance.FrameAccess.READ_WRITE, false).materialize();
+                } else {
+                    frameCount.set(frameCount.get() + 1);
+                    return null;
                 }
-
             });
 
             if (frame == null) {

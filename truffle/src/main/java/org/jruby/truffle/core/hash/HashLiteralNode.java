@@ -92,7 +92,7 @@ public abstract class HashLiteralNode extends RubyNode {
 
         public SmallHashLiteralNode(RubyContext context, SourceSection sourceSection, RubyNode[] keyValues) {
             super(context, sourceSection, keyValues);
-            hashNode = new HashNode(context, sourceSection);
+            hashNode = new HashNode();
             equalNode = DispatchHeadNodeFactory.createMethodCall(context);
         }
 
@@ -112,7 +112,7 @@ public abstract class HashLiteralNode extends RubyNode {
                     }
                 }
 
-                final int hashed = hashNode.hash(frame, key);
+                final int hashed = hashNode.hash(frame, key, false);
 
                 final Object value = keyValues[n * 2 + 1].execute(frame);
 
@@ -136,7 +136,7 @@ public abstract class HashLiteralNode extends RubyNode {
         protected boolean isFrozen(Object object) {
             if (isFrozenNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                isFrozenNode = insert(IsFrozenNodeGen.create(getContext(), getSourceSection(), null));
+                isFrozenNode = insert(IsFrozenNodeGen.create(getContext(), null, null));
             }
             return isFrozenNode.executeIsFrozen(object);
         }
@@ -156,7 +156,7 @@ public abstract class HashLiteralNode extends RubyNode {
         public Object execute(VirtualFrame frame) {
             if (setNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                setNode = insert(SetNodeGen.create(getContext(), getEncapsulatingSourceSection(), null, null, null, null));
+                setNode = insert(SetNode.create());
             }
 
             final int bucketsCount = BucketsStrategy.capacityGreaterThan(keyValues.length / 2) * BucketsStrategy.OVERALLOCATE_FACTOR;

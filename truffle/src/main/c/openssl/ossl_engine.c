@@ -9,7 +9,7 @@
  */
 #include "ossl.h"
 
-#if !defined(OPENSSL_NO_ENGINE)
+#if defined(OSSL_ENGINE_ENABLED)
 
 #define NewEngine(klass) \
     TypedData_Wrap_Struct((klass), &ossl_engine_type, 0)
@@ -96,7 +96,7 @@ ossl_engine_s_load(int argc, VALUE *argv, VALUE klass)
         ENGINE_load_builtin_engines();
         return Qtrue;
     }
-    StringValueCStr(name);
+    StringValue(name);
 #ifndef OPENSSL_NO_STATIC_ENGINE
 #if HAVE_ENGINE_LOAD_DYNAMIC
     OSSL_ENGINE_LOAD_IF_MATCH(dynamic);
@@ -148,7 +148,7 @@ ossl_engine_s_load(int argc, VALUE *argv, VALUE klass)
     OSSL_ENGINE_LOAD_IF_MATCH(openbsd_dev_crypto);
 #endif
     OSSL_ENGINE_LOAD_IF_MATCH(openssl);
-    rb_warning("no such builtin loader for `%"PRIsVALUE"'", name);
+    rb_warning("no such builtin loader for `%s'", RSTRING_PTR(name));
     return Qnil;
 #endif /* HAVE_ENGINE_LOAD_BUILTIN_ENGINES */
 }
@@ -160,14 +160,14 @@ ossl_engine_s_load(int argc, VALUE *argv, VALUE klass)
  * It is only necessary to run cleanup when engines are loaded via
  * OpenSSL::Engine.load. However, running cleanup before exit is recommended.
  *
- * Note that this is needed and works only in OpenSSL < 1.1.0.
- *
  * See also, https://www.openssl.org/docs/crypto/engine.html
  */
 static VALUE
 ossl_engine_s_cleanup(VALUE self)
 {
+#if defined(HAVE_ENGINE_CLEANUP)
     ENGINE_cleanup();
+#endif
     return Qnil;
 }
 
@@ -213,7 +213,7 @@ ossl_engine_s_by_id(VALUE klass, VALUE id)
     ENGINE *e;
     VALUE obj;
 
-    StringValueCStr(id);
+    StringValue(id);
     ossl_engine_s_load(1, &id, klass);
     obj = NewEngine(klass);
     if(!(e = ENGINE_by_id(RSTRING_PTR(id))))
@@ -224,7 +224,7 @@ ossl_engine_s_by_id(VALUE klass, VALUE id)
 	ossl_raise(eEngineError, NULL);
     ENGINE_ctrl(e, ENGINE_CTRL_SET_PASSWORD_CALLBACK,
 		0, NULL, (void(*)(void))ossl_pem_passwd_cb);
-    ossl_clear_error();
+    ERR_clear_error();
 
     return obj;
 }
@@ -296,6 +296,7 @@ ossl_engine_finish(VALUE self)
     return Qnil;
 }
 
+#if defined(HAVE_ENGINE_GET_CIPHER)
 /* Document-method: OpenSSL::Engine#cipher
  *
  * call-seq:
@@ -317,10 +318,12 @@ ossl_engine_get_cipher(VALUE self, VALUE name)
 {
     ENGINE *e;
     const EVP_CIPHER *ciph, *tmp;
+    char *s;
     int nid;
 
-    tmp = EVP_get_cipherbyname(StringValueCStr(name));
-    if(!tmp) ossl_raise(eEngineError, "no such cipher `%"PRIsVALUE"'", name);
+    s = StringValuePtr(name);
+    tmp = EVP_get_cipherbyname(s);
+    if(!tmp) ossl_raise(eEngineError, "no such cipher `%s'", s);
     nid = EVP_CIPHER_nid(tmp);
     GetEngine(self, e);
     ciph = ENGINE_get_cipher(e, nid);
@@ -328,7 +331,11 @@ ossl_engine_get_cipher(VALUE self, VALUE name)
 
     return ossl_cipher_new(ciph);
 }
+#else
+#define ossl_engine_get_cipher rb_f_notimplement
+#endif
 
+#if defined(HAVE_ENGINE_GET_DIGEST)
 /* Document-method: OpenSSL::Engine#digest
  *
  * call-seq:
@@ -350,10 +357,12 @@ ossl_engine_get_digest(VALUE self, VALUE name)
 {
     ENGINE *e;
     const EVP_MD *md, *tmp;
+    char *s;
     int nid;
 
-    tmp = EVP_get_digestbyname(StringValueCStr(name));
-    if(!tmp) ossl_raise(eEngineError, "no such digest `%"PRIsVALUE"'", name);
+    s = StringValuePtr(name);
+    tmp = EVP_get_digestbyname(s);
+    if(!tmp) ossl_raise(eEngineError, "no such digest `%s'", s);
     nid = EVP_MD_nid(tmp);
     GetEngine(self, e);
     md = ENGINE_get_digest(e, nid);
@@ -361,6 +370,9 @@ ossl_engine_get_digest(VALUE self, VALUE name)
 
     return ossl_digest_new(md);
 }
+#else
+#define ossl_engine_get_digest rb_f_notimplement
+#endif
 
 /* Document-method: OpenSSL::Engine#load_private_key
  *
@@ -381,10 +393,14 @@ ossl_engine_load_privkey(int argc, VALUE *argv, VALUE self)
     char *sid, *sdata;
 
     rb_scan_args(argc, argv, "02", &id, &data);
-    sid = NIL_P(id) ? NULL : StringValueCStr(id);
-    sdata = NIL_P(data) ? NULL : StringValueCStr(data);
+    sid = NIL_P(id) ? NULL : StringValuePtr(id);
+    sdata = NIL_P(data) ? NULL : StringValuePtr(data);
     GetEngine(self, e);
+#if OPENSSL_VERSION_NUMBER < 0x00907000L
+    pkey = ENGINE_load_private_key(e, sid, sdata);
+#else
     pkey = ENGINE_load_private_key(e, sid, NULL, sdata);
+#endif
     if (!pkey) ossl_raise(eEngineError, NULL);
     obj = ossl_pkey_new(pkey);
     OSSL_PKEY_SET_PRIVATE(obj);
@@ -411,10 +427,14 @@ ossl_engine_load_pubkey(int argc, VALUE *argv, VALUE self)
     char *sid, *sdata;
 
     rb_scan_args(argc, argv, "02", &id, &data);
-    sid = NIL_P(id) ? NULL : StringValueCStr(id);
-    sdata = NIL_P(data) ? NULL : StringValueCStr(data);
+    sid = NIL_P(id) ? NULL : StringValuePtr(id);
+    sdata = NIL_P(data) ? NULL : StringValuePtr(data);
     GetEngine(self, e);
+#if OPENSSL_VERSION_NUMBER < 0x00907000L
+    pkey = ENGINE_load_public_key(e, sid, sdata);
+#else
     pkey = ENGINE_load_public_key(e, sid, NULL, sdata);
+#endif
     if (!pkey) ossl_raise(eEngineError, NULL);
 
     return ossl_pkey_new(pkey);
@@ -467,8 +487,10 @@ ossl_engine_ctrl_cmd(int argc, VALUE *argv, VALUE self)
 
     GetEngine(self, e);
     rb_scan_args(argc, argv, "11", &cmd, &val);
-    ret = ENGINE_ctrl_cmd_string(e, StringValueCStr(cmd),
-				 NIL_P(val) ? NULL : StringValueCStr(val), 0);
+    StringValue(cmd);
+    if (!NIL_P(val)) StringValue(val);
+    ret = ENGINE_ctrl_cmd_string(e, RSTRING_PTR(cmd),
+				 NIL_P(val) ? NULL : RSTRING_PTR(val), 0);
     if (!ret) ossl_raise(eEngineError, NULL);
 
     return self;
@@ -563,8 +585,12 @@ Init_ossl_engine(void)
 #ifdef ENGINE_METHOD_BN_MOD_EXP_CRT
     DefEngineConst(METHOD_BN_MOD_EXP_CRT);
 #endif
+#ifdef ENGINE_METHOD_CIPHERS
     DefEngineConst(METHOD_CIPHERS);
+#endif
+#ifdef ENGINE_METHOD_DIGESTS
     DefEngineConst(METHOD_DIGESTS);
+#endif
     DefEngineConst(METHOD_ALL);
     DefEngineConst(METHOD_NONE);
 }

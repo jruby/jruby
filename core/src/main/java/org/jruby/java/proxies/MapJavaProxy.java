@@ -44,11 +44,11 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.invokedynamic.MethodNames;
 
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
+import org.jruby.util.TypeConverter;
 
 /**
  * A proxy for wrapping <code>java.util.Map</code> instances.
@@ -266,7 +266,7 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
         }
 
         @Override
-        public RubyBoolean compare(final ThreadContext context, final MethodNames method, IRubyObject other) {
+        public RubyBoolean compare(final ThreadContext context, final VisitorWithState<RubyHash> method, IRubyObject other) {
             syncSize();
             if ( other instanceof RubyHashMap ) {
                 ((RubyHashMap) other).syncSize();
@@ -448,7 +448,11 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
 
     @JRubyMethod(name = "to_proc")
     public RubyProc to_proc(ThreadContext context) {
-        return getOrCreateRubyHashMap().to_proc(context);
+        IRubyObject newProc = getOrCreateRubyHashMap().callMethod("to_proc");
+
+        TypeConverter.checkType(context, newProc, context.runtime.getProc());
+
+        return (RubyProc) newProc;
     }
 
     /** rb_hash_to_s
@@ -552,8 +556,8 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
      *
      */
     @JRubyMethod(name = {"has_key?", "key?", "include?", "member?"}, required = 1)
-    public RubyBoolean has_key_p(IRubyObject key) {
-        return getOrCreateRubyHashMap().has_key_p(key);
+    public RubyBoolean has_key_p(ThreadContext context, IRubyObject key) {
+        return getOrCreateRubyHashMap().has_key_p(context, key);
     }
 
     /** rb_hash_has_value
@@ -602,14 +606,6 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
     @JRubyMethod(name = "keep_if")
     public IRubyObject keep_if(final ThreadContext context, final Block block) {
         return getOrCreateRubyHashMap().keep_if(context, block);
-    }
-
-    /** rb_hash_sort
-     *
-     */
-    @JRubyMethod(name = "sort")
-    public IRubyObject sort(ThreadContext context, Block block) {
-        return getOrCreateRubyHashMap().sort(context, block);
     }
 
     /** rb_hash_index
@@ -831,6 +827,11 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
     @Deprecated
     public IRubyObject op_aset19(ThreadContext context, IRubyObject key, IRubyObject value) {
         return getOrCreateRubyHashMap().op_aset19(context, key, value);
+    }
+
+    @Deprecated
+    public IRubyObject sort(ThreadContext context, Block block) {
+        return getOrCreateRubyHashMap().sort(context, block);
     }
 
 }

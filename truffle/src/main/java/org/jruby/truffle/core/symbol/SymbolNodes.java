@@ -18,23 +18,23 @@ import com.oracle.truffle.api.frame.FrameDescriptor;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.builtins.UnaryCoreMethodNode;
-import org.jruby.truffle.core.encoding.EncodingNodes;
 import org.jruby.truffle.core.proc.ProcOperations;
 import org.jruby.truffle.core.proc.ProcType;
 import org.jruby.truffle.language.RubyRootNode;
+import org.jruby.truffle.language.RubySourceSection;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.methods.Arity;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.methods.SharedMethodInfo;
 import org.jruby.truffle.language.methods.SymbolProcNode;
-import org.jruby.truffle.language.parser.jruby.Translator;
+import org.jruby.truffle.parser.ArgumentDescriptor;
+import org.jruby.truffle.parser.Translator;
 
 import java.util.Arrays;
 
@@ -48,7 +48,7 @@ public abstract class SymbolNodes {
         @Specialization
         public DynamicObject allSymbols() {
             Object[] store = getContext().getSymbolTable().allSymbols().toArray();
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), store, store.length);
+            return createArray(store, store.length);
         }
 
     }
@@ -108,10 +108,21 @@ public abstract class SymbolNodes {
         protected DynamicObject createProc(InternalMethod method, DynamicObject symbol) {
             final SourceSection sourceSection = getContext().getCallStack().getCallerFrameIgnoringSend()
                     .getCallNode().getEncapsulatingSourceSection();
+            final RubySourceSection rubySourceSection = new RubySourceSection(sourceSection);
 
-            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, null, Arity.AT_LEAST_ONE, Layouts.SYMBOL.getString(symbol), true, ArgumentDescriptor.ANON_REST, false, false, false);
+            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(
+                    sourceSection,
+                    method.getLexicalScope(),
+                    Arity.AT_LEAST_ONE,
+                    null,
+                    Layouts.SYMBOL.getString(symbol),
+                    "proc",
+                    ArgumentDescriptor.ANON_REST,
+                    false,
+                    false,
+                    false);
 
-            final RubyRootNode rootNode = new RubyRootNode(getContext(), sourceSection, new FrameDescriptor(nil()), sharedMethodInfo, Translator.sequence(getContext(), sourceSection, Arrays.asList(Translator.createCheckArityNode(getContext(), sourceSection, Arity.AT_LEAST_ONE), new SymbolProcNode(getContext(), sourceSection, Layouts.SYMBOL.getString(symbol)))), false);
+            final RubyRootNode rootNode = new RubyRootNode(getContext(), sourceSection, new FrameDescriptor(nil()), sharedMethodInfo, Translator.sequence(getContext(), sourceSection.getSource(), rubySourceSection, Arrays.asList(Translator.createCheckArityNode(getContext(), sourceSection.getSource(), rubySourceSection, Arity.AT_LEAST_ONE), new SymbolProcNode(getContext(), sourceSection, Layouts.SYMBOL.getString(symbol)))), false);
 
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
 

@@ -1,0 +1,3 @@
+fails:Addrinfo#ipv4? for an ipv4 socket returns true
+fails:Addrinfo#ipv4? for an ipv6 socket returns false
+fails:Addrinfo#ipv4? for a unix socket returns false

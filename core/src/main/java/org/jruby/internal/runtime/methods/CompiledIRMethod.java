@@ -1,7 +1,5 @@
 package org.jruby.internal.runtime.methods;
 
-import org.jruby.MetaClass;
-import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.compiler.Compilable;
 import org.jruby.internal.runtime.AbstractIRMethod;
@@ -13,14 +11,13 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Helpers;
-import org.jruby.runtime.PositionAware;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import java.lang.invoke.MethodHandle;
 
-public class CompiledIRMethod extends AbstractIRMethod implements IRMethodArgs, PositionAware, Compilable<DynamicMethod> {
+public class CompiledIRMethod extends AbstractIRMethod implements Compilable<DynamicMethod> {
     // FIXME: This was final
     public MethodHandle variable;
 
@@ -62,6 +59,22 @@ public class CompiledIRMethod extends AbstractIRMethod implements IRMethodArgs, 
         return ((IRMethod)method).getArgumentDescriptors();
     }
 
+    @Override
+    public void completeBuild(DynamicMethod buildResult) {
+    }
+
+    @Override
+    public InterpreterContext ensureInstrsReady() {
+        // FIXME: duplicated from MixedModeIRMethod
+        if (method instanceof IRMethod) {
+            return ((IRMethod) method).lazilyAcquireInterpreterContext();
+        }
+
+        InterpreterContext ic = method.getInterpreterContext();
+
+        return ic;
+    }
+
     protected void post(ThreadContext context) {
         // update call stacks (pop: ..)
         context.postMethodFrameAndScope();
@@ -76,7 +89,7 @@ public class CompiledIRMethod extends AbstractIRMethod implements IRMethodArgs, 
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
         if (!hasExplicitCallProtocol) return callNoProtocol(context, self, name, args, block);
 
-        if (hasKwargs) IRRuntimeHelpers.frobnicateKwargsArgument(context, args, getSignature().required());
+        if (hasKwargs) args = IRRuntimeHelpers.frobnicateKwargsArgument(context, args, getSignature().required());
 
         return invokeExact(this.variable, context, staticScope, self, args, block, implementationClass, name);
     }
@@ -122,7 +135,7 @@ public class CompiledIRMethod extends AbstractIRMethod implements IRMethodArgs, 
         RubyModule implementationClass = this.implementationClass;
         pre(context, staticScope, implementationClass, self, name, block);
 
-        if (hasKwargs) IRRuntimeHelpers.frobnicateKwargsArgument(context, args, getSignature().required());
+        if (hasKwargs) args = IRRuntimeHelpers.frobnicateKwargsArgument(context, args, getSignature().required());
 
         try {
             return invokeExact(this.variable, context, staticScope, self, args, block, implementationClass, name);
@@ -180,54 +193,6 @@ public class CompiledIRMethod extends AbstractIRMethod implements IRMethodArgs, 
             return invokeExact(this.specific, context, staticScope, self, arg0, arg1, arg2, block, implementationClass, name);
         }
         finally { post(context); }
-    }
-
-    @Override
-    public DynamicMethod dup() {
-        return new CompiledIRMethod(variable, specific, specificArity, method, getVisibility(), implementationClass, hasKwargs);
-    }
-
-    @Override
-    public void setCallCount(int count) {
-
-    }
-
-    @Override
-    public void completeBuild(DynamicMethod buildResult) {
-
-    }
-
-    @Override
-    public InterpreterContext ensureInstrsReady() {
-        // FIXME: duplicated from MixedModeIRMethod
-        if (method instanceof IRMethod) {
-            return ((IRMethod) method).lazilyAcquireInterpreterContext();
-        }
-
-        InterpreterContext ic = method.getInterpreterContext();
-
-        return ic;
-    }
-
-    @Override
-    public String getClassName(ThreadContext context) {
-        String className;
-        if (implementationClass.isSingleton()) {
-            MetaClass metaClass = (MetaClass) implementationClass;
-            RubyClass realClass = metaClass.getRealClass();
-            // if real class is Class
-            if (realClass == context.runtime.getClassClass()) {
-                // use the attached class's name
-                className = ((RubyClass) metaClass.getAttached()).getName();
-            } else {
-                // use the real class name
-                className = realClass.getName();
-            }
-        } else {
-            // use the class name
-            className = implementationClass.getName();
-        }
-        return className;
     }
 
     public String getFile() {

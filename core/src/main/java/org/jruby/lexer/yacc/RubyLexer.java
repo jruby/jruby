@@ -159,7 +159,7 @@ public class RubyLexer extends LexingCommon {
         IF ("if", Tokens.kIF, Tokens.kIF_MOD, EXPR_BEG),
         DEFINED_P ("defined?", Tokens.kDEFINED, Tokens.kDEFINED, EXPR_ARG),
         SUPER ("super", Tokens.kSUPER, Tokens.kSUPER, EXPR_ARG),
-        UNDEF ("undef", Tokens.kUNDEF, Tokens.kUNDEF, EXPR_FNAME),
+        UNDEF ("undef", Tokens.kUNDEF, Tokens.kUNDEF, EXPR_FNAME|EXPR_FITEM),
         BREAK ("break", Tokens.kBREAK, Tokens.kBREAK, EXPR_MID),
         IN ("in", Tokens.kIN, Tokens.kIN, EXPR_BEG),
         DO ("do", Tokens.kDO, Tokens.kDO, EXPR_BEG),
@@ -178,7 +178,7 @@ public class RubyLexer extends LexingCommon {
         LEND ("END", Tokens.klEND, Tokens.klEND, EXPR_END),
         LBEGIN ("BEGIN", Tokens.klBEGIN, Tokens.klBEGIN, EXPR_END),
         WHILE ("while", Tokens.kWHILE, Tokens.kWHILE_MOD, EXPR_BEG),
-        ALIAS ("alias", Tokens.kALIAS, Tokens.kALIAS, EXPR_FNAME),
+        ALIAS ("alias", Tokens.kALIAS, Tokens.kALIAS, EXPR_FNAME|EXPR_FITEM),
         __ENCODING__("__ENCODING__", Tokens.k__ENCODING__, Tokens.k__ENCODING__, EXPR_END);
         
         public final String name;
@@ -560,7 +560,7 @@ public class RubyLexer extends LexingCommon {
 
         case 's':
             lex_strterm = new StringTerm(str_ssym, begin, end);
-            setState(EXPR_FNAME);
+            setState(EXPR_FNAME|EXPR_FITEM);
             yaccValue = "%"+c+begin;
             return Tokens.tSYMBEG;
         
@@ -655,7 +655,7 @@ public class RubyLexer extends LexingCommon {
     }
     
     private boolean arg_ambiguous() {
-        if (warnings.isVerbose() && Options.PARSER_WARN_AMBIGUOUS_ARGUMENTS.load() && !ParserSupport.skipTruffleRubiniusWarnings(this)) {
+        if (warnings.isVerbose() && Options.PARSER_WARN_AMBIGUOUS_ARGUMENTS.load()) {
             warnings.warning(ID.AMBIGUOUS_ARGUMENT, getPosition(), "Ambiguous first argument; make sure.");
         }
         return true;
@@ -1056,7 +1056,7 @@ public class RubyLexer extends LexingCommon {
     private int identifierToken(int result, String value) {
         if (result == Tokens.tIDENTIFIER && !isLexState(last_state, EXPR_DOT|EXPR_FNAME) &&
                 parserSupport.getCurrentScope().isDefined(value) >= 0) {
-            setState(EXPR_END);
+            setState(EXPR_END|EXPR_LABEL);
         }
 
         yaccValue = value;
@@ -1443,7 +1443,6 @@ public class RubyLexer extends LexingCommon {
         }
 
         newtok(true);
-        int first = c;
         do {
             if (!tokadd_mbchar(c)) return EOF;
             c = nextc();
@@ -1465,8 +1464,10 @@ public class RubyLexer extends LexingCommon {
         int result = 0;
 
         last_state = lex_state;
+        String tempVal;
         if (lastBangOrPredicate) {
             result = Tokens.tFID;
+            tempVal = createTokenString();
         } else {
             if (isLexState(lex_state, EXPR_FNAME)) {
                 if ((c = nextc()) == '=') { 
@@ -1484,14 +1485,14 @@ public class RubyLexer extends LexingCommon {
                     pushback(c);
                 }
             }
+            tempVal = createTokenString();
 
-            if (result == 0 && Character.isUpperCase(first)) {
+            if (result == 0 && Character.isUpperCase(tempVal.charAt(0))) {
                 result = Tokens.tCONSTANT;
             } else {
                 result = Tokens.tIDENTIFIER;
             }
         }
-        String tempVal = createTokenString();
         
         if (isLabelPossible(commandState)) {
             if (isLabelSuffix()) {
@@ -1717,7 +1718,7 @@ public class RubyLexer extends LexingCommon {
             return Tokens.tOP_ASGN;
         }
 
-        if (isSpaceArg(c, spaceSeen)) return parseQuote(c);
+        if (isSpaceArg(c, spaceSeen) || (isLexState(lex_state, EXPR_FITEM) && c == 's')) return parseQuote(c);
 
         setState(isAfterOperator() ? EXPR_ARG : EXPR_BEG);
         
@@ -1975,7 +1976,7 @@ public class RubyLexer extends LexingCommon {
         default:
             pushback(c);
             if (isSpaceArg(c, spaceSeen)) {
-                if (warnings.isVerbose() && Options.PARSER_WARN_ARGUMENT_PREFIX.load() && !ParserSupport.skipTruffleRubiniusWarnings(this))
+                if (warnings.isVerbose() && Options.PARSER_WARN_ARGUMENT_PREFIX.load())
                     warnings.warning(ID.ARGUMENT_AS_PREFIX, getPosition(), "`*' interpreted as argument prefix");
                 c = Tokens.tSTAR;
             } else if (isBEG()) {

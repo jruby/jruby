@@ -34,12 +34,10 @@ package org.jruby.runtime;
 
 import org.jruby.Ruby;
 import org.jruby.RubyBasicObject;
-import org.jruby.parser.StaticScopeFactory;
 import org.jruby.runtime.backtrace.BacktraceElement;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
-import org.jruby.runtime.scope.NoVarsDynamicScope;
 
 /**
  *  Internal live representation of a block ({...} or do ... end).
@@ -49,17 +47,14 @@ public class Binding {
     public static final Binding DUMMY =
             new Binding(
                     RubyBasicObject.NEVER,
-                    Frame.DUMMY,
-                    Visibility.PUBLIC,
-                    new NoVarsDynamicScope(StaticScopeFactory.newStaticScope(null, StaticScope.Type.BLOCK, null)),
-                    "<dummy>",
-                    "dummy",
-                    -1);
+                    // Can't use Frame.DUMMY because of circular static init seeing it before it's assigned
+                    new Frame(),
+                    Visibility.PUBLIC);
     
     /**
      * frame of method which defined this block
      */
-    private Frame frame;
+    private final Frame frame;
 
     public String method;
     public String filename;
@@ -74,7 +69,7 @@ public class Binding {
     /**
      * A reference to all variable values (and names) that are in-scope for this block.
      */
-    private DynamicScope dynamicScope;
+    private final DynamicScope dynamicScope;
 
     /**
      * Binding-local scope for 1.9 mode.
@@ -94,6 +89,7 @@ public class Binding {
 
     public Binding(IRubyObject self, Frame frame,
                    Visibility visibility, DynamicScope dynamicScope, String method, String filename, int line) {
+        assert frame != null;
         this.self = self;
         this.frame = frame;
         this.visibility = visibility;
@@ -105,6 +101,7 @@ public class Binding {
 
     private Binding(IRubyObject self, Frame frame,
                     Visibility visibility, DynamicScope dynamicScope, String method, String filename, int line, DynamicScope dummyScope) {
+        assert frame != null;
         this.self = self;
         this.frame = frame;
         this.visibility = visibility;
@@ -116,6 +113,7 @@ public class Binding {
     }
     
     public Binding(Frame frame, DynamicScope dynamicScope, String method, String filename, int line) {
+        assert frame != null;
         this.self = frame.getSelf();
         this.frame = frame;
         this.visibility = frame.getVisibility();
@@ -127,22 +125,28 @@ public class Binding {
 
     public Binding(IRubyObject self) {
         this.self = self;
+        this.frame = Frame.DUMMY;
+        this.dynamicScope = null;
     }
 
     public Binding(IRubyObject self, Frame frame,
                    Visibility visibility) {
+        assert frame != null;
         this.self = self;
         this.frame = frame;
         this.visibility = visibility;
+        this.dynamicScope = null;
     }
 
     public Binding(IRubyObject self, DynamicScope dynamicScope) {
         this.self = self;
+        this.frame = Frame.DUMMY;
         this.dynamicScope = dynamicScope;
     }
 
     public Binding(IRubyObject self, Frame frame,
                    Visibility visibility, DynamicScope dynamicScope) {
+        assert frame != null;
         this.self = self;
         this.frame = frame;
         this.visibility = visibility;

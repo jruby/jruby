@@ -59,8 +59,9 @@ import org.jruby.javasupport.JavaSupport;
 import org.jruby.javasupport.JavaSupportImpl;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
+import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.invokedynamic.InvokeDynamicSupport;
-import org.jruby.util.ClassDefiningClassLoader;
+import org.jruby.util.MRIRecursionGuard;
 import org.objectweb.asm.util.TraceClassVisitor;
 
 import jnr.constants.Constant;
@@ -71,7 +72,6 @@ import jnr.posix.POSIXFactory;
 
 import org.jcodings.Encoding;
 import org.joda.time.DateTimeZone;
-import org.jruby.RubyInstanceConfig.CompileMode;
 import org.jruby.ast.Node;
 import org.jruby.ast.RootNode;
 import org.jruby.ast.executable.RuntimeCache;
@@ -83,7 +83,6 @@ import org.jruby.compiler.JITCompiler;
 import org.jruby.embed.Extension;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.exceptions.Unrescuable;
 import org.jruby.ext.JRubyPOSIXHandler;
 import org.jruby.ext.LateLoadingLibrary;
 import org.jruby.ext.coverage.CoverageData;
@@ -141,8 +140,10 @@ import org.jruby.runtime.profile.builtin.ProfiledMethods;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
 import org.jruby.threading.DaemonThreadFactory;
 import org.jruby.util.ByteList;
+import org.jruby.util.ClassDefiningClassLoader;
 import org.jruby.util.DefinedMessage;
 import org.jruby.util.JRubyClassLoader;
+import org.jruby.util.SecurityHelper;
 import org.jruby.util.SelfFirstJRubyClassLoader;
 import org.jruby.util.IOInputStream;
 import org.jruby.util.IOOutputStream;
@@ -159,8 +160,6 @@ import org.jruby.util.log.LoggerFactory;
 import org.objectweb.asm.ClassReader;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.FileDescriptor;
 import java.io.IOException;
 import java.io.InputStream;
@@ -168,11 +167,7 @@ import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.lang.invoke.MethodHandle;
 import java.lang.ref.WeakReference;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
 import java.net.BindException;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.nio.channels.ClosedChannelException;
 import java.nio.charset.Charset;
 import java.security.AccessControlException;
@@ -242,10 +237,8 @@ public final class Ruby implements Constantizable {
         this.threadService      = new ThreadService(this);
 
         if( config.isProfiling() ) {
-            this.profiledMethods        = new ProfiledMethods(this);
             this.profilingServiceLookup = new ProfilingServiceLookup(this);
         } else {
-            this.profiledMethods        = null;
             this.profilingServiceLookup = null;
         }
 
@@ -315,6 +308,7 @@ public final class Ruby implements Constantizable {
 
         if (reinitCore) {
             RubyGlobal.initARGV(this);
+            RubyGlobal.initSTDIO(this, globalVariables);
         }
     }
 
@@ -826,10 +820,6 @@ public final class Ruby implements Constantizable {
     }
 
     public IRubyObject runScript(Script script, boolean wrap) {
-        if (getInstanceConfig().getCompileMode() == CompileMode.TRUFFLE) {
-            throw new UnsupportedOperationException();
-        }
-
         return script.load(getCurrentContext(), getTopSelf(), wrap);
     }
 
@@ -842,31 +832,12 @@ public final class Ruby implements Constantizable {
     }
 
     public IRubyObject runInterpreter(ThreadContext context, ParseResult parseResult, IRubyObject self) {
-        if (getInstanceConfig().getCompileMode() == CompileMode.TRUFFLE) {
-            throw new UnsupportedOperationException();
-        }
-
         return interpreter.execute(this, parseResult, self);
    }
 
-    public IRubyObject runInterpreter(ThreadContext context, Node rootNode, IRubyObject self) {
+    public IRubyObject runInterpreter(ThreadContext context,  Node rootNode, IRubyObject self) {
         assert rootNode != null : "scriptNode is not null";
-
-        if (getInstanceConfig().getCompileMode() == CompileMode.TRUFFLE) {
-            assert rootNode instanceof RootNode;
-            assert self == getTopSelf();
-            final JRubyTruffleInterface truffleContext = getTruffleContext();
-            Main.printTruffleTimeMetric("before-run");
-            try {
-                truffleContext.execute((RootNode) rootNode);
-            } finally {
-                Main.printTruffleTimeMetric("after-run");
-                shutdownTruffleContextIfRunning();
-            }
-            return getNil();
-        } else {
-            return interpreter.execute(this, rootNode, self);
-        }
+        return interpreter.execute(this, rootNode, self);
     }
 
     public IRubyObject runInterpreter(Node scriptNode) {
@@ -898,56 +869,6 @@ public final class Ruby implements Constantizable {
 
     public JITCompiler getJITCompiler() {
         return jitCompiler;
-    }
-
-    public JRubyTruffleInterface getTruffleContext() {
-        synchronized (truffleContextMonitor) {
-            if (truffleContext == null) {
-                truffleContext = loadTruffle();
-            }
-            return truffleContext;
-        }
-    }
-
-    private JRubyTruffleInterface loadTruffle() {
-        Main.printTruffleTimeMetric("before-load-context");
-
-        String javaVersion = System.getProperty("java.version");
-        String[] parts = javaVersion.split("\\D+");
-        int firstPart = Integer.valueOf(parts[0]);
-        if (!(firstPart >= 9 || Integer.valueOf(parts[1]) >= 8)) {
-            System.err.println("JRuby+Truffle needs Java 8 to run (found " + javaVersion + ").");
-            System.exit(1);
-        }
-
-        final Class<?> clazz;
-
-        try {
-            clazz = getJRubyClassLoader().loadClass("org.jruby.truffle.JRubyTruffleImpl");
-        } catch (Exception e) {
-            throw new RuntimeException("JRuby's Truffle backend not available - either it was not compiled because JRuby was built with Java 7, or it has been removed", e);
-        }
-
-        final JRubyTruffleInterface truffleContext;
-
-        try {
-            Constructor<?> con = clazz.getConstructor(Ruby.class);
-            truffleContext = (JRubyTruffleInterface) con.newInstance(this);
-        } catch (Exception e) {
-            throw new RuntimeException("Error while calling the constructor of Truffle's RubyContext", e);
-        }
-
-        Main.printTruffleTimeMetric("after-load-context");
-
-        return truffleContext;
-    }
-
-    public void shutdownTruffleContextIfRunning() {
-        synchronized (truffleContextMonitor) {
-            if (truffleContext != null) {
-                truffleContext.dispose();
-            }
-        }
     }
 
     /**
@@ -1278,44 +1199,30 @@ public final class Ruby implements Constantizable {
         // if we can't use reflection, 'jruby' and 'java' won't work; no load.
         boolean reflectionWorks = doesReflectionWork();
 
-        if (!RubyInstanceConfig.DEBUG_PARSER && reflectionWorks
-                && getInstanceConfig().getCompileMode() != CompileMode.TRUFFLE) {
+        if (!RubyInstanceConfig.DEBUG_PARSER && reflectionWorks) {
             loadService.require("jruby");
         }
 
-        // attempt to enable unlimited-strength crypto on OpenJDK
-        try {
-            Class jceSecurity = Class.forName("javax.crypto.JceSecurity");
-            Field isRestricted = jceSecurity.getDeclaredField("isRestricted");
-            isRestricted.setAccessible(true);
-            isRestricted.set(null, false);
-            isRestricted.setAccessible(false);
-        } catch (Exception e) {
-            if (isDebug() || LOG.isDebugEnabled()) {
-                LOG.debug("unable to enable unlimited-strength crypto", e);
-            }
-        }
+        SecurityHelper.checkCryptoRestrictions(this);
 
         // out of base boot mode
         bootingCore = false;
 
-        if (getInstanceConfig().getCompileMode() != CompileMode.TRUFFLE) {
-            // init Ruby-based kernel
-            initRubyKernel();
+        // init Ruby-based kernel
+        initRubyKernel();
 
-            // Define blank modules for feature detection in preludes
-            if (!config.isDisableGems()) {
-                defineModule("Gem");
-            }
-            if (!config.isDisableDidYouMean()) {
-                defineModule("DidYouMean");
-            }
-
-            initRubyPreludes();
-
-            // everything booted, so SizedQueue should be available; set up root fiber
-            ThreadFiber.initRootFiber(context);
+        // Define blank modules for feature detection in preludes
+        if (!config.isDisableGems()) {
+            defineModule("Gem");
         }
+        if (!config.isDisableDidYouMean()) {
+            defineModule("DidYouMean");
+        }
+
+        initRubyPreludes();
+
+        // everything booted, so SizedQueue should be available; set up root fiber
+        ThreadFiber.initRootFiber(context);
 
         if(config.isProfiling()) {
             // additional twiddling for profiled mode
@@ -1337,10 +1244,8 @@ public final class Ruby implements Constantizable {
         bootingRuntime = false;
 
         // Require in all libraries specified on command line
-        if (getInstanceConfig().getCompileMode() != CompileMode.TRUFFLE) {
-            for (String scriptName : config.getRequiredLibraries()) {
-                topSelf.callMethod(context, "require", RubyString.newString(this, scriptName));
-            }
+        for (String scriptName : config.getRequiredLibraries()) {
+            topSelf.callMethod(context, "require", RubyString.newString(this, scriptName));
         }
     }
 
@@ -1369,8 +1274,8 @@ public final class Ruby implements Constantizable {
 
     private void initDefinedMessages() {
         for (DefinedMessage definedMessage : DefinedMessage.values()) {
-            RubyString str = RubyString.newString(this, ByteList.create(definedMessage.getText()));
-            str.setFrozen(true);
+            RubyString str = freezeAndDedupString(
+                RubyString.newString(this, ByteList.create(definedMessage.getText())));
             definedMessages.put(definedMessage, str);
         }
     }
@@ -1464,8 +1369,6 @@ public final class Ruby implements Constantizable {
         encodingService = new EncodingService(this);
 
         RubySymbol.createSymbolClass(this);
-
-        recursiveKey = newSymbol("__recursive_key__");
 
         if (profile.allowClass("ThreadGroup")) {
             RubyThreadGroup.createThreadGroupClass(this);
@@ -1620,8 +1523,10 @@ public final class Ruby implements Constantizable {
         ioError = defineClassIfAllowed("IOError", standardError);
         scriptError = defineClassIfAllowed("ScriptError", exceptionClass);
         rangeError = defineClassIfAllowed("RangeError", standardError);
-        signalException = defineClassIfAllowed("SignalException", exceptionClass);
 
+        if (profile.allowClass("SignalException")) {
+            signalException = RubySignalException.createSignalExceptionClass(this, exceptionClass);
+        }
         if (profile.allowClass("NameError")) {
             nameError = RubyNameError.createNameErrorClass(this, standardError);
             nameErrorMessage = RubyNameError.createNameErrorMessageClass(this, nameError);
@@ -1643,7 +1548,9 @@ public final class Ruby implements Constantizable {
         }
 
         fatal = defineClassIfAllowed("Fatal", exceptionClass);
-        interrupt = defineClassIfAllowed("Interrupt", signalException);
+        if (profile.allowClass("Interrupt")) {
+            interrupt = RubyInterrupt.createInterruptClass(this, signalException);
+        }
         typeError = defineClassIfAllowed("TypeError", standardError);
         argumentError = defineClassIfAllowed("ArgumentError", standardError);
         if (profile.allowClass("UncaughtThrowError")) {
@@ -1683,7 +1590,6 @@ public final class Ruby implements Constantizable {
         keyError = defineClassIfAllowed("KeyError", indexError);
 
         mathDomainError = defineClassUnder("DomainError", argumentError, argumentError.getAllocator(), mathModule);
-        inRecursiveListOperation.set(false);
 
         initErrno();
     }
@@ -1806,7 +1712,7 @@ public final class Ruby implements Constantizable {
         // we define the classes at boot because we need them
         addBuiltinIfAllowed("thread.rb", Library.DUMMY);
 
-        if(RubyInstanceConfig.NATIVE_NET_PROTOCOL) {
+        if (RubyInstanceConfig.NATIVE_NET_PROTOCOL) {
             addLazyBuiltin("net/protocol.rb", "net/protocol", "org.jruby.ext.net.protocol.NetProtocolBufferedIOLibrary");
         }
 
@@ -1815,6 +1721,8 @@ public final class Ruby implements Constantizable {
                 runtime.getLoadService().require("jruby/win32ole/stub");
             }
         });
+
+        addLazyBuiltin("cgi/escape.jar", "cgi/escape", "org.jruby.ext.cgi.escape.CGIEscape");
     }
 
     private void initRubyKernel() {
@@ -2673,23 +2581,6 @@ public final class Ruby implements Constantizable {
             else {
                 jrubyClassLoader = new SelfFirstJRubyClassLoader(config.getLoader());
             }
-
-            // if jit code cache is used, we need to add the cache directory to the classpath
-            // so the previously generated class files can be reused.
-            if( config.JIT_CODE_CACHE != null && !config.JIT_CODE_CACHE.trim().isEmpty() ) {
-                File file = new File( config.JIT_CODE_CACHE );
-
-                if( file.exists() == false || file.isDirectory() == false ) {
-                    getWarnings().warning("The jit.codeCache '" + config.JIT_CODE_CACHE + "' directory doesn't exit.");
-                } else {
-                    try {
-                        URL url = file.toURI().toURL();
-                        jrubyClassLoader.addURL( url );
-                    } catch (MalformedURLException e) {
-                        getWarnings().warning("Unable to add the jit.codeCache '" + config.JIT_CODE_CACHE + "' directory to the classpath." + e.getMessage());
-                    }
-                }
-            }
         }
 
         return jrubyClassLoader;
@@ -3271,10 +3162,14 @@ public final class Ruby implements Constantizable {
     public void tearDown(boolean systemExit) {
         int status = 0;
 
-        // clear out threadlocals so they don't leak
-        recursive = new ThreadLocal<Map<String, RubyHash>>();
+        // clear out old style recursion guards so they don't leak
+        mriRecursionGuard = null;
 
         final ThreadContext context = getCurrentContext();
+
+        // Disable event hooks during runtime teardown
+        // This avoids deadlocks if some other thread is holding a debugger lock while we're trying to exit
+        context.setEventHooksEnabled(false);
 
         // FIXME: 73df3d230b9d92c7237d581c6366df1b92ad9b2b exposed no toplevel scope existing anymore (I think the
         // bogus scope I removed was playing surrogate toplevel scope and wallpapering this bug).  For now, add a
@@ -3804,6 +3699,10 @@ public final class Ruby implements Constantizable {
         return newRaiseException(getErrno().getClass("EINTR"), "Interrupted");
     }
 
+    public RaiseException newErrnoEAFNOSUPPORTError(String message) {
+        return newRaiseException(getErrno().getClass("EAFNOSUPPORT"), message);
+    }
+
     public RaiseException newErrnoFromLastPOSIXErrno() {
         RubyClass errnoClass = getErrno(getPosix().errno());
         if (errnoClass == null) errnoClass = systemCallError;
@@ -4124,6 +4023,8 @@ public final class Ruby implements Constantizable {
                     return newErrnoENFILEError();
                 case "Network is unreachable" :
                     return newErrnoENETUNREACHError();
+                case "Address already in use" :
+                    return newErrnoEADDRINUSEError();
                 default :
                     if ( Platform.IS_WINDOWS ) {
                         if ( errorMessage.contains("connection was aborted") ) {
@@ -4310,292 +4211,6 @@ public final class Ruby implements Constantizable {
         if (val != null ) val.remove(obj);
     }
 
-    public static interface RecursiveFunction {
-        IRubyObject call(IRubyObject obj, boolean recur);
-    }
-
-    private static class RecursiveError extends Error implements Unrescuable {
-        public RecursiveError(Object tag) {
-            this.tag = tag;
-        }
-        public final Object tag;
-
-        @Override
-        public synchronized Throwable fillInStackTrace() {
-            return this;
-        }
-    }
-
-    private IRubyObject recursiveListAccess() {
-        Map<String, RubyHash> hash = recursive.get();
-        String sym = getCurrentContext().getFrameName();
-        IRubyObject list = getNil();
-        if(hash == null) {
-            hash = new HashMap<String, RubyHash>();
-            recursive.set(hash);
-        } else {
-            list = hash.get(sym);
-        }
-        if(list == null || list.isNil()) {
-            list = RubyHash.newHash(this);
-            hash.put(sym, (RubyHash)list);
-        }
-        return list;
-    }
-
-    private void recursiveListClear() {
-        Map<String, RubyHash> hash = recursive.get();
-        if(hash != null) {
-            hash.clear();
-        }
-    }
-
-    private static class ExecRecursiveParams {
-        public ExecRecursiveParams() {}
-        public RecursiveFunction func;
-        public IRubyObject list;
-        public IRubyObject obj;
-        public IRubyObject objid;
-        public IRubyObject pairid;
-    }
-
-    private void recursivePush(IRubyObject list, IRubyObject obj, IRubyObject paired_obj) {
-        IRubyObject pair_list;
-        final ThreadContext context = getCurrentContext();
-        if (paired_obj == null) {
-            ((RubyHash) list).op_aset(context, obj, getTrue());
-        } else if ((pair_list = ((RubyHash)list).fastARef(obj)) == null) {
-            ((RubyHash) list).op_aset(context, obj, paired_obj);
-        } else {
-            if (!(pair_list instanceof RubyHash)) {
-                IRubyObject other_paired_obj = pair_list;
-                pair_list = RubyHash.newHash(this);
-                ((RubyHash) pair_list).op_aset(context, other_paired_obj, getTrue());
-                ((RubyHash) list).op_aset(context, obj, pair_list);
-            }
-            ((RubyHash)pair_list).op_aset(context, paired_obj, getTrue());
-        }
-    }
-
-    private void recursivePop(IRubyObject list, IRubyObject obj, IRubyObject paired_obj) {
-        if(paired_obj != null) {
-            IRubyObject pair_list = ((RubyHash)list).fastARef(obj);
-            if(pair_list == null) {
-                throw newTypeError("invalid inspect_tbl pair_list for " + getCurrentContext().getFrameName());
-            }
-            if(pair_list instanceof RubyHash) {
-                ((RubyHash)pair_list).delete(getCurrentContext(), paired_obj, Block.NULL_BLOCK);
-                if(!((RubyHash)pair_list).isEmpty()) {
-                    return;
-                }
-            }
-        }
-        ((RubyHash)list).delete(getCurrentContext(), obj, Block.NULL_BLOCK);
-    }
-
-    private boolean recursiveCheck(IRubyObject list, IRubyObject obj_id, IRubyObject paired_obj_id) {
-        IRubyObject pair_list = ((RubyHash)list).fastARef(obj_id);
-        if(pair_list == null) {
-            return false;
-        }
-        if(paired_obj_id != null) {
-            if(!(pair_list instanceof RubyHash)) {
-                if(pair_list != paired_obj_id) {
-                    return false;
-                }
-            } else {
-                IRubyObject paired_result = ((RubyHash)pair_list).fastARef(paired_obj_id);
-                if(paired_result == null || paired_result.isNil()) {
-                    return false;
-                }
-            }
-        }
-        return true;
-    }
-
-    // exec_recursive_i
-    private IRubyObject execRecursiveI(ExecRecursiveParams p) {
-        IRubyObject result = null;
-        recursivePush(p.list, p.objid, p.pairid);
-        try {
-            result = p.func.call(p.obj, false);
-        } finally {
-            recursivePop(p.list, p.objid, p.pairid);
-        }
-        return result;
-    }
-
-    // exec_recursive
-    private IRubyObject execRecursiveInternal(RecursiveFunction func, IRubyObject obj, IRubyObject pairid, boolean outer) {
-        ExecRecursiveParams p = new ExecRecursiveParams();
-        p.list = recursiveListAccess();
-        p.objid = obj.id();
-        boolean outermost = outer && !recursiveCheck(p.list, recursiveKey, null);
-        if(recursiveCheck(p.list, p.objid, pairid)) {
-            if(outer && !outermost) {
-                throw new RecursiveError(p.list);
-            }
-            return func.call(obj, true);
-        } else {
-            IRubyObject result = null;
-            p.func = func;
-            p.obj = obj;
-            p.pairid = pairid;
-
-            if(outermost) {
-                recursivePush(p.list, recursiveKey, null);
-                try {
-                    result = execRecursiveI(p);
-                } catch(RecursiveError e) {
-                    if(e.tag != p.list) {
-                        throw e;
-                    } else {
-                        result = p.list;
-                    }
-                }
-                recursivePop(p.list, recursiveKey, null);
-                if(result == p.list) {
-                    result = func.call(obj, true);
-                }
-            } else {
-                result = execRecursiveI(p);
-            }
-
-            return result;
-        }
-    }
-
-    ThreadLocal<Map<String, Map<IRubyObject, IRubyObject>>> symMap = new ThreadLocal<>();
-
-    public IRubyObject safeRecurse(RecursiveFunction func, IRubyObject obj, String name, boolean outer) {
-        Map<IRubyObject, IRubyObject> guards = safeRecurseGetGuards(name);
-
-        boolean outermost = outer && !guards.containsKey(recursiveKey);
-
-        // check guards
-        if (guards.containsKey(obj)) {
-            if (outer && !outermost) {
-                throw new RecursiveError(guards);
-            }
-            return func.call(obj, true);
-        } else {
-            if (outermost) {
-                return safeRecurseOutermost(func, obj, guards);
-            } else {
-                return safeRecurseInner(func, obj, guards);
-            }
-        }
-    }
-
-    private IRubyObject safeRecurseOutermost(RecursiveFunction func, IRubyObject obj, Map<IRubyObject, IRubyObject> guards) {
-        boolean recursed = false;
-        guards.put(recursiveKey, recursiveKey);
-
-        try {
-            return safeRecurseInner(func, obj, guards);
-        } catch (RecursiveError re) {
-            if (re.tag != guards) {
-                throw re;
-            }
-            recursed = true;
-            guards.remove(recursiveKey);
-            return func.call(obj, true);
-        } finally {
-            if (!recursed) guards.remove(recursiveKey);
-        }
-    }
-
-    private Map<IRubyObject, IRubyObject> safeRecurseGetGuards(String name) {
-        Map<String, Map<IRubyObject, IRubyObject>> symToGuards = symMap.get();
-        if (symToGuards == null) {
-            symToGuards = new HashMap<>();
-            symMap.set(symToGuards);
-        }
-
-        Map<IRubyObject, IRubyObject> guards = symToGuards.get(name);
-        if (guards == null) {
-            guards = new IdentityHashMap<>();
-            symToGuards.put(name, guards);
-        } return guards;
-    }
-
-    private IRubyObject safeRecurseInner(RecursiveFunction func, IRubyObject obj, Map<IRubyObject, IRubyObject> guards) {
-        try {
-            guards.put(obj, obj);
-            return func.call(obj, false);
-        } finally {
-            guards.remove(obj);
-        }
-    }
-
-    /**
-     * Perform a recursive walk on the given object using the given function.
-     *
-     * Do not call this method directly unless you know you're within a call
-     * to {@link Ruby#recursiveListOperation(java.util.concurrent.Callable) recursiveListOperation},
-     * which will ensure the thread-local recursion tracking data structs are
-     * cleared.
-     *
-     * MRI: rb_exec_recursive
-     *
-     * Calls func(obj, arg, recursive), where recursive is non-zero if the
-     * current method is called recursively on obj
-     *
-     * @param func
-     * @param obj
-     * @return
-     */
-    public IRubyObject execRecursive(RecursiveFunction func, IRubyObject obj) {
-        if (!inRecursiveListOperation.get()) {
-            throw newThreadError("BUG: execRecursive called outside recursiveListOperation");
-        }
-        return execRecursiveInternal(func, obj, null, false);
-    }
-
-    /**
-     * Perform a recursive walk on the given object using the given function.
-     * Treat this as the outermost call, cleaning up recursive structures.
-     *
-     * MRI: rb_exec_recursive_outer
-     *
-     * If recursion is detected on the current method and obj, the outermost
-     * func will be called with (obj, arg, Qtrue). All inner func will be
-     * short-circuited using throw.
-     *
-     * @param func
-     * @param obj
-     * @return
-     */
-    public IRubyObject execRecursiveOuter(RecursiveFunction func, IRubyObject obj) {
-        try {
-            return execRecursiveInternal(func, obj, null, true);
-        } finally {
-            recursiveListClear();
-        }
-    }
-
-    /**
-     * Begin a recursive walk that may make one or more calls to
-     * {@link Ruby#execRecursive(org.jruby.Ruby.RecursiveFunction, org.jruby.runtime.builtin.IRubyObject) execRecursive}.
-     * Clean up recursive structures once complete.
-     *
-     * @param body
-     * @param <T>
-     * @return
-     */
-    public <T extends IRubyObject> T recursiveListOperation(Callable<T> body) {
-        try {
-            inRecursiveListOperation.set(true);
-            return body.call();
-        } catch (Exception e) {
-            Helpers.throwException(e);
-            return null; // not reached
-        } finally {
-            recursiveListClear();
-            inRecursiveListOperation.set(false);
-        }
-    }
-
     public boolean isObjectSpaceEnabled() {
         return objectSpaceEnabled;
     }
@@ -4767,27 +4382,16 @@ public final class Ruby implements Constantizable {
     }
 
     /**
-     * Get the list of method holders for methods being profiled.
-     * @return all known profiled methods
-     * @deprecated This should be an implementation detail of the ProfilingService and should remove from the Ruby class.
-     */
-    @Deprecated
-    public ProfiledMethods getProfiledMethods() {
-        return profiledMethods;
-    }
-
-    /**
      * Add a method, so it can be printed out later.
      *
      * @param name the name of the method
      * @param method
      */
-    @SuppressWarnings("deprecation")
     void addProfiledMethod(final String name, final DynamicMethod method) {
         if (!config.isProfiling()) return;
         if (method.isUndefined()) return;
 
-        getProfiledMethods().addProfiledMethod( name, method );
+        getProfilingService().addProfiledMethod( name, method );
     }
 
     /**
@@ -4935,7 +4539,7 @@ public final class Ruby implements Constantizable {
     }
 
     public RubyString getDefinedMessage(DefinedMessage definedMessage) {
-        return freezeAndDedupString(definedMessages.get(definedMessage));
+        return definedMessages.get(definedMessage);
     }
 
     public RubyString getThreadStatus(RubyThread.Status status) {
@@ -5040,6 +4644,27 @@ public final class Ruby implements Constantizable {
         return this.nullToNil = nullToNil;
     }
 
+    // Parser stats methods
+    private void addLoadParseToStats() {
+        if (parserStats != null) parserStats.addLoadParse();
+    }
+
+    private void addEvalParseToStats() {
+        if (parserStats != null) parserStats.addEvalParse();
+    }
+
+    public FilenoUtil getFilenoUtil() {
+        return filenoUtil;
+    }
+
+    @Deprecated
+    private static final RecursiveFunctionEx<RecursiveFunction> LEGACY_RECURSE = new RecursiveFunctionEx<RecursiveFunction>() {
+        @Override
+        public IRubyObject call(ThreadContext context, RecursiveFunction func, IRubyObject obj, boolean recur) {
+            return func.call(obj, recur);
+        }
+    };
+
     @Deprecated
     public int getSafeLevel() {
         return 0;
@@ -5064,15 +4689,6 @@ public final class Ruby implements Constantizable {
         return new RaiseException(error, false);
     }
 
-    // Parser stats methods
-    private void addLoadParseToStats() {
-        if (parserStats != null) parserStats.addLoadParse();
-    }
-
-    private void addEvalParseToStats() {
-        if (parserStats != null) parserStats.addEvalParse();
-    }
-
     @Deprecated
     public boolean is1_8() {
         return false;
@@ -5083,8 +4699,98 @@ public final class Ruby implements Constantizable {
         return true;
     }
 
-    public FilenoUtil getFilenoUtil() {
-        return filenoUtil;
+    @Deprecated
+    public IRubyObject safeRecurse(RecursiveFunction func, IRubyObject obj, String name, boolean outer) {
+        return safeRecurse(LEGACY_RECURSE, getCurrentContext(), func, obj, name, outer);
+    }
+
+    @Deprecated
+    public ProfiledMethods getProfiledMethods() {
+        return new ProfiledMethods(this);
+    }
+
+    public interface RecursiveFunctionEx<T> extends ThreadContext.RecursiveFunctionEx<T> {
+        IRubyObject call(ThreadContext context, T state, IRubyObject obj, boolean recur);
+    }
+
+    @Deprecated
+    public interface RecursiveFunction extends MRIRecursionGuard.RecursiveFunction {}
+
+    /**
+     * @deprecated Use ThreadContext.safeRecurse
+     */
+    @Deprecated
+    public <T> IRubyObject safeRecurse(RecursiveFunctionEx<T> func, ThreadContext context, T state, IRubyObject obj, String name, boolean outer) {
+        return context.safeRecurse(func, state, obj, name, outer);
+    }
+
+    /**
+     * Perform a recursive walk on the given object using the given function.
+     *
+     * Do not call this method directly unless you know you're within a call
+     * to {@link Ruby#recursiveListOperation(java.util.concurrent.Callable) recursiveListOperation},
+     * which will ensure the thread-local recursion tracking data structs are
+     * cleared.
+     *
+     * MRI: rb_exec_recursive
+     *
+     * Calls func(obj, arg, recursive), where recursive is non-zero if the
+     * current method is called recursively on obj
+     *
+     * @param func
+     * @param obj
+     * @return
+     */
+    @Deprecated
+    public IRubyObject execRecursive(RecursiveFunction func, IRubyObject obj) {
+        return oldRecursionGuard().execRecursive(func, obj);
+    }
+
+    /**
+     * Perform a recursive walk on the given object using the given function.
+     * Treat this as the outermost call, cleaning up recursive structures.
+     *
+     * MRI: rb_exec_recursive_outer
+     *
+     * If recursion is detected on the current method and obj, the outermost
+     * func will be called with (obj, arg, Qtrue). All inner func will be
+     * short-circuited using throw.
+     *
+     * @deprecated Use ThreadContext.safeRecurse.
+     *
+     * @param func
+     * @param obj
+     * @return
+     */
+    @Deprecated
+    public IRubyObject execRecursiveOuter(RecursiveFunction func, IRubyObject obj) {
+        return oldRecursionGuard().execRecursiveOuter(func, obj);
+    }
+
+    /**
+     * Begin a recursive walk that may make one or more calls to
+     * {@link Ruby#execRecursive(org.jruby.Ruby.RecursiveFunction, org.jruby.runtime.builtin.IRubyObject) execRecursive}.
+     * Clean up recursive structures once complete.
+     *
+     * @param body
+     * @param <T>
+     * @return
+     */
+    @Deprecated
+    public <T extends IRubyObject> T recursiveListOperation(Callable<T> body) {
+        return oldRecursionGuard().recursiveListOperation(body);
+    }
+
+    @Deprecated
+    private MRIRecursionGuard oldRecursionGuard() {
+        MRIRecursionGuard mriRecursionGuard = this.mriRecursionGuard;
+        if (mriRecursionGuard != null) return mriRecursionGuard;
+
+        synchronized (this) {
+            mriRecursionGuard = this.mriRecursionGuard;
+            if (mriRecursionGuard != null) return mriRecursionGuard;
+            return mriRecursionGuard = new MRIRecursionGuard(this);
+        }
     }
 
     private final ConcurrentHashMap<String, Invalidator> constantNameInvalidators =
@@ -5197,9 +4903,6 @@ public final class Ruby implements Constantizable {
     // Compilation
     private final JITCompiler jitCompiler;
 
-    private JRubyTruffleInterface truffleContext;
-    private final Object truffleContextMonitor = new Object();
-
     // Note: this field and the following static initializer
     // must be located be in this order!
     private volatile static boolean securityRestricted = false;
@@ -5288,9 +4991,6 @@ public final class Ruby implements Constantizable {
     // A global cache for Java-to-Ruby calls
     private final RuntimeCache runtimeCache;
 
-    // The method objects for serial numbers
-    private final ProfiledMethods profiledMethods;
-
     // Message for Errno exceptions that will not generate a backtrace
     public static final String ERRNO_BACKTRACE_MESSAGE = "errno backtraces disabled; run with -Xerrno.backtrace=true to enable";
 
@@ -5337,11 +5037,6 @@ public final class Ruby implements Constantizable {
     private StaticScopeFactory staticScopeFactory;
 
     private IRManager irManager;
-
-    // structures and such for recursive operations
-    private ThreadLocal<Map<String, RubyHash>> recursive = new ThreadLocal<Map<String, RubyHash>>();
-    private RubySymbol recursiveKey;
-    private ThreadLocal<Boolean> inRecursiveListOperation = new ThreadLocal<Boolean>();
 
     private FFI ffi;
 
@@ -5417,4 +5112,8 @@ public final class Ruby implements Constantizable {
             return RubyModule.loadPopulatorFor(type);
         }
     };
+
+    public final JavaSites sites = new JavaSites();
+
+    private volatile MRIRecursionGuard mriRecursionGuard;
 }

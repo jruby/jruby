@@ -35,3 +35,7 @@ end
 # Just to have an exception name output not be "Exception"
 class MSpecExampleError < Exception
 end
+
+def hide_deprecation_warnings
+  MSpec.stub(:deprecate)
+end

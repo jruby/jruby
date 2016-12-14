@@ -108,7 +108,7 @@ module Mock
         end
         unless pass
           SpecExpectation.fail_with(
-            "Mock '#{name_or_inspect obj}' expected to receive '#{key.last}' " \
+            "Mock '#{name_or_inspect obj}' expected to receive '#{key.last}' " + \
             "#{qualifier.to_s.sub('_', ' ')} #{count} times",
             "but received it #{proxy.calls} times")
         end
@@ -142,14 +142,14 @@ module Mock
                 block.call(*args_to_yield)
               else
                 SpecExpectation.fail_with(
-                  "Mock '#{name_or_inspect obj}' asked to yield " \
+                  "Mock '#{name_or_inspect obj}' asked to yield " + \
                   "|#{proxy.yielding.join(', ')}| on #{sym}\n",
                   "but a block with arity #{block.arity} was passed")
               end
             end
           else
             SpecExpectation.fail_with(
-              "Mock '#{name_or_inspect obj}' asked to yield " \
+              "Mock '#{name_or_inspect obj}' asked to yield " + \
               "|[#{proxy.yielding.join('], [')}]| on #{sym}\n",
               "but no block was passed")
           end

@@ -26,6 +26,7 @@
 package org.jruby.runtime.profile;
 
 import org.jruby.Ruby;
+import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.ThreadContext;
 
 /**
@@ -59,4 +60,11 @@ public interface ProfilingService {
      */
     public ProfileReporter newProfileReporter(ThreadContext context);
 
+    /**
+     * Add a named method to the profiling service to be monitored.
+     *
+     * @param name the name
+     * @param method the method
+     */
+    public void addProfiledMethod(String name, DynamicMethod method);
 }

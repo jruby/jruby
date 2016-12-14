@@ -32,18 +32,18 @@ public abstract class ObjectIVarGetNode extends RubyNode {
     @Specialization(guards = "name == cachedName", limit = "getCacheLimit()")
     public Object ivarGetCached(DynamicObject object, String name,
             @Cached("name") String cachedName,
-            @Cached("createReadFieldNode(checkName(cachedName))") ReadObjectFieldNode readObjectFieldNode) {
+            @Cached("createReadFieldNode(checkName(cachedName, object))") ReadObjectFieldNode readObjectFieldNode) {
         return readObjectFieldNode.execute(object);
     }
 
     @TruffleBoundary
     @Specialization(contains = "ivarGetCached")
     public Object ivarGetUncached(DynamicObject object, String name) {
-        return object.get(checkName(name), nil());
+        return object.get(checkName(name, object), nil());
     }
 
-    protected String checkName(String name) {
-        return checkName ? SymbolTable.checkInstanceVariableName(getContext(), name, this) : name;
+    protected String checkName(String name, DynamicObject object) {
+        return checkName ? SymbolTable.checkInstanceVariableName(getContext(), name, object, this) : name;
     }
 
     protected ReadObjectFieldNode createReadFieldNode(String name) {

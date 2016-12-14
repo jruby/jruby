@@ -30,6 +30,7 @@ public class RubyRootNode extends RootNode {
     public RubyRootNode(RubyContext context, SourceSection sourceSection, FrameDescriptor frameDescriptor,
                         SharedMethodInfo sharedMethodInfo, RubyNode body, boolean needsDeclarationFrame) {
         super(RubyLanguage.class, sourceSection, frameDescriptor);
+        assert sourceSection != null;
         assert body != null;
         this.context = context;
         this.sharedMethodInfo = sharedMethodInfo;
@@ -72,8 +73,17 @@ public class RubyRootNode extends RootNode {
     }
 
     @Override
+    public String getName() {
+        if (sharedMethodInfo.getName() != null) {
+            return sharedMethodInfo.getName();
+        } else {
+            return sharedMethodInfo.getNotes();
+        }
+    }
+
+    @Override
     public String toString() {
-        return sharedMethodInfo.toString();
+        return sharedMethodInfo.getDescriptiveNameAndSource();
     }
 
     public SharedMethodInfo getSharedMethodInfo() {

@@ -22,7 +22,7 @@ describe "Symbol#swapcase" do
     it "leaves uppercase Unicode characters as they were" do
       "\u{00DE}Bc".to_sym.swapcase.should == :"ÞbC"
     end
-  
+
     it "leaves lowercase Unicode characters as they were" do
       "\u{00DF}Bc".to_sym.swapcase.should == :"ßbC"
     end

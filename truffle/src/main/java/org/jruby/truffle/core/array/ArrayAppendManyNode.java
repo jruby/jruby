@@ -16,11 +16,8 @@ import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
-import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 
-import static org.jruby.truffle.core.array.ArrayHelpers.getSize;
 import static org.jruby.truffle.core.array.ArrayHelpers.setSize;
 import static org.jruby.truffle.core.array.ArrayHelpers.setStoreAndSize;
 
@@ -31,45 +28,19 @@ import static org.jruby.truffle.core.array.ArrayHelpers.setStoreAndSize;
 @ImportStatic(ArrayGuards.class)
 public abstract class ArrayAppendManyNode extends RubyNode {
 
-    public ArrayAppendManyNode(RubyContext context, SourceSection sourceSection) {
-        super(context, sourceSection);
-    }
-
     public abstract DynamicObject executeAppendMany(DynamicObject array, DynamicObject other);
-
-    // Append into an empty array
-
-    // TODO CS 12-May-15 differentiate between null and empty but possibly having enough space
-
-    @Specialization(guards = { "isEmptyArray(array)", "isNullArray(other)" })
-    public DynamicObject appendManyNullNull(DynamicObject array, DynamicObject other) {
-        return array;
-    }
-
-    @Specialization(guards = { "isEmptyArray(array)", "strategy.matches(other)" }, limit = "ARRAY_STRATEGIES")
-    public DynamicObject appendManyEmpty(DynamicObject array, DynamicObject other,
-            @Cached("of(other)") ArrayStrategy strategy) {
-        final int otherSize = getSize(other);
-        Object store = strategy.newMirror(other).copyArrayAndMirror(otherSize).getArray();
-        setStoreAndSize(array, store, otherSize);
-        return array;
-    }
-
-    @Specialization(guards = "isEmptyArray(other)")
-    public DynamicObject appendManyOtherEmpty(DynamicObject array, DynamicObject other) {
-        return array;
-    }
 
     // Append of a compatible type
 
     @Specialization(guards = { "strategy.matches(array)", "otherStrategy.matches(other)",
-            "strategy.canStore(otherStrategy.type())" }, limit = "ARRAY_STRATEGIES")
+            "generalized.equals(strategy)" }, limit = "ARRAY_STRATEGIES")
     public DynamicObject appendManySameType(DynamicObject array, DynamicObject other,
             @Cached("of(array)") ArrayStrategy strategy,
             @Cached("of(other)") ArrayStrategy otherStrategy,
+            @Cached("strategy.generalize(otherStrategy)") ArrayStrategy generalized,
             @Cached("createBinaryProfile()") ConditionProfile extendProfile) {
-        final int oldSize = getSize(array);
-        final int otherSize = getSize(other);
+        final int oldSize = strategy.getSize(array);
+        final int otherSize = otherStrategy.getSize(other);
         final int newSize = oldSize + otherSize;
         final ArrayMirror storeMirror = strategy.newMirror(array);
         final ArrayMirror otherStoreMirror = otherStrategy.newMirror(other);
@@ -89,14 +60,14 @@ public abstract class ArrayAppendManyNode extends RubyNode {
     // Generalizations
 
     @Specialization(guards = { "strategy.matches(array)", "otherStrategy.matches(other)",
-            "!strategy.canStore(otherStrategy.type())" }, limit = "ARRAY_STRATEGIES")
+            "!generalized.equals(strategy)" }, limit = "ARRAY_STRATEGIES")
     public DynamicObject appendManyGeneralize(DynamicObject array, DynamicObject other,
             @Cached("of(array)") ArrayStrategy strategy,
             @Cached("of(other)") ArrayStrategy otherStrategy,
             @Cached("strategy.generalize(otherStrategy)") ArrayStrategy generalized,
             @Cached("createBinaryProfile()") ConditionProfile extendProfile) {
-        final int oldSize = getSize(array);
-        final int otherSize = getSize(other);
+        final int oldSize = strategy.getSize(array);
+        final int otherSize = otherStrategy.getSize(other);
         final int newSize = oldSize + otherSize;
         final ArrayMirror newStoreMirror = generalized.newArray(newSize);
         strategy.newMirror(array).copyTo(newStoreMirror, 0, 0, oldSize);

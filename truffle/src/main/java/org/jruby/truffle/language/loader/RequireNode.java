@@ -27,10 +27,8 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.Source;
-import java.io.File;
-import java.io.IOException;
-import java.util.concurrent.locks.ReentrantLock;
 import org.jcodings.specific.UTF8Encoding;
+import org.jruby.truffle.Log;
 import org.jruby.truffle.RubyLanguage;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyNode;
@@ -39,7 +37,12 @@ import org.jruby.truffle.language.control.JavaException;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.methods.DeclarationContext;
-import org.jruby.truffle.language.parser.ParserContext;
+import org.jruby.truffle.parser.ParserContext;
+import org.jruby.truffle.util.StringUtils;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.concurrent.locks.ReentrantLock;
 
 @NodeChild("feature")
 public abstract class RequireNode extends RubyNode {
@@ -99,12 +102,12 @@ public abstract class RequireNode extends RubyNode {
 
                 final Source source;
                 try {
-                    source = getContext().getSourceCache().getSource(expandedPath);
+                    source = getContext().getSourceLoader().load(expandedPath);
                 } catch (IOException e) {
                     return false;
                 }
 
-                final String mimeType = source.getMimeType();
+                final String mimeType = getSourceMimeType(source);
 
                 if (RubyLanguage.MIME_TYPE.equals(mimeType)) {
                     final RubyRootNode rootNode = getContext().getCodeLoader().parse(
@@ -124,7 +127,11 @@ public abstract class RequireNode extends RubyNode {
 
                     deferredCall.call(frame, callNode);
                 } else if (RubyLanguage.CEXT_MIME_TYPE.equals(mimeType)) {
-                    featureLoader.ensureCExtImplementationLoaded(frame, callNode);
+                    featureLoader.ensureCExtImplementationLoaded(frame, feature, callNode);
+
+                    if (getContext().getOptions().CEXTS_LOG_LOAD) {
+                        Log.info("loading cext module %s", expandedPath);
+                    }
 
                     final CallTarget callTarget = featureLoader.parseSource(source);
                     callNode.call(frame, callTarget, new Object[] {});
@@ -145,7 +152,7 @@ public abstract class RequireNode extends RubyNode {
                 } else {
                     errorProfile.enter();
 
-                    if (expandedPath.toLowerCase().endsWith(".su")) {
+                    if (StringUtils.toLowerCase(expandedPath).endsWith(".su")) {
                         throw new RaiseException(cextSupportNotAvailable(expandedPath));
                     } else {
                         throw new RaiseException(unknownLanguage(expandedPath, mimeType));
@@ -159,6 +166,11 @@ public abstract class RequireNode extends RubyNode {
                 fileLocks.unlock(expandedPath, lock);
             }
         }
+    }
+
+    @TruffleBoundary
+    private String getSourceMimeType(Source source) {
+        return source.getMimeType();
     }
 
     @TruffleBoundary
@@ -177,10 +189,20 @@ public abstract class RequireNode extends RubyNode {
 
     @TruffleBoundary
     private TruffleObject getInitFunction(final String expandedPath) {
-        final Object initFunction = getContext().getEnv().importSymbol("@Init_" + getBaseName(expandedPath));
+        final String initFunctionName = "@Init_" + getBaseName(expandedPath);
+
+        final Object initFunction = getContext().getEnv().importSymbol(initFunctionName);
 
         if (!(initFunction instanceof TruffleObject)) {
-            throw new UnsupportedOperationException();
+            if (initFunction == null) {
+                throw new RaiseException(getContext().getCoreExceptions().internalError(
+                        String.format("Couldn't find the cext initialise function %s in %s", initFunctionName, expandedPath),
+                        callNode));
+            } else {
+                throw new RaiseException(getContext().getCoreExceptions().internalError(
+                        String.format("The cext initialise function %s in %s was not a Truffle object", initFunctionName, expandedPath),
+                        callNode));
+            }
         }
 
         return (TruffleObject) initFunction;

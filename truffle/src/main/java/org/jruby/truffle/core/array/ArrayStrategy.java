@@ -1,3 +1,12 @@
+/*
+ * Copyright (c) 2016 Oracle and/or its affiliates. All rights reserved. This
+ * code is released under a tri EPL/GPL/LGPL license. You can use it,
+ * redistribute it and/or modify it under the terms of the:
+ *
+ * Eclipse Public License version 1.0
+ * GNU General Public License version 2
+ * GNU Lesser General Public License version 2.1
+ */
 package org.jruby.truffle.core.array;
 
 import com.oracle.truffle.api.CompilerAsserts;
@@ -9,7 +18,7 @@ public abstract class ArrayStrategy {
 
     // ArrayStrategy interface
 
-    public Class<?> type() {
+    protected Class<?> type() {
         throw unsupported();
     }
 
@@ -27,12 +36,32 @@ public abstract class ArrayStrategy {
         throw unsupported();
     }
 
-    public abstract boolean matches(DynamicObject array);
+    public final boolean matches(DynamicObject array) {
+        return matchesStore(Layouts.ARRAY.getStore(array));
+    }
+
+    protected abstract boolean matchesStore(Object store);
+
+    public int getSize(DynamicObject array) {
+        return Layouts.ARRAY.getSize(array);
+    }
 
     public abstract ArrayMirror newArray(int size);
 
-    public abstract ArrayMirror newMirror(DynamicObject array);
+    public final ArrayMirror newMirror(DynamicObject array) {
+        return newMirrorFromStore(Layouts.ARRAY.getStore(array));
+    }
 
+    protected ArrayMirror newMirrorFromStore(Object store) {
+        throw unsupported();
+    }
+
+    public void setStore(DynamicObject array, Object store) {
+        assert !(store instanceof ArrayMirror);
+        Layouts.ARRAY.setStore(array, store);
+    }
+
+    @Override
     public abstract String toString();
 
     public ArrayStrategy generalize(ArrayStrategy other) {
@@ -40,16 +69,17 @@ public abstract class ArrayStrategy {
         if (other == this) {
             return this;
         }
+
+        if (other instanceof NullArrayStrategy) {
+            return this;
+        }
+
         for (ArrayStrategy generalized : TYPE_STRATEGIES) {
             if (generalized.canStore(type()) && generalized.canStore(other.type())) {
                 return generalized;
             }
         }
         throw unsupported();
-    }
-
-    public ArrayStrategy generalizeFor(Object value) {
-        return generalize(ArrayStrategy.forValue(value));
     }
 
     // Helpers
@@ -65,6 +95,24 @@ public abstract class ArrayStrategy {
             ObjectArrayStrategy.INSTANCE
     };
 
+    private static ArrayStrategy ofStore(Object store) {
+        CompilerAsserts.neverPartOfCompilation();
+
+        if (store == null) {
+            return NullArrayStrategy.INSTANCE;
+        } else if (store instanceof int[]) {
+            return IntArrayStrategy.INSTANCE;
+        } else if (store instanceof long[]) {
+            return LongArrayStrategy.INSTANCE;
+        } else if (store instanceof double[]) {
+            return DoubleArrayStrategy.INSTANCE;
+        } else if (store.getClass() == Object[].class) {
+            return ObjectArrayStrategy.INSTANCE;
+        } else {
+            throw new UnsupportedOperationException(store.getClass().getName());
+        }
+    }
+
     public static ArrayStrategy of(DynamicObject array) {
         CompilerAsserts.neverPartOfCompilation();
 
@@ -72,27 +120,7 @@ public abstract class ArrayStrategy {
             return FallbackArrayStrategy.INSTANCE;
         }
 
-        if (ArrayGuards.isIntArray(array)) {
-            return IntArrayStrategy.INSTANCE;
-        } else if (ArrayGuards.isLongArray(array)) {
-            return LongArrayStrategy.INSTANCE;
-        } else if (ArrayGuards.isDoubleArray(array)) {
-            return DoubleArrayStrategy.INSTANCE;
-        } else if (ArrayGuards.isObjectArray(array)) {
-            return ObjectArrayStrategy.INSTANCE;
-        } else {
-            assert ArrayGuards.isNullArray(array);
-            return FallbackArrayStrategy.INSTANCE;
-        }
-    }
-
-    public static ArrayStrategy of(DynamicObject array, Object value) {
-        CompilerAsserts.neverPartOfCompilation();
-        if (ArrayGuards.isLongArray(array) && value instanceof Integer) {
-            return LongIntArrayStrategy.INSTANCE;
-        } else {
-            return of(array);
-        }
+        return ofStore(Layouts.ARRAY.getStore(array));
     }
 
     public static ArrayStrategy forValue(Object value) {
@@ -114,28 +142,34 @@ public abstract class ArrayStrategy {
 
         static final ArrayStrategy INSTANCE = new IntArrayStrategy();
 
+        @Override
         public Class<?> type() {
             return Integer.class;
         }
 
+        @Override
         public boolean canStore(Class<?> type) {
             return type == Integer.class;
         }
 
+        @Override
         public boolean accepts(Object value) {
             return value instanceof Integer;
         }
 
+        @Override
         public boolean specializesFor(Object value) {
             return value instanceof Integer;
         }
 
+        @Override
         public boolean isDefaultValue(Object value) {
             return (int) value == 0;
         }
 
-        public boolean matches(DynamicObject array) {
-            return ArrayGuards.isIntArray(array);
+        @Override
+        public boolean matchesStore(Object store) {
+            return store instanceof int[];
         }
 
         @Override
@@ -150,14 +184,17 @@ public abstract class ArrayStrategy {
             }
         }
 
+        @Override
         public ArrayMirror newArray(int size) {
             return new IntegerArrayMirror(new int[size]);
         }
 
-        public ArrayMirror newMirror(DynamicObject array) {
-            return new IntegerArrayMirror((int[]) Layouts.ARRAY.getStore(array));
+        @Override
+        protected ArrayMirror newMirrorFromStore(Object store) {
+            return new IntegerArrayMirror((int[]) store);
         }
 
+        @Override
         public String toString() {
             return "int[]";
         }
@@ -168,38 +205,47 @@ public abstract class ArrayStrategy {
 
         static final ArrayStrategy INSTANCE = new LongArrayStrategy();
 
+        @Override
         public Class<?> type() {
             return Long.class;
         }
 
+        @Override
         public boolean canStore(Class<?> type) {
             return type == Long.class || type == Integer.class;
         }
 
+        @Override
         public boolean accepts(Object value) {
             return value instanceof Long;
         }
 
+        @Override
         public boolean specializesFor(Object value) {
             return value instanceof Long;
         }
 
+        @Override
         public boolean isDefaultValue(Object value) {
             return (long) value == 0L;
         }
 
-        public boolean matches(DynamicObject array) {
-            return ArrayGuards.isLongArray(array);
+        @Override
+        public boolean matchesStore(Object store) {
+            return store instanceof long[];
         }
 
+        @Override
         public ArrayMirror newArray(int size) {
             return new LongArrayMirror(new long[size]);
         }
 
-        public ArrayMirror newMirror(DynamicObject array) {
-            return new LongArrayMirror((long[]) Layouts.ARRAY.getStore(array));
+        @Override
+        public ArrayMirror newMirrorFromStore(Object store) {
+            return new LongArrayMirror((long[]) store);
         }
 
+        @Override
         public String toString() {
             return "long[]";
         }
@@ -210,38 +256,47 @@ public abstract class ArrayStrategy {
 
         static final ArrayStrategy INSTANCE = new DoubleArrayStrategy();
 
+        @Override
         public Class<?> type() {
             return Double.class;
         }
 
+        @Override
         public boolean canStore(Class<?> type) {
             return type == Double.class;
         }
 
+        @Override
         public boolean accepts(Object value) {
             return value instanceof Double;
         }
 
+        @Override
         public boolean specializesFor(Object value) {
             return value instanceof Double;
         }
 
+        @Override
         public boolean isDefaultValue(Object value) {
             return (double) value == 0.0;
         }
 
-        public boolean matches(DynamicObject array) {
-            return ArrayGuards.isDoubleArray(array);
+        @Override
+        public boolean matchesStore(Object store) {
+            return store instanceof double[];
         }
 
+        @Override
         public ArrayMirror newArray(int size) {
             return new DoubleArrayMirror(new double[size]);
         }
 
-        public ArrayMirror newMirror(DynamicObject array) {
-            return new DoubleArrayMirror((double[]) Layouts.ARRAY.getStore(array));
+        @Override
+        public ArrayMirror newMirrorFromStore(Object store) {
+            return new DoubleArrayMirror((double[]) store);
         }
 
+        @Override
         public String toString() {
             return "double[]";
         }
@@ -252,65 +307,49 @@ public abstract class ArrayStrategy {
 
         static final ArrayStrategy INSTANCE = new ObjectArrayStrategy();
 
+        @Override
         public Class<?> type() {
             return Object.class;
         }
 
+        @Override
         public boolean canStore(Class<?> type) {
             return true;
         }
 
+        @Override
         public boolean accepts(Object value) {
             return true;
         }
 
+        @Override
         public boolean specializesFor(Object value) {
             return !(value instanceof Integer) && !(value instanceof Long) && !(value instanceof Double);
         }
 
+        @Override
         public boolean isDefaultValue(Object value) {
             return value == null;
         }
 
-        public boolean matches(DynamicObject array) {
-            return ArrayGuards.isObjectArray(array);
+        @Override
+        public boolean matchesStore(Object store) {
+            return store != null && store.getClass() == Object[].class;
         }
 
+        @Override
         public ArrayMirror newArray(int size) {
             return new ObjectArrayMirror(new Object[size]);
         }
 
-        public ArrayMirror newMirror(DynamicObject array) {
-            return new ObjectArrayMirror((Object[]) Layouts.ARRAY.getStore(array));
+        @Override
+        public ArrayMirror newMirrorFromStore(Object store) {
+            return new ObjectArrayMirror((Object[]) store);
         }
 
+        @Override
         public String toString() {
             return "Object[]";
-        }
-
-    }
-
-    // Specific generalization strategies to handle int => long
-
-    /** long[] accepting int */
-    private static class LongIntArrayStrategy extends LongArrayStrategy {
-
-        static final ArrayStrategy INSTANCE = new LongIntArrayStrategy();
-
-        public boolean accepts(Object value) {
-            return value instanceof Integer;
-        }
-
-        public boolean matches(DynamicObject array) {
-            return ArrayGuards.isLongArray(array);
-        }
-
-        public ArrayMirror newMirror(DynamicObject array) {
-            return new LongIntArrayMirror((long[]) Layouts.ARRAY.getStore(array));
-        }
-
-        public String toString() {
-            return "(long[], int)";
         }
 
     }
@@ -320,24 +359,83 @@ public abstract class ArrayStrategy {
 
         static final ArrayStrategy INSTANCE = new IntToObjectGeneralizationArrayStrategy();
 
+        @Override
         public boolean accepts(Object value) {
             return !(value instanceof Long);
         }
 
-        public boolean matches(DynamicObject array) {
-            return ArrayGuards.isObjectArray(array);
+        @Override
+        public boolean matchesStore(Object store) {
+            return store != null && store.getClass() == Object[].class;
         }
 
+        @Override
         public ArrayMirror newArray(int size) {
             return new ObjectArrayMirror(new Object[size]);
         }
 
-        public ArrayMirror newMirror(DynamicObject array) {
-            return new ObjectArrayMirror((Object[]) Layouts.ARRAY.getStore(array));
+        @Override
+        public ArrayMirror newMirrorFromStore(Object store) {
+            return new ObjectArrayMirror((Object[]) store);
         }
 
+        @Override
         public String toString() {
             return "Object[] (not accepting long)";
+        }
+
+    }
+
+    // Null/empty strategy
+
+    private static class NullArrayStrategy extends ArrayStrategy {
+
+        static final ArrayStrategy INSTANCE = new NullArrayStrategy();
+
+        @Override
+        public Class<?> type() {
+            throw unsupported();
+        }
+
+        @Override
+        public boolean canStore(Class<?> type) {
+            return type == null;
+        }
+
+        @Override
+        public boolean accepts(Object value) {
+            return false;
+        }
+
+        @Override
+        public boolean matchesStore(Object store) {
+            return store == null;
+        }
+
+        @Override
+        public int getSize(DynamicObject array) {
+            return 0;
+        }
+
+        @Override
+        public ArrayMirror newArray(int size) {
+            assert size == 0;
+            return EmptyArrayMirror.INSTANCE;
+        }
+
+        @Override
+        protected ArrayMirror newMirrorFromStore(Object store) {
+            return EmptyArrayMirror.INSTANCE;
+        }
+
+        @Override
+        public ArrayStrategy generalize(ArrayStrategy other) {
+            return other;
+        }
+
+        @Override
+        public String toString() {
+            return "null";
         }
 
     }
@@ -348,11 +446,13 @@ public abstract class ArrayStrategy {
 
         static final ArrayStrategy INSTANCE = new FallbackArrayStrategy();
 
+        @Override
         public boolean accepts(Object value) {
             return false;
         }
 
-        public boolean matches(DynamicObject array) {
+        @Override
+        public boolean matchesStore(Object store) {
             return false;
         }
 
@@ -361,16 +461,19 @@ public abstract class ArrayStrategy {
             return other;
         }
 
+        @Override
         public ArrayMirror newArray(int size) {
             throw unsupported();
         }
 
-        public ArrayMirror newMirror(DynamicObject array) {
+        @Override
+        public ArrayMirror newMirrorFromStore(Object store) {
             throw unsupported();
         }
 
+        @Override
         public String toString() {
-            return "null";
+            return "fallback";
         }
 
     }

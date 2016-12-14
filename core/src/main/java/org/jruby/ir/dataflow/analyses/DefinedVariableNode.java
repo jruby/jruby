@@ -2,10 +2,15 @@ package org.jruby.ir.dataflow.analyses;
 
 import org.jruby.dirgra.Edge;
 import org.jruby.ir.dataflow.FlowGraphNode;
+import org.jruby.ir.instructions.ClosureAcceptingInstr;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.ResultInstr;
 import org.jruby.ir.operands.LocalVariable;
+import org.jruby.ir.operands.Operand;
+import org.jruby.ir.operands.TemporaryLocalVariable;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.operands.WrappedIRClosure;
+import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRFlags;
 import org.jruby.ir.representations.BasicBlock;
 
@@ -81,28 +86,63 @@ public class DefinedVariableNode extends FlowGraphNode<DefinedVariablesProblem, 
         }
     }
 
-    public void identifyInits(Set<Variable> undefinedVars) {
-        int parentScopeDepth = 1;
-        if (problem.getScope().getFlags().contains(IRFlags.REUSE_PARENT_DYNSCOPE)) {
-            parentScopeDepth = 0;
+    private void identifyUndefinedVarsInClosure(Set<Variable> undefinedVars, IRClosure cl, int nestingLevel) {
+        int clBaseDepth = nestingLevel + (cl.getFlags().contains(IRFlags.REUSE_PARENT_DYNSCOPE) ? 0 : 1);
+        cl.setUpUseDefLocalVarMaps();
+        for (LocalVariable lv: cl.getUsedLocalVariables()) {
+            // This can happen where an outer scope variable
+            // is not used in this scope but is used in a nested
+            // scope. Ex: ~jruby/bin/ast:21
+            if (problem.getDFVar(lv) == null) {
+                continue;
+            }
+
+            // Find variables which belong to the problem.getScope()
+            if (lv.getScopeDepth() == clBaseDepth && !tmp.get(problem.getDFVar(lv))) {
+                // We want lv suitable for initializing in this scope
+                undefinedVars.add(lv.getScopeDepth() == 0 ? lv : lv.cloneForDepth(0));
+                tmp.set(problem.getDFVar(lv));
+            }
         }
 
-        // System.out.println("BB " + basicBlock + "; state\n" + toString());
+        // Recurse
+        for (IRClosure nestedCl: cl.getClosures()) {
+            identifyUndefinedVarsInClosure(undefinedVars, nestedCl, nestingLevel + 1);
+        }
+    }
+
+    public void identifyInits(Set<Variable> undefinedVars) {
+        int parentScopeDepth = problem.getScope().getFlags().contains(IRFlags.REUSE_PARENT_DYNSCOPE) ? 0 : 1;
 
         initSolution();
         for (Instr i: basicBlock.getInstrs()) {
-            // Variables that belong to outer scopes should always
-            // be considered defined.
             for (Variable v: i.getUsedVariables()) {
                 if (!v.isSelf()) {
-                    if (v instanceof LocalVariable && ((LocalVariable)v).getScopeDepth() >= parentScopeDepth) {
-                        tmp.set(problem.getDFVar(v));
+                    if (v instanceof LocalVariable) {
+                        LocalVariable lv = (LocalVariable) v;
+                        // Variables that belong to outer scopes
+                        // are considered already defined.
+                        if (lv.getScopeDepth() < parentScopeDepth && !tmp.get(problem.getDFVar(v))) {
+                            // We want lv suitable for initializing in this scope
+                            undefinedVars.add(lv.getScopeDepth() == 0 ? lv : lv.cloneForDepth(0));
+                        }
+                        tmp.set(problem.getDFVar(lv));
+                    } else if (v instanceof TemporaryLocalVariable) {
+                        TemporaryLocalVariable tlv = (TemporaryLocalVariable) v;
+                        if (!tmp.get(problem.getDFVar(v))) {
+                            undefinedVars.add(tlv);
+                        }
+                        tmp.set(problem.getDFVar(tlv));
                     }
+                }
+            }
 
-                    if (!tmp.get(problem.getDFVar(v))) {
-                        // System.out.println("Variable " + v + " in instr " + i + " in " + basicBlock + " isn't defined!");
-                        undefinedVars.add(v);
-                    }
+            if (i instanceof ClosureAcceptingInstr) {
+                // Find all variables used in the closure and
+                // figure out if they are defined are not.
+                Operand o = ((ClosureAcceptingInstr)i).getClosureArg();
+                if (o != null && o instanceof WrappedIRClosure) {
+                    identifyUndefinedVarsInClosure(undefinedVars, ((WrappedIRClosure)o).getClosure(), 0);
                 }
             }
 

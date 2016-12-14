@@ -26,6 +26,8 @@ public class ReadUserKeywordsHashNode extends RubyNode {
 
     private final ConditionProfile notEnoughArgumentsProfile = ConditionProfile.createBinaryProfile();
     private final ConditionProfile lastArgumentIsHashProfile = ConditionProfile.createBinaryProfile();
+    private final ConditionProfile respondsToToHashProfile = ConditionProfile.createBinaryProfile();
+    private final ConditionProfile convertedIsHashProfile = ConditionProfile.createBinaryProfile();
 
     public ReadUserKeywordsHashNode(int minArgumentCount) {
         this.minArgumentCount = minArgumentCount;
@@ -45,26 +47,36 @@ public class ReadUserKeywordsHashNode extends RubyNode {
             return lastArgument;
         }
 
-        CompilerDirectives.bailout("Ruby keyword arguments aren't optimized yet");
+        return tryConvertToHash(frame, argumentCount, lastArgument);
+    }
 
-        if (respondToToHashNode == null) {
-            respondToToHashNode = insert(new DoesRespondDispatchHeadNode(getContext(), false));
-        }
+    private Object tryConvertToHash(VirtualFrame frame, final int argumentCount, final Object lastArgument) {
+        if (respondsToToHashProfile.profile(respondToToHash(frame, lastArgument))) {
+            final Object converted = callToHash(frame, lastArgument);
 
-        if (respondToToHashNode.doesRespondTo(frame, "to_hash", lastArgument)) {
-            if (callToHashNode == null) {
-                callToHashNode = insert(CallDispatchHeadNode.createMethodCall());
-            }
-
-            final Object converted = callToHashNode.call(frame, lastArgument, "to_hash");
-
-            if (RubyGuards.isRubyHash(converted)) {
+            if (convertedIsHashProfile.profile(RubyGuards.isRubyHash(converted))) {
                 RubyArguments.setArgument(frame, argumentCount - 1, converted);
                 return converted;
             }
         }
 
         return null;
+    }
+
+    private boolean respondToToHash(VirtualFrame frame, final Object lastArgument) {
+        if (respondToToHashNode == null) {
+            CompilerDirectives.transferToInterpreterAndInvalidate();
+            respondToToHashNode = insert(new DoesRespondDispatchHeadNode(getContext(), false));
+        }
+        return respondToToHashNode.doesRespondTo(frame, "to_hash", lastArgument);
+    }
+
+    private Object callToHash(VirtualFrame frame, final Object lastArgument) {
+        if (callToHashNode == null) {
+            CompilerDirectives.transferToInterpreterAndInvalidate();
+            callToHashNode = insert(CallDispatchHeadNode.createMethodCall());
+        }
+        return callToHashNode.call(frame, lastArgument, "to_hash");
     }
 
 }

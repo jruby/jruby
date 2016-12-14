@@ -216,6 +216,7 @@ public class LinuxRubiniusConfiguration extends DefaultRubiniusConfiguration {
         configuration.config("rbx.platform.file.O_APPEND", 1024);
         configuration.config("rbx.platform.file.O_NONBLOCK", 2048);
         configuration.config("rbx.platform.file.O_SYNC", 1052672);
+        configuration.config("rbx.platform.file.O_TMPFILE", 4259840);
         configuration.config("rbx.platform.file.S_IRUSR", 256);
         configuration.config("rbx.platform.file.S_IWUSR", 128);
         configuration.config("rbx.platform.file.S_IXUSR", 64);

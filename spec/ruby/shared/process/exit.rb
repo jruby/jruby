@@ -62,7 +62,7 @@ describe :process_exit, shared: true do
     begin
       ready = true
       sleep
-    rescue SystemExit => e
+    rescue SystemExit
       ScratchPad << :in_main
     end
 

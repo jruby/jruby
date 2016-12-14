@@ -9,6 +9,8 @@
  */
 package org.jruby.truffle.language.backtrace;
 
+import org.jruby.truffle.util.StringUtils;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -42,7 +44,7 @@ public class BacktraceInterleaver {
     }
 
     private static String format(StackTraceElement element) {
-        return String.format("\t\t%s", element);
+        return StringUtils.format("\t\t%s", element);
     }
 
 }

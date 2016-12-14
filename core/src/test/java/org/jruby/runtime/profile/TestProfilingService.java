@@ -9,6 +9,8 @@ import org.jruby.runtime.ThreadContext;
  */
 public class TestProfilingService implements ProfilingService {
 
+    public TestProfilingService(Ruby runtime) {}
+
     @Override
     public ProfileCollection newProfileCollection(ThreadContext context) {
         return null;
@@ -27,5 +29,9 @@ public class TestProfilingService implements ProfilingService {
     @Override
     public ProfileReporter newProfileReporter(ThreadContext context) {
         return null;
+    }
+
+    @Override
+    public void addProfiledMethod(String name, DynamicMethod method) {
     }
 }

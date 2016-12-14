@@ -13,7 +13,6 @@ import com.oracle.truffle.api.TruffleOptions;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.source.Source;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
@@ -23,7 +22,8 @@ import org.jruby.truffle.language.backtrace.Activation;
 import org.jruby.truffle.language.backtrace.BacktraceFormatter;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.loader.CodeLoader;
-import org.jruby.truffle.language.parser.ParserContext;
+import org.jruby.truffle.parser.ParserContext;
+import org.jruby.truffle.util.StringUtils;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -41,7 +41,7 @@ public class SimpleShell {
     public SimpleShell(RubyContext context) {
         this.context = context;
 
-        if (!TruffleOptions.AOT && System.console() == null) {
+        if (TruffleOptions.AOT || System.console() == null) {
             shellInterface = new StandardShellInterface();
         } else {
             shellInterface = new ConsoleShellInterface();
@@ -124,7 +124,7 @@ public class SimpleShell {
                         try {
                             inspected = context.send(result, "inspect", null).toString();
                         } catch (Exception e) {
-                            inspected = String.format("(error inspecting %s@%x %s)",
+                            inspected = StringUtils.format("(error inspecting %s@%x %s)",
                                     result.getClass().getSimpleName(),
                                     result.hashCode(),
                                     e.toString());

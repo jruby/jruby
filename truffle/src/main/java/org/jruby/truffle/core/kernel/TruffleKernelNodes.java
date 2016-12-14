@@ -31,7 +31,7 @@ import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.loader.CodeLoader;
 import org.jruby.truffle.language.methods.DeclarationContext;
-import org.jruby.truffle.language.parser.ParserContext;
+import org.jruby.truffle.parser.ParserContext;
 import org.jruby.truffle.platform.UnsafeGroup;
 
 import java.io.IOException;
@@ -71,7 +71,7 @@ public abstract class TruffleKernelNodes {
             }
 
             try {
-                final RubyRootNode rootNode = getContext().getCodeLoader().parse(getContext().getSourceCache().getSource(StringOperations.getString(file)), UTF8Encoding.INSTANCE, ParserContext.TOP_LEVEL, null, true, this);
+                final RubyRootNode rootNode = getContext().getCodeLoader().parse(getContext().getSourceLoader().load(StringOperations.getString(file)), UTF8Encoding.INSTANCE, ParserContext.TOP_LEVEL, null, true, this);
                 final CodeLoader.DeferredCall deferredCall = getContext().getCodeLoader().prepareExecute(ParserContext.TOP_LEVEL, DeclarationContext.TOP_LEVEL, rootNode, null, getContext().getCoreLibrary().getMainObject());
                 deferredCall.call(frame, callNode);
             } catch (IOException e) {

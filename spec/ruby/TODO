@@ -3,9 +3,6 @@
 * Look at automating discovery of guarded bugs which have been fixed.
 * Use mocks for all Math functions that coerce with #to_f; currently a fixture
   is used.
-* use ruby_exe instead of RUBY_EXE/RUBY_FLAGS.
 * investigate slow specs (run with -fp) and make them faster.
 * restore some caller specs from 642bf529
 * restore refinements specs and update. See 56c5528f and f20a62e8.
-* remove not_compliant_on/diverge_on guards, these specs are
-  implementation-specific and either should be generalized or removed.

@@ -342,7 +342,7 @@ class TestException < Test::Unit::TestCase
   end
 
   def test_thread_signal_location
-    _, stderr, _ = EnvUtil.invoke_ruby(%w"--disable-gems -d", <<-RUBY, false, true)
+    _, stderr, _ = EnvUtil.invoke_ruby("--disable-gems -d", <<-RUBY, false, true)
 Thread.start do
   begin
     Process.kill(:INT, $$)
@@ -625,6 +625,41 @@ end.join
     assert_not_same(e, e.cause, "#{msg}: should not be recursive")
   end
 
+  def test_cause_raised_in_rescue
+    e = assert_raise_with_message(RuntimeError, 'b') {
+      begin
+        raise 'a'
+      rescue => a
+        begin
+          raise 'b'
+        rescue => b
+          begin
+            raise 'c'
+          rescue
+            raise b
+          end
+        end
+      end
+    }
+    assert_equal('a', e.cause.message, 'cause should not be overwritten by reraise')
+  end
+
+  def test_cause_at_raised
+    e = assert_raise_with_message(RuntimeError, 'b') {
+      begin
+        raise 'a'
+      rescue => a
+        b = RuntimeError.new('b')
+        begin
+          raise 'c'
+        rescue
+          raise b
+        end
+      end
+    }
+    assert_equal('c', e.cause.message, 'cause should be the exception at raised')
+  end
+
   def test_raise_with_cause
     msg = "[Feature #8257]"
     cause = ArgumentError.new("foobar")
@@ -637,6 +672,25 @@ end.join
     assert_raise_with_message(ArgumentError, /with no arguments/) do
       raise cause: cause
     end
+  end
+
+  def test_raise_with_cause_in_rescue
+    e = assert_raise_with_message(RuntimeError, 'b') {
+      begin
+        raise 'a'
+      rescue => a
+        begin
+          raise 'b'
+        rescue => b
+          begin
+            raise 'c'
+          rescue
+            raise b, cause: ArgumentError.new('d')
+          end
+        end
+      end
+    }
+    assert_equal('d', e.cause.message, 'cause option should be honored always')
   end
 
   def test_unknown_option
@@ -689,15 +743,6 @@ end.join
     assert_equal(:foo, e.name)
     assert_equal([1, 2], e.args)
     assert_same(obj, e.receiver)
-    def obj.test(a, b=nil, *c, &d)
-      e = a
-      1.times {|f| g = foo}
-    end
-    e = assert_raise(NameError) {
-      obj.test(3)
-    }
-    assert_equal(:foo, e.name)
-    assert_same(obj, e.receiver)
   end
 
   def test_name_error_local_variables
@@ -709,7 +754,15 @@ end.join
     e = assert_raise(NameError) {
       obj.test(3)
     }
+    assert_equal(:foo, e.name)
+    assert_same(obj, e.receiver)
     assert_equal(%i[a b c d e f g], e.local_variables.sort)
+  end
+
+  def test_name_error_info_parent_iseq_mark
+    assert_separately(['-', File.join(__dir__, 'bug-11928.rb')], <<-'end;')
+      -> {require ARGV[0]}.call
+    end;
   end
 
   def test_output_string_encoding

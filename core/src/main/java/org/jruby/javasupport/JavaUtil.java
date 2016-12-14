@@ -210,8 +210,7 @@ public class JavaUtil {
 
     public static IRubyObject convertJavaArrayElementToRuby(Ruby runtime, JavaConverter converter, Object array, int i) {
         if (converter == null || converter == JAVA_DEFAULT_CONVERTER) {
-            IRubyObject x = convertJavaToUsableRubyObject(runtime, ((Object[])array)[i]);
-            return x;
+            return convertJavaToUsableRubyObject(runtime, ((Object[])array)[i]);
         }
         return converter.get(runtime, array, i);
     }
@@ -294,15 +293,15 @@ public class JavaUtil {
      * @return java object or passed object
      * @see JavaUtil#isJavaObject(IRubyObject)
      */
-    public static Object unwrapIfJavaObject(final IRubyObject object) {
+    public static <T> T unwrapIfJavaObject(final IRubyObject object) {
         if ( object instanceof JavaProxy ) {
-            return ((JavaProxy) object).getObject();
+            return (T) ((JavaProxy) object).getObject();
         }
         final Object unwrap = object.dataGetStruct();
         if ( unwrap instanceof JavaObject ) {
-            return ((JavaObject) unwrap).getValue();
+            return (T) ((JavaObject) unwrap).getValue();
         }
-        return object;
+        return (T) object; // assume correct instance
     }
 
     @Deprecated // no longer used
@@ -1015,7 +1014,7 @@ public class JavaUtil {
         return ((JavaProxy)self).getObject();
     }
 
-    public static final Map<String,Class> PRIMITIVE_CLASSES;
+    public static final Map<String, Class> PRIMITIVE_CLASSES;
     static {
         Map<String, Class> primitiveClasses = new HashMap<>(10, 1);
         primitiveClasses.put("boolean", Boolean.TYPE);
@@ -1027,6 +1026,22 @@ public class JavaUtil {
         primitiveClasses.put("float", Float.TYPE);
         primitiveClasses.put("double", Double.TYPE);
         PRIMITIVE_CLASSES = Collections.unmodifiableMap(primitiveClasses);
+    }
+
+    public static Class<?> getPrimitiveClass(final String name) {
+        switch (name) {
+            case "boolean": return Boolean.TYPE;
+            case "byte": return Byte.TYPE;
+            case "char": return Character.TYPE;
+            case "short": return Short.TYPE;
+            case "int": return Integer.TYPE;
+            case "long": return Long.TYPE;
+            case "float": return Float.TYPE;
+            case "double": return Double.TYPE;
+
+            case "void": return Void.TYPE;
+        }
+        return null;
     }
 
     @Deprecated

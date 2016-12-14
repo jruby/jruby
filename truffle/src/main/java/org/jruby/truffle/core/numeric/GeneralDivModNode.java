@@ -13,7 +13,6 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyBaseNode;
 import org.jruby.truffle.language.control.RaiseException;
@@ -110,13 +109,13 @@ public class GeneralDivModNode extends RubyBaseNode {
 
         if (integerDiv instanceof Long && ((long) integerDiv) >= Integer.MIN_VALUE && ((long) integerDiv) <= Integer.MAX_VALUE && mod >= Integer.MIN_VALUE && mod <= Integer.MAX_VALUE) {
             useFixnumPairProfile.enter();
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), new int[]{(int) (long) integerDiv, (int) mod}, 2);
+            return createArray(new int[] { (int) (long) integerDiv, (int) mod }, 2);
         } else if (integerDiv instanceof Long) {
             useObjectPairProfile.enter();
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), new Object[]{integerDiv, mod}, 2);
+            return createArray(new Object[] { integerDiv, mod }, 2);
         } else {
             useObjectPairProfile.enter();
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), new Object[]{
+            return createArray(new Object[] {
                         fixnumOrBignumQuotient.fixnumOrBignum((BigInteger) integerDiv),
                         mod}, 2);
         }
@@ -142,7 +141,7 @@ public class GeneralDivModNode extends RubyBaseNode {
             mod += b;
         }
 
-        return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), new Object[]{
+        return createArray(new Object[] {
                 fixnumOrBignumQuotient.fixnumOrBignum(div),
                 mod}, 2);
     }
@@ -162,7 +161,7 @@ public class GeneralDivModNode extends RubyBaseNode {
             bigIntegerResults[1] = b.add(bigIntegerResults[1]);
         }
 
-        return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), new Object[]{
+        return createArray(new Object[] {
                 fixnumOrBignumQuotient.fixnumOrBignum(bigIntegerResults[0]),
                 fixnumOrBignumRemainder.fixnumOrBignum(bigIntegerResults[1])}, 2);
     }

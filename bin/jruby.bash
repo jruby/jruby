@@ -188,6 +188,7 @@ declare -a ruby_args
 mode=""
 
 JAVA_CLASS_JRUBY_MAIN=org.jruby.Main
+JAVA_CLASS_JRUBY_TRUFFLE_MAIN=org.jruby.truffle.Main
 java_class=$JAVA_CLASS_JRUBY_MAIN
 JAVA_CLASS_NGSERVER=org.jruby.main.NailServerMain
 
@@ -230,6 +231,7 @@ do
               -*)
                 opt="${opt:1}=false" ;;
             esac
+            echo "$1 is deprecated - use -J-Dgraal.$opt instead" >&2
             java_args=("${java_args[@]}" "-Dgraal.$opt")
         else
             if [ "${val:0:3}" = "-ea" ]; then
@@ -297,6 +299,8 @@ do
         # Start up as Nailgun server
         java_class=$JAVA_CLASS_NGSERVER
         VERIFY_JRUBY=true ;;
+     --no-bootclasspath)
+        NO_BOOTCLASSPATH=true ;;
      --ng)
         # Use native Nailgun client to toss commands to server
         process_special_opts "--ng" ;;
@@ -317,7 +321,8 @@ do
 done
 
 if [[ "$USING_TRUFFLE" != "" ]]; then
-   JRUBY_CP="$JRUBY_CP$CP_DELIMITER$JRUBY_HOME/lib/jruby-truffle.jar"
+   JRUBY_CP="$JRUBY_HOME/lib/jruby-truffle.jar"
+   java_class=$JAVA_CLASS_JRUBY_TRUFFLE_MAIN
    ruby_args=("-X+T" "${ruby_args[@]}")
 fi
 
@@ -363,7 +368,7 @@ if [ "$nailgun_client" != "" ]; then
     exit 1
   fi
 else
-if [[ "$VERIFY_JRUBY" != "" && -z "$USING_TRUFFLE" ]]; then
+if [[ "$NO_BOOTCLASSPATH" != "" || ("$VERIFY_JRUBY" != "" && -z "$USING_TRUFFLE") ]]; then
   if [ "$PROFILE_ARGS" != "" ]; then
       echo "Running with instrumented profiler"
   fi

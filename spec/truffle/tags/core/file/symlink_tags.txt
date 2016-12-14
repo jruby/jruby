@@ -1,1 +1,0 @@
-fails:File.symlink creates a symlink between a source and target file

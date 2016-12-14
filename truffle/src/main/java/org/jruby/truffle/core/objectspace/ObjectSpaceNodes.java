@@ -32,6 +32,7 @@ import org.jruby.truffle.language.objects.ObjectGraph;
 import org.jruby.truffle.language.objects.ObjectIDOperations;
 import org.jruby.truffle.language.objects.ReadObjectFieldNode;
 import org.jruby.truffle.language.objects.ReadObjectFieldNodeGen;
+import org.jruby.truffle.util.StringUtils;
 
 @CoreClass("ObjectSpace")
 public abstract class ObjectSpaceNodes {
@@ -72,7 +73,7 @@ public abstract class ObjectSpaceNodes {
                 }
             }
 
-            throw new RaiseException(coreExceptions().rangeError(String.format("0x%016x is not id value", id), this));
+            throw new RaiseException(coreExceptions().rangeError(StringUtils.format("0x%016x is not id value", id), this));
         }
 
         @Specialization(guards = { "isRubyBignum(id)", "isLargeFixnumID(id)" })
@@ -121,8 +122,7 @@ public abstract class ObjectSpaceNodes {
             int count = 0;
 
             for (DynamicObject object : ObjectGraph.stopAndGetAllObjects(this, getContext())) {
-                final DynamicObject metaClass = Layouts.BASIC_OBJECT.getMetaClass(object);
-                if (!isHidden(object) && ModuleOperations.assignableTo(metaClass, ofClass)) {
+                if (!isHidden(object) && ModuleOperations.assignableTo(Layouts.BASIC_OBJECT.getMetaClass(object), ofClass)) {
                     yield(frame, block, object);
                     count++;
                 }
@@ -132,7 +132,7 @@ public abstract class ObjectSpaceNodes {
         }
 
         private boolean isHidden(DynamicObject object) {
-            return RubyGuards.isRubyClass(object) && Layouts.CLASS.getIsSingleton(object);
+            return !RubyGuards.isRubyBasicObject(object) || RubyGuards.isSingletonClass(object);
         }
 
     }
@@ -155,7 +155,7 @@ public abstract class ObjectSpaceNodes {
             if (respondToCallNode.doesRespondTo(frame, "call", finalizer)) {
                 getContext().getObjectSpaceManager().defineFinalizer(object, finalizer);
                 Object[] objects = new Object[] { 0, finalizer };
-                return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), objects, objects.length);
+                return createArray(objects, objects.length);
             } else {
                 errorProfile.enter();
                 throw new RaiseException(coreExceptions().argumentErrorWrongArgumentType(finalizer, "callable", this));

@@ -71,7 +71,17 @@ public class Runtime implements RuntimeMBean {
     public String fullThreadDump() {
         return dumpThreads(Gather.FULL);
     }
-    
+
+
+    /**
+     *
+     * Dump all the threads that are known to ruby. We first discover any running
+     * threads and then raise an exception in each thread adding the current thread
+     * and it's context to the backtrace.
+     *
+     * @param gather The level of backtrace that get's raised in each thread
+     * @return [String] A string represnetation of the threds that have been dumped with included backtrace.
+     */
     public String dumpThreads(Gather gather) {
         Ruby ruby = this.ruby.get();
         RubyThread[] thrs = ruby.getThreadService().getActiveRubyThreads();

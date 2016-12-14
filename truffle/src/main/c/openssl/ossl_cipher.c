@@ -11,12 +11,10 @@
 
 #define NewCipher(klass) \
     TypedData_Wrap_Struct((klass), &ossl_cipher_type, 0)
-#define AllocCipher(obj, ctx) do { \
-    (ctx) = EVP_CIPHER_CTX_new(); \
-    if (!(ctx)) \
-	ossl_raise(rb_eRuntimeError, NULL); \
-    RTYPEDDATA_DATA(obj) = (ctx); \
-} while (0)
+#define MakeCipher(obj, klass, ctx) \
+    (obj) = TypedData_Make_Struct((klass), EVP_CIPHER_CTX, &ossl_cipher_type, (ctx))
+#define AllocCipher(obj, ctx) \
+    (DATA_PTR(obj) = (ctx) = ZALLOC(EVP_CIPHER_CTX))
 #define GetCipherInit(obj, ctx) do { \
     TypedData_Get_Struct((obj), EVP_CIPHER_CTX, &ossl_cipher_type, (ctx)); \
 } while (0)
@@ -39,13 +37,13 @@ VALUE eCipherError;
 
 static VALUE ossl_cipher_alloc(VALUE klass);
 static void ossl_cipher_free(void *ptr);
+static size_t ossl_cipher_memsize(const void *ptr);
 
 static const rb_data_type_t ossl_cipher_type = {
     "OpenSSL/Cipher",
-    {
-	0, ossl_cipher_free,
-    },
-    0, 0, RUBY_TYPED_FREE_IMMEDIATELY,
+    {0, ossl_cipher_free, ossl_cipher_memsize,},
+    0, 0,
+    RUBY_TYPED_FREE_IMMEDIATELY,
 };
 
 /*
@@ -69,6 +67,7 @@ ossl_cipher_new(const EVP_CIPHER *cipher)
 
     ret = ossl_cipher_alloc(cCipher);
     AllocCipher(ret, ctx);
+    EVP_CIPHER_CTX_init(ctx);
     if (EVP_CipherInit_ex(ctx, cipher, NULL, NULL, NULL, -1) != 1)
 	ossl_raise(eCipherError, NULL);
 
@@ -81,7 +80,18 @@ ossl_cipher_new(const EVP_CIPHER *cipher)
 static void
 ossl_cipher_free(void *ptr)
 {
-    EVP_CIPHER_CTX_free(ptr);
+    EVP_CIPHER_CTX *ctx = ptr;
+    if (ctx) {
+	EVP_CIPHER_CTX_cleanup(ctx);
+	ruby_xfree(ctx);
+    }
+}
+
+static size_t
+ossl_cipher_memsize(const void *ptr)
+{
+    const EVP_CIPHER_CTX *ctx = ptr;
+    return sizeof(*ctx);
 }
 
 static VALUE
@@ -104,27 +114,26 @@ ossl_cipher_initialize(VALUE self, VALUE str)
     EVP_CIPHER_CTX *ctx;
     const EVP_CIPHER *cipher;
     char *name;
-    unsigned char dummy_key[EVP_MAX_KEY_LENGTH] = { 0 };
+    unsigned char key[EVP_MAX_KEY_LENGTH];
 
-    name = StringValueCStr(str);
+    name = StringValuePtr(str);
     GetCipherInit(self, ctx);
     if (ctx) {
 	ossl_raise(rb_eRuntimeError, "Cipher already inititalized!");
     }
     AllocCipher(self, ctx);
+    EVP_CIPHER_CTX_init(ctx);
     if (!(cipher = EVP_get_cipherbyname(name))) {
-	ossl_raise(rb_eRuntimeError, "unsupported cipher algorithm (%"PRIsVALUE")", str);
+	ossl_raise(rb_eRuntimeError, "unsupported cipher algorithm (%s)", name);
     }
     /*
-     * EVP_CipherInit_ex() allows to specify NULL to key and IV, however some
-     * ciphers don't handle well (OpenSSL's bug). [Bug #2768]
-     *
      * The EVP which has EVP_CIPH_RAND_KEY flag (such as DES3) allows
      * uninitialized key, but other EVPs (such as AES) does not allow it.
      * Calling EVP_CipherUpdate() without initializing key causes SEGV so we
      * set the data filled with "\0" as the key by default.
      */
-    if (EVP_CipherInit_ex(ctx, cipher, NULL, dummy_key, NULL, -1) != 1)
+    memset(key, 0, EVP_MAX_KEY_LENGTH);
+    if (EVP_CipherInit_ex(ctx, cipher, NULL, key, NULL, -1) != 1)
 	ossl_raise(eCipherError, NULL);
 
     return self;
@@ -149,13 +158,16 @@ ossl_cipher_copy(VALUE self, VALUE other)
     return self;
 }
 
+#ifdef HAVE_OBJ_NAME_DO_ALL_SORTED
 static void*
 add_cipher_name_to_ary(const OBJ_NAME *name, VALUE ary)
 {
     rb_ary_push(ary, rb_str_new2(name->name));
     return NULL;
 }
+#endif
 
+#ifdef HAVE_OBJ_NAME_DO_ALL_SORTED
 /*
  *  call-seq:
  *     OpenSSL::Cipher.ciphers -> array[string...]
@@ -174,6 +186,9 @@ ossl_s_ciphers(VALUE self)
 
     return ary;
 }
+#else
+#define ossl_s_ciphers rb_f_notimplement
+#endif
 
 /*
  *  call-seq:
@@ -465,17 +480,15 @@ static VALUE
 ossl_cipher_set_key(VALUE self, VALUE key)
 {
     EVP_CIPHER_CTX *ctx;
-    int key_len;
 
     StringValue(key);
     GetCipher(self, ctx);
 
-    key_len = EVP_CIPHER_CTX_key_length(ctx);
-    if (RSTRING_LEN(key) != key_len)
-	ossl_raise(rb_eArgError, "key must be %d bytes", key_len);
+    if (RSTRING_LEN(key) < EVP_CIPHER_CTX_key_length(ctx))
+        ossl_raise(eCipherError, "key length too short");
 
     if (EVP_CipherInit_ex(ctx, NULL, NULL, (unsigned char *)RSTRING_PTR(key), NULL, -1) != 1)
-	ossl_raise(eCipherError, NULL);
+        ossl_raise(eCipherError, NULL);
 
     return key;
 }
@@ -499,14 +512,12 @@ static VALUE
 ossl_cipher_set_iv(VALUE self, VALUE iv)
 {
     EVP_CIPHER_CTX *ctx;
-    int iv_len;
 
     StringValue(iv);
     GetCipher(self, ctx);
 
-    iv_len = EVP_CIPHER_CTX_iv_length(ctx);
-    if (RSTRING_LEN(iv) != iv_len)
-	ossl_raise(rb_eArgError, "iv must be %d bytes", iv_len);
+    if (RSTRING_LEN(iv) < EVP_CIPHER_CTX_iv_length(ctx))
+        ossl_raise(eCipherError, "iv length too short");
 
     if (EVP_CipherInit_ex(ctx, NULL, NULL, NULL, (unsigned char *)RSTRING_PTR(iv), -1) != 1)
 	ossl_raise(eCipherError, NULL);
@@ -553,9 +564,29 @@ ossl_cipher_set_auth_data(VALUE self, VALUE data)
     return data;
 }
 
+#define ossl_is_gcm(nid)	(nid) == NID_aes_128_gcm || \
+				(nid) == NID_aes_192_gcm || \
+				(nid) == NID_aes_256_gcm
+
+static VALUE
+ossl_get_gcm_auth_tag(EVP_CIPHER_CTX *ctx, int len)
+{
+    unsigned char *tag;
+    VALUE ret;
+
+    tag = ALLOC_N(unsigned char, len);
+
+    if (!EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_GET_TAG, len, tag))
+        ossl_raise(eCipherError, "retrieving the authentication tag failed");
+
+    ret = rb_str_new((const char *) tag, len);
+    xfree(tag);
+    return ret;
+}
+
 /*
  *  call-seq:
- *     cipher.auth_tag(tag_len = 16) -> String
+ *     cipher.auth_tag([ tag_len ] -> string
  *
  *  Gets the authentication tag generated by Authenticated Encryption Cipher
  *  modes (GCM for example). This tag may be stored along with the ciphertext,
@@ -570,23 +601,32 @@ ossl_cipher_set_auth_data(VALUE self, VALUE data)
 static VALUE
 ossl_cipher_get_auth_tag(int argc, VALUE *argv, VALUE self)
 {
-    VALUE vtag_len, ret;
+    VALUE vtag_len;
     EVP_CIPHER_CTX *ctx;
-    int tag_len = 16;
+    int nid, tag_len;
 
-    if (rb_scan_args(argc, argv, "01", &vtag_len) == 1)
+    if (rb_scan_args(argc, argv, "01", &vtag_len) == 0) {
+	tag_len = 16;
+    } else {
 	tag_len = NUM2INT(vtag_len);
+    }
 
     GetCipher(self, ctx);
+    nid = EVP_CIPHER_CTX_nid(ctx);
 
-    if (!(EVP_CIPHER_CTX_flags(ctx) & EVP_CIPH_FLAG_AEAD_CIPHER))
+    if (ossl_is_gcm(nid)) {
+	return ossl_get_gcm_auth_tag(ctx, tag_len);
+    } else {
 	ossl_raise(eCipherError, "authentication tag not supported by this cipher");
+	return Qnil; /* dummy */
+    }
+}
 
-    ret = rb_str_new(NULL, tag_len);
-    if (!EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_AEAD_GET_TAG, tag_len, RSTRING_PTR(ret)))
-	ossl_raise(eCipherError, "retrieving the authentication tag failed");
-
-    return ret;
+static inline void
+ossl_set_gcm_auth_tag(EVP_CIPHER_CTX *ctx, unsigned char *tag, int tag_len)
+{
+    if (!EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_SET_TAG, tag_len, tag))
+        ossl_raise(eCipherError, "unable to set GCM tag");
 }
 
 /*
@@ -605,6 +645,7 @@ static VALUE
 ossl_cipher_set_auth_tag(VALUE self, VALUE vtag)
 {
     EVP_CIPHER_CTX *ctx;
+    int nid;
     unsigned char *tag;
     int tag_len;
 
@@ -613,11 +654,13 @@ ossl_cipher_set_auth_tag(VALUE self, VALUE vtag)
     tag_len = RSTRING_LENINT(vtag);
 
     GetCipher(self, ctx);
-    if (!(EVP_CIPHER_CTX_flags(ctx) & EVP_CIPH_FLAG_AEAD_CIPHER))
-	ossl_raise(eCipherError, "authentication tag not supported by this cipher");
+    nid = EVP_CIPHER_CTX_nid(ctx);
 
-    if (!EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_AEAD_SET_TAG, tag_len, tag))
-	ossl_raise(eCipherError, "unable to set AEAD tag");
+    if (ossl_is_gcm(nid)) {
+	ossl_set_gcm_auth_tag(ctx, tag, tag_len);
+    } else {
+	ossl_raise(eCipherError, "authentication tag not supported by this cipher");
+    }
 
     return vtag;
 }
@@ -633,10 +676,16 @@ static VALUE
 ossl_cipher_is_authenticated(VALUE self)
 {
     EVP_CIPHER_CTX *ctx;
+    int nid;
 
     GetCipher(self, ctx);
+    nid = EVP_CIPHER_CTX_nid(ctx);
 
-    return (EVP_CIPHER_CTX_flags(ctx) & EVP_CIPH_FLAG_AEAD_CIPHER) ? Qtrue : Qfalse;
+    if (ossl_is_gcm(nid)) {
+	return Qtrue;
+    } else {
+	return Qfalse;
+    }
 }
 #else
 #define ossl_cipher_set_auth_data rb_f_notimplement
@@ -670,6 +719,7 @@ ossl_cipher_set_key_length(VALUE self, VALUE key_length)
     return key_length;
 }
 
+#if defined(HAVE_EVP_CIPHER_CTX_SET_PADDING)
 /*
  *  call-seq:
  *     cipher.padding = integer -> integer
@@ -691,6 +741,9 @@ ossl_cipher_set_padding(VALUE self, VALUE padding)
 	ossl_raise(eCipherError, NULL);
     return padding;
 }
+#else
+#define ossl_cipher_set_padding rb_f_notimplement
+#endif
 
 #define CIPHER_0ARG_INT(func)					\
     static VALUE						\
@@ -910,7 +963,7 @@ Init_ossl_cipher(void)
      * the OpenSSL library still requires a value to be set - "" may be used in
      * case none is available. An example using the GCM (Galois Counter Mode):
      *
-     *   cipher = OpenSSL::Cipher.new("aes-128-gcm")
+     *   cipher = OpenSSL::Cipher::AES.new(128, :GCM)
      *   cipher.encrypt
      *   key = cipher.random_key
      *   iv = cipher.random_iv
@@ -919,7 +972,7 @@ Init_ossl_cipher(void)
      *   encrypted = cipher.update(data) + cipher.final
      *   tag = cipher.auth_tag
      *
-     *   decipher = OpenSSL::Cipher.new("aes-128-gcm")
+     *   decipher = OpenSSL::Cipher::AES.new(128, :GCM)
      *   decipher.decrypt
      *   decipher.key = key
      *   decipher.iv = iv

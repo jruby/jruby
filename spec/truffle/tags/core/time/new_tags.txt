@@ -1,3 +1,5 @@
 fails:Time.new with a utc_offset argument disallows a value for minutes greater than 59
 fails:Time.new with a utc_offset argument returns a Time with a UTC offset of the specified number of Rational seconds
 fails:Time.new with a utc_offset argument with an argument that responds to #to_r coerces using #to_r
+fails:Time.new with a utc_offset argument raises ArgumentError if the argument represents a value less than or equal to -86400 seconds
+fails:Time.new with a utc_offset argument raises ArgumentError if the argument represents a value greater than or equal to 86400 seconds

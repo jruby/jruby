@@ -132,7 +132,7 @@ describe "Operators" do
   end
 
   it "* / % are left-associative" do
-    (2*1/2).should     == (2*1)/2
+    (2*1/2).should == (2*1)/2
     # Guard against the Mathn library
     # TODO: Make these specs not rely on specific behaviour / result values
     # by using mocks.
@@ -140,13 +140,13 @@ describe "Operators" do
       (2*1/2).should_not == 2*(1/2)
     end
 
-    (10/7/5).should     == (10/7)/5
+    (10/7/5).should == (10/7)/5
     (10/7/5).should_not == 10/(7/5)
 
-    (101 % 55 % 7).should     == (101 % 55) % 7
+    (101 % 55 % 7).should == (101 % 55) % 7
     (101 % 55 % 7).should_not == 101 % (55 % 7)
 
-    (50*20/7%42).should     == ((50*20)/7)%42
+    (50*20/7%42).should == ((50*20)/7)%42
     (50*20/7%42).should_not == 50*(20/(7%42))
   end
 
@@ -193,7 +193,7 @@ describe "Operators" do
     class BitwiseAndTest; def &(a); a+1; end; end
     c = BitwiseAndTest.new
 
-    (c & 5 & 2).should     == (c & 5) & 2
+    (c & 5 & 2).should == (c & 5) & 2
     (c & 5 & 2).should_not == c & (5 & 2)
   end
 
@@ -206,10 +206,10 @@ describe "Operators" do
     class OrAndXorTest; def ^(a); a+10; end; def |(a); a-10; end; end
     d = OrAndXorTest.new
 
-    (d ^ 13 ^ 16).should     == (d ^ 13) ^ 16
+    (d ^ 13 ^ 16).should == (d ^ 13) ^ 16
     (d ^ 13 ^ 16).should_not == d ^ (13 ^ 16)
 
-    (d | 13 | 4).should     == (d | 13) | 4
+    (d | 13 | 4).should == (d | 13) | 4
     (d | 13 | 4).should_not == d | (13 | 4)
   end
 
@@ -234,16 +234,16 @@ describe "Operators" do
 
     e = ComparisonTest.new
 
-    (e <= 0 <= 1).should     == (e <= 0) <= 1
+    (e <= 0 <= 1).should == (e <= 0) <= 1
     (e <= 0 <= 1).should_not == e <= (0 <= 1)
 
-    (e < 0 < 1).should     == (e < 0) < 1
+    (e < 0 < 1).should == (e < 0) < 1
     (e < 0 < 1).should_not == e < (0 < 1)
 
-    (e >= 0 >= 1).should     == (e >= 0) >= 1
+    (e >= 0 >= 1).should == (e >= 0) >= 1
     (e >= 0 >= 1).should_not == e >= (0 >= 1)
 
-    (e > 0 > 1).should     == (e > 0) > 1
+    (e > 0 > 1).should == (e > 0) > 1
     (e > 0 > 1).should_not == e > (0 > 1)
   end
 
@@ -263,7 +263,7 @@ describe "Operators" do
     (false && 3 != true).should == false
 
     class FalseClass; def =~(o); o == false; end; end
-    (false && true =~ false).should     == (false && (true =~ false))
+    (false && true =~ false).should == (false && (true =~ false))
     (false && true =~ false).should_not == ((false && true) =~ false)
     class FalseClass; undef_method :=~; end
 
@@ -308,7 +308,6 @@ describe "Operators" do
   def oops; raise end
 
   it "? : has higher precedence than rescue" do
-
     (true ? oops : 0 rescue 10).should == 10
   end
 

@@ -21,16 +21,14 @@ import com.oracle.truffle.api.nodes.RootNode;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.builtins.UnaryCoreMethodNode;
+import org.jruby.truffle.core.Hashing;
 import org.jruby.truffle.core.basicobject.BasicObjectNodes.ReferenceEqualNode;
-import org.jruby.truffle.core.cast.ProcOrNullNode;
-import org.jruby.truffle.core.cast.ProcOrNullNodeGen;
 import org.jruby.truffle.core.proc.ProcOperations;
 import org.jruby.truffle.core.proc.ProcType;
 import org.jruby.truffle.core.string.StringOperations;
@@ -44,6 +42,7 @@ import org.jruby.truffle.language.methods.CallBoundMethodNodeGen;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.objects.LogicalClassNode;
 import org.jruby.truffle.language.objects.LogicalClassNodeGen;
+import org.jruby.truffle.parser.ArgumentDescriptor;
 
 @CoreClass("Method")
 public abstract class MethodNodes {
@@ -79,17 +78,15 @@ public abstract class MethodNodes {
     public abstract static class CallNode extends CoreMethodArrayArgumentsNode {
 
         @Child CallBoundMethodNode callBoundMethodNode;
-        @Child ProcOrNullNode procOrNullNode;
 
         public CallNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             callBoundMethodNode = CallBoundMethodNodeGen.create(context, sourceSection, null, null, null);
-            procOrNullNode = ProcOrNullNodeGen.create(context, sourceSection, null);
         }
 
         @Specialization
-        protected Object call(VirtualFrame frame, DynamicObject method, Object[] arguments, Object block) {
-            return callBoundMethodNode.executeCallBoundMethod(frame, method, arguments, procOrNullNode.executeProcOrNull(block));
+        protected Object call(VirtualFrame frame, DynamicObject method, Object[] arguments, Object maybeBlock) {
+            return callBoundMethodNode.executeCallBoundMethod(frame, method, arguments, maybeBlock);
         }
 
     }
@@ -100,6 +97,21 @@ public abstract class MethodNodes {
         @Specialization
         public DynamicObject name(DynamicObject method) {
             return getSymbol(Layouts.METHOD.getMethod(method).getName());
+        }
+
+    }
+
+    @CoreMethod(names = "hash")
+    public abstract static class HashNode extends CoreMethodArrayArgumentsNode {
+
+        @TruffleBoundary
+        @Specialization
+        public long hash(DynamicObject rubyMethod) {
+            final InternalMethod method = Layouts.METHOD.getMethod(rubyMethod);
+            long h = Hashing.start(method.getDeclaringModule().hashCode());
+            h = Hashing.update(h, Layouts.METHOD.getReceiver(rubyMethod).hashCode());
+            h = Hashing.update(h, method.getSharedMethodInfo().hashCode());
+            return Hashing.end(h);
         }
 
     }
@@ -150,7 +162,7 @@ public abstract class MethodNodes {
             } else {
                 DynamicObject file = createString(StringOperations.encodeRope(sourceSection.getSource().getName(), UTF8Encoding.INSTANCE));
                 Object[] objects = new Object[] { file, sourceSection.getStartLine() };
-                return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), objects, objects.length);
+                return createArray(objects, objects.length);
             }
         }
 

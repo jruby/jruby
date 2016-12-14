@@ -12,6 +12,8 @@ package org.jruby.truffle.platform.posix;
 import jnr.ffi.Pointer;
 import jnr.posix.Timeval;
 
+import java.nio.ByteBuffer;
+
 public interface Sockets {
 
     /*
@@ -113,11 +115,20 @@ public interface Sockets {
 
 
     /**
-     * int connect(int sockfd, const struct sockaddr *addr,
-     * socklen_t addrlen);
+     * int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
      */
 
     int connect(int socket, Pointer address, int address_len);
+
+    /**
+     * int sockfd, void *buf, size_t len, int flags, struct sockaddr *src_addr, socklen_t *addrlen
+     */
+    int recvfrom(int sockfd, ByteBuffer buf, int len, int flags, Pointer  src_addr, Pointer addrlen);
+
+    /**
+     * int send(int sockfd, Pointer buf, int len, int flags);
+     */
+    int send(int sockfd, Pointer buf, int len, int flags);
 
     /**
      * int shutdown(int sockfd, int how);

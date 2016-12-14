@@ -26,6 +26,6 @@ describe "Module.new" do
 
     (o = mock('x')).extend(fred)
     o.hello.should == "hello"
-    o.bye.should   == "bye"
+    o.bye.should == "bye"
   end
 end

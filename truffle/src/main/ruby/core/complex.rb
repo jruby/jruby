@@ -321,7 +321,7 @@ class Complex < Numeric
   end
 
   def hash
-    @real.hash ^ @imag.hash
+    Truffle.invoke_primitive :fixnum_memhash, @real.hash, @imag.hash
   end
 
   def inspect
@@ -368,5 +368,8 @@ class Complex < Numeric
   def imag=(imag)
     @imag = imag
   end
+
+  undef_method :negative?
+  undef_method :positive?
 
 end

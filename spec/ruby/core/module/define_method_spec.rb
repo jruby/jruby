@@ -69,6 +69,23 @@ describe "Module#define_method when given an UnboundMethod" do
       @class.another_test_method.should == :foo
     end
   end
+
+  it "sets the new method's visibility to the current frame's visibility" do
+    foo = Class.new do
+      def ziggy
+        'piggy'
+      end
+      private :ziggy
+
+      # make sure frame visibility is public
+      public
+
+      define_method :piggy, instance_method(:ziggy)
+    end
+
+    lambda { foo.new.ziggy }.should raise_error(NoMethodError)
+    foo.new.piggy.should == 'piggy'
+  end
 end
 
 describe "Module#define_method when name is not a special private name" do
@@ -205,10 +222,25 @@ describe "Module#define_method" do
     }.should raise_error(ArgumentError)
   end
 
+  ruby_version_is "2.3" do
+    it "does not use the caller block when no block is given" do
+      o = Object.new
+      def o.define(name)
+        self.class.class_eval do
+          define_method(name)
+        end
+      end
+
+      lambda {
+        o.define(:foo) { raise "not used" }
+      }.should raise_error(ArgumentError)
+    end
+  end
+
   it "does not change the arity check style of the original proc" do
     class DefineMethodSpecClass
       prc = Proc.new { || true }
-      method = define_method("proc_style_test", &prc)
+      define_method("proc_style_test", &prc)
     end
 
     obj = DefineMethodSpecClass.new
@@ -264,6 +296,23 @@ describe "Module#define_method" do
     lambda {
       Class.new { define_method :bar, m }
     }.should raise_error(TypeError)
+  end
+
+  it "accepts an UnboundMethod from an attr_accessor method" do
+    class DefineMethodSpecClass
+      attr_accessor :accessor_method
+    end
+
+    m = DefineMethodSpecClass.instance_method(:accessor_method)
+    o = DefineMethodSpecClass.new
+
+    DefineMethodSpecClass.send(:undef_method, :accessor_method)
+    lambda { o.accessor_method }.should raise_error(NoMethodError)
+
+    DefineMethodSpecClass.send(:define_method, :accessor_method, m)
+
+    o.accessor_method = :abc
+    o.accessor_method.should == :abc
   end
 
   it "accepts a proc from a method" do

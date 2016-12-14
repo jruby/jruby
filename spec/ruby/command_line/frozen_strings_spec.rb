@@ -18,6 +18,13 @@ ruby_version_is "2.3" do
     it "produce different objects for literals with the same content in different files if they have different encodings" do
       ruby_exe(fixture(__FILE__, "freeze_flag_across_files_diff_enc.rb"), options: "--enable-frozen-string-literal").chomp.should == "true"
     end
+  end
 
+  describe "The --debug flag produces" do
+    it "debugging info on attempted frozen string modification" do
+      error_str = ruby_exe(fixture(__FILE__, 'debug_info.rb'), options: '--debug',  args: "2>&1")
+      error_str.should include("can't modify frozen String, created at ")
+      error_str.should include("command_line/fixtures/debug_info.rb:2")
+    end
   end
 end

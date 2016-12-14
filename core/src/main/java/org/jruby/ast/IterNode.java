@@ -48,7 +48,7 @@ public class IterNode extends Node implements DefNode {
     private StaticScope scope;
 
     /**
-     *  Used by Truffle 'for' and by ForNode only.
+     *  Used by ForNode only.
      * This is to support 1.8-style assignments which only 'for' expressions use.
      */
     public IterNode(ISourcePosition position, Node args, StaticScope scope, Node body) {
@@ -109,5 +109,9 @@ public class IterNode extends Node implements DefNode {
     
     public List<Node> childNodes() {
         return Node.createList(varNode, bodyNode);
+    }
+
+    public int getEndLine() {
+        return -1;
     }
 }

@@ -17,9 +17,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.Layouts;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
@@ -32,8 +30,8 @@ public abstract class ToFNode extends RubyNode {
 
     private final BranchProfile errorProfile = BranchProfile.create();
 
-    public ToFNode(RubyContext context, SourceSection sourceSection) {
-        super(context, sourceSection);
+    public static ToFNode create() {
+        return ToFNodeGen.create(null);
     }
 
     public double doDouble(VirtualFrame frame, Object value) {

@@ -61,12 +61,12 @@ function check {
 
 }
 
-# extended from 9 to 10 to accommodate temporary copy of stdlib 2.2.2
-check lib/target/jruby-stdlib-$jar_version.jar 10
+# extended from 9 to 11 to accommodate temporary copy of stdlib 2.3
+check lib/target/jruby-stdlib-$jar_version.jar 11
 check maven/jruby-jars/pkg/jruby-jars-$gem_version.gem 30
 check maven/jruby-jars/lib/jruby-core-$jar_version-complete.jar 13
-# extended from 9 to 10 to accommodate temporary copy of stdlib 2.2.2
-check maven/jruby-jars/lib/jruby-stdlib-$jar_version.jar 10
+# extended from 9 to 11 to accommodate temporary copy of stdlib 2.3
+check maven/jruby-jars/lib/jruby-stdlib-$jar_version.jar 11
 check maven/jruby-complete/target/jruby-complete-$jar_version.jar 27
 check maven/jruby/target/jruby-$jar_version.jar 9
 check maven/jruby-dist/target/jruby-dist-$jar_version-bin.tar.gz 45 jruby-$jar_version

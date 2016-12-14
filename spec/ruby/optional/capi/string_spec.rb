@@ -1,4 +1,4 @@
-# encoding: UTF-8
+# encoding: utf-8
 require File.expand_path('../spec_helper', __FILE__)
 
 load_extension('string')
@@ -141,7 +141,8 @@ describe "C-API String function" do
 
     it "transcodes the String" do
       result = @s.rb_str_encode("ありがとう", "euc-jp", 0, nil)
-      result.should == "\xa4\xa2\xa4\xea\xa4\xac\xa4\xc8\xa4\xa6".force_encoding("euc-jp")
+      euc_jp = [0xa4, 0xa2, 0xa4, 0xea, 0xa4, 0xac, 0xa4, 0xc8, 0xa4, 0xa6].pack('C*').force_encoding("euc-jp")
+      result.should == euc_jp
       result.encoding.should == Encoding::EUC_JP
     end
 
@@ -158,7 +159,8 @@ describe "C-API String function" do
     end
 
     it "accepts encoding flags" do
-      result = @s.rb_str_encode("a\xffc", "us-ascii",
+      xFF = [0xFF].pack('C').force_encoding('utf-8')
+      result = @s.rb_str_encode("a#{xFF}c", "us-ascii",
                                 Encoding::Converter::INVALID_REPLACE, nil)
       result.should == "a?c"
       result.encoding.should == Encoding::US_ASCII
@@ -167,7 +169,8 @@ describe "C-API String function" do
     it "accepts an encoding options Hash specifying replacement String" do
       # Yeah, MRI aborts with rb_bug() if the options Hash is not frozen
       options = { replace: "b" }.freeze
-      result = @s.rb_str_encode("a\xffc", "us-ascii",
+      xFF = [0xFF].pack('C').force_encoding('utf-8')
+      result = @s.rb_str_encode("a#{xFF}c", "us-ascii",
                                 Encoding::Converter::INVALID_REPLACE,
                                 options)
       result.should == "abc"
@@ -509,7 +512,6 @@ describe "rb_str_free" do
   # is available. There is no guarantee this even does
   # anything at all
   it "indicates data for a string might be freed" do
-    str = "xyz"
     @s.rb_str_free("xyz").should be_nil
   end
 end
@@ -522,7 +524,8 @@ describe :rb_external_str_new, shared: true do
 
   it "returns an ASCII-8BIT encoded string if any non-ascii bytes are present and default external is US-ASCII" do
     Encoding.default_external = "US-ASCII"
-    @s.send(@method, "\x80abc").encoding.should == Encoding::ASCII_8BIT
+    x80 = [0x80].pack('C')
+    @s.send(@method, "#{x80}abc").encoding.should == Encoding::ASCII_8BIT
   end
 
   it "returns a tainted String" do
@@ -579,17 +582,32 @@ describe "C-API String function" do
     end
 
     it "returns an ASCII-8BIT encoded String if any non-ascii bytes are present and the specified encoding is US-ASCII" do
-      s = @s.rb_external_str_new_with_enc("\x80abc", 4, Encoding::US_ASCII)
+      x80 = [0x80].pack('C')
+      s = @s.rb_external_str_new_with_enc("#{x80}abc", 4, Encoding::US_ASCII)
       s.encoding.should == Encoding::ASCII_8BIT
     end
+
+
+#     it "transcodes a String to Encoding.default_internal if it is set" do
+#       Encoding.default_internal = Encoding::EUC_JP
+#
+#  -      a = "\xE3\x81\x82\xe3\x82\x8c".force_encoding("utf-8")
+#  +      a = [0xE3, 0x81, 0x82, 0xe3, 0x82, 0x8c].pack('C6').force_encoding("utf-8")
+#         s = @s.rb_external_str_new_with_enc(a, a.bytesize, Encoding::UTF_8)
+#  -
+#  -      s.should == "\xA4\xA2\xA4\xEC".force_encoding("euc-jp")
+#  +      x = [0xA4, 0xA2, 0xA4, 0xEC].pack('C4')#.force_encoding('ascii-8bit')
+#  +      s.should == x
+#         s.encoding.should equal(Encoding::EUC_JP)
+#     end
 
     it "transcodes a String to Encoding.default_internal if it is set" do
       Encoding.default_internal = Encoding::EUC_JP
 
-      a = "\xE3\x81\x82\xe3\x82\x8c".force_encoding("utf-8")
+      a = [0xE3, 0x81, 0x82, 0xe3, 0x82, 0x8c].pack('C6').force_encoding("utf-8")
       s = @s.rb_external_str_new_with_enc(a, a.bytesize, Encoding::UTF_8)
-
-      s.should == "\xA4\xA2\xA4\xEC".force_encoding("euc-jp")
+      x = [0xA4, 0xA2, 0xA4, 0xEC].pack('C4').force_encoding('euc-jp')
+      s.should == x
       s.encoding.should equal(Encoding::EUC_JP)
     end
 
@@ -622,14 +640,15 @@ describe "C-API String function" do
     end
 
     it "returns the original String if a transcoding error occurs" do
-      a = "\xEE".force_encoding("utf-8")
+      a = [0xEE].pack('C').force_encoding("utf-8")
       @s.rb_str_conv_enc(a, Encoding::UTF_8, Encoding::EUC_JP).should equal(a)
     end
 
     it "returns a transcoded String" do
       a = "\xE3\x81\x82\xE3\x82\x8C".force_encoding("utf-8")
       result = @s.rb_str_conv_enc(a, Encoding::UTF_8, Encoding::EUC_JP)
-      result.should == "\xA4\xA2\xA4\xEC".force_encoding("euc-jp")
+      x = [0xA4, 0xA2, 0xA4, 0xEC].pack('C4').force_encoding('utf-8')
+      result.should == x.force_encoding("euc-jp")
       result.encoding.should equal(Encoding::EUC_JP)
     end
 
@@ -658,7 +677,7 @@ describe "C-API String function" do
     end
 
     it "returns the original String if a transcoding error occurs" do
-      a = "\xEE".force_encoding("utf-8")
+      a = [0xEE].pack('C').force_encoding("utf-8")
       @s.rb_str_conv_enc_opts(a, Encoding::UTF_8,
                               Encoding::EUC_JP, 0, nil).should equal(a)
     end
@@ -666,7 +685,8 @@ describe "C-API String function" do
     it "returns a transcoded String" do
       a = "\xE3\x81\x82\xE3\x82\x8C".force_encoding("utf-8")
       result = @s.rb_str_conv_enc_opts(a, Encoding::UTF_8, Encoding::EUC_JP, 0, nil)
-      result.should == "\xA4\xA2\xA4\xEC".force_encoding("euc-jp")
+      x = [0xA4, 0xA2, 0xA4, 0xEC].pack('C4').force_encoding('utf-8')
+      result.should == x.force_encoding("euc-jp")
       result.encoding.should equal(Encoding::EUC_JP)
     end
 

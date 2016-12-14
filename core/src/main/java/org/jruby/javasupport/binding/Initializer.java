@@ -81,18 +81,43 @@ public abstract class Initializer {
         this.javaClass = javaClass;
     }
 
-    public static RubyModule setupProxyClass(Ruby runtime, final Class<?> javaClass, final RubyClass proxy) {
+    public static RubyModule setupProxyClass(Ruby runtime, final Class<?> javaClass, RubyClass proxy) {
         setJavaClassFor(javaClass, proxy);
 
-        return new ClassInitializer(runtime, javaClass).initialize(proxy);
+        proxy.setReifiedClass((Class) javaClass);
+
+        if ( javaClass.isArray() ) {
+            flagAsJavaProxy(proxy); return proxy;
+        }
+
+        if ( javaClass.isPrimitive() ) {
+            final RubyClass proxySingleton = proxy.getSingletonClass();
+            proxySingleton.undefineMethod("new"); // remove ConcreteJavaProxy class method 'new'
+            if ( javaClass == Void.TYPE ) {
+                // special treatment ... while Java::int[4] is OK Java::void[2] is NOT!
+                proxySingleton.undefineMethod("[]"); // from JavaProxy
+                proxySingleton.undefineMethod("new_array"); // from JavaProxy
+            }
+            flagAsJavaProxy(proxy); return proxy;
+        }
+
+        proxy = new ClassInitializer(runtime, javaClass).initialize(proxy);
+        flagAsJavaProxy(proxy); return proxy;
     }
 
-    public static RubyModule setupProxyModule(Ruby runtime, final Class<?> javaClass, final RubyModule proxy) {
+    public static RubyModule setupProxyModule(Ruby runtime, final Class<?> javaClass, RubyModule proxy) {
         setJavaClassFor(javaClass, proxy);
 
         assert javaClass.isInterface();
 
-        return new InterfaceInitializer(runtime, javaClass).initialize(proxy);
+        proxy = new InterfaceInitializer(runtime, javaClass).initialize(proxy);
+        flagAsJavaProxy(proxy); return proxy;
+    }
+
+    private static void flagAsJavaProxy(final RubyModule proxy) {
+        // flag the class as a Java class proxy.
+        proxy.setJavaProxy(true);
+        proxy.getSingletonClass().setJavaProxy(true);
     }
 
     protected static void addField(

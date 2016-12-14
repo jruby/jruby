@@ -24,6 +24,7 @@ public abstract class ThreadLocalObjectNode extends RubyNode {
         super(context, sourceSection);
     }
 
+    @Override
     public abstract DynamicObject executeDynamicObject(VirtualFrame frame);
 
     @Specialization(

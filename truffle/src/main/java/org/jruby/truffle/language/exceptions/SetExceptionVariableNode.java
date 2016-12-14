@@ -48,6 +48,11 @@ public class SetExceptionVariableNode extends Node {
         }
     }
 
+    public void setLastException(VirtualFrame frame, DynamicObject exception) {
+        final DynamicObject threadLocals = getThreadLocalsObject(frame);
+        writeDollarBang(threadLocals, exception);
+    }
+
     private DynamicObject getThreadLocalsObject(VirtualFrame frame) {
         if (threadLocalNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();

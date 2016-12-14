@@ -28,6 +28,7 @@ package org.jruby.runtime.ivars;
 
 import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
+import org.jruby.util.ArraySupport;
 import org.jruby.util.unsafe.UnsafeHolder;
 
 /**
@@ -60,8 +61,8 @@ public class NonvolatileVariableAccessor extends VariableAccessor {
      * @param value the variable's value
      */
     public void set(Object object, Object value) {
-        ((RubyBasicObject)object).ensureInstanceVariablesSettable();
-        setVariable((RubyBasicObject)object, realClass, index, value);
+        ((RubyBasicObject) object).ensureInstanceVariablesSettable();
+        setVariable((RubyBasicObject) object, realClass, index, value);
     }
 
     /**
@@ -127,8 +128,8 @@ public class NonvolatileVariableAccessor extends VariableAccessor {
 
         Object[] newTable = new Object[realClass.getVariableTableSizeWithExtras()];
 
-        if(currentTable != null) {
-            System.arraycopy(currentTable, 0, newTable, 0, currentTable.length);
+        if (currentTable != null) {
+            ArraySupport.copy(currentTable, 0, newTable, 0, currentTable.length);
         }
 
         newTable[index] = value;

@@ -28,7 +28,7 @@ module BigMath
       return BigDecimal::INFINITY if x.infinite?
       return BigDecimal::NAN if x.nan?
     end
-    x = x.is_a?(Rational) ? x.to_d(Float::DIG) : x.to_d
+    x = x.is_a?(Rational) ? x.to_d(prec) : x.to_d
     return BigDecimal::INFINITY if x.infinite?
     return BigDecimal::NAN if x.nan?
 
@@ -54,14 +54,17 @@ module BigMath
     series_element = z
 
     i = 1
-    while series_element != 0 do
+    while series_element.nonzero? do
       sum_exponent = series_sum.exponent
       element_exponent = series_element.exponent
       remaining_precision = n - (sum_exponent - element_exponent).abs
       break if remaining_precision < 0
+      if remaining_precision < rmpd_double_figures
+        remaining_precision = rmpd_double_figures
+      end
       z = z.mult(z2, n)
       i += 2
-      series_element = z.div(i, n)
+      series_element = z.div(i, remaining_precision)
       series_sum += series_element
     end
 

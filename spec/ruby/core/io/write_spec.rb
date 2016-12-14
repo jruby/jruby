@@ -20,21 +20,6 @@ describe "IO#write on a file" do
     rm_r @filename
   end
 
-  # TODO: impl detail? discuss this with matz. This spec is useless. - rdavis
-  # I agree. I've marked it not compliant on macruby, as we don't buffer input. -pthomson
-  not_compliant_on :macruby do
-    it "writes all of the string's bytes but buffers them" do
-      written = @file.write("abcde")
-      written.should == 5
-      File.open(@filename) do |file|
-        file.read.should == "012345678901234567890123456789"
-        @file.fsync
-        file.rewind
-        file.read.should == "abcde5678901234567890123456789"
-      end
-    end
-  end
-
   it "does not check if the file is writable if writing zero bytes" do
     lambda { @readonly_file.write("") }.should_not raise_error
   end
@@ -72,8 +57,10 @@ describe "IO#write on a file" do
     end
 
     it "raises a invalid byte sequence error if invalid bytes are being written" do
+      # pack "\xFEhi" to avoid utf-8 conflict
+      xFEhi = ([254].pack('C*') + 'hi').force_encoding('utf-8')
       File.open(@filename, "w", encoding: Encoding::US_ASCII) do |file|
-        lambda { file.write("\xFEhi") }.should raise_error(Encoding::InvalidByteSequenceError)
+        lambda { file.write(xFEhi) }.should raise_error(Encoding::InvalidByteSequenceError)
       end
     end
 
@@ -81,7 +68,10 @@ describe "IO#write on a file" do
       File.open(@filename, "w") do |file|
         file.write('Hëllö'.encode('ISO-8859-1'))
       end
-      File.binread(@filename).should == "H\xEBll\xF6".force_encoding(Encoding::ASCII_8BIT)
+      ë = ([235].pack('U')).encode('ISO-8859-1')
+      ö = ([246].pack('U')).encode('ISO-8859-1')
+      res = "H#{ë}ll#{ö}"
+      File.binread(@filename).should == res.force_encoding(Encoding::ASCII_8BIT)
     end
   end
 end
@@ -104,7 +94,9 @@ describe "IO.write" do
 
   it "writes binary data if no encoding is given" do
     IO.write(@filename, 'Hëllö'.encode('ISO-8859-1'))
-    File.binread(@filename).should == "H\xEBll\xF6".force_encoding(Encoding::ASCII_8BIT)
+    xEB = [235].pack('C*')
+    xF6 = [246].pack('C*')
+    File.binread(@filename).should == ("H" + xEB + "ll" + xF6).force_encoding(Encoding::ASCII_8BIT)
   end
 
   platform_is_not :windows do

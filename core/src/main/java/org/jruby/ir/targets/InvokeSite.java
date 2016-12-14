@@ -339,6 +339,10 @@ public abstract class InvokeSite extends MutableCallSite {
         return object.getClass() == clazz;
     }
 
+    public String toString() {
+        return "InvokeSite[name=" + name() + ",arity=" + arity + ",type=" + type() + ",file=" + file + ",line=" + line + "]";
+    }
+
     private static final MethodHandle TEST_CLASS = Binder
             .from(boolean.class, Object.class, Class.class)
             .invokeStaticQuiet(lookup(), InvokeSite.class, "testClass");

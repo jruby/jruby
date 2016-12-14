@@ -100,19 +100,19 @@ ossl_pkcs12_s_create(int argc, VALUE *argv, VALUE self)
     PKCS12 *p12;
 
     rb_scan_args(argc, argv, "46", &pass, &name, &pkey, &cert, &ca, &key_nid, &cert_nid, &key_iter, &mac_iter, &keytype);
-    passphrase = NIL_P(pass) ? NULL : StringValueCStr(pass);
-    friendlyname = NIL_P(name) ? NULL : StringValueCStr(name);
+    passphrase = NIL_P(pass) ? NULL : StringValuePtr(pass);
+    friendlyname = NIL_P(name) ? NULL : StringValuePtr(name);
     key = GetPKeyPtr(pkey);
     x509 = GetX509CertPtr(cert);
     x509s = NIL_P(ca) ? NULL : ossl_x509_ary2sk(ca);
 /* TODO: make a VALUE to nid function */
     if (!NIL_P(key_nid)) {
-        if ((nkey = OBJ_txt2nid(StringValueCStr(key_nid))) == NID_undef)
-	    ossl_raise(rb_eArgError, "Unknown PBE algorithm %"PRIsVALUE, key_nid);
+        if ((nkey = OBJ_txt2nid(StringValuePtr(key_nid))) == NID_undef)
+            ossl_raise(rb_eArgError, "Unknown PBE algorithm %s", StringValuePtr(key_nid));
     }
     if (!NIL_P(cert_nid)) {
-        if ((ncert = OBJ_txt2nid(StringValueCStr(cert_nid))) == NID_undef)
-	    ossl_raise(rb_eArgError, "Unknown PBE algorithm %"PRIsVALUE, cert_nid);
+        if ((ncert = OBJ_txt2nid(StringValuePtr(cert_nid))) == NID_undef)
+            ossl_raise(rb_eArgError, "Unknown PBE algorithm %s", StringValuePtr(cert_nid));
     }
     if (!NIL_P(key_iter))
         kiter = NUM2INT(key_iter);
@@ -158,19 +158,15 @@ ossl_pkcs12_initialize(int argc, VALUE *argv, VALUE self)
     PKCS12 *pkcs = DATA_PTR(self);
 
     if(rb_scan_args(argc, argv, "02", &arg, &pass) == 0) return self;
-    passphrase = NIL_P(pass) ? NULL : StringValueCStr(pass);
+    passphrase = NIL_P(pass) ? NULL : StringValuePtr(pass);
     in = ossl_obj2bio(arg);
     d2i_PKCS12_bio(in, &pkcs);
     DATA_PTR(self) = pkcs;
     BIO_free(in);
 
     pkey = cert = ca = Qnil;
-    /* OpenSSL's bug; PKCS12_parse() puts errors even if it succeeds.
-     * Fixed in OpenSSL 1.0.0t, 1.0.1p, 1.0.2d */
-    ERR_set_mark();
     if(!PKCS12_parse(pkcs, passphrase, &key, &x509, &x509s))
 	ossl_raise(ePKCS12Error, "PKCS12_parse");
-    ERR_pop_to_mark();
     pkey = rb_protect((VALUE(*)_((VALUE)))ossl_pkey_new, (VALUE)key,
 		      &st); /* NO DUP */
     if(st) goto err;

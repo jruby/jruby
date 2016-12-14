@@ -73,6 +73,7 @@ describe MSpecScript, "#load_default" do
     default = "ybur.1.8.mspec"
     @script.should_receive(:try_load).with('default.mspec').and_return(false)
     @script.should_receive(:try_load).with(default)
+    @script.should_receive(:try_load).with('ybur.mspec')
     @script.load_default
   end
 end
@@ -81,6 +82,8 @@ describe MSpecScript, ".main" do
   before :each do
     @script = double("MSpecScript").as_null_object
     MSpecScript.stub(:new).and_return(@script)
+    # Do not require full mspec as it would conflict with RSpec
+    MSpecScript.should_receive(:require).with('mspec')
   end
 
   it "creates an instance of MSpecScript" do
@@ -110,6 +113,11 @@ describe MSpecScript, ".main" do
 
   it "calls the #register method on the script" do
     @script.should_receive(:register)
+    MSpecScript.main
+  end
+
+  it "calls the #setup_env method on the script" do
+    @script.should_receive(:setup_env)
     MSpecScript.main
   end
 
@@ -148,15 +156,16 @@ describe MSpecScript, "#load" do
   end
 
   it "attempts to locate the file through the expanded path name" do
-    File.should_receive(:expand_path).with(@file).and_return(@file)
+    File.should_receive(:expand_path).with(@file, ".").and_return(@file)
     File.should_receive(:exist?).with(@file).and_return(true)
     Kernel.should_receive(:load).with(@file).and_return(:loaded)
     @script.load(@file).should == :loaded
   end
 
   it "appends config[:config_ext] to the name and attempts to locate the file through the expanded path name" do
-    File.should_receive(:expand_path).with(@base).and_return(@base)
-    File.should_receive(:expand_path).with(@file).and_return(@file)
+    File.should_receive(:expand_path).with(@base, ".").and_return(@base)
+    File.should_receive(:expand_path).with(@base, "spec").and_return(@base)
+    File.should_receive(:expand_path).with(@file, ".").and_return(@file)
     File.should_receive(:exist?).with(@base).and_return(false)
     File.should_receive(:exist?).with(@file).and_return(true)
     Kernel.should_receive(:load).with(@file).and_return(:loaded)
@@ -164,28 +173,28 @@ describe MSpecScript, "#load" do
   end
 
   it "attemps to locate the file in '.'" do
-    path = File.join ".", @file
+    path = File.expand_path @file, "."
     File.should_receive(:exist?).with(path).and_return(true)
     Kernel.should_receive(:load).with(path).and_return(:loaded)
     @script.load(@file).should == :loaded
   end
 
   it "appends config[:config_ext] to the name and attempts to locate the file in '.'" do
-    path = File.join ".", @file
+    path = File.expand_path @file, "."
     File.should_receive(:exist?).with(path).and_return(true)
     Kernel.should_receive(:load).with(path).and_return(:loaded)
     @script.load(@base).should == :loaded
   end
 
   it "attemps to locate the file in 'spec'" do
-    path = File.join "spec", @file
+    path = File.expand_path @file, "spec"
     File.should_receive(:exist?).with(path).and_return(true)
     Kernel.should_receive(:load).with(path).and_return(:loaded)
     @script.load(@file).should == :loaded
   end
 
   it "appends config[:config_ext] to the name and attempts to locate the file in 'spec'" do
-    path = File.join "spec", @file
+    path = File.expand_path @file, "spec"
     File.should_receive(:exist?).with(path).and_return(true)
     Kernel.should_receive(:load).with(path).and_return(:loaded)
     @script.load(@base).should == :loaded
@@ -422,5 +431,35 @@ describe MSpecScript, "#files" do
 
   it "returns an empty list if the config key is not set" do
     @script.files([":all_files"]).should == []
+  end
+end
+
+describe MSpecScript, "#setup_env" do
+  before :each do
+    @script = MSpecScript.new
+    @options, @config = new_option
+    @script.stub(:config).and_return(@config)
+  end
+
+  after :each do
+  end
+
+  it "sets MSPEC_RUNNER = '1' in the environment" do
+    ENV["MSPEC_RUNNER"] = "0"
+    @script.setup_env
+    ENV["MSPEC_RUNNER"].should == "1"
+  end
+
+  it "sets RUBY_EXE = config[:target] in the environment" do
+    ENV["RUBY_EXE"] = nil
+    @script.setup_env
+    ENV["RUBY_EXE"].should == @config[:target]
+  end
+
+  it "sets RUBY_FLAGS = config[:flags] in the environment" do
+    ENV["RUBY_FLAGS"] = nil
+    @config[:flags] = ["-w", "-Q"]
+    @script.setup_env
+    ENV["RUBY_FLAGS"].should == "-w -Q"
   end
 end

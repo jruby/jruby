@@ -38,6 +38,8 @@ if scenario
     signal = %["-TERM"]
   when "group_full_string"
     signal = %["-SIGTERM"]
+  else
+    raise "unknown scenario: #{scenario.inspect}"
   end
 
   cmd = %[#{ruby_exe} -e 'Process.kill(#{signal}, #{process})']

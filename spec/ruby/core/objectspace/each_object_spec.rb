@@ -133,6 +133,7 @@ describe "ObjectSpace.each_object" do
     thread = Thread.new {}
     thread.thread_variable_set(:object_space_thread_local, ObjectSpaceFixtures::ObjectToBeFound.new(:thread_local))
     ObjectSpaceFixtures.to_be_found_symbols.should include(:thread_local)
+    thread.join
   end
 
   it "finds an object stored in a fiber local" do

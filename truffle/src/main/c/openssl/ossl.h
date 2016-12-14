@@ -12,6 +12,10 @@
 
 #include RUBY_EXTCONF_H
 
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
 #if 0
   mOSSL = rb_define_module("OpenSSL");
   mX509 = rb_define_module_under(mOSSL, "X509");
@@ -27,6 +31,11 @@
 #include <ruby/io.h>
 #include <ruby/thread.h>
 
+/*
+ * Check the OpenSSL version
+ * The only supported are:
+ * 	OpenSSL >= 0.9.7
+ */
 #include <openssl/opensslv.h>
 
 #ifdef HAVE_ASSERT_H
@@ -37,6 +46,7 @@
 
 #if defined(_WIN32) && !defined(LIBRESSL_VERSION_NUMBER)
 #  include <openssl/e_os2.h>
+#  define OSSL_NO_CONF_API 1
 #  if !defined(OPENSSL_SYS_WIN32)
 #    define OPENSSL_SYS_WIN32 1
 #  endif
@@ -44,7 +54,7 @@
 #endif
 #include <errno.h>
 #include <openssl/err.h>
-#include <openssl/asn1.h>
+#include <openssl/asn1_mac.h>
 #include <openssl/x509v3.h>
 #include <openssl/ssl.h>
 #include <openssl/pkcs12.h>
@@ -56,12 +66,21 @@
 #if !defined(_WIN32)
 #  include <openssl/crypto.h>
 #endif
-#if !defined(OPENSSL_NO_ENGINE)
+#undef X509_NAME
+#undef PKCS7_SIGNER_INFO
+#if defined(HAVE_OPENSSL_ENGINE_H) && defined(HAVE_EVP_CIPHER_CTX_ENGINE)
+#  define OSSL_ENGINE_ENABLED
 #  include <openssl/engine.h>
 #endif
-#if !defined(OPENSSL_NO_OCSP)
+#if defined(HAVE_OPENSSL_OCSP_H)
+#  define OSSL_OCSP_ENABLED
 #  include <openssl/ocsp.h>
 #endif
+
+/* OpenSSL requires passwords for PEM-encoded files to be at least four
+ * characters long
+ */
+#define OSSL_MIN_PWD_LEN 4
 
 /*
  * Common Module
@@ -97,6 +116,13 @@ extern VALUE eOSSLError;
 } while (0)
 
 /*
+ * Compatibility
+ */
+#if OPENSSL_VERSION_NUMBER >= 0x10000000L
+#define STACK _STACK
+#endif
+
+/*
  * String to HEXString conversion
  */
 int string2hex(const unsigned char *, int, char **, int *);
@@ -120,24 +146,16 @@ do{\
 }while(0)
 
 /*
- * Our default PEM callback
+ * our default PEM callback
  */
-/* Convert the argument to String and validate the length. Note this may raise. */
-VALUE ossl_pem_passwd_value(VALUE);
-/* Can be casted to pem_password_cb. If a password (String) is passed as the
- * "arbitrary data" (typically the last parameter of PEM_{read,write}_
- * functions), uses the value. If not, but a block is given, yields to it.
- * If not either, fallbacks to PEM_def_callback() which reads from stdin. */
 int ossl_pem_passwd_cb(char *, int, int, void *);
 
 /*
  * Clear BIO* with this in PEM/DER fallback scenarios to avoid decoding
  * errors piling up in OpenSSL::Errors
  */
-#define OSSL_BIO_reset(bio) do { \
-    (void)BIO_reset((bio)); \
-    ossl_clear_error(); \
-} while (0)
+#define OSSL_BIO_reset(bio)	(void)BIO_reset((bio)); \
+				ERR_clear_error();
 
 /*
  * ERRor messages
@@ -145,14 +163,11 @@ int ossl_pem_passwd_cb(char *, int, int, void *);
 #define OSSL_ErrMsg() ERR_reason_error_string(ERR_get_error())
 NORETURN(void ossl_raise(VALUE, const char *, ...));
 VALUE ossl_exc_new(VALUE, const char *, ...);
-/* Clear OpenSSL error queue. If dOSSL is set, rb_warn() them. */
-void ossl_clear_error(void);
 
 /*
  * Verify callback
  */
-extern int ossl_store_ctx_ex_verify_cb_idx;
-extern int ossl_store_ex_verify_cb_idx;
+extern int ossl_verify_cb_idx;
 
 struct ossl_verify_cb_args {
     VALUE proc;
@@ -200,6 +215,24 @@ void ossl_debug(const char *, ...);
 #define OSSL_Warn rb_warn
 #endif
 
+#ifdef JRUBY_TRUFFLE
+#define WRITE_EX_DATA(data) rb_jt_to_native_handle(data)
+#define READ_EX_DATA(data) rb_jt_from_native_handle(data)
+#else
+#define WRITE_EX_DATA(data) ((void *)(data))
+#define READ_EX_DATA(data) (data)
+#endif
+
+#ifdef JRUBY_TRUFFLE
+#define RB_SCAN_ARGS_0_HASH     rb_jt_scan_args_0_HASH
+#define RB_SCAN_ARGS_02         rb_jt_scan_args_02
+#define RB_SCAN_ARGS_11         rb_jt_scan_args_11
+#else
+#define RB_SCAN_ARGS_0_HASH     rb_scan_args
+#define RB_SCAN_ARGS_02         rb_scan_args
+#define RB_SCAN_ARGS_11         rb_scan_args
+#endif
+
 /*
  * Include all parts
  */
@@ -225,5 +258,9 @@ void ossl_debug(const char *, ...);
 #include "ossl_engine.h"
 
 void Init_openssl(void);
+
+#if defined(__cplusplus)
+}
+#endif
 
 #endif /* _OSSL_H_ */

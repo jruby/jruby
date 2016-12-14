@@ -18,6 +18,7 @@ public class DispatchHeadNode extends Node {
 
     protected final RubyContext context;
     protected final boolean ignoreVisibility;
+    protected final boolean onlyCallPublic;
     protected final MissingBehavior missingBehavior;
     protected final DispatchAction dispatchAction;
 
@@ -26,10 +27,11 @@ public class DispatchHeadNode extends Node {
     public DispatchHeadNode(
             RubyContext context,
             boolean ignoreVisibility,
-            MissingBehavior missingBehavior,
-            DispatchAction dispatchAction) {
+            boolean onlyCallPublic,
+            MissingBehavior missingBehavior, DispatchAction dispatchAction) {
         this.context = context;
         this.ignoreVisibility = ignoreVisibility;
+        this.onlyCallPublic = onlyCallPublic;
         this.missingBehavior = missingBehavior;
         this.dispatchAction = dispatchAction;
         first = new UnresolvedDispatchNode(context, ignoreVisibility, missingBehavior, dispatchAction);

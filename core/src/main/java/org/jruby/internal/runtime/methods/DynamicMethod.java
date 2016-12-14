@@ -33,6 +33,7 @@ package org.jruby.internal.runtime.methods;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import org.jruby.MetaClass;
+import org.jruby.PrependedModule;
 import org.jruby.RubyModule;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -51,10 +52,12 @@ import org.jruby.util.CodegenUtils;
  * delegation or callback mechanisms.
  */
 public abstract class DynamicMethod {
-    /** The Ruby module or class in which this method is immediately defined. */
+    /** The Ruby module or class from which this method should `super`. Referred to as the `owner` in C Ruby. */
     protected RubyModule implementationClass;
     /** The "protected class" used for calculating protected access. */
     protected RubyModule protectedClass;
+    /** The module or class that originally defined this method. Referred to as the `defined_class` in C Ruby. */
+    protected RubyModule definedClass;
     /** The visibility of this method. This is the ordinal of the Visibility enum value. */
     private byte visibility;
     /** The serial number for this method object, to globally identify it */
@@ -279,6 +282,8 @@ public abstract class DynamicMethod {
         // For visibility we need real meta class and not anonymous one from class << self
         if (cls instanceof MetaClass) cls = ((MetaClass) cls).getRealClass();
 
+        if (cls instanceof PrependedModule) cls = ((PrependedModule) cls).getNonIncludedClass();
+
         return cls;
     }
 
@@ -314,6 +319,24 @@ public abstract class DynamicMethod {
     public void setImplementationClass(RubyModule implClass) {
         implementationClass = implClass;
         protectedClass = calculateProtectedClass(implClass);
+    }
+
+    /**
+     * Get the original owner of this method/
+     */
+    public RubyModule getDefinedClass() {
+        RubyModule definedClass = this.definedClass;
+
+        if (definedClass != null) return definedClass;
+
+        return implementationClass;
+    }
+
+    /**
+     * Set the defining class for this method, as when restructuring hierarchy for prepend.
+     */
+    public void setDefinedClass(RubyModule definedClass) {
+        this.definedClass = definedClass;
     }
 
     /**

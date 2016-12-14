@@ -1,0 +1,3 @@
+fails:Addrinfo#protocol for an ipv4 socket returns Socket::IPPROTO_TCP
+fails:Addrinfo#protocol for an ipv6 socket returns Socket::IPPROTO_TCP
+fails:Addrinfo#protocol for a unix socket returns 0

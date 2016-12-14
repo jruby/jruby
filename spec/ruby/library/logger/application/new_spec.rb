@@ -18,9 +18,9 @@ ruby_version_is ''...'2.2' do
       @log_file.rewind            # go back to the beginning to read the contents
 
       first, second, third = @log_file.readlines
-      LoggerSpecs.strip_date(first).should  == "INFO -- TestApp: Start of TestApp.\n"
+      LoggerSpecs.strip_date(first).should == "INFO -- TestApp: Start of TestApp.\n"
       LoggerSpecs.strip_date(second).should == "WARN -- TestApp: Test log message\n"
-      LoggerSpecs.strip_date(third).should  == "INFO -- TestApp: End of TestApp. (status: true)\n"
+      LoggerSpecs.strip_date(third).should == "INFO -- TestApp: End of TestApp. (status: true)\n"
     end
 
     it "defaults application name to ''" do
@@ -28,9 +28,9 @@ ruby_version_is ''...'2.2' do
       @log_file.rewind
 
       first, second, third =  @log_file.readlines
-      LoggerSpecs.strip_date(first).should  == "INFO -- : Start of .\n"
+      LoggerSpecs.strip_date(first).should == "INFO -- : Start of .\n"
       LoggerSpecs.strip_date(second).should == "WARN -- : Test log message\n"
-      LoggerSpecs.strip_date(third).should  == "INFO -- : End of . (status: true)\n"
+      LoggerSpecs.strip_date(third).should == "INFO -- : End of . (status: true)\n"
     end
 
     it "defaults logs to STDERR" do

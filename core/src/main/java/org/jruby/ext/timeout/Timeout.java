@@ -225,12 +225,12 @@ public class Timeout implements Library {
             final Ruby runtime = timeout.getRuntime();
             IRubyObject anonException = getAnonymousException(timeout).newInstance(runtime.getCurrentContext(), runtime.newString("execution expired"), Block.NULL_BLOCK);
             anonException.getInternalVariables().setInternalVariable("__identifier__", id);
-            currentThread.internalRaise(new IRubyObject[] { anonException });
+            currentThread.raise(anonException);
         }
 
         private void raiseException() {
             final Ruby runtime = timeout.getRuntime();
-            currentThread.internalRaise(new IRubyObject[]{ exception, runtime.newString("execution expired") });
+            currentThread.raise(exception, runtime.newString("execution expired"));
         }
 
     }

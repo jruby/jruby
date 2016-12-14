@@ -19,6 +19,16 @@ module Java::java::util::Collection
     # stub implemented in org.jruby.javasupport.ext.JavaUtil.java
   end
 
+  # Re-implemented for efficiency, so that we do not (`#each`) loop over the collection
+  # for types where its not necessary (e.g. *java.util.Set* instances), uses (native) `java.util.Collection#contains`.
+  # @see Java::java::lang::Iterable#include?
+  # @return [true, false]
+  # @since 9.1.3
+  def include?(obj)
+    # stub implemented in org.jruby.javasupport.ext.JavaUtil.java
+  end
+  alias member? include?
+
   # `Enumerable#first`
   # @note Might collide with *java.util.Deque#getFirst* in which case you want to alias its ruby_ name
   #       so that the Ruby version is used e.g. `java.util.ArrayDeque.class_eval { alias first ruby_first }`
@@ -82,6 +92,8 @@ module Java::java::util::Collection
   def to_a
     # stub implemented in org.jruby.javasupport.ext.JavaUtil.java
   end
+  # @since 9.1.3
+  alias entries to_a
 
   # Return a dup-ed collection (if possible).
   # @example

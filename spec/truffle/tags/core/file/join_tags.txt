@@ -1,1 +1,0 @@
-fails(windows):File.join respects given separator if only one part has a boundary separator

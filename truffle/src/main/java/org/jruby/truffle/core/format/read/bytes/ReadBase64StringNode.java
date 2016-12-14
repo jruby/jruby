@@ -57,7 +57,7 @@ import org.jruby.truffle.core.format.FormatNode;
 import org.jruby.truffle.core.format.exceptions.InvalidFormatException;
 import org.jruby.truffle.core.format.read.SourceNode;
 import org.jruby.truffle.core.rope.AsciiOnlyLeafRope;
-import org.jruby.util.Pack;
+import org.jruby.truffle.util.Pack;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;

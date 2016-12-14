@@ -16,6 +16,7 @@ import org.jruby.truffle.platform.signal.SignalManager;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+@SuppressWarnings("restriction")
 public class SunMiscSignalManager implements SignalManager {
 
     private final ConcurrentMap<sun.misc.Signal, sun.misc.SignalHandler> DEFAULT_HANDLERS = new ConcurrentHashMap<>();
@@ -56,12 +57,7 @@ public class SunMiscSignalManager implements SignalManager {
 
     private sun.misc.SignalHandler wrapHandler(final Signal signal, final SignalHandler newHandler) {
         final SunMiscSignal smSignal = (SunMiscSignal) signal;
-        return new sun.misc.SignalHandler() {
-            @Override
-            public void handle(sun.misc.Signal wrappedSignal) {
-                newHandler.handle(smSignal);
-            }
-        };
+        return wrappedSignal -> newHandler.handle(smSignal);
     }
 
     @Override

@@ -362,7 +362,7 @@ public class Bootstrap {
     }
 
     static MethodHandle buildAttrHandle(InvokeSite site, DynamicMethod method, IRubyObject self, RubyClass dispatchClass) {
-        if (method instanceof AttrReaderMethod) {
+        if (method instanceof AttrReaderMethod && site.arity == 0) {
             AttrReaderMethod attrReader = (AttrReaderMethod) method;
             String varName = attrReader.getVariableName();
 
@@ -371,15 +371,15 @@ public class Bootstrap {
 
             // Ruby to attr reader
             if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
-                //            if (accessor instanceof FieldVariableAccessor) {
-                //                LOG.info(site.name() + "\tbound as field attr reader " + logMethod(method) + ":" + ((AttrReaderMethod)method).getVariableName());
-                //            } else {
-                //                LOG.info(site.name() + "\tbound as attr reader " + logMethod(method) + ":" + ((AttrReaderMethod)method).getVariableName());
-                //            }
+                if (accessor instanceof FieldVariableAccessor) {
+                    LOG.info(site.name() + "\tbound as field attr reader " + logMethod(method) + ":" + ((AttrReaderMethod)method).getVariableName());
+                } else {
+                    LOG.info(site.name() + "\tbound as attr reader " + logMethod(method) + ":" + ((AttrReaderMethod)method).getVariableName());
+                }
             }
 
             return createAttrReaderHandle(site, self, dispatchClass.getRealClass(), accessor);
-        } else if (method instanceof AttrWriterMethod) {
+        } else if (method instanceof AttrWriterMethod && site.arity == 1) {
             AttrWriterMethod attrReader = (AttrWriterMethod)method;
             String varName = attrReader.getVariableName();
 
@@ -387,13 +387,13 @@ public class Bootstrap {
             VariableAccessor accessor = dispatchClass.getRealClass().getVariableAccessorForWrite(varName);
 
             // Ruby to attr reader
-//            if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
-//                if (accessor instanceof FieldVariableAccessor) {
-//                    LOG.info(site.name() + "\tbound as field attr writer " + logMethod(method) + ":" + ((AttrWriterMethod) method).getVariableName());
-//                } else {
-//                    LOG.info(site.name() + "\tbound as attr writer " + logMethod(method) + ":" + ((AttrWriterMethod) method).getVariableName());
-//                }
-//            }
+            if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
+                if (accessor instanceof FieldVariableAccessor) {
+                    LOG.info(site.name() + "\tbound as field attr writer " + logMethod(method) + ":" + ((AttrWriterMethod) method).getVariableName());
+                } else {
+                    LOG.info(site.name() + "\tbound as attr writer " + logMethod(method) + ":" + ((AttrWriterMethod) method).getVariableName());
+                }
+            }
 
             return createAttrWriterHandle(site, self, dispatchClass.getRealClass(), accessor);
         }
@@ -961,6 +961,10 @@ public class Bootstrap {
                 .invoke(CONSTRUCT_BLOCK);
 
         return new ConstantCallSite(blockMaker);
+    }
+
+    private static String logMethod(DynamicMethod method) {
+        return "[#" + method.getSerialNumber() + " " + method.getImplementationClass() + "]";
     }
 
     private static final Binder BINDING_MAKER_BINDER = Binder.from(Binding.class, ThreadContext.class, IRubyObject.class, DynamicScope.class);

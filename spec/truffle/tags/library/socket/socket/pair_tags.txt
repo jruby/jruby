@@ -1,1 +1,2 @@
 fails:Socket#pair ensures the returned sockets are connected
+fails:Socket#pair responses with array of two sockets

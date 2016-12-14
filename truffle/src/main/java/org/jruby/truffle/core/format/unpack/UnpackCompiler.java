@@ -11,15 +11,12 @@ package org.jruby.truffle.core.format.unpack;
 
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.Truffle;
-import org.antlr.v4.runtime.ANTLRInputStream;
-import org.antlr.v4.runtime.CommonTokenStream;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.format.DescriptionTruncater;
-import org.jruby.truffle.core.format.FormatErrorListener;
 import org.jruby.truffle.core.format.LoopRecovery;
-import org.jruby.truffle.core.format.pack.PackLexer;
-import org.jruby.truffle.core.format.pack.PackParser;
+import org.jruby.truffle.core.format.pack.SimplePackParser;
 import org.jruby.truffle.language.RubyNode;
+
+import java.nio.charset.StandardCharsets;
 
 public class UnpackCompiler {
 
@@ -36,28 +33,17 @@ public class UnpackCompiler {
             format = LoopRecovery.recoverLoop(format);
         }
 
-        final FormatErrorListener errorListener = new FormatErrorListener(context, currentNode);
+        final SimpleUnpackTreeBuilder builder = new SimpleUnpackTreeBuilder(context, currentNode);
 
-        final ANTLRInputStream input = new ANTLRInputStream(format);
+        builder.enterSequence();
 
-        final PackLexer lexer = new PackLexer(input);
-        lexer.removeErrorListeners();
-        lexer.addErrorListener(errorListener);
+        final SimplePackParser parser = new SimplePackParser(builder, format.getBytes(StandardCharsets.US_ASCII));
+        parser.parse();
 
-        final CommonTokenStream tokens = new CommonTokenStream(lexer);
-
-        final PackParser parser = new PackParser(tokens);
-
-        final UnpackTreeBuilder builder = new UnpackTreeBuilder(context, currentNode);
-        parser.addParseListener(builder);
-
-        parser.removeErrorListeners();
-        parser.addErrorListener(errorListener);
-
-        parser.sequence();
+        builder.exitSequence();
 
         return Truffle.getRuntime().createCallTarget(
-                new UnpackRootNode(context, DescriptionTruncater.trunate(format), builder.getNode()));
+                new UnpackRootNode(context, currentNode.getEncapsulatingSourceSection(), builder.getNode()));
     }
 
 }

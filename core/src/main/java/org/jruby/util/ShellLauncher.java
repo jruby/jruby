@@ -33,8 +33,6 @@ import static java.lang.System.out;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.FilterInputStream;
-import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -63,13 +61,12 @@ import org.jruby.RubyIO;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
-import jnr.posix.util.FieldAccess;
 import jnr.posix.util.Platform;
 import org.jruby.runtime.Helpers;
 import org.jruby.ext.rbconfig.RbConfigLibrary;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.cli.Options;
+import org.jruby.util.io.ChannelHelper;
 import org.jruby.util.io.IOOptions;
 import org.jruby.util.io.ModeFlags;
 
@@ -398,9 +395,14 @@ public class ShellLauncher {
                 // NOTE: Jruby's handling of tildes is more complete than
                 //       MRI's, which can't handle user names after the tilde
                 //       when searching the executable path
-                pathFile = isValidFile(runtime, fdir, fname, isExec);
-                if (pathFile != null) {
-                    break;
+                try {
+                    pathFile = isValidFile(runtime, fdir, fname, isExec);
+                    if (pathFile != null) {
+                        break;
+                    }
+                } catch (SecurityException se) {
+                    // Security prevented accessing this PATH entry, proceed to next
+                    continue;
                 }
             }
         } else {
@@ -840,95 +842,6 @@ public class ShellLauncher {
         return childProcess;
     }
 
-    /**
-     * Unwrap all filtering streams between the given stream and its actual
-     * unfiltered stream. This is primarily to unwrap streams that have
-     * buffers that would interfere with interactivity.
-     *
-     * @param filteredStream The stream to unwrap
-     * @return An unwrapped stream, presumably unbuffered
-     */
-    public static OutputStream unwrapBufferedStream(OutputStream filteredStream) {
-        if (RubyInstanceConfig.NO_UNWRAP_PROCESS_STREAMS) return filteredStream;
-
-        return unwrapFilterOutputStream(filteredStream);
-    }
-
-    /**
-     * Unwrap all filtering streams between the given stream and its actual
-     * unfiltered stream. This is primarily to unwrap streams that have
-     * buffers that would interfere with interactivity.
-     *
-     * @param filteredStream The stream to unwrap
-     * @return An unwrapped stream, presumably unbuffered
-     */
-    public static InputStream unwrapBufferedStream(InputStream filteredStream) {
-        if (RubyInstanceConfig.NO_UNWRAP_PROCESS_STREAMS) return filteredStream;
-
-        // Java 7+ uses a stream that drains the child on exit, which when
-        // unwrapped breaks because the channel gets drained prematurely.
-//        System.out.println("class is :" + filteredStream.getClass().getName());
-        if (filteredStream.getClass().getName().indexOf("ProcessPipeInputStream") != 1) {
-            return filteredStream;
-        }
-
-        return unwrapFilterInputStream((FilterInputStream)filteredStream);
-    }
-
-    /**
-     * Unwrap the given stream to its first non-FilterOutputStream. If the stream is not
-     * a FilterOutputStream it is returned immediately.
-     *
-     * Note that this version is used when you are absolutely sure you want to unwrap;
-     * the unwrapBufferedStream version will perform checks for certain types of
-     * process-related streams that should not be unwrapped (Java 7+ Process, e.g.).
-     *
-     * @param filteredStream a stream to be unwrapped, if it is a FilterOutputStream
-     * @return the deeped non-FilterOutputStream stream, or filterOutputStream if it is
-     *         not a FilterOutputStream to begin with.
-     */
-    public static OutputStream unwrapFilterOutputStream(OutputStream filteredStream) {
-        while (filteredStream instanceof FilterOutputStream) {
-            try {
-                OutputStream tmpStream = (OutputStream)
-                        FieldAccess.getProtectedFieldValue(FilterOutputStream.class,
-                                "out", filteredStream);
-                if (tmpStream == null) break;
-                filteredStream = tmpStream;
-            } catch (Exception e) {
-                break; // break out if we've dug as deep as we can
-            }
-        }
-        return filteredStream;
-    }
-
-    /**
-     * Unwrap the given stream to its first non-FilterInputStream. If the stream is not
-     * a FilterInputStream it is returned immediately.
-     *
-     * Note that this version is used when you are absolutely sure you want to unwrap;
-     * the unwrapBufferedStream version will perform checks for certain types of
-     * process-related streams that should not be unwrapped (Java 7+ Process, e.g.).
-     *
-     * @param filteredStream a stream to be unwrapped, if it is a FilterInputStream
-     * @return the deeped non-FilterInputStream stream, or filterInputStream if it is
-     *         not a FilterInputStream to begin with.
-     */
-    public static InputStream unwrapFilterInputStream(InputStream filteredStream) {
-        while (filteredStream instanceof FilterInputStream) {
-            try {
-                InputStream tmpStream = (InputStream)
-                        FieldAccess.getProtectedFieldValue(FilterInputStream.class,
-                                "in", filteredStream);
-                if (tmpStream == null) break;
-                filteredStream = tmpStream;
-            } catch (Exception e) {
-                break; // break out if we've dug as deep as we can
-            }
-        }
-        return filteredStream;
-    }
-
     public static class POpenProcess extends Process {
         private final Process child;
         private final boolean waitForChild;
@@ -1080,7 +993,7 @@ public class ShellLauncher {
         private void prepareOutput(Process child) {
             // popen caller wants to be able to write, provide subprocess out directly
             realOutput = child.getOutputStream();
-            output = unwrapBufferedStream(realOutput);
+            output = ChannelHelper.unwrapBufferedStream(realOutput);
             if (output instanceof FileOutputStream) {
                 outputChannel = ((FileOutputStream) output).getChannel();
             } else {
@@ -1090,12 +1003,12 @@ public class ShellLauncher {
 
         private void pumpInput(Process child, Ruby runtime) {
             // no read requested, hook up read to parents output
-            InputStream childIn = unwrapBufferedStream(child.getInputStream());
+            InputStream childIn = ChannelHelper.unwrapBufferedStream(child.getInputStream());
             FileChannel childInChannel = null;
             if (childIn instanceof FileInputStream) {
                 childInChannel = ((FileInputStream) childIn).getChannel();
             }
-            OutputStream parentOut = unwrapBufferedStream(runtime.getOut());
+            OutputStream parentOut = ChannelHelper.unwrapBufferedStream(runtime.getOut());
             FileChannel parentOutChannel = null;
             if (parentOut instanceof FileOutputStream) {
                 parentOutChannel = ((FileOutputStream) parentOut).getChannel();
@@ -1112,12 +1025,12 @@ public class ShellLauncher {
 
         private void pumpInerr(Process child, Ruby runtime) {
             // no read requested, hook up read to parents output
-            InputStream childIn = unwrapBufferedStream(child.getErrorStream());
+            InputStream childIn = ChannelHelper.unwrapBufferedStream(child.getErrorStream());
             FileChannel childInChannel = null;
             if (childIn instanceof FileInputStream) {
                 childInChannel = ((FileInputStream) childIn).getChannel();
             }
-            OutputStream parentOut = unwrapBufferedStream(runtime.getOut());
+            OutputStream parentOut = ChannelHelper.unwrapBufferedStream(runtime.getOut());
             FileChannel parentOutChannel = null;
             if (parentOut instanceof FileOutputStream) {
                 parentOutChannel = ((FileOutputStream) parentOut).getChannel();
@@ -1487,8 +1400,8 @@ public class ShellLauncher {
         private final Ruby runtime;
 
         StreamPumper(Ruby runtime, InputStream in, OutputStream out, boolean avail, Slave slave, Object sync) {
-            this.in = unwrapBufferedStream(in);
-            this.out = unwrapBufferedStream(out);
+            this.in = ChannelHelper.unwrapBufferedStream(in);
+            this.out = ChannelHelper.unwrapBufferedStream(out);
             this.onlyIfAvailable = avail;
             this.slave = slave;
             this.sync = sync;
@@ -1732,5 +1645,25 @@ public class ShellLauncher {
         if (RubyInstanceConfig.DEBUG_LAUNCHING) {
             runtime.getErr().println("ShellLauncher: " + msg);
         }
+    }
+
+    @Deprecated
+    public static OutputStream unwrapBufferedStream(OutputStream filteredStream) {
+        return ChannelHelper.unwrapBufferedStream(filteredStream);
+    }
+
+    @Deprecated
+    public static InputStream unwrapBufferedStream(InputStream filteredStream) {
+        return ChannelHelper.unwrapBufferedStream(filteredStream);
+    }
+
+    @Deprecated
+    public static OutputStream unwrapFilterOutputStream(OutputStream filteredStream) {
+        return ChannelHelper.unwrapFilterOutputStream(filteredStream);
+    }
+
+    @Deprecated
+    public static InputStream unwrapFilterInputStream(InputStream filteredStream) {
+        return ChannelHelper.unwrapFilterInputStream(filteredStream);
     }
 }

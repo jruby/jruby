@@ -290,10 +290,8 @@ describe "A class definition extending an object (sclass)" do
     ClassSpecs.sclass_with_block { 123 }.should == 123
   end
 
-  not_compliant_on :rubinius do
-    it "can use return to cause the enclosing method to return" do
-      ClassSpecs.sclass_with_return.should == :inner
-    end
+  it "can use return to cause the enclosing method to return" do
+    ClassSpecs.sclass_with_return.should == :inner
   end
 end
 

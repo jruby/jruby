@@ -11,18 +11,13 @@ package org.jruby.truffle.language.dispatch;
 
 import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.frame.Frame;
-import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyGuards;
-import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.methods.InternalMethod;
-
-import java.util.concurrent.Callable;
 
 public final class UnresolvedDispatchNode extends DispatchNode {
 
@@ -57,45 +52,44 @@ public final class UnresolvedDispatchNode extends DispatchNode {
 
         // Make sure to have an up-to-date Shape.
         if (receiverObject instanceof DynamicObject) {
-            ((DynamicObject) receiverObject).updateShape();
+            synchronized (receiverObject) {
+                ((DynamicObject) receiverObject).updateShape();
+            }
         }
 
-        final DispatchNode dispatch = atomic(new Callable<DispatchNode>() {
-            @Override
-            public DispatchNode call() throws Exception {
-                final DispatchNode first = getHeadNode().getFirstDispatchNode();
+        final DispatchNode dispatch = atomic(() -> {
+            final DispatchNode first = getHeadNode().getFirstDispatchNode();
 
-                // First try to see if we did not a miss a specialization added by another thread.
+            // First try to see if we did not a miss a specialization added by another thread.
 
-                DispatchNode lookupDispatch = first;
-                while (lookupDispatch != null) {
-                    if (lookupDispatch.guard(methodName, receiverObject)) {
-                        // This one worked, no need to rewrite anything.
-                        return lookupDispatch;
-                    }
-                    lookupDispatch = lookupDispatch.getNext();
+            DispatchNode lookupDispatch = first;
+            while (lookupDispatch != null) {
+                if (lookupDispatch.guard(methodName, receiverObject)) {
+                    // This one worked, no need to rewrite anything.
+                    return lookupDispatch;
                 }
-
-                // We need a new node to handle this case.
-
-                final DispatchNode newDispathNode;
-
-                if (depth == getContext().getOptions().DISPATCH_CACHE) {
-                    newDispathNode = new UncachedDispatchNode(getContext(), ignoreVisibility, getDispatchAction(), missingBehavior);
-                } else {
-                    depth++;
-                    if (RubyGuards.isForeignObject(receiverObject)) {
-                        newDispathNode = new CachedForeignDispatchNode(getContext(), first, methodName);
-                    } else if (RubyGuards.isRubyBasicObject(receiverObject)) {
-                        newDispathNode = doDynamicObject(frame, first, receiverObject, methodName, argumentsObjects);
-                    } else {
-                        newDispathNode = doUnboxedObject(frame, first, receiverObject, methodName);
-                    }
-                }
-
-                first.replace(newDispathNode);
-                return newDispathNode;
+                lookupDispatch = lookupDispatch.getNext();
             }
+
+            // We need a new node to handle this case.
+
+            final DispatchNode newDispathNode;
+
+            if (depth == getContext().getOptions().DISPATCH_CACHE) {
+                newDispathNode = new UncachedDispatchNode(getContext(), ignoreVisibility, getDispatchAction(), missingBehavior);
+            } else {
+                depth++;
+                if (RubyGuards.isForeignObject(receiverObject)) {
+                    newDispathNode = new CachedForeignDispatchNode(getContext(), first, methodName);
+                } else if (RubyGuards.isRubyBasicObject(receiverObject)) {
+                    newDispathNode = doDynamicObject(frame, first, receiverObject, methodName, argumentsObjects);
+                } else {
+                    newDispathNode = doUnboxedObject(frame, first, receiverObject, methodName);
+                }
+            }
+
+            first.replace(newDispathNode);
+            return newDispathNode;
         });
 
         return dispatch.executeDispatch(frame, receiverObject, methodName, blockObject, argumentsObjects);
@@ -106,16 +100,9 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             DispatchNode first,
             Object receiverObject,
             Object methodName) {
-        final DynamicObject callerClass;
-
-        if (ignoreVisibility) {
-            callerClass = null;
-        } else {
-            callerClass = coreLibrary().getMetaClass(RubyArguments.getSelf(frame));
-        }
 
         final String methodNameString = toString(methodName);
-        final InternalMethod method = lookup(callerClass, receiverObject, methodNameString, ignoreVisibility);
+        final InternalMethod method = lookup(frame, receiverObject, methodNameString, ignoreVisibility);
 
         if (method == null) {
             return createMethodMissingNode(first, methodName, receiverObject);
@@ -123,10 +110,10 @@ public final class UnresolvedDispatchNode extends DispatchNode {
 
         if (receiverObject instanceof Boolean) {
             final Assumption falseUnmodifiedAssumption = Layouts.MODULE.getFields(coreLibrary().getFalseClass()).getUnmodifiedAssumption();
-            final InternalMethod falseMethod = lookup(callerClass, false, methodNameString, ignoreVisibility);
+            final InternalMethod falseMethod = lookup(frame, false, methodNameString, ignoreVisibility);
 
             final Assumption trueUnmodifiedAssumption = Layouts.MODULE.getFields(coreLibrary().getTrueClass()).getUnmodifiedAssumption();
-            final InternalMethod trueMethod = lookup(callerClass, true, methodNameString, ignoreVisibility);
+            final InternalMethod trueMethod = lookup(frame, true, methodNameString, ignoreVisibility);
             assert falseMethod != null || trueMethod != null;
 
             return new CachedBooleanDispatchNode(getContext(),
@@ -147,24 +134,9 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             Object receiverObject,
             Object methodName,
             Object[] argumentsObjects) {
-        final DynamicObject callerClass;
 
-        if (ignoreVisibility) {
-            callerClass = null;
-        } else if (getDispatchAction() == DispatchAction.RESPOND_TO_METHOD) {
-            final FrameInstance instance = getContext().getCallStack().getCallerFrameIgnoringSend();
-
-            if (instance == null) {
-                callerClass = coreLibrary().getMetaClass(coreLibrary().getMainObject());
-            } else {
-                final Frame callerFrame = instance.getFrame(FrameInstance.FrameAccess.READ_ONLY, true);
-                callerClass = coreLibrary().getMetaClass(RubyArguments.getSelf(callerFrame));
-            }
-        } else {
-            callerClass = coreLibrary().getMetaClass(RubyArguments.getSelf(frame));
-        }
-
-        final InternalMethod method = lookup(callerClass, receiverObject, toString(methodName), ignoreVisibility);
+        String methodNameString = toString(methodName);
+        final InternalMethod method = lookup(frame, receiverObject, methodNameString, ignoreVisibility);
 
         if (method == null) {
             return createMethodMissingNode(first, methodName, receiverObject);

@@ -112,7 +112,7 @@ public final class Enums extends RubyObject {
 
     @JRubyMethod(name = "find")
     public IRubyObject find(final ThreadContext context, IRubyObject query){
-        if (taggedEnums.has_key_p(query).isTrue()){
+        if (taggedEnums.has_key_p(context, query).isTrue()){
             return taggedEnums.fastARef(query);
         }
         for (int i = 0; i < allEnums.getLength(); i++){

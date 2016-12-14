@@ -3,12 +3,20 @@ require 'mspec/guards'
 require 'mspec/helpers'
 
 describe Object, "#hash_class" do
+  before :each do
+    hide_deprecation_warnings
+  end
+
   it "returns the Hash class" do
     hash_class.should == Hash
   end
 end
 
 describe Object, "#new_hash" do
+  before :each do
+    hide_deprecation_warnings
+  end
+
   it "returns a default hash" do
     new_hash.should == {}
   end

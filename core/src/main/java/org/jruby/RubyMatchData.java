@@ -165,11 +165,11 @@ public class RubyMatchData extends RubyObject {
         }
     }
 
-    private void updatePairs(ByteList value, Encoding encoding, Pair[] pairs) {
+    private static void updatePairs(ByteList value, Encoding encoding, Pair[] pairs) {
         Arrays.sort(pairs);
 
         int length = pairs.length;
-        byte[]bytes = value.getUnsafeBytes();
+        byte[] bytes = value.getUnsafeBytes();
         int p = value.getBegin();
         int s = p;
         int c = 0;
@@ -295,7 +295,7 @@ public class RubyMatchData extends RubyObject {
         final Object pattern = this.pattern;
         if (pattern instanceof Regex) return (Regex) pattern;
         if (pattern == null) throw getRuntime().newTypeError("uninitialized Match (missing pattern)");
-        // when a regexp is avoided for matching we lazyli instantiate one from the unquoted string :
+        // when a regexp is avoided for matching we lazily instantiate one from the unquoted string :
         Regex regexPattern = RubyRegexp.getQuotedRegexpFromCache(getRuntime(), (RubyString) pattern, RegexpOptions.NULL_OPTIONS);
         this.pattern = regexPattern;
         return regexPattern;
@@ -504,7 +504,7 @@ public class RubyMatchData extends RubyObject {
     public IRubyObject op_aref19(IRubyObject idx) {
         check();
         IRubyObject result = op_arefCommon(idx);
-        return result == null ? to_a().aref19(idx) : result;
+        return result == null ? to_a().aref(idx) : result;
     }
 
     /** match_aref
@@ -513,7 +513,7 @@ public class RubyMatchData extends RubyObject {
     @JRubyMethod(name = "[]")
     public IRubyObject op_aref19(IRubyObject idx, IRubyObject rest) {
         IRubyObject result;
-        return !rest.isNil() || (result = op_arefCommon(idx)) == null ? to_a().aref19(idx, rest) : result;
+        return !rest.isNil() || (result = op_arefCommon(idx)) == null ? to_a().aref(idx, rest) : result;
     }
 
     private IRubyObject op_arefCommon(IRubyObject idx) {

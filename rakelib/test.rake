@@ -21,7 +21,10 @@ namespace :test do
   task :compile do
     mkdir_p "test/target/test-classes"
     classpath = %w[lib/jruby.jar test/target/junit.jar].join(File::PATH_SEPARATOR)
-    sh "javac -cp #{classpath} -d test/target/test-classes #{Dir['spec/java_integration/fixtures/**/*.java'].to_a.join(' ')}"
+    # try detecting javac - so we use the same Java versions as we're running (JAVA_HOME) with :
+    java_home = [ ENV_JAVA['java.home'], File.join(ENV_JAVA['java.home'], '..') ] # in case of jdk/jre
+    javac = java_home.map { |home| File.expand_path('bin/javac', home) }.find { |javac| File.exist?(javac) } || 'javac'
+    sh "#{javac} -cp #{classpath} -d test/target/test-classes #{Dir['spec/java_integration/fixtures/**/*.java'].to_a.join(' ')}"
   end
 
   short_tests = ['jruby', 'mri']

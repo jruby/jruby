@@ -22,6 +22,7 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
+import org.jruby.truffle.util.StringUtils;
 
 /**
  * Array indices and lengths must be in 32-bit ranges. This class handle various data types and lowers to a 32-bit int
@@ -92,7 +93,7 @@ public abstract class ArrayAttributeCastNode extends RubyNode {
 
     @TruffleBoundary
     private String formatOutOfRangeErrorMessage() {
-        return String.format("%s out of int range", indexName);
+        return StringUtils.format("%s out of int range", indexName);
     }
 
     protected static boolean inBounds(long value) {

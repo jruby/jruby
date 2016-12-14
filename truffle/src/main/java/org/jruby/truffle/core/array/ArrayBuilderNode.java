@@ -227,7 +227,6 @@ public abstract class ArrayBuilderNode extends Node {
 
         @Override
         public Object appendValue(Object store, int index, Object value) {
-            // TODO(CS): inject probability
             if (store instanceof int[] && value instanceof Integer) {
                 ((int[]) store)[index] = (int) value;
                 return store;
@@ -237,6 +236,7 @@ public abstract class ArrayBuilderNode extends Node {
             }
         }
 
+        @Override
         public Object finish(Object store, int length) {
             return store;
         }
@@ -295,7 +295,6 @@ public abstract class ArrayBuilderNode extends Node {
 
         @Override
         public Object appendValue(Object store, int index, Object value) {
-            // TODO(CS): inject probability
             if (store instanceof long[]) {
                 if (value instanceof Long) {
                     ((long[]) store)[index] = (long) value;
@@ -309,6 +308,7 @@ public abstract class ArrayBuilderNode extends Node {
             return appendValueFallback(store, index, value, expectedLength);
         }
 
+        @Override
         public Object finish(Object store, int length) {
             return store;
         }
@@ -374,7 +374,6 @@ public abstract class ArrayBuilderNode extends Node {
 
         @Override
         public Object appendValue(Object store, int index, Object value) {
-            // TODO(CS): inject probability
             if (store instanceof double[] && value instanceof Double) {
                 ((double[]) store)[index] = (double) value;
                 return store;
@@ -384,6 +383,7 @@ public abstract class ArrayBuilderNode extends Node {
             }
         }
 
+        @Override
         public Object finish(Object store, int length) {
             return store;
         }
@@ -396,6 +396,8 @@ public abstract class ArrayBuilderNode extends Node {
 
         @CompilationFinal private boolean hasAppendedObjectArray = false;
         @CompilationFinal private boolean hasAppendedIntArray = false;
+        @CompilationFinal private boolean hasAppendedLongArray = false;
+        @CompilationFinal private boolean hasAppendedDoubleArray = false;
 
         public ObjectArrayBuilderNode(RubyContext context, int expectedLength) {
             super(context);
@@ -455,6 +457,28 @@ public abstract class ArrayBuilderNode extends Node {
                 return store;
             }
 
+            if (hasAppendedLongArray && otherStore instanceof long[]) {
+                final Object[] objectStore = (Object[]) store;
+                final long[] otherLongStore = (long[]) otherStore;
+
+                for (int n = 0; n < Layouts.ARRAY.getSize(array); n++) {
+                    objectStore[index + n] = otherLongStore[n];
+                }
+
+                return store;
+            }
+
+            if (hasAppendedDoubleArray && otherStore instanceof double[]) {
+                final Object[] objectStore = (Object[]) store;
+                final double[] otherDoubleStore = (double[]) otherStore;
+
+                for (int n = 0; n < Layouts.ARRAY.getSize(array); n++) {
+                    objectStore[index + n] = otherDoubleStore[n];
+                }
+
+                return store;
+            }
+
             CompilerDirectives.transferToInterpreterAndInvalidate();
 
             if (otherStore instanceof int[]) {
@@ -467,6 +491,7 @@ public abstract class ArrayBuilderNode extends Node {
             }
 
             if (otherStore instanceof long[]) {
+                hasAppendedLongArray = true;
                 for (int n = 0; n < Layouts.ARRAY.getSize(array); n++) {
                     ((Object[]) store)[index + n] = ((long[]) otherStore)[n];
                 }
@@ -475,6 +500,7 @@ public abstract class ArrayBuilderNode extends Node {
             }
 
             if (otherStore instanceof double[]) {
+                hasAppendedDoubleArray = true;
                 for (int n = 0; n < Layouts.ARRAY.getSize(array); n++) {
                     ((Object[]) store)[index + n] = ((double[]) otherStore)[n];
                 }
@@ -497,6 +523,7 @@ public abstract class ArrayBuilderNode extends Node {
             return store;
         }
 
+        @Override
         public Object finish(Object store, int length) {
             return store;
         }

@@ -1,4 +1,4 @@
-# Copyright (c) 2015 Oracle and/or its affiliates. All rights reserved. This
+# Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
 # code is released under a tri EPL/GPL/LGPL license. You can use it,
 # redistribute it and/or modify it under the terms of the:
 #
@@ -1193,22 +1193,12 @@ class Array
       while i < size
         o = array.at i
 
-        if Rubinius::Type.object_kind_of? o, Array
-          modified = true
-          recursively_flatten o, out, max_levels
-        elsif Rubinius::Type.object_respond_to? o, :to_ary
-          ary = o.__send__ :to_ary
-          if nil.equal? ary
-            out << o
-          else
-            modified = true
-            recursively_flatten ary, out, max_levels
-          end
-        elsif ary = Rubinius::Type.execute_check_convert_type(o, Array, :to_ary)
-          modified = true
-          recursively_flatten ary, out, max_levels
-        else
+        tmp = Rubinius::Type.rb_check_convert_type(o, Array, :to_ary)
+        if tmp.nil?
           out << o
+        else
+          modified = true
+          recursively_flatten tmp, out, max_levels
         end
 
         i += 1

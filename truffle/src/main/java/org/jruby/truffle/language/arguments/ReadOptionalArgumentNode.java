@@ -18,6 +18,7 @@ import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.array.ArrayReadNormalizedNode;
 import org.jruby.truffle.core.array.ArrayReadNormalizedNodeGen;
+import org.jruby.truffle.language.PerformanceWarnings;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 
@@ -69,12 +70,13 @@ public class ReadOptionalArgumentNode extends RubyNode {
         defaultValueProfile.enter();
 
         if (considerRejectedKWArgs) {
-            CompilerDirectives.bailout("Ruby keyword arguments aren't optimized");
+            PerformanceWarnings.warn(PerformanceWarnings.KWARGS_NOT_OPTIMIZED_YET);
 
             final Object rest = readRestArgumentNode.execute(frame);
 
             if (RubyGuards.isRubyArray(rest) && Layouts.ARRAY.getSize((DynamicObject) rest) > 0) {
                 if (arrayReadNode == null) {
+                    CompilerDirectives.transferToInterpreterAndInvalidate();
                     arrayReadNode = insert(ArrayReadNormalizedNodeGen.create(getContext(), null, null, null));
                 }
 

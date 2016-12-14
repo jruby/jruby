@@ -16,4 +16,8 @@ describe "IO#inspect" do
     @r.close
     @r.inspect.should include("(closed)")
   end
+
+  it "reports IO as its Method object's owner" do
+    IO.instance_method(:inspect).owner.should == IO
+  end
 end

@@ -36,70 +36,83 @@ describe "BasicSocket#setsockopt" do
     end
   end
 
-  it "sets the socket option Socket::SO_OOBINLINE" do
-    @sock.setsockopt(Socket::SOL_SOCKET, Socket::SO_OOBINLINE, true).should == 0
-    n = @sock.getsockopt(Socket::SOL_SOCKET, Socket::SO_OOBINLINE).to_s
-    n.should_not == [0].pack("i")
-
-    @sock.setsockopt(Socket::SOL_SOCKET, Socket::SO_OOBINLINE, false).should == 0
-    n = @sock.getsockopt(Socket::SOL_SOCKET, Socket::SO_OOBINLINE).to_s
-    n.should == [0].pack("i")
-
-    @sock.setsockopt(Socket::SOL_SOCKET, Socket::SO_OOBINLINE, 1).should == 0
-    n = @sock.getsockopt(Socket::SOL_SOCKET, Socket::SO_OOBINLINE).to_s
-    n.should_not == [0].pack("i")
-
-    @sock.setsockopt(Socket::SOL_SOCKET, Socket::SO_OOBINLINE, 0).should == 0
-    n = @sock.getsockopt(Socket::SOL_SOCKET, Socket::SO_OOBINLINE).to_s
-    n.should == [0].pack("i")
-
-    @sock.setsockopt(Socket::SOL_SOCKET, Socket::SO_OOBINLINE, 2).should == 0
-    n = @sock.getsockopt(Socket::SOL_SOCKET, Socket::SO_OOBINLINE).to_s
-    n.should_not == [0].pack("i")
-
-    platform_is_not os: :windows do
-      lambda {
-        @sock.setsockopt(Socket::SOL_SOCKET, Socket::SO_OOBINLINE, "")
-      }.should raise_error(SystemCallError)
+  platform_is_not :windows do
+    it "raises EINVAL if passed wrong linger value" do
+      lambda do
+        @sock.setsockopt(Socket::SOL_SOCKET, Socket::SO_LINGER, 0)
+      end.should raise_error(Errno::EINVAL)
     end
+  end
 
-    @sock.setsockopt(Socket::SOL_SOCKET, Socket::SO_OOBINLINE, "blah").should == 0
-    n = @sock.getsockopt(Socket::SOL_SOCKET, Socket::SO_OOBINLINE).to_s
-    n.should_not == [0].pack("i")
+  platform_is_not :aix do
+    # A known bug in AIX.  getsockopt(2) does not properly set
+    # the fifth argument for SO_TYPE, SO_OOBINLINE, SO_BROADCAST, etc.
 
-    platform_is_not os: :windows do
-      lambda {
-        @sock.setsockopt(Socket::SOL_SOCKET, Socket::SO_OOBINLINE, "0")
-      }.should raise_error(SystemCallError)
+    it "sets the socket option Socket::SO_OOBINLINE" do
+      @sock.setsockopt(Socket::SOL_SOCKET, Socket::SO_OOBINLINE, true).should == 0
+      n = @sock.getsockopt(Socket::SOL_SOCKET, Socket::SO_OOBINLINE).to_s
+      n.should_not == [0].pack("i")
+
+      @sock.setsockopt(Socket::SOL_SOCKET, Socket::SO_OOBINLINE, false).should == 0
+      n = @sock.getsockopt(Socket::SOL_SOCKET, Socket::SO_OOBINLINE).to_s
+      n.should == [0].pack("i")
+
+      @sock.setsockopt(Socket::SOL_SOCKET, Socket::SO_OOBINLINE, 1).should == 0
+      n = @sock.getsockopt(Socket::SOL_SOCKET, Socket::SO_OOBINLINE).to_s
+      n.should_not == [0].pack("i")
+
+      @sock.setsockopt(Socket::SOL_SOCKET, Socket::SO_OOBINLINE, 0).should == 0
+      n = @sock.getsockopt(Socket::SOL_SOCKET, Socket::SO_OOBINLINE).to_s
+      n.should == [0].pack("i")
+
+      @sock.setsockopt(Socket::SOL_SOCKET, Socket::SO_OOBINLINE, 2).should == 0
+      n = @sock.getsockopt(Socket::SOL_SOCKET, Socket::SO_OOBINLINE).to_s
+      n.should_not == [0].pack("i")
+
+      platform_is_not os: :windows do
+        lambda {
+          @sock.setsockopt(Socket::SOL_SOCKET, Socket::SO_OOBINLINE, "")
+        }.should raise_error(SystemCallError)
+      end
+
+      @sock.setsockopt(Socket::SOL_SOCKET, Socket::SO_OOBINLINE, "blah").should == 0
+      n = @sock.getsockopt(Socket::SOL_SOCKET, Socket::SO_OOBINLINE).to_s
+      n.should_not == [0].pack("i")
+
+      platform_is_not os: :windows do
+        lambda {
+          @sock.setsockopt(Socket::SOL_SOCKET, Socket::SO_OOBINLINE, "0")
+        }.should raise_error(SystemCallError)
+      end
+
+      @sock.setsockopt(Socket::SOL_SOCKET, Socket::SO_OOBINLINE, "\x00\x00\x00\x00").should == 0
+      n = @sock.getsockopt(Socket::SOL_SOCKET, Socket::SO_OOBINLINE).to_s
+      n.should == [0].pack("i")
+
+      platform_is_not os: :windows do
+        lambda {
+          @sock.setsockopt(Socket::SOL_SOCKET, Socket::SO_OOBINLINE, "1")
+        }.should raise_error(SystemCallError)
+      end
+
+      platform_is_not os: :windows do
+        lambda {
+          @sock.setsockopt(Socket::SOL_SOCKET, Socket::SO_OOBINLINE, "\x00\x00\x00")
+        }.should raise_error(SystemCallError)
+      end
+
+      @sock.setsockopt(Socket::SOL_SOCKET, Socket::SO_OOBINLINE, [1].pack('i')).should == 0
+      n = @sock.getsockopt(Socket::SOL_SOCKET, Socket::SO_OOBINLINE).to_s
+      n.should_not == [0].pack("i")
+
+      @sock.setsockopt(Socket::SOL_SOCKET, Socket::SO_OOBINLINE, [0].pack('i')).should == 0
+      n = @sock.getsockopt(Socket::SOL_SOCKET, Socket::SO_OOBINLINE).to_s
+      n.should == [0].pack("i")
+
+      @sock.setsockopt(Socket::SOL_SOCKET, Socket::SO_OOBINLINE, [1000].pack('i')).should == 0
+      n = @sock.getsockopt(Socket::SOL_SOCKET, Socket::SO_OOBINLINE).to_s
+      n.should_not == [0].pack("i")
     end
-
-    @sock.setsockopt(Socket::SOL_SOCKET, Socket::SO_OOBINLINE, "\x00\x00\x00\x00").should == 0
-    n = @sock.getsockopt(Socket::SOL_SOCKET, Socket::SO_OOBINLINE).to_s
-    n.should == [0].pack("i")
-
-    platform_is_not os: :windows do
-      lambda {
-        @sock.setsockopt(Socket::SOL_SOCKET, Socket::SO_OOBINLINE, "1")
-      }.should raise_error(SystemCallError)
-    end
-
-    platform_is_not os: :windows do
-      lambda {
-        @sock.setsockopt(Socket::SOL_SOCKET, Socket::SO_OOBINLINE, "\x00\x00\x00")
-      }.should raise_error(SystemCallError)
-    end
-
-    @sock.setsockopt(Socket::SOL_SOCKET, Socket::SO_OOBINLINE, [1].pack('i')).should == 0
-    n = @sock.getsockopt(Socket::SOL_SOCKET, Socket::SO_OOBINLINE).to_s
-    n.should_not == [0].pack("i")
-
-    @sock.setsockopt(Socket::SOL_SOCKET, Socket::SO_OOBINLINE, [0].pack('i')).should == 0
-    n = @sock.getsockopt(Socket::SOL_SOCKET, Socket::SO_OOBINLINE).to_s
-    n.should == [0].pack("i")
-
-    @sock.setsockopt(Socket::SOL_SOCKET, Socket::SO_OOBINLINE, [1000].pack('i')).should == 0
-    n = @sock.getsockopt(Socket::SOL_SOCKET, Socket::SO_OOBINLINE).to_s
-    n.should_not == [0].pack("i")
   end
 
   it "sets the socket option Socket::SO_SNDBUF" do
@@ -155,5 +168,46 @@ describe "BasicSocket#setsockopt" do
     @sock.setsockopt(Socket::SOL_SOCKET, Socket::SO_SNDBUF, [1000].pack('i')).should == 0
     n = @sock.getsockopt(Socket::SOL_SOCKET, Socket::SO_SNDBUF).to_s
     n.unpack('i')[0].should >= 1000
+  end
+
+  platform_is_not :aix do
+    describe 'accepts Socket::Option as argument' do
+      it 'boolean' do
+        option = Socket::Option.bool(:INET, :SOCKET, :KEEPALIVE, true)
+        @sock.setsockopt(option).should == 0
+        @sock.getsockopt(Socket::SOL_SOCKET, Socket::SO_KEEPALIVE).bool.should == true
+      end
+
+      it 'int' do
+        option = Socket::Option.int(:INET, :SOCKET, :KEEPALIVE, 1)
+        @sock.setsockopt(option).should == 0
+        @sock.getsockopt(Socket::SOL_SOCKET, Socket::SO_KEEPALIVE).bool.should == true
+      end
+    end
+  end
+
+  platform_is :aix do
+    describe 'accepts Socket::Option as argument' do
+      it 'boolean' do
+        option = Socket::Option.bool(:INET, :SOCKET, :KEEPALIVE, true)
+        @sock.setsockopt(option).should == 0
+      end
+
+      it 'int' do
+        option = Socket::Option.int(:INET, :SOCKET, :KEEPALIVE, 1)
+        @sock.setsockopt(option).should == 0
+      end
+    end
+  end
+
+  describe 'accepts Socket::Option as argument' do
+    it 'linger' do
+      option = Socket::Option.linger(true, 10)
+      @sock.setsockopt(option).should == 0
+      onoff, seconds = @sock.getsockopt(Socket::SOL_SOCKET, Socket::SO_LINGER).linger
+      seconds.should == 10
+      # Both results can be produced depending on the OS and value of Socket::SO_LINGER
+      [true, Socket::SO_LINGER].should include(onoff)
+    end
   end
 end

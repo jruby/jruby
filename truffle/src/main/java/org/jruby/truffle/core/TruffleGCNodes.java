@@ -10,11 +10,14 @@
 package org.jruby.truffle.core;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.TruffleOptions;
 import com.oracle.truffle.api.dsl.Specialization;
-import org.jruby.RubyGC;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
+
+import java.lang.management.GarbageCollectorMXBean;
+import java.lang.management.ManagementFactory;
 
 @CoreClass("Truffle::GC")
 public abstract class TruffleGCNodes {
@@ -25,7 +28,19 @@ public abstract class TruffleGCNodes {
         @TruffleBoundary
         @Specialization
         public int count() {
-            return RubyGC.getCollectionCount();
+            if (TruffleOptions.AOT) {
+                throw new UnsupportedOperationException("Memory manager is not available with AOT.");
+            }
+
+            return getCollectionCount();
+        }
+
+        public static int getCollectionCount() {
+            int count = 0;
+            for (GarbageCollectorMXBean bean : ManagementFactory.getGarbageCollectorMXBeans()) {
+                count += bean.getCollectionCount();
+            }
+            return count;
         }
 
     }
@@ -36,7 +51,19 @@ public abstract class TruffleGCNodes {
         @TruffleBoundary
         @Specialization
         public long time() {
-            return RubyGC.getCollectionTime();
+            if (TruffleOptions.AOT) {
+                throw new UnsupportedOperationException("Memory manager is not available with AOT.");
+            }
+
+            return getCollectionTime();
+        }
+
+        public static long getCollectionTime() {
+            long time = 0;
+            for (GarbageCollectorMXBean bean : ManagementFactory.getGarbageCollectorMXBeans()) {
+                time += bean.getCollectionTime();
+            }
+            return time;
         }
 
     }

@@ -1,1 +1,13 @@
-require_relative '../../../stdlib/psych/' + File.basename(__FILE__)
+module Psych
+  class Exception < RuntimeError
+  end
+
+  class BadAlias < Exception
+  end
+
+  class DisallowedClass < Exception
+    def initialize klass_name
+      super "Tried to load unspecified class: #{klass_name}"
+    end
+  end
+end

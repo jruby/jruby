@@ -36,6 +36,7 @@ import java.util.Map;
 import org.jruby.Ruby;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ArraySupport;
 
 /**
  * The arity of a method is the number of arguments it takes.
@@ -291,13 +292,10 @@ public final class Arity implements Serializable {
     /**
      */
     public static IRubyObject[] scanArgs(Ruby runtime, IRubyObject[] args, int required, int optional) {
-        int total = required+optional;
-        int real = checkArgumentCount(runtime, args,required,total);
-        IRubyObject[] narr = new IRubyObject[total];
-        System.arraycopy(args,0,narr,0,real);
-        for(int i=real; i<total; i++) {
-            narr[i] = runtime.getNil();
-        }
-        return narr;
+        final int total = required + optional;
+        int len = checkArgumentCount(runtime, args, required, total);
+        args = ArraySupport.newCopy(args, total);
+        for (int i=len; i<total; i++) args[i] = runtime.getNil();
+        return args;
     }
 }

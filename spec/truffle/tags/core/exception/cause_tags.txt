@@ -1,0 +1,1 @@
+fails:Exception#cause returns the active exception when an exception is raised

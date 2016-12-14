@@ -13,7 +13,6 @@ public class DescriptorInfo {
     private int min;
     private int max;
     private boolean frame;
-    private boolean scope;
     private boolean rest;
     private boolean block;
     private String parameterDesc;
@@ -28,7 +27,6 @@ public class DescriptorInfo {
         min = Integer.MAX_VALUE;
         max = 0;
         frame = false;
-        scope = false;
         rest = false;
         block = false;
         boolean first = true;
@@ -85,10 +83,7 @@ public class DescriptorInfo {
 
             if (frame && !desc.anno.frame())
                 throw new RuntimeException("Unbalanced frame property on method " + desc.declaringClassName + '.' + desc.name);
-            if (scope && !desc.anno.scope())
-                throw new RuntimeException("Unbalanced scope property on method " + desc.declaringClassName + '.' + desc.name);
             frame |= desc.anno.frame();
-            scope |= desc.anno.scope();
             block |= desc.hasBlock;
         }
 
@@ -145,10 +140,6 @@ public class DescriptorInfo {
 
     public int getMin() {
         return min;
-    }
-
-    public boolean isScope() {
-        return scope;
     }
 
     public boolean isRest() {

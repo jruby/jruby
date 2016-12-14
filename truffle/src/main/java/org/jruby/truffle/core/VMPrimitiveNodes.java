@@ -38,6 +38,7 @@
 package org.jruby.truffle.core;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.TruffleOptions;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Fallback;
 import com.oracle.truffle.api.dsl.Specialization;
@@ -55,27 +56,31 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.Primitive;
 import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.core.basicobject.BasicObjectNodes.ReferenceEqualNode;
+import org.jruby.truffle.core.cast.NameToJavaStringNode;
 import org.jruby.truffle.core.kernel.KernelNodes;
 import org.jruby.truffle.core.kernel.KernelNodesFactory;
 import org.jruby.truffle.core.proc.ProcSignalHandler;
 import org.jruby.truffle.core.string.StringOperations;
-import org.jruby.truffle.core.thread.ThreadManager;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.control.ExitException;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.control.ThrowException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
+import org.jruby.truffle.language.methods.InternalMethod;
+import org.jruby.truffle.language.methods.LookupMethodNode;
+import org.jruby.truffle.language.methods.LookupMethodNodeGen;
 import org.jruby.truffle.language.objects.IsANode;
 import org.jruby.truffle.language.objects.IsANodeGen;
 import org.jruby.truffle.language.objects.LogicalClassNode;
 import org.jruby.truffle.language.objects.LogicalClassNodeGen;
+import org.jruby.truffle.language.objects.shared.SharedObjects;
 import org.jruby.truffle.language.yield.YieldNode;
 import org.jruby.truffle.platform.UnsafeGroup;
 import org.jruby.truffle.platform.signal.Signal;
 import org.jruby.truffle.platform.signal.SignalHandler;
 import org.jruby.truffle.platform.signal.SignalManager;
-import org.jruby.util.io.PosixShim;
+import org.jruby.truffle.util.Platform;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
@@ -246,6 +251,45 @@ public abstract class VMPrimitiveNodes {
 
     }
 
+    @Primitive(name = "vm_method_is_basic", needsSelf = false)
+    public static abstract class VMMethodIsBasicNode extends PrimitiveArrayArgumentsNode {
+
+        public VMMethodIsBasicNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public boolean vmMethodIsBasic(VirtualFrame frame, DynamicObject method) {
+            return Layouts.METHOD.getMethod(method).isBuiltIn();
+        }
+
+    }
+
+    @Primitive(name = "vm_method_lookup", needsSelf = false)
+    public static abstract class VMMethodLookupNode extends PrimitiveArrayArgumentsNode {
+
+        @Child NameToJavaStringNode nameToJavaStringNode;
+        @Child LookupMethodNode lookupMethodNode;
+
+        public VMMethodLookupNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            nameToJavaStringNode = NameToJavaStringNode.create();
+            lookupMethodNode = LookupMethodNodeGen.create(context, sourceSection, true, false, null, null);
+        }
+
+        @Specialization
+        public DynamicObject vmMethodLookup(VirtualFrame frame, Object self, Object name) {
+            // TODO BJF Sep 14, 2016 Handle private
+            final String normalizedName = nameToJavaStringNode.executeToJavaString(frame, name);
+            InternalMethod method = lookupMethodNode.executeLookupMethod(frame, self, normalizedName);
+            if (method == null) {
+                return nil();
+            }
+            return Layouts.METHOD.createMethod(coreLibrary().getMethodFactory(), self, method);
+        }
+
+    }
+
     @Primitive(name = "vm_object_respond_to", needsSelf = false)
     public static abstract class VMObjectRespondToPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
@@ -262,6 +306,7 @@ public abstract class VMPrimitiveNodes {
         }
 
     }
+
 
     @Primitive(name = "vm_object_singleton_class", needsSelf = false)
     public static abstract class VMObjectSingletonClassPrimitiveNode extends PrimitiveArrayArgumentsNode {
@@ -369,7 +414,7 @@ public abstract class VMPrimitiveNodes {
             final double tutime = 0;
             final double tstime = 0;
 
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), new double[]{
+            return createArray(new double[] {
                     utime,
                     stime,
                     cutime,
@@ -405,6 +450,11 @@ public abstract class VMPrimitiveNodes {
 
         @TruffleBoundary
         private boolean handleDefault(DynamicObject signalName) {
+            // We can't work with signals with AOT.
+            if (TruffleOptions.AOT) {
+                return true;
+            }
+
             Signal signal = getContext().getNativePlatform().getSignalManager().createSignal(signalName.toString());
             try {
                 getContext().getNativePlatform().getSignalManager().watchDefaultForSignal(signal);
@@ -416,6 +466,11 @@ public abstract class VMPrimitiveNodes {
 
         @TruffleBoundary
         private boolean handle(DynamicObject signalName, SignalHandler newHandler) {
+            // We can't work with signals with AOT.
+            if (TruffleOptions.AOT) {
+                return true;
+            }
+
             Signal signal = getContext().getNativePlatform().getSignalManager().createSignal(signalName.toString());
             try {
                 getContext().getNativePlatform().getSignalManager().watchSignal(signal, newHandler);
@@ -433,6 +488,9 @@ public abstract class VMPrimitiveNodes {
         @TruffleBoundary
         @Specialization(guards = "isRubyString(key)")
         public Object get(DynamicObject key) {
+            // Sharing: we do not need to share here as it's only called by the main thread
+            assert getContext().getThreadManager().getCurrentThread() == getContext().getThreadManager().getRootThread();
+
             final Object value = getContext().getNativePlatform().getRubiniusConfiguration().get(key.toString());
 
             if (value == null) {
@@ -465,11 +523,11 @@ public abstract class VMPrimitiveNodes {
                 Object[] objects = new Object[]{
                         createString(StringOperations.encodeRope(key, UTF8Encoding.INSTANCE)),
                         createString(StringOperations.encodeRope(stringValue, UTF8Encoding.INSTANCE)) };
-                sectionKeyValues.add(Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), objects, objects.length));
+                sectionKeyValues.add(createArray(objects, objects.length));
             }
 
             Object[] objects = sectionKeyValues.toArray();
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), objects, objects.length);
+            return createArray(objects, objects.length);
         }
 
     }
@@ -479,7 +537,7 @@ public abstract class VMPrimitiveNodes {
 
         @TruffleBoundary
         @Specialization
-        public Object waitPID(final int input_pid, boolean no_hang) {
+        public Object waitPID(int input_pid, boolean no_hang) {
             // Transliterated from Rubinius C++ - not tidied up significantly to make merging changes easier
 
             int options = 0;
@@ -492,12 +550,12 @@ public abstract class VMPrimitiveNodes {
 
             final int finalOptions = options;
 
-            // retry:
-            pid = getContext().getThreadManager().runUntilResult(this, new ThreadManager.BlockingAction<Integer>() {
-                @Override
-                public Integer block() throws InterruptedException {
-                    return posix().waitpid(input_pid, statusReference, finalOptions);
+            pid = getContext().getThreadManager().runUntilResult(this, () -> {
+                int result = posix().waitpid(input_pid, statusReference, finalOptions);
+                if (result == -1 && posix().errno() == EINTR.intValue()) {
+                    throw new InterruptedException();
                 }
+                return result;
             });
 
             final int errno = posix().errno();
@@ -505,11 +563,6 @@ public abstract class VMPrimitiveNodes {
             if (pid == -1) {
                 if (errno == ECHILD.intValue()) {
                     return false;
-                }
-                if (errno == EINTR.intValue()) {
-                    throw new UnsupportedOperationException();
-                    //if(!state->check_async(calling_environment)) return NULL;
-                    //goto retry;
                 }
 
                 // TODO handle other errnos?
@@ -526,16 +579,117 @@ public abstract class VMPrimitiveNodes {
 
             final int status = statusReference[0];
 
-            if (PosixShim.WAIT_MACROS.WIFEXITED(status)) {
-                output = PosixShim.WAIT_MACROS.WEXITSTATUS(status);
-            } else if (PosixShim.WAIT_MACROS.WIFSIGNALED(status)) {
-                termsig = PosixShim.WAIT_MACROS.WTERMSIG(status);
-            } else if (PosixShim.WAIT_MACROS.WIFSTOPPED(status)) {
-                stopsig = PosixShim.WAIT_MACROS.WSTOPSIG(status);
+            if (WAIT_MACROS.WIFEXITED(status)) {
+                output = WAIT_MACROS.WEXITSTATUS(status);
+            } else if (WAIT_MACROS.WIFSIGNALED(status)) {
+                termsig = WAIT_MACROS.WTERMSIG(status);
+            } else if (WAIT_MACROS.WIFSTOPPED(status)) {
+                stopsig = WAIT_MACROS.WSTOPSIG(status);
             }
 
             Object[] objects = new Object[]{ output, termsig, stopsig, pid };
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), objects, objects.length);
+            return createArray(objects, objects.length);
+        }
+
+        public interface WaitMacros {
+            public abstract boolean WIFEXITED(long status);
+            public abstract boolean WIFSIGNALED(long status);
+            public abstract int WTERMSIG(long status);
+            public abstract int WEXITSTATUS(long status);
+            public abstract int WSTOPSIG(long status);
+            public abstract boolean WIFSTOPPED(long status);
+            public abstract boolean WCOREDUMP(long status);
+        }
+
+        public static class BSDWaitMacros implements WaitMacros {
+            public final long _WSTOPPED = 0177;
+
+            // Only confirmed on Darwin
+            public final long WCOREFLAG = 0200;
+
+            public long _WSTATUS(long status) {
+                return status & _WSTOPPED;
+            }
+
+            public boolean WIFEXITED(long status) {
+                return _WSTATUS(status) == 0;
+            }
+
+            public boolean WIFSIGNALED(long status) {
+                return _WSTATUS(status) != _WSTOPPED && _WSTATUS(status) != 0;
+            }
+
+            public int WTERMSIG(long status) {
+                return (int)_WSTATUS(status);
+            }
+
+            public int WEXITSTATUS(long status) {
+                // not confirmed on all platforms
+                return (int)((status >>> 8) & 0xFF);
+            }
+
+            public int WSTOPSIG(long status) {
+                return (int)(status >>> 8);
+            }
+
+            public boolean WIFSTOPPED(long status) {
+                return _WSTATUS(status) == _WSTOPPED && WSTOPSIG(status) != 0x13;
+            }
+
+            public boolean WCOREDUMP(long status) {
+                return (status & WCOREFLAG) != 0;
+            }
+        }
+
+        public static class LinuxWaitMacros implements WaitMacros {
+            private int __WAIT_INT(long status) { return (int)status; }
+
+            private int __W_EXITCODE(int ret, int sig) { return (ret << 8) | sig; }
+            private int __W_STOPCODE(int sig) { return (sig << 8) | 0x7f; }
+            private static int __W_CONTINUED = 0xffff;
+            private static int __WCOREFLAG = 0x80;
+
+            /* If WIFEXITED(STATUS), the low-order 8 bits of the status.  */
+            private int __WEXITSTATUS(long status) { return (int)((status & 0xff00) >> 8); }
+
+            /* If WIFSIGNALED(STATUS), the terminating signal.  */
+            private int __WTERMSIG(long status) { return (int)(status & 0x7f); }
+
+            /* If WIFSTOPPED(STATUS), the signal that stopped the child.  */
+            private int __WSTOPSIG(long status) { return __WEXITSTATUS(status); }
+
+            /* Nonzero if STATUS indicates normal termination.  */
+            private boolean __WIFEXITED(long status) { return __WTERMSIG(status) == 0; }
+
+            /* Nonzero if STATUS indicates termination by a signal.  */
+            private boolean __WIFSIGNALED(long status) {
+                return ((status & 0x7f) + 1) >> 1 > 0;
+            }
+
+            /* Nonzero if STATUS indicates the child is stopped.  */
+            private boolean __WIFSTOPPED(long status) { return (status & 0xff) == 0x7f; }
+
+            /* Nonzero if STATUS indicates the child dumped core.  */
+            private boolean __WCOREDUMP(long status) { return (status & __WCOREFLAG) != 0; }
+
+            /* Macros for constructing status values.  */
+            public int WEXITSTATUS(long status) { return __WEXITSTATUS (__WAIT_INT (status)); }
+            public int WTERMSIG(long status) { return __WTERMSIG(__WAIT_INT(status)); }
+            public int WSTOPSIG(long status) { return __WSTOPSIG(__WAIT_INT(status)); }
+            public boolean WIFEXITED(long status) { return __WIFEXITED(__WAIT_INT(status)); }
+            public boolean WIFSIGNALED(long status) { return __WIFSIGNALED(__WAIT_INT(status)); }
+            public boolean WIFSTOPPED(long status) { return __WIFSTOPPED(__WAIT_INT(status)); }
+            public boolean WCOREDUMP(long status) { return __WCOREDUMP(__WAIT_INT(status)); }
+        }
+
+        public static final WaitMacros WAIT_MACROS;
+        static {
+            if (Platform.IS_BSD) {
+                WAIT_MACROS = new BSDWaitMacros();
+            } else {
+                // need other platforms
+                WAIT_MACROS = new LinuxWaitMacros();
+            }
         }
 
     }
@@ -545,9 +699,27 @@ public abstract class VMPrimitiveNodes {
 
         @Specialization(guards = "isRubyClass(newClass)")
         public DynamicObject setClass(DynamicObject object, DynamicObject newClass) {
-            Layouts.BASIC_OBJECT.setLogicalClass(object, newClass);
-            Layouts.BASIC_OBJECT.setMetaClass(object, newClass);
+            SharedObjects.propagate(object, newClass);
+            synchronized (object) {
+                Layouts.BASIC_OBJECT.setLogicalClass(object, newClass);
+                Layouts.BASIC_OBJECT.setMetaClass(object, newClass);
+            }
             return object;
+        }
+
+    }
+
+    @Primitive(name = "vm_set_process_title", needsSelf = false)
+    public abstract static class VMSetProcessTitleNode extends PrimitiveArrayArgumentsNode {
+
+        @TruffleBoundary
+        @Specialization(guards = "isRubyString(name)")
+        protected Object writeProgramName(DynamicObject name) {
+            if (getContext().getNativePlatform().getProcessName().canSet()) {
+                getContext().getNativePlatform().getProcessName().set(name.toString());
+            }
+
+            return name;
         }
 
     }

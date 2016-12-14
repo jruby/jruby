@@ -37,12 +37,17 @@ ossl_bn_free(void *ptr)
     BN_clear_free(ptr);
 }
 
+static size_t
+ossl_bn_size(const void *ptr)
+{
+    return sizeof(BIGNUM);
+}
+
 static const rb_data_type_t ossl_bn_type = {
     "OpenSSL/BN",
-    {
-	0, ossl_bn_free,
-    },
-    0, 0, RUBY_TYPED_FREE_IMMEDIATELY,
+    {0, ossl_bn_free, ossl_bn_size,},
+    0, 0,
+    RUBY_TYPED_FREE_IMMEDIATELY,
 };
 
 /*
@@ -77,8 +82,8 @@ ossl_bn_new(const BIGNUM *bn)
     return obj;
 }
 
-static BIGNUM *
-try_convert_to_bnptr(VALUE obj)
+BIGNUM *
+GetBNPtr(VALUE obj)
 {
     BIGNUM *bn = NULL;
     VALUE newobj;
@@ -90,22 +95,16 @@ try_convert_to_bnptr(VALUE obj)
     case T_BIGNUM:
 	obj = rb_String(obj);
 	newobj = NewBN(cBN);	/* GC bug */
-	if (!BN_dec2bn(&bn, StringValueCStr(obj))) {
+	if (!BN_dec2bn(&bn, StringValuePtr(obj))) {
 	    ossl_raise(eBNError, NULL);
 	}
 	SetBN(newobj, bn); /* Handle potencial mem leaks */
 	break;
-    }
-    return bn;
-}
-
-BIGNUM *
-GetBNPtr(VALUE obj)
-{
-    BIGNUM *bn = try_convert_to_bnptr(obj);
-    if (!bn)
+    case T_NIL:
+	break;
+    default:
 	ossl_raise(rb_eTypeError, "Cannot convert into OpenSSL::BN");
-
+    }
     return bn;
 }
 
@@ -204,25 +203,26 @@ ossl_bn_initialize(int argc, VALUE *argv, VALUE self)
 	return self;
     }
 
+    StringValue(str);
     GetBN(self, bn);
     switch (base) {
     case 0:
-	if (!BN_mpi2bn((unsigned char *)StringValuePtr(str), RSTRING_LENINT(str), bn)) {
+	if (!BN_mpi2bn((unsigned char *)RSTRING_PTR(str), RSTRING_LENINT(str), bn)) {
 	    ossl_raise(eBNError, NULL);
 	}
 	break;
     case 2:
-	if (!BN_bin2bn((unsigned char *)StringValuePtr(str), RSTRING_LENINT(str), bn)) {
+	if (!BN_bin2bn((unsigned char *)RSTRING_PTR(str), RSTRING_LENINT(str), bn)) {
 	    ossl_raise(eBNError, NULL);
 	}
 	break;
     case 10:
-	if (!BN_dec2bn(&bn, StringValueCStr(str))) {
+	if (!BN_dec2bn(&bn, RSTRING_PTR(str))) {
 	    ossl_raise(eBNError, NULL);
 	}
 	break;
     case 16:
-	if (!BN_hex2bn(&bn, StringValueCStr(str))) {
+	if (!BN_hex2bn(&bn, RSTRING_PTR(str))) {
 	    ossl_raise(eBNError, NULL);
 	}
 	break;
@@ -738,10 +738,6 @@ BIGNUM_RAND_RANGE(pseudo_rand)
  * call-seq:
  *    BN.generate_prime(bits, [, safe [, add [, rem]]]) => bn
  *
- * Generates a random prime number of bit length +bits+. If +safe+ is true,
- * generates a safe prime. If +add+ is specified, generates a prime that
- * fulfills condition <tt>p % add = rem</tt>.
- *
  * === Parameters
  * * +bits+ - integer
  * * +safe+ - boolean
@@ -770,7 +766,7 @@ ossl_bn_s_generate_prime(int argc, VALUE *argv, VALUE klass)
     if (!(result = BN_new())) {
 	ossl_raise(eBNError, NULL);
     }
-    if (!BN_generate_prime_ex(result, num, safe, add, rem, NULL)) {
+    if (!BN_generate_prime(result, num, safe, add, rem, NULL, NULL)) {
 	BN_free(result);
 	ossl_raise(eBNError, NULL);
     }
@@ -845,85 +841,24 @@ BIGNUM_CMP(ucmp)
 
 /*
  *  call-seq:
- *     bn == obj => true or false
+ *     big.eql?(obj) => true or false
  *
- *  Returns +true+ only if +obj+ has the same value as +bn+. Contrast this
- *  with OpenSSL::BN#eql?, which requires obj to be OpenSSL::BN.
+ *  Returns <code>true</code> only if <i>obj</i> is a
+ *  <code>Bignum</code> with the same value as <i>big</i>. Contrast this
  */
 static VALUE
-ossl_bn_eq(VALUE self, VALUE other)
+ossl_bn_eql(VALUE self, VALUE other)
 {
-    BIGNUM *bn1, *bn2;
-
-    GetBN(self, bn1);
-    /* BNPtr may raise, so we can't use here */
-    bn2 = try_convert_to_bnptr(other);
-
-    if (bn2 && !BN_cmp(bn1, bn2)) {
+    if (ossl_bn_cmp(self, other) == INT2FIX(0)) {
 	return Qtrue;
     }
     return Qfalse;
 }
 
 /*
- *  call-seq:
- *     bn.eql?(obj) => true or false
- *
- *  Returns <code>true</code> only if <i>obj</i> is a
- *  <code>OpenSSL::BN</code> with the same value as <i>big</i>. Contrast this
- *  with OpenSSL::BN#==, which performs type conversions.
- */
-static VALUE
-ossl_bn_eql(VALUE self, VALUE other)
-{
-    BIGNUM *bn1, *bn2;
-
-    if (!rb_obj_is_kind_of(other, cBN))
-	return Qfalse;
-    GetBN(self, bn1);
-    GetBN(other, bn2);
-
-    return BN_cmp(bn1, bn2) ? Qfalse : Qtrue;
-}
-
-/*
- *  call-seq:
- *     bn.hash => Integer
- *
- *  Returns a hash code for this object.
- *
- *  See also Object#hash.
- */
-static VALUE
-ossl_bn_hash(VALUE self)
-{
-    BIGNUM *bn;
-    VALUE hash;
-    unsigned char *buf;
-    int len;
-
-    GetBN(self, bn);
-    len = BN_num_bytes(bn);
-    buf = xmalloc(len);
-    if (BN_bn2bin(bn, buf) != len) {
-	xfree(buf);
-	ossl_raise(eBNError, NULL);
-    }
-
-    hash = INT2FIX(rb_memhash(buf, len));
-    xfree(buf);
-
-    return hash;
-}
-
-/*
  * call-seq:
  *    bn.prime? => true | false
  *    bn.prime?(checks) => true | false
- *
- *  Performs a Miller-Rabin probabilistic primality test with +checks+
- *  iterations. If +nchecks+ is not specified, a number of iterations is used
- *  that yields a false positive rate of at most 2^-80 for random input.
  *
  * === Parameters
  * * +checks+ - integer
@@ -939,7 +874,7 @@ ossl_bn_is_prime(int argc, VALUE *argv, VALUE self)
 	checks = NUM2INT(vchecks);
     }
     GetBN(self, bn);
-    switch (BN_is_prime_ex(bn, checks, ossl_bn_ctx, NULL)) {
+    switch (BN_is_prime(bn, checks, NULL, ossl_bn_ctx, NULL)) {
     case 1:
 	return Qtrue;
     case 0:
@@ -956,9 +891,6 @@ ossl_bn_is_prime(int argc, VALUE *argv, VALUE self)
  *    bn.prime_fasttest? => true | false
  *    bn.prime_fasttest?(checks) => true | false
  *    bn.prime_fasttest?(checks, trial_div) => true | false
- *
- *  Performs a Miller-Rabin primality test. This is same as #prime? except this
- *  first attempts trial divisions with some small primes.
  *
  * === Parameters
  * * +checks+ - integer
@@ -981,7 +913,7 @@ ossl_bn_is_prime_fasttest(int argc, VALUE *argv, VALUE self)
     if (vtrivdiv == Qfalse) {
 	do_trial_division = 0;
     }
-    switch (BN_is_prime_fasttest_ex(bn, checks, ossl_bn_ctx, do_trial_division, NULL)) {
+    switch (BN_is_prime_fasttest(bn, checks, NULL, ossl_bn_ctx, NULL, do_trial_division)) {
     case 1:
 	return Qtrue;
     case 0:
@@ -1050,9 +982,8 @@ Init_ossl_bn(void)
     rb_define_alias(cBN, "<=>", "cmp");
     rb_define_method(cBN, "ucmp", ossl_bn_ucmp, 1);
     rb_define_method(cBN, "eql?", ossl_bn_eql, 1);
-    rb_define_method(cBN, "hash", ossl_bn_hash, 0);
-    rb_define_method(cBN, "==", ossl_bn_eq, 1);
-    rb_define_alias(cBN, "===", "==");
+    rb_define_alias(cBN, "==", "eql?");
+    rb_define_alias(cBN, "===", "eql?");
     rb_define_method(cBN, "zero?", ossl_bn_is_zero, 0);
     rb_define_method(cBN, "one?", ossl_bn_is_one, 0);
     /* is_word */
@@ -1071,7 +1002,6 @@ Init_ossl_bn(void)
 
     rb_define_singleton_method(cBN, "generate_prime", ossl_bn_s_generate_prime, -1);
     rb_define_method(cBN, "prime?", ossl_bn_is_prime, -1);
-    rb_define_method(cBN, "prime_fasttest?", ossl_bn_is_prime_fasttest, -1);
 
     rb_define_method(cBN, "set_bit!", ossl_bn_set_bit, 1);
     rb_define_method(cBN, "clear_bit!", ossl_bn_clear_bit, 1);
@@ -1113,4 +1043,10 @@ Init_ossl_bn(void)
 
     /* RECiProcal
      * MONTgomery */
+
+    /*
+     * TODO:
+     * Where to belong these?
+     */
+    rb_define_method(cBN, "prime_fasttest?", ossl_bn_is_prime_fasttest, -1);
 }

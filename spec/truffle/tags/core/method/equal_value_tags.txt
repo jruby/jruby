@@ -1,4 +1,0 @@
-fails:Method#== returns true on aliased methods
-fails:Method#== returns true if the two core methods are aliases
-fails:Method#== returns true if a method was defined using the other one
-fails:Method#== missing methods returns true for the same method missing

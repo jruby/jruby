@@ -4,9 +4,9 @@ require File.expand_path('../fixtures/classes.rb', __FILE__)
 
 describe "String#center with length, padding" do
   it "returns a new string of specified length with self centered and padded with padstr" do
-    "one".center(9, '.').should       == "...one..."
-    "hello".center(20, '123').should  == "1231231hello12312312"
-    "middle".center(13, '-').should   == "---middle----"
+    "one".center(9, '.').should == "...one..."
+    "hello".center(20, '123').should == "1231231hello12312312"
+    "middle".center(13, '-').should == "---middle----"
 
     "".center(1, "abcd").should == "a"
     "".center(2, "abcd").should == "aa"
@@ -34,7 +34,7 @@ describe "String#center with length, padding" do
   end
 
   it "pads with whitespace if no padstr is given" do
-    "two".center(5).should    == " two "
+    "two".center(5).should == " two "
     "hello".center(20).should == "       hello        "
   end
 

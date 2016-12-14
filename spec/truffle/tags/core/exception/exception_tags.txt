@@ -1,1 +1,0 @@
-fails:Exception.exception returns 'Exception' for message when no message given

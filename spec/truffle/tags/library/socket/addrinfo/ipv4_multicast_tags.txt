@@ -1,0 +1,5 @@
+fails:Addrinfo#ipv4_multicast? for an ipv4 socket returns true for the loopback address
+fails:Addrinfo#ipv4_multicast? for an ipv4 socket returns false for another address
+fails:Addrinfo#ipv4_multicast? for an ipv6 socket returns false for the loopback address
+fails:Addrinfo#ipv4_multicast? for an ipv6 socket returns false for another address
+fails:Addrinfo#ipv4_multicast? for a unix socket returns false

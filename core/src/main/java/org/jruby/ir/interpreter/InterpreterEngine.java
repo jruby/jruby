@@ -117,7 +117,7 @@ public class InterpreterEngine {
 
         // Blocks with explicit call protocol shouldn't do this before args are prepared
         if (acceptsKeywordArgument && (block == null || !interpreterContext.hasExplicitCallProtocol())) {
-            IRRuntimeHelpers.frobnicateKwargsArgument(context, args, interpreterContext.getRequiredArgsCount());
+            args = IRRuntimeHelpers.frobnicateKwargsArgument(context, args, interpreterContext.getRequiredArgsCount());
         }
 
         StaticScope currScope = interpreterContext.getStaticScope();
@@ -202,7 +202,8 @@ public class InterpreterEngine {
             } catch (Throwable t) {
                 if (debug) extractToMethodToAvoidC2Crash(instr, t);
 
-                ipc = instr.getRPC();
+                // StartupInterpreterEngine never calls this method so we know it is a full build.
+                ipc = ((FullInterpreterContext) interpreterContext).determineRPC(ipc);
 
                 if (debug) {
                     Interpreter.LOG.info("in : " + interpreterContext.getScope() + ", caught Java throwable: " + t + "; excepting instr: " + instr);
@@ -564,7 +565,7 @@ public class InterpreterEngine {
             temp[((TemporaryLocalVariable)resultVar).offset] = result;
         } else {
             LocalVariable lv = (LocalVariable)resultVar;
-            currDynScope.setValue((IRubyObject) result, lv.getLocation(), lv.getScopeDepth());
+            currDynScope.setValueVoid((IRubyObject) result, lv.getLocation(), lv.getScopeDepth());
         }
     }
 

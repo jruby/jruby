@@ -1,6 +1,5 @@
 fails:ObjectSpace.each_object calls the block once for each living, non-immediate object in the Ruby process
 fails:ObjectSpace.each_object returns an enumerator if not given a block
-fails:ObjectSpace.each_object doesn't find an object stored in a WeakRef that should have been cleared
 fails:ObjectSpace.each_object finds an object stored in a global variable
 fails:ObjectSpace.each_object finds an object stored in a top-level constant
 fails:ObjectSpace.each_object finds an object stored in a second-level constant

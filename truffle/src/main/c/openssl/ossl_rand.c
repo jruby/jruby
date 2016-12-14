@@ -67,9 +67,9 @@ ossl_rand_add(VALUE self, VALUE str, VALUE entropy)
 static VALUE
 ossl_rand_load_file(VALUE self, VALUE filename)
 {
-    rb_check_safe_obj(filename);
+    SafeStringValue(filename);
 
-    if(!RAND_load_file(StringValueCStr(filename), -1)) {
+    if(!RAND_load_file(RSTRING_PTR(filename), -1)) {
 	ossl_raise(eRandomError, NULL);
     }
     return Qtrue;
@@ -86,9 +86,8 @@ ossl_rand_load_file(VALUE self, VALUE filename)
 static VALUE
 ossl_rand_write_file(VALUE self, VALUE filename)
 {
-    rb_check_safe_obj(filename);
-
-    if (RAND_write_file(StringValueCStr(filename)) == -1) {
+    SafeStringValue(filename);
+    if (RAND_write_file(RSTRING_PTR(filename)) == -1) {
 	ossl_raise(eRandomError, NULL);
     }
     return Qtrue;
@@ -115,8 +114,10 @@ ossl_rand_bytes(VALUE self, VALUE len)
 
     str = rb_str_new(0, n);
     ret = RAND_bytes((unsigned char *)RSTRING_PTR(str), n);
-    if (ret == 0) {
-	ossl_raise(eRandomError, "RAND_bytes");
+    if (ret == 0){
+	char buf[256];
+	ERR_error_string_n(ERR_get_error(), buf, 256);
+	ossl_raise(eRandomError, "RAND_bytes error: %s", buf);
     } else if (ret == -1) {
 	ossl_raise(eRandomError, "RAND_bytes is not supported");
     }
@@ -124,7 +125,6 @@ ossl_rand_bytes(VALUE self, VALUE len)
     return str;
 }
 
-#if defined(HAVE_RAND_PSEUDO_BYTES)
 /*
  *  call-seq:
  *	pseudo_bytes(length) -> string
@@ -146,13 +146,12 @@ ossl_rand_pseudo_bytes(VALUE self, VALUE len)
     int n = NUM2INT(len);
 
     str = rb_str_new(0, n);
-    if (RAND_pseudo_bytes((unsigned char *)RSTRING_PTR(str), n) < 1) {
+    if (!RAND_pseudo_bytes((unsigned char *)RSTRING_PTR(str), n)) {
 	ossl_raise(eRandomError, NULL);
     }
 
     return str;
 }
-#endif
 
 #ifdef HAVE_RAND_EGD
 /*
@@ -164,9 +163,9 @@ ossl_rand_pseudo_bytes(VALUE self, VALUE len)
 static VALUE
 ossl_rand_egd(VALUE self, VALUE filename)
 {
-    rb_check_safe_obj(filename);
+    SafeStringValue(filename);
 
-    if (RAND_egd(StringValueCStr(filename)) == -1) {
+    if(!RAND_egd(RSTRING_PTR(filename))) {
 	ossl_raise(eRandomError, NULL);
     }
     return Qtrue;
@@ -186,9 +185,9 @@ ossl_rand_egd_bytes(VALUE self, VALUE filename, VALUE len)
 {
     int n = NUM2INT(len);
 
-    rb_check_safe_obj(filename);
+    SafeStringValue(filename);
 
-    if (RAND_egd_bytes(StringValueCStr(filename), n) == -1) {
+    if (!RAND_egd_bytes(RSTRING_PTR(filename), n)) {
 	ossl_raise(eRandomError, NULL);
     }
     return Qtrue;
@@ -226,9 +225,7 @@ Init_ossl_rand(void)
     rb_define_module_function(mRandom, "load_random_file", ossl_rand_load_file, 1);
     rb_define_module_function(mRandom, "write_random_file", ossl_rand_write_file, 1);
     rb_define_module_function(mRandom, "random_bytes", ossl_rand_bytes, 1);
-#if defined(HAVE_RAND_PSEUDO_BYTES)
     rb_define_module_function(mRandom, "pseudo_bytes", ossl_rand_pseudo_bytes, 1);
-#endif
 #ifdef HAVE_RAND_EGD
     rb_define_module_function(mRandom, "egd", ossl_rand_egd, 1);
     rb_define_module_function(mRandom, "egd_bytes", ossl_rand_egd_bytes, 2);

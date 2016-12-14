@@ -79,6 +79,10 @@ class File < IO
     NONBLOCK = Rubinius::Config['rbx.platform.file.O_NONBLOCK']
     SYNC     = Rubinius::Config['rbx.platform.file.O_SYNC']
 
+    if Rubinius::Config['rbx.platform.file.O_TMPFILE']
+      TMPFILE = Rubinius::Config['rbx.platform.file.O_TMPFILE']
+    end
+
     # TODO: these flags should probably be imported from Platform
     LOCK_SH  = 0x01
     LOCK_EX  = 0x02
@@ -247,7 +251,6 @@ class File < IO
   # the link, not the file referenced by the link).
   # Often not available.
   def self.lchmod(mode, *paths)
-    raise NotImplementedError, "lchmod not implemented on this platform" unless Rubinius::HAVE_LCHMOD
 
     mode = Rubinius::Type.coerce_to(mode, Integer, :to_int)
 
@@ -343,6 +346,14 @@ class File < IO
     end
 
     paths.size
+  end
+
+  def self.mkfifo(path, mode = 0666)
+    mode = Rubinius::Type.coerce_to mode, Integer, :to_int
+    path = Rubinius::Type.coerce_to_path(path)
+    status = Truffle::POSIX.mkfifo(path, mode)
+    Errno.handle path if status != 0
+    status
   end
 
   ##
@@ -821,7 +832,7 @@ class File < IO
       end
 
       if value.prefix? sep
-        ret.gsub!(/#{SEPARATOR}+$/, '')
+        ret.gsub!(/#{SEPARATOR}+$/o, '')
       elsif not ret.suffix? sep
         ret << sep
       end

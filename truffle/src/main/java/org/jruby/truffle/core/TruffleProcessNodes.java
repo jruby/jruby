@@ -19,14 +19,15 @@ import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.core.array.ArrayOperations;
 import org.jruby.truffle.core.hash.HashOperations;
+import org.jruby.truffle.core.hash.KeyValue;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.platform.UnsafeGroup;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Map.Entry;
 
 @CoreClass("Truffle::Process")
 public abstract class TruffleProcessNodes {
@@ -34,6 +35,7 @@ public abstract class TruffleProcessNodes {
     @CoreMethod(names = "spawn", onSingleton = true, required = 4, unsafe = UnsafeGroup.PROCESSES)
     public abstract static class SpawnNode extends CoreMethodArrayArgumentsNode {
 
+        @TruffleBoundary
         @Specialization(guards = {
                 "isRubyString(command)",
                 "isRubyArray(arguments)",
@@ -46,14 +48,11 @@ public abstract class TruffleProcessNodes {
 
             Collection<SpawnFileAction> fileActions = parseOptions(options);
 
-            final long longPid = call(
+            int pid = call(
                     StringOperations.getString(command),
                     toStringArray(arguments),
                     toStringArray(environmentVariables),
                     fileActions);
-            assert longPid <= Integer.MAX_VALUE;
-            // VMWaitPidPrimitiveNode accepts only int
-            final int pid = (int) longPid;
 
             if (pid == -1) {
                 // TODO (pitr 07-Sep-2015): needs compatibility improvements
@@ -83,7 +82,7 @@ public abstract class TruffleProcessNodes {
             }
 
             Collection<SpawnFileAction> actions = new ArrayList<>();
-            for (Entry<Object, Object> keyValue : HashOperations.iterableKeyValues(options)) {
+            for (KeyValue keyValue : HashOperations.iterableKeyValues(options)) {
                 final Object key = keyValue.getKey();
                 final Object value = keyValue.getValue();
 
@@ -126,8 +125,7 @@ public abstract class TruffleProcessNodes {
         }
 
         @TruffleBoundary
-        private long call(String command, String[] arguments, String[] environmentVariables, Collection<SpawnFileAction> fileActions) {
-            // TODO (pitr 04-Sep-2015): only simple implementation, does not support file actions or other options
+        private int call(String command, String[] arguments, String[] environmentVariables, Collection<SpawnFileAction> fileActions) {
             return getContext().getNativePlatform().getPosix().posix_spawnp(
                     command,
                     fileActions,

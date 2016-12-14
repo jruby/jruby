@@ -150,7 +150,6 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
      */
     public static IRubyObject evalSimple(ThreadContext context, RubyModule under, IRubyObject self, RubyString src, String file, int lineNumber, EvalType evalType) {
         Ruby runtime = context.runtime;
-        if (runtime.getInstanceConfig().getCompileMode() == RubyInstanceConfig.CompileMode.TRUFFLE) throw new UnsupportedOperationException();
 
         // no binding, just eval in "current" frame (caller'scope frame)
         DynamicScope parentScope = context.getCurrentScope();
@@ -196,7 +195,6 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
      */
     public static IRubyObject evalWithBinding(ThreadContext context, IRubyObject self, IRubyObject src, Binding binding) {
         Ruby runtime = context.runtime;
-        if (runtime.getInstanceConfig().getCompileMode() == RubyInstanceConfig.CompileMode.TRUFFLE) throw new UnsupportedOperationException();
 
         DynamicScope evalScope = binding.getEvalScope(runtime);
         evalScope.getStaticScope().determineModule(); // FIXME: It would be nice to just set this or remove it from staticScope altogether

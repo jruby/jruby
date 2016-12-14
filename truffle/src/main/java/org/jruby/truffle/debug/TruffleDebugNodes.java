@@ -26,6 +26,7 @@ import org.jruby.truffle.core.array.ArrayStrategy;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.backtrace.BacktraceFormatter;
 import org.jruby.truffle.language.methods.InternalMethod;
+import org.jruby.truffle.language.objects.shared.SharedObjects;
 import org.jruby.truffle.platform.UnsafeGroup;
 import org.jruby.truffle.tools.simpleshell.SimpleShell;
 
@@ -115,7 +116,7 @@ public abstract class TruffleDebugNodes {
                 array.add(ast(child));
             }
 
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), array.toArray(), array.size());
+            return createArray(array.toArray(), array.size());
         }
 
     }
@@ -129,13 +130,33 @@ public abstract class TruffleDebugNodes {
         }
     }
 
+    @CoreMethod(names = "shape", onSingleton = true, required = 1)
+    public abstract static class ShapeNode extends CoreMethodArrayArgumentsNode {
+
+        @Specialization
+        public DynamicObject shape(DynamicObject object) {
+            return createString(StringOperations.encodeRope(object.getShape().toString(), UTF8Encoding.INSTANCE));
+        }
+
+    }
+
     @CoreMethod(names = "array_storage", onSingleton = true, required = 1)
     public abstract static class ArrayStorageNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization(guards = "isRubyArray(array)")
         public DynamicObject arrayStorage(DynamicObject array) {
             String storage = ArrayStrategy.of(array).toString();
-            return StringOperations.createString(getContext(), StringOperations.createRope(storage, USASCIIEncoding.INSTANCE));
+            return StringOperations.createString(getContext(), StringOperations.encodeRope(storage, USASCIIEncoding.INSTANCE));
+        }
+
+    }
+
+    @CoreMethod(names = "shared?", onSingleton = true, required = 1)
+    public abstract static class IsSharedNode extends CoreMethodArrayArgumentsNode {
+
+        @Specialization
+        public boolean isShared(DynamicObject object) {
+            return SharedObjects.isShared(object);
         }
 
     }

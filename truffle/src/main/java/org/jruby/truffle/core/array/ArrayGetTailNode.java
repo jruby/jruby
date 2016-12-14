@@ -17,11 +17,8 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
-
-import static org.jruby.truffle.core.array.ArrayHelpers.createArray;
 
 @NodeChildren({@NodeChild(value = "array", type = RubyNode.class)})
 @ImportStatic(ArrayGuards.class)
@@ -34,21 +31,16 @@ public abstract class ArrayGetTailNode extends RubyNode {
         this.index = index;
     }
 
-    @Specialization(guards = "isNullArray(array)")
-    public DynamicObject getTailNull(DynamicObject array) {
-        return createArray(getContext(), null, 0);
-    }
-
     @Specialization(guards = "strategy.matches(array)", limit = "ARRAY_STRATEGIES")
     public DynamicObject getTail(DynamicObject array,
             @Cached("of(array)") ArrayStrategy strategy,
             @Cached("createBinaryProfile()") ConditionProfile indexLargerThanSize) {
-        final int size = Layouts.ARRAY.getSize(array);
+        final int size = strategy.getSize(array);
         if (indexLargerThanSize.profile(index >= size)) {
-            return createArray(getContext(), null, 0);
+            return createArray(null, 0);
         } else {
             final Object newStore = strategy.newMirror(array).extractRange(index, size).getArray();
-            return createArray(getContext(), newStore, size - index);
+            return createArray(newStore, size - index);
         }
     }
 

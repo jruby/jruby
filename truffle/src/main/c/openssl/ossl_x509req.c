@@ -302,7 +302,6 @@ static VALUE
 ossl_x509req_get_signature_algorithm(VALUE self)
 {
     X509_REQ *req;
-    X509_ALGOR *alg;
     BIO *out;
     BUF_MEM *buf;
     VALUE str;
@@ -312,8 +311,7 @@ ossl_x509req_get_signature_algorithm(VALUE self)
     if (!(out = BIO_new(BIO_s_mem()))) {
 	ossl_raise(eX509ReqError, NULL);
     }
-    X509_REQ_get0_signature(NULL, &alg, req);
-    if (!i2a_ASN1_OBJECT(out, alg->algorithm)) {
+    if (!i2a_ASN1_OBJECT(out, req->sig_alg->algorithm)) {
 	BIO_free(out);
 	ossl_raise(eX509ReqError, NULL);
     }
@@ -377,18 +375,18 @@ ossl_x509req_verify(VALUE self, VALUE key)
 {
     X509_REQ *req;
     EVP_PKEY *pkey;
+    int i;
 
     GetX509Req(self, req);
     pkey = GetPKeyPtr(key); /* NO NEED TO DUP */
-    switch (X509_REQ_verify(req, pkey)) {
-      case 1:
-	return Qtrue;
-      case 0:
-	ossl_clear_error();
-	return Qfalse;
-      default:
+    if ((i = X509_REQ_verify(req, pkey)) < 0) {
 	ossl_raise(eX509ReqError, NULL);
     }
+    if (i > 0) {
+	return Qtrue;
+    }
+
+    return Qfalse;
 }
 
 static VALUE
@@ -428,8 +426,8 @@ ossl_x509req_set_attributes(VALUE self, VALUE ary)
 	OSSL_Check_Kind(RARRAY_AREF(ary, i), cX509Attr);
     }
     GetX509Req(self, req);
-    while ((attr = X509_REQ_delete_attr(req, 0)))
-	X509_ATTRIBUTE_free(attr);
+    sk_X509_ATTRIBUTE_pop_free(req->req_info->attributes, X509_ATTRIBUTE_free);
+    req->req_info->attributes = NULL;
     for (i=0;i<RARRAY_LEN(ary); i++) {
 	item = RARRAY_AREF(ary, i);
 	attr = DupX509AttrPtr(item);

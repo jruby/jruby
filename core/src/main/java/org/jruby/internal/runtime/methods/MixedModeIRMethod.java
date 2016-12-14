@@ -318,7 +318,7 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
 
     @Override
     public DynamicMethod dup() {
-        MixedModeIRMethod x = new MixedModeIRMethod(method, getVisibility(), implementationClass);
+        MixedModeIRMethod x = (MixedModeIRMethod) super.dup();
         x.box = box;
 
         return x;

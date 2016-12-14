@@ -32,6 +32,7 @@ package org.jruby.util;
 
 import java.io.File;
 import java.io.FileFilter;
+import java.io.FileNotFoundException;
 import java.io.FilenameFilter;
 import java.io.IOException;
 
@@ -122,7 +123,7 @@ public class JRubyFile extends JavaSecuredFile {
 
     private static JRubyFile createNoUnicodeConversion(String cwd, String pathname) {
         if (pathname == null || pathname.length() == 0 || Ruby.isSecurityRestricted()) {
-            return JRubyNonExistentFile.NOT_EXIST;
+            return JRubyFile.DUMMY;
         }
         if (pathname.startsWith("file:")) {
             pathname = pathname.substring(5);
@@ -287,4 +288,76 @@ public class JRubyFile extends JavaSecuredFile {
         }
         return smartFiles;
     }
+
+    public static JRubyFile DUMMY = new JRubyFile("") {
+        @Override
+        public String getAbsolutePath() {
+            return "";
+        }
+
+        @Override
+        public boolean isDirectory() {
+            return false;
+        }
+
+        @Override
+        public boolean exists() {
+            return false;
+        }
+
+        @Override
+        public String getCanonicalPath() throws IOException {
+            throw new FileNotFoundException("File does not exist");
+        }
+
+        @Override
+        public String getPath() {
+            return "";
+        }
+
+        @Override
+        public String toString() {
+            return "";
+        }
+
+        @Override
+        public File getAbsoluteFile() {
+            return this;
+        }
+
+        @Override
+        public File getCanonicalFile() throws IOException {
+            throw new FileNotFoundException("File does not exist");
+        }
+
+        @Override
+        public String getParent() {
+            return "";
+        }
+
+        @Override
+        public File getParentFile() {
+            return this;
+        }
+
+        @Override
+        public String[] list(FilenameFilter filter) {
+            return new String[0];
+        }
+
+        @Override
+        public File[] listFiles() {
+            return new File[0];
+        }
+
+        @Override
+        public File[] listFiles(final FileFilter filter) {
+            return new File[0];
+        }
+
+        @Override
+        public File[] listFiles(final FilenameFilter filter) {
+            return new File[0];
+        }
+    };
 }

@@ -750,3 +750,27 @@ describe "Multiple assignment" do
     end
   end
 end
+
+describe "A local variable assigned only within a conditional block" do
+  context "accessed from a later closure" do
+    it "is defined?" do
+      if VariablesSpecs.false
+        a = 1
+      end
+
+      1.times do
+        defined?(a).should == "local-variable"
+      end
+    end
+
+    it "is nil" do
+      if VariablesSpecs.false
+        a = 1
+      end
+
+      1.times do
+        a.inspect.should == "nil"
+      end
+    end
+  end
+end

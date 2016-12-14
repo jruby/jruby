@@ -17,7 +17,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
-import org.jruby.truffle.language.parser.jruby.ReadLocalNode;
+import org.jruby.truffle.parser.ReadLocalNode;
 
 public class ReadDeclarationVariableNode extends ReadLocalNode {
 
@@ -74,7 +74,7 @@ public class ReadDeclarationVariableNode extends ReadLocalNode {
 
     @Override
     public RubyNode makeWriteNode(RubyNode rhs) {
-        return new WriteDeclarationVariableNode(getContext(), getSourceSection(), frameSlot, frameDepth, rhs);
+        return new WriteDeclarationVariableNode(getContext(), getRubySourceSection(), frameSlot, frameDepth, rhs);
     }
 
 }

@@ -15,7 +15,6 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.string.StringOperations;
-import org.jruby.util.ByteList;
 
 public class DataNode extends RubyNode {
 
@@ -35,10 +34,11 @@ public class DataNode extends RubyNode {
             snippetNode = insert(new SnippetNode());
         }
 
+        final String path = getEncapsulatingSourceSection().getSource().getPath();
         final Object data = snippetNode.execute(frame,
                 "Truffle.get_data(file, offset)",
                 "file", StringOperations.createString(getContext(),
-                        ByteList.create(getEncapsulatingSourceSection().getSource().getPath())),
+                                StringOperations.encodeRope(path, getContext().getEncodingManager().getLocaleEncoding())),
                 "offset", endPosition);
 
         Layouts.MODULE.getFields(coreLibrary().getObjectClass()).setConstant(getContext(), null, "DATA", data);

@@ -7,8 +7,7 @@ describe :kernel_require_basic, shared: true do
     end
 
     it "loads a non-canonical absolute path" do
-      dir, file = File.split(File.expand_path("load_fixture.rb", CODE_LOADING_DIR))
-      path = File.join dir, ["..", "code"], file
+      path = File.join CODE_LOADING_DIR, "..", "code", "load_fixture.rb"
       @object.send(@method, path).should be_true
       ScratchPad.recorded.should == [:loaded]
     end
@@ -414,8 +413,7 @@ describe :kernel_require, shared: true do
     end
 
     it "canonicalizes non-unique absolute paths" do
-      dir, file = File.split(File.expand_path("load_fixture.rb", CODE_LOADING_DIR))
-      path = File.join dir, ["..", "code"], file
+      path = File.join CODE_LOADING_DIR, "..", "code", "load_fixture.rb"
       @object.require(path).should be_true
       $LOADED_FEATURES.should include(@path)
     end
@@ -454,6 +452,7 @@ describe :kernel_require, shared: true do
 
   describe "(shell expansion)" do
     before :each do
+      @path = File.expand_path("load_fixture.rb", CODE_LOADING_DIR)
       @env_home = ENV["HOME"]
       ENV["HOME"] = CODE_LOADING_DIR
     end
@@ -464,13 +463,11 @@ describe :kernel_require, shared: true do
 
     # "#3171"
     it "performs tilde expansion on a .rb file before storing paths in $LOADED_FEATURES" do
-      path = File.expand_path("load_fixture.rb", CODE_LOADING_DIR)
       @object.require("~/load_fixture.rb").should be_true
       $LOADED_FEATURES.should include(@path)
     end
 
     it "performs tilde expansion on a non-extensioned file before storing paths in $LOADED_FEATURES" do
-      path = File.expand_path("load_fixture.rb", CODE_LOADING_DIR)
       @object.require("~/load_fixture").should be_true
       $LOADED_FEATURES.should include(@path)
     end
@@ -607,7 +604,6 @@ describe :kernel_require, shared: true do
       t2 = nil
       t1 = Thread.new do
         Thread.current[:con_raise] = true
-        t1_running = true
 
         lambda {
           @object.require(@path)

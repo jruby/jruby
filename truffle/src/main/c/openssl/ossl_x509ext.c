@@ -188,6 +188,7 @@ ossl_x509extfactory_set_crl(VALUE self, VALUE crl)
     return crl;
 }
 
+#ifdef HAVE_X509V3_SET_NCONF
 static VALUE
 ossl_x509extfactory_set_config(VALUE self, VALUE config)
 {
@@ -201,6 +202,9 @@ ossl_x509extfactory_set_config(VALUE self, VALUE config)
 
     return config;
 }
+#else
+#define ossl_x509extfactory_set_config rb_f_notimplement
+#endif
 
 static VALUE
 ossl_x509extfactory_initialize(int argc, VALUE *argv, VALUE self)
@@ -239,29 +243,36 @@ ossl_x509extfactory_create_ext(int argc, VALUE *argv, VALUE self)
     X509_EXTENSION *ext;
     VALUE oid, value, critical, valstr, obj;
     int nid;
+#ifdef HAVE_X509V3_EXT_NCONF_NID
     VALUE rconf;
     CONF *conf;
+#else
+    static LHASH *empty_lhash;
+#endif
 
     rb_scan_args(argc, argv, "21", &oid, &value, &critical);
-    StringValueCStr(oid);
+    StringValue(oid);
     StringValue(value);
     if(NIL_P(critical)) critical = Qfalse;
 
     nid = OBJ_ln2nid(RSTRING_PTR(oid));
     if(!nid) nid = OBJ_sn2nid(RSTRING_PTR(oid));
-    if(!nid) ossl_raise(eX509ExtError, "unknown OID `%"PRIsVALUE"'", oid);
-
+    if(!nid) ossl_raise(eX509ExtError, "unknown OID `%s'", RSTRING_PTR(oid));
     valstr = rb_str_new2(RTEST(critical) ? "critical," : "");
     rb_str_append(valstr, value);
-    StringValueCStr(valstr);
-
     GetX509ExtFactory(self, ctx);
     obj = NewX509Ext(cX509Ext);
+#ifdef HAVE_X509V3_EXT_NCONF_NID
     rconf = rb_iv_get(self, "@config");
     conf = NIL_P(rconf) ? NULL : GetConfigPtr(rconf);
     ext = X509V3_EXT_nconf_nid(conf, ctx, nid, RSTRING_PTR(valstr));
+#else
+    if (!empty_lhash) empty_lhash = lh_new(NULL, NULL);
+    ext = X509V3_EXT_conf_nid(empty_lhash, ctx, nid, RSTRING_PTR(valstr));
+#endif
     if (!ext){
-	ossl_raise(eX509ExtError, "%"PRIsVALUE" = %"PRIsVALUE, oid, valstr);
+	ossl_raise(eX509ExtError, "%s = %s",
+		   RSTRING_PTR(oid), RSTRING_PTR(value));
     }
     SetX509Ext(obj, ext);
 
@@ -330,7 +341,7 @@ ossl_x509ext_set_oid(VALUE self, VALUE oid)
     ASN1_OBJECT *obj;
     char *s;
 
-    s = StringValueCStr(oid);
+    s = StringValuePtr(oid);
     obj = OBJ_txt2obj(s, 0);
     if(!obj) obj = OBJ_txt2obj(s, 1);
     if(!obj) ossl_raise(eX509ExtError, NULL);
@@ -345,16 +356,23 @@ ossl_x509ext_set_value(VALUE self, VALUE data)
 {
     X509_EXTENSION *ext;
     ASN1_OCTET_STRING *asn1s;
+    char *s;
 
     data = ossl_to_der_if_possible(data);
     StringValue(data);
+    if(!(s = OPENSSL_malloc(RSTRING_LEN(data))))
+	ossl_raise(eX509ExtError, "malloc error");
+    memcpy(s, RSTRING_PTR(data), RSTRING_LEN(data));
     if(!(asn1s = ASN1_OCTET_STRING_new())){
+	OPENSSL_free(s);
 	ossl_raise(eX509ExtError, NULL);
     }
-    if(!ASN1_STRING_set((ASN1_STRING *)asn1s, (unsigned char *)RSTRING_PTR(data), RSTRING_LENINT(data))){
+    if(!M_ASN1_OCTET_STRING_set(asn1s, s, RSTRING_LENINT(data))){
+	OPENSSL_free(s);
 	ASN1_OCTET_STRING_free(asn1s);
 	ossl_raise(eX509ExtError, NULL);
     }
+    OPENSSL_free(s);
     GetX509Ext(self, ext);
     X509_EXTENSION_set_data(ext, asn1s);
 
@@ -406,7 +424,7 @@ ossl_x509ext_get_value(VALUE obj)
     if (!(out = BIO_new(BIO_s_mem())))
 	ossl_raise(eX509ExtError, NULL);
     if (!X509V3_EXT_print(out, ext, 0, 0))
-	ASN1_STRING_print(out, (ASN1_STRING *)X509_EXTENSION_get_data(ext));
+	M_ASN1_OCTET_STRING_print(out, ext->value);
     ret = ossl_membio2str(out);
 
     return ret;

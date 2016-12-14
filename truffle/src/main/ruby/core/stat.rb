@@ -197,7 +197,7 @@ module Rubinius
     end
 
     def dev_minor
-      minor = Truffle::POSIX.major dev
+      minor = Truffle::POSIX.minor dev
       minor < 0 ? nil : minor
     end
 

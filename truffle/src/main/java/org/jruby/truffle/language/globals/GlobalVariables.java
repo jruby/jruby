@@ -21,12 +21,10 @@ import java.util.concurrent.ConcurrentMap;
 public class GlobalVariables {
 
     private final DynamicObject defaultValue;
-
-    ConcurrentMap<String, GlobalVariableStorage> variables;
+    private final ConcurrentMap<String, GlobalVariableStorage> variables = new ConcurrentHashMap<>();
 
     public GlobalVariables(DynamicObject defaultValue) {
         this.defaultValue = defaultValue;
-        this.variables = new ConcurrentHashMap<>();
     }
 
     public Object getOrDefault(String key, Object defaultValue) {
@@ -40,26 +38,27 @@ public class GlobalVariables {
 
     @TruffleBoundary
     public GlobalVariableStorage getStorage(String key) {
-        final GlobalVariableStorage currentStorage = variables.get(key);
-        if (currentStorage == null) {
-            final GlobalVariableStorage newStorage = new GlobalVariableStorage(defaultValue);
-            final GlobalVariableStorage prevStorage = variables.putIfAbsent(key, newStorage);
-            return (prevStorage == null) ? newStorage : prevStorage;
-        } else {
-            return currentStorage;
-        }
+        return variables.computeIfAbsent(key, k -> new GlobalVariableStorage(defaultValue));
     }
 
     public GlobalVariableStorage put(String key, Object value) {
-        GlobalVariableStorage storage = getStorage(key);
-        storage.setValue(value);
+        assert !variables.containsKey(key);
+        final GlobalVariableStorage storage = new GlobalVariableStorage(value);
+        variables.put(key, storage);
         return storage;
     }
 
+    @TruffleBoundary
     public void alias(String name, GlobalVariableStorage storage) {
         variables.put(name, storage);
     }
 
+    @TruffleBoundary
+    public Collection<String> keys() {
+        return variables.keySet();
+    }
+
+    @TruffleBoundary
     public Collection<DynamicObject> dynamicObjectValues() {
         final Collection<GlobalVariableStorage> storages = variables.values();
         final ArrayList<DynamicObject> values = new ArrayList<>(storages.size());

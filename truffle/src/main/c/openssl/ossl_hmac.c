@@ -11,8 +11,8 @@
 
 #include "ossl.h"
 
-#define NewHMAC(klass) \
-    TypedData_Wrap_Struct((klass), &ossl_hmac_type, 0)
+#define MakeHMAC(obj, klass, ctx) \
+    (obj) = TypedData_Make_Struct((klass), HMAC_CTX, &ossl_hmac_type, (ctx))
 #define GetHMAC(obj, ctx) do { \
     TypedData_Get_Struct((obj), HMAC_CTX, &ossl_hmac_type, (ctx)); \
     if (!(ctx)) { \
@@ -40,7 +40,8 @@ VALUE eHMACError;
 static void
 ossl_hmac_free(void *ctx)
 {
-    HMAC_CTX_free(ctx);
+    HMAC_CTX_cleanup(ctx);
+    ruby_xfree(ctx);
 }
 
 static const rb_data_type_t ossl_hmac_type = {
@@ -54,14 +55,11 @@ static const rb_data_type_t ossl_hmac_type = {
 static VALUE
 ossl_hmac_alloc(VALUE klass)
 {
-    VALUE obj;
     HMAC_CTX *ctx;
+    VALUE obj;
 
-    obj = NewHMAC(klass);
-    ctx = HMAC_CTX_new();
-    if (!ctx)
-	ossl_raise(eHMACError, NULL);
-    RTYPEDDATA_DATA(obj) = ctx;
+    MakeHMAC(obj, klass, ctx);
+    HMAC_CTX_init(ctx);
 
     return obj;
 }
@@ -109,8 +107,8 @@ ossl_hmac_initialize(VALUE self, VALUE key, VALUE digest)
 
     StringValue(key);
     GetHMAC(self, ctx);
-    HMAC_Init_ex(ctx, RSTRING_PTR(key), RSTRING_LENINT(key),
-		 GetDigestPtr(digest), NULL);
+    HMAC_Init(ctx, RSTRING_PTR(key), RSTRING_LENINT(key),
+		 GetDigestPtr(digest));
 
     return self;
 }
@@ -126,8 +124,7 @@ ossl_hmac_copy(VALUE self, VALUE other)
     GetHMAC(self, ctx1);
     SafeGetHMAC(other, ctx2);
 
-    if (!HMAC_CTX_copy(ctx1, ctx2))
-	ossl_raise(eHMACError, "HMAC_CTX_copy");
+    HMAC_CTX_copy(ctx1, ctx2);
     return self;
 }
 
@@ -164,24 +161,16 @@ ossl_hmac_update(VALUE self, VALUE data)
 static void
 hmac_final(HMAC_CTX *ctx, unsigned char **buf, unsigned int *buf_len)
 {
-    HMAC_CTX *final;
+    HMAC_CTX final;
 
-    final = HMAC_CTX_new();
-    if (!final)
-	ossl_raise(eHMACError, "HMAC_CTX_new");
-
-    if (!HMAC_CTX_copy(final, ctx)) {
-	HMAC_CTX_free(final);
-	ossl_raise(eHMACError, "HMAC_CTX_copy");
-    }
-
-    if (!(*buf = OPENSSL_malloc(HMAC_size(final)))) {
-	HMAC_CTX_free(final);
-	OSSL_Debug("Allocating %d mem", (int)HMAC_size(final));
+    HMAC_CTX_copy(&final, ctx);
+    if (!(*buf = OPENSSL_malloc(HMAC_size(&final)))) {
+	HMAC_CTX_cleanup(&final);
+	OSSL_Debug("Allocating %d mem", HMAC_size(&final));
 	ossl_raise(eHMACError, "Cannot allocate memory for hmac");
     }
-    HMAC_Final(final, *buf, buf_len);
-    HMAC_CTX_free(final);
+    HMAC_Final(&final, *buf, buf_len);
+    HMAC_CTX_cleanup(&final);
 }
 
 /*
@@ -267,7 +256,7 @@ ossl_hmac_reset(VALUE self)
     HMAC_CTX *ctx;
 
     GetHMAC(self, ctx);
-    HMAC_Init_ex(ctx, NULL, 0, NULL, NULL);
+    HMAC_Init(ctx, NULL, 0, NULL);
 
     return self;
 }

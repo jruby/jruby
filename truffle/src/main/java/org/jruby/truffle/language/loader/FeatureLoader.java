@@ -14,13 +14,15 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.source.Source;
-import java.io.File;
-import java.io.IOException;
+import org.jruby.truffle.Log;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.RubyLanguage;
 import org.jruby.truffle.core.array.ArrayOperations;
 import org.jruby.truffle.language.control.JavaException;
 import org.jruby.truffle.language.control.RaiseException;
+
+import java.io.File;
+import java.io.IOException;
 
 public class FeatureLoader {
 
@@ -80,16 +82,16 @@ public class FeatureLoader {
             }
         }
 
-        final String asSU = findFeatureWithExactPath(path + RubyLanguage.CEXT_EXTENSION);
-
-        if (asSU != null) {
-            return asSU;
-        }
-
         final String withExtension = findFeatureWithExactPath(path + RubyLanguage.EXTENSION);
 
         if (withExtension != null) {
             return withExtension;
+        }
+
+        final String asSU = findFeatureWithExactPath(path + RubyLanguage.CEXT_EXTENSION);
+
+        if (asSU != null) {
+            return asSU;
         }
 
         final String withoutExtension = findFeatureWithExactPath(path);
@@ -125,13 +127,22 @@ public class FeatureLoader {
         }
     }
 
-    public void ensureCExtImplementationLoaded(VirtualFrame frame, IndirectCallNode callNode) {
+    @TruffleBoundary
+    private boolean isSulongAvailable() {
+        return context.getEnv().isMimeTypeSupported(RubyLanguage.CEXT_MIME_TYPE);
+    }
+
+    public void ensureCExtImplementationLoaded(VirtualFrame frame, String feature, IndirectCallNode callNode) {
         synchronized (cextImplementationLock) {
             if (cextImplementationLoaded) {
                 return;
             }
 
-            final CallTarget callTarget = getCExtLibRuby();
+            if (!isSulongAvailable()) {
+                throw new RaiseException(context.getCoreExceptions().loadError("Sulong is required to support C extensions, and it doesn't appear to be available", feature, null));
+            }
+
+            final CallTarget callTarget = getCExtLibRuby(feature);
             callNode.call(frame, callTarget, new Object[] {});
 
             cextImplementationLoaded = true;
@@ -139,11 +150,15 @@ public class FeatureLoader {
     }
 
     @TruffleBoundary
-    private CallTarget getCExtLibRuby() {
-        final String path = context.getJRubyRuntime().getJRubyHome() + "/lib/ruby/truffle/cext/ruby.su";
+    private CallTarget getCExtLibRuby(String feature) {
+        final String path = context.getJRubyHome() + "/lib/ruby/truffle/cext/ruby.su";
+
+        if (context.getOptions().CEXTS_LOG_LOAD) {
+            Log.info("loading cext implementation %s", path);
+        }
 
         if (!new File(path).exists()) {
-            throw new RaiseException(context.getCoreExceptions().internalError("This JRuby distribution does not have the C extension implementation file ruby.su", null));
+            throw new RaiseException(context.getCoreExceptions().loadError("This JRuby distribution does not have the C extension implementation file ruby.su", feature, null));
         }
 
         try {

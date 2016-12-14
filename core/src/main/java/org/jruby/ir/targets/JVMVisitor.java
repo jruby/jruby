@@ -28,6 +28,7 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.RefinedCachingCallSite;
+import org.jruby.runtime.scope.DynamicScopeGenerator;
 import org.jruby.util.ByteList;
 import org.jruby.util.ClassDefiningClassLoader;
 import org.jruby.util.JavaNameMangler;
@@ -175,9 +176,6 @@ public class JVMVisitor extends IRVisitor {
             jvmAdapter().invokestatic(p(Profiler.class), "initProfiling", sig(void.class, IRScope.class));
         }
 
-        int numberOfBasicBlocks = bbs.length;
-        int ipc = 0; // synthetic, used for debug traces that show which instr failed
-
         Label currentRescue = null;
         Label currentRegionStart = null;
         Label currentBlockStart = null;
@@ -235,7 +233,6 @@ public class JVMVisitor extends IRVisitor {
 
             // visit remaining instrs
             for (Instr instr : bb.getInstrs()) {
-                if (DEBUG) instr.setIPC(ipc++); // debug mode uses instr offset for backtrace
                 visit(instr);
             }
 
@@ -371,7 +368,7 @@ public class JVMVisitor extends IRVisitor {
 
     public void visit(Instr instr) {
         if (DEBUG) { // debug will skip emitting actual file line numbers
-            jvmAdapter().line(instr.getIPC());
+            jvmAdapter().line(++jvmMethod().ipc);
         }
         instr.visit(this);
     }
@@ -403,41 +400,11 @@ public class JVMVisitor extends IRVisitor {
 
     private void jvmStoreLocal(Variable variable) {
         if (variable instanceof LocalVariable) {
-
-            LocalVariable localvariable = (LocalVariable) variable;
-
             jvmLoadLocal(DYNAMIC_SCOPE);
 
             jvmAdapter().swap();
 
-            if (localvariable.getScopeDepth() == 0) {
-
-                switch (localvariable.getOffset()) {
-                    case 0:
-                        jvmAdapter().invokevirtual(p(DynamicScope.class), "setValueZeroDepthZeroVoid", sig(void.class, IRubyObject.class));
-                        break;
-                    case 1:
-                        jvmAdapter().invokevirtual(p(DynamicScope.class), "setValueOneDepthZeroVoid", sig(void.class, IRubyObject.class));
-                        break;
-                    case 2:
-                        jvmAdapter().invokevirtual(p(DynamicScope.class), "setValueTwoDepthZeroVoid", sig(void.class, IRubyObject.class));
-                        break;
-                    case 3:
-                        jvmAdapter().invokevirtual(p(DynamicScope.class), "setValueThreeDepthZeroVoid", sig(void.class, IRubyObject.class));
-                        break;
-                    default:
-                        jvmAdapter().ldc(localvariable.getOffset());
-                        jvmAdapter().invokevirtual(p(DynamicScope.class), "setValueDepthZeroVoid", sig(void.class, IRubyObject.class, int.class));
-                        break;
-                }
-
-            } else {
-
-                jvmAdapter().ldc(localvariable.getOffset());
-                jvmAdapter().ldc(localvariable.getScopeDepth());
-                jvmAdapter().invokevirtual(p(DynamicScope.class), "setValueVoid", sig(void.class, IRubyObject.class, int.class, int.class));
-
-            }
+            genSetValue((LocalVariable) variable);
         } else if (variable instanceof TemporaryLocalVariable) {
             switch (((TemporaryLocalVariable)variable).getType()) {
             case FLOAT: jvmAdapter().dstore(getJVMLocalVarIndex(variable)); break;
@@ -452,44 +419,11 @@ public class JVMVisitor extends IRVisitor {
 
     private void jvmStoreLocal(Runnable source, Variable variable) {
         if (variable instanceof LocalVariable) {
-
-            LocalVariable localvariable = (LocalVariable) variable;
-
             jvmLoadLocal(DYNAMIC_SCOPE);
 
-            if (localvariable.getScopeDepth() == 0) {
+            source.run();
 
-                source.run();
-
-                switch (localvariable.getOffset()) {
-                    case 0:
-                        jvmAdapter().invokevirtual(p(DynamicScope.class), "setValueZeroDepthZeroVoid", sig(void.class, IRubyObject.class));
-                        break;
-                    case 1:
-                        jvmAdapter().invokevirtual(p(DynamicScope.class), "setValueOneDepthZeroVoid", sig(void.class, IRubyObject.class));
-                        break;
-                    case 2:
-                        jvmAdapter().invokevirtual(p(DynamicScope.class), "setValueTwoDepthZeroVoid", sig(void.class, IRubyObject.class));
-                        break;
-                    case 3:
-                        jvmAdapter().invokevirtual(p(DynamicScope.class), "setValueThreeDepthZeroVoid", sig(void.class, IRubyObject.class));
-                        break;
-                    default:
-                        jvmAdapter().ldc(localvariable.getOffset());
-                        jvmAdapter().invokevirtual(p(DynamicScope.class), "setValueDepthZeroVoid", sig(void.class, IRubyObject.class, int.class));
-                        break;
-                }
-
-            } else {
-
-                source.run();
-
-                jvmAdapter().ldc(localvariable.getOffset());
-                jvmAdapter().ldc(localvariable.getScopeDepth());
-
-                jvmAdapter().invokevirtual(p(DynamicScope.class), "setValueVoid", sig(void.class, IRubyObject.class, int.class, int.class));
-
-            }
+            genSetValue((LocalVariable) variable);
         } else if (variable instanceof TemporaryLocalVariable) {
             source.run();
 
@@ -503,6 +437,27 @@ public class JVMVisitor extends IRVisitor {
             source.run();
 
             jvmMethod().storeLocal(getJVMLocalVarIndex(variable));
+        }
+    }
+
+    private void genSetValue(LocalVariable localvariable) {
+        int depth = localvariable.getScopeDepth();
+        int location = localvariable.getLocation();
+
+        String baseName = p(DynamicScope.class);
+
+        if (depth == 0) {
+            if (location < DynamicScopeGenerator.SPECIALIZED_SETS.size()) {
+                jvmAdapter().invokevirtual(baseName, DynamicScopeGenerator.SPECIALIZED_SETS.get(location), sig(void.class, IRubyObject.class));
+            } else {
+                jvmAdapter().pushInt(location);
+                jvmAdapter().invokevirtual(baseName, "setValueDepthZeroVoid", sig(void.class, IRubyObject.class, int.class));
+            }
+        } else {
+            jvmAdapter().pushInt(location);
+            jvmAdapter().pushInt(depth);
+
+            jvmAdapter().invokevirtual(baseName, "setValueVoid", sig(void.class, IRubyObject.class, int.class, int.class));
         }
     }
 
@@ -858,6 +813,34 @@ public class JVMVisitor extends IRVisitor {
 
     }
 
+    public void BSwitchInstr(BSwitchInstr bswitchinstr) {
+        visit(bswitchinstr.getCaseOperand());
+        jvmAdapter().dup();
+        jvmAdapter().instance_of(p(RubyFixnum.class));
+        org.objectweb.asm.Label rubyCaseLabel = getJVMLabel(bswitchinstr.getRubyCaseLabel());
+        org.objectweb.asm.Label notFixnum = new org.objectweb.asm.Label();
+        jvmAdapter().iffalse(notFixnum);
+        jvmAdapter().checkcast(p(RubyFixnum.class));
+        jvmAdapter().invokevirtual(p(RubyFixnum.class), "getIntValue", sig(int.class));
+        Label[] targets = bswitchinstr.getTargets();
+        org.objectweb.asm.Label[] jvmTargets = new org.objectweb.asm.Label[targets.length];
+        for (int i = 0; i < targets.length; i++) jvmTargets[i] = getJVMLabel(targets[i]);
+
+        // if jump table is all contiguous values, use a tableswitch
+        int[] jumps = bswitchinstr.getJumps();
+        int low = jumps[0];
+        int high = jumps[jumps.length - 1];
+        int span = high - low;
+        if (span == jumps.length) {
+            jvmAdapter().tableswitch(low, high, getJVMLabel(bswitchinstr.getElseTarget()), jvmTargets);
+        } else {
+            jvmAdapter().lookupswitch(getJVMLabel(bswitchinstr.getElseTarget()), bswitchinstr.getJumps(), jvmTargets);
+        }
+        jvmAdapter().label(notFixnum);
+        jvmAdapter().pop();
+        jvmAdapter().label(rubyCaseLabel);
+    }
+
     @Override
     public void BTrueInstr(BTrueInstr btrueinstr) {
         Operand arg1 = btrueinstr.getArg1();
@@ -988,7 +971,8 @@ public class JVMVisitor extends IRVisitor {
     public void BuildSplatInstr(BuildSplatInstr instr) {
         jvmMethod().loadContext();
         visit(instr.getArray());
-        jvmMethod().invokeIRHelper("irSplat", sig(RubyArray.class, ThreadContext.class, IRubyObject.class));
+        jvmAdapter().ldc(instr.getDup());
+        jvmMethod().invokeIRHelper("splatArray", sig(RubyArray.class, ThreadContext.class, IRubyObject.class, boolean.class));
         jvmStoreLocal(instr.getResult());
     }
 
@@ -1441,42 +1425,7 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void LoadLocalVarInstr(LoadLocalVarInstr loadlocalvarinstr) {
-        IRBytecodeAdapter m = jvmMethod();
-        jvmLoadLocal(DYNAMIC_SCOPE);
-        int depth = loadlocalvarinstr.getLocalVar().getScopeDepth();
-        int location = loadlocalvarinstr.getLocalVar().getLocation();
-        // TODO if we can avoid loading nil unnecessarily, it could be a big win
-        OUTER: switch (depth) {
-            case 0:
-                switch (location) {
-                    case 0:
-                        m.pushNil();
-                        m.adapter.invokevirtual(p(DynamicScope.class), "getValueZeroDepthZeroOrNil", sig(IRubyObject.class, IRubyObject.class));
-                        break OUTER;
-                    case 1:
-                        m.pushNil();
-                        m.adapter.invokevirtual(p(DynamicScope.class), "getValueOneDepthZeroOrNil", sig(IRubyObject.class, IRubyObject.class));
-                        break OUTER;
-                    case 2:
-                        m.pushNil();
-                        m.adapter.invokevirtual(p(DynamicScope.class), "getValueTwoDepthZeroOrNil", sig(IRubyObject.class, IRubyObject.class));
-                        break OUTER;
-                    case 3:
-                        m.pushNil();
-                        m.adapter.invokevirtual(p(DynamicScope.class), "getValueThreeDepthZeroOrNil", sig(IRubyObject.class, IRubyObject.class));
-                        break OUTER;
-                    default:
-                        m.adapter.pushInt(location);
-                        m.pushNil();
-                        m.adapter.invokevirtual(p(DynamicScope.class), "getValueDepthZeroOrNil", sig(IRubyObject.class, int.class, IRubyObject.class));
-                        break OUTER;
-                }
-            default:
-                m.adapter.pushInt(location);
-                m.adapter.pushInt(depth);
-                m.pushNil();
-                m.adapter.invokevirtual(p(DynamicScope.class), "getValueOrNil", sig(IRubyObject.class, int.class, int.class, IRubyObject.class));
-        }
+        LocalVariable(loadlocalvarinstr.getLocalVar());
         jvmStoreLocal(loadlocalvarinstr.getResult());
     }
 
@@ -1822,10 +1771,12 @@ public class JVMVisitor extends IRVisitor {
         jvmMethod().loadContext();
         jvmMethod().loadArgs();
         jvmAdapter().pushInt(instr.preReqdArgsCount);
+        jvmAdapter().pushInt(instr.optArgsCount);
+        jvmAdapter().pushBoolean(instr.restArg);
         jvmAdapter().pushInt(instr.postReqdArgsCount);
         jvmAdapter().pushInt(instr.getArgIndex());
         jvmAdapter().ldc(jvm.methodData().scope.receivesKeywordArgs());
-        jvmMethod().invokeIRHelper("receivePostReqdArg", sig(IRubyObject.class, ThreadContext.class, IRubyObject[].class, int.class, int.class, int.class, boolean.class));
+        jvmMethod().invokeIRHelper("receivePostReqdArg", sig(IRubyObject.class, ThreadContext.class, IRubyObject[].class, int.class, int.class, boolean.class, int.class, int.class, boolean.class));
         jvmStoreLocal(instr.getResult());
     }
 
@@ -1935,7 +1886,8 @@ public class JVMVisitor extends IRVisitor {
                 break;
             case IS_DEFINED_BACKREF:
                 jvmMethod().loadContext();
-                jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "isDefinedBackref", sig(IRubyObject.class, ThreadContext.class));
+                visit(runtimehelpercall.getArgs()[0]);
+                jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "isDefinedBackref", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class));
                 jvmStoreLocal(runtimehelpercall.getResult());
                 break;
             case IS_DEFINED_CALL:
@@ -1943,33 +1895,39 @@ public class JVMVisitor extends IRVisitor {
                 jvmMethod().loadSelf();
                 visit(runtimehelpercall.getArgs()[0]);
                 jvmAdapter().ldc(((StringLiteral) runtimehelpercall.getArgs()[1]).getString());
-                jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "isDefinedCall", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class));
+                visit(runtimehelpercall.getArgs()[2]);
+                jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "isDefinedCall", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class));
                 jvmStoreLocal(runtimehelpercall.getResult());
                 break;
             case IS_DEFINED_CONSTANT_OR_METHOD:
                 jvmMethod().loadContext();
                 visit(runtimehelpercall.getArgs()[0]);
                 jvmAdapter().ldc(((Stringable)runtimehelpercall.getArgs()[1]).getString());
-                jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "isDefinedConstantOrMethod", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, String.class));
+                visit(runtimehelpercall.getArgs()[2]);
+                visit(runtimehelpercall.getArgs()[3]);
+                jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "isDefinedConstantOrMethod", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class));
                 jvmStoreLocal(runtimehelpercall.getResult());
                 break;
             case IS_DEFINED_NTH_REF:
                 jvmMethod().loadContext();
                 jvmAdapter().ldc((int)((Fixnum)runtimehelpercall.getArgs()[0]).getValue());
-                jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "isDefinedNthRef", sig(IRubyObject.class, ThreadContext.class, int.class));
+                visit(runtimehelpercall.getArgs()[1]);
+                jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "isDefinedNthRef", sig(IRubyObject.class, ThreadContext.class, int.class, IRubyObject.class));
                 jvmStoreLocal(runtimehelpercall.getResult());
                 break;
             case IS_DEFINED_GLOBAL:
                 jvmMethod().loadContext();
                 jvmAdapter().ldc(((Stringable)runtimehelpercall.getArgs()[0]).getString());
-                jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "isDefinedGlobal", sig(IRubyObject.class, ThreadContext.class, String.class));
+                visit(runtimehelpercall.getArgs()[1]);
+                jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "isDefinedGlobal", sig(IRubyObject.class, ThreadContext.class, String.class, IRubyObject.class));
                 jvmStoreLocal(runtimehelpercall.getResult());
                 break;
             case IS_DEFINED_INSTANCE_VAR:
                 jvmMethod().loadContext();
                 visit(runtimehelpercall.getArgs()[0]);
                 jvmAdapter().ldc(((Stringable)runtimehelpercall.getArgs()[1]).getString());
-                jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "isDefinedInstanceVar", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, String.class));
+                visit(runtimehelpercall.getArgs()[2]);
+                jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "isDefinedInstanceVar", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, String.class, IRubyObject.class));
                 jvmStoreLocal(runtimehelpercall.getResult());
                 break;
             case IS_DEFINED_CLASS_VAR:
@@ -1977,14 +1935,17 @@ public class JVMVisitor extends IRVisitor {
                 visit(runtimehelpercall.getArgs()[0]);
                 jvmAdapter().checkcast(p(RubyModule.class));
                 jvmAdapter().ldc(((Stringable)runtimehelpercall.getArgs()[1]).getString());
-                jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "isDefinedClassVar", sig(IRubyObject.class, ThreadContext.class, RubyModule.class, String.class));
+                visit(runtimehelpercall.getArgs()[2]);
+                jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "isDefinedClassVar", sig(IRubyObject.class, ThreadContext.class, RubyModule.class, String.class, IRubyObject.class));
                 jvmStoreLocal(runtimehelpercall.getResult());
                 break;
             case IS_DEFINED_SUPER:
                 jvmMethod().loadContext();
                 visit(runtimehelpercall.getArgs()[0]);
-                jvmAdapter().ldc(((Stringable)runtimehelpercall.getArgs()[1]).getString());
-                jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "isDefinedSuper", sig(IRubyObject.class, ThreadContext.class, String.class));
+                jvmMethod().loadFrameName();
+                jvmMethod().loadFrameClass();
+                visit(runtimehelpercall.getArgs()[1]);
+                jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "isDefinedSuper", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, String.class, RubyModule.class, IRubyObject.class));
                 jvmStoreLocal(runtimehelpercall.getResult());
                 break;
             case IS_DEFINED_METHOD:
@@ -1992,7 +1953,8 @@ public class JVMVisitor extends IRVisitor {
                 visit(runtimehelpercall.getArgs()[0]);
                 jvmAdapter().ldc(((Stringable) runtimehelpercall.getArgs()[1]).getString());
                 jvmAdapter().ldc(((Boolean)runtimehelpercall.getArgs()[2]).isTrue());
-                jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "isDefinedMethod", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, String.class, boolean.class));
+                visit(runtimehelpercall.getArgs()[3]);
+                jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "isDefinedMethod", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, String.class, boolean.class, IRubyObject.class));
                 jvmStoreLocal(runtimehelpercall.getResult());
                 break;
             case MERGE_KWARGS:
@@ -2385,12 +2347,47 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void LocalVariable(LocalVariable localvariable) {
-        // CON FIXME: This isn't as efficient as it could be, but we should not see these in optimized JIT scopes
-        jvmLoadLocal(DYNAMIC_SCOPE);
-        jvmAdapter().ldc(localvariable.getOffset());
-        jvmAdapter().ldc(localvariable.getScopeDepth());
-        jvmMethod().pushNil();
-        jvmAdapter().invokevirtual(p(DynamicScope.class), "getValueOrNil", sig(IRubyObject.class, int.class, int.class, IRubyObject.class));
+        IRBytecodeAdapter m = jvmMethod();
+
+        int depth = localvariable.getScopeDepth();
+        int location = localvariable.getLocation();
+
+        // We can only use the fast path with no null checking in methods, since closures may JIT independently
+        // atop methods that do not guarantee all scoped vars are initialized. See jruby/jruby#4235.
+        if (jvm.methodData().scope instanceof IRMethod) {
+            jvmLoadLocal(DYNAMIC_SCOPE);
+
+            if (depth == 0) {
+                if (location < DynamicScopeGenerator.SPECIALIZED_GETS.size()) {
+                    m.adapter.invokevirtual(p(DynamicScope.class), DynamicScopeGenerator.SPECIALIZED_GETS.get(location), sig(IRubyObject.class));
+                } else {
+                    m.adapter.pushInt(location);
+                    m.adapter.invokevirtual(p(DynamicScope.class), "getValueDepthZero", sig(IRubyObject.class, int.class));
+                }
+            } else {
+                m.adapter.pushInt(location);
+                m.adapter.pushInt(depth);
+                m.adapter.invokevirtual(p(DynamicScope.class), "getValue", sig(IRubyObject.class, int.class, int.class));
+            }
+        } else {
+            jvmLoadLocal(DYNAMIC_SCOPE);
+
+            if (depth == 0) {
+                if (location < DynamicScopeGenerator.SPECIALIZED_GETS_OR_NIL.size()) {
+                    m.pushNil();
+                    m.adapter.invokevirtual(p(DynamicScope.class), DynamicScopeGenerator.SPECIALIZED_GETS_OR_NIL.get(location), sig(IRubyObject.class, IRubyObject.class));
+                } else {
+                    m.adapter.pushInt(location);
+                    m.pushNil();
+                    m.adapter.invokevirtual(p(DynamicScope.class), "getValueDepthZeroOrNil", sig(IRubyObject.class, int.class, IRubyObject.class));
+                }
+            } else {
+                m.adapter.pushInt(location);
+                m.adapter.pushInt(depth);
+                m.pushNil();
+                m.adapter.invokevirtual(p(DynamicScope.class), "getValueOrNil", sig(IRubyObject.class, int.class, int.class, IRubyObject.class));
+            }
+        }
     }
 
     @Override

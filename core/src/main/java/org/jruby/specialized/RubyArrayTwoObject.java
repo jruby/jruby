@@ -93,13 +93,6 @@ public class RubyArrayTwoObject extends RubyArraySpecialized {
     }
 
     @Override
-    public IRubyObject collect(ThreadContext context, Block block) {
-        if (!packed()) return super.collect(context, block);
-
-        return new RubyArrayTwoObject(getRuntime(), block.yield(context, car), block.yield(context, cdr));
-    }
-
-    @Override
     public void copyInto(IRubyObject[] target, int start) {
         if (!packed()) {
             super.copyInto(target, start);
@@ -128,34 +121,6 @@ public class RubyArrayTwoObject extends RubyArraySpecialized {
     public IRubyObject dup() {
         if (!packed()) return super.dup();
         return new RubyArrayTwoObject(this);
-    }
-
-    @Override
-    public IRubyObject each(ThreadContext context, Block block) {
-        if (!packed()) return super.each(context, block);
-
-        if (!block.isGiven()) return enumeratorizeWithSize(context, this, "each", enumLengthFn());
-
-        block.yield(context, car);
-        block.yield(context, cdr);
-
-        return this;
-    }
-
-    @Override
-    protected IRubyObject fillCommon(ThreadContext context, int beg, long len, Block block) {
-        if (!packed()) return super.fillCommon(context, beg, len, block);
-
-        unpack();
-        return super.fillCommon(context, beg, len, block);
-    }
-
-    @Override
-    protected IRubyObject fillCommon(ThreadContext context, int beg, long len, IRubyObject item) {
-        if (!packed()) return super.fillCommon(context, beg, len, item);
-
-        unpack();
-        return super.fillCommon(context, beg, len, item);
     }
 
     @Override
@@ -252,7 +217,7 @@ public class RubyArrayTwoObject extends RubyArraySpecialized {
 
         if (origArr.size() == 2) {
             car = origArr.eltInternal(0);
-            cdr = origArr.eltInternal(0);
+            cdr = origArr.eltInternal(1);
             return this;
         }
 

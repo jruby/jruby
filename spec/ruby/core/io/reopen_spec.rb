@@ -193,6 +193,34 @@ describe "IO#reopen with a String" do
   end
 end
 
+describe "IO#reopen with an IO at EOF" do
+  before :each do
+    @name = tmp("io_reopen.txt")
+    touch(@name) { |f| f.puts "a line" }
+    @other_name = tmp("io_reopen_other.txt")
+    touch(@other_name) do |f|
+      f.puts "Line 1"
+      f.puts "Line 2"
+    end
+
+    @io = new_io @name, "r"
+    @other_io = new_io @other_name, "r"
+    @io.read
+  end
+
+  after :each do
+    @io.close unless @io.closed?
+    @other_io.close unless @other_io.closed?
+    rm_r @name, @other_name
+  end
+
+  it "resets the EOF status to false" do
+    @io.eof?.should be_true
+    @io.reopen @other_io
+    @io.eof?.should be_false
+  end
+end
+
 describe "IO#reopen with an IO" do
   before :each do
     @name = tmp("io_reopen.txt")

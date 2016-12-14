@@ -1,1 +1,1 @@
-fails:Class.new raises a TypeError if passed a metaclass
+fails:Class.new raises a TypeError when given a non-Class

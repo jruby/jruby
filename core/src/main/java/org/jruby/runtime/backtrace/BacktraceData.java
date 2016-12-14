@@ -126,7 +126,7 @@ public class BacktraceData implements Serializable {
                     case CLASS: newName = "<class:" + rubyFrame.method + '>'; break;
                     case MODULE: newName = "<module:" + rubyFrame.method + '>'; break;
                     case METACLASS: newName = "singleton class"; break;
-                    case ROOT: newName = "<top>"; break;
+                    case ROOT: newName = "<main>"; break;
                     case EVAL: newName = "<eval>"; break;
                     default: newName = rubyFrame.method;
                 }

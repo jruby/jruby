@@ -1,4 +1,4 @@
-# -*- encoding: us-ascii -*-
+# -*- encoding: binary -*-
 require File.expand_path('../../../spec_helper', __FILE__)
 
 describe "Time#_dump" do

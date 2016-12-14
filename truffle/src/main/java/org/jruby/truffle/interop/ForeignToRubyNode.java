@@ -14,15 +14,20 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyNode;
 
+/**
+ * Only converts primitive types (including java.lang.String).
+ */
 @NodeChild(value = "value", type = RubyNode.class)
 public abstract class ForeignToRubyNode extends RubyNode {
+
+    public static ForeignToRubyNode create() {
+        return ForeignToRubyNodeGen.create(null);
+    }
 
     public abstract Object executeConvert(VirtualFrame frame, Object value);
 

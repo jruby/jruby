@@ -21,9 +21,14 @@ describe :file_grpowned, shared: true do
     it 'takes non primary groups into account' do
       group = (Process.groups - [Process.egid]).first
 
-      File.chown(nil, group, @file)
+      if group
+        File.chown(nil, group, @file)
 
-      @object.send(@method, @file).should == true
+        @object.send(@method, @file).should == true
+      else
+        # No supplementary groups
+        1.should == 1
+      end
     end
   end
 

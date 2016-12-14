@@ -67,6 +67,7 @@ import org.jruby.exceptions.Unrescuable;
 import org.jruby.ext.rbconfig.RbConfigLibrary;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Helpers;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.FileResource;
 import org.jruby.util.JRubyFile;
@@ -220,8 +221,9 @@ public class LoadService {
         // add $RUBYLIB paths
         RubyHash env = (RubyHash) runtime.getObject().getConstant("ENV");
         RubyString env_rubylib = runtime.newString("RUBYLIB");
-        if (env.has_key_p(env_rubylib).isTrue()) {
-            String rubylib = env.op_aref(runtime.getCurrentContext(), env_rubylib).toString();
+        ThreadContext currentContext = runtime.getCurrentContext();
+        if (env.has_key_p(currentContext, env_rubylib).isTrue()) {
+            String rubylib = env.op_aref(currentContext, env_rubylib).toString();
             String[] paths = rubylib.split(File.pathSeparator);
             addPaths(paths);
         }
@@ -393,41 +395,15 @@ public class LoadService {
     }
 
     public boolean require(String requireName) {
-        return requireCommon(requireName, true) == RequireState.LOADED;
+        return smartLoadInternal(requireName, true) == RequireState.LOADED;
     }
 
     public boolean autoloadRequire(String requireName) {
-        return requireCommon(requireName, false) != RequireState.CIRCULAR;
+        return smartLoadInternal(requireName, false) != RequireState.CIRCULAR;
     }
 
     private enum RequireState {
         LOADED, ALREADY_LOADED, CIRCULAR
-    }
-
-    private RequireState requireCommon(String file, boolean circularRequireWarning) {
-        checkEmptyLoad(file);
-
-        // check with short name
-        if (featureAlreadyLoaded(file)) {
-            return RequireState.ALREADY_LOADED;
-        }
-
-        SearchState state = findFileForLoad(file);
-
-        if (state.library == null) {
-            throw runtime.newLoadError("no such file to load -- " + state.searchFile, state.searchFile);
-        }
-
-        // check with long name
-        if (featureAlreadyLoaded(state.loadName)) {
-            return RequireState.ALREADY_LOADED;
-        }
-
-        if (!runtime.getProfile().allowRequire(file)) {
-            throw runtime.newLoadError("no such file to load -- " + file, file);
-        }
-
-        return smartLoadInternal(file, circularRequireWarning);
     }
 
     private final RequireLocks requireLocks = new RequireLocks();
@@ -436,6 +412,8 @@ public class LoadService {
         private final ConcurrentHashMap<String, ReentrantLock> pool;
         // global lock for require must be fair
         //private final ReentrantLock globalLock;
+
+        public enum LockResult { LOCKED, CIRCULAR }
 
         private RequireLocks() {
             this.pool = new ConcurrentHashMap<>(8, 0.75f, 2);
@@ -452,7 +430,7 @@ public class LoadService {
          * @return If the sync object already locked by current thread, it just
          *         returns false without getting a lock. Otherwise true.
          */
-        private boolean lock(String requireName) {
+        private LockResult lock(String requireName) {
             ReentrantLock lock = pool.get(requireName);
 
             if (lock == null) {
@@ -461,9 +439,11 @@ public class LoadService {
                 if (lock == null) lock = newLock;
             }
 
-            if (lock.isHeldByCurrentThread()) return false;
+            if (lock.isHeldByCurrentThread()) return LockResult.CIRCULAR;
 
-            return lock.tryLock();
+            lock.lock();
+
+            return LockResult.LOCKED;
         }
 
         /**
@@ -519,7 +499,11 @@ public class LoadService {
             return RequireState.ALREADY_LOADED;
         }
 
-        if (!requireLocks.lock(state.loadName)) {
+        if (!runtime.getProfile().allowRequire(file)) {
+            throw runtime.newLoadError("no such file to load -- " + file, file);
+        }
+
+        if (requireLocks.lock(state.loadName) == RequireLocks.LockResult.CIRCULAR) {
             if (circularRequireWarning && runtime.isVerbose()) {
                 warnCircularRequire(state.loadName);
             }

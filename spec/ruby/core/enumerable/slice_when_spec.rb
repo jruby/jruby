@@ -5,7 +5,7 @@ ruby_version_is "2.2" do
   describe "Enumerable#slice_when" do
     before :each do
       ary = [10, 9, 7, 6, 4, 3, 2, 1]
-      @enum = EnumerableSpecs::Numerous.new *ary
+      @enum = EnumerableSpecs::Numerous.new(*ary)
       @result = @enum.slice_when { |i, j| i - 1 != j }
       @enum_length = ary.length
     end

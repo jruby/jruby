@@ -15,7 +15,6 @@ import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 
 import java.util.Iterator;
-import java.util.Map;
 import java.util.NoSuchElementException;
 
 public abstract class PackedArrayStrategy {
@@ -128,8 +127,8 @@ public abstract class PackedArrayStrategy {
     }
 
     @TruffleBoundary
-    public static Iterator<Map.Entry<Object, Object>> iterateKeyValues(final Object[] store, final int size) {
-        return new Iterator<Map.Entry<Object, Object>>() {
+    public static Iterator<KeyValue> iterateKeyValues(final Object[] store, final int size) {
+        return new Iterator<KeyValue>() {
 
             private int index = 0;
 
@@ -139,31 +138,16 @@ public abstract class PackedArrayStrategy {
             }
 
             @Override
-            public Map.Entry<Object, Object> next() {
+            public KeyValue next() {
                 if (!hasNext()) {
                     throw new NoSuchElementException();
                 }
 
                 final int finalIndex = index;
 
-                final Map.Entry<Object, Object> entryResult = new Map.Entry<Object, Object>() {
-
-                    @Override
-                    public Object getKey() {
-                        return PackedArrayStrategy.getKey(store, finalIndex);
-                    }
-
-                    @Override
-                    public Object getValue() {
-                        return PackedArrayStrategy.getValue(store, finalIndex);
-                    }
-
-                    @Override
-                    public Object setValue(Object value) {
-                        throw new UnsupportedOperationException();
-                    }
-
-                };
+                final KeyValue entryResult = new KeyValue(
+                        PackedArrayStrategy.getKey(store, finalIndex),
+                        PackedArrayStrategy.getValue(store, finalIndex));
 
                 index++;
 

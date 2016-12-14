@@ -877,15 +877,15 @@ module Zlib
     end
 
     def gzfile_get16(src)
-      src.unpack('S').first
+      src.unpack('v').first
     end
 
     def gzfile_get32(src)
-      src.unpack('L').first
+      src.unpack('V').first
     end
 
     def gzfile_set32(n)
-      [n].pack('L')
+      [n].pack('V')
     end
 
     def gzfile_make_header

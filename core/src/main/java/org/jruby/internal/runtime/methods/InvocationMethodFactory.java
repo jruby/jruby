@@ -420,7 +420,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         SkinnyMethodAdapter mv = new SkinnyMethodAdapter(cw, ACC_PUBLIC, "<init>", JAVA_SUPER_SIG, null, null);
         mv.start();
         mv.aloadMany(0, 1, 2);
-        mv.visitMethodInsn(INVOKESPECIAL, sup, "<init>", JAVA_SUPER_SIG);
+        mv.invokespecial(sup, "<init>", JAVA_SUPER_SIG);
         mv.aload(0);
         mv.ldc(parameterDesc);
         mv.invokevirtual(p(JavaMethod.class), "setParameterDesc", sig(void.class, String.class));

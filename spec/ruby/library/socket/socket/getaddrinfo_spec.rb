@@ -106,7 +106,7 @@ describe "Socket#getaddrinfo" do
         ["AF_INET6", 9, "::1", "::1", Socket::AF_INET6, Socket::SOCK_STREAM, Socket::IPPROTO_TCP],
         ["AF_INET6", 9, "0:0:0:0:0:0:0:1", "0:0:0:0:0:0:0:1", Socket::AF_INET6, Socket::SOCK_STREAM, Socket::IPPROTO_TCP]
       ]
-      res.each { |a| expected.should include (a) }
+      res.each { |a| expected.should include(a) }
     end
   end
 end

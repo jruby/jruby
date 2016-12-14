@@ -17,15 +17,11 @@ import com.oracle.truffle.api.instrumentation.ProvidedTags;
 import com.oracle.truffle.api.instrumentation.StandardTags;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
-import org.jruby.Ruby;
-import org.jruby.RubyInstanceConfig;
-import org.jruby.runtime.Constants;
 import org.jruby.truffle.core.kernel.TraceManager;
-import org.jruby.truffle.extra.AttachmentsManager;
-import org.jruby.truffle.interop.JRubyContextWrapper;
 import org.jruby.truffle.language.LazyRubyRootNode;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.stdlib.CoverageManager;
+import org.jruby.truffle.util.Constants;
 
 import java.io.IOException;
 
@@ -35,7 +31,6 @@ import java.io.IOException;
         mimeType = RubyLanguage.MIME_TYPE)
 @ProvidedTags({
         CoverageManager.LineTag.class,
-        AttachmentsManager.LineTag.class,
         TraceManager.CallTag.class,
         TraceManager.ClassTag.class,
         TraceManager.LineTag.class,
@@ -58,20 +53,8 @@ public class RubyLanguage extends TruffleLanguage<RubyContext> {
 
     @Override
     public RubyContext createContext(Env env) {
-        final JRubyContextWrapper runtimeWrapper = (JRubyContextWrapper) env.importSymbol(JRubyTruffleImpl.RUNTIME_SYMBOL);
-
-        final Ruby runtime;
-
-        if (runtimeWrapper == null) {
-            RubyInstanceConfig config = new RubyInstanceConfig();
-            config.processArgumentsWithRubyopts();
-            config.setCompileMode(RubyInstanceConfig.CompileMode.TRUFFLE);
-            runtime = Ruby.newInstance(config);
-        } else {
-            runtime = runtimeWrapper.getRuby();
-        }
-
-        return new RubyContext(runtime, env);
+        // TODO CS 3-Dec-16 need to parse RUBY_OPT here if it hasn't been already?
+        return new RubyContext(env);
     }
 
     @Override

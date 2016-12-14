@@ -1,7 +1,6 @@
 exclude :test_exit_action, "kills test run"
 exclude :test_hup_me, "kills test run"
 exclude :test_kill_immediately_before_termination, "kills test run"
-exclude :test_signal2, "SignalException needs to be its own class which provides a #signo accessor"
 exclude :test_trap, "SignalException needs to be its own class which provides a #signo accessor"
 exclude :test_signal_exception, "SignalException needs to be its own class which enforces args"
 exclude :test_signame, "needs investigation - OutOfMemoryError"

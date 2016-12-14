@@ -20,7 +20,6 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.Shape;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
@@ -36,7 +35,7 @@ import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
-import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
+import org.jruby.truffle.parser.ArgumentDescriptor;
 
 @CoreClass("Proc")
 public abstract class ProcNodes {
@@ -123,7 +122,7 @@ public abstract class ProcNodes {
         private AllocateObjectNode getAllocateObjectNode() {
             if (allocateObjectNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                allocateObjectNode = insert(AllocateObjectNodeGen.create(getContext(), null, null, null));
+                allocateObjectNode = insert(AllocateObjectNode.create());
             }
 
             return allocateObjectNode;
@@ -165,7 +164,7 @@ public abstract class ProcNodes {
         private AllocateObjectNode getAllocateObjectNode() {
             if (allocateObjectNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                allocateObjectNode = insert(AllocateObjectNodeGen.create(getContext(), null, null, null));
+                allocateObjectNode = insert(AllocateObjectNode.create());
             }
 
             return allocateObjectNode;
@@ -247,7 +246,7 @@ public abstract class ProcNodes {
                         sourceSection.getSource().getName(), UTF8Encoding.INSTANCE));
 
                 final Object[] objects = new Object[]{file, sourceSection.getStartLine()};
-                return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), objects, objects.length);
+                return createArray(objects, objects.length);
             }
         }
 

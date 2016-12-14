@@ -1,4 +1,2 @@
-fails:Process.waitall returns an empty array when there are no children
-fails:Process.waitall takes no arguments
 fails:Process.waitall waits for all children
 fails:Process.waitall returns an array of pid/status pairs

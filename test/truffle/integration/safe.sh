@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 
+source test/truffle/common.sh.inc
+
 function run {
-  ruby -X+T -Xtruffle.platform.safe=false "$@"
+  jt ruby -Xtruffle.platform.safe=false "$@"
 }
 
 function safe {
@@ -28,13 +30,13 @@ unsafe -Xtruffle.platform.safe_puts=false -e "Truffle::Safe.puts 'hello, world'"
 
 unsafe -e "puts 'hello, world'"
 unsafe -e '`echo foo`'
-unsafe -e 'exit!'
+unsafe -e 'exit!(0)'
 unsafe -e 'Rubinius::FFI::Pointer.new(1).read_int'
 unsafe -e "File.open('bad.txt')"
 
 # Check we can enable some unsafe operations if we want to
 
-safe -Xtruffle.platform.safe.exit=true -e 'exit!'
+safe -Xtruffle.platform.safe.exit=true -e 'exit!(0)'
 
 # Check that safe_puts sanitises correctly
 

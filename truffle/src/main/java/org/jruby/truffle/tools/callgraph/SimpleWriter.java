@@ -9,7 +9,6 @@
  */
 package org.jruby.truffle.tools.callgraph;
 
-import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.language.methods.SharedMethodInfo;
 
@@ -46,7 +45,7 @@ public class SimpleWriter {
         if (sourceSection == null || sourceSection.getSource() == null) {
             sourceName = "(unknown)";
         } else {
-            sourceName = sourceSection.getSource().getName();
+            sourceName = sourceSection.getSource().getPath();
         }
 
         final int startLine;

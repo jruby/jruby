@@ -21,6 +21,7 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.cast.BooleanCastNode;
 import org.jruby.truffle.core.cast.BooleanCastNodeGen;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.util.SourceSectionUtils;
 
 public final class WhileNode extends RubyNode {
 
@@ -46,7 +47,7 @@ public final class WhileNode extends RubyNode {
         loopNode.executeLoop(frame);
         return nil();
     }
-    
+
     private static abstract class WhileRepeatingBaseNode extends Node implements RepeatingNode {
 
         protected final RubyContext context;
@@ -66,7 +67,12 @@ public final class WhileNode extends RubyNode {
 
         @Override
         public String toString() {
-            return condition.getEncapsulatingSourceSection().getShortDescription();
+            SourceSection sourceSection = getEncapsulatingSourceSection();
+            if (sourceSection != null && sourceSection.isAvailable()) {
+                return "while loop at " + SourceSectionUtils.fileLine(sourceSection);
+            } else {
+                return "while loop";
+            }
         }
 
     }
@@ -99,7 +105,7 @@ public final class WhileNode extends RubyNode {
         }
 
     }
-    
+
     private static class DoWhileRepeatingNode extends WhileRepeatingBaseNode implements RepeatingNode {
 
         public DoWhileRepeatingNode(RubyContext context, RubyNode condition, RubyNode body) {

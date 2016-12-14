@@ -11,7 +11,6 @@ package org.jruby.truffle.language.arguments;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.profiles.BranchProfile;
-import com.oracle.truffle.api.profiles.ValueProfile;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyNode;
 
@@ -22,8 +21,6 @@ public class ReadPreArgumentNode extends RubyNode {
     private final BranchProfile outOfRangeProfile = BranchProfile.create();
     private final MissingArgumentBehavior missingArgumentBehavior;
 
-    private final ValueProfile argumentValueProfile = ValueProfile.createEqualityProfile();
-
     public ReadPreArgumentNode(int index,
                                MissingArgumentBehavior missingArgumentBehavior) {
         this.index = index;
@@ -33,7 +30,7 @@ public class ReadPreArgumentNode extends RubyNode {
     @Override
     public Object execute(VirtualFrame frame) {
         if (index < RubyArguments.getArgumentsCount(frame)) {
-            return argumentValueProfile.profile(RubyArguments.getArgument(frame, index));
+            return RubyArguments.getArgument(frame, index);
         }
 
         outOfRangeProfile.enter();

@@ -9,6 +9,18 @@ describe "Net::FTP#passive" do
     ftp.passive = true
     ftp.passive.should be_true
   end
+
+  ruby_version_is ""..."2.3" do
+    it "is false by default" do
+      ruby_exe(fixture(__FILE__, "passive.rb")).should == "false"
+    end
+  end
+
+  ruby_version_is "2.3" do
+    it "is the value of Net::FTP.default_value by default" do
+      ruby_exe(fixture(__FILE__, "passive.rb")).should == "true"
+    end
+  end
 end
 
 describe "Net::FTP#passive=" do

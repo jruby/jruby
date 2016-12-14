@@ -23,12 +23,20 @@ public class ReceivePostReqdArgInstr extends ReceiveArgBase implements FixedArit
     /** The method/block parameter list has these many required parameters before opt+rest args*/
     public final int preReqdArgsCount;
 
+    /** The method/block parameter list has a maximum of this many optional arguments*/
+    public final int optArgsCount;
+
+    /** Does this method/block accept a rest argument */
+    public final boolean restArg;
+
     /** The method/block parameter list has these many required parameters after opt+rest args*/
     public final int postReqdArgsCount;
 
-    public ReceivePostReqdArgInstr(Variable result, int argIndex, int preReqdArgsCount, int postReqdArgsCount) {
+    public ReceivePostReqdArgInstr(Variable result, int argIndex, int preReqdArgsCount, int optArgCount, boolean restArg, int postReqdArgsCount) {
         super(Operation.RECV_POST_REQD_ARG, result, argIndex);
         this.preReqdArgsCount = preReqdArgsCount;
+        this.optArgsCount = optArgCount;
+        this.restArg = restArg;
         this.postReqdArgsCount = postReqdArgsCount;
     }
 
@@ -39,7 +47,9 @@ public class ReceivePostReqdArgInstr extends ReceiveArgBase implements FixedArit
 
     @Override
     public Instr clone(CloneInfo info) {
-        if (info instanceof SimpleCloneInfo) return new ReceivePostReqdArgInstr(info.getRenamedVariable(result), argIndex, preReqdArgsCount, postReqdArgsCount);
+        if (info instanceof SimpleCloneInfo) {
+            return new ReceivePostReqdArgInstr(info.getRenamedVariable(result), argIndex, preReqdArgsCount, optArgsCount, restArg, postReqdArgsCount);
+        }
 
         InlineCloneInfo ii = (InlineCloneInfo) info;
 
@@ -64,15 +74,18 @@ public class ReceivePostReqdArgInstr extends ReceiveArgBase implements FixedArit
         super.encode(e);
         e.encode(getArgIndex());
         e.encode(preReqdArgsCount);
+        e.encode(optArgsCount);
+        e.encode(restArg);
         e.encode(postReqdArgsCount);
     }
 
     public static ReceivePostReqdArgInstr decode(IRReaderDecoder d) {
-        return new ReceivePostReqdArgInstr(d.decodeVariable(), d.decodeInt(), d.decodeInt(), d.decodeInt());
+        return new ReceivePostReqdArgInstr(d.decodeVariable(), d.decodeInt(), d.decodeInt(), d.decodeInt(), d.decodeBoolean(), d.decodeInt());
     }
 
     public IRubyObject receivePostReqdArg(ThreadContext context, IRubyObject[] args, boolean acceptsKeywordArgument) {
-        return IRRuntimeHelpers.receivePostReqdArg(context, args, preReqdArgsCount, postReqdArgsCount, argIndex, acceptsKeywordArgument);
+        return IRRuntimeHelpers.receivePostReqdArg(context, args, preReqdArgsCount, optArgsCount, restArg,
+                postReqdArgsCount, argIndex, acceptsKeywordArgument);
     }
 
     @Override

@@ -1,4 +1,4 @@
-# -*- encoding: us-ascii -*-
+# -*- encoding: binary -*-
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/marshal_data', __FILE__)
 
@@ -220,7 +220,7 @@ describe "Marshal.dump" do
     it "dumps a String with instance variables" do
       str = ""
       str.instance_variable_set("@foo", "bar")
-      Marshal.dump(str.force_encoding("binary")).should == "\x04\bI\"\x00\x06:\t@fooI\"\bbar\x06:\x06EF"
+      Marshal.dump(str.force_encoding("binary")).should == "\x04\bI\"\x00\x06:\t@foo\"\bbar"
     end
 
     with_feature :encoding do
@@ -474,13 +474,13 @@ describe "Marshal.dump" do
     end
 
     it "dumps the message for the exception" do
-      Marshal.dump(Exception.new("foo")).should == "\x04\bo:\x0EException\a:\tmesgI\"\bfoo\x06:\x06EF:\abt0"
+      Marshal.dump(Exception.new("foo")).should == "\x04\bo:\x0EException\a:\tmesg\"\bfoo:\abt0"
     end
 
     it "contains the filename in the backtrace" do
       obj = Exception.new("foo")
       obj.set_backtrace(["foo/bar.rb:10"])
-      Marshal.dump(obj).should == "\x04\bo:\x0EException\a:\tmesgI\"\bfoo\x06:\x06EF:\abt[\x06I\"\x12foo/bar.rb:10\x06;\aF"
+      Marshal.dump(obj).should == "\x04\bo:\x0EException\a:\tmesg\"\bfoo:\abt[\x06\"\x12foo/bar.rb:10"
     end
   end
 
@@ -557,7 +557,7 @@ describe "Marshal.dump" do
   end
 
   it "raises a TypeError if dumping a MatchData instance" do
-    lambda { Marshal.dump /(.)/.match("foo") }.should raise_error(TypeError)
+    lambda { Marshal.dump(/(.)/.match("foo")) }.should raise_error(TypeError)
   end
 
   it "returns an untainted string if object is untainted" do

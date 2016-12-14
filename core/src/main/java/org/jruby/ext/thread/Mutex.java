@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2006 MenTaLguY <mental@rydia.net>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -33,6 +33,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyObject;
+import org.jruby.RubyThread;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Block;
@@ -84,17 +85,13 @@ public class Mutex extends RubyObject {
 
     @JRubyMethod
     public IRubyObject lock(ThreadContext context) {
+        RubyThread thread = context.getThread();
         try {
-            context.getThread().enterSleep();
-            try {
-                checkRelocking(context);
-                context.getThread().lockInterruptibly(lock);
-            } catch (InterruptedException ex) {
-                context.pollThreadEvents();
-                throw context.runtime.newConcurrencyError("interrupted waiting for mutex");
-            }
+            thread.enterSleep();
+            checkRelocking(context);
+            thread.lock(lock);
         } finally {
-            context.getThread().exitSleep();
+            thread.exitSleep();
         }
         return this;
     }
@@ -108,7 +105,7 @@ public class Mutex extends RubyObject {
         if (!lock.isHeldByCurrentThread()) {
             throw runtime.newThreadError("Mutex is not owned by calling thread");
         }
-        
+
         boolean hasQueued = lock.hasQueuedThreads();
         context.getThread().unlock(lock);
         return hasQueued ? context.nil : this;
@@ -148,7 +145,7 @@ public class Mutex extends RubyObject {
     public IRubyObject synchronize(ThreadContext context, Block block) {
         lock(context);
         try {
-            return block.yield(context, null);
+            return block.call(context);
         } finally {
             unlock(context);
         }
@@ -164,5 +161,5 @@ public class Mutex extends RubyObject {
             throw context.runtime.newThreadError("Mutex relocking by same thread");
         }
     }
-    
+
 }

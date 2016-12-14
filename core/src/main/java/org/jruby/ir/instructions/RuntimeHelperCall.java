@@ -91,14 +91,24 @@ public class RuntimeHelperCall extends NOperandResultBaseInstr {
     public IRubyObject callHelper(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block.Type blockType) {
         StaticScope scope = currDynScope.getStaticScope();
 
-        if (helperMethod == Methods.IS_DEFINED_BACKREF) return IRRuntimeHelpers.isDefinedBackref(context);
+        if (helperMethod == Methods.IS_DEFINED_BACKREF) {
+            return IRRuntimeHelpers.isDefinedBackref(
+                    context,
+                    (IRubyObject) getOperands()[0].retrieve(context, self, currScope, currDynScope, temp));
+        }
         Operand[] operands = getOperands();
 
         switch (helperMethod) {
             case IS_DEFINED_NTH_REF:
-                return IRRuntimeHelpers.isDefinedNthRef(context, (int) ((Fixnum) operands[0]).getValue());
+                return IRRuntimeHelpers.isDefinedNthRef(
+                        context,
+                        (int) ((Fixnum) operands[0]).getValue(),
+                        (IRubyObject) operands[1].retrieve(context, self, currScope, currDynScope, temp));
             case IS_DEFINED_GLOBAL:
-                return IRRuntimeHelpers.isDefinedGlobal(context, ((Stringable) operands[0]).getString());
+                return IRRuntimeHelpers.isDefinedGlobal(
+                        context,
+                        ((Stringable) operands[0]).getString(),
+                        (IRubyObject) operands[1].retrieve(context, self, currScope, currDynScope, temp));
         }
 
         Object arg1 = operands[0].retrieve(context, self, currScope, currDynScope, temp);
@@ -111,20 +121,41 @@ public class RuntimeHelperCall extends NOperandResultBaseInstr {
             case HANDLE_BREAK_AND_RETURNS_IN_LAMBDA:
                 return IRRuntimeHelpers.handleBreakAndReturnsInLambdas(context, scope, currDynScope, arg1, blockType);
             case IS_DEFINED_CALL:
-                return IRRuntimeHelpers.isDefinedCall(context, self, (IRubyObject) arg1, ((Stringable) operands[1]).getString());
+                return IRRuntimeHelpers.isDefinedCall(
+                        context,
+                        self,
+                        (IRubyObject) arg1,
+                        ((Stringable) operands[1]).getString(),
+                        (IRubyObject) operands[2].retrieve(context, self, currScope, currDynScope, temp));
             case IS_DEFINED_CONSTANT_OR_METHOD:
-                return IRRuntimeHelpers.isDefinedConstantOrMethod(context, (IRubyObject) arg1,
-                        ((FrozenString) operands[1]).getString());
+                return IRRuntimeHelpers.isDefinedConstantOrMethod(
+                        context,
+                        (IRubyObject) arg1,
+                        ((FrozenString) operands[1]).getString(),
+                        (IRubyObject) operands[2].retrieve(context, self, currScope, currDynScope, temp),
+                        (IRubyObject) operands[3].retrieve(context, self, currScope, currDynScope, temp));
             case IS_DEFINED_INSTANCE_VAR:
-                return IRRuntimeHelpers.isDefinedInstanceVar(context, (IRubyObject) arg1, ((Stringable) operands[1]).getString());
+                return IRRuntimeHelpers.isDefinedInstanceVar(
+                        context,
+                        (IRubyObject) arg1,
+                        ((Stringable) operands[1]).getString(),
+                        (IRubyObject) operands[2].retrieve(context, self, currScope, currDynScope, temp));
             case IS_DEFINED_CLASS_VAR:
-                return IRRuntimeHelpers.isDefinedClassVar(context, (RubyModule) arg1, ((Stringable) operands[1]).getString());
+                return IRRuntimeHelpers.isDefinedClassVar(
+                        context,
+                        (RubyModule) arg1,
+                        ((Stringable) operands[1]).getString(),
+                        (IRubyObject) operands[2].retrieve(context, self, currScope, currDynScope, temp));
             case IS_DEFINED_SUPER:
-                return IRRuntimeHelpers.isDefinedSuper(context, (IRubyObject) arg1);
+                return IRRuntimeHelpers.isDefinedSuper(
+                        context,
+                        (IRubyObject) arg1,
+                        (IRubyObject) operands[1].retrieve(context, self, currScope, currDynScope, temp));
             case IS_DEFINED_METHOD:
                 return IRRuntimeHelpers.isDefinedMethod(context, (IRubyObject) arg1,
                         ((Stringable) operands[1]).getString(),
-                        ((Boolean) operands[2]).isTrue());
+                        ((Boolean) operands[2]).isTrue(),
+                        (IRubyObject) operands[3].retrieve(context, self, currScope, currDynScope, temp));
             case MERGE_KWARGS:
                 return IRRuntimeHelpers.mergeKeywordArguments(context, (IRubyObject) arg1,
                         (IRubyObject) getArgs()[1].retrieve(context, self, currScope, currDynScope, temp));

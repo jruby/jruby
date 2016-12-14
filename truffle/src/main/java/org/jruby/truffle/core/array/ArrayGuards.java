@@ -20,11 +20,6 @@ public class ArrayGuards {
 
     // Storage strategies
 
-    public static boolean isNullArray(DynamicObject array) {
-        assert RubyGuards.isRubyArray(array);
-        return Layouts.ARRAY.getStore(array) == null;
-    }
-
     public static boolean isIntArray(DynamicObject array) {
         assert RubyGuards.isRubyArray(array);
         return Layouts.ARRAY.getStore(array) instanceof int[];

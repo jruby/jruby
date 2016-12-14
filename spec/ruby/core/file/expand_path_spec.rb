@@ -1,4 +1,5 @@
 # -*- encoding: utf-8 -*-
+
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/common', __FILE__)
 
@@ -33,13 +34,11 @@ describe "File.expand_path" do
     File.expand_path('a', nil).should == File.join(@base, 'a')
   end
 
-  not_compliant_on :ironruby do
-    it "converts a pathname to an absolute pathname, Ruby-Talk:18512" do
-      # See Ruby-Talk:18512
-      File.expand_path('.a').should == File.join(@base, '.a')
-      File.expand_path('..a').should == File.join(@base, '..a')
-      File.expand_path('a../b').should == File.join(@base, 'a../b')
-    end
+  it "converts a pathname to an absolute pathname, Ruby-Talk:18512" do
+    # See Ruby-Talk:18512
+    File.expand_path('.a').should == File.join(@base, '.a')
+    File.expand_path('..a').should == File.join(@base, '..a')
+    File.expand_path('a../b').should == File.join(@base, 'a../b')
   end
 
   platform_is_not :windows do
@@ -114,16 +113,8 @@ describe "File.expand_path" do
       File.expand_path('~/a','~/b').should == "#{@home}/a"
     end
 
-    not_compliant_on :rubinius, :macruby do
-      it "does not replace multiple '/' at the beginning of the path" do
-        File.expand_path('////some/path').should == "////some/path"
-      end
-    end
-
-    deviates_on :rubinius, :macruby do
-      it "replaces multiple '/' with a single '/' at the beginning of the path" do
-        File.expand_path('////some/path').should == "/some/path"
-      end
+    it "does not replace multiple '/' at the beginning of the path" do
+      File.expand_path('////some/path').should == "////some/path"
     end
 
     it "replaces multiple '/' with a single '/'" do
@@ -177,14 +168,15 @@ describe "File.expand_path" do
       path = "./a".force_encoding Encoding::CP1251
       File.expand_path(path).encoding.should equal(Encoding::CP1251)
 
-      weird_path = "\xde\xad\xbe\xaf".force_encoding Encoding::ASCII_8BIT
+      weird_path = [222, 173, 190, 175].pack('C*')
       File.expand_path(weird_path).encoding.should equal(Encoding::ASCII_8BIT)
     end
 
     platform_is_not :windows do
       it "expands a path when the default external encoding is ASCII-8BIT" do
         Encoding.default_external = Encoding::ASCII_8BIT
-        File.expand_path("\xde\xad\xbe\xaf", @rootdir).should == "#{@rootdir}\xde\xad\xbe\xaf"
+        path_8bit = [222, 173, 190, 175].pack('C*')
+        File.expand_path( path_8bit, @rootdir).should == "#{@rootdir}" + path_8bit
       end
     end
 
@@ -230,14 +222,16 @@ platform_is_not :windows do
       ENV["HOME"] = @home
     end
 
-    it "raises an ArgumentError when passed '~' if HOME is nil" do
-      ENV.delete "HOME"
-      lambda { File.expand_path("~") }.should raise_error(ArgumentError)
-    end
+    ruby_version_is ''...'2.4' do
+      it "raises an ArgumentError when passed '~' if HOME is nil" do
+        ENV.delete "HOME"
+        lambda { File.expand_path("~") }.should raise_error(ArgumentError)
+      end
 
-    it "raises an ArgumentError when passed '~/' if HOME is nil" do
-      ENV.delete "HOME"
-      lambda { File.expand_path("~/") }.should raise_error(ArgumentError)
+      it "raises an ArgumentError when passed '~/' if HOME is nil" do
+        ENV.delete "HOME"
+        lambda { File.expand_path("~/") }.should raise_error(ArgumentError)
+      end
     end
 
     it "raises an ArgumentError when passed '~' if HOME == ''" do

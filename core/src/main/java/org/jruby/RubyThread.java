@@ -213,6 +213,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         super(runtime, type);
 
         finalResult = errorInfo = runtime.getNil();
+        threadName = runtime.getNil();
     }
 
     public RubyThread(Ruby runtime, RubyClass klass, Runnable runnable) {
@@ -1241,6 +1242,18 @@ public class RubyThread extends RubyObject implements ExecutionContext {
      */
     public final IRubyObject raise(IRubyObject exception) {
         return raise(new IRubyObject[]{exception}, Block.NULL_BLOCK);
+    }
+
+    /**
+     * Simplified utility method for just raising an existing exception in this
+     * thread.
+     *
+     * @param exception the exception to raise
+     * @param message the message to use
+     * @return this thread
+     */
+    public final IRubyObject raise(IRubyObject exception, RubyString message) {
+        return raise(new IRubyObject[]{exception, message}, Block.NULL_BLOCK);
     }
 
     @JRubyMethod(optional = 3)

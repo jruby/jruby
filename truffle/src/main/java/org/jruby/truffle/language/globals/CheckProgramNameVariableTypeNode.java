@@ -28,6 +28,7 @@ public class CheckProgramNameVariableTypeNode extends RubyNode {
         this.child = child;
     }
 
+    @Override
     public Object execute(VirtualFrame frame) {
         final Object childValue = child.execute(frame);
 

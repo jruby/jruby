@@ -26,7 +26,9 @@ project 'JRuby Core' do
               'jruby.basedir' => '${basedir}/..',
               'jruby.test.memory' => '3G',
               'jruby.test.memory.permgen' => '2G',
-              'jruby.compile.memory' => '2G' )
+              'jruby.compile.memory' => '2G',
+
+              'create.sources.jar' => false )
 
   IO.foreach(File.join(basedir, '..', 'default.build.properties')) do |line|
     line.chomp!
@@ -43,26 +45,25 @@ project 'JRuby Core' do
   jar 'org.ow2.asm:asm-util:${asm.version}'
 
   # exclude jnr-ffi to avoid problems with shading and relocation of the asm packages
-  jar 'com.github.jnr:jnr-netdb:1.1.5', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-enxio:0.12', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-netdb:1.1.6', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-enxio:0.14', :exclusions => ['com.github.jnr:jnr-ffi']
   jar 'com.github.jnr:jnr-x86asm:1.0.2', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-unixsocket:0.12', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-posix:3.0.29', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-constants:0.9.2', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-ffi:2.0.9'
+  jar 'com.github.jnr:jnr-unixsocket:0.15', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-posix:3.0.33', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-constants:0.9.6', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-ffi:2.1.2'
   jar 'com.github.jnr:jffi:${jffi.version}'
   jar 'com.github.jnr:jffi:${jffi.version}:native'
 
-  jar 'org.jruby.joni:joni:2.1.10'
+  jar 'org.jruby.joni:joni:2.1.11'
   jar 'org.jruby.extras:bytelist:1.0.13'
-  jar 'org.jruby.jcodings:jcodings:1.0.17'
+  jar 'org.jruby.jcodings:jcodings:1.0.18'
   jar 'org.jruby:dirgra:0.3'
 
   jar 'com.headius:invokebinder:1.7'
   jar 'com.headius:options:1.4'
   jar 'com.headius:coro-mock:1.0', :scope => 'provided'
   jar 'com.headius:unsafe-mock', '${unsafe.version}', :scope => 'provided'
-  jar 'com.headius:jsr292-mock:1.1', :scope => 'provided'
 
   jar 'bsf:bsf:2.4.0', :scope => 'provided'
   jar 'com.jcraft:jzlib:1.1.3'
@@ -78,6 +79,8 @@ project 'JRuby Core' do
   # SLF4J only used within SLF4JLogger (JRuby logger impl) class
   jar 'org.slf4j:slf4j-api:1.7.12', :scope => 'provided', :optional => true
   jar 'org.slf4j:slf4j-simple:1.7.12', :scope => 'test'
+
+  jar 'me.qmx.jitescript:jitescript:0.4.1', :exclusions => ['org.ow2.asm:asm-all']
 
   plugin_management do
     plugin( 'org.eclipse.m2e:lifecycle-mapping:1.0.0',
@@ -190,6 +193,7 @@ project 'JRuby Core' do
                                        '-J-Duser.language=en',
                                        '-J-Dfile.encoding=UTF-8',
                                        '-J-Xbootclasspath/p:${unsafe.jar}',
+                                       '-Xbootclasspath/p:${unsafe.jar}',
                                        '-J-Xmx${jruby.compile.memory}' ] )
     execute_goals( 'compile',
                    :id => 'populators',
@@ -198,6 +202,7 @@ project 'JRuby Core' do
                                        '-J-Duser.language=en',
                                        '-J-Dfile.encoding=UTF-8',
                                        '-J-Xbootclasspath/p:${unsafe.jar}',
+                                       '-Xbootclasspath/p:${unsafe.jar}',
                                        '-J-Xmx${jruby.compile.memory}' ],
                    'includes' => [ 'org/jruby/gen/**/*.java' ] )
     execute_goals( 'compile',
@@ -229,7 +234,8 @@ project 'JRuby Core' do
           'argLine' =>  '-Xmx${jruby.test.memory} -XX:MaxPermSize=${jruby.test.memory.permgen} -Dfile.encoding=UTF-8 -Djava.awt.headless=true',
           'includes' => [ 'org/jruby/test/MainTestSuite.java',
                           'org/jruby/embed/**/*Test*.java',
-                          'org/jruby/util/**/*Test*.java' ],
+                          'org/jruby/util/**/*Test*.java',
+                          'org/jruby/runtime/**/*Test*.java' ],
           'additionalClasspathElements' => [ '${basedir}/src/test/ruby' ] )
 
   build do
@@ -268,17 +274,24 @@ project 'JRuby Core' do
                                         'shadedPattern' => 'org.jruby.org.objectweb' } ],
                    'outputFile' => '${jruby.basedir}/lib/jruby.jar',
                    'transformers' => [ { '@implementation' => 'org.apache.maven.plugins.shade.resource.ManifestResourceTransformer',
-                                         'mainClass' => 'org.jruby.Main' } ] )
+                                         'mainClass' => 'org.jruby.Main' } ],
+                   'createSourcesJar' => '${create.sources.jar}' )
   end
 
-  [:release, :main, :osgi, :j2ee, :complete, :dist, :'jruby_complete_jar_extended', :'jruby-jars' ].each do |name|
+  [:all, :release, :main, :osgi, :j2ee, :complete, :dist, :'jruby_complete_jar_extended', :'jruby-jars' ].each do |name|
     profile name do
+      # we shade in all dependencies which use the asm classes and relocate
+      # the asm package-name. with all jruby artifacts behave the same
+      # regarding asm: lib/jruby, jruby-core and jruby-complete via maven
       plugin :shade do
         execute_goals( 'shade',
                        :id => 'shade the asm classes',
                        :phase => 'package',
                        'artifactSet' => {
+                         # IMPORTANT these needs to match exclusions in
+                         # maven/jruby-complete/pom.rb
                          'includes' => [ 'com.github.jnr:jnr-ffi',
+                                         'me.qmx.jitescript:jitescript',
                                          'org.ow2.asm:*' ]
                        },
                        'relocations' => [ { 'pattern' =>  'org.objectweb',
@@ -384,5 +397,17 @@ project 'JRuby Core' do
     properties( 'tzdata.jar.version' => '${tzdata.version}',
                 'tzdata.scope' => 'runtime' )
 
+  end
+
+  profile 'generate sources jar' do
+    activation do
+      property( :name => 'create.sources.jar', :value => 'true' )
+    end
+
+    plugin :source do
+      execute_goals( 'jar-no-fork',
+                     :id => 'pack core sources',
+                     :phase => 'prepare-package' ) # Needs to run before the shade plugin
+    end
   end
 end

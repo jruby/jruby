@@ -18,7 +18,8 @@ class Object
     if argv.empty? or argv.length > 2
       raise "Only 1 or 2 filenames are allowed for the argf helper so files can be properly closed: #{argv.inspect}"
     end
-    raise "Cannot nest calls to the argf helper" if @argf || @__mspec_saved_argf_file__
+    @argf ||= nil
+    raise "Cannot nest calls to the argf helper" if @argf
 
     @argf = ARGF.class.new(*argv)
     @__mspec_saved_argf_file__ = @argf.file

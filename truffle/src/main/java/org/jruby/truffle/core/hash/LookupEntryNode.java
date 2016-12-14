@@ -12,32 +12,19 @@ package org.jruby.truffle.core.hash;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.Layouts;
-import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.basicobject.BasicObjectNodes;
-import org.jruby.truffle.core.basicobject.BasicObjectNodesFactory;
 import org.jruby.truffle.language.RubyBaseNode;
-import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
-import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 
 public class LookupEntryNode extends RubyBaseNode {
 
-    @Child HashNode hashNode;
-    @Child CallDispatchHeadNode eqlNode;
-    @Child BasicObjectNodes.ReferenceEqualNode equalNode;
-    
+    @Child HashNode hashNode = new HashNode();
+    @Child CompareHashKeysNode compareHashKeysNode = new CompareHashKeysNode();
+
     private final ConditionProfile byIdentityProfile = ConditionProfile.createBinaryProfile();
 
-    public LookupEntryNode(RubyContext context, SourceSection sourceSection) {
-        super(context, sourceSection);
-        hashNode = new HashNode(context, sourceSection);
-        eqlNode = DispatchHeadNodeFactory.createMethodCall(context);
-        equalNode = BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(null);
-    }
-
     public HashLookupResult lookup(VirtualFrame frame, DynamicObject hash, Object key) {
-        final int hashed = hashNode.hash(frame, key);
+        final boolean compareByIdentity = byIdentityProfile.profile(Layouts.HASH.getCompareByIdentity(hash));
+        int hashed = hashNode.hash(frame, key, compareByIdentity);
 
         final Entry[] entries = (Entry[]) Layouts.HASH.getStore(hash);
         final int index = BucketsStrategy.getBucketIndex(hashed, entries.length);
@@ -46,14 +33,8 @@ public class LookupEntryNode extends RubyBaseNode {
         Entry previousEntry = null;
 
         while (entry != null) {
-            if (byIdentityProfile.profile(Layouts.HASH.getCompareByIdentity(hash))) {
-                if (equalNode.executeReferenceEqual(key, entry.getKey())) {
-                    return new HashLookupResult(hashed, index, previousEntry, entry);
-                }
-            } else {
-                if (eqlNode.callBoolean(frame, key, "eql?", null, entry.getKey())) {
-                    return new HashLookupResult(hashed, index, previousEntry, entry);
-                }
+            if (equalKeys(frame, compareByIdentity, key, hashed, entry.getKey(), entry.getHashed())) {
+                return new HashLookupResult(hashed, index, previousEntry, entry);
             }
 
             previousEntry = entry;
@@ -61,6 +42,10 @@ public class LookupEntryNode extends RubyBaseNode {
         }
 
         return new HashLookupResult(hashed, index, previousEntry, null);
+    }
+
+    protected boolean equalKeys(VirtualFrame frame, boolean compareByIdentity, Object key, int hashed, Object otherKey, int otherHashed) {
+        return compareHashKeysNode.equalKeys(frame, compareByIdentity, key, hashed, otherKey, otherHashed);
     }
 
 }

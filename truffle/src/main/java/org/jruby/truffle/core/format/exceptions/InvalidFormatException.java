@@ -11,6 +11,8 @@ package org.jruby.truffle.core.format.exceptions;
 
 public class InvalidFormatException extends FormatException {
 
+    private static final long serialVersionUID = -6689191131430505495L;
+
     public InvalidFormatException(String message) {
         super(message);
     }

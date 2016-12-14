@@ -17,10 +17,10 @@ import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
-import org.jruby.RubyThread.Status;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.InterruptMode;
+import org.jruby.truffle.core.thread.ThreadStatus;
 
 import java.util.Collections;
 import java.util.Set;
@@ -92,7 +92,6 @@ public class SafepointManager {
 
         if (!interruptible) {
             Thread.currentThread().interrupt(); // keep the interrupt flag
-            System.err.println("re-interrupting " + thread);
             return; // interrupt me later
         }
 
@@ -122,7 +121,7 @@ public class SafepointManager {
         final SafepointAction deferredAction = deferred ? action : null;
 
         try {
-            if (!deferred && thread != null && Layouts.THREAD.getStatus(thread) != Status.ABORTING) {
+            if (!deferred && thread != null && Layouts.THREAD.getStatus(thread) != ThreadStatus.ABORTING) {
                 action.run(thread, currentNode);
             }
         } finally {
@@ -189,12 +188,9 @@ public class SafepointManager {
             final DynamicObject rubyThread = context.getThreadManager().getCurrentThread();
             action.run(rubyThread, currentNode);
         } else {
-            pauseAllThreadsAndExecute(currentNode, false, new SafepointAction() {
-                @Override
-                public void run(DynamicObject rubyThread, Node currentNode) {
-                    if (Thread.currentThread() == thread) {
-                        action.run(rubyThread, currentNode);
-                    }
+            pauseAllThreadsAndExecute(currentNode, false, (rubyThread, currentNode1) -> {
+                if (Thread.currentThread() == thread) {
+                    action.run(rubyThread, currentNode1);
                 }
             });
         }
@@ -207,12 +203,9 @@ public class SafepointManager {
             final DynamicObject rubyThread = context.getThreadManager().getCurrentThread();
             action.run(rubyThread, currentNode);
         } else {
-            pauseAllThreadsAndExecute(currentNode, true, new SafepointAction() {
-                @Override
-                public void run(DynamicObject rubyThread, Node currentNode) {
-                    if (Thread.currentThread() == thread) {
-                        action.run(rubyThread, currentNode);
-                    }
+            pauseAllThreadsAndExecute(currentNode, true, (rubyThread, currentNode1) -> {
+                if (Thread.currentThread() == thread) {
+                    action.run(rubyThread, currentNode1);
                 }
             });
         }
@@ -220,12 +213,9 @@ public class SafepointManager {
 
     @TruffleBoundary
     public void pauseThreadAndExecuteLaterFromNonRubyThread(final Thread thread, final SafepointAction action) {
-        pauseAllThreadsAndExecuteFromNonRubyThread(true, new SafepointAction() {
-            @Override
-            public void run(DynamicObject rubyThread, Node currentNode) {
-                if (Thread.currentThread() == thread) {
-                    action.run(rubyThread, currentNode);
-                }
+        pauseAllThreadsAndExecuteFromNonRubyThread(true, (rubyThread, currentNode) -> {
+            if (Thread.currentThread() == thread) {
+                action.run(rubyThread, currentNode);
             }
         });
     }

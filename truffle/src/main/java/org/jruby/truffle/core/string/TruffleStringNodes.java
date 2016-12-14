@@ -21,6 +21,7 @@ import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeNodes;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.control.RaiseException;
+import org.jruby.truffle.util.StringUtils;
 
 import static org.jruby.truffle.core.string.StringOperations.rope;
 
@@ -61,12 +62,12 @@ public class TruffleStringNodes {
 
         @TruffleBoundary
         private String formatNegativeError(int count) {
-            return String.format("Invalid byte count: %d is negative", count);
+            return StringUtils.format("Invalid byte count: %d is negative", count);
         }
 
         @TruffleBoundary
         private String formatTooLongError(int count, final Rope rope) {
-            return String.format("Invalid byte count: %d exceeds string size of %d bytes", count, rope.byteLength());
+            return StringUtils.format("Invalid byte count: %d exceeds string size of %d bytes", count, rope.byteLength());
         }
 
     }

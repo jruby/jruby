@@ -4,7 +4,6 @@ import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.regex.Pattern;
-import org.jruby.ext.socket.SocketUtilsIPV6.IPv6Network;
 
 /*
  * Copyright 2013 Jan Van Besien
@@ -25,12 +24,16 @@ import org.jruby.ext.socket.SocketUtilsIPV6.IPv6Network;
  */
 public class SocketUtilsIPV6 {
 
-    public String getIPV6NetMask(String ip) {
+    public static String getIPV6Address(String ip) {
+        return new IPv6Address().fromString(ip).toString();
+    }
+
+    public static String getIPV6NetMask(String ip) {
         IPv6Network strangeNetwork = new IPv6Network().fromString(ip);
         return strangeNetwork.getNetmask().asAddress().toString();
     }
 
-    public class IPv6Address {
+    public static class IPv6Address {
 
         private static final int N_SHORTS = 8;
         private long highBits;
@@ -57,7 +60,8 @@ public class SocketUtilsIPV6 {
                 throw new IllegalArgumentException("can not parse [null]");
             }
 
-            final String withoutIPv4MappedNotation = rewriteIPv4MappedNotation(string);
+            final String withoutScope = removeScope(string);
+            final String withoutIPv4MappedNotation = rewriteIPv4MappedNotation(withoutScope);
             final String longNotation = expandShortNotation(withoutIPv4MappedNotation);
 
             final long[] longs = tryParseStringArrayIntoLongArray(string, longNotation);
@@ -168,6 +172,16 @@ public class SocketUtilsIPV6 {
             }
 
             return builder.toString();
+        }
+
+        private String removeScope(String string) {
+            int hasScope = string.indexOf('%');
+
+            if (hasScope != -1) {
+                return string.substring(0, hasScope);
+            }
+
+            return string;
         }
 
         /**
@@ -435,7 +449,7 @@ public class SocketUtilsIPV6 {
 
     }
 
-    public class IPv6NetworkMask {
+    public static class IPv6NetworkMask {
 
         private final int prefixLength;
 
@@ -465,7 +479,7 @@ public class SocketUtilsIPV6 {
         }
     }
 
-    public class IPv6Network {
+    public static class IPv6Network {
 
         private IPv6NetworkMask networkMask;
         private IPv6Address first;

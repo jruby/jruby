@@ -1,1 +1,6 @@
-require_relative '../../../stdlib/rubygems/' + File.basename(__FILE__)
+# frozen_string_literal: true
+require 'rubygems/source'
+require 'rubygems/source_local'
+
+# TODO warn upon require, this file is deprecated.
+

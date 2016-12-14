@@ -112,6 +112,6 @@ class DottedFormatter
   # A convenience method to allow printing to different outputs.
   def print(*args)
     @out.print(*args)
-    @out.flush rescue nil #IronRuby throws a .NET exception on IO.flush
+    @out.flush
   end
 end

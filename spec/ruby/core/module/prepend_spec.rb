@@ -44,10 +44,11 @@ describe "Module#prepend" do
     lambda { ModuleSpecs::SubclassSpec.prepend(ModuleSpecs::Subclass.new) }.should_not raise_error(TypeError)
   end
 
-  it "does not import constants" do
-    m1 = Module.new { A = 1 }
+  it "imports constants" do
+    m1 = Module.new
+    m1::MY_CONSTANT = 1
     m2 = Module.new { prepend(m1) }
-    m1.constants.should_not include(:A)
+    m2.constants.should include(:MY_CONSTANT)
   end
 
   it "imports instance methods" do
@@ -218,12 +219,24 @@ describe "Module#prepend" do
     }.should raise_error(ArgumentError)
   end
 
-  it "accepts no-arguments" do
-    lambda {
-      Module.new do
-        prepend
-      end
-    }.should_not raise_error
+  ruby_version_is ''...'2.4' do
+    it "accepts no-arguments" do
+      lambda {
+        Module.new do
+          prepend
+        end
+      }.should_not raise_error
+    end
+  end
+
+  ruby_version_is '2.4' do
+    it "doesn't accept no-arguments" do
+      lambda {
+        Module.new do
+          prepend
+        end
+      }.should raise_error(ArgumentError)
+    end
   end
 
   it "returns the class it's included into" do

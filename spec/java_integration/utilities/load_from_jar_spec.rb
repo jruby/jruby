@@ -13,6 +13,12 @@ describe "Loading scripts from jar files" do
     expect($LOADED_FEATURES.pop).to eq("#{jar}!/abc/foo.rb")
   end
 
+  it "blegh" do
+    jar = File.expand_path("test/jruby/dir with spaces/test_jar.jar")
+    load jar
+    expect(File.size?("uri:classloader:/inside_jar.rb")).to eq(108)
+  end
+
   # JRUBY-4774, WARBLER-15
   it "works with classpath URLs that have spaces in them" do
     url_loader = java.net.URLClassLoader.new([java.net.URL.new("file:" + File.expand_path("test/jruby/dir with spaces/test_jar.jar"))].to_java(java.net.URL))

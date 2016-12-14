@@ -71,12 +71,11 @@ import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
-import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
+import org.jruby.truffle.platform.FDSet;
 import org.jruby.truffle.platform.UnsafeGroup;
-import org.jruby.truffle.platform.posix.FDSet;
-import org.jruby.util.ByteList;
-import org.jruby.util.Dir;
-import org.jruby.util.unsafe.UnsafeHolder;
+import org.jruby.truffle.util.Dir;
+import org.jruby.truffle.util.UnsafeHolder;
+import org.jruby.truffle.util.ByteList;
 
 import java.nio.ByteBuffer;
 
@@ -95,17 +94,21 @@ public abstract class IOPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        protected int ensureSuccessful(int result, int errno) {
+        protected int ensureSuccessful(int result, int errno, String extra) {
             assert result >= -1;
             if (result == -1) {
                 errorProfile.enter();
-                throw new RaiseException(coreExceptions().errnoError(errno, this));
+                throw new RaiseException(coreExceptions().errnoError(errno, extra, this));
             }
             return result;
         }
 
         protected int ensureSuccessful(int result) {
-            return ensureSuccessful(result, posix().errno());
+            return ensureSuccessful(result, posix().errno(), "");
+        }
+
+        protected int ensureSuccessful(int result, String extra) {
+            return ensureSuccessful(result, posix().errno(), " - " + extra);
         }
     }
 
@@ -119,7 +122,7 @@ public abstract class IOPrimitiveNodes {
 
         public IOAllocatePrimitiveNode(RubyContext context, SourceSection sourceSection) {
             newBufferNode = DispatchHeadNodeFactory.createMethodCall(context);
-            allocateNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
+            allocateNode = AllocateObjectNode.create();
         }
 
         @Specialization
@@ -184,13 +187,18 @@ public abstract class IOPrimitiveNodes {
 
     }
 
-    @Primitive(name = "io_open", needsSelf = false, lowerFixnum = { 2, 3 }, unsafe = UnsafeGroup.IO)
+    @Primitive(name = "io_open", needsSelf = false, lowerFixnum = {2, 3}, unsafe = UnsafeGroup.IO)
     public static abstract class IOOpenPrimitiveNode extends IOPrimitiveArrayArgumentsNode {
 
         @TruffleBoundary(throwsControlFlowException = true)
         @Specialization(guards = "isRubyString(path)")
         public int open(DynamicObject path, int mode, int permission) {
-            return ensureSuccessful(posix().open(StringOperations.getString(path), mode, permission));
+            String pathString = StringOperations.getString(path);
+            int fd = posix().open(pathString, mode, permission);
+            if (fd == -1) {
+                ensureSuccessful(fd, pathString);
+            }
+            return fd;
         }
 
     }
@@ -257,6 +265,28 @@ public abstract class IOPrimitiveNodes {
 
     }
 
+
+    @Primitive(name = "io_socket_read", lowerFixnum = {1, 2, 3, 4}, unsafe = UnsafeGroup.IO)
+    public static abstract class IOSocketReadNode extends IOPrimitiveArrayArgumentsNode {
+
+        @TruffleBoundary(throwsControlFlowException = true)
+        @Specialization
+        public Object socketRead(DynamicObject io, int length, int flags, int type) {
+            final int sockfd = Layouts.IO.getDescriptor(io);
+
+            if (type != 0) {
+                throw new UnsupportedOperationException();
+            }
+
+            final ByteBuffer buffer = ByteBuffer.allocate(length);
+            final int bytesRead = getContext().getThreadManager().runUntilResult(this, () -> ensureSuccessful(nativeSockets().recvfrom(sockfd, buffer, length, flags, PointerPrimitiveNodes.NULL_POINTER, PointerPrimitiveNodes.NULL_POINTER)));
+            buffer.position(bytesRead);
+
+            return createString(new ByteList(buffer.array(), buffer.arrayOffset(), buffer.position(), false));
+        }
+
+    }
+
     @Primitive(name = "io_read_if_available", lowerFixnum = 1, unsafe = UnsafeGroup.IO)
     public static abstract class IOReadIfAvailableNode extends IOPrimitiveArrayArgumentsNode {
 
@@ -271,7 +301,7 @@ public abstract class IOPrimitiveNodes {
 
             final int fd = Layouts.IO.getDescriptor(file);
 
-            final FDSet fdSet = new FDSet();
+            final FDSet fdSet = getContext().getNativePlatform().createFDSet();
             fdSet.set(fd);
 
             final Timeval timeoutObject = new DefaultNativeTimeval(jnr.ffi.Runtime.getSystemRuntime());
@@ -356,7 +386,7 @@ public abstract class IOPrimitiveNodes {
                     if (fdTarget > 0) {
                         ensureSuccessful(posix().close(fdTarget));
                     }
-                    ensureSuccessful(result, errno); // throws
+                    ensureSuccessful(result, errno, targetPathString); // throws
                     return;
                 }
             } else {
@@ -394,20 +424,15 @@ public abstract class IOPrimitiveNodes {
                 return rope.byteLength();
             }
 
-            RopeOperations.visitBytes(rope, new BytesVisitor() {
+            RopeOperations.visitBytes(rope, (bytes, offset, length) -> {
+                final ByteBuffer buffer = ByteBuffer.wrap(bytes, offset, length);
 
-                @Override
-                public void accept(byte[] bytes, int offset, int length) {
-                    final ByteBuffer buffer = ByteBuffer.wrap(bytes, offset, length);
+                while (buffer.hasRemaining()) {
+                    getContext().getSafepointManager().poll(IOWritePrimitiveNode.this);
 
-                    while (buffer.hasRemaining()) {
-                        getContext().getSafepointManager().poll(IOWritePrimitiveNode.this);
-
-                        int written = ensureSuccessful(posix().write(fd, buffer, buffer.remaining()));
-                        buffer.position(buffer.position() + written);
-                    }
+                    int written = ensureSuccessful(posix().write(fd, buffer, buffer.remaining()));
+                    buffer.position(buffer.position() + written);
                 }
-
             });
 
             return rope.byteLength();
@@ -419,6 +444,8 @@ public abstract class IOPrimitiveNodes {
     public static abstract class IOWriteNonBlockPrimitiveNode extends IOPrimitiveArrayArgumentsNode {
 
         static class StopWriting extends ControlFlowException {
+            private static final long serialVersionUID = 1096318435617097172L;
+
             final int bytesWritten;
 
             public StopWriting(int bytesWritten) {
@@ -624,14 +651,19 @@ public abstract class IOPrimitiveNodes {
             return selectOneSet(writables, timeoutMicros, 2);
         }
 
+        @Specialization(guards = { "isNilOrEmpty(readables)", "isNilOrEmpty(writables)", "isRubyArray(errorables)" })
+        public Object selectErrorables(DynamicObject readables, DynamicObject writables, DynamicObject errorables, int timeoutMicros) {
+            return selectOneSet(errorables, timeoutMicros, 3);
+        }
+
         @TruffleBoundary(throwsControlFlowException = true)
-        private Object selectOneSet(DynamicObject setToSelect, int timeoutMicros, int setNb) {
+        private Object selectOneSet(DynamicObject setToSelect, final int timeoutMicros, int setNb) {
             assert setNb >= 1 && setNb <= 3;
             final Object[] readableObjects = ArrayOperations.toObjectArray(setToSelect);
             final int[] fds = getFileDescriptors(setToSelect);
             final int nfds = max(fds) + 1;
 
-            final FDSet fdSet = new FDSet();
+            final FDSet fdSet = getContext().getNativePlatform().createFDSet();
 
             final ThreadManager.ResultOrTimeout<Integer> resultOrTimeout = getContext().getThreadManager().runUntilTimeout(this, timeoutMicros, new ThreadManager.BlockingTimeoutAction<Integer>() {
                 @Override
@@ -642,11 +674,14 @@ public abstract class IOPrimitiveNodes {
                     }
                     final int result = callSelect(nfds, fdSet, timeoutToUse);
 
-                    if (result == 0) {
+                    if (result == 0 && timeoutMicros != 0) {
+                        // interrupted, try again
                         return null;
+                    } else {
+                        // result == 0: nothing was ready
+                        // result >  0: some were ready
+                        return result;
                     }
-
-                    return result;
                 }
 
                 private int callSelect(int nfds, FDSet fdSet, Timeval timeoutToUse) {
@@ -670,7 +705,7 @@ public abstract class IOPrimitiveNodes {
                 return nil();
             }
 
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), new Object[] {
+            return createArray(new Object[] {
                     setNb == 1 ? getSetObjects(readableObjects, fds, fdSet) : createEmptyArray(),
                     setNb == 2 ? getSetObjects(readableObjects, fds, fdSet) : createEmptyArray(),
                     setNb == 3 ? getSetObjects(readableObjects, fds, fdSet) : createEmptyArray()
@@ -678,7 +713,7 @@ public abstract class IOPrimitiveNodes {
         }
 
         public DynamicObject createEmptyArray() {
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), null, 0);
+            return createArray(null, 0);
         }
 
         private int[] getFileDescriptors(DynamicObject fileDescriptorArray) {
@@ -722,7 +757,7 @@ public abstract class IOPrimitiveNodes {
                 }
             }
 
-            return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), setObjects, setFdsCount);
+            return createArray(setObjects, setFdsCount);
         }
 
         protected boolean isNilOrEmpty(DynamicObject fds) {

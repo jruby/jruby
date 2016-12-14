@@ -45,6 +45,7 @@ module Java::java::lang::Iterable
   include ::Enumerable
 
   # Ruby style `Enumerable#each` iteration for Java iterable types.
+  # @return [Java::java::util::Iterable] self (since 9.1.3)
   # @return [Enumerator] if called without a block to yield to
   def each(&block)
     # stub implemented in org.jruby.javasupport.ext.JavaLang.java
@@ -53,6 +54,7 @@ module Java::java::lang::Iterable
   end
 
   # Ruby style `Enumerable#each_with_index` for Java iterable types.
+  # @return [Java::java::util::Iterable] self (since 9.1.3)
   # @return [Enumerator] if called without a block to yield to
   def each_with_index(&block)
     # stub implemented in org.jruby.javasupport.ext.JavaLang.java
@@ -62,6 +64,21 @@ module Java::java::lang::Iterable
     #   yield(iter.next, index)
     #   index += 1
     # end
+  end
+
+  # Re-defined `Enumerable#to_a`.
+  # @return [Array]
+  # @since 9.1.3
+  def to_a
+    # stub implemented in org.jruby.javasupport.ext.JavaLang.java
+  end
+  alias entries to_a
+
+  # Re-defined `Enumerable#count`.
+  # @return [Integer] matched elements count
+  # @since 9.1.3
+  def count(obj = nil, &block)
+    # stub implemented in org.jruby.javasupport.ext.JavaLang.java
   end
 end if false
 

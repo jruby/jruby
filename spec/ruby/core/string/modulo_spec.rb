@@ -411,29 +411,22 @@ describe "String#%" do
     ("%*e" % [10, 9]).should == "9.000000e+00"
   end
 
-  # Inf, -Inf, and NaN are identifiers for results of floating point operations
-  # that cannot be expressed with any value in the set of real numbers. Upcasing
-  # or downcasing these identifiers for %e or %E, which refers to the case of the
-  # of the exponent identifier, is silly.
+  it "supports float formats using %e, but Inf, -Inf, and NaN are not floats" do
+    ("%e" % 1e1020).should == "Inf"
+    ("%e" % -1e1020).should == "-Inf"
+    ("%e" % -Float::NAN).should == "NaN"
+    ("%e" % Float::NAN).should == "NaN"
+  end
 
-  deviates_on :rubinius, :jruby do
-    it "supports float formats using %e, but Inf, -Inf, and NaN are not floats" do
-      ("%e" % 1e1020).should == "Inf"
-      ("%e" % -1e1020).should == "-Inf"
-      ("%e" % -Float::NAN).should == "NaN"
-      ("%e" % Float::NAN).should == "NaN"
-    end
-
-    it "supports float formats using %E, but Inf, -Inf, and NaN are not floats" do
-      ("%E" % 1e1020).should == "Inf"
-      ("%E" % -1e1020).should == "-Inf"
-      ("%-10E" % 1e1020).should == "Inf       "
-      ("%10E" % 1e1020).should == "       Inf"
-      ("%+E" % 1e1020).should == "+Inf"
-      ("% E" % 1e1020).should == " Inf"
-      ("%E" % Float::NAN).should == "NaN"
-      ("%E" % -Float::NAN).should == "NaN"
-    end
+  it "supports float formats using %E, but Inf, -Inf, and NaN are not floats" do
+    ("%E" % 1e1020).should == "Inf"
+    ("%E" % -1e1020).should == "-Inf"
+    ("%-10E" % 1e1020).should == "Inf       "
+    ("%10E" % 1e1020).should == "       Inf"
+    ("%+E" % 1e1020).should == "+Inf"
+    ("% E" % 1e1020).should == " Inf"
+    ("%E" % Float::NAN).should == "NaN"
+    ("%E" % -Float::NAN).should == "NaN"
   end
 
   it "supports float formats using %E" do
@@ -447,12 +440,10 @@ describe "String#%" do
     ("%*E" % [10, 9]).should == "9.000000E+00"
   end
 
-  not_compliant_on :rubinius, :jruby do
-    it "pads with spaces for %E with Inf, -Inf, and NaN" do
-      ("%010E" % -1e1020).should == "      -Inf"
-      ("%010E" % 1e1020).should == "       Inf"
-      ("%010E" % Float::NAN).should == "       NaN"
-    end
+  it "pads with spaces for %E with Inf, -Inf, and NaN" do
+    ("%010E" % -1e1020).should == "      -Inf"
+    ("%010E" % 1e1020).should == "       Inf"
+    ("%010E" % Float::NAN).should == "       NaN"
   end
 
   it "supports float formats using %f" do

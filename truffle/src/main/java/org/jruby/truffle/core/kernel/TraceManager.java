@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.core.kernel;
 
+import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
@@ -17,13 +18,13 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.instrumentation.EventBinding;
 import com.oracle.truffle.api.instrumentation.EventContext;
 import com.oracle.truffle.api.instrumentation.ExecutionEventNode;
-import com.oracle.truffle.api.instrumentation.ExecutionEventNodeFactory;
 import com.oracle.truffle.api.instrumentation.Instrumenter;
 import com.oracle.truffle.api.instrumentation.SourceSectionFilter;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
+import com.oracle.truffle.api.utilities.CyclicAssumption;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.string.StringOperations;
@@ -46,6 +47,7 @@ public class TraceManager {
     
     private final RubyContext context;
     private final Instrumenter instrumenter;
+    private final CyclicAssumption unusedAssumption;
 
     private Collection<EventBinding<?>> instruments;
     private boolean isInTraceFunc = false;
@@ -53,11 +55,16 @@ public class TraceManager {
     public TraceManager(RubyContext context, Instrumenter instrumenter) {
         this.context = context;
         this.instrumenter = instrumenter;
+        this.unusedAssumption = new CyclicAssumption("set_trace_func is not used");
+    }
+
+    public Assumption getUnusedAssumption() {
+        return unusedAssumption.getAssumption();
     }
 
     @TruffleBoundary
     public void setTraceFunc(final DynamicObject traceFunc) {
-        assert RubyGuards.isRubyProc(traceFunc);
+        assert traceFunc == null || RubyGuards.isRubyProc(traceFunc);
 
         if (instruments != null) {
             for (EventBinding<?> instrument : instruments) {
@@ -66,32 +73,25 @@ public class TraceManager {
         }
 
         if (traceFunc == null) {
+            // Update to a new valid assumption
+            unusedAssumption.invalidate();
             instruments = null;
             return;
         }
 
+        // Invalidate current assumption
+        unusedAssumption.getAssumption().invalidate();
+
         instruments = new ArrayList<>();
 
-        instruments.add(instrumenter.attachFactory(SourceSectionFilter.newBuilder().tagIs(LineTag.class).build(), new ExecutionEventNodeFactory() {
-            @Override
-            public ExecutionEventNode create(EventContext eventContext) {
-                return new BaseEventEventNode(context, eventContext, traceFunc, context.getCoreStrings().LINE.createInstance());
-            }
-        }));
+        instruments.add(instrumenter.attachFactory(SourceSectionFilter.newBuilder().tagIs(LineTag.class).build(),
+                eventContext -> new BaseEventEventNode(context, eventContext, traceFunc, context.getCoreStrings().LINE.createInstance())));
 
-        instruments.add(instrumenter.attachFactory(SourceSectionFilter.newBuilder().tagIs(CallTag.class).build(), new ExecutionEventNodeFactory() {
-            @Override
-            public ExecutionEventNode create(EventContext eventContext) {
-                return new CallEventEventNode(context, eventContext, traceFunc, context.getCoreStrings().CALL.createInstance());
-            }
-        }));
+        instruments.add(instrumenter.attachFactory(SourceSectionFilter.newBuilder().tagIs(CallTag.class).build(),
+                eventContext -> new CallEventEventNode(context, eventContext, traceFunc, context.getCoreStrings().CALL.createInstance())));
 
-        instruments.add(instrumenter.attachFactory(SourceSectionFilter.newBuilder().tagIs(ClassTag.class).build(), new ExecutionEventNodeFactory() {
-            @Override
-            public ExecutionEventNode create(EventContext eventContext) {
-                return new BaseEventEventNode(context, eventContext, traceFunc, context.getCoreStrings().CLASS.createInstance());
-            }
-        }));
+        instruments.add(instrumenter.attachFactory(SourceSectionFilter.newBuilder().tagIs(ClassTag.class).build(),
+                eventContext -> new BaseEventEventNode(context, eventContext, traceFunc, context.getCoreStrings().CLASS.createInstance())));
 
     }
 

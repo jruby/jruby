@@ -128,10 +128,12 @@ with_feature :encoding do
 
     it "returns ASCII-8BIT when an escape creates a byte with the 8th bit set if the source encoding is US-ASCII" do
       __ENCODING__.should == Encoding::US_ASCII
-      s = "\xDF"
-      s.ascii_only?.should be_false
-      s.encoding.should == Encoding::ASCII_8BIT
-    end
+      str = " "
+      str.encoding.should == Encoding::US_ASCII
+      str += [0xDF].pack('C')
+      str.ascii_only?.should be_false
+      str.encoding.should == Encoding::ASCII_8BIT
+     end
 
     # TODO: Deal with case when the byte in question isn't valid in the source
     # encoding?
@@ -154,7 +156,7 @@ with_feature :encoding do
       default_external = Encoding.default_external
       Encoding.default_external = Encoding::SHIFT_JIS
       "\x50".encoding.should == Encoding::US_ASCII
-      "\xD4".encoding.should == Encoding::ASCII_8BIT
+      [0xD4].pack('C').encoding.should == Encoding::ASCII_8BIT
       Encoding.default_external = default_external
     end
 
@@ -163,20 +165,25 @@ with_feature :encoding do
       default_external = Encoding.default_external
       Encoding.default_internal = Encoding::EUC_JP
       Encoding.default_external = Encoding::SHIFT_JIS
-      "\x50".encoding.should == Encoding::US_ASCII
-      "\xD4".encoding.should == Encoding::ASCII_8BIT
+      x50 = "\x50"
+      x50.encoding.should == Encoding::US_ASCII
+      [0xD4].pack('C').encoding.should == Encoding::ASCII_8BIT
       Encoding.default_external = default_external
       Encoding.default_internal = default_internal
     end
 
     it "returns the given encoding if #force_encoding has been called" do
-      "\x50".force_encoding(Encoding::SHIFT_JIS).encoding.should == Encoding::SHIFT_JIS
-      "\xD4".force_encoding(Encoding::ISO_8859_9).encoding.should == Encoding::ISO_8859_9
+      x50 = "\x50"
+      x50.force_encoding(Encoding::SHIFT_JIS).encoding.should == Encoding::SHIFT_JIS
+      xD4 = [212].pack('C')
+      xD4.force_encoding(Encoding::ISO_8859_9).encoding.should == Encoding::ISO_8859_9
     end
 
     it "returns the given encoding if #encode!has been called" do
-      "\x50".encode!(Encoding::SHIFT_JIS).encoding.should == Encoding::SHIFT_JIS
-      "\x00".encode!(Encoding::UTF_8).encoding.should == Encoding::UTF_8
+      x50 = "\x50"
+      x50.encode!(Encoding::SHIFT_JIS).encoding.should == Encoding::SHIFT_JIS
+      x00 = "x\00"
+      x00.encode!(Encoding::UTF_8).encoding.should == Encoding::UTF_8
     end
   end
 end

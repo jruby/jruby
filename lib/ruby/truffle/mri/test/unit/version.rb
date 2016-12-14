@@ -1,2 +1,5 @@
-require_relative '../../../../stdlib/test/unit/' + File.basename(__FILE__)
-
+module Test
+  module Unit
+    VERSION = '3.1.1'
+  end
+end

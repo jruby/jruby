@@ -29,6 +29,7 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.hash.Entry;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.RubySourceSection;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.control.RaiseException;
 
@@ -39,13 +40,17 @@ import org.jruby.truffle.language.control.RaiseException;
 @Instrumentable(factory = AllocateObjectNodeWrapper.class)
 public abstract class AllocateObjectNode extends RubyNode {
 
-    private final boolean useCallerFrameForTracing;
-
-    public AllocateObjectNode() {
-        this(null, null);
+    public static AllocateObjectNode create() {
+        return AllocateObjectNodeGen.create(null, (RubySourceSection) null, null, null);
     }
 
+    private final boolean useCallerFrameForTracing;
+
     public AllocateObjectNode(RubyContext context, SourceSection sourceSection) {
+        this(context, sourceSection, true);
+    }
+
+    public AllocateObjectNode(RubyContext context, RubySourceSection sourceSection) {
         this(context, sourceSection, true);
     }
 
@@ -54,8 +59,13 @@ public abstract class AllocateObjectNode extends RubyNode {
         this.useCallerFrameForTracing = useCallerFrameForTracing;
     }
 
+    public AllocateObjectNode(RubyContext context, RubySourceSection sourceSection, boolean useCallerFrameForTracing) {
+        super(context, sourceSection);
+        this.useCallerFrameForTracing = useCallerFrameForTracing;
+    }
+
     public AllocateObjectNode(AllocateObjectNode node) {
-        this(node.getContext(), node.getSourceSection());
+        this(node.getContext(), node.getRubySourceSection());
     }
 
     public DynamicObject allocate(DynamicObject classToAllocate, Object... values) {
@@ -145,6 +155,10 @@ public abstract class AllocateObjectNode extends RubyNode {
                 allocatingSourceSection.getStartLine());
 
         return object;
+    }
+
+    protected DynamicObjectFactory getInstanceFactory(DynamicObject classToAllocate) {
+        return Layouts.CLASS.getInstanceFactory(classToAllocate);
     }
 
     private DynamicObject string(String value) {

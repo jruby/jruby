@@ -50,10 +50,13 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
+import org.jruby.runtime.JavaSites;
+import org.jruby.runtime.JavaSites.TimeSites;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ArraySupport;
 import org.jruby.util.ByteList;
 import org.jruby.util.RubyDateFormatter;
 import org.jruby.util.TypeConverter;
@@ -275,7 +278,8 @@ public class RubyTime extends RubyObject {
                 break;
 
             default:
-                if ((tmp = v.getMetaClass().finvokeChecked(runtime.getCurrentContext(), v, "to_r")) != null) {
+                ThreadContext context = runtime.getCurrentContext();
+                if ((tmp = v.getMetaClass().finvokeChecked(context, v, "to_r")) != null) {
                     /* test to_int method availability to reject non-Numeric
                      * objects such as String, Time, etc which have to_r method. */
                     if (!v.respondsTo("to_int")) {
@@ -285,7 +289,7 @@ public class RubyTime extends RubyObject {
                     v = tmp;
                     break;
                 }
-                if (!(tmp = TypeConverter.checkIntegerType(runtime, v, "to_int")).isNil()) {
+                if (!(tmp = TypeConverter.checkIntegerType(context, v)).isNil()) {
                     v = tmp;
                     break;
                 }
@@ -693,7 +697,7 @@ public class RubyTime extends RubyObject {
             return context.runtime.newFixnum(cmp((RubyTime) other));
         }
 
-        return invcmp(context, this, other);
+        return invcmp(context, sites(context).recursive_cmp, this, other);
     }
 
     @JRubyMethod(name = "eql?", required = 1)
@@ -1388,7 +1392,7 @@ public class RubyTime extends RubyObject {
 
             if (len < ARG_SIZE) {
                 IRubyObject[] newArgs = new IRubyObject[ARG_SIZE];
-                System.arraycopy(args, 0, newArgs, 0, args.length);
+                ArraySupport.copy(args, newArgs, 0, len);
                 for (int i = len; i < ARG_SIZE; i++) {
                     newArgs[i] = runtime.getNil();
                 }
@@ -1523,5 +1527,9 @@ public class RubyTime extends RubyObject {
         time.callInit(IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
         time.setIsTzRelative(setTzRelative);
         return time;
+    }
+
+    private static TimeSites sites(ThreadContext context) {
+        return context.sites.Time;
     }
 }

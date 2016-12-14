@@ -60,23 +60,10 @@ public class JRubyClassLoader extends ClassDefiningJRubyClassLoader {
 
     private Runnable unloader;
 
-    private File tempdir;
+    private File tempDir;
 
     public JRubyClassLoader(ClassLoader parent) {
         super(parent);
-    }
-
-    private File getTempDir() {
-        if (tempdir == null) {
-            String processName = ManagementFactory.getRuntimeMXBean().getName();
-            long pid = Long.parseLong(processName.split("@")[0]);
-            File dir = new File(System.getProperty("java.io.tmpdir"), "jruby-" + pid);
-            if (dir.mkdirs()) {
-                dir.deleteOnExit();
-            }
-            tempdir = dir;
-        }
-        return tempdir;
     }
 
     // Change visibility so others can see it
@@ -121,6 +108,43 @@ public class JRubyClassLoader extends ClassDefiningJRubyClassLoader {
             }
         }
         super.addURL( url );
+    }
+
+    private File getTempDir() {
+        File tempDir = this.tempDir;
+        if (tempDir != null) return tempDir;
+
+        tempDir = new File(systemTmpDir(), tempDirName());
+        if (tempDir.mkdirs()) {
+            tempDir.deleteOnExit();
+        }
+        return this.tempDir = tempDir;
+    }
+
+    private static final String TEMP_DIR_PREFIX = "jruby-";
+    private static String tempDirName;
+
+    private static String tempDirName() {
+        String dirName = tempDirName;
+        if (dirName != null) return dirName;
+        try {
+            String processName = ManagementFactory.getRuntimeMXBean().getName();
+            return tempDirName = TEMP_DIR_PREFIX + processName.split("@")[0]; // jruby-PID
+        }
+        catch (Throwable ex) {
+            LOG.debug(ex); // e.g. java.lang.management classes not available (on Android)
+            return tempDirName = TEMP_DIR_PREFIX + Integer.toHexString(System.identityHashCode(JRubyClassLoader.class));
+        }
+    }
+
+    private static String systemTmpDir() {
+        try {
+            return System.getProperty("java.io.tmpdir");
+        }
+        catch (SecurityException ex) {
+            LOG.warn("could not access 'java.io.tmpdir' will use working directory", ex);
+        }
+        return "";
     }
 
     /**

@@ -33,6 +33,7 @@ import org.jruby.lexer.LexerSource;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import static org.jruby.lexer.LexingCommon.EXPR_BEG;
+import static org.jruby.lexer.LexingCommon.EXPR_FITEM;
 import static org.jruby.lexer.LexingCommon.EXPR_FNAME;
 import static org.jruby.lexer.LexingCommon.EXPR_ENDFN;
 import static org.jruby.lexer.LexingCommon.EXPR_ENDARG;
@@ -279,7 +280,7 @@ stmt_or_begin   : stmt {
                 }
 
 stmt            : kALIAS fitem {
-                    p.setState(EXPR_FNAME);
+                    p.setState(EXPR_FNAME|EXPR_FITEM);
                 } fitem {
                     $$ = p.dispatch("on_alias", $2, $4);
                 }
@@ -728,7 +729,7 @@ undef_list      : fitem {
                     $$ = p.new_array($1);
                 }
                 | undef_list ',' {
-                    p.setState(EXPR_FNAME);
+                    p.setState(EXPR_FNAME|EXPR_FITEM);
                 } fitem {
                     $$ = $1.append($4);
                 }

@@ -9,8 +9,8 @@
  */
 package org.jruby.truffle.language.dispatch;
 
-import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.object.DynamicObject;
@@ -24,8 +24,6 @@ import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.methods.InternalMethod;
-import org.jruby.truffle.language.objects.MetaClassNode;
-import org.jruby.truffle.language.objects.MetaClassNodeGen;
 
 public class UncachedDispatchNode extends DispatchNode {
 
@@ -35,7 +33,6 @@ public class UncachedDispatchNode extends DispatchNode {
     @Child private IndirectCallNode indirectCallNode;
     @Child private ToSymbolNode toSymbolNode;
     @Child private NameToJavaStringNode toJavaStringNode;
-    @Child private MetaClassNode metaClassNode;
 
     private final BranchProfile methodMissingProfile = BranchProfile.create();
     private final BranchProfile methodMissingNotFoundProfile = BranchProfile.create();
@@ -48,7 +45,6 @@ public class UncachedDispatchNode extends DispatchNode {
         this.indirectCallNode = Truffle.getRuntime().createIndirectCallNode();
         this.toSymbolNode = ToSymbolNodeGen.create(context, null, null);
         this.toJavaStringNode = NameToJavaStringNode.create();
-        this.metaClassNode = MetaClassNodeGen.create(context, null, null);
     }
 
     @Override
@@ -65,9 +61,7 @@ public class UncachedDispatchNode extends DispatchNode {
             Object[] argumentsObjects) {
         final DispatchAction dispatchAction = getDispatchAction();
 
-        final DynamicObject callerClass = ignoreVisibility ? null : metaClassNode.executeMetaClass(RubyArguments.getSelf(frame));
-
-        final InternalMethod method = lookup(callerClass, receiverObject, toJavaStringNode.executeToJavaString(frame, name), ignoreVisibility);
+        final InternalMethod method = lookup(frame, receiverObject, toJavaStringNode.executeToJavaString(frame, name), ignoreVisibility);
 
         if (method != null) {
             if (dispatchAction == DispatchAction.CALL_METHOD) {
@@ -85,7 +79,7 @@ public class UncachedDispatchNode extends DispatchNode {
 
         methodMissingProfile.enter();
 
-        final InternalMethod missingMethod = lookup(callerClass, receiverObject, "method_missing", true);
+        final InternalMethod missingMethod = lookup(frame, receiverObject, "method_missing", true);
 
         if (missingMethod == null) {
             if (dispatchAction == DispatchAction.RESPOND_TO_METHOD) {

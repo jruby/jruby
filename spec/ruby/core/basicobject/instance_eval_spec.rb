@@ -106,7 +106,7 @@ describe "BasicObject#instance_eval" do
 
   it "makes the receiver metaclass the scoped class when used with a string" do
     obj = Object.new
-    klass = obj.instance_eval %{
+    obj.instance_eval %{
       class B; end
       B
     }

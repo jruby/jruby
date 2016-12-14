@@ -31,7 +31,16 @@ class LongArrayMirror extends BasicArrayMirror {
 
     @Override
     public void set(int index, Object value) {
-        array[index] = (long) value;
+        if (value instanceof Integer) {
+            array[index] = (int) value;
+        } else {
+            array[index] = (long) value;
+        }
+    }
+
+    @Override
+    public ArrayMirror copyArrayAndMirror() {
+        return new LongArrayMirror(array.clone());
     }
 
     @Override

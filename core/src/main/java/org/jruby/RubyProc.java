@@ -36,6 +36,7 @@ package org.jruby;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Binding;
@@ -43,14 +44,11 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
-import org.jruby.runtime.IRBlockBody;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.DataType;
-
-import java.util.Arrays;
 
 /**
  * @author  jpetersen
@@ -255,72 +253,21 @@ public class RubyProc extends RubyObject implements DataType {
      * arity of one, etc.)
      */
     public static IRubyObject[] prepareArgs(ThreadContext context, Block.Type type, BlockBody blockBody, IRubyObject[] args) {
-        Signature signature = blockBody.getSignature();
-
-        if (args == null) return IRubyObject.NULL_ARRAY;
-
         if (type == Block.Type.LAMBDA) {
-            signature.checkArity(context.runtime, args);
+            blockBody.getSignature().checkArity(context.runtime, args);
             return args;
         }
 
-        boolean isFixed = signature.isFixed();
-        int required = signature.required();
-        int actual = args.length;
-        boolean restKwargs = blockBody instanceof IRBlockBody && ((IRBlockBody) blockBody).getSignature().hasKwargs();
-
-        // FIXME: This is a hot mess.  restkwargs factors into destructing a single element array as well.  I just weaved it into this logic.
+        // FIXME: weirdly nearly identical logic exists in prepareBlockArgsInternal but only for lambdas.
         // for procs and blocks, single array passed to multi-arg must be spread
-        if ((signature != Signature.ONE_ARGUMENT &&  required != 0 && (isFixed || signature != Signature.OPTIONAL) || restKwargs) &&
-                actual == 1 && args[0].respondsTo("to_ary")) {
-            IRubyObject newAry = Helpers.aryToAry(args[0]);
-
-            // This is very common to yield in *IRBlockBody.  When we tackle call protocol for blocks this will combine.
-            if (newAry.isNil()) {
-                args = new IRubyObject[] { args[0] };
-            } else if (newAry instanceof RubyArray){
-                args = ((RubyArray) newAry).toJavaArray();
-            } else {
-                throw context.runtime.newTypeError(args[0].getType().getName() + "#to_ary should return Array");
-            }
-            actual = args.length;
-        }
-
-        // FIXME: NOTE IN THE BLOCKCAPALYPSE: I think we only care if there is any kwargs syntax at all and if so it is +1
-        // argument.  This ended up more complex because required() on signature adds +1 is required kwargs.  I suspect
-        // required() is used for two purposes and the +1 might be useful in some other way so I made it all work and
-        // after this we should clean this up (IRBlockBody and BlockBody are also messing with args[] so that should
-        // be part of this cleanup.
-
-        // We add one to our fill and adjust number of incoming args code when there are kwargs.  We subtract one
-        // if it happens to be requiredkwargs since required gets a +1.  This is horrible :)
-        int needsKwargs = blockBody instanceof IRBlockBody && ((IRBlockBody) blockBody).getSignature().hasKwargs() ?
-                1 - ((IRBlockBody) blockBody).getSignature().getRequiredKeywordForArityCount() : 0;
-
-        // fixed arity > 0 with mismatch needs a new args array
-        if (isFixed && required > 0 && required+needsKwargs != actual) {
-            IRubyObject[] newArgs = Arrays.copyOf(args, required+needsKwargs);
-
-
-            if (required > actual) {                      // Not enough required args pad.
-                Helpers.fillNil(newArgs, actual, required, context.runtime);
-                // ENEBO: what if we need kwargs here?
-            } else if (needsKwargs != 0) {
-                if (args.length < required+needsKwargs) { // Not enough args and we need an empty {} for kwargs processing.
-                    newArgs[newArgs.length - 1] = RubyHash.newHash(context.runtime);
-                } else {                                  // We have more args than we need and kwargs is always the last arg.
-                    newArgs[newArgs.length - 1] = args[args.length - 1];
-                }
-            }
-
-            args = newArgs;
-        }
+        int arityValue = blockBody.getSignature().arityValue();
+        if (args.length == 1 && (arityValue < -1 || arityValue > 1)) args = IRRuntimeHelpers.toAry(context, args);
 
         return args;
     }
 
     @JRubyMethod(name = {"call", "[]", "yield", "==="}, rest = true, omit = true)
-    public IRubyObject call19(ThreadContext context, IRubyObject[] args, Block blockCallArg) {
+    public final IRubyObject call19(ThreadContext context, IRubyObject[] args, Block blockCallArg) {
         IRubyObject[] preppedArgs = prepareArgs(context, type, block.getBody(), args);
 
         return call(context, preppedArgs, null, blockCallArg);

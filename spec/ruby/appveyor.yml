@@ -1,8 +1,11 @@
 ---
 version: "{build}"
 clone_depth: 5
+environment:
+  matrix:
+    - RUBY_VERSION: 23-x64
 install:
-  - SET PATH=C:\Ruby22\bin;%PATH%
+  - SET PATH=C:\Ruby%RUBY_VERSION%\bin;%PATH%
   - ruby --version
   - git clone https://github.com/ruby/mspec.git ../mspec
 build: off

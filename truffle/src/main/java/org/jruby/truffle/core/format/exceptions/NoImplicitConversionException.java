@@ -11,6 +11,8 @@ package org.jruby.truffle.core.format.exceptions;
 
 public class NoImplicitConversionException extends FormatException {
 
+    private static final long serialVersionUID = -2509958825294561087L;
+
     private final Object object;
     private final String target;
 

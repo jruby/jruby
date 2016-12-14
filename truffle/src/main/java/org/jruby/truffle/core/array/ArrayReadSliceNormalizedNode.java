@@ -20,7 +20,6 @@ import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
-import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
 
 import static org.jruby.truffle.core.array.ArrayHelpers.getSize;
 
@@ -36,7 +35,7 @@ public abstract class ArrayReadSliceNormalizedNode extends RubyNode {
 
     public ArrayReadSliceNormalizedNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
-        allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
+        allocateObjectNode = AllocateObjectNode.create();
     }
 
     public abstract DynamicObject executeReadSlice(DynamicObject array, int index, int length);
@@ -51,15 +50,6 @@ public abstract class ArrayReadSliceNormalizedNode extends RubyNode {
     @Specialization(guards = "!lengthPositive(length)")
     public DynamicObject readNegativeLength(DynamicObject array, int index, int length) {
         return nil();
-    }
-
-    // If these guards pass for a null array you can only get an empty array
-
-    @Specialization(
-            guards = { "indexInBounds(array, index)", "lengthPositive(length)", "isNullArray(array)" }
-    )
-    public DynamicObject readNull(DynamicObject array, int index, int length) {
-        return createArrayOfSameClass(array, null, 0);
     }
 
     // Reading within bounds on an array with actual storage
@@ -82,7 +72,7 @@ public abstract class ArrayReadSliceNormalizedNode extends RubyNode {
     }, limit = "ARRAY_STRATEGIES")
     public DynamicObject readOutOfBounds(DynamicObject array, int index, int length,
             @Cached("of(array)") ArrayStrategy strategy) {
-        final int end = getSize(array);
+        final int end = strategy.getSize(array);
         final Object store = strategy.newMirror(array).extractRange(index, end).getArray();
         return createArrayOfSameClass(array, store, end - index);
     }

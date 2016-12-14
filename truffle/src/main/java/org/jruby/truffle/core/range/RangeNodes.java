@@ -39,7 +39,6 @@ import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
-import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
 
 
 @CoreClass("Range")
@@ -75,10 +74,7 @@ public abstract class RangeNodes {
                 }
             }
 
-            return Layouts.ARRAY.createArray(
-                    coreLibrary().getArrayFactory(),
-                    arrayBuilder.finish(store, length),
-                    length);
+            return createArray(arrayBuilder.finish(store, length), length);
         }
 
     }
@@ -219,7 +215,7 @@ public abstract class RangeNodes {
 
         public DupNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
+            allocateObjectNode = AllocateObjectNode.create();
         }
 
         @Specialization(guards = "isIntRange(range)")
@@ -428,7 +424,7 @@ public abstract class RangeNodes {
             final int length = result - begin;
 
             if (length < 0) {
-                return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), null, 0);
+                return createArray(null, 0);
             } else {
                 final int[] values = new int[length];
 
@@ -436,7 +432,7 @@ public abstract class RangeNodes {
                     values[n] = begin + n;
                 }
 
-                return Layouts.ARRAY.createArray(coreLibrary().getArrayFactory(), values, length);
+                return createArray(values, length);
             }
         }
 
@@ -565,7 +561,7 @@ public abstract class RangeNodes {
             }
             if (allocateNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                allocateNode = insert(AllocateObjectNodeGen.create(getContext(), getSourceSection(), null, null));
+                allocateNode = insert(AllocateObjectNode.create());
             }
 
             final Object cmpResult;
@@ -599,7 +595,7 @@ public abstract class RangeNodes {
 
         public AllocateNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            allocateNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
+            allocateNode = AllocateObjectNode.create();
         }
 
         @Specialization

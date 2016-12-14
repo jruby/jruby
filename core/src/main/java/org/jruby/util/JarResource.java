@@ -130,7 +130,7 @@ abstract class JarResource extends AbstractFileResource {
 
     @Override
     public JRubyFile hackyGetJRubyFile() {
-      return JRubyNonExistentFile.NOT_EXIST;
+      return JRubyFile.DUMMY;
     }
 
     abstract protected String entryName();

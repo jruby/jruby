@@ -10,15 +10,9 @@
 package org.jruby.truffle.language.control;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 
 public class RetryNode extends RubyNode {
-
-    public RetryNode(RubyContext context, SourceSection sourceSection) {
-        super(context, sourceSection);
-    }
 
     @Override
     public Object execute(VirtualFrame frame) {

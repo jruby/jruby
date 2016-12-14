@@ -26,36 +26,39 @@ public class TopLevelRaiseHandler extends RubyNode {
 
     @Child private RubyNode body;
     @Child private IntegerCastNode integerCastNode;
+    @Child private SetExceptionVariableNode setExceptionVariableNode;
 
     public TopLevelRaiseHandler(RubyContext context, SourceSection sourceSection, RubyNode body) {
         super(context, sourceSection);
         this.body = body;
     }
 
-    @SuppressWarnings("finally")
     @Override
     public Object execute(VirtualFrame frame) {
-        DynamicObject lastException = null;
+        int exitCode = 0;
 
         try {
             body.execute(frame);
         } catch (RaiseException e) {
-            lastException = AtExitManager.handleAtExitException(getContext(), e);
+            DynamicObject rubyException = AtExitManager.handleAtExitException(getContext(), e);
+            getSetExceptionVariableNode().setLastException(frame, rubyException);
+            exitCode = statusFromException(rubyException);
+        } catch (ExitException e) {
+            exitCode = e.getCode();
         } finally {
             final DynamicObject atExitException = getContext().getAtExitManager().runAtExitHooks();
 
             if (atExitException != null) {
-                lastException = atExitException;
+                exitCode = statusFromException(atExitException);
             }
 
-            throw new ExitException(statusFromException(lastException));
         }
+
+        return exitCode;
     }
 
     private int statusFromException(DynamicObject exception) {
-        if (exception == null) {
-            return 0;
-        } else if (Layouts.BASIC_OBJECT.getLogicalClass(exception) == coreLibrary().getSystemExitClass()) {
+        if (Layouts.BASIC_OBJECT.getLogicalClass(exception) == coreLibrary().getSystemExitClass()) {
             return castToInt(exception.get("@status", null));
         } else {
             return 1;
@@ -65,10 +68,19 @@ public class TopLevelRaiseHandler extends RubyNode {
     private int castToInt(Object value) {
         if (integerCastNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            integerCastNode = insert(IntegerCastNodeGen.create(getContext(), getSourceSection(), null));
+            integerCastNode = insert(IntegerCastNodeGen.create(getContext(), null, null));
         }
 
         return integerCastNode.executeCastInt(value);
+    }
+
+    private SetExceptionVariableNode getSetExceptionVariableNode() {
+        if (setExceptionVariableNode == null) {
+            CompilerDirectives.transferToInterpreterAndInvalidate();
+            setExceptionVariableNode = insert(new SetExceptionVariableNode(getContext()));
+        }
+
+        return setExceptionVariableNode;
     }
 
 }

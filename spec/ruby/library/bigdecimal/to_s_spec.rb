@@ -16,7 +16,7 @@ describe "BigDecimal#to_s" do
   end
 
   it "the default format looks like 0.xxxxEnn" do
-    @bigdec.to_s.should  =~ /^0\.[0-9]*E[0-9]*$/
+    @bigdec.to_s.should =~ /^0\.[0-9]*E[0-9]*$/
   end
 
   it "takes an optional argument" do

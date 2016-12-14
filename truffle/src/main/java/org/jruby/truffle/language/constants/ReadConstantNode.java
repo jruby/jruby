@@ -10,6 +10,7 @@
 package org.jruby.truffle.language.constants;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.Layouts;
@@ -75,6 +76,10 @@ public class ReadConstantNode extends RubyNode {
         } else {
             return create7BitString("constant", UTF8Encoding.INSTANCE);
         }
+    }
+
+    public RubyNode makeWriteNode(RubyNode rhs) {
+        return new WriteConstantNode(name, NodeUtil.cloneNode(moduleNode), rhs);
     }
 
 }

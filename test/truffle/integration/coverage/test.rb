@@ -13,8 +13,8 @@ Coverage.start
 require_relative 'subject.rb'
 
 result = Coverage.result
-key = result.keys.select { |k| k.end_with?('subject.rb') }.first
+key = result.keys.find { |k| k.end_with?('subject.rb') }
 data = result[key]
 expected = [nil, nil, nil, nil, nil, nil, nil, nil, 1, 1, nil, 1, 10, nil, nil, 1, nil, 1, 1, nil, nil, 1, 2, nil, nil, 1, 1, nil, 1]
 
-raise 'coverage data not as expected' unless data == expected
+raise "coverage data not as expected: #{data}" unless data == expected

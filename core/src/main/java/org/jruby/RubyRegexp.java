@@ -41,7 +41,6 @@ import static org.jruby.anno.FrameField.LASTLINE;
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
-import org.jcodings.specific.UTF8Encoding;
 import org.joni.Matcher;
 import org.joni.NameEntry;
 import org.joni.Option;
@@ -68,7 +67,6 @@ import org.jruby.util.ByteList;
 import org.jruby.util.KCode;
 import org.jruby.util.RegexpOptions;
 import org.jruby.util.RegexpSupport;
-import org.jruby.util.Sprintf;
 import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.cli.Options;
@@ -228,10 +226,10 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
     public static int matcherSearch(Ruby runtime, Matcher matcher, int start, int range, int option) {
         try {
-            RubyThread thread = runtime.getCurrentContext().getThread();
-            SearchMatchTask task = new SearchMatchTask(thread, matcher, start, range, option, false);
-            thread.executeBlockingTask(task);
-            return task.retval;
+            ThreadContext context = runtime.getCurrentContext();
+            RubyThread thread = context.getThread();
+            SearchMatchTask task = new SearchMatchTask(thread, start, range, option, false);
+            return thread.executeTask(context, matcher, task);
         } catch (InterruptedException e) {
             throw runtime.newInterruptedRegexpError("Regexp Interrupted");
         }
@@ -239,27 +237,24 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
     public static int matcherMatch(Ruby runtime, Matcher matcher, int start, int range, int option) {
         try {
-            RubyThread thread = runtime.getCurrentContext().getThread();
-            SearchMatchTask task = new SearchMatchTask(thread, matcher, start, range, option, true);
-            thread.executeBlockingTask(task);
-            return task.retval;
+            ThreadContext context = runtime.getCurrentContext();
+            RubyThread thread = context.getThread();
+            SearchMatchTask task = new SearchMatchTask(thread, start, range, option, true);
+            return thread.executeTask(context, matcher, task);
         } catch (InterruptedException e) {
             throw runtime.newInterruptedRegexpError("Regexp Interrupted");
         }
     }
 
-    private static class SearchMatchTask implements RubyThread.BlockingTask {
-        int retval;
+    private static class SearchMatchTask implements RubyThread.Task<Matcher, Integer> {
         final RubyThread thread;
-        final Matcher matcher;
         final int start;
         final int range;
         final int option;
         final boolean match;
 
-        SearchMatchTask(RubyThread thread, Matcher matcher, int start, int range, int option, boolean match) {
+        SearchMatchTask(RubyThread thread, int start, int range, int option, boolean match) {
             this.thread = thread;
-            this.matcher = matcher;
             this.start = start;
             this.range = range;
             this.option = option;
@@ -267,14 +262,14 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         }
 
         @Override
-        public void run() throws InterruptedException {
-            retval = match ?
+        public Integer run(ThreadContext context, Matcher matcher) throws InterruptedException {
+            return match ?
                     matcher.matchInterruptible(start, range, option) :
                     matcher.searchInterruptible(start, range, option);
         }
 
         @Override
-        public void wakeup() {
+        public void wakeup(RubyThread thread, Matcher matcher) {
             thread.getNativeThread().interrupt();
         }
     }
@@ -329,6 +324,15 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         } catch (RaiseException re) {
             throw runtime.newSyntaxError(re.getMessage());
         }
+    }
+
+    /**
+     * throws RaiseException on error so parser can pick this up and give proper line and line number
+     * error as opposed to any non-literal regexp creation which may raise a syntax error but will not
+     * have this extra source info in the error message
+     */
+    public static RubyRegexp newRegexpParser(Ruby runtime, ByteList pattern, RegexpOptions options) {
+        return new RubyRegexp(runtime, pattern, (RegexpOptions)options.clone());
     }
 
     // used only by the compiler/interpreter (will set the literal flag)
@@ -1567,7 +1571,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
     // rb_reg_regsub
     static RubyString regsub19(ThreadContext context, RubyString str, RubyString src, Matcher matcher, Regex pattern) {
-        Ruby runtime = str.getRuntime();
+        Ruby runtime = context.runtime;
 
         RubyString val = null;
         int p, s, e;
@@ -1597,7 +1601,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             if (c != '\\' || s == e) continue;
 
             if (val == null) {
-                val = RubyString.newString(str.getRuntime(), new ByteList(ss - p));
+                val = RubyString.newString(runtime, new ByteList(ss - p));
             }
             EncodingUtils.encStrBufCat(runtime, val, sBytes, p, ss - p, strEnc);
 
@@ -1634,12 +1638,12 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
                         try {
                             no = pattern.nameToBackrefNumber(sBytes, name, nameEnd, regs);
                         } catch (JOniException je) {
-                            throw str.getRuntime().newIndexError(je.getMessage());
+                            throw runtime.newIndexError(je.getMessage());
                         }
                         p = s = nameEnd + clen[0];
                         break;
                     } else {
-                        throw str.getRuntime().newRuntimeError("invalid group name reference format");
+                        throw runtime.newRuntimeError("invalid group name reference format");
                     }
                 }
 
@@ -1686,17 +1690,12 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return val;
     }
 
-    final int adjustStartPos19(RubyString str, int pos, boolean reverse) {
-        return adjustStartPosInternal(str, checkEncoding(str, false), pos, reverse);
-    }
-
     final int adjustStartPos(RubyString str, int pos, boolean reverse) {
+        check();
         return adjustStartPosInternal(str, pattern.getEncoding(), pos, reverse);
     }
 
-    private final int adjustStartPosInternal(RubyString str, Encoding enc, int pos, boolean reverse) {
-        check();
-
+    private static int adjustStartPosInternal(RubyString str, Encoding enc, int pos, boolean reverse) {
         ByteList value = str.getByteList();
         int len = value.getRealSize();
         if (pos > 0 && enc.maxLength() != 1 && pos < len) {

@@ -11,6 +11,8 @@ package org.jruby.truffle.core.array;
 
 public class EmptyArrayMirror extends BasicArrayMirror {
 
+    public static final ArrayMirror INSTANCE = new EmptyArrayMirror();
+
     @Override
     public int getLength() {
         return 0;
@@ -27,8 +29,13 @@ public class EmptyArrayMirror extends BasicArrayMirror {
     }
 
     @Override
+    public ArrayMirror copyArrayAndMirror() {
+        return INSTANCE;
+    }
+
+    @Override
     public ArrayMirror copyArrayAndMirror(int newLength) {
-        return new EmptyArrayMirror();
+        return INSTANCE;
     }
 
     @Override
@@ -48,7 +55,7 @@ public class EmptyArrayMirror extends BasicArrayMirror {
     @Override
     public ArrayMirror extractRange(int start, int end) {
         assert start == 0 && end == 0;
-        return new EmptyArrayMirror();
+        return INSTANCE;
     }
 
     @Override

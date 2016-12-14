@@ -11,11 +11,9 @@ package org.jruby.truffle.core.numeric;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
-import com.oracle.truffle.api.ExactMath;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.profiles.ConditionProfile;
@@ -29,6 +27,9 @@ import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.builtins.Primitive;
 import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.core.CoreLibrary;
+import org.jruby.truffle.core.Hashing;
+import org.jruby.truffle.core.InlinableBuiltin;
+import org.jruby.truffle.core.numeric.FixnumNodesFactory.DivNodeFactory;
 import org.jruby.truffle.core.rope.LazyIntRope;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.SnippetNode;
@@ -36,8 +37,10 @@ import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.methods.UnsupportedOperationBehavior;
+import org.jruby.truffle.util.SipHashInline;
 
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
 
 @CoreClass("Fixnum")
 public abstract class FixnumNodes {
@@ -49,7 +52,8 @@ public abstract class FixnumNodes {
 
         @Specialization(rewriteOn = ArithmeticException.class)
         public int neg(int value) {
-            return ExactMath.subtractExact(0, value);
+            // TODO CS 13-Oct-16, use negateExact, but this isn't intrinsified by Graal yet
+            return Math.subtractExact(0, value);
         }
 
         @Specialization(contains = "neg")
@@ -62,14 +66,14 @@ public abstract class FixnumNodes {
 
         @Specialization(rewriteOn = ArithmeticException.class)
         public long neg(long value) {
-            return ExactMath.subtractExact(0, value);
+            return Math.subtractExact(0, value);
         }
 
         @Specialization
         public Object negWithOverflow(long value) {
             if (fixnumOrBignumNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                fixnumOrBignumNode = insert(new FixnumOrBignumNode(getContext(), getSourceSection()));
+                fixnumOrBignumNode = insert(new FixnumOrBignumNode(getContext(), null));
             }
 
             return fixnumOrBignumNode.fixnumOrBignum(BigInteger.valueOf(value).negate());
@@ -78,11 +82,13 @@ public abstract class FixnumNodes {
     }
 
     @CoreMethod(names = "+", required = 1)
-    public abstract static class AddNode extends BignumNodes.BignumCoreMethodNode {
+    public abstract static class AddNode extends BignumNodes.BignumCoreMethodNode implements InlinableBuiltin {
+
+        public abstract Object executeBuiltin(VirtualFrame frame, Object... arguments);
 
         @Specialization(rewriteOn = ArithmeticException.class)
         public int add(int a, int b) {
-            return ExactMath.addExact(a, b);
+            return Math.addExact(a, b);
         }
 
         @Specialization
@@ -101,7 +107,7 @@ public abstract class FixnumNodes {
 
         @Specialization(rewriteOn = ArithmeticException.class)
         public long add(long a, long b) {
-            return ExactMath.addExact(a, b);
+            return Math.addExact(a, b);
         }
 
         @Specialization
@@ -131,11 +137,13 @@ public abstract class FixnumNodes {
     }
 
     @CoreMethod(names = "-", required = 1)
-    public abstract static class SubNode extends BignumNodes.BignumCoreMethodNode {
+    public abstract static class SubNode extends BignumNodes.BignumCoreMethodNode implements InlinableBuiltin {
+
+        public abstract Object executeBuiltin(VirtualFrame frame, Object... arguments);
 
         @Specialization(rewriteOn = ArithmeticException.class)
         public int sub(int a, int b) {
-            return ExactMath.subtractExact(a, b);
+            return Math.subtractExact(a, b);
         }
 
         @Specialization
@@ -154,7 +162,7 @@ public abstract class FixnumNodes {
 
         @Specialization(rewriteOn = ArithmeticException.class)
         public long sub(long a, long b) {
-            return ExactMath.subtractExact(a, b);
+            return Math.subtractExact(a, b);
         }
 
         @Specialization
@@ -184,11 +192,13 @@ public abstract class FixnumNodes {
     }
 
     @CoreMethod(names = "*", required = 1)
-    public abstract static class MulNode extends BignumNodes.BignumCoreMethodNode {
+    public abstract static class MulNode extends BignumNodes.BignumCoreMethodNode implements InlinableBuiltin {
+
+        public abstract Object executeBuiltin(VirtualFrame frame, Object... arguments);
 
         @Specialization(rewriteOn = ArithmeticException.class)
         public int mul(int a, int b) {
-            return ExactMath.multiplyExact(a, b);
+            return Math.multiplyExact(a, b);
         }
 
         @Specialization
@@ -207,7 +217,7 @@ public abstract class FixnumNodes {
 
         @Specialization(rewriteOn = ArithmeticException.class)
         public long mul(long a, long b) {
-            return ExactMath.multiplyExact(a, b);
+            return Math.multiplyExact(a, b);
         }
 
         @TruffleBoundary
@@ -238,7 +248,7 @@ public abstract class FixnumNodes {
     }
 
     @CoreMethod(names = { "/", "__slash__" }, required = 1)
-    public abstract static class DivNode extends CoreMethodArrayArgumentsNode {
+    public abstract static class DivNode extends CoreMethodArrayArgumentsNode implements InlinableBuiltin {
 
         private final BranchProfile bGreaterZero = BranchProfile.create();
         private final BranchProfile bGreaterZeroAGreaterEqualZero = BranchProfile.create();
@@ -248,6 +258,10 @@ public abstract class FixnumNodes {
         private final BranchProfile bMinusOneAMinimum = BranchProfile.create();
         private final BranchProfile bMinusOneANotMinimum = BranchProfile.create();
         private final BranchProfile finalCase = BranchProfile.create();
+
+        public abstract Object executeBuiltin(VirtualFrame frame, Object... arguments);
+
+        public abstract Object executeDiv(VirtualFrame frame, Object a, Object b);
 
         // int
 
@@ -366,6 +380,29 @@ public abstract class FixnumNodes {
 
         protected static boolean isLongMinValue(long a) {
             return a == Long.MIN_VALUE;
+        }
+
+    }
+
+    // Defined in Java as we need to statically call #/
+    @CoreMethod(names = "div", required = 1)
+    public abstract static class IDivNode extends BignumNodes.BignumCoreMethodNode {
+
+        @Child DivNode divNode = DivNodeFactory.create(null);
+        @Child FloatNodes.FloorNode floorNode = FloatNodesFactory.FloorNodeFactory.create(null, null, null);
+
+        @Specialization
+        public Object idiv(VirtualFrame frame, Object a, Object b,
+                @Cached("createBinaryProfile()") ConditionProfile zeroProfile) {
+            Object quotient = divNode.executeDiv(frame, a, b);
+            if (quotient instanceof Double) {
+                if (zeroProfile.profile((double) b == 0.0)) {
+                    throw new RaiseException(coreExceptions().zeroDivisionError(this));
+                }
+                return floorNode.executeFloor((double) quotient);
+            } else {
+                return quotient;
+            }
         }
 
     }
@@ -593,8 +630,16 @@ public abstract class FixnumNodes {
     public abstract static class CompareNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
-        public int compare(int a, int b) {
-            return Integer.compare(a, b);
+        public int compare(int a, int b,
+                        @Cached("createBinaryProfile()") ConditionProfile smallerProfile,
+                        @Cached("createBinaryProfile()") ConditionProfile equalProfile) {
+            if (smallerProfile.profile(a < b)) {
+                return -1;
+            } else if (equalProfile.profile(a == b)) {
+                return 0;
+            } else {
+                return +1;
+            }
         }
 
         @Specialization(guards = "isRubyBignum(b)")
@@ -603,8 +648,16 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public int compare(long a, long b) {
-            return Long.compare(a, b);
+        public int compare(long a, long b,
+                        @Cached("createBinaryProfile()") ConditionProfile smallerProfile,
+                        @Cached("createBinaryProfile()") ConditionProfile equalProfile) {
+            if (smallerProfile.profile(a < b)) {
+                return -1;
+            } else if (equalProfile.profile(a == b)) {
+                return 0;
+            } else {
+                return +1;
+            }
         }
 
         @Specialization
@@ -756,9 +809,28 @@ public abstract class FixnumNodes {
         }
 
         @Specialization(guards = "isRubyBignum(b)")
+        public Object bitAndBignum(int a, DynamicObject b) {
+            return fixnumOrBignum(BigInteger.valueOf(a).and(Layouts.BIGNUM.getValue(b)));
+        }
+
+        @Specialization(guards = "isRubyBignum(b)")
         public Object bitAndBignum(long a, DynamicObject b) {
             return fixnumOrBignum(BigInteger.valueOf(a).and(Layouts.BIGNUM.getValue(b)));
         }
+
+        @Specialization(guards = "!isRubyBignum(b)")
+        public Object bitAndNotBignum(VirtualFrame frame, int a, Object b,
+                                      @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "self & bit_coerce(b)[1]", "b", b);
+        }
+
+        @Specialization(guards = "!isRubyBignum(b)")
+        public Object bitAndNotBignum(VirtualFrame frame, long a, Object b,
+                                      @Cached("new()") SnippetNode snippetNode) {
+            return snippetNode.execute(frame, "self & bit_coerce(b)[1]", "b", b);
+        }
+
+
     }
 
     @CoreMethod(names = "|", required = 1)
@@ -804,7 +876,7 @@ public abstract class FixnumNodes {
                 Object a,
                 DynamicObject b,
                 @Cached("new()") SnippetNode snippetNode) {
-            return snippetNode.execute(frame, "a ^ Rubinius::Type.coerce_to_bitwise_operand(b)", "a", a, "b", b);
+            return snippetNode.execute(frame, "redo_coerced :^, b", "b", b);
         }
 
     }
@@ -950,7 +1022,8 @@ public abstract class FixnumNodes {
 
         @Specialization(rewriteOn = ArithmeticException.class)
         public int absIntInBounds(int n) {
-            return (n < 0) ? ExactMath.subtractExact(0, n) : n;
+            // TODO CS 13-Oct-16, use negateExact, but this isn't intrinsified by Graal yet
+            return (n < 0) ? Math.subtractExact(0, n) : n;
         }
 
         @Specialization(contains = "absIntInBounds")
@@ -963,7 +1036,7 @@ public abstract class FixnumNodes {
 
         @Specialization(rewriteOn = ArithmeticException.class)
         public long absInBounds(long n) {
-            return (n < 0) ? ExactMath.subtractExact(0, n) : n;
+            return (n < 0) ? Math.subtractExact(0, n) : n;
         }
 
         @Specialization(contains = "absInBounds")
@@ -1129,8 +1202,66 @@ public abstract class FixnumNodes {
 
     }
 
+
+    @Primitive(name = "fixnum_memhash")
+    public static abstract class FixnumMemhashPrimitiveNode extends PrimitiveArrayArgumentsNode {
+
+        @Specialization
+        public long memhashLongLong(long a, long b) {
+            final ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES * 2);
+            buffer.putLong(a);
+            buffer.putLong(b);
+            return SipHashInline.hash24(Hashing.SEED_K0, Hashing.SEED_K1, buffer.array());
+        }
+
+
+
+    }
+
+    @Primitive(name = "fixnum_fits_into_int")
+    public static abstract class FixnumFitsIntoIntPrimitiveNode extends PrimitiveArrayArgumentsNode {
+
+        @Specialization
+        public boolean fitsIntoIntInt(int a) {
+            return true;
+        }
+
+        @Specialization
+        public boolean fitsIntoIntLong(long a) {
+            return CoreLibrary.fitsIntoInteger(a);
+        }
+
+        @Specialization(guards = "isRubyBignum(b)")
+        public boolean fitsIntoIntBignum(DynamicObject b) {
+            return false;
+        }
+
+    }
+
+    @Primitive(name = "fixnum_fits_into_long")
+    public static abstract class FixnumFitsIntoLongPrimitiveNode extends PrimitiveArrayArgumentsNode {
+
+        @Specialization
+        public boolean fitsIntoLongInt(int a) {
+            return true;
+        }
+
+        @Specialization
+        public boolean fitsIntoLongLong(long a) {
+            return true;
+        }
+
+        @Specialization(guards = "isRubyBignum(b)")
+        public boolean fitsIntoLongBignum(DynamicObject b) {
+            return false;
+        }
+
+    }
+
     @Primitive(name = "fixnum_pow")
     public abstract static class FixnumPowPrimitiveNode extends BignumNodes.BignumCoreMethodNode {
+
+        @Child private SnippetNode warnNode = new SnippetNode();
 
         private final ConditionProfile negativeProfile = ConditionProfile.createBinaryProfile();
         private final ConditionProfile complexProfile = ConditionProfile.createBinaryProfile();
@@ -1161,8 +1292,8 @@ public abstract class FixnumNodes {
         }
 
         @Specialization(guards = "isRubyBignum(b)")
-        public Object powBignum(int a, DynamicObject b) {
-            return powBignum((long) a, b);
+        public Object powBignum(VirtualFrame frame, int a, DynamicObject b) {
+            return powBignum(frame, (long) a, b);
         }
 
         @Specialization(guards = "canShiftIntoLong(a, b)")
@@ -1205,9 +1336,8 @@ public abstract class FixnumNodes {
             }
         }
 
-        @TruffleBoundary
         @Specialization(guards = "isRubyBignum(b)")
-        public Object powBignum(long a, DynamicObject b) {
+        public Object powBignum(VirtualFrame frame, long a, DynamicObject b) {
             if (a == 0) {
                 return 0;
             }
@@ -1217,21 +1347,31 @@ public abstract class FixnumNodes {
             }
 
             if (a == -1) {
-                if (Layouts.BIGNUM.getValue(b).testBit(0)) {
+                if (testBit(Layouts.BIGNUM.getValue(b), 0)) {
                     return -1;
                 } else {
                     return 1;
                 }
             }
 
-            if (Layouts.BIGNUM.getValue(b).compareTo(BigInteger.ZERO) < 0) {
+            if (compareTo(Layouts.BIGNUM.getValue(b), BigInteger.ZERO) < 0) {
                 return null; // Primitive failure
             }
 
-            getContext().getJRubyRuntime().getWarnings().warn("in a**b, b may be too big");
+            warnNode.execute(frame, "warn('in a**b, b may be too big')");
             // b >= 2**63 && (a > 1 || a < -1) => larger than largest double
             // MRI behavior/bug: always positive Infinity even if a negative and b odd (likely due to libc pow(a, +inf)).
             return Double.POSITIVE_INFINITY;
+        }
+
+        @TruffleBoundary
+        private boolean testBit(BigInteger bigInteger, int n) {
+            return bigInteger.testBit(n);
+        }
+
+        @TruffleBoundary
+        private int compareTo(BigInteger a, BigInteger b) {
+            return a.compareTo(b);
         }
 
         @Specialization(guards = "!isRubyBignum(b)")

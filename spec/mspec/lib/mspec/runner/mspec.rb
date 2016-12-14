@@ -50,14 +50,17 @@ module MSpec
 
     shuffle files if randomize?
     files.each do |file|
-      @env = Object.new
-      @env.extend MSpec
-
+      setup_env
       store :file, file
       actions :load
       protect("loading #{file}") { Kernel.load file }
       actions :unload
     end
+  end
+
+  def self.setup_env
+    @env = Object.new
+    @env.extend MSpec
   end
 
   def self.actions(action, *args)

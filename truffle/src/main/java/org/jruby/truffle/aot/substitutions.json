@@ -1,0 +1,101 @@
+[
+  {
+    "annotatedClass": "org.jruby.truffle.aot.Target_org_jcodings_Encoding",
+    "originalClass": "org.jcodings.Encoding",
+    "methods": [
+      {
+        "annotatedName": "load",
+        "substitute": true
+      }
+    ]
+  },
+  {
+    "annotatedClass": "org.jruby.truffle.aot.Target_org_jcodings_util_ArrayReader",
+    "originalClass": "org.jcodings.util.ArrayReader",
+    "methods": [
+      {
+        "annotatedName": "openStream",
+        "substitute": true
+      }
+    ]
+  },
+  {
+    "annotatedClass": "org.jruby.truffle.aot.Target_org_joda_time_DateTimeUtils",
+    "originalClass": "org.joda.time.DateTimeUtils",
+    "methods": [
+      {
+        "annotatedName": "getDateFormatSymbols",
+        "substitute": true
+      }
+    ]
+  },
+  {
+    "annotatedClass": "org.jruby.truffle.aot.Target_org_joda_time_tz_ZoneInfoProvider",
+    "originalClass": "org.joda.time.tz.ZoneInfoProvider",
+    "methods": [
+      {
+        "annotatedName": "getZone",
+        "substitute": true
+      },
+      {
+        "annotatedName": "openResource",
+        "substitute": true
+      }
+    ],
+    "fields": [
+      {
+        "annotatedName": "iFileDir",
+        "alias": true
+      }
+    ]
+  },
+  {
+    "annotatedClass": "org.jruby.truffle.aot.Target_org_jruby_truffle_language_loader_SourceLoader",
+    "originalClass": "org.jruby.truffle.language.loader.SourceLoader",
+    "methods": [
+      {
+        "annotatedName": "loadResource",
+        "substitute": true
+      }
+    ]
+  },
+  {
+    "annotatedClass": "org.jruby.truffle.aot.Target_org_jruby_truffle_core_string_StringSupport",
+    "originalClass": "org.jruby.util.StringSupport",
+    "fields": [
+      {
+        "annotatedName": "ARRAY_BYTE_BASE_OFFSET",
+        "delete": true
+      }
+    ]
+  },
+  {
+    "annotatedClass": "org.jruby.truffle.aot.Target_org_jruby_util_unsafe_UnsafeHolder",
+    "originalClass": "org.jruby.util.unsafe.UnsafeHolder",
+    "methods": [
+      {
+        "annotatedName": "fullFence",
+        "substitute": true
+      }
+    ],
+    "fields": [
+      {
+        "annotatedName": "ARRAY_OBJECT_BASE_OFFSET",
+        "alias": true,
+        "kind": "ArrayBaseOffset",
+        "declClassName": "[Ljava.lang.Object;"
+      },
+      {
+        "annotatedName": "ARRAY_OBJECT_INDEX_SCALE",
+        "alias": true,
+        "kind": "ArrayIndexScale",
+        "declClassName": "[Ljava.lang.Object;"
+      },
+      {
+        "annotatedName": "SUPPORTS_FENCES",
+        "alias": true,
+        "kind": "FromAlias"
+      }
+    ]
+  },
+]

@@ -11,7 +11,6 @@ package org.jruby.truffle.language.supercall;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
@@ -50,7 +49,6 @@ public class SuperCallNode extends RubyNode {
         this.callMethodNode = CallInternalMethodNodeGen.create(context, sourceSection, null, new RubyNode[] {});
     }
 
-    @ExplodeLoop
     @Override
     public final Object execute(VirtualFrame frame) {
         final Object self = RubyArguments.getSelf(frame);

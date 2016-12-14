@@ -333,9 +333,11 @@ public final class Frame {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder(50);
-        
+
+        sb.append("Frame<");
         sb.append(klazz);
         if (name != null) sb.append(" in ").append(name);
+        sb.append(">");
 
         return sb.toString();
     }

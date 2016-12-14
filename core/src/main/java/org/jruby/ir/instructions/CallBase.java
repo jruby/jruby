@@ -1,6 +1,5 @@
 package org.jruby.ir.instructions;
 
-import org.jruby.RubyArray;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.*;
@@ -12,9 +11,8 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.RefinedCachingCallSite;
+import org.jruby.util.ArraySupport;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
 import static org.jruby.ir.IRFlags.*;
@@ -114,9 +112,7 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
     // Warning: Potentially expensive.  Analysis should be written around retrieving operands.
     public Operand[] getCallArgs() {
         Operand[] callArgs = new Operand[argsCount];
-
-        System.arraycopy(operands, 1, callArgs, 0, argsCount);
-
+        ArraySupport.copy(operands, 1, callArgs, 0, argsCount);
         return callArgs;
     }
 
@@ -156,7 +152,7 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
         return dontInline;
     }
 
-    public static CallSite getCallSiteFor(CallType callType, String name, boolean potentiallyRefined) {
+    protected static CallSite getCallSiteFor(CallType callType, String name, boolean potentiallyRefined) {
         assert callType != null: "Calltype should never be null";
 
         if (potentiallyRefined) return new RefinedCachingCallSite(name, callType);
@@ -238,6 +234,9 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
                 scope.getFlags().add(REQUIRES_DYNSCOPE);
             }
         }
+
+        // Refined scopes require dynamic scope in order to get the static scope
+        if (potentiallyRefined) scope.getFlags().add(REQUIRES_DYNSCOPE);
 
         return modifiedScope;
     }

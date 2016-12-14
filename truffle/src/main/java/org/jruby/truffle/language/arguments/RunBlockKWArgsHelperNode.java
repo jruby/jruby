@@ -13,6 +13,7 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.Layouts;
+import org.jruby.truffle.language.PerformanceWarnings;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.SnippetNode;
 import org.jruby.truffle.language.locals.ReadFrameSlotNode;
@@ -36,11 +37,12 @@ public class RunBlockKWArgsHelperNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        CompilerDirectives.bailout("blocks with kwargs are not optimized yet");
+        PerformanceWarnings.warn(PerformanceWarnings.KWARGS_NOT_OPTIMIZED_YET);
 
         final Object array = readArrayNode.executeRead(frame);
 
         if (snippetNode == null) {
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             snippetNode = insert(new SnippetNode());
         }
 

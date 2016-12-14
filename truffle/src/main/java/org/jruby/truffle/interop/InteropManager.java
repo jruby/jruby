@@ -34,7 +34,7 @@ public class InteropManager {
     }
 
     public Object importObject(String name) {
-        return context.getEnv().importSymbol(name.toString());
+        return context.getEnv().importSymbol(name);
     }
 
 }

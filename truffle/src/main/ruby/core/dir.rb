@@ -233,8 +233,7 @@ class Dir
   end
 
   def self.getwd
-    buf = String.pattern Rubinius::PATH_MAX, 0
-    wd = Truffle::POSIX.getcwd(buf, buf.length)
+    wd = Truffle::POSIX.getcwd
     Errno.handle unless wd
     Rubinius::Type.external_string wd
   end

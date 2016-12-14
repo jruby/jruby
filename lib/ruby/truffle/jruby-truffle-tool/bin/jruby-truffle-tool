@@ -1,0 +1,6 @@
+#!/usr/bin/env ruby
+
+require_relative '../lib/truffle/tool.rb'
+
+runner = Truffle::Tool.new ARGV
+exit runner.run

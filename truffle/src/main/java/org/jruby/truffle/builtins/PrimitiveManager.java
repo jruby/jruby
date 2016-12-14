@@ -9,13 +9,10 @@
  */
 package org.jruby.truffle.builtins;
 
-import com.oracle.truffle.api.dsl.GeneratedBy;
 import com.oracle.truffle.api.dsl.NodeFactory;
 import org.jruby.truffle.core.rubinius.UndefinedPrimitiveNodes;
 import org.jruby.truffle.language.RubyNode;
 
-
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -36,15 +33,7 @@ public class PrimitiveManager {
         return constructor;
     }
 
-    public void addPrimitiveNodes(List<? extends NodeFactory<? extends RubyNode>> nodeFactories) {
-        for (NodeFactory<? extends RubyNode> nodeFactory : nodeFactories) {
-            final GeneratedBy generatedBy = nodeFactory.getClass().getAnnotation(GeneratedBy.class);
-            final Class<?> nodeClass = generatedBy.value();
-            final Primitive annotation = nodeClass.getAnnotation(Primitive.class);
-
-            if (annotation != null) {
-                primitives.put(annotation.name(), new PrimitiveNodeConstructor(annotation, nodeFactory));
-            }
-        }
+    public void addPrimitive(NodeFactory<? extends RubyNode> nodeFactory, Primitive annotation) {
+        primitives.put(annotation.name(), new PrimitiveNodeConstructor(annotation, nodeFactory));
     }
 }

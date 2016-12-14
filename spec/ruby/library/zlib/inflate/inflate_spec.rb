@@ -1,4 +1,3 @@
-# -*- encoding: us-ascii -*-
 require 'zlib'
 require File.expand_path('../../../../spec_helper', __FILE__)
 
@@ -7,10 +6,8 @@ describe "Zlib::Inflate#inflate" do
   before :each do
     @inflator = Zlib::Inflate.new
   end
-
   it "inflates some data" do
-    data = "x\234c`\200\001\000\000\n\000\001"
-
+    data = [120, 156, 99, 96, 128, 1, 0, 0, 10, 0, 1].pack('C*')
     unzipped = @inflator.inflate data
     @inflator.finish
 
@@ -18,18 +15,20 @@ describe "Zlib::Inflate#inflate" do
   end
 
   it "inflates lots of data" do
-    data = "x\234\355\301\001\001\000\000\000\200\220\376\257\356\b\n#{"\000" * 31}\030\200\000\000\001"
+    data = [120, 156, 237, 193, 1, 1, 0, 0] +
+           [0, 128, 144, 254, 175, 238, 8, 10] +
+           Array.new(31, 0) +
+           [24, 128, 0, 0, 1]
 
-    unzipped = @inflator.inflate data
+    unzipped = @inflator.inflate data.pack('C*')
     @inflator.finish
 
     unzipped.should == "\000" * 32 * 1024
   end
 
   it "works in pass-through mode, once finished" do
-    data = "x\234c`\200\001\000\000\n\000\001"
-
-    @inflator.inflate data
+    data = [120, 156, 99, 96, 128, 1, 0, 0, 10, 0, 1]
+    @inflator.inflate data.pack('C*')
     @inflator.finish  # this is a precondition
 
     out = @inflator.inflate('uncompressed_data')
@@ -45,23 +44,25 @@ end
 describe "Zlib::Inflate.inflate" do
 
   it "inflates some data" do
-    data = "x\234c`\200\001\000\000\n\000\001"
-
-    unzipped = Zlib::Inflate.inflate data
+    data = [120, 156, 99, 96, 128, 1, 0, 0, 10, 0, 1]
+    unzipped = Zlib::Inflate.inflate data.pack('C*')
 
     unzipped.should == "\000" * 10
   end
 
   it "inflates lots of data" do
-    data = "x\234\355\301\001\001\000\000\000\200\220\376\257\356\b\n#{"\000" * 31}\030\200\000\000\001"
+    data = [120, 156, 237, 193, 1, 1, 0, 0] +
+           [0, 128, 144, 254, 175, 238, 8, 10] +
+           Array.new(31,0) +
+           [24, 128, 0, 0, 1]
 
-    zipped = Zlib::Inflate.inflate data
+    zipped = Zlib::Inflate.inflate data.pack('C*')
 
     zipped.should == "\000" * 32 * 1024
   end
 
   it "properly handles data in chunks" do
-    data =  "x\234K\313\317\a\000\002\202\001E"
+    data = [120, 156, 75, 203, 207, 7, 0, 2, 130, 1, 69].pack('C*')
     z = Zlib::Inflate.new
     # add bytes, one by one
     result = ""
@@ -71,7 +72,7 @@ describe "Zlib::Inflate.inflate" do
   end
 
   it "properly handles incomplete data" do
-    data =  "x\234K\313\317\a\000\002\202\001E"[0,5]
+    data = [120, 156, 75, 203, 207, 7, 0, 2, 130, 1, 69].pack('C*')[0,5]
     z = Zlib::Inflate.new
     # add bytes, one by one, but not all
     result = ""
@@ -80,7 +81,7 @@ describe "Zlib::Inflate.inflate" do
   end
 
   it "properly handles excessive data, byte-by-byte" do
-    main_data = "x\234K\313\317\a\000\002\202\001E"
+    main_data = [120, 156, 75, 203, 207, 7, 0, 2, 130, 1, 69].pack('C*')
     data =  main_data * 2
     result = ""
 
@@ -95,7 +96,7 @@ describe "Zlib::Inflate.inflate" do
   end
 
   it "properly handles excessive data, in one go" do
-    main_data = "x\234K\313\317\a\000\002\202\001E"
+    main_data = [120, 156, 75, 203, 207, 7, 0, 2, 130, 1, 69].pack('C*')
     data =  main_data * 2
     result = ""
 
@@ -132,7 +133,6 @@ describe "Zlib::Inflate#inflate" do
     it "properly handles chunked data" do
       @chunks.all? { |chunk| chunk =~ /\A0+\z/ }.should be_true
     end
-
   end
 
   describe "with break" do
@@ -148,6 +148,5 @@ describe "Zlib::Inflate#inflate" do
       output = @inflator.inflate nil
       (100_000 - @chunks.first.length).should == output.length
     end
-
   end
 end

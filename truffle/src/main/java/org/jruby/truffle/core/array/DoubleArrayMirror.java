@@ -35,6 +35,11 @@ class DoubleArrayMirror extends BasicArrayMirror {
     }
 
     @Override
+    public ArrayMirror copyArrayAndMirror() {
+        return new DoubleArrayMirror(array.clone());
+    }
+
+    @Override
     public ArrayMirror copyArrayAndMirror(int newLength) {
         return new DoubleArrayMirror(Arrays.copyOf(array, newLength));
     }

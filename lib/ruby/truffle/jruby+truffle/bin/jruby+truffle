@@ -1,6 +1,0 @@
-#!/usr/bin/env ruby
-
-require_relative '../lib/truffle/runner.rb'
-
-runner = Truffle::Runner.new ARGV
-exit runner.run

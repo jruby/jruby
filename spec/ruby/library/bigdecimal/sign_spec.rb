@@ -14,7 +14,7 @@ describe "BigDecimal#sign" do
   end
 
   it "returns positive value if BigDecimal greater than 0" do
-    BigDecimal("1").sign.should  == BigDecimal::SIGN_POSITIVE_FINITE
+    BigDecimal("1").sign.should == BigDecimal::SIGN_POSITIVE_FINITE
     BigDecimal("1E-20000000").sign.should == BigDecimal::SIGN_POSITIVE_FINITE
     BigDecimal("1E200000000").sign.should == BigDecimal::SIGN_POSITIVE_FINITE
     BigDecimal("Infinity").sign.should == BigDecimal::SIGN_POSITIVE_INFINITE
@@ -29,8 +29,8 @@ describe "BigDecimal#sign" do
 
   it "returns positive zero if BigDecimal equals positve zero" do
     BigDecimal("0").sign.should == BigDecimal::SIGN_POSITIVE_ZERO
-    BigDecimal("0E-200000000").sign.should ==  BigDecimal::SIGN_POSITIVE_ZERO
-    BigDecimal("0E200000000").sign.should ==  BigDecimal::SIGN_POSITIVE_ZERO
+    BigDecimal("0E-200000000").sign.should == BigDecimal::SIGN_POSITIVE_ZERO
+    BigDecimal("0E200000000").sign.should == BigDecimal::SIGN_POSITIVE_ZERO
   end
 
   it "returns negative zero if BigDecimal equals negative zero" do

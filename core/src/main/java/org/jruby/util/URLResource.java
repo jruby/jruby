@@ -94,10 +94,25 @@ public class URLResource extends AbstractFileResource {
     }
 
     @Override
-    public long length()
-    {
-        // TODO Auto-generated method stub
-        return 0;
+    public long length() {
+        long totalRead = 0;
+        InputStream is = null;
+
+        try {
+            is = openInputStream();
+            byte[] buf = new byte[8096];
+            int amountRead;
+
+            while ((amountRead = is.read(buf)) != -1) {
+                totalRead += amountRead;
+            }
+
+            is.close();
+        } catch (IOException e) {
+            if (is != null) try { is.close(); } catch (IOException e2) {}
+        }
+
+        return totalRead;
     }
 
     @Override
@@ -136,7 +151,7 @@ public class URLResource extends AbstractFileResource {
 
     @Override
     public JRubyFile hackyGetJRubyFile() {
-        return JRubyNonExistentFile.NOT_EXIST;
+        return JRubyFile.DUMMY;
     }
 
     @Override

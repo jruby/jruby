@@ -70,6 +70,7 @@ class MSpecCI < MSpecScript
     tags = ["fails", "critical", "unstable", "incomplete", "unsupported"]
     tags += Array(config[:ci_xtags])
 
+    require 'mspec/runner/filters/tag'
     filter = TagFilter.new(:exclude, *tags)
     filter.register
 

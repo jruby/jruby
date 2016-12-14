@@ -99,29 +99,29 @@ end
 describe "DateTime.parse(.)" do
   it "parses YYYY.MM.DD into a DateTime object" do
     d = DateTime.parse("2007.10.01")
-    d.year.should  == 2007
+    d.year.should == 2007
     d.month.should == 10
-    d.day.should   == 1
+    d.day.should == 1
   end
 
   it "parses DD.MM.YYYY into a DateTime object" do
     d = DateTime.parse("10.01.2007")
-    d.year.should  == 2007
+    d.year.should == 2007
     d.month.should == 1
-    d.day.should   == 10
+    d.day.should == 10
   end
 
   it "parses YY.MM.DD into a DateTime object using the year 20YY" do
     d = DateTime.parse("10.01.07")
-    d.year.should  == 2010
+    d.year.should == 2010
     d.month.should == 1
-    d.day.should   == 7
+    d.day.should == 7
   end
 
   it "parses YY.MM.DD using the year digits as 20YY when given true as additional argument" do
     d = DateTime.parse("10.01.07", true)
-    d.year.should  == 2010
+    d.year.should == 2010
     d.month.should == 1
-    d.day.should   == 7
+    d.day.should == 7
   end
 end

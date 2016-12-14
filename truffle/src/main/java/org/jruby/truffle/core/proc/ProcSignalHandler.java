@@ -9,12 +9,10 @@
  */
 package org.jruby.truffle.core.proc;
 
-import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyGuards;
-import org.jruby.truffle.language.SafepointAction;
 import org.jruby.truffle.platform.signal.Signal;
 import org.jruby.truffle.platform.signal.SignalHandler;
 
@@ -33,12 +31,7 @@ public class ProcSignalHandler implements SignalHandler {
     @Override
     public void handle(Signal signal) {
         Thread mainThread = Layouts.FIBER.getThread((Layouts.THREAD.getFiberManager(context.getThreadManager().getRootThread()).getCurrentFiber()));
-        context.getSafepointManager().pauseThreadAndExecuteLaterFromNonRubyThread(mainThread, new SafepointAction() {
-            @Override
-            public void run(DynamicObject thread, Node currentNode) {
-                ProcOperations.rootCall(proc);
-            }
-        });
+        context.getSafepointManager().pauseThreadAndExecuteLaterFromNonRubyThread(mainThread, (thread, currentNode) -> ProcOperations.rootCall(proc));
     }
 
 }

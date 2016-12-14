@@ -1,7 +1,6 @@
 require 'mspec/runner/mspec'
 require 'mspec/runner/actions/tally'
-
-require 'rbconfig'
+require 'mspec/utils/ruby_name'
 
 class SpecGuard
   def self.report
@@ -42,29 +41,25 @@ class SpecGuard
     @@ruby_version_override
   end
 
-  # Returns a partial Ruby version string based on +which+. For example,
-  # if RUBY_VERSION = 8.2.3 and RUBY_PATCHLEVEL = 71:
+  # Returns a partial Ruby version string based on +which+.
+  # For example, if RUBY_VERSION = 8.2.3:
   #
   #  :major  => "8"
   #  :minor  => "8.2"
   #  :tiny   => "8.2.3"
   #  :teeny  => "8.2.3"
-  #  :full   => "8.2.3.71"
+  #  :full   => "8.2.3"
   def self.ruby_version(which = :minor)
     case which
     when :major
       n = 1
     when :minor
       n = 2
-    when :tiny, :teeny
+    when :tiny, :teeny, :full
       n = 3
-    else
-      n = 4
     end
 
-    patch = RUBY_PATCHLEVEL.to_i
-    patch = 0 if patch < 0
-    version = "#{ruby_version_override || RUBY_VERSION}.#{patch}"
+    version = ruby_version_override || RUBY_VERSION
     version.split('.')[0,n].join('.')
   end
 
@@ -165,11 +160,16 @@ class SpecGuard
     size == 8 * 1.size
   end
 
+  HOST_OS = begin
+    require 'rbconfig'
+    RbConfig::CONFIG['host_os'] || RUBY_PLATFORM
+  rescue LoadError
+    RUBY_PLATFORM
+  end.downcase
+
   def os?(*oses)
     oses.any? do |os|
-      host_os = RbConfig::CONFIG['host_os'] || RUBY_PLATFORM
-      host_os.downcase!
-      host_os.match(os.to_s) || windows?(os, host_os)
+      HOST_OS.match(os.to_s) || windows?(os, HOST_OS)
     end
   end
 

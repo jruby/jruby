@@ -699,8 +699,8 @@ describe "a method definition that sets more than one default parameter all to t
   end
 
   it "assigns the parameters different objects across different default calls" do
-    a, b, c = foo
-    d, e, f = foo
+    a, _b, _c = foo
+    d, _e, _f = foo
     a.should_not equal(d)
   end
 

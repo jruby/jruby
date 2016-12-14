@@ -11,4 +11,6 @@ package org.jruby.truffle.core.format.exceptions;
 
 public class TooFewArgumentsException extends FormatException {
 
+    private static final long serialVersionUID = 425804306436596616L;
+
 }

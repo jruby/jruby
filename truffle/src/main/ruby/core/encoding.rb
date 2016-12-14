@@ -1,4 +1,4 @@
-# Copyright (c) 2015 Oracle and/or its affiliates. All rights reserved. This
+# Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
 # code is released under a tri EPL/GPL/LGPL license. You can use it,
 # redistribute it and/or modify it under the terms of the:
 #
@@ -57,19 +57,19 @@ class Encoding
   class << self
     def build_encoding_map
       map = Rubinius::LookupTable.new
-      EncodingList.each_with_index { |encoding, index|
+      Encoding.list.each_with_index { |encoding, index|
         key = encoding.name.upcase.to_sym
         map[key] = [nil, index]
       }
 
-      each_alias { |alias_name, index|
+      Truffle::Encoding.each_alias { |alias_name, index|
         key = alias_name.upcase.to_sym
         map[key] = [alias_name, index]
       }
 
       %w[internal external locale filesystem].each { |name|
         key = name.upcase.to_sym
-        enc = get_default_encoding(name)
+        enc = Truffle::Encoding.get_default_encoding(name)
         index = enc ? map[enc.name.upcase.to_sym].last : nil
         map[key] = [name, index]
       }
@@ -79,7 +79,6 @@ class Encoding
   end
 
   TranscodingMap = Encoding::Converter.transcoding_map
-  EncodingList = Encoding.list.freeze
   EncodingMap = build_encoding_map
 
   @default_external = undefined
@@ -228,13 +227,7 @@ class Encoding
           @replacement_converters << name << converters
         end
       end
-    end
-    
-    alias_method :initialize_rubinius, :initialize
-
-    def initialize(*args)
-      initialize_rubinius(*args)
-      initialize_jruby(*args)
+      initialize_jruby(*[@source_encoding, @destination_encoding, @options])
     end
 
     def convert(str)
@@ -555,7 +548,7 @@ class Encoding
       next unless index
 
       aname = r.first
-      aliases[aname] = EncodingList[index].name if aname
+      aliases[aname] = Truffle.invoke_primitive(:encoding_get_encoding_by_index, index).name if aname
     end
 
     aliases
@@ -595,6 +588,7 @@ class Encoding
     set_alias_index "external", enc
     set_alias_index "filesystem", enc
     @default_external = undefined
+    Truffle::Encoding.default_external = enc
   end
 
   def self.default_internal
@@ -607,6 +601,7 @@ class Encoding
   def self.default_internal=(enc)
     set_alias_index "internal", enc
     @default_internal = undefined
+    Truffle::Encoding.default_internal = enc
   end
 
   def self.find(name)
@@ -619,7 +614,7 @@ class Encoding
   def self.name_list
     EncodingMap.map do |n, r|
       index = r.last
-      r.first or (index and EncodingList[index].name)
+      r.first or (index and Truffle.invoke_primitive(:encoding_get_encoding_by_index, index).name)
     end
   end
 
@@ -637,6 +632,10 @@ class Encoding
     names
   end
 
+  def replicate(name)
+    Truffle.invoke_primitive(:encoding_replicate, self, StringValue(name))
+  end
+
   def _dump(depth)
     name
   end
@@ -644,22 +643,7 @@ class Encoding
   def self._load(name)
     find name
   end
-  
-  class << self
-    alias_method :default_external_rubinius=, :default_external=
 
-    def default_external=(enc)
-      self.default_external_rubinius = enc
-      self.default_external_jruby = enc
-    end
-
-    alias_method :default_internal_rubinius=, :default_internal=
-
-    def default_internal=(enc)
-      self.default_internal_rubinius = enc
-      self.default_internal_jruby = enc
-    end
-  end
 end
 
 Encoding::TranscodingMap[:'UTF-16BE'] = Rubinius::LookupTable.new

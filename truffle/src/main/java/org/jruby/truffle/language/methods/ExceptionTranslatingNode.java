@@ -20,6 +20,7 @@ import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.control.JavaException;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.control.TruffleFatalException;
 
@@ -57,12 +58,14 @@ public class ExceptionTranslatingNode extends RubyNode {
         } catch (TruffleFatalException exception) {
             errorProfile.enter();
             throw exception;
-        } catch (org.jruby.exceptions.RaiseException e) {
-            errorProfile.enter();
-            throw new RaiseException(getContext().getJRubyInterop().toTruffle(e.getException(), this));
         } catch (StackOverflowError error) {
             errorProfile.enter();
             throw new RaiseException(translate(error));
+        } catch (ThreadDeath death) {
+            throw death;
+        } catch (IllegalArgumentException e) {
+            errorProfile.enter();
+            throw new RaiseException(translate(e));
         } catch (Throwable exception) {
             errorProfile.enter();
             throw new RaiseException(translate(exception));
@@ -85,6 +88,21 @@ public class ExceptionTranslatingNode extends RubyNode {
         }
 
         return coreExceptions().systemStackErrorStackLevelTooDeep(this, error);
+    }
+
+    @TruffleBoundary
+    private DynamicObject translate(IllegalArgumentException exception) {
+        if (getContext().getOptions().EXCEPTIONS_PRINT_JAVA) {
+            exception.printStackTrace();
+        }
+
+        String message = exception.getMessage();
+
+        if (message == null) {
+            message = exception.toString();
+        }
+
+        return coreExceptions().argumentError(message, this, exception);
     }
 
     @TruffleBoundary
@@ -162,17 +180,37 @@ public class ExceptionTranslatingNode extends RubyNode {
             throwable.printStackTrace();
         }
 
-        final StringBuilder message = new StringBuilder();
-        message.append(throwable.getClass().getSimpleName());
-        message.append(" ");
-        message.append(throwable.getMessage());
-
-        if (throwable.getStackTrace().length > 0) {
-            message.append(" ");
-            message.append(throwable.getStackTrace()[0].toString());
+        Throwable t = throwable;
+        if (t instanceof JavaException) {
+            t = t.getCause();
         }
 
-        return coreExceptions().internalError(message.toString(), this, throwable);
+        final StringBuilder messageBuilder = new StringBuilder();
+        messageBuilder.append('\n');
+
+        while (t != null) {
+            final String message = t.getMessage();
+
+            messageBuilder.append(t.getClass().getSimpleName());
+            messageBuilder.append(" ");
+            if (message != null) {
+                messageBuilder.append(message);
+            } else {
+                messageBuilder.append("<no message>");
+            }
+
+            if (t.getStackTrace().length > 0) {
+                messageBuilder.append(" ");
+                messageBuilder.append(t.getStackTrace()[0].toString());
+            }
+
+            t = t.getCause();
+            if (t != null) {
+                messageBuilder.append("\nCaused by: ");
+            }
+        }
+
+        return coreExceptions().internalError(messageBuilder.toString(), this, throwable);
     }
 
 }

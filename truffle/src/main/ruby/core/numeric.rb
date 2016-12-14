@@ -237,6 +237,15 @@ class Numeric
   end
   private :math_coerce
 
+  def bit_coerce(other)
+    values = math_coerce(other)
+    unless values[0].is_a?(Integer) && values[1].is_a?(Integer)
+         raise TypeError, "#{values[1].class} can't be coerced into #{self.class}"
+    end
+    values
+  end
+  private :bit_coerce
+
   def redo_coerced(meth, right)
     b, a = math_coerce(right)
     a.__send__ meth, b
@@ -250,7 +259,7 @@ class Numeric
 
   def div(other)
     raise ZeroDivisionError, "divided by 0" if other == 0
-    self.__slash__(other).floor
+    (self / other).floor
   end
 
   def fdiv(other)
@@ -326,4 +335,10 @@ class Numeric
   def real?
     true
   end
+
+  def singleton_method_added(name)
+      self.singleton_class.send(:remove_method, name)
+      raise TypeError, "can't define singleton method #{name} for #{self.class}"
+  end
+
 end

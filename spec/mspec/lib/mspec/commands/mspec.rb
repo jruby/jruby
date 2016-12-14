@@ -1,7 +1,5 @@
 #!/usr/bin/env ruby
 
-MSPEC_HOME = File.expand_path(File.dirname(__FILE__) + '/../../..')
-
 require 'mspec/version'
 require 'mspec/utils/options'
 require 'mspec/utils/script'
@@ -139,10 +137,6 @@ class MSpecMain < MSpecScript
   end
 
   def run
-    ENV['MSPEC_RUNNER'] = '1'
-    ENV['RUBY_EXE']     = config[:target]
-    ENV['RUBY_FLAGS']   = config[:flags].join " "
-
     argv = []
 
     argv.concat config[:launch]

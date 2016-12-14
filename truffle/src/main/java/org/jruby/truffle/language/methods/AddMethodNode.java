@@ -16,11 +16,11 @@ import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.runtime.Visibility;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.Visibility;
 import org.jruby.truffle.language.objects.SingletonClassNode;
 import org.jruby.truffle.language.objects.SingletonClassNodeGen;
 
@@ -77,7 +77,7 @@ public abstract class AddMethodNode extends RubyNode {
     protected DynamicObject getSingletonClass(DynamicObject object) {
         if (singletonClassNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            singletonClassNode = insert(SingletonClassNodeGen.create(getContext(), getSourceSection(), null));
+            singletonClassNode = insert(SingletonClassNodeGen.create(getContext(), null, null));
         }
 
         return singletonClassNode.executeSingletonClass(object);

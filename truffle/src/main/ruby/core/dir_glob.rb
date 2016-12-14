@@ -320,10 +320,14 @@ class Dir
       last
     end
 
-    def self.run(node, matches=[])
+    def self.run(node, all_matches=[])
+      matches = []
       env = Environment.new(matches)
       node.call env, nil
-      env.matches
+      # Truffle: ensure glob'd files are always sorted in consistent order,
+      # it avoids headaches due to platform differences (OS X is sorted, Linux not).
+      matches.sort!
+      all_matches.concat(matches)
     end
 
     def self.glob(pattern, flags, matches=[])

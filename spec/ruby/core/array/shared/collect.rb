@@ -14,7 +14,7 @@ describe :array_collect, shared: true do
 
   it "does not change self" do
     a = ['a', 'b', 'c', 'd']
-    b = a.send(@method) { |i| i + '!' }
+    a.send(@method) { |i| i + '!' }
     a.should == ['a', 'b', 'c', 'd']
   end
 
