@@ -161,7 +161,7 @@ module Process
       main_index = command.index("\x00org.jruby")
       raise "Did not find the main class in args" unless main_index
       needle = command[0...main_index]
-      i = haystack.index("\x00\x00#{needle}")
+      i = haystack.index("\x00#{needle}")
       unless i
         puts
         p needle
@@ -170,7 +170,7 @@ module Process
         puts
         raise "argv[0] not found"
       end
-      i += 2
+      i += 1
 
       @_argv0_max_length = needle.bytesize
       base + i
