@@ -71,12 +71,12 @@ public class JNRTrufflePosix implements TrufflePosix {
 
     @Override
     public int exec(String path, String... argv) {
-        return posix.exec(path, argv);
+        return posix.execv(path, argv);
     }
 
     @Override
     public int exec(String path, String[] argv, String[] envp) {
-        return posix.exec(path, argv, envp);
+        return posix.execve(path, argv, envp);
     }
 
     @Override

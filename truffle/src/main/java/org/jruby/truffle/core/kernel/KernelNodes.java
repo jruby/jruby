@@ -38,7 +38,6 @@ import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
-import jnr.constants.platform.Errno;
 import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.Layouts;
@@ -111,7 +110,6 @@ import org.jruby.truffle.language.dispatch.DispatchNode;
 import org.jruby.truffle.language.dispatch.DoesRespondDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.MissingBehavior;
 import org.jruby.truffle.language.dispatch.RubyCallNode;
-import org.jruby.truffle.language.globals.ReadGlobalVariableNode;
 import org.jruby.truffle.language.globals.ReadGlobalVariableNodeGen;
 import org.jruby.truffle.language.loader.CodeLoader;
 import org.jruby.truffle.language.loader.RequireNode;
@@ -157,13 +155,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.ProcessBuilder.Redirect;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 
-import static org.jruby.truffle.core.array.ArrayHelpers.getStore;
 
 @CoreClass("Kernel")
 public abstract class KernelNodes {
@@ -768,89 +763,6 @@ public abstract class KernelNodes {
 
         protected int getCacheLimit() {
             return getContext().getOptions().EVAL_CACHE;
-        }
-
-    }
-
-    @CoreMethod(names = "exec", isModuleFunction = true, required = 1, rest = true, unsafe = UnsafeGroup.PROCESSES)
-    public abstract static class ExecNode extends CoreMethodArrayArgumentsNode {
-
-        @Child private CallDispatchHeadNode toHashNode;
-
-        @Specialization
-        public Object exec(VirtualFrame frame, Object command, Object[] args) {
-            if (TruffleOptions.AOT) {
-                throw new UnsupportedOperationException("ProcessEnvironment.environment not supported with AOT.");
-            }
-
-            if (toHashNode == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                toHashNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
-            }
-
-            final String[] commandLine = buildCommandLine(command, args);
-
-            final DynamicObject env = coreLibrary().getENV();
-            final DynamicObject envAsHash = (DynamicObject) toHashNode.call(frame, env, "to_hash");
-
-            exec(getContext(), envAsHash, commandLine);
-
-            return null;
-        }
-
-        @TruffleBoundary
-        private String[] buildCommandLine(Object command, Object[] args) {
-            final List<String> commandLine = new ArrayList<>(1 + args.length);
-            if (RubyGuards.isRubyArray(command)) {
-                // For handling: exec([cmdname, argv0], arg1, ...)
-                // argv0 not yet implemented
-                final Object[] store = (Object[]) getStore((DynamicObject) command);
-                commandLine.add(store[0].toString());
-            } else {
-                commandLine.add(command.toString());
-            }
-            for (int n = 0; n < args.length; n++) {
-                if (n == args.length - 1 && RubyGuards.isRubyHash(args[n])) {
-                    break;
-                }
-                commandLine.add(args[n].toString());
-            }
-            final String[] result = new String[commandLine.size()];
-            return commandLine.toArray(result);
-        }
-
-        @TruffleBoundary
-        private void exec(RubyContext context, DynamicObject envAsHash, String[] commandLine) {
-            final ProcessBuilder builder = new ProcessBuilder(commandLine);
-            builder.inheritIO();
-
-            for (KeyValue keyValue : HashOperations.iterableKeyValues(envAsHash)) {
-                builder.environment().put(keyValue.getKey().toString(), keyValue.getValue().toString());
-            }
-
-            final Process process;
-
-            try {
-                process = builder.start();
-            } catch (IOException e) {
-                if (e.getMessage().contains("Permission denied")) {
-                    throw new RaiseException(getContext().getCoreExceptions().errnoError(Errno.EACCES.intValue(), this));
-                } else if (e.getMessage().contains("No such file or directory")) {
-                    throw new RaiseException(getContext().getCoreExceptions().errnoError(Errno.ENOENT.intValue(), this));
-                } else {
-                    // TODO(cs): proper Ruby exception
-                    throw new JavaException(e);
-                }
-            }
-
-            int exitCode = context.getThreadManager().runUntilResult(this, () -> process.waitFor());
-
-            /*
-             * We really do want to just exit here as opposed to throwing a MainExitException and tidying up, as we're
-             * pretending that we did exec and so replaced this process with a new one.
-             */
-
-            System.exit(exitCode);
         }
 
     }
