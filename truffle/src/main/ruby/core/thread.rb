@@ -88,7 +88,7 @@ class Thread
   # If there is one, it returns true.
   # Otherwise, it will yield once and return false.
 
-  def self.detect_recursion(obj, paired_obj=undefined)
+  def self.detect_recursion(obj, paired_obj=nil)
     id = obj.object_id
     pair_id = paired_obj.object_id
     objects = current.recursive_objects
@@ -142,7 +142,7 @@ class Thread
 
   class InnerRecursionDetected < Exception; end
 
-  def self.detect_outermost_recursion(obj, paired_obj=undefined, &block)
+  def self.detect_outermost_recursion(obj, paired_obj=nil, &block)
     rec = current.recursive_objects
 
     if rec[:__detect_outermost_recursion__]
