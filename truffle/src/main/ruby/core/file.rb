@@ -1222,7 +1222,7 @@ class File < IO
     alias_method :fnmatch?, :fnmatch
   end
 
-  def initialize(path_or_fd, mode=undefined, perm=undefined, options=undefined)
+  def initialize(path_or_fd, mode=nil, perm=undefined, options=undefined)
     if path_or_fd.kind_of? Integer
       super(path_or_fd, mode, options)
       @path = nil
@@ -1233,7 +1233,7 @@ class File < IO
       case mode
       when String, Fixnum
         # do nothing
-      when nil, undefined
+      when nil
         mode = "r"
       when Hash
         options = mode

@@ -700,7 +700,7 @@ class IO
     end
   end
 
-  def self.for_fd(fd, mode=undefined, options=undefined)
+  def self.for_fd(fd, mode=nil, options=undefined)
     new fd, mode, options
   end
 
@@ -758,7 +758,6 @@ class IO
   end
 
   def self.normalize_options(mode, options)
-    mode = nil if undefined.equal?(mode)
     autoclose = true
 
     if undefined.equal?(options)
@@ -1208,7 +1207,7 @@ class IO
   #
   # Create a new IO associated with the given fd.
   #
-  def initialize(fd, mode=undefined, options=undefined)
+  def initialize(fd, mode=nil, options=undefined)
     initialize_allocated
     if block_given?
       warn 'IO::new() does not take block; use IO::open() instead'
