@@ -588,12 +588,11 @@ class IO
 
     name = Rubinius::Type.coerce_to_path name
 
+    separator = $/ if undefined.equal?(separator)
     case separator
     when Fixnum
       options = limit
       limit = separator
-      separator = $/
-    when undefined
       separator = $/
     when Hash
       options = separator
@@ -604,11 +603,10 @@ class IO
       separator = StringValue(separator)
     end
 
+    limit = nil if undefined.equal?(limit)
     case limit
     when Fixnum, nil
       # do nothing
-    when undefined
-      limit = nil
     when Hash
       if undefined.equal? options
         options = limit
@@ -625,11 +623,12 @@ class IO
       end
     end
 
+    options = {} if undefined.equal?(options)
     case options
     when Hash
       # do nothing
-    when undefined, nil
-      options = { }
+    when nil
+      options = {}
     else
       options = Rubinius::Type.coerce_to options, Hash, :to_hash
     end
