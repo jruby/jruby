@@ -470,42 +470,42 @@ class String
     Truffle.check_frozen
 
     case to
-      when Encoding
-        to_enc = to
-      when Hash
-        options = to
-        to_enc = Encoding.default_internal
-      when undefined
-        to_enc = Encoding.default_internal
-        return self unless to_enc
-      else
-        opts = Rubinius::Type::check_convert_type to, Hash, :to_hash
+    when Encoding
+      to_enc = to
+    when Hash
+      options = to
+      to_enc = Encoding.default_internal
+    when undefined
+      to_enc = Encoding.default_internal
+      return self unless to_enc
+    else
+      opts = Rubinius::Type::check_convert_type to, Hash, :to_hash
 
-        if opts
-          options = opts
-          to_enc = Encoding.default_internal
-        else
-          to_enc = Rubinius::Type.try_convert_to_encoding to
-        end
+      if opts
+        options = opts
+        to_enc = Encoding.default_internal
+      else
+        to_enc = Rubinius::Type.try_convert_to_encoding to
+      end
     end
 
     case from
-      when undefined
-        from_enc = encoding
-      when Encoding
-        from_enc = from
-      when Hash
-        options = from
+    when undefined
+      from_enc = encoding
+    when Encoding
+      from_enc = from
+    when Hash
+      options = from
+      from_enc = encoding
+    else
+      opts = Rubinius::Type::check_convert_type from, Hash, :to_hash
+
+      if opts
+        options = opts
         from_enc = encoding
       else
-        opts = Rubinius::Type::check_convert_type from, Hash, :to_hash
-
-        if opts
-          options = opts
-          from_enc = encoding
-        else
-          from_enc = Rubinius::Type.coerce_to_encoding from
-        end
+        from_enc = Rubinius::Type.coerce_to_encoding from
+      end
     end
 
     if undefined.equal? from_enc or undefined.equal? to_enc
