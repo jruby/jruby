@@ -1243,7 +1243,7 @@ class File < IO
         mode = nil
       end
 
-      if undefined.equal?(options)
+      if undefined.equal?(options) and !undefined.equal?(perm)
         options = Rubinius::Type.try_convert(perm, Hash, :to_hash)
         perm = undefined if options
       end
