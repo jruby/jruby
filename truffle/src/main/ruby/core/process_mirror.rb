@@ -369,13 +369,15 @@ module Rubinius
               command = split_command
               args = [split_command] + split_args
             end
-          elsif should_search_path?(command)
-            resolved_command = resolve_in_path(command)
+          else
+            if should_search_path?(command)
+              resolved_command = resolve_in_path(command)
 
-            if resolved_command
-              command = resolved_command
-            else
-              raise Errno::ENOENT.new("No such file or directory - #{command}")
+              if resolved_command
+                command = resolved_command
+              else
+                raise Errno::ENOENT.new("No such file or directory - #{command}")
+              end
             end
           end
 
