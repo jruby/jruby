@@ -496,55 +496,6 @@ optparse/test_autoconf.rb
 # psych/handlers/test_recorder.rb
 # psych/test_safe_load.rb
 # psych/test_yamldbm.rb
-rake/test_private_reader.rb
-rake/test_rake.rb
-rake/test_rake_application.rb
-# rake/test_rake_application_options.rb
-rake/test_rake_backtrace.rb
-# rake/test_rake_clean.rb
-# rake/test_rake_cpu_counter.rb
-rake/test_rake_definitions.rb
-rake/test_rake_directory_task.rb
-rake/test_rake_dsl.rb
-rake/test_rake_early_time.rb
-rake/test_rake_extension.rb
-rake/test_rake_file_creation_task.rb
-rake/test_rake_file_list.rb
-rake/test_rake_file_list_path_map.rb
-# rake/test_rake_file_task.rb
-rake/test_rake_file_utils.rb
-rake/test_rake_ftp_file.rb
-# rake/test_rake_functional.rb
-rake/test_rake_invocation_chain.rb
-rake/test_rake_linked_list.rb
-rake/test_rake_makefile_loader.rb
-rake/test_rake_multi_task.rb
-rake/test_rake_name_space.rb
-rake/test_rake_package_task.rb
-rake/test_rake_path_map.rb
-rake/test_rake_path_map_explode.rb
-rake/test_rake_path_map_partial.rb
-rake/test_rake_pathname_extensions.rb
-rake/test_rake_pseudo_status.rb
-# rake/test_rake_rake_test_loader.rb
-# rake/test_rake_reduce_compat.rb
-rake/test_rake_require.rb
-rake/test_rake_rules.rb
-rake/test_rake_scope.rb
-rake/test_rake_task.rb
-rake/test_rake_task_argument_parsing.rb
-rake/test_rake_task_arguments.rb
-rake/test_rake_task_lib.rb
-rake/test_rake_task_manager.rb
-rake/test_rake_task_manager_argument_resolution.rb
-rake/test_rake_task_with_arguments.rb
-rake/test_rake_test_task.rb
-rake/test_rake_thread_pool.rb
-rake/test_rake_top_level_functions.rb
-rake/test_rake_win32.rb
-rake/test_thread_history_display.rb
-rake/test_trace_output.rb
-rdoc/test_attribute_manager.rb
 rdoc/test_rdoc_alias.rb
 rdoc/test_rdoc_any_method.rb
 rdoc/test_rdoc_attr.rb
@@ -644,7 +595,6 @@ rexml/test_doctype.rb
 rexml/test_document.rb
 rexml/test_elements.rb
 rexml/test_encoding.rb
-rexml/test_encoding_2.rb
 rexml/test_entity.rb
 rexml/test_functions.rb
 rexml/test_functions_number.rb
@@ -664,11 +614,6 @@ rexml/test_text.rb
 rexml/test_ticket_80.rb
 rexml/test_validation_rng.rb
 rexml/test_xml_declaration.rb
-rexml/test_xpath.rb
-rexml/test_xpath_attribute_query.rb
-rexml/test_xpath_msw.rb
-rexml/test_xpath_pred.rb
-rexml/test_xpathtext.rb
 rexml/xpath/test_attribute.rb
 rexml/xpath/test_axis_preceding_sibling.rb
 rexml/xpath/test_base.rb
