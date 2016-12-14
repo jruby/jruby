@@ -42,7 +42,7 @@ module Rubinius
       def self.exec(*args)
         exe = Execute.new(*args)
         exe.spawn_setup
-        exe.exec exe.command, exe.argv
+        exe.exec exe.command, exe.argv, exe.env_array
       end
 
       def self.spawn(*args)
@@ -62,6 +62,7 @@ module Rubinius
         attr_reader :command
         attr_reader :argv
         attr_reader :options
+        attr_reader :env_array
 
         # Turns the various varargs incantations supported by Process.spawn into a
         # [env, prog, argv, redirects, options] tuple.
@@ -109,6 +110,7 @@ module Rubinius
 
             @command = command
             @argv = argv
+            @env_array = []
           end
 
           @options = Rubinius::LookupTable.new if options or env
@@ -267,6 +269,49 @@ module Rubinius
           "a+" => ::File::RDWR   | ::File::APPEND | ::File::CREAT
         }
 
+        def spawn_setup
+          env = options&.delete(:unsetenv_others) ? {} : ENV.to_hash
+          if add_to_env = options&.delete(:env)
+            env.merge! Hash[add_to_env]
+          end
+
+          @env_array = env.map { |k, v| "#{k}=#{v}" }
+
+          if @options
+            pgroup = options[:pgroup]
+            if pgroup
+              Truffle::POSIX.setpgid(0, pgroup)
+            end
+
+            mask = options[:mask]
+            if mask
+              Truffle::POSIX.umask(mask)
+            end
+
+            chdir = options[:chdir]
+            if chdir
+              Truffle::POSIX.chdir(chdir)
+            end
+
+            close_others = options[:close_others]
+            if close_others
+              warn 'spawn_setup: close_others not yet implemented'
+            end
+
+            assign_fd = options[:assign_fd]
+            if assign_fd
+              warn 'spawn_setup: assign_fd not yet implemented'
+            end
+
+            redirect_fd = options[:redirect_fd]
+            if redirect_fd
+              warn 'spawn_setup: redirect_fd not yet implemented'
+            end
+          end
+
+          nil
+        end
+
         def spawn(options, command, arguments)
           options ||= {}
           env = options.delete(:unsetenv_others) ? {} : ENV.to_hash
@@ -283,10 +328,57 @@ module Rubinius
           Truffle::Process.spawn command, arguments, env_array, options
         end
 
-        def exec(command, args)
-          Truffle.primitive :vm_exec
+        def exec(command, args, env_array)
+          command.each_byte do |b|
+            if b == 0x00
+              raise ArgumentError.new("string contains null byte")
+            end
+          end
+
+          if args.empty?
+            split_command, *args = command.strip.split(' ')
+
+            if should_search_path?(split_command)
+              resolved_command = resolve_in_path(split_command)
+
+              if resolved_command
+                command, args = '/bin/sh', ['/bin/sh', '-c', command] + args
+              else
+                raise Errno::ENOENT.new("No such file or directory - #{command}")
+              end
+            else
+              args = [command]
+            end
+          elsif should_search_path?(command)
+            resolved_command = resolve_in_path(command)
+
+            if resolved_command
+              command = resolved_command
+            else
+              raise Errno::ENOENT.new("No such file or directory - #{command}")
+            end
+          end
+
+          Truffle.invoke_primitive :vm_exec, command, args, env_array
           raise PrimitiveFailure,
             "Rubinius::Mirror::Process::Execute#exec primitive failed"
+        end
+
+        def should_search_path?(command)
+          ['/', './', '../'].each { |prefix| return false if command.start_with?(prefix) }
+          true
+        end
+
+        def resolve_in_path(command)
+          ENV['PATH'].split(File::PATH_SEPARATOR).each do |dir|
+            f = File.join(dir, command)
+
+            if File.file?(f) && File.executable?(f)
+              return f
+            end
+          end
+
+          nil
         end
       end
     end

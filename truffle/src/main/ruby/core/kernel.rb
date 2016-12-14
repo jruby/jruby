@@ -221,6 +221,11 @@ module Kernel
     port.write self
   end
 
+  def exec(*args)
+    Process.exec(*args)
+  end
+  module_function :exec
+
   def exit(code=0)
     Process.exit(code)
   end
