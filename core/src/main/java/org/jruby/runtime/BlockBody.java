@@ -68,9 +68,10 @@ public abstract class BlockBody {
     }
 
     public MethodHandle getTestBlockBody() {
+        final MethodHandle testBlockBody = this.testBlockBody;
         if (testBlockBody != null) return testBlockBody;
 
-        return testBlockBody = Binder.from(boolean.class, ThreadContext.class, Block.class).drop(0).append(this).invoke(TEST_BLOCK_BODY);
+        return this.testBlockBody = Binder.from(boolean.class, ThreadContext.class, Block.class).drop(0).append(this).invoke(TEST_BLOCK_BODY);
     }
 
     private static final MethodHandle TEST_BLOCK_BODY = Binder.from(boolean.class, Block.class, BlockBody.class).invokeStaticQuiet(MethodHandles.lookup(), BlockBody.class, "testBlockBody");

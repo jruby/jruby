@@ -621,7 +621,7 @@ public class RubyKernel {
 
     /** Returns value of $_.
      *
-     * @throws TypeError if $_ is not a String or nil.
+     * @throws RaiseException TypeError if $_ is not a String or nil.
      * @return value of $_ as String.
      */
     private static RubyString getLastlineString(ThreadContext context, Ruby runtime) {
@@ -1174,15 +1174,12 @@ public class RubyKernel {
     public static IRubyObject warn(ThreadContext context, IRubyObject recv, IRubyObject message) {
         final Ruby runtime = context.runtime;
 
-        if (runtime.warningsEnabled()) {
-            IRubyObject out = runtime.getGlobalVariables().get("$stderr");
-            sites(context).write.call(context, out, out, message);
-            sites(context).write.call(context, out, out, runtime.getGlobalVariables().getDefaultSeparator());
-        }
+        if (runtime.warningsEnabled()) RubyIO.puts1(context, runtime.getGlobalVariables().get("$stderr"), message);
+
         return context.nil;
     }
 
-    @JRubyMethod(module = true, required = 1, rest = true, visibility = PRIVATE)
+    @JRubyMethod(module = true, rest = true, visibility = PRIVATE)
     public static IRubyObject warn(ThreadContext context, IRubyObject recv, IRubyObject... messages) {
         for (IRubyObject message : messages) warn(context, recv, message);
         return context.nil;

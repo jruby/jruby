@@ -2428,4 +2428,8 @@ public final class StringSupport {
 
         return modify;
     }
+
+    public static int encCoderangeClean(int cr) {
+        return (cr ^ (cr >> 1)) & CR_7BIT;
+    }
 }
