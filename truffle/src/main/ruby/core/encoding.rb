@@ -150,17 +150,17 @@ class Encoding
       Encoding.find transcoding.keys.first.to_s
     end
 
-    def self.search_convpath(from, to, options=undefined)
+    def self.search_convpath(from, to, options=0)
       new(from, to, options).convpath
     end
 
-    def initialize(from, to, options=undefined)
+    def initialize(from, to, options=0)
       @source_encoding = Rubinius::Type.coerce_to_encoding from
       @destination_encoding = Rubinius::Type.coerce_to_encoding to
 
       if options.kind_of? Fixnum
         @options = options
-      elsif !undefined.equal? options
+      else
         options = Rubinius::Type.coerce_to options, Hash, :to_hash
 
         @options = 0
@@ -188,8 +188,6 @@ class Encoding
 
           replacement = options[:replace]
         end
-      else
-        @options = 0
       end
 
       source_name = @source_encoding.name.upcase.to_sym
