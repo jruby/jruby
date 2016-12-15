@@ -49,12 +49,10 @@ module Rubinius::FFI::Library
     suffixes = ['ruby/truffle/rubysl/rubysl-socket/lib/rubysl/socket.rb']
 
     suffixes.each do |suffix|
-      if caller[-suffix.length, suffix.length] == suffix
-        if Truffle::POSIX.respond_to? mname
-          define_method mname, &Truffle::POSIX.method(mname)
-          module_function mname
-          return
-        end
+      if caller.end_with?(suffix) and Truffle::POSIX.respond_to?(mname)
+        define_method mname, &Truffle::POSIX.method(mname)
+        module_function mname
+        return
       end
     end
 
