@@ -1,8 +1,11 @@
 package org.jruby.internal.runtime.methods;
 
 import org.jruby.RubyModule;
+import org.jruby.internal.runtime.AbstractIRMethod;
 import org.jruby.ir.IRFlags;
+import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
+import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Block;
@@ -14,13 +17,15 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import java.lang.invoke.MethodHandle;
 
-public class CompiledIRMetaClassBody extends CompiledIRMethod {
+public class CompiledIRNoProtocolMethod extends AbstractIRMethod {
     private final boolean scope;
+    private final MethodHandle variable;
 
-    public CompiledIRMetaClassBody(MethodHandle handle, IRScope scope, RubyModule implementationClass) {
-        super(handle, scope, Visibility.PUBLIC, implementationClass, scope.receivesKeywordArgs());
+    public CompiledIRNoProtocolMethod(MethodHandle handle, IRScope scope, RubyModule implementationClass) {
+        super(scope, Visibility.PUBLIC, implementationClass);
 
         this.scope = !scope.getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED);
+        this.variable = handle;
     }
 
     public ArgumentDescriptor[] getArgumentDescriptors() {
@@ -63,7 +68,6 @@ public class CompiledIRMetaClassBody extends CompiledIRMethod {
         throw new RuntimeException("BUG: this path should never be called");
     }
 
-    @Override
     protected void post(ThreadContext context) {
         // update call stacks (pop: ..)
         context.popFrame();
@@ -72,7 +76,6 @@ public class CompiledIRMetaClassBody extends CompiledIRMethod {
         }
     }
 
-    @Override
     protected void pre(ThreadContext context, StaticScope staticScope, RubyModule implementationClass, IRubyObject self, String name, Block block) {
         // update call stacks (push: frame, class, scope, etc.)
         context.preMethodFrameOnly(implementationClass, name, self, block);
@@ -83,6 +86,18 @@ public class CompiledIRMetaClassBody extends CompiledIRMethod {
             context.pushScope(DynamicScope.newDynamicScope(staticScope, context.getCurrentScope()));
         }
         context.setCurrentVisibility(getVisibility());
+    }
+
+    @Override
+    public InterpreterContext ensureInstrsReady() {
+        // FIXME: duplicated from MixedModeIRMethod
+        if (method instanceof IRMethod) {
+            return ((IRMethod) method).lazilyAcquireInterpreterContext();
+        }
+
+        InterpreterContext ic = method.getInterpreterContext();
+
+        return ic;
     }
 
 }

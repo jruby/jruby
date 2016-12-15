@@ -40,6 +40,8 @@ public class CompiledIRMethod extends AbstractIRMethod {
         this.method.getStaticScope().determineModule();
         this.hasKwargs = hasKwargs;
 
+        assert method.hasExplicitCallProtocol();
+
         setHandle(variable);
     }
 
@@ -65,16 +67,6 @@ public class CompiledIRMethod extends AbstractIRMethod {
         InterpreterContext ic = method.getInterpreterContext();
 
         return ic;
-    }
-
-    protected void post(ThreadContext context) {
-        // update call stacks (pop: ..)
-        context.postMethodFrameAndScope();
-    }
-
-    protected void pre(ThreadContext context, StaticScope staticScope, RubyModule implementationClass, IRubyObject self, String name, Block block) {
-        // update call stacks (push: frame, class, scope, etc.)
-        context.preMethodFrameAndScope(implementationClass, name, self, block, staticScope);
     }
 
     @Override

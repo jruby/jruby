@@ -244,6 +244,9 @@ public class StaticScope implements Serializable {
 
         if (slot >= 0) return slot;
 
+        // Clear constructor since we are adding a name
+        constructor = null;
+
         // This is perhaps innefficient timewise?  Optimal spacewise
         growVariableNames(name);
 
@@ -277,6 +280,9 @@ public class StaticScope implements Serializable {
 
         if (slot >= 0) return slot;
 
+        // Clear constructor since we are adding a name
+        constructor = null;
+
         // This is perhaps innefficient timewise?  Optimal spacewise
         growVariableNames(name);
 
@@ -295,6 +301,9 @@ public class StaticScope implements Serializable {
     public void setVariables(String[] names) {
         assert names != null : "names is not null";
         assert namesAreInterned(names);
+
+        // Clear constructor since we are changing names
+        constructor = null;
 
         variableNames = new String[names.length];
         variableNamesLength = names.length;
