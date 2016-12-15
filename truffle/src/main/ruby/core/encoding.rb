@@ -37,20 +37,15 @@ end
 
 class Encoding
   class Transcoding
-    attr_accessor :source
-    attr_accessor :target
+    attr_reader :source, :target
+
+    def initialize(source, target)
+      @source = source
+      @target = target
+    end
 
     def inspect
       "#<#{super} #{source} to #{target}"
-    end
-
-    def self.create(source, target)
-      ret = new
-
-      ret.source = source
-      ret.target = target
-
-      ret
     end
   end
 
@@ -76,9 +71,22 @@ class Encoding
       map
     end
     private :build_encoding_map
+
+    def build_transcoding_map
+      map = Rubinius::LookupTable.new
+      Encoding::Converter.each_transcoder { |source, destinations|
+        h = {}
+        destinations.each { |dest|
+          h[dest] = Transcoding.new(source, dest)
+        }
+        map[source] = h
+      }
+      map
+    end
+    private :build_transcoding_map
   end
 
-  TranscodingMap = Encoding::Converter.transcoding_map
+  TranscodingMap = build_transcoding_map
   EncodingMap = build_encoding_map
 
   @default_external = Truffle::Encoding.get_default_encoding('external')

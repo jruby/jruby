@@ -31,6 +31,7 @@ import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.builtins.NonStandard;
 import org.jruby.truffle.builtins.Primitive;
 import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
+import org.jruby.truffle.builtins.YieldingCoreMethodNode;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeConstants;
 import org.jruby.truffle.core.rope.RopeNodes;
@@ -99,43 +100,25 @@ public abstract class EncodingConverterNodes {
     }
 
     @NonStandard
-    @CoreMethod(names = "transcoding_map", onSingleton = true)
-    public abstract static class TranscodingMapNode extends CoreMethodArrayArgumentsNode {
-
-        @Child private CallDispatchHeadNode upcaseNode;
-        @Child private CallDispatchHeadNode toSymNode;
-        @Child private CallDispatchHeadNode newLookupTableNode;
-        @Child private CallDispatchHeadNode lookupTableWriteNode;
-        @Child private CallDispatchHeadNode newTranscodingNode;
-
-        public TranscodingMapNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            upcaseNode = DispatchHeadNodeFactory.createMethodCall(context);
-            toSymNode = DispatchHeadNodeFactory.createMethodCall(context);
-            newLookupTableNode = DispatchHeadNodeFactory.createMethodCall(context);
-            lookupTableWriteNode = DispatchHeadNodeFactory.createMethodCall(context);
-            newTranscodingNode = DispatchHeadNodeFactory.createMethodCall(context);
-        }
+    @CoreMethod(names = "each_transcoder", onSingleton = true, needsBlock = true)
+    public abstract static class EachTranscoderNode extends YieldingCoreMethodNode {
 
         @Specialization
-        public Object transcodingMap(VirtualFrame frame) {
-            final Object ret = newLookupTableNode.call(frame, coreLibrary().getLookupTableClass(), "new");
-
+        public Object transcodingMap(VirtualFrame frame, DynamicObject block) {
             for (Map.Entry<String, Map<String, Transcoder>> sourceEntry : TranscodingManager.allTranscoders.entrySet()) {
                 final DynamicObject source = getContext().getSymbolTable().getSymbol(sourceEntry.getKey());
-                final Object destinations = newLookupTableNode.call(frame, coreLibrary().getLookupTableClass(), "new");
+                final int size = sourceEntry.getValue().size();
+                final Object[] destinations = new Object[size];
 
+                int i = 0;
                 for (Map.Entry<String, Transcoder> destinationEntry : sourceEntry.getValue().entrySet()) {
-                    final DynamicObject destination = getContext().getSymbolTable().getSymbol(destinationEntry.getKey());
-                    final Object lookupTableValue = newTranscodingNode.call(frame, coreLibrary().getTranscodingClass(), "create", source, destination);
-
-                    lookupTableWriteNode.call(frame, destinations, "[]=", destination, lookupTableValue);
+                    destinations[i++] = getContext().getSymbolTable().getSymbol(destinationEntry.getKey());
                 }
 
-                lookupTableWriteNode.call(frame, ret, "[]=", source, destinations);
+                yield(frame, block, source, createArray(destinations, size));
             }
 
-            return ret;
+            return nil();
         }
     }
 
