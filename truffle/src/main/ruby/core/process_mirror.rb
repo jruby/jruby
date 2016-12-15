@@ -112,7 +112,7 @@ module Rubinius
             @argv = argv
           end
 
-          @options = Rubinius::LookupTable.new
+          @options = {}
 
           if options
             options.each do |key, value|

@@ -51,7 +51,7 @@ class Encoding
 
   class << self
     def build_encoding_map
-      map = Rubinius::LookupTable.new
+      map = {}
       Encoding.list.each_with_index { |encoding, index|
         key = encoding.name.upcase.to_sym
         map[key] = [nil, index]
@@ -73,7 +73,7 @@ class Encoding
     private :build_encoding_map
 
     def build_transcoding_map
-      map = Rubinius::LookupTable.new
+      map = {}
       Encoding::Converter.each_transcoder { |source, destinations|
         h = {}
         destinations.each { |dest|
@@ -152,7 +152,7 @@ class Encoding
       return unless encoding
       return if encoding.ascii_compatible?
 
-      transcoding = TranscodingMap[encoding.name.upcase]
+      transcoding = TranscodingMap[encoding.name.upcase.to_sym]
       return unless transcoding and transcoding.size == 1
 
       Encoding.find transcoding.keys.first.to_s
@@ -229,7 +229,7 @@ class Encoding
           name = enc.to_s.upcase
           next if name == replacement_encoding_name
 
-          _, converters = TranscodingPath[replacement_encoding_name, enc]
+          _, converters = TranscodingPath[replacement_encoding_name.to_sym, enc]
           @replacement_converters << name << converters
         end
       end
@@ -646,17 +646,17 @@ class Encoding
 
 end
 
-Encoding::TranscodingMap[:'UTF-16BE'] = Rubinius::LookupTable.new
+Encoding::TranscodingMap[:'UTF-16BE'] = {}
 Encoding::TranscodingMap[:'UTF-16BE'][:'UTF-8'] = nil
 
-Encoding::TranscodingMap[:'UTF-16LE'] = Rubinius::LookupTable.new
+Encoding::TranscodingMap[:'UTF-16LE'] = {}
 Encoding::TranscodingMap[:'UTF-16LE'][:'UTF-8'] = nil
 
-Encoding::TranscodingMap[:'UTF-32BE'] = Rubinius::LookupTable.new
+Encoding::TranscodingMap[:'UTF-32BE'] = {}
 Encoding::TranscodingMap[:'UTF-32BE'][:'UTF-8'] = nil
 
-Encoding::TranscodingMap[:'UTF-32LE'] = Rubinius::LookupTable.new
+Encoding::TranscodingMap[:'UTF-32LE'] = {}
 Encoding::TranscodingMap[:'UTF-32LE'][:'UTF-8'] = nil
 
-Encoding::TranscodingMap[:'ISO-2022-JP'] = Rubinius::LookupTable.new
+Encoding::TranscodingMap[:'ISO-2022-JP'] = {}
 Encoding::TranscodingMap[:'ISO-2022-JP'][:'STATELESS-ISO-2022-JP'] = nil

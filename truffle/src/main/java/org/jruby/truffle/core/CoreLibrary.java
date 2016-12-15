@@ -193,7 +193,6 @@ public class CoreLibrary {
     private final DynamicObject ioErrorClass;
     private final DynamicObject loadErrorClass;
     private final DynamicObject localJumpErrorClass;
-    private final DynamicObject lookupTableClass;
     private final DynamicObject matchDataClass;
     private final DynamicObjectFactory matchDataFactory;
     private final DynamicObject moduleClass;
@@ -640,7 +639,6 @@ public class CoreLibrary {
         byteArrayClass = defineClass(rubiniusModule, objectClass, "ByteArray");
         byteArrayFactory = Layouts.BYTE_ARRAY.createByteArrayShape(byteArrayClass, byteArrayClass);
         Layouts.CLASS.setInstanceFactoryUnsafe(byteArrayClass, byteArrayFactory);
-        lookupTableClass = defineClass(rubiniusModule, hashClass, "LookupTable");
         defineClass(rubiniusModule, objectClass, "StringData");
         transcodingClass = defineClass(encodingClass, objectClass, "Transcoding");
         randomizerClass = defineClass(rubiniusModule, objectClass, "Randomizer");
@@ -1476,10 +1474,6 @@ public class CoreLibrary {
         return statFactory;
     }
 
-    public DynamicObject getLookupTableClass() {
-        return lookupTableClass;
-    }
-
     public DynamicObject getTranscodingClass() {
         return transcodingClass;
     }
@@ -1692,7 +1686,6 @@ public class CoreLibrary {
 
     private static final String[] coreFiles = {
             "/core/pre.rb",
-            "/core/lookuptable.rb",
             "/core/basic_object.rb",
             "/core/mirror.rb",
             "/core/bignum.rb",
