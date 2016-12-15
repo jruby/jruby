@@ -36,10 +36,10 @@ package org.jruby.javasupport;
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Array;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.lang.reflect.ReflectPermission;
 import static java.lang.Character.isLetter;
 import static java.lang.Character.isLowerCase;
 import static java.lang.Character.isUpperCase;
@@ -99,9 +99,13 @@ public class JavaUtil {
 
         if (RubyInstanceConfig.CAN_SET_ACCESSIBLE) {
             try {
-                AccessController.checkPermission(new ReflectPermission("suppressAccessChecks"));
-                canSetAccessible = true;
-            } catch (Throwable t) {
+                // We want to check if we can access a commonly-existing private field through reflection. If so,
+                // we're probably able to access some other fields too later on.
+                Field f = Integer.class.getDeclaredField("value");
+                f.setAccessible(true);
+                Integer v = 1;
+                canSetAccessible = f.get(v).equals(v);
+            } catch (Exception t) {
                 // added this so if things are weird in the future we can debug without
                 // spinning a new binary
                 if (Options.JI_LOGCANSETACCESSIBLE.load()) {
