@@ -412,7 +412,7 @@ class Array
     level = Rubinius::Type.coerce_to_collection_index level
     return self.dup if level == 0
 
-    out = new_reserved size
+    out = [] # new_reserved size
     recursively_flatten(self, out, level)
     Rubinius::Type.infect(out, self)
     out
@@ -424,7 +424,7 @@ class Array
     level = Rubinius::Type.coerce_to_collection_index level
     return nil if level == 0
 
-    out = new_reserved size
+    out = [] # new_reserved size
     if recursively_flatten(self, out, level)
       Truffle::Array.steal_storage(self, out)
       return self
@@ -1397,13 +1397,6 @@ class Array
     end
   end
   private :isort_block!
-
-  # Truffle: what follows is our changes
-
-  def new_reserved(count)
-    # TODO CS 6-Feb-15 do we want to reserve space or allow the runtime to optimise for us?
-    self.class.new(0 , nil)
-  end
 
   def reverse!
     Truffle.check_frozen
