@@ -55,6 +55,7 @@ import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.builtins.NonStandard;
 import org.jruby.truffle.builtins.Primitive;
 import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
+import org.jruby.truffle.builtins.PrimitiveNode;
 import org.jruby.truffle.core.cast.ToStrNode;
 import org.jruby.truffle.core.cast.ToStrNodeGen;
 import org.jruby.truffle.core.regexp.RegexpNodesFactory.RegexpSetLastMatchPrimitiveNodeFactory;
@@ -282,14 +283,6 @@ public abstract class RegexpNodes {
         } catch (SyntaxException e) {
             throw new RaiseException(context.getCoreExceptions().regexpError(e.getMessage(), currentNode));
         }
-    }
-
-    public static Object getCachedNames(DynamicObject regexp) {
-        return Layouts.REGEXP.getCachedNames(regexp);
-    }
-
-    public static void setCachedNames(DynamicObject regexp, Object cachedNames) {
-        Layouts.REGEXP.setCachedNames(regexp, cachedNames);
     }
 
     public static void setRegex(DynamicObject regexp, Regex regex) {
@@ -681,54 +674,33 @@ public abstract class RegexpNodes {
 
     }
 
-    @NonStandard
-    @NodeChild(value = "self")
-    public abstract static class RubiniusNamesNode extends RubyNode {
+    @Primitive(name = "regexp_names")
+    public abstract static class RubiniusNamesNode extends PrimitiveArrayArgumentsNode {
 
-        @Child private CallDispatchHeadNode newLookupTableNode;
-        @Child private CallDispatchHeadNode lookupTableWriteNode;
-
-        @Specialization(guards = "!anyNames(regexp)")
-        public DynamicObject rubiniusNamesNoCaptures(DynamicObject regexp) {
-            return nil();
-        }
-
-        @Specialization(guards = "anyNames(regexp)")
-        public Object rubiniusNames(VirtualFrame frame, DynamicObject regexp) {
-            if (getCachedNames(regexp) != null) {
-                return getCachedNames(regexp);
+        @TruffleBoundary
+        @Specialization
+        public Object rubiniusNames(DynamicObject regexp) {
+            final int size = Layouts.REGEXP.getRegex(regexp).numberOfNames();
+            if (size == 0) {
+                return createArray(null, size);
             }
 
-            if (newLookupTableNode == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                newLookupTableNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
-            }
-
-            if (lookupTableWriteNode == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                lookupTableWriteNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
-            }
-
-            final Object namesLookupTable = newLookupTableNode.call(frame, coreLibrary().getLookupTableClass(), "new");
-
-            for (final Iterator<NameEntry> i = Layouts.REGEXP.getRegex(regexp).namedBackrefIterator(); i.hasNext();) {
-                final NameEntry e = i.next();
-                final DynamicObject name = getContext().getSymbolTable().getSymbol(getContext().getRopeTable().getRope(Arrays.copyOfRange(e.name, e.nameP, e.nameEnd), USASCIIEncoding.INSTANCE, CodeRange.CR_7BIT));
+            final Object[] names = new Object[size];
+            int i = 0;
+            for (final Iterator<NameEntry> iter = Layouts.REGEXP.getRegex(regexp).namedBackrefIterator(); iter.hasNext();) {
+                final NameEntry e = iter.next();
+                final byte[] bytes = Arrays.copyOfRange(e.name, e.nameP, e.nameEnd);
+                final Rope rope = getContext().getRopeTable().getRope(bytes, USASCIIEncoding.INSTANCE, CodeRange.CR_7BIT);
+                final DynamicObject name = getContext().getFrozenStrings().getFrozenString(rope);
 
                 final int[] backrefs = e.getBackRefs();
                 final DynamicObject backrefsRubyArray = createArray(backrefs, backrefs.length);
-
-                lookupTableWriteNode.call(frame, namesLookupTable, "[]=", name, backrefsRubyArray);
+                names[i++] = createArray(new Object[]{ name, backrefsRubyArray }, 2);
             }
 
-            setCachedNames(regexp, namesLookupTable);
-
-            return namesLookupTable;
+            return createArray(names, size);
         }
 
-        public static boolean anyNames(DynamicObject regexp) {
-            return Layouts.REGEXP.getRegex(regexp).numberOfNames() > 0;
-        }
     }
 
     @CoreMethod(names = "allocate", constructor = true)

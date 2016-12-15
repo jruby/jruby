@@ -309,15 +309,8 @@ class Regexp
   #    #=> {}
   #
   def named_captures
-    hash = {}
-
-    if @names
-      @names.sort_by { |a,b| b.first }.each do |k, v| # LookupTable is unordered
-        hash[k.to_s] = v
-      end
-    end
-
-    return hash
+    @named_captures ||= Hash[Truffle.invoke_primitive(:regexp_names, self)].freeze
+    @named_captures.dup
   end
 
   #
@@ -336,11 +329,7 @@ class Regexp
   #     #=> []
   #
   def names
-    if @names
-      @names.sort_by { |a,b| b.first }.map { |x| x.first.to_s } # LookupTable is unordered
-    else
-      []
-    end
+    named_captures.keys.dup
   end
 
 end

@@ -1984,10 +1984,6 @@ public class BodyTranslator extends Translator {
                 ret = MatchDataNodesFactory.RegexpNodeFactory.create(new RubyNode[]{ self });
                 ret.unsafeSetSourceSection(sourceSection);
                 return addNewlineIfNeeded(node, ret);
-            } else if (name.equals("@names")) {
-                ret = RegexpNodesFactory.RubiniusNamesNodeGen.create(self);
-                ret.unsafeSetSourceSection(sourceSection);
-                return addNewlineIfNeeded(node, ret);
             }
         }
 
