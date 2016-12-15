@@ -53,11 +53,6 @@ public abstract class DurationToMillisecondsNode extends RubyNode {
         return validate((long) (duration * 1000));
     }
 
-    @Specialization(guards = "isRubiniusUndefined(duration)")
-    public long duration(DynamicObject duration) {
-        return noDuration(NotProvided.INSTANCE);
-    }
-
     @Specialization(guards = "isNil(duration)")
     public long durationNil(DynamicObject duration) {
         if (acceptsNil) {
@@ -67,7 +62,7 @@ public abstract class DurationToMillisecondsNode extends RubyNode {
         }
     }
 
-    @Specialization(guards = { "!isRubiniusUndefined(duration)", "!isNil(duration)" })
+    @Specialization(guards = "!isNil(duration)")
     public long duration(VirtualFrame frame, DynamicObject duration) {
         if (floatCastNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();

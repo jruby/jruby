@@ -303,7 +303,7 @@ public abstract class HashNodes {
         public GetOrUndefinedNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             getIndexNode = GetIndexNodeFactory.create(context, sourceSection, null);
-            getIndexNode.setUndefinedValue(context.getCoreLibrary().getRubiniusUndefined());
+            getIndexNode.setUndefinedValue(NotProvided.INSTANCE);
         }
 
         @Specialization

@@ -97,10 +97,6 @@ public abstract class RubyBaseNode extends Node {
         return value == nil();
     }
 
-    protected boolean isRubiniusUndefined(Object value) {
-        return value == coreLibrary().getRubiniusUndefined();
-    }
-
     // Helpers methods for terseness
 
     protected DynamicObject nil() {

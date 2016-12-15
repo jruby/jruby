@@ -509,8 +509,8 @@ public abstract class StringNodes {
             allocateObjectNode = AllocateObjectNode.create();
         }
 
-        @Specialization(guards = "wasNotProvided(length) || isRubiniusUndefined(length)")
-        public Object getIndex(VirtualFrame frame, DynamicObject string, int index, Object length) {
+        @Specialization
+        public Object getIndex(VirtualFrame frame, DynamicObject string, int index, NotProvided length) {
             // Check for the only difference from str[index, 1]
             if (index == rope(string).characterLength()) {
                 outOfBounds.enter();
@@ -519,24 +519,26 @@ public abstract class StringNodes {
             return getSubstringNode().execute(frame, string, index, 1);
         }
 
-        @Specialization(guards = { "!isRubyRange(index)", "!isRubyRegexp(index)", "!isRubyString(index)", "wasNotProvided(length) || isRubiniusUndefined(length)" })
-        public Object getIndex(VirtualFrame frame, DynamicObject string, Object index, Object length, @Cached("new()") SnippetNode snippetNode) {
+        @Specialization(guards = { "!isRubyRange(index)", "!isRubyRegexp(index)", "!isRubyString(index)" })
+        public Object getIndex(VirtualFrame frame, DynamicObject string, Object index, NotProvided length, @Cached("new()") SnippetNode snippetNode) {
             return getIndex(frame, string, (int)snippetNode.execute(frame, "Rubinius::Type.rb_num2int(v)", "v", index), length);
         }
 
-        @Specialization(guards = { "isIntRange(range)", "wasNotProvided(length) || isRubiniusUndefined(length)" })
-        public Object sliceIntegerRange(VirtualFrame frame, DynamicObject string, DynamicObject range, Object length) {
+        @Specialization(guards = "isIntRange(range)")
+        public Object sliceIntegerRange(VirtualFrame frame, DynamicObject string, DynamicObject range, NotProvided length) {
             return sliceRange(frame, string, Layouts.INT_RANGE.getBegin(range), Layouts.INT_RANGE.getEnd(range), Layouts.INT_RANGE.getExcludedEnd(range));
         }
 
-        @Specialization(guards = { "isLongRange(range)", "wasNotProvided(length) || isRubiniusUndefined(length)" })
-        public Object sliceLongRange(VirtualFrame frame, DynamicObject string, DynamicObject range, Object length) {
+        @Specialization(guards = "isLongRange(range)")
+        public Object sliceLongRange(VirtualFrame frame, DynamicObject string, DynamicObject range, NotProvided length) {
             // TODO (nirvdrum 31-Mar-15) The begin and end values should be properly lowered, only if possible.
             return sliceRange(frame, string, (int) Layouts.LONG_RANGE.getBegin(range), (int) Layouts.LONG_RANGE.getEnd(range), Layouts.LONG_RANGE.getExcludedEnd(range));
         }
 
-        @Specialization(guards = {"isObjectRange(range)", "wasNotProvided(length) || isRubiniusUndefined(length)"})
-        public Object sliceObjectRange(VirtualFrame frame, DynamicObject string, DynamicObject range, Object length, @Cached("new()") SnippetNode snippetNode1, @Cached("new()") SnippetNode snippetNode2) {
+        @Specialization(guards = "isObjectRange(range)")
+        public Object sliceObjectRange(VirtualFrame frame, DynamicObject string, DynamicObject range, NotProvided length,
+                @Cached("new()") SnippetNode snippetNode1,
+                @Cached("new()") SnippetNode snippetNode2) {
             // TODO (nirvdrum 31-Mar-15) The begin and end values may return Fixnums beyond int boundaries and we should handle that -- Bignums are always errors.
             final int coercedBegin = (int)snippetNode1.execute(frame, "Rubinius::Type.rb_num2int(v)", "v", Layouts.OBJECT_RANGE.getBegin(range));
             final int coercedEnd = (int)snippetNode2.execute(frame, "Rubinius::Type.rb_num2int(v)", "v", Layouts.OBJECT_RANGE.getEnd(range));
@@ -593,12 +595,12 @@ public abstract class StringNodes {
             return slice(frame, string, (int)snippetNode1.execute(frame, "Rubinius::Type.rb_num2int(v)", "v", start), (int)snippetNode2.execute(frame, "Rubinius::Type.rb_num2int(v)", "v", length));
         }
 
-        @Specialization(guards = {"isRubyRegexp(regexp)", "wasNotProvided(capture) || isRubiniusUndefined(capture)"})
+        @Specialization(guards = "isRubyRegexp(regexp)")
         public Object slice1(
                 VirtualFrame frame,
                 DynamicObject string,
                 DynamicObject regexp,
-                Object capture,
+                NotProvided capture,
                 @Cached("createMethodCallIgnoreVisibility()") CallDispatchHeadNode callNode,
                 @Cached("create()") RegexpSetLastMatchPrimitiveNode setLastMatchNode) {
             return sliceCapture(frame, string, regexp, 0, callNode, setLastMatchNode);
@@ -626,8 +628,8 @@ public abstract class StringNodes {
             return array[1];
         }
 
-        @Specialization(guards = {"wasNotProvided(length) || isRubiniusUndefined(length)", "isRubyString(matchStr)"})
-        public Object slice2(VirtualFrame frame, DynamicObject string, DynamicObject matchStr, Object length) {
+        @Specialization(guards = "isRubyString(matchStr)")
+        public Object slice2(VirtualFrame frame, DynamicObject string, DynamicObject matchStr, NotProvided length) {
             if (includeNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
                 includeNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
@@ -654,11 +656,6 @@ public abstract class StringNodes {
             }
 
             return substringNode;
-        }
-
-        @Override
-        protected boolean isRubiniusUndefined(Object object) {
-            return object == coreLibrary().getRubiniusUndefined();
         }
 
     }

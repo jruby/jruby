@@ -12,6 +12,7 @@ package org.jruby.truffle.core;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyNode;
 
 public class IsRubiniusUndefinedNode extends RubyNode {
@@ -25,7 +26,7 @@ public class IsRubiniusUndefinedNode extends RubyNode {
 
     @Override
     public boolean executeBoolean(VirtualFrame frame) {
-        return isRubiniusUndefined(child.execute(frame));
+        return child.execute(frame) == NotProvided.INSTANCE;
     }
 
     @Override
