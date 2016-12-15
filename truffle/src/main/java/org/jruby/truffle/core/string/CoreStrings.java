@@ -46,7 +46,7 @@ public class CoreStrings {
     public CoreStrings(RubyContext context) {
         ASSIGNMENT = new CoreString(context, "assignment");
         BACKTRACE_OMITTED_LIMIT = new CoreString(context, "(omitted due to -Xtruffle.backtraces.limit)");
-        BACKTRACE_OMITTED_UNUSED = new CoreString(context, "(omitted as the rescue expression was pure; use -Xtruffle.backtraces.omit_for_unused=false to disable)");
+        BACKTRACE_OMITTED_UNUSED = new CoreString(context, "(omitted as the rescue expression was pure; use -Xtruffle.backtraces.omit_unused=false to disable)");
         CALL = new CoreString(context, "call");
         CANT_COMPRESS_NEGATIVE = new CoreString(context, "can't compress negative numbers");
         CLASS = new CoreString(context, "class");
