@@ -38,6 +38,9 @@ import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import static java.lang.Character.isLetter;
 import static java.lang.Character.isLowerCase;
 import static java.lang.Character.isUpperCase;
@@ -98,13 +101,12 @@ public class JavaUtil {
 
         if (RubyInstanceConfig.CAN_SET_ACCESSIBLE) {
             try {
-                // We want to check if we can access a commonly-existing private field through reflection.
-                // If so, we're probably able to access some other fields too later on.
-                Field f = Java.class.getDeclaredField("_");
+                // We want to check if we can access a commonly-existing private field through reflection. If so,
+                // we're probably able to access some other fields too later on.
+                Field f = DummyForJavaUtil.class.getDeclaredField("PRIVATE");
                 f.setAccessible(true);
-                canSetAccessible = f.getByte(null) == 72;
-            }
-            catch (Exception t) {
+                canSetAccessible = f.get(null).equals(DummyForJavaUtil.PUBLIC);
+            } catch (Exception t) {
                 // added this so if things are weird in the future we can debug without
                 // spinning a new binary
                 if (Options.JI_LOGCANSETACCESSIBLE.load()) {
