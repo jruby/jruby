@@ -469,29 +469,30 @@ class String
   def encode!(to=undefined, from=undefined, options=undefined)
     Truffle.check_frozen
 
-    case to
-    when Encoding
-      to_enc = to
-    when Hash
-      options = to
-      to_enc = Encoding.default_internal
-    when undefined
+    if undefined.equal?(to)
       to_enc = Encoding.default_internal
       return self unless to_enc
     else
-      opts = Rubinius::Type::check_convert_type to, Hash, :to_hash
-
-      if opts
-        options = opts
+      case to
+      when Encoding
+        to_enc = to
+      when Hash
+        options = to
         to_enc = Encoding.default_internal
       else
-        to_enc = Rubinius::Type.try_convert_to_encoding to
+        opts = Rubinius::Type::check_convert_type to, Hash, :to_hash
+
+        if opts
+          options = opts
+          to_enc = Encoding.default_internal
+        else
+          to_enc = Rubinius::Type.try_convert_to_encoding to
+        end
       end
     end
 
+    from = encoding if undefined.equal?(from)
     case from
-    when undefined
-      from_enc = encoding
     when Encoding
       from_enc = from
     when Hash
@@ -508,17 +509,19 @@ class String
       end
     end
 
-    if undefined.equal? from_enc or undefined.equal? to_enc
+    if false == to_enc
       raise Encoding::ConverterNotFoundError, "undefined code converter (#{from} to #{to})"
     end
 
-    case options
-      when undefined
-        options = 0
+    if undefined.equal?(options)
+      options = 0
+    else
+      case options
       when Hash
         # do nothing
       else
         options = Rubinius::Type.coerce_to options, Hash, :to_hash
+      end
     end
 
     if ascii_only? and from_enc.ascii_compatible? and to_enc and to_enc.ascii_compatible?

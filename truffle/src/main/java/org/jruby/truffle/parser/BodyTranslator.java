@@ -3170,7 +3170,7 @@ public class BodyTranslator extends Translator {
     @Override
     public RubyNode visitVCallNode(VCallParseNode node) {
         final RubySourceSection sourceSection = translate(node.getPosition());
-        if (node.getName().equals("undefined") && getSourcePath(sourceSection).startsWith(corePath())) {
+        if (node.getName().equals("undefined") && getSourcePath(sourceSection).startsWith(corePath())) { // translate undefined
             final RubyNode ret = new ObjectLiteralNode(context, sourceSection.toSourceSection(source), context.getCoreLibrary().getRubiniusUndefined());
             return addNewlineIfNeeded(node, ret);
         }

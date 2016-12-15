@@ -104,6 +104,7 @@ import org.jruby.truffle.extra.TrufflePosixNodesFactory;
 import org.jruby.truffle.extra.ffi.PointerPrimitiveNodesFactory;
 import org.jruby.truffle.gem.bcrypt.BCryptNodesFactory;
 import org.jruby.truffle.interop.InteropNodesFactory;
+import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
@@ -278,7 +279,7 @@ public class CoreLibrary {
     private final GlobalVariables globalVariables;
     private final DynamicObject mainObject;
     private final DynamicObject nilObject;
-    private final DynamicObject rubiniusUndefined;
+    private final Object rubiniusUndefined;
     private final DynamicObject digestClass;
     private final DynamicObjectFactory digestFactory;
 
@@ -664,7 +665,7 @@ public class CoreLibrary {
         mainObject = objectFactory.newInstance();
         nilObject = nilFactory.newInstance();
         argv = Layouts.ARRAY.createArray(arrayFactory, null, 0);
-        rubiniusUndefined = objectFactory.newInstance();
+        rubiniusUndefined = NotProvided.INSTANCE;
 
         globalVariables = new GlobalVariables(nilObject);
 
@@ -1487,7 +1488,7 @@ public class CoreLibrary {
         return rubiniusFFIPointerClass;
     }
 
-    public DynamicObject getRubiniusUndefined() {
+    public Object getRubiniusUndefined() {
         return rubiniusUndefined;
     }
 
@@ -1725,7 +1726,6 @@ public class CoreLibrary {
             "/core/enumerator.rb",
             "/core/argf.rb",
             "/core/exception.rb",
-            "/core/undefined.rb",
             "/core/hash.rb",
             "/core/array.rb",
             "/core/kernel.rb",

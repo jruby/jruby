@@ -49,7 +49,7 @@ class Dir
   def initialize(path, options=undefined)
     path = Rubinius::Type.coerce_to_path path
 
-    if options.equal? undefined
+    if undefined.equal? options
       enc = nil
     else
       options = Rubinius::Type.coerce_to options, Hash, :to_hash

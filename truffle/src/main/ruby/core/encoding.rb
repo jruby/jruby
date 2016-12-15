@@ -141,7 +141,7 @@ class Encoding
     def self.asciicompat_encoding(string_or_encoding)
       encoding = Rubinius::Type.try_convert_to_encoding string_or_encoding
 
-      return if not encoding or undefined.equal? encoding
+      return unless encoding
       return if encoding.ascii_compatible?
 
       transcoding = TranscodingMap[encoding.name.upcase]
@@ -150,17 +150,17 @@ class Encoding
       Encoding.find transcoding.keys.first.to_s
     end
 
-    def self.search_convpath(from, to, options=undefined)
+    def self.search_convpath(from, to, options=0)
       new(from, to, options).convpath
     end
 
-    def initialize(from, to, options=undefined)
+    def initialize(from, to, options=0)
       @source_encoding = Rubinius::Type.coerce_to_encoding from
       @destination_encoding = Rubinius::Type.coerce_to_encoding to
 
       if options.kind_of? Fixnum
         @options = options
-      elsif !undefined.equal? options
+      else
         options = Rubinius::Type.coerce_to options, Hash, :to_hash
 
         @options = 0
@@ -188,8 +188,6 @@ class Encoding
 
           replacement = options[:replace]
         end
-      else
-        @options = 0
       end
 
       source_name = @source_encoding.name.upcase.to_sym
@@ -363,14 +361,14 @@ class Encoding
       Truffle.privately do
         exc.source_encoding_name = source_encoding_name
         src = Rubinius::Type.try_convert_to_encoding source_encoding_name
-        exc.source_encoding = src unless undefined.equal? src
+        exc.source_encoding = src unless false == src
 
         exc.destination_encoding_name = destination_encoding_name
         dst = Rubinius::Type.try_convert_to_encoding destination_encoding_name
-        exc.destination_encoding = dst unless undefined.equal? dst
+        exc.destination_encoding = dst unless false == dst
 
         if error_char
-          error_char.force_encoding src unless undefined.equal? src
+          error_char.force_encoding src unless false == src
           exc.error_char = error_char
         end
 
@@ -600,7 +598,7 @@ class Encoding
 
   def self.find(name)
     enc = Rubinius::Type.try_convert_to_encoding name
-    return enc unless undefined.equal? enc
+    return enc unless false == enc
 
     raise ArgumentError, "unknown encoding name - #{name}"
   end
