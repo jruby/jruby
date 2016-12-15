@@ -1,1 +1,0 @@
-fails:Process::Sys.setrgid needs to be reviewed for spec completeness
