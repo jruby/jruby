@@ -156,6 +156,10 @@ public abstract class ArrayUtils {
         return boxed;
     }
 
+    public static Object[] box(Object array, int newLength) {
+        return boxExtra(array, newLength - Array.getLength(array));
+    }
+
     public static Object[] box(double[] unboxed, int newLength) {
         final Object[] boxed = new Object[newLength];
 

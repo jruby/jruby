@@ -15,8 +15,6 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 
-import java.util.Arrays;
-
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 
@@ -68,6 +66,14 @@ public abstract class ArrayBuilderNode extends Node {
 
         newStore[index] = value;
         return newStore;
+    }
+
+    protected Object ensureFallback(Object store, int length) {
+        final Object[] newStore = ArrayUtils.box(store, length);
+        final UninitializedArrayBuilderNode newNode = new UninitializedArrayBuilderNode(getContext());
+        replace(newNode);
+        newNode.resume(newStore);
+        return newNode.ensure(newStore, length);
     }
 
     private static class UninitializedArrayBuilderNode extends ArrayBuilderNode {
@@ -198,15 +204,8 @@ public abstract class ArrayBuilderNode extends Node {
         public Object ensure(Object store, int length) {
             if (length > ((int[]) store).length) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-
-                final Object[] newStore = ArrayUtils.box((int[]) store);
-
-                final UninitializedArrayBuilderNode newNode = new UninitializedArrayBuilderNode(getContext());
-                replace(newNode);
-                newNode.resume(newStore);
-                return newNode.ensure(newStore, length);
+                return ensureFallback(store, length);
             }
-
             return store;
         }
 
@@ -224,7 +223,6 @@ public abstract class ArrayBuilderNode extends Node {
             }
 
             CompilerDirectives.transferToInterpreterAndInvalidate();
-
             return replace(new ObjectArrayBuilderNode(getContext(), expectedLength)).
                     appendArray(ArrayUtils.box((int[]) store), index, array);
         }
@@ -274,8 +272,11 @@ public abstract class ArrayBuilderNode extends Node {
 
         @Override
         public Object ensure(Object store, int length) {
-            CompilerDirectives.transferToInterpreterAndInvalidate();
-            throw new UnsupportedOperationException();
+            if (length > ((long[]) store).length) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                return ensureFallback(store, length);
+            }
+            return store;
         }
 
         @Override
@@ -292,7 +293,6 @@ public abstract class ArrayBuilderNode extends Node {
             }
 
             CompilerDirectives.transferToInterpreterAndInvalidate();
-
             return replace(new ObjectArrayBuilderNode(getContext(), expectedLength)).
                     appendArray(ArrayUtils.box((long[]) store), index, array);
         }
@@ -348,11 +348,7 @@ public abstract class ArrayBuilderNode extends Node {
         public Object ensure(Object store, int length) {
             if (length > ((double[]) store).length) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                final Object[] newStore = ArrayUtils.box((double[]) store);
-                final UninitializedArrayBuilderNode newNode = new UninitializedArrayBuilderNode(getContext());
-                replace(newNode);
-                newNode.resume(newStore);
-                return newNode.ensure(newStore, length);
+                return ensureFallback(store, length);
             }
             return store;
         }
@@ -371,7 +367,6 @@ public abstract class ArrayBuilderNode extends Node {
             }
 
             CompilerDirectives.transferToInterpreterAndInvalidate();
-
             return replace(new ObjectArrayBuilderNode(getContext(), expectedLength)).
                     appendArray(ArrayUtils.box((double[]) store), index, array);
         }
@@ -431,7 +426,7 @@ public abstract class ArrayBuilderNode extends Node {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
                 final ArrayBuilderNode newNode = new ObjectArrayBuilderNode(getContext(), length);
                 replace(newNode, length + " > " + expectedLength + " (expected)");
-                return newNode.ensure(Arrays.copyOf((Object[]) store, length), length);
+                return newNode.ensure(ArrayUtils.copyOf((Object[]) store, length), length);
             }
 
             return store;
