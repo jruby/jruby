@@ -182,24 +182,13 @@ public abstract class TrufflePosixNodes {
 
     }
 
-    @CoreMethod(names = "getgroups", isModuleFunction = true, required = 2, lowerFixnum = 1, unsafe = {UnsafeGroup.MEMORY, UnsafeGroup.PROCESSES})
+    @CoreMethod(names = "getgroups", isModuleFunction = true, unsafe = {UnsafeGroup.MEMORY, UnsafeGroup.PROCESSES})
     public abstract static class GetGroupsNode extends CoreMethodArrayArgumentsNode {
 
-        @TruffleBoundary
-        @Specialization(guards = "isNil(pointer)")
-        public int getGroupsNil(int max, DynamicObject pointer) {
-            return getGroups().length;
-        }
-
-        @TruffleBoundary
-        @Specialization(guards = "isRubyPointer(pointer)")
-        public int getGroups(int max, DynamicObject pointer) {
-            final Pointer pointerValue = Layouts.POINTER.getPointer(pointer);
+        @Specialization
+        public DynamicObject getgroups() {
             final long[] groups = getGroups();
-            for (int n = 0; n < groups.length; n++) {
-                pointerValue.putInt(4 * n, (int) groups[n]);
-            }
-            return groups.length;
+            return createArray(groups, groups.length);
         }
 
         @TruffleBoundary
