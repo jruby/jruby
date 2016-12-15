@@ -2144,7 +2144,6 @@ public class IRBuilder {
 
     protected void receiveNonBlockArgs(final ArgsNode argsNode) {
         Signature signature = scope.getStaticScope().getSignature();
-        KeywordRestArgNode keyRest = argsNode.getKeyRest();
 
         // For closures, we don't need the check arity call
         if (scope instanceof IRMethod) {
@@ -2155,12 +2154,12 @@ public class IRBuilder {
             // But later, perhaps can make this implicit in the method setup preamble?
 
             addInstr(new CheckArityInstr(signature.required(), signature.opt(), signature.hasRest(), argsNode.hasKwargs(),
-                    keyRest == null ? -1 : keyRest.getIndex()));
+                    signature.keyRest()));
         } else if (scope instanceof IRClosure && argsNode.hasKwargs()) {
             // FIXME: This is added to check for kwargs correctness but bypass regular correctness.
             // Any other arity checking currently happens within Java code somewhere (RubyProc.call?)
             addInstr(new CheckArityInstr(signature.required(), signature.opt(), signature.hasRest(), argsNode.hasKwargs(),
-                    keyRest == null ? -1 : keyRest.getIndex()));
+                    signature.keyRest()));
         }
 
         // Other args begin at index 0
