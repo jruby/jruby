@@ -110,10 +110,9 @@ module Rubinius
 
             @command = command
             @argv = argv
-            @env_array = []
           end
 
-          @options = Rubinius::LookupTable.new if options or env
+          @options = Rubinius::LookupTable.new
 
           if options
             options.each do |key, value|
@@ -272,44 +271,38 @@ module Rubinius
         def spawn_setup
           require 'fcntl'
 
-          env = options&.delete(:unsetenv_others) ? {} : ENV.to_hash
-          if add_to_env = options&.delete(:env)
+          env = options.delete(:unsetenv_others) ? {} : ENV.to_hash
+          if add_to_env = options.delete(:env)
             env.merge! Hash[add_to_env]
           end
 
           @env_array = env.map { |k, v| "#{k}=#{v}" }
 
-          if @options
-            pgroup = options[:pgroup]
-            if pgroup
+          if options
+            if pgroup = options[:pgroup]
               Truffle::POSIX.setpgid(0, pgroup)
             end
 
-            mask = options[:mask]
-            if mask
+            if mask = options[:mask]
               Truffle::POSIX.umask(mask)
             end
 
-            chdir = options[:chdir]
-            if chdir
+            if chdir = options[:chdir]
               Truffle::POSIX.chdir(chdir)
             end
 
-            close_others = options[:close_others]
-            if close_others
+            if close_others = options[:close_others]
               warn 'spawn_setup: close_others not yet implemented'
             end
 
-            assign_fd = options[:assign_fd]
-            if assign_fd
+            if assign_fd = options[:assign_fd]
               assign_fd.each_slice(4) do |from, name, mode, perm|
                 to = IO.open_with_mode(name, mode | Fcntl::FD_CLOEXEC, perm)
                 redirect_file_descriptor(from, to)
               end
             end
 
-            redirect_fd = options[:redirect_fd]
-            if redirect_fd
+            if redirect_fd = options[:redirect_fd]
               redirect_fd.each_slice(2) do |from, to|
                 redirect_file_descriptor(from, to)
               end
@@ -348,11 +341,7 @@ module Rubinius
         end
 
         def exec(command, args, env_array)
-          command.each_byte do |b|
-            if b == 0x00
-              raise ArgumentError.new("string contains null byte")
-            end
-          end
+          command = Rubinius::Type.check_null_safe(StringValue(command))
 
           if args.empty?
             # If the command contains both the binary to run and the arguments, we need to split them apart. We have
@@ -381,6 +370,7 @@ module Rubinius
             # If arguments are explicitly passed, the semantics of this method (defined in Ruby) are to run the
             # command directly. Thus, we must find the full path to the command, if not specified, because we can't
             # allow the shell to do it for us.
+
             if should_search_path?(command)
               resolved_command = resolve_in_path(command)
 
