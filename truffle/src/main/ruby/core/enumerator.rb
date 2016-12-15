@@ -515,10 +515,10 @@ module Enumerable
 
       def reset
         @done = false
-        @fiber = Rubinius::Fiber.new(0) do
+        @fiber = Fiber.new do
           obj = @object
           @result = obj.each do |*val|
-            Rubinius::Fiber.yield *val
+            Fiber.yield *val
           end
           @done = true
         end

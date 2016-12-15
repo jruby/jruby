@@ -55,20 +55,6 @@ module Rubinius
     false
   end
 
-  #def self.asm
-  # No-op.
-  #end
-
-  class Fiber < ::Fiber
-
-    ENABLED = true
-
-    def initialize(size, &block)
-      super(&block)
-    end
-
-  end
-
   module FFI
     class DynamicLibrary
     end
@@ -77,12 +63,9 @@ module Rubinius
   # jnr-posix hard codes this value
   PATH_MAX = 1024
 
-  class Backtrace
-  end
-
   def self.watch_signal(sig, ignored)
     Truffle.primitive :vm_watch_signal
-    raise PrimitiveFailure, "Rubinius.vm_watch_signal primitive failed" # Truffle: simplified failure
+    raise PrimitiveFailure, "Rubinius.vm_watch_signal primitive failed"
   end
 
   def self.extended_modules(obj)
@@ -127,7 +110,6 @@ module Rubinius
   end
 
   module Metrics
-
     def self.data
       {
           :'gc.young.count' => 0,
@@ -147,7 +129,6 @@ module Rubinius
           :'memory.code.bytes' => 0
       }
     end
-
   end
 end
 
