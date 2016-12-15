@@ -1039,12 +1039,10 @@ class Array
     n = Rubinius::Type.coerce_to_collection_index n
     raise ArgumentError, "attempt to drop negative size" if n < 0
 
-    return [] if size == 0
-
     new_size = size - n
     return [] if new_size <= 0
 
-    new_range n, new_size
+    self[n..-1]
   end
 
   def sort_by!(&block)
@@ -1401,14 +1399,6 @@ class Array
   private :isort_block!
 
   # Truffle: what follows is our changes
-
-  def new_range(start, count)
-    ret = Array.new(count)
-
-    self[start..-1].each_with_index { |x, index| ret[index] = x }
-
-    ret
-  end
 
   def new_reserved(count)
     # TODO CS 6-Feb-15 do we want to reserve space or allow the runtime to optimise for us?
