@@ -625,10 +625,10 @@ module Kernel
     end
 
     if $DEBUG and $VERBOSE != nil
-      if bt = exc.backtrace and bt[1]
-        pos = bt[1]
+      if bt = exc.backtrace and !bt.empty?
+        pos = bt.first
       else
-        pos = Rubinius::VM.backtrace(1)[0].position
+        pos = caller.first
       end
 
       STDERR.puts "Exception: `#{exc.class}' #{pos} - #{exc.message}"
