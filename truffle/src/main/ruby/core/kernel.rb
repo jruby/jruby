@@ -552,37 +552,16 @@ module Kernel
 
   def trace_var(name, cmd = nil, &block)
     if !cmd && !block
-      raise(
-        ArgumentError,
-        'The 2nd argument should be a Proc/String, alternatively use a block'
-      )
+      raise ArgumentError,
+        "The 2nd argument should be a Proc/String, alternatively use a block"
     end
 
-    # We have to use a custom proc since set_hook passes in both the variable
-    # name and value.
-    set = proc do |_, value|
-      if cmd.is_a?(String)
-        eval(cmd)
-
-      # In MRI if one passes both a proc in `cmd` and a block the latter will
-      # be ignored.
-      elsif cmd.is_a?(Proc)
-        cmd.call(value)
-
-      elsif block
-        block.call(value)
-      end
-    end
-
-    Rubinius::Globals.set_hook(name, :[], set)
+    # Truffle: not yet implemented
   end
   module_function :trace_var
 
-  # In MRI one can specify a 2nd argument to remove a specific tracer.
-  # Rubinius::Globals however only supports one hook per variable, hence the
-  # 2nd dummy argument.
-  def untrace_var(name, *args)
-    Rubinius::Globals.remove_hook(name)
+  def untrace_var(name, cmd)
+    # Truffle: not yet implemented
   end
   module_function :untrace_var
 

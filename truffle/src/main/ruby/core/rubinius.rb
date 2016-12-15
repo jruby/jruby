@@ -77,18 +77,6 @@ module Rubinius
   # jnr-posix hard codes this value
   PATH_MAX = 1024
 
-  # Rubinius has a method for modifying attributes on global variables.  We handle that internally in JRuby+Truffle.
-  # The shim API here is just to allow Rubinius code to run unmodified.
-  class Globals
-    def self.read_only(var)
-      # No-op.
-    end
-
-    def self.set_hook(var)
-      # No-op.
-    end
-  end
-
   class Backtrace
   end
 
