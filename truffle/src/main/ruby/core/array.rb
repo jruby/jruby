@@ -487,7 +487,6 @@ class Array
   def find_index(obj=undefined)
     super
   end
-
   alias_method :index, :find_index
 
   def insert(idx, *items)
@@ -522,7 +521,6 @@ class Array
     result << "]"
     result
   end
-
   alias_method :to_s, :inspect
 
   def join(sep=nil)
@@ -809,7 +807,6 @@ class Array
   end
   private :combination_size
 
-
   def compile_repeated_permutations(combination_size, place, index, &block)
     length.times do |i|
       place[index] = i
@@ -820,7 +817,6 @@ class Array
       end
     end
   end
-
   private :compile_repeated_permutations
 
   def reverse
@@ -1564,7 +1560,6 @@ class Array
 
     Truffle::Array.steal_storage(self, sort(&block))
   end
-  public :sort!
 
   def swap(a, b)
     temp = at(a)
