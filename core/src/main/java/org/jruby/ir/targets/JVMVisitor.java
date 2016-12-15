@@ -66,6 +66,7 @@ public class JVMVisitor extends IRVisitor {
     private static final Signature METHOD_SIGNATURE_BASE = Signature
             .returning(IRubyObject.class)
             .appendArgs(new String[]{"context", "scope", "self", BLOCK_ARG_NAME, "class", "callName"}, ThreadContext.class, StaticScope.class, IRubyObject.class, Block.class, RubyModule.class, String.class);
+    private static final Signature METHOD_SIGNATURE_VARARGS = METHOD_SIGNATURE_BASE.insertArg(BLOCK_ARG_NAME, "args", IRubyObject[].class);
 
     public static final Signature CLOSURE_SIGNATURE = Signature
             .returning(IRubyObject.class)
@@ -238,6 +239,45 @@ public class JVMVisitor extends IRVisitor {
         jvm.popmethod();
     }
 
+    protected void emitVarargsMethodWrapper(IRScope scope, String name, Signature variableSignature, Signature specificSignature) {
+
+        Map<BasicBlock, Label> exceptionTable = scope.buildJVMExceptionTable();
+
+        jvm.pushmethod(name, scope, variableSignature, false);
+
+        IRBytecodeAdapter m = jvmMethod();
+
+        // check arity
+        org.jruby.runtime.Signature scopeSig = scope.getStaticScope().getSignature();
+        checkArity(scopeSig.required(), scopeSig.opt(), scopeSig.hasRest(), scopeSig.hasKwargs(), scopeSig.keyRest());
+
+        // push leading args
+        m.loadContext();
+        m.loadStaticScope();
+        m.loadSelf();
+
+        // unwrap specific args
+        if (scopeSig.required() > 0) {
+            for (int i = 0; i < scopeSig.required(); i++) {
+                m.loadArgs();
+                jvmAdapter().pushInt(i);
+                jvmAdapter().aaload();
+            }
+        }
+
+        // push trailing args
+        m.loadBlock();
+        m.loadFrameClass();
+        m.loadFrameName();
+
+        // invoke specific-arity version and return
+        Method specificMethod = new Method(name, Type.getType(specificSignature.type().returnType()), IRRuntimeHelpers.typesFromSignature(specificSignature));
+        jvmAdapter().invokestatic(m.getClassData().clsName, name, specificMethod.getDescriptor());
+        jvmAdapter().areturn();
+
+        jvm.popmethod();
+    }
+
     protected static final Signature signatureFor(IRScope method, boolean aritySplit) {
         if (aritySplit) {
             StaticScope argScope = method.getStaticScope();
@@ -306,14 +346,16 @@ public class JVMVisitor extends IRVisitor {
     private void emitWithSignatures(IRMethod method, JVMVisitorMethodContext context, String name) {
         context.setJittedName(name);
 
-        Signature signature = signatureFor(method, false);
-        emitScope(method, name, signature, false, true);
-        context.addNativeSignature(-1, signature.type());
-
         Signature specificSig = signatureFor(method, true);
-        if (specificSig != null) {
+        if (specificSig == null) {
+            Signature signature = signatureFor(method, false);
+            emitScope(method, name, signature, false, true);
+            context.addNativeSignature(-1, signature.type());
+        } else {
             emitScope(method, name, specificSig, true, false);
             context.addNativeSignature(method.getStaticScope().getSignature().required(), specificSig.type());
+            emitVarargsMethodWrapper(method, name, METHOD_SIGNATURE_VARARGS, specificSig);
+            context.addNativeSignature(-1, METHOD_SIGNATURE_VARARGS.type());
         }
     }
 
@@ -1057,18 +1099,22 @@ public class JVMVisitor extends IRVisitor {
         if (jvm.methodData().specificArity >= 0) {
             // no arity check in specific arity path
         } else {
-            jvmMethod().loadContext();
-            jvmMethod().loadStaticScope();
-            jvmMethod().loadArgs();
-            // TODO: pack these, e.g. in a constant pool String
-            jvmAdapter().ldc(checkarityinstr.required);
-            jvmAdapter().ldc(checkarityinstr.opt);
-            jvmAdapter().ldc(checkarityinstr.rest);
-            jvmAdapter().ldc(checkarityinstr.receivesKeywords);
-            jvmAdapter().ldc(checkarityinstr.restKey);
-            jvmMethod().loadBlockType();
-            jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "checkArity", sig(void.class, ThreadContext.class, StaticScope.class, Object[].class, int.class, int.class, boolean.class, boolean.class, int.class, Block.Type.class));
+            checkArity(checkarityinstr.required, checkarityinstr.opt, checkarityinstr.rest, checkarityinstr.receivesKeywords, checkarityinstr.restKey);
         }
+    }
+
+    private void checkArity(int required, int opt, boolean rest, boolean receivesKeywords, int restKey) {
+        jvmMethod().loadContext();
+        jvmMethod().loadStaticScope();
+        jvmMethod().loadArgs();
+        // TODO: pack these, e.g. in a constant pool String
+        jvmAdapter().ldc(required);
+        jvmAdapter().ldc(opt);
+        jvmAdapter().ldc(rest);
+        jvmAdapter().ldc(receivesKeywords);
+        jvmAdapter().ldc(restKey);
+        jvmMethod().loadBlockType();
+        jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "checkArity", sig(void.class, ThreadContext.class, StaticScope.class, Object[].class, int.class, int.class, boolean.class, boolean.class, int.class, Block.Type.class));
     }
 
     @Override
@@ -1151,13 +1197,10 @@ public class JVMVisitor extends IRVisitor {
         JVMVisitorMethodContext context = new JVMVisitorMethodContext();
         emitMethod(method, context);
 
-        MethodType variable = context.getNativeSignature(-1); // always a variable arity handle
-        assert(variable != null);
-
         String defSignature = pushHandlesForDef(
                 context.getJittedName(),
                 context.getNativeSignaturesExceptVariable(),
-                variable,
+                METHOD_SIGNATURE_VARARGS.type(),
                 sig(void.class, ThreadContext.class, java.lang.invoke.MethodHandle.class, IRScope.class, IRubyObject.class),
                 sig(void.class, ThreadContext.class, java.lang.invoke.MethodHandle.class, java.lang.invoke.MethodHandle.class, int.class, IRScope.class, IRubyObject.class));
 
