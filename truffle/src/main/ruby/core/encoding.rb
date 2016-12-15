@@ -435,59 +435,20 @@ class Encoding
 
     class TranscodingPath
       @paths = {}
-      @load_cache = true
-      @cache_valid = false
-      @transcoders_count = TranscodingMap.size
-
-      def self.paths
-        if load_cache? and cache_threshold?
-          begin
-            path = "#{Rubinius::RUNTIME_PATH}/delta/converter_paths"
-            Rubinius::CodeLoader.require_compiled path
-            cache_loaded
-          rescue Object
-            disable_cache
-          end
-        end
-
-        @paths
-      end
-
-      def self.disable_cache
-        @cache_valid = false
-        @load_cache = false
-      end
-
-      def self.load_cache?
-        @load_cache
-      end
-
-      def self.cache_loaded?
-        @load_cache == false and @cache_valid
-      end
-
-      def self.cache_threshold?
-        @paths.size > 5
-      end
-
-      def self.cache_valid?
-        cache_loaded? and default_transcoders?
-      end
 
       def self.[](source, target)
         key = "[#{source}, #{target}]"
 
-        path, converters = paths[key]
+        path, converters = @paths[key]
 
         unless path
-          return if cache_valid?
           return unless path = search(source, target)
-          paths[key] = [path]
+          @paths[key] = [path]
         end
 
         unless converters
           converters = get_converters path
-          paths[key][1] = converters
+          @paths[key][1] = converters
         end
 
         return path, converters
@@ -527,16 +488,7 @@ class Encoding
 
         while i < total
           entry = TranscodingMap[path[i]][path[i + 1]]
-
-          if entry.kind_of? String
-            lib = "#{Rubinius::ENC_PATH}/#{entry}"
-            Rubinius::NativeMethod.load_extension lib, entry
-
-            entry = TranscodingMap[path[i]][path[i + 1]]
-          end
-
           converters << entry
-
           i += 1
         end
 
