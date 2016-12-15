@@ -324,15 +324,13 @@ class Encoding
       error = Truffle.invoke_primitive :encoding_converter_last_error, self
       return if error.nil?
 
-      result = error[:result]
-      error_bytes = error[:error_bytes]
+      result, source_encoding_name, destination_encoding_name, error_bytes, read_again_bytes = error
+      read_again_string = nil
+      codepoint = nil
       error_bytes_msg = error_bytes.dump
-      source_encoding_name = error[:source_encoding_name]
-      destination_encoding_name = error[:destination_encoding_name]
 
       case result
       when :invalid_byte_sequence
-        read_again_string = error[:read_again_string]
         if read_again_string
           msg = "#{error_bytes_msg} followed by #{read_again_string.dump} on #{source_encoding_name}"
         else
@@ -346,7 +344,7 @@ class Encoding
         exc = InvalidByteSequenceError.new msg
       when :undefined_conversion
         error_char = error_bytes
-        if codepoint = error[:codepoint]
+        if codepoint
           error_bytes_msg = "U+%04X" % codepoint
         end
 
@@ -379,7 +377,7 @@ class Encoding
         if result == :invalid_byte_sequence or result == :incomplete_input
           exc.error_bytes = error_bytes.force_encoding Encoding::ASCII_8BIT
 
-          if bytes = error[:read_again_bytes]
+          if bytes = read_again_bytes
             exc.readagain_bytes = bytes.force_encoding Encoding::ASCII_8BIT
           end
         end

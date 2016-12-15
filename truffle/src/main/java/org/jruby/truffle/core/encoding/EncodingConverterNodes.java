@@ -312,17 +312,9 @@ public abstract class EncodingConverterNodes {
     @Primitive(name = "encoding_converter_last_error")
     public static abstract class EncodingConverterLastErrorNode extends PrimitiveArrayArgumentsNode {
 
-        @Child private CallDispatchHeadNode newLookupTableNode;
-        @Child private CallDispatchHeadNode lookupTableWriteNode;
-
-        public EncodingConverterLastErrorNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            newLookupTableNode = DispatchHeadNodeFactory.createMethodCall(context);
-            lookupTableWriteNode = DispatchHeadNodeFactory.createMethodCall(context);
-        }
-
+        @TruffleBoundary
         @Specialization
-        public Object encodingConverterLastError(VirtualFrame frame, DynamicObject encodingConverter) {
+        public Object encodingConverterLastError(DynamicObject encodingConverter) {
             final EConv ec = Layouts.ENCODING_CONVERTER.getEconv(encodingConverter);
             final EConv.LastError lastError = ec.lastError;
 
@@ -332,21 +324,23 @@ public abstract class EncodingConverterNodes {
                 return nil();
             }
 
-            Object ret = newLookupTableNode.call(frame, coreLibrary().getLookupTableClass(), "new");
+            final boolean readAgain = lastError.getReadAgainLength() != 0;
+            final int size = readAgain ? 5 : 4;
+            final Object[] store = new Object[size];
 
-            lookupTableWriteNode.call(frame, ret, "[]=", getSymbol("result"), eConvResultToSymbol(lastError.getResult()));
-            lookupTableWriteNode.call(frame, ret, "[]=", getSymbol("source_encoding_name"), createString(new ByteList(lastError.getSource())));
-            lookupTableWriteNode.call(frame, ret, "[]=", getSymbol("destination_encoding_name"), createString(new ByteList(lastError.getDestination())));
-            lookupTableWriteNode.call(frame, ret, "[]=", getSymbol("error_bytes"), createString(new ByteList(lastError.getErrorBytes(),
-                lastError.getErrorBytesP(), lastError.getErrorBytesP() + lastError.getErrorBytesLength())));
+            store[0] = eConvResultToSymbol(lastError.getResult());
+            store[1] = createString(new ByteList(lastError.getSource()));
+            store[2] = createString(new ByteList(lastError.getDestination()));
+            store[3] = createString(new ByteList(lastError.getErrorBytes(),
+                    lastError.getErrorBytesP(), lastError.getErrorBytesP() + lastError.getErrorBytesLength()));
 
-            if (lastError.getReadAgainLength() != 0) {
-                lookupTableWriteNode.call(frame, ret, "[]=", getSymbol("read_again_bytes"), createString(new ByteList(lastError.getErrorBytes(),
+            if (readAgain) {
+                store[4] = createString(new ByteList(lastError.getErrorBytes(),
                     lastError.getErrorBytesLength() + lastError.getErrorBytesP(),
-                    lastError.getReadAgainLength())));
+                    lastError.getReadAgainLength()));
             }
 
-            return ret;
+            return createArray(store, size);
         }
 
         private DynamicObject eConvResultToSymbol(EConvResult result) {
