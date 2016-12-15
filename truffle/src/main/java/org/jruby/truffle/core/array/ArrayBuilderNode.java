@@ -11,8 +11,10 @@ package org.jruby.truffle.core.array;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 
 import org.jruby.truffle.Layouts;
@@ -81,6 +83,7 @@ public abstract class ArrayBuilderNode extends Node {
         private boolean couldUseInteger = true;
         private boolean couldUseLong = true;
         private boolean couldUseDouble = true;
+        private final BranchProfile expandProfile = BranchProfile.create();
 
         public UninitializedArrayBuilderNode(RubyContext context) {
             super(context);
@@ -94,13 +97,11 @@ public abstract class ArrayBuilderNode extends Node {
 
         @Override
         public Object start() {
-            CompilerDirectives.transferToInterpreterAndInvalidate();
             return new Object[getContext().getOptions().ARRAY_UNINITIALIZED_SIZE];
         }
 
         @Override
         public Object start(int length) {
-            CompilerDirectives.transferToInterpreterAndInvalidate();
             return new Object[length];
         }
 
@@ -110,10 +111,9 @@ public abstract class ArrayBuilderNode extends Node {
             return store;
         }
 
+        @TruffleBoundary
         @Override
         public Object appendArray(Object store, int index, DynamicObject array) {
-            CompilerDirectives.transferToInterpreterAndInvalidate();
-
             for (Object value : ArrayOperations.toIterable(array)) {
                 store = appendValue(store, index, value);
                 index++;
@@ -124,13 +124,12 @@ public abstract class ArrayBuilderNode extends Node {
 
         @Override
         public Object appendValue(Object store, int index, Object value) {
-            CompilerDirectives.transferToInterpreterAndInvalidate();
-
             screen(value);
 
             Object[] storeArray = (Object[]) store;
 
             if (index >= storeArray.length) {
+                expandProfile.enter();
                 storeArray = ArrayUtils.grow(storeArray, ArrayUtils.capacity(getContext(), storeArray.length, index + 1));
             }
 
@@ -140,6 +139,7 @@ public abstract class ArrayBuilderNode extends Node {
 
         @Override
         public Object finish(Object store, int length) {
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             Object[] storeArray = (Object[]) store;
             if (couldUseInteger) {
                 replace(new IntegerArrayBuilderNode(getContext(), storeArray.length));
