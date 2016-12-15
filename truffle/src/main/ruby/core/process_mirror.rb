@@ -363,6 +363,8 @@ module Rubinius
             # perform the search (a poor man's version of shell processing). If we can find it on the PATH, then we
             # run the whole thing through a shell to get proper shell processing.
 
+            split_command, *split_args = command.strip.split(' ')
+
             if should_search_path?(split_command)
               resolved_command = resolve_in_path(split_command)
 
