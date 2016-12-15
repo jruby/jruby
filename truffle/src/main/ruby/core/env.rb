@@ -36,17 +36,8 @@
 # Interface to process environment variables.
 
 module Rubinius
-  module EnvironmentAccess
-    extend FFI::Library
-
-    attach_function :getenv,   [:string], :string
-    attach_function :setenv,   [:string,  :string, :int], :int
-    attach_function :unsetenv, [:string], :int
-  end
-
   class EnvironmentVariables
     include Enumerable
-    include Rubinius::EnvironmentAccess
 
     def initialize
       vars = Truffle::System.initial_environment_variables
@@ -58,7 +49,7 @@ module Rubinius
     end
 
     def [](key)
-      value = getenv(StringValue(key))
+      value = Truffle::POSIX.getenv(StringValue(key))
       if value
         value = set_encoding(value)
       end
@@ -68,10 +59,10 @@ module Rubinius
     def []=(key, value)
       key = StringValue(key)
       if value.nil?
-        unsetenv(key)
+        Truffle::POSIX.unsetenv(key)
         @variables.delete(key)
       else
-        if setenv(key, StringValue(value), 1) != 0
+        if Truffle::POSIX.setenv(key, StringValue(value), 1) != 0
           Errno.handle("setenv")
         end
         unless @variables.include?(key)
