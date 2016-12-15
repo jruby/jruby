@@ -32,7 +32,6 @@ package org.jruby.ext.stringio;
 
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
-import org.jruby.FlagRegistry;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
