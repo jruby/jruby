@@ -995,9 +995,9 @@ class Array
 
       result = Array.new(self)
 
-      count.times { |i|
+      count.times do |i|
         result.swap i, rng.rand(size)
-      }
+      end
 
       return count == size ? result : result[0, count]
     end
@@ -1517,21 +1517,21 @@ class Array
     result = []
     if block_given?
       h = {}
-      each { |e|
+      each do |e|
         v = yield(e)
         unless h.key?(v)
           h[v] = true
           result << e
         end
-      }
+      end
     else
       h = {}
-      each { |e|
+      each do |e|
         unless h.key?(e)
           h[e] = true
           result << e
         end
-      }
+      end
     end
     return if result.size == size
 

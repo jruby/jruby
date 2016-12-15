@@ -468,18 +468,18 @@ module Enumerable
         index = 0
         Lazy.new(self, enumerator_size) do |yielder, *args|
           val = args.length >= 2 ? args : args.first
-          rests = lists.map { |list|
-                    case list
-                    when Array
-                      list[index]
-                    else
-                      begin
-                        list.next
-                      rescue StopIteration
-                        nil
-                      end
-                    end
-                  }
+          rests = lists.map do |list|
+            case list
+            when Array
+              list[index]
+            else
+              begin
+                list.next
+              rescue StopIteration
+                nil
+              end
+            end
+          end
           yielder.yield [val, *rests]
           index += 1
         end

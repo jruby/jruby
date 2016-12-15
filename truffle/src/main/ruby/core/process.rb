@@ -433,20 +433,20 @@ module Process
   def self.groups
     g = []
     count = Truffle::POSIX.getgroups(0, nil)
-    FFI::MemoryPointer.new(:int, count) { |p|
+    FFI::MemoryPointer.new(:int, count) do |p|
       num_groups = Truffle::POSIX.getgroups(count, p)
       Errno.handle if num_groups == -1
       g = p.read_array_of_int(num_groups)
-    }
+    end
     g
   end
 
   def self.groups=(g)
     @maxgroups = g.length if g.length > @maxgroups
-    FFI::MemoryPointer.new(:int, @maxgroups) { |p|
+    FFI::MemoryPointer.new(:int, @maxgroups) do |p|
       p.write_array_of_int(g)
       Errno.handle if Truffle::POSIX.setgroups(g.length, p) == -1
-    }
+    end
     g
   end
 

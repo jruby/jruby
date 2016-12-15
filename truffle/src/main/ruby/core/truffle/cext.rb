@@ -373,9 +373,9 @@ module Truffle::CExt
   end
 
   def rb_proc_new(function, value)
-    proc { |*args|
+    Proc.new do |*args|
       Truffle::Interop.execute(function, *args)
-    }
+    end
   end
 
   def verbose
