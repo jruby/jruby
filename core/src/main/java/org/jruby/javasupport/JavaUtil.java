@@ -48,7 +48,6 @@ import static java.lang.Character.toLowerCase;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.security.AccessController;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
@@ -101,10 +100,9 @@ public class JavaUtil {
             try {
                 // We want to check if we can access a commonly-existing private field through reflection. If so,
                 // we're probably able to access some other fields too later on.
-                Field f = Integer.class.getDeclaredField("value");
+                Field f = DummyForJavaUtil.class.getDeclaredField("PRIVATE");
                 f.setAccessible(true);
-                Integer v = 1;
-                canSetAccessible = f.get(v).equals(v);
+                canSetAccessible = f.get(null).equals(DummyForJavaUtil.PUBLIC);
             } catch (Exception t) {
                 // added this so if things are weird in the future we can debug without
                 // spinning a new binary
