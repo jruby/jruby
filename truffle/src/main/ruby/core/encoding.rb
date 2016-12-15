@@ -52,35 +52,35 @@ class Encoding
   class << self
     def build_encoding_map
       map = {}
-      Encoding.list.each_with_index { |encoding, index|
+      Encoding.list.each_with_index do |encoding, index|
         key = encoding.name.upcase.to_sym
         map[key] = [nil, index]
-      }
+      end
 
-      Truffle::Encoding.each_alias { |alias_name, index|
+      Truffle::Encoding.each_alias do |alias_name, index|
         key = alias_name.upcase.to_sym
         map[key] = [alias_name, index]
-      }
+      end
 
-      %w[internal external locale filesystem].each { |name|
+      %w[internal external locale filesystem].each do |name|
         key = name.upcase.to_sym
         enc = Truffle::Encoding.get_default_encoding(name)
         index = enc ? map[enc.name.upcase.to_sym].last : nil
         map[key] = [name, index]
-      }
+      end
       map
     end
     private :build_encoding_map
 
     def build_transcoding_map
       map = {}
-      Encoding::Converter.each_transcoder { |source, destinations|
+      Encoding::Converter.each_transcoder do |source, destinations|
         h = {}
-        destinations.each { |dest|
+        destinations.each do |dest|
           h[dest] = Transcoding.new(source, dest)
-        }
+        end
         map[source] = h
-      }
+      end
       map
     end
     private :build_transcoding_map
