@@ -58,30 +58,26 @@ class Array
   def &(other)
     other = Rubinius::Type.coerce_to other, Array, :to_ary
 
-    array = []
-    im = Rubinius::IdentityMap.from other
-
-    each { |x| array << x if im.delete x }
-
-    array
+    h = {}
+    other.each { |e| h[e] = true }
+    select { |x| h.delete x }
   end
 
   def |(other)
     other = Rubinius::Type.coerce_to other, Array, :to_ary
 
-    im = Rubinius::IdentityMap.from self, other
-    im.to_array
+    h = {}
+    each { |e| h[e] = true }
+    other.each { |e| h[e] = true }
+    h.keys
   end
 
   def -(other)
     other = Rubinius::Type.coerce_to other, Array, :to_ary
 
-    array = []
-    im = Rubinius::IdentityMap.from other
-
-    each { |x| array << x unless im.include? x }
-
-    array
+    h = {}
+    other.each { |e| h[e] = true }
+    reject { |x| h.include? x }
   end
 
   def <=>(other)
@@ -1518,14 +1514,28 @@ class Array
   def uniq!(&block)
     Truffle.check_frozen
 
+    result = []
     if block_given?
-      im = Rubinius::IdentityMap.from(self, &block)
+      h = {}
+      each { |e|
+        v = yield(e)
+        unless h.key?(v)
+          h[v] = true
+          result << e
+        end
+      }
     else
-      im = Rubinius::IdentityMap.from(self)
+      h = {}
+      each { |e|
+        unless h.key?(e)
+          h[e] = true
+          result << e
+        end
+      }
     end
-    return if im.size == size
+    return if result.size == size
 
-    Truffle::Array.steal_storage(self, im.to_array)
+    Truffle::Array.steal_storage(self, result)
     self
   end
 

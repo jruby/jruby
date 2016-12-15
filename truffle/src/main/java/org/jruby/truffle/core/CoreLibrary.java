@@ -1722,7 +1722,6 @@ public class CoreLibrary {
             "/core/hash.rb",
             "/core/array.rb",
             "/core/kernel.rb",
-            "/core/identity_map.rb",
             "/core/comparable.rb",
             "/core/numeric_mirror.rb",
             "/core/numeric.rb",
