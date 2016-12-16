@@ -72,7 +72,7 @@ describe "Hash#compare_by_identity" do
   end
 
   # Behaviour confirmed in bug #1871
-  it "perists over #dups" do
+  it "persists over #dups" do
     @idh['foo'] = :bar
     @idh['foo'] = :glark
     @idh.dup.should == @idh
