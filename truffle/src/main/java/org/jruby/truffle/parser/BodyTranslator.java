@@ -302,8 +302,6 @@ public class BodyTranslator extends Translator {
 
     private boolean privately = false;
 
-    protected boolean usesRubiniusPrimitive = false;
-
     public BodyTranslator(com.oracle.truffle.api.nodes.Node currentNode, RubyContext context, BodyTranslator parent, TranslatorEnvironment environment, Source source, boolean topLevel) {
         super(currentNode, context, source);
         parserSupport = new ParserSupport(context);
@@ -594,8 +592,6 @@ public class BodyTranslator extends Translator {
     }
 
     private RubyNode translateRubiniusPrimitive(SourceSection sourceSection, CallParseNode node) {
-        usesRubiniusPrimitive = true;
-
         /*
          * Translates something that looks like
          *
