@@ -52,7 +52,7 @@ public abstract class BigDecimalNodes {
 
     // TODO (pitr 21-Jun-2015): Check for missing coerce on OpNodes
 
-    @CoreMethod(names = "initialize", required = 1, optional = 1)
+    @CoreMethod(names = "initialize", required = 1, optional = 1, lowerFixnum = 2)
     public abstract static class InitializeNode extends BigDecimalCoreMethodArrayArgumentsNode {
 
         @Specialization
@@ -87,7 +87,7 @@ public abstract class BigDecimalNodes {
 
     }
 
-    @CoreMethod(names = "add", required = 2)
+    @CoreMethod(names = "add", required = 2, lowerFixnum = 2)
     @NodeChild(value = "precision", type = RubyNode.class)
     public abstract static class AddNode extends AbstractAddNode {
 
@@ -130,7 +130,7 @@ public abstract class BigDecimalNodes {
         }
     }
 
-    @CoreMethod(names = "sub", required = 2)
+    @CoreMethod(names = "sub", required = 2, lowerFixnum = 2)
     @NodeChild(value = "precision", type = RubyNode.class)
     public abstract static class SubNode extends AbstractSubNode {
 
@@ -238,7 +238,7 @@ public abstract class BigDecimalNodes {
         }
     }
 
-    @CoreMethod(names = "mult", required = 2)
+    @CoreMethod(names = "mult", required = 2, lowerFixnum = 2)
     @NodeChild(value = "precision", type = RubyNode.class)
     public abstract static class MultNode extends AbstractMultNode {
 
@@ -316,7 +316,7 @@ public abstract class BigDecimalNodes {
         }
     }
 
-    @CoreMethod(names = "div", required = 1, optional = 1)
+    @CoreMethod(names = "div", required = 1, optional = 1, lowerFixnum = 2)
     @NodeChild(value = "precision", type = RubyNode.class)
     public abstract static class DivNode extends AbstractDivNode {
 
@@ -681,7 +681,7 @@ public abstract class BigDecimalNodes {
         }
     }
 
-    @CoreMethod(names = { "**", "power" }, required = 1, optional = 1)
+    @CoreMethod(names = { "**", "power" }, required = 1, optional = 1, lowerFixnum = { 1, 2 })
     @NodeChildren({
             @NodeChild(value = "self", type = RubyNode.class),
             @NodeChild(value = "exponent", type = RubyNode.class),
@@ -789,7 +789,7 @@ public abstract class BigDecimalNodes {
         }
     }
 
-    @CoreMethod(names = "sqrt", required = 1)
+    @CoreMethod(names = "sqrt", required = 1, lowerFixnum = 1)
     @NodeChildren({
             @NodeChild(value = "self", type = RubyNode.class),
             @NodeChild(value = "precision", type = RubyNode.class),
@@ -1233,7 +1233,7 @@ public abstract class BigDecimalNodes {
 
     }
 
-    @CoreMethod(names = "round", optional = 2)
+    @CoreMethod(names = "round", optional = 2, lowerFixnum = { 1, 2 })
     public abstract static class RoundNode extends BigDecimalCoreMethodArrayArgumentsNode {
 
         @TruffleBoundary

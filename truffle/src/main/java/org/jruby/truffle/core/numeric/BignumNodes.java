@@ -542,11 +542,8 @@ public abstract class BignumNodes {
 
         @Specialization
         public Object rightShift(VirtualFrame frame, DynamicObject a, long b) {
-            if (CoreLibrary.fitsIntoInteger(b)) {
-                return executeRightShift(frame, a, (int) b);
-            } else {
-                return 0;
-            }
+            assert !CoreLibrary.fitsIntoInteger(b);
+            return 0;
         }
 
         @Specialization(guards = "isRubyBignum(b)")
@@ -662,7 +659,7 @@ public abstract class BignumNodes {
 
     }
 
-    @CoreMethod(names = {"to_s", "inspect"}, optional = 1)
+    @CoreMethod(names = { "to_s", "inspect" }, optional = 1, lowerFixnum = 1)
     public abstract static class ToSNode extends CoreMethodArrayArgumentsNode {
 
         @TruffleBoundary

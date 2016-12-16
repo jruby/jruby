@@ -294,7 +294,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "[]=", required = 2, optional = 1, lowerFixnum = 1, raiseIfFrozenSelf = true)
+    @CoreMethod(names = "[]=", required = 2, optional = 1, lowerFixnum = { 1, 2 }, raiseIfFrozenSelf = true)
     public abstract static class IndexSetNode extends ArrayCoreMethodNode {
 
         @Child private ArrayReadNormalizedNode readNode;
@@ -530,7 +530,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "at", required = 1)
+    @CoreMethod(names = "at", required = 1, lowerFixnum = 1)
     @NodeChildren({
             @NodeChild(type = RubyNode.class, value = "array"),
             @NodeChild(type = RubyNode.class, value = "index")
@@ -1604,7 +1604,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "shift", raiseIfFrozenSelf = true, optional = 1)
+    @CoreMethod(names = "shift", raiseIfFrozenSelf = true, optional = 1, lowerFixnum = 1)
     @NodeChildren({
             @NodeChild(type = RubyNode.class, value = "array"),
             @NodeChild(type = RubyNode.class, value = "n")

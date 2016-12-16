@@ -239,7 +239,7 @@ public abstract class ThreadNodes {
 
     }
 
-    @CoreMethod(names = "join", optional = 1, unsafe = UnsafeGroup.THREADS)
+    @CoreMethod(names = "join", optional = 1, lowerFixnum = 1, unsafe = UnsafeGroup.THREADS)
     public abstract static class JoinNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization

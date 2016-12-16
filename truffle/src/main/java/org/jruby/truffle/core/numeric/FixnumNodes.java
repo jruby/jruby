@@ -1132,7 +1132,7 @@ public abstract class FixnumNodes {
 
     }
 
-    @CoreMethod(names = "to_s", optional = 1)
+    @CoreMethod(names = "to_s", optional = 1, lowerFixnum = 1)
     public abstract static class ToSNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization

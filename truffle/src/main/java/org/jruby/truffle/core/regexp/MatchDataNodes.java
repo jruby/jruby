@@ -169,7 +169,7 @@ public abstract class MatchDataNodes {
         return charOffsets;
     }
 
-    @CoreMethod(names = "[]", required = 1, optional = 1, lowerFixnum = 1, taintFrom = 0)
+    @CoreMethod(names = "[]", required = 1, optional = 1, lowerFixnum = { 1, 2 }, taintFrom = 0)
     public abstract static class GetIndexNode extends CoreMethodArrayArgumentsNode {
 
         @Child private ToIntNode toIntNode;

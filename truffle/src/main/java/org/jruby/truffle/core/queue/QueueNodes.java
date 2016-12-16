@@ -125,7 +125,7 @@ public abstract class QueueNodes {
     }
 
     @NonStandard
-    @CoreMethod(names = "receive_timeout", required = 1, visibility = Visibility.PRIVATE)
+    @CoreMethod(names = "receive_timeout", required = 1, visibility = Visibility.PRIVATE, lowerFixnum = 1)
     @NodeChildren({
             @NodeChild(type = RubyNode.class, value = "queue"),
             @NodeChild(type = RubyNode.class, value = "duration")

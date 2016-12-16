@@ -231,7 +231,7 @@ public abstract class ReadlineHistoryNodes {
 
     }
 
-    @CoreMethod(names = "[]=", needsSelf = false, required = 2)
+    @CoreMethod(names = "[]=", needsSelf = false, lowerFixnum = 1, required = 2)
     @NodeChildren({
             @NodeChild(type = RubyNode.class, value = "index"),
             @NodeChild(type = RubyNode.class, value = "line")

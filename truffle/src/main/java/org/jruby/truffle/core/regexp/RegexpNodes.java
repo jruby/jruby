@@ -460,7 +460,7 @@ public abstract class RegexpNodes {
     }
 
     @NonStandard
-    @CoreMethod(names = "match_start", required = 2)
+    @CoreMethod(names = "match_start", required = 2, lowerFixnum = 2)
     public abstract static class MatchStartNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode dupNode;
@@ -629,7 +629,7 @@ public abstract class RegexpNodes {
     }
 
     @NonStandard
-    @CoreMethod(names = "search_from", required = 2)
+    @CoreMethod(names = "search_from", required = 2, lowerFixnum = 2)
     public abstract static class SearchFromNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode dupNode;

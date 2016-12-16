@@ -66,7 +66,7 @@ public class CExtNodes {
 
     }
 
-    @CoreMethod(names = "NUM2UINT", isModuleFunction = true, required = 1)
+    @CoreMethod(names = "NUM2UINT", isModuleFunction = true, required = 1, lowerFixnum = 1)
     public abstract static class NUM2UINTNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
@@ -92,7 +92,7 @@ public class CExtNodes {
         }
     }
 
-    @CoreMethod(names = "NUM2ULONG", isModuleFunction = true, required = 1)
+    @CoreMethod(names = "NUM2ULONG", isModuleFunction = true, required = 1, lowerFixnum = 1)
     public abstract static class NUM2ULONGNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
@@ -103,7 +103,7 @@ public class CExtNodes {
 
     }
 
-    @CoreMethod(names = "NUM2DBL", isModuleFunction = true, required = 1)
+    @CoreMethod(names = "NUM2DBL", isModuleFunction = true, required = 1, lowerFixnum = 1)
     public abstract static class NUM2DBLNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
@@ -113,7 +113,7 @@ public class CExtNodes {
 
     }
 
-    @CoreMethod(names = "FIX2INT", isModuleFunction = true, required = 1)
+    @CoreMethod(names = "FIX2INT", isModuleFunction = true, required = 1, lowerFixnum = 1)
     public abstract static class FIX2INTNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
@@ -140,7 +140,7 @@ public class CExtNodes {
 
     }
 
-    @CoreMethod(names = "FIX2LONG", isModuleFunction = true, required = 1)
+    @CoreMethod(names = "FIX2LONG", isModuleFunction = true, required = 1, lowerFixnum = 1)
     public abstract static class FIX2LONGNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
@@ -180,7 +180,7 @@ public class CExtNodes {
 
     }
 
-    @CoreMethod(names = "UINT2NUM", isModuleFunction = true, required = 1)
+    @CoreMethod(names = "UINT2NUM", isModuleFunction = true, required = 1, lowerFixnum = 1)
     public abstract static class UINT2NUMNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization

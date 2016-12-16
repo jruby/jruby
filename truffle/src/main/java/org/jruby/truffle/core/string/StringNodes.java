@@ -1894,7 +1894,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "setbyte", required = 2, raiseIfFrozenSelf = true)
+    @CoreMethod(names = "setbyte", required = 2, raiseIfFrozenSelf = true, lowerFixnum = { 1, 2 })
     @NodeChildren({
         @NodeChild(type = RubyNode.class, value = "string"),
         @NodeChild(type = RubyNode.class, value = "index"),

@@ -53,7 +53,7 @@ public abstract class SizedQueueNodes {
 
     }
 
-    @CoreMethod(names = "initialize", visibility = Visibility.PRIVATE, required = 1)
+    @CoreMethod(names = "initialize", visibility = Visibility.PRIVATE, required = 1, lowerFixnum = 1)
     public abstract static class InitializeNode extends CoreMethodArrayArgumentsNode {
 
         @TruffleBoundary
@@ -70,7 +70,7 @@ public abstract class SizedQueueNodes {
 
     }
 
-    @CoreMethod(names = "max=", required = 1)
+    @CoreMethod(names = "max=", required = 1, lowerFixnum = 1)
     public abstract static class SetMaxNode extends CoreMethodArrayArgumentsNode {
 
         @TruffleBoundary

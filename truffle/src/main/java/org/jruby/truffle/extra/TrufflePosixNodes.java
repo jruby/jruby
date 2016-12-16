@@ -236,13 +236,8 @@ public abstract class TrufflePosixNodes {
 
     }
 
-    @CoreMethod(names = "memset", isModuleFunction = true, required = 3, lowerFixnum = {2, 3}, unsafe = UnsafeGroup.MEMORY)
+    @CoreMethod(names = "memset", isModuleFunction = true, required = 3, lowerFixnum = 2, unsafe = UnsafeGroup.MEMORY)
     public abstract static class MemsetNode extends CoreMethodArrayArgumentsNode {
-
-        @Specialization(guards = "isRubyPointer(pointer)")
-        public DynamicObject memset(DynamicObject pointer, int c, int length) {
-            return memset(pointer, c, (long) length);
-        }
 
         @TruffleBoundary
         @Specialization(guards = "isRubyPointer(pointer)")
