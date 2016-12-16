@@ -388,7 +388,7 @@ public abstract class ClassNodes {
 
     }
 
-    @CoreMethod(names = "inherited", required = 1, visibility = Visibility.PRIVATE)
+    @CoreMethod(names = "inherited", needsSelf = false, required = 1, visibility = Visibility.PRIVATE)
     public abstract static class InheritedNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization

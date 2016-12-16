@@ -1205,7 +1205,7 @@ public abstract class ModuleNodes {
 
     }
 
-    @CoreMethod(names = "included", required = 1, visibility = Visibility.PRIVATE)
+    @CoreMethod(names = "included", needsSelf = false, required = 1, visibility = Visibility.PRIVATE)
     public abstract static class IncludedNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
