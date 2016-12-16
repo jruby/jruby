@@ -1298,9 +1298,9 @@ module Commands
     puts `cat spec/truffle/tags/core/**/**.txt | grep 'fails:'`.lines.sample
   end
 
-  def check_ambiguous_arguments
+  def check_dsl_usage
     clean
-    # modify pom
+    # modify pom to add -parameters for javac
     pom = "#{JRUBY_DIR}/truffle/pom.rb"
     contents = File.read(pom)
     contents.sub!(/^(\s+)('-J-Dfile.encoding=UTF-8')(.+\n)(?!\1'-parameters')/) do
@@ -1309,7 +1309,7 @@ module Commands
     File.write pom, contents
 
     build
-    run({ "TRUFFLE_CHECK_AMBIGUOUS_OPTIONAL_ARGS" => "true" }, '-e', 'exit')
+    run({ "TRUFFLE_CHECK_DSL_USAGE" => "true" }, '-e', 'exit')
   end
 
 end
