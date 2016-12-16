@@ -41,10 +41,6 @@ public class PrimitiveNodeConstructor {
     public RubyNode createCallPrimitiveNode(RubyContext context, SourceSection sourceSection, ReturnID returnID) {
         int argumentsCount = getPrimitiveArity();
         final List<RubyNode> arguments = new ArrayList<>(argumentsCount);
-        List<List<Class<?>>> signatures = factory.getNodeSignatures();
-
-        assert signatures.size() == 1;
-        List<Class<?>> signature = signatures.get(0);
 
         if (annotation.needsSelf()) {
             arguments.add(transformArgument(new ProfileArgumentNode(new ReadSelfNode()), 0));
@@ -60,27 +56,8 @@ public class PrimitiveNodeConstructor {
             return new UnsafeNode(context, sourceSection);
         }
 
-        if (signature.size() >= 3 && signature.get(2) == RubyNode[].class) {
-            return new CallPrimitiveNode(context, sourceSection,
-                    factory.createNode(context, sourceSection, arguments.toArray(new RubyNode[arguments.size()])), returnID);
-        } else if (signature.size() == 1 && signature.get(0) == RubyNode[].class) {
-            return new CallPrimitiveNode(context, sourceSection,
-                    factory.createNode(new Object[]{arguments.toArray(new RubyNode[arguments.size()])}), returnID);
-        } else if (signature.size() == 0) {
-            return new CallPrimitiveNode(context, sourceSection,
-                    factory.createNode(), returnID);
-        } else if (signature.get(0) != RubyContext.class) {
-            final Object[] varargs = new Object[arguments.size()];
-            System.arraycopy(arguments.toArray(new RubyNode[arguments.size()]), 0, varargs, 0, arguments.size());
-            return new CallPrimitiveNode(context, sourceSection, factory.createNode(varargs), returnID);
-        } else {
-            final Object[] varargs = new Object[2 + arguments.size()];
-            varargs[0] = context;
-            varargs[1] = sourceSection;
-            System.arraycopy(arguments.toArray(new RubyNode[arguments.size()]), 0, varargs, 2, arguments.size());
-
-            return new CallPrimitiveNode(context, sourceSection, factory.createNode(varargs), returnID);
-        }
+        RubyNode primitiveNode = CoreMethodNodeManager.createNodeFromFactory(context, sourceSection, factory, arguments);
+        return new CallPrimitiveNode(context, sourceSection, primitiveNode, returnID);
     }
 
     public RubyNode createInvokePrimitiveNode(RubyContext context, SourceSection sourceSection, RubyNode[] arguments) {
