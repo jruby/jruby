@@ -73,7 +73,7 @@ public abstract class TrufflePosixNodes {
 
     }
 
-    @CoreMethod(names = "chown", isModuleFunction = true, required = 3, lowerFixnum = { 1, 2 }, unsafe = UnsafeGroup.IO)
+    @CoreMethod(names = "chown", isModuleFunction = true, required = 3, lowerFixnum = { 2, 3 }, unsafe = UnsafeGroup.IO)
     public abstract static class ChownNode extends CoreMethodArrayArgumentsNode {
 
         @CompilerDirectives.TruffleBoundary
@@ -356,7 +356,7 @@ public abstract class TrufflePosixNodes {
 
     }
 
-    @CoreMethod(names = "mkdir", isModuleFunction = true, required = 2, lowerFixnum = 1, unsafe = UnsafeGroup.IO)
+    @CoreMethod(names = "mkdir", isModuleFunction = true, required = 2, lowerFixnum = 2, unsafe = UnsafeGroup.IO)
     public abstract static class MkdirNode extends CoreMethodArrayArgumentsNode {
 
         @CompilerDirectives.TruffleBoundary
@@ -923,7 +923,7 @@ public abstract class TrufflePosixNodes {
 
     }
 
-    @CoreMethod(names = "kill", isModuleFunction = true, unsafe = { UnsafeGroup.PROCESSES, UnsafeGroup.SIGNALS }, required = 3)
+    @CoreMethod(names = "kill", isModuleFunction = true, required = 3, lowerFixnum = { 1, 2 }, unsafe = { UnsafeGroup.PROCESSES, UnsafeGroup.SIGNALS })
     public abstract static class KillNode extends CoreMethodArrayArgumentsNode {
 
         @TruffleBoundary
