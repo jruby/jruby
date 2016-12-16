@@ -575,7 +575,7 @@ public class BodyTranslator extends Translator {
                 && ((ConstParseNode) ((Colon2ConstParseNode) receiver).getLeftNode()).getName().equals("Truffle")
                 && ((Colon2ConstParseNode) receiver).getName().equals("Graal")) {
             if (methodName.equals("assert_constant")) {
-                final RubyNode ret = AssertConstantNodeGen.create(context, fullSourceSection, node.getArgsNode().childNodes().get(0).accept(this));
+                final RubyNode ret = AssertConstantNodeGen.create(context, fullSourceSection, ((ArrayParseNode) node.getArgsNode()).get(0).accept(this));
                 return addNewlineIfNeeded(node, ret);
             } else if (methodName.equals("assert_not_compiled")) {
                 final RubyNode ret = AssertNotCompiledNodeGen.create(context, fullSourceSection);
@@ -610,11 +610,12 @@ public class BodyTranslator extends Translator {
          * keywords etc).
          */
 
-        if (node.getArgsNode().childNodes().size() != 1 || !(node.getArgsNode().childNodes().get(0) instanceof SymbolParseNode)) {
+        final ArrayParseNode argsNode = (ArrayParseNode) node.getArgsNode();
+        if (argsNode.size() != 1 || !(argsNode.get(0) instanceof SymbolParseNode)) {
             throw new UnsupportedOperationException("Truffle.primitive must have a single literal symbol argument");
         }
 
-        final String primitiveName = ((SymbolParseNode) node.getArgsNode().childNodes().get(0)).getName();
+        final String primitiveName = ((SymbolParseNode) argsNode.get(0)).getName();
 
         final PrimitiveNodeConstructor primitive = context.getPrimitiveManager().getPrimitive(primitiveName);
         final ReturnID returnID = environment.getReturnID();
@@ -632,7 +633,7 @@ public class BodyTranslator extends Translator {
          *   InvokePrimitiveNode(FooNode(arg1, arg2, ..., argN))
          */
 
-        final List<ParseNode> args = node.getArgsNode().childNodes();
+        final ArrayParseNode args = (ArrayParseNode) node.getArgsNode();
 
         if (args.size() < 1 || !(args.get(0) instanceof SymbolParseNode)) {
             throw new UnsupportedOperationException("Truffle.invoke_primitive must have at least an initial literal symbol argument");
@@ -670,7 +671,8 @@ public class BodyTranslator extends Translator {
             throw new UnsupportedOperationException("Truffle.privately needs a literal block");
         }
 
-        if (node.getArgsNode() != null && node.getArgsNode().childNodes().size() > 0) {
+        final ArrayParseNode argsNode = (ArrayParseNode) node.getArgsNode();
+        if (argsNode != null && argsNode.size() > 0) {
             throw new UnsupportedOperationException("Truffle.privately should not have any arguments");
         }
 
