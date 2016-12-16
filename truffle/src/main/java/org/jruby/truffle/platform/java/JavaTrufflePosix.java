@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.platform.java;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import jnr.constants.platform.Errno;
 import jnr.constants.platform.Fcntl;
 import jnr.constants.platform.OpenFlags;
@@ -57,6 +58,7 @@ public class JavaTrufflePosix extends JNRTrufflePosix {
         super(delegateTo);
     }
 
+    @TruffleBoundary
     @Override
     public int fcntlInt(int fd, Fcntl fcntlConst, int arg) {
         if (fcntlConst.longValue() == Fcntl.F_GETFL.longValue()) {
@@ -78,6 +80,7 @@ public class JavaTrufflePosix extends JNRTrufflePosix {
         return super.fcntlInt(fd, fcntlConst, arg);
     }
 
+    @TruffleBoundary
     @Override
     public int open(CharSequence path, int flags, int perm) {
         if (perm != 0666) {
@@ -116,26 +119,31 @@ public class JavaTrufflePosix extends JNRTrufflePosix {
         return fileHandle;
     }
 
+    @TruffleBoundary
     @Override
     public int read(int fd, ByteBuffer buf, int n) {
         return pread(fd, buf.array(), n, buf.arrayOffset());
     }
 
+    @TruffleBoundary
     @Override
     public int read(int fd, byte[] buf, int n) {
         return pread(fd, buf, n, 0);
     }
 
+    @TruffleBoundary
     @Override
     public int write(int fd, ByteBuffer buf, int n) {
         return pwrite(fd, buf.array(), n, buf.arrayOffset());
     }
 
+    @TruffleBoundary
     @Override
     public int write(int fd, byte[] buf, int n) {
         return pwrite(fd, buf, n, 0);
     }
 
+    @TruffleBoundary
     @Override
     public int close(int fd) {
         final OpenFile openFile = fileHandles.get(fd);
@@ -160,11 +168,13 @@ public class JavaTrufflePosix extends JNRTrufflePosix {
         return 0;
     }
 
+    @TruffleBoundary
     @Override
     public FileStat allocateStat() {
         return new TruffleJavaFileStat(getPosix(), null);
     }
 
+    @TruffleBoundary
     @Override
     public String getenv(String envName) {
         final String javaValue = System.getenv(envName);
@@ -176,11 +186,13 @@ public class JavaTrufflePosix extends JNRTrufflePosix {
         return super.getenv(envName);
     }
 
+    @TruffleBoundary
     @Override
     public int isatty(int fd) {
         return System.console() != null ? 1 : 0;
     }
 
+    @TruffleBoundary
     private int pwrite(int fd, byte[] buf, int n, int offset) {
         if (fd == STDOUT || fd == STDERR) {
             final PrintStream stream;
@@ -204,6 +216,7 @@ public class JavaTrufflePosix extends JNRTrufflePosix {
         throw new UnsupportedOperationException();
     }
 
+    @TruffleBoundary
     private int pread(int fd, byte[] buf, int n, int offset) {
         if (fd == STDIN) {
             try {

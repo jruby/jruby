@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.platform.sunmisc;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import org.jruby.truffle.platform.signal.Signal;
 import org.jruby.truffle.platform.signal.SignalHandler;
 import org.jruby.truffle.platform.signal.SignalManager;
@@ -36,6 +37,7 @@ public class SunMiscSignalManager implements SignalManager {
         handleDefault(signal);
     }
 
+    @TruffleBoundary
     @Override
     public void handle(final Signal signal, final SignalHandler newHandler) throws IllegalArgumentException {
         final SunMiscSignal smSignal = (SunMiscSignal) signal;
@@ -46,6 +48,7 @@ public class SunMiscSignalManager implements SignalManager {
         DEFAULT_HANDLERS.putIfAbsent(smSignal.getSunMiscSignal(), oldSunHandler);
     }
 
+    @TruffleBoundary
     @Override
     public void handleDefault(final Signal signal) throws IllegalArgumentException {
         final SunMiscSignal smSignal = (SunMiscSignal) signal;
@@ -55,13 +58,15 @@ public class SunMiscSignalManager implements SignalManager {
         }
     }
 
+    @TruffleBoundary
     private sun.misc.SignalHandler wrapHandler(final Signal signal, final SignalHandler newHandler) {
         final SunMiscSignal smSignal = (SunMiscSignal) signal;
         return wrappedSignal -> newHandler.handle(smSignal);
     }
 
+    @TruffleBoundary
     @Override
-    public  void raise(Signal signal) throws IllegalArgumentException {
+    public void raise(Signal signal) throws IllegalArgumentException {
         sun.misc.Signal.raise(((SunMiscSignal) signal).getSunMiscSignal());
     }
 }
