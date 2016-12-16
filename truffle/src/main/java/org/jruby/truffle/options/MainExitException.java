@@ -73,6 +73,8 @@ public class MainExitException extends RuntimeException {
         this.usageError = usageError;
     }
 
+    @SuppressWarnings("sync-override")
+    @Override
     public Throwable fillInStackTrace() {
         return this;
     }

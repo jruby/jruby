@@ -76,7 +76,7 @@ public class TaintResultNode extends RubyNode {
 
         if (result != nil()) {
             if (taintFromSelf) {
-                maybeTaint((DynamicObject) RubyArguments.getSelf(frame), result);
+                maybeTaint(RubyArguments.getSelf(frame), result);
             }
 
             if (taintFromParameter != -1) {

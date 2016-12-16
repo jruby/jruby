@@ -288,7 +288,6 @@ public class ByteList implements CharSequence {
      *
      * @param index new begin value for shared ByteBuffer
      * @param len new length/realSize for chared
-     * @return
      */
     public ByteList makeShared(int index, int len) {
         ByteList shared = new ByteList(bytes, encoding);
@@ -440,7 +439,9 @@ public class ByteList implements CharSequence {
         final int size = begin + realSize;
         final byte[] buf = bytes;
         pos += begin;
-        for ( ; pos < size && buf[pos] != b ; pos++ ) ;
+        while (pos < size && buf[pos] != b) {
+            pos++;
+        }
         return pos < size ? pos - begin : -1;
     }
 
@@ -480,12 +481,16 @@ public class ByteList implements CharSequence {
         int max = sourceOffset + (sourceCount - targetCount);
 
         for (int i = sourceOffset + fromIndex; i <= max; i++) {
-            if (source[i] != first) while (++i <= max && source[i] != first);
+            if (source[i] != first) {
+                while (++i <= max && source[i] != first) {
+                }
+            }
 
             if (i <= max) {
                 int j = i + 1;
                 int end = j + targetCount - 1;
-                for (int k = targetOffset + 1; j < end && source[j] == target[k]; j++, k++);
+                for (int k = targetOffset + 1; j < end && source[j] == target[k]; j++, k++) {
+                }
 
                 if (j == end) return i - sourceOffset;
             }
@@ -530,10 +535,10 @@ public class ByteList implements CharSequence {
             // ends until late) or sample odd bytes forward and even bytes
             // backward (I like this one, but it's more expensive for
             // strings that are equal; see sample_equals below).
-
-            for (first = -1;
-                 --last > first && buf[begin + last] == otherBuf[other.begin + last] &&
-                         ++first < last && buf[begin + first] == otherBuf[other.begin + first] ; ) ;
+            first = -1;
+            while (--last > first && buf[begin + last] == otherBuf[other.begin + last] &&
+                    ++first < last && buf[begin + first] == otherBuf[other.begin + first]) {
+            }
             return first >= last;
         }
         return false;
@@ -696,7 +701,6 @@ public class ByteList implements CharSequence {
      * Pretend byte array is raw and each byte is also the character value
      *
      * @param ix is the index you want
-     * @return
      */
     public char charAt(int ix) {
         return (char)(this.bytes[begin + ix] & 0xFF);
@@ -724,7 +728,8 @@ public class ByteList implements CharSequence {
         if (first == second) return 0;
         final int len =  Math.min(firstLen,secondLen);
         int offset = -1;
-        for (  ; ++offset < len && first[firstStart + offset] == second[secondStart + offset]; ) ;
+        while (++offset < len && first[firstStart + offset] == second[secondStart + offset]) {
+        }
         if (offset < len) {
             return (first[firstStart + offset]&0xFF) > (second[secondStart + offset]&0xFF) ? 1 : -1;
         }

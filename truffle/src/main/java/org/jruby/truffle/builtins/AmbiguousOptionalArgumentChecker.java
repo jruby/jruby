@@ -27,7 +27,7 @@ public class AmbiguousOptionalArgumentChecker {
         }
     }
 
-    private static void verifyNoAmbiguousOptionalArgumentsWithReflection(CoreMethodNodeManager.MethodDetails methodDetails) throws ReflectiveOperationException {
+    private static void verifyNoAmbiguousOptionalArgumentsWithReflection(CoreMethodNodeManager.MethodDetails methodDetails) {
         final CoreMethod methodAnnotation = methodDetails.getMethodAnnotation();
         if (methodAnnotation.optional() > 0 || methodAnnotation.needsBlock()) {
             int opt = methodAnnotation.optional();
@@ -90,7 +90,7 @@ public class AmbiguousOptionalArgumentChecker {
         return false;
     }
 
-    private static String methodToString(Method method, Class<?>[] parameterTypes, Parameter[] parameters) throws ReflectiveOperationException {
+    private static String methodToString(Method method, Class<?>[] parameterTypes, Parameter[] parameters) {
         StringBuilder str = new StringBuilder();
         str.append(method.getName()).append("(");
         for (int i = 0; i < parameters.length; i++) {

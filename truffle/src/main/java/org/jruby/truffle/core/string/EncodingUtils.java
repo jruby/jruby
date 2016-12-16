@@ -141,7 +141,6 @@ public class EncodingUtils {
          * @param destination
          * @param len
          * @param new_len
-         * @return
          */
         int resize(ByteList destination, int len, int new_len);
     }

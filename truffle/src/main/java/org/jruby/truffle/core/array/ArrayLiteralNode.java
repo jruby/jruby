@@ -56,6 +56,7 @@ public abstract class ArrayLiteralNode extends RubyNode {
         return createArray(executedValues, executedValues.length);
     }
 
+    @Override
     protected DynamicObject createArray(Object store, int size) {
         return allocateObjectNode.allocate(coreLibrary().getArrayClass(), store, size);
     }
@@ -309,7 +310,7 @@ public abstract class ArrayLiteralNode extends RubyNode {
                 for (int n = 0; n < objects.length; n++) {
                     final Object object = objects[n];
                     if (object instanceof Integer) {
-                        store[n] = (long) (int) object;
+                        store[n] = (int) object;
                     } else if (object instanceof Long) {
                         store[n] = (long) object;
                     } else {

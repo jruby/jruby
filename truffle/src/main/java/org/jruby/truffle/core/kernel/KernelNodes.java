@@ -832,7 +832,7 @@ public abstract class KernelNodes {
         }
 
         @TruffleBoundary
-        private static String gets(BufferedReader reader) throws InterruptedException {
+        private static String gets(BufferedReader reader) {
             try {
                 return reader.readLine() + "\n";
             } catch (IOException e) {

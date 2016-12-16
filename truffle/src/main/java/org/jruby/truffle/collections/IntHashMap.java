@@ -49,7 +49,7 @@ public class IntHashMap<V> {
         this(initialCapacity, 0.75f);
     }
 
-    @SuppressWarnings({"unchecked", "rawtypes"})
+    @SuppressWarnings({ "unchecked" })
     public IntHashMap(int initialCapacity, float loadFactor) {
         super();
         if (initialCapacity < 0) {
@@ -117,7 +117,6 @@ public class IntHashMap<V> {
         return null;
     }
 
-    @SuppressWarnings("rawtypes")
     protected void rehash() {
         int oldCapacity = table.length;
         Entry<V>[] oldMap = table;
@@ -225,7 +224,8 @@ public class IntHashMap<V> {
 			index = i;
 		}
 
-		public boolean hasNext() {
+        @Override
+        public boolean hasNext() {
 			return next != null;
 		}
 
@@ -245,26 +245,30 @@ public class IntHashMap<V> {
 			return e;
 		}
 
-		public void remove() {
+        @Override
+        public void remove() {
             throw new UnsupportedOperationException();
 		}
 
 	}
 
 	private class ValueIterator extends HashIterator<V> {
-		public V next() {
+        @Override
+        public V next() {
 			return nextEntry().value;
 		}
 	}
 
 	private class KeyIterator extends HashIterator<Integer> {
-		public Integer next() {
+        @Override
+        public Integer next() {
 			return nextEntry().key;
 		}
 	}
 
 	private class EntryIterator extends HashIterator<Entry<V>> {
-		public Entry<V> next() {
+        @Override
+        public Entry<V> next() {
 			return nextEntry();
 		}
 	}
@@ -290,11 +294,13 @@ public class IntHashMap<V> {
 
 	private class KeySet extends AbstractSet<Integer> {
 
-		public Iterator<Integer> iterator() {
+        @Override
+        public Iterator<Integer> iterator() {
 			return newKeyIterator();
 		}
 
-		public int size() {
+        @Override
+        public int size() {
 			return IntHashMap.this.count;
 		}
 
@@ -324,11 +330,13 @@ public class IntHashMap<V> {
 
 	private class Values extends AbstractCollection<V> {
 
-		public Iterator<V> iterator() {
+        @Override
+        public Iterator<V> iterator() {
 			return newValueIterator();
 		}
 
-		public int size() {
+        @Override
+        public int size() {
 			return IntHashMap.this.count;
 		}
 
@@ -350,7 +358,8 @@ public class IntHashMap<V> {
 
 	private class EntrySet extends AbstractSet<Entry<V>> {
 
-		public Iterator<Entry<V>> iterator() {
+        @Override
+        public Iterator<Entry<V>> iterator() {
 			return newEntryIterator();
 		}
 
@@ -370,7 +379,8 @@ public class IntHashMap<V> {
             throw new UnsupportedOperationException();
 		}
 
-		public int size() {
+        @Override
+        public int size() {
 			return IntHashMap.this.count;
 		}
 

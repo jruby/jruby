@@ -510,7 +510,8 @@ public class RopeOperations {
         // [slightly] understand it), in some cases, when two (or more?)
         // arrays are being accessed, the member reference is actually
         // faster.  this is one of those cases...
-        for (  ; ++offset < len && bytes[offset] == otherBytes[offset]; ) ;
+        while (++offset < len && bytes[offset] == otherBytes[offset]) {
+        }
         if (offset < len) {
             return (bytes[offset]&0xFF) > (otherBytes[offset]&0xFF) ? 1 : -1;
         }

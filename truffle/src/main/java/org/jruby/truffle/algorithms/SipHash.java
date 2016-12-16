@@ -127,7 +127,7 @@ public class SipHash {
         // packing the last block to long, as LE 0-7 bytes + the length in the top byte
         m = 0;
         for (i = offset + length - 1; i >= last; --i) {
-            m <<= 8; m |= (long) src[i];
+            m <<= 8; m |= src[i];
         }
         m |= (long) length << 56;
         // MSGROUND {

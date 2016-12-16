@@ -3568,12 +3568,16 @@ public abstract class StringNodes {
             int max = sourceOffset + (sourceCount - targetCount);
 
             for (int i = sourceOffset + fromIndex; i <= max; i++) {
-                if (source[i] != first) while (++i <= max && source[i] != first);
+                if (source[i] != first) {
+                    while (++i <= max && source[i] != first) {
+                    }
+                }
 
                 if (i <= max) {
                     int j = i + 1;
                     int end = j + targetCount - 1;
-                    for (int k = targetOffset + 1; j < end && source[j] == target[k]; j++, k++);
+                    for (int k = targetOffset + 1; j < end && source[j] == target[k]; j++, k++) {
+                    }
 
                     if (j == end) return i - sourceOffset;
                 }

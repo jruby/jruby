@@ -159,6 +159,7 @@ public class DoubleConverter {
             super(message);
         }
 
+        @SuppressWarnings("sync-override")
         @Override
         public Throwable fillInStackTrace() {
             return this;

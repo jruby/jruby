@@ -294,7 +294,7 @@ public abstract class ArrayUtils {
             final Object value = unboxed[n];
 
             if (value instanceof Integer) {
-                boxed[n] = (long) (int) unboxed[n];
+                boxed[n] = (int) unboxed[n];
             } else if (value instanceof Long) {
                 boxed[n] = (long) unboxed[n];
             }

@@ -55,7 +55,7 @@ public class ArgumentDescriptor {
     /**
      * Generate the prefixed version of this descriptor.
      *
-     * @see org.jruby.internal.runtime.methods.MethodArgs2
+     * See org.jruby.internal.runtime.methods.MethodArgs2
      */
     public String toPrefixForm() {
         return type.renderPrefixForm(name);

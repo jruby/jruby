@@ -19,7 +19,6 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.Encoding;
 import org.jcodings.Ptr;
 import org.jcodings.transcode.EConv;
-import org.jcodings.transcode.EConvFlags;
 import org.jcodings.transcode.EConvResult;
 import org.jcodings.transcode.Transcoder;
 import org.jcodings.transcode.TranscodingManager;
@@ -44,8 +43,6 @@ import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.Visibility;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
-import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 
 import java.util.Map;
@@ -78,23 +75,6 @@ public abstract class EncodingConverterNodes {
             Layouts.ENCODING_CONVERTER.setEconv(self, econv);
 
             return nil();
-        }
-
-        /**
-         * Rubinius and JRuby process Encoding::Converter options flags differently.  Rubinius splits the processing
-         * between initial setup and the replacement value setup, whereas JRuby handles them all during initial setup.
-         * We figure out what flags JRuby additionally expects to be set and set them to satisfy EConv.
-         */
-        private int rubiniusToJRubyFlags(int flags) {
-            if ((flags & EConvFlags.XML_TEXT_DECORATOR) != 0) {
-                flags |= EConvFlags.UNDEF_HEX_CHARREF;
-            }
-
-            if ((flags & EConvFlags.XML_ATTR_CONTENT_DECORATOR) != 0) {
-                flags |= EConvFlags.UNDEF_HEX_CHARREF;
-            }
-
-            return flags;
         }
 
     }
