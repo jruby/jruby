@@ -250,7 +250,7 @@ public abstract class TrufflePosixNodes {
         @TruffleBoundary
         @Specialization(guards = "isRubyString(path)")
         public int mkfifo(DynamicObject path, int mode) {
-            return posix().mkfifo(StringOperations.getString(path), mode);
+            return posix().mkfifo(decodeUTF8(path), mode);
         }
 
     }
@@ -932,7 +932,7 @@ public abstract class TrufflePosixNodes {
             int self = posix().getpid();
 
             if (self == pid) {
-                Signal signal = getContext().getNativePlatform().getSignalManager().createSignal(StringOperations.getString(signalName));
+                Signal signal = getContext().getNativePlatform().getSignalManager().createSignal(decodeUTF8(signalName));
                 return raise(signal);
             } else {
                 return posix().kill(pid, signalNumber);
