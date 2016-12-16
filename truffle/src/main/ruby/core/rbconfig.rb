@@ -44,6 +44,7 @@ module RbConfig
   end
 
   CONFIG = {
+    'arch' => "#{Truffle::System.host_cpu}-#{Truffle::System.host_os}",
     'exeext' => '',
     'EXEEXT' => '',
     'host_os' => Truffle::System.host_os,
