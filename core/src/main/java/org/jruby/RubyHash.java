@@ -44,20 +44,13 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.JavaUtil;
-import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
-import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.ClassIndex;
-import org.jruby.runtime.Constants;
-import org.jruby.runtime.Frame;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites.HashSites;
 import org.jruby.runtime.ObjectAllocator;
-import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
@@ -118,7 +111,7 @@ import static org.jruby.RubyEnumerator.SizeFn;
 public class RubyHash extends RubyObject implements Map {
     public static final int DEFAULT_INSPECT_STR_SIZE = 20;
 
-    public static final int COMPARE_BY_IDENTITY_F = Constants.COMPARE_BY_IDENTITY_F;
+    public static final int COMPARE_BY_IDENTITY_F = ObjectFlags.COMPARE_BY_IDENTITY_F;
 
     public static RubyClass createHashClass(Ruby runtime) {
         RubyClass hashc = runtime.defineClass("Hash", runtime.getObject(), HASH_ALLOCATOR);
@@ -231,7 +224,7 @@ public class RubyHash extends RubyObject implements Map {
     protected int size = 0;
     private int threshold;
 
-    private static final int PROCDEFAULT_HASH_F = Constants.PROCDEFAULT_HASH_F;
+    private static final int PROCDEFAULT_HASH_F = ObjectFlags.PROCDEFAULT_HASH_F;
 
     private IRubyObject ifNone;
 

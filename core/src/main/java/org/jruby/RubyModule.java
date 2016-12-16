@@ -93,7 +93,6 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
-import org.jruby.runtime.Constants;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.IRBlockBody;
 import org.jruby.runtime.MethodFactory;
@@ -134,10 +133,10 @@ public class RubyModule extends RubyObject {
     private static final Logger LOG = LoggerFactory.getLogger(RubyModule.class);
     // static { LOG.setDebugEnable(true); } // enable DEBUG output
 
-    public static final int CACHEPROXY_F = Constants.CACHEPROXY_F;
-    public static final int NEEDSIMPL_F = Constants.NEEDSIMPL_F;
-    public static final int REFINED_MODULE_F = Constants.REFINED_MODULE_F;
-    public static final int IS_OVERLAID_F = Constants.IS_OVERLAID_F;
+    public static final int CACHEPROXY_F = ObjectFlags.CACHEPROXY_F;
+    public static final int NEEDSIMPL_F = ObjectFlags.NEEDSIMPL_F;
+    public static final int REFINED_MODULE_F = ObjectFlags.REFINED_MODULE_F;
+    public static final int IS_OVERLAID_F = ObjectFlags.IS_OVERLAID_F;
 
     public static final ObjectAllocator MODULE_ALLOCATOR = new ObjectAllocator() {
         @Override

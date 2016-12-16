@@ -30,7 +30,6 @@ package org.jruby;
 import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.ir.interpreter.Interpreter;
-import org.jruby.runtime.Constants;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.JavaSites.BasicObjectSites;
 import org.jruby.runtime.ivars.VariableAccessor;
@@ -143,7 +142,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     public static final String ERR_INSECURE_SET_INST_VAR  = "Insecure: can't modify instance variable";
 
     public static final int ALL_F = -1;
-    public static final int FALSE_F = Constants.FALSE_F;
+    public static final int FALSE_F = ObjectFlags.FALSE_F;
     /**
      * This flag is a bit funny. It's used to denote that this value
      * is nil. It's a bit counterintuitive for a Java programmer to
@@ -154,9 +153,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * final. It turns out using a flag for this actually gives us
      * better performance than having a polymorphic {@link #isNil()} method.
      */
-    public static final int NIL_F = Constants.NIL_F;
-    public static final int FROZEN_F = Constants.FROZEN_F;
-    public static final int TAINTED_F = Constants.TAINTED_F;
+    public static final int NIL_F = ObjectFlags.NIL_F;
+    public static final int FROZEN_F = ObjectFlags.FROZEN_F;
+    public static final int TAINTED_F = ObjectFlags.TAINTED_F;
 
     /**
      *  A value that is used as a null sentinel in among other places

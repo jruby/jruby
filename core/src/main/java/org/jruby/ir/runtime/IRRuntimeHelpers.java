@@ -6,7 +6,7 @@ import org.jruby.*;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Unrescuable;
-import org.jruby.internal.runtime.methods.CompiledIRMetaClassBody;
+import org.jruby.internal.runtime.methods.CompiledIRNoProtocolMethod;
 import org.jruby.internal.runtime.methods.CompiledIRMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.InterpretedIRBodyMethod;
@@ -1240,7 +1240,7 @@ public class IRRuntimeHelpers {
     public static DynamicMethod newCompiledMetaClass(ThreadContext context, MethodHandle handle, IRScope metaClassBody, IRubyObject obj) {
         RubyClass singletonClass = newMetaClassFromIR(context.runtime, metaClassBody, obj);
 
-        return new CompiledIRMetaClassBody(handle, metaClassBody, singletonClass);
+        return new CompiledIRNoProtocolMethod(handle, metaClassBody, singletonClass);
     }
 
     private static RubyClass newMetaClassFromIR(Ruby runtime, IRScope metaClassBody, IRubyObject obj) {
