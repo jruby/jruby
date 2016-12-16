@@ -132,15 +132,7 @@ class Time
     sec += nsec / 1_000_000_000
     nsec %= 1_000_000_000
 
-    if utc_offset
-      utc_offset_sec = utc_offset.to_i
-      utc_offset_nsec = ((utc_offset % 1.0) * 1_000_000_000 + 0.5).to_i
-    else
-      utc_offset_sec = 0
-      utc_offset_nsec = 0
-    end
-
-    from_array(sec, min, hour, mday, month, year, nsec, is_dst, from_gmt, utc_offset, utc_offset_sec, utc_offset_nsec)
+    from_array(sec, min, hour, mday, month, year, nsec, is_dst, from_gmt, utc_offset)
   end
 
   def self.new(year=undefined, month=nil, day=nil, hour=nil, minute=nil, second=nil, utc_offset=nil)

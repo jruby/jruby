@@ -11,7 +11,7 @@
 package org.jruby.truffle.core.rope;
 
 import org.jcodings.Encoding;
-import org.jruby.truffle.util.ByteList;
+import org.jruby.truffle.core.string.ByteList;
 
 public class RopeBuffer extends LeafRope {
 

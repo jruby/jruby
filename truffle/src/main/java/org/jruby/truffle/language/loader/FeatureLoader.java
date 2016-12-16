@@ -28,7 +28,7 @@ public class FeatureLoader {
 
     private final RubyContext context;
 
-    private final ReentrantLockFreeingMap<String> fileLocks = new ReentrantLockFreeingMap<String>();
+    private final ReentrantLockFreeingMap<String> fileLocks = new ReentrantLockFreeingMap<>();
 
     private final Object cextImplementationLock = new Object();
     private boolean cextImplementationLoaded = false;

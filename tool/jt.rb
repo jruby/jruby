@@ -148,8 +148,11 @@ module Utilities
   end
 
   def self.mx?
-    mx_ruby_jar = "#{JRUBY_DIR}/mxbuild/dists/ruby.jar"
-    File.exist?(mx_ruby_jar)
+    mx_jar = "#{JRUBY_DIR}/mxbuild/dists/ruby.jar"
+    mvn_jar = "#{JRUBY_DIR}/lib/jruby-truffle.jar"
+    mx_time = File.exist?(mx_jar) ? File.mtime(mx_jar) : Time.at(0)
+    mvn_time = File.exist?(mvn_jar) ? File.mtime(mvn_jar) : Time.at(0)
+    mx_time > mvn_time
   end
 
   def self.find_ruby
@@ -369,19 +372,6 @@ module ShellUtils
     sh *options, './mvnw', *args
   end
 
-  def maven_options(*options)
-    maven_options = []
-    build_pack = options.delete('--build-pack')
-    offline = options.delete('--offline')
-    if build_pack || offline
-      maven_options.push "-Dmaven.repo.local=#{Utilities.find_repo('jruby-build-pack')}/maven"
-    end
-    if offline
-      maven_options.push '--offline'
-    end
-    return [maven_options, options]
-  end
-
   def mx(dir, *args)
     command = ['mx', '-p', dir]
     command.push *args
@@ -444,8 +434,6 @@ module Commands
           cexts [--no-openssl]                       build the cext backend (set SULONG_HOME)
           parser                                     build the parser
           options                                    build the options
-          --build-pack                               use the build pack
-          --offline                                  use the build pack to build offline
       jt clean                                       clean
       jt irb                                         irb
       jt rebuild                                     clean and build
@@ -503,6 +491,7 @@ module Commands
               benchmark bench/mri/bm_vm1_not.rb --cache
               jt benchmark bench/mri/bm_vm1_not.rb --use-cache
       jt where repos ...                            find these repositories
+      jt next                                       tell you what to work on next (give you a random core library spec)
 
       you can also put build or rebuild in front of any command
 
@@ -530,17 +519,15 @@ module Commands
   end
 
   def bootstrap(*options)
-    maven_options, other_options = maven_options(*options)
-    mvn *maven_options, '-Pbootstrap-no-launcher'
+    mvn *options, '-Pbootstrap-no-launcher'
   end
 
   def build(*options)
-    maven_options, other_options = maven_options(*options)
-    project = other_options.first
+    project = options.first
     env = VERBOSE ? {} : {'JRUBY_BUILD_MORE_QUIET' => 'true'}
     case project
     when 'truffle'
-      mvn env, *maven_options, '-pl', 'truffle', 'package'
+      mvn env, '-pl', 'truffle', 'package'
     when 'cexts'
       no_openssl = options.delete('--no-openssl')
       build_ruby_su
@@ -556,13 +543,14 @@ module Commands
     when 'options'
       sh 'tool/truffle/generate-options.rb'
     when nil
-      mvn env, *maven_options, 'package'
+      mvn env, 'package'
     else
       raise ArgumentError, project
     end
   end
 
   def clean
+    mx(JRUBY_DIR, 'clean') if Utilities.mx?
     mvn 'clean'
   end
 
@@ -788,7 +776,7 @@ module Commands
     env_vars = {
       "EXCLUDES" => "test/mri/excludes_truffle"
     }
-    jruby_args = %w[-J-Xmx2G -Xtruffle.exceptions.print_java=true]
+    jruby_args = %w[-J-Xmx2G --jexceptions]
 
     if args.count { |arg| !arg.start_with?('-') } == 0
       args += File.readlines("#{JRUBY_DIR}/test/mri_truffle.index").grep(/^[^#]\w+/).map(&:chomp)
@@ -1044,9 +1032,6 @@ module Commands
     if args.first == 'fast'
       args.shift
       options += %w[--excl-tag slow]
-      if args[-2..-1] != %w[-t ruby] and !args.delete('--backtrace')
-        options << "-T-Xtruffle.backtraces.limit=4"
-      end
     end
 
     if args.delete('--graal')
@@ -1077,7 +1062,7 @@ module Commands
   private :test_specs
 
   def test_tck(*args)
-    exec 'mx', 'rubytck' if Utilities.mx?
+    raw_sh 'mx', 'rubytck', use_exec: true if Utilities.mx?
     env = {'JRUBY_BUILD_MORE_QUIET' => 'true'}
     mvn env, *args, '-Ptck'
   end
@@ -1260,8 +1245,7 @@ module Commands
   end
 
   def tarball(*options)
-    maven_options, other_options = maven_options(*options)
-    mvn *maven_options, '-Pdist'
+    mvn '-Pdist'
     generated_file = "#{JRUBY_DIR}/maven/jruby-dist/target/jruby-dist-#{Utilities.jruby_version}-bin.tar.gz"
     final_file = "#{JRUBY_DIR}/jruby-bin-#{Utilities.jruby_version}.tar.gz"
     FileUtils.copy generated_file, final_file
@@ -1309,10 +1293,14 @@ module Commands
       end
     end
   end
+  
+  def next(*args)
+    puts `cat spec/truffle/tags/core/**/**.txt | grep 'fails:'`.lines.sample
+  end
 
-  def check_ambiguous_arguments
+  def check_dsl_usage
     clean
-    # modify pom
+    # modify pom to add -parameters for javac
     pom = "#{JRUBY_DIR}/truffle/pom.rb"
     contents = File.read(pom)
     contents.sub!(/^(\s+)('-J-Dfile.encoding=UTF-8')(.+\n)(?!\1'-parameters')/) do
@@ -1321,7 +1309,7 @@ module Commands
     File.write pom, contents
 
     build
-    run({ "TRUFFLE_CHECK_AMBIGUOUS_OPTIONAL_ARGS" => "true" }, '-e', 'exit')
+    run({ "TRUFFLE_CHECK_DSL_USAGE" => "true" }, '-e', 'exit')
   end
 
 end
@@ -1342,7 +1330,7 @@ class JT
       send(args.shift)
     when "build"
       command = [args.shift]
-      while ['truffle', 'cexts', 'parser', 'options', '--offline', '--build-pack', '--no-openssl'].include?(args.first)
+      while ['truffle', 'cexts', 'parser', 'options', '--no-openssl'].include?(args.first)
         command << args.shift
       end
       send(*command)

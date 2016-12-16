@@ -22,6 +22,7 @@ import org.jruby.truffle.core.array.ArrayUtils;
 import org.jruby.truffle.core.cast.TaintResultNode;
 import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.core.numeric.FixnumLowerNodeGen;
+import org.jruby.truffle.core.string.StringUtils;
 import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyConstant;
@@ -46,7 +47,6 @@ import org.jruby.truffle.options.Options;
 import org.jruby.truffle.parser.Translator;
 import org.jruby.truffle.platform.UnsafeGroup;
 import org.jruby.truffle.tools.ChaosNodeGen;
-import org.jruby.truffle.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -54,7 +54,7 @@ import java.util.List;
 
 public class CoreMethodNodeManager {
 
-    private static final boolean CHECK_AMBIGUOUS_OPTIONAL_ARGS = System.getenv("TRUFFLE_CHECK_AMBIGUOUS_OPTIONAL_ARGS") != null;
+    private static final boolean CHECK_DSL_USAGE = System.getenv("TRUFFLE_CHECK_DSL_USAGE") != null;
     private final RubyContext context;
     private final SingletonClassNode singletonClassNode;
     private final PrimitiveManager primitiveManager;
@@ -191,7 +191,7 @@ public class CoreMethodNodeManager {
 
         final RubyNode methodNode = createCoreMethodNode(context, sourceSection, methodDetails.getNodeFactory(), method);
 
-        if (CHECK_AMBIGUOUS_OPTIONAL_ARGS) {
+        if (CHECK_DSL_USAGE) {
             AmbiguousOptionalArgumentChecker.verifyNoAmbiguousOptionalArguments(methodDetails);
         }
 
@@ -234,10 +234,15 @@ public class CoreMethodNodeManager {
         final int optional = method.optional();
         final int nArgs = required + optional;
 
+        if (CHECK_DSL_USAGE) {
+            LowerFixnumChecker.checkLowerFixnumArguments(nodeFactory, needsSelf ? 1 : 0, method);
+        }
+
         for (int n = 0; n < nArgs; n++) {
             RubyNode readArgumentNode = new ProfileArgumentNode(new ReadPreArgumentNode(n, MissingArgumentBehavior.UNDEFINED));
             argumentsNodes.add(transformArgument(context, sourceSection, method, readArgumentNode, n + 1));
         }
+
         if (method.rest()) {
             argumentsNodes.add(new ReadRemainingArgumentsNode(nArgs));
         }
@@ -363,8 +368,10 @@ public class CoreMethodNodeManager {
     }
 
     public void allMethodInstalled() {
-        if (CHECK_AMBIGUOUS_OPTIONAL_ARGS && !AmbiguousOptionalArgumentChecker.SUCCESS) {
-            System.exit(1);
+        if (CHECK_DSL_USAGE) {
+            if (!(AmbiguousOptionalArgumentChecker.SUCCESS && LowerFixnumChecker.SUCCESS)) {
+                System.exit(1);
+            }
         }
     }
 

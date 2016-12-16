@@ -62,6 +62,10 @@ module OpenSSL
       end
 
     end
+
+    # valled in lib/ruby/stdlib/rubygems/security.rb:372
+    def self.new(enc)
+    end
   end
 
   module PKCS5

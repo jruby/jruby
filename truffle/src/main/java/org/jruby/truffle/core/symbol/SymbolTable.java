@@ -20,7 +20,7 @@ import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.util.IdUtil;
+import org.jruby.truffle.parser.Identifiers;
 
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
@@ -74,7 +74,7 @@ public class SymbolTable {
             final Rope rope = StringOperations.encodeRope(stringKey, USASCIIEncoding.INSTANCE);
             symbol = getDeduplicatedSymbol(rope);
 
-            stringSymbolMap.put(stringKey, new WeakReference<DynamicObject>(symbol));
+            stringSymbolMap.put(stringKey, new WeakReference<>(symbol));
         } finally {
             lock.writeLock().unlock();
         }
@@ -105,7 +105,7 @@ public class SymbolTable {
             final Rope rope = RopeOperations.flatten(ropeKey);
             symbol = getDeduplicatedSymbol(rope);
 
-            ropeSymbolMap.put(rope, new WeakReference<DynamicObject>(symbol));
+            ropeSymbolMap.put(rope, new WeakReference<>(symbol));
         } finally {
             lock.writeLock().unlock();
         }
@@ -119,7 +119,7 @@ public class SymbolTable {
         final DynamicObject currentSymbol = readRef(symbolSet, newKey);
 
         if (currentSymbol == null) {
-            symbolSet.put(newKey, new WeakReference<DynamicObject>(newSymbol));
+            symbolSet.put(newKey, new WeakReference<>(newSymbol));
             return newSymbol;
         } else {
             return currentSymbol;
@@ -180,7 +180,7 @@ public class SymbolTable {
         // if (!IdUtil.isValidInstanceVariableName(name)) {
 
         // check like Rubinius does for compatibility with their Struct Ruby implementation.
-        if (!(name.startsWith("@") && name.length() > 1 && IdUtil.isInitialCharacter(name.charAt(1)))) {
+        if (!(name.startsWith("@") && name.length() > 1 && Identifiers.isInitialCharacter(name.charAt(1)))) {
             throw new RaiseException(context.getCoreExceptions().nameErrorInstanceNameNotAllowable(
                     name,
                     receiver,
@@ -195,7 +195,7 @@ public class SymbolTable {
             String name,
             Object receiver,
             Node currentNode) {
-        if (!IdUtil.isValidClassVariableName(name)) {
+        if (!Identifiers.isValidClassVariableName(name)) {
             throw new RaiseException(context.getCoreExceptions().nameErrorInstanceNameNotAllowable(
                     name,
                     receiver,

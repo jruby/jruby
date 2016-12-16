@@ -133,7 +133,7 @@ public abstract class PsychEmitterNodes {
 
     }
 
-    @CoreMethod(names = "start_stream", required = 1)
+    @CoreMethod(names = "start_stream", required = 1, lowerFixnum = 1)
     public abstract static class StartStreamNode extends CoreMethodArrayArgumentsNode {
 
         @TruffleBoundary
@@ -240,7 +240,7 @@ public abstract class PsychEmitterNodes {
 
     }
 
-    @CoreMethod(names = "scalar", required = 6)
+    @CoreMethod(names = "scalar", required = 6, lowerFixnum = 6)
     public abstract static class ScalarNode extends CoreMethodArrayArgumentsNode {
 
         // Map style constants from Psych values (ANY = 0 ... FOLDED = 5)
@@ -295,7 +295,7 @@ public abstract class PsychEmitterNodes {
     }
 
 
-    @CoreMethod(names = "start_sequence", required = 4)
+    @CoreMethod(names = "start_sequence", required = 4, lowerFixnum = 4)
     public abstract static class StartSequenceNode extends CoreMethodArrayArgumentsNode {
 
         private static final int SEQUENCE_BLOCK = 1;
@@ -348,7 +348,7 @@ public abstract class PsychEmitterNodes {
 
     }
 
-    @CoreMethod(names = "start_mapping", required = 4)
+    @CoreMethod(names = "start_mapping", required = 4, lowerFixnum = 4)
     public abstract static class StartMappingNode extends CoreMethodArrayArgumentsNode {
 
         private static final int MAPPING_BLOCK = 1;
@@ -433,7 +433,7 @@ public abstract class PsychEmitterNodes {
 
     }
 
-    @CoreMethod(names = "indentation=", required = 1)
+    @CoreMethod(names = "indentation=", required = 1, lowerFixnum = 1)
     public abstract static class SetIndentationNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
@@ -454,7 +454,7 @@ public abstract class PsychEmitterNodes {
 
     }
 
-    @CoreMethod(names = "line_width=", required = 1)
+    @CoreMethod(names = "line_width=", required = 1, lowerFixnum = 1)
     public abstract static class SetLineWidthNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization

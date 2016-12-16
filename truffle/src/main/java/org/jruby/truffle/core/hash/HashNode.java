@@ -11,7 +11,10 @@ package org.jruby.truffle.core.hash;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
+
+import org.jruby.truffle.Layouts;
 import org.jruby.truffle.core.ObjectNodes.ObjectIDPrimitiveNode;
 import org.jruby.truffle.core.ObjectNodesFactory.ObjectIDPrimitiveNodeFactory;
 import org.jruby.truffle.language.RubyBaseNode;
@@ -25,6 +28,7 @@ public class HashNode extends RubyBaseNode {
 
     private final ConditionProfile isIntegerProfile = ConditionProfile.createBinaryProfile();
     private final ConditionProfile isLongProfile = ConditionProfile.createBinaryProfile();
+    private final ConditionProfile isBignumProfile = ConditionProfile.createBinaryProfile();
 
     public int hash(VirtualFrame frame, Object key, boolean compareByIdentity) {
         final Object hashedObject;
@@ -38,6 +42,8 @@ public class HashNode extends RubyBaseNode {
             return (int) hashedObject;
         } else if (isLongProfile.profile(hashedObject instanceof Long)) {
             return (int) (long) hashedObject;
+        } else if (isBignumProfile.profile(Layouts.BIGNUM.isBignum(hashedObject))) {
+            return Layouts.BIGNUM.getValue((DynamicObject) hashedObject).hashCode();
         } else {
             throw new UnsupportedOperationException();
         }

@@ -40,9 +40,10 @@
 package org.jruby.truffle.parser.parser;
 
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.string.StringSupport;
+import org.jruby.truffle.core.rope.CodeRange;
+import org.jruby.truffle.core.string.ByteList;
 import org.jruby.truffle.interop.ForeignCodeNode;
-import org.jruby.truffle.parser.KeyValuePair;
+import org.jruby.truffle.collections.Tuple;
 import org.jruby.truffle.parser.RubyWarnings;
 import org.jruby.truffle.parser.ast.ArgsParseNode;
 import org.jruby.truffle.parser.ast.ArgumentParseNode;
@@ -129,7 +130,6 @@ import org.jruby.truffle.parser.lexer.LexerSource;
 import org.jruby.truffle.parser.lexer.RubyLexer;
 import org.jruby.truffle.parser.lexer.StrTerm;
 import org.jruby.truffle.parser.lexer.SyntaxException.PID;
-import org.jruby.truffle.util.ByteList;
 
 import java.io.IOException;
 
@@ -3649,7 +3649,7 @@ states[460] = new ParserState() {
 		    lexer.setHeredocIndent(0);
 
                     if (((ParseNode)yyVals[-1+yyTop]) == null) {
-                        yyVal = new XStrParseNode(position, null, StringSupport.CR_7BIT);
+                        yyVal = new XStrParseNode(position, null, CodeRange.CR_7BIT);
                     } else if (((ParseNode)yyVals[-1+yyTop]) instanceof StrParseNode) {
                         yyVal = new XStrParseNode(position, ((StrParseNode)yyVals[-1+yyTop]).getValue().dup(), ((StrParseNode)yyVals[-1+yyTop]).getCodeRange());
                     } else if (((ParseNode)yyVals[-1+yyTop]) instanceof DStrParseNode) {
@@ -4578,13 +4578,13 @@ states[607] = new ParserState() {
 };
 states[608] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = new HashParseNode(lexer.getPosition(), ((KeyValuePair)yyVals[0+yyTop]));
+                    yyVal = new HashParseNode(lexer.getPosition(), ((Tuple)yyVals[0+yyTop]));
     return yyVal;
   }
 };
 states[609] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = ((HashParseNode)yyVals[-2+yyTop]).add(((KeyValuePair)yyVals[0+yyTop]));
+                    yyVal = ((HashParseNode)yyVals[-2+yyTop]).add(((Tuple)yyVals[0+yyTop]));
     return yyVal;
   }
 };

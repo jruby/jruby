@@ -542,11 +542,8 @@ public abstract class BignumNodes {
 
         @Specialization
         public Object rightShift(VirtualFrame frame, DynamicObject a, long b) {
-            if (CoreLibrary.fitsIntoInteger(b)) {
-                return executeRightShift(frame, a, (int) b);
-            } else {
-                return 0;
-            }
+            assert !CoreLibrary.fitsIntoInteger(b);
+            return 0;
         }
 
         @Specialization(guards = "isRubyBignum(b)")
@@ -579,33 +576,6 @@ public abstract class BignumNodes {
         @Specialization
         public int bitLength(DynamicObject value) {
             return Layouts.BIGNUM.getValue(value).bitLength();
-        }
-
-    }
-
-    @CoreMethod(names = "coerce", required = 1)
-    public abstract static class CoerceNode extends CoreMethodArrayArgumentsNode {
-
-        // NOTE (eregon, 16 Feb. 2015): In other implementations, b is converted to a Bignum here,
-        // even if it fits in a Fixnum. We avoid it for implementation sanity
-        // and to keep the representations strictly distinct over the range of values.
-
-        @Specialization
-        public DynamicObject coerce(DynamicObject a, int b) {
-            Object[] store = new Object[] { b, a };
-            return createArray(store, store.length);
-        }
-
-        @Specialization
-        public DynamicObject coerce(DynamicObject a, long b) {
-            Object[] store = new Object[] { b, a };
-            return createArray(store, store.length);
-        }
-
-        @Specialization(guards = "isRubyBignum(b)")
-        public DynamicObject coerce(DynamicObject a, DynamicObject b) {
-            Object[] store = new Object[] { b, a };
-            return createArray(store, store.length);
         }
 
     }
@@ -689,7 +659,7 @@ public abstract class BignumNodes {
 
     }
 
-    @CoreMethod(names = {"to_s", "inspect"}, optional = 1)
+    @CoreMethod(names = { "to_s", "inspect" }, optional = 1, lowerFixnum = 1)
     public abstract static class ToSNode extends CoreMethodArrayArgumentsNode {
 
         @TruffleBoundary

@@ -37,9 +37,9 @@
 package org.jruby.truffle.parser.parser;
 
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.string.StringSupport;
+import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.interop.ForeignCodeNode;
-import org.jruby.truffle.parser.KeyValuePair;
+import org.jruby.truffle.collections.Tuple;
 import org.jruby.truffle.parser.RubyWarnings;
 import org.jruby.truffle.parser.ast.ArgsParseNode;
 import org.jruby.truffle.parser.ast.ArgumentParseNode;
@@ -254,7 +254,7 @@ public class RubyParser {
    // ENEBO: missing when_args
 %type <HashParseNode> assoc_list
 %type <HashParseNode> assocs
-%type <KeyValuePair> assoc
+%type <Tuple> assoc
 %type <ListParseNode> mlhs_head mlhs_post
 %type <ListParseNode> f_block_optarg
 %type <BlockPassParseNode> opt_block_arg block_arg none_block_pass
@@ -1921,7 +1921,7 @@ xstring         : tXSTRING_BEG xstring_contents tSTRING_END {
 		    lexer.setHeredocIndent(0);
 
                     if ($2 == null) {
-                        $$ = new XStrParseNode(position, null, StringSupport.CR_7BIT);
+                        $$ = new XStrParseNode(position, null, CodeRange.CR_7BIT);
                     } else if ($2 instanceof StrParseNode) {
                         $$ = new XStrParseNode(position, $<StrParseNode>2.getValue().dup(), $<StrParseNode>2.getCodeRange());
                     } else if ($2 instanceof DStrParseNode) {

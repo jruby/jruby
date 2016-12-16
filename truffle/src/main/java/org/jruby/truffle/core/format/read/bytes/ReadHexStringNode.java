@@ -55,7 +55,7 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.FormatNode;
 import org.jruby.truffle.core.format.read.SourceNode;
 import org.jruby.truffle.core.rope.AsciiOnlyLeafRope;
-import org.jruby.truffle.util.Pack;
+import org.jruby.truffle.core.format.write.bytes.EncodeUM;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -111,7 +111,7 @@ public abstract class ReadHexStringNode extends FormatNode {
                 bits = encode.get();
             }
 
-            lElem[lCurByte] = Pack.sHexDigits[(bits >>> shift) & 15];
+            lElem[lCurByte] = EncodeUM.sHexDigits[(bits >>> shift) & 15];
         }
 
         setSourcePosition(frame, encode.position());

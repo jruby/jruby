@@ -28,7 +28,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.scope;
 
-import org.jruby.truffle.parser.IRScopeType;
 import org.jruby.truffle.parser.Signature;
 import org.jruby.truffle.parser.ast.AssignableParseNode;
 import org.jruby.truffle.parser.ast.DAsgnParseNode;
@@ -78,8 +77,6 @@ public class StaticScope implements Serializable {
     // File name where this static scope came from or null if a native or artificial scope
     private String file;
 
-    protected IRScopeType scopeType;
-
     private static final String[] NO_NAMES = new String[0];
 
     private Type type;
@@ -127,14 +124,6 @@ public class StaticScope implements Serializable {
         this.variableNames = names;
         this.type = type;
         this.isBlockOrEval = (type != Type.LOCAL);
-    }
-
-    public IRScopeType getScopeType() {
-        return scopeType;
-    }
-
-    public void setScopeType(IRScopeType scopeType) {
-        this.scopeType = scopeType;
     }
 
     /**

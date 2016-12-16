@@ -24,6 +24,8 @@ public abstract class ProcOrNullNode extends RubyNode {
         super(context, sourceSection);
     }
 
+    public abstract RubyNode getChild();
+
     public abstract DynamicObject executeProcOrNull(Object proc);
 
     @Specialization

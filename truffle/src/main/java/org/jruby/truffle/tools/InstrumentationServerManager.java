@@ -18,12 +18,12 @@ import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.string.StringUtils;
 import org.jruby.truffle.language.SafepointAction;
 import org.jruby.truffle.language.backtrace.Backtrace;
 import org.jruby.truffle.language.backtrace.BacktraceFormatter;
 import org.jruby.truffle.language.control.JavaException;
 import org.jruby.truffle.tools.simpleshell.SimpleShell;
-import org.jruby.truffle.util.StringUtils;
 
 import java.io.IOException;
 import java.io.OutputStream;

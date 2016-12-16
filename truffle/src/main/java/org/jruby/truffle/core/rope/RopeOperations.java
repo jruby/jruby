@@ -30,13 +30,13 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.encoding.EncodingManager;
+import org.jruby.truffle.core.string.ByteList;
+import org.jruby.truffle.core.string.EncodingUtils;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.core.string.StringSupport;
+import org.jruby.truffle.core.string.StringUtils;
 import org.jruby.truffle.language.RubyGuards;
-import org.jruby.truffle.util.EncodingUtils;
-import org.jruby.truffle.util.Memo;
-import org.jruby.truffle.util.StringUtils;
-import org.jruby.truffle.util.ByteList;
+import org.jruby.truffle.collections.Memo;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
@@ -510,7 +510,8 @@ public class RopeOperations {
         // [slightly] understand it), in some cases, when two (or more?)
         // arrays are being accessed, the member reference is actually
         // faster.  this is one of those cases...
-        for (  ; ++offset < len && bytes[offset] == otherBytes[offset]; ) ;
+        while (++offset < len && bytes[offset] == otherBytes[offset]) {
+        }
         if (offset < len) {
             return (bytes[offset]&0xFF) > (otherBytes[offset]&0xFF) ? 1 : -1;
         }

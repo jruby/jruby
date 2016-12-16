@@ -15,7 +15,7 @@ package org.jruby.truffle.aot;
 
 import java.nio.file.SimpleFileVisitor;
 
-class SimpleRootedFileVisitor<T> extends SimpleFileVisitor<T> implements RootedFileVisitor<T> {
+public class SimpleRootedFileVisitor<T> extends SimpleFileVisitor<T> implements RootedFileVisitor<T> {
     private T root;
 
     @Override

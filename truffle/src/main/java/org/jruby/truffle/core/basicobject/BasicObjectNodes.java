@@ -38,6 +38,7 @@ import org.jruby.truffle.core.cast.BooleanCastNodeGen;
 import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.core.string.StringUtils;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
@@ -57,7 +58,6 @@ import org.jruby.truffle.language.objects.PropertyFlags;
 import org.jruby.truffle.language.supercall.SuperCallNode;
 import org.jruby.truffle.language.yield.YieldNode;
 import org.jruby.truffle.parser.ParserContext;
-import org.jruby.truffle.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -98,7 +98,7 @@ public abstract class BasicObjectNodes {
 
     }
 
-    @CoreMethod(names = { "equal?", "==" }, required = 1)
+    @CoreMethod(names = {"equal?", "=="}, required = 1)
     public abstract static class ReferenceEqualNode extends CoreMethodArrayArgumentsNode {
 
         public static ReferenceEqualNode create() {
@@ -132,8 +132,8 @@ public abstract class BasicObjectNodes {
             return a == b;
         }
 
-        @Specialization(guards = { "isNotDynamicObject(a)", "isNotDynamicObject(b)", "notSameClass(a, b)" })
-        public boolean equal(Object a, Object b) {
+        @Specialization(guards = { "isNotDynamicObject(a)", "isNotDynamicObject(b)", "notSameClass(a, b)", "isNotIntLong(a) || isNotIntLong(b)" })
+        public boolean equalIncompatiblePrimitiveTypes(Object a, Object b) {
             return false;
         }
 
@@ -155,6 +155,10 @@ public abstract class BasicObjectNodes {
             return a.getClass() != b.getClass();
         }
 
+        protected boolean isNotIntLong(Object v) {
+            return !(v instanceof Integer) && !(v instanceof Long);
+        }
+
     }
 
     @CoreMethod(names = "initialize", needsSelf = false)
@@ -167,7 +171,7 @@ public abstract class BasicObjectNodes {
 
     }
 
-    @CoreMethod(names = "instance_eval", needsBlock = true, optional = 3, unsupportedOperationBehavior = UnsupportedOperationBehavior.ARGUMENT_ERROR)
+    @CoreMethod(names = "instance_eval", needsBlock = true, optional = 3, lowerFixnum = 3, unsupportedOperationBehavior = UnsupportedOperationBehavior.ARGUMENT_ERROR)
     public abstract static class InstanceEvalNode extends CoreMethodArrayArgumentsNode {
 
         @Child private YieldNode yield;

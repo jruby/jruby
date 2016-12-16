@@ -42,7 +42,7 @@ module Rubinius
       def self.exec(*args)
         exe = Execute.new(*args)
         exe.spawn_setup
-        exe.exec exe.command, exe.argv
+        exe.exec exe.command, exe.argv, exe.env_array
       end
 
       def self.spawn(*args)
@@ -62,6 +62,7 @@ module Rubinius
         attr_reader :command
         attr_reader :argv
         attr_reader :options
+        attr_reader :env_array
 
         # Turns the various varargs incantations supported by Process.spawn into a
         # [env, prog, argv, redirects, options] tuple.
@@ -111,7 +112,7 @@ module Rubinius
             @argv = argv
           end
 
-          @options = Rubinius::LookupTable.new if options or env
+          @options = {}
 
           if options
             options.each do |key, value|
@@ -267,6 +268,62 @@ module Rubinius
           "a+" => ::File::RDWR   | ::File::APPEND | ::File::CREAT
         }
 
+        def spawn_setup
+          require 'fcntl'
+
+          env = options.delete(:unsetenv_others) ? {} : ENV.to_hash
+          if add_to_env = options.delete(:env)
+            env.merge! Hash[add_to_env]
+          end
+
+          @env_array = env.map { |k, v| "#{k}=#{v}" }
+
+          if options
+            if pgroup = options[:pgroup]
+              Truffle::POSIX.setpgid(0, pgroup)
+            end
+
+            if mask = options[:mask]
+              Truffle::POSIX.umask(mask)
+            end
+
+            if chdir = options[:chdir]
+              Truffle::POSIX.chdir(chdir)
+            end
+
+            if close_others = options[:close_others]
+              warn 'spawn_setup: close_others not yet implemented'
+            end
+
+            if assign_fd = options[:assign_fd]
+              assign_fd.each_slice(4) do |from, name, mode, perm|
+                to = IO.open_with_mode(name, mode | Fcntl::FD_CLOEXEC, perm)
+                redirect_file_descriptor(from, to)
+              end
+            end
+
+            if redirect_fd = options[:redirect_fd]
+              redirect_fd.each_slice(2) do |from, to|
+                redirect_file_descriptor(from, to)
+              end
+            end
+          end
+
+          nil
+        end
+
+        def redirect_file_descriptor(from, to)
+          to = (-to + 1) if to < 0
+
+          result = Truffle::POSIX.dup2(to, from)
+          Errno.handle if result < 0
+
+          flags = Truffle::POSIX.fcntl(from, Fcntl::F_GETFD, nil)
+          Errno.handle if flags < 0
+
+          Truffle::POSIX.fcntl(from, Fcntl::F_SETFD, flags & ~Fcntl::FD_CLOEXEC)
+        end
+
         def spawn(options, command, arguments)
           options ||= {}
           env = options.delete(:unsetenv_others) ? {} : ENV.to_hash
@@ -283,10 +340,67 @@ module Rubinius
           Truffle::Process.spawn command, arguments, env_array, options
         end
 
-        def exec(command, args)
-          Truffle.primitive :vm_exec
-          raise PrimitiveFailure,
-            "Rubinius::Mirror::Process::Execute#exec primitive failed"
+        def exec(command, args, env_array)
+          command = Rubinius::Type.check_null_safe(StringValue(command))
+
+          if args.empty?
+            # If the command contains both the binary to run and the arguments, we need to split them apart. We have
+            # two basic cases here: 1) a fully qualified command; and 2) a simple name expected to be found on the PATH.
+            # Both cases require the split. In the event of a fully qualified command, we exec the command directly,
+            # but the signature for exec requires the command and arguments to all be split. In the other case, where
+            # we have a command to search on the PATH, we must split the command apart from the arguments in order to
+            # perform the search (a poor man's version of shell processing). If we can find it on the PATH, then we
+            # run the whole thing through a shell to get proper shell processing.
+
+            split_command, *split_args = command.strip.split(' ')
+
+            if should_search_path?(split_command)
+              resolved_command = resolve_in_path(split_command)
+
+              if resolved_command
+                command, args = '/bin/sh', ['/bin/sh', '-c', command]
+              else
+                raise Errno::ENOENT.new("No such file or directory - #{command}")
+              end
+            else
+              command = split_command
+              args = [split_command] + split_args
+            end
+          else
+            # If arguments are explicitly passed, the semantics of this method (defined in Ruby) are to run the
+            # command directly. Thus, we must find the full path to the command, if not specified, because we can't
+            # allow the shell to do it for us.
+
+            if should_search_path?(command)
+              resolved_command = resolve_in_path(command)
+
+              if resolved_command
+                command = resolved_command
+              else
+                raise Errno::ENOENT.new("No such file or directory - #{command}")
+              end
+            end
+          end
+
+          Truffle.invoke_primitive :vm_exec, command, args, env_array
+          raise PrimitiveFailure, "Rubinius::Mirror::Process::Execute#exec primitive failed"
+        end
+
+        def should_search_path?(command)
+          ['/', './', '../'].each { |prefix| return false if command.start_with?(prefix) }
+          true
+        end
+
+        def resolve_in_path(command)
+          ENV['PATH'].split(File::PATH_SEPARATOR).each do |dir|
+            f = File.join(dir, command)
+
+            if File.file?(f) && File.executable?(f)
+              return f
+            end
+          end
+
+          nil
         end
       end
     end

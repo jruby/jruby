@@ -11,6 +11,8 @@ package org.jruby.truffle.options;
 
 public class UnknownOptionException extends UnsupportedOperationException {
 
+    private static final long serialVersionUID = 94889894853948L;
+
     private final String name;
 
     public UnknownOptionException(String name) {

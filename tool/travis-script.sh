@@ -3,11 +3,6 @@
 set -e
 set -x
 
-if [[ -v USE_BUILD_PACK ]]
-then
-  MAVEN_CLI_OPTS="-Dmaven.repo.local=jruby-build-pack/maven --offline"
-fi
-
 if [[ -v PHASE ]]
 then
   DOWNLOAD_OUTPUT_FILTER='Download|\\[exec\\] [[:digit:]]+/[[:digit:]]+|^[[:space:]]*\\[exec\\][[:space:]]*$'

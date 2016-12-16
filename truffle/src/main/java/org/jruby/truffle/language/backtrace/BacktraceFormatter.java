@@ -17,12 +17,12 @@ import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.RubyLanguage;
+import org.jruby.truffle.core.string.StringUtils;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.loader.SourceLoader;
-import org.jruby.truffle.util.SourceSectionUtils;
-import org.jruby.truffle.util.StringUtils;
 
 import java.io.PrintWriter;
 import java.util.ArrayList;
@@ -264,7 +264,7 @@ public class BacktraceFormatter {
         final SourceSection sourceSection = callNode.getEncapsulatingSourceSection();
 
         if (sourceSection != null) {
-            final String shortDescription = SourceSectionUtils.fileLine(sourceSection);
+            final String shortDescription = RubyLanguage.fileLine(sourceSection);
 
 
             builder.append(shortDescription);

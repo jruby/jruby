@@ -456,9 +456,9 @@ class Hash
 
   def invert
     inverted = {}
-    each_pair { |key, value|
+    each_pair do |key, value|
       inverted[value] = key
-    }
+    end
     inverted
   end
 
@@ -468,10 +468,10 @@ class Hash
 
   def to_proc
     proc_hash = self
-    Proc.new { |*args|
+    Proc.new do |*args|
       Rubinius::Type.check_arity(args.size, 1, 1)
       proc_hash[args[0]]
-    }
+    end
   end
 
   # Implementation of a fundamental Rubinius method that allows their Hash

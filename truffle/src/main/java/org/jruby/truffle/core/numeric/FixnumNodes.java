@@ -37,7 +37,7 @@ import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.methods.UnsupportedOperationBehavior;
-import org.jruby.truffle.util.SipHashInline;
+import org.jruby.truffle.algorithms.SipHash;
 
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
@@ -1132,7 +1132,7 @@ public abstract class FixnumNodes {
 
     }
 
-    @CoreMethod(names = "to_s", optional = 1)
+    @CoreMethod(names = "to_s", optional = 1, lowerFixnum = 1)
     public abstract static class ToSNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
@@ -1211,7 +1211,7 @@ public abstract class FixnumNodes {
             final ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES * 2);
             buffer.putLong(a);
             buffer.putLong(b);
-            return SipHashInline.hash24(Hashing.SEED_K0, Hashing.SEED_K1, buffer.array());
+            return SipHash.hash24(Hashing.SEED_K0, Hashing.SEED_K1, buffer.array());
         }
 
 

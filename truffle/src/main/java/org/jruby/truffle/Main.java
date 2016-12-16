@@ -49,9 +49,8 @@ import org.jruby.truffle.options.OptionsBuilder;
 import org.jruby.truffle.options.OptionsCatalog;
 import org.jruby.truffle.options.OutputStrings;
 import org.jruby.truffle.options.RubyInstanceConfig;
-import org.jruby.truffle.util.MainExitException;
+import org.jruby.truffle.options.MainExitException;
 
-import java.io.InputStream;
 import java.lang.management.ManagementFactory;
 
 public class Main {
@@ -70,19 +69,18 @@ public class Main {
             if (!mee.isAborted()) {
                 config.getError().println(mee.getMessage());
                 if (mee.isUsageError()) {
-                    doPrintUsage(config, true);
+                    printUsage(config, true);
                 }
             }
             System.exit(mee.getStatus());
         }
 
-        doShowVersion(config);
-        doShowCopyright(config);
+        showVersion(config);
+        showCopyright(config);
 
         final int exitCode;
 
         if (config.getShouldRunInterpreter()) {
-            final InputStream in = config.getScriptSource();
             final String filename = config.displayedFileName();
 
             final RubyEngine rubyEngine = new RubyEngine(
@@ -101,15 +99,13 @@ public class Main {
 
             printTruffleTimeMetric("before-run");
             try {
-                if (in == null) {
-                    exitCode = 1;
-                } else if (config.isXFlag()) {
+                if (config.isXFlag()) {
                     // no shebang was found and x option is set
                     config.getError().println("jruby: no Ruby script found in input (LoadError)");
                     exitCode = 1;
                 } else if (config.getShouldCheckSyntax()) {
                     // check syntax only and exit
-                    exitCode = rubyEngine.doCheckSyntax(in, filename);
+                    exitCode = rubyEngine.checkSyntax(config.getScriptSource(), filename);
                 } else {
                     exitCode = rubyEngine.execute(filename);
                 }
@@ -118,7 +114,7 @@ public class Main {
                 rubyEngine.dispose();
             }
         } else {
-            doPrintUsage(config, false);
+            printUsage(config, false);
             exitCode = 1;
         }
 
@@ -127,19 +123,19 @@ public class Main {
         System.exit(exitCode);
     }
 
-    private static void doPrintUsage(RubyInstanceConfig config, boolean force) {
+    private static void printUsage(RubyInstanceConfig config, boolean force) {
         if (config.getShouldPrintUsage() || force) {
             config.getOutput().print(OutputStrings.getBasicUsageHelp());
         }
     }
 
-    private static void doShowCopyright(RubyInstanceConfig config) {
+    private static void showCopyright(RubyInstanceConfig config) {
         if (config.isShowCopyright()) {
             config.getOutput().println(OutputStrings.getCopyrightString());
         }
     }
 
-    private static void doShowVersion(RubyInstanceConfig config) {
+    private static void showVersion(RubyInstanceConfig config) {
         if (config.isShowVersion()) {
             config.getOutput().println(OutputStrings.getVersionString());
         }

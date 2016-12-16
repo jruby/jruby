@@ -19,9 +19,9 @@ import org.jcodings.specific.EUCJPEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.string.ByteList;
 import org.jruby.truffle.parser.ReOptions;
-import org.jruby.truffle.util.KCode;
-import org.jruby.truffle.util.ByteList;
+import org.jruby.truffle.core.string.KCode;
 
 public class RegexpOptions implements Cloneable {
     private static ByteList WINDOWS31J = new ByteList(new byte[] {'W', 'i', 'n', 'd', 'o', 'w', 's', '-', '3', '1', 'J'});

@@ -23,9 +23,9 @@ import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.rope.Rope;
+import org.jruby.truffle.core.string.ByteList;
 import org.jruby.truffle.core.string.StringOperations;
-import org.jruby.truffle.util.ISO_8859_16;
-import org.jruby.truffle.util.ByteList;
+import org.jruby.truffle.core.string.ISO_8859_16;
 
 import java.nio.charset.Charset;
 import java.nio.charset.UnsupportedCharsetException;
@@ -39,8 +39,8 @@ public class EncodingManager {
 
     private static final int INITIAL_NUMBER_OF_ENCODINGS = EncodingDB.getEncodings().size();
 
-    private final List<DynamicObject> ENCODING_LIST_BY_ENCODING_LIST_INDEX = new ArrayList<DynamicObject>(INITIAL_NUMBER_OF_ENCODINGS);
-    private final List<DynamicObject> ENCODING_LIST_BY_ENCODING_INDEX = new ArrayList<DynamicObject>(INITIAL_NUMBER_OF_ENCODINGS);
+    private final List<DynamicObject> ENCODING_LIST_BY_ENCODING_LIST_INDEX = new ArrayList<>(INITIAL_NUMBER_OF_ENCODINGS);
+    private final List<DynamicObject> ENCODING_LIST_BY_ENCODING_INDEX = new ArrayList<>(INITIAL_NUMBER_OF_ENCODINGS);
     private final Map<String, DynamicObject> LOOKUP = new ConcurrentHashMap<>();
 
     private final RubyContext context;

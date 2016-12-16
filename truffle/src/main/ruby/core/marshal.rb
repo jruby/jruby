@@ -468,8 +468,8 @@ module Marshal
 
     def initialize(stream, depth, proc)
       # shared
-      @links = Rubinius::LookupTable.new
-      @symlinks = Rubinius::LookupTable.new
+      @links = {}
+      @symlinks = {}
       @symbols = []
       @objects = []
 

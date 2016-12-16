@@ -31,8 +31,8 @@ import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.joni.Regex;
-import org.jruby.truffle.core.string.StringSupport;
-import org.jruby.truffle.util.ByteList;
+import org.jruby.truffle.core.rope.CodeRange;
+import org.jruby.truffle.core.string.ByteList;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -92,7 +92,7 @@ public abstract class LexingCommon {
     protected int ruby_sourceline = 0;
     protected LexerSource src;                // Stream of data that yylex() examines.
     protected int token;                      // Last token read via yylex().
-    private int tokenCR;
+    private CodeRange tokenCR;
     protected boolean tokenSeen = false;
     public ISourcePosition tokline;
     public int tokp = 0;                   // Where last token started
@@ -213,7 +213,7 @@ public abstract class LexingCommon {
         return lex_state;
     }
 
-    public int getTokenCR() {
+    public CodeRange getTokenCR() {
         return tokenCR;
     }
 
@@ -282,7 +282,7 @@ public abstract class LexingCommon {
     public void newtok(boolean unreadOnce) {
         tokline = getPosition();
         // We assume all idents are 7BIT until they aren't.
-        tokenCR = StringSupport.CR_7BIT;
+        tokenCR = CodeRange.CR_7BIT;
 
         tokp = lex_p - (unreadOnce ? 1 : 0); // We use tokp of ripper to mark beginning of tokens.
     }
@@ -552,7 +552,7 @@ public abstract class LexingCommon {
         if (length <= 0) {
             compile_error("invalid multibyte char (" + getEncoding() + ")");
         } else if (length > 1) {
-            tokenCR = StringSupport.CR_VALID;
+            tokenCR = CodeRange.CR_VALID;
         }
 
         lex_p += length - 1;  // we already read first byte so advance pointer for remainder

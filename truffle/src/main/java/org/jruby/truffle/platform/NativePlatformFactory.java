@@ -15,7 +15,6 @@ import org.jruby.truffle.platform.darwin.DarwinPlatform;
 import org.jruby.truffle.platform.java.JavaPlatform;
 import org.jruby.truffle.platform.linux.LinuxPlatform;
 import org.jruby.truffle.platform.solaris.SolarisPlatform;
-import org.jruby.truffle.util.Platform;
 
 public abstract class NativePlatformFactory {
 

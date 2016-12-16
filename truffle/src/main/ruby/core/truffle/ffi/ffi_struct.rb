@@ -38,14 +38,14 @@ module FFI
       # Pick up a enclosing FFI::Library
       @enclosing_module ||= find_nested_parent
 
-      cspec = Rubinius::LookupTable.new
+      cspec = {}
       i = 0
 
       @size = 0
       @members = []
 
       while i < spec.size
-        name = spec[i]
+        name = spec[i].to_sym
         @members << name
 
         f = spec[i + 1]
@@ -118,9 +118,10 @@ module FFI
 
     def self.config(base, *fields)
       @size = Rubinius::Config["#{base}.sizeof"]
-      cspec = Rubinius::LookupTable.new
+      cspec = {}
 
       fields.each do |field|
+        field  = field.to_sym
         offset = Rubinius::Config["#{base}.#{field}.offset"]
         size   = Rubinius::Config["#{base}.#{field}.size"]
         type   = Rubinius::Config["#{base}.#{field}.type"]

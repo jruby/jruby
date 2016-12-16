@@ -88,7 +88,7 @@ class Thread
   # If there is one, it returns true.
   # Otherwise, it will yield once and return false.
 
-  def self.detect_recursion(obj, paired_obj=undefined)
+  def self.detect_recursion(obj, paired_obj=nil)
     id = obj.object_id
     pair_id = paired_obj.object_id
     objects = current.recursive_objects
@@ -106,7 +106,7 @@ class Thread
 
       # We've seen +obj+ before and it's got multiple paired objects associated
       # with it, so check the pair and yield if there is no recursion.
-      when Rubinius::LookupTable
+      when Hash
         return true if objects[id][pair_id]
         objects[id][pair_id] = true
 
@@ -119,13 +119,13 @@ class Thread
       # We've seen +obj+ with one paired object, so check the stored one for
       # recursion.
       #
-      # This promotes the value to a LookupTable since there is another new paired
+      # This promotes the value to a Hash since there is another new paired
       # object.
       else
         previous = objects[id]
         return true if previous == pair_id
 
-        objects[id] = Rubinius::LookupTable.new(previous => true, pair_id => true)
+        objects[id] = { previous => true, pair_id => true }
 
         begin
           yield
@@ -142,7 +142,7 @@ class Thread
 
   class InnerRecursionDetected < Exception; end
 
-  def self.detect_outermost_recursion(obj, paired_obj=undefined, &block)
+  def self.detect_outermost_recursion(obj, paired_obj=nil, &block)
     rec = current.recursive_objects
 
     if rec[:__detect_outermost_recursion__]

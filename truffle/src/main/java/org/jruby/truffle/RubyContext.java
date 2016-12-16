@@ -49,6 +49,7 @@ import org.jruby.truffle.options.OptionsBuilder;
 import org.jruby.truffle.platform.NativePlatform;
 import org.jruby.truffle.platform.NativePlatformFactory;
 import org.jruby.truffle.stdlib.CoverageManager;
+import org.jruby.truffle.stdlib.readline.ConsoleHolder;
 import org.jruby.truffle.tools.InstrumentationServerManager;
 import org.jruby.truffle.tools.callgraph.CallGraph;
 import org.jruby.truffle.tools.callgraph.SimpleWriter;
@@ -103,6 +104,7 @@ public class RubyContext extends ExecutionContext {
     private final CallGraph callGraph;
     private final PrintStream debugStandardOut;
     private final CoverageManager coverageManager;
+    private final ConsoleHolder consoleHolder;
 
     private final Object classVariableDefinitionLock = new Object();
 
@@ -116,7 +118,7 @@ public class RubyContext extends ExecutionContext {
         optionsBuilder.set(System.getProperties());
         options = optionsBuilder.build();
 
-        this.jrubyHome = setupJRubyHome();
+        this.jrubyHome = findJRubyHome();
         this.currentDirectory = System.getProperty("user.dir");
 
         if (options.CALL_GRAPH) {
@@ -201,15 +203,12 @@ public class RubyContext extends ExecutionContext {
 
         coreLibrary.initializePostBoot();
 
+        consoleHolder = new ConsoleHolder();
+
         // Share once everything is loaded
         if (options.SHARED_OBJECTS_ENABLED && options.SHARED_OBJECTS_FORCE) {
             sharedObjects.startSharing();
         }
-    }
-
-    private String setupJRubyHome() {
-        String jrubyHome = findJRubyHome();
-        return jrubyHome;
     }
 
     private CodeSource getCodeSource() {
@@ -221,8 +220,22 @@ public class RubyContext extends ExecutionContext {
     }
 
     private String findJRubyHome() {
-        if (!TruffleOptions.AOT && System.getenv("JRUBY_HOME") == null && System.getProperty("jruby.home") == null) {
-            // Set JRuby home automatically for GraalVM
+        if (options.HOME != null) {
+            return options.HOME;
+        }
+
+        String fromENV = System.getenv("JRUBY_HOME");
+        if (fromENV != null) {
+            return fromENV;
+        }
+
+        String fromProperty = System.getProperty("jruby.home");
+        if (fromProperty != null) {
+            return fromProperty;
+        }
+
+        if (!TruffleOptions.AOT) {
+            // Set JRuby home automatically for GraalVM and mx from the current jar path
             final CodeSource codeSource = getCodeSource();
             if (codeSource != null) {
                 final File currentJarFile;
@@ -252,7 +265,7 @@ public class RubyContext extends ExecutionContext {
             }
         }
 
-        return options.HOME;
+        return null;
     }
 
     public Object send(Object object, String methodName, DynamicObject block, Object... arguments) {
@@ -470,6 +483,10 @@ public class RubyContext extends ExecutionContext {
 
     public void setSyntaxCheckInputStream(InputStream syntaxCheckInputStream) {
         this.syntaxCheckInputStream = syntaxCheckInputStream;
+    }
+
+    public ConsoleHolder getConsoleHolder() {
+        return consoleHolder;
     }
 
 }

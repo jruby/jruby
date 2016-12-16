@@ -20,6 +20,7 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.ffi.provider.MemoryManager;
 import org.jcodings.Encoding;
+import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.CoreLibrary;
@@ -31,12 +32,12 @@ import org.jruby.truffle.core.numeric.BignumOperations;
 import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeOperations;
+import org.jruby.truffle.core.string.ByteList;
 import org.jruby.truffle.core.string.CoreStrings;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.platform.posix.Sockets;
 import org.jruby.truffle.platform.posix.TrufflePosix;
 import org.jruby.truffle.stdlib.CoverageManager;
-import org.jruby.truffle.util.ByteList;
 
 import java.math.BigInteger;
 
@@ -96,10 +97,6 @@ public abstract class RubyBaseNode extends Node {
         return value == nil();
     }
 
-    protected boolean isRubiniusUndefined(Object value) {
-        return value == coreLibrary().getRubiniusUndefined();
-    }
-
     // Helpers methods for terseness
 
     protected DynamicObject nil() {
@@ -112,6 +109,10 @@ public abstract class RubyBaseNode extends Node {
 
     protected DynamicObject getSymbol(Rope name) {
         return getContext().getSymbolTable().getSymbol(name);
+    }
+
+    protected Encoding getDefaultInternalEncoding() {
+        return getContext().getEncodingManager().getDefaultInternalEncoding();
     }
 
     protected DynamicObject createString(ByteList bytes) {

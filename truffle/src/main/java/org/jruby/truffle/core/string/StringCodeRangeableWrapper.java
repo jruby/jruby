@@ -15,9 +15,6 @@ import org.jcodings.Encoding;
 import org.jruby.truffle.core.encoding.EncodingNodes;
 import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.language.RubyGuards;
-import org.jruby.truffle.util.CodeRangeable;
-import org.jruby.truffle.util.StringUtils;
-import org.jruby.truffle.util.ByteList;
 
 public class StringCodeRangeableWrapper implements CodeRangeable {
 
@@ -31,13 +28,13 @@ public class StringCodeRangeableWrapper implements CodeRangeable {
     }
 
     @Override
-    public int getCodeRange() {
-        return StringOperations.codeRange(string).toInt();
+    public CodeRange getCodeRange() {
+        return StringOperations.codeRange(string);
     }
 
     @Override
-    public int scanForCodeRange() {
-        return StringOperations.codeRange(string).toInt();
+    public CodeRange scanForCodeRange() {
+        return StringOperations.codeRange(string);
     }
 
     @Override
@@ -46,9 +43,9 @@ public class StringCodeRangeableWrapper implements CodeRangeable {
     }
 
     @Override
-    public void setCodeRange(int newCodeRange) {
+    public void setCodeRange(CodeRange newCodeRange) {
         // TODO (nirvdrum 07-Jan-16) Code range is now stored in the rope and ropes are immutable -- all calls to this method are suspect.
-        final int existingCodeRange = getCodeRange();
+        final CodeRange existingCodeRange = getCodeRange();
 
         if (existingCodeRange != newCodeRange) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
@@ -58,13 +55,13 @@ public class StringCodeRangeableWrapper implements CodeRangeable {
 
     @Override
     public final void clearCodeRange() {
-        setCodeRange(CodeRange.CR_UNKNOWN.toInt());
+        setCodeRange(CodeRange.CR_UNKNOWN);
     }
 
     @Override
     public final void keepCodeRange() {
         if (StringOperations.codeRange(string) == CodeRange.CR_BROKEN) {
-            setCodeRange(CodeRange.CR_UNKNOWN.toInt());
+            setCodeRange(CodeRange.CR_UNKNOWN);
         }
     }
 
@@ -81,7 +78,7 @@ public class StringCodeRangeableWrapper implements CodeRangeable {
     @Override
     public final void modifyAndKeepCodeRange() {
         if (StringOperations.codeRange(string) == CodeRange.CR_BROKEN) {
-            setCodeRange(CodeRange.CR_UNKNOWN.toInt());
+            setCodeRange(CodeRange.CR_UNKNOWN);
         }
     }
 

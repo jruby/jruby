@@ -43,12 +43,12 @@ public abstract class Translator extends org.jruby.truffle.parser.ast.visitor.Ab
 
     public static final Set<String> FRAME_LOCAL_GLOBAL_VARIABLES = new HashSet<>(
             Arrays.asList("$_", "$~", "$+", "$&", "$`", "$'", "$1", "$2", "$3", "$4", "$5", "$6", "$7", "$8", "$9"));
-    static final Set<String> READ_ONLY_GLOBAL_VARIABLES = new HashSet<String>(
+    static final Set<String> READ_ONLY_GLOBAL_VARIABLES = new HashSet<>(
             Arrays.asList("$:", "$LOAD_PATH", "$-I", "$\"", "$LOADED_FEATURES", "$<", "$FILENAME", "$?", "$-a", "$-l", "$-p", "$!"));
     static final Set<String> ALWAYS_DEFINED_GLOBALS = new HashSet<>(Arrays.asList("$!", "$~"));
     static final Set<String> THREAD_LOCAL_GLOBAL_VARIABLES = new HashSet<>(Arrays.asList("$!", "$?")); // "$_"
 
-    static final Map<String, String> GLOBAL_VARIABLE_ALIASES = new HashMap<String, String>();
+    static final Map<String, String> GLOBAL_VARIABLE_ALIASES = new HashMap<>();
     static {
         Map<String, String> m = GLOBAL_VARIABLE_ALIASES;
         m.put("$-I", "$LOAD_PATH");

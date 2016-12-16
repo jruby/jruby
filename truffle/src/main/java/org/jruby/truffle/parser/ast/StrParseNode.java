@@ -32,11 +32,12 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.ast;
 
+import org.jruby.truffle.core.rope.CodeRange;
+import org.jruby.truffle.core.string.ByteList;
 import org.jruby.truffle.core.string.StringSupport;
 import org.jruby.truffle.parser.ast.types.ILiteralNode;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
 import org.jruby.truffle.parser.lexer.ISourcePosition;
-import org.jruby.truffle.util.ByteList;
 
 import java.util.List;
 
@@ -45,14 +46,14 @@ import java.util.List;
  */
 public class StrParseNode extends ParseNode implements ILiteralNode, SideEffectFree {
     private final ByteList value;
-    private final int codeRange;
+    private final CodeRange codeRange;
     private boolean frozen;
 
     public StrParseNode(ISourcePosition position, ByteList value) {
         this(position, value, StringSupport.codeRangeScan(value.getEncoding(), value));
     }
 
-    public StrParseNode(ISourcePosition position, ByteList value, int codeRange) {
+    public StrParseNode(ISourcePosition position, ByteList value, CodeRange codeRange) {
         super(position, false);
 
         this.value = value;
@@ -99,7 +100,7 @@ public class StrParseNode extends ParseNode implements ILiteralNode, SideEffectF
      *
      * @return the string's coderange
      */
-    public int getCodeRange() {
+    public CodeRange getCodeRange() {
         return codeRange;
     }
     

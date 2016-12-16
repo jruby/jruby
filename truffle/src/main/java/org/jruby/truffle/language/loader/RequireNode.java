@@ -31,6 +31,7 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.Log;
 import org.jruby.truffle.RubyLanguage;
 import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.core.string.StringUtils;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.control.JavaException;
@@ -38,7 +39,6 @@ import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.parser.ParserContext;
-import org.jruby.truffle.util.StringUtils;
 
 import java.io.File;
 import java.io.IOException;

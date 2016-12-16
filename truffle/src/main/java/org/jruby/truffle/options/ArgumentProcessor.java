@@ -29,9 +29,7 @@
 package org.jruby.truffle.options;
 
 import org.jruby.truffle.core.string.StringSupport;
-import org.jruby.truffle.util.KCode;
-import org.jruby.truffle.util.MainExitException;
-import org.jruby.truffle.util.SafePropertyAccessor;
+import org.jruby.truffle.core.string.KCode;
 
 import java.io.File;
 import java.io.IOException;
@@ -134,7 +132,7 @@ public class ArgumentProcessor {
     }
 
     private void processArgv() {
-        ArrayList<String> arglist = new ArrayList<String>();
+        ArrayList<String> arglist = new ArrayList<>();
         for (; argumentIndex < arguments.size(); argumentIndex++) {
             String arg = arguments.get(argumentIndex).originalValue;
             if (config.isArgvGlobalsOn() && arg.startsWith("-")) {
@@ -532,6 +530,7 @@ public class ArgumentProcessor {
                             break;
                         }
                     }
+                    throw new MainExitException(1, "jruby: unknown option " + argument);
                 default:
                     throw new MainExitException(1, "jruby: unknown option " + argument);
             }
@@ -570,6 +569,7 @@ public class ArgumentProcessor {
         throw mee;
     }
 
+    @SuppressWarnings("fallthrough")
     private void processEncodingOption(String value) {
         List<String> encodings = StringSupport.split(value, ':', 3);
         switch (encodings.size()) {
@@ -615,7 +615,7 @@ public class ArgumentProcessor {
         return null;
     }
 
-    private String resolveScript(String scriptName) {
+    public String resolveScript(String scriptName) {
         // These try/catches are to allow failing over to the "commands" logic
         // when running from within a jruby-complete jar file, which has
         // jruby.home = a jar file URL that does not resolve correctly with

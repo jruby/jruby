@@ -161,9 +161,16 @@ module Process
       main_index = command.index("\x00org.jruby")
       raise "Did not find the main class in args" unless main_index
       needle = command[0...main_index]
-      i = haystack.index("\x00\x00#{needle}")
-      raise "argv[0] not found" unless i
-      i += 2
+      i = haystack.index("\x00#{needle}")
+      unless i
+        puts
+        p needle
+        puts
+        p haystack
+        puts
+        raise "argv[0] not found"
+      end
+      i += 1
 
       @_argv0_max_length = needle.bytesize
       base + i
@@ -424,22 +431,15 @@ module Process
   end
 
   def self.groups
-    g = []
-    count = Truffle::POSIX.getgroups(0, nil)
-    FFI::MemoryPointer.new(:int, count) { |p|
-      num_groups = Truffle::POSIX.getgroups(count, p)
-      Errno.handle if num_groups == -1
-      g = p.read_array_of_int(num_groups)
-    }
-    g
+    Truffle::POSIX.getgroups
   end
 
   def self.groups=(g)
     @maxgroups = g.length if g.length > @maxgroups
-    FFI::MemoryPointer.new(:int, @maxgroups) { |p|
+    FFI::MemoryPointer.new(:int, @maxgroups) do |p|
       p.write_array_of_int(g)
       Errno.handle if Truffle::POSIX.setgroups(g.length, p) == -1
-    }
+    end
     g
   end
 
@@ -540,9 +540,6 @@ module Process
     alias_method :waitpid, :wait
     alias_method :waitpid2, :wait2
   end
-
-  Rubinius::Globals.read_only :$?
-  Rubinius::Globals.set_hook(:$?) { Thread.current[:$?] }
 
   def self.daemon(stay_in_dir=false, keep_stdio_open=false)
     # Do not run at_exit handlers in the parent

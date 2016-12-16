@@ -41,7 +41,4 @@ public interface RegexpLayout extends BasicObjectLayout {
     RegexpOptions getOptions(DynamicObject object);
     void setOptions(DynamicObject object, RegexpOptions value);
 
-    Object getCachedNames(DynamicObject object);
-    void setCachedNames(DynamicObject object, Object value);
-
 }

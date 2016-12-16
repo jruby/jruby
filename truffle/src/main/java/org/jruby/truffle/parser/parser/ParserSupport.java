@@ -39,9 +39,11 @@ import org.jcodings.Encoding;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.regexp.ClassicRegexp;
 import org.jruby.truffle.core.regexp.RegexpOptions;
+import org.jruby.truffle.core.rope.CodeRange;
+import org.jruby.truffle.core.string.ByteList;
 import org.jruby.truffle.core.string.StringSupport;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.parser.KeyValuePair;
+import org.jruby.truffle.collections.Tuple;
 import org.jruby.truffle.parser.RubyWarnings;
 import org.jruby.truffle.parser.Signature;
 import org.jruby.truffle.parser.ast.AliasParseNode;
@@ -130,11 +132,11 @@ import org.jruby.truffle.parser.lexer.RubyLexer;
 import org.jruby.truffle.parser.lexer.SyntaxException.PID;
 import org.jruby.truffle.parser.scope.DynamicScope;
 import org.jruby.truffle.parser.scope.StaticScope;
-import org.jruby.truffle.util.ByteList;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static org.jruby.truffle.parser.lexer.LexingCommon.ASCII8BIT_ENCODING;
 import static org.jruby.truffle.parser.lexer.LexingCommon.USASCII_ENCODING;
@@ -643,7 +645,7 @@ public class ParserSupport {
     private boolean isStaticContent(ParseNode node) {
         if (node instanceof HashParseNode) {
             HashParseNode hash = (HashParseNode) node;
-            for (KeyValuePair<ParseNode, ParseNode> pair : hash.getPairs()) {
+            for (Tuple<ParseNode, ParseNode> pair : hash.getPairs()) {
                 if (!isStaticContent(pair.getKey()) || !isStaticContent(pair.getValue())) return false;
             }
             return true;
@@ -1034,10 +1036,10 @@ public class ParserSupport {
         return dstr;
     }
 
-    public KeyValuePair<ParseNode, ParseNode> createKeyValue(ParseNode key, ParseNode value) {
+    public Tuple<ParseNode, ParseNode> createKeyValue(ParseNode key, ParseNode value) {
         if (key != null && key instanceof StrParseNode) ((StrParseNode) key).setFrozen(true);
 
-        return new KeyValuePair<>(key, value);
+        return new Tuple<>(key, value);
     }
 
     public ParseNode asSymbol(ISourcePosition position, String value) {
@@ -1206,7 +1208,7 @@ public class ParserSupport {
     public ParseNode remove_duplicate_keys(HashParseNode hash) {
         List<ParseNode> encounteredKeys = new ArrayList<>();
 
-        for (KeyValuePair<ParseNode,ParseNode> pair: hash.getPairs()) {
+        for (Tuple<ParseNode,ParseNode> pair: hash.getPairs()) {
             ParseNode key = pair.getKey();
             if (key == null) continue;
             int index = encounteredKeys.indexOf(key);
@@ -1381,7 +1383,7 @@ public class ParserSupport {
         pattern.setLiteral();
         String[] names = pattern.getNames();
         int length = names.length;
-        List<Integer> locals = new ArrayList<Integer>();
+        List<Integer> locals = new ArrayList<>();
         StaticScope scope = getCurrentScope();
 
         for (int i = 0; i < length; i++) {
@@ -1404,7 +1406,7 @@ public class ParserSupport {
     }
 
     private boolean is7BitASCII(ByteList value) {
-        return StringSupport.codeRangeScan(value.getEncoding(), value) == StringSupport.CR_7BIT;
+        return StringSupport.codeRangeScan(value.getEncoding(), value) == CodeRange.CR_7BIT;
     }
 
     // TODO: Put somewhere more consolidated (similiar
@@ -1532,7 +1534,7 @@ public class ParserSupport {
     
     // FIXME:  This logic is used by many methods in MRI, but we are only using it in lexer
     // currently.  Consolidate this when we tackle a big encoding refactoring
-    public static int associateEncoding(ByteList buffer, Encoding newEncoding, int codeRange) {
+    public static CodeRange associateEncoding(ByteList buffer, Encoding newEncoding, CodeRange codeRange) {
         Encoding bufferEncoding = buffer.getEncoding();
                 
         if (newEncoding == bufferEncoding) return codeRange;
@@ -1541,8 +1543,8 @@ public class ParserSupport {
         
         buffer.setEncoding(newEncoding);
         
-        if (codeRange != StringSupport.CR_7BIT || !newEncoding.isAsciiCompatible()) {
-            return StringSupport.CR_UNKNOWN;
+        if (codeRange != CodeRange.CR_7BIT || !newEncoding.isAsciiCompatible()) {
+            return CodeRange.CR_UNKNOWN;
         }
         
         return codeRange;

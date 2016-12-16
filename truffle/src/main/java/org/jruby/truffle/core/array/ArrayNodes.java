@@ -107,7 +107,8 @@ public abstract class ArrayNodes {
     @ImportStatic(ArrayGuards.class)
     public abstract static class AddNode extends CoreMethodNode {
 
-        @CreateCast("b") public RubyNode coerceOtherToAry(RubyNode other) {
+        @CreateCast("b")
+        public RubyNode coerceOtherToAry(RubyNode other) {
             return ToAryNodeGen.create(null, null, other);
         }
 
@@ -293,7 +294,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "[]=", required = 2, optional = 1, lowerFixnum = 1, raiseIfFrozenSelf = true)
+    @CoreMethod(names = "[]=", required = 2, optional = 1, lowerFixnum = { 1, 2 }, raiseIfFrozenSelf = true)
     public abstract static class IndexSetNode extends ArrayCoreMethodNode {
 
         @Child private ArrayReadNormalizedNode readNode;
@@ -330,7 +331,7 @@ public abstract class ArrayNodes {
         public Object setObject(VirtualFrame frame, DynamicObject array, int start, int length, Object value,
                 @Cached("forValue(value)") ArrayStrategy strategy,
                 @Cached("createBinaryProfile()") ConditionProfile negativeIndexProfile,
-                                @Cached("new()") SnippetNode snippetNode) {
+                @Cached("new()") SnippetNode snippetNode) {
             checkLengthPositive(length);
 
             final int size = getSize(array);
@@ -529,16 +530,17 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "at", required = 1)
+    @CoreMethod(names = "at", required = 1, lowerFixnum = 1)
     @NodeChildren({
-        @NodeChild(type = RubyNode.class, value = "array"),
-        @NodeChild(type = RubyNode.class, value = "index")
+            @NodeChild(type = RubyNode.class, value = "array"),
+            @NodeChild(type = RubyNode.class, value = "index")
     })
     public abstract static class AtNode extends CoreMethodNode {
 
         @Child private ArrayReadDenormalizedNode readNode;
 
-        @CreateCast("index") public RubyNode coerceOtherToInt(RubyNode index) {
+        @CreateCast("index")
+        public RubyNode coerceOtherToInt(RubyNode index) {
             return FixnumLowerNodeGen.create(null, null, ToIntNodeGen.create(index));
         }
 
@@ -568,7 +570,7 @@ public abstract class ArrayNodes {
     @ImportStatic(ArrayGuards.class)
     public abstract static class CompactNode extends ArrayCoreMethodNode {
 
-        @Specialization(guards = {"strategy.matches(array)", "!strategy.accepts(nil())"}, limit = "ARRAY_STRATEGIES")
+        @Specialization(guards = { "strategy.matches(array)", "!strategy.accepts(nil())" }, limit = "ARRAY_STRATEGIES")
         public DynamicObject compactPrimitive(DynamicObject array,
                 @Cached("of(array)") ArrayStrategy strategy) {
             final int size = strategy.getSize(array);
@@ -576,7 +578,7 @@ public abstract class ArrayNodes {
             return createArray(store, size);
         }
 
-        @Specialization(guards = {"strategy.matches(array)", "strategy.accepts(nil())"}, limit = "ARRAY_STRATEGIES")
+        @Specialization(guards = { "strategy.matches(array)", "strategy.accepts(nil())" }, limit = "ARRAY_STRATEGIES")
         public Object compactObjects(DynamicObject array,
                 @Cached("of(array)") ArrayStrategy strategy) {
             // TODO CS 9-Feb-15 by removing nil we could make this array suitable for a primitive array storage class
@@ -602,13 +604,13 @@ public abstract class ArrayNodes {
     @CoreMethod(names = "compact!", raiseIfFrozenSelf = true)
     public abstract static class CompactBangNode extends ArrayCoreMethodNode {
 
-        @Specialization(guards = {"strategy.matches(array)", "!strategy.accepts(nil())"}, limit = "ARRAY_STRATEGIES")
+        @Specialization(guards = { "strategy.matches(array)", "!strategy.accepts(nil())" }, limit = "ARRAY_STRATEGIES")
         public DynamicObject compactNotObjects(DynamicObject array,
                 @Cached("of(array)") ArrayStrategy strategy) {
             return nil();
         }
 
-        @Specialization(guards = {"strategy.matches(array)", "strategy.accepts(nil())"}, limit = "ARRAY_STRATEGIES")
+        @Specialization(guards = { "strategy.matches(array)", "strategy.accepts(nil())" }, limit = "ARRAY_STRATEGIES")
         public Object compactObjects(DynamicObject array,
                 @Cached("of(array)") ArrayStrategy strategy) {
             final Object[] store = (Object[]) getStore(array);
@@ -644,7 +646,8 @@ public abstract class ArrayNodes {
 
         @Child private ArrayAppendManyNode appendManyNode = ArrayAppendManyNodeGen.create(null, null);
 
-        @CreateCast("other") public RubyNode coerceOtherToAry(RubyNode other) {
+        @CreateCast("other")
+        public RubyNode coerceOtherToAry(RubyNode other) {
             return ToAryNodeGen.create(null, null, other);
         }
 
@@ -713,13 +716,14 @@ public abstract class ArrayNodes {
 
     @CoreMethod(names = "delete_at", required = 1, raiseIfFrozenSelf = true, lowerFixnum = 1)
     @NodeChildren({
-        @NodeChild(type = RubyNode.class, value = "array"),
-        @NodeChild(type = RubyNode.class, value = "index")
+            @NodeChild(type = RubyNode.class, value = "array"),
+            @NodeChild(type = RubyNode.class, value = "index")
     })
     @ImportStatic(ArrayGuards.class)
     public abstract static class DeleteAtNode extends CoreMethodNode {
 
-        @CreateCast("index") public RubyNode coerceOtherToInt(RubyNode index) {
+        @CreateCast("index")
+        public RubyNode coerceOtherToInt(RubyNode index) {
             return ToIntNodeGen.create(index);
         }
 
@@ -838,8 +842,8 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "strategy.matches(array)", limit = "ARRAY_STRATEGIES")
         public long hash(VirtualFrame frame, DynamicObject array,
-                         @Cached("of(array)") ArrayStrategy strategy,
-                         @Cached("createMethodCall()") CallDispatchHeadNode toHashNode) {
+                @Cached("of(array)") ArrayStrategy strategy,
+                @Cached("createMethodCall()") CallDispatchHeadNode toHashNode) {
             final int size = strategy.getSize(array);
             // TODO BJF Jul 4, 2016 Seed could be chosen in advance to avoid branching
             long h = Hashing.start(size);
@@ -1048,7 +1052,8 @@ public abstract class ArrayNodes {
     @ImportStatic(ArrayGuards.class)
     public abstract static class InitializeCopyNode extends CoreMethodNode {
 
-        @CreateCast("from") public RubyNode coerceOtherToAry(RubyNode other) {
+        @CreateCast("from")
+        public RubyNode coerceOtherToAry(RubyNode other) {
             return ToAryNodeGen.create(null, null, other);
         }
 
@@ -1236,13 +1241,10 @@ public abstract class ArrayNodes {
         private final BranchProfile exceptionProfile = BranchProfile.create();
         private final ConditionProfile resizeProfile = ConditionProfile.createBinaryProfile();
 
-        @Specialization(
-                guards = {
-                        "isRubyString(format)",
-                        "ropesEqual(format, cachedFormat)"
-                },
-                limit = "getCacheLimit()"
-        )
+        @Specialization(guards = {
+                "isRubyString(format)",
+                "ropesEqual(format, cachedFormat)"
+        }, limit = "getCacheLimit()")
         public DynamicObject packCached(
                 VirtualFrame frame,
                 DynamicObject array,
@@ -1496,7 +1498,6 @@ public abstract class ArrayNodes {
 
     }
 
-
     @CoreMethod(names = "reject!", needsBlock = true, enumeratorSize = "size", raiseIfFrozenSelf = true)
     @ImportStatic(ArrayGuards.class)
     public abstract static class RejectInPlaceNode extends YieldingCoreMethodNode {
@@ -1553,7 +1554,8 @@ public abstract class ArrayNodes {
 
         public abstract DynamicObject executeReplace(DynamicObject array, DynamicObject other);
 
-        @CreateCast("other") public RubyNode coerceOtherToAry(RubyNode index) {
+        @CreateCast("other")
+        public RubyNode coerceOtherToAry(RubyNode index) {
             return ToAryNodeGen.create(null, null, index);
         }
 
@@ -1602,7 +1604,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "shift", raiseIfFrozenSelf = true, optional = 1)
+    @CoreMethod(names = "shift", raiseIfFrozenSelf = true, optional = 1, lowerFixnum = 1)
     @NodeChildren({
             @NodeChild(type = RubyNode.class, value = "array"),
             @NodeChild(type = RubyNode.class, value = "n")
@@ -1696,7 +1698,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "strategy.matches(array)", limit = "ARRAY_STRATEGIES")
         public int size(DynamicObject array,
-                        @Cached("of(array)") ArrayStrategy strategy) {
+                @Cached("of(array)") ArrayStrategy strategy) {
             return strategy.getSize(array);
         }
 
@@ -1722,7 +1724,7 @@ public abstract class ArrayNodes {
         }
 
         @ExplodeLoop
-        @Specialization(guards = {"!isEmptyArray(array)", "isSmall(array)", "strategy.matches(array)"}, limit = "ARRAY_STRATEGIES")
+        @Specialization(guards = { "!isEmptyArray(array)", "isSmall(array)", "strategy.matches(array)" }, limit = "ARRAY_STRATEGIES")
         public DynamicObject sortVeryShort(VirtualFrame frame, DynamicObject array, NotProvided block,
                 @Cached("of(array)") ArrayStrategy strategy) {
             final ArrayMirror originalStore = strategy.newMirror(array);
@@ -1757,14 +1759,14 @@ public abstract class ArrayNodes {
             return createArray(store.getArray(), size);
         }
 
-        @Specialization(guards = {"!isEmptyArray(array)", "!isSmall(array)"})
+        @Specialization(guards = { "!isEmptyArray(array)", "!isSmall(array)" })
         public Object sortLargeArray(VirtualFrame frame, DynamicObject array, NotProvided block,
                 @Cached("new()") SnippetNode snippetNode) {
             return snippetNode.execute(frame,
                     "sorted = dup; Truffle.privately { sorted.mergesort! }; sorted");
         }
 
-        @Specialization(guards = {"!isEmptyArray(array)", "isObjectArray(array)"})
+        @Specialization(guards = { "!isEmptyArray(array)", "isObjectArray(array)" })
         public Object sortObjectWithBlock(DynamicObject array, DynamicObject block) {
             final int size = getSize(array);
             Object[] copy = ((Object[]) getStore(array)).clone();
@@ -1777,7 +1779,7 @@ public abstract class ArrayNodes {
             Arrays.sort(copy, 0, size, (a, b) -> castSortValue(ProcOperations.rootCall(block, a, b)));
         }
 
-        @Specialization(guards = {"!isEmptyArray(array)", "!isObjectArray(array)"})
+        @Specialization(guards = { "!isEmptyArray(array)", "!isObjectArray(array)" })
         public Object sortWithBlock(VirtualFrame frame, DynamicObject array, DynamicObject block,
                 @Cached("new()") SnippetNode snippet) {
             return snippet.execute(frame,
@@ -1835,7 +1837,7 @@ public abstract class ArrayNodes {
             return createArray(zipped, zippedLength);
         }
 
-        @Specialization(guards = {"isRubyArray(other)", "others.length > 0"})
+        @Specialization(guards = { "isRubyArray(other)", "others.length > 0" })
         public Object zipObjectObjectNotSingleObject(VirtualFrame frame, DynamicObject array, DynamicObject other, Object[] others, NotProvided block) {
             return zipRuby(frame, array, null);
         }

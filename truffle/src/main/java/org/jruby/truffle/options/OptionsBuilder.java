@@ -49,6 +49,7 @@ public class OptionsBuilder {
         return new Options(this);
     }
 
+    @SuppressWarnings("unchecked")
     <T> T getOrDefault(OptionDescription description) {
         final Object value = options.get(description);
 
@@ -59,6 +60,7 @@ public class OptionsBuilder {
         }
     }
 
+    @SuppressWarnings("unchecked")
     <T> T getOrDefault(OptionDescription description, T defaultValue) {
         final Object value = options.get(description);
 
@@ -69,6 +71,7 @@ public class OptionsBuilder {
         }
     }
 
+    @SuppressWarnings("unchecked")
     public static <T> T readSystemProperty(OptionDescription description) {
         final Object value = System.getProperty(LEGACY_PREFIX + description.getName());
 

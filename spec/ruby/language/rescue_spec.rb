@@ -63,6 +63,28 @@ describe "The rescue keyword" do
     end
   end
 
+  it "can combine a splatted list of exceptions with a literal list of exceptions" do
+    caught_it = false
+    begin
+      raise SpecificExampleException, "not important"
+    rescue ArbitraryException, *exception_list
+      caught_it = true
+    end
+    caught_it.should be_true
+    caught = []
+    [lambda{raise ArbitraryException}, lambda{raise SpecificExampleException}].each do |block|
+      begin
+        block.call
+      rescue ArbitraryException, *exception_list
+        caught << $!
+      end
+    end
+    caught.size.should == 2
+    exception_list.each do |exception_class|
+      caught.map{|e| e.class}.should include(exception_class)
+    end
+  end
+
   it "will only rescue the specified exceptions when doing a splat rescue" do
     lambda do
       begin

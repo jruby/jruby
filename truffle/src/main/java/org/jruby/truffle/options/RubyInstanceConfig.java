@@ -30,21 +30,15 @@ package org.jruby.truffle.options;
 
 import com.oracle.truffle.api.TruffleOptions;
 import jnr.posix.util.Platform;
-import org.jcodings.Encoding;
 import org.jruby.truffle.core.string.StringSupport;
 import org.jruby.truffle.language.control.JavaException;
-import org.jruby.truffle.util.KCode;
-import org.jruby.truffle.util.SafePropertyAccessor;
+import org.jruby.truffle.core.string.KCode;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -79,7 +73,7 @@ public class RubyInstanceConfig {
     }
 
     public static String getFileProperty(String property) {
-        return normalizeSeps(SafePropertyAccessor.getProperty(property, "/"));
+        return normalizeSeps(System.getProperty(property, "/"));
     }
 
     public static String normalizeSeps(String path) {
@@ -90,7 +84,7 @@ public class RubyInstanceConfig {
     }
 
     private void initEnvironment() {
-        environment = new HashMap<String,String>();
+        environment = new HashMap<>();
         try {
             environment.putAll(System.getenv());
         }
@@ -99,8 +93,12 @@ public class RubyInstanceConfig {
     }
 
     public void processArguments(String[] arguments) {
-        new ArgumentProcessor(arguments, this).processArguments();
+        final ArgumentProcessor processor = new ArgumentProcessor(arguments, this);
+        processor.processArguments();
         tryProcessArgumentsWithRubyopts();
+        if (!TruffleOptions.AOT && !hasScriptArgv && System.console() != null) {
+            setScriptFileName(processor.resolveScript("irb"));
+        }
     }
 
     public void tryProcessArgumentsWithRubyopts() {
@@ -139,7 +137,7 @@ public class RubyInstanceConfig {
 
         // try the normal property first
         if (!isSecurityRestricted) {
-            newJRubyHome = SafePropertyAccessor.getProperty("jruby.home");
+            newJRubyHome = System.getProperty("jruby.home", null);
         }
 
         if (!TruffleOptions.AOT && newJRubyHome == null && getLoader().getResource("META-INF/jruby.home/.jrubydir") != null) {
@@ -150,7 +148,7 @@ public class RubyInstanceConfig {
             newJRubyHome = verifyHome(newJRubyHome, error);
         } else {
             try {
-                newJRubyHome = SafePropertyAccessor.getenv("JRUBY_HOME");
+                newJRubyHome = System.getenv("JRUBY_HOME");
             } catch (Exception e) {}
 
             if (newJRubyHome != null) {
@@ -158,7 +156,7 @@ public class RubyInstanceConfig {
                 newJRubyHome = verifyHome(newJRubyHome, error);
             } else {
                 // otherwise fall back on system temp location
-                newJRubyHome = SafePropertyAccessor.getProperty("java.io.tmpdir");
+                newJRubyHome = System.getProperty("java.io.tmpdir", null);
             }
         }
 
@@ -181,7 +179,7 @@ public class RubyInstanceConfig {
             return home;
         }
         if (home.equals(".")) {
-            home = SafePropertyAccessor.getProperty("user.dir");
+            home = System.getProperty("user.dir", null);
         }
         else if (home.startsWith("cp:")) {
             home = home.substring(3);
@@ -194,7 +192,7 @@ public class RubyInstanceConfig {
         else if (!home.contains(".jar!/") && !home.startsWith("uri:")) {
             File file = new File(home);
             if (!file.exists()) {
-                final String tmpdir = SafePropertyAccessor.getProperty("java.io.tmpdir");
+                final String tmpdir = System.getProperty("java.io.tmpdir", null);
                 error.println("Warning: JRuby home \"" + file + "\" does not exist, using " + tmpdir);
                 return tmpdir;
             }
@@ -216,58 +214,14 @@ public class RubyInstanceConfig {
             if (hasInlineScript) {
                 return new ByteArrayInputStream(inlineScript());
             } else if (isForceStdin() || getScriptFileName() == null) {
-                // can't use -v and stdin
-                if (isShowVersion()) {
-                    return null;
-                }
-                return getInput();
+                return System.in;
             } else {
                 final String script = getScriptFileName();
-
                 return new FileInputStream(script);
-
-                /*FileResource resource = JRubyFile.createRestrictedResource(getCurrentDirectory(), getScriptFileName());
-                if (resource != null && resource.exists()) {
-                    if (resource.canRead() && !resource.isDirectory()) {
-                        if (isXFlag()) {
-                            // search for a shebang line and
-                            // return the script between shebang and __END__ or CTRL-Z (0x1A)
-                            return findScript(resource.inputStream());
-                        }
-                        return resource.inputStream();
-                    }
-                    else {
-                        throw new FileNotFoundException(script + " (Not a file)");
-                    }
-                }
-                else {*/
-                    //throw new FileNotFoundException(script + " (No such file or directory)");
-                //}
             }
         } catch (IOException e) {
             throw new JavaException(e);
         }
-    }
-
-    private static InputStream findScript(InputStream is) throws IOException {
-        StringBuilder buf = new StringBuilder();
-        BufferedReader br = new BufferedReader(new InputStreamReader(is));
-        String currentLine = br.readLine();
-        while (currentLine != null && !isRubyShebangLine(currentLine)) {
-            currentLine = br.readLine();
-        }
-
-        buf.append(currentLine);
-        buf.append("\n");
-
-        do {
-            currentLine = br.readLine();
-            if (currentLine != null) {
-                buf.append(currentLine);
-                buf.append("\n");
-            }
-        } while (!(currentLine == null || currentLine.contains("__END__") || currentLine.contains("\026")));
-        return new BufferedInputStream(new ByteArrayInputStream(buf.toString().getBytes()), 8192);
     }
 
     public String displayedFileName() {
@@ -295,14 +249,6 @@ public class RubyInstanceConfig {
         return jrubyHome;
     }
 
-    public void setInput(InputStream newInput) {
-        input = newInput;
-    }
-
-    public InputStream getInput() {
-        return input;
-    }
-
     public void setOutput(PrintStream newOutput) {
         output = newOutput;
     }
@@ -328,7 +274,7 @@ public class RubyInstanceConfig {
     }
 
     public void setEnvironment(Map<String, String> newEnvironment) {
-        environment = new HashMap<String, String>();
+        environment = new HashMap<>();
         if (newEnvironment != null) {
             environment.putAll(newEnvironment);
         }
@@ -608,16 +554,16 @@ public class RubyInstanceConfig {
     private ClassLoader loader = defaultClassLoader();
 
     // from CommandlineParser
-    private List<String> loadPaths = new ArrayList<String>();
-    private Set<String> excludedMethods = new HashSet<String>();
+    private List<String> loadPaths = new ArrayList<>();
+    private Set<String> excludedMethods = new HashSet<>();
     private StringBuffer inlineScript = new StringBuffer();
     private boolean hasInlineScript = false;
     private String scriptFileName = null;
-    private Collection<String> requiredLibraries = new LinkedHashSet<String>();
+    private Collection<String> requiredLibraries = new LinkedHashSet<>();
     private boolean argvGlobalsOn = false;
     private boolean assumeLoop = false;
     private boolean assumePrinting = false;
-    private Map<String, String> optionGlobals = new HashMap<String, String>();
+    private Map<String, String> optionGlobals = new HashMap<>();
     private boolean processLineEnds = false;
     private boolean split = false;
     private Verbosity verbosity = Verbosity.FALSE;

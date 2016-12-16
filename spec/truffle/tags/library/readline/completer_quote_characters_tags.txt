@@ -1,0 +1,2 @@
+fails:Readline.completer_quote_characters returns nil
+fails:Readline.completer_quote_characters= returns the passed string

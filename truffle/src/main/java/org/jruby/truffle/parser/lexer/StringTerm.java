@@ -29,10 +29,10 @@ package org.jruby.truffle.parser.lexer;
 
 import org.jcodings.Encoding;
 import org.jruby.truffle.core.regexp.RegexpOptions;
+import org.jruby.truffle.core.string.ByteList;
 import org.jruby.truffle.parser.ast.RegexpParseNode;
 import org.jruby.truffle.parser.parser.Tokens;
-import org.jruby.truffle.util.KCode;
-import org.jruby.truffle.util.ByteList;
+import org.jruby.truffle.core.string.KCode;
 
 import java.io.IOException;
 

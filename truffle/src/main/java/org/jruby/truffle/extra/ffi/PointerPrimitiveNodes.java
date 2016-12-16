@@ -26,12 +26,11 @@ import org.jruby.truffle.builtins.Primitive;
 import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeConstants;
+import org.jruby.truffle.core.string.ByteList;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.platform.RubiniusTypes;
 import org.jruby.truffle.platform.UnsafeGroup;
-import org.jruby.truffle.util.UnsafeHolder;
-import org.jruby.truffle.util.ByteList;
 
 public abstract class PointerPrimitiveNodes {
     public static final Pointer NULL_POINTER = jnr.ffi.Runtime.getSystemRuntime().getMemoryManager().newOpaquePointer(0);
@@ -71,7 +70,7 @@ public abstract class PointerPrimitiveNodes {
         @SuppressWarnings("restriction")
         @Specialization
         public DynamicObject malloc(DynamicObject pointerClass, long size) {
-            return allocateObjectNode.allocate(pointerClass, memoryManager().newPointer(UnsafeHolder.U.allocateMemory(size)));
+            return allocateObjectNode.allocate(pointerClass, memoryManager().newPointer(getContext().getNativePlatform().getMallocFree().malloc(size)));
         }
 
     }
@@ -82,7 +81,7 @@ public abstract class PointerPrimitiveNodes {
         @SuppressWarnings("restriction")
         @Specialization
         public DynamicObject free(DynamicObject pointer) {
-            UnsafeHolder.U.freeMemory(Layouts.POINTER.getPointer(pointer).address());
+            getContext().getNativePlatform().getMallocFree().free(Layouts.POINTER.getPointer(pointer).address());
             return pointer;
         }
 

@@ -37,7 +37,7 @@ public class OpenJDKArrayBlockingQueueLocksConditions<T>
 
     @TruffleBoundary
     public OpenJDKArrayBlockingQueueLocksConditions(int capacity) {
-        super(new ArrayBlockingQueue<T>(capacity));
+        super(new ArrayBlockingQueue<>(capacity));
 
         final ArrayBlockingQueue<T> queue = (ArrayBlockingQueue<T>) getQueue();
 

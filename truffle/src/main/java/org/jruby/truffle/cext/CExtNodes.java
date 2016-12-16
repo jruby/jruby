@@ -44,7 +44,6 @@ import org.jruby.truffle.language.constants.LookupConstantNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.objects.MetaClassNode;
-import org.jruby.truffle.util.UnsafeHolder;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -67,7 +66,7 @@ public class CExtNodes {
 
     }
 
-    @CoreMethod(names = "NUM2UINT", isModuleFunction = true, required = 1)
+    @CoreMethod(names = "NUM2UINT", isModuleFunction = true, required = 1, lowerFixnum = 1)
     public abstract static class NUM2UINTNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
@@ -93,7 +92,7 @@ public class CExtNodes {
         }
     }
 
-    @CoreMethod(names = "NUM2ULONG", isModuleFunction = true, required = 1)
+    @CoreMethod(names = "NUM2ULONG", isModuleFunction = true, required = 1, lowerFixnum = 1)
     public abstract static class NUM2ULONGNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
@@ -104,7 +103,7 @@ public class CExtNodes {
 
     }
 
-    @CoreMethod(names = "NUM2DBL", isModuleFunction = true, required = 1)
+    @CoreMethod(names = "NUM2DBL", isModuleFunction = true, required = 1, lowerFixnum = 1)
     public abstract static class NUM2DBLNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
@@ -114,7 +113,7 @@ public class CExtNodes {
 
     }
 
-    @CoreMethod(names = "FIX2INT", isModuleFunction = true, required = 1)
+    @CoreMethod(names = "FIX2INT", isModuleFunction = true, required = 1, lowerFixnum = 1)
     public abstract static class FIX2INTNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
@@ -141,7 +140,7 @@ public class CExtNodes {
 
     }
 
-    @CoreMethod(names = "FIX2LONG", isModuleFunction = true, required = 1)
+    @CoreMethod(names = "FIX2LONG", isModuleFunction = true, required = 1, lowerFixnum = 1)
     public abstract static class FIX2LONGNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
@@ -181,7 +180,7 @@ public class CExtNodes {
 
     }
 
-    @CoreMethod(names = "UINT2NUM", isModuleFunction = true, required = 1)
+    @CoreMethod(names = "UINT2NUM", isModuleFunction = true, required = 1, lowerFixnum = 1)
     public abstract static class UINT2NUMNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
@@ -410,8 +409,8 @@ public class CExtNodes {
         public long toNativeHandle(DynamicObject object) {
             synchronized (handlesLock) {
                 return toNative.computeIfAbsent(object, (k) -> {
-                    final long handle = UnsafeHolder.U.allocateMemory(Long.BYTES);
-                    UnsafeHolder.U.putLong(handle, 0xdeadbeef);
+                    final long handle = getContext().getNativePlatform().getMallocFree().malloc(Long.BYTES);
+                    memoryManager().newPointer(handle).putLong(0, 0xdeadbeef);
                     System.err.printf("native handle 0x%x -> %s%n", handle, object);
                     toManaged.put(handle, object);
                     return handle;

@@ -72,7 +72,7 @@ import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.ReadObjectFieldNode;
 import org.jruby.truffle.language.objects.ReadObjectFieldNodeGen;
 import org.jruby.truffle.platform.UnsafeGroup;
-import org.jruby.truffle.util.Memo;
+import org.jruby.truffle.collections.Memo;
 
 import java.util.ArrayList;
 import java.util.concurrent.CountDownLatch;
@@ -239,7 +239,7 @@ public abstract class ThreadNodes {
 
     }
 
-    @CoreMethod(names = "join", optional = 1, unsafe = UnsafeGroup.THREADS)
+    @CoreMethod(names = "join", optional = 1, lowerFixnum = 1, unsafe = UnsafeGroup.THREADS)
     public abstract static class JoinNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization

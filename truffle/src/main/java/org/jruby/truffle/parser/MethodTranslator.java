@@ -239,18 +239,9 @@ public class MethodTranslator extends BodyTranslator {
             parentSourceSection.pop();
         }
 
-        final RubyNode prelude;
+        final RubyNode checkArity = createCheckArityNode(context, source, sourceSection, arity);
 
-        if (usesRubiniusPrimitive) {
-            // Use Truffle.primitive seems to turn off arity checking. See Time.from_array for example.
-            prelude = loadArguments;
-        } else {
-            final RubyNode checkArity = createCheckArityNode(context, source, sourceSection, arity);
-
-            prelude = sequence(context, source, sourceSection, Arrays.asList(checkArity, loadArguments));
-        }
-
-        body = sequence(context, source, body.getRubySourceSection(), Arrays.asList(prelude, body));
+        body = sequence(context, source, body.getRubySourceSection(), Arrays.asList(checkArity, loadArguments, body));
 
         if (environment.getFlipFlopStates().size() > 0) {
             body = sequence(context, source, body.getRubySourceSection(), Arrays.asList(initFlipFlopStates(sourceSection), body));

@@ -55,6 +55,7 @@ import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.Primitive;
 import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
+import org.jruby.truffle.core.array.ArrayOperations;
 import org.jruby.truffle.core.basicobject.BasicObjectNodes.ReferenceEqualNode;
 import org.jruby.truffle.core.cast.NameToJavaStringNode;
 import org.jruby.truffle.core.kernel.KernelNodes;
@@ -80,7 +81,7 @@ import org.jruby.truffle.platform.UnsafeGroup;
 import org.jruby.truffle.platform.signal.Signal;
 import org.jruby.truffle.platform.signal.SignalHandler;
 import org.jruby.truffle.platform.signal.SignalManager;
-import org.jruby.truffle.util.Platform;
+import org.jruby.truffle.platform.Platform;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
@@ -720,6 +721,38 @@ public abstract class VMPrimitiveNodes {
             }
 
             return name;
+        }
+
+    }
+
+    @Primitive(name = "vm_exec", needsSelf = false)
+    public abstract static class VMSExecNode extends PrimitiveArrayArgumentsNode {
+
+        @TruffleBoundary
+        @Specialization(guards = { "isRubyString(path)", "isRubyArray(args)", "isRubyArray(env)" })
+        protected Object vmExec(DynamicObject path, DynamicObject args, DynamicObject env) {
+            final String convertedCommand = StringOperations.decodeUTF8(path).trim();
+            final String[] convertedCommandLine = convertToJava(args);
+            final String[] convertedEnv = convertToJava(env);
+
+            final int ret = posix().exec(convertedCommand, convertedCommandLine, convertedEnv);
+
+            if (ret == -1) {
+                throw new RaiseException(coreExceptions().errnoError(posix().errno(), this));
+            }
+
+            return null;
+        }
+
+        private String[] convertToJava(DynamicObject array) {
+            final Object[] javaArray = ArrayOperations.toObjectArray(array);
+            final String[] ret = new String[javaArray.length];
+
+            for (int i = 0; i < javaArray.length; i++) {
+                ret[i] = StringOperations.decodeUTF8((DynamicObject) javaArray[i]);
+            }
+
+            return ret;
         }
 
     }

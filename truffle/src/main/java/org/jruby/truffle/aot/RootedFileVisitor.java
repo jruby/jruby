@@ -26,7 +26,7 @@ import java.util.Collections;
 /**
  * Visit files with knowledge of the root of the subtree the traversal started from.
  */
-interface RootedFileVisitor<T> extends FileVisitor<T> {
+public interface RootedFileVisitor<T> extends FileVisitor<T> {
     void setRoot(T root);
 
     T getRoot();

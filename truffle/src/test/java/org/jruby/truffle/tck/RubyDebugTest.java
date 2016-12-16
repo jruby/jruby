@@ -61,7 +61,7 @@ public class RubyDebugTest {
     }
 
     @Before
-    public void before() throws IOException {
+    public void before() {
         suspendedEvent = null;
 
         engine = PolyglotEngine.newBuilder().setOut(out).setErr(err).build();
@@ -241,7 +241,7 @@ public class RubyDebugTest {
         assertTrue(msg + ". Assuming all requests processed: " + run, run.isEmpty());
     }
 
-    private static Source createFactorial() throws IOException {
+    private static Source createFactorial() {
         return getSource("src/test/ruby/factorial.rb");
     }
 

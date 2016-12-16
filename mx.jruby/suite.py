@@ -140,23 +140,18 @@ suite = {
             "2982d6beb2f8fabe5ac5cc9dec6b4d6a9ffeedb1",
             "MIT"),
 
-        "BYTELIST": mavenLib(
-            "org.jruby.extras:bytelist:1.0.13",
-            "dc54989113128bda0d303c7bf97a7aba65507ddf",
-            "e8f683aa496bf651879d9e3a8a82e053c2df9b99",
-            "EPL-1.0"),
-
         "JCODINGS": mavenLib(
             "org.jruby.jcodings:jcodings:1.0.18",
             "e2c76a19f00128bb1806207e2989139bfb45f49d",
             "201985f0f15af95f03494ab9ef0400e849090d6c",
             "MIT"),
 
-        "JODA_TIME": mavenLib(
-            "joda-time:joda-time:2.8.2",
-            "d27c24204c5e507b16fec01006b3d0f1ec42aed4",
-            "65dd2b998571ea61a3cee68c99a1dde729b14a7e",
-            "Apache-2.0"),
+        "JLINE": mavenLib(
+            "jline:jline:2.11",
+            "9504d5e2da5d78237239c5226e8200ec21182040",
+            "ef2539b992e5605be966b6db7cfc83930f0da39b",
+            "BSD-new"
+        )
     },
 
     "projects": {
@@ -177,9 +172,8 @@ suite = {
                 "JFFI_NATIVE",
                 "SNAKEYAML",
                 "JONI",
-                "BYTELIST",
                 "JCODINGS",
-                "JODA_TIME",
+                "JLINE",
             ],
             "annotationProcessors": ["truffle:TRUFFLE_DSL_PROCESSOR"],
             "javaCompliance": "1.8",
@@ -238,9 +232,6 @@ suite = {
             "dependencies": [
                 "jruby-truffle",
                 "jruby-truffle-ruby",
-            ],
-            "exclude": [
-                "truffle:JLINE",
             ],
             "distDependencies": [
                 "truffle:TRUFFLE_API",

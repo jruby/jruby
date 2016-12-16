@@ -23,6 +23,7 @@ import org.jruby.truffle.platform.linux.LinuxRubiniusConfiguration;
 import org.jruby.truffle.platform.openjdk.OpenJDKArrayBlockingQueueLocksConditions;
 import org.jruby.truffle.platform.openjdk.OpenJDKLinkedBlockingQueueLocksConditions;
 import org.jruby.truffle.platform.posix.ClockGetTime;
+import org.jruby.truffle.platform.posix.MallocFree;
 import org.jruby.truffle.platform.posix.PosixFDSet4Bytes;
 import org.jruby.truffle.platform.posix.Sockets;
 import org.jruby.truffle.platform.posix.TrufflePosix;
@@ -80,6 +81,11 @@ public class JavaPlatform implements NativePlatform {
     @Override
     public ClockGetTime getClockGetTime() {
         return clockGetTime;
+    }
+
+    @Override
+    public MallocFree getMallocFree() {
+        throw new UnsupportedOperationException();
     }
 
     @Override

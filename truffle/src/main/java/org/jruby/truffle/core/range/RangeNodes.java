@@ -268,7 +268,7 @@ public abstract class RangeNodes {
 
     }
 
-    @CoreMethod(names = "step", needsBlock = true, optional = 1, returnsEnumeratorIfNoBlock = true)
+    @CoreMethod(names = "step", needsBlock = true, optional = 1, lowerFixnum = 1, returnsEnumeratorIfNoBlock = true)
     public abstract static class StepNode extends YieldingCoreMethodNode {
 
         @Child private CallDispatchHeadNode stepInternalCall;

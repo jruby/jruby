@@ -53,9 +53,10 @@ class Complex < Numeric
   undef_method :i
 
   def self.convert(real, imag = undefined)
-    if real.equal?(nil) || imag.equal?(nil)
+    if nil.equal?(real) || nil.equal?(imag)
       raise TypeError, "cannot convert nil into Complex"
     end
+    imag = nil if undefined.equal?(imag)
 
     real = real.to_c if real.kind_of?(String)
     imag = imag.to_c if imag.kind_of?(String)
@@ -72,7 +73,7 @@ class Complex < Numeric
       return real
     end
 
-    if undefined.equal?(imag)
+    if imag.nil?
       if real.kind_of?(Numeric) && !real.real?
         return real
       elsif !real.kind_of?(Numeric)

@@ -61,6 +61,9 @@ import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.core.adapaters.InputStreamAdapter;
 import org.jruby.truffle.core.cast.ToStrNode;
 import org.jruby.truffle.core.cast.ToStrNodeGen;
+import org.jruby.truffle.core.rope.CodeRange;
+import org.jruby.truffle.core.string.ByteList;
+import org.jruby.truffle.core.string.EncodingUtils;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.core.string.StringSupport;
 import org.jruby.truffle.language.NotProvided;
@@ -72,9 +75,7 @@ import org.jruby.truffle.language.objects.ReadObjectFieldNode;
 import org.jruby.truffle.language.objects.ReadObjectFieldNodeGen;
 import org.jruby.truffle.language.objects.TaintNode;
 import org.jruby.truffle.language.objects.TaintNodeGen;
-import org.jruby.truffle.util.BoundaryUtils.BoundaryIterable;
-import org.jruby.truffle.util.EncodingUtils;
-import org.jruby.truffle.util.ByteList;
+import org.jruby.truffle.collections.BoundaryIterable;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.error.Mark;
 import org.yaml.snakeyaml.events.AliasEvent;
@@ -530,10 +531,10 @@ public abstract class PsychParserNodes {
         }
 
         private static boolean isAsciiOnly(ByteList string) {
-            return string.getEncoding().isAsciiCompatible() && scanForCodeRange(string) == StringSupport.CR_7BIT;
+            return string.getEncoding().isAsciiCompatible() && scanForCodeRange(string) == CodeRange.CR_7BIT;
         }
 
-        private static int scanForCodeRange(ByteList string) {
+        private static CodeRange scanForCodeRange(ByteList string) {
             return StringSupport.codeRangeScan(EncodingUtils.getActualEncoding(string.getEncoding(), string), string);
         }
 

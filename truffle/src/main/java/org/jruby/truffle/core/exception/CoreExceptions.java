@@ -22,9 +22,9 @@ import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.string.CoreStrings;
 import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.core.string.StringUtils;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.Visibility;
-import org.jruby.truffle.util.StringUtils;
 
 import static org.jruby.truffle.core.array.ArrayHelpers.createArray;
 
@@ -278,6 +278,11 @@ public class CoreExceptions {
     @TruffleBoundary
     public DynamicObject negativeLengthError(int length, Node currentNode) {
         return indexError(StringUtils.format("negative length (%d)", length), currentNode);
+    }
+
+    @TruffleBoundary
+    public DynamicObject indexErrorInvalidIndex(Node currentNode) {
+        return indexError("invalid index", currentNode);
     }
 
     // LocalJumpError

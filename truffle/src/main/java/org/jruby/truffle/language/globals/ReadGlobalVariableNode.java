@@ -20,8 +20,7 @@ public abstract class ReadGlobalVariableNode extends RubyNode {
 
     private final String name;
 
-    public ReadGlobalVariableNode(RubyContext context, SourceSection sourceSection, String name) {
-        super(context, sourceSection);
+    public ReadGlobalVariableNode(String name) {
         this.name = name;
     }
 

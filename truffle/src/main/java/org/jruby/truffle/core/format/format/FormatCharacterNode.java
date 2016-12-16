@@ -25,8 +25,8 @@ import org.jruby.truffle.core.format.convert.ToStringNode;
 import org.jruby.truffle.core.format.convert.ToStringNodeGen;
 import org.jruby.truffle.core.format.exceptions.NoImplicitConversionException;
 import org.jruby.truffle.core.format.write.bytes.WriteByteNodeGen;
+import org.jruby.truffle.core.string.StringUtils;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.util.StringUtils;
 
 import java.nio.charset.StandardCharsets;
 

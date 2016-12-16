@@ -156,6 +156,10 @@ public abstract class ArrayUtils {
         return boxed;
     }
 
+    public static Object[] box(Object array, int newLength) {
+        return boxExtra(array, newLength - Array.getLength(array));
+    }
+
     public static Object[] box(double[] unboxed, int newLength) {
         final Object[] boxed = new Object[newLength];
 
@@ -290,7 +294,7 @@ public abstract class ArrayUtils {
             final Object value = unboxed[n];
 
             if (value instanceof Integer) {
-                boxed[n] = (long) (int) unboxed[n];
+                boxed[n] = (int) unboxed[n];
             } else if (value instanceof Long) {
                 boxed[n] = (long) unboxed[n];
             }

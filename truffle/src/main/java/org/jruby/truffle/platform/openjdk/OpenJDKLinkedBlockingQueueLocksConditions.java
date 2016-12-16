@@ -31,7 +31,7 @@ public class OpenJDKLinkedBlockingQueueLocksConditions<T>
     private final Condition notEmptyCondition;
 
     public OpenJDKLinkedBlockingQueueLocksConditions() {
-        super(new LinkedBlockingQueue<T>());
+        super(new LinkedBlockingQueue<>());
 
         final LinkedBlockingQueue<T> queue = (LinkedBlockingQueue<T>) getQueue();
 
