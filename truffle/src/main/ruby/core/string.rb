@@ -713,8 +713,7 @@ class String
   end
 
   def prepend(other)
-    self[0, 0] = other
-    self
+    replace(StringValue(other) + self)
   end
 
   def upto(stop, exclusive=false)
