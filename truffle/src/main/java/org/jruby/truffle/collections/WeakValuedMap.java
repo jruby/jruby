@@ -40,8 +40,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class WeakValuedMap<Key, Value> {
 
-    private final Map<Key, KeyedReference<Key, Value>> map = newMap();
-    @SuppressWarnings("unchecked")
+    private final Map<Key, KeyedReference<Key, Value>> map = new ConcurrentHashMap<>();
     private final ReferenceQueue<Value> deadRefs = new ReferenceQueue<>();
 
     public final void put(Key key, Value value) {
@@ -66,15 +65,6 @@ public class WeakValuedMap<Key, Value> {
         return map.size();
     }
 
-    /**
-     * Construct the backing store map for this WeakValuedMap. It should be capable of safe concurrent read and write.
-     *
-     * @return the backing store map
-     */
-    protected Map<Key, KeyedReference<Key, Value>> newMap() {
-        return new ConcurrentHashMap<>();
-    }
-
     protected static class KeyedReference<Key, Value> extends WeakReference<Value> {
 
         protected final Key key;
@@ -89,8 +79,8 @@ public class WeakValuedMap<Key, Value> {
     @SuppressWarnings("unchecked")
     private void cleanReferences() {
         KeyedReference<Key, Value> ref;
-        while ( ( ref = (KeyedReference) deadRefs.poll() ) != null ) {
-            map.remove( ref.key );
+        while ((ref = (KeyedReference<Key, Value>) deadRefs.poll()) != null) {
+            map.remove(ref.key);
         }
     }
 }
