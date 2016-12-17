@@ -98,12 +98,13 @@ public class JavaUtil {
 
         if (RubyInstanceConfig.CAN_SET_ACCESSIBLE) {
             try {
-                // We want to check if we can access a commonly-existing private field through reflection. If so,
-                // we're probably able to access some other fields too later on.
-                Field f = DummyForJavaUtil.class.getDeclaredField("PRIVATE");
+                // We want to check if we can access a commonly-existing private field through reflection.
+                // If so, we're probably able to access some other fields too later on.
+                Field f = Java.class.getDeclaredField("_");
                 f.setAccessible(true);
-                canSetAccessible = f.get(null).equals(DummyForJavaUtil.PUBLIC);
-            } catch (Exception t) {
+                canSetAccessible = f.getByte(null) == 72;
+            }
+            catch (Exception t) {
                 // added this so if things are weird in the future we can debug without
                 // spinning a new binary
                 if (Options.JI_LOGCANSETACCESSIBLE.load()) {

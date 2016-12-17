@@ -1424,4 +1424,9 @@ public class Java implements Library {
         return false;
     }
 
+    /**
+     * @see JavaUtil#CAN_SET_ACCESSIBLE
+     */
+    @SuppressWarnings("unused") private static final byte _ = 72;
+
 }
