@@ -252,7 +252,7 @@ public class MethodTranslator extends BodyTranslator {
         parentSourceSection.push(sourceSection);
         try {
             if (isPrimitive) {
-                body = translateRubiniusPrimitive(sourceSection.toSourceSection(source), (BlockParseNode) bodyNode);
+                body = translateRubiniusPrimitive(sourceSection, (BlockParseNode) bodyNode, loadArguments);
             } else {
                 body = translateNodeOrNil(sourceSection, bodyNode);
             }
@@ -260,18 +260,26 @@ public class MethodTranslator extends BodyTranslator {
             parentSourceSection.pop();
         }
 
+        final RubySourceSection bodySourceSection = body.getRubySourceSection();
+
         final RubyNode checkArity = createCheckArityNode(context, source, sourceSection, arity);
 
-        body = sequence(context, source, body.getRubySourceSection(), Arrays.asList(checkArity, loadArguments, body));
-
-        if (environment.getFlipFlopStates().size() > 0) {
-            body = sequence(context, source, body.getRubySourceSection(), Arrays.asList(initFlipFlopStates(sourceSection), body));
+        if (isPrimitive) {
+            // Arguments are loaded on the fallback path
+            body = sequence(context, source, bodySourceSection, Arrays.asList(checkArity, body));
+        } else {
+            body = sequence(context, source, bodySourceSection, Arrays.asList(checkArity, loadArguments, body));
         }
 
-        body = new CatchForMethodNode(context, translateSourceSection(source, body.getRubySourceSection()), environment.getReturnID(), body);
+        if (environment.getFlipFlopStates().size() > 0) {
+            body = sequence(context, source, bodySourceSection, Arrays.asList(initFlipFlopStates(sourceSection), body));
+        }
+
+        final SourceSection fullBodySourceSection = translateSourceSection(source, bodySourceSection);
+        body = new CatchForMethodNode(context, fullBodySourceSection, environment.getReturnID(), body);
 
         // TODO(CS, 10-Jan-15) why do we only translate exceptions in methods and not blocks?
-        body = new ExceptionTranslatingNode(context, translateSourceSection(source, body.getRubySourceSection()), body, UnsupportedOperationBehavior.TYPE_ERROR);
+        body = new ExceptionTranslatingNode(context, fullBodySourceSection, body, UnsupportedOperationBehavior.TYPE_ERROR);
 
         if (context.getOptions().CHAOS) {
             body = ChaosNodeGen.create(body);

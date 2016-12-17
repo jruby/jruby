@@ -590,7 +590,7 @@ public class BodyTranslator extends Translator {
         return translateCallNode(node, false, false, false);
     }
 
-    protected RubyNode translateRubiniusPrimitive(SourceSection sourceSection, BlockParseNode body) {
+    protected RubyNode translateRubiniusPrimitive(RubySourceSection sourceSection, BlockParseNode body, RubyNode loadArguments) {
         /*
          * Translates something that looks like
          *
@@ -624,10 +624,11 @@ public class BodyTranslator extends Translator {
         for (int i = 1; i < body.size(); i++) {
             fallback.add(body.get(i));
         }
-        final RubyNode fallbackNode = fallback.accept(this);
+        RubyNode fallbackNode = fallback.accept(this);
+        fallbackNode = sequence(context, source, sourceSection, Arrays.asList(loadArguments, fallbackNode));
 
         final PrimitiveNodeConstructor primitive = context.getPrimitiveManager().getPrimitive(primitiveName);
-        return primitive.createCallPrimitiveNode(context, sourceSection, fallbackNode);
+        return primitive.createCallPrimitiveNode(context, sourceSection.toSourceSection(source), fallbackNode);
     }
 
     private RubyNode translateRubiniusInvokePrimitive(SourceSection sourceSection, CallParseNode node) {
