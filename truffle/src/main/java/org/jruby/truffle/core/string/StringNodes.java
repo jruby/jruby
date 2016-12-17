@@ -3460,7 +3460,8 @@ public abstract class StringNodes {
 
         @TruffleBoundary(throwsControlFlowException = true)
         @Specialization
-        public Object stringToF(DynamicObject string, boolean strict) {
+        public Object stringToF(DynamicObject string, boolean strict,
+                                @Cached("create(getContext(), getSourceSection())") FixnumOrBignumNode fixnumOrBignumNode) {
             final Rope rope = rope(string);
             final ByteList byteList = RopeOperations.getByteListReadOnly(rope);
             if (byteList.getRealSize() == 0) {
@@ -3470,7 +3471,17 @@ public abstract class StringNodes {
                 try {
                     return Double.parseDouble(string.toString());
                 } catch (NumberFormatException e) {
-                    return null;
+                    // Try falling back to this implementation if the first fails, niether 100% complete
+                    final Object result = ConvertBytes.byteListToInum19(getContext(), this, fixnumOrBignumNode, string, 16, true);
+                    if (result instanceof Integer) {
+                        return ((Integer) result).doubleValue();
+                    } else if (result instanceof Long) {
+                        return ((Long) result).doubleValue();
+                    } else if (result instanceof Double) {
+                        return result;
+                    } else {
+                        return null;
+                    }
                 }
             }
             try {
