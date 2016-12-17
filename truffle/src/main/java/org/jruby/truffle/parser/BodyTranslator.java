@@ -553,8 +553,7 @@ public class BodyTranslator extends Translator {
             // Truffle.<method>
 
             if (methodName.equals("primitive")) {
-                final RubyNode ret = translateRubiniusPrimitive(fullSourceSection, node);
-                return addNewlineIfNeeded(node, ret);
+                throw new AssertionError("Invalid usage of Truffle.primitive at " + RubyLanguage.fileLine(fullSourceSection));
             } else if (methodName.equals("invoke_primitive")) {
                 final RubyNode ret = translateRubiniusInvokePrimitive(fullSourceSection, node);
                 return addNewlineIfNeeded(node, ret);
@@ -591,21 +590,29 @@ public class BodyTranslator extends Translator {
         return translateCallNode(node, false, false, false);
     }
 
-    private RubyNode translateRubiniusPrimitive(SourceSection sourceSection, CallParseNode node) {
+    protected RubyNode translateRubiniusPrimitive(SourceSection sourceSection, BlockParseNode body) {
         /*
          * Translates something that looks like
          *
-         *   Truffle.primitive :foo
+         *   def foo
+         *     Truffle.primitive :foo
+         *     fallback code
+         *   end
          *
          * into
          *
-         *   CallPrimitiveNode(FooNode(arg1, arg2, ..., argN))
+         *   if value = CallPrimitiveNode(FooNode(arg1, arg2, ..., argN))
+         *     return value
+         *   else
+         *     fallback code
+         *   end
          *
          * Where the arguments are the same arguments as the method. It looks like this is only exercised with simple
          * arguments so we're not worrying too much about what happens when they're more complicated (rest,
          * keywords etc).
          */
 
+        final CallParseNode node = (CallParseNode) body.get(0);
         final ArrayParseNode argsNode = (ArrayParseNode) node.getArgsNode();
         if (argsNode.size() != 1 || !(argsNode.get(0) instanceof SymbolParseNode)) {
             throw new UnsupportedOperationException("Truffle.primitive must have a single literal symbol argument");
@@ -613,9 +620,14 @@ public class BodyTranslator extends Translator {
 
         final String primitiveName = ((SymbolParseNode) argsNode.get(0)).getName();
 
+        BlockParseNode fallback = new BlockParseNode(body.getPosition());
+        for (int i = 1; i < body.size(); i++) {
+            fallback.add(body.get(i));
+        }
+        final RubyNode fallbackNode = fallback.accept(this);
+
         final PrimitiveNodeConstructor primitive = context.getPrimitiveManager().getPrimitive(primitiveName);
-        final ReturnID returnID = environment.getReturnID();
-        return primitive.createCallPrimitiveNode(context, sourceSection, returnID);
+        return primitive.createCallPrimitiveNode(context, sourceSection, fallbackNode);
     }
 
     private RubyNode translateRubiniusInvokePrimitive(SourceSection sourceSection, CallParseNode node) {

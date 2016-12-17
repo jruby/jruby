@@ -50,7 +50,11 @@ import org.jruby.truffle.language.supercall.ReadZSuperArgumentsNode;
 import org.jruby.truffle.language.supercall.SuperCallNode;
 import org.jruby.truffle.language.supercall.ZSuperOutsideMethodNode;
 import org.jruby.truffle.parser.ast.ArgsParseNode;
+import org.jruby.truffle.parser.ast.ArrayParseNode;
 import org.jruby.truffle.parser.ast.AssignableParseNode;
+import org.jruby.truffle.parser.ast.BlockParseNode;
+import org.jruby.truffle.parser.ast.CallParseNode;
+import org.jruby.truffle.parser.ast.ConstParseNode;
 import org.jruby.truffle.parser.ast.DAsgnParseNode;
 import org.jruby.truffle.parser.ast.KeywordArgParseNode;
 import org.jruby.truffle.parser.ast.LocalAsgnParseNode;
@@ -232,9 +236,26 @@ public class MethodTranslator extends BodyTranslator {
         
         RubyNode body;
 
+        boolean isPrimitive = false;
+        if (bodyNode instanceof BlockParseNode) {
+            ParseNode[] statements = ((BlockParseNode) bodyNode).children();
+            if (statements.length >= 0 && statements[0] instanceof CallParseNode) {
+                CallParseNode callNode = (CallParseNode) statements[0];
+                ParseNode receiver = callNode.getReceiverNode();
+                // Truffle.primitive :name
+                if (callNode.getName().equals("primitive") && receiver instanceof ConstParseNode && ((ConstParseNode) receiver).getName().equals("Truffle")) {
+                    isPrimitive = true;
+                }
+            }
+        }
+
         parentSourceSection.push(sourceSection);
         try {
-            body = translateNodeOrNil(sourceSection, bodyNode);
+            if (isPrimitive) {
+                body = translateRubiniusPrimitive(sourceSection.toSourceSection(source), (BlockParseNode) bodyNode);
+            } else {
+                body = translateNodeOrNil(sourceSection, bodyNode);
+            }
         } finally {
             parentSourceSection.pop();
         }
