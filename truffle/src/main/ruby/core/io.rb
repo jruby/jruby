@@ -1280,7 +1280,8 @@ class IO
     offset = Rubinius::Type.coerce_to offset, Integer, :to_int
     len = Rubinius::Type.coerce_to len, Integer, :to_int
 
-    Truffle.primitive :io_advise
+    # Truffle.invoke_primitive :io_advise, self, advice, offset, len
+    raise "IO#advise not implemented"
     nil
   end
 
