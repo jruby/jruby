@@ -76,18 +76,6 @@ public class Log {
     }
 
     /**
-     * Warn about code that works but is not yet optimized as Truffle code normally would be. Only prints the warning
-     * if called from compiled code. Don't call this method from behind a boundary or transfer, as it will never print
-     * the warning because it will never be called from compiled code. Use {@link #performance} instead if you need to
-     * warn in code that is never compiled.
-     */
-    public static void notOptimized(String message) {
-        if (CompilerDirectives.inCompiledCode()) {
-            performance(message);
-        }
-    }
-
-    /**
      * Warn about something that has lower performance than might be expected. Only prints the warning once.
      */
     @TruffleBoundary
