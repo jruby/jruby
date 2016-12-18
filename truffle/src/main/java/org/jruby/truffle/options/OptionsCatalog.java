@@ -99,7 +99,6 @@ public class OptionsCatalog {
     public static final OptionDescription CALL_GRAPH_WRITE = new StringOptionDescription("callgraph.write", "File to write the call graph to on exit", null);
     public static final OptionDescription CHAOS = new BooleanOptionDescription("chaos", "Randomly modify the representation of objects", false);
     public static final OptionDescription GRAAL_WARNING_UNLESS = new BooleanOptionDescription("graal.warn_unless", "Warn unless the JVM has the Graal compiler", true);
-    public static final OptionDescription PERF_WARNING = new BooleanOptionDescription("perf.warn", "Warn when using a fature which is not optimized yet", false);
     public static final OptionDescription SHARED_OBJECTS_ENABLED = new BooleanOptionDescription("shared.objects", "Enable shared objects", true);
     public static final OptionDescription SHARED_OBJECTS_DEBUG = new BooleanOptionDescription("shared.objects.debug", "Print information about shared objects", false);
     public static final OptionDescription SHARED_OBJECTS_FORCE = new BooleanOptionDescription("shared.objects.force", "Force sharing of objects roots at startup", false);
@@ -275,8 +274,6 @@ public class OptionsCatalog {
                 return CHAOS;
             case "graal.warn_unless":
                 return GRAAL_WARNING_UNLESS;
-            case "perf.warn":
-                return PERF_WARNING;
             case "shared.objects":
                 return SHARED_OBJECTS_ENABLED;
             case "shared.objects.debug":

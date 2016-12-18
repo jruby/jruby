@@ -101,7 +101,6 @@ public class Options {
     public final String CALL_GRAPH_WRITE;
     public final boolean CHAOS;
     public final boolean GRAAL_WARNING_UNLESS;
-    public final boolean PERF_WARNING;
     public final boolean SHARED_OBJECTS_ENABLED;
     public final boolean SHARED_OBJECTS_DEBUG;
     public final boolean SHARED_OBJECTS_FORCE;
@@ -193,7 +192,6 @@ public class Options {
         CALL_GRAPH_WRITE = builder.getOrDefault(OptionsCatalog.CALL_GRAPH_WRITE);
         CHAOS = builder.getOrDefault(OptionsCatalog.CHAOS);
         GRAAL_WARNING_UNLESS = builder.getOrDefault(OptionsCatalog.GRAAL_WARNING_UNLESS);
-        PERF_WARNING = builder.getOrDefault(OptionsCatalog.PERF_WARNING);
         SHARED_OBJECTS_ENABLED = builder.getOrDefault(OptionsCatalog.SHARED_OBJECTS_ENABLED);
         SHARED_OBJECTS_DEBUG = builder.getOrDefault(OptionsCatalog.SHARED_OBJECTS_DEBUG);
         SHARED_OBJECTS_FORCE = builder.getOrDefault(OptionsCatalog.SHARED_OBJECTS_FORCE);
