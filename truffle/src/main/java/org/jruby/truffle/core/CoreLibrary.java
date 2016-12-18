@@ -1764,6 +1764,7 @@ public class CoreLibrary {
             "/core/truffle/cext.rb",
             "/core/truffle/interop.rb",
             "/core/rbconfig.rb",
+            "/core/byte_array.rb",
             "/core/main.rb",
             "/core/post.rb"
     };
