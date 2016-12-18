@@ -38,7 +38,6 @@ import org.jruby.truffle.core.hash.HashNodesFactory.DefaultValueNodeFactory;
 import org.jruby.truffle.core.hash.HashNodesFactory.GetIndexNodeFactory;
 import org.jruby.truffle.core.hash.HashNodesFactory.InternalRehashNodeGen;
 import org.jruby.truffle.language.NotProvided;
-import org.jruby.truffle.language.PerformanceWarnings;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.SnippetNode;
