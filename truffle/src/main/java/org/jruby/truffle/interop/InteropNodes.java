@@ -32,6 +32,7 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.Source;
 import org.jcodings.specific.ASCIIEncoding;
+import org.jruby.truffle.Log;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
@@ -118,7 +119,7 @@ public abstract class InteropNodes {
                 VirtualFrame frame,
                 TruffleObject receiver,
                 Object[] args) {
-            PerformanceWarnings.warn("megamorphic interop EXECUTE message send");
+            Log.performanceOnce("megamorphic interop EXECUTE message send");
 
             final Node executeNode = createExecuteNode(args.length);
 
@@ -184,7 +185,7 @@ public abstract class InteropNodes {
                 TruffleObject receiver,
                 DynamicObject identifier,
                 Object[] args) {
-            PerformanceWarnings.warn("megamorphic interop INVOKE message send");
+            Log.performanceOnce("megamorphic interop INVOKE message send");
 
             final Node invokeNode = createInvokeNode(args.length);
 

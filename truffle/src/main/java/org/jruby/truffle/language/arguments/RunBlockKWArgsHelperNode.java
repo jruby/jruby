@@ -13,7 +13,7 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.Layouts;
-import org.jruby.truffle.language.PerformanceWarnings;
+import org.jruby.truffle.Log;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.SnippetNode;
 import org.jruby.truffle.language.locals.ReadFrameSlotNode;
@@ -37,7 +37,7 @@ public class RunBlockKWArgsHelperNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        PerformanceWarnings.warn(PerformanceWarnings.KWARGS_NOT_OPTIMIZED_YET);
+        Log.performanceOnce(Log.KWARGS_NOT_OPTIMIZED_YET);
 
         final Object array = readArrayNode.executeRead(frame);
 

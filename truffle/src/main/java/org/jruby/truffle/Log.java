@@ -11,11 +11,25 @@ package org.jruby.truffle;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 
+import java.util.Collections;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Handler;
+import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
 public class Log {
+
+    private static class RubyLevel extends Level {
+
+        public RubyLevel(String name, Level parent) {
+            super(name, parent.intValue(), parent.getResourceBundleName());
+        }
+
+    }
+
+    public static final Level PERFORMANCE = new RubyLevel("PERFORMANCE", Level.WARNING);
 
     private static final Logger LOGGER = createLogger();
 
@@ -42,6 +56,29 @@ public class Log {
         });
 
         return logger;
+    }
+
+    private static final Set<String> displayedWarnings = Collections.newSetFromMap(new ConcurrentHashMap<>());
+
+    public static final String KWARGS_NOT_OPTIMIZED_YET = "keyword arguments are not yet optimized";
+
+    @TruffleBoundary
+    public static void performanceOnce(String message) {
+        // This isn't double-checked locking, because we aren't publishing an object that is then used
+
+        if (!displayedWarnings.contains(message)) {
+            synchronized (displayedWarnings) {
+                if (!displayedWarnings.contains(message)) {
+                    displayedWarnings.add(message);
+                    performance(message);
+                }
+            }
+        }
+    }
+
+    @TruffleBoundary
+    public static void performance(String message) {
+        LOGGER.log(PERFORMANCE, message);
     }
 
     @TruffleBoundary
