@@ -15,11 +15,11 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.Layouts;
+import org.jruby.truffle.Log;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.hash.BucketsStrategy;
 import org.jruby.truffle.core.hash.HashOperations;
 import org.jruby.truffle.core.hash.KeyValue;
-import org.jruby.truffle.language.PerformanceWarnings;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 
@@ -53,13 +53,13 @@ public class ReadKeywordRestArgumentNode extends RubyNode {
             return Layouts.HASH.createHash(coreLibrary().getHashFactory(), null, 0, null, null, null, null, false);
         }
 
+        Log.notOptimizedOnce(Log.KWARGS_NOT_OPTIMIZED_YET);
+
         return extractKeywordHash(hash);
     }
 
     @TruffleBoundary
     private Object extractKeywordHash(final Object hash) {
-        PerformanceWarnings.warn(PerformanceWarnings.KWARGS_NOT_OPTIMIZED_YET);
-
         final DynamicObject hashObject = (DynamicObject) hash;
 
         final List<KeyValue> entries = new ArrayList<>();

@@ -13,9 +13,9 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.Log;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.array.ArrayUtils;
-import org.jruby.truffle.language.PerformanceWarnings;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.SnippetNode;
@@ -81,7 +81,7 @@ public class ReadRestArgumentNode extends RubyNode {
         final DynamicObject rest = createArray(resultStore, resultLength);
 
         if (keywordArguments) {
-            PerformanceWarnings.warn(PerformanceWarnings.KWARGS_NOT_OPTIMIZED_YET);
+            Log.notOptimizedOnce(Log.KWARGS_NOT_OPTIMIZED_YET);
 
             Object kwargsHash = readUserKeywordsHashNode.execute(frame);
 

@@ -25,6 +25,7 @@ import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.Layouts;
+import org.jruby.truffle.Log;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
@@ -37,7 +38,6 @@ import org.jruby.truffle.core.hash.HashNodesFactory.DefaultValueNodeFactory;
 import org.jruby.truffle.core.hash.HashNodesFactory.GetIndexNodeFactory;
 import org.jruby.truffle.core.hash.HashNodesFactory.InternalRehashNodeGen;
 import org.jruby.truffle.language.NotProvided;
-import org.jruby.truffle.language.PerformanceWarnings;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.SnippetNode;
@@ -1004,7 +1004,7 @@ public abstract class HashNodes {
 
         @Specialization(guards = "isRubyHash(other)")
         public DynamicObject merge(VirtualFrame frame, DynamicObject hash, DynamicObject other, DynamicObject block) {
-            PerformanceWarnings.warn("Hash#merge with a block is not yet optimized");
+            Log.notOptimizedOnce("Hash#merge with a block is not yet optimized");
             final boolean compareByIdentity = Layouts.HASH.getCompareByIdentity(hash);
 
             final int capacity = BucketsStrategy.capacityGreaterThan(Layouts.HASH.getSize(hash) + Layouts.HASH.getSize(other));

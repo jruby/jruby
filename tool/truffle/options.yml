@@ -97,7 +97,6 @@ CALL_GRAPH_WRITE: [callgraph.write, string, null, File to write the call graph t
 CHAOS: [chaos, boolean, false, Randomly modify the representation of objects]
 
 GRAAL_WARNING_UNLESS: [graal.warn_unless, boolean, true, Warn unless the JVM has the Graal compiler]
-PERF_WARNING: [perf.warn, boolean, false, Warn when using a fature which is not optimized yet]
 
 SHARED_OBJECTS_ENABLED: [shared.objects, boolean, true, Enable shared objects]
 SHARED_OBJECTS_DEBUG: [shared.objects.debug, boolean, false, Print information about shared objects]
