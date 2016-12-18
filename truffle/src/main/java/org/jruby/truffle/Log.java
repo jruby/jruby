@@ -94,13 +94,8 @@ public class Log {
     public static void performanceOnce(String message) {
         // This isn't double-checked locking, because we aren't publishing an object that is then used
 
-        if (!displayedWarnings.contains(message)) {
-            synchronized (displayedWarnings) {
-                if (!displayedWarnings.contains(message)) {
-                    displayedWarnings.add(message);
-                    performance(message);
-                }
-            }
+        if (displayedWarnings.add(message)) {
+            performance(message);
         }
     }
 
