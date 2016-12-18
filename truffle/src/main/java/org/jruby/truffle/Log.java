@@ -35,28 +35,29 @@ public class Log {
 
     private static final Logger LOGGER = createLogger();
 
+    public static class RubyHandler extends Handler {
+
+        @Override
+        public void publish(LogRecord record) {
+            System.err.printf("[ruby] %s %s%n", record.getLevel().getName(), record.getMessage());
+        }
+
+        @Override
+        public void flush() {
+        }
+
+        @Override
+        public void close() throws SecurityException {
+        }
+
+    }
+
     private static Logger createLogger() {
         final Logger logger = Logger.getLogger("org.jruby.truffle");
 
         if (LogManager.getLogManager().getProperty("org.jruby.truffle.handlers") == null) {
             logger.setUseParentHandlers(false);
-
-            logger.addHandler(new Handler() {
-
-                @Override
-                public void publish(LogRecord record) {
-                    System.err.printf("[ruby] %s %s%n", record.getLevel().getName(), record.getMessage());
-                }
-
-                @Override
-                public void flush() {
-                }
-
-                @Override
-                public void close() throws SecurityException {
-                }
-
-            });
+            logger.addHandler(new RubyHandler());
         }
 
         return logger;
