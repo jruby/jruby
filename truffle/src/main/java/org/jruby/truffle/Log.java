@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 
 import java.util.Collections;
@@ -61,6 +62,18 @@ public class Log {
     private static final Set<String> displayedWarnings = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
     public static final String KWARGS_NOT_OPTIMIZED_YET = "keyword arguments are not yet optimized";
+
+    public static void notOptimizedOnce(String message) {
+        if (CompilerDirectives.inCompiledCode()) {
+            performanceOnce(message);
+        }
+    }
+
+    public static void notOptimized(String message) {
+        if (CompilerDirectives.inCompiledCode()) {
+            performance(message);
+        }
+    }
 
     @TruffleBoundary
     public static void performanceOnce(String message) {

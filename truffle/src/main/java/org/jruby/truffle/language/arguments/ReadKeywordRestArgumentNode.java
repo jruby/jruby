@@ -53,13 +53,13 @@ public class ReadKeywordRestArgumentNode extends RubyNode {
             return Layouts.HASH.createHash(coreLibrary().getHashFactory(), null, 0, null, null, null, null, false);
         }
 
+        Log.notOptimizedOnce(Log.KWARGS_NOT_OPTIMIZED_YET);
+
         return extractKeywordHash(hash);
     }
 
     @TruffleBoundary
     private Object extractKeywordHash(final Object hash) {
-        Log.performanceOnce(Log.KWARGS_NOT_OPTIMIZED_YET);
-
         final DynamicObject hashObject = (DynamicObject) hash;
 
         final List<KeyValue> entries = new ArrayList<>();

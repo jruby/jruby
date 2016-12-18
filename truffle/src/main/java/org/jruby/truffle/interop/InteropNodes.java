@@ -119,7 +119,7 @@ public abstract class InteropNodes {
                 VirtualFrame frame,
                 TruffleObject receiver,
                 Object[] args) {
-            Log.performanceOnce("megamorphic interop EXECUTE message send");
+            Log.notOptimizedOnce("megamorphic interop EXECUTE message send");
 
             final Node executeNode = createExecuteNode(args.length);
 
@@ -185,7 +185,7 @@ public abstract class InteropNodes {
                 TruffleObject receiver,
                 DynamicObject identifier,
                 Object[] args) {
-            Log.performanceOnce("megamorphic interop INVOKE message send");
+            Log.notOptimizedOnce("megamorphic interop INVOKE message send");
 
             final Node invokeNode = createInvokeNode(args.length);
 

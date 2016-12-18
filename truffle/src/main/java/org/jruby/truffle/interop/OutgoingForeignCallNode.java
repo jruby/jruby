@@ -73,7 +73,7 @@ public abstract class OutgoingForeignCallNode extends RubyNode {
             TruffleObject receiver,
             Object[] args,
             @Cached("create()") ForeignToRubyNode toRubyNode) {
-        Log.performanceOnce("megamorphic outgoing foreign call");
+        Log.notOptimizedOnce("megamorphic outgoing foreign call");
 
         if (megamorphicToForeignNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();

@@ -70,7 +70,7 @@ public class ReadOptionalArgumentNode extends RubyNode {
         defaultValueProfile.enter();
 
         if (considerRejectedKWArgs) {
-            Log.performanceOnce(Log.KWARGS_NOT_OPTIMIZED_YET);
+            Log.notOptimizedOnce(Log.KWARGS_NOT_OPTIMIZED_YET);
 
             final Object rest = readRestArgumentNode.execute(frame);
 

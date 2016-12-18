@@ -1005,7 +1005,7 @@ public abstract class HashNodes {
 
         @Specialization(guards = "isRubyHash(other)")
         public DynamicObject merge(VirtualFrame frame, DynamicObject hash, DynamicObject other, DynamicObject block) {
-            Log.performanceOnce("Hash#merge with a block is not yet optimized");
+            Log.notOptimizedOnce("Hash#merge with a block is not yet optimized");
             final boolean compareByIdentity = Layouts.HASH.getCompareByIdentity(hash);
 
             final int capacity = BucketsStrategy.capacityGreaterThan(Layouts.HASH.getSize(hash) + Layouts.HASH.getSize(other));

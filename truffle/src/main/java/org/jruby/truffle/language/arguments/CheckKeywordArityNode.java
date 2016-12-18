@@ -56,6 +56,7 @@ public class CheckKeywordArityNode extends RubyNode {
 
         if (keywordArguments != null) {
             receivedKeywordsProfile.enter();
+            Log.notOptimizedOnce(Log.KWARGS_NOT_OPTIMIZED_YET);
             checkArityKeywordArguments(keywordArguments, given);
         }
     }
@@ -68,8 +69,6 @@ public class CheckKeywordArityNode extends RubyNode {
 
     @TruffleBoundary
     private void checkArityKeywordArguments(Object keywordArguments, int given) {
-        Log.performanceOnce(Log.KWARGS_NOT_OPTIMIZED_YET);
-
         final DynamicObject keywordHash = (DynamicObject) keywordArguments;
 
         for (KeyValue keyValue : HashOperations.iterableKeyValues(keywordHash)) {

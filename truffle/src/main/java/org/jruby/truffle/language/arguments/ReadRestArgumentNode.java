@@ -81,7 +81,7 @@ public class ReadRestArgumentNode extends RubyNode {
         final DynamicObject rest = createArray(resultStore, resultLength);
 
         if (keywordArguments) {
-            Log.performanceOnce(Log.KWARGS_NOT_OPTIMIZED_YET);
+            Log.notOptimizedOnce(Log.KWARGS_NOT_OPTIMIZED_YET);
 
             Object kwargsHash = readUserKeywordsHashNode.execute(frame);
 

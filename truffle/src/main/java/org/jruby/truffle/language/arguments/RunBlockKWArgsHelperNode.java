@@ -37,7 +37,7 @@ public class RunBlockKWArgsHelperNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        Log.performanceOnce(Log.KWARGS_NOT_OPTIMIZED_YET);
+        Log.notOptimizedOnce(Log.KWARGS_NOT_OPTIMIZED_YET);
 
         final Object array = readArrayNode.executeRead(frame);
 
