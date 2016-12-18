@@ -17,6 +17,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Handler;
 import java.util.logging.Level;
+import java.util.logging.LogManager;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
@@ -37,24 +38,26 @@ public class Log {
     private static Logger createLogger() {
         final Logger logger = Logger.getLogger("org.jruby.truffle");
 
-        logger.setUseParentHandlers(false);
+        if (LogManager.getLogManager().getProperty("org.jruby.truffle.handlers") == null) {
+            logger.setUseParentHandlers(false);
 
-        logger.addHandler(new Handler() {
+            logger.addHandler(new Handler() {
 
-            @Override
-            public void publish(LogRecord record) {
-                System.err.printf("[ruby] %s %s%n", record.getLevel().getName(), record.getMessage());
-            }
+                @Override
+                public void publish(LogRecord record) {
+                    System.err.printf("[ruby] %s %s%n", record.getLevel().getName(), record.getMessage());
+                }
 
-            @Override
-            public void flush() {
-            }
+                @Override
+                public void flush() {
+                }
 
-            @Override
-            public void close() throws SecurityException {
-            }
+                @Override
+                public void close() throws SecurityException {
+                }
 
-        });
+            });
+        }
 
         return logger;
     }
