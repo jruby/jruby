@@ -160,10 +160,9 @@ module Rbzlib
     attr_accessor :buffer, :offset
 
     def initialize(buffer, offset=0)
-      if buffer.class == String
+      if buffer.class == Rubinius::ByteArray
         @buffer = buffer
         @offset = offset
-        @buffer.force_encoding('ASCII-8BIT')
       else
         @buffer = buffer.buffer
         @offset = offset
@@ -201,7 +200,7 @@ module Rbzlib
     end
 
     def current
-      @buffer[@offset..-1]
+      @buffer[@offset, @buffer.length - @offset]
     end
   end
 
@@ -245,7 +244,7 @@ module Rbzlib
     end
 
     def []=(idx, val)
-      @buffer[(idx * 2) + @offset, 2] = [val].pack('v')
+      @buffer[(idx * 2) + @offset, 2] = Rubinius::ByteArray.from_string([val].pack('v'))
     end
 
     def get()
@@ -253,7 +252,7 @@ module Rbzlib
     end
 
     def set(val)
-      @buffer[@offset, 2] = [val].pack('v')
+      @buffer[@offset, 2] = Rubinius::ByteArray.from_string([val].pack('v'))
     end
   end
 
@@ -525,7 +524,7 @@ module Rbzlib
       elsif c == ?R.ord
         strategy = Z_RLE
       else
-        fmode += c.chr
+        fmode += c
       end
     end
 
@@ -544,7 +543,7 @@ module Rbzlib
         strategy
       )
 
-      s.outbuf = 0.chr * Z_BUFSIZE
+      s.outbuf = Rubinius::ByteArray.new(Z_BUFSIZE, 0)
       s.stream.next_out = Bytef.new(s.outbuf)
 
       if err != Z_OK || s.outbuf.nil?
@@ -552,7 +551,7 @@ module Rbzlib
         return nil
       end
     else
-      s.inbuf = 0.chr * Z_BUFSIZE
+      s.inbuf = Rubinius::ByteArray.new(Z_BUFSIZE, 0)
       s.stream.next_in = Bytef.new(s.inbuf)
 
       err = inflateInit2_(s.stream, -MAX_WBITS, ZLIB_VERSION, s.stream.size)
@@ -568,17 +567,17 @@ module Rbzlib
     s.file = fd < 0 ? File.new(path, fmode) : IO.new(fd, fmode)
 
     if s.mode == 'w'
-      gzheader = 0.chr * 10
+      gzheader = Rubinius::ByteArray.new(10, 0)
       gzheader[0] = @@gz_magic[0]
       gzheader[1] = @@gz_magic[1]
-      gzheader[2] = Z_DEFLATED.chr
-      gzheader[3] = 0.chr
-      gzheader[4] = 0.chr
-      gzheader[5] = 0.chr
-      gzheader[6] = 0.chr
-      gzheader[7] = 0.chr
-      gzheader[8] = 0.chr
-      gzheader[9] = OS_CODE.chr
+      gzheader[2] = Z_DEFLATED
+      gzheader[3] = 0
+      gzheader[4] = 0
+      gzheader[5] = 0
+      gzheader[6] = 0
+      gzheader[7] = 0
+      gzheader[8] = 0
+      gzheader[9] = OS_CODE
       s.file.write(gzheader)
       s.start = 10
     else
@@ -660,12 +659,12 @@ module Rbzlib
   # Reads a long in LSB order from the given gz_stream. Sets z_err in case
   # of error.
   def getLong(s)
-    x = 0.chr * 4
-    x[0] = (get_byte(s)).chr
-    x[1] = (get_byte(s)).chr
-    x[2] = (get_byte(s)).chr
+    x = Rubinius::ByteArray.new(4, 0)
+    x[0] = get_byte(s)
+    x[1] = get_byte(s)
+    x[2] = get_byte(s)
     c = get_byte(s)
-    x[3] = (c).chr
+    x[3] = c
 
     s.z_err = Z_DATA_ERROR if (c == Z_EOF)
 
@@ -915,7 +914,7 @@ module Rbzlib
   # or -1 in case of end of file or error.
   #
   def gzgetc(file)
-    c = 0.chr
+    c = 0
     if (gzread(file,c,1) == 1)
       return c
     else
@@ -947,18 +946,18 @@ module Rbzlib
     return nil if buf.nil? || (len <= 0)
 
     i = 0
-    gzchar = 0.chr
+    gzchar = 0
 
     loop do
       len-=1
       bytes = gzread(file, gzchar, 1)
       buf[i] = gzchar[0]
       i += 1
-      break if len == 0 || (bytes != 1) || (gzchar == (13).chr)
+      break if len == 0 || (bytes != 1) || (gzchar == 13)
     end
 
-    buf[i..-1] = ''
-    buf.chomp!(0.chr)
+    buf[i, buf.length - i] = Rubinius::ByteArray.new(0, 0)
+    buf.chomp!(0)
 
     if i == 0 && (len > 0)
       return nil
@@ -1121,7 +1120,7 @@ module Rbzlib
       end
 
       if (s.inbuf.nil?)
-        s.inbuf = 0.chr*Z_BUFSIZE
+        s.inbuf = Rubinius::ByteArray.new(Z_BUFSIZE, 0)
       end
 
       while (offset > 0)
@@ -1166,7 +1165,7 @@ module Rbzlib
     end
 
     if offset != 0 && s.outbuf.nil?
-      s.outbuf = 0.chr * Z_BUFSIZE
+      s.outbuf = Rubinius::ByteArray.new(Z_BUFSIZE, 0)
     end
     if(offset != 0 && s.back != Z_EOF)
       s.back = Z_EOF
@@ -1369,13 +1368,13 @@ module Rbzlib
     s.hash_mask = s.hash_size - 1
     s.hash_shift =  ((s.hash_bits+MIN_MATCH-1) / MIN_MATCH)
 
-    s.window = 0.chr * (s.w_size * 2)
+    s.window = Rubinius::ByteArray.new(s.w_size * 2, 0)
     s.prev   = Array.new(s.w_size,0)
     s.head   = Array.new(s.hash_size,0)
 
     s.lit_bufsize = 1 << (memLevel + 6)
 
-    overlay = 0.chr * (s.lit_bufsize * (2+2))
+    overlay = Rubinius::ByteArray.new(s.lit_bufsize * (2+2), 0)
     s.pending_buf = Bytef.new(overlay)
     s.pending_buf_size = (s.lit_bufsize) * (2+2)
 
@@ -2236,8 +2235,8 @@ module Rbzlib
   # Flush the current block, with given end-of-file flag.
   # IN assertion: strstart is set to the end of the current match.
   def FLUSH_BLOCK_ONLY(s,eof)
-    if (s.block_start >= (0))
-      _tr_flush_block(s, s.window[(s.block_start)..-1],
+    if (s.block_start >= 0)
+      _tr_flush_block(s, s.window[s.block_start, s.window.length - s.block_start],
                     ((s.strstart) - s.block_start), eof)
     else
       _tr_flush_block(s, nil,
@@ -4084,7 +4083,7 @@ module Rbzlib
     state = strm.state
 
     if state.window.nil?
-        state.window = 0.chr * (1 << state.wbits)
+        state.window = Rubinius::ByteArray.new(1 << state.wbits, 0)
         return true if state.window.nil?
     end
 
@@ -4127,19 +4126,19 @@ module Rbzlib
 
   # compute crc
   def CRC2(check, word)
-      hbuf = 0.chr * 2
-      hbuf[0] = (word & 0xff).chr
-      hbuf[1] = ((word >> 8) & 0xff).chr
+      hbuf = Rubinius::ByteArray.new(2, 0)
+      hbuf[0] = (word & 0xff)
+      hbuf[1] = ((word >> 8) & 0xff)
       check = crc32(check, hbuf)
   end
 
   # compute crc
   def CRC4(check, word)
-        hbuf = 0.chr * 4
-        hbuf[0] = (word & 0xff).chr
-        hbuf[1] = ((word >> 8) & 0xff).chr
-        hbuf[2] = ((word >> 16) & 0xff).chr
-        hbuf[3] = ((word >> 24) & 0xff).chr
+        hbuf = Rubinius::ByteArray.new(4, 0)
+        hbuf[0] = (word & 0xff)
+        hbuf[1] = ((word >> 8) & 0xff)
+        hbuf[2] = ((word >> 16) & 0xff)
+        hbuf[3] = ((word >> 24) & 0xff)
         check = crc32(check, hbuf)
   end
 
@@ -4959,14 +4958,14 @@ module Rbzlib
     state = strm.state
     return Z_BUF_ERROR if (strm.avail_in == 0 && state.bits < 8)
 
-    buf = 0.chr * 4
+    buf = Rubinius::ByteArray.new(4, 0)
     if (state.mode != SYNC)
         state.mode = SYNC
         state.hold <<= state.bits & 7
         state.bits -= state.bits & 7
         len = 0
         while (state.bits >= 8)
-            buf[len] = (state.hold).chr
+            buf[len] = state.hold
             len+=1
             state.hold >>= 8
             state.bits -= 8
@@ -5012,7 +5011,7 @@ module Rbzlib
     return Z_MEM_ERROR if copy.nil?
     window = nil
     if state.window
-        window = 0.chr * (1 << state.wbits)
+        window = Rubinius::ByteArray.new(1 << state.wbits, 0)
         if window.nil?
             copy = nil
             return Z_MEM_ERROR

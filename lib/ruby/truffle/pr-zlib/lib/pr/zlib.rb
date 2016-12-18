@@ -113,7 +113,7 @@ module Zlib
 
     def zstream_expand_buffer()
       if @buf.nil?
-        @buf = Bytef.new(0.chr * ZSTREAM_INITIAL_BUFSIZE)
+        @buf = Bytef.new(Rubinius::ByteArray.new(ZSTREAM_INITIAL_BUFSIZE, 0))
         @stream.next_out = Bytef.new(@buf)
         @stream.avail_out = ZSTREAM_INITIAL_BUFSIZE
         return
@@ -127,7 +127,7 @@ module Zlib
             inc = ZSTREAM_AVAIL_OUT_STEP_MIN
         end
         if @buf.length < @buf.offset + inc
-          @buf.buffer << 0.chr * (@buf.offset + inc - @buf.length)
+          @buf.buffer << Rubinius::ByteArray.new(@buf.offset + inc - @buf.length, 0)
         end
         @stream.avail_out = (inc < ZSTREAM_AVAIL_OUT_STEP_MAX) ?
             inc : ZSTREAM_AVAIL_OUT_STEP_MAX
@@ -143,7 +143,7 @@ module Zlib
         return
       end
       if (@buf.length < @buf.offset + len)
-        @buf.buffer << (0.chr * (@buf.offset + len - @buf.length))
+        @buf.buffer << Rubinius::ByteArray.new(@buf.offset + len - @buf.length, 0)
         @stream.avail_out = 0
       else
         if (@stream.avail_out >= len)
@@ -159,17 +159,17 @@ module Zlib
 
     def zstream_detach_buffer()
       if @buf.nil?
-       dst = ''
+       dst = Rubinius::ByteArray.new(0, 0)
       else
        dst = @buf.buffer[0,@buf.offset]
       end
 
-      @buf = Bytef.new(0.chr * ZSTREAM_INITIAL_BUFSIZE)
+      @buf = Bytef.new(Rubinius::ByteArray.new(ZSTREAM_INITIAL_BUFSIZE, 0))
       @stream.next_out = Bytef.new(@buf)
       @stream.avail_out = ZSTREAM_INITIAL_BUFSIZE
       @buf_filled = 0
 
-      return dst
+      return dst.to_str
     end
 
     def zstream_shift_buffer(len)
@@ -192,7 +192,7 @@ module Zlib
       if (@buf.nil? || (@buf.length - @buf.offset).zero?)
        zstream_expand_buffer()
       end
-      @buf.buffer[0,0] = c.chr
+      @buf.buffer[0,0] = c
       @buf += 1
       if (@stream.avail_out > 0)
        @stream.next_out+=1
@@ -202,7 +202,7 @@ module Zlib
 
     def zstream_append_input(src, len)
       return if (len <= 0)
-      src = src.current if src.class != String
+      src = src.current if src.class != Rubinius::ByteArray
       if @input.nil?
         @input = src[0,len]
       else
@@ -214,7 +214,7 @@ module Zlib
       if (@input.nil? || @input.length <= len)
         @input = nil
       else
-        @input[0,len] = ''
+        @input[0,len] = Rubinius::ByteArray.new(0, 0)
       end
     end
 
@@ -406,12 +406,12 @@ module Zlib
 
     def avail_out=(size)
       if @z.buf.nil?
-        @z.buf = Bytef.new(0.chr * size)
+        @z.buf = Bytef.new(Rubinius::ByteArray.new(size, 0))
         @z.stream.next_out = Bytef.new(@z.buf)
         @z.stream.avail_out = size
       elsif @z.stream.avail_out != size
         if @z.buf.offset + size > @z.buf.length
-          @z.buf.buffer << 0.chr * (@z.buf.offset + size - @z.buf.length)
+          @z.buf.buffer << Rubinius::ByteArray.new(@z.buf.offset + size - @z.buf.length, 0)
         end
         @z.stream.next_out = Bytef.new(@z.buf,@z.buf.offset)
         @z.stream.avail_out = size
@@ -482,7 +482,7 @@ module Zlib
     end
 
     def finish()
-      @z.zstream_run("", 0, Z_FINISH)
+      @z.zstream_run(Rubinius::ByteArray.new(0,0), 0, Z_FINISH)
       @z.zstream_detach_buffer()
     end
 
@@ -518,11 +518,11 @@ module Zlib
       @z.ZSTREAM_READY()
 
       begin
-        dst = deflate_run(src)
+        dst = deflate_run(Rubinius::ByteArray.from_string(src))
       ensure
         @z.zstream_end()
       end
-      dst
+      dst.to_str
     end
 
     def initialize(level=Z_DEFAULT_COMPRESSION,wbits=MAX_WBITS,memlevel=DEF_MEM_LEVEL,strategy=Z_DEFAULT_STRATEGY)
@@ -547,11 +547,11 @@ module Zlib
 
     def do_deflate(src,flush)
       if src.nil?
-        @z.zstream_run('',0,Z_FINISH)
+        @z.zstream_run(Rubinius::ByteArray.new(0,0),0,Z_FINISH)
         return
       end
       if (flush != Z_NO_FLUSH || (src && src.length>0))
-        @z.zstream_run(src,src.length,flush)
+        @z.zstream_run(Rubinius::ByteArray.from_string(src),src.length,flush)
       end
     end
     private :do_deflate
@@ -568,7 +568,7 @@ module Zlib
 
     def flush(v_flush)
       if(v_flush != Z_NO_FLUSH)
-        @z.zstream_run("", 0, flush)
+        @z.zstream_run(Rubinius::ByteArray.new(0, 0), 0, flush)
       end
       @z.zstream_detach_buffer()
     end
@@ -588,7 +588,7 @@ module Zlib
     end
 
     def set_dictionary(dic)
-      err = deflateSetDictionary(@z.stream,dic,dic.length)
+      err = deflateSetDictionary(@z.stream,Rubinius::ByteArray.from_string(dic),dic.length)
       if (err != Z_OK)
         raise_zlib_error(err, @z.stream.msg)
       end
@@ -599,8 +599,8 @@ module Zlib
   class Inflate < ZStream
 
     def self.inflate_run(src)
-      @z.zstream_run(src,src.length,Z_SYNC_FLUSH)
-      @z.zstream_run('',0,Z_FINISH)
+      @z.zstream_run(Rubinius::ByteArray.from_string(src),src.length,Z_SYNC_FLUSH)
+      @z.zstream_run(Rubinius::ByteArray.new(0, 0),0,Z_FINISH)
       @z.zstream_detach_buffer()
     end
 
@@ -613,20 +613,20 @@ module Zlib
       end
       @z.ZSTREAM_READY()
       begin
-        dst = inflate_run(src)
+        dst = inflate_run(Rubinius::ByteArray.from_string(src))
       ensure
         @z.zstream_end
       end
-      dst
+      dst.to_str
     end
 
     def do_inflate(src)
       if(src.nil?)
-        @z.zstream_run("", 0, Z_FINISH)
+        @z.zstream_run(Rubinius::ByteArray.new(0, 0), 0, Z_FINISH)
         return
       end
       if (src.length>0)
-        @z.zstream_run(src,src.length,Z_SYNC_FLUSH)
+        @z.zstream_run(Rubinius::ByteArray.from_string(src),src.length,Z_SYNC_FLUSH)
       end
     end
     private :do_inflate
@@ -647,7 +647,7 @@ module Zlib
          dst = @z.zstream_detach_buffer()
         else
           @z.zstream_append_buffer(src,src.lenth)
-          dst = ''
+          dst = Rubinius::ByteArray.new(0, 0)
        end
       else
        do_inflate(src)
@@ -657,16 +657,16 @@ module Zlib
        end
       end
       if block_given?
-	      yield dst
+	      yield dst.to_str
       else
-        dst
+        dst.to_str
       end
     end
 
     def <<(src)
       if @z.ZSTREAM_IS_FINISHED()
         if src
-          @z.zstream_append_buffer(src,src.length)
+          @z.zstream_append_buffer(Rubinius::ByteArray.from_string(src),src.length)
         end
       else
         do_inflate(src)
@@ -694,7 +694,7 @@ module Zlib
     end
 
     def set_dictionary(dic)
-      src = dic
+      src = Rubinius::ByteArray.from_string(dic)
       err = inflateSetDictionary(@z.stream,src,src.length)
 
       if err != Z_OK
@@ -885,11 +885,11 @@ module Zlib
     end
 
     def gzfile_set32(n)
-      [n].pack('V')
+      Rubinius::ByteArray.from_string([n].pack('V'))
     end
 
     def gzfile_make_header
-      buf = 0.chr * 10
+      buf = Rubinius::ByteArray.new(10, 0)
       flags = 0
       extraflags = 0
       if @gz.orig_name
@@ -906,29 +906,28 @@ module Zlib
       elsif (@gz.level == Z_BEST_COMPRESSION)
         extraflags |= GZ_EXTRAFLAG_SLOW
       end
-      buf[0] = GZ_MAGIC1.chr
-      buf[1] = GZ_MAGIC2.chr
-      buf[2] = GZ_METHOD_DEFLATE.chr
-      buf[3] = flags.chr
+      buf[0] = GZ_MAGIC1
+      buf[1] = GZ_MAGIC2
+      buf[2] = GZ_METHOD_DEFLATE
+      buf[3] = flags
       buf[4,4] = gzfile_set32(@gz.mtime)
-      buf[8] = extraflags.chr
-      buf[9] = @gz.os_code.chr
+      buf[8] = extraflags
+      buf[9] = @gz.os_code
       @gz.z.zstream_append_buffer(buf,buf.length)
-
       if @gz.orig_name
-        @gz.z.zstream_append_buffer(@gz.orig_name,@gz.orig_name.length)
-        @gz.z.zstream_append_buffer("\0", 1)
+        @gz.z.zstream_append_buffer(Rubinius::ByteArray.from_string(@gz.orig_name),@gz.orig_name.length)
+        @gz.z.zstream_append_buffer(Rubinius::ByteArray.new(1, 0), 1)
       end
       if @gz.comment
-        @gz.z.zstream_append_buffer(@gz.comment,@gz.comment.length)
-        @gz.z.zstream_append_buffer("\0", 1)
+        @gz.z.zstream_append_buffer(Rubinius::ByteArray.from_string(@gz.comment),@gz.comment.length)
+        @gz.z.zstream_append_buffer(Rubinius::ByteArray.new(1, 0), 1)
       end
 
       @gz.z.flags |= GZFILE_FLAG_HEADER_FINISHED
     end
 
     def gzfile_make_footer()
-      buf = 0.chr * 8
+      buf = Rubinius::ByteArray.new(8, 0)
       buf[0,4] = gzfile_set32(@gz.crc)
       buf[4,4] = gzfile_set32(@gz.z.stream.total_in)
       @gz.z.zstream_append_buffer(buf, buf.length)
@@ -1100,7 +1099,7 @@ module Zlib
       raise GzipFile::Error, "closed gzip stream" unless @gz.z.ZSTREAM_IS_READY()
 
       if v_flush != Z_NO_FLUSH
-        @gz.z.zstream_run("", 0, v_flush)
+        @gz.z.zstream_run(Rubinius::ByteArray.new(0, 0), 0, v_flush)
       end
 
       gzfile_write_raw()
@@ -1121,7 +1120,7 @@ module Zlib
 
     def putc(ch)
       raise GzipFile::Error, "closed gzip stream" unless @gz.z.ZSTREAM_IS_READY()
-      gzfile_write(ch.chr, 1)
+      gzfile_write(ch, 1)
       ch
     end
 
@@ -1154,10 +1153,11 @@ module Zlib
     private :gzfile_write_raw
 
     def gzfile_write(str,len)
+      str = Rubinius::ByteArray.from_string(str)
+
       if (@gz.z.flags & GZFILE_FLAG_HEADER_FINISHED).zero?
         gzfile_make_header()
       end
-
       if (len > 0 || (@gz.z.flags & GZFILE_FLAG_SYNC))
         @gz.crc = crc32(@gz.crc, str, len)
         @gz.z.zstream_run(str, len, (@gz.z.flags & GZFILE_FLAG_SYNC).nonzero? ?
@@ -1172,7 +1172,7 @@ module Zlib
       if (@gz.z.flags & GZFILE_FLAG_HEADER_FINISHED).zero?
         gzfile_make_header()
       end
-      @gz.z.zstream_run("", 0, Z_FINISH)
+      @gz.z.zstream_run(Rubinius::ByteArray.new(0, 0), 0, Z_FINISH)
       gzfile_make_footer()
       gzfile_write_raw()
 
@@ -1266,7 +1266,7 @@ module Zlib
       if dst.nil?
         raise EOFError, "end of file reached"
       end
-      dst
+      dst.to_str
     end
 
     def each_byte()
@@ -1283,6 +1283,7 @@ module Zlib
 
     def gets(rs=$/)
       dst = gzreader_gets(rs)
+      dst = dst.to_str if dst
       $_ = dst if dst
       dst
     end
@@ -1412,7 +1413,7 @@ module Zlib
       if (rspara)
         gzreader_skip_linebreaks()
       end
-      dst
+      dst.to_str
     end
 
     def gzfile_read(len)
@@ -1437,7 +1438,7 @@ module Zlib
 
       dst = @gz.z.zstream_shift_buffer(len)
       gzfile_calc_crc(dst)
-      dst
+      dst.to_str
     end
 
     def gzfile_read_all()
@@ -1453,7 +1454,7 @@ module Zlib
 
       dst = @gz.z.zstream_detach_buffer()
       gzfile_calc_crc(dst)
-      dst
+      dst.to_str
     end
 
     def gzfile_read_raw()
@@ -1461,7 +1462,7 @@ module Zlib
       if str && str.class != String
         raise TypeError,"wrong argument type #{rs.class} (expected String)"
       end
-      str
+      Rubinius::ByteArray.from_string(str)
     end
 
     def gzfile_read_raw_ensure(size)
@@ -1477,7 +1478,7 @@ module Zlib
       ap = nil
 
       loop do
-        ap = @gz.z.input[offset, @gz.z.input.length-offset].index(0.chr)
+        ap = @gz.z.input[offset, @gz.z.input.length-offset].index(0)
         break if ap
         str = gzfile_read_raw()
 
