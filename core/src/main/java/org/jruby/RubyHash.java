@@ -1868,7 +1868,7 @@ public class RubyHash extends RubyObject implements Map {
     public IRubyObject getCompareByIdentity(ThreadContext context) {
         modify();
         setComparedByIdentity(true);
-        return this;
+        return rehash();
     }
 
     @JRubyMethod(name = "compare_by_identity?")
