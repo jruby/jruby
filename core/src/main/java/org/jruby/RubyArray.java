@@ -3026,24 +3026,20 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         IdentityHashMap<RubyArray, IRubyObject> memo = new IdentityHashMap<>();
         RubyArray ary = this;
         memo.put(ary, NEVER);
-        boolean modified = false;
 
         int i = 0;
 
         try {
             while (true) {
-                IRubyObject tmp;
                 while (i < ary.realLength) {
                     IRubyObject elt = ary.eltOk(i++);
                     if (level >= 0 && (stack == null ? 0 : stack.size()) / 2 >= level) {
                         result.append(elt);
                         continue;
                     }
-                    tmp = TypeConverter.checkArrayType(elt);
-                    if (tmp.isNil()) {
-                        result.append(elt);
-                    } else {
-                        modified = true;
+                    IRubyObject tmp = TypeConverter.checkArrayType(elt);
+                    if (tmp.isNil()) result.append(elt);
+                    else { // nested array element
                         if (memo.get(tmp) != null) throw runtime.newArgumentError("tried to flatten recursive array");
                         if (stack == null) stack = new ArrayList<>(16);
                         stack.add(ary); stack.add(i); // add (ary, i) pair
@@ -3061,7 +3057,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         } catch (ArrayIndexOutOfBoundsException ex) {
             throw concurrentModification(context.runtime, ex);
         }
-        return modified;
+        return stack != null;
     }
 
     @JRubyMethod(name = "flatten!")
