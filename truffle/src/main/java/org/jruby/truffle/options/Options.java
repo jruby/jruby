@@ -45,6 +45,7 @@ public class Options {
     public final boolean INLINE_JS;
     public final String CORE_LOAD_PATH;
     public final boolean CORE_PARALLEL_LOAD;
+    public final boolean LAZY_TRANSLATION;
     public final int ARRAY_UNINITIALIZED_SIZE;
     public final int ARRAY_SMALL;
     public final int HASH_PACKED_ARRAY_MAX;
@@ -136,6 +137,7 @@ public class Options {
         INLINE_JS = builder.getOrDefault(OptionsCatalog.INLINE_JS);
         CORE_LOAD_PATH = builder.getOrDefault(OptionsCatalog.CORE_LOAD_PATH);
         CORE_PARALLEL_LOAD = builder.getOrDefault(OptionsCatalog.CORE_PARALLEL_LOAD);
+        LAZY_TRANSLATION = builder.getOrDefault(OptionsCatalog.LAZY_TRANSLATION);
         ARRAY_UNINITIALIZED_SIZE = builder.getOrDefault(OptionsCatalog.ARRAY_UNINITIALIZED_SIZE);
         ARRAY_SMALL = builder.getOrDefault(OptionsCatalog.ARRAY_SMALL);
         HASH_PACKED_ARRAY_MAX = builder.getOrDefault(OptionsCatalog.HASH_PACKED_ARRAY_MAX);
