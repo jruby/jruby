@@ -401,7 +401,7 @@ public abstract class RopeNodes {
 
         @Specialization(guards = "isBroken(codeRange)")
         public LeafRope makeInvalidLeafRope(byte[] bytes, Encoding encoding, CodeRange codeRange, Object characterLength) {
-            return new InvalidLeafRope(bytes, encoding);
+            return new InvalidLeafRope(bytes, encoding, RopeOperations.strLength(encoding, bytes, 0, bytes.length));
         }
 
         @Specialization(guards = { "isUnknown(codeRange)", "isEmpty(bytes)" })
@@ -464,7 +464,7 @@ public abstract class RopeNodes {
                 return new ValidLeafRope(bytes, encoding, calculatedCharacterLength);
             }
 
-            return new InvalidLeafRope(bytes, encoding);
+            return new InvalidLeafRope(bytes, encoding, calculatedCharacterLength);
         }
 
         @Specialization(guards = { "isUnknown(codeRange)", "!isEmpty(bytes)", "!isBinaryString(encoding)", "!isAsciiCompatible(encoding)" })
@@ -483,7 +483,7 @@ public abstract class RopeNodes {
                 return new ValidLeafRope(bytes, encoding, calculatedCharacterLength);
             }
 
-            return new InvalidLeafRope(bytes, encoding);
+            return new InvalidLeafRope(bytes, encoding, calculatedCharacterLength);
         }
 
         protected static boolean is7Bit(CodeRange codeRange) {

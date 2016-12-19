@@ -86,7 +86,7 @@ public class RopeOperations {
         switch(codeRange) {
             case CR_7BIT: return new AsciiOnlyLeafRope(bytes, encoding);
             case CR_VALID: return new ValidLeafRope(bytes, encoding, characterLength);
-            case CR_BROKEN: return new InvalidLeafRope(bytes, encoding);
+            case CR_BROKEN: return new InvalidLeafRope(bytes, encoding, characterLength);
             default: {
                 throw new RuntimeException(StringUtils.format("Unknown code range type: %d", codeRange));
             }
