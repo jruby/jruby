@@ -37,7 +37,9 @@ import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
 
+import java.util.ArrayDeque;
 import java.util.Arrays;
+import java.util.Deque;
 
 import static org.jruby.truffle.core.rope.CodeRange.CR_7BIT;
 import static org.jruby.truffle.core.rope.CodeRange.CR_BROKEN;
@@ -243,6 +245,8 @@ public abstract class RopeNodes {
     })
     public abstract static class MakeConcatNode extends RubyNode {
 
+        @Child private FlattenNode flattenNode;
+
         public abstract Rope executeMake(Rope left, Rope right, Encoding encoding);
 
         @Specialization(guards = "isMutableRope(left)")
@@ -269,11 +273,34 @@ public abstract class RopeNodes {
         public Rope concat(Rope left, Rope right, Encoding encoding,
                            @Cached("createBinaryProfile()") ConditionProfile sameCodeRangeProfile,
                            @Cached("createBinaryProfile()") ConditionProfile brokenCodeRangeProfile,
-                           @Cached("createBinaryProfile()") ConditionProfile isLeftSingleByteOptimizableProfile) {
+                           @Cached("createBinaryProfile()") ConditionProfile isLeftSingleByteOptimizableProfile,
+                           @Cached("createBinaryProfile()") ConditionProfile shouldRebalanceProfile) {
             try {
                 Math.addExact(left.byteLength(), right.byteLength());
             } catch (ArithmeticException e) {
                 throw new RaiseException(getContext().getCoreExceptions().argumentError("Result of string concatenation exceeds the system maximum string length", this));
+            }
+
+            if (shouldRebalanceProfile.profile(left.depth() >= getContext().getOptions().ROPE_DEPTH_THRESHOLD)) {
+                if (flattenNode == null) {
+                    CompilerDirectives.transferToInterpreterAndInvalidate();
+                    flattenNode = insert(FlattenNode.create());
+                }
+
+                if (left instanceof ConcatRope) {
+                    left = rebalance((ConcatRope) left, getContext().getOptions().ROPE_DEPTH_THRESHOLD, flattenNode);
+                }
+            }
+
+            if (shouldRebalanceProfile.profile(right.depth() >= getContext().getOptions().ROPE_DEPTH_THRESHOLD)) {
+                if (flattenNode == null) {
+                    CompilerDirectives.transferToInterpreterAndInvalidate();
+                    flattenNode = insert(FlattenNode.create());
+                }
+
+                if (right instanceof ConcatRope) {
+                    right = rebalance((ConcatRope) right, getContext().getOptions().ROPE_DEPTH_THRESHOLD, flattenNode);
+                }
             }
 
             int depth = depth(left, right);
@@ -284,7 +311,84 @@ public abstract class RopeNodes {
             return new ConcatRope(left, right, encoding,
                     commonCodeRange(left.getCodeRange(), right.getCodeRange(), sameCodeRangeProfile, brokenCodeRangeProfile),
                     isSingleByteOptimizable(left, right, isLeftSingleByteOptimizableProfile),
-                    depth);
+                    depth, isBalanced(left, right));
+        }
+
+        private boolean isBalanced(Rope left, Rope right) {
+            // Our definition of balanced is centered around the notion of rebalancing. We could have a simple structure
+            // such as ConcatRope(ConcatRope(LeafRope, LeafRope), LeafRope) that is balanced on its own but may contribute
+            // to an unbalanced rope when combined with another rope of similar structure. To keep things simple, we only
+            // consider ConcatRopes that consist of two non-ConcatRopes balanced as the base case and ConcatRopes that
+            // have balanced ConcatRopes for both children are balanced by induction.
+            if (left instanceof ConcatRope) {
+                if (right instanceof ConcatRope) {
+                    return ((ConcatRope) left).isBalanced() && ((ConcatRope) right).isBalanced();
+                }
+
+                return false;
+            } else {
+                // We treat the concatenation of two non-ConcatRopes as balanced, even if their children not balanced.
+                // E.g., a SubstringRope whose child is an unbalanced ConcatRope arguable isn't balanced. However,
+                // the code is much simpler by handling it this way. Balanced ConcatRopes will never rebalance, but
+                // if they become part of a larger subtree that exceeds the depth threshold, they may be flattened.
+                return !(right instanceof ConcatRope);
+            }
+        }
+
+        @TruffleBoundary
+        private Rope rebalance(ConcatRope rope, int depthThreshold, FlattenNode flattenNode) {
+            final Deque<Rope> ropeQueue = new ArrayDeque<>();
+
+            linearizeTree(rope.getLeft(), ropeQueue);
+            linearizeTree(rope.getRight(), ropeQueue);
+
+            final int flattenThreshold = depthThreshold / 2;
+
+            Rope root = null;
+            while (! ropeQueue.isEmpty()) {
+                Rope left = ropeQueue.pop();
+
+                if (left.depth() >= flattenThreshold) {
+                    left = flattenNode.executeFlatten(left);
+                }
+
+                if (ropeQueue.isEmpty()) {
+                    root = left;
+                } else {
+                    Rope right = ropeQueue.pop();
+
+                    if (right.depth() >= flattenThreshold) {
+                        right = flattenNode.executeFlatten(right);
+                    }
+
+                    final Rope child = new ConcatRope(left, right, rope.getEncoding(),
+                                                      commonCodeRange(left.getCodeRange(), right.getCodeRange()),
+                                    left.isSingleByteOptimizable() && right.isSingleByteOptimizable(),
+                                                      depth(left, right), isBalanced(left, right));
+
+                    ropeQueue.add(child);
+                }
+            }
+
+            return root;
+        }
+
+        @TruffleBoundary
+        private void linearizeTree(Rope rope, Deque<Rope> ropeQueue) {
+            if (rope instanceof ConcatRope) {
+                final ConcatRope concatRope = (ConcatRope) rope;
+
+                // If a rope is known to be balanced, there's no need to rebalance it.
+                if (concatRope.isBalanced()) {
+                    ropeQueue.add(concatRope);
+                } else {
+                    linearizeTree(concatRope.getLeft(), ropeQueue);
+                    linearizeTree(concatRope.getRight(), ropeQueue);
+                }
+            } else {
+                // We never rebalance non-ConcatRopes since that requires per-rope type logic with likely minimal benefit.
+                ropeQueue.add(rope);
+            }
         }
 
         @Specialization(guards = {"!isMutableRope(left)", "isCodeRangeBroken(left, right)"})
@@ -314,6 +418,19 @@ public abstract class RopeNodes {
             }
 
             if (brokenCodeRangeProfile.profile((first == CR_BROKEN) || (second == CR_BROKEN))) {
+                return CR_BROKEN;
+            }
+
+            // If we get this far, one must be CR_7BIT and the other must be CR_VALID, so promote to the more general code range.
+            return CR_VALID;
+        }
+
+        public static CodeRange commonCodeRange(CodeRange first, CodeRange second) {
+            if (first == second) {
+                return first;
+            }
+
+            if ((first == CR_BROKEN) || (second == CR_BROKEN)) {
                 return CR_BROKEN;
             }
 

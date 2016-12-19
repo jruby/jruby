@@ -38,6 +38,7 @@ HASH_PACKED_ARRAY_MAX: [hash.packed_array.max, integer, 3, Maximum size of a Has
 
 ROPE_LAZY_SUBSTRINGS: [rope.lazy_substrings, boolean, true, Indicates whether a substring operation on a rope should be performed lazily]
 ROPE_PRINT_INTERN_STATS: [rope.print_intern_stats, boolean, false, Print interned rope stats at application exit]
+ROPE_DEPTH_THRESHOLD: [rope.depth_threshold, integer, 128, Threshold value at which ropes will be rebalanced (indirectly controls flattening as well)]
 
 GLOBAL_VARIABLE_MAX_INVALIDATIONS: [global_variable.max_invalidations, integer, 10, Maximum number of times a global variable can be changed to be considered constant]
 

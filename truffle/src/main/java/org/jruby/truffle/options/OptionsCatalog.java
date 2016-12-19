@@ -48,6 +48,7 @@ public class OptionsCatalog {
     public static final OptionDescription HASH_PACKED_ARRAY_MAX = new IntegerOptionDescription("hash.packed_array.max", "Maximum size of a Hash to consider using the packed array storage strategy for", 3);
     public static final OptionDescription ROPE_LAZY_SUBSTRINGS = new BooleanOptionDescription("rope.lazy_substrings", "Indicates whether a substring operation on a rope should be performed lazily", true);
     public static final OptionDescription ROPE_PRINT_INTERN_STATS = new BooleanOptionDescription("rope.print_intern_stats", "Print interned rope stats at application exit", false);
+    public static final OptionDescription ROPE_DEPTH_THRESHOLD = new IntegerOptionDescription("rope.depth_threshold", "Threshold value at which ropes will be rebalanced (indirectly controls flattening as well)", 128);
     public static final OptionDescription GLOBAL_VARIABLE_MAX_INVALIDATIONS = new IntegerOptionDescription("global_variable.max_invalidations", "Maximum number of times a global variable can be changed to be considered constant", 10);
     public static final OptionDescription DEFAULT_CACHE = new IntegerOptionDescription("default_cache", "Default size for caches", 8);
     public static final OptionDescription METHOD_LOOKUP_CACHE = new IntegerOptionDescription("method_lookup.cache", "Method lookup cache size", 0);
@@ -172,6 +173,8 @@ public class OptionsCatalog {
                 return ROPE_LAZY_SUBSTRINGS;
             case "rope.print_intern_stats":
                 return ROPE_PRINT_INTERN_STATS;
+            case "rope.depth_threshold":
+                return ROPE_DEPTH_THRESHOLD;
             case "global_variable.max_invalidations":
                 return GLOBAL_VARIABLE_MAX_INVALIDATIONS;
             case "default_cache":

@@ -50,6 +50,7 @@ public class Options {
     public final int HASH_PACKED_ARRAY_MAX;
     public final boolean ROPE_LAZY_SUBSTRINGS;
     public final boolean ROPE_PRINT_INTERN_STATS;
+    public final int ROPE_DEPTH_THRESHOLD;
     public final int GLOBAL_VARIABLE_MAX_INVALIDATIONS;
     public final int DEFAULT_CACHE;
     public final int METHOD_LOOKUP_CACHE;
@@ -141,6 +142,7 @@ public class Options {
         HASH_PACKED_ARRAY_MAX = builder.getOrDefault(OptionsCatalog.HASH_PACKED_ARRAY_MAX);
         ROPE_LAZY_SUBSTRINGS = builder.getOrDefault(OptionsCatalog.ROPE_LAZY_SUBSTRINGS);
         ROPE_PRINT_INTERN_STATS = builder.getOrDefault(OptionsCatalog.ROPE_PRINT_INTERN_STATS);
+        ROPE_DEPTH_THRESHOLD = builder.getOrDefault(OptionsCatalog.ROPE_DEPTH_THRESHOLD);
         GLOBAL_VARIABLE_MAX_INVALIDATIONS = builder.getOrDefault(OptionsCatalog.GLOBAL_VARIABLE_MAX_INVALIDATIONS);
         DEFAULT_CACHE = builder.getOrDefault(OptionsCatalog.DEFAULT_CACHE);
         METHOD_LOOKUP_CACHE = builder.getOrDefault(OptionsCatalog.METHOD_LOOKUP_CACHE, DEFAULT_CACHE);

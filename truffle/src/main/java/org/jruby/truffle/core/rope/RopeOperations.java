@@ -585,7 +585,7 @@ public class RopeOperations {
                         UTF8Encoding.INSTANCE,
                         commonCodeRange(rope.getCodeRange(), valueRope.getCodeRange()),
                         rope.isSingleByteOptimizable() && valueRope.isSingleByteOptimizable(),
-                        Math.max(rope.depth(), valueRope.depth()) + 1);
+                        Math.max(rope.depth(), valueRope.depth()) + 1, false);
 
             }
         }
