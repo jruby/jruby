@@ -150,7 +150,8 @@ public abstract class RopeNodes {
         @Specialization(guards = { "byteLength > 1", "!sameAsBase(base, byteLength)" })
         public Rope substringConcatRope(ConcatRope base, int offset, int byteLength,
                                       @Cached("createBinaryProfile()") ConditionProfile is7BitProfile,
-                                      @Cached("createBinaryProfile()") ConditionProfile isBinaryStringProfile) {
+                                      @Cached("createBinaryProfile()") ConditionProfile isBinaryStringProfile,
+                                      @Cached("createBinaryProfile()") ConditionProfile matchesChildProfile) {
             Rope root = base;
 
             while (root instanceof ConcatRope) {
@@ -177,6 +178,12 @@ public abstract class RopeNodes {
                 } else {
                     return makeSubstring(root, offset, byteLength, is7BitProfile, isBinaryStringProfile);
                 }
+            }
+
+            if (root instanceof SubstringRope) {
+                return substringSubstringRope((SubstringRope) root, offset, byteLength, is7BitProfile, isBinaryStringProfile);
+            } else if (root instanceof RepeatingRope) {
+                return substringRepeatingRope((RepeatingRope) root, offset, byteLength, is7BitProfile, isBinaryStringProfile, matchesChildProfile);
             }
 
             return makeSubstring(root, offset, byteLength, is7BitProfile, isBinaryStringProfile);
