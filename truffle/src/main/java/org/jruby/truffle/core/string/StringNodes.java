@@ -139,9 +139,7 @@ import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.IsTaintedNode;
-import org.jruby.truffle.language.objects.IsTaintedNodeGen;
 import org.jruby.truffle.language.objects.TaintNode;
-import org.jruby.truffle.language.objects.TaintNodeGen;
 import org.jruby.truffle.platform.posix.TrufflePosix;
 
 import java.io.UnsupportedEncodingException;
@@ -2483,7 +2481,7 @@ public abstract class StringNodes {
             if (result.isTainted()) {
                 if (taintNode == null) {
                     CompilerDirectives.transferToInterpreterAndInvalidate();
-                    taintNode = insert(TaintNodeGen.create(getContext(), null, null));
+                    taintNode = insert(TaintNode.create());
                 }
 
                 taintNode.executeTaint(array);
@@ -3196,8 +3194,8 @@ public abstract class StringNodes {
     @Primitive(name = "string_escape", needsSelf = false)
     public abstract static class StringEscapePrimitiveNode extends PrimitiveArrayArgumentsNode {
 
-        @Child private IsTaintedNode isTaintedNode = IsTaintedNodeGen.create(null, null, null);
-        @Child private TaintNode taintNode = TaintNodeGen.create(null, null, null);
+        @Child private IsTaintedNode isTaintedNode = IsTaintedNode.create();
+        @Child private TaintNode taintNode = TaintNode.create();
         private final ConditionProfile taintedProfile = ConditionProfile.createBinaryProfile();
 
         @Specialization

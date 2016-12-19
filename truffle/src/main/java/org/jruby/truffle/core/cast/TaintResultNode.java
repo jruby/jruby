@@ -21,9 +21,7 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.objects.IsTaintedNode;
-import org.jruby.truffle.language.objects.IsTaintedNodeGen;
 import org.jruby.truffle.language.objects.TaintNode;
-import org.jruby.truffle.language.objects.TaintNodeGen;
 
 public class TaintResultNode extends RubyNode {
 
@@ -39,21 +37,21 @@ public class TaintResultNode extends RubyNode {
         this.taintFromSelf = taintFromSelf;
         this.taintFromParameter = taintFromParameter;
         this.method = method;
-        this.isTaintedNode = IsTaintedNodeGen.create(null, null, null);
+        this.isTaintedNode = IsTaintedNode.create();
     }
 
     public TaintResultNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
         this.taintFromSelf = false;
         this.taintFromParameter = -1;
-        this.isTaintedNode = IsTaintedNodeGen.create(null, null, null);
+        this.isTaintedNode = IsTaintedNode.create();
     }
 
     public Object maybeTaint(Object source, Object result) {
         if (taintProfile.profile(isTaintedNode.executeIsTainted(source))) {
             if (taintNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                taintNode = insert(TaintNodeGen.create(null, null, null));
+                taintNode = insert(TaintNode.create());
             }
 
             taintNode.executeTaint(result);

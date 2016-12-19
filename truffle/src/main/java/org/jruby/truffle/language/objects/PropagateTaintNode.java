@@ -16,7 +16,7 @@ import com.oracle.truffle.api.profiles.ConditionProfile;
 
 public class PropagateTaintNode extends Node {
 
-    @Child IsTaintedNode isTaintedNode = IsTaintedNodeGen.create(null, null, null);
+    @Child IsTaintedNode isTaintedNode = IsTaintedNode.create();
     @Child TaintNode taintNode;
 
     private final ConditionProfile taintProfile = ConditionProfile.createBinaryProfile();
@@ -34,7 +34,7 @@ public class PropagateTaintNode extends Node {
     private void taint(Object target) {
         if (taintNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            taintNode = insert(TaintNodeGen.create(null, null, null));
+            taintNode = insert(TaintNode.create());
         }
         taintNode.executeTaint(target);
     }

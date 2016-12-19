@@ -1266,7 +1266,7 @@ public abstract class ArrayNodes {
             if (result.isTainted()) {
                 if (taintNode == null) {
                     CompilerDirectives.transferToInterpreterAndInvalidate();
-                    taintNode = insert(TaintNodeGen.create(getContext(), null, null));
+                    taintNode = insert(TaintNode.create());
                 }
 
                 taintNode.executeTaint(string);

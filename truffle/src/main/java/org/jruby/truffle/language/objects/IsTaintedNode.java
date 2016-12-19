@@ -14,16 +14,14 @@ import com.oracle.truffle.api.dsl.Fallback;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.Layouts;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 
 @NodeChild(value = "child", type = RubyNode.class)
 public abstract class IsTaintedNode extends RubyNode {
 
-    public IsTaintedNode(RubyContext context, SourceSection sourceSection) {
-        super(context, sourceSection);
+    public static IsTaintedNode create() {
+        return IsTaintedNodeGen.create(null);
     }
 
     public abstract boolean executeIsTainted(Object object);

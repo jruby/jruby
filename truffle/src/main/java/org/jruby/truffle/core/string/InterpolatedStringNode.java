@@ -21,9 +21,7 @@ import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.objects.IsTaintedNode;
-import org.jruby.truffle.language.objects.IsTaintedNodeGen;
 import org.jruby.truffle.language.objects.TaintNode;
-import org.jruby.truffle.language.objects.TaintNodeGen;
 
 /**
  * A list of expressions to build up into a string.
@@ -44,8 +42,8 @@ public final class InterpolatedStringNode extends RubyNode {
         this.children = children;
         appendNode = StringNodesFactory.StringAppendPrimitiveNodeFactory.create(context, sourceSection, new RubyNode[] {});
         dupNode = DispatchHeadNodeFactory.createMethodCall(context);
-        isTaintedNode = IsTaintedNodeGen.create(context, sourceSection, null);
-        taintNode = TaintNodeGen.create(context, sourceSection, null);
+        isTaintedNode = IsTaintedNode.create();
+        taintNode = TaintNode.create();
     }
 
     @ExplodeLoop
