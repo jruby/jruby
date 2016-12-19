@@ -134,6 +134,7 @@ import org.jruby.truffle.language.objects.ObjectIVarGetNode;
 import org.jruby.truffle.language.objects.ObjectIVarGetNodeGen;
 import org.jruby.truffle.language.objects.ObjectIVarSetNode;
 import org.jruby.truffle.language.objects.ObjectIVarSetNodeGen;
+import org.jruby.truffle.language.objects.PropagateTaintNode;
 import org.jruby.truffle.language.objects.PropertyFlags;
 import org.jruby.truffle.language.objects.SingletonClassNode;
 import org.jruby.truffle.language.objects.SingletonClassNodeGen;
@@ -493,8 +494,7 @@ public abstract class KernelNodes {
         @Child private CallDispatchHeadNode initializeCloneNode;
         @Child private IsFrozenNode isFrozenNode;
         @Child private FreezeNode freezeNode;
-        @Child private IsTaintedNode isTaintedNode;
-        @Child private TaintNode taintNode;
+        @Child private PropagateTaintNode propagateTaintNode = PropagateTaintNode.create();
         @Child private SingletonClassNode singletonClassNode;
 
         public CloneNode(RubyContext context, SourceSection sourceSection) {
@@ -503,7 +503,6 @@ public abstract class KernelNodes {
             // Calls private initialize_clone on the new copy.
             initializeCloneNode = DispatchHeadNodeFactory.createMethodCallOnSelf(context);
             isFrozenNode = IsFrozenNodeGen.create(context, sourceSection, null);
-            isTaintedNode = IsTaintedNode.create();
             singletonClassNode = SingletonClassNodeGen.create(context, sourceSection, null);
         }
 
@@ -524,14 +523,7 @@ public abstract class KernelNodes {
 
             initializeCloneNode.call(frame, newObject, "initialize_clone", self);
 
-            if (taintProfile.profile(isTaintedNode.executeIsTainted(self))) {
-                if (taintNode == null) {
-                    CompilerDirectives.transferToInterpreterAndInvalidate();
-                    taintNode = insert(TaintNode.create());
-                }
-
-                taintNode.executeTaint(newObject);
-            }
+            propagateTaintNode.propagate(self, newObject);
 
             if (isFrozenProfile.profile(isFrozenNode.executeIsFrozen(self))) {
                 if (freezeNode == null) {
