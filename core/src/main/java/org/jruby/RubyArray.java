@@ -3022,11 +3022,11 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         // TODO: (CON) We can flatten packed versions efficiently if length does not change (e.g. [[1,2],[]])
         unpack();
         final Ruby runtime = context.runtime;
-        ArrayList<Object> stack = null;
-        IdentityHashMap<RubyArray, IRubyObject> memo = new IdentityHashMap<>();
-        RubyArray ary = this;
-        memo.put(ary, NEVER);
 
+        ArrayList<Object> stack = null;
+        IdentityHashMap<RubyArray, IRubyObject> memo = null; // used as an IdentityHashSet
+
+        RubyArray ary = this;
         int i = 0;
 
         try {
@@ -3040,8 +3040,12 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
                     IRubyObject tmp = TypeConverter.checkArrayType(elt);
                     if (tmp.isNil()) result.append(elt);
                     else { // nested array element
+                        if (memo == null) {
+                            memo = new IdentityHashMap<>(4 + 1);
+                            memo.put(this, NEVER);
+                        }
                         if (memo.get(tmp) != null) throw runtime.newArgumentError("tried to flatten recursive array");
-                        if (stack == null) stack = new ArrayList<>(16);
+                        if (stack == null) stack = new ArrayList<>(8); // fine hold 4-level deep nesting
                         stack.add(ary); stack.add(i); // add (ary, i) pair
                         ary = (RubyArray) tmp;
                         memo.put(ary, NEVER);
@@ -3049,7 +3053,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
                     }
                 }
                 if (stack == null || stack.size() == 0) break;
-                memo.remove(ary);
+                memo.remove(ary); // memo != null since stack != null
                 final int s = stack.size(); // pop (ary, i)
                 i = (Integer) stack.remove(s - 1);
                 ary = (RubyArray) stack.remove(s - 2);
