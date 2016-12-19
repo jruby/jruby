@@ -295,7 +295,12 @@ public class MethodTranslator extends BodyTranslator {
         final SourceSection fullMethodSourceSection = new RubySourceSection(defNode.getLine() + 1, defNode.getEndLine() + 1).toSourceSection(source);
 
         final RubyRootNode rootNode = new RubyRootNode(
-                context, fullMethodSourceSection, environment.getFrameDescriptor(), environment.getSharedMethodInfo(), body, environment.needsDeclarationFrame());
+                context,
+                fullMethodSourceSection,
+                environment.getFrameDescriptor(),
+                environment.getSharedMethodInfo(),
+                new LazyTranslationNode(body),
+                environment.needsDeclarationFrame());
 
         final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
         return new MethodDefinitionNode(context, fullMethodSourceSection, methodName, environment.getSharedMethodInfo(), callTarget);
