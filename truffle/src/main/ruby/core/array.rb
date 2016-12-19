@@ -105,6 +105,15 @@ class Array
     size <=> total
   end
 
+  def *(count)
+    Truffle.primitive :array_mul
+    if str = Rubinius::Type.check_convert_type(count, String, :to_str)
+      join(str)
+    else
+      self * Rubinius::Type.coerce_to(count, Integer, :to_int)
+    end
+  end
+
   def ==(other)
     return true if equal?(other)
     unless other.kind_of? Array

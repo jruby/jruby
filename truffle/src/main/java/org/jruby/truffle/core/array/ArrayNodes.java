@@ -70,6 +70,7 @@ import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.IsFrozenNode;
 import org.jruby.truffle.language.objects.IsFrozenNodeGen;
+import org.jruby.truffle.language.objects.PropagateTaintNode;
 import org.jruby.truffle.language.objects.TaintNode;
 import org.jruby.truffle.language.objects.TaintNodeGen;
 import org.jruby.truffle.language.yield.YieldNode;
@@ -146,14 +147,12 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "*", required = 1, lowerFixnum = 1, taintFrom = 0)
-    public abstract static class MulNode extends ArrayCoreMethodNode {
+    @Primitive(name = "array_mul", lowerFixnum = 1)
+    @ImportStatic(ArrayGuards.class)
+    public abstract static class MulNode extends PrimitiveArrayArgumentsNode {
 
-        @Child private KernelNodes.RespondToNode respondToToStrNode;
-        @Child private ToIntNode toIntNode;
         @Child private AllocateObjectNode allocateObjectNode = AllocateObjectNode.create();
-
-        protected abstract Object executeMul(VirtualFrame frame, DynamicObject array, int count);
+        @Child private PropagateTaintNode propagateTaintNode = PropagateTaintNode.create();
 
         @Specialization(guards = "strategy.matches(array)", limit = "ARRAY_STRATEGIES")
         public DynamicObject mulOther(DynamicObject array, int count,
@@ -171,42 +170,15 @@ public abstract class ArrayNodes {
             for (int n = 0; n < count; n++) {
                 store.copyTo(newStore, 0, n * size, size);
             }
-            return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(array), newStore.getArray(), newSize);
+
+            final DynamicObject result = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(array), newStore.getArray(), newSize);
+            propagateTaintNode.propagate(array, result);
+            return result;
         }
 
-        @Specialization(guards = "isRubyString(string)")
-        public Object mulObject(
-                VirtualFrame frame,
-                DynamicObject array,
-                DynamicObject string,
-                @Cached("createMethodCall()") CallDispatchHeadNode callNode) {
-            return callNode.call(frame, array, "join", string);
-        }
-
-        @Specialization(guards = { "!isInteger(object)", "!isRubyString(object)" })
-        public Object mulObjectCount(
-                VirtualFrame frame,
-                DynamicObject array,
-                Object object,
-                @Cached("new()") SnippetNode snippetNode) {
-            if (respondToToStr(frame, object)) {
-                return snippetNode.execute(frame, "join(sep.to_str)", "sep", object);
-            } else {
-                if (toIntNode == null) {
-                    CompilerDirectives.transferToInterpreterAndInvalidate();
-                    toIntNode = insert(ToIntNode.create());
-                }
-                final int count = toIntNode.doInt(frame, object);
-                return executeMul(frame, array, count);
-            }
-        }
-
-        public boolean respondToToStr(VirtualFrame frame, Object object) {
-            if (respondToToStrNode == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                respondToToStrNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), null, null, null, null));
-            }
-            return respondToToStrNode.doesRespondToString(frame, object, create7BitString("to_str", UTF8Encoding.INSTANCE), false);
+        @Specialization(guards = "!isInteger(object)")
+        public Object fallback(DynamicObject array, Object object) {
+            return FAILURE;
         }
 
     }
