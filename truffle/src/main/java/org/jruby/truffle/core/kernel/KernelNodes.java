@@ -510,7 +510,6 @@ public abstract class KernelNodes {
         public DynamicObject clone(VirtualFrame frame, DynamicObject self,
                 @Cached("createBinaryProfile()") ConditionProfile isSingletonProfile,
                 @Cached("createBinaryProfile()") ConditionProfile isFrozenProfile,
-                @Cached("createBinaryProfile()") ConditionProfile taintProfile,
                 @Cached("createBinaryProfile()") ConditionProfile isRubyClass) {
             final DynamicObject newObject = copyNode.executeCopy(frame, self);
 
