@@ -34,6 +34,8 @@ import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.builtins.CoreMethodNode;
+import org.jruby.truffle.builtins.Primitive;
+import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.builtins.YieldingCoreMethodNode;
 import org.jruby.truffle.core.Hashing;
 import org.jruby.truffle.core.array.ArrayNodesFactory.RejectInPlaceNodeFactory;
@@ -209,13 +211,13 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = { "[]", "slice" }, required = 1, optional = 1, lowerFixnum = { 1, 2 })
-    public abstract static class IndexNode extends ArrayCoreMethodNode {
+    @Primitive(name = "array_aref", lowerFixnum = { 1, 2 })
+    @ImportStatic(ArrayGuards.class)
+    public abstract static class IndexNode extends PrimitiveArrayArgumentsNode {
 
         @Child protected ArrayReadDenormalizedNode readNode;
         @Child protected ArrayReadSliceDenormalizedNode readSliceNode;
         @Child protected ArrayReadSliceNormalizedNode readNormalizedSliceNode;
-        @Child protected CallDispatchHeadNode fallbackNode;
         @Child protected AllocateObjectNode allocateObjectNode = AllocateObjectNode.create();
 
         @Specialization
@@ -271,25 +273,12 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = { "!isInteger(a)", "!isIntRange(a)" })
         public Object fallbackIndex(VirtualFrame frame, DynamicObject array, Object a, NotProvided length) {
-            Object[] objects = new Object[] { a };
-            return fallback(frame, array, createArray(objects, objects.length));
+            return FAILURE;
         }
 
         @Specialization(guards = { "!isIntRange(a)", "wasProvided(b)" })
         public Object fallbackSlice(VirtualFrame frame, DynamicObject array, Object a, Object b) {
-            Object[] objects = new Object[] { a, b };
-            return fallback(frame, array, createArray(objects, objects.length));
-        }
-
-        public Object fallback(VirtualFrame frame, DynamicObject array, DynamicObject args) {
-            if (fallbackNode == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                fallbackNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
-            }
-
-            InternalMethod method = RubyArguments.getMethod(frame);
-            return fallbackNode.call(frame, array, "element_reference_fallback", createString(StringOperations.encodeRope(method.getName(), UTF8Encoding.INSTANCE)),
-                    args);
+            return FAILURE;
         }
 
     }
