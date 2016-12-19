@@ -58,6 +58,7 @@ import org.jruby.truffle.parser.ast.ConstParseNode;
 import org.jruby.truffle.parser.ast.DAsgnParseNode;
 import org.jruby.truffle.parser.ast.KeywordArgParseNode;
 import org.jruby.truffle.parser.ast.LocalAsgnParseNode;
+import org.jruby.truffle.parser.ast.MethodDefParseNode;
 import org.jruby.truffle.parser.ast.ParseNode;
 import org.jruby.truffle.parser.ast.SuperParseNode;
 import org.jruby.truffle.parser.ast.UnnamedRestArgParseNode;
@@ -288,22 +289,16 @@ public class MethodTranslator extends BodyTranslator {
         return body;
     }
 
-    public MethodDefinitionNode compileMethodNode(RubySourceSection sourceSection, String methodName, ParseNode bodyNode, SharedMethodInfo sharedMethodInfo) {
+    public MethodDefinitionNode compileMethodNode(RubySourceSection sourceSection, String methodName, MethodDefParseNode defNode, ParseNode bodyNode, SharedMethodInfo sharedMethodInfo) {
         final RubyNode body = compileMethodBody(sourceSection, methodName, bodyNode, sharedMethodInfo);
 
-        final SourceSection extendedBodySourceSection;
-
-        if (body.getRubySourceSection() == null) {
-            extendedBodySourceSection = sourceSection.toSourceSection(source);
-        } else {
-            extendedBodySourceSection = translateSourceSection(source, considerExtendingMethodToCoverEnd(body.getRubySourceSection()));
-        }
+        final SourceSection fullMethodSourceSection = new RubySourceSection(defNode.getLine() + 1, defNode.getEndLine() + 1).toSourceSection(source);
 
         final RubyRootNode rootNode = new RubyRootNode(
-                context, extendedBodySourceSection, environment.getFrameDescriptor(), environment.getSharedMethodInfo(), body, environment.needsDeclarationFrame());
+                context, fullMethodSourceSection, environment.getFrameDescriptor(), environment.getSharedMethodInfo(), body, environment.needsDeclarationFrame());
 
         final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
-        return new MethodDefinitionNode(context, translateSourceSection(source, body.getRubySourceSection()), methodName, environment.getSharedMethodInfo(), callTarget);
+        return new MethodDefinitionNode(context, fullMethodSourceSection, methodName, environment.getSharedMethodInfo(), callTarget);
     }
 
     private void declareArguments() {

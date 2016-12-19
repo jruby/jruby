@@ -226,6 +226,7 @@ import org.jruby.truffle.parser.ast.LocalVarParseNode;
 import org.jruby.truffle.parser.ast.Match2ParseNode;
 import org.jruby.truffle.parser.ast.Match3ParseNode;
 import org.jruby.truffle.parser.ast.MatchParseNode;
+import org.jruby.truffle.parser.ast.MethodDefParseNode;
 import org.jruby.truffle.parser.ast.ModuleParseNode;
 import org.jruby.truffle.parser.ast.MultipleAsgnParseNode;
 import org.jruby.truffle.parser.ast.NextParseNode;
@@ -1395,7 +1396,7 @@ public class BodyTranslator extends Translator {
 
         String methodName = node.getName();
 
-        final RubyNode ret = translateMethodDefinition(sourceSection, classNode, methodName, node.getArgsNode(), node.getBodyNode(), false);
+        final RubyNode ret = translateMethodDefinition(sourceSection, classNode, methodName, node.getArgsNode(), node, node.getBodyNode(), false);
 
         return addNewlineIfNeeded(node, ret);
     }
@@ -1409,12 +1410,12 @@ public class BodyTranslator extends Translator {
 
         final SingletonClassNode singletonClassNode = SingletonClassNodeGen.create(context, fullSourceSection, objectNode);
 
-        final RubyNode ret = translateMethodDefinition(sourceSection, singletonClassNode, node.getName(), node.getArgsNode(), node.getBodyNode(), true);
+        final RubyNode ret = translateMethodDefinition(sourceSection, singletonClassNode, node.getName(), node.getArgsNode(), node, node.getBodyNode(), true);
 
         return addNewlineIfNeeded(node, ret);
     }
 
-    protected RubyNode translateMethodDefinition(RubySourceSection sourceSection, RubyNode classNode, String methodName, ArgsParseNode argsNode, ParseNode bodyNode,
+    protected RubyNode translateMethodDefinition(RubySourceSection sourceSection, RubyNode classNode, String methodName, ArgsParseNode argsNode, MethodDefParseNode defNode, ParseNode bodyNode,
                                                  boolean isDefs) {
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
@@ -1440,7 +1441,7 @@ public class BodyTranslator extends Translator {
 
         final MethodTranslator methodCompiler = new MethodTranslator(currentNode, context, this, newEnvironment, false, source, argsNode);
 
-        final MethodDefinitionNode methodDefinitionNode = methodCompiler.compileMethodNode(sourceSection, methodName, bodyNode, sharedMethodInfo);
+        final MethodDefinitionNode methodDefinitionNode = methodCompiler.compileMethodNode(sourceSection, methodName, defNode, bodyNode, sharedMethodInfo);
 
         final RubyNode visibilityNode;
         if (isDefs) {
