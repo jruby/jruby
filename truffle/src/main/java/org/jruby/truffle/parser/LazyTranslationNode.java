@@ -19,26 +19,15 @@ import java.util.function.Supplier;
 
 public class LazyTranslationNode extends RubyNode {
 
-    private static final AtomicLong createdCount = new AtomicLong();
-    private static final AtomicLong resolvedCount = new AtomicLong();
-
-    static {
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            Log.info("lazy translation %d/%d", resolvedCount.get(), createdCount.get());
-        }));
-    }
-
     private final Supplier<RubyNode> resolver;
 
     public LazyTranslationNode(Supplier<RubyNode> resolver) {
         this.resolver = resolver;
-        createdCount.getAndIncrement();
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
         CompilerDirectives.transferToInterpreterAndInvalidate();
-        resolvedCount.getAndIncrement();
         final RubyNode resolved = resolver.get();
         replace(resolved, "lazy translation node resolved");
         return resolved.execute(frame);
