@@ -437,10 +437,10 @@ public abstract class EncodingNodes {
     }
 
     @Primitive(name = "encoding_get_encoding_by_index", needsSelf = false)
-    public static abstract class EncodingGetObjectEncodingByIndexNode extends PrimitiveArrayArgumentsNode {
+    public static abstract class GetEncodingObjectByIndexNode extends PrimitiveArrayArgumentsNode {
 
         @Specialization
-        public DynamicObject encodingGetObjectEncodingByIndex(int index) {
+        public DynamicObject getEncoding(int index) {
             return getContext().getEncodingManager().getRubyEncoding(index);
         }
 

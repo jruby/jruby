@@ -3766,12 +3766,12 @@ public abstract class StringNodes {
 
     @Primitive(name = "string_byte_index", needsSelf = false, lowerFixnum = { 1, 2 })
     @ImportStatic(StringGuards.class)
-    public static abstract class StringByteIndexPrimitiveNode extends PrimitiveArrayArgumentsNode {
+    public static abstract class StringByteIndexNode extends PrimitiveArrayArgumentsNode {
 
         @Child private EncodingNodes.CheckEncodingNode checkEncodingNode;
 
         @Specialization(guards = "isSingleByteOptimizable(string)")
-        public Object stringByteIndexSingleByte(DynamicObject string, int index, int start,
+        public Object singleByte(DynamicObject string, int index, int start,
                                                 @Cached("createBinaryProfile()") ConditionProfile indexTooLargeProfile) {
             if (indexTooLargeProfile.profile(index > rope(string).byteLength())) {
                 return nil();
@@ -3781,7 +3781,7 @@ public abstract class StringNodes {
         }
 
         @Specialization(guards = "!isSingleByteOptimizable(string)")
-        public Object stringByteIndex(DynamicObject string, int index, int start,
+        public Object multiBytes(DynamicObject string, int index, int start,
                                       @Cached("createBinaryProfile()") ConditionProfile indexTooLargeProfile,
                                       @Cached("createBinaryProfile()") ConditionProfile invalidByteProfile,
                                       @Cached("create()") BranchProfile errorProfile) {
@@ -3818,7 +3818,7 @@ public abstract class StringNodes {
         }
 
         @Specialization(guards = "isRubyString(pattern)")
-        public Object stringByteIndex(DynamicObject string, DynamicObject pattern, int offset,
+        public Object pattern(DynamicObject string, DynamicObject pattern, int offset,
                                       @Cached("createBinaryProfile()") ConditionProfile emptyPatternProfile,
                 @Cached("createBinaryProfile()") ConditionProfile brokenCodeRangeProfile,
                 @Cached("create()") BranchProfile errorProfile) {
@@ -3886,25 +3886,25 @@ public abstract class StringNodes {
     // the byte index marking the start of the previous character in the string.
     @Primitive(name = "string_previous_byte_index")
     @ImportStatic(StringGuards.class)
-    public static abstract class StringPreviousByteIndexPrimitiveNode extends PrimitiveArrayArgumentsNode {
+    public static abstract class StringPreviousByteIndexNode extends PrimitiveArrayArgumentsNode {
 
         @Specialization(guards = "index < 0")
-        public Object stringPreviousByteIndexNegativeIndex(DynamicObject string, int index) {
+        public Object negativeIndex(DynamicObject string, int index) {
             throw new RaiseException(coreExceptions().argumentError("negative index given", this));
         }
 
         @Specialization(guards = "index == 0")
-        public Object stringPreviousByteIndexZeroIndex(DynamicObject string, int index) {
+        public Object zeroIndex(DynamicObject string, int index) {
             return nil();
         }
 
         @Specialization(guards = { "index > 0", "isSingleByteOptimizable(string)" })
-        public int stringPreviousByteIndexSingleByteOptimizable(DynamicObject string, int index) {
+        public int singleByteOptimizable(DynamicObject string, int index) {
             return index - 1;
         }
 
         @Specialization(guards = { "index > 0", "!isSingleByteOptimizable(string)", "isFixedWidthEncoding(string)" })
-        public int stringPreviousByteIndexFixedWidthEncoding(DynamicObject string, int index,
+        public int fixedWidthEncoding(DynamicObject string, int index,
                                                              @Cached("createBinaryProfile()") ConditionProfile firstCharacterProfile) {
             final Encoding encoding = encoding(string);
 
@@ -3922,7 +3922,7 @@ public abstract class StringNodes {
 
         @Specialization(guards = { "index > 0", "!isSingleByteOptimizable(string)", "!isFixedWidthEncoding(string)" })
         @TruffleBoundary
-        public Object stringPreviousByteIndex(DynamicObject string, int index) {
+        public Object other(DynamicObject string, int index) {
             final Rope rope = rope(string);
             final int p = 0;
             final int end = p + rope.byteLength();
