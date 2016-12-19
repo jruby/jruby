@@ -28,9 +28,13 @@ public class LazyTranslationNode extends RubyNode {
     @Override
     public Object execute(VirtualFrame frame) {
         CompilerDirectives.transferToInterpreterAndInvalidate();
+        return resolve().execute(frame);
+    }
+
+    public RubyNode resolve() {
         final RubyNode resolved = resolver.get();
         replace(resolved, "lazy translation node resolved");
-        return resolved.execute(frame);
+        return resolved;
     }
 
 }
