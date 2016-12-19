@@ -15,6 +15,7 @@ import org.jruby.truffle.Log;
 import org.jruby.truffle.language.RubyNode;
 
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Supplier;
 
 public class LazyTranslationNode extends RubyNode {
 
@@ -27,10 +28,10 @@ public class LazyTranslationNode extends RubyNode {
         }));
     }
 
-    @Child private RubyNode resolved;
+    private final Supplier<RubyNode> resolver;
 
-    public LazyTranslationNode(RubyNode resolved) {
-        this.resolved = resolved;
+    public LazyTranslationNode(Supplier<RubyNode> resolver) {
+        this.resolver = resolver;
         createdCount.getAndIncrement();
     }
 
@@ -38,6 +39,7 @@ public class LazyTranslationNode extends RubyNode {
     public Object execute(VirtualFrame frame) {
         CompilerDirectives.transferToInterpreterAndInvalidate();
         resolvedCount.getAndIncrement();
+        final RubyNode resolved = resolver.get();
         replace(resolved, "lazy translation node resolved");
         return resolved.execute(frame);
     }
