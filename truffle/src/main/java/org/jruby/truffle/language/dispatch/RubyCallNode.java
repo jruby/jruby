@@ -165,7 +165,7 @@ public class RubyCallNode extends RubyNode {
 
         if (method == null) {
             final Object r = respondToMissing(frame, receiverObject);
-            if (r != DispatchNode.MISSING && !castRespondToMissingToBoolean(frame, r)) {
+            if (r != DispatchNode.MISSING && !castRespondToMissingToBoolean(r)) {
                 return nil();
             }
         } else if (method.isUndefined()) {
@@ -186,12 +186,12 @@ public class RubyCallNode extends RubyNode {
         return respondToMissing.call(frame, receiverObject, "respond_to_missing?", method, false);
     }
 
-    private boolean castRespondToMissingToBoolean(VirtualFrame frame, final Object r) {
+    private boolean castRespondToMissingToBoolean(Object r) {
         if (respondToMissingCast == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
             respondToMissingCast = insert(BooleanCastNodeGen.create(null));
         }
-        return respondToMissingCast.executeBoolean(frame, r);
+        return respondToMissingCast.executeToBoolean(r);
     }
 
     public String getName() {

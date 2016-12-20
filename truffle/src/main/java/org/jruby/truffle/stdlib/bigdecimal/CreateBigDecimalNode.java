@@ -119,8 +119,7 @@ public abstract class CreateBigDecimalNode extends BigDecimalCoreMethodNode {
         final int exceptionConstant = getIntegerConstantNode
                 .executeGetIntegerConstant(frame, getBigDecimalClass(), "EXCEPTION_INFINITY");
 
-        final boolean raise = booleanCastNode.executeBoolean(
-                frame,
+        final boolean raise = booleanCastNode.executeToBoolean(
                 modeCallNode.call(frame, getBigDecimalClass(), "boolean_mode", exceptionConstant));
 
         if (raiseProfile.profile(raise)) {
@@ -146,8 +145,7 @@ public abstract class CreateBigDecimalNode extends BigDecimalCoreMethodNode {
         final int exceptionConstant = getIntegerConstantNode.executeGetIntegerConstant
                 (frame, getBigDecimalClass(), "EXCEPTION_NaN");
 
-        final boolean raise = booleanCastNode.executeBoolean(
-                frame,
+        final boolean raise = booleanCastNode.executeToBoolean(
                 modeCallNode.call(frame, getBigDecimalClass(), "boolean_mode", exceptionConstant));
 
         if (raiseProfile.profile(raise)) {
