@@ -32,9 +32,11 @@ public class LazyTranslationNode extends RubyNode {
     }
 
     public RubyNode resolve() {
-        final RubyNode resolved = resolver.get();
-        replace(resolved, "lazy translation node resolved");
-        return resolved;
+        return atomic(() -> {
+            final RubyNode resolved = resolver.get();
+            replace(resolved, "lazy translation node resolved");
+            return resolved;
+        });
     }
 
 }
