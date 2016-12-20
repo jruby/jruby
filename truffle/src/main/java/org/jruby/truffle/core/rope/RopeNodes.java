@@ -337,25 +337,35 @@ public abstract class RopeNodes {
 
         @TruffleBoundary
         private Rope rebalance(ConcatRope rope, int depthThreshold, FlattenNode flattenNode) {
-            final Deque<Rope> ropeQueue = new ArrayDeque<>();
+            Deque<Rope> currentRopeQueue = new ArrayDeque<>();
+            Deque<Rope> nextLevelQueue = new ArrayDeque<>();
 
-            linearizeTree(rope.getLeft(), ropeQueue);
-            linearizeTree(rope.getRight(), ropeQueue);
+            linearizeTree(rope.getLeft(), currentRopeQueue);
+            linearizeTree(rope.getRight(), currentRopeQueue);
 
             final int flattenThreshold = depthThreshold / 2;
 
             Rope root = null;
-            while (! ropeQueue.isEmpty()) {
-                Rope left = ropeQueue.pop();
+            while (! currentRopeQueue.isEmpty()) {
+                Rope left = currentRopeQueue.pop();
 
                 if (left.depth() >= flattenThreshold) {
                     left = flattenNode.executeFlatten(left);
                 }
 
-                if (ropeQueue.isEmpty()) {
-                    root = left;
+                if (currentRopeQueue.isEmpty()) {
+                    if (nextLevelQueue.isEmpty()) {
+                        root = left;
+                    } else {
+                        // If a rope can't be paired with another rope at the current level (i.e., odd numbers of ropes),
+                        // it needs to be promoted to the next level where it be tried again. Since by definition every
+                        // rope already present in the next level must have occurred before this rope in the current
+                        // level, this rope must be added to the end of the list in the next level to maintain proper
+                        // position.
+                        nextLevelQueue.add(left);
+                    }
                 } else {
-                    Rope right = ropeQueue.pop();
+                    Rope right = currentRopeQueue.pop();
 
                     if (right.depth() >= flattenThreshold) {
                         right = flattenNode.executeFlatten(right);
@@ -366,7 +376,12 @@ public abstract class RopeNodes {
                                     left.isSingleByteOptimizable() && right.isSingleByteOptimizable(),
                                                       depth(left, right), isBalanced(left, right));
 
-                    ropeQueue.add(child);
+                    nextLevelQueue.add(child);
+                }
+
+                if (currentRopeQueue.isEmpty() && !nextLevelQueue.isEmpty()) {
+                    currentRopeQueue = nextLevelQueue;
+                    nextLevelQueue = new ArrayDeque<>();
                 }
             }
 
