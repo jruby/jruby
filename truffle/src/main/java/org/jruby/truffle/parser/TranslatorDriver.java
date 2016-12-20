@@ -41,7 +41,6 @@ import org.jruby.truffle.language.methods.ExceptionTranslatingNode;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.methods.SharedMethodInfo;
 import org.jruby.truffle.language.methods.UnsupportedOperationBehavior;
-import org.jruby.truffle.parser.ast.NilParseNode;
 import org.jruby.truffle.parser.ast.RootParseNode;
 import org.jruby.truffle.parser.parser.ParserConfiguration;
 import org.jruby.truffle.parser.scope.DynamicScope;
@@ -176,18 +175,7 @@ public class TranslatorDriver {
 
         final BodyTranslator translator = new BodyTranslator(currentNode, context, null, environment, source, topLevel);
 
-        RubyNode truffleNode;
-
-        if (node.getBodyNode() == null || node.getBodyNode() instanceof NilParseNode) {
-            translator.parentSourceSection.push(rubySourceSection);
-            try {
-                truffleNode = translator.nilNode(source, rubySourceSection);
-            } finally {
-                translator.parentSourceSection.pop();
-            }
-        } else {
-            truffleNode = node.getBodyNode().accept(translator);
-        }
+        RubyNode truffleNode = translator.translateNodeOrNil(rubySourceSection, node.getBodyNode());
 
         // Load arguments
 

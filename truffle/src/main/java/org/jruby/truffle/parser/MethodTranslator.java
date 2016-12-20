@@ -138,24 +138,17 @@ public class MethodTranslator extends BodyTranslator {
 
         final RubyNode preludeLambda = sequence(context, source, sourceSection, Arrays.asList(checkArity, NodeUtil.cloneNode(loadArguments)));
 
-        RubyNode body;
-
-        parentSourceSection.push(sourceSection);
-        try {
-            if (!translatingForStatement) {
-                // Make sure to declare block-local variables
-                for (String var : variables) {
-                    environment.declareVar(var);
-                }
+        if (!translatingForStatement) {
+            // Make sure to declare block-local variables
+            for (String var : variables) {
+                environment.declareVar(var);
             }
+        }
 
-            body = translateNodeOrNil(sourceSection, bodyNode);
+        RubyNode body = translateNodeOrNil(sourceSection, bodyNode);
 
-            if (context.getOptions().CHAOS) {
-                body = ChaosNodeGen.create(body);
-            }
-        } finally {
-            parentSourceSection.pop();
+        if (context.getOptions().CHAOS) {
+            body = ChaosNodeGen.create(body);
         }
 
         // Procs
@@ -238,8 +231,6 @@ public class MethodTranslator extends BodyTranslator {
         final LoadArgumentsTranslator loadArgumentsTranslator = new LoadArgumentsTranslator(currentNode, context, source, false, this);
         final RubyNode loadArguments = argsNode.accept(loadArgumentsTranslator);
         
-        RubyNode body;
-
         boolean isPrimitive = false;
         if (bodyNode instanceof BlockParseNode) {
             ParseNode[] statements = ((BlockParseNode) bodyNode).children();
@@ -253,15 +244,11 @@ public class MethodTranslator extends BodyTranslator {
             }
         }
 
-        parentSourceSection.push(sourceSection);
-        try {
-            if (isPrimitive) {
-                body = translateRubiniusPrimitive(sourceSection, (BlockParseNode) bodyNode, loadArguments);
-            } else {
-                body = translateNodeOrNil(sourceSection, bodyNode);
-            }
-        } finally {
-            parentSourceSection.pop();
+        RubyNode body;
+        if (isPrimitive) {
+            body = translateRubiniusPrimitive(sourceSection, (BlockParseNode) bodyNode, loadArguments);
+        } else {
+            body = translateNodeOrNil(sourceSection, bodyNode);
         }
 
         final RubySourceSection bodySourceSection = body.getRubySourceSection();
@@ -477,24 +464,21 @@ public class MethodTranslator extends BodyTranslator {
      * eagerly.
      */
     public TranslatorState getCurrentState() {
-        return new TranslatorState(getEnvironment().unsafeGetLexicalScope(), getEnvironment().isDynamicConstantLookup(), new ArrayDeque<>(parentSourceSection));
+        return new TranslatorState(getEnvironment().unsafeGetLexicalScope(), getEnvironment().isDynamicConstantLookup());
     }
 
     public void restoreState(TranslatorState state) {
         getEnvironment().getParseEnvironment().setDynamicConstantLookup(state.dynamicConstantLookup);
         getEnvironment().getParseEnvironment().resetLexicalScope(state.scope);
-        parentSourceSection = state.parentSourceSection;
     }
 
     public static class TranslatorState {
         private final LexicalScope scope;
         private final boolean dynamicConstantLookup;
-        private final Deque<RubySourceSection> parentSourceSection;
 
-        private TranslatorState(LexicalScope scope, boolean dynamicConstantLookup, Deque<RubySourceSection> parentSourceSection) {
+        private TranslatorState(LexicalScope scope, boolean dynamicConstantLookup) {
             this.scope = scope;
             this.dynamicConstantLookup = dynamicConstantLookup;
-            this.parentSourceSection = parentSourceSection;
         }
     }
 

@@ -230,6 +230,7 @@ import org.jruby.truffle.parser.ast.MethodDefParseNode;
 import org.jruby.truffle.parser.ast.ModuleParseNode;
 import org.jruby.truffle.parser.ast.MultipleAsgnParseNode;
 import org.jruby.truffle.parser.ast.NextParseNode;
+import org.jruby.truffle.parser.ast.NilImplicitParseNode;
 import org.jruby.truffle.parser.ast.NilParseNode;
 import org.jruby.truffle.parser.ast.NthRefParseNode;
 import org.jruby.truffle.parser.ast.OpAsgnAndParseNode;
@@ -471,21 +472,11 @@ public class BodyTranslator extends Translator {
         int lastLine = firstLine;
 
         for (ParseNode child : node.children()) {
-            if (child.getPosition() == InvalidSourcePosition.INSTANCE) {
-                parentSourceSection.push(sourceSection);
-            } else {
+            if (child.getPosition() != InvalidSourcePosition.INSTANCE) {
                 lastLine = Math.max(lastLine, child.getPosition().getLine() + 1);
             }
 
-            final RubyNode translatedChild;
-
-            try {
-                translatedChild = child.accept(this);
-            } finally {
-                if (child.getPosition() == InvalidSourcePosition.INSTANCE) {
-                    parentSourceSection.pop();
-                }
-            }
+            final RubyNode translatedChild = translateNodeOrNil(sourceSection, child);
 
             if (!(translatedChild instanceof DeadNode)) {
                 translatedChildren.add(translatedChild);
@@ -506,26 +497,12 @@ public class BodyTranslator extends Translator {
     @Override
     public RubyNode visitBreakNode(BreakParseNode node) {
         assert environment.isBlock() || translatingWhile : "The parser did not see an invalid break";
-
         final RubySourceSection sourceSection = translate(node.getPosition());
 
-        RubyNode resultNode;
-
-        if (node.getValueNode().getPosition() == InvalidSourcePosition.INSTANCE) {
-            parentSourceSection.push(sourceSection);
-
-            try {
-                resultNode = node.getValueNode().accept(this);
-            } finally {
-                parentSourceSection.pop();
-            }
-        } else {
-            resultNode = node.getValueNode().accept(this);
-        }
+        final RubyNode resultNode = translateNodeOrNil(sourceSection, node.getValueNode());
 
         final RubyNode ret = new BreakNode(environment.getBreakID(), translatingWhile, resultNode);
         ret.unsafeSetSourceSection(sourceSection);
-
         return addNewlineIfNeeded(node, ret);
     }
 
@@ -1050,14 +1027,7 @@ public class BodyTranslator extends Translator {
      * </p>
      */
     private ModuleBodyDefinitionNode compileClassNode(RubySourceSection sourceSection, String name, ParseNode bodyNode, boolean sclass) {
-        RubyNode body;
-
-        parentSourceSection.push(sourceSection);
-        try {
-            body = translateNodeOrNil(sourceSection, bodyNode);
-        } finally {
-            parentSourceSection.pop();
-        }
+        RubyNode body = translateNodeOrNil(sourceSection, bodyNode);
 
         if (environment.getFlipFlopStates().size() > 0) {
             body = sequence(context, source, sourceSection, Arrays.asList(initFlipFlopStates(sourceSection), body));
@@ -2105,17 +2075,7 @@ public class BodyTranslator extends Translator {
         if (node.getValueNode() == null) {
             rhs = new DeadNode(context, sourceSection.toSourceSection(source), new Exception());
         } else {
-            if (node.getValueNode().getPosition() == InvalidSourcePosition.INSTANCE) {
-                parentSourceSection.push(sourceSection);
-            }
-
-            try {
-                rhs = node.getValueNode().accept(this);
-            } finally {
-                if (node.getValueNode().getPosition() == InvalidSourcePosition.INSTANCE) {
-                    parentSourceSection.pop();
-                }
-            }
+            rhs = node.getValueNode().accept(this);
         }
 
         final RubyNode ret = lhs.makeWriteNode(rhs);
@@ -2543,18 +2503,9 @@ public class BodyTranslator extends Translator {
 
         final boolean t = translatingNextExpression;
         translatingNextExpression = true;
-
-        if (node.getValueNode().getPosition() == InvalidSourcePosition.INSTANCE) {
-            parentSourceSection.push(sourceSection);
-        }
-
         try {
-            resultNode = node.getValueNode().accept(this);
+            resultNode = translateNodeOrNil(sourceSection, node.getValueNode());
         } finally {
-            if (node.getValueNode().getPosition() == InvalidSourcePosition.INSTANCE) {
-                parentSourceSection.pop();
-            }
-
             translatingNextExpression = t;
         }
 
@@ -2565,7 +2516,11 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitNilNode(NilParseNode node) {
-        if (node.getPosition() == InvalidSourcePosition.INSTANCE && parentSourceSection.peek() == null) {
+        if (node instanceof NilImplicitParseNode) {
+            return addNewlineIfNeeded(node, new NilLiteralNode(context, null, true));
+        }
+
+        if (node.getPosition() == InvalidSourcePosition.INSTANCE) {
             final RubyNode ret = new DeadNode(context, null, new Exception());
             return addNewlineIfNeeded(node, ret);
         }
@@ -3074,7 +3029,7 @@ public class BodyTranslator extends Translator {
     public RubyNode visitReturnNode(ReturnParseNode node) {
         final RubySourceSection sourceSection = translate(node.getPosition());
 
-        RubyNode translatedChild = node.getValueNode().accept(this);
+        RubyNode translatedChild = translateNodeOrNil(sourceSection, node.getValueNode());
 
         final RubyNode ret = new ReturnNode(environment.getReturnID(), translatedChild);
         ret.unsafeSetSourceSection(sourceSection);

@@ -25,14 +25,13 @@ import org.jruby.truffle.language.literal.NilLiteralNode;
 import org.jruby.truffle.language.locals.WriteLocalVariableNode;
 import org.jruby.truffle.language.methods.Arity;
 import org.jruby.truffle.language.objects.SelfNode;
+import org.jruby.truffle.parser.ast.NilImplicitParseNode;
 import org.jruby.truffle.parser.ast.ParseNode;
 import org.jruby.truffle.parser.lexer.ISourcePosition;
 import org.jruby.truffle.parser.lexer.InvalidSourcePosition;
 
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -66,8 +65,6 @@ public abstract class Translator extends org.jruby.truffle.parser.ast.visitor.Ab
     protected final Node currentNode;
     protected final RubyContext context;
     protected final Source source;
-
-    protected Deque<RubySourceSection> parentSourceSection = new ArrayDeque<>();
 
     public Translator(Node currentNode, RubyContext context, Source source) {
         this.currentNode = currentNode;
@@ -145,15 +142,8 @@ public abstract class Translator extends org.jruby.truffle.parser.ast.visitor.Ab
     }
 
     private RubySourceSection translate(Source source, ISourcePosition sourcePosition) {
-        if (sourcePosition == InvalidSourcePosition.INSTANCE) {
-            if (parentSourceSection.peek() == null) {
-                throw new UnsupportedOperationException("Truffle doesn't want invalid positions - find a way to give me a real position!");
-            } else {
-                return parentSourceSection.peek();
-            }
-        } else {
-            return new RubySourceSection(sourcePosition.getLine() + 1);
-        }
+        assert sourcePosition != InvalidSourcePosition.INSTANCE;
+        return new RubySourceSection(sourcePosition.getLine() + 1);
     }
 
     protected RubyNode nilNode(Source source, RubySourceSection sourceSection) {
@@ -162,10 +152,10 @@ public abstract class Translator extends org.jruby.truffle.parser.ast.visitor.Ab
 
     protected RubyNode translateNodeOrNil(RubySourceSection sourceSection, ParseNode node) {
         final RubyNode rubyNode;
-        if (node != null) {
-            rubyNode = node.accept(this);
-        } else {
+        if (node == null || node instanceof NilImplicitParseNode) {
             rubyNode = nilNode(source, sourceSection);
+        } else {
+            rubyNode = node.accept(this);
         }
         return rubyNode;
     }
