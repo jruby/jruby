@@ -243,7 +243,7 @@ class TestDir < Test::Unit::TestCase
     end
   end
 
-  def test_stat_trailing_slash_via_uri_classloader
+  def test_stat_directory_in_jar_with_trailing_slash
     jar_file = File.expand_path('../jar_with_relative_require1.jar', __FILE__)
     $CLASSPATH << jar_file
     source_file = "jar:file:#{jar_file}!/test/require_relative1.rb"
