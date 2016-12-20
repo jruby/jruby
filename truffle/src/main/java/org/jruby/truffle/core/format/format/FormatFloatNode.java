@@ -211,7 +211,7 @@ public abstract class FormatFloatNode extends FormatNode {
                 expSign = 1;
             }
             for (; i < strlen; ) {
-                expVal = expVal * 10 + ((int) str.charAt(i++) - (int) '0');
+                expVal = expVal * 10 + (str.charAt(i++) - '0');
             }
             exponent += expVal * expSign;
         }

@@ -56,7 +56,7 @@ public class EncodeUM {
             b64_xtable[i] = -1;
         }
         for (int i = 0; i < 64; i++) {
-            b64_xtable[(int) b64_table[i]] = i;
+            b64_xtable[b64_table[i]] = i;
         }
     }
 
