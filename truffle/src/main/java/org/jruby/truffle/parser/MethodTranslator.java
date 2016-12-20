@@ -293,13 +293,13 @@ public class MethodTranslator extends BodyTranslator {
     }
 
     public MethodDefinitionNode compileMethodNode(RubySourceSection sourceSection, String methodName, MethodDefParseNode defNode, ParseNode bodyNode, SharedMethodInfo sharedMethodInfo) {
-        final TranslatorState state = getCurrentState();
-
         final SourceSection fullMethodSourceSection = new RubySourceSection(defNode.getLine() + 1, defNode.getEndLine() + 1).toSourceSection(source);
 
         final RubyNode body;
 
         if (context.getOptions().LAZY_TRANSLATION) {
+            final TranslatorState state = getCurrentState();
+
             body = new LazyTranslationNode(() -> {
                 restoreState(state);
                 return compileMethodBody(sourceSection, methodName, bodyNode, sharedMethodInfo);
