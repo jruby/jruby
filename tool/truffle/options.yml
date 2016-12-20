@@ -31,6 +31,7 @@ INLINE_JS: [inline_js, boolean, false, Allow inline JavaScript]
 
 CORE_LOAD_PATH: [core.load_path, string, 'truffle:/jruby-truffle', Location to load the Truffle core library from]
 CORE_PARALLEL_LOAD: [core.parallel_load, boolean, false, Load the Truffle core library in parallel]
+LAZY_TRANSLATION: [lazy_translation, boolean, false, Lazily translate from the parser AST to the Truffle AST]
 
 ARRAY_UNINITIALIZED_SIZE: [array.uninitialized_size, integer, 32, How large an Array to allocate when we have no other information to go on]
 ARRAY_SMALL: [array.small, integer, 3, Maximum size of an Array to consider small for optimisations]

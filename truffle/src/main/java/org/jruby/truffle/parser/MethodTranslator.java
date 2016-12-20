@@ -20,6 +20,7 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.IsNilNode;
 import org.jruby.truffle.core.cast.ArrayCastNodeGen;
 import org.jruby.truffle.core.proc.ProcType;
+import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.RubySourceSection;
@@ -65,7 +66,9 @@ import org.jruby.truffle.parser.ast.UnnamedRestArgParseNode;
 import org.jruby.truffle.parser.ast.ZSuperParseNode;
 import org.jruby.truffle.tools.ChaosNodeGen;
 
+import java.util.ArrayDeque;
 import java.util.Arrays;
+import java.util.Deque;
 
 public class MethodTranslator extends BodyTranslator {
 
@@ -290,14 +293,31 @@ public class MethodTranslator extends BodyTranslator {
     }
 
     public MethodDefinitionNode compileMethodNode(RubySourceSection sourceSection, String methodName, MethodDefParseNode defNode, ParseNode bodyNode, SharedMethodInfo sharedMethodInfo) {
-        final RubyNode body = compileMethodBody(sourceSection, methodName, bodyNode, sharedMethodInfo);
-
         final SourceSection fullMethodSourceSection = new RubySourceSection(defNode.getLine() + 1, defNode.getEndLine() + 1).toSourceSection(source);
 
+        final RubyNode body;
+
+        if (context.getOptions().LAZY_TRANSLATION) {
+            final TranslatorState state = getCurrentState();
+
+            body = new LazyTranslationNode(() -> {
+                restoreState(state);
+                return compileMethodBody(sourceSection, methodName, bodyNode, sharedMethodInfo);
+            });
+        } else {
+            body = compileMethodBody(sourceSection, methodName, bodyNode, sharedMethodInfo);
+        }
+
         final RubyRootNode rootNode = new RubyRootNode(
-                context, fullMethodSourceSection, environment.getFrameDescriptor(), environment.getSharedMethodInfo(), body, environment.needsDeclarationFrame());
+                context,
+                fullMethodSourceSection,
+                environment.getFrameDescriptor(),
+                environment.getSharedMethodInfo(),
+                body,
+                environment.needsDeclarationFrame());
 
         final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
+
         return new MethodDefinitionNode(context, fullMethodSourceSection, methodName, environment.getSharedMethodInfo(), callTarget);
     }
 
@@ -447,6 +467,35 @@ public class MethodTranslator extends BodyTranslator {
         }
 
         return "";
+    }
+
+    /*
+     * The following methods allow us to save and restore enough of
+     * the current state of the Translator to allow lazy parsing. When
+     * the lazy parsing is actually performed, the state is restored
+     * to what it would have been if the method had been parsed
+     * eagerly.
+     */
+    public TranslatorState getCurrentState() {
+        return new TranslatorState(getEnvironment().unsafeGetLexicalScope(), getEnvironment().isDynamicConstantLookup(), new ArrayDeque<>(parentSourceSection));
+    }
+
+    public void restoreState(TranslatorState state) {
+        getEnvironment().getParseEnvironment().setDynamicConstantLookup(state.dynamicConstantLookup);
+        getEnvironment().getParseEnvironment().resetLexicalScope(state.scope);
+        parentSourceSection = state.parentSourceSection;
+    }
+
+    public static class TranslatorState {
+        private final LexicalScope scope;
+        private final boolean dynamicConstantLookup;
+        private final Deque<RubySourceSection> parentSourceSection;
+
+        private TranslatorState(LexicalScope scope, boolean dynamicConstantLookup, Deque<RubySourceSection> parentSourceSection) {
+            this.scope = scope;
+            this.dynamicConstantLookup = dynamicConstantLookup;
+            this.parentSourceSection = parentSourceSection;
+        }
     }
 
 }

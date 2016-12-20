@@ -241,4 +241,7 @@ public class TranslatorEnvironment {
         this.breakID = breakID;
     }
 
+    public LexicalScope unsafeGetLexicalScope() {
+        return parseEnvironment.getLexicalScope();
+    }
 }
