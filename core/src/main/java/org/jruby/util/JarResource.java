@@ -25,12 +25,6 @@ abstract class JarResource extends AbstractFileResource {
         // normalize path -- issue #2017
         if (entryPath.startsWith("//")) entryPath = entryPath.substring(1);
 
-        // Resources will not find paths which end with "/" as a valid directory entry.  We sanitize here before
-        // we create the resources since jar resources cache and we are normalizing the path.
-        if (entryPath.length() > 1 && entryPath.endsWith("/")) {
-            entryPath = entryPath.substring(0, entryPath.length() - 1);
-        }
-
         // TODO: Do we really need to support both test.jar!foo/bar.rb and test.jar!/foo/bar.rb cases?
         JarResource resource = createJarResource(jarPath, entryPath, false);
 
@@ -69,6 +63,12 @@ abstract class JarResource extends AbstractFileResource {
         String[] entries = index.getDirEntries(entryPath);
         if (entries != null) {
             return new JarDirectoryResource(jarPath, rootSlashPrefix, entryPath, entries);
+        } else if (entryPath.length() > 1 && entryPath.endsWith("/")) {  // in case 'foo/' passed
+            entries = index.getDirEntries(entryPath.substring(0, entryPath.length() - 1));
+
+            if (entries != null) {
+                return new JarDirectoryResource(jarPath, rootSlashPrefix, entryPath, entries);
+            }
         }
 
         JarEntry jarEntry = index.getJarEntry(entryPath);
