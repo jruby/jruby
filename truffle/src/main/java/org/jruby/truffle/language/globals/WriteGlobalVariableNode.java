@@ -37,6 +37,9 @@ public abstract class WriteGlobalVariableNode extends RubyNode {
     public Object writeTryToKeepConstant(Object value,
                     @Cached("getStorage()") GlobalVariableStorage storage,
                     @Cached("storage.getValue()") Object previousValue) {
+        // NOTE: we still do the volatile write to get the proper memory barrier,
+        // as the global variable could be used as a publication mechanism.
+        storage.setValueInternal(value);
         return previousValue;
     }
 
