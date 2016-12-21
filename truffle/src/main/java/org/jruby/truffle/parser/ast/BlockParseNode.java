@@ -34,13 +34,13 @@
 package org.jruby.truffle.parser.ast;
 
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.SimpleSourcePosition;
+import org.jruby.truffle.language.RubySourceSection;
 
 /**
  * Represents a block of nodes (read that as list).
  */
 public class BlockParseNode extends ListParseNode {
-    public BlockParseNode(SimpleSourcePosition position) {
+    public BlockParseNode(RubySourceSection position) {
         super(position);
     }
 

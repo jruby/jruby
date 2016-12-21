@@ -34,23 +34,23 @@ package org.jruby.truffle.parser.ast;
 import org.jcodings.Encoding;
 import org.jruby.truffle.parser.ast.types.ILiteralNode;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.SimpleSourcePosition;
+import org.jruby.truffle.language.RubySourceSection;
 
 /**
  * Dynamic backquote string. Backquote strings are eXecuted using the shell, hence the X 
  * or maybe the X is due to the %x general quote syntax?
  */
 public class DXStrParseNode extends DParseNode implements ILiteralNode {
-    public DXStrParseNode(SimpleSourcePosition position, DStrParseNode node) {
+    public DXStrParseNode(RubySourceSection position, DStrParseNode node) {
         super(position, node.getEncoding());
         addAll(node);
     }
 
-    public DXStrParseNode(SimpleSourcePosition position, Encoding encoding) {
+    public DXStrParseNode(RubySourceSection position, Encoding encoding) {
         super(position, encoding);
     }
     
-    public DXStrParseNode(SimpleSourcePosition position) {
+    public DXStrParseNode(RubySourceSection position) {
         super(position);
     }
 

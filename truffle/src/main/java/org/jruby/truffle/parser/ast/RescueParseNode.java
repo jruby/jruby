@@ -33,7 +33,7 @@
 package org.jruby.truffle.parser.ast;
 
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.SimpleSourcePosition;
+import org.jruby.truffle.language.RubySourceSection;
 
 import java.util.List;
 
@@ -45,7 +45,7 @@ public class RescueParseNode extends ParseNode {
     private final RescueBodyParseNode rescueNode;
     private final ParseNode elseNode;
 
-    public RescueParseNode(SimpleSourcePosition position, ParseNode bodyNode, RescueBodyParseNode rescueNode, ParseNode elseNode) {
+    public RescueParseNode(RubySourceSection position, ParseNode bodyNode, RescueBodyParseNode rescueNode, ParseNode elseNode) {
         super(position, bodyNode != null && bodyNode.containsVariableAssignment() ||
                 rescueNode != null && rescueNode.containsVariableAssignment() ||
                 elseNode != null && elseNode.containsVariableAssignment());

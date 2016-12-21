@@ -33,7 +33,7 @@ package org.jruby.truffle.parser.ast;
 
 import org.jruby.truffle.parser.ast.types.ILiteralNode;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.SimpleSourcePosition;
+import org.jruby.truffle.language.RubySourceSection;
 
 /**
  *
@@ -41,7 +41,7 @@ import org.jruby.truffle.parser.lexer.SimpleSourcePosition;
  *
  */
 public class ZArrayParseNode extends ListParseNode implements ILiteralNode {
-    public ZArrayParseNode(SimpleSourcePosition position) {
+    public ZArrayParseNode(RubySourceSection position) {
         super(position);
     }
 

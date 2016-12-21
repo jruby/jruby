@@ -35,7 +35,7 @@ package org.jruby.truffle.parser.ast;
 
 import org.jruby.truffle.parser.ast.types.INameNode;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.SimpleSourcePosition;
+import org.jruby.truffle.language.RubySourceSection;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -48,7 +48,7 @@ public abstract class ParseNode {
     // We define an actual list to get around bug in java integration (1387115)
     static final List<ParseNode> EMPTY_LIST = new ArrayList<>();
     
-    private SimpleSourcePosition position;
+    private RubySourceSection position;
 
     // Does this node contain a node which is an assignment.  We can use this knowledge when emitting IR
     // instructions to do more or less depending on whether we have to cope with scenarios like:
@@ -58,7 +58,7 @@ public abstract class ParseNode {
     protected boolean containsVariableAssignment;
     protected boolean newline;
 
-    public ParseNode(SimpleSourcePosition position, boolean containsAssignment) {
+    public ParseNode(RubySourceSection position, boolean containsAssignment) {
         this.position = position;
         this.containsVariableAssignment = containsAssignment;
     }
@@ -74,15 +74,15 @@ public abstract class ParseNode {
     /**
      * Location of this node within the source
      */
-    public SimpleSourcePosition getPosition() {
+    public RubySourceSection getPosition() {
         return position;
     }
 
     public int getLine() {
-        return position.getStartLine();
+        return position.getStartLine() - 1;
     }
 
-    public void setPosition(SimpleSourcePosition position) {
+    public void setPosition(RubySourceSection position) {
         this.position = position;
     }
     
@@ -142,7 +142,7 @@ public abstract class ParseNode {
 
         if (this instanceof INameNode) builder.append(":").append(((INameNode) this).getName());
 
-        builder.append(" ").append(getPosition().getStartLine());
+        builder.append(" ").append(getPosition().getStartLine() - 1);
 
         if (!childNodes().isEmpty() && indent) builder.append("\n");
 

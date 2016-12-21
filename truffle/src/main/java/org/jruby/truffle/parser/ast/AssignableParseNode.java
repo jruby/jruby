@@ -30,7 +30,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.ast;
 
-import org.jruby.truffle.parser.lexer.SimpleSourcePosition;
+import org.jruby.truffle.language.RubySourceSection;
 
 /**
  * Base class of any node which can be assigned to.
@@ -38,11 +38,11 @@ import org.jruby.truffle.parser.lexer.SimpleSourcePosition;
 public abstract class AssignableParseNode extends ParseNode {
     private ParseNode valueNode;
 
-    public AssignableParseNode(SimpleSourcePosition position) {
+    public AssignableParseNode(RubySourceSection position) {
         super(position, true);
     }
 
-    public AssignableParseNode(SimpleSourcePosition position, ParseNode valueNode, boolean containsAssignment) {
+    public AssignableParseNode(RubySourceSection position, ParseNode valueNode, boolean containsAssignment) {
         super(position, containsAssignment);
 
         assert valueNode != null : "valueNode is not null";

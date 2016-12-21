@@ -34,7 +34,7 @@ package org.jruby.truffle.parser.ast;
 import org.jruby.truffle.collections.Tuple;
 import org.jruby.truffle.parser.ast.types.ILiteralNode;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.SimpleSourcePosition;
+import org.jruby.truffle.language.RubySourceSection;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -46,13 +46,13 @@ import java.util.List;
 public class HashParseNode extends ParseNode implements ILiteralNode {
     private final List<Tuple<ParseNode,ParseNode>> pairs;
 
-    public HashParseNode(SimpleSourcePosition position) {
+    public HashParseNode(RubySourceSection position) {
         super(position, false);
 
         pairs = new ArrayList<>();
     }
     
-    public HashParseNode(SimpleSourcePosition position, Tuple<ParseNode,ParseNode> pair) {
+    public HashParseNode(RubySourceSection position, Tuple<ParseNode,ParseNode> pair) {
         this(position);
 
         pairs.add(pair);

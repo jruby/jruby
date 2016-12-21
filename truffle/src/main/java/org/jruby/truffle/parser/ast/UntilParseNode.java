@@ -32,7 +32,7 @@
 package org.jruby.truffle.parser.ast;
 
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.SimpleSourcePosition;
+import org.jruby.truffle.language.RubySourceSection;
 
 import java.util.List;
 
@@ -44,7 +44,7 @@ public class UntilParseNode extends ParseNode {
     private final ParseNode bodyNode;
     private final boolean evaluateAtStart;
 
-    public UntilParseNode(SimpleSourcePosition position, ParseNode conditionNode, ParseNode bodyNode) {
+    public UntilParseNode(RubySourceSection position, ParseNode conditionNode, ParseNode bodyNode) {
         this(position, conditionNode, bodyNode, true);
     }
 
@@ -52,7 +52,7 @@ public class UntilParseNode extends ParseNode {
         return NodeType.UNTILNODE;
     }
 
-    public UntilParseNode(SimpleSourcePosition position, ParseNode conditionNode, ParseNode bodyNode, boolean evaluateAtStart) {
+    public UntilParseNode(RubySourceSection position, ParseNode conditionNode, ParseNode bodyNode, boolean evaluateAtStart) {
         super(position, conditionNode.containsVariableAssignment() || bodyNode.containsVariableAssignment());
 
         assert conditionNode != null : "conditionNode is not null";

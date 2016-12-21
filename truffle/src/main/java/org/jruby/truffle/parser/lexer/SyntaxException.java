@@ -27,6 +27,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.lexer;
 
+import org.jruby.truffle.language.RubySourceSection;
+
 public class SyntaxException extends RuntimeException {
     public enum PID {
         BAD_HEX_NUMBER("BAD_HEX_NUMBER"),
@@ -98,8 +100,8 @@ public class SyntaxException extends RuntimeException {
     }
 
     @Deprecated
-    public SimpleSourcePosition getPosition() {
-        return new SimpleSourcePosition(line);
+    public RubySourceSection getPosition() {
+        return new RubySourceSection(line + 1);
     }
 
     public String getFile() {

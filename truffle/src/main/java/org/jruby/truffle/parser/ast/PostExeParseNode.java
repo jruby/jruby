@@ -32,13 +32,13 @@
 package org.jruby.truffle.parser.ast;
 
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.SimpleSourcePosition;
+import org.jruby.truffle.language.RubySourceSection;
 
 /**
  * Captures END statements (END {...})
  */
 public class PostExeParseNode extends IterParseNode {
-    public PostExeParseNode(SimpleSourcePosition position, ParseNode body) {
+    public PostExeParseNode(RubySourceSection position, ParseNode body) {
         super(position, new ArgsParseNode(position, null, null, null, null, null, null, null), body, null);
     }
 

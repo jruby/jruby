@@ -120,7 +120,7 @@ import org.jruby.truffle.parser.ast.YieldParseNode;
 import org.jruby.truffle.parser.ast.ZArrayParseNode;
 import org.jruby.truffle.parser.ast.ZSuperParseNode;
 import org.jruby.truffle.parser.ast.types.ILiteralNode;
-import org.jruby.truffle.parser.lexer.SimpleSourcePosition;
+import org.jruby.truffle.language.RubySourceSection;
 import org.jruby.truffle.parser.lexer.LexerSource;
 import org.jruby.truffle.parser.lexer.RubyLexer;
 import org.jruby.truffle.parser.lexer.StrTerm;
@@ -154,7 +154,7 @@ public class RubyParser {
     }
 %}
 
-%token <SimpleSourcePosition> kCLASS kMODULE kDEF kUNDEF kBEGIN kRESCUE kENSURE kEND kIF
+%token <RubySourceSection> kCLASS kMODULE kDEF kUNDEF kBEGIN kRESCUE kENSURE kEND kIF
   kUNLESS kTHEN kELSIF kELSE kCASE kWHEN kWHILE kUNTIL kFOR kBREAK kNEXT
   kREDO kRETRY kIN kDO kDO_COND kDO_BLOCK kRETURN kYIELD kSUPER kSELF kNIL
   kTRUE kFALSE kAND kOR kNOT kIF_MOD kUNLESS_MOD kWHILE_MOD kUNTIL_MOD
@@ -186,14 +186,14 @@ public class RubyParser {
 %token <String> tCOLON3        /* :: at EXPR_BEG */
 %token <String> tOP_ASGN       /* +=, -=  etc. */
 %token <String> tASSOC         /* => */
-%token <SimpleSourcePosition> tLPAREN       /* ( */
-%token <SimpleSourcePosition> tLPAREN2      /* ( Is just '(' in ruby and not a token */
+%token <RubySourceSection> tLPAREN       /* ( */
+%token <RubySourceSection> tLPAREN2      /* ( Is just '(' in ruby and not a token */
 %token <String> tRPAREN        /* ) */
-%token <SimpleSourcePosition> tLPAREN_ARG    /* ( */
+%token <RubySourceSection> tLPAREN_ARG    /* ( */
 %token <String> tLBRACK        /* [ */
 %token <String> tRBRACK        /* ] */
-%token <SimpleSourcePosition> tLBRACE        /* { */
-%token <SimpleSourcePosition> tLBRACE_ARG    /* { */
+%token <RubySourceSection> tLBRACE        /* { */
+%token <RubySourceSection> tLBRACE_ARG    /* { */
 %token <String> tSTAR          /* * */
 %token <String> tSTAR2         /* *  Is just '*' in ruby and not a token */
 %token <String> tAMPER         /* & */
@@ -208,7 +208,7 @@ public class RubyParser {
 %token <String> tPIPE          /* | is just '|' in ruby and not a token */
 %token <String> tBANG          /* ! is just '!' in ruby and not a token */
 %token <String> tCARET         /* ^ is just '^' in ruby and not a token */
-%token <SimpleSourcePosition> tLCURLY        /* { is just '{' in ruby and not a token */
+%token <RubySourceSection> tLCURLY        /* { is just '{' in ruby and not a token */
 %token <String> tRCURLY        /* } is just '}' in ruby and not a token */
 %token <String> tBACK_REF2     /* { is just '`' in ruby and not a token */
 %token <String> tSYMBEG tSTRING_BEG tXSTRING_BEG tREGEXP_BEG tWORDS_BEG tQWORDS_BEG
@@ -465,7 +465,7 @@ stmt            : kALIAS fitem {
                 | var_lhs tOP_ASGN command_call {
                     support.checkExpression($3);
 
-                    SimpleSourcePosition pos = $1.getPosition();
+                    RubySourceSection pos = $1.getPosition();
                     String asgnOp = $2;
                     if (asgnOp.equals("||")) {
                         $1.setValueNode($3);
@@ -490,7 +490,7 @@ stmt            : kALIAS fitem {
                     $$ = support.newOpAsgn(support.getPosition($1), $1, $2, $5, $3, $4);
                 }
                 | primary_value tCOLON2 tCONSTANT tOP_ASGN command_call {
-                    SimpleSourcePosition pos = $1.getPosition();
+                    RubySourceSection pos = $1.getPosition();
                     $$ = support.newOpConstAsgn(pos, support.new_colon2(pos, $1, $2), $4, $5);
                 }
 
@@ -730,7 +730,7 @@ mlhs_node       : /*mri:user_variable*/ tIDENTIFIER {
                         support.yyerror("dynamic constant assignment");
                     }
 
-                    SimpleSourcePosition position = support.getPosition($1);
+                    RubySourceSection position = support.getPosition($1);
 
                     $$ = new ConstDeclParseNode(position, null, support.new_colon2(position, $1, $3), NilImplicitParseNode.NIL);
                 }
@@ -739,7 +739,7 @@ mlhs_node       : /*mri:user_variable*/ tIDENTIFIER {
                         support.yyerror("dynamic constant assignment");
                     }
 
-                    SimpleSourcePosition position = lexer.getPosition();
+                    RubySourceSection position = lexer.getPosition();
 
                     $$ = new ConstDeclParseNode(position, null, support.new_colon3(position, $2), NilImplicitParseNode.NIL);
                 }
@@ -809,7 +809,7 @@ lhs             : /*mri:user_variable*/ tIDENTIFIER {
                         support.yyerror("dynamic constant assignment");
                     }
 
-                    SimpleSourcePosition position = support.getPosition($1);
+                    RubySourceSection position = support.getPosition($1);
 
                     $$ = new ConstDeclParseNode(position, null, support.new_colon2(position, $1, $3), NilImplicitParseNode.NIL);
                 }
@@ -818,7 +818,7 @@ lhs             : /*mri:user_variable*/ tIDENTIFIER {
                         support.yyerror("dynamic constant assignment");
                     }
 
-                    SimpleSourcePosition position = lexer.getPosition();
+                    RubySourceSection position = lexer.getPosition();
 
                     $$ = new ConstDeclParseNode(position, null, support.new_colon3(position, $2), NilImplicitParseNode.NIL);
                 }
@@ -1023,7 +1023,7 @@ arg             : lhs '=' arg {
                 | var_lhs tOP_ASGN arg {
                     support.checkExpression($3);
 
-                    SimpleSourcePosition pos = $1.getPosition();
+                    RubySourceSection pos = $1.getPosition();
                     String asgnOp = $2;
                     if (asgnOp.equals("||")) {
                         $1.setValueNode($3);
@@ -1041,7 +1041,7 @@ arg             : lhs '=' arg {
                     support.checkExpression($3);
                     ParseNode rescue = support.newRescueModNode($3, $5);
 
-                    SimpleSourcePosition pos = $1.getPosition();
+                    RubySourceSection pos = $1.getPosition();
                     String asgnOp = $2;
                     if (asgnOp.equals("||")) {
                         $1.setValueNode(rescue);
@@ -1069,11 +1069,11 @@ arg             : lhs '=' arg {
                     $$ = support.newOpAsgn(support.getPosition($1), $1, $2, $5, $3, $4);
                 }
                 | primary_value tCOLON2 tCONSTANT tOP_ASGN arg {
-                    SimpleSourcePosition pos = support.getPosition($1);
+                    RubySourceSection pos = support.getPosition($1);
                     $$ = support.newOpConstAsgn(pos, support.new_colon2(pos, $1, $3), $4, $5);
                 }
                 | tCOLON3 tCONSTANT tOP_ASGN arg {
-                    SimpleSourcePosition pos = lexer.getPosition();
+                    RubySourceSection pos = lexer.getPosition();
                     $$ = support.newOpConstAsgn(pos, new Colon3ParseNode(pos, $1), $3, $4);
                 }
                 | backref tOP_ASGN arg {
@@ -1266,7 +1266,7 @@ opt_block_arg   : ',' block_arg {
 
 // [!null]
 args            : arg_value { // ArrayParseNode
-                    SimpleSourcePosition pos = $1 == null ? lexer.getPosition() : $1.getPosition();
+                    RubySourceSection pos = $1 == null ? lexer.getPosition() : $1.getPosition();
                     $$ = support.newArrayNode(pos, $1);
                 }
                 | tSTAR arg_value { // SplatNode
@@ -1378,7 +1378,7 @@ primary         : literal
                     $$ = support.new_colon3(lexer.getPosition(), $2);
                 }
                 | tLBRACK aref_args tRBRACK {
-                    SimpleSourcePosition position = support.getPosition($2);
+                    RubySourceSection position = support.getPosition($2);
                     if ($2 == null) {
                         $$ = new ZArrayParseNode(position); /* zero length array */
                     } else {
@@ -1507,7 +1507,7 @@ primary         : literal
                     ParseNode body = $5;
                     if (body == null) body = NilImplicitParseNode.NIL;
 
-                    $$ = new DefnParseNode($1, $2, (ArgsParseNode) $4, support.getCurrentScope(), body, $6.getStartLine());
+                    $$ = new DefnParseNode($1, $2, (ArgsParseNode) $4, support.getCurrentScope(), body, $6.getStartLine() - 1);
                     support.popCurrentScope();
                     support.setInDef(false);
                     lexer.setCurrentArg($<String>3);
@@ -1524,7 +1524,7 @@ primary         : literal
                     ParseNode body = $8;
                     if (body == null) body = NilImplicitParseNode.NIL;
 
-                    $$ = new DefsParseNode($1, $2, $5, (ArgsParseNode) $7, support.getCurrentScope(), body, $9.getStartLine());
+                    $$ = new DefsParseNode($1, $2, $5, (ArgsParseNode) $7, support.getCurrentScope(), body, $9.getStartLine() - 1);
                     support.popCurrentScope();
                     support.setInSingle(support.getInSingle() - 1);
                     lexer.setCurrentArg($<String>6);
@@ -1914,7 +1914,7 @@ string1         : tSTRING_BEG string_contents tSTRING_END {
                 }
 
 xstring         : tXSTRING_BEG xstring_contents tSTRING_END {
-                    SimpleSourcePosition position = support.getPosition($2);
+                    RubySourceSection position = support.getPosition($2);
 
                     lexer.heredoc_dedent($2);
 		    lexer.setHeredocIndent(0);
@@ -2155,7 +2155,7 @@ var_ref         : /*mri:user_variable*/ tIDENTIFIER {
                     support.getConfiguration().getContext().getEncodingManager().getLocaleEncoding()));
                 }
                 | k__LINE__ {
-                    $$ = new FixnumParseNode(lexer.getPosition(), lexer.tokline.getStartLine()+1);
+                    $$ = new FixnumParseNode(lexer.getPosition(), lexer.tokline.getStartLine());
                 }
                 | k__ENCODING__ {
                     $$ = new EncodingParseNode(lexer.getPosition(), lexer.getEncoding());

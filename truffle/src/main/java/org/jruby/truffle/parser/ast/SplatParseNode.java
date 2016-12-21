@@ -30,14 +30,14 @@
 package org.jruby.truffle.parser.ast;
 
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.SimpleSourcePosition;
+import org.jruby.truffle.language.RubySourceSection;
 
 import java.util.List;
 
 public class SplatParseNode extends ParseNode {
     protected final ParseNode node;
 
-    public SplatParseNode(SimpleSourcePosition position, ParseNode node) {
+    public SplatParseNode(RubySourceSection position, ParseNode node) {
         super(position, node.containsVariableAssignment());
 
         assert node != null : "node is not null";

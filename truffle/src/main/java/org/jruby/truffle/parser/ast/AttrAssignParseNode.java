@@ -30,7 +30,7 @@ package org.jruby.truffle.parser.ast;
 
 import org.jruby.truffle.parser.ast.types.INameNode;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.SimpleSourcePosition;
+import org.jruby.truffle.language.RubySourceSection;
 
 import java.util.List;
 
@@ -43,7 +43,7 @@ public class AttrAssignParseNode extends ParseNode implements INameNode, IArgume
     private ParseNode argsNode;
     private final boolean isLazy;
 
-    public AttrAssignParseNode(SimpleSourcePosition position, ParseNode receiverNode, String name, ParseNode argsNode, boolean isLazy) {
+    public AttrAssignParseNode(RubySourceSection position, ParseNode receiverNode, String name, ParseNode argsNode, boolean isLazy) {
         super(position, receiverNode != null && receiverNode.containsVariableAssignment() || argsNode != null && argsNode.containsVariableAssignment());
 
         assert receiverNode != null : "receiverNode is not null";

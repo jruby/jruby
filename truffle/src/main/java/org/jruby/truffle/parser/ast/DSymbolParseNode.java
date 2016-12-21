@@ -30,7 +30,7 @@
  package org.jruby.truffle.parser.ast;
 
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.SimpleSourcePosition;
+import org.jruby.truffle.language.RubySourceSection;
 
 /**
  * ParseNode representing symbol in a form like ':"3jane"'.
@@ -41,7 +41,7 @@ public class DSymbolParseNode extends DParseNode {
      *
      * @param node to be copied
      */
-    public DSymbolParseNode(SimpleSourcePosition position, DStrParseNode node) {
+    public DSymbolParseNode(RubySourceSection position, DStrParseNode node) {
         super(position, node.getEncoding());
 
         assert node != null : "node is not null";
@@ -49,7 +49,7 @@ public class DSymbolParseNode extends DParseNode {
         addAll(node);
     }
 
-    public DSymbolParseNode(SimpleSourcePosition position) {
+    public DSymbolParseNode(RubySourceSection position) {
         super(position);
     }
 

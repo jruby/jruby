@@ -33,7 +33,7 @@ package org.jruby.truffle.parser;
 import org.joni.WarnCallback;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.debug.DebugHelpers;
-import org.jruby.truffle.parser.lexer.SimpleSourcePosition;
+import org.jruby.truffle.language.RubySourceSection;
 
 import java.util.EnumSet;
 import java.util.Set;
@@ -188,7 +188,7 @@ public class RubyWarnings implements WarnCallback {
     public void warning(ID id, String fileName, int lineNumber, String message) {
         if (!runtime.warningsEnabled() || !runtime.isVerbose()) return;
 
-        warn(id, fileName, lineNumber, message);
+        warn(id, fileName, lineNumber - 1, message);
     }
 
 }

@@ -58,7 +58,6 @@ import org.jruby.truffle.parser.ast.RestArgParseNode;
 import org.jruby.truffle.parser.ast.StarParseNode;
 import org.jruby.truffle.parser.ast.VCallParseNode;
 import org.jruby.truffle.parser.ast.types.INameNode;
-import org.jruby.truffle.parser.lexer.SimpleSourcePosition;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -118,7 +117,7 @@ public class LoadArgumentsTranslator extends Translator {
     public RubyNode visitArgsNode(ArgsParseNode node) {
         argsNode = node;
 
-        final RubySourceSection sourceSection = translate(node.getPosition());
+        final RubySourceSection sourceSection = node.getPosition();
 
         final List<RubyNode> sequence = new ArrayList<>();
 
@@ -274,7 +273,7 @@ public class LoadArgumentsTranslator extends Translator {
 
     @Override
     public RubyNode visitKeywordRestArgNode(KeywordRestArgParseNode node) {
-        final RubySourceSection sourceSection = translate(node.getPosition());
+        final RubySourceSection sourceSection = node.getPosition();
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
         final RubyNode readNode = new ReadKeywordRestArgumentNode(context, fullSourceSection, required, excludedKeywords.toArray(new String[excludedKeywords.size()]));
@@ -285,7 +284,7 @@ public class LoadArgumentsTranslator extends Translator {
 
     @Override
     public RubyNode visitKeywordArgNode(KeywordArgParseNode node) {
-        final RubySourceSection sourceSection = translate(node.getPosition());
+        final RubySourceSection sourceSection = node.getPosition();
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
         final AssignableParseNode asgnNode = node.getAssignable();
@@ -311,7 +310,7 @@ public class LoadArgumentsTranslator extends Translator {
 
     @Override
     public RubyNode visitArgumentNode(ArgumentParseNode node) {
-        final RubySourceSection sourceSection = translate(node.getPosition());
+        final RubySourceSection sourceSection = node.getPosition();
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
         final RubyNode readNode = readArgument(sourceSection);
@@ -335,7 +334,7 @@ public class LoadArgumentsTranslator extends Translator {
 
     @Override
     public RubyNode visitRestArgNode(RestArgParseNode node) {
-        final RubySourceSection sourceSection = translate(node.getPosition());
+        final RubySourceSection sourceSection = node.getPosition();
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
         final RubyNode readNode;
@@ -358,7 +357,7 @@ public class LoadArgumentsTranslator extends Translator {
 
     @Override
     public RubyNode visitBlockArgNode(BlockArgParseNode node) {
-        final RubySourceSection sourceSection = translate(node.getPosition());
+        final RubySourceSection sourceSection = node.getPosition();
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
         final RubyNode readNode = new ReadBlockNode(context.getCoreLibrary().getNilObject());
@@ -382,8 +381,8 @@ public class LoadArgumentsTranslator extends Translator {
         return translateLocalAssignment(node.getPosition(), node.getName(), node.getValueNode());
     }
 
-    private RubyNode translateLocalAssignment(SimpleSourcePosition sourcePosition, String name, ParseNode valueNode) {
-        final RubySourceSection sourceSection = translate(sourcePosition);
+    private RubyNode translateLocalAssignment(RubySourceSection sourcePosition, String name, ParseNode valueNode) {
+        final RubySourceSection sourceSection = sourcePosition;
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
         final FrameSlot slot = methodBodyTranslator.getEnvironment().getFrameDescriptor().findOrAddFrameSlot(name);
@@ -471,7 +470,7 @@ public class LoadArgumentsTranslator extends Translator {
 
     @Override
     public RubyNode visitMultipleAsgnNode(MultipleAsgnParseNode node) {
-        final RubySourceSection sourceSection = translate(node.getPosition());
+        final RubySourceSection sourceSection = node.getPosition();
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
         // (MultipleAsgn19Node 0, (ArrayParseNode 0, (LocalAsgnParseNode:a 0, ), (LocalAsgnParseNode:b 0, )), null, null))

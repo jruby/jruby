@@ -52,6 +52,7 @@ import org.jruby.truffle.core.regexp.ClassicRegexp;
 import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.string.ByteList;
 import org.jruby.truffle.core.string.StringSupport;
+import org.jruby.truffle.language.RubySourceSection;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.parser.RubyWarnings;
 import org.jruby.truffle.parser.ast.BackRefParseNode;
@@ -354,12 +355,12 @@ public class RubyLexer extends LexingCommon {
         return token == EOF ? 0 : token;
     }
 
-    public SimpleSourcePosition getPosition(SimpleSourcePosition startPosition) {
+    public RubySourceSection getPosition(RubySourceSection startPosition) {
         if (startPosition != null) return startPosition;
 
-        if (tokline != null && ruby_sourceline == tokline.getStartLine()) return tokline;
+        if (tokline != null && ruby_sourceline == tokline.getStartLine() - 1) return tokline;
 
-        return new SimpleSourcePosition(ruby_sourceline);
+        return new RubySourceSection(ruby_sourceline + 1);
     }
 
     /**
@@ -1108,7 +1109,7 @@ public class RubyLexer extends LexingCommon {
         //tmpPosition is required because getPosition()'s side effects.
         //if the warning is generated, the getPosition() on line 954 (this line + 18) will create
         //a wrong position if the "inclusive" flag is not set.
-        SimpleSourcePosition tmpPosition = getPosition();
+        RubySourceSection tmpPosition = getPosition();
         if (isSpaceArg(c, spaceSeen)) {
             if (warnings.isVerbose())
                 warnings.warning(RubyWarnings.ID.ARGUMENT_AS_PREFIX, getFile(), tmpPosition.getStartLine(), "`&' interpreted as argument prefix");

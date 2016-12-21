@@ -32,7 +32,7 @@
 package org.jruby.truffle.parser.ast;
 
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.SimpleSourcePosition;
+import org.jruby.truffle.language.RubySourceSection;
 
 import java.util.List;
 
@@ -43,11 +43,11 @@ public class SuperParseNode extends ParseNode implements BlockAcceptingParseNode
     private final ParseNode argsNode;
     private ParseNode iterNode;
 
-    public SuperParseNode(SimpleSourcePosition position, ParseNode argsNode) {
+    public SuperParseNode(RubySourceSection position, ParseNode argsNode) {
         this(position, argsNode, null);
     }
     
-    public SuperParseNode(SimpleSourcePosition position, ParseNode argsNode, ParseNode iterNode) {
+    public SuperParseNode(RubySourceSection position, ParseNode argsNode, ParseNode iterNode) {
         super(position, argsNode != null && argsNode.containsVariableAssignment() ||
                 iterNode != null && iterNode.containsVariableAssignment());
         this.argsNode = argsNode;

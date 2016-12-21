@@ -33,7 +33,7 @@ package org.jruby.truffle.parser.ast;
 
 import org.jruby.truffle.parser.ast.types.INameNode;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.SimpleSourcePosition;
+import org.jruby.truffle.language.RubySourceSection;
 
 import java.util.List;
 
@@ -41,7 +41,7 @@ import java.util.List;
  * represents 'nil'
  */
 public class NilParseNode extends ParseNode implements INameNode, SideEffectFree {
-    public NilParseNode(SimpleSourcePosition position) {
+    public NilParseNode(RubySourceSection position) {
         super(position, false);
     }
 

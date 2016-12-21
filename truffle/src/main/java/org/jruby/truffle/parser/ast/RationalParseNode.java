@@ -7,7 +7,7 @@
 package org.jruby.truffle.parser.ast;
 
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.SimpleSourcePosition;
+import org.jruby.truffle.language.RubySourceSection;
 
 import java.util.List;
 
@@ -19,7 +19,7 @@ public class RationalParseNode extends NumericParseNode implements SideEffectFre
     private final long numerator;
     private final long denominator;
 
-    public RationalParseNode(SimpleSourcePosition position, long numerator, long denominator) {
+    public RationalParseNode(RubySourceSection position, long numerator, long denominator) {
         super(position);
         
         this.numerator = numerator;

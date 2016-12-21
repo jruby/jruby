@@ -33,7 +33,7 @@ package org.jruby.truffle.parser.ast;
 
 import org.jruby.truffle.parser.ast.types.INameNode;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.SimpleSourcePosition;
+import org.jruby.truffle.language.RubySourceSection;
 
 import java.util.List;
 
@@ -41,7 +41,7 @@ import java.util.List;
  * Represents 'self' keyword
  */
 public class SelfParseNode extends ParseNode implements INameNode, SideEffectFree {
-    public SelfParseNode(SimpleSourcePosition position) {
+    public SelfParseNode(RubySourceSection position) {
         super(position, false);
     }
 

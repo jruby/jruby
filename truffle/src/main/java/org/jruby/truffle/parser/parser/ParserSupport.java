@@ -126,7 +126,7 @@ import org.jruby.truffle.parser.ast.WhenParseNode;
 import org.jruby.truffle.parser.ast.YieldParseNode;
 import org.jruby.truffle.parser.ast.types.ILiteralNode;
 import org.jruby.truffle.parser.ast.types.INameNode;
-import org.jruby.truffle.parser.lexer.SimpleSourcePosition;
+import org.jruby.truffle.language.RubySourceSection;
 import org.jruby.truffle.parser.lexer.RubyLexer;
 import org.jruby.truffle.parser.lexer.SyntaxException.PID;
 import org.jruby.truffle.parser.scope.DynamicScope;
@@ -204,7 +204,7 @@ public class ParserSupport {
         lexer.getCmdArgumentState().reset(0);
     }
 
-    public ParseNode arg_concat(SimpleSourcePosition position, ParseNode node1, ParseNode node2) {
+    public ParseNode arg_concat(RubySourceSection position, ParseNode node1, ParseNode node2) {
         return node2 == null ? node1 : new ArgsCatParseNode(position, node1, node2);
     }
 
@@ -263,7 +263,7 @@ public class ParserSupport {
         return currentScope.assign(lexer.getPosition(), name, makeNullNil(value));
     }
 
-    protected void getterIdentifierError(SimpleSourcePosition position, String identifier) {
+    protected void getterIdentifierError(RubySourceSection position, String identifier) {
         lexer.compile_error(PID.BAD_IDENTIFIER, "identifier " + identifier + " is not valid to get");
     }
 
@@ -272,7 +272,7 @@ public class ParserSupport {
      *
      *@param node
      */
-    public ParseNode newline_node(ParseNode node, SimpleSourcePosition position) {
+    public ParseNode newline_node(ParseNode node, RubySourceSection position) {
         if (node == null) return null;
         node.setNewline();
         return node;
@@ -288,7 +288,7 @@ public class ParserSupport {
             endPosition = -1;
         }
 
-        SimpleSourcePosition position;
+        RubySourceSection position;
         if (result.getBeginNodes().isEmpty()) {
             if (topOfAST == null) {
                 topOfAST = NilImplicitParseNode.NIL;
@@ -345,7 +345,7 @@ public class ParserSupport {
         return getOperatorCallNode(firstNode, operator, secondNode, null);
     }
 
-    public ParseNode getOperatorCallNode(ParseNode firstNode, String operator, ParseNode secondNode, SimpleSourcePosition defaultPosition) {
+    public ParseNode getOperatorCallNode(ParseNode firstNode, String operator, ParseNode secondNode, RubySourceSection defaultPosition) {
         if (defaultPosition != null) {
             firstNode = checkForNilNode(firstNode, defaultPosition);
             secondNode = checkForNilNode(secondNode, defaultPosition);
@@ -419,7 +419,7 @@ public class ParserSupport {
         }
     }
 
-    public ParseNode arg_add(SimpleSourcePosition position, ParseNode node1, ParseNode node2) {
+    public ParseNode arg_add(RubySourceSection position, ParseNode node1, ParseNode node2) {
         if (node1 == null) {
             if (node2 == null) {
                 return new ArrayParseNode(position, NilImplicitParseNode.NIL);
@@ -452,7 +452,7 @@ public class ParserSupport {
         return newNode;
     }
 
-    public ParseNode ret_args(ParseNode node, SimpleSourcePosition position) {
+    public ParseNode ret_args(ParseNode node, RubySourceSection position) {
         if (node != null) {
             if (node instanceof BlockPassParseNode) {
                 lexer.compile_error(PID.BLOCK_ARG_UNEXPECTED, "block argument should not be given");
@@ -680,7 +680,7 @@ public class ParserSupport {
         // FIXME: DSTR,EVSTR,STR: warning "string literal in condition"
         switch(node.getNodeType()) {
         case DREGEXPNODE: {
-            SimpleSourcePosition position = node.getPosition();
+            RubySourceSection position = node.getPosition();
 
             return new Match2ParseNode(position, node, new GlobalVarParseNode(position, "$_"));
         }
@@ -737,23 +737,23 @@ public class ParserSupport {
         return node;
     }
 
-    public SValueParseNode newSValueNode(SimpleSourcePosition position, ParseNode node) {
+    public SValueParseNode newSValueNode(RubySourceSection position, ParseNode node) {
         return new SValueParseNode(position, node);
     }
 
-    public SplatParseNode newSplatNode(SimpleSourcePosition position, ParseNode node) {
+    public SplatParseNode newSplatNode(RubySourceSection position, ParseNode node) {
         return new SplatParseNode(position, makeNullNil(node));
     }
 
-    public ArrayParseNode newArrayNode(SimpleSourcePosition position, ParseNode firstNode) {
+    public ArrayParseNode newArrayNode(RubySourceSection position, ParseNode firstNode) {
         return new ArrayParseNode(position, makeNullNil(firstNode));
     }
 
-    public SimpleSourcePosition position(ParseNode one, ParseNode two) {
+    public RubySourceSection position(ParseNode one, ParseNode two) {
         return one == null ? two.getPosition() : one.getPosition();
     }
 
-    public AndParseNode newAndNode(SimpleSourcePosition position, ParseNode left, ParseNode right) {
+    public AndParseNode newAndNode(RubySourceSection position, ParseNode left, ParseNode right) {
         checkExpression(left);
 
         if (left == null && right == null) return new AndParseNode(position, makeNullNil(left), makeNullNil(right));
@@ -761,7 +761,7 @@ public class ParserSupport {
         return new AndParseNode(position(left, right), makeNullNil(left), makeNullNil(right));
     }
 
-    public OrParseNode newOrNode(SimpleSourcePosition position, ParseNode left, ParseNode right) {
+    public OrParseNode newOrNode(RubySourceSection position, ParseNode left, ParseNode right) {
         checkExpression(left);
 
         if (left == null && right == null) return new OrParseNode(position, makeNullNil(left), makeNullNil(right));
@@ -778,7 +778,7 @@ public class ParserSupport {
      * @param firstWhenNode first when (which could also be the else)
      * @return a new case node
      */
-    public CaseParseNode newCaseNode(SimpleSourcePosition position, ParseNode expression, ParseNode firstWhenNode) {
+    public CaseParseNode newCaseNode(RubySourceSection position, ParseNode expression, ParseNode firstWhenNode) {
         ArrayParseNode cases = new ArrayParseNode(firstWhenNode != null ? firstWhenNode.getPosition() : position);
         CaseParseNode caseNode = new CaseParseNode(position, expression, cases);
 
@@ -815,7 +815,7 @@ public class ParserSupport {
 
         if (expressionNodes instanceof ListParseNode) {
             ListParseNode list = (ListParseNode) expressionNodes;
-            SimpleSourcePosition position = sourceWhen.getPosition();
+            RubySourceSection position = sourceWhen.getPosition();
             ParseNode bodyNode = sourceWhen.getBodyNode();
 
             for (int i = 0; i < list.size(); i++) {
@@ -832,7 +832,7 @@ public class ParserSupport {
         }
     }
 
-    public WhenParseNode newWhenNode(SimpleSourcePosition position, ParseNode expressionNodes, ParseNode bodyNode, ParseNode nextCase) {
+    public WhenParseNode newWhenNode(RubySourceSection position, ParseNode expressionNodes, ParseNode bodyNode, ParseNode nextCase) {
         if (bodyNode == null) bodyNode = NilImplicitParseNode.NIL;
 
         if (expressionNodes instanceof SplatParseNode || expressionNodes instanceof ArgsCatParseNode || expressionNodes instanceof ArgsPushParseNode) {
@@ -854,7 +854,7 @@ public class ParserSupport {
 
     // FIXME: Currently this is passing in position of receiver
     public ParseNode new_opElementAsgnNode(ParseNode receiverNode, String operatorName, ParseNode argsNode, ParseNode valueNode) {
-        SimpleSourcePosition position = lexer.tokline;  // FIXME: ruby_sourceline in new lexer.
+        RubySourceSection position = lexer.tokline;  // FIXME: ruby_sourceline in new lexer.
 
         ParseNode newNode = new OpElementAsgnParseNode(position, receiverNode, operatorName, argsNode, valueNode);
 
@@ -863,11 +863,11 @@ public class ParserSupport {
         return newNode;
     }
 
-    public ParseNode newOpAsgn(SimpleSourcePosition position, ParseNode receiverNode, String callType, ParseNode valueNode, String variableName, String operatorName) {
+    public ParseNode newOpAsgn(RubySourceSection position, ParseNode receiverNode, String callType, ParseNode valueNode, String variableName, String operatorName) {
         return new OpAsgnParseNode(position, receiverNode, valueNode, variableName, operatorName, isLazy(callType));
     }
 
-    public ParseNode newOpConstAsgn(SimpleSourcePosition position, ParseNode lhs, String operatorName, ParseNode rhs) {
+    public ParseNode newOpConstAsgn(RubySourceSection position, ParseNode lhs, String operatorName, ParseNode rhs) {
         // FIXME: Maybe need to fixup position?
         if (lhs != null) {
             return new OpAsgnConstDeclParseNode(position, lhs, operatorName, rhs);
@@ -880,7 +880,7 @@ public class ParserSupport {
         return "&.".equals(callType);
     }
 
-    public ParseNode new_attrassign(SimpleSourcePosition position, ParseNode receiver, String name, ParseNode args, boolean isLazy) {
+    public ParseNode new_attrassign(RubySourceSection position, ParseNode receiver, String name, ParseNode args, boolean isLazy) {
         return new AttrAssignParseNode(position, receiver, name, args, isLazy);
     }
 
@@ -920,13 +920,13 @@ public class ParserSupport {
         return new_call(receiver, ".", name, argsNode, iter);
     }
 
-    public Colon2ParseNode new_colon2(SimpleSourcePosition position, ParseNode leftNode, String name) {
+    public Colon2ParseNode new_colon2(RubySourceSection position, ParseNode leftNode, String name) {
         if (leftNode == null) return new Colon2ImplicitParseNode(position, name);
 
         return new Colon2ConstParseNode(position, leftNode, name);
     }
 
-    public Colon3ParseNode new_colon3(SimpleSourcePosition position, String name) {
+    public Colon3ParseNode new_colon3(RubySourceSection position, String name) {
         return new Colon3ParseNode(position, name);
     }
 
@@ -953,7 +953,7 @@ public class ParserSupport {
         return new FCallParseNode(lexer.tokline, operation);
     }
 
-    public ParseNode new_super(SimpleSourcePosition position, ParseNode args) {
+    public ParseNode new_super(RubySourceSection position, ParseNode args) {
         if (args != null && args instanceof BlockPassParseNode) {
             return new SuperParseNode(position, ((BlockPassParseNode) args).getArgsNode(), args);
         }
@@ -1032,7 +1032,7 @@ public class ParserSupport {
         this.lexer = lexer;
     }
 
-    public DStrParseNode createDStrNode(SimpleSourcePosition position) {
+    public DStrParseNode createDStrNode(RubySourceSection position) {
         DStrParseNode dstr = new DStrParseNode(position, lexer.getEncoding());
         if (getConfiguration().isFrozenStringLiteral()) dstr.setFrozen(true);
         return dstr;
@@ -1044,16 +1044,16 @@ public class ParserSupport {
         return new Tuple<>(key, value);
     }
 
-    public ParseNode asSymbol(SimpleSourcePosition position, String value) {
+    public ParseNode asSymbol(RubySourceSection position, String value) {
         return new SymbolParseNode(position, value, lexer.getEncoding(), lexer.getTokenCR());
     }
 
-    public ParseNode asSymbol(SimpleSourcePosition position, ParseNode value) {
+    public ParseNode asSymbol(RubySourceSection position, ParseNode value) {
         return value instanceof StrParseNode ? new SymbolParseNode(position, ((StrParseNode) value).getValue()) :
                 new DSymbolParseNode(position, (DStrParseNode) value);
     }
 
-    public ParseNode literal_concat(SimpleSourcePosition position, ParseNode head, ParseNode tail) {
+    public ParseNode literal_concat(RubySourceSection position, ParseNode head, ParseNode tail) {
         if (head == null) return tail;
         if (tail == null) return head;
 
@@ -1111,18 +1111,18 @@ public class ParserSupport {
 
     public ParseNode newRescueModNode(ParseNode body, ParseNode rescueBody) {
         if (rescueBody == null) rescueBody = NilImplicitParseNode.NIL; // foo rescue () can make null.
-        SimpleSourcePosition pos = getPosition(body);
+        RubySourceSection pos = getPosition(body);
 
         return new RescueModParseNode(pos, body, new RescueBodyParseNode(pos, null, rescueBody, null));
     }
 
-    public ParseNode newEvStrNode(SimpleSourcePosition position, ParseNode node) {
+    public ParseNode newEvStrNode(RubySourceSection position, ParseNode node) {
         if (node instanceof StrParseNode || node instanceof DStrParseNode || node instanceof EvStrParseNode) return node;
 
         return new EvStrParseNode(position, node);
     }
 
-    public ParseNode new_yield(SimpleSourcePosition position, ParseNode node) {
+    public ParseNode new_yield(RubySourceSection position, ParseNode node) {
         if (node != null && node instanceof BlockPassParseNode) {
             lexer.compile_error(PID.BLOCK_ARG_UNEXPECTED, "Block argument should not be given.");
         }
@@ -1174,11 +1174,11 @@ public class ParserSupport {
                                 rationalNode.getDenominator());
     }
 
-    private ParseNode checkForNilNode(ParseNode node, SimpleSourcePosition defaultPosition) {
+    private ParseNode checkForNilNode(ParseNode node, RubySourceSection defaultPosition) {
         return (node == null) ? new NilParseNode(defaultPosition) : node;
     }
 
-    public ParseNode new_args(SimpleSourcePosition position, ListParseNode pre, ListParseNode optional, RestArgParseNode rest,
+    public ParseNode new_args(RubySourceSection position, ListParseNode pre, ListParseNode optional, RestArgParseNode rest,
                               ListParseNode post, ArgsTailHolder tail) {
         ArgsParseNode argsNode;
         if (tail == null) {
@@ -1193,7 +1193,7 @@ public class ParserSupport {
         return argsNode;
     }
 
-    public ArgsTailHolder new_args_tail(SimpleSourcePosition position, ListParseNode keywordArg,
+    public ArgsTailHolder new_args_tail(RubySourceSection position, ListParseNode keywordArg,
                                         String keywordRestArgName, BlockArgParseNode blockArg) {
         if (keywordRestArgName == null) return new ArgsTailHolder(position, keywordArg, null, blockArg);
 
@@ -1225,11 +1225,11 @@ public class ParserSupport {
         return hash;
     }
 
-    public ParseNode newAlias(SimpleSourcePosition position, ParseNode newNode, ParseNode oldNode) {
+    public ParseNode newAlias(RubySourceSection position, ParseNode newNode, ParseNode oldNode) {
         return new AliasParseNode(position, newNode, oldNode);
     }
 
-    public ParseNode newUndef(SimpleSourcePosition position, ParseNode nameNode) {
+    public ParseNode newUndef(RubySourceSection position, ParseNode nameNode) {
         return new UndefParseNode(position, nameNode);
     }
 
@@ -1249,15 +1249,15 @@ public class ParserSupport {
         lexer.compile_error(PID.GRAMMAR_ERROR, message + ", unexpected " + found + "\n");
     }
 
-    public SimpleSourcePosition getPosition(ParseNode start) {
+    public RubySourceSection getPosition(ParseNode start) {
         return start != null ? lexer.getPosition(start.getPosition()) : lexer.getPosition();
     }
 
-    public void warn(RubyWarnings.ID id, SimpleSourcePosition position, String message, Object... data) {
+    public void warn(RubyWarnings.ID id, RubySourceSection position, String message, Object... data) {
         warnings.warn(id, file, position.getStartLine(), message);
     }
 
-    public void warning(RubyWarnings.ID id, SimpleSourcePosition position, String message, Object... data) {
+    public void warning(RubyWarnings.ID id, RubySourceSection position, String message, Object... data) {
         if (warnings.isVerbose()) warnings.warning(id, file, position.getStartLine(), message);
     }
 
@@ -1423,8 +1423,8 @@ public class ParserSupport {
 
     public void compile_error(String message) { // mri: rb_compile_error_with_enc
         String line = lexer.getCurrentLine();
-        SimpleSourcePosition position = lexer.getPosition();
-        String errorMessage = lexer.getFile() + ":" + (position.getStartLine() + 1) + ": ";
+        RubySourceSection position = lexer.getPosition();
+        String errorMessage = lexer.getFile() + ":" + (position.getStartLine()) + ": ";
 
         if (line != null && line.length() > 5) {
             boolean addNewline = message != null && ! message.endsWith("\n");
@@ -1480,7 +1480,7 @@ public class ParserSupport {
         }
     }
 
-    public ParseNode newRegexpNode(SimpleSourcePosition position, ParseNode contents, RegexpParseNode end) {
+    public ParseNode newRegexpNode(RubySourceSection position, ParseNode contents, RegexpParseNode end) {
         RegexpOptions options = end.getOptions();
         Encoding encoding = lexer.getEncoding();
 
@@ -1552,7 +1552,7 @@ public class ParserSupport {
         return codeRange;
     }
     
-    public KeywordArgParseNode keyword_arg(SimpleSourcePosition position, AssignableParseNode assignable) {
+    public KeywordArgParseNode keyword_arg(RubySourceSection position, AssignableParseNode assignable) {
         return new KeywordArgParseNode(position, assignable);
     }
     
@@ -1573,7 +1573,7 @@ public class ParserSupport {
         return null;
     }
     
-    public ParseNode new_defined(SimpleSourcePosition position, ParseNode something) {
+    public ParseNode new_defined(RubySourceSection position, ParseNode something) {
         return new DefinedParseNode(position, something);
     }
 

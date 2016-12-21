@@ -33,7 +33,7 @@
 package org.jruby.truffle.parser.ast;
 
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.SimpleSourcePosition;
+import org.jruby.truffle.language.RubySourceSection;
 
 import java.math.BigInteger;
 import java.util.List;
@@ -44,7 +44,7 @@ import java.util.List;
 public class BignumParseNode extends NumericParseNode implements SideEffectFree {
     private BigInteger value;
 
-    public BignumParseNode(SimpleSourcePosition position, BigInteger value) {
+    public BignumParseNode(RubySourceSection position, BigInteger value) {
         super(position);
         this.value = value;
     }

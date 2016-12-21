@@ -32,7 +32,7 @@
 package org.jruby.truffle.parser.ast;
 
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.SimpleSourcePosition;
+import org.jruby.truffle.language.RubySourceSection;
 
 import java.util.List;
 
@@ -43,7 +43,7 @@ public class EnsureParseNode extends ParseNode {
     private final ParseNode bodyNode;
     private final ParseNode ensureNode;
 
-    public EnsureParseNode(SimpleSourcePosition position, ParseNode bodyNode, ParseNode ensureNode) {
+    public EnsureParseNode(RubySourceSection position, ParseNode bodyNode, ParseNode ensureNode) {
         super(position, bodyNode.containsVariableAssignment() || ensureNode != null && ensureNode.containsVariableAssignment());
 
         assert bodyNode != null : "bodyNode is not null";

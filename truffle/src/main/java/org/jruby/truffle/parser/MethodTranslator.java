@@ -350,7 +350,7 @@ public class MethodTranslator extends BodyTranslator {
 
     @Override
     public RubyNode visitSuperNode(SuperParseNode node) {
-        final RubySourceSection sourceSection = translate(node.getPosition());
+        final RubySourceSection sourceSection = node.getPosition();
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
         final ArgumentsAndBlockTranslation argumentsAndBlock = translateArgumentsAndBlock(sourceSection, node.getIterNode(), node.getArgsNode(), environment.getNamedMethodName());
@@ -362,7 +362,7 @@ public class MethodTranslator extends BodyTranslator {
 
     @Override
     public RubyNode visitZSuperNode(ZSuperParseNode node) {
-        final RubySourceSection sourceSection = translate(node.getPosition());
+        final RubySourceSection sourceSection = node.getPosition();
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
         if (environment.isBlock()) {

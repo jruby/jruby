@@ -33,6 +33,7 @@ import org.jcodings.specific.UTF8Encoding;
 import org.joni.Regex;
 import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.string.ByteList;
+import org.jruby.truffle.language.RubySourceSection;
 
 import java.nio.charset.Charset;
 import java.nio.charset.UnsupportedCharsetException;
@@ -93,7 +94,7 @@ public abstract class LexingCommon {
     protected int token;                      // Last token read via yylex().
     private CodeRange tokenCR;
     protected boolean tokenSeen = false;
-    public SimpleSourcePosition tokline;
+    public RubySourceSection tokline;
     public int tokp = 0;                   // Where last token started
     protected Object yaccValue;               // Value of last token which had a value associated with it.
 
@@ -199,9 +200,9 @@ public abstract class LexingCommon {
         return leftParenBegin;
     }
 
-    public SimpleSourcePosition getPosition() {
-        if (tokline != null && ruby_sourceline == tokline.getStartLine()) return tokline;
-        return new SimpleSourcePosition(ruby_sourceline);
+    public RubySourceSection getPosition() {
+        if (tokline != null && ruby_sourceline == tokline.getStartLine() - 1) return tokline;
+        return new RubySourceSection(ruby_sourceline + 1);
     }
 
     public int getLineOffset() {

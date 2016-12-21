@@ -32,7 +32,7 @@
 package org.jruby.truffle.parser.ast;
 
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.SimpleSourcePosition;
+import org.jruby.truffle.language.RubySourceSection;
 
 import java.util.List;
 
@@ -42,7 +42,7 @@ import java.util.List;
 public class NthRefParseNode extends ParseNode {
     private final int matchNumber;
 
-    public NthRefParseNode(SimpleSourcePosition position, int matchNumber) {
+    public NthRefParseNode(RubySourceSection position, int matchNumber) {
         super(position, false);
         this.matchNumber = matchNumber;
     }

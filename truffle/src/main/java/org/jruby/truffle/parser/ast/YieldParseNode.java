@@ -32,7 +32,7 @@
 package org.jruby.truffle.parser.ast;
 
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.SimpleSourcePosition;
+import org.jruby.truffle.language.RubySourceSection;
 
 import java.util.List;
 
@@ -48,7 +48,7 @@ public class YieldParseNode extends ParseNode {
      * @param position position of the node in the source
      * @param argsNode the arguments to the yield (null == no args)
      */
-    public YieldParseNode(SimpleSourcePosition position, ParseNode argsNode) {
+    public YieldParseNode(RubySourceSection position, ParseNode argsNode) {
         super(position, argsNode != null && argsNode.containsVariableAssignment());
 
         this.argsNode = argsNode;

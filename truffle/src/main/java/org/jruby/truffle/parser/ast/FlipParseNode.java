@@ -33,7 +33,7 @@
 package org.jruby.truffle.parser.ast;
 
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.SimpleSourcePosition;
+import org.jruby.truffle.language.RubySourceSection;
 
 import java.util.List;
 
@@ -48,7 +48,7 @@ public class FlipParseNode extends ParseNode {
     // is what index in the right scope to set the value.
     private final int location;
 
-    public FlipParseNode(SimpleSourcePosition position, ParseNode beginNode, ParseNode endNode, boolean exclusive, int location) {
+    public FlipParseNode(RubySourceSection position, ParseNode beginNode, ParseNode endNode, boolean exclusive, int location) {
         super(position, beginNode.containsVariableAssignment() || endNode.containsVariableAssignment());
 
         assert beginNode != null : "beginNode is not null";

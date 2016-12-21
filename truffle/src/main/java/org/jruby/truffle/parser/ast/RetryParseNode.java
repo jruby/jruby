@@ -31,7 +31,7 @@
 package org.jruby.truffle.parser.ast;
 
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.SimpleSourcePosition;
+import org.jruby.truffle.language.RubySourceSection;
 
 import java.util.List;
 
@@ -39,7 +39,7 @@ import java.util.List;
  * Represents a 'retry' statement.
  */
 public class RetryParseNode extends ParseNode implements NonLocalControlFlowParseNode {
-    public RetryParseNode(SimpleSourcePosition position) {
+    public RetryParseNode(RubySourceSection position) {
         super(position, false);
     }
 

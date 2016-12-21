@@ -32,14 +32,14 @@
 package org.jruby.truffle.parser.ast;
 
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.SimpleSourcePosition;
+import org.jruby.truffle.language.RubySourceSection;
 
 import java.util.List;
 
 public class MatchParseNode extends ParseNode {
     private final ParseNode regexpNode;
 
-    public MatchParseNode(SimpleSourcePosition position, ParseNode regexpNode) {
+    public MatchParseNode(RubySourceSection position, ParseNode regexpNode) {
         super(position, regexpNode.containsVariableAssignment());
 
         assert regexpNode != null : "regexpNode is not null";

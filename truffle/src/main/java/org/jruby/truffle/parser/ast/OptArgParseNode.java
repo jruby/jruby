@@ -29,7 +29,7 @@ package org.jruby.truffle.parser.ast;
 
 import org.jruby.truffle.parser.ast.types.INameNode;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.SimpleSourcePosition;
+import org.jruby.truffle.language.RubySourceSection;
 
 import java.util.List;
 
@@ -40,7 +40,7 @@ import java.util.List;
 public class OptArgParseNode extends ParseNode implements INameNode {
     private ParseNode value;
 
-    public OptArgParseNode(SimpleSourcePosition position, ParseNode value) {
+    public OptArgParseNode(RubySourceSection position, ParseNode value) {
         super(position, value != null && value.containsVariableAssignment());
         this.value = value;
     }

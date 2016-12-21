@@ -33,7 +33,7 @@ package org.jruby.truffle.parser.ast;
 
 import org.jruby.truffle.parser.ast.types.INameNode;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.SimpleSourcePosition;
+import org.jruby.truffle.language.RubySourceSection;
 
 import java.util.List;
 
@@ -48,7 +48,7 @@ public class DVarParseNode extends ParseNode implements INameNode, IScopedNode, 
     // is what index in the right scope to set the value.
     private int location;
 
-    public DVarParseNode(SimpleSourcePosition position, int location, String name) {
+    public DVarParseNode(RubySourceSection position, int location, String name) {
         super(position, false);
         this.location = location;
         this.name = name;

@@ -33,7 +33,7 @@
 package org.jruby.truffle.parser.ast;
 
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.SimpleSourcePosition;
+import org.jruby.truffle.language.RubySourceSection;
 
 import java.util.List;
 
@@ -46,7 +46,7 @@ public class DotParseNode extends ParseNode {
     private final boolean exclusive;
     private final boolean isLiteral;
 
-    public DotParseNode(SimpleSourcePosition position, ParseNode beginNode, ParseNode endNode, boolean exclusive,
+    public DotParseNode(RubySourceSection position, ParseNode beginNode, ParseNode endNode, boolean exclusive,
                         boolean isLiteral) {
         super(position, beginNode.containsVariableAssignment() || endNode.containsVariableAssignment());
 

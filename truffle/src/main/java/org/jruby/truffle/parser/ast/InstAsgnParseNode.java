@@ -34,7 +34,7 @@ package org.jruby.truffle.parser.ast;
 
 import org.jruby.truffle.parser.ast.types.INameNode;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.SimpleSourcePosition;
+import org.jruby.truffle.language.RubySourceSection;
 
 import java.util.List;
 
@@ -48,7 +48,7 @@ public class InstAsgnParseNode extends AssignableParseNode implements INameNode 
      * @param name the name of the instance variable
      * @param valueNode the value of the variable
      **/
-    public InstAsgnParseNode(SimpleSourcePosition position, String name, ParseNode valueNode) {
+    public InstAsgnParseNode(RubySourceSection position, String name, ParseNode valueNode) {
         super(position, valueNode, valueNode != null && valueNode.containsVariableAssignment());
         
         this.name = name;

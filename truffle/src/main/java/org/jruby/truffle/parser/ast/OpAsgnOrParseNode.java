@@ -32,7 +32,7 @@
 package org.jruby.truffle.parser.ast;
 
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.SimpleSourcePosition;
+import org.jruby.truffle.language.RubySourceSection;
 
 import java.util.List;
 
@@ -40,7 +40,7 @@ public class OpAsgnOrParseNode extends ParseNode implements BinaryOperatorParseN
     private final ParseNode firstNode;
     private final ParseNode secondNode;
 
-    public OpAsgnOrParseNode(SimpleSourcePosition position, ParseNode headNode, ParseNode valueNode) {
+    public OpAsgnOrParseNode(RubySourceSection position, ParseNode headNode, ParseNode valueNode) {
         super(position, headNode.containsVariableAssignment() || valueNode.containsVariableAssignment());
         
         assert headNode != null : "headNode is not null";
