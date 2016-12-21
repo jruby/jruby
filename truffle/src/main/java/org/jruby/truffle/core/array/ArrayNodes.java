@@ -804,7 +804,6 @@ public abstract class ArrayNodes {
                 @Cached("of(array)") ArrayStrategy strategy,
                 @Cached("createMethodCall()") CallDispatchHeadNode toHashNode) {
             final int size = strategy.getSize(array);
-            // TODO BJF Jul 4, 2016 Seed could be chosen in advance to avoid branching
             long h = Hashing.start(size);
             h = Hashing.update(h, MURMUR_ARRAY_SEED);
             final ArrayMirror store = strategy.newMirror(array);
