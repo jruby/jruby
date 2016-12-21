@@ -200,7 +200,7 @@ public abstract class LexingCommon {
     }
 
     public SimpleSourcePosition getPosition() {
-        if (tokline != null && ruby_sourceline == tokline.getLine()) return tokline;
+        if (tokline != null && ruby_sourceline == tokline.getStartLine()) return tokline;
         return new SimpleSourcePosition(ruby_sourceline);
     }
 

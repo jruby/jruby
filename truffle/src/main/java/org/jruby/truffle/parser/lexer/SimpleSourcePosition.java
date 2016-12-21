@@ -36,7 +36,7 @@ public class SimpleSourcePosition {
         this.line = line;
     }
 
-    public int getLine() {
+    public int getStartLine() {
         return line;
     }
 

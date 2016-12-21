@@ -142,7 +142,7 @@ public abstract class Translator extends org.jruby.truffle.parser.ast.visitor.Ab
 
     private RubySourceSection translate(Source source, SimpleSourcePosition sourcePosition) {
         assert sourcePosition != null;
-        return new RubySourceSection(sourcePosition.getLine() + 1);
+        return new RubySourceSection(sourcePosition.getStartLine() + 1);
     }
 
     protected RubyNode nilNode(Source source, RubySourceSection sourceSection) {

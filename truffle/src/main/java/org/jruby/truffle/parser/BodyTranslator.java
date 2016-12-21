@@ -466,12 +466,12 @@ public class BodyTranslator extends Translator {
 
         final List<RubyNode> translatedChildren = new ArrayList<>();
 
-        final int firstLine = node.getPosition().getLine() + 1;
+        final int firstLine = node.getPosition().getStartLine() + 1;
         int lastLine = firstLine;
 
         for (ParseNode child : node.children()) {
             if (child.getPosition() != null) {
-                lastLine = Math.max(lastLine, child.getPosition().getLine() + 1);
+                lastLine = Math.max(lastLine, child.getPosition().getStartLine() + 1);
             }
 
             final RubyNode translatedChild = translateNodeOrNil(sourceSection, child);

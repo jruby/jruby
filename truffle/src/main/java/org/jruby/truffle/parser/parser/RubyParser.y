@@ -1507,7 +1507,7 @@ primary         : literal
                     ParseNode body = $5;
                     if (body == null) body = NilImplicitParseNode.NIL;
 
-                    $$ = new DefnParseNode($1, $2, (ArgsParseNode) $4, support.getCurrentScope(), body, $6.getLine());
+                    $$ = new DefnParseNode($1, $2, (ArgsParseNode) $4, support.getCurrentScope(), body, $6.getStartLine());
                     support.popCurrentScope();
                     support.setInDef(false);
                     lexer.setCurrentArg($<String>3);
@@ -1524,7 +1524,7 @@ primary         : literal
                     ParseNode body = $8;
                     if (body == null) body = NilImplicitParseNode.NIL;
 
-                    $$ = new DefsParseNode($1, $2, $5, (ArgsParseNode) $7, support.getCurrentScope(), body, $9.getLine());
+                    $$ = new DefsParseNode($1, $2, $5, (ArgsParseNode) $7, support.getCurrentScope(), body, $9.getStartLine());
                     support.popCurrentScope();
                     support.setInSingle(support.getInSingle() - 1);
                     lexer.setCurrentArg($<String>6);
@@ -2155,7 +2155,7 @@ var_ref         : /*mri:user_variable*/ tIDENTIFIER {
                     support.getConfiguration().getContext().getEncodingManager().getLocaleEncoding()));
                 }
                 | k__LINE__ {
-                    $$ = new FixnumParseNode(lexer.getPosition(), lexer.tokline.getLine()+1);
+                    $$ = new FixnumParseNode(lexer.getPosition(), lexer.tokline.getStartLine()+1);
                 }
                 | k__ENCODING__ {
                     $$ = new EncodingParseNode(lexer.getPosition(), lexer.getEncoding());

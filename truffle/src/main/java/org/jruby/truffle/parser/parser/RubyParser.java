@@ -2999,7 +2999,7 @@ states[350] = new ParserState() {
                     ParseNode body = ((ParseNode)yyVals[-1+yyTop]);
                     if (body == null) body = NilImplicitParseNode.NIL;
 
-                    yyVal = new DefnParseNode(((SimpleSourcePosition)yyVals[-5+yyTop]), ((String)yyVals[-4+yyTop]), (ArgsParseNode) yyVals[-2+yyTop], support.getCurrentScope(), body, ((SimpleSourcePosition)yyVals[0+yyTop]).getLine());
+                    yyVal = new DefnParseNode(((SimpleSourcePosition)yyVals[-5+yyTop]), ((String)yyVals[-4+yyTop]), (ArgsParseNode) yyVals[-2+yyTop], support.getCurrentScope(), body, ((SimpleSourcePosition)yyVals[0+yyTop]).getStartLine());
                     support.popCurrentScope();
                     support.setInDef(false);
                     lexer.setCurrentArg(((String)yyVals[-3+yyTop]));
@@ -3027,7 +3027,7 @@ states[353] = new ParserState() {
                     ParseNode body = ((ParseNode)yyVals[-1+yyTop]);
                     if (body == null) body = NilImplicitParseNode.NIL;
 
-                    yyVal = new DefsParseNode(((SimpleSourcePosition)yyVals[-8+yyTop]), ((ParseNode)yyVals[-7+yyTop]), ((String)yyVals[-4+yyTop]), (ArgsParseNode) yyVals[-2+yyTop], support.getCurrentScope(), body, ((SimpleSourcePosition)yyVals[0+yyTop]).getLine());
+                    yyVal = new DefsParseNode(((SimpleSourcePosition)yyVals[-8+yyTop]), ((ParseNode)yyVals[-7+yyTop]), ((String)yyVals[-4+yyTop]), (ArgsParseNode) yyVals[-2+yyTop], support.getCurrentScope(), body, ((SimpleSourcePosition)yyVals[0+yyTop]).getStartLine());
                     support.popCurrentScope();
                     support.setInSingle(support.getInSingle() - 1);
                     lexer.setCurrentArg(((String)yyVals[-3+yyTop]));
@@ -4030,7 +4030,7 @@ states[520] = new ParserState() {
 };
 states[521] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = new FixnumParseNode(lexer.getPosition(), lexer.tokline.getLine()+1);
+                    yyVal = new FixnumParseNode(lexer.getPosition(), lexer.tokline.getStartLine()+1);
     return yyVal;
   }
 };

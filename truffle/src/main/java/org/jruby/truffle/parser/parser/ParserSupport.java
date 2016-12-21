@@ -321,7 +321,7 @@ public class ParserSupport {
         }
 
         if (warnings.isVerbose() && isBreakStatement(((ListParseNode) head).getLast())) {
-            warnings.warning(RubyWarnings.ID.STATEMENT_NOT_REACHED, file, tail.getPosition().getLine(), "statement not reached");
+            warnings.warning(RubyWarnings.ID.STATEMENT_NOT_REACHED, file, tail.getPosition().getStartLine(), "statement not reached");
         }
 
         // Assumption: tail is never a list node
@@ -490,13 +490,13 @@ public class ParserSupport {
 
     public void warnUnlessEOption(RubyWarnings.ID id, ParseNode node, String message) {
         if (!configuration.isInlineSource()) {
-            warnings.warn(id, file, node.getPosition().getLine(), message);
+            warnings.warn(id, file, node.getPosition().getStartLine(), message);
         }
     }
 
     public void warningUnlessEOption(RubyWarnings.ID id, ParseNode node, String message) {
         if (warnings.isVerbose() && !configuration.isInlineSource()) {
-            warnings.warning(id, file, node.getPosition().getLine(), message);
+            warnings.warning(id, file, node.getPosition().getStartLine(), message);
         }
     }
 
@@ -548,7 +548,7 @@ public class ParserSupport {
     }
 
     private void handleUselessWarn(ParseNode node, String useless) {
-        warnings.warn(RubyWarnings.ID.USELESS_EXPRESSION, file, node.getPosition().getLine(), "Useless use of " + useless + " in void context.");
+        warnings.warn(RubyWarnings.ID.USELESS_EXPRESSION, file, node.getPosition().getStartLine(), "Useless use of " + useless + " in void context.");
     }
 
     /**
@@ -634,7 +634,7 @@ public class ParserSupport {
         } else if (node instanceof LocalAsgnParseNode || node instanceof DAsgnParseNode || node instanceof GlobalAsgnParseNode || node instanceof InstAsgnParseNode) {
             ParseNode valueNode = ((AssignableParseNode) node).getValueNode();
             if (isStaticContent(valueNode)) {
-                warnings.warn(RubyWarnings.ID.ASSIGNMENT_IN_CONDITIONAL, file, node.getPosition().getLine(), "found = in conditional, should be ==");
+                warnings.warn(RubyWarnings.ID.ASSIGNMENT_IN_CONDITIONAL, file, node.getPosition().getStartLine(), "found = in conditional, should be ==");
             }
             return true;
         }
@@ -1254,11 +1254,11 @@ public class ParserSupport {
     }
 
     public void warn(RubyWarnings.ID id, SimpleSourcePosition position, String message, Object... data) {
-        warnings.warn(id, file, position.getLine(), message);
+        warnings.warn(id, file, position.getStartLine(), message);
     }
 
     public void warning(RubyWarnings.ID id, SimpleSourcePosition position, String message, Object... data) {
-        if (warnings.isVerbose()) warnings.warning(id, file, position.getLine(), message);
+        if (warnings.isVerbose()) warnings.warning(id, file, position.getStartLine(), message);
     }
 
     // ENEBO: Totally weird naming (in MRI is not allocated and is a local var name) [1.9]
@@ -1319,7 +1319,7 @@ public class ParserSupport {
             if (warnings.isVerbose() && current.isDefined(name) >= 0 &&
                     !skipTruffleRubiniusWarnings(lexer)) {
 
-                warnings.warning(RubyWarnings.ID.STATEMENT_NOT_REACHED, file, lexer.getPosition().getLine(),
+                warnings.warning(RubyWarnings.ID.STATEMENT_NOT_REACHED, file, lexer.getPosition().getStartLine(),
                         "shadowing outer local variable - " + name);
             }
         } else if (current.exists(name) >= 0) {
@@ -1424,7 +1424,7 @@ public class ParserSupport {
     public void compile_error(String message) { // mri: rb_compile_error_with_enc
         String line = lexer.getCurrentLine();
         SimpleSourcePosition position = lexer.getPosition();
-        String errorMessage = lexer.getFile() + ":" + (position.getLine() + 1) + ": ";
+        String errorMessage = lexer.getFile() + ":" + (position.getStartLine() + 1) + ": ";
 
         if (line != null && line.length() > 5) {
             boolean addNewline = message != null && ! message.endsWith("\n");

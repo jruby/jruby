@@ -79,7 +79,7 @@ public abstract class ParseNode {
     }
 
     public int getLine() {
-        return position.getLine();
+        return position.getStartLine();
     }
 
     public void setPosition(SimpleSourcePosition position) {
@@ -142,7 +142,7 @@ public abstract class ParseNode {
 
         if (this instanceof INameNode) builder.append(":").append(((INameNode) this).getName());
 
-        builder.append(" ").append(getPosition().getLine());
+        builder.append(" ").append(getPosition().getStartLine());
 
         if (!childNodes().isEmpty() && indent) builder.append("\n");
 
