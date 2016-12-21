@@ -99,7 +99,7 @@ public class SyntaxException extends RuntimeException {
 
     @Deprecated
     public SimpleSourcePosition getPosition() {
-        return new SimpleSourcePosition(file, line);
+        return new SimpleSourcePosition(line);
     }
 
     public String getFile() {

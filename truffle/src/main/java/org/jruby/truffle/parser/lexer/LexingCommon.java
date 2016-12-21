@@ -201,7 +201,7 @@ public abstract class LexingCommon {
 
     public SimpleSourcePosition getPosition() {
         if (tokline != null && ruby_sourceline == tokline.getLine()) return tokline;
-        return new SimpleSourcePosition(getFile(), ruby_sourceline);
+        return new SimpleSourcePosition(ruby_sourceline);
     }
 
     public int getLineOffset() {

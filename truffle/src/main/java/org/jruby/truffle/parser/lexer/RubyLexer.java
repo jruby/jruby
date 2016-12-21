@@ -359,7 +359,7 @@ public class RubyLexer extends LexingCommon {
 
         if (tokline != null && ruby_sourceline == tokline.getLine()) return tokline;
 
-        return new SimpleSourcePosition(getFile(), ruby_sourceline);
+        return new SimpleSourcePosition(ruby_sourceline);
     }
 
     /**

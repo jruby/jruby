@@ -30,25 +30,14 @@ package org.jruby.truffle.parser.lexer;
 
 public class SimpleSourcePosition {
 
-    final String filename;
     final int line;
 
-    public SimpleSourcePosition(String filename, int line) {
-        this.filename = filename;
+    public SimpleSourcePosition(int line) {
         this.line = line;
-    }
-
-    public String getFile() {
-        return filename;
     }
 
     public int getLine() {
         return line;
-    }
-
-    @Override
-    public String toString() {
-        return String.format("%s:%d", filename, getLine() + 1);
     }
 
 }
