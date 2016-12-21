@@ -63,7 +63,7 @@ public abstract class ArrayStrategy {
 
     public void setStoreAndSize(DynamicObject array, Object store, int size) {
         setStore(array, store);
-        Layouts.ARRAY.setSize(array, size);
+        ArrayHelpers.setSize(array, size);
     }
 
     @Override
