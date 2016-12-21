@@ -47,8 +47,9 @@ import java.util.List;
 public abstract class ParseNode {
     // We define an actual list to get around bug in java integration (1387115)
     static final List<ParseNode> EMPTY_LIST = new ArrayList<>();
-    
-    private RubySourceSection position;
+
+    private int sourceStartLine;
+    private int sourceEndLine;
 
     // Does this node contain a node which is an assignment.  We can use this knowledge when emitting IR
     // instructions to do more or less depending on whether we have to cope with scenarios like:
@@ -59,7 +60,13 @@ public abstract class ParseNode {
     protected boolean newline;
 
     public ParseNode(RubySourceSection position, boolean containsAssignment) {
-        this.position = position;
+        if (position == null) {
+            sourceStartLine = -1;
+            sourceEndLine = -1;
+        } else {
+            sourceStartLine = position.getStartLine();
+            sourceEndLine = position.getEndLine();
+        }
         this.containsVariableAssignment = containsAssignment;
     }
 
@@ -75,11 +82,12 @@ public abstract class ParseNode {
      * Location of this node within the source
      */
     public RubySourceSection getPosition() {
-        return position;
+        return new RubySourceSection(sourceStartLine, sourceEndLine);
     }
 
     public void setPosition(RubySourceSection position) {
-        this.position = position;
+        sourceStartLine = position.getStartLine();
+        sourceEndLine = position.getEndLine();
     }
     
     public abstract <T> T accept(NodeVisitor<T> visitor);
