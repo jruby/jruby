@@ -139,11 +139,6 @@ public abstract class StringOperations {
         return RopeOperations.create(byteList.bytes(), byteList.getEncoding(), codeRange);
     }
 
-    public static Rope ropeFromByteList(ByteList byteList, int codeRange) {
-        // TODO (nirvdrum 08-Jan-16) We need to make a copy of the ByteList's bytes for now to be safe, but we should be able to use the unsafe bytes as we move forward.
-        return RopeOperations.create(byteList.bytes(), byteList.getEncoding(), CodeRange.fromInt(codeRange));
-    }
-
     public static Rope rope(DynamicObject string) {
         assert RubyGuards.isRubyString(string);
 
