@@ -32,7 +32,7 @@
 package org.jruby.truffle.parser.ast;
 
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.ISourcePosition;
+import org.jruby.truffle.parser.lexer.SimpleSourcePosition;
 import org.jruby.truffle.parser.scope.StaticScope;
 
 import java.util.List;
@@ -51,7 +51,7 @@ public class IterParseNode extends ParseNode implements DefNode {
      *  Used by Truffle 'for' and by ForParseNode only.
      * This is to support 1.8-style assignments which only 'for' expressions use.
      */
-    public IterParseNode(ISourcePosition position, ParseNode args, StaticScope scope, ParseNode body) {
+    public IterParseNode(SimpleSourcePosition position, ParseNode args, StaticScope scope, ParseNode body) {
         super(position, args != null && args.containsVariableAssignment || body != null && body.containsVariableAssignment);
 
         this.varNode = args;
@@ -62,7 +62,7 @@ public class IterParseNode extends ParseNode implements DefNode {
     /**
      * Used for all non-for types of blocks.
      */
-    public IterParseNode(ISourcePosition position, ArgsParseNode args, ParseNode body, StaticScope scope) {
+    public IterParseNode(SimpleSourcePosition position, ArgsParseNode args, ParseNode body, StaticScope scope) {
         super(position, args != null && args.containsVariableAssignment || body != null && body.containsVariableAssignment);
 
         this.varNode = args;

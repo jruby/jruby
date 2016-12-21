@@ -268,7 +268,7 @@ import org.jruby.truffle.parser.ast.XStrParseNode;
 import org.jruby.truffle.parser.ast.YieldParseNode;
 import org.jruby.truffle.parser.ast.ZArrayParseNode;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.ISourcePosition;
+import org.jruby.truffle.parser.lexer.SimpleSourcePosition;
 import org.jruby.truffle.parser.parser.ParserSupport;
 import org.jruby.truffle.parser.scope.StaticScope;
 import org.jruby.truffle.platform.graal.AssertConstantNodeGen;
@@ -2598,7 +2598,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitOpAsgnNode(OpAsgnParseNode node) {
-        final ISourcePosition pos = node.getPosition();
+        final SimpleSourcePosition pos = node.getPosition();
 
         final boolean isOrOperator = node.getOperatorName().equals("||");
         if (isOrOperator || node.getOperatorName().equals("&&")) {
@@ -2748,7 +2748,7 @@ public class BodyTranslator extends Translator {
         return addNewlineIfNeeded(node, ret);
     }
 
-    private static ArrayParseNode buildArrayNode(ISourcePosition sourcePosition, ParseNode first, ParseNode... rest) {
+    private static ArrayParseNode buildArrayNode(SimpleSourcePosition sourcePosition, ParseNode first, ParseNode... rest) {
         if (first == null) {
             return new ArrayParseNode(sourcePosition);
         }

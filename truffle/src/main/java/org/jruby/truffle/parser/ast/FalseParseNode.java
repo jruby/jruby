@@ -33,7 +33,7 @@ package org.jruby.truffle.parser.ast;
 
 import org.jruby.truffle.parser.ast.types.INameNode;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.ISourcePosition;
+import org.jruby.truffle.parser.lexer.SimpleSourcePosition;
 
 import java.util.List;
 
@@ -41,7 +41,7 @@ import java.util.List;
  * Represents a false literal.
  */
 public class FalseParseNode extends ParseNode implements INameNode, SideEffectFree {
-    public FalseParseNode(ISourcePosition position) {
+    public FalseParseNode(SimpleSourcePosition position) {
         super(position, false);
     }
 

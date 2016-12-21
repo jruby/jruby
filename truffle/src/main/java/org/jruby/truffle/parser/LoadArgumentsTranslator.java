@@ -58,7 +58,7 @@ import org.jruby.truffle.parser.ast.RestArgParseNode;
 import org.jruby.truffle.parser.ast.StarParseNode;
 import org.jruby.truffle.parser.ast.VCallParseNode;
 import org.jruby.truffle.parser.ast.types.INameNode;
-import org.jruby.truffle.parser.lexer.ISourcePosition;
+import org.jruby.truffle.parser.lexer.SimpleSourcePosition;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -382,7 +382,7 @@ public class LoadArgumentsTranslator extends Translator {
         return translateLocalAssignment(node.getPosition(), node.getName(), node.getValueNode());
     }
 
-    private RubyNode translateLocalAssignment(ISourcePosition sourcePosition, String name, ParseNode valueNode) {
+    private RubyNode translateLocalAssignment(SimpleSourcePosition sourcePosition, String name, ParseNode valueNode) {
         final RubySourceSection sourceSection = translate(sourcePosition);
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 

@@ -7,7 +7,7 @@
 package org.jruby.truffle.parser.ast;
 
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.ISourcePosition;
+import org.jruby.truffle.parser.lexer.SimpleSourcePosition;
 
 import java.util.List;
 
@@ -18,7 +18,7 @@ import java.util.List;
 public class ComplexParseNode extends NumericParseNode implements SideEffectFree {
     private NumericParseNode y;
 
-    public ComplexParseNode(ISourcePosition position, NumericParseNode y) {
+    public ComplexParseNode(SimpleSourcePosition position, NumericParseNode y) {
         super(position);
 
         this.y = y;

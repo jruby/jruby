@@ -33,7 +33,7 @@ package org.jruby.truffle.parser.ast;
 
 import org.jruby.truffle.parser.ast.types.INameNode;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.ISourcePosition;
+import org.jruby.truffle.parser.lexer.SimpleSourcePosition;
 
 import java.util.List;
 
@@ -47,7 +47,7 @@ public class ClassVarAsgnParseNode extends AssignableParseNode implements INameN
      * @param name id of the class variable to assign to
      * @param valueNode  ParseNode used to compute the new value when the assignment is evaled
      */
-    public ClassVarAsgnParseNode(ISourcePosition position, String name, ParseNode valueNode) {
+    public ClassVarAsgnParseNode(SimpleSourcePosition position, String name, ParseNode valueNode) {
         super(position, valueNode, valueNode != null && valueNode.containsVariableAssignment());
         
         this.name = name;

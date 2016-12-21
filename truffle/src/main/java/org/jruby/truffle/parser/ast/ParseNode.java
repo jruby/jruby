@@ -35,7 +35,7 @@ package org.jruby.truffle.parser.ast;
 
 import org.jruby.truffle.parser.ast.types.INameNode;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.ISourcePosition;
+import org.jruby.truffle.parser.lexer.SimpleSourcePosition;
 import org.jruby.truffle.parser.lexer.ISourcePositionHolder;
 
 import java.util.ArrayList;
@@ -49,7 +49,7 @@ public abstract class ParseNode implements ISourcePositionHolder {
     // We define an actual list to get around bug in java integration (1387115)
     static final List<ParseNode> EMPTY_LIST = new ArrayList<>();
     
-    private ISourcePosition position;
+    private SimpleSourcePosition position;
 
     // Does this node contain a node which is an assignment.  We can use this knowledge when emitting IR
     // instructions to do more or less depending on whether we have to cope with scenarios like:
@@ -59,7 +59,7 @@ public abstract class ParseNode implements ISourcePositionHolder {
     protected boolean containsVariableAssignment;
     protected boolean newline;
 
-    public ParseNode(ISourcePosition position, boolean containsAssignment) {
+    public ParseNode(SimpleSourcePosition position, boolean containsAssignment) {
         this.position = position;
         this.containsVariableAssignment = containsAssignment;
     }
@@ -75,7 +75,7 @@ public abstract class ParseNode implements ISourcePositionHolder {
     /**
      * Location of this node within the source
      */
-    public ISourcePosition getPosition() {
+    public SimpleSourcePosition getPosition() {
         return position;
     }
 
@@ -83,7 +83,7 @@ public abstract class ParseNode implements ISourcePositionHolder {
         return position.getLine();
     }
 
-    public void setPosition(ISourcePosition position) {
+    public void setPosition(SimpleSourcePosition position) {
         this.position = position;
     }
     

@@ -354,7 +354,7 @@ public class RubyLexer extends LexingCommon {
         return token == EOF ? 0 : token;
     }
 
-    public ISourcePosition getPosition(ISourcePosition startPosition) {
+    public SimpleSourcePosition getPosition(SimpleSourcePosition startPosition) {
         if (startPosition != null) return startPosition;
 
         if (tokline != null && ruby_sourceline == tokline.getLine()) return tokline;
@@ -1108,7 +1108,7 @@ public class RubyLexer extends LexingCommon {
         //tmpPosition is required because getPosition()'s side effects.
         //if the warning is generated, the getPosition() on line 954 (this line + 18) will create
         //a wrong position if the "inclusive" flag is not set.
-        ISourcePosition tmpPosition = getPosition();
+        SimpleSourcePosition tmpPosition = getPosition();
         if (isSpaceArg(c, spaceSeen)) {
             if (warnings.isVerbose())
                 warnings.warning(RubyWarnings.ID.ARGUMENT_AS_PREFIX, tmpPosition.getFile(), tmpPosition.getLine(), "`&' interpreted as argument prefix");

@@ -33,7 +33,7 @@ package org.jruby.truffle.parser.ast;
  */
 
 import org.jruby.truffle.parser.ast.types.INameNode;
-import org.jruby.truffle.parser.lexer.ISourcePosition;
+import org.jruby.truffle.parser.lexer.SimpleSourcePosition;
 import org.jruby.truffle.parser.scope.StaticScope;
 
 public abstract class MethodDefParseNode extends ParseNode implements INameNode, DefNode {
@@ -43,7 +43,7 @@ public abstract class MethodDefParseNode extends ParseNode implements INameNode,
     protected final ParseNode bodyNode;
     protected final int endLine;
 
-    public MethodDefParseNode(ISourcePosition position, String name, ArgsParseNode argsNode,
+    public MethodDefParseNode(SimpleSourcePosition position, String name, ArgsParseNode argsNode,
                               StaticScope scope, ParseNode bodyNode, int endLine) {
         super(position, bodyNode.containsVariableAssignment());
 

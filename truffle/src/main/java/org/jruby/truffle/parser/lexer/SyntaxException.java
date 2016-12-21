@@ -80,7 +80,7 @@ public class SyntaxException extends RuntimeException {
     private PID pid;
 
     @Deprecated
-    public SyntaxException(PID pid, ISourcePosition position, String lastLine, String message, Object... data) {
+    public SyntaxException(PID pid, SimpleSourcePosition position, String lastLine, String message, Object... data) {
         this(pid, position.getFile(), position.getLine(), lastLine, message, data);
     }
 
@@ -103,7 +103,7 @@ public class SyntaxException extends RuntimeException {
     }
 
     @Deprecated
-    public ISourcePosition getPosition() {
+    public SimpleSourcePosition getPosition() {
         return new SimpleSourcePosition(file, line);
     }
 

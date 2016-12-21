@@ -29,14 +29,14 @@
 package org.jruby.truffle.parser.ast;
 
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.ISourcePosition;
+import org.jruby.truffle.parser.lexer.SimpleSourcePosition;
 import org.jruby.truffle.parser.scope.StaticScope;
 
 /**
  * A pre-execution construction (BEGIN { ... }).
  */
 public class PreExeParseNode extends IterParseNode {
-    public PreExeParseNode(ISourcePosition position, StaticScope scope, ParseNode body) {
+    public PreExeParseNode(SimpleSourcePosition position, StaticScope scope, ParseNode body) {
         super(position, new ArgsParseNode(position, null, null, null, null, null, null, null), body, scope);
     }
 

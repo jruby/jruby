@@ -32,7 +32,7 @@
 package org.jruby.truffle.parser.ast;
 
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.ISourcePosition;
+import org.jruby.truffle.parser.lexer.SimpleSourcePosition;
 
 import java.util.List;
 
@@ -53,7 +53,7 @@ public class BlockPassParseNode extends ParseNode {
      */
     private ParseNode argsNode;
 
-    public BlockPassParseNode(ISourcePosition position, ParseNode bodyNode) {
+    public BlockPassParseNode(SimpleSourcePosition position, ParseNode bodyNode) {
         super(position, bodyNode != null && bodyNode.containsVariableAssignment());
         this.bodyNode = bodyNode;
     }

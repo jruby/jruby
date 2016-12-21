@@ -28,7 +28,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.lexer;
 
-public class SimpleSourcePosition implements ISourcePosition {
+public class SimpleSourcePosition {
 
     final String filename;
     final int line;

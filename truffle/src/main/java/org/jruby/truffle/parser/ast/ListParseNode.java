@@ -30,7 +30,7 @@
 package org.jruby.truffle.parser.ast;
 
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.ISourcePosition;
+import org.jruby.truffle.parser.lexer.SimpleSourcePosition;
 
 import java.util.Arrays;
 import java.util.List;
@@ -53,14 +53,14 @@ public class ListParseNode extends ParseNode {
      * @param position where list is
      * @param firstNode first element of the list
      */
-    public ListParseNode(ISourcePosition position, ParseNode firstNode) {
+    public ListParseNode(SimpleSourcePosition position, ParseNode firstNode) {
         super(position, firstNode != null && firstNode.containsVariableAssignment);
 
         list = new ParseNode[INITIAL_SIZE];
         addInternal(firstNode);
     }
 
-    public ListParseNode(ISourcePosition position) {
+    public ListParseNode(SimpleSourcePosition position) {
         super(position, false);
 
         list = EMPTY;

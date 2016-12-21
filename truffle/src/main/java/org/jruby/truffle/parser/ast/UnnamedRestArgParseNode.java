@@ -28,13 +28,13 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.ast;
 
-import org.jruby.truffle.parser.lexer.ISourcePosition;
+import org.jruby.truffle.parser.lexer.SimpleSourcePosition;
 
 /**
  * a bare '*' or nothing.  Name is "" if it is '*' and null if it is nothing.
  */
 public class UnnamedRestArgParseNode extends RestArgParseNode {
-    public UnnamedRestArgParseNode(ISourcePosition position, String name, int index) {
+    public UnnamedRestArgParseNode(SimpleSourcePosition position, String name, int index) {
         super(position, name, index);
     }
 

@@ -33,7 +33,7 @@ package org.jruby.truffle.parser.ast;
 
 import org.jruby.truffle.parser.ast.types.INameNode;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.ISourcePosition;
+import org.jruby.truffle.parser.lexer.SimpleSourcePosition;
 
 import java.util.List;
 
@@ -43,7 +43,7 @@ import java.util.List;
 public abstract class Colon2ParseNode extends Colon3ParseNode implements INameNode {
     protected final ParseNode leftNode;
 
-    public Colon2ParseNode(ISourcePosition position, ParseNode leftNode, String name) {
+    public Colon2ParseNode(SimpleSourcePosition position, ParseNode leftNode, String name) {
         super(position, name, leftNode != null && leftNode.containsVariableAssignment);
         this.leftNode = leftNode;
     }

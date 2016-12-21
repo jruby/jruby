@@ -32,7 +32,7 @@
 package org.jruby.truffle.parser.ast;
 
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.ISourcePosition;
+import org.jruby.truffle.parser.lexer.SimpleSourcePosition;
 
 import java.util.List;
 
@@ -52,11 +52,11 @@ public class WhileParseNode extends ParseNode {
     private final ParseNode bodyNode;
     private final boolean evaluateAtStart;
     
-    public WhileParseNode(ISourcePosition position, ParseNode conditionNode, ParseNode bodyNode) {
+    public WhileParseNode(SimpleSourcePosition position, ParseNode conditionNode, ParseNode bodyNode) {
         this(position, conditionNode, bodyNode, true);
     }
 
-    public WhileParseNode(ISourcePosition position, ParseNode conditionNode, ParseNode bodyNode,
+    public WhileParseNode(SimpleSourcePosition position, ParseNode conditionNode, ParseNode bodyNode,
                           boolean evalAtStart) {
         super(position, conditionNode.containsVariableAssignment() || bodyNode.containsVariableAssignment());
         

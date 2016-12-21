@@ -29,18 +29,18 @@ package org.jruby.truffle.parser.parser;
 import org.jruby.truffle.parser.ast.BlockArgParseNode;
 import org.jruby.truffle.parser.ast.KeywordRestArgParseNode;
 import org.jruby.truffle.parser.ast.ListParseNode;
-import org.jruby.truffle.parser.lexer.ISourcePosition;
+import org.jruby.truffle.parser.lexer.SimpleSourcePosition;
 
 /**
  * Simple struct to hold values until they can be inserted into the AST.
  */
 public class ArgsTailHolder {
-    private ISourcePosition position;
+    private SimpleSourcePosition position;
     private BlockArgParseNode blockArg;
     private ListParseNode keywordArgs;
     private KeywordRestArgParseNode keywordRestArg;
     
-    public ArgsTailHolder(ISourcePosition position, ListParseNode keywordArgs,
+    public ArgsTailHolder(SimpleSourcePosition position, ListParseNode keywordArgs,
                           KeywordRestArgParseNode keywordRestArg, BlockArgParseNode blockArg) {
         this.position = position;
         this.blockArg = blockArg;
@@ -48,7 +48,7 @@ public class ArgsTailHolder {
         this.keywordRestArg = keywordRestArg;
     }
     
-    public ISourcePosition getPosition() {
+    public SimpleSourcePosition getPosition() {
         return position;
     }
     

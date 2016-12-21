@@ -32,7 +32,7 @@
 package org.jruby.truffle.parser.ast;
 
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.ISourcePosition;
+import org.jruby.truffle.parser.lexer.SimpleSourcePosition;
 import org.jruby.truffle.parser.scope.StaticScope;
 
 import java.util.List;
@@ -45,7 +45,7 @@ public class ModuleParseNode extends ParseNode implements IScopingNode {
     private final StaticScope scope;
     private final ParseNode bodyNode;
 
-    public ModuleParseNode(ISourcePosition position, Colon3ParseNode cpath, StaticScope scope, ParseNode bodyNode) {
+    public ModuleParseNode(SimpleSourcePosition position, Colon3ParseNode cpath, StaticScope scope, ParseNode bodyNode) {
         super(position, cpath.containsVariableAssignment() || bodyNode.containsVariableAssignment());
 
         assert cpath != null : "cpath is not null";

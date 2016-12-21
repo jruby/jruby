@@ -33,7 +33,7 @@ package org.jruby.truffle.parser.ast;
 
 import org.jruby.truffle.parser.ast.types.ILiteralNode;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.ISourcePosition;
+import org.jruby.truffle.parser.lexer.SimpleSourcePosition;
 
 import java.util.List;
 
@@ -43,7 +43,7 @@ import java.util.List;
 public class FloatParseNode extends NumericParseNode implements ILiteralNode, SideEffectFree {
     private double value;
 
-    public FloatParseNode(ISourcePosition position, double value) {
+    public FloatParseNode(SimpleSourcePosition position, double value) {
         super(position);
         this.value = value;
     }

@@ -11,7 +11,7 @@ package org.jruby.truffle.parser.ast;
 
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.ISourcePosition;
+import org.jruby.truffle.parser.lexer.SimpleSourcePosition;
 
 import java.util.Collections;
 import java.util.List;
@@ -20,7 +20,7 @@ public class TruffleFragmentParseNode extends ParseNode {
 
     private final RubyNode fragment;
 
-    public TruffleFragmentParseNode(ISourcePosition position, boolean containsAssignment, RubyNode fragment) {
+    public TruffleFragmentParseNode(SimpleSourcePosition position, boolean containsAssignment, RubyNode fragment) {
         super(position, containsAssignment);
         this.fragment = fragment;
     }

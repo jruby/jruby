@@ -34,7 +34,7 @@ package org.jruby.truffle.parser.ast;
 
 import org.jruby.truffle.parser.ast.types.INameNode;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.ISourcePosition;
+import org.jruby.truffle.parser.lexer.SimpleSourcePosition;
 
 import java.util.List;
 
@@ -45,7 +45,7 @@ import java.util.List;
 public class VCallParseNode extends ParseNode implements INameNode {
     private String name;
 
-    public VCallParseNode(ISourcePosition position, String name) {
+    public VCallParseNode(SimpleSourcePosition position, String name) {
         super(position, false);
 
         this.name = name;

@@ -30,6 +30,6 @@ package org.jruby.truffle.parser.lexer;
 /**
  */
 public interface ISourcePositionHolder {
-	public ISourcePosition getPosition();
-	public void setPosition(ISourcePosition position);
+	public SimpleSourcePosition getPosition();
+	public void setPosition(SimpleSourcePosition position);
 }
