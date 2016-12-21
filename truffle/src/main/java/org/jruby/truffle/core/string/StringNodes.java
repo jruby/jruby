@@ -495,10 +495,11 @@ public abstract class StringNodes {
     @CoreMethod(names = { "[]", "slice" }, required = 1, optional = 1, lowerFixnum = { 1, 2 }, taintFrom = 0)
     public abstract static class GetIndexNode extends CoreMethodArrayArgumentsNode {
 
+        @Child private AllocateObjectNode allocateObjectNode;
         @Child private CallDispatchHeadNode includeNode;
         @Child private CallDispatchHeadNode dupNode;
+        @Child private NormalizeIndexNode normalizeIndexNode;
         @Child private StringSubstringPrimitiveNode substringNode;
-        @Child private AllocateObjectNode allocateObjectNode;
 
         private final BranchProfile outOfBounds = BranchProfile.create();
 
@@ -547,8 +548,13 @@ public abstract class StringNodes {
         private Object sliceRange(VirtualFrame frame, DynamicObject string, int begin, int end, boolean doesExcludeEnd) {
             assert RubyGuards.isRubyString(string);
 
+            if (normalizeIndexNode == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                normalizeIndexNode = insert(StringNodesFactory.NormalizeIndexNodeGen.create(null, null));
+            }
+
             final int stringLength = rope(string).characterLength();
-            begin = StringOperations.normalizeIndex(stringLength, begin);
+            begin = normalizeIndexNode.executeNormalize(begin, stringLength);
 
             if (begin < 0 || begin > stringLength) {
                 outOfBounds.enter();
@@ -561,7 +567,7 @@ public abstract class StringNodes {
                     return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), RopeOperations.withEncodingVerySlow(RopeConstants.EMPTY_ASCII_8BIT_ROPE, encoding(string)));
                 }
 
-                end = StringOperations.normalizeIndex(stringLength, end);
+                end = normalizeIndexNode.executeNormalize(end, stringLength);
                 int length = StringOperations.clampExclusiveIndex(string, doesExcludeEnd ? end : end + 1);
 
                 if (length > stringLength) {
@@ -650,7 +656,7 @@ public abstract class StringNodes {
         private StringSubstringPrimitiveNode getSubstringNode() {
             if (substringNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                substringNode = insert(StringNodesFactory.StringSubstringPrimitiveNodeFactory.create(null));
+                substringNode = insert(StringNodesFactory.StringSubstringPrimitiveNodeFactory.create(null, null, null));
             }
 
             return substringNode;
@@ -1224,10 +1230,12 @@ public abstract class StringNodes {
     @CoreMethod(names = "getbyte", required = 1, lowerFixnum = 1)
     public abstract static class GetByteNode extends CoreMethodArrayArgumentsNode {
 
+        @Child private NormalizeIndexNode normalizeIndexNode;
         @Child private RopeNodes.GetByteNode ropeGetByteNode;
 
         public GetByteNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            normalizeIndexNode = StringNodesFactory.NormalizeIndexNodeGen.create(null, null);
             ropeGetByteNode = RopeNodesFactory.GetByteNodeGen.create(null, null);
         }
 
@@ -1236,16 +1244,13 @@ public abstract class StringNodes {
                               @Cached("createBinaryProfile()") ConditionProfile negativeIndexProfile,
                               @Cached("createBinaryProfile()") ConditionProfile indexOutOfBoundsProfile) {
             final Rope rope = rope(string);
+            final int normalizedIndex = normalizeIndexNode.executeNormalize(index, rope.byteLength());
 
-            if (negativeIndexProfile.profile(index < 0)) {
-                index += rope.byteLength();
-            }
-
-            if (indexOutOfBoundsProfile.profile((index < 0) || (index >= rope.byteLength()))) {
+            if (indexOutOfBoundsProfile.profile((normalizedIndex < 0) || (normalizedIndex >= rope.byteLength()))) {
                 return nil();
             }
 
-            return ropeGetByteNode.executeGetByte(rope, index);
+            return ropeGetByteNode.executeGetByte(rope, normalizedIndex);
         }
 
     }
@@ -1420,37 +1425,6 @@ public abstract class StringNodes {
         protected boolean indexAtEitherBounds(int index) {
             return indexAtStartBound(index) || indexAtEndBound(index);
         }
-    }
-
-    @ImportStatic(StringGuards.class)
-    @NodeChildren({ @NodeChild("string"), @NodeChild("index") })
-    public static abstract class CheckCharacterIndexNode extends RubyNode {
-
-        public abstract int executeCheck(Rope string, int index);
-
-        @Specialization
-        protected int check(Rope rope, int characterIndex,
-                            @Cached("createBinaryProfile()") ConditionProfile negativeIndexProfile,
-                            @Cached("create()") BranchProfile errorProfile) {
-            final int characterLength = rope.characterLength();
-
-            if (characterIndex > characterLength) {
-                errorProfile.enter();
-                throw new RaiseException(getContext().getCoreExceptions().indexErrorOutOfString(characterIndex, this));
-            }
-
-            if (negativeIndexProfile.profile(characterIndex < 0)) {
-                if (-characterIndex > characterLength) {
-                    errorProfile.enter();
-                    throw new RaiseException(getContext().getCoreExceptions().indexErrorOutOfString(characterIndex, this));
-                }
-
-                characterIndex += characterLength;
-            }
-
-            return characterIndex;
-        }
-
     }
 
     @CoreMethod(names = "lstrip!", raiseIfFrozenSelf = true)
@@ -1955,7 +1929,6 @@ public abstract class StringNodes {
 
     }
 
-    @ImportStatic(StringGuards.class)
     @NodeChildren({ @NodeChild("string"), @NodeChild("index") })
     public static abstract class CheckByteIndexNode extends RubyNode {
 
@@ -1982,6 +1955,54 @@ public abstract class StringNodes {
             }
 
             return byteIndex;
+        }
+
+    }
+
+    @ImportStatic(StringGuards.class)
+    @NodeChildren({ @NodeChild("string"), @NodeChild("index") })
+    public static abstract class CheckCharacterIndexNode extends RubyNode {
+
+        public abstract int executeCheck(Rope string, int index);
+
+        @Specialization
+        protected int check(Rope rope, int characterIndex,
+                            @Cached("createBinaryProfile()") ConditionProfile negativeIndexProfile,
+                            @Cached("create()") BranchProfile errorProfile) {
+            final int characterLength = rope.characterLength();
+
+            if (characterIndex > characterLength) {
+                errorProfile.enter();
+                throw new RaiseException(getContext().getCoreExceptions().indexErrorOutOfString(characterIndex, this));
+            }
+
+            if (negativeIndexProfile.profile(characterIndex < 0)) {
+                if (-characterIndex > characterLength) {
+                    errorProfile.enter();
+                    throw new RaiseException(getContext().getCoreExceptions().indexErrorOutOfString(characterIndex, this));
+                }
+
+                characterIndex += characterLength;
+            }
+
+            return characterIndex;
+        }
+
+    }
+
+    @NodeChildren({ @NodeChild("index"), @NodeChild("length") })
+    public static abstract class NormalizeIndexNode extends RubyNode {
+
+        public abstract int executeNormalize(int index, int length);
+
+        @Specialization
+        protected int normalizeIndex(int index, int length,
+                                     @Cached("createBinaryProfile()") ConditionProfile negativeIndexProfile) {
+            if (negativeIndexProfile.profile(index < 0)) {
+                return index + length;
+            }
+
+            return index;
         }
 
     }
@@ -2837,6 +2858,7 @@ public abstract class StringNodes {
     public static abstract class StringByteSubstringPrimitiveNode extends PrimitiveNode {
 
         @Child private AllocateObjectNode allocateObjectNode;
+        @Child private NormalizeIndexNode normalizeIndexNode;
         @Child private RopeNodes.MakeSubstringNode makeSubstringNode;
         @Child private TaintResultNode taintResultNode;
 
@@ -2848,6 +2870,7 @@ public abstract class StringNodes {
             super(context, sourceSection);
             allocateObjectNode = AllocateObjectNode.create();
             makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
+            normalizeIndexNode = StringNodesFactory.NormalizeIndexNodeGen.create(null, null);
             taintResultNode = new TaintResultNode(context, sourceSection);
         }
 
@@ -2892,7 +2915,7 @@ public abstract class StringNodes {
 
             final Rope rope = rope(string);
             final int stringByteLength = rope.byteLength();
-            final int normalizedIndex = StringOperations.normalizeIndex(stringByteLength, index);
+            final int normalizedIndex = normalizeIndexNode.executeNormalize(index, stringByteLength);
 
             if (indexOutOfBoundsProfile.profile(normalizedIndex < 0 || normalizedIndex > stringByteLength)) {
                 return nil();
@@ -2965,6 +2988,13 @@ public abstract class StringNodes {
     @Primitive(name = "string_compare_substring")
     public static abstract class StringCompareSubstringPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
+        @Child private NormalizeIndexNode normalizeIndexNode;
+
+        public StringCompareSubstringPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            normalizeIndexNode = StringNodesFactory.NormalizeIndexNodeGen.create(null, null);
+        }
+
         @Specialization(guards = "isRubyString(other)")
         public int stringCompareSubstring(VirtualFrame frame, DynamicObject string, DynamicObject other, int start, int size,
                 @Cached("create()") BranchProfile errorProfile) {
@@ -2973,9 +3003,7 @@ public abstract class StringNodes {
             final int stringLength = StringOperations.rope(string).characterLength();
             final int otherLength = StringOperations.rope(other).characterLength();
 
-            if (start < 0) {
-                start += otherLength;
-            }
+            start = normalizeIndexNode.executeNormalize(start, otherLength);
 
             if (start > otherLength) {
                 errorProfile.enter();
@@ -3498,20 +3526,21 @@ public abstract class StringNodes {
     public static abstract class StringIndexPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Child StringByteCharacterIndexNode byteIndexToCharIndexNode;
+        @Child NormalizeIndexNode normalizeIndexNode;
+
+        public StringIndexPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            byteIndexToCharIndexNode = StringNodesFactory.StringByteCharacterIndexNodeFactory.create(null);
+            normalizeIndexNode = StringNodesFactory.NormalizeIndexNodeGen.create(null, null);
+        }
 
         @Specialization(guards = { "isRubyString(pattern)", "isBrokenCodeRange(pattern)" })
         public DynamicObject stringIndexBrokenCodeRange(DynamicObject string, DynamicObject pattern, int start) {
             return nil();
         }
 
-
         @Specialization(guards = { "isRubyString(pattern)", "!isBrokenCodeRange(pattern)" })
         public Object stringIndex(VirtualFrame frame, DynamicObject string, DynamicObject pattern, int start) {
-            if (byteIndexToCharIndexNode == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                byteIndexToCharIndexNode = insert(StringNodesFactory.StringByteCharacterIndexNodeFactory.create(new RubyNode[]{}));
-            }
-
             // Rubinius will pass in a byte index for the `start` value, but StringSupport.index requires a character index.
             final int charIndex = byteIndexToCharIndexNode.executeStringByteCharacterIndex(frame, string, start, 0);
 
@@ -3531,9 +3560,10 @@ public abstract class StringNodes {
             int sourceLen = source.characterLength();
             int otherLen = other.characterLength();
 
+            offset = normalizeIndexNode.executeNormalize(offset, sourceLen);
+
             if (offset < 0) {
-                offset += sourceLen;
-                if (offset < 0) return -1;
+                return -1;
             }
 
             if (sourceLen - offset < otherLen) return -1;
@@ -4256,7 +4286,7 @@ public abstract class StringNodes {
             return string;
         }
 
-        protected  boolean indexAtStartBound(int index) {
+        protected boolean indexAtStartBound(int index) {
             return index == 0;
         }
 
@@ -4336,29 +4366,31 @@ public abstract class StringNodes {
     public static abstract class StringSubstringPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Child private AllocateObjectNode allocateNode;
+        @Child private NormalizeIndexNode normalizeIndexNode;
         @Child private RopeNodes.MakeSubstringNode makeSubstringNode;
         @Child private TaintResultNode taintResultNode;
+
+        public StringSubstringPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            normalizeIndexNode = StringNodesFactory.NormalizeIndexNodeGen.create(null, null);
+        }
 
         public abstract Object execute(VirtualFrame frame, DynamicObject string, int beg, int len);
 
         @Specialization(guards = "!indexTriviallyOutOfBounds(string, beg, len)")
         public Object stringSubstring(DynamicObject string, int beg, int len,
                                       @Cached("createBinaryProfile()") ConditionProfile negativeIndexProfile,
-                                      @Cached("createBinaryProfile()") ConditionProfile stillNegativeIndexProfile,
                                       @Cached("createBinaryProfile()") ConditionProfile tooLargeTotalProfile,
                                       @Cached("createBinaryProfile()") ConditionProfile singleByteOptimizableProfile,
                                       @Cached("createBinaryProfile()") ConditionProfile mutableRopeProfile,
                                       @Cached("createBinaryProfile()") ConditionProfile foundSingleByteOptimizableDescendentProfile) {
             final Rope rope = rope(string);
 
-            int index = beg;
+            int index = normalizeIndexNode.executeNormalize(beg, rope.characterLength());
             int length = len;
-            if (negativeIndexProfile.profile(index < 0)) {
-                index += rope.characterLength();
 
-                if (stillNegativeIndexProfile.profile(index < 0)) {
-                    return nil();
-                }
+            if (negativeIndexProfile.profile(index < 0)) {
+                return nil();
             }
 
             if (tooLargeTotalProfile.profile(index + length > rope.characterLength())) {

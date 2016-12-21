@@ -101,10 +101,6 @@ public abstract class StringOperations {
         return StringOperations.codeRange(string) == CodeRange.CR_VALID;
     }
 
-    public static int normalizeIndex(int length, int index) {
-        return ArrayOperations.normalizeIndex(length, index);
-    }
-
     public static int clampExclusiveIndex(DynamicObject string, int index) {
         assert RubyGuards.isRubyString(string);
 
