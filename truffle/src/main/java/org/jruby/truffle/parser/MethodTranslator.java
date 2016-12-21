@@ -277,7 +277,7 @@ public class MethodTranslator extends BodyTranslator {
     }
 
     public MethodDefinitionNode compileMethodNode(RubySourceSection sourceSection, String methodName, MethodDefParseNode defNode, ParseNode bodyNode, SharedMethodInfo sharedMethodInfo) {
-        final SourceSection fullMethodSourceSection = new RubySourceSection(defNode.getLine() + 1, defNode.getEndLine() + 1).toSourceSection(source);
+        final SourceSection fullMethodSourceSection = defNode.getPosition().toSourceSection(source);
 
         final RubyNode body;
 

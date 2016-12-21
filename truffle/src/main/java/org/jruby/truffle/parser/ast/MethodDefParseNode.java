@@ -41,11 +41,10 @@ public abstract class MethodDefParseNode extends ParseNode implements INameNode,
     protected final ArgsParseNode argsNode;
     protected final StaticScope scope;
     protected final ParseNode bodyNode;
-    protected final int endLine;
 
     public MethodDefParseNode(RubySourceSection position, String name, ArgsParseNode argsNode,
                               StaticScope scope, ParseNode bodyNode, int endLine) {
-        super(position, bodyNode.containsVariableAssignment());
+        super(new RubySourceSection(position.getStartLine(), endLine), bodyNode.containsVariableAssignment());
 
         assert bodyNode != null : "bodyNode must not be null";
             
@@ -53,7 +52,6 @@ public abstract class MethodDefParseNode extends ParseNode implements INameNode,
         this.argsNode = argsNode;
         this.scope = scope;
         this.bodyNode = bodyNode;
-        this.endLine = endLine;
     }
 
 
@@ -91,11 +89,4 @@ public abstract class MethodDefParseNode extends ParseNode implements INameNode,
         return name;
     }
 
-    /**
-     * Which line is the 'end' encountered on.  Useful for RETURN event generation.
-     * @return the zero-based line number
-     */
-    public int getEndLine() {
-        return endLine;
-    }
 }
