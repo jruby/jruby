@@ -347,16 +347,17 @@ module MSpec
   # file if it is empty.
   def self.delete_tag(tag)
     deleted = false
-    pattern = /#{tag.tag}.*#{Regexp.escape(tag.escape(tag.description))}/
+    desc = tag.escape(tag.description)
     file = tags_file
     if File.exist? file
       lines = IO.readlines(file)
       File.open(file, "wb") do |f|
         lines.each do |line|
-          unless pattern =~ line.chomp
-            f.puts line unless line.empty?
-          else
+          line = line.chomp
+          if line.start_with?(tag.tag) and line.end_with?(desc)
             deleted = true
+          else
+            f.puts line unless line.empty?
           end
         end
       end
