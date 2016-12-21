@@ -189,7 +189,7 @@ describe MkSpec, "#write_spec" do
     @script.stub(:puts)
 
     @response = double("system command response")
-    @response.stub(:=~).and_return(false)
+    @response.stub(:include?).and_return(false)
     @script.stub(:`).and_return(@response)
   end
 
@@ -200,18 +200,18 @@ describe MkSpec, "#write_spec" do
     @script.write_spec("spec/core/tcejbo/inspect_spec.rb", "Object#inspect", true)
   end
 
-  it "escapes the Regexp when checking for method name in the spec file output" do
-    Regexp.should_receive(:escape).with("Array#[]=")
+  it "checks for the method name in the spec file output" do
+    @response.should_receive(:include?).with("Array#[]=")
     @script.write_spec("spec/core/yarra/element_set_spec.rb", "Array#[]=", true)
   end
 
   it "returns nil if the spec file exists and contains a spec for the method" do
-    @response.stub(:=~).and_return(true)
+    @response.stub(:include?).and_return(true)
     @script.write_spec("spec/core/tcejbo/inspect_spec.rb", "Object#inspect", true).should == nil
   end
 
   it "does not print the spec file name if it exists and contains a spec for the method" do
-    @response.stub(:=~).and_return(true)
+    @response.stub(:include?).and_return(true)
     @script.should_not_receive(:puts)
     @script.write_spec("spec/core/tcejbo/inspect_spec.rb", "Object#inspect", true)
   end
@@ -228,7 +228,7 @@ describe MkSpec, "#write_spec" do
   end
 
   it "writes a template spec to the file if it exists but contains no spec for the method" do
-    @response.should_receive(:=~).and_return(false)
+    @response.should_receive(:include?).and_return(false)
     @file.should_receive(:puts).twice
     @script.should_receive(:puts).with("spec/core/tcejbo/inspect_spec.rb")
     @script.write_spec("spec/core/tcejbo/inspect_spec.rb", "Object#inspect", true)
