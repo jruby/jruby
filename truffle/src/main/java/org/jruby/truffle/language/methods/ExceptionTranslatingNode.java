@@ -175,6 +175,10 @@ public class ExceptionTranslatingNode extends RubyNode {
 
     @TruffleBoundary
     public DynamicObject translate(Throwable throwable) {
+        if (throwable instanceof AssertionError && !getContext().getOptions().EXCEPTIONS_TRANSLATE_ASSERT) {
+            throw (AssertionError) throwable;
+        }
+
         if (getContext().getOptions().EXCEPTIONS_PRINT_JAVA
                 || getContext().getOptions().EXCEPTIONS_PRINT_UNCAUGHT_JAVA) {
             throwable.printStackTrace();

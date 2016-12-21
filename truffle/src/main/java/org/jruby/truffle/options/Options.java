@@ -92,6 +92,7 @@ public class Options {
     public final boolean EXCEPTIONS_STORE_JAVA;
     public final boolean EXCEPTIONS_PRINT_JAVA;
     public final boolean EXCEPTIONS_PRINT_UNCAUGHT_JAVA;
+    public final boolean EXCEPTIONS_TRANSLATE_ASSERT;
     public final boolean BACKTRACES_HIDE_CORE_FILES;
     public final boolean BACKTRACES_INTERLEAVE_JAVA;
     public final int BACKTRACES_LIMIT;
@@ -185,6 +186,7 @@ public class Options {
         EXCEPTIONS_STORE_JAVA = builder.getOrDefault(OptionsCatalog.EXCEPTIONS_STORE_JAVA);
         EXCEPTIONS_PRINT_JAVA = builder.getOrDefault(OptionsCatalog.EXCEPTIONS_PRINT_JAVA);
         EXCEPTIONS_PRINT_UNCAUGHT_JAVA = builder.getOrDefault(OptionsCatalog.EXCEPTIONS_PRINT_UNCAUGHT_JAVA);
+        EXCEPTIONS_TRANSLATE_ASSERT = builder.getOrDefault(OptionsCatalog.EXCEPTIONS_TRANSLATE_ASSERT);
         BACKTRACES_HIDE_CORE_FILES = builder.getOrDefault(OptionsCatalog.BACKTRACES_HIDE_CORE_FILES);
         BACKTRACES_INTERLEAVE_JAVA = builder.getOrDefault(OptionsCatalog.BACKTRACES_INTERLEAVE_JAVA);
         BACKTRACES_LIMIT = builder.getOrDefault(OptionsCatalog.BACKTRACES_LIMIT);
