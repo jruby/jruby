@@ -28,13 +28,13 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.ast;
 
-import org.jruby.truffle.language.RubySourceSection;
+import org.jruby.truffle.parser.TempSourceSection;
 
 /**
  * a bare '*' or nothing.  Name is "" if it is '*' and null if it is nothing.
  */
 public class UnnamedRestArgParseNode extends RestArgParseNode {
-    public UnnamedRestArgParseNode(RubySourceSection position, String name, int index) {
+    public UnnamedRestArgParseNode(TempSourceSection position, String name, int index) {
         super(position, name, index);
     }
 

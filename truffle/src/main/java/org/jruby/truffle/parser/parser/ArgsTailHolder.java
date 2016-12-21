@@ -26,21 +26,21 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.parser;
 
+import org.jruby.truffle.parser.TempSourceSection;
 import org.jruby.truffle.parser.ast.BlockArgParseNode;
 import org.jruby.truffle.parser.ast.KeywordRestArgParseNode;
 import org.jruby.truffle.parser.ast.ListParseNode;
-import org.jruby.truffle.language.RubySourceSection;
 
 /**
  * Simple struct to hold values until they can be inserted into the AST.
  */
 public class ArgsTailHolder {
-    private RubySourceSection position;
+    private TempSourceSection position;
     private BlockArgParseNode blockArg;
     private ListParseNode keywordArgs;
     private KeywordRestArgParseNode keywordRestArg;
     
-    public ArgsTailHolder(RubySourceSection position, ListParseNode keywordArgs,
+    public ArgsTailHolder(TempSourceSection position, ListParseNode keywordArgs,
                           KeywordRestArgParseNode keywordRestArg, BlockArgParseNode blockArg) {
         this.position = position;
         this.blockArg = blockArg;
@@ -48,7 +48,7 @@ public class ArgsTailHolder {
         this.keywordRestArg = keywordRestArg;
     }
     
-    public RubySourceSection getPosition() {
+    public TempSourceSection getPosition() {
         return position;
     }
     

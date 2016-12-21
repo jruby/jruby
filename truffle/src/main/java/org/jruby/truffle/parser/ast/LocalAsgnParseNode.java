@@ -34,7 +34,7 @@ package org.jruby.truffle.parser.ast;
 
 import org.jruby.truffle.parser.ast.types.INameNode;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.language.RubySourceSection;
+import org.jruby.truffle.parser.TempSourceSection;
 
 import java.util.List;
 
@@ -49,7 +49,7 @@ public class LocalAsgnParseNode extends AssignableParseNode implements INameNode
     // is what index in the right scope to set the value.
     private final int location;
 
-    public LocalAsgnParseNode(RubySourceSection position, String name, int location, ParseNode valueNode) {
+    public LocalAsgnParseNode(TempSourceSection position, String name, int location, ParseNode valueNode) {
         super(position, valueNode, true);
         this.name = name;
         this.location = location;

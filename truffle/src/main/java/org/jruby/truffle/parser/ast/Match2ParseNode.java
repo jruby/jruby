@@ -32,7 +32,7 @@
 package org.jruby.truffle.parser.ast;
 
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.language.RubySourceSection;
+import org.jruby.truffle.parser.TempSourceSection;
 
 import java.util.List;
 
@@ -40,7 +40,7 @@ public class Match2ParseNode extends ParseNode {
     private final ParseNode receiverNode;
     private final ParseNode valueNode;
 
-    public Match2ParseNode(RubySourceSection position, ParseNode receiverNode, ParseNode valueNode) {
+    public Match2ParseNode(TempSourceSection position, ParseNode receiverNode, ParseNode valueNode) {
         super(position, receiverNode.containsVariableAssignment() || valueNode.containsVariableAssignment());
 
         assert receiverNode != null : "receiverNode is not null";

@@ -17,7 +17,7 @@ import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
-import org.jruby.truffle.language.RubySourceSection;
+import org.jruby.truffle.parser.TempSourceSection;
 
 public class InstrumentedWriteLocalVariableNode extends WriteLocalVariableNode {
 
@@ -28,7 +28,7 @@ public class InstrumentedWriteLocalVariableNode extends WriteLocalVariableNode {
         name = frameSlot.getIdentifier().toString();
     }
 
-    public InstrumentedWriteLocalVariableNode(RubyContext context, RubySourceSection sourceSection, FrameSlot frameSlot, RubyNode valueNode) {
+    public InstrumentedWriteLocalVariableNode(RubyContext context, TempSourceSection sourceSection, FrameSlot frameSlot, RubyNode valueNode) {
         super(context, sourceSection, frameSlot, valueNode);
         name = frameSlot.getIdentifier().toString();
     }

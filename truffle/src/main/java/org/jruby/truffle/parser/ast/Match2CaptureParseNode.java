@@ -1,12 +1,12 @@
 package org.jruby.truffle.parser.ast;
 
-import org.jruby.truffle.language.RubySourceSection;
+import org.jruby.truffle.parser.TempSourceSection;
 
 public class Match2CaptureParseNode extends Match2ParseNode {
     // Allocated locals that the regexp will assign after performing a match
     private int[] scopeOffsets;
 
-    public Match2CaptureParseNode(RubySourceSection position, ParseNode receiverNode, ParseNode valueNode,
+    public Match2CaptureParseNode(TempSourceSection position, ParseNode receiverNode, ParseNode valueNode,
                                   int[] scopeOffsets) {
         super(position, receiverNode, valueNode);
 

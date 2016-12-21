@@ -33,9 +33,9 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.ast;
 
+import org.jruby.truffle.parser.TempSourceSection;
 import org.jruby.truffle.parser.ast.types.INameNode;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.language.RubySourceSection;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -59,7 +59,7 @@ public abstract class ParseNode {
     protected boolean containsVariableAssignment;
     protected boolean newline;
 
-    public ParseNode(RubySourceSection position, boolean containsAssignment) {
+    public ParseNode(TempSourceSection position, boolean containsAssignment) {
         if (position == null) {
             sourceStartLine = -1;
             sourceEndLine = -1;
@@ -81,11 +81,11 @@ public abstract class ParseNode {
     /**
      * Location of this node within the source
      */
-    public RubySourceSection getPosition() {
-        return new RubySourceSection(sourceStartLine, sourceEndLine);
+    public TempSourceSection getPosition() {
+        return new TempSourceSection(sourceStartLine, sourceEndLine);
     }
 
-    public void setPosition(RubySourceSection position) {
+    public void setPosition(TempSourceSection position) {
         sourceStartLine = position.getStartLine();
         sourceEndLine = position.getEndLine();
     }

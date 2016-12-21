@@ -34,19 +34,19 @@ package org.jruby.truffle.parser.ast;
 
 import org.jruby.truffle.parser.ast.types.ILiteralNode;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.language.RubySourceSection;
+import org.jruby.truffle.parser.TempSourceSection;
 
 /**
  * Represents an array. This could be an array literal, quoted words or some args stuff.
  */
 public class ArrayParseNode extends ListParseNode implements ILiteralNode {
-    public ArrayParseNode(RubySourceSection position, ParseNode firstNode) {
+    public ArrayParseNode(TempSourceSection position, ParseNode firstNode) {
         super(position, firstNode);
 
         assert firstNode != null : "ArrayParseNode.first == null";
     }
 
-    public ArrayParseNode(RubySourceSection position) {
+    public ArrayParseNode(TempSourceSection position) {
         super(position);
     }
 

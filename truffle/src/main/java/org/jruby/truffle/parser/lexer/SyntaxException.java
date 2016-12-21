@@ -27,7 +27,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.lexer;
 
-import org.jruby.truffle.language.RubySourceSection;
+import org.jruby.truffle.parser.TempSourceSection;
 
 public class SyntaxException extends RuntimeException {
     public enum PID {
@@ -100,8 +100,8 @@ public class SyntaxException extends RuntimeException {
     }
 
     @Deprecated
-    public RubySourceSection getPosition() {
-        return new RubySourceSection(line + 1);
+    public TempSourceSection getPosition() {
+        return new TempSourceSection(line + 1);
     }
 
     public String getFile() {

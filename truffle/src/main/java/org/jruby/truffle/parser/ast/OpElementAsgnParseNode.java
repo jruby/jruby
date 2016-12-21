@@ -32,7 +32,7 @@
 package org.jruby.truffle.parser.ast;
 
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.language.RubySourceSection;
+import org.jruby.truffle.parser.TempSourceSection;
 
 import java.util.List;
 
@@ -51,7 +51,7 @@ public class OpElementAsgnParseNode extends ParseNode {
     private final ParseNode valueNode;
     private final String operatorName;
 
-    public OpElementAsgnParseNode(RubySourceSection position, ParseNode receiverNode, String operatorName, ParseNode argsNode, ParseNode valueNode) {
+    public OpElementAsgnParseNode(TempSourceSection position, ParseNode receiverNode, String operatorName, ParseNode argsNode, ParseNode valueNode) {
         super(position, receiverNode.containsVariableAssignment() || argsNode != null && argsNode.containsVariableAssignment() || valueNode.containsVariableAssignment());
 
         assert receiverNode != null : "receiverNode is not null";

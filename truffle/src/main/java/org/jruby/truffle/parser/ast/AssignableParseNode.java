@@ -30,7 +30,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.ast;
 
-import org.jruby.truffle.language.RubySourceSection;
+import org.jruby.truffle.parser.TempSourceSection;
 
 /**
  * Base class of any node which can be assigned to.
@@ -38,11 +38,11 @@ import org.jruby.truffle.language.RubySourceSection;
 public abstract class AssignableParseNode extends ParseNode {
     private ParseNode valueNode;
 
-    public AssignableParseNode(RubySourceSection position) {
+    public AssignableParseNode(TempSourceSection position) {
         super(position, true);
     }
 
-    public AssignableParseNode(RubySourceSection position, ParseNode valueNode, boolean containsAssignment) {
+    public AssignableParseNode(TempSourceSection position, ParseNode valueNode, boolean containsAssignment) {
         super(position, containsAssignment);
 
         assert valueNode != null : "valueNode is not null";

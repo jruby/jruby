@@ -33,7 +33,7 @@
 package org.jruby.truffle.parser.ast;
 
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.language.RubySourceSection;
+import org.jruby.truffle.parser.TempSourceSection;
 
 import java.util.List;
 
@@ -44,7 +44,7 @@ public class StarParseNode extends ParseNode {
     /**
      * Constructor for StarParseNode.
      */
-    public StarParseNode(RubySourceSection position) {
+    public StarParseNode(TempSourceSection position) {
         super(position, false);
     }
 

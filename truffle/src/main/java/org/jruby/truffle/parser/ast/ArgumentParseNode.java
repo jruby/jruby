@@ -30,7 +30,7 @@ package org.jruby.truffle.parser.ast;
 
 import org.jruby.truffle.parser.ast.types.INameNode;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.language.RubySourceSection;
+import org.jruby.truffle.parser.TempSourceSection;
 
 import java.util.List;
 
@@ -43,13 +43,13 @@ public class ArgumentParseNode extends ParseNode implements INameNode {
     private String identifier;
     private int location;
 
-    public ArgumentParseNode(RubySourceSection position, String identifier) {
+    public ArgumentParseNode(TempSourceSection position, String identifier) {
         super(position, false);
 
         this.identifier = identifier;
     }
 
-    public ArgumentParseNode(RubySourceSection position, String identifier, int location) {
+    public ArgumentParseNode(TempSourceSection position, String identifier, int location) {
         this(position, identifier);
 
         this.location = location; // All variables should be depth 0 in this case

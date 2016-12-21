@@ -38,9 +38,11 @@ package org.jruby.truffle.parser.parser;
 
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.rope.CodeRange;
+import org.jruby.truffle.core.string.ByteList;
 import org.jruby.truffle.interop.ForeignCodeNode;
 import org.jruby.truffle.collections.Tuple;
 import org.jruby.truffle.parser.RubyWarnings;
+import org.jruby.truffle.parser.TempSourceSection;
 import org.jruby.truffle.parser.ast.ArgsParseNode;
 import org.jruby.truffle.parser.ast.ArgumentParseNode;
 import org.jruby.truffle.parser.ast.ArrayParseNode;
@@ -120,12 +122,10 @@ import org.jruby.truffle.parser.ast.YieldParseNode;
 import org.jruby.truffle.parser.ast.ZArrayParseNode;
 import org.jruby.truffle.parser.ast.ZSuperParseNode;
 import org.jruby.truffle.parser.ast.types.ILiteralNode;
-import org.jruby.truffle.language.RubySourceSection;
 import org.jruby.truffle.parser.lexer.LexerSource;
 import org.jruby.truffle.parser.lexer.RubyLexer;
 import org.jruby.truffle.parser.lexer.StrTerm;
 import org.jruby.truffle.parser.lexer.SyntaxException.PID;
-import org.jruby.truffle.util.ByteList;
 
 import java.io.IOException;
 
@@ -154,7 +154,7 @@ public class RubyParser {
     }
 %}
 
-%token <RubySourceSection> kCLASS kMODULE kDEF kUNDEF kBEGIN kRESCUE kENSURE kEND kIF
+%token <TempSourceSection> kCLASS kMODULE kDEF kUNDEF kBEGIN kRESCUE kENSURE kEND kIF
   kUNLESS kTHEN kELSIF kELSE kCASE kWHEN kWHILE kUNTIL kFOR kBREAK kNEXT
   kREDO kRETRY kIN kDO kDO_COND kDO_BLOCK kRETURN kYIELD kSUPER kSELF kNIL
   kTRUE kFALSE kAND kOR kNOT kIF_MOD kUNLESS_MOD kWHILE_MOD kUNTIL_MOD
@@ -186,14 +186,14 @@ public class RubyParser {
 %token <String> tCOLON3        /* :: at EXPR_BEG */
 %token <String> tOP_ASGN       /* +=, -=  etc. */
 %token <String> tASSOC         /* => */
-%token <RubySourceSection> tLPAREN       /* ( */
-%token <RubySourceSection> tLPAREN2      /* ( Is just '(' in ruby and not a token */
+%token <TempSourceSection> tLPAREN       /* ( */
+%token <TempSourceSection> tLPAREN2      /* ( Is just '(' in ruby and not a token */
 %token <String> tRPAREN        /* ) */
-%token <RubySourceSection> tLPAREN_ARG    /* ( */
+%token <TempSourceSection> tLPAREN_ARG    /* ( */
 %token <String> tLBRACK        /* [ */
 %token <String> tRBRACK        /* ] */
-%token <RubySourceSection> tLBRACE        /* { */
-%token <RubySourceSection> tLBRACE_ARG    /* { */
+%token <TempSourceSection> tLBRACE        /* { */
+%token <TempSourceSection> tLBRACE_ARG    /* { */
 %token <String> tSTAR          /* * */
 %token <String> tSTAR2         /* *  Is just '*' in ruby and not a token */
 %token <String> tAMPER         /* & */
@@ -208,7 +208,7 @@ public class RubyParser {
 %token <String> tPIPE          /* | is just '|' in ruby and not a token */
 %token <String> tBANG          /* ! is just '!' in ruby and not a token */
 %token <String> tCARET         /* ^ is just '^' in ruby and not a token */
-%token <RubySourceSection> tLCURLY        /* { is just '{' in ruby and not a token */
+%token <TempSourceSection> tLCURLY        /* { is just '{' in ruby and not a token */
 %token <String> tRCURLY        /* } is just '}' in ruby and not a token */
 %token <String> tBACK_REF2     /* { is just '`' in ruby and not a token */
 %token <String> tSYMBEG tSTRING_BEG tXSTRING_BEG tREGEXP_BEG tWORDS_BEG tQWORDS_BEG
@@ -465,7 +465,7 @@ stmt            : kALIAS fitem {
                 | var_lhs tOP_ASGN command_call {
                     support.checkExpression($3);
 
-                    RubySourceSection pos = $1.getPosition();
+                    TempSourceSection pos = $1.getPosition();
                     String asgnOp = $2;
                     if (asgnOp.equals("||")) {
                         $1.setValueNode($3);
@@ -490,7 +490,7 @@ stmt            : kALIAS fitem {
                     $$ = support.newOpAsgn(support.getPosition($1), $1, $2, $5, $3, $4);
                 }
                 | primary_value tCOLON2 tCONSTANT tOP_ASGN command_call {
-                    RubySourceSection pos = $1.getPosition();
+                    TempSourceSection pos = $1.getPosition();
                     $$ = support.newOpConstAsgn(pos, support.new_colon2(pos, $1, $2), $4, $5);
                 }
 
@@ -730,7 +730,7 @@ mlhs_node       : /*mri:user_variable*/ tIDENTIFIER {
                         support.yyerror("dynamic constant assignment");
                     }
 
-                    RubySourceSection position = support.getPosition($1);
+                    TempSourceSection position = support.getPosition($1);
 
                     $$ = new ConstDeclParseNode(position, null, support.new_colon2(position, $1, $3), NilImplicitParseNode.NIL);
                 }
@@ -739,7 +739,7 @@ mlhs_node       : /*mri:user_variable*/ tIDENTIFIER {
                         support.yyerror("dynamic constant assignment");
                     }
 
-                    RubySourceSection position = lexer.getPosition();
+                    TempSourceSection position = lexer.getPosition();
 
                     $$ = new ConstDeclParseNode(position, null, support.new_colon3(position, $2), NilImplicitParseNode.NIL);
                 }
@@ -809,7 +809,7 @@ lhs             : /*mri:user_variable*/ tIDENTIFIER {
                         support.yyerror("dynamic constant assignment");
                     }
 
-                    RubySourceSection position = support.getPosition($1);
+                    TempSourceSection position = support.getPosition($1);
 
                     $$ = new ConstDeclParseNode(position, null, support.new_colon2(position, $1, $3), NilImplicitParseNode.NIL);
                 }
@@ -818,7 +818,7 @@ lhs             : /*mri:user_variable*/ tIDENTIFIER {
                         support.yyerror("dynamic constant assignment");
                     }
 
-                    RubySourceSection position = lexer.getPosition();
+                    TempSourceSection position = lexer.getPosition();
 
                     $$ = new ConstDeclParseNode(position, null, support.new_colon3(position, $2), NilImplicitParseNode.NIL);
                 }
@@ -1023,7 +1023,7 @@ arg             : lhs '=' arg {
                 | var_lhs tOP_ASGN arg {
                     support.checkExpression($3);
 
-                    RubySourceSection pos = $1.getPosition();
+                    TempSourceSection pos = $1.getPosition();
                     String asgnOp = $2;
                     if (asgnOp.equals("||")) {
                         $1.setValueNode($3);
@@ -1041,7 +1041,7 @@ arg             : lhs '=' arg {
                     support.checkExpression($3);
                     ParseNode rescue = support.newRescueModNode($3, $5);
 
-                    RubySourceSection pos = $1.getPosition();
+                    TempSourceSection pos = $1.getPosition();
                     String asgnOp = $2;
                     if (asgnOp.equals("||")) {
                         $1.setValueNode(rescue);
@@ -1069,11 +1069,11 @@ arg             : lhs '=' arg {
                     $$ = support.newOpAsgn(support.getPosition($1), $1, $2, $5, $3, $4);
                 }
                 | primary_value tCOLON2 tCONSTANT tOP_ASGN arg {
-                    RubySourceSection pos = support.getPosition($1);
+                    TempSourceSection pos = support.getPosition($1);
                     $$ = support.newOpConstAsgn(pos, support.new_colon2(pos, $1, $3), $4, $5);
                 }
                 | tCOLON3 tCONSTANT tOP_ASGN arg {
-                    RubySourceSection pos = lexer.getPosition();
+                    TempSourceSection pos = lexer.getPosition();
                     $$ = support.newOpConstAsgn(pos, new Colon3ParseNode(pos, $1), $3, $4);
                 }
                 | backref tOP_ASGN arg {
@@ -1266,7 +1266,7 @@ opt_block_arg   : ',' block_arg {
 
 // [!null]
 args            : arg_value { // ArrayParseNode
-                    RubySourceSection pos = $1 == null ? lexer.getPosition() : $1.getPosition();
+                    TempSourceSection pos = $1 == null ? lexer.getPosition() : $1.getPosition();
                     $$ = support.newArrayNode(pos, $1);
                 }
                 | tSTAR arg_value { // SplatNode
@@ -1378,7 +1378,7 @@ primary         : literal
                     $$ = support.new_colon3(lexer.getPosition(), $2);
                 }
                 | tLBRACK aref_args tRBRACK {
-                    RubySourceSection position = support.getPosition($2);
+                    TempSourceSection position = support.getPosition($2);
                     if ($2 == null) {
                         $$ = new ZArrayParseNode(position); /* zero length array */
                     } else {
@@ -1914,7 +1914,7 @@ string1         : tSTRING_BEG string_contents tSTRING_END {
                 }
 
 xstring         : tXSTRING_BEG xstring_contents tSTRING_END {
-                    RubySourceSection position = support.getPosition($2);
+                    TempSourceSection position = support.getPosition($2);
 
                     lexer.heredoc_dedent($2);
 		    lexer.setHeredocIndent(0);

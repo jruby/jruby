@@ -35,7 +35,7 @@ import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.string.ByteList;
 import org.jruby.truffle.parser.ast.types.ILiteralNode;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.language.RubySourceSection;
+import org.jruby.truffle.parser.TempSourceSection;
 
 import java.util.List;
 
@@ -46,7 +46,7 @@ public class XStrParseNode extends ParseNode implements ILiteralNode {
     private final ByteList value;
     private CodeRange coderange;
 
-    public XStrParseNode(RubySourceSection position, ByteList value, CodeRange coderange) {
+    public XStrParseNode(TempSourceSection position, ByteList value, CodeRange coderange) {
         // FIXME: Shouldn't this have codeRange like StrParseNode?
         super(position, false);
         this.value = (value == null ? ByteList.create("") : value);

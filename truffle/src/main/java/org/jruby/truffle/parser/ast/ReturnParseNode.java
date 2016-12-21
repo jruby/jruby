@@ -32,7 +32,7 @@
 package org.jruby.truffle.parser.ast;
 
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.language.RubySourceSection;
+import org.jruby.truffle.parser.TempSourceSection;
 
 import java.util.List;
 
@@ -42,7 +42,7 @@ import java.util.List;
 public class ReturnParseNode extends ParseNode implements NonLocalControlFlowParseNode {
     private final ParseNode valueNode;
 
-    public ReturnParseNode(RubySourceSection position, ParseNode valueNode) {
+    public ReturnParseNode(TempSourceSection position, ParseNode valueNode) {
         super(position, valueNode.containsVariableAssignment());
 
         assert valueNode != null : "valueNode is not null";

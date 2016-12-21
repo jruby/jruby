@@ -33,7 +33,6 @@ package org.jruby.truffle.parser;
 import org.joni.WarnCallback;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.debug.DebugHelpers;
-import org.jruby.truffle.language.RubySourceSection;
 
 import java.util.EnumSet;
 import java.util.Set;

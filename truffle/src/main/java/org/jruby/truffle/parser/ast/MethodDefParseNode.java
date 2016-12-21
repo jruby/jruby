@@ -32,8 +32,8 @@ package org.jruby.truffle.parser.ast;
  * Base class for DefnParseNode and DefsParseNode
  */
 
+import org.jruby.truffle.parser.TempSourceSection;
 import org.jruby.truffle.parser.ast.types.INameNode;
-import org.jruby.truffle.language.RubySourceSection;
 import org.jruby.truffle.parser.scope.StaticScope;
 
 public abstract class MethodDefParseNode extends ParseNode implements INameNode, DefNode {
@@ -42,9 +42,9 @@ public abstract class MethodDefParseNode extends ParseNode implements INameNode,
     protected final StaticScope scope;
     protected final ParseNode bodyNode;
 
-    public MethodDefParseNode(RubySourceSection position, String name, ArgsParseNode argsNode,
+    public MethodDefParseNode(TempSourceSection position, String name, ArgsParseNode argsNode,
                               StaticScope scope, ParseNode bodyNode, int endLine) {
-        super(new RubySourceSection(position.getStartLine(), endLine), bodyNode.containsVariableAssignment());
+        super(new TempSourceSection(position.getStartLine(), endLine), bodyNode.containsVariableAssignment());
 
         assert bodyNode != null : "bodyNode must not be null";
             

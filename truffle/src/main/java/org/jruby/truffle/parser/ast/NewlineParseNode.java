@@ -33,7 +33,7 @@
 package org.jruby.truffle.parser.ast;
 
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.language.RubySourceSection;
+import org.jruby.truffle.parser.TempSourceSection;
 
 import java.util.List;
 
@@ -53,7 +53,7 @@ public class NewlineParseNode extends ParseNode {
     private final ParseNode nextNode;
 
     @Deprecated
-    public NewlineParseNode(RubySourceSection position, ParseNode nextNode) {
+    public NewlineParseNode(TempSourceSection position, ParseNode nextNode) {
         super(position, nextNode.containsVariableAssignment());
 
         assert nextNode != null : "nextNode is not null";

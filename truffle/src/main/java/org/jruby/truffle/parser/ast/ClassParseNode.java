@@ -31,8 +31,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.ast;
 
+import org.jruby.truffle.parser.TempSourceSection;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.language.RubySourceSection;
 import org.jruby.truffle.parser.scope.StaticScope;
 
 import java.util.List;
@@ -46,7 +46,7 @@ public class ClassParseNode extends ParseNode implements IScopingNode {
     private final ParseNode bodyNode;
     private final ParseNode superNode;
 
-    public ClassParseNode(RubySourceSection position, Colon3ParseNode cpath, StaticScope scope, ParseNode bodyNode, ParseNode superNode) {
+    public ClassParseNode(TempSourceSection position, Colon3ParseNode cpath, StaticScope scope, ParseNode bodyNode, ParseNode superNode) {
         super(position, cpath.containsVariableAssignment() || bodyNode.containsVariableAssignment() || superNode != null && superNode.containsVariableAssignment());
 
         assert cpath != null : "cpath is not null";

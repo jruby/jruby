@@ -33,7 +33,7 @@ package org.jruby.truffle.parser.ast;
 
 import org.jruby.truffle.parser.ast.types.ILiteralNode;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.language.RubySourceSection;
+import org.jruby.truffle.parser.TempSourceSection;
 
 import java.util.List;
 
@@ -43,7 +43,7 @@ import java.util.List;
 public class FixnumParseNode extends NumericParseNode implements ILiteralNode, SideEffectFree {
     private long value;
 
-    public FixnumParseNode(RubySourceSection position, long value) {
+    public FixnumParseNode(TempSourceSection position, long value) {
         super(position);
         this.value = value;
     }

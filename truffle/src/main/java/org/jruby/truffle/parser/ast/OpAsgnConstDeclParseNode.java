@@ -1,7 +1,7 @@
 package org.jruby.truffle.parser.ast;
 
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.language.RubySourceSection;
+import org.jruby.truffle.parser.TempSourceSection;
 
 import java.util.List;
 
@@ -13,7 +13,7 @@ public class OpAsgnConstDeclParseNode extends ParseNode implements BinaryOperato
     private String operator;
     private ParseNode rhs;
 
-    public OpAsgnConstDeclParseNode(RubySourceSection position, ParseNode lhs, String operator, ParseNode rhs) {
+    public OpAsgnConstDeclParseNode(TempSourceSection position, ParseNode lhs, String operator, ParseNode rhs) {
         super(position, lhs.containsVariableAssignment() || rhs.containsVariableAssignment());
 
         this.lhs = lhs;

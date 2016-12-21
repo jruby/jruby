@@ -30,13 +30,13 @@ package org.jruby.truffle.parser.ast;
 
 import org.jruby.truffle.parser.ast.types.INameNode;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.language.RubySourceSection;
+import org.jruby.truffle.parser.TempSourceSection;
 
 /*
  * The rest argument for a method (def foo(a, *b, c)).
  */
 public class RestArgParseNode extends ArgumentParseNode implements INameNode {
-    public RestArgParseNode(RubySourceSection position, String name, int index) {
+    public RestArgParseNode(TempSourceSection position, String name, int index) {
         super(position, name, index);
     }
 

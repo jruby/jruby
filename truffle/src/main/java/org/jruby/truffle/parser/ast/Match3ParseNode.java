@@ -31,8 +31,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.ast;
 
+import org.jruby.truffle.parser.TempSourceSection;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.language.RubySourceSection;
 
 import java.util.List;
 
@@ -43,7 +43,7 @@ public class Match3ParseNode extends ParseNode {
     private final ParseNode receiverNode;
     private final ParseNode valueNode;
 
-    public Match3ParseNode(RubySourceSection position, ParseNode receiverNode, ParseNode valueNode) {
+    public Match3ParseNode(TempSourceSection position, ParseNode receiverNode, ParseNode valueNode) {
         super(position, receiverNode.containsVariableAssignment() || valueNode.containsVariableAssignment());
 
         assert receiverNode != null : "receiverNode is not null";

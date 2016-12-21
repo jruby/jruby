@@ -31,8 +31,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.ast;
 
+import org.jruby.truffle.parser.TempSourceSection;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.language.RubySourceSection;
 
 import java.util.List;
 
@@ -49,7 +49,7 @@ public class BackRefParseNode extends ParseNode {
      **/
     private final char type;
 
-    public BackRefParseNode(RubySourceSection position, int type) {
+    public BackRefParseNode(TempSourceSection position, int type) {
         super(position, false);
         this.type = (char) type;
     }

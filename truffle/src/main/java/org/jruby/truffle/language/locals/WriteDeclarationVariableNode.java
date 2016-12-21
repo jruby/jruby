@@ -16,7 +16,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.RubySourceSection;
+import org.jruby.truffle.parser.TempSourceSection;
 import org.jruby.truffle.language.arguments.RubyArguments;
 
 public class WriteDeclarationVariableNode extends RubyNode {
@@ -27,7 +27,7 @@ public class WriteDeclarationVariableNode extends RubyNode {
     @Child private RubyNode valueNode;
     @Child private WriteFrameSlotNode writeFrameSlotNode;
 
-    public WriteDeclarationVariableNode(RubyContext context, RubySourceSection sourceSection,
+    public WriteDeclarationVariableNode(RubyContext context, TempSourceSection sourceSection,
                                         FrameSlot frameSlot, int frameDepth, RubyNode valueNode) {
         super(context, sourceSection);
         this.frameDepth = frameDepth;
