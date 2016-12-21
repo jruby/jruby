@@ -27,8 +27,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.lexer;
 
-import org.jruby.truffle.parser.PositionAware;
-
 /**
  * This interface is the combination of two needs:  1) A Ruby interpreter position (for warnings 
  * and errors).  The interpreter only cares about filename and endLine.  2) A IDE position (offsets
@@ -38,7 +36,7 @@ import org.jruby.truffle.parser.PositionAware;
  * of 0 and an endOffset of 3 ( 0a1b2c3 ).
  * 
  */
-public interface ISourcePosition extends PositionAware {
+public interface ISourcePosition {
     /**
      * Which file does this source position live in?
      * 
