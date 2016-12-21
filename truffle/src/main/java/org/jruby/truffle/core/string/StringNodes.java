@@ -1327,7 +1327,6 @@ public abstract class StringNodes {
     })
     public abstract static class InsertNode extends CoreMethodNode {
 
-        @Child private CallDispatchHeadNode appendNode;
         @Child private CharacterByteIndexNode characterByteIndexNode;
         @Child private CheckIndexNode checkIndexNode;
         @Child private EncodingNodes.CheckEncodingNode checkEncodingNode;
@@ -1376,13 +1375,9 @@ public abstract class StringNodes {
         }
 
         @Specialization(guards = { "indexAtEndBound(index, string)", "isRubyString(other)" })
-        public Object insertAppend(VirtualFrame frame, DynamicObject string, int index, DynamicObject other) {
-            if (appendNode == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                appendNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
-            }
-
-            appendNode.call(frame, string, "append", other);
+        public Object insertAppend(VirtualFrame frame, DynamicObject string, int index, DynamicObject other,
+                                   @Cached("create()") StringAppendPrimitiveNode appendNode) {
+            appendNode.executeStringAppend(string, other);
 
             return taintResultNode.maybeTaint(other, string);
         }
@@ -2711,6 +2706,10 @@ public abstract class StringNodes {
 
         @Child private EncodingNodes.CheckEncodingNode checkEncodingNode;
         @Child private RopeNodes.MakeConcatNode makeConcatNode;
+
+        public static StringAppendPrimitiveNode create() {
+            return StringNodesFactory.StringAppendPrimitiveNodeFactory.create(null, null, null);
+        }
 
         public StringAppendPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
