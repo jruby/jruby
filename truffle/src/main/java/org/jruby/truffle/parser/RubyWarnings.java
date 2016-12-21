@@ -132,15 +132,6 @@ public class RubyWarnings implements WarnCallback {
     /**
      * Prints a warning, unless $VERBOSE is nil.
      */
-    public void warn(ID id, SimpleSourcePosition position, String message) {
-        if (!runtime.warningsEnabled()) return;
-
-        warn(id, position.getFile(), position.getLine() + 1, message);
-    }
-
-    /**
-     * Prints a warning, unless $VERBOSE is nil.
-     */
     @SuppressWarnings("deprecation")
     public void warn(ID id, String fileName, int lineNumber, String message) {
         if (!runtime.warningsEnabled()) return;
@@ -189,13 +180,6 @@ public class RubyWarnings implements WarnCallback {
         if (!runtime.warningsEnabled()) return;
 
         throw new UnsupportedOperationException();
-    }
-
-    /**
-     * Prints a warning, only in verbose mode.
-     */
-    public void warning(ID id, SimpleSourcePosition position, String message) {
-        warning(id, position.getFile(), position.getLine() + 1, message);
     }
 
     /**
