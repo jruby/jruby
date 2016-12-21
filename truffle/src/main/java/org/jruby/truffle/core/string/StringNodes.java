@@ -3795,7 +3795,7 @@ public abstract class StringNodes {
 
         @Specialization(guards = { "index > 0", "!isSingleByteOptimizable(string)", "isFixedWidthEncoding(string)" })
         public int fixedWidthEncoding(DynamicObject string, int index,
-                                                             @Cached("createBinaryProfile()") ConditionProfile firstCharacterProfile) {
+                                      @Cached("createBinaryProfile()") ConditionProfile firstCharacterProfile) {
             final Encoding encoding = encoding(string);
 
             // TODO (nirvdrum 11-Apr-16) Determine whether we need to be bug-for-bug compatible with Rubinius.
