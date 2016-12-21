@@ -323,16 +323,16 @@ module KernelSpecs
 
   # for testing lambda
   class Lambda
-    def outer(meth)
-      inner(meth)
+    def outer
+      inner
     end
 
     def mp(&b); b; end
 
-    def inner(meth)
+    def inner
       b = mp { return :good }
 
-      pr = send(meth) { |x| x.call }
+      pr = lambda { |x| x.call }
 
       pr.call(b)
 

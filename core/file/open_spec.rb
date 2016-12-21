@@ -518,6 +518,31 @@ describe "File.open" do
     File.size(@file).should == 0
   end
 
+  ruby_version_is "2.3" do
+    platform_is :linux do
+      if defined?(File::TMPFILE)
+        it "creates an unnamed temporary file with File::TMPFILE" do
+          dir = tmp("").chomp("/")
+          rm_r @file
+          Dir["#{dir}/*"].should == []
+          begin
+            File.open(dir, "r+", flags: File::TMPFILE) do |io|
+              io.write("ruby")
+              io.flush
+              io.rewind
+              io.read.should == "ruby"
+              Dir["#{dir}/*"].should == []
+            end
+          rescue Errno::EOPNOTSUPP, Errno::EINVAL
+            # EOPNOTSUPP: no support from the filesystem
+            # EINVAL: presumably bug in glibc
+            1.should == 1
+          end
+        end
+      end
+    end
+  end
+
   it "raises a TypeError if passed a filename that is not a String or Integer type" do
     lambda { File.open(true)  }.should raise_error(TypeError)
     lambda { File.open(false) }.should raise_error(TypeError)
@@ -551,6 +576,24 @@ describe "File.open" do
     options.should_receive(:to_hash).and_return({ mode: "r" })
 
     @fh = File.open(@file, options)
+  end
+
+  ruby_version_is "2.3" do
+    it "accepts extra flags as a keyword argument and combine with a string mode" do
+      lambda {
+        File.open(@file, "w", flags: File::EXCL) { }
+      }.should raise_error(Errno::EEXIST)
+
+      lambda {
+        File.open(@file, mode: "w", flags: File::EXCL) { }
+      }.should raise_error(Errno::EEXIST)
+    end
+
+    it "accepts extra flags as a keyword argument and combine with an integer mode" do
+      lambda {
+        File.open(@file, File::WRONLY | File::CREAT, flags: File::EXCL) { }
+      }.should raise_error(Errno::EEXIST)
+    end
   end
 
   platform_is_not :windows do

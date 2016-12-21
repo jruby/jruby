@@ -13,8 +13,8 @@ describe "BigDecimal.new" do
       # ^ to_f to avoid Rational type
     }
     (1..9).each {|i|
-      BigDecimal.new("100.#{i}").to_s.should == "0.100#{i}E3"
-      BigDecimal.new("-100.#{i}").to_s.should == "-0.100#{i}E3"
+      BigDecimal.new("100.#{i}").to_s.should =~ /\A0\.100#{i}E3\z/i
+      BigDecimal.new("-100.#{i}").to_s.should =~ /\A-0\.100#{i}E3\z/i
     }
   end
 
@@ -32,7 +32,6 @@ describe "BigDecimal.new" do
     BigDecimal.new("  \t\n \rNaN   \n").nan?.should == true
     BigDecimal.new("  \t\n \rInfinity   \n").infinite?.should == 1
     BigDecimal.new("  \t\n \r-Infinity   \n").infinite?.should == -1
-    BigDecimal.new("  \t\n \r-\t\t\tInfinity   \n").should == 0.0
   end
 
   it "ignores trailing garbage" do
@@ -42,8 +41,18 @@ describe "BigDecimal.new" do
     BigDecimal.new("1E2E3E4E5E").should == BigDecimal.new("100")
   end
 
-  it "treats invalid strings as 0.0" do
-    BigDecimal.new("ruby").should == BigDecimal.new("0.0")
+  ruby_version_is ""..."2.4" do
+    it "treats invalid strings as 0.0" do
+      BigDecimal.new("ruby").should == BigDecimal.new("0.0")
+      BigDecimal.new("  \t\n \r-\t\t\tInfinity   \n").should == BigDecimal.new("0.0")
+    end
+  end
+
+  ruby_version_is "2.4" do
+    it "raises ArgumentError for invalid strings" do
+      lambda { BigDecimal.new("ruby") }.should raise_error(ArgumentError)
+      lambda { BigDecimal.new("  \t\n \r-\t\t\tInfinity   \n") }.should raise_error(ArgumentError)
+    end
   end
 
   it "allows omitting the integer part" do

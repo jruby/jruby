@@ -76,10 +76,10 @@ describe "Array#sample" do
       [1, 2].sample(random: obj).should be_an_instance_of(Fixnum)
     end
 
-    it "ignores an Object passed for the RNG if it does not define #rand" do
-      obj = mock("array_sample_random")
+    it "raises a NoMethodError if an object passed for the RNG does not define #rand" do
+      obj = BasicObject.new
 
-      [1, 2].sample(random: obj).should be_an_instance_of(Fixnum)
+      lambda { [1, 2].sample(random: obj) }.should raise_error(NoMethodError)
     end
 
     describe "when the object returned by #rand is a Fixnum" do

@@ -250,11 +250,18 @@ describe :process_spawn, shared: true do
 
   # :unsetenv_others
 
+  before :each do
+    @minimal_env = {
+      "PATH" => ENV["PATH"],
+      "HOME" => ENV["HOME"]
+    }
+  end
+
   platform_is_not :windows do
     it "unsets other environment variables when given a true :unsetenv_others option" do
       ENV["FOO"] = "BAR"
       lambda do
-        Process.wait @object.spawn({"PATH" => ENV["PATH"]}, ruby_cmd(fixture(__FILE__, "env.rb"), options: "--disable-gems"), unsetenv_others: true)
+        Process.wait @object.spawn(@minimal_env, ruby_cmd(fixture(__FILE__, "env.rb"), options: "--disable-gems"), unsetenv_others: true)
         $?.success?.should be_true
       end.should output_to_fd("")
     end
@@ -262,7 +269,7 @@ describe :process_spawn, shared: true do
     it "unsets other environment variables when given a non-false :unsetenv_others option" do
       ENV["FOO"] = "BAR"
       lambda do
-        Process.wait @object.spawn({"PATH" => ENV["PATH"]}, ruby_cmd(fixture(__FILE__, "env.rb"), options: "--disable-gems"), unsetenv_others: :true)
+        Process.wait @object.spawn(@minimal_env, ruby_cmd(fixture(__FILE__, "env.rb"), options: "--disable-gems"), unsetenv_others: :true)
         $?.success?.should be_true
       end.should output_to_fd("")
     end
@@ -287,7 +294,8 @@ describe :process_spawn, shared: true do
   platform_is_not :windows do
     it "does not unset environment variables included in the environment hash" do
       lambda do
-        Process.wait @object.spawn({"FOO" => "BAR"}, ruby_cmd(fixture(__FILE__, "env.rb"), options: "--disable-gems"), unsetenv_others: true)
+        env = @minimal_env.merge({"FOO" => "BAR"})
+        Process.wait @object.spawn(env, ruby_cmd(fixture(__FILE__, "env.rb"), options: "--disable-gems"), unsetenv_others: true)
         $?.success?.should be_true
       end.should output_to_fd("BAR")
     end
