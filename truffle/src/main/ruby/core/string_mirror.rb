@@ -57,8 +57,16 @@ module Rubinius
         Truffle.invoke_primitive :string_previous_byte_index, @object, index
       end
 
-      def copy_from(other, start, size, dest)
-        Truffle.invoke_primitive :string_copy_from, @object, other, start, size, dest
+      def copy_from(other, other_offset, byte_count_to_copy, dest_offset)
+        sz = @object.bytesize
+        osz = other.bytesize
+
+        other_offset = 0 if other_offset < 0
+        dest_offset = 0 if dest_offset < 0
+        byte_count_to_copy = osz - other_offset if byte_count_to_copy > osz - other_offset
+        byte_count_to_copy = sz - dest_offset if byte_count_to_copy > sz - dest_offset
+
+        splice(dest_offset, byte_count_to_copy, other.byteslice(other_offset, byte_count_to_copy))
       end
 
       def splice(starting_byte_index, byte_count_to_replace, replacement, encoding=nil)
