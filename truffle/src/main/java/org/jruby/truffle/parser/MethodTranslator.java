@@ -20,6 +20,7 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.IsNilNode;
 import org.jruby.truffle.core.cast.ArrayCastNodeGen;
 import org.jruby.truffle.core.proc.ProcType;
+import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.RubySourceSection;
@@ -50,17 +51,24 @@ import org.jruby.truffle.language.supercall.ReadZSuperArgumentsNode;
 import org.jruby.truffle.language.supercall.SuperCallNode;
 import org.jruby.truffle.language.supercall.ZSuperOutsideMethodNode;
 import org.jruby.truffle.parser.ast.ArgsParseNode;
+import org.jruby.truffle.parser.ast.ArrayParseNode;
 import org.jruby.truffle.parser.ast.AssignableParseNode;
+import org.jruby.truffle.parser.ast.BlockParseNode;
+import org.jruby.truffle.parser.ast.CallParseNode;
+import org.jruby.truffle.parser.ast.ConstParseNode;
 import org.jruby.truffle.parser.ast.DAsgnParseNode;
 import org.jruby.truffle.parser.ast.KeywordArgParseNode;
 import org.jruby.truffle.parser.ast.LocalAsgnParseNode;
+import org.jruby.truffle.parser.ast.MethodDefParseNode;
 import org.jruby.truffle.parser.ast.ParseNode;
 import org.jruby.truffle.parser.ast.SuperParseNode;
 import org.jruby.truffle.parser.ast.UnnamedRestArgParseNode;
 import org.jruby.truffle.parser.ast.ZSuperParseNode;
 import org.jruby.truffle.tools.ChaosNodeGen;
 
+import java.util.ArrayDeque;
 import java.util.Arrays;
+import java.util.Deque;
 
 public class MethodTranslator extends BodyTranslator {
 
@@ -130,24 +138,17 @@ public class MethodTranslator extends BodyTranslator {
 
         final RubyNode preludeLambda = sequence(context, source, sourceSection, Arrays.asList(checkArity, NodeUtil.cloneNode(loadArguments)));
 
-        RubyNode body;
-
-        parentSourceSection.push(sourceSection);
-        try {
-            if (!translatingForStatement) {
-                // Make sure to declare block-local variables
-                for (String var : variables) {
-                    environment.declareVar(var);
-                }
+        if (!translatingForStatement) {
+            // Make sure to declare block-local variables
+            for (String var : variables) {
+                environment.declareVar(var);
             }
+        }
 
-            body = translateNodeOrNil(sourceSection, bodyNode);
+        RubyNode body = translateNodeOrNil(sourceSection, bodyNode);
 
-            if (context.getOptions().CHAOS) {
-                body = ChaosNodeGen.create(body);
-            }
-        } finally {
-            parentSourceSection.pop();
+        if (context.getOptions().CHAOS) {
+            body = ChaosNodeGen.create(body);
         }
 
         // Procs
@@ -230,27 +231,46 @@ public class MethodTranslator extends BodyTranslator {
         final LoadArgumentsTranslator loadArgumentsTranslator = new LoadArgumentsTranslator(currentNode, context, source, false, this);
         final RubyNode loadArguments = argsNode.accept(loadArgumentsTranslator);
         
-        RubyNode body;
-
-        parentSourceSection.push(sourceSection);
-        try {
-            body = translateNodeOrNil(sourceSection, bodyNode);
-        } finally {
-            parentSourceSection.pop();
+        boolean isPrimitive = false;
+        if (bodyNode instanceof BlockParseNode) {
+            ParseNode[] statements = ((BlockParseNode) bodyNode).children();
+            if (statements.length >= 0 && statements[0] instanceof CallParseNode) {
+                CallParseNode callNode = (CallParseNode) statements[0];
+                ParseNode receiver = callNode.getReceiverNode();
+                // Truffle.primitive :name
+                if (callNode.getName().equals("primitive") && receiver instanceof ConstParseNode && ((ConstParseNode) receiver).getName().equals("Truffle")) {
+                    isPrimitive = true;
+                }
+            }
         }
+
+        RubyNode body;
+        if (isPrimitive) {
+            body = translateRubiniusPrimitive(sourceSection, (BlockParseNode) bodyNode, loadArguments);
+        } else {
+            body = translateNodeOrNil(sourceSection, bodyNode);
+        }
+
+        final RubySourceSection bodySourceSection = body.getRubySourceSection();
 
         final RubyNode checkArity = createCheckArityNode(context, source, sourceSection, arity);
 
-        body = sequence(context, source, body.getRubySourceSection(), Arrays.asList(checkArity, loadArguments, body));
-
-        if (environment.getFlipFlopStates().size() > 0) {
-            body = sequence(context, source, body.getRubySourceSection(), Arrays.asList(initFlipFlopStates(sourceSection), body));
+        if (isPrimitive) {
+            // Arguments are loaded on the fallback path
+            body = sequence(context, source, bodySourceSection, Arrays.asList(checkArity, body));
+        } else {
+            body = sequence(context, source, bodySourceSection, Arrays.asList(checkArity, loadArguments, body));
         }
 
-        body = new CatchForMethodNode(context, translateSourceSection(source, body.getRubySourceSection()), environment.getReturnID(), body);
+        if (environment.getFlipFlopStates().size() > 0) {
+            body = sequence(context, source, bodySourceSection, Arrays.asList(initFlipFlopStates(sourceSection), body));
+        }
+
+        final SourceSection fullBodySourceSection = translateSourceSection(source, bodySourceSection);
+        body = new CatchForMethodNode(context, fullBodySourceSection, environment.getReturnID(), body);
 
         // TODO(CS, 10-Jan-15) why do we only translate exceptions in methods and not blocks?
-        body = new ExceptionTranslatingNode(context, translateSourceSection(source, body.getRubySourceSection()), body, UnsupportedOperationBehavior.TYPE_ERROR);
+        body = new ExceptionTranslatingNode(context, fullBodySourceSection, body, UnsupportedOperationBehavior.TYPE_ERROR);
 
         if (context.getOptions().CHAOS) {
             body = ChaosNodeGen.create(body);
@@ -259,22 +279,33 @@ public class MethodTranslator extends BodyTranslator {
         return body;
     }
 
-    public MethodDefinitionNode compileMethodNode(RubySourceSection sourceSection, String methodName, ParseNode bodyNode, SharedMethodInfo sharedMethodInfo) {
-        final RubyNode body = compileMethodBody(sourceSection, methodName, bodyNode, sharedMethodInfo);
+    public MethodDefinitionNode compileMethodNode(RubySourceSection sourceSection, String methodName, MethodDefParseNode defNode, ParseNode bodyNode, SharedMethodInfo sharedMethodInfo) {
+        final SourceSection fullMethodSourceSection = new RubySourceSection(defNode.getLine() + 1, defNode.getEndLine() + 1).toSourceSection(source);
 
-        final SourceSection extendedBodySourceSection;
+        final RubyNode body;
 
-        if (body.getRubySourceSection() == null) {
-            extendedBodySourceSection = sourceSection.toSourceSection(source);
+        if (context.getOptions().LAZY_TRANSLATION) {
+            final TranslatorState state = getCurrentState();
+
+            body = new LazyTranslationNode(() -> {
+                restoreState(state);
+                return compileMethodBody(sourceSection, methodName, bodyNode, sharedMethodInfo);
+            });
         } else {
-            extendedBodySourceSection = translateSourceSection(source, considerExtendingMethodToCoverEnd(body.getRubySourceSection()));
+            body = compileMethodBody(sourceSection, methodName, bodyNode, sharedMethodInfo);
         }
 
         final RubyRootNode rootNode = new RubyRootNode(
-                context, extendedBodySourceSection, environment.getFrameDescriptor(), environment.getSharedMethodInfo(), body, environment.needsDeclarationFrame());
+                context,
+                fullMethodSourceSection,
+                environment.getFrameDescriptor(),
+                environment.getSharedMethodInfo(),
+                body,
+                environment.needsDeclarationFrame());
 
         final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
-        return new MethodDefinitionNode(context, translateSourceSection(source, body.getRubySourceSection()), methodName, environment.getSharedMethodInfo(), callTarget);
+
+        return new MethodDefinitionNode(context, fullMethodSourceSection, methodName, environment.getSharedMethodInfo(), callTarget);
     }
 
     private void declareArguments() {
@@ -423,6 +454,32 @@ public class MethodTranslator extends BodyTranslator {
         }
 
         return "";
+    }
+
+    /*
+     * The following methods allow us to save and restore enough of
+     * the current state of the Translator to allow lazy parsing. When
+     * the lazy parsing is actually performed, the state is restored
+     * to what it would have been if the method had been parsed
+     * eagerly.
+     */
+    public TranslatorState getCurrentState() {
+        return new TranslatorState(getEnvironment().unsafeGetLexicalScope(), getEnvironment().isDynamicConstantLookup());
+    }
+
+    public void restoreState(TranslatorState state) {
+        getEnvironment().getParseEnvironment().setDynamicConstantLookup(state.dynamicConstantLookup);
+        getEnvironment().getParseEnvironment().resetLexicalScope(state.scope);
+    }
+
+    public static class TranslatorState {
+        private final LexicalScope scope;
+        private final boolean dynamicConstantLookup;
+
+        private TranslatorState(LexicalScope scope, boolean dynamicConstantLookup) {
+            this.scope = scope;
+            this.dynamicConstantLookup = dynamicConstantLookup;
+        }
     }
 
 }

@@ -14,9 +14,7 @@ import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.Layouts;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
 
@@ -26,8 +24,8 @@ public abstract class TaintNode extends RubyNode {
     @Child private IsFrozenNode isFrozenNode;
     @Child private IsTaintedNode isTaintedNode;
 
-    public TaintNode(RubyContext context, SourceSection sourceSection) {
-        super(context, sourceSection);
+    public static TaintNode create() {
+        return TaintNodeGen.create(null);
     }
 
     public abstract Object executeTaint(Object object);
@@ -64,7 +62,7 @@ public abstract class TaintNode extends RubyNode {
 
         if (isTaintedNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            isTaintedNode = insert(IsTaintedNodeGen.create(getContext(), null, null));
+            isTaintedNode = insert(IsTaintedNode.create());
         }
 
         if (!isTaintedNode.executeIsTainted(object)) {

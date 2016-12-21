@@ -14,20 +14,18 @@ import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.control.ReturnException;
-import org.jruby.truffle.language.control.ReturnID;
 
 public class CallPrimitiveNode extends RubyNode {
 
     @Child private RubyNode primitive;
-    private final ReturnID returnID;
+    @Child private RubyNode fallback;
 
-    private final ConditionProfile failedProfile = ConditionProfile.createBinaryProfile();
+    private final ConditionProfile successProfile = ConditionProfile.createBinaryProfile();
 
-    public CallPrimitiveNode(RubyContext context, SourceSection sourceSection, RubyNode primitive, ReturnID returnID) {
+    public CallPrimitiveNode(RubyContext context, SourceSection sourceSection, RubyNode primitive, RubyNode fallback) {
         super(context, sourceSection);
         this.primitive = primitive;
-        this.returnID = returnID;
+        this.fallback = fallback;
     }
 
     @Override
@@ -35,11 +33,10 @@ public class CallPrimitiveNode extends RubyNode {
         final Object value = primitive.execute(frame);
 
         // Primitives fail by returning null, allowing the method to continue (the fallback)
-        if (failedProfile.profile(value == null)) {
-            return nil();
+        if (successProfile.profile(value != null)) {
+            return value;
         } else {
-            // If the primitive didn't fail its value is returned in the calling method
-            throw new ReturnException(returnID, value);
+            return fallback.execute(frame);
         }
 
     }

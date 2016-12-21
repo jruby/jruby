@@ -29,7 +29,7 @@ public abstract class BooleanCastNode extends RubyNode {
     public BooleanCastNode(BooleanCastNode node) {
     }
 
-    public abstract boolean executeBoolean(VirtualFrame frame, Object value);
+    public abstract boolean executeToBoolean(Object value);
 
     @Specialization(guards = "isNil(nil)")
     public boolean doNil(Object nil) {

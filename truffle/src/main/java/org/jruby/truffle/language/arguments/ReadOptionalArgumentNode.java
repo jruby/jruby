@@ -15,10 +15,10 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.Layouts;
+import org.jruby.truffle.Log;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.array.ArrayReadNormalizedNode;
 import org.jruby.truffle.core.array.ArrayReadNormalizedNodeGen;
-import org.jruby.truffle.language.PerformanceWarnings;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 
@@ -70,7 +70,7 @@ public class ReadOptionalArgumentNode extends RubyNode {
         defaultValueProfile.enter();
 
         if (considerRejectedKWArgs) {
-            PerformanceWarnings.warn(PerformanceWarnings.KWARGS_NOT_OPTIMIZED_YET);
+            Log.notOptimizedOnce(Log.KWARGS_NOT_OPTIMIZED_YET);
 
             final Object rest = readRestArgumentNode.execute(frame);
 

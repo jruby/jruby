@@ -14,8 +14,8 @@ import org.jcodings.Encoding;
 
 public class InvalidLeafRope extends LeafRope {
 
-    public InvalidLeafRope(byte[] bytes, Encoding encoding) {
-        super(bytes, encoding, CodeRange.CR_BROKEN, false, bytes.length);
+    public InvalidLeafRope(byte[] bytes, Encoding encoding, int characterLength) {
+        super(bytes, encoding, CodeRange.CR_BROKEN, false, characterLength);
     }
 
     @Override
@@ -24,6 +24,7 @@ public class InvalidLeafRope extends LeafRope {
             throw new UnsupportedOperationException("Cannot fast-path updating encoding with different code range.");
         }
 
-        return new InvalidLeafRope(getRawBytes(), newEncoding);
+        final int newCharacterLength = RopeOperations.strLength(newEncoding, getRawBytes(), 0, byteLength());
+        return new InvalidLeafRope(getRawBytes(), newEncoding, newCharacterLength);
     }
 }

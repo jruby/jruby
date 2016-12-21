@@ -33,7 +33,7 @@ public class OrNode extends RubyNode {
     @Override
     public Object execute(VirtualFrame frame) {
         final Object leftValue = left.execute(frame);
-        final boolean leftBoolean = leftCast.executeBoolean(frame, leftValue);
+        final boolean leftBoolean = leftCast.executeToBoolean(leftValue);
 
         if (conditionProfile.profile(leftBoolean)) {
             return leftValue;

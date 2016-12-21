@@ -31,6 +31,7 @@ INLINE_JS: [inline_js, boolean, false, Allow inline JavaScript]
 
 CORE_LOAD_PATH: [core.load_path, string, 'truffle:/jruby-truffle', Location to load the Truffle core library from]
 CORE_PARALLEL_LOAD: [core.parallel_load, boolean, false, Load the Truffle core library in parallel]
+LAZY_TRANSLATION: [lazy_translation, boolean, false, Lazily translate from the parser AST to the Truffle AST]
 
 ARRAY_UNINITIALIZED_SIZE: [array.uninitialized_size, integer, 32, How large an Array to allocate when we have no other information to go on]
 ARRAY_SMALL: [array.small, integer, 3, Maximum size of an Array to consider small for optimisations]
@@ -38,6 +39,7 @@ HASH_PACKED_ARRAY_MAX: [hash.packed_array.max, integer, 3, Maximum size of a Has
 
 ROPE_LAZY_SUBSTRINGS: [rope.lazy_substrings, boolean, true, Indicates whether a substring operation on a rope should be performed lazily]
 ROPE_PRINT_INTERN_STATS: [rope.print_intern_stats, boolean, false, Print interned rope stats at application exit]
+ROPE_DEPTH_THRESHOLD: [rope.depth_threshold, integer, 128, Threshold value at which ropes will be rebalanced (indirectly controls flattening as well)]
 
 GLOBAL_VARIABLE_MAX_INVALIDATIONS: [global_variable.max_invalidations, integer, 10, Maximum number of times a global variable can be changed to be considered constant]
 
@@ -97,7 +99,6 @@ CALL_GRAPH_WRITE: [callgraph.write, string, null, File to write the call graph t
 CHAOS: [chaos, boolean, false, Randomly modify the representation of objects]
 
 GRAAL_WARNING_UNLESS: [graal.warn_unless, boolean, true, Warn unless the JVM has the Graal compiler]
-PERF_WARNING: [perf.warn, boolean, false, Warn when using a fature which is not optimized yet]
 
 SHARED_OBJECTS_ENABLED: [shared.objects, boolean, true, Enable shared objects]
 SHARED_OBJECTS_DEBUG: [shared.objects.debug, boolean, false, Print information about shared objects]

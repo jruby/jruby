@@ -1687,6 +1687,7 @@ public class CoreLibrary {
     private static final String[] coreFiles = {
             "/core/pre.rb",
             "/core/basic_object.rb",
+            "/core/array.rb",
             "/core/mirror.rb",
             "/core/bignum.rb",
             "/core/channel.rb",
@@ -1720,7 +1721,6 @@ public class CoreLibrary {
             "/core/argf.rb",
             "/core/exception.rb",
             "/core/hash.rb",
-            "/core/array.rb",
             "/core/kernel.rb",
             "/core/comparable.rb",
             "/core/numeric_mirror.rb",

@@ -38,7 +38,7 @@ public class PrimitiveNodeConstructor {
         return factory.getExecutionSignature().size();
     }
 
-    public RubyNode createCallPrimitiveNode(RubyContext context, SourceSection sourceSection, ReturnID returnID) {
+    public RubyNode createCallPrimitiveNode(RubyContext context, SourceSection sourceSection, RubyNode fallback) {
         int argumentsCount = getPrimitiveArity();
         final List<RubyNode> arguments = new ArrayList<>(argumentsCount);
 
@@ -57,7 +57,7 @@ public class PrimitiveNodeConstructor {
         }
 
         RubyNode primitiveNode = CoreMethodNodeManager.createNodeFromFactory(context, sourceSection, factory, arguments);
-        return new CallPrimitiveNode(context, sourceSection, primitiveNode, returnID);
+        return new CallPrimitiveNode(context, sourceSection, primitiveNode, fallback);
     }
 
     public RubyNode createInvokePrimitiveNode(RubyContext context, SourceSection sourceSection, RubyNode[] arguments) {

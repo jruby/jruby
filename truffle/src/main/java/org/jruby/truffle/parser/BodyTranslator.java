@@ -226,9 +226,11 @@ import org.jruby.truffle.parser.ast.LocalVarParseNode;
 import org.jruby.truffle.parser.ast.Match2ParseNode;
 import org.jruby.truffle.parser.ast.Match3ParseNode;
 import org.jruby.truffle.parser.ast.MatchParseNode;
+import org.jruby.truffle.parser.ast.MethodDefParseNode;
 import org.jruby.truffle.parser.ast.ModuleParseNode;
 import org.jruby.truffle.parser.ast.MultipleAsgnParseNode;
 import org.jruby.truffle.parser.ast.NextParseNode;
+import org.jruby.truffle.parser.ast.NilImplicitParseNode;
 import org.jruby.truffle.parser.ast.NilParseNode;
 import org.jruby.truffle.parser.ast.NthRefParseNode;
 import org.jruby.truffle.parser.ast.OpAsgnAndParseNode;
@@ -470,21 +472,11 @@ public class BodyTranslator extends Translator {
         int lastLine = firstLine;
 
         for (ParseNode child : node.children()) {
-            if (child.getPosition() == InvalidSourcePosition.INSTANCE) {
-                parentSourceSection.push(sourceSection);
-            } else {
+            if (child.getPosition() != InvalidSourcePosition.INSTANCE) {
                 lastLine = Math.max(lastLine, child.getPosition().getLine() + 1);
             }
 
-            final RubyNode translatedChild;
-
-            try {
-                translatedChild = child.accept(this);
-            } finally {
-                if (child.getPosition() == InvalidSourcePosition.INSTANCE) {
-                    parentSourceSection.pop();
-                }
-            }
+            final RubyNode translatedChild = translateNodeOrNil(sourceSection, child);
 
             if (!(translatedChild instanceof DeadNode)) {
                 translatedChildren.add(translatedChild);
@@ -505,26 +497,12 @@ public class BodyTranslator extends Translator {
     @Override
     public RubyNode visitBreakNode(BreakParseNode node) {
         assert environment.isBlock() || translatingWhile : "The parser did not see an invalid break";
-
         final RubySourceSection sourceSection = translate(node.getPosition());
 
-        RubyNode resultNode;
-
-        if (node.getValueNode().getPosition() == InvalidSourcePosition.INSTANCE) {
-            parentSourceSection.push(sourceSection);
-
-            try {
-                resultNode = node.getValueNode().accept(this);
-            } finally {
-                parentSourceSection.pop();
-            }
-        } else {
-            resultNode = node.getValueNode().accept(this);
-        }
+        final RubyNode resultNode = translateNodeOrNil(sourceSection, node.getValueNode());
 
         final RubyNode ret = new BreakNode(environment.getBreakID(), translatingWhile, resultNode);
         ret.unsafeSetSourceSection(sourceSection);
-
         return addNewlineIfNeeded(node, ret);
     }
 
@@ -553,8 +531,7 @@ public class BodyTranslator extends Translator {
             // Truffle.<method>
 
             if (methodName.equals("primitive")) {
-                final RubyNode ret = translateRubiniusPrimitive(fullSourceSection, node);
-                return addNewlineIfNeeded(node, ret);
+                throw new AssertionError("Invalid usage of Truffle.primitive at " + RubyLanguage.fileLine(fullSourceSection));
             } else if (methodName.equals("invoke_primitive")) {
                 final RubyNode ret = translateRubiniusInvokePrimitive(fullSourceSection, node);
                 return addNewlineIfNeeded(node, ret);
@@ -591,21 +568,29 @@ public class BodyTranslator extends Translator {
         return translateCallNode(node, false, false, false);
     }
 
-    private RubyNode translateRubiniusPrimitive(SourceSection sourceSection, CallParseNode node) {
+    protected RubyNode translateRubiniusPrimitive(RubySourceSection sourceSection, BlockParseNode body, RubyNode loadArguments) {
         /*
          * Translates something that looks like
          *
-         *   Truffle.primitive :foo
+         *   def foo
+         *     Truffle.primitive :foo
+         *     fallback code
+         *   end
          *
          * into
          *
-         *   CallPrimitiveNode(FooNode(arg1, arg2, ..., argN))
+         *   if value = CallPrimitiveNode(FooNode(arg1, arg2, ..., argN))
+         *     return value
+         *   else
+         *     fallback code
+         *   end
          *
          * Where the arguments are the same arguments as the method. It looks like this is only exercised with simple
          * arguments so we're not worrying too much about what happens when they're more complicated (rest,
          * keywords etc).
          */
 
+        final CallParseNode node = (CallParseNode) body.get(0);
         final ArrayParseNode argsNode = (ArrayParseNode) node.getArgsNode();
         if (argsNode.size() != 1 || !(argsNode.get(0) instanceof SymbolParseNode)) {
             throw new UnsupportedOperationException("Truffle.primitive must have a single literal symbol argument");
@@ -613,9 +598,15 @@ public class BodyTranslator extends Translator {
 
         final String primitiveName = ((SymbolParseNode) argsNode.get(0)).getName();
 
+        BlockParseNode fallback = new BlockParseNode(body.getPosition());
+        for (int i = 1; i < body.size(); i++) {
+            fallback.add(body.get(i));
+        }
+        RubyNode fallbackNode = fallback.accept(this);
+        fallbackNode = sequence(context, source, sourceSection, Arrays.asList(loadArguments, fallbackNode));
+
         final PrimitiveNodeConstructor primitive = context.getPrimitiveManager().getPrimitive(primitiveName);
-        final ReturnID returnID = environment.getReturnID();
-        return primitive.createCallPrimitiveNode(context, sourceSection, returnID);
+        return primitive.createCallPrimitiveNode(context, sourceSection.toSourceSection(source), fallbackNode);
     }
 
     private RubyNode translateRubiniusInvokePrimitive(SourceSection sourceSection, CallParseNode node) {
@@ -1036,14 +1027,7 @@ public class BodyTranslator extends Translator {
      * </p>
      */
     private ModuleBodyDefinitionNode compileClassNode(RubySourceSection sourceSection, String name, ParseNode bodyNode, boolean sclass) {
-        RubyNode body;
-
-        parentSourceSection.push(sourceSection);
-        try {
-            body = translateNodeOrNil(sourceSection, bodyNode);
-        } finally {
-            parentSourceSection.pop();
-        }
+        RubyNode body = translateNodeOrNil(sourceSection, bodyNode);
 
         if (environment.getFlipFlopStates().size() > 0) {
             body = sequence(context, source, sourceSection, Arrays.asList(initFlipFlopStates(sourceSection), body));
@@ -1382,7 +1366,7 @@ public class BodyTranslator extends Translator {
 
         String methodName = node.getName();
 
-        final RubyNode ret = translateMethodDefinition(sourceSection, classNode, methodName, node.getArgsNode(), node.getBodyNode(), false);
+        final RubyNode ret = translateMethodDefinition(sourceSection, classNode, methodName, node.getArgsNode(), node, node.getBodyNode(), false);
 
         return addNewlineIfNeeded(node, ret);
     }
@@ -1396,12 +1380,12 @@ public class BodyTranslator extends Translator {
 
         final SingletonClassNode singletonClassNode = SingletonClassNodeGen.create(context, fullSourceSection, objectNode);
 
-        final RubyNode ret = translateMethodDefinition(sourceSection, singletonClassNode, node.getName(), node.getArgsNode(), node.getBodyNode(), true);
+        final RubyNode ret = translateMethodDefinition(sourceSection, singletonClassNode, node.getName(), node.getArgsNode(), node, node.getBodyNode(), true);
 
         return addNewlineIfNeeded(node, ret);
     }
 
-    protected RubyNode translateMethodDefinition(RubySourceSection sourceSection, RubyNode classNode, String methodName, ArgsParseNode argsNode, ParseNode bodyNode,
+    protected RubyNode translateMethodDefinition(RubySourceSection sourceSection, RubyNode classNode, String methodName, ArgsParseNode argsNode, MethodDefParseNode defNode, ParseNode bodyNode,
                                                  boolean isDefs) {
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
@@ -1427,7 +1411,7 @@ public class BodyTranslator extends Translator {
 
         final MethodTranslator methodCompiler = new MethodTranslator(currentNode, context, this, newEnvironment, false, source, argsNode);
 
-        final MethodDefinitionNode methodDefinitionNode = methodCompiler.compileMethodNode(sourceSection, methodName, bodyNode, sharedMethodInfo);
+        final MethodDefinitionNode methodDefinitionNode = methodCompiler.compileMethodNode(sourceSection, methodName, defNode, bodyNode, sharedMethodInfo);
 
         final RubyNode visibilityNode;
         if (isDefs) {
@@ -2091,17 +2075,7 @@ public class BodyTranslator extends Translator {
         if (node.getValueNode() == null) {
             rhs = new DeadNode(context, sourceSection.toSourceSection(source), new Exception());
         } else {
-            if (node.getValueNode().getPosition() == InvalidSourcePosition.INSTANCE) {
-                parentSourceSection.push(sourceSection);
-            }
-
-            try {
-                rhs = node.getValueNode().accept(this);
-            } finally {
-                if (node.getValueNode().getPosition() == InvalidSourcePosition.INSTANCE) {
-                    parentSourceSection.pop();
-                }
-            }
+            rhs = node.getValueNode().accept(this);
         }
 
         final RubyNode ret = lhs.makeWriteNode(rhs);
@@ -2529,18 +2503,9 @@ public class BodyTranslator extends Translator {
 
         final boolean t = translatingNextExpression;
         translatingNextExpression = true;
-
-        if (node.getValueNode().getPosition() == InvalidSourcePosition.INSTANCE) {
-            parentSourceSection.push(sourceSection);
-        }
-
         try {
-            resultNode = node.getValueNode().accept(this);
+            resultNode = translateNodeOrNil(sourceSection, node.getValueNode());
         } finally {
-            if (node.getValueNode().getPosition() == InvalidSourcePosition.INSTANCE) {
-                parentSourceSection.pop();
-            }
-
             translatingNextExpression = t;
         }
 
@@ -2551,7 +2516,11 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitNilNode(NilParseNode node) {
-        if (node.getPosition() == InvalidSourcePosition.INSTANCE && parentSourceSection.peek() == null) {
+        if (node instanceof NilImplicitParseNode) {
+            return addNewlineIfNeeded(node, new NilLiteralNode(context, null, true));
+        }
+
+        if (node.getPosition() == InvalidSourcePosition.INSTANCE) {
             final RubyNode ret = new DeadNode(context, null, new Exception());
             return addNewlineIfNeeded(node, ret);
         }
@@ -3060,7 +3029,7 @@ public class BodyTranslator extends Translator {
     public RubyNode visitReturnNode(ReturnParseNode node) {
         final RubySourceSection sourceSection = translate(node.getPosition());
 
-        RubyNode translatedChild = node.getValueNode().accept(this);
+        RubyNode translatedChild = translateNodeOrNil(sourceSection, node.getValueNode());
 
         final RubyNode ret = new ReturnNode(environment.getReturnID(), translatedChild);
         ret.unsafeSetSourceSection(sourceSection);

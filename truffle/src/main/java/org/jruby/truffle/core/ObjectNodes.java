@@ -21,7 +21,6 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.Primitive;
 import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.language.objects.IsTaintedNode;
-import org.jruby.truffle.language.objects.IsTaintedNodeGen;
 import org.jruby.truffle.language.objects.ObjectIDOperations;
 import org.jruby.truffle.language.objects.ObjectIVarGetNode;
 import org.jruby.truffle.language.objects.ObjectIVarGetNodeGen;
@@ -30,7 +29,6 @@ import org.jruby.truffle.language.objects.ObjectIVarSetNodeGen;
 import org.jruby.truffle.language.objects.ReadObjectFieldNode;
 import org.jruby.truffle.language.objects.ReadObjectFieldNodeGen;
 import org.jruby.truffle.language.objects.TaintNode;
-import org.jruby.truffle.language.objects.TaintNodeGen;
 import org.jruby.truffle.language.objects.WriteObjectFieldNode;
 import org.jruby.truffle.language.objects.WriteObjectFieldNodeGen;
 
@@ -128,7 +126,7 @@ public abstract class ObjectNodes {
         public Object objectInfect(Object host, Object source) {
             if (isTaintedNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                isTaintedNode = insert(IsTaintedNodeGen.create(getContext(), null, null));
+                isTaintedNode = insert(IsTaintedNode.create());
             }
 
             if (isTaintedNode.executeIsTainted(source)) {
@@ -136,7 +134,7 @@ public abstract class ObjectNodes {
 
                 if (taintNode == null) {
                     CompilerDirectives.transferToInterpreterAndInvalidate();
-                    taintNode = insert(TaintNodeGen.create(getContext(), null, null));
+                    taintNode = insert(TaintNode.create());
                 }
 
                 taintNode.executeTaint(host);

@@ -34,6 +34,8 @@ import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.builtins.CoreMethodNode;
+import org.jruby.truffle.builtins.Primitive;
+import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.builtins.YieldingCoreMethodNode;
 import org.jruby.truffle.core.Hashing;
 import org.jruby.truffle.core.array.ArrayNodesFactory.RejectInPlaceNodeFactory;
@@ -54,7 +56,6 @@ import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeNodes;
 import org.jruby.truffle.core.rope.RopeNodesFactory;
 import org.jruby.truffle.core.string.StringCachingGuards;
-import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
@@ -64,12 +65,11 @@ import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.dispatch.MissingBehavior;
-import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.IsFrozenNode;
 import org.jruby.truffle.language.objects.IsFrozenNodeGen;
+import org.jruby.truffle.language.objects.PropagateTaintNode;
 import org.jruby.truffle.language.objects.TaintNode;
-import org.jruby.truffle.language.objects.TaintNodeGen;
 import org.jruby.truffle.language.yield.YieldNode;
 
 import java.util.Arrays;
@@ -144,14 +144,12 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "*", required = 1, lowerFixnum = 1, taintFrom = 0)
-    public abstract static class MulNode extends ArrayCoreMethodNode {
+    @Primitive(name = "array_mul", lowerFixnum = 1)
+    @ImportStatic(ArrayGuards.class)
+    public abstract static class MulNode extends PrimitiveArrayArgumentsNode {
 
-        @Child private KernelNodes.RespondToNode respondToToStrNode;
-        @Child private ToIntNode toIntNode;
         @Child private AllocateObjectNode allocateObjectNode = AllocateObjectNode.create();
-
-        protected abstract Object executeMul(VirtualFrame frame, DynamicObject array, int count);
+        @Child private PropagateTaintNode propagateTaintNode = PropagateTaintNode.create();
 
         @Specialization(guards = "strategy.matches(array)", limit = "ARRAY_STRATEGIES")
         public DynamicObject mulOther(DynamicObject array, int count,
@@ -169,53 +167,26 @@ public abstract class ArrayNodes {
             for (int n = 0; n < count; n++) {
                 store.copyTo(newStore, 0, n * size, size);
             }
-            return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(array), newStore.getArray(), newSize);
+
+            final DynamicObject result = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(array), newStore.getArray(), newSize);
+            propagateTaintNode.propagate(array, result);
+            return result;
         }
 
-        @Specialization(guards = "isRubyString(string)")
-        public Object mulObject(
-                VirtualFrame frame,
-                DynamicObject array,
-                DynamicObject string,
-                @Cached("createMethodCall()") CallDispatchHeadNode callNode) {
-            return callNode.call(frame, array, "join", string);
-        }
-
-        @Specialization(guards = { "!isInteger(object)", "!isRubyString(object)" })
-        public Object mulObjectCount(
-                VirtualFrame frame,
-                DynamicObject array,
-                Object object,
-                @Cached("new()") SnippetNode snippetNode) {
-            if (respondToToStr(frame, object)) {
-                return snippetNode.execute(frame, "join(sep.to_str)", "sep", object);
-            } else {
-                if (toIntNode == null) {
-                    CompilerDirectives.transferToInterpreterAndInvalidate();
-                    toIntNode = insert(ToIntNode.create());
-                }
-                final int count = toIntNode.doInt(frame, object);
-                return executeMul(frame, array, count);
-            }
-        }
-
-        public boolean respondToToStr(VirtualFrame frame, Object object) {
-            if (respondToToStrNode == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                respondToToStrNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), null, null, null, null));
-            }
-            return respondToToStrNode.doesRespondToString(frame, object, create7BitString("to_str", UTF8Encoding.INSTANCE), false);
+        @Specialization(guards = "!isInteger(object)")
+        public Object fallback(DynamicObject array, Object object) {
+            return FAILURE;
         }
 
     }
 
-    @CoreMethod(names = { "[]", "slice" }, required = 1, optional = 1, lowerFixnum = { 1, 2 })
-    public abstract static class IndexNode extends ArrayCoreMethodNode {
+    @Primitive(name = "array_aref", lowerFixnum = { 1, 2 })
+    @ImportStatic(ArrayGuards.class)
+    public abstract static class IndexNode extends PrimitiveArrayArgumentsNode {
 
         @Child protected ArrayReadDenormalizedNode readNode;
         @Child protected ArrayReadSliceDenormalizedNode readSliceNode;
         @Child protected ArrayReadSliceNormalizedNode readNormalizedSliceNode;
-        @Child protected CallDispatchHeadNode fallbackNode;
         @Child protected AllocateObjectNode allocateObjectNode = AllocateObjectNode.create();
 
         @Specialization
@@ -271,25 +242,12 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = { "!isInteger(a)", "!isIntRange(a)" })
         public Object fallbackIndex(VirtualFrame frame, DynamicObject array, Object a, NotProvided length) {
-            Object[] objects = new Object[] { a };
-            return fallback(frame, array, createArray(objects, objects.length));
+            return FAILURE;
         }
 
         @Specialization(guards = { "!isIntRange(a)", "wasProvided(b)" })
         public Object fallbackSlice(VirtualFrame frame, DynamicObject array, Object a, Object b) {
-            Object[] objects = new Object[] { a, b };
-            return fallback(frame, array, createArray(objects, objects.length));
-        }
-
-        public Object fallback(VirtualFrame frame, DynamicObject array, DynamicObject args) {
-            if (fallbackNode == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                fallbackNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
-            }
-
-            InternalMethod method = RubyArguments.getMethod(frame);
-            return fallbackNode.call(frame, array, "element_reference_fallback", createString(StringOperations.encodeRope(method.getName(), UTF8Encoding.INSTANCE)),
-                    args);
+            return FAILURE;
         }
 
     }
@@ -1305,7 +1263,7 @@ public abstract class ArrayNodes {
             if (result.isTainted()) {
                 if (taintNode == null) {
                     CompilerDirectives.transferToInterpreterAndInvalidate();
-                    taintNode = insert(TaintNodeGen.create(getContext(), null, null));
+                    taintNode = insert(TaintNode.create());
                 }
 
                 taintNode.executeTaint(string);

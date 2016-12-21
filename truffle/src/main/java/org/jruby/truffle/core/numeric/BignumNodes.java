@@ -351,7 +351,7 @@ public abstract class BignumNodes {
 
             final Object reversedResult = reverseCallNode.call(frame, b, "==", a);
 
-            return booleanCastNode.executeBoolean(frame, reversedResult);
+            return booleanCastNode.executeToBoolean(reversedResult);
         }
     }
 

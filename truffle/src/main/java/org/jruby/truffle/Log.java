@@ -9,39 +9,92 @@
  */
 package org.jruby.truffle;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 
+import java.util.Collections;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.LogManager;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
 public class Log {
 
+    private static class RubyLevel extends Level {
+
+        public RubyLevel(String name, Level parent) {
+            super(name, parent.intValue(), parent.getResourceBundleName());
+        }
+
+    }
+
+    public static final Level PERFORMANCE = new RubyLevel("PERFORMANCE", Level.WARNING);
+
     private static final Logger LOGGER = createLogger();
+
+    public static class RubyHandler extends Handler {
+
+        @Override
+        public void publish(LogRecord record) {
+            System.err.printf("[ruby] %s %s%n", record.getLevel().getName(), record.getMessage());
+        }
+
+        @Override
+        public void flush() {
+        }
+
+        @Override
+        public void close() throws SecurityException {
+        }
+
+    }
 
     private static Logger createLogger() {
         final Logger logger = Logger.getLogger("org.jruby.truffle");
 
-        logger.setUseParentHandlers(false);
-
-        logger.addHandler(new Handler() {
-
-            @Override
-            public void publish(LogRecord record) {
-                System.err.printf("[ruby] %s %s%n", record.getLevel().getName(), record.getMessage());
-            }
-
-            @Override
-            public void flush() {
-            }
-
-            @Override
-            public void close() throws SecurityException {
-            }
-
-        });
+        if (LogManager.getLogManager().getProperty("org.jruby.truffle.handlers") == null) {
+            logger.setUseParentHandlers(false);
+            logger.addHandler(new RubyHandler());
+        }
 
         return logger;
+    }
+
+    private static final Set<String> displayedWarnings = Collections.newSetFromMap(new ConcurrentHashMap<>());
+
+    public static final String KWARGS_NOT_OPTIMIZED_YET = "keyword arguments are not yet optimized";
+
+    /**
+     * Warn about code that works but is not yet optimized as Truffle code normally would be. Only prints the warning
+     * once, and only if called from compiled code. Don't call this method from behind a boundary, as it will never
+     * print the warning because it will never be called from compiled code. Use {@link #performanceOnce} instead
+     * if you need to warn in code that is never compiled.
+     */
+    public static void notOptimizedOnce(String message) {
+        if (CompilerDirectives.inCompiledCode()) {
+            performanceOnce(message);
+        }
+    }
+
+    /**
+     * Warn about something that has lower performance than might be expected. Only prints the warning once.
+     */
+    @TruffleBoundary
+    public static void performanceOnce(String message) {
+        if (displayedWarnings.add(message)) {
+            performance(message);
+        }
+    }
+
+    /**
+     * Warn about something that has lower performance than might be expected.
+     */
+    @TruffleBoundary
+    public static void performance(String message) {
+        LOGGER.log(PERFORMANCE, message);
     }
 
     @TruffleBoundary

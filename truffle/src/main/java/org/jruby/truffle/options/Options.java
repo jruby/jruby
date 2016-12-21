@@ -45,11 +45,13 @@ public class Options {
     public final boolean INLINE_JS;
     public final String CORE_LOAD_PATH;
     public final boolean CORE_PARALLEL_LOAD;
+    public final boolean LAZY_TRANSLATION;
     public final int ARRAY_UNINITIALIZED_SIZE;
     public final int ARRAY_SMALL;
     public final int HASH_PACKED_ARRAY_MAX;
     public final boolean ROPE_LAZY_SUBSTRINGS;
     public final boolean ROPE_PRINT_INTERN_STATS;
+    public final int ROPE_DEPTH_THRESHOLD;
     public final int GLOBAL_VARIABLE_MAX_INVALIDATIONS;
     public final int DEFAULT_CACHE;
     public final int METHOD_LOOKUP_CACHE;
@@ -101,7 +103,6 @@ public class Options {
     public final String CALL_GRAPH_WRITE;
     public final boolean CHAOS;
     public final boolean GRAAL_WARNING_UNLESS;
-    public final boolean PERF_WARNING;
     public final boolean SHARED_OBJECTS_ENABLED;
     public final boolean SHARED_OBJECTS_DEBUG;
     public final boolean SHARED_OBJECTS_FORCE;
@@ -137,11 +138,13 @@ public class Options {
         INLINE_JS = builder.getOrDefault(OptionsCatalog.INLINE_JS);
         CORE_LOAD_PATH = builder.getOrDefault(OptionsCatalog.CORE_LOAD_PATH);
         CORE_PARALLEL_LOAD = builder.getOrDefault(OptionsCatalog.CORE_PARALLEL_LOAD);
+        LAZY_TRANSLATION = builder.getOrDefault(OptionsCatalog.LAZY_TRANSLATION);
         ARRAY_UNINITIALIZED_SIZE = builder.getOrDefault(OptionsCatalog.ARRAY_UNINITIALIZED_SIZE);
         ARRAY_SMALL = builder.getOrDefault(OptionsCatalog.ARRAY_SMALL);
         HASH_PACKED_ARRAY_MAX = builder.getOrDefault(OptionsCatalog.HASH_PACKED_ARRAY_MAX);
         ROPE_LAZY_SUBSTRINGS = builder.getOrDefault(OptionsCatalog.ROPE_LAZY_SUBSTRINGS);
         ROPE_PRINT_INTERN_STATS = builder.getOrDefault(OptionsCatalog.ROPE_PRINT_INTERN_STATS);
+        ROPE_DEPTH_THRESHOLD = builder.getOrDefault(OptionsCatalog.ROPE_DEPTH_THRESHOLD);
         GLOBAL_VARIABLE_MAX_INVALIDATIONS = builder.getOrDefault(OptionsCatalog.GLOBAL_VARIABLE_MAX_INVALIDATIONS);
         DEFAULT_CACHE = builder.getOrDefault(OptionsCatalog.DEFAULT_CACHE);
         METHOD_LOOKUP_CACHE = builder.getOrDefault(OptionsCatalog.METHOD_LOOKUP_CACHE, DEFAULT_CACHE);
@@ -193,7 +196,6 @@ public class Options {
         CALL_GRAPH_WRITE = builder.getOrDefault(OptionsCatalog.CALL_GRAPH_WRITE);
         CHAOS = builder.getOrDefault(OptionsCatalog.CHAOS);
         GRAAL_WARNING_UNLESS = builder.getOrDefault(OptionsCatalog.GRAAL_WARNING_UNLESS);
-        PERF_WARNING = builder.getOrDefault(OptionsCatalog.PERF_WARNING);
         SHARED_OBJECTS_ENABLED = builder.getOrDefault(OptionsCatalog.SHARED_OBJECTS_ENABLED);
         SHARED_OBJECTS_DEBUG = builder.getOrDefault(OptionsCatalog.SHARED_OBJECTS_DEBUG);
         SHARED_OBJECTS_FORCE = builder.getOrDefault(OptionsCatalog.SHARED_OBJECTS_FORCE);

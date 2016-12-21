@@ -105,6 +105,15 @@ class Array
     size <=> total
   end
 
+  def *(count)
+    Truffle.primitive :array_mul
+    if str = Rubinius::Type.check_convert_type(count, String, :to_str)
+      join(str)
+    else
+      self * Rubinius::Type.coerce_to(count, Integer, :to_int)
+    end
+  end
+
   def ==(other)
     return true if equal?(other)
     unless other.kind_of? Array
@@ -126,6 +135,50 @@ class Array
 
     true
   end
+
+  def [](start, length = undefined)
+    Truffle.primitive :array_aref
+    element_reference_fallback __callee__, start, length
+  end
+  alias :slice :[]
+
+  def element_reference_fallback(method_name, start, length)
+    if undefined.equal?(length)
+      arg = start
+      case arg
+      when Range
+        unless arg.begin.respond_to?(:to_int)
+          raise TypeError, "no implicit conversion of #{arg.begin.class} into Integer"
+        end
+        unless arg.end.respond_to?(:to_int)
+          raise TypeError, "no implicit conversion of #{arg.end.class} into Integer"
+        end
+        start_index = arg.begin.to_int
+        end_index = arg.end.to_int
+        if start_index.is_a?(Bignum) || end_index.is_a?(Bignum)
+          raise RangeError, "bignum too big to convert into `long'"
+        end
+        if arg.exclude_end?
+          range = start_index...end_index
+        else
+          range = start_index..end_index
+        end
+        send(method_name, range)
+      when Bignum
+        raise RangeError, "bignum too big to convert into `long'"
+      else
+        send(method_name, arg.to_int)
+      end
+    else
+      start_index = start.to_int
+      end_index = length.to_int
+      if start_index.is_a?(Bignum) || end_index.is_a?(Bignum)
+        raise RangeError, "bignum too big to convert into `long'"
+      end
+      send(method_name, start_index, end_index)
+    end
+  end
+  private :element_reference_fallback
 
   def assoc(obj)
     each do |x|
@@ -1516,43 +1569,6 @@ class Array
 
     Truffle::Array.steal_storage(self, result)
     self
-  end
-
-  def element_reference_fallback(method_name, args)
-    if args.length == 1
-      arg = args.first
-      case arg
-        when Range
-          unless arg.begin.respond_to?(:to_int)
-            raise TypeError, "no implicit conversion of #{arg.begin.class} into Integer"
-          end
-          unless arg.end.respond_to?(:to_int)
-            raise TypeError, "no implicit conversion of #{arg.end.class} into Integer"
-          end
-          start_index = arg.begin.to_int
-          end_index = arg.end.to_int
-          if start_index.is_a?(Bignum) || end_index.is_a?(Bignum)
-            raise RangeError, "bignum too big to convert into `long'"
-          end
-          if arg.exclude_end?
-            range = start_index...end_index
-          else
-            range = start_index..end_index
-          end
-          send(method_name, range)
-        when Bignum
-          raise RangeError, "bignum too big to convert into `long'"
-        else
-          send(method_name, arg.to_int)
-      end
-    else
-      start_index = args[0].to_int
-      end_index = args[1].to_int
-      if start_index.is_a?(Bignum) || end_index.is_a?(Bignum)
-        raise RangeError, "bignum too big to convert into `long'"
-      end
-      send(method_name, start_index, end_index)
-    end
   end
 
   def sort!(&block)

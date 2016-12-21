@@ -47,6 +47,7 @@ import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+
 import jline.console.CursorBuffer;
 import jline.console.completer.Completer;
 import jline.console.completer.FileNameCompleter;
@@ -66,8 +67,6 @@ import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.objects.TaintNode;
-import org.jruby.truffle.language.objects.TaintNodeGen;
-
 import java.io.IOException;
 import java.nio.CharBuffer;
 import java.util.ArrayList;
@@ -127,11 +126,10 @@ public abstract class ReadlineNodes {
     })
     public abstract static class ReadlineNode extends CoreMethodNode {
 
-        @Child private TaintNode taintNode;
+        @Child private TaintNode taintNode = TaintNode.create();
 
         public ReadlineNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            taintNode = TaintNodeGen.create(context, sourceSection, null);
         }
 
         @CreateCast("prompt") public RubyNode coercePromptToJavaString(RubyNode prompt) {
@@ -229,12 +227,7 @@ public abstract class ReadlineNodes {
     @CoreMethod(names = "line_buffer", onSingleton = true)
     public abstract static class LineBufferNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private TaintNode taintNode;
-
-        public LineBufferNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            taintNode = TaintNodeGen.create(context, sourceSection, null);
-        }
+        @Child private TaintNode taintNode = TaintNode.create();
 
         @TruffleBoundary
         @Specialization

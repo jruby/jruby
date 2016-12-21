@@ -27,8 +27,8 @@ import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.Log;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.language.PerformanceWarnings;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.JavaException;
 
@@ -72,7 +72,7 @@ public abstract class OutgoingForeignCallNode extends RubyNode {
             TruffleObject receiver,
             Object[] args,
             @Cached("create()") ForeignToRubyNode toRubyNode) {
-        PerformanceWarnings.warn("megamorphic outgoing foreign call");
+        Log.notOptimizedOnce("megamorphic outgoing foreign call");
 
         if (megamorphicToForeignNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();

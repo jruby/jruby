@@ -45,7 +45,7 @@ public abstract class FormatIntegerNode extends FormatNode {
 
     private static final byte[] PREFIX_NEGATIVE = {'.', '.'};
 
-    private static final BigInteger BIG_32 = BigInteger.valueOf(((long)Integer.MAX_VALUE + 1L) << 1);
+    private static final BigInteger BIG_32 = BigInteger.valueOf((Integer.MAX_VALUE + 1L) << 1);
     private static final BigInteger BIG_64 = BIG_32.shiftLeft(32);
     private static final BigInteger BIG_MINUS_32 = BigInteger.valueOf((long)Integer.MIN_VALUE << 1);
     private static final BigInteger BIG_MINUS_64 = BIG_MINUS_32.shiftLeft(32);
@@ -401,7 +401,7 @@ public abstract class FormatIntegerNode extends FormatNode {
         byte[] bytes = new byte[len];
         if (upper) {
             for (int i = len; --i >= 0; ) {
-                int b = (byte) ((int) s.charAt(i) & 0xff);
+                int b = (byte) (s.charAt(i) & 0xff);
                 if (b >= 'a' && b <= 'z') {
                     bytes[i] = (byte) (b & ~0x20);
                 } else {
@@ -410,7 +410,7 @@ public abstract class FormatIntegerNode extends FormatNode {
             }
         } else {
             for (int i = len; --i >= 0; ) {
-                bytes[i] = (byte) ((int) s.charAt(i) & 0xff);
+                bytes[i] = (byte) (s.charAt(i) & 0xff);
             }
         }
         return bytes;

@@ -126,7 +126,6 @@ import org.jruby.truffle.language.objects.IsANodeGen;
 import org.jruby.truffle.language.objects.IsFrozenNode;
 import org.jruby.truffle.language.objects.IsFrozenNodeGen;
 import org.jruby.truffle.language.objects.IsTaintedNode;
-import org.jruby.truffle.language.objects.IsTaintedNodeGen;
 import org.jruby.truffle.language.objects.LogicalClassNode;
 import org.jruby.truffle.language.objects.LogicalClassNodeGen;
 import org.jruby.truffle.language.objects.MetaClassNode;
@@ -135,11 +134,11 @@ import org.jruby.truffle.language.objects.ObjectIVarGetNode;
 import org.jruby.truffle.language.objects.ObjectIVarGetNodeGen;
 import org.jruby.truffle.language.objects.ObjectIVarSetNode;
 import org.jruby.truffle.language.objects.ObjectIVarSetNodeGen;
+import org.jruby.truffle.language.objects.PropagateTaintNode;
 import org.jruby.truffle.language.objects.PropertyFlags;
 import org.jruby.truffle.language.objects.SingletonClassNode;
 import org.jruby.truffle.language.objects.SingletonClassNodeGen;
 import org.jruby.truffle.language.objects.TaintNode;
-import org.jruby.truffle.language.objects.TaintNodeGen;
 import org.jruby.truffle.language.objects.WriteObjectFieldNode;
 import org.jruby.truffle.language.objects.WriteObjectFieldNodeGen;
 import org.jruby.truffle.language.objects.shared.SharedObjects;
@@ -488,13 +487,14 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "clone", taintFrom = 0)
+    @CoreMethod(names = "clone")
     public abstract static class CloneNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CopyNode copyNode;
         @Child private CallDispatchHeadNode initializeCloneNode;
         @Child private IsFrozenNode isFrozenNode;
         @Child private FreezeNode freezeNode;
+        @Child private PropagateTaintNode propagateTaintNode = PropagateTaintNode.create();
         @Child private SingletonClassNode singletonClassNode;
 
         public CloneNode(RubyContext context, SourceSection sourceSection) {
@@ -503,7 +503,6 @@ public abstract class KernelNodes {
             // Calls private initialize_clone on the new copy.
             initializeCloneNode = DispatchHeadNodeFactory.createMethodCallOnSelf(context);
             isFrozenNode = IsFrozenNodeGen.create(context, sourceSection, null);
-            freezeNode = FreezeNodeGen.create(context, sourceSection, null);
             singletonClassNode = SingletonClassNodeGen.create(context, sourceSection, null);
         }
 
@@ -523,7 +522,14 @@ public abstract class KernelNodes {
 
             initializeCloneNode.call(frame, newObject, "initialize_clone", self);
 
+            propagateTaintNode.propagate(self, newObject);
+
             if (isFrozenProfile.profile(isFrozenNode.executeIsFrozen(self))) {
+                if (freezeNode == null) {
+                    CompilerDirectives.transferToInterpreterAndInvalidate();
+                    freezeNode = insert(FreezeNodeGen.create(null, null, null));
+                }
+
                 freezeNode.executeFreeze(newObject);
             }
 
@@ -1827,7 +1833,7 @@ public abstract class KernelNodes {
             if (result.isTainted()) {
                 if (taintNode == null) {
                     CompilerDirectives.transferToInterpreterAndInvalidate();
-                    taintNode = insert(TaintNodeGen.create(getContext(), null, null));
+                    taintNode = insert(TaintNode.create());
                 }
 
                 taintNode.executeTaint(string);
@@ -1880,7 +1886,7 @@ public abstract class KernelNodes {
         public Object taint(Object object) {
             if (taintNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                taintNode = insert(TaintNodeGen.create(getContext(), null, null));
+                taintNode = insert(TaintNode.create());
             }
             return taintNode.executeTaint(object);
         }
@@ -1896,7 +1902,7 @@ public abstract class KernelNodes {
         public boolean isTainted(Object object) {
             if (isTaintedNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                isTaintedNode = insert(IsTaintedNodeGen.create(getContext(), null, null));
+                isTaintedNode = insert(IsTaintedNode.create());
             }
             return isTaintedNode.executeIsTainted(object);
         }
@@ -1964,14 +1970,8 @@ public abstract class KernelNodes {
     public abstract static class UntaintNode extends CoreMethodArrayArgumentsNode {
 
         @Child private IsFrozenNode isFrozenNode;
-        @Child private IsTaintedNode isTaintedNode;
-        @Child private WriteObjectFieldNode writeTaintNode;
-
-        public UntaintNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            isTaintedNode = IsTaintedNodeGen.create(context, sourceSection, null);
-            writeTaintNode = WriteObjectFieldNodeGen.create(Layouts.TAINTED_IDENTIFIER);
-        }
+        @Child private IsTaintedNode isTaintedNode = IsTaintedNode.create();
+        @Child private WriteObjectFieldNode writeTaintNode = WriteObjectFieldNodeGen.create(Layouts.TAINTED_IDENTIFIER);
 
         @Specialization
         public int untaint(int num) {

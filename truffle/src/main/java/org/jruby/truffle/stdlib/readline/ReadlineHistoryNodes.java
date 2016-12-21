@@ -97,12 +97,7 @@ public abstract class ReadlineHistoryNodes {
     @CoreMethod(names = "pop", needsSelf = false)
     public abstract static class PopNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private TaintNode taintNode;
-
-        public PopNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            taintNode = TaintNodeGen.create(context, sourceSection, null);
-        }
+        @Child private TaintNode taintNode = TaintNode.create();
 
         @TruffleBoundary
         @Specialization
@@ -124,12 +119,7 @@ public abstract class ReadlineHistoryNodes {
     @CoreMethod(names = "shift", needsSelf = false)
     public abstract static class ShiftNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private TaintNode taintNode;
-
-        public ShiftNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            taintNode = TaintNodeGen.create(context, sourceSection, null);
-        }
+        @Child private TaintNode taintNode = TaintNode.create();
 
         @TruffleBoundary
         @Specialization
@@ -175,12 +165,7 @@ public abstract class ReadlineHistoryNodes {
     @CoreMethod(names = "each", needsBlock = true)
     public abstract static class EachNode extends YieldingCoreMethodNode {
 
-        @Child private TaintNode taintNode;
-
-        public EachNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            taintNode = TaintNodeGen.create(context, sourceSection, null);
-        }
+        @Child private TaintNode taintNode = TaintNode.create();
 
         @Specialization
         public DynamicObject each(VirtualFrame frame, DynamicObject history, DynamicObject block) {
@@ -205,12 +190,7 @@ public abstract class ReadlineHistoryNodes {
     @CoreMethod(names = "[]", needsSelf = false, required = 1, lowerFixnum = 1)
     public abstract static class GetIndexNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private TaintNode taintNode;
-
-        public GetIndexNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            taintNode = TaintNodeGen.create(context, sourceSection, null);
-        }
+        @Child private TaintNode taintNode = TaintNode.create();
 
         @TruffleBoundary
         @Specialization
@@ -267,12 +247,7 @@ public abstract class ReadlineHistoryNodes {
     @CoreMethod(names = "delete_at", needsSelf = false, required = 1, lowerFixnum = 1)
     public abstract static class DeleteAtNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private TaintNode taintNode;
-
-        public DeleteAtNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            taintNode = TaintNodeGen.create(context, sourceSection, null);
-        }
+        @Child private TaintNode taintNode = TaintNode.create();
 
         @TruffleBoundary
         @Specialization

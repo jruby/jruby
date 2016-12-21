@@ -1634,6 +1634,32 @@ class String
     false
   end
 
+  def insert(index, other)
+    other = StringValue(other)
+
+    index = Rubinius::Type.coerce_to index, Fixnum, :to_int
+    index = length + 1 + index if index < 0
+
+    if index > length or index < 0 then
+      raise IndexError, "index #{index} out of string"
+    end
+
+    Truffle.check_frozen
+
+    if index == 0
+      replace(other + self)
+    elsif index == length
+      self << other
+    else
+      left = self[0...index]
+      right = self[index..-1]
+      replace(left + other + right)
+    end
+
+    Rubinius::Type.infect self, other
+    self
+  end
+
   def %(args)
     if args.is_a? Hash
       sprintf(self, args)

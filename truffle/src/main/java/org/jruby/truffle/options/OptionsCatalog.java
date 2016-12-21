@@ -43,11 +43,13 @@ public class OptionsCatalog {
     public static final OptionDescription INLINE_JS = new BooleanOptionDescription("inline_js", "Allow inline JavaScript", false);
     public static final OptionDescription CORE_LOAD_PATH = new StringOptionDescription("core.load_path", "Location to load the Truffle core library from", "truffle:/jruby-truffle");
     public static final OptionDescription CORE_PARALLEL_LOAD = new BooleanOptionDescription("core.parallel_load", "Load the Truffle core library in parallel", false);
+    public static final OptionDescription LAZY_TRANSLATION = new BooleanOptionDescription("lazy_translation", "Lazily translate from the parser AST to the Truffle AST", false);
     public static final OptionDescription ARRAY_UNINITIALIZED_SIZE = new IntegerOptionDescription("array.uninitialized_size", "How large an Array to allocate when we have no other information to go on", 32);
     public static final OptionDescription ARRAY_SMALL = new IntegerOptionDescription("array.small", "Maximum size of an Array to consider small for optimisations", 3);
     public static final OptionDescription HASH_PACKED_ARRAY_MAX = new IntegerOptionDescription("hash.packed_array.max", "Maximum size of a Hash to consider using the packed array storage strategy for", 3);
     public static final OptionDescription ROPE_LAZY_SUBSTRINGS = new BooleanOptionDescription("rope.lazy_substrings", "Indicates whether a substring operation on a rope should be performed lazily", true);
     public static final OptionDescription ROPE_PRINT_INTERN_STATS = new BooleanOptionDescription("rope.print_intern_stats", "Print interned rope stats at application exit", false);
+    public static final OptionDescription ROPE_DEPTH_THRESHOLD = new IntegerOptionDescription("rope.depth_threshold", "Threshold value at which ropes will be rebalanced (indirectly controls flattening as well)", 128);
     public static final OptionDescription GLOBAL_VARIABLE_MAX_INVALIDATIONS = new IntegerOptionDescription("global_variable.max_invalidations", "Maximum number of times a global variable can be changed to be considered constant", 10);
     public static final OptionDescription DEFAULT_CACHE = new IntegerOptionDescription("default_cache", "Default size for caches", 8);
     public static final OptionDescription METHOD_LOOKUP_CACHE = new IntegerOptionDescription("method_lookup.cache", "Method lookup cache size", 0);
@@ -99,7 +101,6 @@ public class OptionsCatalog {
     public static final OptionDescription CALL_GRAPH_WRITE = new StringOptionDescription("callgraph.write", "File to write the call graph to on exit", null);
     public static final OptionDescription CHAOS = new BooleanOptionDescription("chaos", "Randomly modify the representation of objects", false);
     public static final OptionDescription GRAAL_WARNING_UNLESS = new BooleanOptionDescription("graal.warn_unless", "Warn unless the JVM has the Graal compiler", true);
-    public static final OptionDescription PERF_WARNING = new BooleanOptionDescription("perf.warn", "Warn when using a fature which is not optimized yet", false);
     public static final OptionDescription SHARED_OBJECTS_ENABLED = new BooleanOptionDescription("shared.objects", "Enable shared objects", true);
     public static final OptionDescription SHARED_OBJECTS_DEBUG = new BooleanOptionDescription("shared.objects.debug", "Print information about shared objects", false);
     public static final OptionDescription SHARED_OBJECTS_FORCE = new BooleanOptionDescription("shared.objects.force", "Force sharing of objects roots at startup", false);
@@ -163,6 +164,8 @@ public class OptionsCatalog {
                 return CORE_LOAD_PATH;
             case "core.parallel_load":
                 return CORE_PARALLEL_LOAD;
+            case "lazy_translation":
+                return LAZY_TRANSLATION;
             case "array.uninitialized_size":
                 return ARRAY_UNINITIALIZED_SIZE;
             case "array.small":
@@ -173,6 +176,8 @@ public class OptionsCatalog {
                 return ROPE_LAZY_SUBSTRINGS;
             case "rope.print_intern_stats":
                 return ROPE_PRINT_INTERN_STATS;
+            case "rope.depth_threshold":
+                return ROPE_DEPTH_THRESHOLD;
             case "global_variable.max_invalidations":
                 return GLOBAL_VARIABLE_MAX_INVALIDATIONS;
             case "default_cache":
@@ -275,8 +280,6 @@ public class OptionsCatalog {
                 return CHAOS;
             case "graal.warn_unless":
                 return GRAAL_WARNING_UNLESS;
-            case "perf.warn":
-                return PERF_WARNING;
             case "shared.objects":
                 return SHARED_OBJECTS_ENABLED;
             case "shared.objects.debug":

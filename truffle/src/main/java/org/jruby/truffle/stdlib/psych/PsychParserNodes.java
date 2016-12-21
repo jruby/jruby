@@ -74,7 +74,6 @@ import org.jruby.truffle.language.dispatch.DoesRespondDispatchHeadNode;
 import org.jruby.truffle.language.objects.ReadObjectFieldNode;
 import org.jruby.truffle.language.objects.ReadObjectFieldNodeGen;
 import org.jruby.truffle.language.objects.TaintNode;
-import org.jruby.truffle.language.objects.TaintNodeGen;
 import org.jruby.truffle.collections.BoundaryIterable;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.error.Mark;
@@ -144,7 +143,7 @@ public abstract class PsychParserNodes {
                 @Cached("createMethodCall()") CallDispatchHeadNode callEndStreamNode,
                 @Cached("new()") SnippetNode raiseSyntaxErrorSnippetNode,
                 @Cached("new()") SnippetNode tagPushNode,
-                @Cached("createTaintNode()") TaintNode taintNode,
+                @Cached("create()") TaintNode taintNode,
                 @Cached("create()") BranchProfile errorProfile) {
 
             final boolean tainted = (boolean) taintedNode.execute(frame, "yaml.tainted? || yaml.is_a?(IO)", "yaml", yaml);
@@ -371,10 +370,6 @@ public abstract class PsychParserNodes {
 
         protected ReadObjectFieldNode createReadHandlerNode() {
             return ReadObjectFieldNodeGen.create("@handler", nil());
-        }
-
-        protected TaintNode createTaintNode() {
-            return TaintNodeGen.create(getContext(), null, null);
         }
 
         private static final int STYLE_PLAIN = 1;

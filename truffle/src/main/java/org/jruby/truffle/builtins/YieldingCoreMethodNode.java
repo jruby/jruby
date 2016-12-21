@@ -32,14 +32,6 @@ public abstract class YieldingCoreMethodNode extends CoreMethodArrayArgumentsNod
         dispatchNode = new YieldNode(context);
     }
 
-    private boolean booleanCast(VirtualFrame frame, Object value) {
-        if (booleanCastNode == null) {
-            CompilerDirectives.transferToInterpreterAndInvalidate();
-            booleanCastNode = insert(BooleanCastNodeGen.create(null));
-        }
-        return booleanCastNode.executeBoolean(frame, value);
-    }
-
     public Object yield(VirtualFrame frame, DynamicObject block, Object... arguments) {
         return dispatchNode.dispatch(frame, block, arguments);
     }
@@ -49,7 +41,15 @@ public abstract class YieldingCoreMethodNode extends CoreMethodArrayArgumentsNod
     }
 
     public boolean yieldIsTruthy(VirtualFrame frame, DynamicObject block, Object... arguments) {
-        return booleanCast(frame, yield(frame, block, arguments));
+        return booleanCast(yield(frame, block, arguments));
+    }
+
+    private boolean booleanCast(Object value) {
+        if (booleanCastNode == null) {
+            CompilerDirectives.transferToInterpreterAndInvalidate();
+            booleanCastNode = insert(BooleanCastNodeGen.create(null));
+        }
+        return booleanCastNode.executeToBoolean(value);
     }
 
 }

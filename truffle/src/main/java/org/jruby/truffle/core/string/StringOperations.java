@@ -97,14 +97,6 @@ public abstract class StringOperations {
         };
     }
 
-    public static boolean isCodeRangeValid(DynamicObject string) {
-        return StringOperations.codeRange(string) == CodeRange.CR_VALID;
-    }
-
-    public static int normalizeIndex(int length, int index) {
-        return ArrayOperations.normalizeIndex(length, index);
-    }
-
     public static int clampExclusiveIndex(DynamicObject string, int index) {
         assert RubyGuards.isRubyString(string);
 
@@ -145,11 +137,6 @@ public abstract class StringOperations {
     public static Rope ropeFromByteList(ByteList byteList, CodeRange codeRange) {
         // TODO (nirvdrum 08-Jan-16) We need to make a copy of the ByteList's bytes for now to be safe, but we should be able to use the unsafe bytes as we move forward.
         return RopeOperations.create(byteList.bytes(), byteList.getEncoding(), codeRange);
-    }
-
-    public static Rope ropeFromByteList(ByteList byteList, int codeRange) {
-        // TODO (nirvdrum 08-Jan-16) We need to make a copy of the ByteList's bytes for now to be safe, but we should be able to use the unsafe bytes as we move forward.
-        return RopeOperations.create(byteList.bytes(), byteList.getEncoding(), CodeRange.fromInt(codeRange));
     }
 
     public static Rope rope(DynamicObject string) {

@@ -28,8 +28,6 @@ import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.dispatch.MissingBehavior;
 import org.jruby.truffle.language.objects.IsTaintedNode;
-import org.jruby.truffle.language.objects.IsTaintedNodeGen;
-
 import java.nio.charset.StandardCharsets;
 
 @NodeChildren({
@@ -57,7 +55,7 @@ public abstract class ToStringNode extends FormatNode {
         this.conversionMethod = conversionMethod;
         this.inspectOnConversionFailure = inspectOnConversionFailure;
         this.valueOnNil = valueOnNil;
-        isTaintedNode = IsTaintedNodeGen.create(context, null, null);
+        this.isTaintedNode = IsTaintedNode.create();
     }
 
     public abstract Object executeToString(VirtualFrame frame, Object object);
