@@ -269,7 +269,6 @@ import org.jruby.truffle.parser.ast.YieldParseNode;
 import org.jruby.truffle.parser.ast.ZArrayParseNode;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
 import org.jruby.truffle.parser.lexer.ISourcePosition;
-import org.jruby.truffle.parser.lexer.InvalidSourcePosition;
 import org.jruby.truffle.parser.parser.ParserSupport;
 import org.jruby.truffle.parser.scope.StaticScope;
 import org.jruby.truffle.platform.graal.AssertConstantNodeGen;
@@ -471,7 +470,7 @@ public class BodyTranslator extends Translator {
         int lastLine = firstLine;
 
         for (ParseNode child : node.children()) {
-            if (child.getPosition() != InvalidSourcePosition.INSTANCE) {
+            if (child.getPosition() != null) {
                 lastLine = Math.max(lastLine, child.getPosition().getLine() + 1);
             }
 
@@ -2519,7 +2518,7 @@ public class BodyTranslator extends Translator {
             return addNewlineIfNeeded(node, new NilLiteralNode(context, null, true));
         }
 
-        if (node.getPosition() == InvalidSourcePosition.INSTANCE) {
+        if (node.getPosition() == null) {
             final RubyNode ret = new DeadNode(context, null, new Exception());
             return addNewlineIfNeeded(node, ret);
         }
@@ -2895,7 +2894,7 @@ public class BodyTranslator extends Translator {
 
         RubyNode tryPart;
 
-        if (node.getBodyNode() == null || node.getBodyNode().getPosition() == InvalidSourcePosition.INSTANCE) {
+        if (node.getBodyNode() == null || node.getBodyNode().getPosition() == null) {
             tryPart = nilNode(source, sourceSection);
         } else {
             tryPart = node.getBodyNode().accept(this);
@@ -2916,7 +2915,7 @@ public class BodyTranslator extends Translator {
 
             RubyNode bodyNode;
 
-            if (rescueBody.getBodyNode() == null || rescueBody.getBodyNode().getPosition() == InvalidSourcePosition.INSTANCE) {
+            if (rescueBody.getBodyNode() == null || rescueBody.getBodyNode().getPosition() == null) {
                 bodyNode = nilNode(source, sourceSection);
             } else {
                 bodyNode = rescueBody.getBodyNode().accept(this);
@@ -2954,7 +2953,7 @@ public class BodyTranslator extends Translator {
                 } else {
                     RubyNode bodyNode;
 
-                    if (rescueBody.getBodyNode() == null || rescueBody.getBodyNode().getPosition() == InvalidSourcePosition.INSTANCE) {
+                    if (rescueBody.getBodyNode() == null || rescueBody.getBodyNode().getPosition() == null) {
                         bodyNode = nilNode(source, sourceSection);
                     } else {
                         bodyNode = rescueBody.getBodyNode().accept(this);
@@ -2970,7 +2969,7 @@ public class BodyTranslator extends Translator {
 
         RubyNode elsePart;
 
-        if (node.getElseNode() == null || node.getElseNode().getPosition() == InvalidSourcePosition.INSTANCE) {
+        if (node.getElseNode() == null || node.getElseNode().getPosition() == null) {
             elsePart = null; //nilNode(sourceSection);
         } else {
             elsePart = node.getElseNode().accept(this);
@@ -2994,7 +2993,7 @@ public class BodyTranslator extends Translator {
 
         RubyNode translatedBody;
 
-        if (rescueBody.getBodyNode() == null || rescueBody.getBodyNode().getPosition() == InvalidSourcePosition.INSTANCE) {
+        if (rescueBody.getBodyNode() == null || rescueBody.getBodyNode().getPosition() == null) {
             translatedBody = nilNode(source, sourceSection);
         } else {
             translatedBody = rescueBody.getBodyNode().accept(this);
@@ -3008,7 +3007,7 @@ public class BodyTranslator extends Translator {
 
         RubyNode rescueBodyTranslated;
 
-        if (rescueBody.getBodyNode() == null || rescueBody.getBodyNode().getPosition() == InvalidSourcePosition.INSTANCE) {
+        if (rescueBody.getBodyNode() == null || rescueBody.getBodyNode().getPosition() == null) {
             rescueBodyTranslated = nilNode(source, sourceSection);
         } else {
             rescueBodyTranslated = rescueBody.getBodyNode().accept(this);

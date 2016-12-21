@@ -28,7 +28,6 @@ import org.jruby.truffle.language.objects.SelfNode;
 import org.jruby.truffle.parser.ast.NilImplicitParseNode;
 import org.jruby.truffle.parser.ast.ParseNode;
 import org.jruby.truffle.parser.lexer.ISourcePosition;
-import org.jruby.truffle.parser.lexer.InvalidSourcePosition;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -142,7 +141,7 @@ public abstract class Translator extends org.jruby.truffle.parser.ast.visitor.Ab
     }
 
     private RubySourceSection translate(Source source, ISourcePosition sourcePosition) {
-        assert sourcePosition != InvalidSourcePosition.INSTANCE;
+        assert sourcePosition != null;
         return new RubySourceSection(sourcePosition.getLine() + 1);
     }
 
