@@ -16,7 +16,6 @@ describe "Array#<<" do
 
   before :each do
     @long = 1 << 52
-    @long_ary = [@long, @long+1, @long+2]
   end
 
   it "empty array has null storage" do
@@ -63,11 +62,12 @@ describe "Array#<<" do
   end
 
   it "supports long[] << int" do
-    storage(@long_ary).should == "long[]"
+    long_ary = [@long, @long+1, @long+2]
+    storage(long_ary).should == "long[]"
 
-    @long_ary << 1
-    @long_ary.should == [@long, @long+1, @long+2, 1]
-    storage(@long_ary).should == "long[]"
+    long_ary << 1
+    long_ary.should == [@long, @long+1, @long+2, 1]
+    storage(long_ary).should == "long[]"
   end
 
   it "supports int[] << long and goes to long[]" do
@@ -95,11 +95,12 @@ describe "Array#<<" do
   end
 
   it "supports long[] << double" do
-    storage(@long_ary).should == "long[]"
+    long_ary = [@long, @long+1, @long+2]
+    storage(long_ary).should == "long[]"
 
-    @long_ary << 1.34
-    @long_ary.should == [@long, @long+1, @long+2, 1.34]
-    storage(@long_ary).should == "Object[]"
+    long_ary << 1.34
+    long_ary.should == [@long, @long+1, @long+2, 1.34]
+    storage(long_ary).should == "Object[]"
   end
 
   it "supports double[] << int" do
