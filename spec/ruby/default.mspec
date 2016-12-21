@@ -48,5 +48,4 @@ class MSpecScript
   MSpec.enable_feature :continuation_library
   MSpec.enable_feature :fork if respond_to?(:fork, true)
   MSpec.enable_feature :encoding
-  MSpec.enable_feature :readline unless PlatformGuard.windows?
 end

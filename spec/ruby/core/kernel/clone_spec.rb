@@ -57,12 +57,6 @@ describe "Kernel#clone" do
     end
   end
 
-  it "raises TypeError when called on nil" do
-    lambda {
-      nil.clone
-    }.should raise_error(TypeError)
-  end
-
   it "replaces a singleton object's metaclass with a new copy with the same superclass" do
     cls = Class.new do
       def bar

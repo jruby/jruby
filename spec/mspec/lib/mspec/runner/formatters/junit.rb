@@ -80,7 +80,7 @@ class JUnitFormatter < YamlFormatter
   def encode_for_xml(str)
     encode_as_latin1(str).gsub("<", LT).gsub(">", GT).
       gsub('"', QU).gsub("'", AP).gsub("&", AM).
-      gsub(/[#{Regexp.escape("\0\1\2\3\4\5\6\7\8")}]/, "?")
+      tr("\x00-\x08", "?")
   end
 
   def encode_as_latin1(str)

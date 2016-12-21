@@ -38,8 +38,11 @@ describe :socket_pack_sockaddr_un, shared: true do
       path = Socket.unpack_sockaddr_un(sockaddr_un).encode('UTF-8', 'UTF-8')
       path.should == '/home/вася/sock'
     end
+  end
 
+  platform_is_not :windows, :aix do
     it "raises if path length exceeds max size" do
+      # AIX doesn't raise error
       long_path = Array.new(512, 0).join
       lambda { Socket.public_send(@method, long_path) }.should raise_error(ArgumentError)
     end

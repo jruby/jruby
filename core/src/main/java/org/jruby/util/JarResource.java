@@ -63,6 +63,12 @@ abstract class JarResource extends AbstractFileResource {
         String[] entries = index.getDirEntries(entryPath);
         if (entries != null) {
             return new JarDirectoryResource(jarPath, rootSlashPrefix, entryPath, entries);
+        } else if (entryPath.length() > 1 && entryPath.endsWith("/")) {  // in case 'foo/' passed
+            entries = index.getDirEntries(entryPath.substring(0, entryPath.length() - 1));
+
+            if (entries != null) {
+                return new JarDirectoryResource(jarPath, rootSlashPrefix, entryPath, entries);
+            }
         }
 
         JarEntry jarEntry = index.getJarEntry(entryPath);

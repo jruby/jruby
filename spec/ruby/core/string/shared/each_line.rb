@@ -42,11 +42,21 @@ describe :string_each_line, shared: true do
   it "yields paragraphs (broken by 2 or more successive newlines) when passed ''" do
     a = []
     "hello\nworld\n\n\nand\nuniverse\n\n\n\n\n".send(@method, '') { |s| a << s }
-    a.should == ["hello\nworld\n\n\n", "and\nuniverse\n\n\n\n\n"]
+    ruby_version_is ''...'2.5' do
+      a.should == ["hello\nworld\n\n\n", "and\nuniverse\n\n\n\n\n"]
+    end
+    ruby_version_is '2.5' do
+      a.should == ["hello\nworld\n\n", "and\nuniverse\n\n"]
+    end
 
     a = []
     "hello\nworld\n\n\nand\nuniverse\n\n\n\n\ndog".send(@method, '') { |s| a << s }
-    a.should == ["hello\nworld\n\n\n", "and\nuniverse\n\n\n\n\n", "dog"]
+    ruby_version_is ''...'2.5' do
+      a.should == ["hello\nworld\n\n\n", "and\nuniverse\n\n\n\n\n", "dog"]
+    end
+    ruby_version_is '2.5' do
+      a.should == ["hello\nworld\n\n", "and\nuniverse\n\n", "dog"]
+    end
   end
 
   describe "uses $/" do

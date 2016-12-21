@@ -86,8 +86,9 @@ def compile_extension(name)
   ldshared += " #{RbConfig::CONFIG["ARCH_FLAG"]}" if RbConfig::CONFIG["ARCH_FLAG"]
   libpath   = "-L#{path}"
   libs      = RbConfig::CONFIG["LIBS"]
-  dldflags  = "#{RbConfig::CONFIG["LDFLAGS"]} #{RbConfig::CONFIG["DLDFLAGS"]}"
+  dldflags  = "#{RbConfig::CONFIG["LDFLAGS"]} #{RbConfig::CONFIG["DLDFLAGS"]} #{RbConfig::CONFIG["EXTDLDFLAGS"]}"
   dldflags.sub!(/-Wl,-soname,\S+/, '')
+  dldflags.sub!("$(TARGET_ENTRY)", "Init_#{ext}")
 
   link_cmd = "#{ldshared} #{obj} #{libpath} #{dldflags} #{libs} -o #{lib}"
   output = `#{link_cmd}`
@@ -148,6 +149,11 @@ end
 
 def load_extension(name)
   require compile_extension(name)
+rescue LoadError
+  if %r{/usr/sbin/execerror ruby "\(ld 3 1 main ([/a-zA-Z0-9_\-.]+_spec\.so)"} =~ $!.message
+    system('/usr/sbin/execerror', "#{RbConfig::CONFIG["bindir"]}/ruby", "(ld 3 1 main #{$1}")
+  end
+  raise
 end
 
 # Constants

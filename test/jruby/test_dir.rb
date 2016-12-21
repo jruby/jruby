@@ -243,6 +243,23 @@ class TestDir < Test::Unit::TestCase
     end
   end
 
+  def test_stat_directory_in_jar_with_trailing_slash
+    jar_file = File.expand_path('../jar_with_relative_require1.jar', __FILE__)
+    $CLASSPATH << jar_file
+    source_file = "jar:file:#{jar_file}!/test/require_relative1.rb"
+    assert File.exist?(source_file), "test is wrong, #{source_file} doesn't even exist"
+    assert_equal false, File.directory?(source_file)
+    assert_equal false, File.directory?(source_file + "/")
+    assert_raise(Errno::ENOENT) do
+      File.stat(source_file + "/")
+    end
+    source_dir = File.dirname(source_file)
+    assert File.directory?(source_dir), "#{source_dir} not found"
+    source_dir += "/"
+    assert File.directory?(source_dir), "#{source_dir} claims to not be a directory"
+    assert_equal true, File.stat(source_dir).directory?
+  end
+
   # JRUBY-4983
   def test_entries_unicode
     utf8_dir = "testDir_1/glk\u00a9"

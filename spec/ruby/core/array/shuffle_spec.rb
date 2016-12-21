@@ -40,12 +40,10 @@ describe "Array#shuffle" do
     result.should include(1, 2)
   end
 
-  it "ignores an Object passed for the RNG if it does not define #rand" do
-    obj = mock("array_shuffle_random")
+  it "raises a NoMethodError if an object passed for the RNG does not define #rand" do
+    obj = BasicObject.new
 
-    result = [1, 2].shuffle(random: obj)
-    result.size.should == 2
-    result.should include(1, 2)
+    lambda { [1, 2].shuffle(random: obj) }.should raise_error(NoMethodError)
   end
 
   it "accepts a Float for the value returned by #rand" do

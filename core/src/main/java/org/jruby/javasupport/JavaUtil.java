@@ -98,12 +98,13 @@ public class JavaUtil {
 
         if (RubyInstanceConfig.CAN_SET_ACCESSIBLE) {
             try {
-                // We want to check if we can access a commonly-existing private field through reflection. If so,
-                // we're probably able to access some other fields too later on.
-                Field f = DummyForJavaUtil.class.getDeclaredField("PRIVATE");
+                // We want to check if we can access a commonly-existing private field through reflection.
+                // If so, we're probably able to access some other fields too later on.
+                Field f = Java.class.getDeclaredField("_");
                 f.setAccessible(true);
-                canSetAccessible = f.get(null).equals(DummyForJavaUtil.PUBLIC);
-            } catch (Exception t) {
+                canSetAccessible = f.getByte(null) == 72;
+            }
+            catch (Exception t) {
                 // added this so if things are weird in the future we can debug without
                 // spinning a new binary
                 if (Options.JI_LOGCANSETACCESSIBLE.load()) {
@@ -130,20 +131,20 @@ public class JavaUtil {
 
     public static RubyArray convertJavaArrayToRubyWithNesting(final ThreadContext context, final Object array) {
         final int length = Array.getLength(array);
-        final RubyArray outer = context.runtime.newArray(length);
+        final IRubyObject[] rubyElements = new IRubyObject[length];
         for ( int i = 0; i < length; i++ ) {
             final Object element = Array.get(array, i);
             if ( element instanceof ArrayJavaProxy ) {
-                outer.append( convertJavaArrayToRubyWithNesting(context, ((ArrayJavaProxy) element).getObject()) );
+                rubyElements[i] = convertJavaArrayToRubyWithNesting(context, ((ArrayJavaProxy) element).getObject());
             }
             else if ( element != null && element.getClass().isArray() ) {
-                outer.append( convertJavaArrayToRubyWithNesting(context, element) );
+                rubyElements[i] = convertJavaArrayToRubyWithNesting(context, element);
             }
             else {
-                outer.append( convertJavaToUsableRubyObject(context.runtime, element) );
+                rubyElements[i] = convertJavaToUsableRubyObject(context.runtime, element);
             }
         }
-        return outer;
+        return context.runtime.newArrayNoCopy(rubyElements);
     }
 
     public static JavaConverter getJavaConverter(Class clazz) {

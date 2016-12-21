@@ -63,7 +63,6 @@ class MSpecScript
   MSpec.enable_feature :continuation_library
   MSpec.disable_feature :fork
   MSpec.enable_feature :encoding
-  MSpec.enable_feature :readline
 
   # Filter out ObjectSpace specs if ObjectSpace is disabled
   unless JRuby.objectspace

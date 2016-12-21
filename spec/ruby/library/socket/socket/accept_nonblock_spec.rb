@@ -28,4 +28,10 @@ describe "Socket#accept_nonblock" do
       end
     }
   end
+
+  ruby_version_is '2.3' do
+    it 'returns :wait_readable in exceptionless mode' do
+      @socket.accept_nonblock(exception: false).should == :wait_readable
+    end
+  end
 end
