@@ -203,7 +203,6 @@ public final class StringSupport {
 
     private static final int LONG_SIZE = 8;
     private static final int LOWBITS = LONG_SIZE - 1;
-    @SuppressWarnings("deprecation")
     public static int utf8Length(byte[] bytes, int p, int end) {
         final ByteBuffer buffer = ByteBuffer.wrap(bytes, 0, end);
         int len = 0;
@@ -359,7 +358,6 @@ public final class StringSupport {
         return -1;
     }
 
-    @SuppressWarnings("deprecation")
     public static int utf8Nth(byte[]bytes, int p, int e, int nth) {
         // FIXME: Missing our UNSAFE impl because it was doing the wrong thing: See GH #1986
         while (p < e) {

@@ -715,6 +715,7 @@ public class ClassicRegexp implements ReOptions {
         if (options.isExtended()) to.append((byte)'x');
     }
 
+    @SuppressWarnings("unused")
     public ByteList toByteList() {
         RegexpOptions newOptions = (RegexpOptions)options.clone();
         int p = str.getBegin();

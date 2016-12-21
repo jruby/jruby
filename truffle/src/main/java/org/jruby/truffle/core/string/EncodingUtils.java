@@ -44,8 +44,6 @@ import java.util.List;
 public class EncodingUtils {
     public static final int ECONV_DEFAULT_NEWLINE_DECORATOR = Platform.IS_WINDOWS ? EConvFlags.UNIVERSAL_NEWLINE_DECORATOR : 0;
 
-    private static final byte[] NULL_BYTE_ARRAY = ByteList.NULL_ARRAY;
-
     static final int VMODE = 0;
     static final int PERM = 1;
 

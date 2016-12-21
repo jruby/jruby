@@ -62,7 +62,6 @@ import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.objects.TaintNode;
-import org.jruby.truffle.language.objects.TaintNodeGen;
 
 @CoreClass("Truffle::ReadlineHistory")
 public abstract class ReadlineHistoryNodes {

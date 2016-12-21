@@ -395,10 +395,10 @@ public abstract class VMPrimitiveNodes {
                     cstime = stime = bean.getCurrentThreadCpuTime() - bean.getCurrentThreadUserTime();
                 }
             } else {
-                utime = (double) tms.utime();
-                stime = (double) tms.stime();
-                cutime = (double) tms.cutime();
-                cstime = (double) tms.cstime();
+                utime = tms.utime();
+                stime = tms.stime();
+                cutime = tms.cutime();
+                cstime = tms.cstime();
             }
 
             long hz = posix().sysconf(Sysconf._SC_CLK_TCK);

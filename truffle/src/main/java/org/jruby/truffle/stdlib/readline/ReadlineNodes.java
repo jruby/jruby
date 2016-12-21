@@ -281,7 +281,7 @@ public abstract class ReadlineNodes {
 
         @TruffleBoundary
         public static void setDelimiter(String delimiter) {
-            List<String> l = new ArrayList<String>();
+            List<String> l = new ArrayList<>();
             CharBuffer buf = CharBuffer.wrap(delimiter);
             while (buf.hasRemaining()) {
                 l.add(String.valueOf(buf.get()));

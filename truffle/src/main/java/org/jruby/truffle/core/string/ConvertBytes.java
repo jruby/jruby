@@ -700,7 +700,7 @@ public class ConvertBytes {
         int bitcnt = 0;
         for(int i = ilen, o = olen; --o >= 0; ) {
             if(bitcnt < shift) {
-                bitbuf |= ((int)in[--i] & 0xff) << bitcnt;
+                bitbuf |= (in[--i] & 0xff) << bitcnt;
                 bitcnt += 8;
             }
             out[o] = digits[bitbuf & mask];

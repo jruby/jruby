@@ -75,6 +75,7 @@ public class ArgumentProcessor {
             return dashedValue;
         }
 
+        @Override
         public String toString() {
             return getDashedValue();
         }
@@ -193,7 +194,7 @@ public class ArgumentProcessor {
                             throw new UnsupportedOperationException();
                         } else {
                             try {
-                                int val = Integer.parseInt(temp, 8);
+                                Integer.parseInt(temp, 8);
                                 //config.setRecordSeparator(String.valueOf((char) val));
                                 throw new UnsupportedOperationException();
                             } catch (Exception e) {

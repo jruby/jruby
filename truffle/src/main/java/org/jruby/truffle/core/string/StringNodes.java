@@ -715,7 +715,7 @@ public abstract class StringNodes {
             final int[] store = new int[bytes.length];
 
             for (int n = 0; n < store.length; n++) {
-                store[n] = ((int) bytes[n]) & 0xFF;
+                store[n] = bytes[n] & 0xFF;
             }
 
             return createArray(store, store.length);
