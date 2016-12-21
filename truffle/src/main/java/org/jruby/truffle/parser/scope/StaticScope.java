@@ -255,12 +255,6 @@ public class StaticScope implements Serializable {
         throw new UnsupportedOperationException();
     }
 
-    private Object getConstantInnerNoObject(String internedName) {
-        if (previousCRefScope == null) return null;
-
-        return getConstantInner(internedName);
-    }
-
     /**
      * Next outer most scope in list of scopes.  An enclosing scope may have no direct scoping
      * relationship to its child.  If I am in a localScope and then I enter something which

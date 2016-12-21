@@ -66,7 +66,6 @@ public class Parser {
         return totalBytes;
     }
 
-    @SuppressWarnings("unchecked")
     public ParseNode parse(String file, ByteList content, DynamicScope blockScope,
                            ParserConfiguration configuration) {
         configuration.setDefaultEncoding(content.getEncoding());
@@ -75,7 +74,6 @@ public class Parser {
         return parse(file, lexerSource, blockScope, configuration);
     }
 
-    @SuppressWarnings("unchecked")
     public ParseNode parse(String file, byte[] content, DynamicScope blockScope,
                            ParserConfiguration configuration) {
         List<ByteList> list = getLines(configuration, file);
@@ -84,7 +82,6 @@ public class Parser {
         return parse(file, lexerSource, blockScope, configuration);
     }
 
-    @SuppressWarnings("unchecked")
     public ParseNode parse(String file, InputStream content, DynamicScope blockScope,
                            ParserConfiguration configuration) {
         List<ByteList> list = getLines(configuration, file);
@@ -97,7 +94,6 @@ public class Parser {
         return parse(file, lexerSource, blockScope, configuration);
     }
 
-    @SuppressWarnings("unchecked")
     public ParseNode parse(String file, LexerSource lexerSource, DynamicScope blockScope,
                            ParserConfiguration configuration) {
         // We only need to pass in current scope if we are evaluating as a block (which

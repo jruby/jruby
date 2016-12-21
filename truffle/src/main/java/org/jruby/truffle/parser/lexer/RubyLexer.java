@@ -143,6 +143,7 @@ public class RubyLexer extends LexingCommon {
         return new ComplexParseNode(getPosition(), number);
     }
     
+    @Override
     protected void ambiguousOperator(String op, String syn) {
         warnings.warn(RubyWarnings.ID.AMBIGUOUS_ARGUMENT, getPosition().getFile(), getPosition().getLine(), "`" + op + "' after local variable or literal is interpreted as binary operator");
         warnings.warn(RubyWarnings.ID.AMBIGUOUS_ARGUMENT, getPosition().getFile(), getPosition().getLine(), "even though it seems like " + syn);
@@ -214,6 +215,7 @@ public class RubyLexer extends LexingCommon {
     // What handles warnings
     private RubyWarnings warnings;
 
+    @Override
     public int tokenize_ident(int result) {
         // FIXME: Get token from newtok index to lex_p?
         String value = createTokenString();
@@ -242,6 +244,7 @@ public class RubyLexer extends LexingCommon {
         reset();
     }
 
+    @Override
     public void reset() {
         super.reset();
         lex_strterm = null;
@@ -251,6 +254,7 @@ public class RubyLexer extends LexingCommon {
         parser_prepare();
     }
 
+    @Override
     public int nextc() {
         if (lex_p == lex_pend) {
             line_offset += lex_pend;
@@ -322,6 +326,7 @@ public class RubyLexer extends LexingCommon {
         }
     }
 
+    @Override
     public void compile_error(String message) {
         throw new SyntaxException(SyntaxException.PID.BAD_HEX_NUMBER, getFile(), ruby_sourceline, lexb.toString(), message);
     }
@@ -401,6 +406,7 @@ public class RubyLexer extends LexingCommon {
 
     }
 
+    @Override
     protected void setEncoding(ByteList name) {
         final RubyContext context = parserSupport.getConfiguration().getContext();
         Encoding newEncoding = Layouts.ENCODING.getEncoding(context.getEncodingManager().getRubyEncoding(name.toString()));

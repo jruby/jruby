@@ -34,7 +34,6 @@ import org.joni.Regex;
 import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.string.ByteList;
 
-import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.UnsupportedCharsetException;
 
@@ -287,7 +286,7 @@ public abstract class LexingCommon {
         tokp = lex_p - (unreadOnce ? 1 : 0); // We use tokp of ripper to mark beginning of tokens.
     }
 
-    protected int numberLiteralSuffix(int mask) throws IOException {
+    protected int numberLiteralSuffix(int mask) {
         int c = nextc();
 
         if (c == 'i') return (mask & SUFFIX_I) != 0 ?  mask & SUFFIX_I : 0;
@@ -402,7 +401,7 @@ public abstract class LexingCommon {
         cmdArgumentState.reset();
     }
 
-    protected char scanOct(int count) throws IOException {
+    protected char scanOct(int count) {
         char value = '\0';
 
         for (int i = 0; i < count; i++) {
@@ -766,7 +765,7 @@ public abstract class LexingCommon {
         return isLexState(lex_state, EXPR_FNAME|EXPR_DOT);
     }
 
-    protected boolean isNext_identchar() throws IOException {
+    protected boolean isNext_identchar() {
         int c = nextc();
         pushback(c);
 

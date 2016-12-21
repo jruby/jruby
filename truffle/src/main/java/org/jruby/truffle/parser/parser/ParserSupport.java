@@ -136,7 +136,6 @@ import org.jruby.truffle.parser.scope.StaticScope;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import static org.jruby.truffle.parser.lexer.LexingCommon.ASCII8BIT_ENCODING;
 import static org.jruby.truffle.parser.lexer.LexingCommon.USASCII_ENCODING;
@@ -474,7 +473,7 @@ public class ParserSupport {
      * @return true if a control node, false otherwise
      */
     public boolean isBreakStatement(ParseNode node) {
-        breakLoop: do {
+        do { // breakLoop:
             if (node == null) return false;
 
             switch (node.getNodeType()) {
@@ -558,7 +557,7 @@ public class ParserSupport {
     public void checkUselessStatement(ParseNode node) {
         if (!warnings.isVerbose() || (!configuration.isInlineSource() && configuration.isEvalParse())) return;
 
-        uselessLoop: do {
+        do { // uselessLoop:
             if (node == null) return;
 
             switch (node.getNodeType()) {
@@ -883,6 +882,7 @@ public class ParserSupport {
         return new AttrAssignParseNode(position, receiver, name, args, isLazy);
     }
 
+    @SuppressWarnings("unused")
     private boolean isNumericOperator(String name) {
         if (name.length() == 1) {
             switch (name.charAt(0)) {

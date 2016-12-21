@@ -35,7 +35,7 @@ import java.util.List;
  *  Lexer source from ripper getting a line at a time via 'gets' calls.
  */
 public class GetsLexerSource extends LexerSource {
-    private Object io;
+    // private Object io;
     private Encoding encoding;
     private int offset;
 
@@ -43,7 +43,7 @@ public class GetsLexerSource extends LexerSource {
     public GetsLexerSource(String sourceName, int line, Object io, List<ByteList> scriptLines, Encoding encoding) {
         super(sourceName, line, scriptLines);
 
-        this.io = io;
+        // this.io = io;
         this.encoding = encoding;
     }
 

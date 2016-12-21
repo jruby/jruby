@@ -42,16 +42,19 @@ public class DummyDynamicScope extends NoVarsDynamicScope {
         super(staticScope, parent);
     }
 
+    @Override
     public void growIfNeeded() {
         growIfNeeded(SIZE, GROW_ERROR);
     }
 
+    @Override
     protected void growIfNeeded(int size, String message) {
         if (staticScope.getNumberOfVariables() != size) {
             throw new RuntimeException(message);
         }
     }
     
+    @Override
     public DynamicScope cloneScope() {
         // there should be no mutable state in this scope, so return same
         return this;

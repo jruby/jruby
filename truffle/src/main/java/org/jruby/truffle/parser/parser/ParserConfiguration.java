@@ -56,11 +56,7 @@ public class ParserConfiguration {
     private Encoding defaultEncoding;
     private RubyContext context;
 
-    private int[] coverage = EMPTY_COVERAGE;
-
     private final StaticScopeFactory staticScopeFactory;
-
-    private static final int[] EMPTY_COVERAGE = new int[0];
 
     public ParserConfiguration(RubyContext context, int lineNumber, boolean inlineSource, boolean isFileParse, boolean saveData) {
         this.context = context;

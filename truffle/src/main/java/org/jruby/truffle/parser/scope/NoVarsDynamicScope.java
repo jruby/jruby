@@ -42,6 +42,7 @@ public class NoVarsDynamicScope extends DynamicScope {
         super(staticScope);
     }
     
+    @Override
     public void growIfNeeded() {
         growIfNeeded(SIZE, GROW_ERROR);
     }
@@ -52,10 +53,12 @@ public class NoVarsDynamicScope extends DynamicScope {
         }
     }
     
+    @Override
     public DynamicScope cloneScope() {
         return new NoVarsDynamicScope(staticScope, parent);
     }
 
+    @Override
     public Object[] getValues() {
         return new Object[]{};
     }
@@ -70,6 +73,7 @@ public class NoVarsDynamicScope extends DynamicScope {
      * @param depth how many captured scopes down this variable should be set
      * @return the value here
      */
+    @Override
     public Object getValue(int offset, int depth) {
         assert depth != 0: SIZE_ERROR;
         return parent.getValue(offset, depth - 1);
@@ -78,22 +82,32 @@ public class NoVarsDynamicScope extends DynamicScope {
     /**
      * Variation of getValue that checks for nulls, returning and setting the given value (presumably nil)
      */
+    @Override
     public Object getValueOrNil(int offset, int depth, Object nil) {
         return parent.getValueOrNil(offset, depth - 1, nil);
     }
     
+    @Override
     public Object getValueDepthZeroOrNil(int offset, Object nil) {
         throw new RuntimeException(this.getClass().getSimpleName() + " does not support scopes with any variables");
     }
+
+    @Override
     public Object getValueZeroDepthZeroOrNil(Object nil) {
         throw new RuntimeException(this.getClass().getSimpleName() + " does not support scopes with one or more variables");
     }
+
+    @Override
     public Object getValueOneDepthZeroOrNil(Object nil) {
         throw new RuntimeException(this.getClass().getSimpleName() + " does not support scopes with two or more variables");
     }
+
+    @Override
     public Object getValueTwoDepthZeroOrNil(Object nil) {
         throw new RuntimeException(this.getClass().getSimpleName() + " does not support scopes with three or more variables");
     }
+
+    @Override
     public Object getValueThreeDepthZeroOrNil(Object nil) {
         throw new RuntimeException(this.getClass().getSimpleName() + " does not support scopes with four or more variables");
     }
@@ -105,22 +119,32 @@ public class NoVarsDynamicScope extends DynamicScope {
      * @param value to set
      * @param depth how many captured scopes down this variable should be set
      */
+    @Override
     public Object setValue(int offset, Object value, int depth) {
         return parent.setValue(offset, value, depth - 1);
     }
 
+    @Override
     public Object setValueDepthZero(Object value, int offset) {
         throw new RuntimeException(this.getClass().getSimpleName() + " does not support scopes with any variables");
     }
+
+    @Override
     public Object setValueZeroDepthZero(Object value) {
         throw new RuntimeException(this.getClass().getSimpleName() + " does not support scopes with one or more variables");
     }
+
+    @Override
     public Object setValueOneDepthZero(Object value) {
         throw new RuntimeException(this.getClass().getSimpleName() + " does not support scopes with two or more variables");
     }
+
+    @Override
     public Object setValueTwoDepthZero(Object value) {
         throw new RuntimeException(this.getClass().getSimpleName() + " does not support scopes with three or more variables");
     }
+
+    @Override
     public Object setValueThreeDepthZero(Object value) {
         throw new RuntimeException(this.getClass().getSimpleName() + " does not support scopes with four or more variables");
     }

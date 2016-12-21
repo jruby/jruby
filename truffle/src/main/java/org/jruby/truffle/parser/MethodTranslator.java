@@ -51,7 +51,6 @@ import org.jruby.truffle.language.supercall.ReadZSuperArgumentsNode;
 import org.jruby.truffle.language.supercall.SuperCallNode;
 import org.jruby.truffle.language.supercall.ZSuperOutsideMethodNode;
 import org.jruby.truffle.parser.ast.ArgsParseNode;
-import org.jruby.truffle.parser.ast.ArrayParseNode;
 import org.jruby.truffle.parser.ast.AssignableParseNode;
 import org.jruby.truffle.parser.ast.BlockParseNode;
 import org.jruby.truffle.parser.ast.CallParseNode;
@@ -66,9 +65,7 @@ import org.jruby.truffle.parser.ast.UnnamedRestArgParseNode;
 import org.jruby.truffle.parser.ast.ZSuperParseNode;
 import org.jruby.truffle.tools.ChaosNodeGen;
 
-import java.util.ArrayDeque;
 import java.util.Arrays;
-import java.util.Deque;
 
 public class MethodTranslator extends BodyTranslator {
 

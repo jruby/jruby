@@ -55,7 +55,6 @@ import org.jruby.truffle.core.range.RangeNodesFactory;
 import org.jruby.truffle.core.regexp.InterpolatedRegexpNode;
 import org.jruby.truffle.core.regexp.MatchDataNodesFactory;
 import org.jruby.truffle.core.regexp.RegexpNodes;
-import org.jruby.truffle.core.regexp.RegexpNodesFactory;
 import org.jruby.truffle.core.regexp.RegexpOptions;
 import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.rope.Rope;

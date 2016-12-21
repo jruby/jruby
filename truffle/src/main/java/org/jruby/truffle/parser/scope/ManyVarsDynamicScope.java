@@ -63,10 +63,12 @@ public class ManyVarsDynamicScope extends DynamicScope {
         }
     }
     
+    @Override
     public DynamicScope cloneScope() {
         return new ManyVarsDynamicScope(staticScope, parent);
     }
 
+    @Override
     public Object[] getValues() {
         return variableValues;
     }
@@ -81,6 +83,7 @@ public class ManyVarsDynamicScope extends DynamicScope {
      * @param depth how many captured scopes down this variable should be set
      * @return the value here
      */
+    @Override
     public Object getValue(int offset, int depth) {
         if (depth > 0) {
             return parent.getValue(offset, depth - 1);
@@ -94,6 +97,7 @@ public class ManyVarsDynamicScope extends DynamicScope {
     /**
      * Variation of getValue that checks for nulls, returning and setting the given value (presumably nil)
      */
+    @Override
     public Object getValueOrNil(int offset, int depth, Object nil) {
         if (depth > 0) {
             return parent.getValueOrNil(offset, depth - 1, nil);
@@ -102,6 +106,7 @@ public class ManyVarsDynamicScope extends DynamicScope {
         }
     }
     
+    @Override
     public Object getValueDepthZeroOrNil(int offset, Object nil) {
         assertGetValueDepthZeroOrNil(offset);
         // &foo are not getting set from somewhere...I want the following assert to be true though
@@ -110,6 +115,7 @@ public class ManyVarsDynamicScope extends DynamicScope {
         return value == null ? setValueDepthZero(nil, offset) : value;
     }
     
+    @Override
     public Object getValueZeroDepthZeroOrNil(Object nil) {
         assertGetValueZeroDepthZeroOrNil();
         // &foo are not getting set from somewhere...I want the following assert to be true though
@@ -118,6 +124,7 @@ public class ManyVarsDynamicScope extends DynamicScope {
         return value == null ? setValueZeroDepthZero(nil) : value;
     }
     
+    @Override
     public Object getValueOneDepthZeroOrNil(Object nil) {
         assertGetValueOneDepthZeroOrNil();
         // &foo are not getting set from somewhere...I want the following assert to be true though
@@ -126,6 +133,7 @@ public class ManyVarsDynamicScope extends DynamicScope {
         return value == null ? setValueOneDepthZero(nil) : value;
     }
     
+    @Override
     public Object getValueTwoDepthZeroOrNil(Object nil) {
         assertGetValueTwoDepthZeroOrNil();
         // &foo are not getting set from somewhere...I want the following assert to be true though
@@ -134,6 +142,7 @@ public class ManyVarsDynamicScope extends DynamicScope {
         return value == null ? setValueTwoDepthZero(nil) : value;
     }
     
+    @Override
     public Object getValueThreeDepthZeroOrNil(Object nil) {
         assertGetValueThreeDepthZeroOrNil();
         // &foo are not getting set from somewhere...I want the following assert to be true though
@@ -149,6 +158,7 @@ public class ManyVarsDynamicScope extends DynamicScope {
      * @param value to set
      * @param depth how many captured scopes down this variable should be set
      */
+    @Override
     public Object setValue(int offset, Object value, int depth) {
         if (depth > 0) {
             assertParent();
@@ -161,26 +171,35 @@ public class ManyVarsDynamicScope extends DynamicScope {
         }
     }
 
+    @Override
     public Object setValueDepthZero(Object value, int offset) {
         assertSetValueDepthZero(offset, value);
 
         return variableValues[offset] = value;
     }
+
+    @Override
     public Object setValueZeroDepthZero(Object value) {
         assertSetValueZeroDepthZero(value);
 
         return variableValues[0] = value;
     }
+
+    @Override
     public Object setValueOneDepthZero(Object value) {
         assertSetValueOneDepthZero(value);
 
         return variableValues[1] = value;
     }
+
+    @Override
     public Object setValueTwoDepthZero(Object value) {
         assertSetValueTwoDepthZero(value);
 
         return variableValues[2] = value;
     }
+
+    @Override
     public Object setValueThreeDepthZero(Object value) {
         assertSetValueThreeDepthZero(value);
 
@@ -195,6 +214,7 @@ public class ManyVarsDynamicScope extends DynamicScope {
      * things like 'eval "b = 2", binding' happens.
      *
      */
+    @Override
     public void growIfNeeded() {
         int dynamicSize = variableValues == null ? 0: variableValues.length;
         

@@ -73,6 +73,7 @@ public class HeredocTerm extends StrTerm {
         this.lastLine = lastLine;
     }
 
+    @Override
     public int getFlags() {
         return flags;
     }

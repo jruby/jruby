@@ -65,6 +65,7 @@ public class StringTerm extends StrTerm {
         this.nest  = 0;
     }
 
+    @Override
     public int getFlags() {
         return flags;
     }
@@ -75,7 +76,7 @@ public class StringTerm extends StrTerm {
         return bytelist;
     }
 
-    private int endFound(RubyLexer lexer) throws IOException {
+    private int endFound(RubyLexer lexer) {
             if ((flags & STR_FUNC_QWORDS) != 0) {
                 flags = -1;
                 lexer.getPosition();
@@ -95,7 +96,7 @@ public class StringTerm extends StrTerm {
     }
 
     // Return of 0 means failed to find anything.  Non-zero means return that from lexer.
-    private int parsePeekVariableName(RubyLexer lexer) throws IOException {
+    private int parsePeekVariableName(RubyLexer lexer) {
         int c = lexer.nextc(); // byte right after #
         int significant = -1;
         switch (c) {
@@ -165,6 +166,7 @@ public class StringTerm extends StrTerm {
         return 0;
     }
 
+    @Override
     public int parseString(RubyLexer lexer) throws IOException {
         boolean spaceSeen = false;
         int c;
@@ -210,7 +212,7 @@ public class StringTerm extends StrTerm {
         return Tokens.tSTRING_CONTENT;
     }
 
-    private RegexpOptions parseRegexpFlags(RubyLexer lexer) throws IOException {
+    private RegexpOptions parseRegexpFlags(RubyLexer lexer) {
         RegexpOptions options = new RegexpOptions();
         int c;
         StringBuilder unknownFlags = new StringBuilder(10);
@@ -374,7 +376,7 @@ public class StringTerm extends StrTerm {
                     }
                 }
             } else if (!lexer.isASCII(c)) {
-nonascii:       hasNonAscii = true; // Label for comparison with MRI only.
+                hasNonAscii = true; // nonascii:
 
                 if (buffer.getEncoding() != enc[0]) {
                     mixedEscape(lexer, buffer.getEncoding(), enc[0]);

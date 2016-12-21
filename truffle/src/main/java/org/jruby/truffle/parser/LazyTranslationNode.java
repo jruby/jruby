@@ -11,10 +11,8 @@ package org.jruby.truffle.parser;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import org.jruby.truffle.Log;
 import org.jruby.truffle.language.RubyNode;
 
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 
 public class LazyTranslationNode extends RubyNode {
