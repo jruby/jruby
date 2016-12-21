@@ -49,7 +49,7 @@ public abstract class ArrayAppendManyNode extends RubyNode {
             final int capacity = ArrayUtils.capacity(getContext(), storeMirror.getLength(), newSize);
             final ArrayMirror newStoreMirror = storeMirror.copyArrayAndMirror(capacity);
             otherStoreMirror.copyTo(newStoreMirror, 0, oldSize, otherSize);
-            setStoreAndSize(array, newStoreMirror.getArray(), newSize);
+            strategy.setStoreAndSize(array, newStoreMirror.getArray(), newSize);
         } else {
             otherStoreMirror.copyTo(storeMirror, 0, oldSize, otherSize);
             setSize(array, newSize);
@@ -72,7 +72,7 @@ public abstract class ArrayAppendManyNode extends RubyNode {
         final ArrayMirror newStoreMirror = generalized.newArray(newSize);
         strategy.newMirror(array).copyTo(newStoreMirror, 0, 0, oldSize);
         otherStrategy.newMirror(other).copyTo(newStoreMirror, 0, oldSize, otherSize);
-        setStoreAndSize(array, newStoreMirror.getArray(), newSize);
+        generalized.setStoreAndSize(array, newStoreMirror.getArray(), newSize);
         return array;
     }
 

@@ -132,7 +132,7 @@ public abstract class ArrayNodes {
         public DynamicObject addGeneralize(DynamicObject a, DynamicObject b,
                 @Cached("of(a)") ArrayStrategy aStrategy,
                 @Cached("of(b)") ArrayStrategy bStrategy,
-                @Cached("aStrategy.generalize(bStrategy)") ArrayStrategy generalized) {
+                @Cached("aStrategy.generalizeNew(bStrategy)") ArrayStrategy generalized) {
             final int aSize = aStrategy.getSize(a);
             final int bSize = bStrategy.getSize(b);
             final int combinedSize = aSize + bSize;
@@ -516,9 +516,10 @@ public abstract class ArrayNodes {
     @CoreMethod(names = "clear", raiseIfFrozenSelf = true)
     public abstract static class ClearNode extends ArrayCoreMethodNode {
 
-        @Specialization(guards = "isRubyArray(array)")
-        public DynamicObject clear(DynamicObject array) {
-            setStoreAndSize(array, null, 0);
+        @Specialization(guards = "strategy.matches(array)", limit = "ARRAY_STRATEGIES")
+        public DynamicObject clear(DynamicObject array,
+                @Cached("of(array)") ArrayStrategy strategy) {
+            strategy.setStoreAndSize(array, null, 0);
             return array;
         }
 
@@ -541,20 +542,20 @@ public abstract class ArrayNodes {
                 @Cached("of(array)") ArrayStrategy strategy) {
             // TODO CS 9-Feb-15 by removing nil we could make this array suitable for a primitive array storage class
 
-            final Object[] store = (Object[]) getStore(array);
-            final Object[] newStore = new Object[store.length];
             final int size = strategy.getSize(array);
+            final ArrayMirror store = strategy.newMirror(array);
+            final ArrayMirror newStore = strategy.newArray(size);
 
             int m = 0;
 
             for (int n = 0; n < size; n++) {
-                if (store[n] != nil()) {
-                    newStore[m] = store[n];
+                if (store.get(n) != nil()) {
+                    newStore.set(m, store.get(n));
                     m++;
                 }
             }
 
-            return createArray(newStore, m);
+            return createArray(newStore.getArray(), m);
         }
 
     }
@@ -571,19 +572,19 @@ public abstract class ArrayNodes {
         @Specialization(guards = { "strategy.matches(array)", "strategy.accepts(nil())" }, limit = "ARRAY_STRATEGIES")
         public Object compactObjects(DynamicObject array,
                 @Cached("of(array)") ArrayStrategy strategy) {
-            final Object[] store = (Object[]) getStore(array);
             final int size = strategy.getSize(array);
+            final ArrayMirror store = strategy.newMirror(array);
 
             int m = 0;
 
             for (int n = 0; n < size; n++) {
-                if (store[n] != nil()) {
-                    store[m] = store[n];
+                if (store.get(n) != nil()) {
+                    store.set(m, store.get(n));
                     m++;
                 }
             }
 
-            setStoreAndSize(array, store, m);
+            strategy.setStoreAndSize(array, store.getArray(), m);
 
             if (m == size) {
                 return nil();
@@ -651,7 +652,7 @@ public abstract class ArrayNodes {
             }
 
             if (i != n) {
-                setStoreAndSize(array, store.getArray(), i);
+                strategy.setStoreAndSize(array, store.getArray(), i);
                 return found;
             } else {
                 if (maybeBlock == NotProvided.INSTANCE) {
@@ -699,7 +700,7 @@ public abstract class ArrayNodes {
                 final ArrayMirror store = strategy.newMirror(array);
                 final Object value = store.get(i);
                 store.copyTo(store, i + 1, i, size - i - 1);
-                setStoreAndSize(array, store.getArray(), size - 1);
+                strategy.setStoreAndSize(array, store.getArray(), size - 1);
                 return value;
             }
         }
@@ -1517,12 +1518,13 @@ public abstract class ArrayNodes {
             return ToAryNodeGen.create(null, null, index);
         }
 
-        @Specialization(guards = "strategy.matches(other)", limit = "ARRAY_STRATEGIES")
+        @Specialization(guards = {"arrayStrategy.matches(array)", "otherStrategy.matches(other)"}, limit = "ARRAY_STRATEGIES")
         public DynamicObject replace(DynamicObject array, DynamicObject other,
-                @Cached("of(other)") ArrayStrategy strategy) {
-            final int size = strategy.getSize(other);
-            final ArrayMirror copy = strategy.newMirror(other).copyArrayAndMirror();
-            setStoreAndSize(array, copy.getArray(), size);
+                        @Cached("of(array)") ArrayStrategy arrayStrategy,
+                        @Cached("of(other)") ArrayStrategy otherStrategy) {
+            final int size = getSize(other);
+            final ArrayMirror copy = otherStrategy.newMirror(other).copyArrayAndMirror();
+            arrayStrategy.setStoreAndSize(array, copy.getArray(), size);
             return array;
         }
 
@@ -1772,7 +1774,7 @@ public abstract class ArrayNodes {
         public DynamicObject zipObjectIntegerFixnum(DynamicObject array, DynamicObject other, Object[] others, NotProvided block,
                 @Cached("of(array)") ArrayStrategy aStrategy,
                 @Cached("of(other)") ArrayStrategy bStrategy,
-                @Cached("aStrategy.generalize(bStrategy)") ArrayStrategy generalized,
+                @Cached("aStrategy.generalizeNew(bStrategy)") ArrayStrategy generalized,
                 @Cached("createBinaryProfile()") ConditionProfile bNotSmallerProfile) {
             final ArrayMirror a = aStrategy.newMirror(array);
             final ArrayMirror b = bStrategy.newMirror(other);
