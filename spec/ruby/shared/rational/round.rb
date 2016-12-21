@@ -18,26 +18,13 @@ describe :rational_round, shared: true do
       Rational(2, 1).round(0).should == 2
     end
 
-    ruby_version_is ""..."2.4" do
-      it "returns the rounded value toward the nearest integer" do
-        Rational(1, 2).round.should == 1
-        Rational(-1, 2).round.should == -1
-        Rational(3, 2).round.should == 2
-        Rational(-3, 2).round.should == -2
-        Rational(5, 2).round.should == 3
-        Rational(-5, 2).round.should == -3
-      end
-    end
-
-    ruby_version_is "2.4" do
-      it "returns the rounded value toward the nearest even integer" do
-        Rational(1, 2).round.should == 0
-        Rational(-1, 2).round.should == 0
-        Rational(3, 2).round.should == 2
-        Rational(-3, 2).round.should == -2
-        Rational(5, 2).round.should == 2
-        Rational(-5, 2).round.should == -2
-      end
+    it "returns the rounded value toward the nearest integer" do
+      Rational(1, 2).round.should == 1
+      Rational(-1, 2).round.should == -1
+      Rational(3, 2).round.should == 2
+      Rational(-3, 2).round.should == -2
+      Rational(5, 2).round.should == 3
+      Rational(-5, 2).round.should == -3
     end
   end
 

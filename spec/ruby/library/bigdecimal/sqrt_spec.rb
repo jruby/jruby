@@ -37,7 +37,7 @@ describe "BigDecimal#sqrt" do
   end
 
   it "returns square root of 0.9E-99999 with desired precision" do
-    @frac_2.sqrt(1).to_s.should == "0.3E-49999"
+    @frac_2.sqrt(1).to_s.should =~ /\A0\.3E-49999\z/i
   end
 
   it "raises ArgumentError when no argument is given" do
