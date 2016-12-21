@@ -304,7 +304,7 @@ public class BodyTranslator extends Translator {
 
     public BodyTranslator(com.oracle.truffle.api.nodes.Node currentNode, RubyContext context, BodyTranslator parent, TranslatorEnvironment environment, Source source, boolean topLevel) {
         super(currentNode, context, source);
-        parserSupport = new ParserSupport(context);
+        parserSupport = new ParserSupport(context, source.getName());
         this.parent = parent;
         this.environment = environment;
     }

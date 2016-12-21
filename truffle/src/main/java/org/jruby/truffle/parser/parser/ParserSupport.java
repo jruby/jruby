@@ -162,8 +162,11 @@ public class ParserSupport {
 
     private final RubyContext context;
 
-    public ParserSupport(RubyContext context) {
+    private String file;
+
+    public ParserSupport(RubyContext context, String file) {
         this.context = context;
+        this.file = file;
     }
 
     public RubyContext getContext() {
@@ -318,7 +321,7 @@ public class ParserSupport {
         }
 
         if (warnings.isVerbose() && isBreakStatement(((ListParseNode) head).getLast())) {
-            warnings.warning(RubyWarnings.ID.STATEMENT_NOT_REACHED, tail.getPosition().getFile(), tail.getPosition().getLine(), "statement not reached");
+            warnings.warning(RubyWarnings.ID.STATEMENT_NOT_REACHED, file, tail.getPosition().getLine(), "statement not reached");
         }
 
         // Assumption: tail is never a list node
@@ -487,13 +490,13 @@ public class ParserSupport {
 
     public void warnUnlessEOption(RubyWarnings.ID id, ParseNode node, String message) {
         if (!configuration.isInlineSource()) {
-            warnings.warn(id, node.getPosition().getFile(), node.getPosition().getLine(), message);
+            warnings.warn(id, file, node.getPosition().getLine(), message);
         }
     }
 
     public void warningUnlessEOption(RubyWarnings.ID id, ParseNode node, String message) {
         if (warnings.isVerbose() && !configuration.isInlineSource()) {
-            warnings.warning(id, node.getPosition().getFile(), node.getPosition().getLine(), message);
+            warnings.warning(id, file, node.getPosition().getLine(), message);
         }
     }
 
@@ -545,7 +548,7 @@ public class ParserSupport {
     }
 
     private void handleUselessWarn(ParseNode node, String useless) {
-        warnings.warn(RubyWarnings.ID.USELESS_EXPRESSION, node.getPosition().getFile(), node.getPosition().getLine(), "Useless use of " + useless + " in void context.");
+        warnings.warn(RubyWarnings.ID.USELESS_EXPRESSION, file, node.getPosition().getLine(), "Useless use of " + useless + " in void context.");
     }
 
     /**
@@ -631,7 +634,7 @@ public class ParserSupport {
         } else if (node instanceof LocalAsgnParseNode || node instanceof DAsgnParseNode || node instanceof GlobalAsgnParseNode || node instanceof InstAsgnParseNode) {
             ParseNode valueNode = ((AssignableParseNode) node).getValueNode();
             if (isStaticContent(valueNode)) {
-                warnings.warn(RubyWarnings.ID.ASSIGNMENT_IN_CONDITIONAL, node.getPosition().getFile(), node.getPosition().getLine(), "found = in conditional, should be ==");
+                warnings.warn(RubyWarnings.ID.ASSIGNMENT_IN_CONDITIONAL, file, node.getPosition().getLine(), "found = in conditional, should be ==");
             }
             return true;
         }
@@ -1251,11 +1254,11 @@ public class ParserSupport {
     }
 
     public void warn(RubyWarnings.ID id, SimpleSourcePosition position, String message, Object... data) {
-        warnings.warn(id, position.getFile(), position.getLine(), message);
+        warnings.warn(id, file, position.getLine(), message);
     }
 
     public void warning(RubyWarnings.ID id, SimpleSourcePosition position, String message, Object... data) {
-        if (warnings.isVerbose()) warnings.warning(id, position.getFile(), position.getLine(), message);
+        if (warnings.isVerbose()) warnings.warning(id, file, position.getLine(), message);
     }
 
     // ENEBO: Totally weird naming (in MRI is not allocated and is a local var name) [1.9]
@@ -1316,7 +1319,7 @@ public class ParserSupport {
             if (warnings.isVerbose() && current.isDefined(name) >= 0 &&
                     !skipTruffleRubiniusWarnings(lexer)) {
 
-                warnings.warning(RubyWarnings.ID.STATEMENT_NOT_REACHED, lexer.getPosition().getFile(), lexer.getPosition().getLine(),
+                warnings.warning(RubyWarnings.ID.STATEMENT_NOT_REACHED, file, lexer.getPosition().getLine(),
                         "shadowing outer local variable - " + name);
             }
         } else if (current.exists(name) >= 0) {
