@@ -121,7 +121,6 @@ import org.jruby.truffle.parser.ast.ZArrayParseNode;
 import org.jruby.truffle.parser.ast.ZSuperParseNode;
 import org.jruby.truffle.parser.ast.types.ILiteralNode;
 import org.jruby.truffle.parser.lexer.SimpleSourcePosition;
-import org.jruby.truffle.parser.lexer.ISourcePositionHolder;
 import org.jruby.truffle.parser.lexer.LexerSource;
 import org.jruby.truffle.parser.lexer.RubyLexer;
 import org.jruby.truffle.parser.lexer.StrTerm;
@@ -1366,7 +1365,7 @@ primary         : literal
                 | tLPAREN compstmt tRPAREN {
                     if ($2 != null) {
                         // compstmt position includes both parens around it
-                        ((ISourcePositionHolder) $2).setPosition($1);
+                        ((ParseNode) $2).setPosition($1);
                         $$ = $2;
                     } else {
                         $$ = new NilParseNode($1);

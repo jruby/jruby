@@ -36,7 +36,6 @@ package org.jruby.truffle.parser.ast;
 import org.jruby.truffle.parser.ast.types.INameNode;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
 import org.jruby.truffle.parser.lexer.SimpleSourcePosition;
-import org.jruby.truffle.parser.lexer.ISourcePositionHolder;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -45,7 +44,7 @@ import java.util.List;
 /**
  * Base class for all Nodes in the AST
  */
-public abstract class ParseNode implements ISourcePositionHolder {
+public abstract class ParseNode {
     // We define an actual list to get around bug in java integration (1387115)
     static final List<ParseNode> EMPTY_LIST = new ArrayList<>();
     

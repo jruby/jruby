@@ -125,7 +125,6 @@ import org.jruby.truffle.parser.ast.ZArrayParseNode;
 import org.jruby.truffle.parser.ast.ZSuperParseNode;
 import org.jruby.truffle.parser.ast.types.ILiteralNode;
 import org.jruby.truffle.parser.lexer.SimpleSourcePosition;
-import org.jruby.truffle.parser.lexer.ISourcePositionHolder;
 import org.jruby.truffle.parser.lexer.LexerSource;
 import org.jruby.truffle.parser.lexer.RubyLexer;
 import org.jruby.truffle.parser.lexer.StrTerm;
@@ -2740,7 +2739,7 @@ states[313] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
                     if (((ParseNode)yyVals[-1+yyTop]) != null) {
                         /* compstmt position includes both parens around it*/
-                        ((ISourcePositionHolder) ((ParseNode)yyVals[-1+yyTop])).setPosition(((SimpleSourcePosition)yyVals[-2+yyTop]));
+                        ((ParseNode) ((ParseNode)yyVals[-1+yyTop])).setPosition(((SimpleSourcePosition)yyVals[-2+yyTop]));
                         yyVal = ((ParseNode)yyVals[-1+yyTop]);
                     } else {
                         yyVal = new NilParseNode(((SimpleSourcePosition)yyVals[-2+yyTop]));

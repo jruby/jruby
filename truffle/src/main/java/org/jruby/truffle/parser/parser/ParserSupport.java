@@ -127,7 +127,6 @@ import org.jruby.truffle.parser.ast.YieldParseNode;
 import org.jruby.truffle.parser.ast.types.ILiteralNode;
 import org.jruby.truffle.parser.ast.types.INameNode;
 import org.jruby.truffle.parser.lexer.SimpleSourcePosition;
-import org.jruby.truffle.parser.lexer.ISourcePositionHolder;
 import org.jruby.truffle.parser.lexer.RubyLexer;
 import org.jruby.truffle.parser.lexer.SyntaxException.PID;
 import org.jruby.truffle.parser.scope.DynamicScope;
@@ -747,7 +746,7 @@ public class ParserSupport {
         return new ArrayParseNode(position, makeNullNil(firstNode));
     }
 
-    public SimpleSourcePosition position(ISourcePositionHolder one, ISourcePositionHolder two) {
+    public SimpleSourcePosition position(ParseNode one, ParseNode two) {
         return one == null ? two.getPosition() : one.getPosition();
     }
 
@@ -1247,7 +1246,7 @@ public class ParserSupport {
         lexer.compile_error(PID.GRAMMAR_ERROR, message + ", unexpected " + found + "\n");
     }
 
-    public SimpleSourcePosition getPosition(ISourcePositionHolder start) {
+    public SimpleSourcePosition getPosition(ParseNode start) {
         return start != null ? lexer.getPosition(start.getPosition()) : lexer.getPosition();
     }
 
