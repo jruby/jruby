@@ -171,7 +171,7 @@ public class EncodingUtils {
     }
 
     public static void strBufCat(ByteList str, byte[] ptrBytes, int ptr, int len) {
-        int total, off = -1;
+        int total;
 
         // termlen is not relevant since we have no termination sequence
 

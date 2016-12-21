@@ -318,18 +318,6 @@ public class PrintfSimpleParser {
         NAMED
     }
 
-    private void checkPosArg(int relativeArgumentIndex, int absoluteArgumentIndex) {
-        if (relativeArgumentIndex > 0) {
-            throw new InvalidFormatException("numbered(" + absoluteArgumentIndex + ") after unnumbered(" + relativeArgumentIndex + ")");
-        }
-        if (relativeArgumentIndex == -2) {
-            throw new InvalidFormatException("numbered(" + absoluteArgumentIndex + ") after named");
-        }
-        if (absoluteArgumentIndex < 1) {
-            throw new InvalidFormatException("invalid index - " + absoluteArgumentIndex + "$");
-        }
-    }
-
     public LookAheadResult getNum(int startI, int end) {
         StringBuilder sb = new StringBuilder();
 

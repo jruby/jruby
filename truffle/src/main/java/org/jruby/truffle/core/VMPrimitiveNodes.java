@@ -645,9 +645,6 @@ public abstract class VMPrimitiveNodes {
         public static class LinuxWaitMacros implements WaitMacros {
             private int __WAIT_INT(long status) { return (int)status; }
 
-            private int __W_EXITCODE(int ret, int sig) { return (ret << 8) | sig; }
-            private int __W_STOPCODE(int sig) { return (sig << 8) | 0x7f; }
-            private static int __W_CONTINUED = 0xffff;
             private static int __WCOREFLAG = 0x80;
 
             /* If WIFEXITED(STATUS), the low-order 8 bits of the status.  */

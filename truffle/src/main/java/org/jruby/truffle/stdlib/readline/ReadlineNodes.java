@@ -261,13 +261,10 @@ public abstract class ReadlineNodes {
     // Complete using a Proc object
     public static class ProcCompleter implements Completer {
 
-        private final DynamicObject procCompleter;
-
         //\t\n\"\\'`@$><=;|&{(
         static private String[] delimiters = {" ", "\t", "\n", "\"", "\\", "'", "`", "@", "$", ">", "<", "=", ";", "|", "&", "{", "("};
 
         public ProcCompleter(DynamicObject procCompleter) {
-            this.procCompleter = procCompleter;
         }
 
         @TruffleBoundary

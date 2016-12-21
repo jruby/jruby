@@ -223,7 +223,7 @@ public abstract class KernelNodes {
                     "pid", result.getPid(),
                     "code", result.getCode());
 
-            return result.output;
+            return result.getOutput();
         }
 
         @TruffleBoundary

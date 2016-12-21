@@ -618,16 +618,6 @@ public class RubyDateFormatter {
         return DebugHelpers.eval(context, "Time.now.zone");
     }
 
-    /* JRUBY-3560
-     * joda-time disallows use of three-letter time zone IDs.
-     * Since MRI accepts these values, we need to translate them.
-     */
-    private static final Map<String, String> LONG_TZNAME = map(
-            "MET", "CET", // JRUBY-2759
-            "ROC", "Asia/Taipei", // Republic of China
-            "WET", "Europe/Lisbon" // Western European Time
-    );
-
     /* Some TZ values need to be overriden for Time#zone
      */
     private static final Map<String, String> SHORT_STD_TZNAME = map(
