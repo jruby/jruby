@@ -42,7 +42,7 @@ public class StringGuards {
 
     public static boolean isValidUtf8(DynamicObject string) {
         assert RubyGuards.isRubyString(string);
-        return StringOperations.isCodeRangeValid(string) && Layouts.STRING.getRope(string).getEncoding().isUTF8();
+        return isValidCodeRange(string) && Layouts.STRING.getRope(string).getEncoding().isUTF8();
     }
 
     public static boolean isEmpty(DynamicObject string) {
@@ -55,9 +55,14 @@ public class StringGuards {
         return StringOperations.codeRange(string) == CodeRange.CR_BROKEN;
     }
 
+    public static boolean isValidCodeRange(DynamicObject string) {
+        return StringOperations.codeRange(string) == CodeRange.CR_VALID;
+    }
+
     public static boolean isRopeBuffer(DynamicObject string) {
         assert RubyGuards.isRubyString(string);
 
         return rope(string) instanceof RopeBuffer;
     }
+
 }

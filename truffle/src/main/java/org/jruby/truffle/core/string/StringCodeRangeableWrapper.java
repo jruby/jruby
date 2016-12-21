@@ -39,7 +39,7 @@ public class StringCodeRangeableWrapper implements CodeRangeable {
 
     @Override
     public boolean isCodeRangeValid() {
-        return StringOperations.isCodeRangeValid(string);
+        return StringGuards.isValidCodeRange(string);
     }
 
     @Override

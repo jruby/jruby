@@ -4497,7 +4497,7 @@ public abstract class StringNodes {
             }
             if (len == 0) {
                 p = 0;
-            } else if (StringOperations.isCodeRangeValid(string) && enc instanceof UTF8Encoding) {
+            } else if (StringGuards.isValidCodeRange(string) && enc instanceof UTF8Encoding) {
                 p = StringSupport.utf8Nth(bytes, s, end, beg);
                 len = StringSupport.utf8Offset(bytes, p, end, len);
             } else if (enc.isFixedWidth()) {

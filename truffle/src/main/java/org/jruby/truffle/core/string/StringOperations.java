@@ -97,10 +97,6 @@ public abstract class StringOperations {
         };
     }
 
-    public static boolean isCodeRangeValid(DynamicObject string) {
-        return StringOperations.codeRange(string) == CodeRange.CR_VALID;
-    }
-
     public static int clampExclusiveIndex(DynamicObject string, int index) {
         assert RubyGuards.isRubyString(string);
 
