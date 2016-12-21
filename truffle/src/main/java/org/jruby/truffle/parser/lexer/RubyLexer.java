@@ -316,9 +316,9 @@ public class RubyLexer extends LexingCommon {
             int currentLine = -1;
             for (int i = 0; i < length; i++) {
                 ParseNode child = list.get(i);
-                if (currentLine == child.getLine()) continue;  // Only process first element on a line?
+                if (currentLine == child.getPosition().getStartLine() - 1) continue;  // Only process first element on a line?
 
-                currentLine = child.getLine();                 // New line
+                currentLine = child.getPosition().getStartLine() - 1;                 // New line
 
                 if (child instanceof StrParseNode) {
                     dedent_string(((StrParseNode) child).getValue(), indent);

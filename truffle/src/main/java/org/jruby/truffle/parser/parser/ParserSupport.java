@@ -1216,7 +1216,7 @@ public class ParserSupport {
             int index = encounteredKeys.indexOf(key);
             if (index >= 0) {
                 warn(RubyWarnings.ID.AMBIGUOUS_ARGUMENT, hash.getPosition(), "key " + key +
-                        " is duplicated and overwritten on line " + (encounteredKeys.get(index).getLine() + 1));
+                        " is duplicated and overwritten on line " + (encounteredKeys.get(index).getPosition().getStartLine()));
             } else {
                 encounteredKeys.add(key);
             }

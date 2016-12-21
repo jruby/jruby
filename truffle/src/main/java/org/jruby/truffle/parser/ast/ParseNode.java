@@ -78,10 +78,6 @@ public abstract class ParseNode {
         return position;
     }
 
-    public int getLine() {
-        return position.getStartLine() - 1;
-    }
-
     public void setPosition(RubySourceSection position) {
         this.position = position;
     }
