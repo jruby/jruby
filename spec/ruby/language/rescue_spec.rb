@@ -232,4 +232,23 @@ describe "The rescue keyword" do
       end
     end.should raise_error(Exception)
   end
+  
+  it "uses === to compare against rescued classes" do
+    rescuer = Class.new
+
+    def rescuer.===(exception)
+      true
+    end
+
+    begin
+      raise Exception
+    rescue rescuer
+      rescued = :success
+    rescue Exception
+      rescued = :failure 
+    end
+    
+    rescued.should == :success
+  end
+  
 end
