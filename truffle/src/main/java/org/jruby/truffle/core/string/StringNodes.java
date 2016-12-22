@@ -180,14 +180,10 @@ public abstract class StringNodes {
     @ImportStatic(StringGuards.class)
     public abstract static class AddNode extends CoreMethodNode {
 
-        @Child private EncodingNodes.CheckEncodingNode checkEncodingNode;
-        @Child private RopeNodes.MakeConcatNode makeConcatNode;
         @Child private TaintResultNode taintResultNode;
 
         public AddNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            checkEncodingNode = EncodingNodesFactory.CheckEncodingNodeGen.create(context, sourceSection, null, null);
-            makeConcatNode = RopeNodesFactory.MakeConcatNodeGen.create(null, null, null);
             taintResultNode = new TaintResultNode(null, null);
         }
 
@@ -195,25 +191,23 @@ public abstract class StringNodes {
             return ToStrNodeGen.create(null, null, other);
         }
 
-        @Specialization(guards = { "!isRopeBuffer(string)", "isRubyString(other)", "getEncoding(string) == getEncoding(other)" })
-        public DynamicObject addSameEncoding(DynamicObject string, DynamicObject other) {
-            return add(string, other, getEncoding(string));
-        }
+        @Specialization(guards = { "!isRopeBuffer(string)", "isRubyString(other)" })
+        public DynamicObject add(DynamicObject string, DynamicObject other,
+                                 @Cached("create()") StringAppendNode stringAppendNode) {
+            final Rope concatRope = stringAppendNode.executeStringAppend(string, other);
 
-        @Specialization(guards = { "!isRopeBuffer(string)", "isRubyString(other)", "getEncoding(string) != getEncoding(other)", "isUTF8AndUSASCII(string, other)" })
-        public DynamicObject addUTF8AndUSASCII(DynamicObject string, DynamicObject other) {
-            return add(string, other, UTF8Encoding.INSTANCE);
-        }
+            final DynamicObject ret = Layouts.STRING.createString(coreLibrary().getStringFactory(), concatRope);
 
-        @Specialization(guards = { "!isRopeBuffer(string)", "isRubyString(other)", "getEncoding(string) != getEncoding(other)", "!isUTF8AndUSASCII(string, other)" })
-        public DynamicObject addDifferentEncodings(DynamicObject string, DynamicObject other) {
-            final Encoding enc = checkEncodingNode.executeCheckEncoding(string, other);
-            return add(string, other, enc);
+            taintResultNode.maybeTaint(string, ret);
+            taintResultNode.maybeTaint(other, ret);
+
+            return ret;
         }
 
         @Specialization(guards = { "isRopeBuffer(string)", "is7Bit(string)", "is7Bit(other)" })
         public DynamicObject addRopeBuffer(DynamicObject string, DynamicObject other,
-                                           @Cached("createBinaryProfile()") ConditionProfile ropeBufferProfile) {
+                                           @Cached("createBinaryProfile()") ConditionProfile ropeBufferProfile,
+                                           @Cached("create()") EncodingNodes.CheckEncodingNode checkEncodingNode) {
             final Encoding enc = checkEncodingNode.executeCheckEncoding(string, other);
 
             final RopeBuffer left = (RopeBuffer) rope(string);
@@ -244,33 +238,8 @@ public abstract class StringNodes {
             return ret;
         }
 
-        private DynamicObject add(DynamicObject string, DynamicObject other, Encoding encoding) {
-            Rope left = rope(string);
-            final Rope right = rope(other);
-
-            final Rope concatRope = makeConcatNode.executeMake(left, right, encoding);
-
-            final DynamicObject ret = Layouts.STRING.createString(coreLibrary().getStringFactory(), concatRope);
-
-            taintResultNode.maybeTaint(string, ret);
-            taintResultNode.maybeTaint(other, ret);
-
-            return ret;
-        }
-
         protected Encoding getEncoding(DynamicObject string) {
             return Layouts.STRING.getRope(string).getEncoding();
-        }
-
-        protected boolean isUTF8AndUSASCII(DynamicObject string, DynamicObject other) {
-            final Encoding stringEncoding = getEncoding(string);
-            final Encoding otherEncoding = getEncoding(other);
-
-            if (stringEncoding != UTF8Encoding.INSTANCE && otherEncoding != UTF8Encoding.INSTANCE) {
-                return false;
-            }
-
-            return stringEncoding == USASCIIEncoding.INSTANCE || otherEncoding == USASCIIEncoding.INSTANCE;
         }
 
     }
@@ -453,36 +422,14 @@ public abstract class StringNodes {
     @ImportStatic(StringGuards.class)
     public abstract static class ConcatNode extends CoreMethodNode {
 
-        @Child private RopeNodes.MakeConcatNode makeConcatNode;
-        @Child private StringAppendPrimitiveNode stringAppendNode;
-
-        @Specialization(guards = { "isRubyString(other)", "is7Bit(string)", "is7Bit(other)" })
-        public DynamicObject concatStringSingleByte(DynamicObject string, DynamicObject other) {
-            final Rope left = rope(string);
-            final Rope right = rope(other);
-
-            if (makeConcatNode == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                makeConcatNode = insert(RopeNodesFactory.MakeConcatNodeGen.create(null, null, null));
-            }
-
-            StringOperations.setRope(string, makeConcatNode.executeMake(left, right, left.getEncoding()));
-
-            return string;
-        }
-
-        @Specialization(guards =  { "isRubyString(other)", "!is7Bit(string) || !is7Bit(other)" })
-        public Object concatString(DynamicObject string, DynamicObject other) {
-            if (stringAppendNode == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                stringAppendNode = insert(StringNodesFactory.StringAppendPrimitiveNodeFactory.create(getContext(), null, new RubyNode[] {}));
-            }
-
+        @Specialization(guards = "isRubyString(other)")
+        public DynamicObject concat(DynamicObject string, DynamicObject other,
+                                                    @Cached("create()") StringAppendPrimitiveNode stringAppendNode) {
             return stringAppendNode.executeStringAppend(string, other);
         }
 
         @Specialization(guards = "!isRubyString(other)")
-        public Object concat(
+        public Object concatGeneric(
                 VirtualFrame frame,
                 DynamicObject string,
                 Object other,
@@ -2601,8 +2548,7 @@ public abstract class StringNodes {
     @Primitive(name = "string_append")
     public static abstract class StringAppendPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
-        @Child private EncodingNodes.CheckEncodingNode checkEncodingNode;
-        @Child private RopeNodes.MakeConcatNode makeConcatNode;
+        @Child private StringAppendNode stringAppendNode;
 
         public static StringAppendPrimitiveNode create() {
             return StringNodesFactory.StringAppendPrimitiveNodeFactory.create(null, null, null);
@@ -2610,20 +2556,14 @@ public abstract class StringNodes {
 
         public StringAppendPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            checkEncodingNode = EncodingNodesFactory.CheckEncodingNodeGen.create(context, sourceSection, null, null);
-            makeConcatNode = RopeNodesFactory.MakeConcatNodeGen.create(null, null, null);
+            stringAppendNode = StringNodesFactory.StringAppendNodeGen.create(context, sourceSection, null, null);
         }
 
         public abstract DynamicObject executeStringAppend(DynamicObject string, DynamicObject other);
 
         @Specialization(guards = "isRubyString(other)")
         public DynamicObject stringAppend(DynamicObject string, DynamicObject other) {
-            final Rope left = rope(string);
-            final Rope right = rope(other);
-
-            final Encoding compatibleEncoding = checkEncodingNode.executeCheckEncoding(string, other);
-
-            StringOperations.setRope(string, makeConcatNode.executeMake(left, right, compatibleEncoding));
+            StringOperations.setRope(string, stringAppendNode.executeStringAppend(string, other));
 
             return string;
         }
@@ -4411,6 +4351,39 @@ public abstract class StringNodes {
             // Data is copied here - can we do something COW?
             final ByteList byteList = Layouts.BYTE_ARRAY.getBytes(bytes);
             return createString(new ByteList(byteList, start, count));
+        }
+
+    }
+
+    @NodeChildren({ @NodeChild("string"), @NodeChild("other") })
+    public static abstract class StringAppendNode extends RubyNode {
+
+        @Child private EncodingNodes.CheckEncodingNode checkEncodingNode;
+        @Child private RopeNodes.MakeConcatNode makeConcatNode;
+
+        public static StringAppendNode create() {
+            return StringNodesFactory.StringAppendNodeGen.create(null, null, null, null);
+        }
+
+        public StringAppendNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            checkEncodingNode = EncodingNodesFactory.CheckEncodingNodeGen.create(context, sourceSection, null, null);
+            makeConcatNode = RopeNodesFactory.MakeConcatNodeGen.create(null, null, null);
+        }
+
+        public abstract Rope executeStringAppend(DynamicObject string, DynamicObject other);
+
+        @Specialization
+        public Rope stringAppend(DynamicObject string, DynamicObject other) {
+            assert RubyGuards.isRubyString(string);
+            assert RubyGuards.isRubyString(other);
+
+            final Rope left = rope(string);
+            final Rope right = rope(other);
+
+            final Encoding compatibleEncoding = checkEncodingNode.executeCheckEncoding(string, other);
+
+            return makeConcatNode.executeMake(left, right, compatibleEncoding);
         }
 
     }

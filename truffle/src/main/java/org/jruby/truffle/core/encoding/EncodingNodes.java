@@ -452,6 +452,10 @@ public abstract class EncodingNodes {
         @Child private EncodingNodes.CompatibleQueryNode compatibleQueryNode;
         @Child private ToEncodingNode toEncodingNode;
 
+        public static CheckEncodingNode create() {
+            return EncodingNodesFactory.CheckEncodingNodeGen.create(null, null, null, null);
+        }
+
         public CheckEncodingNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             compatibleQueryNode = EncodingNodesFactory.CompatibleQueryNodeFactory.create(context, sourceSection, new RubyNode[] {});
