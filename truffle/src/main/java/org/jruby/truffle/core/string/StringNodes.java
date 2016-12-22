@@ -180,10 +180,12 @@ public abstract class StringNodes {
     @ImportStatic(StringGuards.class)
     public abstract static class AddNode extends CoreMethodNode {
 
+        @Child private AllocateObjectNode allocateObjectNode;
         @Child private TaintResultNode taintResultNode;
 
         public AddNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            allocateObjectNode = AllocateObjectNode.create();
             taintResultNode = new TaintResultNode(null, null);
         }
 
@@ -196,7 +198,7 @@ public abstract class StringNodes {
                                  @Cached("create()") StringAppendNode stringAppendNode) {
             final Rope concatRope = stringAppendNode.executeStringAppend(string, other);
 
-            final DynamicObject ret = Layouts.STRING.createString(coreLibrary().getStringFactory(), concatRope);
+            final DynamicObject ret = allocateObjectNode.allocate(coreLibrary().getStringClass(), concatRope);
 
             taintResultNode.maybeTaint(string, ret);
             taintResultNode.maybeTaint(other, ret);
