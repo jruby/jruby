@@ -12,11 +12,14 @@ package org.jruby.truffle.language.exceptions;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.cast.BooleanCastNode;
 import org.jruby.truffle.core.cast.BooleanCastNodeGen;
+import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 
@@ -26,6 +29,8 @@ public abstract class RescueNode extends RubyNode {
 
     @Child private CallDispatchHeadNode callTripleEqualsNode;
     @Child private BooleanCastNode booleanCastNode;
+
+    private final BranchProfile errorProfile = BranchProfile.create();
 
     public RescueNode(RubyContext context, SourceSection sourceSection, RubyNode body) {
         super(context, sourceSection);
@@ -45,6 +50,11 @@ public abstract class RescueNode extends RubyNode {
     }
 
     protected boolean matches(VirtualFrame frame, Object exception, Object handlingClass) {
+        if (!RubyGuards.isRubyModule(handlingClass)) {
+            errorProfile.enter();
+            throw new RaiseException(coreExceptions().typeErrorRescueInvalidClause(this));
+        }
+
         if (callTripleEqualsNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
             callTripleEqualsNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));

@@ -431,6 +431,11 @@ public class CoreExceptions {
     }
 
     @TruffleBoundary
+    public DynamicObject typeErrorRescueInvalidClause(Node currentNode) {
+        return typeError("class or module required for rescue clause", currentNode);
+    }
+
+    @TruffleBoundary
     public DynamicObject typeError(String message, Node currentNode, Throwable javaThrowable) {
         return ExceptionOperations.createRubyException(
                 context.getCoreLibrary().getTypeErrorClass(),

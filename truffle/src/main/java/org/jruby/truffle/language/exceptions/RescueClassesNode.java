@@ -30,8 +30,7 @@ public class RescueClassesNode extends RescueNode {
     @Override
     public boolean canHandle(VirtualFrame frame, DynamicObject exception) {
         for (RubyNode handlingClassNode : handlingClassNodes) {
-            final DynamicObject handlingClass = (DynamicObject) handlingClassNode.execute(frame);
-
+            final Object handlingClass = handlingClassNode.execute(frame);
             if (matches(frame, exception, handlingClass)) {
                 return true;
             }

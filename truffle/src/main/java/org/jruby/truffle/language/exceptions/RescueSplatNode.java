@@ -30,7 +30,7 @@ public class RescueSplatNode extends RescueNode {
         final DynamicObject handlingClasses = (DynamicObject) handlingClassesArray.execute(frame);
 
         for (Object handlingClass : ArrayOperations.toIterable(handlingClasses)) {
-            if (matches(frame, exception, (DynamicObject) handlingClass)) {
+            if (matches(frame, exception, handlingClass)) {
                 return true;
             }
         }
