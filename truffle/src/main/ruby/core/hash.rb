@@ -68,8 +68,7 @@ class Hash
   # so we have to not collide with that.
   attr_reader_specific :entries, :__entries__
 
-  # Renamed version of the Rubinius Hash#[] method
-  #def self.[](*args)
+  # Fallback for Hash.[]
   def self._constructor_fallback(*args)
     if args.size == 1
       obj = args.first
