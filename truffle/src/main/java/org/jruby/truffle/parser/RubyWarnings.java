@@ -187,7 +187,7 @@ public class RubyWarnings implements WarnCallback {
     public void warning(ID id, String fileName, int lineNumber, String message) {
         if (!runtime.warningsEnabled() || !runtime.isVerbose()) return;
 
-        warn(id, fileName, lineNumber - 1, message);
+        warn(id, fileName, lineNumber, message);
     }
 
 }
