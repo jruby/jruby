@@ -3006,15 +3006,15 @@ public class BodyTranslator extends Translator {
     private RescueNode translateRescueSplatParseNode(SplatParseNode splat, RescueBodyParseNode rescueBody, RubySourceSection sourceSection, SourceSection fullSourceSection) {
         final RubyNode splatTranslated = translateNodeOrNil(sourceSection, splat.getValue());
 
-        RubyNode bodyTranslated;
+        RubyNode rescueBodyTranslated;
 
         if (rescueBody.getBodyNode() == null || rescueBody.getBodyNode().getPosition() == InvalidSourcePosition.INSTANCE) {
-            bodyTranslated = nilNode(source, sourceSection);
+            rescueBodyTranslated = nilNode(source, sourceSection);
         } else {
-            bodyTranslated = rescueBody.getBodyNode().accept(this);
+            rescueBodyTranslated = rescueBody.getBodyNode().accept(this);
         }
 
-        return new RescueSplatNode(context, fullSourceSection, splatTranslated, bodyTranslated);
+        return new RescueSplatNode(context, fullSourceSection, splatTranslated, rescueBodyTranslated);
     }
 
     @Override

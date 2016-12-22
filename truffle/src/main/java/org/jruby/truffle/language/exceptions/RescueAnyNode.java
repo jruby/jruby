@@ -17,8 +17,8 @@ import org.jruby.truffle.language.RubyNode;
 
 public class RescueAnyNode extends RescueNode {
 
-    public RescueAnyNode(RubyContext context, SourceSection sourceSection, RubyNode body) {
-        super(context, sourceSection, body);
+    public RescueAnyNode(RubyContext context, SourceSection sourceSection, RubyNode rescueBody) {
+        super(context, sourceSection, rescueBody);
     }
 
     @Override

@@ -25,28 +25,23 @@ import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 
 public abstract class RescueNode extends RubyNode {
 
-    @Child private RubyNode body;
+    @Child private RubyNode rescueBody;
 
     @Child private CallDispatchHeadNode callTripleEqualsNode;
     @Child private BooleanCastNode booleanCastNode;
 
     private final BranchProfile errorProfile = BranchProfile.create();
 
-    public RescueNode(RubyContext context, SourceSection sourceSection, RubyNode body) {
+    public RescueNode(RubyContext context, SourceSection sourceSection, RubyNode rescueBody) {
         super(context, sourceSection);
-        this.body = body;
+        this.rescueBody = rescueBody;
     }
 
     public abstract boolean canHandle(VirtualFrame frame, DynamicObject exception);
 
     @Override
     public Object execute(VirtualFrame frame) {
-        return body.execute(frame);
-    }
-
-    @Override
-    public void executeVoid(VirtualFrame frame) {
-        body.executeVoid(frame);
+        return rescueBody.execute(frame);
     }
 
     protected boolean matches(VirtualFrame frame, Object exception, Object handlingClass) {
