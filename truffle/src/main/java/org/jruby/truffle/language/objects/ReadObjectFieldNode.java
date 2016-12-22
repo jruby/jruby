@@ -73,4 +73,9 @@ public abstract class ReadObjectFieldNode extends RubyBaseNode {
         return getContext().getOptions().INSTANCE_VARIABLE_CACHE;
     }
 
+    @Override
+    public String toString() {
+        return name.toString();
+    }
+
 }

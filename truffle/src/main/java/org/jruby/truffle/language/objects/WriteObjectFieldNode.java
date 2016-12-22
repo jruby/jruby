@@ -184,4 +184,9 @@ public abstract class WriteObjectFieldNode extends RubyBaseNode {
         }
     }
 
+    @Override
+    public String toString() {
+        return name + " =";
+    }
+
 }
