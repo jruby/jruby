@@ -32,7 +32,7 @@
 package org.jruby.truffle.parser.ast;
 
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.ISourcePosition;
+import org.jruby.truffle.parser.TempSourceSection;
 
 import java.util.List;
 
@@ -42,7 +42,7 @@ import java.util.List;
 public class BeginParseNode extends ParseNode {
     private final ParseNode bodyNode;
 
-    public BeginParseNode(ISourcePosition position, ParseNode bodyNode) {
+    public BeginParseNode(TempSourceSection position, ParseNode bodyNode) {
         super(position, bodyNode.containsVariableAssignment());
 
         assert bodyNode != null : "bodyNode is not null";

@@ -7,17 +7,17 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.language;
+package org.jruby.truffle.parser;
 
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 
-public class RubySourceSection {
+public class TempSourceSection {
 
     private final int startLine;
     private final int endLine;
 
-    public RubySourceSection(SourceSection sourceSection) {
+    public TempSourceSection(SourceSection sourceSection) {
         startLine = sourceSection.getStartLine();
 
         if (sourceSection.getSource() == null) {
@@ -35,11 +35,11 @@ public class RubySourceSection {
         }
     }
 
-    public RubySourceSection(int startLine) {
+    public TempSourceSection(int startLine) {
         this(startLine, startLine);
     }
 
-    public RubySourceSection(int startLine, int endLine) {
+    public TempSourceSection(int startLine, int endLine) {
         this.startLine = startLine;
         this.endLine = endLine;
     }

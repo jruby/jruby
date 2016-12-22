@@ -14,7 +14,6 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.parser.ast.NodeType;
 import org.jruby.truffle.parser.ast.ParseNode;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.ISourcePosition;
 
 import java.util.Collections;
 import java.util.List;
@@ -24,7 +23,7 @@ public class ReadLocalDummyParseNode extends ParseNode {
     final SourceSection sourceSection;
     final FrameSlot frameSlot;
 
-    public ReadLocalDummyParseNode(ISourcePosition sourcePosition, SourceSection sourceSection, FrameSlot frameSlot) {
+    public ReadLocalDummyParseNode(TempSourceSection sourcePosition, SourceSection sourceSection, FrameSlot frameSlot) {
         super(sourcePosition, false);
         this.sourceSection = sourceSection;
         this.frameSlot = frameSlot;

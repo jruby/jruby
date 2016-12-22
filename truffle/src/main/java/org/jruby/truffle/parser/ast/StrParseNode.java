@@ -35,9 +35,9 @@ package org.jruby.truffle.parser.ast;
 import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.string.ByteList;
 import org.jruby.truffle.core.string.StringSupport;
+import org.jruby.truffle.parser.TempSourceSection;
 import org.jruby.truffle.parser.ast.types.ILiteralNode;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.ISourcePosition;
 
 import java.util.List;
 
@@ -49,18 +49,18 @@ public class StrParseNode extends ParseNode implements ILiteralNode, SideEffectF
     private final CodeRange codeRange;
     private boolean frozen;
 
-    public StrParseNode(ISourcePosition position, ByteList value) {
+    public StrParseNode(TempSourceSection position, ByteList value) {
         this(position, value, StringSupport.codeRangeScan(value.getEncoding(), value));
     }
 
-    public StrParseNode(ISourcePosition position, ByteList value, CodeRange codeRange) {
+    public StrParseNode(TempSourceSection position, ByteList value, CodeRange codeRange) {
         super(position, false);
 
         this.value = value;
         this.codeRange = codeRange;
     }
 
-    public StrParseNode(ISourcePosition position, StrParseNode head, StrParseNode tail) {
+    public StrParseNode(TempSourceSection position, StrParseNode head, StrParseNode tail) {
         super(position, false);
 
         ByteList headBL = head.getValue();

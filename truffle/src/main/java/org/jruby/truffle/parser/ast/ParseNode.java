@@ -33,10 +33,9 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.ast;
 
+import org.jruby.truffle.parser.TempSourceSection;
 import org.jruby.truffle.parser.ast.types.INameNode;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.ISourcePosition;
-import org.jruby.truffle.parser.lexer.ISourcePositionHolder;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -45,11 +44,12 @@ import java.util.List;
 /**
  * Base class for all Nodes in the AST
  */
-public abstract class ParseNode implements ISourcePositionHolder {
+public abstract class ParseNode {
     // We define an actual list to get around bug in java integration (1387115)
     static final List<ParseNode> EMPTY_LIST = new ArrayList<>();
-    
-    private ISourcePosition position;
+
+    private int sourceStartLine;
+    private int sourceEndLine;
 
     // Does this node contain a node which is an assignment.  We can use this knowledge when emitting IR
     // instructions to do more or less depending on whether we have to cope with scenarios like:
@@ -59,8 +59,14 @@ public abstract class ParseNode implements ISourcePositionHolder {
     protected boolean containsVariableAssignment;
     protected boolean newline;
 
-    public ParseNode(ISourcePosition position, boolean containsAssignment) {
-        this.position = position;
+    public ParseNode(TempSourceSection position, boolean containsAssignment) {
+        if (position == null) {
+            sourceStartLine = -1;
+            sourceEndLine = -1;
+        } else {
+            sourceStartLine = position.getStartLine();
+            sourceEndLine = position.getEndLine();
+        }
         this.containsVariableAssignment = containsAssignment;
     }
 
@@ -75,16 +81,13 @@ public abstract class ParseNode implements ISourcePositionHolder {
     /**
      * Location of this node within the source
      */
-    public ISourcePosition getPosition() {
-        return position;
+    public TempSourceSection getPosition() {
+        return new TempSourceSection(sourceStartLine, sourceEndLine);
     }
 
-    public int getLine() {
-        return position.getLine();
-    }
-
-    public void setPosition(ISourcePosition position) {
-        this.position = position;
+    public void setPosition(TempSourceSection position) {
+        sourceStartLine = position.getStartLine();
+        sourceEndLine = position.getEndLine();
     }
     
     public abstract <T> T accept(NodeVisitor<T> visitor);
@@ -143,7 +146,7 @@ public abstract class ParseNode implements ISourcePositionHolder {
 
         if (this instanceof INameNode) builder.append(":").append(((INameNode) this).getName());
 
-        builder.append(" ").append(getPosition().getLine());
+        builder.append(" ").append(getPosition().getStartLine() - 1);
 
         if (!childNodes().isEmpty() && indent) builder.append("\n");
 

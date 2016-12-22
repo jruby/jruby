@@ -36,7 +36,7 @@ package org.jruby.truffle.parser.ast;
 
 import org.jruby.truffle.parser.Helpers;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.ISourcePosition;
+import org.jruby.truffle.parser.TempSourceSection;
 
 import java.util.List;
 
@@ -67,7 +67,7 @@ public class ArgsParseNode extends ParseNode {
     /**
      * Construct a new ArgsParseNode with no keyword arguments.
      */
-    public ArgsParseNode(ISourcePosition position, ListParseNode pre, ListParseNode optionalArguments,
+    public ArgsParseNode(TempSourceSection position, ListParseNode pre, ListParseNode optionalArguments,
                          RestArgParseNode rest, ListParseNode post, BlockArgParseNode blockArgNode) {
         this(position, pre, optionalArguments, rest, post, null, null, blockArgNode);
     }
@@ -75,7 +75,7 @@ public class ArgsParseNode extends ParseNode {
     /**
      * Construct a new ArgsParseNode with keyword arguments.
      */
-    public ArgsParseNode(ISourcePosition position, ListParseNode pre, ListParseNode optionalArguments,
+    public ArgsParseNode(TempSourceSection position, ListParseNode pre, ListParseNode optionalArguments,
                          RestArgParseNode rest, ListParseNode post, ListParseNode keywords, KeywordRestArgParseNode keyRest, BlockArgParseNode blockArgNode) {
         super(position, pre != null && pre.containsVariableAssignment() ||
                         optionalArguments != null && optionalArguments.containsVariableAssignment() ||

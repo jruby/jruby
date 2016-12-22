@@ -29,7 +29,7 @@ import org.jruby.truffle.language.RubyConstant;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
-import org.jruby.truffle.language.RubySourceSection;
+import org.jruby.truffle.parser.TempSourceSection;
 import org.jruby.truffle.language.Visibility;
 import org.jruby.truffle.language.arguments.MissingArgumentBehavior;
 import org.jruby.truffle.language.arguments.ProfileArgumentNode;
@@ -187,7 +187,7 @@ public class CoreMethodNodeManager {
         final CoreMethod method = methodDetails.getMethodAnnotation();
 
         final SourceSection sourceSection = sharedMethodInfo.getSourceSection();
-        final RubySourceSection rubySourceSection = new RubySourceSection(sourceSection);
+        final TempSourceSection tempSourceSection = new TempSourceSection(sourceSection);
 
         final RubyNode methodNode = createCoreMethodNode(context, sourceSection, methodDetails.getNodeFactory(), method);
 
@@ -195,13 +195,13 @@ public class CoreMethodNodeManager {
             AmbiguousOptionalArgumentChecker.verifyNoAmbiguousOptionalArguments(methodDetails);
         }
 
-        final RubyNode checkArity = Translator.createCheckArityNode(context, sourceSection.getSource(), rubySourceSection, sharedMethodInfo.getArity());
+        final RubyNode checkArity = Translator.createCheckArityNode(context, sourceSection.getSource(), tempSourceSection, sharedMethodInfo.getArity());
 
         RubyNode node;
         if (!isSafe(context, method.unsafe())) {
             node = new UnsafeNode(context, sourceSection);
         } else {
-            node = Translator.sequence(context, sourceSection.getSource(), rubySourceSection, Arrays.asList(checkArity, methodNode));
+            node = Translator.sequence(context, sourceSection.getSource(), tempSourceSection, Arrays.asList(checkArity, methodNode));
             node = transformResult(method, node);
         }
 

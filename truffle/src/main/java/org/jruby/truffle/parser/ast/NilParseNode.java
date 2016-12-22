@@ -31,9 +31,9 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.ast;
 
+import org.jruby.truffle.parser.TempSourceSection;
 import org.jruby.truffle.parser.ast.types.INameNode;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.ISourcePosition;
 
 import java.util.List;
 
@@ -41,7 +41,7 @@ import java.util.List;
  * represents 'nil'
  */
 public class NilParseNode extends ParseNode implements INameNode, SideEffectFree {
-    public NilParseNode(ISourcePosition position) {
+    public NilParseNode(TempSourceSection position) {
         super(position, false);
     }
 

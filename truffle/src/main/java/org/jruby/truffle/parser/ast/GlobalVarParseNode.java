@@ -33,7 +33,7 @@ package org.jruby.truffle.parser.ast;
 
 import org.jruby.truffle.parser.ast.types.INameNode;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.ISourcePosition;
+import org.jruby.truffle.parser.TempSourceSection;
 
 import java.util.List;
 
@@ -43,7 +43,7 @@ import java.util.List;
 public class GlobalVarParseNode extends ParseNode implements INameNode, SideEffectFree {
     private String name;
 
-    public GlobalVarParseNode(ISourcePosition position, String name) {
+    public GlobalVarParseNode(TempSourceSection position, String name) {
         super(position, false);
         this.name = name;
     }

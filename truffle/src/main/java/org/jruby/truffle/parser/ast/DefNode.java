@@ -26,10 +26,4 @@ public interface DefNode {
      */
     ParseNode getBodyNode();
 
-
-    /**
-     * Which line if the end keyword located
-     * @return the line (zero-offset)
-     */
-    int getEndLine();
 }

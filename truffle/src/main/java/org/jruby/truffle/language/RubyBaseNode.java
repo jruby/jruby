@@ -34,6 +34,7 @@ import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.ByteList;
 import org.jruby.truffle.core.string.CoreStrings;
 import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.parser.TempSourceSection;
 import org.jruby.truffle.platform.posix.Sockets;
 import org.jruby.truffle.platform.posix.TrufflePosix;
 import org.jruby.truffle.stdlib.CoverageManager;
@@ -64,11 +65,11 @@ public abstract class RubyBaseNode extends Node {
 
     public RubyBaseNode(SourceSection sourceSection) {
         if (sourceSection != null) {
-            unsafeSetSourceSection(new RubySourceSection(sourceSection));
+            unsafeSetSourceSection(new TempSourceSection(sourceSection));
         }
     }
 
-    public RubyBaseNode(RubySourceSection sourceSection) {
+    public RubyBaseNode(TempSourceSection sourceSection) {
         if (sourceSection != null) {
             unsafeSetSourceSection(sourceSection);
         }
@@ -78,11 +79,11 @@ public abstract class RubyBaseNode extends Node {
         this.context = context;
 
         if (sourceSection != null) {
-            unsafeSetSourceSection(new RubySourceSection(sourceSection));
+            unsafeSetSourceSection(new TempSourceSection(sourceSection));
         }
     }
 
-    public RubyBaseNode(RubyContext context, RubySourceSection sourceSection) {
+    public RubyBaseNode(RubyContext context, TempSourceSection sourceSection) {
         this.context = context;
 
         if (sourceSection != null) {
@@ -205,21 +206,21 @@ public abstract class RubyBaseNode extends Node {
 
     // Source section
 
-    public void unsafeSetSourceSection(RubySourceSection sourceSection) {
+    public void unsafeSetSourceSection(TempSourceSection sourceSection) {
         assert sourceStartLine == 0;
         sourceStartLine = sourceSection.getStartLine();
         sourceEndLine = sourceSection.getEndLine();
     }
 
-    public RubySourceSection getRubySourceSection() {
+    public TempSourceSection getRubySourceSection() {
         if (sourceStartLine == 0) {
             return null;
         } else {
-            return new RubySourceSection(sourceStartLine, sourceEndLine);
+            return new TempSourceSection(sourceStartLine, sourceEndLine);
         }
     }
 
-    public RubySourceSection getEncapsulatingRubySourceSection() {
+    public TempSourceSection getEncapsulatingRubySourceSection() {
         Node node = this;
 
         while (node != null) {
@@ -228,7 +229,7 @@ public abstract class RubyBaseNode extends Node {
             }
 
             if (node instanceof RootNode) {
-                return new RubySourceSection(node.getSourceSection());
+                return new TempSourceSection(node.getSourceSection());
             }
 
             node = node.getParent();

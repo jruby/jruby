@@ -31,8 +31,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.ast;
 
+import org.jruby.truffle.parser.TempSourceSection;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.ISourcePosition;
 import org.jruby.truffle.parser.scope.StaticScope;
 
 import java.util.List;
@@ -46,7 +46,7 @@ import java.util.List;
 public class ForParseNode extends IterParseNode {
     private ParseNode iterNode;
 
-    public ForParseNode(ISourcePosition position, ParseNode varNode, ParseNode bodyNode, ParseNode iterNode, StaticScope scope) {
+    public ForParseNode(TempSourceSection position, ParseNode varNode, ParseNode bodyNode, ParseNode iterNode, StaticScope scope) {
         // For nodes do not have their own scope so we pass null to indicate this.
         // 'For's are implemented as blocks in evaluation, but they have no scope so we
         // just deal with this lack of scope throughout its lifespan.  We should probably

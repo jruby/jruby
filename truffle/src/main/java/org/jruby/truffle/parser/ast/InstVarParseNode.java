@@ -32,9 +32,9 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.ast;
 
+import org.jruby.truffle.parser.TempSourceSection;
 import org.jruby.truffle.parser.ast.types.INameNode;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.ISourcePosition;
 
 import java.util.List;
 
@@ -44,7 +44,7 @@ import java.util.List;
 public class InstVarParseNode extends ParseNode implements INameNode, SideEffectFree {
     private String name;
 
-    public InstVarParseNode(ISourcePosition position, String name) {
+    public InstVarParseNode(TempSourceSection position, String name) {
         super(position, false);
         this.name = name;
     }

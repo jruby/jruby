@@ -31,8 +31,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.ast;
 
+import org.jruby.truffle.parser.TempSourceSection;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.ISourcePosition;
 
 import java.util.List;
 
@@ -42,7 +42,7 @@ import java.util.List;
 public class ZSuperParseNode extends ParseNode implements BlockAcceptingParseNode {
     private ParseNode iterNode;
 
-    public ZSuperParseNode(ISourcePosition position) {
+    public ZSuperParseNode(TempSourceSection position) {
         super(position, false);
     }
 

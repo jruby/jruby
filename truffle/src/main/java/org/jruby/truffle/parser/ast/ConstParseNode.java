@@ -31,9 +31,9 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.ast;
 
+import org.jruby.truffle.parser.TempSourceSection;
 import org.jruby.truffle.parser.ast.types.INameNode;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.ISourcePosition;
 
 import java.util.List;
 
@@ -43,7 +43,7 @@ import java.util.List;
 public class ConstParseNode extends ParseNode implements INameNode {
     private String name;
 
-    public ConstParseNode(ISourcePosition position, String name) {
+    public ConstParseNode(TempSourceSection position, String name) {
         super(position, false);
         this.name = name;
     }

@@ -15,7 +15,6 @@ import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.RubySourceSection;
 import org.jruby.truffle.language.arguments.CheckArityNode;
 import org.jruby.truffle.language.arguments.CheckKeywordArityNode;
 import org.jruby.truffle.language.arguments.ProfileArgumentNode;
@@ -27,8 +26,6 @@ import org.jruby.truffle.language.methods.Arity;
 import org.jruby.truffle.language.objects.SelfNode;
 import org.jruby.truffle.parser.ast.NilImplicitParseNode;
 import org.jruby.truffle.parser.ast.ParseNode;
-import org.jruby.truffle.parser.lexer.ISourcePosition;
-import org.jruby.truffle.parser.lexer.InvalidSourcePosition;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -72,7 +69,7 @@ public abstract class Translator extends org.jruby.truffle.parser.ast.visitor.Ab
         this.source = source;
     }
 
-    public static RubyNode sequence(RubyContext context, Source source, RubySourceSection sourceSection, List<RubyNode> sequence) {
+    public static RubyNode sequence(RubyContext context, Source source, TempSourceSection sourceSection, List<RubyNode> sequence) {
         final List<RubyNode> flattened = flatten(sequence, true);
 
         if (flattened.isEmpty()) {
@@ -82,7 +79,7 @@ public abstract class Translator extends org.jruby.truffle.parser.ast.visitor.Ab
         } else {
             final RubyNode[] flatSequence = flattened.toArray(new RubyNode[flattened.size()]);
 
-            final RubySourceSection enclosingSourceSection = enclosing(sourceSection, flatSequence);
+            final TempSourceSection enclosingSourceSection = enclosing(sourceSection, flatSequence);
 
             final SourceSection sequenceSourceSection;
 
@@ -96,7 +93,7 @@ public abstract class Translator extends org.jruby.truffle.parser.ast.visitor.Ab
         }
     }
 
-    public static RubySourceSection enclosing(RubySourceSection base, RubyNode... sequence) {
+    public static TempSourceSection enclosing(TempSourceSection base, RubyNode... sequence) {
         if (base == null) {
             return base;
         }
@@ -105,7 +102,7 @@ public abstract class Translator extends org.jruby.truffle.parser.ast.visitor.Ab
         int endLine = base.getEndLine();
 
         for (RubyNode node : sequence) {
-            final RubySourceSection sourceSection = node.getRubySourceSection();
+            final TempSourceSection sourceSection = node.getRubySourceSection();
 
             if (sourceSection != null) {
                 startLine = Integer.min(startLine, sourceSection.getStartLine());
@@ -113,7 +110,7 @@ public abstract class Translator extends org.jruby.truffle.parser.ast.visitor.Ab
             }
         }
 
-        return new RubySourceSection(startLine, endLine);
+        return new TempSourceSection(startLine, endLine);
     }
 
     private static List<RubyNode> flatten(List<RubyNode> sequence, boolean allowTrailingNil) {
@@ -137,20 +134,11 @@ public abstract class Translator extends org.jruby.truffle.parser.ast.visitor.Ab
         return flattened;
     }
 
-    protected RubySourceSection translate(ISourcePosition sourcePosition) {
-        return translate(source, sourcePosition);
-    }
-
-    private RubySourceSection translate(Source source, ISourcePosition sourcePosition) {
-        assert sourcePosition != InvalidSourcePosition.INSTANCE;
-        return new RubySourceSection(sourcePosition.getLine() + 1);
-    }
-
-    protected RubyNode nilNode(Source source, RubySourceSection sourceSection) {
+    protected RubyNode nilNode(Source source, TempSourceSection sourceSection) {
         return new NilLiteralNode(context, sourceSection.toSourceSection(source), false);
     }
 
-    protected RubyNode translateNodeOrNil(RubySourceSection sourceSection, ParseNode node) {
+    protected RubyNode translateNodeOrNil(TempSourceSection sourceSection, ParseNode node) {
         final RubyNode rubyNode;
         if (node == null || node instanceof NilImplicitParseNode) {
             rubyNode = nilNode(source, sourceSection);
@@ -160,7 +148,7 @@ public abstract class Translator extends org.jruby.truffle.parser.ast.visitor.Ab
         return rubyNode;
     }
 
-    public static RubyNode createCheckArityNode(RubyContext context, Source source, RubySourceSection sourceSection, Arity arity) {
+    public static RubyNode createCheckArityNode(RubyContext context, Source source, TempSourceSection sourceSection, Arity arity) {
         if (!arity.acceptsKeywords()) {
             return new CheckArityNode(arity);
         } else {
@@ -168,7 +156,7 @@ public abstract class Translator extends org.jruby.truffle.parser.ast.visitor.Ab
         }
     }
 
-    public SourceSection translateSourceSection(Source source, RubySourceSection sourceSection) {
+    public SourceSection translateSourceSection(Source source, TempSourceSection sourceSection) {
         if (sourceSection == null) {
             return null;
         } else {
@@ -178,7 +166,7 @@ public abstract class Translator extends org.jruby.truffle.parser.ast.visitor.Ab
 
     public static RubyNode loadSelf(RubyContext context, TranslatorEnvironment environment) {
         final FrameSlot slot = environment.getFrameDescriptor().findOrAddFrameSlot(SelfNode.SELF_IDENTIFIER);
-        RubySourceSection sourceSection = null;
+        TempSourceSection sourceSection = null;
         return WriteLocalVariableNode.createWriteLocalVariableNode(context, sourceSection, slot, new ProfileArgumentNode(new ReadSelfNode()));
     }
 

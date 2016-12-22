@@ -15,6 +15,7 @@ import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.parser.TempSourceSection;
 
 @Instrumentable(factory = RubyNodeWrapper.class)
 public abstract class RubyNode extends RubyBaseNode {
@@ -30,7 +31,7 @@ public abstract class RubyNode extends RubyBaseNode {
         super(sourceSection);
     }
 
-    public RubyNode(RubySourceSection sourceSection) {
+    public RubyNode(TempSourceSection sourceSection) {
         super(sourceSection);
     }
 
@@ -38,7 +39,7 @@ public abstract class RubyNode extends RubyBaseNode {
         super(context, sourceSection);
     }
 
-    public RubyNode(RubyContext context, RubySourceSection sourceSection) {
+    public RubyNode(RubyContext context, TempSourceSection sourceSection) {
         super(context, sourceSection);
     }
 

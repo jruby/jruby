@@ -29,8 +29,8 @@
 package org.jruby.truffle.parser.ast;
 
 import org.jcodings.Encoding;
+import org.jruby.truffle.parser.TempSourceSection;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.ISourcePosition;
 
 import java.util.List;
 
@@ -40,7 +40,7 @@ import java.util.List;
 public class EncodingParseNode extends ParseNode {
     private final Encoding encoding;
 
-    public EncodingParseNode(ISourcePosition position, Encoding encoding) {
+    public EncodingParseNode(TempSourceSection position, Encoding encoding) {
         super(position, false);
 
         this.encoding = encoding;

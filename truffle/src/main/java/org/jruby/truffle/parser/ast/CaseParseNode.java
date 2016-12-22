@@ -32,7 +32,7 @@
 package org.jruby.truffle.parser.ast;
 
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.ISourcePosition;
+import org.jruby.truffle.parser.TempSourceSection;
 
 import java.util.List;
 
@@ -51,7 +51,7 @@ public class CaseParseNode extends ParseNode {
     private final ListParseNode cases;
     private ParseNode elseNode = null;
 
-    public CaseParseNode(ISourcePosition position, ParseNode caseNode, ListParseNode cases) {
+    public CaseParseNode(TempSourceSection position, ParseNode caseNode, ListParseNode cases) {
         super(position, caseNode != null && caseNode.containsVariableAssignment() || cases.containsVariableAssignment());
 
         assert cases != null : "caseBody is not null";

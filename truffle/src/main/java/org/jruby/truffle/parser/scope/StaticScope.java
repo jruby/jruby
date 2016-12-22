@@ -29,6 +29,7 @@
 package org.jruby.truffle.parser.scope;
 
 import org.jruby.truffle.parser.Signature;
+import org.jruby.truffle.parser.TempSourceSection;
 import org.jruby.truffle.parser.ast.AssignableParseNode;
 import org.jruby.truffle.parser.ast.DAsgnParseNode;
 import org.jruby.truffle.parser.ast.DVarParseNode;
@@ -36,7 +37,6 @@ import org.jruby.truffle.parser.ast.LocalAsgnParseNode;
 import org.jruby.truffle.parser.ast.LocalVarParseNode;
 import org.jruby.truffle.parser.ast.ParseNode;
 import org.jruby.truffle.parser.ast.VCallParseNode;
-import org.jruby.truffle.parser.lexer.ISourcePosition;
 
 import java.io.Serializable;
 import java.util.Arrays;
@@ -303,7 +303,7 @@ public class StaticScope implements Serializable {
      * @param name
      * @param value
      */
-    public AssignableParseNode assign(ISourcePosition position, String name, ParseNode value) {
+    public AssignableParseNode assign(TempSourceSection position, String name, ParseNode value) {
         return assign(position, name, value, this, 0);
     }
 
@@ -340,13 +340,13 @@ public class StaticScope implements Serializable {
         }
     }
 
-    public AssignableParseNode addAssign(ISourcePosition position, String name, ParseNode value) {
+    public AssignableParseNode addAssign(TempSourceSection position, String name, ParseNode value) {
         int slot = addVariable(name);
         // No bit math to store level since we know level is zero for this case
         return new DAsgnParseNode(position, name, slot, value);
     }
 
-    public AssignableParseNode assign(ISourcePosition position, String name, ParseNode value,
+    public AssignableParseNode assign(TempSourceSection position, String name, ParseNode value,
                                       StaticScope topScope, int depth) {
         int slot = exists(name);
 
@@ -368,7 +368,7 @@ public class StaticScope implements Serializable {
                 : topScope.addAssign(position, name, value);
     }
 
-    public ParseNode declare(ISourcePosition position, String name, int depth) {
+    public ParseNode declare(TempSourceSection position, String name, int depth) {
         int slot = exists(name);
 
         if (slot >= 0) {
@@ -385,7 +385,7 @@ public class StaticScope implements Serializable {
      * @param name     of the variable to be created is named
      * @return a DVarParseNode or LocalVarParseNode
      */
-    public ParseNode declare(ISourcePosition position, String name) {
+    public ParseNode declare(TempSourceSection position, String name) {
         return declare(position, name, 0);
     }
 

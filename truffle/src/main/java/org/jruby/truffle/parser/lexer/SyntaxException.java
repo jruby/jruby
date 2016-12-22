@@ -27,6 +27,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.lexer;
 
+import org.jruby.truffle.parser.TempSourceSection;
+
 public class SyntaxException extends RuntimeException {
     public enum PID {
         BAD_HEX_NUMBER("BAD_HEX_NUMBER"),
@@ -79,11 +81,6 @@ public class SyntaxException extends RuntimeException {
     private int line;
     private PID pid;
 
-    @Deprecated
-    public SyntaxException(PID pid, ISourcePosition position, String lastLine, String message, Object... data) {
-        this(pid, position.getFile(), position.getLine(), lastLine, message, data);
-    }
-
     public SyntaxException(PID pid, String file, int line, String lastLine, String message, Object... data) {
         super(prepareMessage(message, lastLine));
 
@@ -103,8 +100,8 @@ public class SyntaxException extends RuntimeException {
     }
 
     @Deprecated
-    public ISourcePosition getPosition() {
-        return new SimpleSourcePosition(file, line);
+    public TempSourceSection getPosition() {
+        return new TempSourceSection(line + 1);
     }
 
     public String getFile() {

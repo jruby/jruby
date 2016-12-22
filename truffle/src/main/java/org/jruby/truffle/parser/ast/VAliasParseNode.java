@@ -32,7 +32,7 @@
 package org.jruby.truffle.parser.ast;
 
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.ISourcePosition;
+import org.jruby.truffle.parser.TempSourceSection;
 
 import java.util.List;
 
@@ -43,7 +43,7 @@ public class VAliasParseNode extends ParseNode {
     private String oldName;
     private String newName;
 
-    public VAliasParseNode(ISourcePosition position, String newName, String oldName) {
+    public VAliasParseNode(TempSourceSection position, String newName, String oldName) {
         super(position, false);
         this.oldName = oldName;
         this.newName = newName;

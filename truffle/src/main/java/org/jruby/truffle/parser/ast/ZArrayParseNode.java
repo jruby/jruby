@@ -31,9 +31,9 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.ast;
 
+import org.jruby.truffle.parser.TempSourceSection;
 import org.jruby.truffle.parser.ast.types.ILiteralNode;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.ISourcePosition;
 
 /**
  *
@@ -41,7 +41,7 @@ import org.jruby.truffle.parser.lexer.ISourcePosition;
  *
  */
 public class ZArrayParseNode extends ListParseNode implements ILiteralNode {
-    public ZArrayParseNode(ISourcePosition position) {
+    public ZArrayParseNode(TempSourceSection position) {
         super(position);
     }
 

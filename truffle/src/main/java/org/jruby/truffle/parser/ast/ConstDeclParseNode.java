@@ -31,9 +31,9 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.ast;
 
+import org.jruby.truffle.parser.TempSourceSection;
 import org.jruby.truffle.parser.ast.types.INameNode;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.ISourcePosition;
 
 import java.util.List;
 
@@ -45,7 +45,7 @@ public class ConstDeclParseNode extends AssignableParseNode implements INameNode
     private final INameNode constNode;
 
     // TODO: Split this into two sub-classes so that name and constNode can be specified seperately.
-    public ConstDeclParseNode(ISourcePosition position, String name, INameNode constNode, ParseNode valueNode) {
+    public ConstDeclParseNode(TempSourceSection position, String name, INameNode constNode, ParseNode valueNode) {
         super(position, valueNode, valueNode != null && valueNode.containsVariableAssignment());
 
         this.name = name;
