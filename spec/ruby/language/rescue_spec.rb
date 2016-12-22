@@ -251,4 +251,35 @@ describe "The rescue keyword" do
     rescued.should == :success
   end
   
+  it "only accepts Module or Class in rescue clauses" do
+    rescuer = 42
+    lambda {
+      begin
+        raise "error"
+      rescue rescuer
+      end
+    }.should raise_error(TypeError) { |e|
+      e.message.should =~ /class or module required for rescue clause/
+    }
+  end
+
+  it "only accepts Module or Class in splatted rescue clauses" do
+    rescuer = [42]
+    lambda {
+      begin
+        raise "error"
+      rescue *rescuer
+      end
+    }.should raise_error(TypeError) { |e|
+      e.message.should =~ /class or module required for rescue clause/
+    }
+  end
+
+  it "evaluates rescue expressions only when needed" do
+    invalid_rescuer = Object.new
+    begin
+      :foo
+    rescue rescuer
+    end.should == :foo
+  end
 end
