@@ -19,6 +19,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
+import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
@@ -70,31 +71,34 @@ public abstract class EncodingNodes {
         }
     }
 
-    @CoreMethod(names = "compatible?", onSingleton = true, required = 2)
-    public abstract static class CompatibleQueryNode extends CoreMethodArrayArgumentsNode {
+    @NodeChildren({ @NodeChild("first"), @NodeChild("second") })
+    public static abstract class NegotiateCompatibleEncodingNode extends RubyNode {
 
-        @Child private ToEncodingNode toEncodingNode;
+        @Child private ToEncodingNode getEncodingNode;
 
-        public CompatibleQueryNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            toEncodingNode = ToEncodingNode.create();
+        public static NegotiateCompatibleEncodingNode create() {
+            return EncodingNodesFactory.NegotiateCompatibleEncodingNodeGen.create(null, null, null, null);
         }
 
-        public abstract DynamicObject executeCompatibleQuery(Object string, Object other);
+        public NegotiateCompatibleEncodingNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            getEncodingNode = ToEncodingNode.create();
+        }
+
+        public abstract Encoding executeNegotiate(Object first, Object second);
 
         @Specialization(guards = {
                 "getEncoding(first) == getEncoding(second)",
-                "getEncoding(first) == cachedEncoding",
+                "getEncoding(first) == cachedEncoding"
         }, limit = "getCacheLimit()")
-        public DynamicObject isCompatibleCached(Object first, Object second,
-                                                @Cached("getEncoding(first)") Encoding cachedEncoding,
-                                                @Cached("getRubyEncoding(cachedEncoding)") DynamicObject result) {
-            return result;
+        protected Encoding negotiateSameEncodingCached(DynamicObject first, DynamicObject second,
+                                                       @Cached("getEncoding(first)") Encoding cachedEncoding) {
+            return cachedEncoding;
         }
 
-        @Specialization(guards = "getEncoding(first) == getEncoding(second)", contains = "isCompatibleCached")
-        public DynamicObject isCompatibleUncached(Object first, Object second) {
-            return getRubyEncoding(getEncoding(first));
+        @Specialization(guards = "getEncoding(first) == getEncoding(second)", contains = "negotiateSameEncodingCached")
+        protected Encoding negotiateSameEncodingUncached(Object first, Object second) {
+            return getEncoding(first);
         }
 
         @Specialization(guards = {
@@ -108,74 +112,68 @@ public abstract class EncodingNodes {
                 "getEncoding(first) == firstEncoding",
                 "getEncoding(second) == secondEncoding"
         }, limit = "getCacheLimit()")
-        public DynamicObject isCompatibleStringStringCached(DynamicObject first, DynamicObject second,
-                                                     @Cached("getEncoding(first)") Encoding firstEncoding,
-                                                     @Cached("getEncoding(second)") Encoding secondEncoding,
-                                                     @Cached("isEmpty(first)") boolean isFirstEmpty,
-                                                     @Cached("isEmpty(second)") boolean isSecondEmpty,
-                                                     @Cached("getCodeRange(first)") CodeRange firstCodeRange,
-                                                     @Cached("getCodeRange(second)") CodeRange secondCodeRange,
-                                                     @Cached("isCompatibleStringStringUncached(first, second)") DynamicObject rubyEncoding) {
-            return rubyEncoding;
+        protected Encoding negotiateStringStringCached(DynamicObject first, DynamicObject second,
+                                                       @Cached("getEncoding(first)") Encoding firstEncoding,
+                                                       @Cached("getEncoding(second)") Encoding secondEncoding,
+                                                       @Cached("isEmpty(first)") boolean isFirstEmpty,
+                                                       @Cached("isEmpty(second)") boolean isSecondEmpty,
+                                                       @Cached("getCodeRange(first)") CodeRange firstCodeRange,
+                                                       @Cached("getCodeRange(second)") CodeRange secondCodeRange,
+                                                       @Cached("negotiateStringStringUncached(first, second)") Encoding negotiatedEncoding) {
+            return negotiatedEncoding;
         }
 
         @Specialization(guards = {
                 "getEncoding(first) != getEncoding(second)",
                 "isRubyString(first)",
                 "isRubyString(second)",
-        }, contains = "isCompatibleStringStringCached")
-        public DynamicObject isCompatibleStringStringUncached(DynamicObject first, DynamicObject second) {
-            final Encoding compatibleEncoding = compatibleEncodingForStrings(first, second);
-
-            if (compatibleEncoding != null) {
-                return getContext().getEncodingManager().getRubyEncoding(compatibleEncoding);
-            } else {
-                return nil();
-            }
+        }, contains = "negotiateStringStringCached")
+        protected Encoding negotiateStringStringUncached(DynamicObject first, DynamicObject second) {
+            return compatibleEncodingForStrings(first, second);
         }
 
         @Specialization(guards = {
-                "getEncoding(first) != getEncoding(second)",
                 "isRubyString(first)",
                 "!isRubyString(second)",
                 "getCodeRange(first) == codeRange",
                 "getEncoding(first) == firstEncoding",
-                "getEncoding(second) == secondEncoding"
+                "getEncoding(second) == secondEncoding",
+                "firstEncoding != secondEncoding"
         }, limit = "getCacheLimit()")
-        public DynamicObject isCompatibleStringObjectCached(DynamicObject first, Object second,
-                                                            @Cached("getEncoding(first)") Encoding firstEncoding,
-                                                            @Cached("getEncoding(second)") Encoding secondEncoding,
-                                                            @Cached("getCodeRange(first)") CodeRange codeRange,
-                                                            @Cached("isCompatibleStringObjectUncached(first, second)") DynamicObject result) {
-            return result;
+        protected Encoding negotiateStringObjectCached(DynamicObject first, Object second,
+                                                       @Cached("getEncoding(first)") Encoding firstEncoding,
+                                                       @Cached("getEncoding(second)") Encoding secondEncoding,
+                                                       @Cached("getCodeRange(first)") CodeRange codeRange,
+                                                       @Cached("negotiateStringObjectUncached(first, second)") Encoding negotiatedEncoding) {
+            return negotiatedEncoding;
         }
 
         @Specialization(guards = {
                 "getEncoding(first) != getEncoding(second)",
                 "isRubyString(first)",
                 "!isRubyString(second)"
-        }, contains = "isCompatibleStringObjectCached")
-        public DynamicObject isCompatibleStringObjectUncached(DynamicObject first, Object second) {
+        }, contains = "negotiateStringObjectCached")
+        protected Encoding negotiateStringObjectUncached(DynamicObject first, Object second) {
             final Encoding firstEncoding = getEncoding(first);
             final Encoding secondEncoding = getEncoding(second);
 
             if (secondEncoding == null) {
-                return nil();
+                return null;
             }
 
             if (! firstEncoding.isAsciiCompatible() || ! secondEncoding.isAsciiCompatible()) {
-                return nil();
+                return null;
             }
 
             if (secondEncoding == USASCIIEncoding.INSTANCE) {
-                return getContext().getEncodingManager().getRubyEncoding(firstEncoding);
+                return firstEncoding;
             }
 
             if (getCodeRange(first) == CodeRange.CR_7BIT) {
-                return getContext().getEncodingManager().getRubyEncoding(secondEncoding);
+                return secondEncoding;
             }
 
-            return nil();
+            return null;
         }
 
         @Specialization(guards = {
@@ -183,8 +181,8 @@ public abstract class EncodingNodes {
                 "!isRubyString(first)",
                 "isRubyString(second)"
         })
-        public DynamicObject isCompatibleObjectString(Object first, DynamicObject second) {
-            return isCompatibleStringObjectUncached(second, first);
+        protected Encoding negotiateObjectString(Object first, DynamicObject second) {
+            return negotiateStringObjectUncached(second, first);
         }
 
         @Specialization(guards = {
@@ -196,25 +194,26 @@ public abstract class EncodingNodes {
                 "getEncoding(first) == firstEncoding",
                 "getEncoding(second) == secondEncoding",
         }, limit = "getCacheLimit()")
-        public DynamicObject isCompatibleObjectObjectCached(Object first, Object second,
-                                                 @Cached("getEncoding(first)") Encoding firstEncoding,
-                                                 @Cached("getEncoding(second)") Encoding secondEncoding,
-                                                 @Cached("getCompatibleEncoding(getContext(), firstEncoding, secondEncoding)") DynamicObject result) {
+        protected Encoding negotiateObjectObjectCached(Object first, Object second,
+                                                            @Cached("getEncoding(first)") Encoding firstEncoding,
+                                                            @Cached("getEncoding(second)") Encoding secondEncoding,
+                                                            @Cached("areCompatible(firstEncoding, secondEncoding)") Encoding negotiatedEncoding) {
 
-            return result;
+            return negotiatedEncoding;
         }
 
         @Specialization(guards = {
                 "getEncoding(first) != getEncoding(second)",
                 "!isRubyString(first)",
                 "!isRubyString(second)"
-        }, contains = "isCompatibleObjectObjectCached")
-        public DynamicObject isCompatibleObjectObjectUncached(Object first, Object second) {
+        }, contains = "negotiateObjectObjectCached")
+        protected Encoding negotiateObjectObjectUncached(Object first, Object second) {
             final Encoding firstEncoding = getEncoding(first);
             final Encoding secondEncoding = getEncoding(second);
 
-            return getCompatibleEncoding(getContext(), firstEncoding, secondEncoding);
+            return areCompatible(firstEncoding, secondEncoding);
         }
+
 
         private static Encoding compatibleEncodingForStrings(DynamicObject first, DynamicObject second) {
             // Taken from org.jruby.RubyEncoding#areCompatible.
@@ -253,7 +252,7 @@ public abstract class EncodingNodes {
         }
 
         @TruffleBoundary
-        private static Encoding areCompatible(Encoding enc1, Encoding enc2) {
+        protected static Encoding areCompatible(Encoding enc1, Encoding enc2) {
             assert enc1 != enc2;
 
             if (enc1 == null || enc2 == null) return null;
@@ -264,16 +263,6 @@ public abstract class EncodingNodes {
             if (enc1 instanceof USASCIIEncoding) return enc2;
 
             return null;
-        }
-
-        protected static DynamicObject getCompatibleEncoding(RubyContext context, Encoding first, Encoding second) {
-            final Encoding compatibleEncoding = areCompatible(first, second);
-
-            if (compatibleEncoding != null) {
-                return context.getEncodingManager().getRubyEncoding(compatibleEncoding);
-            } else {
-                return context.getCoreLibrary().getNilObject();
-            }
         }
 
         protected boolean isEmpty(Object string) {
@@ -299,15 +288,37 @@ public abstract class EncodingNodes {
         }
 
         protected Encoding getEncoding(Object value) {
-            return toEncodingNode.executeToEncoding(value);
+            return getEncodingNode.executeToEncoding(value);
         }
 
-        protected DynamicObject getRubyEncoding(Encoding value) {
-            if (value == null) {
+        protected int getCacheLimit() {
+            return getContext().getOptions().ENCODING_COMPATIBLE_QUERY_CACHE;
+        }
+
+    }
+
+    @CoreMethod(names = "compatible?", onSingleton = true, required = 2)
+    public abstract static class CompatibleQueryNode extends CoreMethodArrayArgumentsNode {
+
+        @Child private NegotiateCompatibleEncodingNode negotiateCompatibleEncodingNode;
+
+        public CompatibleQueryNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            negotiateCompatibleEncodingNode = NegotiateCompatibleEncodingNode.create();
+        }
+
+        public abstract DynamicObject executeCompatibleQuery(Object first, Object second);
+
+        @Specialization
+        protected DynamicObject isCompatible(Object first, Object second,
+                                             @Cached("createBinaryProfile()") ConditionProfile noNegotiatedEncodingProfile) {
+            final Encoding negotiatedEncoding = negotiateCompatibleEncodingNode.executeNegotiate(first, second);
+
+            if (noNegotiatedEncodingProfile.profile(negotiatedEncoding == null)) {
                 return nil();
             }
 
-            return getContext().getEncodingManager().getRubyEncoding(value);
+            return getContext().getEncodingManager().getRubyEncoding(negotiatedEncoding);
         }
 
         protected int getCacheLimit() {
