@@ -131,7 +131,7 @@ class Hash
 
         # Order of the comparison matters! We must compare our value with
         # the other Hash's value and not the other way around.
-        unless Rubinius::Type::object_equal(value, other_value) or value == other_value
+        unless Rubinius::Type.object_equal(value, other_value) or value == other_value
           return false
         end
       end
@@ -158,7 +158,7 @@ class Hash
 
         # Order of the comparison matters! We must compare our value with
         # the other Hash's value and not the other way around.
-        unless Rubinius::Type::object_equal(value, other_value) or value.eql?(other_value)
+        unless Rubinius::Type.object_equal(value, other_value) or value.eql?(other_value)
           return false
         end
       end

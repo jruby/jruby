@@ -480,7 +480,7 @@ class String
         options = to
         to_enc = Encoding.default_internal
       else
-        opts = Rubinius::Type::check_convert_type to, Hash, :to_hash
+        opts = Rubinius::Type.check_convert_type to, Hash, :to_hash
 
         if opts
           options = opts
@@ -499,7 +499,7 @@ class String
       options = from
       from_enc = encoding
     else
-      opts = Rubinius::Type::check_convert_type from, Hash, :to_hash
+      opts = Rubinius::Type.check_convert_type from, Hash, :to_hash
 
       if opts
         options = opts

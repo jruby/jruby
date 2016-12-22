@@ -246,7 +246,7 @@ class File < IO
   end
 
   ##
-  # Equivalent to File::chmod, but does not follow symbolic
+  # Equivalent to File.chmod, but does not follow symbolic
   # links (so it will change the permissions associated with
   # the link, not the file referenced by the link).
   # Often not available.
@@ -320,7 +320,7 @@ class File < IO
   end
 
   ##
-  # Equivalent to File::chown, but does not follow
+  # Equivalent to File.chown, but does not follow
   # symbolic links (so it will change the owner
   # associated with the link, not the file referenced
   # by the link). Often not available. Returns number
@@ -669,7 +669,7 @@ class File < IO
   # ?:  Matches any one character. Equivalent to /.{1}/ in regexp.
   # [set]:  Matches any one character in set. Behaves exactly like character sets in Regexp, including set negation ([^a-z]).
   # <code></code>:  Escapes the next metacharacter.
-  # flags is a bitwise OR of the FNM_xxx parameters. The same glob pattern and flags are used by Dir::glob.
+  # flags is a bitwise OR of the FNM_xxx parameters. The same glob pattern and flags are used by Dir.glob.
   #
   #  File.fnmatch('cat',       'cat')        #=> true  : match entire string
   #  File.fnmatch('cat',       'category')   #=> false : only match partial string
@@ -856,7 +856,7 @@ class File < IO
   end
 
   ##
-  # Same as File::stat, but does not follow the last symbolic link.
+  # Same as File.stat, but does not follow the last symbolic link.
   # Instead, reports on the link itself.
   #
   #  File.symlink("testfile", "link2test")   #=> 0
@@ -1022,7 +1022,8 @@ class File < IO
   end
 
   ##
-  # Splits the given string into a directory and a file component and returns them in a two-element array. See also File::dirname and File::basename.
+  # Splits the given string into a directory and a file component and returns them in a two-element array.
+  # See also File.dirname and File.basename.
   #
   #  File.split("/home/gumby/.profile")   #=> ["/home/gumby", ".profile"]
   def self.split(path)
@@ -1103,7 +1104,7 @@ class File < IO
   # Deletes the named files, returning the number of names
   # passed as arguments. Raises an exception on any error.
   #
-  # See also Dir::rmdir.
+  # See also Dir.rmdir.
   def self.unlink(*paths)
     paths.each do |path|
       n = POSIX.unlink Rubinius::Type.coerce_to_path(path)
