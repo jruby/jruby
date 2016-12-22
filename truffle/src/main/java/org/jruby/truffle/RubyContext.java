@@ -46,6 +46,7 @@ import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.objects.shared.SharedObjects;
 import org.jruby.truffle.options.Options;
 import org.jruby.truffle.options.OptionsBuilder;
+import org.jruby.truffle.options.Verbosity;
 import org.jruby.truffle.platform.NativePlatform;
 import org.jruby.truffle.platform.NativePlatformFactory;
 import org.jruby.truffle.stdlib.CoverageManager;
@@ -120,6 +121,7 @@ public class RubyContext extends ExecutionContext {
 
         this.jrubyHome = findJRubyHome();
         this.currentDirectory = System.getProperty("user.dir");
+        this.verbose = options.VERBOSITY.equals(Verbosity.TRUE);
 
         if (options.CALL_GRAPH) {
             callGraph = new CallGraph();
