@@ -1,0 +1,1 @@
+fails:The rescue keyword uses === to compare against rescued classes
