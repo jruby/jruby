@@ -32,7 +32,7 @@ public class RescueClassesNode extends RescueNode {
         for (RubyNode handlingClassNode : handlingClassNodes) {
             final DynamicObject handlingClass = (DynamicObject) handlingClassNode.execute(frame);
 
-            if (getIsANode().executeIsA(exception, handlingClass)) {
+            if (matches(frame, exception, handlingClass)) {
                 return true;
             }
         }

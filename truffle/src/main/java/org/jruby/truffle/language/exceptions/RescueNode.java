@@ -14,7 +14,11 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.cast.BooleanCastNode;
+import org.jruby.truffle.core.cast.BooleanCastNodeGen;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.dispatch.DispatchHeadNode;
+import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.objects.IsANode;
 import org.jruby.truffle.language.objects.IsANodeGen;
 
@@ -22,7 +26,8 @@ public abstract class RescueNode extends RubyNode {
 
     @Child private RubyNode body;
 
-    @Child private IsANode isANode;
+    @Child private DispatchHeadNode threequalsNode;
+    @Child private BooleanCastNode booleanCastNode;
 
     public RescueNode(RubyContext context, SourceSection sourceSection, RubyNode body) {
         super(context, sourceSection);
@@ -41,13 +46,14 @@ public abstract class RescueNode extends RubyNode {
         body.executeVoid(frame);
     }
 
-    protected IsANode getIsANode() {
-        if (isANode == null) {
+    protected boolean matches(VirtualFrame frame, Object exception, Object handlingClass) {
+        if (threequalsNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            isANode = insert(IsANodeGen.create(getContext(), null, null, null));
+            threequalsNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+            booleanCastNode = insert(BooleanCastNodeGen.create(null));
         }
 
-        return isANode;
+        return booleanCastNode.executeToBoolean(threequalsNode.dispatch(frame, handlingClass, "===", null, new Object[]{exception}));
     }
 
 }
