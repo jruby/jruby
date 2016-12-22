@@ -17,16 +17,14 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.cast.BooleanCastNode;
 import org.jruby.truffle.core.cast.BooleanCastNodeGen;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.dispatch.DispatchHeadNode;
+import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
-import org.jruby.truffle.language.objects.IsANode;
-import org.jruby.truffle.language.objects.IsANodeGen;
 
 public abstract class RescueNode extends RubyNode {
 
     @Child private RubyNode body;
 
-    @Child private DispatchHeadNode threequalsNode;
+    @Child private CallDispatchHeadNode callTripleEqualsNode;
     @Child private BooleanCastNode booleanCastNode;
 
     public RescueNode(RubyContext context, SourceSection sourceSection, RubyNode body) {
@@ -47,13 +45,13 @@ public abstract class RescueNode extends RubyNode {
     }
 
     protected boolean matches(VirtualFrame frame, Object exception, Object handlingClass) {
-        if (threequalsNode == null) {
+        if (callTripleEqualsNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            threequalsNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+            callTripleEqualsNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
             booleanCastNode = insert(BooleanCastNodeGen.create(null));
         }
 
-        return booleanCastNode.executeToBoolean(threequalsNode.dispatch(frame, handlingClass, "===", null, new Object[]{exception}));
+        return booleanCastNode.executeToBoolean(callTripleEqualsNode.call(frame, handlingClass, "===", exception));
     }
 
 }
