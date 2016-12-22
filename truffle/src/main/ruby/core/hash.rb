@@ -64,10 +64,6 @@ class Hash
     Rubinius::Type.try_convert obj, Hash, :to_hash
   end
 
-  # #entries is a method provided by Enumerable which calls #to_a,
-  # so we have to not collide with that.
-  attr_reader_specific :entries, :__entries__
-
   # Fallback for Hash.[]
   def self._constructor_fallback(*args)
     if args.size == 1

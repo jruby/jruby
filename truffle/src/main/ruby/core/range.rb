@@ -62,8 +62,6 @@ class Range
         self.exclude_end? == other.exclude_end?
   end
 
-  attr_reader_specific :excl, :exclude_end?
-
   def bsearch
     return to_enum :bsearch unless block_given?
 
