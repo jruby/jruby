@@ -32,8 +32,10 @@ import org.jcodings.constants.CharacterType;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.util.IntHash;
 import org.jruby.truffle.collections.IntHashMap;
+import org.jruby.truffle.core.array.ArrayUtils;
 import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.rope.Rope;
+import org.jruby.truffle.core.rope.RopeOperations;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -576,14 +578,6 @@ public final class StringSupport {
      * rb_str_tr / rb_str_tr_bang
      */
     public static final class TR {
-        public TR(ByteList bytes) {
-            p = bytes.getBegin();
-            pend = bytes.getRealSize() + p;
-            buf = bytes.getUnsafeBytes();
-            now = max = 0;
-            gen = false;
-        }
-
         public TR(Rope bytes) {
             p = 0;
             pend = bytes.byteLength() + p;
@@ -1086,23 +1080,17 @@ public final class StringSupport {
      * rb_str_tr / rb_str_tr_bang
      */
 
-    public static CodeRangeable trTransHelper(CodeRangeable self, CodeRangeable srcStr, CodeRangeable replStr, boolean sflag) {
+    public static Rope trTransHelper(Rope self, Rope srcStr, Rope replStr, Encoding e1, Encoding enc, boolean sflag) {
         // This method does not handle the cases where either srcStr or replStr are empty.  It is the responsibility
         // of the caller to take the appropriate action in those cases.
 
-        final ByteList srcList = srcStr.getByteList();
-        final ByteList replList = replStr.getByteList();
-
         CodeRange cr = self.getCodeRange();
-        Encoding e1 = self.checkEncoding(srcStr);
-        Encoding e2 = self.checkEncoding(replStr);
-        Encoding enc = e1 == e2 ? e1 : srcStr.checkEncoding(replStr);
 
-        final StringSupport.TR trSrc = new StringSupport.TR(srcList);
+        final StringSupport.TR trSrc = new StringSupport.TR(srcStr);
         boolean cflag = false;
         int[] l = {0};
 
-        if (srcStr.getByteList().getRealSize() > 1 &&
+        if (srcStr.byteLength() > 1 &&
                 EncodingUtils.encAscget(trSrc.buf, trSrc.p, trSrc.pend, l, enc) == '^' &&
                 trSrc.p + 1 < trSrc.pend){
             cflag = true;
@@ -1111,10 +1099,10 @@ public final class StringSupport {
 
         int c, c0, last = 0;
         final int[]trans = new int[StringSupport.TRANS_SIZE];
-        final StringSupport.TR trRepl = new StringSupport.TR(replList);
+        final StringSupport.TR trRepl = new StringSupport.TR(replStr);
         boolean modify = false;
         IntHash<Integer> hash = null;
-        boolean singlebyte = StringSupport.isSingleByteOptimizable(self, EncodingUtils.STR_ENC_GET(self));
+        boolean singlebyte = self.isSingleByteOptimizable();
 
         if (cflag) {
             for (int i = 0; i< StringSupport.TRANS_SIZE; i++) {
@@ -1157,14 +1145,15 @@ public final class StringSupport {
         if (cr == CR_VALID) {
             cr = CR_7BIT;
         }
-        self.modifyAndKeepCodeRange();
-        int s = self.getByteList().getBegin();
-        int send = s + self.getByteList().getRealSize();
-        byte sbytes[] = self.getByteList().getUnsafeBytes();
 
+        int s = 0;
+        int send = self.byteLength();
+
+        final Rope ret;
         if (sflag) {
+            byte sbytes[] = self.getBytes();
             int clen, tlen;
-            int max = self.getByteList().getRealSize();
+            int max = self.byteLength();
             int save = -1;
             byte[] buf = new byte[max];
             int t = 0;
@@ -1218,9 +1207,10 @@ public final class StringSupport {
                 if (cr == CR_7BIT && !Encoding.isAscii(c)) cr = CR_VALID;
                 t += tlen;
             }
-            self.getByteList().setUnsafeBytes(buf);
-            self.getByteList().setRealSize(t);
+
+            ret = RopeOperations.create(ArrayUtils.extractRange(buf, 0, t), enc, cr);
         } else if (enc.isSingleByte() || (singlebyte && hash == null)) {
+            byte sbytes[] = self.getBytesCopy();
             while (s < send) {
                 c = sbytes[s] & 0xff;
                 if (trans[c] != -1) {
@@ -1235,8 +1225,11 @@ public final class StringSupport {
                 if (cr == CR_7BIT && !Encoding.isAscii(c)) cr = CR_VALID;
                 s++;
             }
+
+            ret = RopeOperations.create(sbytes, enc, cr);
         } else {
-            int clen, tlen, max = (int)(self.getByteList().realSize() * 1.2);
+            byte sbytes[] = self.getBytes();
+            int clen, tlen, max = (int)(self.byteLength() * 1.2);
             byte[] buf = new byte[max];
             int t = 0;
 
@@ -1288,15 +1281,14 @@ public final class StringSupport {
                 s += clen;
                 t += tlen;
             }
-            self.getByteList().setUnsafeBytes(buf);
-            self.getByteList().setRealSize(t);
+
+            ret = RopeOperations.create(ArrayUtils.extractRange(buf, 0, t), enc, cr);
         }
 
         if (modify) {
-            if (cr != CR_BROKEN) self.setCodeRange(cr);
-            StringSupport.associateEncoding(self, enc);
-            return self;
+            return ret;
         }
+
         return null;
     }
 

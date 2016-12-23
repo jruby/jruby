@@ -2510,17 +2510,17 @@ public abstract class StringNodes {
             assert RubyGuards.isRubyString(fromStr);
             assert RubyGuards.isRubyString(toStr);
 
-            final CodeRangeable buffer = StringOperations.getCodeRangeableReadWrite(self, checkEncodingNode);
-            final CodeRangeable ret = StringSupport.trTransHelper(buffer,
-                    StringOperations.getCodeRangeableReadOnly(fromStr, checkEncodingNode),
-                    StringOperations.getCodeRangeableReadOnly(toStr, checkEncodingNode),
-                    sFlag);
+            final Encoding e1 = checkEncodingNode.executeCheckEncoding(self, fromStr);
+            final Encoding e2 = checkEncodingNode.executeCheckEncoding(self, toStr);
+            final Encoding enc = e1 == e2 ? e1 : checkEncodingNode.executeCheckEncoding(fromStr, toStr);
+
+            final Rope ret = StringSupport.trTransHelper(rope(self), rope(fromStr), rope(toStr), e1, enc, sFlag);
 
             if (ret == null) {
                 return context.getCoreLibrary().getNilObject();
             }
 
-            StringOperations.setRope(self, StringOperations.ropeFromByteList(buffer.getByteList(), buffer.getCodeRange()));
+            StringOperations.setRope(self, ret);
 
             return self;
         }
