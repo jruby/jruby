@@ -754,15 +754,14 @@ public final class StringSupport {
     public enum NeighborChar {NOT_CHAR, FOUND, WRAPPED}
 
     // MRI: str_succ
-    public static ByteList succCommon(ByteList original) {
+    public static ByteList succCommon(Rope original) {
         byte carry[] = new byte[org.jcodings.Config.ENC_CODE_TO_MBC_MAXLEN];
         int carryP = 0;
         carry[0] = 1;
         int carryLen = 1;
 
-        ByteList valueCopy = new ByteList(original);
-        valueCopy.setEncoding(original.getEncoding());
         Encoding enc = original.getEncoding();
+        ByteList valueCopy = new ByteList(original.getBytes(), enc, true);
         int p = valueCopy.getBegin();
         int end = p + valueCopy.getRealSize();
         int s = end;
