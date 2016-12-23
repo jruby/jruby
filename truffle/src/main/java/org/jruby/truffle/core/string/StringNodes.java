@@ -805,7 +805,7 @@ public abstract class StringNodes {
                 tables = StringSupport.trSetupTable(rope(otherStr), table, tables, false, enc);
             }
 
-            return StringSupport.strCount(StringOperations.getByteListReadOnly(string), table, tables, enc);
+            return StringSupport.strCount(rope(string), table, tables, enc);
         }
     }
 

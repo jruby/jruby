@@ -535,10 +535,10 @@ public final class StringSupport {
     /**
      * rb_str_count
      */
-    public static int strCount(ByteList str, boolean[] table, TrTables tables, Encoding enc) {
-        final byte[] bytes = str.getUnsafeBytes();
-        int p = str.getBegin();
-        final int end = p + str.getRealSize();
+    public static int strCount(Rope str, boolean[] table, TrTables tables, Encoding enc) {
+        final byte[] bytes = str.getBytes();
+        int p = 0;
+        final int end = str.byteLength();
         final boolean asciiCompat = enc.isAsciiCompatible();
 
         int count = 0;
