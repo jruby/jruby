@@ -584,6 +584,14 @@ public final class StringSupport {
             gen = false;
         }
 
+        public TR(Rope bytes) {
+            p = 0;
+            pend = bytes.byteLength() + p;
+            buf = bytes.getBytes();
+            now = max = 0;
+            gen = false;
+        }
+
         final byte[] buf;
         int p, pend, now, max;
         boolean gen;
@@ -598,14 +606,14 @@ public final class StringSupport {
 
     private static final Object DUMMY_VALUE = "";
 
-    public static TrTables trSetupTable(final ByteList str,
+    public static TrTables trSetupTable(final Rope str,
                                         final boolean[] stable, TrTables tables, final boolean first, final Encoding enc) {
         int i, l[] = {0};
         final boolean cflag;
 
         final TR tr = new TR(str);
 
-        if (str.realSize() > 1 && EncodingUtils.encAscget(tr.buf, tr.p, tr.pend, l, enc) == '^') {
+        if (str.byteLength() > 1 && EncodingUtils.encAscget(tr.buf, tr.p, tr.pend, l, enc) == '^') {
             cflag = true;
             tr.p += l[0];
         }

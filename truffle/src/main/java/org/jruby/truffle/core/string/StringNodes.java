@@ -795,14 +795,14 @@ public abstract class StringNodes {
             Encoding enc = checkEncodingNode.executeCheckEncoding(string, otherStr);
 
             final boolean[]table = new boolean[StringSupport.TRANS_SIZE + 1];
-            StringSupport.TrTables tables = StringSupport.trSetupTable(StringOperations.getByteListReadOnly(otherStr), table, null, true, enc);
+            StringSupport.TrTables tables = StringSupport.trSetupTable(rope(otherStr), table, null, true, enc);
             for (int i = 1; i < otherStrings.length; i++) {
                 otherStr = otherStrings[i];
 
                 assert RubyGuards.isRubyString(otherStr);
 
                 enc = checkEncodingNode.executeCheckEncoding(string, otherStr);
-                tables = StringSupport.trSetupTable(StringOperations.getByteListReadOnly(otherStr), table, tables, false, enc);
+                tables = StringSupport.trSetupTable(rope(otherStr), table, tables, false, enc);
             }
 
             return StringSupport.strCount(StringOperations.getByteListReadOnly(string), table, tables, enc);
@@ -910,14 +910,14 @@ public abstract class StringNodes {
             Encoding enc = checkEncodingNode.executeCheckEncoding(string, otherString);
 
             boolean[] squeeze = new boolean[StringSupport.TRANS_SIZE + 1];
-            StringSupport.TrTables tables = StringSupport.trSetupTable(StringOperations.getByteListReadOnly(otherString),
+            StringSupport.TrTables tables = StringSupport.trSetupTable(rope(otherString),
                     squeeze, null, true, enc);
 
             for (int i = 1; i < otherStrings.length; i++) {
                 assert RubyGuards.isRubyString(otherStrings[i]);
 
                 enc = checkEncodingNode.executeCheckEncoding(string, otherStrings[i]);
-                tables = StringSupport.trSetupTable(StringOperations.getByteListReadOnly(otherStrings[i]), squeeze, tables, false, enc);
+                tables = StringSupport.trSetupTable(rope(otherStrings[i]), squeeze, tables, false, enc);
             }
 
             final CodeRangeable buffer = StringOperations.getCodeRangeableReadWrite(string, checkEncodingNode);
@@ -1909,7 +1909,7 @@ public abstract class StringNodes {
             Rope otherRope = rope(otherStr);
             Encoding enc = checkEncodingNode.executeCheckEncoding(string, otherStr);
             final boolean squeeze[] = new boolean[StringSupport.TRANS_SIZE + 1];
-            StringSupport.TrTables tables = StringSupport.trSetupTable(RopeOperations.getByteListReadOnly(otherRope), squeeze, null, true, enc);
+            StringSupport.TrTables tables = StringSupport.trSetupTable(otherRope, squeeze, null, true, enc);
 
             boolean singlebyte = rope.isSingleByteOptimizable() && otherRope.isSingleByteOptimizable();
 
@@ -1918,7 +1918,7 @@ public abstract class StringNodes {
                 otherRope = rope(otherStr);
                 enc = checkEncodingNode.executeCheckEncoding(string, otherStr);
                 singlebyte = singlebyte && otherRope.isSingleByteOptimizable();
-                tables = StringSupport.trSetupTable(RopeOperations.getByteListReadOnly(otherRope), squeeze, tables, false, enc);
+                tables = StringSupport.trSetupTable(otherRope, squeeze, tables, false, enc);
             }
 
             if (singleByteOptimizableProfile.profile(singlebyte)) {
