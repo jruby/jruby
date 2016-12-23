@@ -64,39 +64,6 @@ public abstract class StringOperations {
         return RopeOperations.decodeRope(StringOperations.rope(string));
     }
 
-    public static StringCodeRangeableWrapper getCodeRangeableReadWrite(final DynamicObject string,
-                                                                       final EncodingNodes.CheckEncodingNode checkEncodingNode) {
-        return new StringCodeRangeableWrapper(string, checkEncodingNode) {
-            private final ByteList byteList = RopeOperations.toByteListCopy(StringOperations.rope(string));
-            CodeRange codeRange = StringOperations.codeRange(string);
-
-            @Override
-            public void setCodeRange(CodeRange newCodeRange) {
-                this.codeRange = newCodeRange;
-            }
-
-            @Override
-            public CodeRange getCodeRange() {
-                return codeRange;
-            }
-
-            @Override
-            public ByteList getByteList() {
-                return byteList;
-            }
-        };
-    }
-
-    public static StringCodeRangeableWrapper getCodeRangeableReadOnly(final DynamicObject string,
-                                                                      final EncodingNodes.CheckEncodingNode checkEncodingNode) {
-        return new StringCodeRangeableWrapper(string, checkEncodingNode) {
-            @Override
-            public ByteList getByteList() {
-                return StringOperations.getByteListReadOnly(string);
-            }
-        };
-    }
-
     public static int clampExclusiveIndex(DynamicObject string, int index) {
         assert RubyGuards.isRubyString(string);
 
