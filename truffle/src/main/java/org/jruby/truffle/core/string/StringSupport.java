@@ -1026,16 +1026,11 @@ public final class StringSupport {
     /**
      * rb_str_delete_bang
      */
-    public static CodeRangeable delete_bangCommon19(CodeRangeable rubyString, boolean[] squeeze, TrTables tables, Encoding enc) {
-        rubyString.modify();
-        rubyString.keepCodeRange();
-
-        final ByteList value = rubyString.getByteList();
-
-        int s = value.getBegin();
+    public static Rope delete_bangCommon19(Rope rubyString, boolean[] squeeze, TrTables tables, Encoding enc) {
+        int s = 0;
         int t = s;
-        int send = s + value.getRealSize();
-        byte[]bytes = value.getUnsafeBytes();
+        int send = s + rubyString.byteLength();
+        byte[]bytes = rubyString.getBytesCopy();
         boolean modify = false;
         boolean asciiCompatible = enc.isAsciiCompatible();
         CodeRange cr = asciiCompatible ? CR_7BIT : CR_VALID;
@@ -1062,10 +1057,8 @@ public final class StringSupport {
                 s += cl;
             }
         }
-        value.setRealSize(t - value.getBegin());
-        rubyString.setCodeRange(cr);
 
-        return modify ? rubyString : null;
+        return modify ? RopeOperations.create(ArrayUtils.extractRange(bytes, 0, t), enc, cr) : null;
     }
 
     public static ByteList addByteLists(ByteList value1, ByteList value2) {

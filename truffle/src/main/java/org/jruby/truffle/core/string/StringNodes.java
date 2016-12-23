@@ -920,12 +920,12 @@ public abstract class StringNodes {
                 tables = StringSupport.trSetupTable(rope(otherStrings[i]), squeeze, tables, false, enc);
             }
 
-            final CodeRangeable buffer = StringOperations.getCodeRangeableReadWrite(string, checkEncodingNode);
-            if (StringSupport.delete_bangCommon19(buffer, squeeze, tables, enc) == null) {
+            final Rope processedRope = StringSupport.delete_bangCommon19(rope(string), squeeze, tables, enc);
+            if (processedRope == null) {
                 return nil();
             }
 
-            StringOperations.setRope(string, StringOperations.ropeFromByteList(buffer.getByteList(), buffer.getCodeRange()));
+            StringOperations.setRope(string, processedRope);
 
             return string;
         }
