@@ -47,10 +47,10 @@ public class InterpolatedRegexpNode extends RubyNode {
 
     @TruffleBoundary
     private DynamicObject createRegexp(DynamicObject[] parts) {
-        final ByteList[] strings = new ByteList[children.length];
+        final Rope[] strings = new Rope[children.length];
 
         for (int n = 0; n < children.length; n++) {
-            strings[n] = StringOperations.getByteListReadOnly(parts[n]);
+            strings[n] = StringOperations.rope(parts[n]);
         }
 
         final ByteList preprocessed = ClassicRegexp.preprocessDRegexp(getContext(), strings, options);

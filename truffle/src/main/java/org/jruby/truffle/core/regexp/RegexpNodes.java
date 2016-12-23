@@ -89,8 +89,8 @@ public abstract class RegexpNodes {
 
         if (regex.getEncoding() != enc) {
             final Encoding[] fixedEnc = new Encoding[] { null };
-            final ByteList sourceByteList = RopeOperations.getByteListReadOnly(Layouts.REGEXP.getSource(regexp));
-            final ByteList preprocessed = ClassicRegexp.preprocess(context, sourceByteList, enc, fixedEnc, RegexpSupport.ErrorMode.RAISE);
+            final Rope sourceRope = Layouts.REGEXP.getSource(regexp);
+            final ByteList preprocessed = ClassicRegexp.preprocess(context, sourceRope, enc, fixedEnc, RegexpSupport.ErrorMode.RAISE);
             final RegexpOptions options = Layouts.REGEXP.getOptions(regexp);
             final Encoding newEnc = checkEncoding(regexp, stringRope, true);
             regex = new Regex(preprocessed.getUnsafeBytes(), preprocessed.getBegin(), preprocessed.getBegin() + preprocessed.getRealSize(),
@@ -251,10 +251,9 @@ public abstract class RegexpNodes {
         bytes = shimModifiers(bytes);
 
         try {
-            final ByteList byteList = RopeOperations.getByteListReadOnly(bytes);
             Encoding enc = bytes.getEncoding();
             Encoding[] fixedEnc = new Encoding[]{null};
-            ByteList unescaped = ClassicRegexp.preprocess(context, byteList, enc, fixedEnc, RegexpSupport.ErrorMode.RAISE);
+            ByteList unescaped = ClassicRegexp.preprocess(context, bytes, enc, fixedEnc, RegexpSupport.ErrorMode.RAISE);
             if (fixedEnc[0] != null) {
                 if ((fixedEnc[0] != enc && options.isFixed()) ||
                         (fixedEnc[0] != ASCIIEncoding.INSTANCE && options.isEncodingNone())) {
@@ -608,7 +607,7 @@ public abstract class RegexpNodes {
         public DynamicObject quoteString(DynamicObject raw) {
             final Rope rope = StringOperations.rope(raw);
             boolean isAsciiOnly = rope.getEncoding().isAsciiCompatible() && rope.getCodeRange() == CodeRange.CR_7BIT;
-            return createString(ClassicRegexp.quote19(StringOperations.getByteListReadOnly(raw), isAsciiOnly));
+            return createString(ClassicRegexp.quote19(rope, isAsciiOnly));
         }
 
         @Specialization(guards = "isRubySymbol(raw)")
@@ -665,7 +664,7 @@ public abstract class RegexpNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject toS(DynamicObject regexp) {
-            final ClassicRegexp classicRegexp = ClassicRegexp.newRegexp(getContext(), RopeOperations.getByteListReadOnly(Layouts.REGEXP.getSource(regexp)), Layouts.REGEXP.getRegex(regexp).getOptions());
+            final ClassicRegexp classicRegexp = ClassicRegexp.newRegexp(getContext(), Layouts.REGEXP.getSource(regexp), Layouts.REGEXP.getRegex(regexp).getOptions());
             return createString(classicRegexp.toByteList());
         }
 

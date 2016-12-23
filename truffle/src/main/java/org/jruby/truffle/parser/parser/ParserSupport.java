@@ -40,7 +40,9 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.regexp.ClassicRegexp;
 import org.jruby.truffle.core.regexp.RegexpOptions;
 import org.jruby.truffle.core.rope.CodeRange;
+import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.ByteList;
+import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.core.string.StringSupport;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.collections.Tuple;
@@ -1374,14 +1376,14 @@ public class ParserSupport {
     public void regexpFragmentCheck(RegexpParseNode end, ByteList value) {
         setRegexpEncoding(end, value);
         try {
-            ClassicRegexp.preprocessCheck(configuration.getContext(), value);
+            ClassicRegexp.preprocessCheck(configuration.getContext(), StringOperations.ropeFromByteList(value));
         } catch (RaiseException re) {
             compile_error(re.getMessage());
         }
     }        // 1.9 mode overrides to do extra checking...
 
     private List<Integer> allocateNamedLocals(RegexpParseNode regexpNode) {
-        ClassicRegexp pattern = ClassicRegexp.newRegexp(configuration.getContext(), regexpNode.getValue(), regexpNode.getOptions());
+        ClassicRegexp pattern = ClassicRegexp.newRegexp(configuration.getContext(), StringOperations.ropeFromByteList(regexpNode.getValue()), regexpNode.getOptions());
         pattern.setLiteral();
         String[] names = pattern.getNames();
         int length = names.length;
@@ -1474,7 +1476,7 @@ public class ParserSupport {
 
         try {
             // This is only for syntax checking but this will as a side-effect create an entry in the regexp cache.
-            ClassicRegexp.newRegexpParser(getConfiguration().getContext(), value, (RegexpOptions)options.clone());
+            ClassicRegexp.newRegexpParser(getConfiguration().getContext(), StringOperations.ropeFromByteList(value), (RegexpOptions)options.clone());
         } catch (RaiseException re) {
             compile_error(re.getMessage());
         }

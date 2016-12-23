@@ -34,7 +34,6 @@ import org.jruby.truffle.core.array.ArrayUtils;
 import org.jruby.truffle.core.cast.TaintResultNode;
 import org.jruby.truffle.core.cast.ToIntNode;
 import org.jruby.truffle.core.rope.Rope;
-import org.jruby.truffle.core.string.ByteList;
 import org.jruby.truffle.core.string.StringGuards;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.core.string.StringSupport;
@@ -86,13 +85,13 @@ public abstract class MatchDataNodes {
         return e;
     }
 
-    private static void updatePairs(ByteList source, Encoding encoding, Pair[] pairs) {
+    private static void updatePairs(Rope source, Encoding encoding, Pair[] pairs) {
         // Taken from org.jruby.RubyMatchData
         Arrays.sort(pairs);
 
         int length = pairs.length;
-        byte[]bytes = source.getUnsafeBytes();
-        int p = source.getBegin();
+        byte[]bytes = source.getBytes();
+        int p = 0;
         int s = p;
         int c = 0;
 
@@ -104,7 +103,7 @@ public abstract class MatchDataNodes {
         }
     }
 
-    private static Region getCharOffsetsManyRegs(DynamicObject matchData, ByteList source, Encoding encoding) {
+    private static Region getCharOffsetsManyRegs(DynamicObject matchData, Rope source, Encoding encoding) {
         // Taken from org.jruby.RubyMatchData
         final Region regs = Layouts.MATCH_DATA.getRegion(matchData);
         int numRegs = regs.numRegs;
@@ -162,7 +161,7 @@ public abstract class MatchDataNodes {
 
     @TruffleBoundary
     private static Region createCharOffsets(DynamicObject matchData) {
-        final ByteList source = StringOperations.getByteListReadOnly(Layouts.MATCH_DATA.getSource(matchData));
+        final Rope source = StringOperations.rope(Layouts.MATCH_DATA.getSource(matchData));
         final Encoding enc = source.getEncoding();
         final Region charOffsets = getCharOffsetsManyRegs(matchData, source, enc);
         Layouts.MATCH_DATA.setCharOffsets(matchData, charOffsets);
