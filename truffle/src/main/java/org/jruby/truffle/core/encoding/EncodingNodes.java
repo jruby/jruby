@@ -11,6 +11,7 @@
  */
 package org.jruby.truffle.core.encoding;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
@@ -460,7 +461,7 @@ public abstract class EncodingNodes {
     @NodeChildren({ @NodeChild("first"), @NodeChild("second") })
     public static abstract class CheckEncodingNode extends RubyNode {
 
-        @Child private EncodingNodes.CompatibleQueryNode compatibleQueryNode;
+        @Child private NegotiateCompatibleEncodingNode negotiateCompatibleEncodingNode;
         @Child private ToEncodingNode toEncodingNode;
 
         public static CheckEncodingNode create() {
@@ -469,8 +470,7 @@ public abstract class EncodingNodes {
 
         public CheckEncodingNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            compatibleQueryNode = EncodingNodesFactory.CompatibleQueryNodeFactory.create(context, sourceSection, new RubyNode[] {});
-            toEncodingNode = ToEncodingNode.create();
+            negotiateCompatibleEncodingNode = EncodingNodesFactory.NegotiateCompatibleEncodingNodeGen.create(context, sourceSection, null, null);
         }
 
         public abstract Encoding executeCheckEncoding(Object first, Object second);
@@ -478,15 +478,21 @@ public abstract class EncodingNodes {
         @Specialization
         public Encoding checkEncoding(Object first, Object second,
                                       @Cached("create()") BranchProfile errorProfile) {
-            final DynamicObject rubyEncoding = compatibleQueryNode.executeCompatibleQuery(first, second);
+            final Encoding negotiatedEncoding = negotiateCompatibleEncodingNode.executeNegotiate(first, second);
 
-            if (rubyEncoding == nil()) {
+            if (negotiatedEncoding == null) {
                 errorProfile.enter();
+
+                if (toEncodingNode == null) {
+                    CompilerDirectives.transferToInterpreterAndInvalidate();
+                    toEncodingNode = insert(ToEncodingNode.create());
+                }
+
                 throw new RaiseException(getContext().getCoreExceptions().encodingCompatibilityErrorIncompatible(
                         toEncodingNode.executeToEncoding(first), toEncodingNode.executeToEncoding(second), this));
             }
 
-            return toEncodingNode.executeToEncoding(rubyEncoding);
+            return negotiatedEncoding;
         }
 
     }

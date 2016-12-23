@@ -707,11 +707,11 @@ public abstract class StringNodes {
     })
     public abstract static class CaseCmpNode extends CoreMethodNode {
 
-        @Child private EncodingNodes.CompatibleQueryNode compatibleQueryNode;
+        @Child private EncodingNodes.NegotiateCompatibleEncodingNode negotiateCompatibleEncodingNode;
 
         public CaseCmpNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            compatibleQueryNode = EncodingNodesFactory.CompatibleQueryNodeFactory.create(context, sourceSection, new RubyNode[] {});
+            negotiateCompatibleEncodingNode = EncodingNodesFactory.NegotiateCompatibleEncodingNodeGen.create(context, sourceSection, null, null);
         }
 
         @CreateCast("other") public RubyNode coerceOtherToString(RubyNode other) {
@@ -723,7 +723,7 @@ public abstract class StringNodes {
         public Object caseCmpSingleByte(DynamicObject string, DynamicObject other) {
             // Taken from org.jruby.RubyString#casecmp19.
 
-            if (compatibleQueryNode.executeCompatibleQuery(string, other) == nil()) {
+            if (negotiateCompatibleEncodingNode.executeNegotiate(string, other) == null) {
                 return nil();
             }
 
@@ -735,13 +735,13 @@ public abstract class StringNodes {
         public Object caseCmp(DynamicObject string, DynamicObject other) {
             // Taken from org.jruby.RubyString#casecmp19 and
 
-            final DynamicObject encoding = compatibleQueryNode.executeCompatibleQuery(string, other);
+            final Encoding encoding = negotiateCompatibleEncodingNode.executeNegotiate(string, other);
 
-            if (encoding == nil()) {
+            if (encoding == null) {
                 return nil();
             }
 
-            return multiByteCasecmp(Layouts.ENCODING.getEncoding(encoding), StringOperations.getByteListReadOnly(string), StringOperations.getByteListReadOnly(other));
+            return multiByteCasecmp(encoding, StringOperations.getByteListReadOnly(string), StringOperations.getByteListReadOnly(other));
         }
 
         @TruffleBoundary
