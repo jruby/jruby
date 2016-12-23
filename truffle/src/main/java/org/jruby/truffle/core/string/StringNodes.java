@@ -1550,16 +1550,16 @@ public abstract class StringNodes {
         @TruffleBoundary
         private ByteList dumpCommon(DynamicObject string) {
             assert RubyGuards.isRubyString(string);
-            return dumpCommon(StringOperations.getByteListReadOnly(string));
+            return dumpCommon(rope(string));
         }
 
-        private ByteList dumpCommon(ByteList byteList) {
+        private ByteList dumpCommon(Rope rope) {
             ByteList buf = null;
-            Encoding enc = byteList.getEncoding();
+            Encoding enc = rope.getEncoding();
 
-            int p = byteList.getBegin();
-            int end = p + byteList.getRealSize();
-            byte[]bytes = byteList.getUnsafeBytes();
+            int p = 0;
+            int end = rope.byteLength();
+            byte[]bytes = rope.getBytes();
 
             int len = 2;
             while (p < end) {
@@ -1602,8 +1602,8 @@ public abstract class StringNodes {
             ByteList outBytes = new ByteList(len);
             byte out[] = outBytes.getUnsafeBytes();
             int q = 0;
-            p = byteList.getBegin();
-            end = p + byteList.getRealSize();
+            p = 0;
+            end = rope.byteLength();
 
             out[q++] = '"';
             while (p < end) {
