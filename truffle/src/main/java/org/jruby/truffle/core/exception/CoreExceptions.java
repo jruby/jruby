@@ -42,6 +42,10 @@ public class CoreExceptions {
         return argumentError(coreStrings().ONE_HASH_REQUIRED.getRope(), currentNode, null);
     }
 
+    public DynamicObject argumentError(Rope message, Node currentNode) {
+        return argumentError(message, currentNode, null);
+    }
+
     public DynamicObject argumentError(String message, Node currentNode) {
         return argumentError(message, currentNode, null);
     }

@@ -3596,27 +3596,42 @@ public abstract class StringNodes {
 
     }
 
-    @Primitive(name = "string_byte_index", needsSelf = false, lowerFixnum = { 1, 2 })
+    @NodeChildren({ @NodeChild("string"), @NodeChild("characterIndex") })
     @ImportStatic(StringGuards.class)
-    public static abstract class StringByteIndexNode extends PrimitiveArrayArgumentsNode {
+    public static abstract class StringByteIndexFromCharIndexNode extends RubyNode {
 
-        @Child private EncodingNodes.CheckEncodingNode checkEncodingNode;
-
-        @Specialization(guards = "isSingleByteOptimizable(string)")
-        public Object singleByte(DynamicObject string, int index, int start,
-                                                @Cached("createBinaryProfile()") ConditionProfile indexTooLargeProfile) {
-            if (indexTooLargeProfile.profile(index > rope(string).byteLength())) {
-                return nil();
-            }
-
-            return index;
+        public static StringByteIndexFromCharIndexNode create() {
+            return StringNodesFactory.StringByteIndexFromCharIndexNodeGen.create(null, null);
         }
 
-        @Specialization(guards = "!isSingleByteOptimizable(string)")
-        public Object multiBytes(DynamicObject string, int index, int start,
-                                      @Cached("createBinaryProfile()") ConditionProfile indexTooLargeProfile,
-                                      @Cached("createBinaryProfile()") ConditionProfile invalidByteProfile,
-                                      @Cached("create()") BranchProfile errorProfile) {
+        @CreateCast("characterIndex") public RubyNode coerceCharacterIndexToInt(RubyNode characterIndex) {
+            return FixnumLowerNodeGen.create(null, null, characterIndex);
+        }
+
+        public abstract Object executeFindByteIndex(DynamicObject string, int characterIndex);
+
+        @Specialization(guards = "characterIndex < 0")
+        protected Object byteIndexNegativeIndex(DynamicObject string, int characterIndex) {
+            throw new RaiseException(
+                    getContext().getCoreExceptions().argumentError(
+                            coreStrings().CHARACTER_INDEX_NEGATIVE.getRope(), this));
+        }
+
+        @Specialization(guards = "characterIndexTooLarge(string, characterIndex)")
+        protected Object byteIndexTooLarge(DynamicObject string, int characterIndex) {
+            return nil();
+        }
+
+        @Specialization(guards = { "characterIndexInBounds(string, characterIndex)", "isSingleByteOptimizable(string)" })
+        protected Object singleByte(DynamicObject string, int characterIndex) {
+            return characterIndex;
+        }
+
+        @Specialization(guards = { "characterIndexInBounds(string, characterIndex)", "!isSingleByteOptimizable(string)" })
+        protected Object multiBytes(DynamicObject string, int characterIndex,
+                                    @Cached("createBinaryProfile()") ConditionProfile indexTooLargeProfile,
+                                    @Cached("createBinaryProfile()") ConditionProfile invalidByteProfile,
+                                    @Cached("create()") BranchProfile errorProfile) {
             // Taken from Rubinius's String::byte_index.
 
             final Rope rope = rope(string);
@@ -3624,16 +3639,12 @@ public abstract class StringNodes {
             int p = 0;
             final int e = p + rope.byteLength();
 
-            int i, k = index;
-
-            if (k < 0) {
-                errorProfile.enter();
-                throw new RaiseException(coreExceptions().argumentError("character index is negative", this));
-            }
+            int i, k = characterIndex;
 
             for (i = 0; i < k && p < e; i++) {
                 final int c = StringSupport.preciseLength(enc, rope.getBytes(), p, e);
 
+                // TODO (nirvdrum 22-Dec-16): Consider having a specialized version for CR_BROKEN strings to avoid these checks.
                 // If it's an invalid byte, just treat it as a single byte
                 if(invalidByteProfile.profile(! StringSupport.MBCLEN_CHARFOUND_P(c))) {
                     ++p;
@@ -3642,6 +3653,7 @@ public abstract class StringNodes {
                 }
             }
 
+            // TODO (nirvdrum 22-Dec-16): Since we specialize elsewhere on index being too large, do we need this? Can character boundary search in a CR_BROKEN string cause us to encounter this case?
             if (indexTooLargeProfile.profile(i < k)) {
                 return nil();
             } else {
@@ -3649,11 +3661,32 @@ public abstract class StringNodes {
             }
         }
 
+        protected boolean characterIndexTooLarge(DynamicObject string, int characterIndex) {
+            return characterIndex > rope(string).characterLength();
+        }
+
+        protected boolean characterIndexInBounds(DynamicObject string, int characterIndex) {
+            return characterIndex >= 0 && !characterIndexTooLarge(string, characterIndex);
+        }
+
+    }
+
+    @Primitive(name = "string_byte_index", needsSelf = false, lowerFixnum = 1)
+    @ImportStatic(StringGuards.class)
+    public static abstract class StringByteIndexNode extends PrimitiveArrayArgumentsNode {
+
+        @Specialization
+        protected Object findByteIndexFromCharIndex(DynamicObject string, int characterIndex, int offset,
+                                                    @Cached("create()") StringByteIndexFromCharIndexNode stringByteIndexFromCharIndexNode) {
+            return stringByteIndexFromCharIndexNode.executeFindByteIndex(string, characterIndex);
+        }
+
         @Specialization(guards = "isRubyString(pattern)")
         public Object pattern(DynamicObject string, DynamicObject pattern, int offset,
-                                      @Cached("createBinaryProfile()") ConditionProfile emptyPatternProfile,
-                @Cached("createBinaryProfile()") ConditionProfile brokenCodeRangeProfile,
-                @Cached("create()") BranchProfile errorProfile) {
+                              @Cached("createBinaryProfile()") ConditionProfile emptyPatternProfile,
+                              @Cached("createBinaryProfile()") ConditionProfile brokenCodeRangeProfile,
+                              @Cached("create()") BranchProfile errorProfile,
+                              @Cached("create()")EncodingNodes.CheckEncodingNode checkEncodingNode) {
             // Taken from Rubinius's String::byte_index.
 
             if (offset < 0) {
@@ -3668,11 +3701,6 @@ public abstract class StringNodes {
 
             if (brokenCodeRangeProfile.profile(stringRope.getCodeRange() == CodeRange.CR_BROKEN)) {
                 return nil();
-            }
-
-            if (checkEncodingNode == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                checkEncodingNode = insert(checkEncodingNode = EncodingNodesFactory.CheckEncodingNodeGen.create(getContext(), null, null, null));
             }
 
             final Encoding encoding = checkEncodingNode.executeCheckEncoding(string, pattern);
@@ -3710,6 +3738,7 @@ public abstract class StringNodes {
 
             return nil();
         }
+
     }
 
     // Port of Rubinius's String::previous_byte_index.
