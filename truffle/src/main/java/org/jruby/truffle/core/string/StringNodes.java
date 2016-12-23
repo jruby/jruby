@@ -727,7 +727,7 @@ public abstract class StringNodes {
                 return nil();
             }
 
-            return StringOperations.getByteListReadOnly(string).caseInsensitiveCmp(StringOperations.getByteListReadOnly(other));
+            return RopeOperations.caseInsensitiveCmp(rope(string), rope(other));
         }
 
         @Specialization(guards = {"isRubyString(other)", "!bothSingleByteOptimizable(string, other)"})
@@ -741,12 +741,7 @@ public abstract class StringNodes {
                 return nil();
             }
 
-            return multiByteCasecmp(encoding, StringOperations.getByteListReadOnly(string), StringOperations.getByteListReadOnly(other));
-        }
-
-        @TruffleBoundary
-        private int multiByteCasecmp(Encoding enc, ByteList value, ByteList otherValue) {
-            return StringSupport.multiByteCasecmp(enc, value, otherValue);
+            return StringSupport.multiByteCasecmp(encoding, rope(string), rope(other));
         }
 
         public static boolean bothSingleByteOptimizable(DynamicObject string, DynamicObject other) {

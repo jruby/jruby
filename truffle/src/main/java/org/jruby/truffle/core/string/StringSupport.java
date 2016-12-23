@@ -33,6 +33,7 @@ import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.util.IntHash;
 import org.jruby.truffle.collections.IntHashMap;
 import org.jruby.truffle.core.rope.CodeRange;
+import org.jruby.truffle.core.rope.Rope;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -1306,14 +1307,15 @@ public final class StringSupport {
         }
     }
 
-    public static int multiByteCasecmp(Encoding enc, ByteList value, ByteList otherValue) {
-        byte[]bytes = value.getUnsafeBytes();
-        int p = value.getBegin();
-        int end = p + value.getRealSize();
+    @TruffleBoundary
+    public static int multiByteCasecmp(Encoding enc, Rope value, Rope otherValue) {
+        byte[]bytes = value.getBytes();
+        int p = 0;
+        int end = value.byteLength();
 
-        byte[]obytes = otherValue.getUnsafeBytes();
-        int op = otherValue.getBegin();
-        int oend = op + otherValue.getRealSize();
+        byte[]obytes = otherValue.getBytes();
+        int op = 0;
+        int oend = otherValue.byteLength();
 
         while (p < end && op < oend) {
             final int c, oc;

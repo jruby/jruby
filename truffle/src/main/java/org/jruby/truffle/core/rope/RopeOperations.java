@@ -24,6 +24,7 @@ package org.jruby.truffle.core.rope;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jcodings.Encoding;
+import org.jcodings.ascii.AsciiTables;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
@@ -609,6 +610,29 @@ public class RopeOperations {
         // If we get this far, one must be CR_7BIT and the other must be CR_VALID, so promote to the more general code range.
 
         return CR_VALID;
+    }
+
+    @TruffleBoundary
+    public static int caseInsensitiveCmp(Rope value, Rope other) {
+        // Taken from org.jruby.util.ByteList#caseInsensitiveCmp.
+
+        if (other == value) return 0;
+
+        final int size = value.byteLength();
+        final int len =  Math.min(size, other.byteLength());
+        final byte[] other_bytes = other.getBytes();
+
+        for (int offset = -1; ++offset < len;) {
+            int myCharIgnoreCase = AsciiTables.ToLowerCaseTable[value.getBytes()[offset] & 0xff] & 0xff;
+            int otherCharIgnoreCase = AsciiTables.ToLowerCaseTable[other_bytes[offset] & 0xff] & 0xff;
+            if (myCharIgnoreCase < otherCharIgnoreCase) {
+                return -1;
+            } else if (myCharIgnoreCase > otherCharIgnoreCase) {
+                return 1;
+            }
+        }
+
+        return size == other.byteLength() ? 0 : size == len ? -1 : 1;
     }
 
 }
