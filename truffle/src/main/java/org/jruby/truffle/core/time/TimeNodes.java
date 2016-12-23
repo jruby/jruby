@@ -408,7 +408,7 @@ public abstract class TimeNodes {
         @Specialization(guards = "isRubyString(format)")
         public DynamicObject timeStrftime(DynamicObject time, DynamicObject format) {
             final RubyDateFormatter rdf = new RubyDateFormatter(getContext(), this);
-            final List<Token> pattern = rdf.compilePattern(StringOperations.getByteListReadOnly(format), false);
+            final List<Token> pattern = rdf.compilePattern(StringOperations.rope(format), false);
             return createString(rdf.formatToByteList(pattern, Layouts.TIME.getDateTime(time)));
         }
 

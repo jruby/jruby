@@ -44,6 +44,7 @@ import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.encoding.EncodingManager;
+import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.string.ByteList;
 import org.jruby.truffle.debug.DebugHelpers;
 import org.jruby.truffle.language.control.RaiseException;
@@ -247,7 +248,7 @@ public class RubyDateFormatter {
         }
     }
 
-    public List<Token> compilePattern(ByteList pattern, boolean dateLibrary) {
+    public List<Token> compilePattern(Rope pattern, boolean dateLibrary) {
         List<Token> compiledPattern = new LinkedList<>();
 
         Encoding enc = pattern.getEncoding();
@@ -258,7 +259,7 @@ public class RubyDateFormatter {
             compiledPattern.add(new Token(Format.FORMAT_ENCODING, enc));
         }
 
-        ByteArrayInputStream in = new ByteArrayInputStream(pattern.getUnsafeBytes(), pattern.getBegin(), pattern.getRealSize());
+        ByteArrayInputStream in = new ByteArrayInputStream(pattern.getBytes(), 0, pattern.byteLength());
         Reader reader = new InputStreamReader(in, EncodingManager.charsetForEncoding(pattern.getEncoding()));
         lexer.yyreset(reader);
 
