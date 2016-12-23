@@ -3440,7 +3440,15 @@ public abstract class StringNodes {
             return start + index;
         }
 
-        @Specialization(guards = "!isSingleByteOptimizable(string)")
+        @Specialization(guards = { "!isSingleByteOptimizable(string)", "isFixedWidthEncoding(string)" })
+        public int stringCharacterByteIndexFixedWidthEncoding(DynamicObject string, int index, int start) {
+            final Encoding encoding = encoding(string);
+
+            return start + index * encoding.minLength();
+        }
+
+        @TruffleBoundary
+        @Specialization(guards = { "!isSingleByteOptimizable(string)", "!isFixedWidthEncoding(string)" })
         public int stringCharacterByteIndexMultiByteEncoding(DynamicObject string, int index, int start) {
             final Rope rope = rope(string);
 
