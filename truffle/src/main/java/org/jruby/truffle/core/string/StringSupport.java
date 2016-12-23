@@ -25,6 +25,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.core.string;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import org.jcodings.Encoding;
 import org.jcodings.ascii.AsciiTables;
 import org.jcodings.constants.CharacterType;
@@ -103,6 +104,7 @@ public final class StringSupport {
     }
 
     // rb_enc_precise_mbclen
+    @TruffleBoundary
     public static int preciseLength(Encoding enc, byte[]bytes, int p, int end) {
         if (p >= end) return -1 - (1);
         int n = enc.length(bytes, p, end);

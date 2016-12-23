@@ -2764,7 +2764,7 @@ public abstract class StringNodes {
 
             final Rope rope = rope(string);
             final int end = rope.byteLength();
-            final int c = preciseLength(rope, byteIndex, end);
+            final int c = StringSupport.preciseLength(rope.getEncoding(), rope.getBytes(), byteIndex, end);
 
             if (! StringSupport.MBCLEN_CHARFOUND_P(c)) {
                 return nil();
@@ -2776,11 +2776,6 @@ public abstract class StringNodes {
             }
 
             return stringByteSubstringNode.executeStringByteSubstring(string, byteIndex, n);
-        }
-
-        @TruffleBoundary
-        private int preciseLength(final Rope rope, final int p, final int end) {
-            return StringSupport.preciseLength(rope.getEncoding(), rope.getBytes(), p, end);
         }
 
         protected static boolean indexOutOfBounds(DynamicObject string, int byteIndex) {
