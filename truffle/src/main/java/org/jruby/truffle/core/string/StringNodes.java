@@ -2048,7 +2048,7 @@ public abstract class StringNodes {
 
         @TruffleBoundary
         private double convertToDouble(DynamicObject string) {
-            return new DoubleConverter().parse(StringOperations.getByteListReadOnly(string), false, true);
+            return new DoubleConverter().parse(rope(string), false, true);
         }
     }
 
@@ -3283,8 +3283,7 @@ public abstract class StringNodes {
         public Object stringToF(DynamicObject string, boolean strict,
                                 @Cached("create(getContext(), getSourceSection())") FixnumOrBignumNode fixnumOrBignumNode) {
             final Rope rope = rope(string);
-            final ByteList byteList = RopeOperations.getByteListReadOnly(rope);
-            if (byteList.getRealSize() == 0) {
+            if (rope.isEmpty()) {
                 throw new RaiseException(coreExceptions().argumentError(coreStrings().INVALID_VALUE_FOR_FLOAT.getRope(), this));
             }
             if (string.toString().startsWith("0x")) {
@@ -3305,7 +3304,7 @@ public abstract class StringNodes {
                 }
             }
             try {
-                return new DoubleConverter().parse(byteList, strict, true);
+                return new DoubleConverter().parse(rope, strict, true);
             } catch (NumberFormatException e) {
                 if (strict) {
                     throw new RaiseException(coreExceptions().argumentError(coreStrings().INVALID_VALUE_FOR_FLOAT.getRope(), this));

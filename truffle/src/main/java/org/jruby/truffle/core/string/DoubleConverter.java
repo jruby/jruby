@@ -27,6 +27,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.core.string;
 
+import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.string.ByteList;
 import org.jruby.truffle.parser.SafeDoubleParser;
 
@@ -57,16 +58,16 @@ public class DoubleConverter {
     public DoubleConverter() {
     }
 
-    public void init(ByteList list, boolean isStrict) {
-        bytes = list.getUnsafeBytes();
-        index = list.begin();
-        endIndex = index + list.length();
+    public void init(Rope rope, boolean isStrict) {
+        bytes = rope.getBytes();
+        index = 0;
+        endIndex = index + rope.byteLength();
         this.isStrict = isStrict;
         // +2 for added exponent: E...
         // The algorithm trades digits for inc/dec exponent.
         // Worse case is adding E-1 when no exponent,
         // it trades one digit for 3 chars.
-        chars = new char[Math.min(list.length() + 2, MAX_LENGTH)];
+        chars = new char[Math.min(rope.byteLength() + 2, MAX_LENGTH)];
         charsIndex = 0;
         significantDigitsProcessed = 0;
         adjustExponent = 0;
@@ -179,8 +180,8 @@ public class DoubleConverter {
      * However, in order to maintain binary compatibility with extensions we can't
      * just change the signature either.
      */
-    public double parse(ByteList list, boolean strict, boolean is19) {
-        init(list, strict);
+    public double parse(Rope rope, boolean strict, boolean is19) {
+        init(rope, strict);
 
         if (skipWhitespace()) return completeCalculation();
         if (parseOptionalSign()) return completeCalculation();
