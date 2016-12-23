@@ -3285,7 +3285,7 @@ public abstract class StringNodes {
             final Rope rope = rope(string);
             final ByteList byteList = RopeOperations.getByteListReadOnly(rope);
             if (byteList.getRealSize() == 0) {
-                throw new RaiseException(coreExceptions().argumentError("invalid value for Float()", this));
+                throw new RaiseException(coreExceptions().argumentError(coreStrings().INVALID_VALUE_FOR_FLOAT.getRope(), this));
             }
             if (string.toString().startsWith("0x")) {
                 try {
@@ -3308,7 +3308,7 @@ public abstract class StringNodes {
                 return new DoubleConverter().parse(byteList, strict, true);
             } catch (NumberFormatException e) {
                 if (strict) {
-                    throw new RaiseException(coreExceptions().argumentError("invalid value for Float()", this));
+                    throw new RaiseException(coreExceptions().argumentError(coreStrings().INVALID_VALUE_FOR_FLOAT.getRope(), this));
                 }
                 return 0.0;
             }
