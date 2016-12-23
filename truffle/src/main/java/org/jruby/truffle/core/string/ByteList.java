@@ -34,6 +34,7 @@ package org.jruby.truffle.core.string;
 import org.jcodings.Encoding;
 import org.jcodings.ascii.AsciiTables;
 import org.jcodings.specific.ASCIIEncoding;
+import org.jruby.truffle.core.rope.Rope;
 
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
@@ -464,6 +465,16 @@ public class ByteList implements CharSequence {
      */
     public int indexOf(ByteList find, int i) {
         return indexOf(bytes, begin, realSize, find.bytes, find.begin, find.realSize, i);
+    }
+
+    /**
+     * Get the index of first occurrence of Bytelist find in this ByteList starting at index i.
+     *
+     * @param find the Rope to
+     * @return the index of the byte or -1 if not found
+     */
+    public int indexOf(Rope find) {
+        return indexOf(bytes, begin, realSize, find.getBytes(), 0, find.byteLength(), 0);
     }
 
     /**
