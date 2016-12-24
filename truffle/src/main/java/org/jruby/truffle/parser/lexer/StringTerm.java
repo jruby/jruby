@@ -29,7 +29,7 @@ package org.jruby.truffle.parser.lexer;
 
 import org.jcodings.Encoding;
 import org.jruby.truffle.core.regexp.RegexpOptions;
-import org.jruby.truffle.core.string.ByteList;
+import org.jruby.truffle.parser.ParserByteList;
 import org.jruby.truffle.parser.ast.RegexpParseNode;
 import org.jruby.truffle.parser.parser.Tokens;
 import org.jruby.truffle.core.string.KCode;
@@ -70,8 +70,8 @@ public class StringTerm extends StrTerm {
         return flags;
     }
 
-    protected ByteList createByteList(RubyLexer lexer) {
-        ByteList bytelist = new ByteList(15);
+    protected ParserByteList createByteList(RubyLexer lexer) {
+        ParserByteList bytelist = new ParserByteList(15);
         bytelist.setEncoding(lexer.getEncoding());
         return bytelist;
     }
@@ -85,9 +85,9 @@ public class StringTerm extends StrTerm {
 
             if ((flags & STR_FUNC_REGEXP) != 0) {
                 RegexpOptions options = parseRegexpFlags(lexer);
-                ByteList regexpBytelist = ByteList.create("");
+                ParserByteList regexpBytelist = ParserByteList.create("");
 
-                lexer.setValue(new RegexpParseNode(lexer.getPosition(), regexpBytelist, options));
+                lexer.setValue(new RegexpParseNode(lexer.getPosition(), regexpBytelist.toByteList(), options));
                 return Tokens.tREGEXP_END;
             }
 
@@ -191,8 +191,8 @@ public class StringTerm extends StrTerm {
             lexer.getPosition();
             return ' ';
         }
-        
-        ByteList buffer = createByteList(lexer);
+
+        ParserByteList buffer = createByteList(lexer);
         lexer.newtok(true);
         if ((flags & STR_FUNC_EXPAND) != 0 && c == '#') {
             int token = parsePeekVariableName(lexer);
@@ -266,7 +266,7 @@ public class StringTerm extends StrTerm {
     }
 
     // mri: parser_tokadd_string
-    public int parseStringIntoBuffer(RubyLexer lexer, ByteList buffer, Encoding enc[]) throws IOException {
+    public int parseStringIntoBuffer(RubyLexer lexer, ParserByteList buffer, Encoding enc[]) throws IOException {
         boolean qwords = (flags & STR_FUNC_QWORDS) != 0;
         boolean expand = (flags & STR_FUNC_EXPAND) != 0;
         boolean escape = (flags & STR_FUNC_ESCAPE) != 0;
@@ -420,7 +420,7 @@ public class StringTerm extends StrTerm {
 
     // Was a goto in original ruby lexer
     @SuppressWarnings("fallthrough")
-    private void escaped(RubyLexer lexer, ByteList buffer) throws IOException {
+    private void escaped(RubyLexer lexer, ParserByteList buffer) throws IOException {
         int c;
 
         switch (c = lexer.nextc()) {
@@ -435,7 +435,7 @@ public class StringTerm extends StrTerm {
     }
 
     @SuppressWarnings("fallthrough")
-    private void parseEscapeIntoBuffer(RubyLexer lexer, ByteList buffer) throws IOException {
+    private void parseEscapeIntoBuffer(RubyLexer lexer, ParserByteList buffer) throws IOException {
         int c;
 
         switch (c = lexer.nextc()) {

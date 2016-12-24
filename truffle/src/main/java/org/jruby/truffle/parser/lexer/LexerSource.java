@@ -38,7 +38,7 @@ package org.jruby.truffle.parser.lexer;
 
 import com.oracle.truffle.api.source.Source;
 import org.jcodings.Encoding;
-import org.jruby.truffle.core.string.ByteList;
+import org.jruby.truffle.parser.ParserByteList;
 
 import java.nio.charset.StandardCharsets;
 
@@ -79,7 +79,7 @@ public class LexerSource {
         return lineStartOffset;
     }
 
-    public ByteList gets() {
+    public ParserByteList gets() {
         if (byteOffset >= sourceBytes.length) {
             return null;
         }
@@ -95,7 +95,7 @@ public class LexerSource {
 
         byteOffset = lineEnd;
 
-        return new ByteList(sourceBytes, start, length, encoding, false);
+        return new ParserByteList(sourceBytes, start, length, encoding);
     }
 
     private int nextNewLine() {

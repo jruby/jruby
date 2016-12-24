@@ -30,7 +30,7 @@
 package org.jruby.truffle.parser.lexer;
 
 import org.jcodings.Encoding;
-import org.jruby.truffle.core.string.ByteList;
+import org.jruby.truffle.parser.ParserByteList;
 import org.jruby.truffle.parser.parser.Tokens;
 
 import static org.jruby.truffle.parser.lexer.RubyLexer.EOF;
@@ -53,7 +53,7 @@ import static org.jruby.truffle.parser.lexer.RubyLexer.STR_FUNC_INDENT;
  */
 public class HeredocTerm extends StrTerm {
     // Marker delimiting heredoc boundary
-    private final ByteList nd_lit;
+    private final ParserByteList nd_lit;
 
     // Expand variables, Indentation of final marker
     private final int flags;
@@ -63,9 +63,9 @@ public class HeredocTerm extends StrTerm {
     protected final int line;
 
     // Portion of line right after beginning marker
-    protected final ByteList lastLine;
+    protected final ParserByteList lastLine;
 
-    public HeredocTerm(ByteList marker, int func, int nth, int line, ByteList lastLine) {
+    public HeredocTerm(ParserByteList marker, int func, int nth, int line, ParserByteList lastLine) {
         this.nd_lit = marker;
         this.flags = func;
         this.nth = nth;
@@ -78,7 +78,7 @@ public class HeredocTerm extends StrTerm {
         return flags;
     }
 
-    protected int error(RubyLexer lexer, int len, ByteList str, ByteList eos) {
+    protected int error(RubyLexer lexer, int len, ParserByteList str, ParserByteList eos) {
         lexer.compile_error("can't find string \"" + eos.toString() + "\" anywhere before EOF");
         return -1;
     }
@@ -92,8 +92,8 @@ public class HeredocTerm extends StrTerm {
 
     @Override
     public int parseString(RubyLexer lexer) throws java.io.IOException {
-        ByteList str = null;
-        ByteList eos = nd_lit;
+        ParserByteList str = null;
+        ParserByteList eos = nd_lit;
         int len = nd_lit.length() - 1;
         boolean indent = (flags & STR_FUNC_INDENT) != 0;
         int c = lexer.nextc();
@@ -108,7 +108,7 @@ public class HeredocTerm extends StrTerm {
 
         if ((flags & STR_FUNC_EXPAND) == 0) {
             do {
-                ByteList lbuf = lexer.lex_lastline;
+                ParserByteList lbuf = lexer.lex_lastline;
                 int p = 0;
                 int pend = lexer.lex_pend;
                 if (pend > p) {
@@ -134,7 +134,7 @@ public class HeredocTerm extends StrTerm {
                 if (str != null) {
                     str.append(lbuf.makeShared(p, pend - p));
                 } else {
-                    str = new ByteList(lbuf.makeShared(p, pend - p));
+                    str = new ParserByteList(lbuf.makeShared(p, pend - p));
                 }
 
                 if (pend < lexer.lex_pend) str.append('\n');
@@ -148,7 +148,7 @@ public class HeredocTerm extends StrTerm {
                 if (lexer.nextc() == -1) return error(lexer, len, null, eos);
             } while (!lexer.whole_match_p(eos, indent));
         } else {
-            ByteList tok = new ByteList();
+            ParserByteList tok = new ParserByteList();
             tok.setEncoding(lexer.getEncoding());
             if (c == '#') {
                 switch (c = lexer.nextc()) {
