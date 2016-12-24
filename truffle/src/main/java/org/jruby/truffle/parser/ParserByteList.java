@@ -39,31 +39,19 @@ public class ParserByteList {
         return new ParserByteList(ByteList.create(string));
     }
 
-    public byte[] unsafeBytes() {
-        return byteList.unsafeBytes();
-    }
-
-    public int begin() {
-        return byteList.begin();
-    }
-
-    public int getBegin() {
+    public int getStart() {
         return byteList.getBegin();
     }
 
-    public void setBegin(int start) {
+    public void setStart(int start) {
         byteList.setBegin(start);
     }
 
-    public int realSize() {
-        return byteList.realSize();
-    }
-
-    public int length() {
+    public int getLength() {
         return byteList.length();
     }
 
-    public void setRealSize(int length) {
+    public void setLength(int length) {
         byteList.setRealSize(length);
     }
 
@@ -95,14 +83,6 @@ public class ParserByteList {
         return byteList.getUnsafeBytes();
     }
 
-    public int get(int index) {
-        return byteList.get(index);
-    }
-
-    public CharSequence subSequence(int start, int length) {
-        return byteList.subSequence(start, length);
-    }
-
     public int caseInsensitiveCmp(ParserByteList other) {
         return byteList.caseInsensitiveCmp(other.byteList);
     }
@@ -113,10 +93,6 @@ public class ParserByteList {
 
     public boolean equal(ParserByteList other) {
         return byteList.equals(other.byteList);
-    }
-
-    public int getRealSize() {
-        return byteList.getRealSize();
     }
 
     public void ensure(int length) {

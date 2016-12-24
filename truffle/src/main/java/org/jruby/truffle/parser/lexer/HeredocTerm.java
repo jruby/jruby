@@ -94,7 +94,7 @@ public class HeredocTerm extends StrTerm {
     public int parseString(RubyLexer lexer) throws java.io.IOException {
         ParserByteList str = null;
         ParserByteList eos = nd_lit;
-        int len = nd_lit.length() - 1;
+        int len = nd_lit.getLength() - 1;
         boolean indent = (flags & STR_FUNC_INDENT) != 0;
         int c = lexer.nextc();
 

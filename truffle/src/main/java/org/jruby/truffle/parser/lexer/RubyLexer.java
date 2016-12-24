@@ -283,7 +283,7 @@ public class RubyLexer {
             ruby_sourceline++;
             line_count++;
             lex_pbeg = lex_p = 0;
-            lex_pend = lex_p + v.length();
+            lex_pend = lex_p + v.getLength();
             lexb = v;
             flush();
             lex_lastline = v;
@@ -336,7 +336,7 @@ public class RubyLexer {
 
     // FIXME: How does lexb.toString() vs getCurrentLine() differ.
     public void compile_error(SyntaxException.PID pid, String message) {
-        String src = createAsEncodedString(lex_lastline.unsafeBytes(), lex_lastline.begin(), lex_lastline.length(), getEncoding());
+        String src = createAsEncodedString(lex_lastline.getUnsafeBytes(), lex_lastline.getStart(), lex_lastline.getLength(), getEncoding());
         throw new SyntaxException(pid, getFile(), ruby_sourceline, src, message);
     }
 
@@ -344,7 +344,7 @@ public class RubyLexer {
         ParserByteList line = here.lastLine;
         lex_lastline = line;
         lex_pbeg = 0;
-        lex_pend = lex_pbeg + line.length();
+        lex_pend = lex_pbeg + line.getLength();
         lex_p = lex_pbeg + here.nth;
         lexb = line;
         heredoc_end = ruby_sourceline;
@@ -957,7 +957,7 @@ public class RubyLexer {
             case '=':
                 // documentation nodes
                 if (was_bol()) {
-                    if (strncmp(lexb.makeShared(lex_p, lex_pend - lex_p), BEGIN_DOC_MARKER, BEGIN_DOC_MARKER.length()) &&
+                    if (strncmp(lexb.makeShared(lex_p, lex_pend - lex_p), BEGIN_DOC_MARKER, BEGIN_DOC_MARKER.getLength()) &&
                             Character.isWhitespace(p(lex_p + 5))) {
                         for (;;) {
                             lex_goto_eol();
@@ -971,7 +971,7 @@ public class RubyLexer {
 
                             if (c != '=') continue;
 
-                            if (strncmp(lexb.makeShared(lex_p, lex_pend - lex_p), END_DOC_MARKER, END_DOC_MARKER.length()) &&
+                            if (strncmp(lexb.makeShared(lex_p, lex_pend - lex_p), END_DOC_MARKER, END_DOC_MARKER.getLength()) &&
                                     (lex_p + 3 == lex_pend || Character.isWhitespace(p(lex_p + 3)))) {
                                 break;
                             }
@@ -1147,7 +1147,7 @@ public class RubyLexer {
 
     // MRI: parser_magic_comment
     public boolean parseMagicComment(ParserByteList magicLine) throws IOException {
-        int length = magicLine.length();
+        int length = magicLine.getLength();
 
         if (length <= 7) return false;
         int beg = magicCommentMarker(magicLine, 0);
@@ -1159,8 +1159,8 @@ public class RubyLexer {
             beg = 0;
         }
 
-        int begin = magicLine.getBegin() + beg;
-        Matcher matcher = magicRegexp.matcher(magicLine.unsafeBytes(), begin, begin + length);
+        int begin = magicLine.getStart() + beg;
+        Matcher matcher = magicRegexp.matcher(magicLine.getUnsafeBytes(), begin, begin + length);
         int result = ClassicRegexp.matcherSearch(matcher, begin, begin + length, Option.NONE);
 
         if (result < 0) return false;
@@ -1168,7 +1168,7 @@ public class RubyLexer {
         // Regexp is guaranteed to have three matches
         int begs[] = matcher.getRegion().beg;
         int ends[] = matcher.getRegion().end;
-        String name = magicLine.subSequence(beg + begs[1], beg + ends[1]).toString().replace('-', '_');
+        String name = magicLine.toString().subSequence(beg + begs[1], beg + ends[1]).toString().replace('-', '_');
         ParserByteList value = magicLine.makeShared(beg + begs[2], ends[2] - begs[2]);
 
         if ("coding".equals(name) || "encoding".equals(name)) {
@@ -2167,7 +2167,7 @@ public class RubyLexer {
         setState(EXPR_END);
         newtok(true);
 
-        numberBuffer.setRealSize(0);
+        numberBuffer.setLength(0);
 
         if (c == '-') {
         	numberBuffer.append((char) c);
@@ -2180,7 +2180,7 @@ public class RubyLexer {
         int nondigit = 0;
 
         if (c == '0') {
-            int startLen = numberBuffer.length();
+            int startLen = numberBuffer.getLength();
 
             switch (c = nextc()) {
                 case 'x' :
@@ -2201,7 +2201,7 @@ public class RubyLexer {
                     }
                     pushback(c);
 
-                    if (numberBuffer.length() == startLen) {
+                    if (numberBuffer.getLength() == startLen) {
                         compile_error(SyntaxException.PID.BAD_HEX_NUMBER, "Hexadecimal number without hex-digits.");
                     } else if (nondigit != '\0') {
                         compile_error(SyntaxException.PID.TRAILING_UNDERSCORE_IN_NUMBER, "Trailing '_' in number.");
@@ -2225,7 +2225,7 @@ public class RubyLexer {
                     }
                     pushback(c);
 
-                    if (numberBuffer.length() == startLen) {
+                    if (numberBuffer.getLength() == startLen) {
                         compile_error(SyntaxException.PID.EMPTY_BINARY_NUMBER, "Binary number without digits.");
                     } else if (nondigit != '\0') {
                         compile_error(SyntaxException.PID.TRAILING_UNDERSCORE_IN_NUMBER, "Trailing '_' in number.");
@@ -2249,7 +2249,7 @@ public class RubyLexer {
                     }
                     pushback(c);
 
-                    if (numberBuffer.length() == startLen) {
+                    if (numberBuffer.getLength() == startLen) {
                         compile_error(SyntaxException.PID.EMPTY_BINARY_NUMBER, "Binary number without digits.");
                     } else if (nondigit != '\0') {
                         compile_error(SyntaxException.PID.TRAILING_UNDERSCORE_IN_NUMBER, "Trailing '_' in number.");
@@ -2272,7 +2272,7 @@ public class RubyLexer {
                             break;
                         }
                     }
-                    if (numberBuffer.length() > startLen) {
+                    if (numberBuffer.getLength() > startLen) {
                         pushback(c);
 
                         if (nondigit != '\0') compile_error(SyntaxException.PID.TRAILING_UNDERSCORE_IN_NUMBER, "Trailing '_' in number.");
@@ -2626,11 +2626,11 @@ public class RubyLexer {
     }
 
     public ParserByteList createTokenByteArrayView() {
-        return new ParserByteList(lexb.unsafeBytes(), lexb.begin() + tokp, lex_p - tokp, getEncoding(), false);
+        return new ParserByteList(lexb.getUnsafeBytes(), lexb.getStart() + tokp, lex_p - tokp, getEncoding(), false);
     }
 
     public String createTokenString(int start) {
-        return createAsEncodedString(lexb.getUnsafeBytes(), lexb.begin() + start, lex_p - start, getEncoding());
+        return createAsEncodedString(lexb.getUnsafeBytes(), lexb.getStart() + start, lex_p - start, getEncoding());
     }
 
     public String createAsEncodedString(byte[] bytes, int start, int length, Encoding encoding) {
@@ -2741,7 +2741,7 @@ public class RubyLexer {
 
     // mri: parser_isascii
     public boolean isASCII() {
-        return Encoding.isMbcAscii((byte) lexb.get(lex_p - 1));
+        return Encoding.isMbcAscii((byte) lexb.charAt(lex_p - 1));
     }
 
     public boolean isASCII(int c) {
@@ -2851,7 +2851,7 @@ public class RubyLexer {
     }
 
     public int p(int offset) {
-        return lexb.get(offset) & 0xff;
+        return lexb.charAt(offset) & 0xff;
     }
 
     public boolean peek(int c) {
@@ -2864,7 +2864,7 @@ public class RubyLexer {
 
     public int precise_mbclen() {
         byte[] data = lexb.getUnsafeBytes();
-        int begin = lexb.begin();
+        int begin = lexb.getStart();
 
         // we subtract one since we have read past first byte by time we are calling this.
         return current_enc.length(data, begin + lex_p - 1, begin + lex_pend);
@@ -3012,7 +3012,7 @@ public class RubyLexer {
     }
 
     protected boolean strncmp(ParserByteList one, ParserByteList two, int length) {
-        if (one.length() < length || two.length() < length) return false;
+        if (one.getLength() < length || two.getLength() < length) return false;
 
         return one.makeShared(0, length).equal(two.makeShared(0, length));
     }
@@ -3081,9 +3081,9 @@ public class RubyLexer {
     public void tokaddmbc(int codepoint, ParserByteList buffer) {
         Encoding encoding = buffer.getEncoding();
         int length = encoding.codeToMbcLength(codepoint);
-        buffer.ensure(buffer.getRealSize() + length);
-        encoding.codeToMbc(codepoint, buffer.getUnsafeBytes(), buffer.begin() + buffer.getRealSize());
-        buffer.setRealSize(buffer.getRealSize() + length);
+        buffer.ensure(buffer.getLength() + length);
+        encoding.codeToMbc(codepoint, buffer.getUnsafeBytes(), buffer.getStart() + buffer.getLength());
+        buffer.setLength(buffer.getLength() + length);
     }
 
     /**
@@ -3162,7 +3162,7 @@ public class RubyLexer {
     }
 
     public boolean whole_match_p(ParserByteList eos, boolean indent) {
-        int len = eos.length();
+        int len = eos.getLength();
         int p = lex_pbeg;
 
         if (indent) {
@@ -3283,7 +3283,7 @@ public class RubyLexer {
      */
     public static int magicCommentMarker(ParserByteList str, int begin) {
         int i = begin;
-        int len = str.length();
+        int len = str.getLength();
 
         while (i < len) {
             switch (str.charAt(i)) {
