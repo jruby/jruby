@@ -2837,7 +2837,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitRegexpNode(RegexpParseNode node) {
-        final Rope rope = StringOperations.ropeFromByteList(node.getValue());
+        final Rope rope = RopeOperations.ropeFromByteList(node.getValue());
         final RegexpOptions options = node.getOptions();
         options.setLiteral(true);
         Regex regex = RegexpNodes.compile(currentNode, context, rope, options);

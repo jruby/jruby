@@ -52,7 +52,6 @@ import org.jruby.truffle.core.rope.RopeConstants;
 import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.ByteList;
 import org.jruby.truffle.core.string.ByteListKey;
-import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.core.string.StringSupport;
 import org.jruby.truffle.parser.ReOptions;
 import org.jruby.truffle.collections.WeakValuedMap;
@@ -658,7 +657,7 @@ public class ClassicRegexp implements ReOptions {
         }
 
         result.setRealSize(op);
-        return StringOperations.ropeFromByteList(result);
+        return RopeOperations.ropeFromByteList(result);
     }
 
     // rb_reg_initialize

@@ -39,7 +39,6 @@ import org.jcodings.Encoding;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.array.ArrayOperations;
-import org.jruby.truffle.core.encoding.EncodingNodes;
 import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeOperations;
@@ -53,7 +52,7 @@ public abstract class StringOperations {
 
     /** Creates a String from the ByteList, with unknown CR */
     public static DynamicObject createString(RubyContext context, ByteList bytes) {
-        return Layouts.STRING.createString(context.getCoreLibrary().getStringFactory(), ropeFromByteList(bytes, CodeRange.CR_UNKNOWN));
+        return Layouts.STRING.createString(context.getCoreLibrary().getStringFactory(), RopeOperations.ropeFromByteList(bytes, CodeRange.CR_UNKNOWN));
     }
 
     public static DynamicObject createString(RubyContext context, Rope rope) {
@@ -91,15 +90,6 @@ public abstract class StringOperations {
 
     public static Rope encodeRope(CharSequence value, Encoding encoding) {
         return encodeRope(value, encoding, CodeRange.CR_UNKNOWN);
-    }
-
-    public static Rope ropeFromByteList(ByteList byteList) {
-        return RopeOperations.create(byteList.bytes(), byteList.getEncoding(), CodeRange.CR_UNKNOWN);
-    }
-
-    public static Rope ropeFromByteList(ByteList byteList, CodeRange codeRange) {
-        // TODO (nirvdrum 08-Jan-16) We need to make a copy of the ByteList's bytes for now to be safe, but we should be able to use the unsafe bytes as we move forward.
-        return RopeOperations.create(byteList.bytes(), byteList.getEncoding(), codeRange);
     }
 
     public static Rope rope(DynamicObject string) {

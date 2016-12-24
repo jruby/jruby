@@ -855,7 +855,7 @@ public abstract class StringNodes {
                 taintResultNode = insert(new TaintResultNode(getContext(), null));
             }
 
-            final DynamicObject ret = createString(StringOperations.ropeFromByteList(new ByteList(cryptedString, 0, cryptedString.length - 1, ASCIIEncoding.INSTANCE, false)));
+            final DynamicObject ret = createString(RopeOperations.ropeFromByteList(new ByteList(cryptedString, 0, cryptedString.length - 1, ASCIIEncoding.INSTANCE, false)));
 
             taintResultNode.maybeTaint(string, ret);
             taintResultNode.maybeTaint(salt, ret);
@@ -1518,7 +1518,7 @@ public abstract class StringNodes {
             ByteList outputBytes = dumpCommon(string);
             outputBytes.setEncoding(encoding(string));
 
-            final DynamicObject result = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), StringOperations.ropeFromByteList(outputBytes, CodeRange.CR_7BIT));
+            final DynamicObject result = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), RopeOperations.ropeFromByteList(outputBytes, CodeRange.CR_7BIT));
 
             return result;
         }
@@ -1542,7 +1542,7 @@ public abstract class StringNodes {
 
             outputBytes.setEncoding(ASCIIEncoding.INSTANCE);
 
-            final DynamicObject result = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), StringOperations.ropeFromByteList(outputBytes, CodeRange.CR_7BIT));
+            final DynamicObject result = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), RopeOperations.ropeFromByteList(outputBytes, CodeRange.CR_7BIT));
 
             return result;
         }
@@ -1861,13 +1861,13 @@ public abstract class StringNodes {
                 if (! StringSupport.singleByteSqueeze(buffer, squeeze)) {
                     return nil();
                 } else {
-                    StringOperations.setRope(string, StringOperations.ropeFromByteList(buffer));
+                    StringOperations.setRope(string, RopeOperations.ropeFromByteList(buffer));
                 }
             } else {
                 if (! squeezeCommonMultiByte(buffer, squeeze, null, encoding(string), false)) {
                     return nil();
                 } else {
-                    StringOperations.setRope(string, StringOperations.ropeFromByteList(buffer));
+                    StringOperations.setRope(string, RopeOperations.ropeFromByteList(buffer));
                 }
             }
 
@@ -1925,13 +1925,13 @@ public abstract class StringNodes {
                 if (! StringSupport.singleByteSqueeze(buffer, squeeze)) {
                     return nil();
                 } else {
-                    StringOperations.setRope(string, StringOperations.ropeFromByteList(buffer));
+                    StringOperations.setRope(string, RopeOperations.ropeFromByteList(buffer));
                 }
             } else {
                 if (! StringSupport.multiByteSqueeze(buffer, squeeze, tables, enc, true)) {
                     return nil();
                 } else {
-                    StringOperations.setRope(string, StringOperations.ropeFromByteList(buffer));
+                    StringOperations.setRope(string, RopeOperations.ropeFromByteList(buffer));
                 }
             }
 
@@ -1959,7 +1959,7 @@ public abstract class StringNodes {
             if (! rope.isEmpty()) {
                 final ByteList succByteList = StringSupport.succCommon(rope);
 
-                StringOperations.setRope(string, StringOperations.ropeFromByteList(succByteList, rope.getCodeRange()));
+                StringOperations.setRope(string, RopeOperations.ropeFromByteList(succByteList, rope.getCodeRange()));
             }
 
             return string;
@@ -2388,7 +2388,7 @@ public abstract class StringNodes {
             final ByteList bytes = RopeOperations.toByteListCopy(rope);
             final boolean modified = multiByteUpcase(encoding, bytes.unsafeBytes(), bytes.begin(), bytes.realSize());
             if (modified) {
-                StringOperations.setRope(string, StringOperations.ropeFromByteList(bytes, rope.getCodeRange()));
+                StringOperations.setRope(string, RopeOperations.ropeFromByteList(bytes, rope.getCodeRange()));
 
                 return string;
             } else {
@@ -3094,7 +3094,7 @@ public abstract class StringNodes {
             if (p > prev) result.append(pBytes, prev, p - prev);
 
             result.setEncoding(USASCIIEncoding.INSTANCE);
-            return StringOperations.ropeFromByteList(result, CodeRange.CR_7BIT);
+            return RopeOperations.ropeFromByteList(result, CodeRange.CR_7BIT);
         }
 
         private static int MBCLEN_CHARFOUND_LEN(int r) {

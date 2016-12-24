@@ -63,6 +63,7 @@ import org.jruby.truffle.core.cast.ToStrNode;
 import org.jruby.truffle.core.cast.ToStrNodeGen;
 import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.rope.Rope;
+import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.ByteList;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.NotProvided;
@@ -509,7 +510,7 @@ public abstract class PsychParserNodes {
                     len = dp.p;
                     newStr.setRealSize(len);
                     newStr.setEncoding(toEncoding);
-                    return StringOperations.ropeFromByteList(newStr);
+                    return RopeOperations.ropeFromByteList(newStr);
 
                 default:
                     // some error, return original

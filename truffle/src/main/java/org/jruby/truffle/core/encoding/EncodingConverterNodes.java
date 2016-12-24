@@ -223,7 +223,7 @@ public abstract class EncodingConverterNodes {
                     outBytes.setEncoding(ec.destinationEncoding);
                 }
 
-                StringOperations.setRope(target, StringOperations.ropeFromByteList(outBytes));
+                StringOperations.setRope(target, RopeOperations.ropeFromByteList(outBytes));
 
                 return getSymbol(res.symbolicName());
             }
