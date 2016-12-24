@@ -36,14 +36,14 @@ import org.jruby.truffle.core.string.KCode;
 
 import java.io.IOException;
 
-import static org.jruby.truffle.parser.lexer.LexingCommon.EOF;
-import static org.jruby.truffle.parser.lexer.LexingCommon.STR_FUNC_ESCAPE;
-import static org.jruby.truffle.parser.lexer.LexingCommon.STR_FUNC_EXPAND;
-import static org.jruby.truffle.parser.lexer.LexingCommon.STR_FUNC_QWORDS;
-import static org.jruby.truffle.parser.lexer.LexingCommon.STR_FUNC_REGEXP;
-import static org.jruby.truffle.parser.lexer.LexingCommon.STR_FUNC_SYMBOL;
-import static org.jruby.truffle.parser.lexer.LexingCommon.isHexChar;
-import static org.jruby.truffle.parser.lexer.LexingCommon.isOctChar;
+import static org.jruby.truffle.parser.lexer.RubyLexer.EOF;
+import static org.jruby.truffle.parser.lexer.RubyLexer.STR_FUNC_ESCAPE;
+import static org.jruby.truffle.parser.lexer.RubyLexer.STR_FUNC_EXPAND;
+import static org.jruby.truffle.parser.lexer.RubyLexer.STR_FUNC_QWORDS;
+import static org.jruby.truffle.parser.lexer.RubyLexer.STR_FUNC_REGEXP;
+import static org.jruby.truffle.parser.lexer.RubyLexer.STR_FUNC_SYMBOL;
+import static org.jruby.truffle.parser.lexer.RubyLexer.isHexChar;
+import static org.jruby.truffle.parser.lexer.RubyLexer.isOctChar;
 
 public class StringTerm extends StrTerm {
     // Expand variables, Indentation of final marker

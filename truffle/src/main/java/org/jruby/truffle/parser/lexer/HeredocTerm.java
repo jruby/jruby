@@ -33,9 +33,9 @@ import org.jcodings.Encoding;
 import org.jruby.truffle.core.string.ByteList;
 import org.jruby.truffle.parser.parser.Tokens;
 
-import static org.jruby.truffle.parser.lexer.LexingCommon.EOF;
-import static org.jruby.truffle.parser.lexer.LexingCommon.STR_FUNC_EXPAND;
-import static org.jruby.truffle.parser.lexer.LexingCommon.STR_FUNC_INDENT;
+import static org.jruby.truffle.parser.lexer.RubyLexer.EOF;
+import static org.jruby.truffle.parser.lexer.RubyLexer.STR_FUNC_EXPAND;
+import static org.jruby.truffle.parser.lexer.RubyLexer.STR_FUNC_INDENT;
 
 /**
  * A lexing unit for scanning a heredoc element.

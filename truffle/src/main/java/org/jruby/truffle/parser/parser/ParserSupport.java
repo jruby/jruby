@@ -137,9 +137,9 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.jruby.truffle.parser.lexer.LexingCommon.ASCII8BIT_ENCODING;
-import static org.jruby.truffle.parser.lexer.LexingCommon.USASCII_ENCODING;
-import static org.jruby.truffle.parser.lexer.LexingCommon.UTF8_ENCODING;
+import static org.jruby.truffle.parser.lexer.RubyLexer.ASCII8BIT_ENCODING;
+import static org.jruby.truffle.parser.lexer.RubyLexer.USASCII_ENCODING;
+import static org.jruby.truffle.parser.lexer.RubyLexer.UTF8_ENCODING;
 
 /** 
  *

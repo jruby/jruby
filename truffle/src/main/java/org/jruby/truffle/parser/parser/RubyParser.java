@@ -132,12 +132,12 @@ import org.jruby.truffle.parser.lexer.SyntaxException.PID;
 
 import java.io.IOException;
 
-import static org.jruby.truffle.parser.lexer.LexingCommon.EXPR_BEG;
-import static org.jruby.truffle.parser.lexer.LexingCommon.EXPR_END;
-import static org.jruby.truffle.parser.lexer.LexingCommon.EXPR_ENDARG;
-import static org.jruby.truffle.parser.lexer.LexingCommon.EXPR_ENDFN;
-import static org.jruby.truffle.parser.lexer.LexingCommon.EXPR_FNAME;
-import static org.jruby.truffle.parser.lexer.LexingCommon.EXPR_LABEL;
+import static org.jruby.truffle.parser.lexer.RubyLexer.EXPR_BEG;
+import static org.jruby.truffle.parser.lexer.RubyLexer.EXPR_END;
+import static org.jruby.truffle.parser.lexer.RubyLexer.EXPR_ENDARG;
+import static org.jruby.truffle.parser.lexer.RubyLexer.EXPR_ENDFN;
+import static org.jruby.truffle.parser.lexer.RubyLexer.EXPR_FNAME;
+import static org.jruby.truffle.parser.lexer.RubyLexer.EXPR_LABEL;
 
 @SuppressWarnings({"unchecked", "fallthrough"})
 public class RubyParser {
