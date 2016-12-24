@@ -41,8 +41,6 @@ import org.jcodings.Encoding;
 import org.jruby.truffle.core.string.ByteList;
 
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
 
 public class LexerSource {
 
@@ -53,8 +51,6 @@ public class LexerSource {
     private Encoding encoding;
 
     private int byteOffset;
-
-    private final List<ByteList> scriptLines = new ArrayList<>();
 
     public LexerSource(Source source, int lineStartOffset, Encoding encoding) {
         this.source = source;
@@ -69,7 +65,6 @@ public class LexerSource {
 
     public void setEncoding(Encoding encoding) {
         this.encoding = encoding;
-        scriptLines.forEach(b -> b.setEncoding(encoding));
     }
 
     public ByteList gets() {
@@ -83,12 +78,12 @@ public class LexerSource {
             lineEnd = sourceBytes.length;
         }
 
-        final ByteList line = new ByteList(sourceBytes, byteOffset, lineEnd - byteOffset, encoding, false);
-        scriptLines.add(line);
+        final int start = byteOffset;
+        final int length = lineEnd - byteOffset;
 
         byteOffset = lineEnd;
 
-        return line;
+        return new ByteList(sourceBytes, start, length, encoding, false);
     }
 
     public int nextNewLine() {
