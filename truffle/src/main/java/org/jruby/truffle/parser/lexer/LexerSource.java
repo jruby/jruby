@@ -44,26 +44,22 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- *  Lexer source for ripper when we have all bytes available to us.
- */
 public class LexerSource {
-    private final Source source;
 
-    // Offset specified where to add to actual offset
-    private int lineOffset;
+    private final Source source;
+    private final int lineStartOffset;
+
+    private final byte[] sourceBytes;
+    private Encoding encoding;
+
+    private int byteOffset;
 
     private final List<ByteList> scriptLines = new ArrayList<>();
 
-    private byte[] completeSource; // The entire source of the file
-    private Encoding encoding;
-
-    private int offset = 0; // Offset into source overall (mri: lex_gets_ptr)
-
-    public LexerSource(Source source, int line, Encoding encoding) {
+    public LexerSource(Source source, int lineStartOffset, Encoding encoding) {
         this.source = source;
-        this.lineOffset = line;
-        this.completeSource = source.getCode().getBytes(StandardCharsets.UTF_8);
+        this.lineStartOffset = lineStartOffset;
+        this.sourceBytes = source.getCode().getBytes(StandardCharsets.UTF_8);
         this.encoding = encoding;
     }
 
@@ -73,36 +69,40 @@ public class LexerSource {
 
     public void setEncoding(Encoding encoding) {
         this.encoding = encoding;
-        encodeExistingScriptLines(encoding);
+        scriptLines.forEach(b -> b.setEncoding(encoding));
     }
 
     public ByteList gets() {
-        int length = completeSource.length;
-        if (offset >= length) return null; // At end of source/eof
+        if (byteOffset >= sourceBytes.length) {
+            return null;
+        }
 
-        int end = indexOf('\n', offset) + 1;
-        if (end == 0) end = length;
+        int lineEnd = nextNewLine() + 1;
 
-        ByteList line = new ByteList(completeSource, offset, end - offset, encoding, false); // completeSource.makeShared(offset, end - offset);
-        line.setEncoding(encoding);
-        offset = end;
+        if (lineEnd == 0) {
+            lineEnd = sourceBytes.length;
+        }
 
-        if (scriptLines != null) scriptLines.add(line);
+        final ByteList line = new ByteList(sourceBytes, byteOffset, lineEnd - byteOffset, encoding, false);
+        scriptLines.add(line);
+
+        byteOffset = lineEnd;
 
         return line;
     }
 
-    public int indexOf(final int c, int pos) {
-        if (c > 255)
-            return -1;
-        final byte b = (byte)(c&0xFF);
-        final int size = completeSource.length;
-        final byte[] buf = completeSource;
-        pos += 0;
-        while (pos < size && buf[pos] != b) {
-            pos++;
+    public int nextNewLine() {
+        int n = byteOffset;
+
+        while (n < sourceBytes.length) {
+            if (sourceBytes[n] == '\n') {
+                return n;
+            }
+
+            n++;
         }
-        return pos < size ? pos - 0 : -1;
+
+        return -1;
     }
 
     public Source getSource() {
@@ -110,22 +110,11 @@ public class LexerSource {
     }
 
     public int getOffset() {
-        return offset;
+        return byteOffset;
     }
 
     public int getLineOffset() {
-        return lineOffset;
-    }
-
-    public void encodeExistingScriptLines(Encoding encoding) {
-        if (scriptLines == null) return;
-
-        int length = scriptLines.size();
-        for (int i = 0; i < length; i++) {
-            ByteList line = scriptLines.get(0);
-
-            line.setEncoding(encoding);
-        }
+        return lineStartOffset;
     }
 
 }
