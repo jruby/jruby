@@ -70,7 +70,6 @@ import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.methods.SharedMethodInfo;
 import org.jruby.truffle.language.methods.UnsupportedOperationBehavior;
 import org.jruby.truffle.parser.ast.RootParseNode;
-import org.jruby.truffle.parser.lexer.ByteListLexerSource;
 import org.jruby.truffle.parser.lexer.LexerSource;
 import org.jruby.truffle.parser.lexer.SyntaxException;
 import org.jruby.truffle.parser.parser.ParserConfiguration;
@@ -269,7 +268,7 @@ public class TranslatorDriver {
                            ParserConfiguration configuration) {
         List<ByteList> list = null;
         ByteList in = new ByteList(content, configuration.getDefaultEncoding());
-        LexerSource lexerSource = new ByteListLexerSource(file, configuration.getLineNumber(), in,  list);
+        LexerSource ByteListLexerSource = new LexerSource(file, configuration.getLineNumber(), in,  list);
         // We only need to pass in current scope if we are evaluating as a block (which
         // is only done for evals).  We need to pass this in so that we can appropriately scope
         // down to captured scopes when we are parsing.
@@ -277,7 +276,7 @@ public class TranslatorDriver {
             configuration.parseAsBlock(blockScope);
         }
 
-        RubyParser parser = new RubyParser(context, lexerSource, new RubyWarnings(configuration.getContext()));
+        RubyParser parser = new RubyParser(context, ByteListLexerSource, new RubyWarnings(configuration.getContext()));
         RubyParserResult result;
         try {
             result = parser.parse(configuration);

@@ -37,9 +37,9 @@ import org.jruby.truffle.core.string.ByteList;
 import java.util.List;
 
 /**
- * Simple source capable of providing the next line in Ruby source file being lex'd.
+ *  Lexer source for ripper when we have all bytes available to us.
  */
-public abstract class LexerSource {
+public class LexerSource {
     // The name of this source (e.g. a filename: foo.rb)
     private final String name; // mri: parser_ruby_sourcefile
 
@@ -48,16 +48,50 @@ public abstract class LexerSource {
 
     protected List<ByteList> scriptLines;
 
-    public LexerSource(String sourceName, int lineOffset, List<ByteList> scriptLines) {
-        this.name = sourceName;
-        this.lineOffset = lineOffset;
-        this.scriptLines = scriptLines;
-    }
+    private ByteList completeSource; // The entire source of the file
+    private int offset = 0; // Offset into source overall (mri: lex_gets_ptr)
 
     /**
-     * What file are we lexing?
-     * @return the files name
+     * Create our food-source for the lexer.
+     * 
+     * @param sourceName is the file we are reading
+     * @param line starting line number for source (used by eval)
+     * @param in the ByteList backing the source we want to lex
      */
+    public LexerSource(String sourceName, int line, ByteList in, List<ByteList> list) {
+        this.name = sourceName;
+        this.lineOffset = line;
+        this.scriptLines = list;
+        this.completeSource = in;
+    }
+
+    public Encoding getEncoding() {
+        return completeSource.getEncoding();
+    }
+
+    public void setEncoding(Encoding encoding) {
+        completeSource.setEncoding(encoding);
+        encodeExistingScriptLines(encoding);
+    }
+
+    public ByteList gets() {
+        int length = completeSource.length();
+        if (offset >= length) return null; // At end of source/eof
+
+        int end = completeSource.indexOf('\n', offset) + 1;
+        if (end == 0) end = length;
+
+        ByteList line = completeSource.makeShared(offset, end - offset);
+        offset = end;
+
+        if (scriptLines != null) scriptLines.add(line);
+
+        return line;
+    }
+
+    public int getOffset() {
+        return offset;
+    }
     public String getFilename() {
         return name;
     }
@@ -77,11 +111,4 @@ public abstract class LexerSource {
         }
     }
 
-    public abstract Encoding getEncoding();
-
-    public abstract void setEncoding(Encoding encoding);
-
-    public abstract ByteList gets();
-
-    public abstract int getOffset();
 }
