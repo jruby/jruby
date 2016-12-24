@@ -52,18 +52,11 @@ import java.util.Arrays;
  * will point to the previous scope of the enclosing module/class (cref).
  * 
  */
-public class StaticScope implements Serializable {
-    private static final long serialVersionUID = 3423852552352498148L;
+public class StaticScope {
 
     // Next immediate scope.  Variable and constant scoping rules make use of this variable
     // in different ways.
     final protected StaticScope enclosingScope;
-
-    // Live reference to module
-    private transient Object cref = null;
-
-    // Next CRef down the lexical structure
-    private StaticScope previousCRefScope = null;
 
     // Our name holder (offsets are assigned as variables are added)
     private String[] variableNames;
@@ -91,7 +84,7 @@ public class StaticScope implements Serializable {
     /**
      *
      */
-    protected StaticScope(Type type, StaticScope enclosingScope, String file) {
+    public StaticScope(Type type, StaticScope enclosingScope, String file) {
         this(type, enclosingScope, NO_NAMES);
 
         this.file = file;
@@ -214,45 +207,6 @@ public class StaticScope implements Serializable {
 
         variableNames = new String[names.length];
         System.arraycopy(names, 0, variableNames, 0, names.length);
-    }
-
-    /**
-     * Gets a constant back from lexical search from the cref in this scope.
-     * As it is for defined? we will not forced resolution of autoloads nor
-     * call const_defined
-     */
-    public Object getConstantDefined(String internedName) {
-        /*Object result = cref.fetchConstant(internedName);
-
-        if (result != null) return result;
-
-        return previousCRefScope == null ? null : previousCRefScope.getConstantDefinedNoObject(internedName);*/
-        throw new UnsupportedOperationException();
-    }
-
-    public Object getConstantDefinedNoObject(String internedName) {
-        if (previousCRefScope == null) return null;
-
-        return getConstantDefined(internedName);
-    }
-
-    public Object getConstant(String internedName) {
-        /*Object result = getConstantInner(internedName);
-
-        // If we could not find the constant from cref..then try getting from inheritence hierarchy
-        return result == null ? cref.getConstantNoConstMissing(internedName) : result;*/
-        throw new UnsupportedOperationException();
-    }
-
-    public Object getConstantInner(String internedName) {
-        /*Object result = cref.fetchConstant(internedName);
-
-        if (result != null) {
-            return result == RubyObject.UNDEF ? cref.resolveUndefConstant(internedName) : result;
-        }
-
-        return previousCRefScope == null ? null : previousCRefScope.getConstantInnerNoObject(internedName);*/
-        throw new UnsupportedOperationException();
     }
 
     /**
@@ -398,26 +352,6 @@ public class StaticScope implements Serializable {
 
     public StaticScope getLocalScope() {
         return (type != Type.BLOCK) ? this : enclosingScope.getLocalScope();
-    }
-
-    /**
-     * Update current scoping structure to populate with proper cref scoping values.  This should
-     * be called at any point when you reference a scope for the first time.  For the interpreter
-     * this is done in a small number of places (defnNode, defsNode, and getBlock).  The compiler
-     * does this in the same places.
-     *
-     * @return the current cref, though this is largely an implementation detail
-     */
-    public Object determineModule() {
-        if (cref == null) {
-            cref = getEnclosingScope().determineModule();
-
-            assert cref != null : "CRef is always created before determine happens";
-
-            previousCRefScope = getEnclosingScope().previousCRefScope;
-        }
-
-        return cref;
     }
 
     public boolean isBlockScope() {

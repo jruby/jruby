@@ -77,7 +77,6 @@ import org.jruby.truffle.parser.parser.RubyParser;
 import org.jruby.truffle.parser.parser.RubyParserResult;
 import org.jruby.truffle.parser.scope.DynamicScope;
 import org.jruby.truffle.parser.scope.StaticScope;
-import org.jruby.truffle.parser.scope.StaticScopeFactory;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -96,8 +95,7 @@ public class TranslatorDriver {
     }
 
     public RubyRootNode parse(RubyContext context, Source source, Encoding defaultEncoding, ParserContext parserContext, String[] argumentNames, FrameDescriptor frameDescriptor, MaterializedFrame parentFrame, boolean ownScopeForAssignments, Node currentNode) {
-        final StaticScopeFactory staticScopeFactory = new StaticScopeFactory();
-        final StaticScope staticScope = staticScopeFactory.newLocalScope(null);
+        final StaticScope staticScope = new StaticScope(StaticScope.Type.LOCAL, null);
 
         /*
          * Note that jruby-parser will be mistaken about how deep the existing variables are,

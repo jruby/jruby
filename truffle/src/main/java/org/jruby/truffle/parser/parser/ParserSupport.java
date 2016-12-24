@@ -196,11 +196,11 @@ public class ParserSupport {
     }
 
     public void pushBlockScope() {
-        currentScope = configuration.getStaticScopeFactory().newBlockScope(currentScope, lexer.getFile());
+        currentScope = new StaticScope(StaticScope.Type.BLOCK, currentScope, lexer.getFile());
     }
 
     public void pushLocalScope() {
-        currentScope = configuration.getStaticScopeFactory().newLocalScope(currentScope, lexer.getFile());
+        currentScope = new StaticScope(StaticScope.Type.LOCAL, currentScope, lexer.getFile());
         currentScope.setCommandArgumentStack(lexer.getCmdArgumentState().getStack());
         lexer.getCmdArgumentState().reset(0);
     }

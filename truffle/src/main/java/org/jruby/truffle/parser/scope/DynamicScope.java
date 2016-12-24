@@ -81,54 +81,12 @@ public class DynamicScope {
     }
 
     /**
-     * Returns the n-th parent scope of this scope.
-     * May return <code>null</code>.
-     * @param n - number of levels above to look.
-     * @return The n-th parent scope or <code>null</code>.
-     */
-    public DynamicScope getNthParentScope(int n) {
-        DynamicScope scope = this;
-        for (int i = 0; i < n; i++) {
-            if (scope == null) break;
-            scope = scope.getParentScope();
-        }
-        return scope;
-    }
-
-    public static DynamicScope newDynamicScope(StaticScope staticScope) {
-        return newDynamicScope(staticScope);
-    }
-
-    /**
-     * Find the scope to use for flip-flops. Flip-flops live either in the
-     * topmost "method scope" or in their nearest containing "eval scope".
-     *
-     * @return The scope to use for flip-flops
-     */
-    public DynamicScope getFlipScope() {
-        if (staticScope.getLocalScope() == staticScope) {
-            return this;
-        } else {
-            return parent.getFlipScope();
-        }
-    }
-
-    /**
      * Get the static scope associated with this ManyVarsDynamicScope.
      *
      * @return static complement to this scope
      */
     public final StaticScope getStaticScope() {
         return staticScope;
-    }
-
-    /**
-     * Get all variable names captured (visible) by this scope (sans $~ and $_).
-     *
-     * @return a list of variable names
-     */
-    public final String[] getAllNamesInScope() {
-        return staticScope.getAllNamesInScope();
     }
 
     /**
@@ -140,24 +98,6 @@ public class DynamicScope {
      */
     public Object setValue(Object value, int offset, int depth) {
         return setValue(offset, value, depth);
-    }
-
-    /**
-     * Set value in current dynamic scope or one of its captured scopes.
-     *
-     * @param offset zero-indexed value that represents where variable lives
-     * @param value to set
-     * @param depth how many captured scopes down this variable should be set
-     */
-    public void setValueVoid(Object value, int offset, int depth) {
-        setValue(offset, value, depth);
-    }
-
-    /**
-     * Set value three in this scope.
-     */
-    public void setValueThreeDepthZeroVoid(Object value) {
-        setValueThreeDepthZero(value);
     }
 
     @Override
@@ -222,10 +162,6 @@ public class DynamicScope {
         }
     }
 
-    public DynamicScope cloneScope() {
-        return new DynamicScope(staticScope, parent);
-    }
-
     public Object[] getValues() {
         return variableValues;
     }
@@ -248,57 +184,6 @@ public class DynamicScope {
         // &foo are not getting set from somewhere...I want the following assert to be true though
         //assert variableValues[offset] != null : "Getting unassigned: " + staticScope.getVariables()[offset];
         return variableValues[offset];
-    }
-    
-    /**
-     * Variation of getValue that checks for nulls, returning and setting the given value (presumably nil)
-     */
-    public Object getValueOrNil(int offset, int depth, Object nil) {
-        if (depth > 0) {
-            return parent.getValueOrNil(offset, depth - 1, nil);
-        } else {
-            return getValueDepthZeroOrNil(offset, nil);
-        }
-    }
-
-    public Object getValueDepthZeroOrNil(int offset, Object nil) {
-        assertGetValueDepthZeroOrNil(offset);
-        // &foo are not getting set from somewhere...I want the following assert to be true though
-        //assert variableValues[offset] != null : "Getting unassigned: " + staticScope.getVariables()[offset];
-        Object value = variableValues[offset];
-        return value == null ? setValueDepthZero(nil, offset) : value;
-    }
-
-    public Object getValueZeroDepthZeroOrNil(Object nil) {
-        assertGetValueZeroDepthZeroOrNil();
-        // &foo are not getting set from somewhere...I want the following assert to be true though
-        //assert variableValues[offset] != null : "Getting unassigned: " + staticScope.getVariables()[offset];
-        Object value = variableValues[0];
-        return value == null ? setValueZeroDepthZero(nil) : value;
-    }
-
-    public Object getValueOneDepthZeroOrNil(Object nil) {
-        assertGetValueOneDepthZeroOrNil();
-        // &foo are not getting set from somewhere...I want the following assert to be true though
-        //assert variableValues[offset] != null : "Getting unassigned: " + staticScope.getVariables()[offset];
-        Object value = variableValues[1];
-        return value == null ? setValueOneDepthZero(nil) : value;
-    }
-
-    public Object getValueTwoDepthZeroOrNil(Object nil) {
-        assertGetValueTwoDepthZeroOrNil();
-        // &foo are not getting set from somewhere...I want the following assert to be true though
-        //assert variableValues[offset] != null : "Getting unassigned: " + staticScope.getVariables()[offset];
-        Object value = variableValues[2];
-        return value == null ? setValueTwoDepthZero(nil) : value;
-    }
-
-    public Object getValueThreeDepthZeroOrNil(Object nil) {
-        assertGetValueThreeDepthZeroOrNil();
-        // &foo are not getting set from somewhere...I want the following assert to be true though
-        //assert variableValues[offset] != null : "Getting unassigned: " + staticScope.getVariables()[offset];
-        Object value = variableValues[3];
-        return value == null ? setValueThreeDepthZero(nil) : value;
     }
 
     /**
@@ -324,30 +209,6 @@ public class DynamicScope {
         assertSetValueDepthZero(offset, value);
 
         return variableValues[offset] = value;
-    }
-
-    public Object setValueZeroDepthZero(Object value) {
-        assertSetValueZeroDepthZero(value);
-
-        return variableValues[0] = value;
-    }
-
-    public Object setValueOneDepthZero(Object value) {
-        assertSetValueOneDepthZero(value);
-
-        return variableValues[1] = value;
-    }
-
-    public Object setValueTwoDepthZero(Object value) {
-        assertSetValueTwoDepthZero(value);
-
-        return variableValues[2] = value;
-    }
-
-    public Object setValueThreeDepthZero(Object value) {
-        assertSetValueThreeDepthZero(value);
-
-        return variableValues[3] = value;
     }
 
     /**
@@ -387,31 +248,6 @@ public class DynamicScope {
         assert values != null && offset < values.length : "No variables or index to big for getValue off: " + offset + ", Dep: " + depth + ", O: " + this;
     }
 
-    private void assertGetValueDepthZeroOrNil(int offset) {
-        Object[] values = variableValues;
-        assert values != null && offset < values.length : "No variables or index too big for getValue off: " + offset + ", Dep: " + 0 + ", O: " + this;
-    }
-
-    private void assertGetValueZeroDepthZeroOrNil() {
-        Object[] values = variableValues;
-        assert values != null && 0 < values.length : "No variables or index to big for getValue off: " + 0 + ", Dep: " + 0 + ", O: " + this;
-    }
-
-    private void assertGetValueOneDepthZeroOrNil() {
-        Object[] values = variableValues;
-        assert values != null && 1 < values.length : "No variables or index to big for getValue off: " + 1 + ", Dep: " + 0 + ", O: " + this;
-    }
-
-    private void assertGetValueTwoDepthZeroOrNil() {
-        Object[] values = variableValues;
-        assert values != null && 3 < values.length : "No variables or index to big for getValue off: " + 3 + ", Dep: " + 0 + ", O: " + this;
-    }
-
-    private void assertGetValueThreeDepthZeroOrNil() {
-        Object[] values = variableValues;
-        assert values != null && 2 < values.length : "No variables or index to big for getValue off: " + 2 + ", Dep: " + 0 + ", O: " + this;
-    }
-
     private void assertParent() {
         assert parent != null : "If depth > 0, then parent should not ever be null";
     }
@@ -424,19 +260,4 @@ public class DynamicScope {
         assert offset < variableValues.length : "Setting " + offset + " to " + value + ", O: " + this;
     }
 
-    private void assertSetValueZeroDepthZero(Object value) {
-        assert 0 < variableValues.length : "Setting " + 0 + " to " + value + ", O: " + this;
-    }
-
-    private void assertSetValueOneDepthZero(Object value) {
-        assert 1 < variableValues.length : "Setting " + 1 + " to " + value + ", O: " + this;
-    }
-
-    private void assertSetValueThreeDepthZero(Object value) {
-        assert 3 < variableValues.length : "Setting " + 3 + " to " + value + ", O: " + this;
-    }
-
-    private void assertSetValueTwoDepthZero(Object value) {
-        assert 2 < variableValues.length : "Setting " + 2 + " to " + value + ", O: " + this;
-    }
 }
