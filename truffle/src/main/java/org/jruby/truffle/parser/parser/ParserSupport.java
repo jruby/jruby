@@ -40,7 +40,6 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.regexp.ClassicRegexp;
 import org.jruby.truffle.core.regexp.RegexpOptions;
 import org.jruby.truffle.core.rope.CodeRange;
-import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.ByteList;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.core.string.StringSupport;

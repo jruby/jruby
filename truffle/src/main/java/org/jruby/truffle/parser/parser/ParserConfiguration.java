@@ -34,7 +34,6 @@ import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.parser.scope.DynamicScope;
-import org.jruby.truffle.parser.scope.ManyVarsDynamicScope;
 import org.jruby.truffle.parser.scope.StaticScopeFactory;
 
 public class ParserConfiguration {
@@ -133,7 +132,7 @@ public class ParserConfiguration {
         // will always happen because of $~ and $_).
         // FIXME: Because we end up adjusting this after-the-fact, we can't use
         // any of the specific-size scopes.
-        return new ManyVarsDynamicScope(staticScopeFactory.newLocalScope(null, file), existingScope);
+        return new DynamicScope(staticScopeFactory.newLocalScope(null, file), existingScope);
     }
 
     public boolean isCoverageEnabled() {

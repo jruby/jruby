@@ -76,7 +76,6 @@ import org.jruby.truffle.parser.parser.ParserConfiguration;
 import org.jruby.truffle.parser.parser.RubyParser;
 import org.jruby.truffle.parser.parser.RubyParserResult;
 import org.jruby.truffle.parser.scope.DynamicScope;
-import org.jruby.truffle.parser.scope.ManyVarsDynamicScope;
 import org.jruby.truffle.parser.scope.StaticScope;
 import org.jruby.truffle.parser.scope.StaticScopeFactory;
 
@@ -142,7 +141,7 @@ public class TranslatorDriver {
             }
         }
 
-        final DynamicScope dynamicScope = new ManyVarsDynamicScope(staticScope);
+        final DynamicScope ManyVarsDynamicScope = new DynamicScope(staticScope);
 
         boolean isInlineSource = parserContext == ParserContext.SHELL;
         boolean isEvalParse = parserContext == ParserContext.EVAL || parserContext == ParserContext.INLINE || parserContext == ParserContext.MODULE;
@@ -156,7 +155,7 @@ public class TranslatorDriver {
 
         // Parse to the JRuby AST
 
-        RootParseNode node = parse(source.getName(), source.getCode().getBytes(StandardCharsets.UTF_8), dynamicScope, parserConfiguration);
+        RootParseNode node = parse(source.getName(), source.getCode().getBytes(StandardCharsets.UTF_8), ManyVarsDynamicScope, parserConfiguration);
 
         final SourceSection sourceSection = source.createSection(0, source.getCode().length());
         final TempSourceSection tempSourceSection = new TempSourceSection(sourceSection);
@@ -302,7 +301,7 @@ public class TranslatorDriver {
         // If variables were added then we may need to grow the dynamic scope to match the static
         // one.
         // FIXME: Make this so we only need to check this for blockScope != null.  We cannot
-        // currently since we create the DynamicScope for a LocalStaticScope before parse begins.
+        // currently since we create the ManyVarsDynamicScope for a LocalStaticScope before parse begins.
         // Refactoring should make this fixable.
         if (result.getScope() != null) {
             result.getScope().growIfNeeded();
