@@ -16,6 +16,11 @@
  * Copyright (C) 2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2005 Zach Dennis <zdennis@mktec.com>
+ * Copyright (C) 2007-2010 JRuby Community
+ * Copyright (C) 2007 Charles O Nutter <headius@headius.com>
+ * Copyright (C) 2007 Nick Sieger <nicksieger@gmail.com>
+ * Copyright (C) 2007 Ola Bini <ola@ologix.com>
+ * Copyright (C) 2007 William N Dortch <bill.dortch@gmail.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -50,37 +55,54 @@ public class LexerSource {
 
     private final List<ByteList> scriptLines = new ArrayList<>();
 
-    private ByteList completeSource; // The entire source of the file
+    private byte[] completeSource; // The entire source of the file
+    private Encoding encoding;
+
     private int offset = 0; // Offset into source overall (mri: lex_gets_ptr)
 
-    public LexerSource(Source source, int line, Encoding defaultEncoding) {
+    public LexerSource(Source source, int line, Encoding encoding) {
         this.source = source;
         this.lineOffset = line;
-        this.completeSource = new ByteList(source.getCode().getBytes(StandardCharsets.UTF_8), defaultEncoding);
+        this.completeSource = source.getCode().getBytes(StandardCharsets.UTF_8);
+        this.encoding = encoding;
     }
 
     public Encoding getEncoding() {
-        return completeSource.getEncoding();
+        return encoding;
     }
 
     public void setEncoding(Encoding encoding) {
-        completeSource.setEncoding(encoding);
+        this.encoding = encoding;
         encodeExistingScriptLines(encoding);
     }
 
     public ByteList gets() {
-        int length = completeSource.length();
+        int length = completeSource.length;
         if (offset >= length) return null; // At end of source/eof
 
-        int end = completeSource.indexOf('\n', offset) + 1;
+        int end = indexOf('\n', offset) + 1;
         if (end == 0) end = length;
 
-        ByteList line = completeSource.makeShared(offset, end - offset);
+        ByteList line = new ByteList(completeSource, offset, end - offset, encoding, false); // completeSource.makeShared(offset, end - offset);
+        line.setEncoding(encoding);
         offset = end;
 
         if (scriptLines != null) scriptLines.add(line);
 
         return line;
+    }
+
+    public int indexOf(final int c, int pos) {
+        if (c > 255)
+            return -1;
+        final byte b = (byte)(c&0xFF);
+        final int size = completeSource.length;
+        final byte[] buf = completeSource;
+        pos += 0;
+        while (pos < size && buf[pos] != b) {
+            pos++;
+        }
+        return pos < size ? pos - 0 : -1;
     }
 
     public Source getSource() {
