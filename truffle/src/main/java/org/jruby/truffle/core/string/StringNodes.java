@@ -3022,7 +3022,7 @@ public abstract class StringNodes {
 
         @Specialization
         public DynamicObject string_escape(DynamicObject string) {
-            final DynamicObject result = create7BitString(rbStrEscape(StringOperations.getByteListReadOnly(string)), USASCIIEncoding.INSTANCE);
+            final DynamicObject result = StringOperations.createString(getContext(), rbStrEscape(rope(string)));
 
             if (taintedProfile.profile(isTaintedNode.isTainted(string))) {
                 taintNode.executeTaint(result);
@@ -3033,12 +3033,11 @@ public abstract class StringNodes {
 
         // MRI: rb_str_escape
         @TruffleBoundary
-        private static ByteList rbStrEscape(ByteList str) {
+        private static Rope rbStrEscape(Rope str) {
             Encoding enc = str.getEncoding();
-            ByteList strBL = str;
-            byte[] pBytes = strBL.unsafeBytes();
-            int p = strBL.begin();
-            int pend = p + strBL.realSize();
+            byte[] pBytes = str.getBytes();
+            int p = 0;
+            int pend = str.byteLength();
             int prev = p;
             ByteList result = new ByteList();
             boolean unicode_p = enc.isUnicode();
@@ -3094,7 +3093,8 @@ public abstract class StringNodes {
             }
             if (p > prev) result.append(pBytes, prev, p - prev);
 
-            return result;
+            result.setEncoding(USASCIIEncoding.INSTANCE);
+            return StringOperations.ropeFromByteList(result, CodeRange.CR_7BIT);
         }
 
         private static int MBCLEN_CHARFOUND_LEN(int r) {
