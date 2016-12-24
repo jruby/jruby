@@ -12,31 +12,33 @@ package org.jruby.truffle.parser;
 import org.jcodings.Encoding;
 import org.jruby.truffle.core.string.ByteList;
 
-public class ParserByteList {
+import java.util.Arrays;
+
+public class ParserByteListBuilder {
 
     private byte[] bytes;
     private int start;
     private int length;
     private Encoding encoding;
 
-    public ParserByteList(ByteList byteList) {
+    public ParserByteListBuilder(ByteList byteList) {
         fromByteList(byteList);
     }
 
-    public ParserByteList(byte[] bytes, int start, int length, Encoding encoding, boolean copy) {
-        this(new ByteList(bytes, start, length, encoding, copy));
+    public ParserByteListBuilder(int capacity) {
+        this(new ByteList(capacity));
     }
 
-    public ParserByteList(byte[] bytes, int start, int length, Encoding encoding) {
-        this(new ByteList(bytes, start, length, encoding, false));
+    public ParserByteListBuilder() {
+        this(new ByteList());
     }
 
-    public ParserByteList(byte[] bytes) {
-        this(new ByteList(bytes));
+    public ParserByteListBuilder(ParserByteListBuilder other) {
+        this(other.toByteList());
     }
 
-    public static ParserByteList create(String string) {
-        return new ParserByteList(ByteList.create(string));
+    public static ParserByteListBuilder create(String string) {
+        return new ParserByteListBuilder(ByteList.create(string));
     }
 
     public int getStart() {
@@ -63,12 +65,28 @@ public class ParserByteList {
         this.encoding = encoding;
     }
 
-    public ParserByteList makeShared(int sharedStart, int sharedLength) {
-        return new ParserByteList(bytes, start + sharedStart, sharedLength, encoding);
+    public void append(int b) {
+        fromByteList(toByteList().append(b));
     }
 
-    public int caseInsensitiveCmp(ParserByteList other) {
-        return toByteList().caseInsensitiveCmp(other.toByteList());
+    public void append(byte[] bytes) {
+        fromByteList(toByteList().append(bytes));
+    }
+
+    public void append(ParserByteListBuilder other, int start, int length) {
+        fromByteList(toByteList().append(other.toByteList(), start, length));
+    }
+
+    public void append(ParserByteListBuilder other) {
+        fromByteList(toByteList().append(other.toByteList()));
+    }
+
+    public void ensure(int length) {
+        bytes = Arrays.copyOf(bytes, Math.max(bytes.length, length));
+    }
+
+    public byte[] getUnsafeBytes() {
+        return bytes;
     }
 
     public ByteList toByteList() {
@@ -82,7 +100,7 @@ public class ParserByteList {
         encoding = byteList.getEncoding();
     }
 
-    public boolean equal(ParserByteList other) {
+    public boolean equal(ParserByteListBuilder other) {
         return toByteList().equals(other.toByteList());
     }
 
@@ -94,8 +112,7 @@ public class ParserByteList {
         return toByteList().toString();
     }
 
-    public ParserByteListBuilder toBuilder() {
-        return new ParserByteListBuilder(toByteList());
+    public ParserByteList toParserByteList() {
+        return new ParserByteList(toByteList());
     }
-
 }

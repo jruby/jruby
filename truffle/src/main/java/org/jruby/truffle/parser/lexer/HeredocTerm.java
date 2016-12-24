@@ -31,6 +31,7 @@ package org.jruby.truffle.parser.lexer;
 
 import org.jcodings.Encoding;
 import org.jruby.truffle.parser.ParserByteList;
+import org.jruby.truffle.parser.ParserByteListBuilder;
 import org.jruby.truffle.parser.parser.Tokens;
 
 import static org.jruby.truffle.parser.lexer.RubyLexer.EOF;
@@ -92,13 +93,13 @@ public class HeredocTerm extends StrTerm {
 
     @Override
     public int parseString(RubyLexer lexer) throws java.io.IOException {
-        ParserByteList str = null;
+        ParserByteListBuilder str = null;
         ParserByteList eos = nd_lit;
         int len = nd_lit.getLength() - 1;
         boolean indent = (flags & STR_FUNC_INDENT) != 0;
         int c = lexer.nextc();
 
-        if (c == EOF) return error(lexer, len, str, eos);
+        if (c == EOF) return error(lexer, len, str.toParserByteList(), eos);
 
         // Found end marker for this heredoc
         if (lexer.was_bol() && lexer.whole_match_p(nd_lit, indent)) {
@@ -132,23 +133,23 @@ public class HeredocTerm extends StrTerm {
                 }
 
                 if (str != null) {
-                    str.append(lbuf.makeShared(p, pend - p));
+                    str.append(lbuf.makeShared(p, pend - p).toBuilder());
                 } else {
-                    str = new ParserByteList(lbuf.makeShared(p, pend - p));
+                    str = new ParserByteListBuilder(lbuf.makeShared(p, pend - p).toBuilder());
                 }
 
                 if (pend < lexer.lex_pend) str.append('\n');
                 lexer.lex_goto_eol();
 
                 if (lexer.getHeredocIndent() > 0) {
-                    lexer.setValue(lexer.createStr(str, 0));
+                    lexer.setValue(lexer.createStr(str.toByteList(), 0));
                     return Tokens.tSTRING_CONTENT;
                 }
                 // MRI null checks str in this case but it is unconditionally non-null?
                 if (lexer.nextc() == -1) return error(lexer, len, null, eos);
             } while (!lexer.whole_match_p(eos, indent));
         } else {
-            ParserByteList tok = new ParserByteList();
+            ParserByteListBuilder tok = new ParserByteListBuilder();
             tok.setEncoding(lexer.getEncoding());
             if (c == '#') {
                 switch (c = lexer.nextc()) {
@@ -171,29 +172,29 @@ public class HeredocTerm extends StrTerm {
                 enc[0] = lexer.getEncoding();
 
                 if ((c = new StringTerm(flags, '\0', '\n').parseStringIntoBuffer(lexer, tok, enc)) == EOF) {
-                    if (lexer.eofp) return error(lexer, len, str, eos);
+                    if (lexer.eofp) return error(lexer, len, str.toParserByteList(), eos);
                     return restore(lexer);
                 }
                 if (c != '\n') {
-                    lexer.setValue(lexer.createStr(tok, 0));
+                    lexer.setValue(lexer.createStr(tok.toByteList(), 0));
                     return Tokens.tSTRING_CONTENT;
                 }
                 tok.append(lexer.nextc());
 
                 if (lexer.getHeredocIndent() > 0) {
                     lexer.lex_goto_eol();
-                    lexer.setValue(lexer.createStr(tok, 0));
+                    lexer.setValue(lexer.createStr(tok.toByteList(), 0));
                     return Tokens.tSTRING_CONTENT;
                 }
 
-                if ((c = lexer.nextc()) == EOF) return error(lexer, len, str, eos);
+                if ((c = lexer.nextc()) == EOF) return error(lexer, len, str.toParserByteList(), eos);
             } while (!lexer.whole_match_p(eos, indent));
             str = tok;
         }
 
         lexer.heredoc_restore(this);
         lexer.setStrTerm(new StringTerm(-1, '\0', '\0'));
-        lexer.setValue(lexer.createStr(str, 0));
+        lexer.setValue(lexer.createStr(str.toByteList(), 0));
         return Tokens.tSTRING_CONTENT;
     }
 }
