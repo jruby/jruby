@@ -314,12 +314,13 @@ public class ByteList implements CharSequence {
      *
      * @param moreBytes to be added.
      */
-    public void append(byte[] moreBytes) {
+    public ByteList append(byte[] moreBytes) {
         assert moreBytes != null : "moreBytes is null";
 
         grow(moreBytes.length);
         System.arraycopy(moreBytes, 0, bytes, begin + realSize, moreBytes.length);
         realSize += moreBytes.length;
+        return this;
     }
 
     /**
@@ -327,8 +328,8 @@ public class ByteList implements CharSequence {
      *
      * @param moreBytes to be added.
      */
-    public void append(ByteList moreBytes) {
-        append(moreBytes.bytes, moreBytes.begin, moreBytes.realSize);
+    public ByteList append(ByteList moreBytes) {
+        return append(moreBytes.bytes, moreBytes.begin, moreBytes.realSize);
     }
 
     /**
@@ -339,8 +340,8 @@ public class ByteList implements CharSequence {
      * @param index new index past current begin value
      * @param len is the number of bytes to append from source ByteList
      */
-    public void append(ByteList moreBytes, int index, int len) {
-        append(moreBytes.bytes, moreBytes.begin + index, len);
+    public ByteList append(ByteList moreBytes, int index, int len) {
+        return append(moreBytes.bytes, moreBytes.begin + index, len);
     }
 
     /**
@@ -351,7 +352,7 @@ public class ByteList implements CharSequence {
      * @param start is the new begin value
      * @param len is the number of bytes to append from source byte array
      */
-    public void append(byte[] moreBytes, int start, int len) {
+    public ByteList append(byte[] moreBytes, int start, int len) {
         assert moreBytes != null : "moreBytes is null";
         // FIXME: Problems on CI box tripping on this.  Re-enable later during 1.6 development.
         //assert start >= 0 && (start == 0 || start < moreBytes.length) : "Invalid start";
@@ -360,6 +361,8 @@ public class ByteList implements CharSequence {
         grow(len);
         System.arraycopy(moreBytes, start, bytes, begin + realSize, len);
         realSize += len;
+
+        return this;
     }
 
     /**
