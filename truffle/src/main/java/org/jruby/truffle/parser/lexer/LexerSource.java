@@ -31,6 +31,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.lexer;
 
+import com.oracle.truffle.api.source.Source;
 import org.jcodings.Encoding;
 import org.jruby.truffle.core.string.ByteList;
 
@@ -40,8 +41,7 @@ import java.util.List;
  *  Lexer source for ripper when we have all bytes available to us.
  */
 public class LexerSource {
-    // The name of this source (e.g. a filename: foo.rb)
-    private final String name; // mri: parser_ruby_sourcefile
+    private final Source source;
 
     // Offset specified where to add to actual offset
     private int lineOffset;
@@ -51,15 +51,8 @@ public class LexerSource {
     private ByteList completeSource; // The entire source of the file
     private int offset = 0; // Offset into source overall (mri: lex_gets_ptr)
 
-    /**
-     * Create our food-source for the lexer.
-     * 
-     * @param sourceName is the file we are reading
-     * @param line starting line number for source (used by eval)
-     * @param in the ByteList backing the source we want to lex
-     */
-    public LexerSource(String sourceName, int line, ByteList in, List<ByteList> list) {
-        this.name = sourceName;
+    public LexerSource(Source source, int line, ByteList in, List<ByteList> list) {
+        this.source = source;
         this.lineOffset = line;
         this.scriptLines = list;
         this.completeSource = in;
@@ -89,11 +82,12 @@ public class LexerSource {
         return line;
     }
 
+    public Source getSource() {
+        return source;
+    }
+
     public int getOffset() {
         return offset;
-    }
-    public String getFilename() {
-        return name;
     }
 
     public int getLineOffset() {

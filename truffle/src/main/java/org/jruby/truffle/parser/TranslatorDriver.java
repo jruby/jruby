@@ -153,7 +153,7 @@ public class TranslatorDriver {
 
         // Parse to the JRuby AST
 
-        RootParseNode node = parse(source.getName(), source.getCode().getBytes(StandardCharsets.UTF_8), ManyVarsDynamicScope, parserConfiguration);
+        RootParseNode node = parse(source, source.getCode().getBytes(StandardCharsets.UTF_8), ManyVarsDynamicScope, parserConfiguration);
 
         final SourceSection sourceSection = source.createSection(0, source.getCode().length());
         final TempSourceSection tempSourceSection = new TempSourceSection(sourceSection);
@@ -261,11 +261,11 @@ public class TranslatorDriver {
         return new RubyRootNode(context, truffleNode.getRubySourceSection().toSourceSection(source), environment.getFrameDescriptor(), sharedMethodInfo, truffleNode, environment.needsDeclarationFrame());
     }
 
-    public RootParseNode parse(String file, byte[] content, DynamicScope blockScope,
+    public RootParseNode parse(Source source, byte[] content, DynamicScope blockScope,
                            ParserConfiguration configuration) {
         List<ByteList> list = null;
         ByteList in = new ByteList(content, configuration.getDefaultEncoding());
-        LexerSource ByteListLexerSource = new LexerSource(file, configuration.getLineNumber(), in,  list);
+        LexerSource ByteListLexerSource = new LexerSource(source, configuration.getLineNumber(), in,  list);
         // We only need to pass in current scope if we are evaluating as a block (which
         // is only done for evals).  We need to pass this in so that we can appropriately scope
         // down to captured scopes when we are parsing.

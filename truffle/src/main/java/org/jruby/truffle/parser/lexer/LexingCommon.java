@@ -189,7 +189,7 @@ public abstract class LexingCommon {
     }
 
     public String getFile() {
-        return src.getFilename();
+        return src.getSource().getName();
     }
 
     public int getHeredocIndent() {
