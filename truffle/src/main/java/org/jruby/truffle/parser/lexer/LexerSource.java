@@ -35,6 +35,8 @@ import com.oracle.truffle.api.source.Source;
 import org.jcodings.Encoding;
 import org.jruby.truffle.core.string.ByteList;
 
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -46,16 +48,15 @@ public class LexerSource {
     // Offset specified where to add to actual offset
     private int lineOffset;
 
-    protected List<ByteList> scriptLines;
+    private final List<ByteList> scriptLines = new ArrayList<>();
 
     private ByteList completeSource; // The entire source of the file
     private int offset = 0; // Offset into source overall (mri: lex_gets_ptr)
 
-    public LexerSource(Source source, int line, ByteList in, List<ByteList> list) {
+    public LexerSource(Source source, int line, Encoding defaultEncoding) {
         this.source = source;
         this.lineOffset = line;
-        this.scriptLines = list;
-        this.completeSource = in;
+        this.completeSource = new ByteList(source.getCode().getBytes(StandardCharsets.UTF_8), defaultEncoding);
     }
 
     public Encoding getEncoding() {

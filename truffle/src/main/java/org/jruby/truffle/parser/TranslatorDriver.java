@@ -49,7 +49,6 @@ import org.jcodings.Encoding;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.LoadRequiredLibrariesNode;
 import org.jruby.truffle.core.SetTopLevelBindingNode;
-import org.jruby.truffle.core.string.ByteList;
 import org.jruby.truffle.language.DataNode;
 import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.RubyNode;
@@ -79,7 +78,6 @@ import org.jruby.truffle.parser.scope.DynamicScope;
 import org.jruby.truffle.parser.scope.StaticScope;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -153,7 +151,7 @@ public class TranslatorDriver {
 
         // Parse to the JRuby AST
 
-        RootParseNode node = parse(source, source.getCode().getBytes(StandardCharsets.UTF_8), ManyVarsDynamicScope, parserConfiguration);
+        RootParseNode node = parse(source, ManyVarsDynamicScope, parserConfiguration);
 
         final SourceSection sourceSection = source.createSection(0, source.getCode().length());
         final TempSourceSection tempSourceSection = new TempSourceSection(sourceSection);
@@ -261,11 +259,9 @@ public class TranslatorDriver {
         return new RubyRootNode(context, truffleNode.getRubySourceSection().toSourceSection(source), environment.getFrameDescriptor(), sharedMethodInfo, truffleNode, environment.needsDeclarationFrame());
     }
 
-    public RootParseNode parse(Source source, byte[] content, DynamicScope blockScope,
+    public RootParseNode parse(Source source, DynamicScope blockScope,
                            ParserConfiguration configuration) {
-        List<ByteList> list = null;
-        ByteList in = new ByteList(content, configuration.getDefaultEncoding());
-        LexerSource ByteListLexerSource = new LexerSource(source, configuration.getLineNumber(), in,  list);
+        LexerSource ByteListLexerSource = new LexerSource(source, configuration.getLineNumber(), configuration.getDefaultEncoding());
         // We only need to pass in current scope if we are evaluating as a block (which
         // is only done for evals).  We need to pass this in so that we can appropriately scope
         // down to captured scopes when we are parsing.
