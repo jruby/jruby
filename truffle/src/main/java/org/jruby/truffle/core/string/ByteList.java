@@ -50,7 +50,6 @@ import java.util.concurrent.ConcurrentMap;
 public class ByteList implements CharSequence {
 
     public static final byte[] NULL_ARRAY = new byte[0];
-    public static final ByteList EMPTY_BYTELIST = new ByteList(0);
 
     private byte[] bytes;
     private int begin;
@@ -234,19 +233,6 @@ public class ByteList implements CharSequence {
      */
     public ByteList dup() {
         ByteList dup = dup(realSize);
-        return dup;
-    }
-
-    /**
-     * Create a new ByteList but do not array copy the byte backing store.
-     *
-     * @return a new ByteList with same backing store
-     */
-    public ByteList shallowDup() {
-        ByteList dup = new  ByteList(bytes, false);
-        dup.realSize = realSize;
-        dup.begin = begin;
-        dup.encoding = safeEncoding(encoding);
         return dup;
     }
 
@@ -772,14 +758,6 @@ public class ByteList implements CharSequence {
      */
     public byte[] getUnsafeBytes() {
         return bytes;
-    }
-
-    /**
-     * @param bytes the bytes to set
-     */
-    public void setUnsafeBytes(byte[] bytes) {
-        assert bytes != null;
-        this.bytes = bytes;
     }
 
     /**
