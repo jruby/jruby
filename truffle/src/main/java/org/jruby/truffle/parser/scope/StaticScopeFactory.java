@@ -36,24 +36,12 @@ public class StaticScopeFactory {
         return new StaticScope(StaticScope.Type.BLOCK, parent, file);
     }
 
-    public StaticScope newBlockScope(StaticScope parent, String[] names) {
-        return new StaticScope(StaticScope.Type.BLOCK, parent, names);
-    }
-
-    public StaticScope newEvalScope(StaticScope parent, String[] names) {
-        return new StaticScope(StaticScope.Type.EVAL, parent, names);
-    }
-
     public StaticScope newLocalScope(StaticScope parent, String file) {
         return new StaticScope(StaticScope.Type.LOCAL, parent, file);
     }
 
     public StaticScope newLocalScope(StaticScope parent) {
         return new StaticScope(StaticScope.Type.LOCAL, parent);
-    }
-
-    public StaticScope newLocalScope(StaticScope parent, String[] names) {
-        return new StaticScope(StaticScope.Type.LOCAL, parent, names);
     }
 
 }

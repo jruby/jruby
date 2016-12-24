@@ -46,20 +46,7 @@ public abstract class DynamicScope {
     }
 
     public static DynamicScope newDynamicScope(StaticScope staticScope, DynamicScope parent) {
-        switch (staticScope.getNumberOfVariables()) {
-        case 0:
-            return new NoVarsDynamicScope(staticScope, parent);
-        case 1:
-            return new OneVarDynamicScope(staticScope, parent);
-        case 2:
-            return new TwoVarDynamicScope(staticScope, parent);
-        case 3:
-            return new ThreeVarDynamicScope(staticScope, parent);
-        case 4:
-            return new FourVarDynamicScope(staticScope, parent);
-        default:
-            return new ManyVarsDynamicScope(staticScope, parent);
-        }
+        return new ManyVarsDynamicScope(staticScope, parent);
     }
 
     /**
