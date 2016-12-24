@@ -93,10 +93,6 @@ public abstract class StringOperations {
         return encodeRope(value, encoding, CodeRange.CR_UNKNOWN);
     }
 
-    public static ByteList getByteListReadOnly(DynamicObject object) {
-        return RopeOperations.getByteListReadOnly(rope(object));
-    }
-
     public static Rope ropeFromByteList(ByteList byteList) {
         return RopeOperations.create(byteList.bytes(), byteList.getEncoding(), CodeRange.CR_UNKNOWN);
     }
