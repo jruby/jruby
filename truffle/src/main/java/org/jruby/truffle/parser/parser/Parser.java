@@ -43,7 +43,6 @@ import org.jruby.truffle.parser.lexer.SyntaxException;
 import org.jruby.truffle.parser.scope.DynamicScope;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.List;
 
 /**
@@ -51,50 +50,35 @@ import java.util.List;
  */
 public class Parser {
     private final RubyContext context;
-    private volatile long totalTime;
-    private volatile int totalBytes;
 
     public Parser(RubyContext context) {
         this.context = context;
     }
 
-    public long getTotalTime() {
-        return totalTime;
-    }
-
-    public int getTotalBytes() {
-        return totalBytes;
-    }
-
     public ParseNode parse(String file, ByteList content, DynamicScope blockScope,
                            ParserConfiguration configuration) {
         configuration.setDefaultEncoding(content.getEncoding());
-        List<ByteList> list = getLines(configuration, file);
+        List<ByteList> list = null;
         LexerSource lexerSource = new ByteListLexerSource(file, configuration.getLineNumber(), content, list);
-        return parse(file, lexerSource, blockScope, configuration);
+        return parse(lexerSource, blockScope, configuration);
     }
 
     public ParseNode parse(String file, byte[] content, DynamicScope blockScope,
                            ParserConfiguration configuration) {
-        List<ByteList> list = getLines(configuration, file);
+        List<ByteList> list = null;
         ByteList in = new ByteList(content, configuration.getDefaultEncoding());
         LexerSource lexerSource = new ByteListLexerSource(file, configuration.getLineNumber(), in,  list);
-        return parse(file, lexerSource, blockScope, configuration);
+        return parse(lexerSource, blockScope, configuration);
     }
 
-    public ParseNode parse(String file, InputStream content, DynamicScope blockScope,
+    public ParseNode parse(String file, DynamicScope blockScope,
                            ParserConfiguration configuration) {
-        List<ByteList> list = getLines(configuration, file);
-            /*if (content instanceof FileInputStream) {
-                io = new RubyFile(context.getJRubyRuntime(), file, ((FileInputStream) content).getChannel());
-            } else {
-                io = RubyIO.newIO(context.getJRubyRuntime(), Channels.newChannel(content));
-            }*/
+        List<ByteList> list = null;
         LexerSource lexerSource = new GetsLexerSource(file, configuration.getLineNumber(), null, list, configuration.getDefaultEncoding());
-        return parse(file, lexerSource, blockScope, configuration);
+        return parse(lexerSource, blockScope, configuration);
     }
 
-    public ParseNode parse(String file, LexerSource lexerSource, DynamicScope blockScope,
+    public ParseNode parse(LexerSource lexerSource, DynamicScope blockScope,
                            ParserConfiguration configuration) {
         // We only need to pass in current scope if we are evaluating as a block (which
         // is only done for evals).  We need to pass this in so that we can appropriately scope
@@ -103,7 +87,6 @@ public class Parser {
             configuration.parseAsBlock(blockScope);
         }
 
-        long startTime = System.nanoTime();
         RubyParser parser = new RubyParser(context, lexerSource, new RubyWarnings(configuration.getContext()));
         RubyParserResult result;
         try {
@@ -137,15 +120,8 @@ public class Parser {
         }
 
         ParseNode ast = result.getAST();
-        
-        totalTime += System.nanoTime() - startTime;
-        totalBytes += lexerSource.getOffset();
 
         return ast;
-    }
-
-    private List<ByteList> getLines(ParserConfiguration configuration, String file) {
-        return null;
     }
 
 }
