@@ -59,12 +59,24 @@ public class LexerSource {
         this.encoding = encoding;
     }
 
+    public Source getSource() {
+        return source;
+    }
+
     public Encoding getEncoding() {
         return encoding;
     }
 
     public void setEncoding(Encoding encoding) {
         this.encoding = encoding;
+    }
+
+    public int getOffset() {
+        return byteOffset;
+    }
+
+    public int getLineStartOffset() {
+        return lineStartOffset;
     }
 
     public ByteList gets() {
@@ -86,7 +98,7 @@ public class LexerSource {
         return new ByteList(sourceBytes, start, length, encoding, false);
     }
 
-    public int nextNewLine() {
+    private int nextNewLine() {
         int n = byteOffset;
 
         while (n < sourceBytes.length) {
@@ -98,18 +110,6 @@ public class LexerSource {
         }
 
         return -1;
-    }
-
-    public Source getSource() {
-        return source;
-    }
-
-    public int getOffset() {
-        return byteOffset;
-    }
-
-    public int getLineOffset() {
-        return lineStartOffset;
     }
 
 }

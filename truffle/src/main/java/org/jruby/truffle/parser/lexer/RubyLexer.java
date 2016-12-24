@@ -253,7 +253,7 @@ public class RubyLexer {
         superReset();
         lex_strterm = null;
         // FIXME: ripper offsets correctly but we need to subtract one?
-        ruby_sourceline = src.getLineOffset() - 1;
+        ruby_sourceline = src.getLineStartOffset() - 1;
 
         parser_prepare();
     }
