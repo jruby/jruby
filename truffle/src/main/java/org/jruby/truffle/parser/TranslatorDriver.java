@@ -41,6 +41,7 @@ import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.methods.SharedMethodInfo;
 import org.jruby.truffle.language.methods.UnsupportedOperationBehavior;
 import org.jruby.truffle.parser.ast.RootParseNode;
+import org.jruby.truffle.parser.parser.Parser;
 import org.jruby.truffle.parser.parser.ParserConfiguration;
 import org.jruby.truffle.parser.scope.DynamicScope;
 import org.jruby.truffle.parser.scope.ManyVarsDynamicScope;
@@ -63,7 +64,7 @@ public class TranslatorDriver {
     public RubyRootNode parse(RubyContext context, Source source, Encoding defaultEncoding, ParserContext parserContext, String[] argumentNames, FrameDescriptor frameDescriptor, MaterializedFrame parentFrame, boolean ownScopeForAssignments, Node currentNode) {
         // Set up the JRuby parser
 
-        final org.jruby.truffle.parser.parser.Parser parser = new org.jruby.truffle.parser.parser.Parser(context);
+        final Parser parser = new Parser(context);
 
         final StaticScopeFactory staticScopeFactory = new StaticScopeFactory();
         final StaticScope staticScope = staticScopeFactory.newLocalScope(null);
