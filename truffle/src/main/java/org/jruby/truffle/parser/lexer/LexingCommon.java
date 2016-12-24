@@ -265,10 +265,6 @@ public abstract class LexingCommon {
         lex_p = lex_pend;
     }
 
-    public int lineno() {
-        return ruby_sourceline + src.getLineOffset();
-    }
-
     protected void magicCommentEncoding(ByteList encoding) {
         if (!comment_at_top()) return;
 
@@ -360,14 +356,6 @@ public abstract class LexingCommon {
 
         // we subtract one since we have read past first byte by time we are calling this.
         return current_enc.length(data, begin + lex_p - 1, begin + lex_pend);
-    }
-
-    public void printState() {
-        if (lex_state == 0) {
-            System.out.println("NULL");
-        } else {
-            System.out.println(lex_state);
-        }
     }
 
     public void pushback(int c) {
