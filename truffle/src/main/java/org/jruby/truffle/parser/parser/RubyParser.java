@@ -2565,7 +2565,7 @@ states[280] = new ParserState() {
 };
 states[281] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = Long.valueOf(lexer.getCmdArgumentState().getStack());
+                    yyVal = lexer.getCmdArgumentState().getStack();
                     lexer.getCmdArgumentState().begin();
     return yyVal;
   }
