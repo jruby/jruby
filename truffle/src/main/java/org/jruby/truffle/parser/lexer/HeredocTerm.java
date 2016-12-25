@@ -142,7 +142,7 @@ public class HeredocTerm extends StrTerm {
                 lexer.lex_goto_eol();
 
                 if (lexer.getHeredocIndent() > 0) {
-                    lexer.setValue(lexer.createStr(str.toByteList(), 0));
+                    lexer.setValue(lexer.createStr(str, 0));
                     return Tokens.tSTRING_CONTENT;
                 }
                 // MRI null checks str in this case but it is unconditionally non-null?
@@ -176,14 +176,14 @@ public class HeredocTerm extends StrTerm {
                     return restore(lexer);
                 }
                 if (c != '\n') {
-                    lexer.setValue(lexer.createStr(tok.toByteList(), 0));
+                    lexer.setValue(lexer.createStr(tok, 0));
                     return Tokens.tSTRING_CONTENT;
                 }
                 tok.append(lexer.nextc());
 
                 if (lexer.getHeredocIndent() > 0) {
                     lexer.lex_goto_eol();
-                    lexer.setValue(lexer.createStr(tok.toByteList(), 0));
+                    lexer.setValue(lexer.createStr(tok, 0));
                     return Tokens.tSTRING_CONTENT;
                 }
 
@@ -194,7 +194,7 @@ public class HeredocTerm extends StrTerm {
 
         lexer.heredoc_restore(this);
         lexer.setStrTerm(new StringTerm(-1, '\0', '\0'));
-        lexer.setValue(lexer.createStr(str.toByteList(), 0));
+        lexer.setValue(lexer.createStr(str, 0));
         return Tokens.tSTRING_CONTENT;
     }
 }

@@ -21,6 +21,13 @@ public class ParserByteListBuilder {
     private int length;
     private Encoding encoding;
 
+    public ParserByteListBuilder(byte[] bytes, Encoding encoding) {
+        this.bytes = bytes;
+        start = 0;
+        length = bytes.length;
+        this.encoding = encoding;
+    }
+
     public ParserByteListBuilder(ByteList byteList) {
         fromByteList(byteList);
     }
@@ -113,6 +120,6 @@ public class ParserByteListBuilder {
     }
 
     public ParserByteList toParserByteList() {
-        return new ParserByteList(toByteList());
+        return new ParserByteList(Arrays.copyOfRange(bytes, start, length), 0, length, encoding);
     }
 }

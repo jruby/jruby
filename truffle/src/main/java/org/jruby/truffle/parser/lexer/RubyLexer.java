@@ -483,8 +483,8 @@ public class RubyLexer {
         return considerComplex(Tokens.tINTEGER, suffix);
     }
 
-    public StrParseNode createStr(ByteList buffer, int flags) {
-        return createStr(new ParserByteList(buffer), flags);
+    public StrParseNode createStr(ParserByteListBuilder buffer, int flags) {
+        return createStr(buffer.toParserByteList(), flags);
     }
 
     // STR_NEW3/parser_str_new
@@ -2627,7 +2627,7 @@ public class RubyLexer {
     }
 
     public ParserByteList createTokenByteArrayView() {
-        return new ParserByteList(lexb.toBuilder().getUnsafeBytes(), lexb.getStart() + tokp, lex_p - tokp, getEncoding(), false);
+        return new ParserByteList(lexb.toBuilder().getUnsafeBytes(), lexb.getStart() + tokp, lex_p - tokp, getEncoding());
     }
 
     public String createTokenString(int start) {

@@ -2001,9 +2001,7 @@ qsym_list      : /* none */ {
                 }
 
 string_contents : /* none */ {
-                    ByteList aChar = ByteList.create("");
-                    aChar.setEncoding(lexer.getEncoding());
-                    $$ = lexer.createStr(aChar, 0);
+                    $$ = lexer.createStr(new ParserByteList(new byte[]{}, 0, 0, lexer.getEncoding()), 0);
                 }
                 | string_contents string_content {
                     $$ = support.literal_concat($1.getPosition(), $1, $<ParseNode>2);

@@ -44,6 +44,7 @@ import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.string.ByteList;
 import org.jruby.truffle.interop.ForeignCodeNode;
 import org.jruby.truffle.collections.Tuple;
+import org.jruby.truffle.parser.ParserByteList;
 import org.jruby.truffle.parser.RubyWarnings;
 import org.jruby.truffle.parser.TempSourceSection;
 import org.jruby.truffle.parser.ast.ArgsParseNode;
@@ -3777,9 +3778,7 @@ states[479] = new ParserState() {
 };
 states[480] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    ByteList aChar = ByteList.create("");
-                    aChar.setEncoding(lexer.getEncoding());
-                    yyVal = lexer.createStr(aChar, 0);
+                    yyVal = lexer.createStr(new ParserByteList(new byte[]{}, 0, 0, lexer.getEncoding()), 0);
     return yyVal;
   }
 };

@@ -86,7 +86,7 @@ public class StringTerm extends StrTerm {
 
             if ((flags & STR_FUNC_REGEXP) != 0) {
                 RegexpOptions options = parseRegexpFlags(lexer);
-                ParserByteList regexpBytelist = ParserByteList.create("");
+                ParserByteList regexpBytelist = new ParserByteList(new byte[]{});
 
                 lexer.setValue(new RegexpParseNode(lexer.getPosition(), regexpBytelist.toByteList(), options));
                 return Tokens.tREGEXP_END;
@@ -209,7 +209,7 @@ public class StringTerm extends StrTerm {
             lexer.compile_error("unterminated string meets end of file");
         }
 
-        lexer.setValue(lexer.createStr(buffer.toByteList(), flags));
+        lexer.setValue(lexer.createStr(buffer, flags));
         return Tokens.tSTRING_CONTENT;
     }
 
