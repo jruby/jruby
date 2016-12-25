@@ -23,6 +23,7 @@ import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.builtins.UnaryCoreMethodNode;
 import org.jruby.truffle.core.Hashing;
+import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.Visibility;
@@ -174,6 +175,26 @@ public abstract class UnboundMethodNodes {
                 DynamicObject file = createString(StringOperations.encodeRope(sourceSection.getSource().getName(), UTF8Encoding.INSTANCE));
                 Object[] objects = new Object[]{file, sourceSection.getStartLine()};
                 return createArray(objects, objects.length);
+            }
+        }
+
+    }
+
+    @CoreMethod(names = "super_method")
+    public abstract static class SuperMethodNode extends CoreMethodArrayArgumentsNode {
+
+        @Child MetaClassNode metaClassNode = MetaClassNode.create();
+
+        @Specialization
+        public DynamicObject superMethod(DynamicObject unboundMethod) {
+            InternalMethod internalMethod = Layouts.UNBOUND_METHOD.getMethod(unboundMethod);
+            DynamicObject origin = Layouts.UNBOUND_METHOD.getOrigin(unboundMethod);
+            InternalMethod superMethod = ModuleOperations.lookupSuperMethod(internalMethod, origin);
+            if (superMethod == null || superMethod.isUndefined()) {
+                return nil();
+            } else {
+                return Layouts.UNBOUND_METHOD.createUnboundMethod(coreLibrary().getUnboundMethodFactory(),
+                        superMethod.getDeclaringModule(), superMethod);
             }
         }
 

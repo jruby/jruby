@@ -29,6 +29,7 @@ import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.builtins.UnaryCoreMethodNode;
 import org.jruby.truffle.core.Hashing;
 import org.jruby.truffle.core.basicobject.BasicObjectNodes.ReferenceEqualNode;
+import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.core.proc.ProcOperations;
 import org.jruby.truffle.core.proc.ProcType;
 import org.jruby.truffle.core.string.StringOperations;
@@ -42,6 +43,7 @@ import org.jruby.truffle.language.methods.CallBoundMethodNodeGen;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.objects.LogicalClassNode;
 import org.jruby.truffle.language.objects.LogicalClassNodeGen;
+import org.jruby.truffle.language.objects.MetaClassNode;
 import org.jruby.truffle.parser.ArgumentDescriptor;
 
 @CoreClass("Method")
@@ -163,6 +165,26 @@ public abstract class MethodNodes {
                 DynamicObject file = createString(StringOperations.encodeRope(sourceSection.getSource().getName(), UTF8Encoding.INSTANCE));
                 Object[] objects = new Object[] { file, sourceSection.getStartLine() };
                 return createArray(objects, objects.length);
+            }
+        }
+
+    }
+
+    @CoreMethod(names = "super_method")
+    public abstract static class SuperMethodNode extends CoreMethodArrayArgumentsNode {
+
+        @Child MetaClassNode metaClassNode = MetaClassNode.create();
+
+        @Specialization
+        public DynamicObject superMethod(DynamicObject method) {
+            Object receiver = Layouts.METHOD.getReceiver(method);
+            InternalMethod internalMethod = Layouts.METHOD.getMethod(method);
+            DynamicObject selfMetaClass = metaClassNode.executeMetaClass(receiver);
+            InternalMethod superMethod = ModuleOperations.lookupSuperMethod(internalMethod, selfMetaClass);
+            if (superMethod == null || superMethod.isUndefined()) {
+                return nil();
+            } else {
+                return Layouts.METHOD.createMethod(coreLibrary().getMethodFactory(), receiver, superMethod);
             }
         }
 
