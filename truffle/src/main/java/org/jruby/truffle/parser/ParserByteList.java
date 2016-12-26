@@ -39,7 +39,7 @@ package org.jruby.truffle.parser;
 
 import org.jcodings.Encoding;
 import org.jcodings.ascii.AsciiTables;
-import org.jcodings.specific.USASCIIEncoding;
+import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.truffle.core.string.ByteList;
 
 import java.nio.charset.StandardCharsets;
@@ -53,7 +53,7 @@ public class ParserByteList {
     private final Encoding encoding;
 
     public ParserByteList(byte[] bytes) {
-        this(bytes, 0, bytes.length, USASCIIEncoding.INSTANCE);
+        this(bytes, 0, bytes.length, ASCIIEncoding.INSTANCE);
     }
 
     public ParserByteList(byte[] bytes, int start, int length, Encoding encoding) {
