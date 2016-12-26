@@ -11,7 +11,6 @@ package org.jruby.truffle.parser;
 
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
-import org.jruby.truffle.core.string.ByteList;
 
 import java.util.Arrays;
 
@@ -87,16 +86,8 @@ public class ParserByteListBuilder {
         return bytes;
     }
 
-    public String toString() {
-        return toByteList().toString();
-    }
-
     public ParserByteList toParserByteList() {
         return new ParserByteList(Arrays.copyOfRange(bytes, 0, length), 0, length, encoding);
-    }
-
-    private ByteList toByteList() {
-        return new ByteList(bytes, 0, length, encoding, true);
     }
 
 }
