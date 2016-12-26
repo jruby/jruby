@@ -143,4 +143,8 @@ public class ParserByteList {
         return new ParserByteListBuilder(Arrays.copyOfRange(bytes, start, length), encoding);
     }
 
+    protected byte[] getBytes() {
+        return bytes;
+    }
+
 }

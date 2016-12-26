@@ -3081,7 +3081,7 @@ public class RubyLexer {
     public void tokaddmbc(int codepoint, ParserByteListBuilder buffer) {
         Encoding encoding = buffer.getEncoding();
         int length = encoding.codeToMbcLength(codepoint);
-        buffer.ensure(buffer.getLength() + length);
+        buffer.grow(length);
         encoding.codeToMbc(codepoint, buffer.getUnsafeBytes(), buffer.getLength());
         buffer.setLength(buffer.getLength() + length);
     }

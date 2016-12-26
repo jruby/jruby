@@ -50,23 +50,37 @@ public class ParserByteListBuilder {
     }
 
     public void append(int b) {
-        fromByteList(toByteList().append(b));
+        append((byte) b);
+    }
+
+    public void append(byte b) {
+        grow(1);
+        bytes[length] = b;
+        length++;
     }
 
     public void append(byte[] bytes) {
-        fromByteList(toByteList().append(bytes));
-    }
-
-    public void append(ParserByteList other, int start, int length) {
-        fromByteList(toByteList().append(other.toByteList(), start, length));
+        append(bytes, 0, bytes.length);
     }
 
     public void append(ParserByteList other) {
-        fromByteList(toByteList().append(other.toByteList()));
+        append(other, 0, other.getLength());
     }
 
-    public void ensure(int length) {
-        bytes = Arrays.copyOf(bytes, Math.max(bytes.length, length));
+    public void append(ParserByteList other, int start, int length) {
+        append(other.getBytes(), other.getStart() + start, length);
+    }
+
+    public void append(byte[] appendBytes, int appendStart, int appendLength) {
+        grow(appendLength);
+        System.arraycopy(appendBytes, appendStart, bytes, length, appendLength);
+        length += appendLength;
+    }
+
+    public void grow(int extra) {
+        if (length + extra > bytes.length) {
+            bytes = Arrays.copyOf(bytes, (length + extra) * 2);
+        }
     }
 
     public byte[] getUnsafeBytes() {
@@ -83,12 +97,6 @@ public class ParserByteListBuilder {
 
     private ByteList toByteList() {
         return new ByteList(bytes, 0, length, encoding, true);
-    }
-
-    private void fromByteList(ByteList byteList) {
-        bytes = byteList.bytes();
-        length = byteList.length();
-        encoding = byteList.getEncoding();
     }
 
 }
