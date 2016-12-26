@@ -47,16 +47,14 @@ public class LexerSource {
     private final Source source;
     private final int lineStartOffset;
 
-    private final byte[] sourceBytes;
-    private Encoding encoding;
+    private ParserByteList sourceBytes;
 
     private int byteOffset;
 
     public LexerSource(Source source, int lineStartOffset, Encoding encoding) {
         this.source = source;
         this.lineStartOffset = lineStartOffset;
-        this.sourceBytes = source.getCode().getBytes(StandardCharsets.UTF_8);
-        this.encoding = encoding;
+        this.sourceBytes = new ParserByteList(source.getCode().getBytes(StandardCharsets.UTF_8), encoding);
     }
 
     public Source getSource() {
@@ -64,11 +62,11 @@ public class LexerSource {
     }
 
     public Encoding getEncoding() {
-        return encoding;
+        return sourceBytes.getEncoding();
     }
 
     public void setEncoding(Encoding encoding) {
-        this.encoding = encoding;
+        sourceBytes = sourceBytes.withEncoding(encoding);
     }
 
     public int getOffset() {
@@ -80,14 +78,14 @@ public class LexerSource {
     }
 
     public ParserByteList gets() {
-        if (byteOffset >= sourceBytes.length) {
+        if (byteOffset >= sourceBytes.getLength()) {
             return null;
         }
 
         int lineEnd = nextNewLine() + 1;
 
         if (lineEnd == 0) {
-            lineEnd = sourceBytes.length;
+            lineEnd = sourceBytes.getLength();
         }
 
         final int start = byteOffset;
@@ -95,14 +93,14 @@ public class LexerSource {
 
         byteOffset = lineEnd;
 
-        return new ParserByteList(sourceBytes, start, length, encoding);
+        return sourceBytes.makeShared(start, length);
     }
 
     private int nextNewLine() {
         int n = byteOffset;
 
-        while (n < sourceBytes.length) {
-            if (sourceBytes[n] == '\n') {
+        while (n < sourceBytes.getLength()) {
+            if (sourceBytes.charAt(n) == '\n') {
                 return n;
             }
 

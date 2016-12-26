@@ -52,7 +52,11 @@ public class ParserByteList {
     private final Encoding encoding;
 
     public ParserByteList(byte[] bytes) {
-        this(bytes, 0, bytes.length, ASCIIEncoding.INSTANCE);
+        this(bytes, ASCIIEncoding.INSTANCE);
+    }
+
+    public ParserByteList(byte[] bytes, Encoding encoding) {
+        this(bytes, 0, bytes.length, encoding);
     }
 
     public ParserByteList(byte[] bytes, int start, int length, Encoding encoding) {
