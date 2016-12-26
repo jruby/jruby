@@ -72,7 +72,7 @@ public class StringTerm extends StrTerm {
     }
 
     protected ParserByteListBuilder createByteList(RubyLexer lexer) {
-        ParserByteListBuilder bytelist = new ParserByteListBuilder(15);
+        ParserByteListBuilder bytelist = new ParserByteListBuilder();
         bytelist.setEncoding(lexer.getEncoding());
         return bytelist;
     }

@@ -1999,7 +1999,7 @@ public class RubyLexer {
         } else if (c == '\\') {
             if (peek('u')) {
                 nextc(); // Eat 'u'
-                ParserByteListBuilder oneCharBL = new ParserByteListBuilder(2);
+                ParserByteListBuilder oneCharBL = new ParserByteListBuilder();
                 oneCharBL.setEncoding(getEncoding());
 
                 c = readUTFEscape(oneCharBL, false, false);
@@ -2011,7 +2011,7 @@ public class RubyLexer {
                 }
 
                 setState(EXPR_END);
-                yaccValue = new StrParseNode(getPosition(), oneCharBL.toByteList());
+                yaccValue = new StrParseNode(getPosition(), oneCharBL.toParserByteList().toByteList());
 
                 return Tokens.tCHAR;
             } else {
@@ -2021,9 +2021,9 @@ public class RubyLexer {
             newtok(true);
         }
 
-        ParserByteListBuilder oneCharBL = new ParserByteListBuilder(1);
+        ParserByteListBuilder oneCharBL = new ParserByteListBuilder();
         oneCharBL.append(c);
-        yaccValue = new StrParseNode(getPosition(), oneCharBL.toByteList());
+        yaccValue = new StrParseNode(getPosition(), oneCharBL.toParserByteList().toByteList());
         setState(EXPR_END);
         return Tokens.tCHAR;
     }
@@ -2155,7 +2155,7 @@ public class RubyLexer {
         return Tokens.tTILDE;
     }
 
-    private ParserByteListBuilder numberBuffer = new ParserByteListBuilder(10); // ascii is good enough.
+    private ParserByteListBuilder numberBuffer = new ParserByteListBuilder(); // ascii is good enough.
     /**
      *  Parse a number from the input stream.
      *
@@ -3022,7 +3022,7 @@ public class RubyLexer {
     }
 
     public void tokCopy(int length, ParserByteListBuilder buffer) {
-        buffer.append(lexb.toBuilder(), lex_p - length, length);
+        buffer.append(lexb, lex_p - length, length);
     }
 
     public boolean tokadd_ident(int c) {

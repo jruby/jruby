@@ -133,9 +133,9 @@ public class HeredocTerm extends StrTerm {
                 }
 
                 if (str != null) {
-                    str.append(lbuf.makeShared(p, pend - p).toBuilder());
+                    str.append(lbuf.makeShared(p, pend - p));
                 } else {
-                    str = new ParserByteListBuilder(lbuf.makeShared(p, pend - p).toBuilder());
+                    str = lbuf.makeShared(p, pend - p).toBuilder();
                 }
 
                 if (pend < lexer.lex_pend) str.append('\n');

@@ -10,6 +10,7 @@
 package org.jruby.truffle.parser;
 
 import org.jcodings.Encoding;
+import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.truffle.core.string.ByteList;
 
 import java.util.Arrays;
@@ -20,30 +21,16 @@ public class ParserByteListBuilder {
     private int length;
     private Encoding encoding;
 
+    public ParserByteListBuilder() {
+        bytes = new byte[16];
+        length = 0;
+        encoding = ASCIIEncoding.INSTANCE;
+    }
+
     public ParserByteListBuilder(byte[] bytes, Encoding encoding) {
         this.bytes = bytes;
         length = bytes.length;
         this.encoding = encoding;
-    }
-
-    public ParserByteListBuilder(ByteList byteList) {
-        fromByteList(byteList);
-    }
-
-    public ParserByteListBuilder(int capacity) {
-        this(new ByteList(capacity));
-    }
-
-    public ParserByteListBuilder() {
-        this(new ByteList());
-    }
-
-    public ParserByteListBuilder(ParserByteListBuilder other) {
-        this(other.toByteList());
-    }
-
-    public static ParserByteListBuilder create(String string) {
-        return new ParserByteListBuilder(ByteList.create(string));
     }
 
     public int getLength() {
@@ -70,11 +57,11 @@ public class ParserByteListBuilder {
         fromByteList(toByteList().append(bytes));
     }
 
-    public void append(ParserByteListBuilder other, int start, int length) {
+    public void append(ParserByteList other, int start, int length) {
         fromByteList(toByteList().append(other.toByteList(), start, length));
     }
 
-    public void append(ParserByteListBuilder other) {
+    public void append(ParserByteList other) {
         fromByteList(toByteList().append(other.toByteList()));
     }
 
@@ -86,7 +73,15 @@ public class ParserByteListBuilder {
         return bytes;
     }
 
-    public ByteList toByteList() {
+    public String toString() {
+        return toByteList().toString();
+    }
+
+    public ParserByteList toParserByteList() {
+        return new ParserByteList(Arrays.copyOfRange(bytes, 0, length), 0, length, encoding);
+    }
+
+    private ByteList toByteList() {
         return new ByteList(bytes, 0, length, encoding, true);
     }
 
@@ -96,19 +91,4 @@ public class ParserByteListBuilder {
         encoding = byteList.getEncoding();
     }
 
-    public boolean equal(ParserByteListBuilder other) {
-        return toByteList().equals(other.toByteList());
-    }
-
-    public int charAt(int index) {
-        return toByteList().charAt(index);
-    }
-
-    public String toString() {
-        return toByteList().toString();
-    }
-
-    public ParserByteList toParserByteList() {
-        return new ParserByteList(Arrays.copyOfRange(bytes, 0, length), 0, length, encoding);
-    }
 }
