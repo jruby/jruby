@@ -2626,7 +2626,7 @@ public class RubyLexer {
     }
 
     public ParserByteList createTokenByteArrayView() {
-        return new ParserByteList(lexb.toBuilder().getUnsafeBytes(), lexb.getStart() + tokp, lex_p - tokp, getEncoding());
+        return lexb.makeShared(tokp, lex_p - tokp);
     }
 
     public String createTokenString(int start) {
