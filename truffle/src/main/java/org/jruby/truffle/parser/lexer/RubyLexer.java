@@ -499,6 +499,7 @@ public class RubyLexer {
             } else if (getEncoding() == USASCII_ENCODING &&
                     bufferEncoding != UTF8_ENCODING) {
                 codeRange = associateEncoding(buffer, ASCII8BIT_ENCODING, codeRange);
+                buffer = buffer.withEncoding(ASCII8BIT_ENCODING);
             }
         }
 
@@ -515,8 +516,6 @@ public class RubyLexer {
         if (newEncoding == bufferEncoding) return codeRange;
 
         // TODO: Special const error
-
-        buffer.setEncoding(newEncoding);
 
         if (codeRange != CodeRange.CR_7BIT || !newEncoding.isAsciiCompatible()) {
             return CodeRange.CR_UNKNOWN;
@@ -2935,7 +2934,7 @@ public class RubyLexer {
     public void setEncoding(Encoding encoding) {
         setCurrentEncoding(encoding);
         src.setEncoding(encoding);
-        lexb.setEncoding(encoding);
+        lexb = lexb.withEncoding(encoding);
     }
 
     protected void set_file_encoding(int str, int send) {

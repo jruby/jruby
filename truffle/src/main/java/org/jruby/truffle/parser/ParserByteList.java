@@ -50,7 +50,7 @@ public class ParserByteList {
     private final byte[] bytes;
     private final int start;
     private final int length;
-    private Encoding encoding;
+    private final Encoding encoding;
 
     public ParserByteList(byte[] bytes) {
         this(bytes, 0, bytes.length, USASCIIEncoding.INSTANCE);
@@ -76,8 +76,8 @@ public class ParserByteList {
         return encoding;
     }
 
-    public void setEncoding(Encoding encoding) {
-        this.encoding = encoding;
+    public ParserByteList withEncoding(Encoding encoding) {
+        return new ParserByteList(bytes, start, length, encoding);
     }
 
     public ParserByteList makeShared(int sharedStart, int sharedLength) {
