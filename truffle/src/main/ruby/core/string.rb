@@ -536,6 +536,10 @@ class String
 
     # TODO: replace this hack with transcoders
     if options.kind_of? Hash
+      case invalid = options[:invalid]
+        when :replace
+          self.scrub!
+      end
       case xml = options[:xml]
         when :text
           gsub!(/[&><]/, '&' => '&amp;', '>' => '&gt;', '<' => '&lt;')
@@ -1195,70 +1199,30 @@ class String
     result
   end
 
-  # Removes invalid byte sequences from a String, available since Ruby 2.1.
-  def scrub(replace = nil)
-    output = ''
-    input  = dup
-
-    # The default replacement character is the "Unicode replacement" character.
-    # (U+FFFD).
-    if !replace and !block_given?
-      replace = "\xEF\xBF\xBD".force_encoding("UTF-8")
-                    .encode(self.encoding, :undef => :replace, :replace => '?')
+  def scrub(replace=undefined, &block)
+    if undefined.equal?(replace)
+      replace = nil
     end
-
-    if replace
-      unless replace.is_a?(String)
-        raise(
-            TypeError,
-            "no implicit conversion of #{replace.class} into String"
-        )
-      end
-
-      unless replace.valid_encoding?
-        raise(
-            ArgumentError,
-            "replacement must be a valid byte sequence '#{replace.inspect}'"
-        )
-      end
-
-      replace = replace.force_encoding(Encoding::BINARY)
-    end
-
-    # MRI appears to just return a copy of self when the input encoding is
-    # BINARY/ASCII_8BIT.
-    if input.encoding == Encoding::BINARY
-      return input
-    end
-
-    converter = Encoding::Converter.new(input.encoding, Encoding::BINARY)
-
-    while input.length > 0
-      result = converter.primitive_convert(input, output, output.length)
-
-      if result == :finished
-        break
-      elsif result == :undefined_conversion
-        output << converter.primitive_errinfo[3]
-      else
-        # Blocks can return strings in any encoding so we'll make sure it's the
-        # same as our buffer for the mean time.
-        if block_given?
-          block_output = yield(converter.primitive_errinfo[3])
-
-          output << block_output.force_encoding(output.encoding)
-        else
-          output << replace
-        end
-      end
-    end
-
-    return output.force_encoding(encoding)
+    val = scrub_internal(replace, &block)
+    return val unless val.nil?
+    self.dup
   end
 
   def scrub!(replace = nil, &block)
     replace(scrub(replace, &block))
     return self
+  end
+
+  def str_compat_and_valid(str, enc)
+    res = StringValue(str)
+    if !res.valid_encoding?
+      raise ArgumentError, "replacement must be valid byte sequence"
+    else
+      if res.ascii_only? ? !enc.ascii_compatible? : enc != res.encoding
+        raise Encoding::CompatibilityError, "incompatible character encodings"
+      end
+    end
+    res
   end
 
   def []=(index, count_or_replacement, replacement=undefined)

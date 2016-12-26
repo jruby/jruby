@@ -23,7 +23,7 @@
  * Copyright (C) 2006 Ola Bini <ola@ologix.com>
  * Copyright (C) 2007 Nick Sieger <nicksieger@gmail.com>
  *
- * Some of the code in this class is transposed from org.jruby.util.ByteList,
+ * Some of the code in this class is transposed from org.jruby.util.ByteList and org.jruby.RubyString,
  * licensed under the same EPL1.0/GPL 2.0/LGPL 2.1 used throughout.
  *
  * Copyright (C) 2007-2010 JRuby Community
@@ -82,6 +82,10 @@ import org.jcodings.Encoding;
 import org.jcodings.exception.EncodingException;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
+import org.jcodings.specific.UTF16BEEncoding;
+import org.jcodings.specific.UTF16LEEncoding;
+import org.jcodings.specific.UTF32BEEncoding;
+import org.jcodings.specific.UTF32LEEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
@@ -148,9 +152,15 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import static org.jruby.truffle.core.rope.CodeRange.CR_7BIT;
+import static org.jruby.truffle.core.rope.CodeRange.CR_VALID;
 import static org.jruby.truffle.core.rope.RopeConstants.EMPTY_ASCII_8BIT_ROPE;
 import static org.jruby.truffle.core.string.StringOperations.encoding;
 import static org.jruby.truffle.core.string.StringOperations.rope;
+import static org.jruby.truffle.core.string.StringSupport.MBCLEN_CHARFOUND_LEN;
+import static org.jruby.truffle.core.string.StringSupport.MBCLEN_CHARFOUND_P;
+import static org.jruby.truffle.core.string.StringSupport.MBCLEN_INVALID_P;
+import static org.jruby.truffle.core.string.StringSupport.MBCLEN_NEEDMORE_P;
 
 @CoreClass("String")
 public abstract class StringNodes {
@@ -1353,6 +1363,311 @@ public abstract class StringNodes {
         private int prevCharHead(Encoding enc, byte[]bytes, int p, int s, int end) {
             return enc.prevCharHead(bytes, p, s, end);
         }
+    }
+
+    @CoreMethod(names = "scrub_internal", required = 1, needsBlock = true)
+    public abstract static class ScrubNode extends YieldingCoreMethodNode {
+
+        private static final byte[] SCRUB_REPL_UTF8 = new byte[]{(byte)0xEF, (byte)0xBF, (byte)0xBD};
+        private static final byte[] SCRUB_REPL_ASCII = new byte[]{(byte)'?'};
+        private static final byte[] SCRUB_REPL_UTF16BE = new byte[]{(byte)0xFF, (byte)0xFD};
+        private static final byte[] SCRUB_REPL_UTF16LE = new byte[]{(byte)0xFD, (byte)0xFF};
+        private static final byte[] SCRUB_REPL_UTF32BE = new byte[]{(byte)0x00, (byte)0x00, (byte)0xFF, (byte)0xFD};
+        private static final byte[] SCRUB_REPL_UTF32LE = new byte[]{(byte)0xFD, (byte)0xFF, (byte)0x00, (byte)0x00};
+
+
+        @Child private IsTaintedNode isTaintedNode = IsTaintedNode.create();
+        @Child private TaintNode taintNode = TaintNode.create();
+        @Child private CallDispatchHeadNode strCompatAndValidNode = DispatchHeadNodeFactory.createMethodCall();
+        @Child private RopeNodes.MakeConcatNode makeConcatNode = RopeNodesFactory.MakeConcatNodeGen.create(null, null, null);
+
+        @Specialization
+        public DynamicObject scrubNoBlock(VirtualFrame frame, DynamicObject string, Object repl, NotProvided block,
+                                          @Cached("createBinaryProfile()") ConditionProfile validRangeProfile,
+                                          @Cached("createBinaryProfile()") ConditionProfile asciiCompatibleProfile) {
+            return scrubDefault(frame, string, repl, nil(), validRangeProfile, asciiCompatibleProfile);
+        }
+
+        @Specialization
+        public DynamicObject scrubDefault(VirtualFrame frame, DynamicObject string, Object repl, DynamicObject block,
+                                          @Cached("createBinaryProfile()") ConditionProfile validRangeProfile,
+                                          @Cached("createBinaryProfile()") ConditionProfile asciiCompatibleProfile) {
+            final DynamicObject rubyEncoding = getContext().getEncodingManager().getRubyEncoding(StringOperations.encoding(string));
+            final Rope rope = rope(string);
+            final ByteList value = RopeOperations.getByteListReadOnly(rope);
+
+            CodeRange cr = rope.getCodeRange();
+            Encoding enc;
+            Encoding encidx;
+            Rope buf = null;
+            byte[] repBytes;
+            int rep;
+            int replen;
+            boolean tainted = false;
+
+            if (validRangeProfile.profile(cr == CR_7BIT || cr == CR_VALID)) {
+                return nil();
+            }
+
+            enc = rope.getEncoding();
+            if (repl != nil()) {
+                repl = strCompatAndValidNode.call(frame, string, "str_compat_and_valid", repl, rubyEncoding);
+                tainted |= isTaintedNode.executeIsTainted(repl);
+            }
+
+            if (enc.isDummy()) {
+                return nil();
+            }
+            encidx = enc;
+
+            if (asciiCompatibleProfile.profile(enc.isAsciiCompatible())) {
+                byte[] pBytes = value.unsafeBytes();
+                int p = value.begin();
+                int e = p + value.getRealSize();
+                int p1 = p;
+                boolean rep7bit_p;
+                if (block != nil()) {
+                    repBytes = null;
+                    rep = 0;
+                    replen = 0;
+                    rep7bit_p = false;
+                }
+                else if (repl != nil()) {
+                    final Rope replRope = rope((DynamicObject) repl);
+                    final ByteList replValue = RopeOperations.getByteListReadOnly(replRope);
+                    repBytes = replValue.unsafeBytes();
+                    rep = replValue.begin();
+                    replen = replValue.getRealSize();
+                    rep7bit_p = (replRope.getCodeRange() == CodeRange.CR_7BIT);
+                }
+                else if (encidx == UTF8Encoding.INSTANCE) {
+                    repBytes = SCRUB_REPL_UTF8;
+                    rep = 0;
+                    replen = repBytes.length;
+                    rep7bit_p = false;
+                }
+                else {
+                    repBytes = SCRUB_REPL_ASCII;
+                    rep = 0;
+                    replen = repBytes.length;
+                    rep7bit_p = false;
+                }
+                cr = CR_7BIT;
+
+                p = StringSupport.searchNonAscii(pBytes, p, e);
+                if (p == -1) {
+                    p = e;
+                }
+                while (p < e) {
+                    int ret = enc.length(pBytes, p, e);
+                    if (MBCLEN_NEEDMORE_P(ret)) {
+                        break;
+                    }
+                    else if (MBCLEN_CHARFOUND_P(ret)) {
+                        cr = CR_VALID;
+                        p += MBCLEN_CHARFOUND_LEN(ret);
+                    }
+                    else if (MBCLEN_INVALID_P(ret)) {
+                    /*
+                     * p1~p: valid ascii/multibyte chars
+                     * p ~e: invalid bytes + unknown bytes
+                     */
+                        int clen = enc.maxLength();
+                        if (buf == null) {
+                            buf = RopeConstants.EMPTY_ASCII_8BIT_ROPE;
+                        }
+                        if (p > p1) {
+                            buf = makeConcatNode.executeMake(buf, RopeOperations.create(ArrayUtils.extractRange(pBytes, p1, p), ASCIIEncoding.INSTANCE, CodeRange.CR_VALID), enc);
+                        }
+
+                        if (e - p < clen){
+                            clen = e - p;
+                        }
+                        if (clen <= 2) {
+                            clen = 1;
+                        }
+                        else {
+                            int q = p;
+                            clen--;
+                            for (; clen > 1; clen--) {
+                                ret = enc.length(pBytes, q, q + clen);
+                                if (MBCLEN_NEEDMORE_P(ret)) break;
+                                if (MBCLEN_INVALID_P(ret)) continue;
+                            }
+                        }
+                        if (repBytes != null) {
+                            buf = makeConcatNode.executeMake(buf, RopeOperations.create(ArrayUtils.extractRange(repBytes, rep, rep + replen), ASCIIEncoding.INSTANCE, CodeRange.CR_VALID), enc);
+                            if (!rep7bit_p) {
+                                cr = CR_VALID;
+                            }
+                        }
+                        else {
+                            repl = yield(frame, (DynamicObject)block, createString(ArrayUtils.extractRange(pBytes, p, p + clen), enc));
+                            repl = strCompatAndValidNode.call(frame, string, "str_compat_and_valid", repl, rubyEncoding);
+                            tainted |= isTaintedNode.executeIsTainted(repl);
+                            buf = makeConcatNode.executeMake(buf, rope((DynamicObject)repl), enc);
+                            if (StringGuards.isValidCodeRange((DynamicObject) repl)) {
+                                cr = CR_VALID;
+                            }
+                        }
+                        p += clen;
+                        p1 = p;
+                        p = StringSupport.searchNonAscii(pBytes, p, e);
+                        if (p == -1) {
+                            p = e;
+                            break;
+                        }
+                    }
+                }
+                if (buf == null) {
+                    if (p == e) {
+//                        setCodeRange(cr);
+                        return nil();
+                    }
+                    buf = RopeConstants.EMPTY_ASCII_8BIT_ROPE;
+                }
+                if (p1 < p) {
+                    buf = makeConcatNode.executeMake(buf, RopeOperations.create(ArrayUtils.extractRange(pBytes, p1, p), ASCIIEncoding.INSTANCE, CodeRange.CR_VALID), enc);
+                }
+                if (p < e) {
+                    if (repBytes != null) {
+                        buf = makeConcatNode.executeMake(buf, RopeOperations.create(ArrayUtils.extractRange(repBytes, rep, rep + replen), ASCIIEncoding.INSTANCE, CodeRange.CR_VALID), enc);
+                        if (!rep7bit_p) {
+                            cr = CR_VALID;
+                        }
+                    }
+                    else {
+                        repl = yield(frame, (DynamicObject)block, createString(ArrayUtils.extractRange(pBytes, p, e), enc));
+                        repl = strCompatAndValidNode.call(frame, string, "str_compat_and_valid", repl, rubyEncoding);
+                        tainted |= isTaintedNode.executeIsTainted(repl);
+                        buf = makeConcatNode.executeMake(buf, rope((DynamicObject)repl), enc);
+                        if (rope((DynamicObject) repl).getCodeRange() == CR_VALID) {
+                            cr = CR_VALID;
+                        }
+                    }
+                }
+            }
+            else {
+	        /* ASCII incompatible */
+                byte[] pBytes = value.unsafeBytes();
+                int p = value.begin();
+                int e = p + value.getRealSize();
+                int p1 = p;
+                int mbminlen = enc.minLength();
+                if (repl != nil()) {
+                    final Rope replRope = rope((DynamicObject) repl);
+                    final ByteList replValue = RopeOperations.getByteListReadOnly(replRope);
+                    repBytes = replValue.unsafeBytes();
+                    rep = replValue.begin();
+                    replen = replValue.getRealSize();
+                }
+                else if (encidx == UTF16BEEncoding.INSTANCE) {
+                    repBytes = SCRUB_REPL_UTF16BE;
+                    rep = 0;
+                    replen = repBytes.length;
+                }
+                else if (encidx == UTF16LEEncoding.INSTANCE) {
+                    repBytes = SCRUB_REPL_UTF16LE;
+                    rep = 0;
+                    replen = repBytes.length;
+                }
+                else if (encidx == UTF32BEEncoding.INSTANCE) {
+                    repBytes = SCRUB_REPL_UTF32BE;
+                    rep = 0;
+                    replen = repBytes.length;
+                }
+                else if (encidx == UTF32LEEncoding.INSTANCE) {
+                    repBytes = SCRUB_REPL_UTF32LE;
+                    rep = 0;
+                    replen = repBytes.length;
+                }
+                else {
+                    repBytes = SCRUB_REPL_ASCII;
+                    rep = 0;
+                    replen = repBytes.length;
+                }
+
+                while (p < e) {
+                    int ret = StringSupport.preciseLength(enc, pBytes, p, e);
+                    if (MBCLEN_NEEDMORE_P(ret)) {
+                        break;
+                    }
+                    else if (MBCLEN_CHARFOUND_P(ret)) {
+                        p += MBCLEN_CHARFOUND_LEN(ret);
+                    }
+                    else if (MBCLEN_INVALID_P(ret)) {
+                        int q = p;
+                        int clen = enc.maxLength();
+                        if (buf == null) {
+                            buf = RopeConstants.EMPTY_ASCII_8BIT_ROPE;
+                        };
+
+                        if (p > p1) {
+                            buf = makeConcatNode.executeMake(buf, RopeOperations.create(ArrayUtils.extractRange(pBytes, p1, p), ASCIIEncoding.INSTANCE, CodeRange.CR_VALID), enc);
+                        }
+
+
+                        if (e - p < clen) clen = e - p;
+                        if (clen <= mbminlen * 2) {
+                            clen = mbminlen;
+                        }
+                        else {
+                            clen -= mbminlen;
+                            for (; clen > mbminlen; clen-=mbminlen) {
+                                ret = enc.length(pBytes, q, q + clen);
+                                if (MBCLEN_NEEDMORE_P(ret)) break;
+                                if (MBCLEN_INVALID_P(ret)) continue;
+                            }
+                        }
+                        if (repBytes != null) {
+                            buf = makeConcatNode.executeMake(buf, RopeOperations.create(ArrayUtils.extractRange(repBytes, rep, rep + replen), ASCIIEncoding.INSTANCE, CodeRange.CR_VALID), enc);
+                        } else {
+                            repl = yield(frame, (DynamicObject) block, createString(ArrayUtils.extractRange(pBytes, p, e), enc));
+                            repl = strCompatAndValidNode.call(frame, string, "str_compat_and_valid", repl, rubyEncoding);
+                            tainted |= isTaintedNode.executeIsTainted(repl);
+                            buf = makeConcatNode.executeMake(buf, rope((DynamicObject) repl), enc);
+                        }
+                        p += clen;
+                        p1 = p;
+                    }
+                }
+                if (buf == null) {
+                    if (p == e) {
+//                        setCodeRange(CR_VALID);
+                        return nil();
+                    }
+                    buf = RopeConstants.EMPTY_ASCII_8BIT_ROPE;
+                }
+                if (p1 < p) {
+                    buf = makeConcatNode.executeMake(buf, RopeOperations.create(ArrayUtils.extractRange(pBytes, p1, p), ASCIIEncoding.INSTANCE, CodeRange.CR_VALID), enc);
+                }
+                if (p < e) {
+                    if (repBytes != null) {
+                        buf = makeConcatNode.executeMake(buf, RopeOperations.create(ArrayUtils.extractRange(repBytes, rep, rep + replen), ASCIIEncoding.INSTANCE, CodeRange.CR_VALID), enc);
+                    }
+                    else {
+                        repl = yield(frame, (DynamicObject)block, createString(ArrayUtils.extractRange(pBytes, p, e), enc));
+                        repl = strCompatAndValidNode.call(frame, string, "str_compat_and_valid", repl, rubyEncoding);
+                        tainted |= isTaintedNode.executeIsTainted(repl);
+                        buf = makeConcatNode.executeMake(buf, rope((DynamicObject)repl), enc);
+                    }
+                }
+                cr = CR_VALID;
+            }
+
+            final boolean isTaint = isTaintedNode.executeIsTainted(string);
+
+            final DynamicObject resultString = createString(buf);
+
+            if (tainted | isTaint) {
+                taintNode.executeTaint(resultString);
+            }
+
+//            ((RubyString)buf).setEncodingAndCodeRange(enc, cr);
+
+            return resultString;
+        }
+
     }
 
     @CoreMethod(names = "swapcase!", raiseIfFrozenSelf = true)
