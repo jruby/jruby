@@ -40,7 +40,6 @@ package org.jruby.truffle.parser;
 import org.jcodings.Encoding;
 import org.jcodings.ascii.AsciiTables;
 import org.jcodings.specific.ASCIIEncoding;
-import org.jruby.truffle.core.string.ByteList;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -57,11 +56,10 @@ public class ParserByteList {
     }
 
     public ParserByteList(byte[] bytes, int start, int length, Encoding encoding) {
-        ByteList byteList = new ByteList(bytes, start, length, encoding, false);
-        this.bytes = byteList.bytes();
-        this.start = 0;
-        this.length = byteList.length();
-        this.encoding = byteList.getEncoding();
+        this.bytes = bytes;
+        this.start = start;
+        this.length = length;
+        this.encoding = encoding;
     }
 
     public int getStart() {
@@ -132,18 +130,10 @@ public class ParserByteList {
     }
 
     public String toString() {
-        return new String(Arrays.copyOfRange(bytes, start, length), StandardCharsets.US_ASCII);
+        return new String(Arrays.copyOfRange(bytes, start, start + length), StandardCharsets.US_ASCII);
     }
 
-    public ByteList toByteList() {
-        return new ByteList(bytes, start, length, encoding, true);
-    }
-
-    public ParserByteListBuilder toBuilder() {
-        return new ParserByteListBuilder(Arrays.copyOfRange(bytes, start, length), encoding);
-    }
-
-    protected byte[] getBytes() {
+    public byte[] getUnsafeBytes() {
         return bytes;
     }
 

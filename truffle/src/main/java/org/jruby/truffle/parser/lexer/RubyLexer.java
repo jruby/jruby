@@ -337,7 +337,7 @@ public class RubyLexer {
 
     // FIXME: How does lexb.toString() vs getCurrentLine() differ.
     public void compile_error(SyntaxException.PID pid, String message) {
-        String src = createAsEncodedString(lex_lastline.toBuilder().getUnsafeBytes(), lex_lastline.getStart(), lex_lastline.getLength(), getEncoding());
+        String src = createAsEncodedString(lex_lastline.getUnsafeBytes(), lex_lastline.getStart(), lex_lastline.getLength(), getEncoding());
         throw new SyntaxException(pid, getFile(), ruby_sourceline, src, message);
     }
 
@@ -490,7 +490,7 @@ public class RubyLexer {
     // STR_NEW3/parser_str_new
     public StrParseNode createStr(ParserByteList buffer, int flags) {
         Encoding bufferEncoding = buffer.getEncoding();
-        CodeRange codeRange = StringSupport.codeRangeScan(bufferEncoding, buffer.toByteList());
+        CodeRange codeRange = StringSupport.codeRangeScan(bufferEncoding, buffer.getUnsafeBytes(), buffer.getStart(), buffer.getLength());
 
         if ((flags & STR_FUNC_REGEXP) == 0 && bufferEncoding.isAsciiCompatible()) {
             // If we have characters outside 7-bit range and we are still ascii then change to ascii-8bit
@@ -503,7 +503,7 @@ public class RubyLexer {
             }
         }
 
-        StrParseNode newStr = new StrParseNode(getPosition(), buffer.toByteList(), codeRange);
+        StrParseNode newStr = new StrParseNode(getPosition(), buffer, codeRange);
 
         if (parserSupport.getConfiguration().isFrozenStringLiteral()) newStr.setFrozen(true);
 
@@ -1160,7 +1160,7 @@ public class RubyLexer {
         }
 
         int begin = magicLine.getStart() + beg;
-        Matcher matcher = magicRegexp.matcher(magicLine.toBuilder().getUnsafeBytes(), begin, begin + length);
+        Matcher matcher = magicRegexp.matcher(magicLine.getUnsafeBytes(), begin, begin + length);
         int result = ClassicRegexp.matcherSearch(matcher, begin, begin + length, Option.NONE);
 
         if (result < 0) return false;
@@ -2011,7 +2011,7 @@ public class RubyLexer {
                 }
 
                 setState(EXPR_END);
-                yaccValue = new StrParseNode(getPosition(), oneCharBL.toParserByteList().toByteList());
+                yaccValue = new StrParseNode(getPosition(), oneCharBL.toParserByteList());
 
                 return Tokens.tCHAR;
             } else {
@@ -2023,7 +2023,7 @@ public class RubyLexer {
 
         ParserByteListBuilder oneCharBL = new ParserByteListBuilder();
         oneCharBL.append(c);
-        yaccValue = new StrParseNode(getPosition(), oneCharBL.toParserByteList().toByteList());
+        yaccValue = new StrParseNode(getPosition(), oneCharBL.toParserByteList());
         setState(EXPR_END);
         return Tokens.tCHAR;
     }
@@ -2630,7 +2630,7 @@ public class RubyLexer {
     }
 
     public String createTokenString(int start) {
-        return createAsEncodedString(lexb.toBuilder().getUnsafeBytes(), lexb.getStart() + start, lex_p - start, getEncoding());
+        return createAsEncodedString(lexb.getUnsafeBytes(), lexb.getStart() + start, lex_p - start, getEncoding());
     }
 
     public String createAsEncodedString(byte[] bytes, int start, int length, Encoding encoding) {
@@ -2863,7 +2863,7 @@ public class RubyLexer {
     }
 
     public int precise_mbclen() {
-        byte[] data = lexb.toBuilder().getUnsafeBytes();
+        byte[] data = lexb.getUnsafeBytes();
         int begin = lexb.getStart();
 
         // we subtract one since we have read past first byte by time we are calling this.
@@ -3022,7 +3022,7 @@ public class RubyLexer {
     }
 
     public void tokCopy(int length, ParserByteListBuilder buffer) {
-        buffer.append(lexb, lex_p - length, length);
+        buffer.append(lexb.makeShared(lex_p - length, length));
     }
 
     public boolean tokadd_ident(int c) {

@@ -88,7 +88,7 @@ public class StringTerm extends StrTerm {
                 RegexpOptions options = parseRegexpFlags(lexer);
                 ParserByteList regexpBytelist = new ParserByteList(new byte[]{});
 
-                lexer.setValue(new RegexpParseNode(lexer.getPosition(), regexpBytelist.toByteList(), options));
+                lexer.setValue(new RegexpParseNode(lexer.getPosition(), regexpBytelist, options));
                 return Tokens.tREGEXP_END;
             }
 

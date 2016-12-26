@@ -26,12 +26,6 @@ public class ParserByteListBuilder {
         encoding = ASCIIEncoding.INSTANCE;
     }
 
-    public ParserByteListBuilder(byte[] bytes, Encoding encoding) {
-        this.bytes = bytes;
-        length = bytes.length;
-        this.encoding = encoding;
-    }
-
     public int getLength() {
         return length;
     }
@@ -63,11 +57,7 @@ public class ParserByteListBuilder {
     }
 
     public void append(ParserByteList other) {
-        append(other, 0, other.getLength());
-    }
-
-    public void append(ParserByteList other, int start, int length) {
-        append(other.getBytes(), other.getStart() + start, length);
+        append(other.getUnsafeBytes(), other.getStart(), other.getLength());
     }
 
     public void append(byte[] appendBytes, int appendStart, int appendLength) {
@@ -87,7 +77,7 @@ public class ParserByteListBuilder {
     }
 
     public ParserByteList toParserByteList() {
-        return new ParserByteList(Arrays.copyOfRange(bytes, 0, length), 0, length, encoding);
+        return new ParserByteList(Arrays.copyOf(bytes, length), 0, length, encoding);
     }
 
 }
