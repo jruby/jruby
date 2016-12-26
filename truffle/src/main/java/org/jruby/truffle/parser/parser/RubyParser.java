@@ -41,7 +41,6 @@ package org.jruby.truffle.parser.parser;
 
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.rope.CodeRange;
-import org.jruby.truffle.core.string.ByteList;
 import org.jruby.truffle.interop.ForeignCodeNode;
 import org.jruby.truffle.collections.Tuple;
 import org.jruby.truffle.parser.ParserByteList;
@@ -3651,7 +3650,7 @@ states[460] = new ParserState() {
                     if (((ParseNode)yyVals[-1+yyTop]) == null) {
                         yyVal = new XStrParseNode(position, null, CodeRange.CR_7BIT);
                     } else if (((ParseNode)yyVals[-1+yyTop]) instanceof StrParseNode) {
-                        yyVal = new XStrParseNode(position, ((StrParseNode)yyVals[-1+yyTop]).getValue().dup(), ((StrParseNode)yyVals[-1+yyTop]).getCodeRange());
+                        yyVal = new XStrParseNode(position, ((StrParseNode)yyVals[-1+yyTop]).getValue(), ((StrParseNode)yyVals[-1+yyTop]).getCodeRange());
                     } else if (((ParseNode)yyVals[-1+yyTop]) instanceof DStrParseNode) {
                         yyVal = new DXStrParseNode(position, ((DStrParseNode)yyVals[-1+yyTop]));
 
@@ -4022,7 +4021,7 @@ states[519] = new ParserState() {
 };
 states[520] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = new FileParseNode(lexer.getPosition(), new ByteList(lexer.getFile().getBytes(),
+                    yyVal = new FileParseNode(lexer.getPosition(), new ParserByteList(lexer.getFile().getBytes(),
                     support.getConfiguration().getContext().getEncodingManager().getLocaleEncoding()));
     return yyVal;
   }

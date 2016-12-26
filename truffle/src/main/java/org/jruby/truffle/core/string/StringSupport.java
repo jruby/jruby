@@ -36,6 +36,7 @@ import org.jruby.truffle.core.array.ArrayUtils;
 import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeOperations;
+import org.jruby.truffle.parser.ParserByteList;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -189,6 +190,10 @@ public final class StringSupport {
             p += cl;
         }
         return p > end ? CR_BROKEN : CR_VALID;
+    }
+
+    public static CodeRange codeRangeScan(Encoding enc, ParserByteList bytes) {
+        return codeRangeScan(enc, bytes.getUnsafeBytes(), bytes.getStart(), bytes.getLength());
     }
 
     public static CodeRange codeRangeScan(Encoding enc, ByteList bytes) {

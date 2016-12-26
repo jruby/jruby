@@ -41,8 +41,8 @@ import org.jcodings.Encoding;
 import org.jcodings.ascii.AsciiTables;
 import org.jcodings.specific.ASCIIEncoding;
 
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 
 public class ParserByteList {
 
@@ -133,8 +133,9 @@ public class ParserByteList {
         return bytes[start + index];
     }
 
+    @Override
     public String toString() {
-        return new String(Arrays.copyOfRange(bytes, start, start + length), StandardCharsets.US_ASCII);
+        return StandardCharsets.ISO_8859_1.decode(ByteBuffer.wrap(bytes, start, length)).toString();
     }
 
     public byte[] getUnsafeBytes() {

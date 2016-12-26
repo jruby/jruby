@@ -54,7 +54,6 @@ import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.regexp.ClassicRegexp;
 import org.jruby.truffle.core.rope.CodeRange;
-import org.jruby.truffle.core.string.ByteList;
 import org.jruby.truffle.core.string.StringSupport;
 import org.jruby.truffle.parser.ParserByteList;
 import org.jruby.truffle.parser.ParserByteListBuilder;
@@ -313,7 +312,10 @@ public class RubyLexer {
 
         if (root instanceof StrParseNode) {
             StrParseNode str = (StrParseNode) root;
-            dedent_string(str.getValue(), indent);
+            ParserByteListBuilder builder = new ParserByteListBuilder();
+            builder.append(str.getValue());
+            dedent_string(builder, indent);
+            str.setValue(builder.toParserByteList());
         } else if (root instanceof ListParseNode) {
             ListParseNode list = (ListParseNode) root;
             int length = list.size();
@@ -325,7 +327,10 @@ public class RubyLexer {
                 currentLine = child.getPosition().getStartLine() - 1;                 // New line
 
                 if (child instanceof StrParseNode) {
-                    dedent_string(((StrParseNode) child).getValue(), indent);
+                    ParserByteListBuilder builder = new ParserByteListBuilder();
+                    builder.append(((StrParseNode) child).getValue());
+                    dedent_string(builder, indent);
+                    ((StrParseNode) child).setValue(builder.toParserByteList());
                 }
             }
         }
@@ -2649,16 +2654,15 @@ public class RubyLexer {
         return createTokenString(tokp);
     }
 
-    protected int dedent_string(ByteList string, int width) {
-        long len = string.realSize();
+    protected int dedent_string(ParserByteListBuilder string, int width) {
+        long len = string.getLength();
         int i, col = 0;
-        byte[] str = string.unsafeBytes();
-        int begin = string.begin();
+        byte[] str = string.getUnsafeBytes();
 
         for (i = 0; i < len && col < width; i++) {
-            if (str[begin + i] == ' ') {
+            if (str[i] == ' ') {
                 col++;
-            } else if (str[begin + i] == '\t') {
+            } else if (str[i] == '\t') {
                 int n = TAB_WIDTH * (col / TAB_WIDTH + 1);
                 if (n > width) break;
                 col = n;
@@ -2667,8 +2671,7 @@ public class RubyLexer {
             }
         }
 
-        string.setBegin(begin + i);
-        string.setRealSize((int) len - i);
+        string.removeOffset(i);
         return i;
     }
 

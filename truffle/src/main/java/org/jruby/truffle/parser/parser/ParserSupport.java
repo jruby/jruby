@@ -36,15 +36,16 @@
 package org.jruby.truffle.parser.parser;
 
 import org.jcodings.Encoding;
+import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.regexp.ClassicRegexp;
 import org.jruby.truffle.core.regexp.RegexpOptions;
 import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.rope.RopeOperations;
-import org.jruby.truffle.core.string.ByteList;
 import org.jruby.truffle.core.string.StringSupport;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.collections.Tuple;
+import org.jruby.truffle.parser.ParserByteList;
 import org.jruby.truffle.parser.RubyWarnings;
 import org.jruby.truffle.parser.Signature;
 import org.jruby.truffle.parser.TempSourceSection;
@@ -1076,7 +1077,7 @@ public class ParserSupport {
                 StrParseNode front = (StrParseNode) head;
                 // string_contents always makes an empty strnode...which is sometimes valid but
                 // never if it ever is in literal_concat.
-                if (front.getValue().getRealSize() > 0) {
+                if (front.getValue().getLength() > 0) {
                     return new StrParseNode(head.getPosition(), front, (StrParseNode) tail);
                 } else {
                     return tail;
@@ -1101,7 +1102,7 @@ public class ParserSupport {
         if (head instanceof StrParseNode) {
 
             //Do not add an empty string node
-            if(((StrParseNode) head).getValue().length() == 0) {
+            if(((StrParseNode) head).getValue().getLength() == 0) {
                 head = createDStrNode(head.getPosition());
             } else {
                 head = createDStrNode(head.getPosition()).add(head);
@@ -1372,13 +1373,14 @@ public class ParserSupport {
     }
 
     // MRI: reg_fragment_check
-    public void regexpFragmentCheck(RegexpParseNode end, ByteList value) {
-        setRegexpEncoding(end, value);
+    public ParserByteList regexpFragmentCheck(RegexpParseNode end, ParserByteList value) {
+        value = setRegexpEncoding(end, value);
         try {
             ClassicRegexp.preprocessCheck(configuration.getContext(), RopeOperations.ropeFromByteList(value));
         } catch (RaiseException re) {
             compile_error(re.getMessage());
         }
+        return value;
     }        // 1.9 mode overrides to do extra checking...
 
     private List<Integer> allocateNamedLocals(RegexpParseNode regexpNode) {
@@ -1408,7 +1410,7 @@ public class ParserSupport {
         return locals;
     }
 
-    private boolean is7BitASCII(ByteList value) {
+    private boolean is7BitASCII(ParserByteList value) {
         return StringSupport.codeRangeScan(value.getEncoding(), value) == CodeRange.CR_7BIT;
     }
 
@@ -1442,7 +1444,7 @@ public class ParserSupport {
     }
     
     // MRI: reg_fragment_setenc_gen
-    public void setRegexpEncoding(RegexpParseNode end, ByteList value) {
+    public ParserByteList setRegexpEncoding(RegexpParseNode end, ParserByteList value) {
         RegexpOptions options = end.getOptions();
         Encoding optionsEncoding = options.setup(configuration.getContext()) ;
 
@@ -1452,22 +1454,23 @@ public class ParserSupport {
                 compileError(optionsEncoding, value.getEncoding());
             }
 
-            value.setEncoding(optionsEncoding);
+            value = value.withEncoding(optionsEncoding);
         } else if (options.isEncodingNone()) {
             if (value.getEncoding() == ASCII8BIT_ENCODING && !is7BitASCII(value)) {
                 compileError(optionsEncoding, value.getEncoding());
             }
-            value.setEncoding(ASCII8BIT_ENCODING);
+            value = value.withEncoding(ASCII8BIT_ENCODING);
         } else if (lexer.getEncoding() == USASCII_ENCODING) {
             if (!is7BitASCII(value)) {
-                value.setEncoding(USASCII_ENCODING); // This will raise later
+                value = value.withEncoding(USASCII_ENCODING); // This will raise later
             } else {
-                value.setEncoding(ASCII8BIT_ENCODING);
+                value = value.withEncoding(ASCII8BIT_ENCODING);
             }
         }
+        return value;
     }    
 
-    protected void checkRegexpSyntax(ByteList value, RegexpOptions options) {
+    protected void checkRegexpSyntax(ParserByteList value, RegexpOptions options) {
         final String stringValue = value.toString();
         // Joni doesn't support these modifiers - but we can fix up in some cases - let the error delay until we try that
         if (stringValue.startsWith("(?u)") || stringValue.startsWith("(?a)") || stringValue.startsWith("(?d)"))
@@ -1486,16 +1489,16 @@ public class ParserSupport {
         Encoding encoding = lexer.getEncoding();
 
         if (contents == null) {
-            ByteList newValue = ByteList.create("");
+            ParserByteList newValue = new ParserByteList(new byte[]{});
             if (encoding != null) {
-                newValue.setEncoding(encoding);
+                newValue = newValue.withEncoding(encoding);
             }
 
-            regexpFragmentCheck(end, newValue);
+            newValue = regexpFragmentCheck(end, newValue);
             return new RegexpParseNode(position, newValue, options.withoutOnce());
         } else if (contents instanceof StrParseNode) {
-            ByteList meat = ((StrParseNode) contents).getValue().dup();
-            regexpFragmentCheck(end, meat);
+            ParserByteList meat = ((StrParseNode) contents).getValue();
+            meat = regexpFragmentCheck(end, meat);
             checkRegexpSyntax(meat, options.withoutOnce());
             return new RegexpParseNode(contents.getPosition(), meat, options.withoutOnce());
         } else if (contents instanceof DStrParseNode) {
@@ -1504,8 +1507,8 @@ public class ParserSupport {
             for (int i = 0; i < dStrNode.size(); i++) {
                 ParseNode fragment = dStrNode.get(i);
                 if (fragment instanceof StrParseNode) {
-                    ByteList frag = ((StrParseNode) fragment).getValue();
-                    regexpFragmentCheck(end, frag);
+                    ParserByteList frag = ((StrParseNode) fragment).getValue();
+                    frag = regexpFragmentCheck(end, frag);
 //                    if (!lexer.isOneEight()) encoding = frag.getEncoding();
                 }
             }
@@ -1517,8 +1520,8 @@ public class ParserSupport {
         }
 
         // EvStrParseNode: #{val}: no fragment check, but at least set encoding
-        ByteList master = createMaster(options);
-        regexpFragmentCheck(end, master);
+        ParserByteList master = createMaster(options);
+        master = regexpFragmentCheck(end, master);
         encoding = master.getEncoding();
         DRegexpParseNode node = new DRegexpParseNode(position, options, encoding);
         node.add(new StrParseNode(contents.getPosition(), master));
@@ -1529,28 +1532,10 @@ public class ParserSupport {
     // Create the magical empty 'master' string which will be encoded with
     // regexp options encoding so dregexps can end up starting with the
     // right encoding.
-    private ByteList createMaster(RegexpOptions options) {
+    private ParserByteList createMaster(RegexpOptions options) {
         Encoding encoding = options.setup(configuration.getContext());
 
-        return new ByteList(ByteList.NULL_ARRAY, encoding);
-    }
-    
-    // FIXME:  This logic is used by many methods in MRI, but we are only using it in lexer
-    // currently.  Consolidate this when we tackle a big encoding refactoring
-    public static CodeRange associateEncoding(ByteList buffer, Encoding newEncoding, CodeRange codeRange) {
-        Encoding bufferEncoding = buffer.getEncoding();
-                
-        if (newEncoding == bufferEncoding) return codeRange;
-        
-        // TODO: Special const error
-        
-        buffer.setEncoding(newEncoding);
-        
-        if (codeRange != CodeRange.CR_7BIT || !newEncoding.isAsciiCompatible()) {
-            return CodeRange.CR_UNKNOWN;
-        }
-        
-        return codeRange;
+        return new ParserByteList(new byte[]{}, encoding == null ? ASCIIEncoding.INSTANCE : encoding);
     }
     
     public KeywordArgParseNode keyword_arg(TempSourceSection position, AssignableParseNode assignable) {

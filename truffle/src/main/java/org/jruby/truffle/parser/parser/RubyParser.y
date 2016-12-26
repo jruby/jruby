@@ -38,7 +38,6 @@ package org.jruby.truffle.parser.parser;
 
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.rope.CodeRange;
-import org.jruby.truffle.core.string.ByteList;
 import org.jruby.truffle.interop.ForeignCodeNode;
 import org.jruby.truffle.collections.Tuple;
 import org.jruby.truffle.parser.RubyWarnings;
@@ -1922,7 +1921,7 @@ xstring         : tXSTRING_BEG xstring_contents tSTRING_END {
                     if ($2 == null) {
                         $$ = new XStrParseNode(position, null, CodeRange.CR_7BIT);
                     } else if ($2 instanceof StrParseNode) {
-                        $$ = new XStrParseNode(position, $<StrParseNode>2.getValue().dup(), $<StrParseNode>2.getCodeRange());
+                        $$ = new XStrParseNode(position, $<StrParseNode>2.getValue(), $<StrParseNode>2.getCodeRange());
                     } else if ($2 instanceof DStrParseNode) {
                         $$ = new DXStrParseNode(position, $<DStrParseNode>2);
 
@@ -2149,7 +2148,7 @@ var_ref         : /*mri:user_variable*/ tIDENTIFIER {
                     $$ = new FalseParseNode(lexer.getPosition());
                 }
                 | k__FILE__ {
-                    $$ = new FileParseNode(lexer.getPosition(), new ByteList(lexer.getFile().getBytes(),
+                    $$ = new FileParseNode(lexer.getPosition(), new ParserByteList(lexer.getFile().getBytes(),
                     support.getConfiguration().getContext().getEncodingManager().getLocaleEncoding()));
                 }
                 | k__LINE__ {

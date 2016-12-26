@@ -62,7 +62,6 @@ import org.jruby.truffle.core.rope.RopeConstants;
 import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.rubinius.RubiniusLastStringReadNode;
 import org.jruby.truffle.core.rubinius.RubiniusLastStringWriteNodeGen;
-import org.jruby.truffle.core.string.ByteList;
 import org.jruby.truffle.core.string.InterpolatedStringNode;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.core.string.StringUtils;
@@ -511,10 +510,10 @@ public class BodyTranslator extends Translator {
 
         if (receiver instanceof StrParseNode && methodName.equals("freeze")) {
             final StrParseNode strNode = (StrParseNode) receiver;
-            final ByteList byteList = strNode.getValue();
+            final ParserByteList byteList = strNode.getValue();
             final CodeRange codeRange = strNode.getCodeRange();
 
-            final Rope rope = context.getRopeTable().getRope(byteList.bytes(), byteList.getEncoding(), codeRange);
+            final Rope rope = context.getRopeTable().getRope(byteList, codeRange);
 
             final DynamicObject frozenString = context.getFrozenStrings().getFrozenString(rope);
 
@@ -2122,7 +2121,7 @@ public class BodyTranslator extends Translator {
 
         if (node.getReceiverNode() instanceof RegexpParseNode) {
             final RegexpParseNode regexpNode = (RegexpParseNode) node.getReceiverNode();
-            final Regex regex = new Regex(regexpNode.getValue().bytes(), 0, regexpNode.getValue().length(), regexpNode.getOptions().toOptions(), regexpNode.getEncoding(), Syntax.RUBY);
+            final Regex regex = new Regex(regexpNode.getValue().getUnsafeBytes(), regexpNode.getValue().getStart(), regexpNode.getValue().getStart() + regexpNode.getValue().getLength(), regexpNode.getOptions().toOptions(), regexpNode.getEncoding(), Syntax.RUBY);
 
             if (regex.numberOfNames() > 0) {
                 for (Iterator<NameEntry> i = regex.namedBackrefIterator(); i.hasNext(); ) {
@@ -3089,9 +3088,9 @@ public class BodyTranslator extends Translator {
     public RubyNode visitStrNode(StrParseNode node) {
         final TempSourceSection sourceSection = node.getPosition();
 
-        final ByteList byteList = node.getValue();
+        final ParserByteList byteList = node.getValue();
         final CodeRange codeRange = node.getCodeRange();
-        final Rope rope = context.getRopeTable().getRope(byteList.bytes(), byteList.getEncoding(), codeRange);
+        final Rope rope = context.getRopeTable().getRope(byteList, codeRange);
 
         final RubyNode ret;
 

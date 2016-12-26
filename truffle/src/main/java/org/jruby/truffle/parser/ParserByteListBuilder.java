@@ -80,4 +80,8 @@ public class ParserByteListBuilder {
         return new ParserByteList(Arrays.copyOf(bytes, length), 0, length, encoding);
     }
 
+    public void removeOffset(int offset) {
+        System.arraycopy(bytes, offset, bytes, 0, length - offset);
+        length -= offset;
+    }
 }

@@ -38,10 +38,12 @@ import org.jruby.truffle.core.string.StringSupport;
 import org.jruby.truffle.core.string.StringUtils;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.collections.Memo;
+import org.jruby.truffle.parser.ParserByteList;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.ArrayDeque;
+import java.util.Arrays;
 import java.util.Deque;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -637,6 +639,10 @@ public class RopeOperations {
 
     public static Rope ropeFromByteList(ByteList byteList) {
         return create(byteList.bytes(), byteList.getEncoding(), CR_UNKNOWN);
+    }
+
+    public static Rope ropeFromByteList(ParserByteList byteList) {
+        return create(Arrays.copyOfRange(byteList.getUnsafeBytes(), byteList.getStart(), byteList.getStart() + byteList.getLength()), byteList.getEncoding(), CR_UNKNOWN);
     }
 
     public static Rope ropeFromByteList(ByteList byteList, CodeRange codeRange) {
