@@ -17,13 +17,11 @@ import java.util.Arrays;
 public class ParserByteListBuilder {
 
     private byte[] bytes;
-    private int start;
     private int length;
     private Encoding encoding;
 
     public ParserByteListBuilder(byte[] bytes, Encoding encoding) {
         this.bytes = bytes;
-        start = 0;
         length = bytes.length;
         this.encoding = encoding;
     }
@@ -46,14 +44,6 @@ public class ParserByteListBuilder {
 
     public static ParserByteListBuilder create(String string) {
         return new ParserByteListBuilder(ByteList.create(string));
-    }
-
-    public int getStart() {
-        return start;
-    }
-
-    public void setStart(int start) {
-        this.start = start;
     }
 
     public int getLength() {
@@ -97,12 +87,11 @@ public class ParserByteListBuilder {
     }
 
     public ByteList toByteList() {
-        return new ByteList(bytes, start, length, encoding, true);
+        return new ByteList(bytes, 0, length, encoding, true);
     }
 
     private void fromByteList(ByteList byteList) {
         bytes = byteList.bytes();
-        start = 0;
         length = byteList.length();
         encoding = byteList.getEncoding();
     }
@@ -120,6 +109,6 @@ public class ParserByteListBuilder {
     }
 
     public ParserByteList toParserByteList() {
-        return new ParserByteList(Arrays.copyOfRange(bytes, start, length), 0, length, encoding);
+        return new ParserByteList(Arrays.copyOfRange(bytes, 0, length), 0, length, encoding);
     }
 }

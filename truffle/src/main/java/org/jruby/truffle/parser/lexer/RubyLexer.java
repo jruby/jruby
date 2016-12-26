@@ -3083,7 +3083,7 @@ public class RubyLexer {
         Encoding encoding = buffer.getEncoding();
         int length = encoding.codeToMbcLength(codepoint);
         buffer.ensure(buffer.getLength() + length);
-        encoding.codeToMbc(codepoint, buffer.getUnsafeBytes(), buffer.getStart() + buffer.getLength());
+        encoding.codeToMbc(codepoint, buffer.getUnsafeBytes(), buffer.getLength());
         buffer.setLength(buffer.getLength() + length);
     }
 
