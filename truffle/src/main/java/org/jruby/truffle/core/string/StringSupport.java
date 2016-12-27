@@ -192,14 +192,6 @@ public final class StringSupport {
         return p > end ? CR_BROKEN : CR_VALID;
     }
 
-    public static CodeRange codeRangeScan(Encoding enc, ParserByteList bytes) {
-        return codeRangeScan(enc, bytes.getUnsafeBytes(), bytes.getStart(), bytes.getLength());
-    }
-
-    public static CodeRange codeRangeScan(Encoding enc, ByteList bytes) {
-        return codeRangeScan(enc, bytes.getUnsafeBytes(), bytes.getBegin(), bytes.getRealSize());
-    }
-
     private static final long NONASCII_MASK = 0x8080808080808080L;
     private static int countUtf8LeadBytes(long d) {
         d |= ~(d >>> 1);

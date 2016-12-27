@@ -69,7 +69,7 @@ public class SymbolParseNode extends ParseNode implements ILiteralNode, INameNod
 
         if (value.getEncoding() != USASCIIEncoding.INSTANCE) {
             int size = value.getLength();
-            this.encoding = value.getEncoding().strLength(value.getUnsafeBytes(), value.getStart(), size) == size ?
+            this.encoding = value.getStringLength() == size ?
                     USASCIIEncoding.INSTANCE : value.getEncoding();
         } else {
             this.encoding = USASCIIEncoding.INSTANCE;

@@ -40,9 +40,17 @@ package org.jruby.truffle.parser;
 import org.jcodings.Encoding;
 import org.jcodings.ascii.AsciiTables;
 import org.jcodings.specific.ASCIIEncoding;
+import org.jruby.truffle.core.rope.CodeRange;
+import org.jruby.truffle.core.rope.Rope;
+import org.jruby.truffle.core.rope.RopeOperations;
+import org.jruby.truffle.core.string.StringSupport;
+import org.jruby.truffle.parser.lexer.RubyLexer;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+
+import static org.jruby.truffle.core.rope.CodeRange.CR_UNKNOWN;
 
 public class ParserByteList {
 
@@ -138,8 +146,36 @@ public class ParserByteList {
         return StandardCharsets.ISO_8859_1.decode(ByteBuffer.wrap(bytes, start, length)).toString();
     }
 
-    public byte[] getUnsafeBytes() {
-        return bytes;
+    public Rope toRope(CodeRange codeRange) {
+        return RopeOperations.create(getBytes(), encoding, codeRange);
+    }
+
+    public Rope toRope() {
+        return toRope(CR_UNKNOWN);
+    }
+
+    public byte[] getBytes() {
+        return Arrays.copyOfRange(bytes, start, start + length);
+    }
+
+    public CodeRange codeRangeScan(Encoding encoding) {
+        return StringSupport.codeRangeScan(encoding, bytes, start, length);
+    }
+
+    public int getStringLength(Encoding encoding) {
+        return encoding.strLength(bytes, start, length);
+    }
+
+    public int getEncodingLength(Encoding encoding) {
+        return encoding.length(bytes, start, length);
+    }
+
+    public int getStringLength() {
+        return getStringLength(encoding);
+    }
+
+    public String toEncodedString(Encoding encoding) {
+        return RubyLexer.createAsEncodedString(bytes, start, length, encoding);
     }
 
 }

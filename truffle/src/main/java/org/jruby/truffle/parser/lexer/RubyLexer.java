@@ -342,7 +342,7 @@ public class RubyLexer {
 
     // FIXME: How does lexb.toString() vs getCurrentLine() differ.
     public void compile_error(SyntaxException.PID pid, String message) {
-        String src = createAsEncodedString(lex_lastline.getUnsafeBytes(), lex_lastline.getStart(), lex_lastline.getLength(), getEncoding());
+        String src = lex_lastline.toEncodedString(getEncoding());
         throw new SyntaxException(pid, getFile(), ruby_sourceline, src, message);
     }
 
@@ -495,7 +495,7 @@ public class RubyLexer {
     // STR_NEW3/parser_str_new
     public StrParseNode createStr(ParserByteList buffer, int flags) {
         Encoding bufferEncoding = buffer.getEncoding();
-        CodeRange codeRange = StringSupport.codeRangeScan(bufferEncoding, buffer.getUnsafeBytes(), buffer.getStart(), buffer.getLength());
+        CodeRange codeRange = buffer.codeRangeScan(bufferEncoding);
 
         if ((flags & STR_FUNC_REGEXP) == 0 && bufferEncoding.isAsciiCompatible()) {
             // If we have characters outside 7-bit range and we are still ascii then change to ascii-8bit
@@ -1165,7 +1165,7 @@ public class RubyLexer {
         }
 
         int begin = magicLine.getStart() + beg;
-        Matcher matcher = magicRegexp.matcher(magicLine.getUnsafeBytes(), begin, begin + length);
+        Matcher matcher = magicRegexp.matcher(magicLine.getBytes());
         int result = ClassicRegexp.matcherSearch(matcher, begin, begin + length, Option.NONE);
 
         if (result < 0) return false;
@@ -2635,13 +2635,13 @@ public class RubyLexer {
     }
 
     public String createTokenString(int start) {
-        return createAsEncodedString(lexb.getUnsafeBytes(), lexb.getStart() + start, lex_p - start, getEncoding());
+        return lexb.makeShared(start, lex_p - start).toEncodedString(getEncoding());
     }
 
-    public String createAsEncodedString(byte[] bytes, int start, int length, Encoding encoding) {
+    public static String createAsEncodedString(byte[] bytes, int start, int length, Encoding encoding) {
         // FIXME: We should be able to move some faster non-exception cache using Encoding.isDefined
         try {
-            Charset charset = getEncoding().getCharset();
+            Charset charset = encoding.getCharset();
             if (charset != null) {
                 return new String(bytes, start, length, charset);
             }
@@ -2866,11 +2866,11 @@ public class RubyLexer {
     }
 
     public int precise_mbclen() {
-        byte[] data = lexb.getUnsafeBytes();
-        int begin = lexb.getStart();
-
         // we subtract one since we have read past first byte by time we are calling this.
-        return current_enc.length(data, begin + lex_p - 1, begin + lex_pend);
+        int start = lex_p - 1;
+        int end = lex_pend;
+        int length = end - start;
+        return lexb.makeShared(start, length).getEncodingLength(current_enc);
     }
 
     public void pushback(int c) {

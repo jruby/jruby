@@ -40,7 +40,7 @@ public class RopeTable {
     }
 
     public Rope getRope(ParserByteList string, CodeRange codeRange) {
-        return getRope(Arrays.copyOfRange(string.getUnsafeBytes(), string.getStart(), string.getStart() + string.getLength()), string.getEncoding(), codeRange);
+        return getRope(string.getBytes(), string.getEncoding(), codeRange);
     }
 
     @TruffleBoundary

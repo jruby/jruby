@@ -2121,7 +2121,8 @@ public class BodyTranslator extends Translator {
 
         if (node.getReceiverNode() instanceof RegexpParseNode) {
             final RegexpParseNode regexpNode = (RegexpParseNode) node.getReceiverNode();
-            final Regex regex = new Regex(regexpNode.getValue().getUnsafeBytes(), regexpNode.getValue().getStart(), regexpNode.getValue().getStart() + regexpNode.getValue().getLength(), regexpNode.getOptions().toOptions(), regexpNode.getEncoding(), Syntax.RUBY);
+            final byte[] bytes = regexpNode.getValue().getBytes();
+            final Regex regex = new Regex(bytes, 0, bytes.length, regexpNode.getOptions().toOptions(), regexpNode.getEncoding(), Syntax.RUBY);
 
             if (regex.numberOfNames() > 0) {
                 for (Iterator<NameEntry> i = regex.namedBackrefIterator(); i.hasNext(); ) {
@@ -2836,7 +2837,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitRegexpNode(RegexpParseNode node) {
-        final Rope rope = RopeOperations.ropeFromByteList(node.getValue());
+        final Rope rope = node.getValue().toRope();
         final RegexpOptions options = node.getOptions();
         options.setLiteral(true);
         Regex regex = RegexpNodes.compile(currentNode, context, rope, options);

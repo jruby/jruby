@@ -41,8 +41,6 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.regexp.ClassicRegexp;
 import org.jruby.truffle.core.regexp.RegexpOptions;
 import org.jruby.truffle.core.rope.CodeRange;
-import org.jruby.truffle.core.rope.RopeOperations;
-import org.jruby.truffle.core.string.StringSupport;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.collections.Tuple;
 import org.jruby.truffle.parser.ParserByteList;
@@ -1376,7 +1374,7 @@ public class ParserSupport {
     public ParserByteList regexpFragmentCheck(RegexpParseNode end, ParserByteList value) {
         value = setRegexpEncoding(end, value);
         try {
-            ClassicRegexp.preprocessCheck(configuration.getContext(), RopeOperations.ropeFromByteList(value));
+            ClassicRegexp.preprocessCheck(configuration.getContext(), value.toRope());
         } catch (RaiseException re) {
             compile_error(re.getMessage());
         }
@@ -1384,7 +1382,7 @@ public class ParserSupport {
     }        // 1.9 mode overrides to do extra checking...
 
     private List<Integer> allocateNamedLocals(RegexpParseNode regexpNode) {
-        ClassicRegexp pattern = ClassicRegexp.newRegexp(configuration.getContext(), RopeOperations.ropeFromByteList(regexpNode.getValue()), regexpNode.getOptions());
+        ClassicRegexp pattern = ClassicRegexp.newRegexp(configuration.getContext(), regexpNode.getValue().toRope(), regexpNode.getOptions());
         pattern.setLiteral();
         String[] names = pattern.getNames();
         int length = names.length;
@@ -1411,7 +1409,7 @@ public class ParserSupport {
     }
 
     private boolean is7BitASCII(ParserByteList value) {
-        return StringSupport.codeRangeScan(value.getEncoding(), value) == CodeRange.CR_7BIT;
+        return value.codeRangeScan(value.getEncoding()) == CodeRange.CR_7BIT;
     }
 
     // TODO: Put somewhere more consolidated (similiar
@@ -1478,7 +1476,7 @@ public class ParserSupport {
 
         try {
             // This is only for syntax checking but this will as a side-effect create an entry in the regexp cache.
-            ClassicRegexp.newRegexpParser(getConfiguration().getContext(), RopeOperations.ropeFromByteList(value), (RegexpOptions)options.clone());
+            ClassicRegexp.newRegexpParser(getConfiguration().getContext(), value.toRope(), (RegexpOptions)options.clone());
         } catch (RaiseException re) {
             compile_error(re.getMessage());
         }

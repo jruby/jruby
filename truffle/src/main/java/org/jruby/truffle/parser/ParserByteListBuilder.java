@@ -57,7 +57,7 @@ public class ParserByteListBuilder {
     }
 
     public void append(ParserByteList other) {
-        append(other.getUnsafeBytes(), other.getStart(), other.getLength());
+        append(other.getBytes());
     }
 
     public void append(byte[] appendBytes, int appendStart, int appendLength) {
