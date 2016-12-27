@@ -77,10 +77,12 @@ public class ParserByteList {
     }
 
     public ParserByteList withEncoding(Encoding encoding) {
+        // TODO CS 27-Dec-16 what is the best way tomodify the encoding of a rope?
         return new ParserByteList(RopeOperations.create(getBytes(), encoding, CR_UNKNOWN));
     }
 
     public ParserByteList makeShared(int sharedStart, int sharedLength) {
+        // TODO CS 27-Dec-16 what is the correct way to create a SubstringRope?
         return new ParserByteList(getBytes(), sharedStart, sharedLength, getEncoding());
     }
 
@@ -114,10 +116,12 @@ public class ParserByteList {
     }
 
     public int getStringLength() {
+        // TODO CS 27-Dec-16 what is the correct way to do encoding.strLength on a rope?
         return rope.getEncoding().strLength(getBytes(), 0, getLength());
     }
 
     public int getEncodingLength(Encoding encoding) {
+        // TODO CS 27-Dec-16 what is the correct way to do encoding.length on a rope?
         return encoding.length(getBytes(), 0, getLength());
     }
 
