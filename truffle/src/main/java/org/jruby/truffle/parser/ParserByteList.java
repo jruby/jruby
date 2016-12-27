@@ -43,7 +43,6 @@ import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeOperations;
-import org.jruby.truffle.core.string.StringSupport;
 import org.jruby.truffle.parser.lexer.RubyLexer;
 
 import java.nio.ByteBuffer;
@@ -54,120 +53,103 @@ import static org.jruby.truffle.core.rope.CodeRange.CR_UNKNOWN;
 
 public class ParserByteList {
 
-    private final byte[] bytes;
-    private final int start;
-    private final int length;
-    private final Encoding encoding;
+    private final Rope rope;
+
+    public ParserByteList(Rope rope) {
+        this.rope = rope;
+    }
 
     public ParserByteList(byte[] bytes) {
         this(bytes, ASCIIEncoding.INSTANCE);
     }
 
     public ParserByteList(byte[] bytes, Encoding encoding) {
-        this(bytes, 0, bytes.length, encoding);
+        this(RopeOperations.create(bytes, encoding, CR_UNKNOWN));
     }
 
     public ParserByteList(byte[] bytes, int start, int length, Encoding encoding) {
-        this.bytes = bytes;
-        this.start = start;
-        this.length = length;
-        this.encoding = encoding;
+        this(RopeOperations.create(Arrays.copyOfRange(bytes, start, start + length), encoding, CR_UNKNOWN));
     }
 
     public int getLength() {
-        return length;
+        return rope.byteLength();
     }
 
     public Encoding getEncoding() {
-        return encoding;
+        return rope.getEncoding();
     }
 
     public ParserByteList withEncoding(Encoding encoding) {
-        return new ParserByteList(bytes, start, length, encoding);
+        return new ParserByteList(RopeOperations.create(getBytes(), encoding, CR_UNKNOWN));
     }
 
     public ParserByteList makeShared(int sharedStart, int sharedLength) {
-        return new ParserByteList(bytes, start + sharedStart, sharedLength, encoding);
+        return new ParserByteList(getBytes(), sharedStart, sharedLength, getEncoding());
     }
 
     public int caseInsensitiveCmp(ParserByteList other) {
         if (other == this) return 0;
 
-        final int size = length;
-        final int len =  Math.min(size, other.length);
-        final int other_begin = other.start;
-        final byte[] other_bytes = other.bytes;
+        final int size = rope.byteLength();
+        final int len =  Math.min(size, other.rope.byteLength());
+        final byte[] bytes = getBytes();
+        final byte[] other_bytes = other.getBytes();
 
         for (int offset = -1; ++offset < len;) {
-            int myCharIgnoreCase = AsciiTables.ToLowerCaseTable[bytes[start + offset] & 0xff] & 0xff;
-            int otherCharIgnoreCase = AsciiTables.ToLowerCaseTable[other_bytes[other_begin + offset] & 0xff] & 0xff;
+            int myCharIgnoreCase = AsciiTables.ToLowerCaseTable[bytes[offset] & 0xff] & 0xff;
+            int otherCharIgnoreCase = AsciiTables.ToLowerCaseTable[other_bytes[offset] & 0xff] & 0xff;
             if (myCharIgnoreCase < otherCharIgnoreCase) {
                 return -1;
             } else if (myCharIgnoreCase > otherCharIgnoreCase) {
                 return 1;
             }
         }
-        return size == other.length ? 0 : size == len ? -1 : 1;
+        return size == other.getLength() ? 0 : size == len ? -1 : 1;
     }
 
     public boolean equal(ParserByteList other) {
-        if (other == this) return true;
-
-        int first, last;
-        if ((last = length) == other.length) {
-            byte buf[] = bytes;
-            byte otherBuf[] = other.bytes;
-            // scanning from front and back simultaneously, meeting in
-            // the middle. the object is to get a mismatch as quickly as
-            // possible. alternatives might be: scan from the middle outward
-            // (not great because it won't pick up common variations at the
-            // ends until late) or sample odd bytes forward and even bytes
-            // backward (I like this one, but it's more expensive for
-            // strings that are equal; see sample_equals below).
-            first = -1;
-            while (--last > first && buf[start + last] == otherBuf[other.start + last] &&
-                    ++first < last && buf[start + first] == otherBuf[other.start + first]) {
-            }
-            return first >= last;
-        }
-        return false;
+        return rope.equals(other.rope);
     }
 
     public int charAt(int index) {
-        return bytes[start + index];
+        return rope.get(index);
     }
 
     @Override
     public String toString() {
-        return StandardCharsets.ISO_8859_1.decode(ByteBuffer.wrap(bytes, start, length)).toString();
+        return StandardCharsets.ISO_8859_1.decode(ByteBuffer.wrap(getBytes(), 0, getLength())).toString();
     }
 
     public Rope toRope() {
-        return RopeOperations.create(getBytes(), encoding, CR_UNKNOWN);
+        return rope;
     }
 
     public byte[] getBytes() {
-        return Arrays.copyOfRange(bytes, start, start + length);
+        return rope.getBytes();
     }
 
     public CodeRange codeRangeScan(Encoding encoding) {
-        return StringSupport.codeRangeScan(encoding, bytes, start, length);
+        if (encoding == rope.getEncoding()) {
+            return rope.getCodeRange();
+        } else {
+            throw new UnsupportedOperationException();
+        }
     }
 
     public int getStringLength(Encoding encoding) {
-        return encoding.strLength(bytes, start, length);
+        return encoding.strLength(getBytes(), 0, getLength());
     }
 
     public int getEncodingLength(Encoding encoding) {
-        return encoding.length(bytes, start, length);
+        return encoding.length(getBytes(), 0, getLength());
     }
 
     public int getStringLength() {
-        return getStringLength(encoding);
+        return getStringLength(rope.getEncoding());
     }
 
     public String toEncodedString(Encoding encoding) {
-        return RubyLexer.createAsEncodedString(bytes, start, length, encoding);
+        return RubyLexer.createAsEncodedString(getBytes(), 0, getLength(), encoding);
     }
 
 }
