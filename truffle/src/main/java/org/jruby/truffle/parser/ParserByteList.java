@@ -74,10 +74,6 @@ public class ParserByteList {
         this.encoding = encoding;
     }
 
-    public int getStart() {
-        return start;
-    }
-
     public int getLength() {
         return length;
     }
@@ -146,12 +142,8 @@ public class ParserByteList {
         return StandardCharsets.ISO_8859_1.decode(ByteBuffer.wrap(bytes, start, length)).toString();
     }
 
-    public Rope toRope(CodeRange codeRange) {
-        return RopeOperations.create(getBytes(), encoding, codeRange);
-    }
-
     public Rope toRope() {
-        return toRope(CR_UNKNOWN);
+        return RopeOperations.create(getBytes(), encoding, CR_UNKNOWN);
     }
 
     public byte[] getBytes() {

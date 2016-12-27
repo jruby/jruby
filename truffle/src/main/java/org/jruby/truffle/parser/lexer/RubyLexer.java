@@ -1164,7 +1164,7 @@ public class RubyLexer {
             beg = 0;
         }
 
-        int begin = magicLine.getStart() + beg;
+        int begin = beg;
         Matcher matcher = magicRegexp.matcher(magicLine.getBytes());
         int result = ClassicRegexp.matcherSearch(matcher, begin, begin + length, Option.NONE);
 
