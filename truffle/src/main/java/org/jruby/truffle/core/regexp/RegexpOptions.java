@@ -24,7 +24,7 @@ import org.jruby.truffle.parser.ReOptions;
 import org.jruby.truffle.core.string.KCode;
 
 public class RegexpOptions implements Cloneable {
-    private static ByteList WINDOWS31J = new ByteList(new byte[] {'W', 'i', 'n', 'd', 'o', 'w', 's', '-', '3', '1', 'J'});
+    private static String WINDOWS31J = "Windows-31J";
     public static final RegexpOptions NULL_OPTIONS = new RegexpOptions(KCode.NONE, true);
     
     public RegexpOptions() {
@@ -154,7 +154,7 @@ public class RegexpOptions implements Cloneable {
             return EUCJPEncoding.INSTANCE;
         } else if (explicitKCode == KCode.SJIS) {
             setFixed(true);
-            return Layouts.ENCODING.getEncoding(runtime.getEncodingManager().getRubyEncoding(WINDOWS31J.toString()));
+            return Layouts.ENCODING.getEncoding(runtime.getEncodingManager().getRubyEncoding(WINDOWS31J));
         } else if (explicitKCode == KCode.UTF8) {
             setFixed(true);
             return UTF8Encoding.INSTANCE;

@@ -39,6 +39,7 @@ import org.jruby.truffle.core.rope.Rope;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -48,8 +49,6 @@ import java.util.concurrent.ConcurrentMap;
  * because it is a mutable object.
  */
 public class ByteList implements CharSequence {
-
-    public static final byte[] NULL_ARRAY = new byte[0];
 
     private byte[] bytes;
     private int begin;
@@ -134,16 +133,6 @@ public class ByteList implements CharSequence {
         }
         this.realSize = wrap.length;
         this.encoding = safeEncoding(encoding);
-    }
-
-    /**
-     * Create a new instance of byte list with the same contents as the passed in ByteList wrap.
-     * Note that this does array copy the data for the new objects initial backing store.
-     *
-     * @param wrap is contents for new ByteList
-     */
-    public ByteList(ByteList wrap) {
-        this(wrap.bytes, wrap.begin, wrap.realSize, wrap.encoding, true);
     }
 
     /**
@@ -267,25 +256,6 @@ public class ByteList implements CharSequence {
     }
 
     /**
-     * Make a shared copy of this ByteList.  This is used for COW'ing ByteLists, you typically
-     * want a piece of the same backing store to be shared across ByteBuffers, while those
-     * ByteLists will be pointing at different indexes and lengths of the same backing store.
-     *
-     * Note: that this does not update hash or stringValue.
-     *
-     * @param index new begin value for shared ByteBuffer
-     * @param len new length/realSize for chared
-     */
-    public ByteList makeShared(int index, int len) {
-        ByteList shared = new ByteList(bytes, encoding);
-
-        shared.realSize = len;
-        shared.begin = begin + index;
-
-        return shared;
-    }
-
-    /**
      * Append a single byte to the ByteList
      *
      * @param b the byte to be added
@@ -321,15 +291,6 @@ public class ByteList implements CharSequence {
         System.arraycopy(moreBytes, 0, bytes, begin + realSize, moreBytes.length);
         realSize += moreBytes.length;
         return this;
-    }
-
-    /**
-     * Append moreBytes onto the end of the current ByteList.
-     *
-     * @param moreBytes to be added.
-     */
-    public ByteList append(ByteList moreBytes) {
-        return append(moreBytes.bytes, moreBytes.begin, moreBytes.realSize);
     }
 
     /**
@@ -374,19 +335,6 @@ public class ByteList implements CharSequence {
         return realSize;
     }
 
-    // ENEBO: Wow...what happens if newLength < realSize...nasty shrinkage?
-    /**
-     * grow the bytelist to be newLength in size.
-     *
-     * @param newLength
-     */
-    public void length(int newLength) {
-//        assert newLength >= realSize : "newLength is too small";
-
-        grow(newLength - realSize);
-        realSize = newLength;
-    }
-
     /**
      * Get the byte at index from the ByteList.
      *
@@ -410,39 +358,6 @@ public class ByteList implements CharSequence {
         assert begin + index < begin + realSize : "index is too large";
 
         bytes[begin + index] = (byte)b;
-    }
-
-    /**
-     * Get the index of first occurrence of c in ByteList from the pos offset of the ByteList.
-     *
-     * @param c byte to be looking for
-     * @param pos off set from beginning of ByteList to look for byte
-     * @return the index of the byte or -1 if not found
-     */
-    public int indexOf(final int c, int pos) {
-        // not sure if this is checked elsewhere,
-        // didn't see it in RubyString. RubyString does
-        // cast to char, so c will be >= 0.
-        if (c > 255)
-            return -1;
-        final byte b = (byte)(c&0xFF);
-        final int size = begin + realSize;
-        final byte[] buf = bytes;
-        pos += begin;
-        while (pos < size && buf[pos] != b) {
-            pos++;
-        }
-        return pos < size ? pos - begin : -1;
-    }
-
-    /**
-     * Get the index of first occurrence of Bytelist find in this ByteList.
-     *
-     * @param find the ByteList to find
-     * @return the index of the byte or -1 if not found
-     */
-    public int indexOf(ByteList find) {
-        return indexOf(find, 0);
     }
 
     /**
@@ -545,32 +460,6 @@ public class ByteList implements CharSequence {
     }
 
     /**
-     * Do a case insensitive comparison with other ByteList with return types similiar to compareTo.
-     *
-     * @param other the ByteList to compare
-     * @return -1, 0, or 1
-     */
-    public int caseInsensitiveCmp(final ByteList other) {
-        if (other == this) return 0;
-
-        final int size = realSize;
-        final int len =  Math.min(size, other.realSize);
-        final int other_begin = other.begin;
-        final byte[] other_bytes = other.bytes;
-
-        for (int offset = -1; ++offset < len;) {
-            int myCharIgnoreCase = AsciiTables.ToLowerCaseTable[bytes[begin + offset] & 0xff] & 0xff;
-            int otherCharIgnoreCase = AsciiTables.ToLowerCaseTable[other_bytes[other_begin + offset] & 0xff] & 0xff;
-            if (myCharIgnoreCase < otherCharIgnoreCase) {
-                return -1;
-            } else if (myCharIgnoreCase > otherCharIgnoreCase) {
-                return 1;
-            }
-        }
-        return size == other.realSize ? 0 : size == len ? -1 : 1;
-    }
-
-    /**
      * Returns the internal byte array. This is unsafe unless you know what you're
      * doing. But it can improve performance for byte-array operations that
      * won't change the array.
@@ -624,22 +513,10 @@ public class ByteList implements CharSequence {
         }
     }
 
-    /**
-     * @return an ISO-8859-1 representation of the byte list
-     */
     @Override
     public String toString() {
-        return decode(bytes, begin, realSize, "ISO-8859-1");
-    }
-
-    /**
-     * Create a bytelist with ISO_8859_1 encoding from the provided CharSequence.
-     *
-     * @param s the source for new ByteList
-     * @return the new ByteList
-     */
-    public static ByteList create(CharSequence s) {
-        return new ByteList(plain(s),false);
+        // This should be used for debugging only.
+        return new String(bytes(), StandardCharsets.US_ASCII);
     }
 
     /**
@@ -649,7 +526,7 @@ public class ByteList implements CharSequence {
      * @return a byte[]
      */
     public static byte[] plain(CharSequence s) {
-        if (s instanceof String) return encode(s, "ISO-8859-1");
+        if (s instanceof String) return encode(s, StandardCharsets.ISO_8859_1);
 
         // Not a String...get it the slow way
         byte[] bytes = new byte[s.length()];
@@ -659,42 +536,8 @@ public class ByteList implements CharSequence {
         return bytes;
     }
 
-    // Work around bad charset handling in JDK. See
-    // http://halfbottle.blogspot.com/2009/07/charset-continued-i-wrote-about.html
-    private static final ConcurrentMap<String,Charset> charsetsByAlias =
-            new ConcurrentHashMap<>();
-
-    /**
-     * Decode byte data into a String with the supplied charsetName.
-     *
-     * @param data to be decoded
-     * @param offset where to start decoding from in data
-     * @param length how many bytes to decode from data
-     * @param charsetName used to make the resulting String
-     * @return the new String
-     */
-    public static String decode(byte[] data, int offset, int length, String charsetName) {
-        return lookup(charsetName).decode(ByteBuffer.wrap(data, offset, length)).toString();
-    }
-
-    /**
-     * Encode CharSequence into a set of bytes based on the charsetName.
-     *
-     * @param data to be encoded
-     * @param charsetName used to extract the resulting bytes
-     * @return the new byte[]
-     */
-    public static byte[] encode(CharSequence data, String charsetName) {
-        return lookup(charsetName).encode(CharBuffer.wrap(data)).array();
-    }
-
-    private static Charset lookup(String alias) {
-        Charset cs = charsetsByAlias.get(alias);
-        if (cs == null) {
-            cs = Charset.forName(alias);
-            charsetsByAlias.putIfAbsent(alias, cs);
-        }
-        return cs;
+    public static byte[] encode(CharSequence data, Charset charset) {
+        return charset.encode(CharBuffer.wrap(data)).array();
     }
 
     /**
@@ -768,14 +611,6 @@ public class ByteList implements CharSequence {
      */
     public int getBegin() {
         return begin;
-    }
-
-    /**
-     * @param begin the begin to set
-     */
-    public void setBegin(int begin) {
-        assert begin >= 0;
-        this.begin = begin;
     }
 
     /**
