@@ -146,6 +146,10 @@ public class RopeOperations {
         return charset.decode(ByteBuffer.wrap(bytes, offset, byteLength)).toString();
     }
 
+    public static String decodeRope(Charset charset, Rope rope) {
+        return charset.decode(ByteBuffer.wrap(rope.getBytes(), 0, rope.byteLength())).toString();
+    }
+
     // MRI: get_actual_encoding
     @TruffleBoundary
     public static Encoding STR_ENC_GET(Rope rope) {

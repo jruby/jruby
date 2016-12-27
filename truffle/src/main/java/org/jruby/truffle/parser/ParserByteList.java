@@ -43,6 +43,7 @@ import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeOperations;
+import org.jruby.truffle.core.rope.SubstringRope;
 import org.jruby.truffle.parser.lexer.RubyLexer;
 
 import java.nio.ByteBuffer;
@@ -88,23 +89,7 @@ public class ParserByteList {
     }
 
     public int caseInsensitiveCmp(ParserByteList other) {
-        if (other == this) return 0;
-
-        final int size = rope.byteLength();
-        final int len =  Math.min(size, other.rope.byteLength());
-        final byte[] bytes = getBytes();
-        final byte[] other_bytes = other.getBytes();
-
-        for (int offset = -1; ++offset < len;) {
-            int myCharIgnoreCase = AsciiTables.ToLowerCaseTable[bytes[offset] & 0xff] & 0xff;
-            int otherCharIgnoreCase = AsciiTables.ToLowerCaseTable[other_bytes[offset] & 0xff] & 0xff;
-            if (myCharIgnoreCase < otherCharIgnoreCase) {
-                return -1;
-            } else if (myCharIgnoreCase > otherCharIgnoreCase) {
-                return 1;
-            }
-        }
-        return size == other.getLength() ? 0 : size == len ? -1 : 1;
+        return RopeOperations.caseInsensitiveCmp(rope, other.rope);
     }
 
     public boolean equal(ParserByteList other) {
@@ -117,7 +102,7 @@ public class ParserByteList {
 
     @Override
     public String toString() {
-        return StandardCharsets.ISO_8859_1.decode(ByteBuffer.wrap(getBytes(), 0, getLength())).toString();
+        return RopeOperations.decodeRope(StandardCharsets.ISO_8859_1, rope);
     }
 
     public Rope toRope() {
