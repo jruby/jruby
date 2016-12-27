@@ -342,7 +342,7 @@ public class RubyLexer {
 
     // FIXME: How does lexb.toString() vs getCurrentLine() differ.
     public void compile_error(SyntaxException.PID pid, String message) {
-        String src = lex_lastline.toEncodedString(getEncoding());
+        String src = lex_lastline.toEncodedString();
         throw new SyntaxException(pid, getFile(), ruby_sourceline, src, message);
     }
 
@@ -2635,19 +2635,7 @@ public class RubyLexer {
     }
 
     public String createTokenString(int start) {
-        return lexb.makeShared(start, lex_p - start).toEncodedString(getEncoding());
-    }
-
-    public static String createAsEncodedString(byte[] bytes, int start, int length, Encoding encoding) {
-        // FIXME: We should be able to move some faster non-exception cache using Encoding.isDefined
-        try {
-            Charset charset = encoding.getCharset();
-            if (charset != null) {
-                return new String(bytes, start, length, charset);
-            }
-        } catch (UnsupportedCharsetException e) {}
-
-        return new String(bytes, start, length);
+        return lexb.makeShared(start, lex_p - start).toEncodedString();
     }
 
     public String createTokenString() {

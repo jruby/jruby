@@ -38,15 +38,11 @@
 package org.jruby.truffle.parser;
 
 import org.jcodings.Encoding;
-import org.jcodings.ascii.AsciiTables;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeOperations;
-import org.jruby.truffle.core.rope.SubstringRope;
-import org.jruby.truffle.parser.lexer.RubyLexer;
 
-import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
@@ -125,8 +121,8 @@ public class ParserByteList {
         return encoding.length(getBytes(), 0, getLength());
     }
 
-    public String toEncodedString(Encoding encoding) {
-        return RubyLexer.createAsEncodedString(getBytes(), 0, getLength(), encoding);
+    public String toEncodedString() {
+        return RopeOperations.decodeRope(rope);
     }
 
 }
