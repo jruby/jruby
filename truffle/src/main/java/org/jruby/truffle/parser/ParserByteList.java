@@ -113,24 +113,16 @@ public class ParserByteList {
         return rope.getBytes();
     }
 
-    public CodeRange codeRangeScan(Encoding encoding) {
-        if (encoding == rope.getEncoding()) {
-            return rope.getCodeRange();
-        } else {
-            throw new UnsupportedOperationException();
-        }
+    public CodeRange codeRangeScan() {
+        return rope.getCodeRange();
     }
 
-    public int getStringLength(Encoding encoding) {
-        return encoding.strLength(getBytes(), 0, getLength());
+    public int getStringLength() {
+        return rope.getEncoding().strLength(getBytes(), 0, getLength());
     }
 
     public int getEncodingLength(Encoding encoding) {
         return encoding.length(getBytes(), 0, getLength());
-    }
-
-    public int getStringLength() {
-        return getStringLength(rope.getEncoding());
     }
 
     public String toEncodedString(Encoding encoding) {

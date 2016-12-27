@@ -495,7 +495,7 @@ public class RubyLexer {
     // STR_NEW3/parser_str_new
     public StrParseNode createStr(ParserByteList buffer, int flags) {
         Encoding bufferEncoding = buffer.getEncoding();
-        CodeRange codeRange = buffer.codeRangeScan(bufferEncoding);
+        CodeRange codeRange = buffer.codeRangeScan();
 
         if ((flags & STR_FUNC_REGEXP) == 0 && bufferEncoding.isAsciiCompatible()) {
             // If we have characters outside 7-bit range and we are still ascii then change to ascii-8bit

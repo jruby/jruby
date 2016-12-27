@@ -50,7 +50,7 @@ public class StrParseNode extends ParseNode implements ILiteralNode, SideEffectF
     private boolean frozen;
 
     public StrParseNode(TempSourceSection position, ParserByteList value) {
-        this(position, value, value.codeRangeScan(value.getEncoding()));
+        this(position, value, value.codeRangeScan());
     }
 
     public StrParseNode(TempSourceSection position, ParserByteList value, CodeRange codeRange) {
@@ -73,7 +73,7 @@ public class StrParseNode extends ParseNode implements ILiteralNode, SideEffectF
 
         frozen = head.isFrozen() && tail.isFrozen();
         value = myValue.toParserByteList();
-        codeRange = value.codeRangeScan(value.getEncoding());
+        codeRange = value.codeRangeScan();
     }
 
     public NodeType getNodeType() {

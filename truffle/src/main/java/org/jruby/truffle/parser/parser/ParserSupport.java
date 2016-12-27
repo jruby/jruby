@@ -1409,7 +1409,7 @@ public class ParserSupport {
     }
 
     private boolean is7BitASCII(ParserByteList value) {
-        return value.codeRangeScan(value.getEncoding()) == CodeRange.CR_7BIT;
+        return value.codeRangeScan() == CodeRange.CR_7BIT;
     }
 
     // TODO: Put somewhere more consolidated (similiar
