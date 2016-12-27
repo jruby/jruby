@@ -48,7 +48,7 @@ import java.util.concurrent.ConcurrentMap;
  * of characters. However, its API resembles StringBuffer/StringBuilder more than String
  * because it is a mutable object.
  */
-public class ByteList implements CharSequence {
+public class ByteList {
 
     private byte[] bytes;
     private int begin;
@@ -538,26 +538,6 @@ public class ByteList implements CharSequence {
 
     public static byte[] encode(CharSequence data, Charset charset) {
         return charset.encode(CharBuffer.wrap(data)).array();
-    }
-
-    /**
-     * Pretend byte array is raw and each byte is also the character value
-     *
-     * @param ix is the index you want
-     */
-    public char charAt(int ix) {
-        return (char)(this.bytes[begin + ix] & 0xFF);
-    }
-
-    /**
-     * Create subSequence of this array between start and end offsets
-     *
-     * @param start index for beginning of subsequence
-     * @param end index for end of subsequence
-     * @return a new ByteList/CharSequence
-     */
-    public CharSequence subSequence(int start, int end) {
-        return new ByteList(this, start, end - start);
     }
 
     /**
