@@ -39,6 +39,7 @@ public class OptionsCatalog {
     public static final OptionDescription PLATFORM_SAFE_AT_EXIT = new BooleanOptionDescription("platform.safe.at_exit", "Treat #at_exit as safe", false);
     public static final OptionDescription PLATFORM_SAFE_PUTS = new BooleanOptionDescription("platform.safe_puts", "Treat safe_puts as safe", true);
     public static final OptionDescription PLATFORM_USE_JAVA = new BooleanOptionDescription("platform.use_java", "Use a pure-Java platform", false);
+    public static final OptionDescription TRACE_CALLS = new BooleanOptionDescription("trace.calls", "Support tracing (set_trace_func", true);
     public static final OptionDescription COVERAGE_GLOBAL = new BooleanOptionDescription("coverage.global", "Run coverage for all code and print results on exit", false);
     public static final OptionDescription INLINE_JS = new BooleanOptionDescription("inline_js", "Allow inline JavaScript", false);
     public static final OptionDescription CORE_LOAD_PATH = new StringOptionDescription("core.load_path", "Location to load the Truffle core library from", "truffle:/jruby-truffle");
@@ -157,6 +158,8 @@ public class OptionsCatalog {
                 return PLATFORM_SAFE_PUTS;
             case "platform.use_java":
                 return PLATFORM_USE_JAVA;
+            case "trace.calls":
+                return TRACE_CALLS;
             case "coverage.global":
                 return COVERAGE_GLOBAL;
             case "inline_js":

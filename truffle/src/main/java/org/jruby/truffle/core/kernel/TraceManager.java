@@ -87,12 +87,13 @@ public class TraceManager {
         instruments.add(instrumenter.attachFactory(SourceSectionFilter.newBuilder().tagIs(LineTag.class).build(),
                 eventContext -> new BaseEventEventNode(context, eventContext, traceFunc, context.getCoreStrings().LINE.createInstance())));
 
-        instruments.add(instrumenter.attachFactory(SourceSectionFilter.newBuilder().tagIs(CallTag.class).build(),
-                eventContext -> new CallEventEventNode(context, eventContext, traceFunc, context.getCoreStrings().CALL.createInstance())));
-
         instruments.add(instrumenter.attachFactory(SourceSectionFilter.newBuilder().tagIs(ClassTag.class).build(),
                 eventContext -> new BaseEventEventNode(context, eventContext, traceFunc, context.getCoreStrings().CLASS.createInstance())));
 
+        if (context.getOptions().TRACE_CALLS) {
+            instruments.add(instrumenter.attachFactory(SourceSectionFilter.newBuilder().tagIs(CallTag.class).build(),
+                    eventContext -> new CallEventEventNode(context, eventContext, traceFunc, context.getCoreStrings().CALL.createInstance())));
+        }
     }
 
     private class BaseEventEventNode extends ExecutionEventNode {

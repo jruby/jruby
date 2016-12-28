@@ -26,6 +26,7 @@ PLATFORM_SAFE_AT_EXIT: [platform.safe.at_exit, boolean, PLATFORM_SAFE, 'Treat #a
 PLATFORM_SAFE_PUTS: [platform.safe_puts, boolean, true, Treat safe_puts as safe]
 PLATFORM_USE_JAVA: [platform.use_java, boolean, false, Use a pure-Java platform, so no native POSIX]
 
+TRACE_CALLS: [trace.calls, boolean, true, Support tracing (set_trace_func, TracePoint) of method calls]
 COVERAGE_GLOBAL: [coverage.global, boolean, false, Run coverage for all code and print results on exit]
 INLINE_JS: [inline_js, boolean, false, Allow inline JavaScript]
 

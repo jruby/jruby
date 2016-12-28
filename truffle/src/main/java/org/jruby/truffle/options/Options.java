@@ -41,6 +41,7 @@ public class Options {
     public final boolean PLATFORM_SAFE_AT_EXIT;
     public final boolean PLATFORM_SAFE_PUTS;
     public final boolean PLATFORM_USE_JAVA;
+    public final boolean TRACE_CALLS;
     public final boolean COVERAGE_GLOBAL;
     public final boolean INLINE_JS;
     public final String CORE_LOAD_PATH;
@@ -135,6 +136,7 @@ public class Options {
         PLATFORM_SAFE_AT_EXIT = builder.getOrDefault(OptionsCatalog.PLATFORM_SAFE_AT_EXIT, PLATFORM_SAFE);
         PLATFORM_SAFE_PUTS = builder.getOrDefault(OptionsCatalog.PLATFORM_SAFE_PUTS);
         PLATFORM_USE_JAVA = builder.getOrDefault(OptionsCatalog.PLATFORM_USE_JAVA);
+        TRACE_CALLS = builder.getOrDefault(OptionsCatalog.TRACE_CALLS);
         COVERAGE_GLOBAL = builder.getOrDefault(OptionsCatalog.COVERAGE_GLOBAL);
         INLINE_JS = builder.getOrDefault(OptionsCatalog.INLINE_JS);
         CORE_LOAD_PATH = builder.getOrDefault(OptionsCatalog.CORE_LOAD_PATH);
