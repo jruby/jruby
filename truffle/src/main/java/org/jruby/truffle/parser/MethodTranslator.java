@@ -20,6 +20,7 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.IsNilNode;
 import org.jruby.truffle.core.cast.ArrayCastNodeGen;
 import org.jruby.truffle.core.proc.ProcType;
+import org.jruby.truffle.language.LazyRubyNode;
 import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
@@ -283,7 +284,7 @@ public class MethodTranslator extends BodyTranslator {
         if (context.getOptions().LAZY_TRANSLATION) {
             final TranslatorState state = getCurrentState();
 
-            body = new LazyTranslationNode(() -> {
+            body = new LazyRubyNode(() -> {
                 restoreState(state);
                 return compileMethodBody(sourceSection, methodName, bodyNode, sharedMethodInfo);
             });
