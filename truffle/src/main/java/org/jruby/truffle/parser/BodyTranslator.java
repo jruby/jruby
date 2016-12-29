@@ -3362,7 +3362,10 @@ public class BodyTranslator extends Translator {
                 return node;
             }
 
-            context.getCoverageManager().setLineHasCode(source, current.getStartLine());
+            if (context.getCoverageManager().isEnabled()) {
+                context.getCoverageManager().setLineHasCode(source, current.getStartLine());
+            }
+
             node.unsafeSetIsNewLine();
         }
 
