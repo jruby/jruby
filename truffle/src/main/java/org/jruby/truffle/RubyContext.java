@@ -183,6 +183,7 @@ public class RubyContext extends ExecutionContext {
         final Instrumenter instrumenter = env.lookup(Instrumenter.class);
         traceManager = new TraceManager(this, instrumenter);
         coreMethods = new CoreMethods(this);
+        coverageManager = new CoverageManager(this, instrumenter);
 
         // Load the reset of the core library
 
@@ -200,8 +201,6 @@ public class RubyContext extends ExecutionContext {
         } else {
             instrumentationServerManager = null;
         }
-
-        coverageManager = new CoverageManager(this, instrumenter);
 
         coreLibrary.initializePostBoot();
 
