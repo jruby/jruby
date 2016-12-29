@@ -46,8 +46,9 @@ import java.math.BigInteger;
 public abstract class RubyBaseNode extends Node {
 
     private static final int FLAG_NEWLINE = 0;
-    private static final int FLAG_CALL = 1;
-    private static final int FLAG_ROOT = 2;
+    private static final int FLAG_COVERAGE_LINE = 1;
+    private static final int FLAG_CALL = 2;
+    private static final int FLAG_ROOT = 3;
 
     @CompilationFinal private RubyContext context;
 
@@ -259,6 +260,10 @@ public abstract class RubyBaseNode extends Node {
         flags |= 1 << FLAG_NEWLINE;
     }
 
+    public void unsafeSetIsCoverageLine() {
+        flags |= 1 << FLAG_COVERAGE_LINE;
+    }
+
     public void unsafeSetIsCall() {
         flags |= 1 << FLAG_CALL;
     }
@@ -269,6 +274,10 @@ public abstract class RubyBaseNode extends Node {
 
     private boolean isNewLine() {
         return ((flags >> FLAG_NEWLINE) & 1) == 1;
+    }
+
+    private boolean isCoverageLine() {
+        return ((flags >> FLAG_COVERAGE_LINE) & 1) == 1;
     }
 
     private boolean isCall() {
@@ -285,10 +294,12 @@ public abstract class RubyBaseNode extends Node {
             return isCall();
         }
 
-        if (tag == TraceManager.LineTag.class
-                || tag == CoverageManager.LineTag.class
-                || tag == StandardTags.StatementTag.class) {
+        if (tag == TraceManager.LineTag.class || tag == StandardTags.StatementTag.class) {
             return isNewLine();
+        }
+
+        if (tag == CoverageManager.LineTag.class) {
+            return isCoverageLine();
         }
 
         if (tag == StandardTags.RootTag.class) {
