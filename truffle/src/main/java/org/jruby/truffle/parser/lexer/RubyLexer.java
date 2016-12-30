@@ -374,7 +374,7 @@ public class RubyLexer {
     }
 
     public TempSourceSection getPosition() {
-        if (tokline != null && ruby_sourceline == tokline.toSourceSection(src.getSource()).getStartLine() - 1) { // SLOW!
+        if (tokline != null && ruby_sourceline == ruby_sourceline_when_tokline_created) {
             return tokline;
         }
 
@@ -2640,6 +2640,7 @@ public class RubyLexer {
     private CodeRange tokenCR;
     protected boolean tokenSeen = false;
     public TempSourceSection tokline;
+    private int ruby_sourceline_when_tokline_created;
     public int tokp = 0;                   // Where last token started
     protected Object yaccValue;               // Value of last token which had a value associated with it.
 
@@ -2803,6 +2804,7 @@ public class RubyLexer {
     // we remove actual source characters (like extra '"') then this acts differently.
     public void newtok(boolean unreadOnce) {
         tokline = getPosition();
+        ruby_sourceline_when_tokline_created = ruby_sourceline;
         // We assume all idents are 7BIT until they aren't.
         tokenCR = CodeRange.CR_7BIT;
 
