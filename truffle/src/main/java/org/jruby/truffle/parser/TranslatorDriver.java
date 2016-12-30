@@ -53,6 +53,7 @@ import org.jruby.truffle.language.DataNode;
 import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.arguments.MissingArgumentBehavior;
 import org.jruby.truffle.language.arguments.ProfileArgumentNode;
 import org.jruby.truffle.language.arguments.ReadPreArgumentNode;
@@ -154,7 +155,7 @@ public class TranslatorDriver {
         RootParseNode node = parse(source, dynamicScope, parserConfiguration);
 
         final SourceSection sourceSection = source.createSection(0, source.getCode().length());
-        final TempSourceSection tempSourceSection = new TempSourceSection(sourceSection.getCharIndex(), sourceSection.getCharLength());
+        final SourceIndexLength sourceIndexLength = new SourceIndexLength(sourceSection.getCharIndex(), sourceSection.getCharLength());
 
         final InternalMethod parentMethod = parentFrame == null ? null : RubyArguments.getMethod(parentFrame);
         LexicalScope lexicalScope;
@@ -199,12 +200,12 @@ public class TranslatorDriver {
 
         final BodyTranslator translator = new BodyTranslator(currentNode, context, null, environment, source, topLevel);
 
-        RubyNode truffleNode = translator.translateNodeOrNil(tempSourceSection, node.getBodyNode());
+        RubyNode truffleNode = translator.translateNodeOrNil(sourceIndexLength, node.getBodyNode());
 
         // Load arguments
 
         final RubyNode writeSelfNode = Translator.loadSelf(context, environment);
-        truffleNode = Translator.sequence(context, source, tempSourceSection, Arrays.asList(writeSelfNode, truffleNode));
+        truffleNode = Translator.sequence(context, source, sourceIndexLength, Arrays.asList(writeSelfNode, truffleNode));
 
         if (argumentNames != null && argumentNames.length > 0) {
             final List<RubyNode> sequence = new ArrayList<>();
@@ -217,13 +218,13 @@ public class TranslatorDriver {
             }
 
             sequence.add(truffleNode);
-            truffleNode = Translator.sequence(context, source, tempSourceSection, sequence);
+            truffleNode = Translator.sequence(context, source, sourceIndexLength, sequence);
         }
 
         // Load flip-flop states
 
         if (environment.getFlipFlopStates().size() > 0) {
-            truffleNode = Translator.sequence(context, source, tempSourceSection, Arrays.asList(translator.initFlipFlopStates(tempSourceSection), truffleNode));
+            truffleNode = Translator.sequence(context, source, sourceIndexLength, Arrays.asList(translator.initFlipFlopStates(sourceIndexLength), truffleNode));
         }
 
         // Catch next
@@ -241,13 +242,13 @@ public class TranslatorDriver {
         truffleNode = new CatchRetryAsErrorNode(context, truffleNode.getRubySourceSection().toSourceSection(source), truffleNode);
 
         if (parserContext == ParserContext.TOP_LEVEL_FIRST) {
-            truffleNode = Translator.sequence(context, source, tempSourceSection, Arrays.asList(
+            truffleNode = Translator.sequence(context, source, sourceIndexLength, Arrays.asList(
                     new SetTopLevelBindingNode(context, sourceSection),
                     new LoadRequiredLibrariesNode(context, sourceSection),
                     truffleNode));
 
             if (node.hasEndPosition()) {
-                truffleNode = Translator.sequence(context, source, tempSourceSection, Arrays.asList(
+                truffleNode = Translator.sequence(context, source, sourceIndexLength, Arrays.asList(
                         new DataNode(context, sourceSection, node.getEndPosition()),
                         truffleNode));
             }

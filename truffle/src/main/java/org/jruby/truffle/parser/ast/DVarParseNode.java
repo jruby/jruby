@@ -31,7 +31,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.ast;
 
-import org.jruby.truffle.parser.TempSourceSection;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.parser.ast.types.INameNode;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
 
@@ -48,7 +48,7 @@ public class DVarParseNode extends ParseNode implements INameNode, IScopedNode, 
     // is what index in the right scope to set the value.
     private int location;
 
-    public DVarParseNode(TempSourceSection position, int location, String name) {
+    public DVarParseNode(SourceIndexLength position, int location, String name) {
         super(position, false);
         this.location = location;
         this.name = name;

@@ -19,23 +19,23 @@ import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.parser.TempSourceSection;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
 
 public abstract class ArrayLiteralNode extends RubyNode {
 
-    public static ArrayLiteralNode create(RubyContext context, TempSourceSection sourceSection, RubyNode[] values) {
+    public static ArrayLiteralNode create(RubyContext context, SourceIndexLength sourceSection, RubyNode[] values) {
         return new UninitialisedArrayLiteralNode(context, sourceSection, values);
     }
 
     @Children protected final RubyNode[] values;
     @Child protected AllocateObjectNode allocateObjectNode;
 
-    public ArrayLiteralNode(RubyContext context, TempSourceSection sourceSection, RubyNode[] values) {
+    public ArrayLiteralNode(RubyContext context, SourceIndexLength sourceSection, RubyNode[] values) {
         super(context, sourceSection);
         this.values = values;
-        this.allocateObjectNode = AllocateObjectNodeGen.create(context, (TempSourceSection) null, false, null, null);
+        this.allocateObjectNode = AllocateObjectNodeGen.create(context, (SourceIndexLength) null, false, null, null);
     }
 
     protected DynamicObject makeGeneric(VirtualFrame frame, Object[] alreadyExecuted) {
@@ -97,7 +97,7 @@ public abstract class ArrayLiteralNode extends RubyNode {
 
     private static class EmptyArrayLiteralNode extends ArrayLiteralNode {
 
-        public EmptyArrayLiteralNode(RubyContext context, TempSourceSection sourceSection, RubyNode[] values) {
+        public EmptyArrayLiteralNode(RubyContext context, SourceIndexLength sourceSection, RubyNode[] values) {
             super(context, sourceSection, values);
         }
 
@@ -110,7 +110,7 @@ public abstract class ArrayLiteralNode extends RubyNode {
 
     private static class FloatArrayLiteralNode extends ArrayLiteralNode {
 
-        public FloatArrayLiteralNode(RubyContext context, TempSourceSection sourceSection, RubyNode[] values) {
+        public FloatArrayLiteralNode(RubyContext context, SourceIndexLength sourceSection, RubyNode[] values) {
             super(context, sourceSection, values);
         }
 
@@ -144,7 +144,7 @@ public abstract class ArrayLiteralNode extends RubyNode {
 
     private static class IntegerArrayLiteralNode extends ArrayLiteralNode {
 
-        public IntegerArrayLiteralNode(RubyContext context, TempSourceSection sourceSection, RubyNode[] values) {
+        public IntegerArrayLiteralNode(RubyContext context, SourceIndexLength sourceSection, RubyNode[] values) {
             super(context, sourceSection, values);
         }
 
@@ -178,7 +178,7 @@ public abstract class ArrayLiteralNode extends RubyNode {
 
     private static class LongArrayLiteralNode extends ArrayLiteralNode {
 
-        public LongArrayLiteralNode(RubyContext context, TempSourceSection sourceSection, RubyNode[] values) {
+        public LongArrayLiteralNode(RubyContext context, SourceIndexLength sourceSection, RubyNode[] values) {
             super(context, sourceSection, values);
         }
 
@@ -212,7 +212,7 @@ public abstract class ArrayLiteralNode extends RubyNode {
 
     private static class ObjectArrayLiteralNode extends ArrayLiteralNode {
 
-        public ObjectArrayLiteralNode(RubyContext context, TempSourceSection sourceSection, RubyNode[] values) {
+        public ObjectArrayLiteralNode(RubyContext context, SourceIndexLength sourceSection, RubyNode[] values) {
             super(context, sourceSection, values);
         }
 
@@ -232,7 +232,7 @@ public abstract class ArrayLiteralNode extends RubyNode {
 
     private static class UninitialisedArrayLiteralNode extends ArrayLiteralNode {
 
-        public UninitialisedArrayLiteralNode(RubyContext context, TempSourceSection sourceSection, RubyNode[] values) {
+        public UninitialisedArrayLiteralNode(RubyContext context, SourceIndexLength sourceSection, RubyNode[] values) {
             super(context, sourceSection, values);
         }
 

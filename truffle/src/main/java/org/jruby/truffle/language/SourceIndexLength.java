@@ -7,17 +7,17 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.parser;
+package org.jruby.truffle.language;
 
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 
-public class TempSourceSection {
+public class SourceIndexLength {
 
     private final int charIndex;
     private final int length;
 
-    public TempSourceSection(int charIndex, int length) {
+    public SourceIndexLength(int charIndex, int length) {
         this.charIndex = charIndex;
         this.length = length;
     }

@@ -28,7 +28,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.ast;
 
-import org.jruby.truffle.parser.TempSourceSection;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
 import org.jruby.truffle.parser.scope.StaticScope;
 
@@ -36,7 +36,7 @@ import org.jruby.truffle.parser.scope.StaticScope;
  * A pre-execution construction (BEGIN { ... }).
  */
 public class PreExe19ParseNode extends PreExeParseNode {
-    public PreExe19ParseNode(TempSourceSection position, StaticScope scope, ParseNode body) {
+    public PreExe19ParseNode(SourceIndexLength position, StaticScope scope, ParseNode body) {
         super(position, scope, body);
     }
 

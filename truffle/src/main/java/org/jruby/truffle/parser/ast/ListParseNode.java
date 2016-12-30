@@ -29,7 +29,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.ast;
 
-import org.jruby.truffle.parser.TempSourceSection;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
 
 import java.util.Arrays;
@@ -53,14 +53,14 @@ public class ListParseNode extends ParseNode {
      * @param position where list is
      * @param firstNode first element of the list
      */
-    public ListParseNode(TempSourceSection position, ParseNode firstNode) {
+    public ListParseNode(SourceIndexLength position, ParseNode firstNode) {
         super(position, firstNode != null && firstNode.containsVariableAssignment);
 
         list = new ParseNode[INITIAL_SIZE];
         addInternal(firstNode);
     }
 
-    public ListParseNode(TempSourceSection position) {
+    public ListParseNode(SourceIndexLength position) {
         super(position, false);
 
         list = EMPTY;

@@ -32,7 +32,7 @@
 package org.jruby.truffle.parser.ast;
 
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.TempSourceSection;
+import org.jruby.truffle.language.SourceIndexLength;
 
 import java.util.List;
 
@@ -40,7 +40,7 @@ public class OpAsgnAndParseNode extends ParseNode implements BinaryOperatorParse
     private final ParseNode firstNode;
     private final ParseNode secondNode;
 
-    public OpAsgnAndParseNode(TempSourceSection position, ParseNode headNode, ParseNode valueNode) {
+    public OpAsgnAndParseNode(SourceIndexLength position, ParseNode headNode, ParseNode valueNode) {
         super(position, headNode.containsVariableAssignment() || valueNode.containsVariableAssignment());
 
         assert headNode != null : "headNode is not null";

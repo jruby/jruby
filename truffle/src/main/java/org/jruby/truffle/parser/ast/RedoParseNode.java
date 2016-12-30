@@ -32,7 +32,7 @@
 package org.jruby.truffle.parser.ast;
 
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.TempSourceSection;
+import org.jruby.truffle.language.SourceIndexLength;
 
 import java.util.List;
 
@@ -40,7 +40,7 @@ import java.util.List;
  * Represents a 'redo'
  */
 public class RedoParseNode extends ParseNode implements NonLocalControlFlowParseNode {
-    public RedoParseNode(TempSourceSection position) {
+    public RedoParseNode(SourceIndexLength position) {
         super(position, false);
     }
 

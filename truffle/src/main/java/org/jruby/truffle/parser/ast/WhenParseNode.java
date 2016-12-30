@@ -32,7 +32,7 @@
 package org.jruby.truffle.parser.ast;
 
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.TempSourceSection;
+import org.jruby.truffle.language.SourceIndexLength;
 
 import java.util.List;
 
@@ -44,7 +44,7 @@ public class WhenParseNode extends ParseNode {
     protected final ParseNode bodyNode;
     private final ParseNode nextCase;
 
-    public WhenParseNode(TempSourceSection position, ParseNode expressionNodes, ParseNode bodyNode, ParseNode nextCase) {
+    public WhenParseNode(SourceIndexLength position, ParseNode expressionNodes, ParseNode bodyNode, ParseNode nextCase) {
         super(position, expressionNodes != null && expressionNodes.containsVariableAssignment() ||
                 bodyNode != null && bodyNode.containsVariableAssignment() ||
                 nextCase != null && nextCase.containsVariableAssignment());

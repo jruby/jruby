@@ -29,7 +29,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.ast;
 
-import org.jruby.truffle.parser.TempSourceSection;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
 
 import java.util.List;
@@ -37,7 +37,7 @@ import java.util.List;
 public class SplatParseNode extends ParseNode {
     protected final ParseNode node;
 
-    public SplatParseNode(TempSourceSection position, ParseNode node) {
+    public SplatParseNode(SourceIndexLength position, ParseNode node) {
         super(position, node.containsVariableAssignment());
 
         assert node != null : "node is not null";

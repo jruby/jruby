@@ -36,7 +36,7 @@ import org.jruby.truffle.core.regexp.RegexpOptions;
 import org.jruby.truffle.parser.ParserByteList;
 import org.jruby.truffle.parser.ast.types.ILiteralNode;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.TempSourceSection;
+import org.jruby.truffle.language.SourceIndexLength;
 
 import java.util.List;
 
@@ -47,7 +47,7 @@ public class RegexpParseNode extends ParseNode implements ILiteralNode {
     private final ParserByteList value;
     private final RegexpOptions options;
 
-    public RegexpParseNode(TempSourceSection position, ParserByteList value, RegexpOptions options) {
+    public RegexpParseNode(SourceIndexLength position, ParserByteList value, RegexpOptions options) {
         super(position, false);
 
         this.value = value;

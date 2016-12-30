@@ -26,7 +26,7 @@ import org.jruby.truffle.builtins.UnaryCoreMethodNode;
 import org.jruby.truffle.core.proc.ProcOperations;
 import org.jruby.truffle.core.proc.ProcType;
 import org.jruby.truffle.language.RubyRootNode;
-import org.jruby.truffle.parser.TempSourceSection;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.methods.Arity;
@@ -108,7 +108,7 @@ public abstract class SymbolNodes {
         protected DynamicObject createProc(InternalMethod method, DynamicObject symbol) {
             final SourceSection sourceSection = getContext().getCallStack().getCallerFrameIgnoringSend()
                     .getCallNode().getEncapsulatingSourceSection();
-            final TempSourceSection tempSourceSection = new TempSourceSection(sourceSection.getCharIndex(), sourceSection.getCharLength());
+            final SourceIndexLength sourceIndexLength = new SourceIndexLength(sourceSection.getCharIndex(), sourceSection.getCharLength());
 
             final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(
                     sourceSection,
@@ -122,7 +122,7 @@ public abstract class SymbolNodes {
                     false,
                     false);
 
-            final RubyRootNode rootNode = new RubyRootNode(getContext(), sourceSection, new FrameDescriptor(nil()), sharedMethodInfo, Translator.sequence(getContext(), sourceSection.getSource(), tempSourceSection, Arrays.asList(Translator.createCheckArityNode(getContext(), sourceSection.getSource(), tempSourceSection, Arity.AT_LEAST_ONE), new SymbolProcNode(getContext(), sourceSection, Layouts.SYMBOL.getString(symbol)))), false);
+            final RubyRootNode rootNode = new RubyRootNode(getContext(), sourceSection, new FrameDescriptor(nil()), sharedMethodInfo, Translator.sequence(getContext(), sourceSection.getSource(), sourceIndexLength, Arrays.asList(Translator.createCheckArityNode(getContext(), sourceSection.getSource(), sourceIndexLength, Arity.AT_LEAST_ONE), new SymbolProcNode(getContext(), sourceSection, Layouts.SYMBOL.getString(symbol)))), false);
 
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
 

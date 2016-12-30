@@ -28,7 +28,7 @@
 package org.jruby.truffle.parser.ast;
 
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.TempSourceSection;
+import org.jruby.truffle.language.SourceIndexLength;
 
 import java.util.List;
 
@@ -40,7 +40,7 @@ public class MultipleAsgnParseNode extends AssignableParseNode {
     private final ParseNode rest;
     private final ListParseNode post;
 
-    public MultipleAsgnParseNode(TempSourceSection position, ListParseNode pre, ParseNode rest, ListParseNode post) {
+    public MultipleAsgnParseNode(SourceIndexLength position, ListParseNode pre, ParseNode rest, ListParseNode post) {
         super(position);
         this.pre = pre;
         this.rest = rest;

@@ -31,7 +31,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.ast;
 
-import org.jruby.truffle.parser.TempSourceSection;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.parser.ast.types.INameNode;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
 
@@ -41,7 +41,7 @@ import java.util.List;
  * Represents 'true'.
  */
 public class TrueParseNode extends ParseNode implements INameNode, SideEffectFree {
-    public TrueParseNode(TempSourceSection position) {
+    public TrueParseNode(SourceIndexLength position) {
         super(position, false);
     }
 

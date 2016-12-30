@@ -32,7 +32,7 @@ package org.jruby.truffle.parser.ast;
  * Base class for DefnParseNode and DefsParseNode
  */
 
-import org.jruby.truffle.parser.TempSourceSection;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.parser.ast.types.INameNode;
 import org.jruby.truffle.parser.scope.StaticScope;
 
@@ -42,7 +42,7 @@ public abstract class MethodDefParseNode extends ParseNode implements INameNode,
     protected final StaticScope scope;
     protected final ParseNode bodyNode;
 
-    public MethodDefParseNode(TempSourceSection position, String name, ArgsParseNode argsNode,
+    public MethodDefParseNode(SourceIndexLength position, String name, ArgsParseNode argsNode,
                               StaticScope scope, ParseNode bodyNode) {
         super(position, bodyNode.containsVariableAssignment());
 

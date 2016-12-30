@@ -27,7 +27,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.ast;
 
-import org.jruby.truffle.parser.TempSourceSection;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
 import org.jruby.truffle.parser.scope.StaticScope;
 
@@ -37,7 +37,7 @@ import java.util.List;
  * Stubby lambda node (1.9 only)
  */
 public class LambdaParseNode extends IterParseNode {
-    public LambdaParseNode(TempSourceSection position, ArgsParseNode args, ParseNode body, StaticScope scope) {
+    public LambdaParseNode(SourceIndexLength position, ArgsParseNode args, ParseNode body, StaticScope scope) {
         super(position, args, body, scope);
     }
 

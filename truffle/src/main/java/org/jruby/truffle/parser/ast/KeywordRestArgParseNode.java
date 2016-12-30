@@ -1,13 +1,13 @@
 package org.jruby.truffle.parser.ast;
 
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.TempSourceSection;
+import org.jruby.truffle.language.SourceIndexLength;
 
 /**
  *
  */
 public class KeywordRestArgParseNode extends ArgumentParseNode {
-    public KeywordRestArgParseNode(TempSourceSection position, String name, int index) {
+    public KeywordRestArgParseNode(SourceIndexLength position, String name, int index) {
         super(position, name, index);
     }
     

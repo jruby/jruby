@@ -32,7 +32,7 @@
 package org.jruby.truffle.parser.ast;
 
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.TempSourceSection;
+import org.jruby.truffle.language.SourceIndexLength;
 
 import java.util.List;
 
@@ -42,7 +42,7 @@ public class AliasParseNode extends ParseNode {
     private ParseNode oldName;
     private ParseNode newName;
 
-    public AliasParseNode(TempSourceSection position, ParseNode newName, ParseNode oldName) {
+    public AliasParseNode(SourceIndexLength position, ParseNode newName, ParseNode oldName) {
         super(position, newName.containsVariableAssignment() || oldName.containsVariableAssignment());
         this.oldName = oldName;
         this.newName = newName;

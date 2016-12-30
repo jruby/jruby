@@ -31,7 +31,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.ast;
 
-import org.jruby.truffle.parser.TempSourceSection;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
 
 import java.util.List;
@@ -43,7 +43,7 @@ public class OrParseNode extends ParseNode implements BinaryOperatorParseNode {
     private final ParseNode firstNode;
     private final ParseNode secondNode;
 
-    public OrParseNode(TempSourceSection position, ParseNode firstNode, ParseNode secondNode) {
+    public OrParseNode(SourceIndexLength position, ParseNode firstNode, ParseNode secondNode) {
         super(position, firstNode.containsVariableAssignment() || secondNode.containsVariableAssignment());
 
         assert firstNode != null : "firstNode is not null";

@@ -32,7 +32,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.ast;
 
-import org.jruby.truffle.parser.TempSourceSection;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
 
 import java.util.List;
@@ -45,7 +45,7 @@ public class RescueParseNode extends ParseNode {
     private final RescueBodyParseNode rescueNode;
     private final ParseNode elseNode;
 
-    public RescueParseNode(TempSourceSection position, ParseNode bodyNode, RescueBodyParseNode rescueNode, ParseNode elseNode) {
+    public RescueParseNode(SourceIndexLength position, ParseNode bodyNode, RescueBodyParseNode rescueNode, ParseNode elseNode) {
         super(position, bodyNode != null && bodyNode.containsVariableAssignment() ||
                 rescueNode != null && rescueNode.containsVariableAssignment() ||
                 elseNode != null && elseNode.containsVariableAssignment());

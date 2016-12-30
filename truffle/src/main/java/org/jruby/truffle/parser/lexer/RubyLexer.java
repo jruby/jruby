@@ -56,10 +56,9 @@ import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.regexp.ClassicRegexp;
 import org.jruby.truffle.core.rope.CodeRange;
-import org.jruby.truffle.core.string.StringSupport;
 import org.jruby.truffle.parser.ParserByteList;
 import org.jruby.truffle.parser.ParserByteListBuilder;
-import org.jruby.truffle.parser.TempSourceSection;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.parser.RubyWarnings;
 import org.jruby.truffle.parser.ast.BackRefParseNode;
@@ -81,8 +80,6 @@ import org.jruby.truffle.parser.SafeDoubleParser;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.nio.charset.Charset;
-import java.nio.charset.UnsupportedCharsetException;
 import java.util.HashMap;
 
 /*
@@ -373,7 +370,7 @@ public class RubyLexer {
         return token == EOF ? 0 : token;
     }
 
-    public TempSourceSection getPosition() {
+    public SourceIndexLength getPosition() {
         if (tokline != null && ruby_sourceline == ruby_sourceline_when_tokline_created) {
             return tokline;
         }
@@ -387,7 +384,7 @@ public class RubyLexer {
         assert sectionFromLine.getCharIndex() == sectionFromOffsets.getCharIndex() : String.format("%d %d %s:%d %d %d", sectionFromLine.getCharIndex(), sectionFromOffsets.getCharIndex(), src.getSource().getPath(), ruby_sourceline + 1, ruby_sourceline_char_offset, ruby_sourceline_char_length);
         assert sectionFromLine.getCharLength() == sectionFromOffsets.getCharLength() : String.format("%d %d %s:%d %d %d", sectionFromLine.getCharLength(), sectionFromOffsets.getCharLength(), src.getSource().getPath(), ruby_sourceline + 1, ruby_sourceline_char_offset, ruby_sourceline_char_length);
 
-        return new TempSourceSection(sectionFromLine.getCharIndex(), sectionFromLine.getCharLength());
+        return new SourceIndexLength(sectionFromLine.getCharIndex(), sectionFromLine.getCharLength());
     }
 
     private void updateLineOffset() {
@@ -1158,7 +1155,7 @@ public class RubyLexer {
         //tmpPosition is required because getPosition()'s side effects.
         //if the warning is generated, the getPosition() on line 954 (this line + 18) will create
         //a wrong position if the "inclusive" flag is not set.
-        TempSourceSection tmpPosition = getPosition();
+        SourceIndexLength tmpPosition = getPosition();
         if (isSpaceArg(c, spaceSeen)) {
             if (warnings.isVerbose())
                 warnings.warning(RubyWarnings.ID.ARGUMENT_AS_PREFIX, getFile(), tmpPosition.toSourceSection(src.getSource()).getStartLine(), "`&' interpreted as argument prefix");
@@ -2639,7 +2636,7 @@ public class RubyLexer {
     protected int token;                      // Last token read via yylex().
     private CodeRange tokenCR;
     protected boolean tokenSeen = false;
-    public TempSourceSection tokline;
+    public SourceIndexLength tokline;
     private int ruby_sourceline_when_tokline_created;
     public int tokp = 0;                   // Where last token started
     protected Object yaccValue;               // Value of last token which had a value associated with it.

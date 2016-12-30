@@ -7,7 +7,7 @@
 package org.jruby.truffle.parser.ast;
 
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.TempSourceSection;
+import org.jruby.truffle.language.SourceIndexLength;
 
 import java.util.List;
 
@@ -18,7 +18,7 @@ import java.util.List;
 public class ComplexParseNode extends NumericParseNode implements SideEffectFree {
     private NumericParseNode y;
 
-    public ComplexParseNode(TempSourceSection position, NumericParseNode y) {
+    public ComplexParseNode(SourceIndexLength position, NumericParseNode y) {
         super(position);
 
         this.y = y;

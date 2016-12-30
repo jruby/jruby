@@ -31,7 +31,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.ast;
 
-import org.jruby.truffle.parser.TempSourceSection;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
 import org.jruby.truffle.parser.scope.StaticScope;
 
@@ -51,7 +51,7 @@ public class SClassParseNode extends ParseNode {
     private final StaticScope scope;
     private final ParseNode bodyNode;
 
-    public SClassParseNode(TempSourceSection position, ParseNode recvNode, StaticScope scope, ParseNode bodyNode) {
+    public SClassParseNode(SourceIndexLength position, ParseNode recvNode, StaticScope scope, ParseNode bodyNode) {
         super(position, recvNode.containsVariableAssignment() || bodyNode.containsVariableAssignment());
         
         assert scope != null : "scope is not null";

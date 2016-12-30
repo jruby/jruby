@@ -21,6 +21,7 @@ import org.jruby.truffle.core.array.PrimitiveArrayNodeFactory;
 import org.jruby.truffle.core.cast.SplatCastNode;
 import org.jruby.truffle.core.cast.SplatCastNodeGen;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.arguments.ArrayIsAtLeastAsLargeAsNode;
 import org.jruby.truffle.language.arguments.MissingArgumentBehavior;
 import org.jruby.truffle.language.arguments.MissingKeywordArgumentNode;
@@ -116,7 +117,7 @@ public class LoadArgumentsTranslator extends Translator {
     public RubyNode visitArgsNode(ArgsParseNode node) {
         argsNode = node;
 
-        final TempSourceSection sourceSection = node.getPosition();
+        final SourceIndexLength sourceSection = node.getPosition();
 
         final List<RubyNode> sequence = new ArrayList<>();
 
@@ -272,7 +273,7 @@ public class LoadArgumentsTranslator extends Translator {
 
     @Override
     public RubyNode visitKeywordRestArgNode(KeywordRestArgParseNode node) {
-        final TempSourceSection sourceSection = node.getPosition();
+        final SourceIndexLength sourceSection = node.getPosition();
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
         final RubyNode readNode = new ReadKeywordRestArgumentNode(context, fullSourceSection, required, excludedKeywords.toArray(new String[excludedKeywords.size()]));
@@ -283,7 +284,7 @@ public class LoadArgumentsTranslator extends Translator {
 
     @Override
     public RubyNode visitKeywordArgNode(KeywordArgParseNode node) {
-        final TempSourceSection sourceSection = node.getPosition();
+        final SourceIndexLength sourceSection = node.getPosition();
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
         final AssignableParseNode asgnNode = node.getAssignable();
@@ -309,7 +310,7 @@ public class LoadArgumentsTranslator extends Translator {
 
     @Override
     public RubyNode visitArgumentNode(ArgumentParseNode node) {
-        final TempSourceSection sourceSection = node.getPosition();
+        final SourceIndexLength sourceSection = node.getPosition();
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
         final RubyNode readNode = readArgument(sourceSection);
@@ -317,7 +318,7 @@ public class LoadArgumentsTranslator extends Translator {
         return WriteLocalVariableNode.createWriteLocalVariableNode(context, fullSourceSection, slot, readNode);
     }
 
-    private RubyNode readArgument(TempSourceSection sourceSection) {
+    private RubyNode readArgument(SourceIndexLength sourceSection) {
         if (useArray()) {
             return PrimitiveArrayNodeFactory.read(context, sourceSection.toSourceSection(source), loadArray(sourceSection), index);
         } else {
@@ -333,7 +334,7 @@ public class LoadArgumentsTranslator extends Translator {
 
     @Override
     public RubyNode visitRestArgNode(RestArgParseNode node) {
-        final TempSourceSection sourceSection = node.getPosition();
+        final SourceIndexLength sourceSection = node.getPosition();
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
         final RubyNode readNode;
@@ -356,7 +357,7 @@ public class LoadArgumentsTranslator extends Translator {
 
     @Override
     public RubyNode visitBlockArgNode(BlockArgParseNode node) {
-        final TempSourceSection sourceSection = node.getPosition();
+        final SourceIndexLength sourceSection = node.getPosition();
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
         final RubyNode readNode = new ReadBlockNode(context.getCoreLibrary().getNilObject());
@@ -380,8 +381,8 @@ public class LoadArgumentsTranslator extends Translator {
         return translateLocalAssignment(node.getPosition(), node.getName(), node.getValueNode());
     }
 
-    private RubyNode translateLocalAssignment(TempSourceSection sourcePosition, String name, ParseNode valueNode) {
-        final TempSourceSection sourceSection = sourcePosition;
+    private RubyNode translateLocalAssignment(SourceIndexLength sourcePosition, String name, ParseNode valueNode) {
+        final SourceIndexLength sourceSection = sourcePosition;
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
         final FrameSlot slot = methodBodyTranslator.getEnvironment().getFrameDescriptor().findOrAddFrameSlot(name);
@@ -469,7 +470,7 @@ public class LoadArgumentsTranslator extends Translator {
 
     @Override
     public RubyNode visitMultipleAsgnNode(MultipleAsgnParseNode node) {
-        final TempSourceSection sourceSection = node.getPosition();
+        final SourceIndexLength sourceSection = node.getPosition();
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
         // (MultipleAsgn19Node 0, (ArrayParseNode 0, (LocalAsgnParseNode:a 0, ), (LocalAsgnParseNode:b 0, )), null, null))
@@ -626,7 +627,7 @@ public class LoadArgumentsTranslator extends Translator {
         return !arraySlotStack.isEmpty();
     }
 
-    protected RubyNode loadArray(TempSourceSection sourceSection) {
+    protected RubyNode loadArray(SourceIndexLength sourceSection) {
         return new ReadLocalVariableNode(context, sourceSection.toSourceSection(source), LocalVariableType.FRAME_LOCAL, arraySlotStack.peek().getArraySlot());
     }
 

@@ -34,7 +34,6 @@ import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.ByteList;
 import org.jruby.truffle.core.string.CoreStrings;
 import org.jruby.truffle.core.string.StringOperations;
-import org.jruby.truffle.parser.TempSourceSection;
 import org.jruby.truffle.platform.posix.Sockets;
 import org.jruby.truffle.platform.posix.TrufflePosix;
 import org.jruby.truffle.stdlib.CoverageManager;
@@ -66,11 +65,11 @@ public abstract class RubyBaseNode extends Node {
 
     public RubyBaseNode(SourceSection sourceSection) {
         if (sourceSection != null) {
-            unsafeSetSourceSection(new TempSourceSection(sourceSection.getCharIndex(), sourceSection.getCharLength()));
+            unsafeSetSourceSection(new SourceIndexLength(sourceSection.getCharIndex(), sourceSection.getCharLength()));
         }
     }
 
-    public RubyBaseNode(TempSourceSection sourceSection) {
+    public RubyBaseNode(SourceIndexLength sourceSection) {
         if (sourceSection != null) {
             unsafeSetSourceSection(sourceSection);
         }
@@ -80,11 +79,11 @@ public abstract class RubyBaseNode extends Node {
         this.context = context;
 
         if (sourceSection != null) {
-            unsafeSetSourceSection(new TempSourceSection(sourceSection.getCharIndex(), sourceSection.getCharLength()));
+            unsafeSetSourceSection(new SourceIndexLength(sourceSection.getCharIndex(), sourceSection.getCharLength()));
         }
     }
 
-    public RubyBaseNode(RubyContext context, TempSourceSection sourceSection) {
+    public RubyBaseNode(RubyContext context, SourceIndexLength sourceSection) {
         this.context = context;
 
         if (sourceSection != null) {
@@ -207,21 +206,21 @@ public abstract class RubyBaseNode extends Node {
 
     // Source section
 
-    public void unsafeSetSourceSection(TempSourceSection sourceSection) {
+    public void unsafeSetSourceSection(SourceIndexLength sourceSection) {
         assert sourceCharIndex == -1;
         sourceCharIndex = sourceSection.getCharIndex();
         sourceLength = sourceSection.getLength();
     }
 
-    public TempSourceSection getRubySourceSection() {
+    public SourceIndexLength getRubySourceSection() {
         if (sourceCharIndex == -1) {
             return null;
         } else {
-            return new TempSourceSection(sourceCharIndex, sourceLength);
+            return new SourceIndexLength(sourceCharIndex, sourceLength);
         }
     }
 
-    public TempSourceSection getEncapsulatingRubySourceSection() {
+    public SourceIndexLength getEncapsulatingRubySourceSection() {
         Node node = this;
 
         while (node != null) {
@@ -230,7 +229,7 @@ public abstract class RubyBaseNode extends Node {
             }
 
             if (node instanceof RootNode) {
-                return new TempSourceSection(node.getSourceSection().getCharIndex(), node.getSourceSection().getCharLength());
+                return new SourceIndexLength(node.getSourceSection().getCharIndex(), node.getSourceSection().getCharLength());
             }
 
             node = node.getParent();

@@ -31,7 +31,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.ast;
 
-import org.jruby.truffle.parser.TempSourceSection;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
 
 import java.util.List;
@@ -43,7 +43,7 @@ public class EnsureParseNode extends ParseNode {
     private final ParseNode bodyNode;
     private final ParseNode ensureNode;
 
-    public EnsureParseNode(TempSourceSection position, ParseNode bodyNode, ParseNode ensureNode) {
+    public EnsureParseNode(SourceIndexLength position, ParseNode bodyNode, ParseNode ensureNode) {
         super(position, bodyNode.containsVariableAssignment() || ensureNode != null && ensureNode.containsVariableAssignment());
 
         assert bodyNode != null : "bodyNode is not null";

@@ -31,7 +31,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.ast;
 
-import org.jruby.truffle.parser.TempSourceSection;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.parser.ast.types.INameNode;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
 import org.jruby.truffle.parser.scope.StaticScope;
@@ -43,7 +43,7 @@ import java.util.List;
  */
 public class DefsParseNode extends MethodDefParseNode implements INameNode {
     private final ParseNode receiverNode;
-    public DefsParseNode(TempSourceSection position, ParseNode receiverNode, String name, ArgsParseNode argsNode,
+    public DefsParseNode(SourceIndexLength position, ParseNode receiverNode, String name, ArgsParseNode argsNode,
                          StaticScope scope, ParseNode bodyNode) {
         super(position, name, argsNode, scope, bodyNode);
 

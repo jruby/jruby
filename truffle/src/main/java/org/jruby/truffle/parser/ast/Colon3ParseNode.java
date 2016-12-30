@@ -31,7 +31,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.ast;
 
-import org.jruby.truffle.parser.TempSourceSection;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.parser.ast.types.INameNode;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
 
@@ -44,11 +44,11 @@ import java.util.List;
 public class Colon3ParseNode extends ParseNode implements INameNode {
     protected String name;
 
-    public Colon3ParseNode(TempSourceSection position, String name) {
+    public Colon3ParseNode(SourceIndexLength position, String name) {
         this(position, name, false);
     }
 
-    protected Colon3ParseNode(TempSourceSection position, String name, boolean containsAssignment) {
+    protected Colon3ParseNode(SourceIndexLength position, String name, boolean containsAssignment) {
         super(position, containsAssignment);
         this.name = name;
     }

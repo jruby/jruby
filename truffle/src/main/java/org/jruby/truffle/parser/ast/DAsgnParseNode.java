@@ -33,7 +33,7 @@ package org.jruby.truffle.parser.ast;
 
 import org.jruby.truffle.parser.ast.types.INameNode;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.TempSourceSection;
+import org.jruby.truffle.language.SourceIndexLength;
 
 import java.util.List;
 
@@ -48,7 +48,7 @@ public class DAsgnParseNode extends AssignableParseNode implements INameNode, IS
     // is what index in the right scope to set the value.
     private int location;
 
-    public DAsgnParseNode(TempSourceSection position, String name, int location, ParseNode valueNode) {
+    public DAsgnParseNode(SourceIndexLength position, String name, int location, ParseNode valueNode) {
         super(position, valueNode, true);
         this.name = name;
         this.location = location;

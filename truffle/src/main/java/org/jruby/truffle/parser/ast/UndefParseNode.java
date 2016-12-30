@@ -32,7 +32,7 @@
 package org.jruby.truffle.parser.ast;
 
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.TempSourceSection;
+import org.jruby.truffle.language.SourceIndexLength;
 
 import java.util.List;
 
@@ -42,7 +42,7 @@ import java.util.List;
 public class UndefParseNode extends ParseNode {
     private ParseNode name;
 
-    public UndefParseNode(TempSourceSection position, ParseNode name) {
+    public UndefParseNode(SourceIndexLength position, ParseNode name) {
         super(position, false);
         this.name = name;
     }

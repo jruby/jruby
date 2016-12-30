@@ -27,8 +27,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.lexer;
 
-import org.jruby.truffle.parser.TempSourceSection;
-
 public class SyntaxException extends RuntimeException {
     public enum PID {
         BAD_HEX_NUMBER("BAD_HEX_NUMBER"),

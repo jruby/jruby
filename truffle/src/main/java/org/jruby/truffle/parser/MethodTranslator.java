@@ -24,6 +24,7 @@ import org.jruby.truffle.language.LazyRubyNode;
 import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.arguments.MissingArgumentBehavior;
 import org.jruby.truffle.language.arguments.ProfileArgumentNode;
 import org.jruby.truffle.language.arguments.ReadBlockNode;
@@ -78,7 +79,7 @@ public class MethodTranslator extends BodyTranslator {
         this.argsNode = argsNode;
     }
 
-    public BlockDefinitionNode compileBlockNode(TempSourceSection sourceSection, String methodName, ParseNode bodyNode, SharedMethodInfo sharedMethodInfo, ProcType type, String[] variables) {
+    public BlockDefinitionNode compileBlockNode(SourceIndexLength sourceSection, String methodName, ParseNode bodyNode, SharedMethodInfo sharedMethodInfo, ProcType type, String[] variables) {
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
         declareArguments();
@@ -200,8 +201,8 @@ public class MethodTranslator extends BodyTranslator {
         }
     }
 
-    private RubyNode composeBody(TempSourceSection preludeSourceSection, RubyNode prelude, RubyNode body) {
-        final TempSourceSection sourceSection = enclosing(preludeSourceSection, body);
+    private RubyNode composeBody(SourceIndexLength preludeSourceSection, RubyNode prelude, RubyNode body) {
+        final SourceIndexLength sourceSection = enclosing(preludeSourceSection, body);
 
         body = sequence(context, source, sourceSection, Arrays.asList(prelude, body));
 
@@ -217,11 +218,11 @@ public class MethodTranslator extends BodyTranslator {
      * method parsing. The substitution returns a node which performs
      * the parsing lazily and then calls doCompileMethodBody.
      */
-    public RubyNode compileMethodBody(TempSourceSection sourceSection, String methodName, ParseNode bodyNode, SharedMethodInfo sharedMethodInfo) {
+    public RubyNode compileMethodBody(SourceIndexLength sourceSection, String methodName, ParseNode bodyNode, SharedMethodInfo sharedMethodInfo) {
         return doCompileMethodBody(sourceSection, methodName, bodyNode, sharedMethodInfo);
     }
 
-    public RubyNode doCompileMethodBody(TempSourceSection sourceSection, String methodName, ParseNode bodyNode, SharedMethodInfo sharedMethodInfo) {
+    public RubyNode doCompileMethodBody(SourceIndexLength sourceSection, String methodName, ParseNode bodyNode, SharedMethodInfo sharedMethodInfo) {
         declareArguments();
         final Arity arity = getArity(argsNode);
 
@@ -248,7 +249,7 @@ public class MethodTranslator extends BodyTranslator {
             body = translateNodeOrNil(sourceSection, bodyNode);
         }
 
-        final TempSourceSection bodySourceSection = body.getRubySourceSection();
+        final SourceIndexLength bodySourceSection = body.getRubySourceSection();
 
         final RubyNode checkArity = createCheckArityNode(context, source, sourceSection, arity);
 
@@ -276,7 +277,7 @@ public class MethodTranslator extends BodyTranslator {
         return body;
     }
 
-    public MethodDefinitionNode compileMethodNode(TempSourceSection sourceSection, String methodName, MethodDefParseNode defNode, ParseNode bodyNode, SharedMethodInfo sharedMethodInfo) {
+    public MethodDefinitionNode compileMethodNode(SourceIndexLength sourceSection, String methodName, MethodDefParseNode defNode, ParseNode bodyNode, SharedMethodInfo sharedMethodInfo) {
         final SourceSection fullMethodSourceSection = defNode.getPosition().toSourceSection(source);
 
         final RubyNode body;
@@ -350,7 +351,7 @@ public class MethodTranslator extends BodyTranslator {
 
     @Override
     public RubyNode visitSuperNode(SuperParseNode node) {
-        final TempSourceSection sourceSection = node.getPosition();
+        final SourceIndexLength sourceSection = node.getPosition();
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
         final ArgumentsAndBlockTranslation argumentsAndBlock = translateArgumentsAndBlock(sourceSection, node.getIterNode(), node.getArgsNode(), environment.getNamedMethodName());
@@ -362,7 +363,7 @@ public class MethodTranslator extends BodyTranslator {
 
     @Override
     public RubyNode visitZSuperNode(ZSuperParseNode node) {
-        final TempSourceSection sourceSection = node.getPosition();
+        final SourceIndexLength sourceSection = node.getPosition();
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
         if (environment.isBlock()) {
@@ -411,7 +412,7 @@ public class MethodTranslator extends BodyTranslator {
     }
 
     @Override
-    protected FlipFlopStateNode createFlipFlopState(TempSourceSection sourceSection, int depth) {
+    protected FlipFlopStateNode createFlipFlopState(SourceIndexLength sourceSection, int depth) {
         if (isBlock) {
             environment.setNeedsDeclarationFrame();
             return parent.createFlipFlopState(sourceSection, depth + 1);

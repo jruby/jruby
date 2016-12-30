@@ -31,7 +31,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.ast;
 
-import org.jruby.truffle.parser.TempSourceSection;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
 
 import java.util.List;
@@ -52,11 +52,11 @@ public class WhileParseNode extends ParseNode {
     private final ParseNode bodyNode;
     private final boolean evaluateAtStart;
     
-    public WhileParseNode(TempSourceSection position, ParseNode conditionNode, ParseNode bodyNode) {
+    public WhileParseNode(SourceIndexLength position, ParseNode conditionNode, ParseNode bodyNode) {
         this(position, conditionNode, bodyNode, true);
     }
 
-    public WhileParseNode(TempSourceSection position, ParseNode conditionNode, ParseNode bodyNode,
+    public WhileParseNode(SourceIndexLength position, ParseNode conditionNode, ParseNode bodyNode,
                           boolean evalAtStart) {
         super(position, conditionNode.containsVariableAssignment() || bodyNode.containsVariableAssignment());
         

@@ -32,7 +32,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.ast;
 
-import org.jruby.truffle.parser.TempSourceSection;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.parser.ast.types.INameNode;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
 
@@ -48,12 +48,12 @@ public class CallParseNode extends ParseNode implements INameNode, IArgumentNode
     private String name;
     private final boolean isLazy;
 
-    public CallParseNode(TempSourceSection position, ParseNode receiverNode, String name, ParseNode argsNode,
+    public CallParseNode(SourceIndexLength position, ParseNode receiverNode, String name, ParseNode argsNode,
                          ParseNode iterNode) {
         this(position, receiverNode, name, argsNode, iterNode, false);
     }
 
-    public CallParseNode(TempSourceSection position, ParseNode receiverNode, String name, ParseNode argsNode,
+    public CallParseNode(SourceIndexLength position, ParseNode receiverNode, String name, ParseNode argsNode,
                          ParseNode iterNode, boolean isLazy) {
         super(position, receiverNode.containsVariableAssignment() ||
                 argsNode != null && argsNode.containsVariableAssignment() ||

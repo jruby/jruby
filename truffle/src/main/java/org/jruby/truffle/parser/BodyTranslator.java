@@ -69,6 +69,7 @@ import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.Visibility;
 import org.jruby.truffle.language.arguments.ArrayIsAtLeastAsLargeAsNode;
 import org.jruby.truffle.language.arguments.SingleBlockArgNode;
@@ -312,7 +313,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitAliasNode(AliasParseNode node) {
-        final TempSourceSection sourceSection = node.getPosition();
+        final SourceIndexLength sourceSection = node.getPosition();
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
         final DynamicObject oldName = translateNameNodeToSymbol(node.getOldName());
@@ -341,7 +342,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitVAliasNode(VAliasParseNode node) {
-        final TempSourceSection sourceSection = node.getPosition();
+        final SourceIndexLength sourceSection = node.getPosition();
         final RubyNode ret = new AliasGlobalVarNode(node.getOldName(), node.getNewName());
 
         ret.unsafeSetSourceSection(sourceSection);
@@ -350,7 +351,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitAndNode(AndParseNode node) {
-        final TempSourceSection sourceSection = node.getPosition();
+        final SourceIndexLength sourceSection = node.getPosition();
 
         final RubyNode x = translateNodeOrNil(sourceSection, node.getFirstNode());
         final RubyNode y = translateNodeOrNil(sourceSection, node.getSecondNode());
@@ -394,7 +395,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitArgsPushNode(ArgsPushParseNode node) {
-        final TempSourceSection sourceSection = node.getPosition();
+        final SourceIndexLength sourceSection = node.getPosition();
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
         final RubyNode args = node.getFirstNode().accept(this);
@@ -440,7 +441,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitBignumNode(BignumParseNode node) {
-        final TempSourceSection sourceSection = node.getPosition();
+        final SourceIndexLength sourceSection = node.getPosition();
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
         // These aren't always Bignums!
@@ -459,7 +460,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitBlockNode(BlockParseNode node) {
-        final TempSourceSection sourceSection = node.getPosition();
+        final SourceIndexLength sourceSection = node.getPosition();
 
         final List<RubyNode> translatedChildren = new ArrayList<>();
 
@@ -483,7 +484,7 @@ public class BodyTranslator extends Translator {
         if (translatedChildren.size() == 1) {
             ret = translatedChildren.get(0);
         } else {
-            ret = sequence(context, source, new TempSourceSection(start, end - start), translatedChildren);
+            ret = sequence(context, source, new SourceIndexLength(start, end - start), translatedChildren);
         }
 
         return addNewlineIfNeeded(node, ret);
@@ -492,7 +493,7 @@ public class BodyTranslator extends Translator {
     @Override
     public RubyNode visitBreakNode(BreakParseNode node) {
         assert environment.isBlock() || translatingWhile : "The parser did not see an invalid break";
-        final TempSourceSection sourceSection = node.getPosition();
+        final SourceIndexLength sourceSection = node.getPosition();
 
         final RubyNode resultNode = translateNodeOrNil(sourceSection, node.getValueNode());
 
@@ -503,7 +504,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitCallNode(CallParseNode node) {
-        final TempSourceSection sourceSection = node.getPosition();
+        final SourceIndexLength sourceSection = node.getPosition();
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
         final ParseNode receiver = node.getReceiverNode();
         final String methodName = node.getName();
@@ -563,7 +564,7 @@ public class BodyTranslator extends Translator {
         return translateCallNode(node, false, false, false);
     }
 
-    protected RubyNode translateRubiniusPrimitive(TempSourceSection sourceSection, BlockParseNode body, RubyNode loadArguments) {
+    protected RubyNode translateRubiniusPrimitive(SourceIndexLength sourceSection, BlockParseNode body, RubyNode loadArguments) {
         /*
          * Translates something that looks like
          *
@@ -692,7 +693,7 @@ public class BodyTranslator extends Translator {
     }
 
     private RubyNode translateCallNode(CallParseNode node, boolean ignoreVisibility, boolean isVCall, boolean isAttrAssign) {
-        final TempSourceSection sourceSection = node.getPosition();
+        final SourceIndexLength sourceSection = node.getPosition();
 
         final RubyNode receiver = node.getReceiverNode().accept(this);
 
@@ -715,7 +716,7 @@ public class BodyTranslator extends Translator {
 
         children.addAll(Arrays.asList(argumentsAndBlock.getArguments()));
 
-        final TempSourceSection enclosingSourceSection = enclosing(sourceSection, children.toArray(new RubyNode[children.size()]));
+        final SourceIndexLength enclosingSourceSection = enclosing(sourceSection, children.toArray(new RubyNode[children.size()]));
         final SourceSection enclosingFullSourceSection = enclosingSourceSection.toSourceSection(source);
 
         RubyCallNodeParameters callParameters = new RubyCallNodeParameters(context, enclosingFullSourceSection, receiver, methodName, argumentsAndBlock.getBlock(), argumentsAndBlock.getArguments(), argumentsAndBlock.isSplatted(), privately || ignoreVisibility, isVCall, node.isLazy(), isAttrAssign);
@@ -766,7 +767,7 @@ public class BodyTranslator extends Translator {
 
     public Deque<Object> frameOnStackMarkerSlotStack = new ArrayDeque<>();
 
-    protected ArgumentsAndBlockTranslation translateArgumentsAndBlock(TempSourceSection sourceSection, ParseNode iterNode, ParseNode argsNode, String nameToSetWhenTranslatingBlock) {
+    protected ArgumentsAndBlockTranslation translateArgumentsAndBlock(SourceIndexLength sourceSection, ParseNode iterNode, ParseNode argsNode, String nameToSetWhenTranslatingBlock) {
         assert !(argsNode instanceof IterParseNode);
 
         final List<ParseNode> arguments = new ArrayList<>();
@@ -842,7 +843,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitCaseNode(CaseParseNode node) {
-        final TempSourceSection sourceSection = node.getPosition();
+        final SourceIndexLength sourceSection = node.getPosition();
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
         RubyNode elseNode = translateNodeOrNil(sourceSection, node.getElseNode());
@@ -974,7 +975,7 @@ public class BodyTranslator extends Translator {
         return addNewlineIfNeeded(node, ret);
     }
 
-    private RubyNode openModule(TempSourceSection sourceSection, RubyNode defineOrGetNode, String name, ParseNode bodyNode, boolean sclass) {
+    private RubyNode openModule(SourceIndexLength sourceSection, RubyNode defineOrGetNode, String name, ParseNode bodyNode, boolean sclass) {
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
         LexicalScope newLexicalScope = environment.pushLexicalScope();
@@ -1021,7 +1022,7 @@ public class BodyTranslator extends Translator {
      * newly allocated module or class.
      * </p>
      */
-    private ModuleBodyDefinitionNode compileClassNode(TempSourceSection sourceSection, String name, ParseNode bodyNode, boolean sclass) {
+    private ModuleBodyDefinitionNode compileClassNode(SourceIndexLength sourceSection, String name, ParseNode bodyNode, boolean sclass) {
         RubyNode body = translateNodeOrNil(sourceSection, bodyNode);
 
         if (environment.getFlipFlopStates().size() > 0) {
@@ -1053,7 +1054,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitClassNode(ClassParseNode node) {
-        final TempSourceSection sourceSection = node.getPosition();
+        final SourceIndexLength sourceSection = node.getPosition();
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
         final String name = node.getCPath().getName();
@@ -1069,7 +1070,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitClassVarAsgnNode(ClassVarAsgnParseNode node) {
-        final TempSourceSection sourceSection = node.getPosition();
+        final SourceIndexLength sourceSection = node.getPosition();
         final RubyNode rhs = node.getValueNode().accept(this);
 
         final RubyNode ret = new WriteClassVariableNode(context, sourceSection.toSourceSection(source), environment.getLexicalScope(), node.getName(), rhs);
@@ -1078,7 +1079,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitClassVarNode(ClassVarParseNode node) {
-        final TempSourceSection sourceSection = node.getPosition();
+        final SourceIndexLength sourceSection = node.getPosition();
         final RubyNode ret = new ReadClassVariableNode(context, sourceSection.toSourceSection(source), environment.getLexicalScope(), node.getName());
         return addNewlineIfNeeded(node, ret);
     }
@@ -1090,7 +1091,7 @@ public class BodyTranslator extends Translator {
             throw new UnsupportedOperationException(node.toString());
         }
 
-        final TempSourceSection sourceSection = node.getPosition();
+        final SourceIndexLength sourceSection = node.getPosition();
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
         final String name = ConstantReplacer.replacementName(fullSourceSection, node.getName());
 
@@ -1104,7 +1105,7 @@ public class BodyTranslator extends Translator {
     public RubyNode visitColon3Node(Colon3ParseNode node) {
         // Root namespace constant access, as in ::Foo
 
-        final TempSourceSection sourceSection = node.getPosition();
+        final SourceIndexLength sourceSection = node.getPosition();
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
         final String name = ConstantReplacer.replacementName(fullSourceSection, node.getName());
 
@@ -1114,7 +1115,7 @@ public class BodyTranslator extends Translator {
         return addNewlineIfNeeded(node, ret);
     }
 
-    private RubyNode translateCPath(TempSourceSection sourceSection, Colon3ParseNode node) {
+    private RubyNode translateCPath(SourceIndexLength sourceSection, Colon3ParseNode node) {
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
         final RubyNode ret;
@@ -1139,7 +1140,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitComplexNode(ComplexParseNode node) {
-        final TempSourceSection sourceSection = node.getPosition();
+        final SourceIndexLength sourceSection = node.getPosition();
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
         final RubyNode ret = translateRationalComplex(sourceSection, "Complex",
@@ -1151,7 +1152,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitConstDeclNode(ConstDeclParseNode node) {
-        final TempSourceSection sourceSection = node.getPosition();
+        final SourceIndexLength sourceSection = node.getPosition();
         RubyNode rhs = node.getValueNode().accept(this);
 
         final RubyNode moduleNode;
@@ -1180,7 +1181,7 @@ public class BodyTranslator extends Translator {
         return addNewlineIfNeeded(node, ret);
     }
 
-    private String getSourcePath(TempSourceSection sourceSection) {
+    private String getSourcePath(SourceIndexLength sourceSection) {
         if (sourceSection == null) {
             return "(unknown)";
         }
@@ -1216,7 +1217,7 @@ public class BodyTranslator extends Translator {
     @Override
     public RubyNode visitConstNode(ConstParseNode node) {
         // Unqualified constant access, as in CONST
-        final TempSourceSection sourceSection = node.getPosition();
+        final SourceIndexLength sourceSection = node.getPosition();
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
         /*
@@ -1261,7 +1262,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitDRegxNode(DRegexpParseNode node) {
-        TempSourceSection sourceSection = node.getPosition();
+        SourceIndexLength sourceSection = node.getPosition();
 
         final List<RubyNode> children = new ArrayList<>();
 
@@ -1288,7 +1289,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitDSymbolNode(DSymbolParseNode node) {
-        TempSourceSection sourceSection = node.getPosition();
+        SourceIndexLength sourceSection = node.getPosition();
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
         final RubyNode stringNode = translateInterpolatedString(fullSourceSection, node.children());
@@ -1347,7 +1348,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitDefinedNode(DefinedParseNode node) {
-        final TempSourceSection sourceSection = node.getPosition();
+        final SourceIndexLength sourceSection = node.getPosition();
 
         final RubyNode ret = new DefinedNode(context, sourceSection.toSourceSection(source), node.getExpressionNode().accept(this));
         return addNewlineIfNeeded(node, ret);
@@ -1355,7 +1356,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitDefnNode(DefnParseNode node) {
-        final TempSourceSection sourceSection = node.getPosition();
+        final SourceIndexLength sourceSection = node.getPosition();
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
         final RubyNode classNode = new RaiseIfFrozenNode(context, fullSourceSection, new GetDefaultDefineeNode(context, fullSourceSection));
 
@@ -1368,7 +1369,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitDefsNode(DefsParseNode node) {
-        final TempSourceSection sourceSection = node.getPosition();
+        final SourceIndexLength sourceSection = node.getPosition();
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
         final RubyNode objectNode = node.getReceiverNode().accept(this);
@@ -1380,7 +1381,7 @@ public class BodyTranslator extends Translator {
         return addNewlineIfNeeded(node, ret);
     }
 
-    protected RubyNode translateMethodDefinition(TempSourceSection sourceSection, RubyNode classNode, String methodName, ArgsParseNode argsNode, MethodDefParseNode defNode, ParseNode bodyNode,
+    protected RubyNode translateMethodDefinition(SourceIndexLength sourceSection, RubyNode classNode, String methodName, ArgsParseNode argsNode, MethodDefParseNode defNode, ParseNode bodyNode,
                                                  boolean isDefs) {
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
@@ -1420,7 +1421,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitDotNode(DotParseNode node) {
-        final TempSourceSection sourceSection = node.getPosition();
+        final SourceIndexLength sourceSection = node.getPosition();
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
         final RubyNode begin = node.getBeginNode().accept(this);
         final RubyNode end = node.getEndNode().accept(this);
@@ -1433,7 +1434,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitEncodingNode(EncodingParseNode node) {
-        TempSourceSection sourceSection = node.getPosition();
+        SourceIndexLength sourceSection = node.getPosition();
         final RubyNode ret = new ObjectLiteralNode(context, sourceSection.toSourceSection(source), context.getEncodingManager().getRubyEncoding(node.getEncoding()));
         return addNewlineIfNeeded(node, ret);
     }
@@ -1451,7 +1452,7 @@ public class BodyTranslator extends Translator {
         final RubyNode ret;
 
         if (node.getBody() == null) {
-            final TempSourceSection sourceSection = node.getPosition();
+            final SourceIndexLength sourceSection = node.getPosition();
             ret = new ObjectLiteralNode(context, sourceSection.toSourceSection(source), StringOperations.createString(context, RopeConstants.EMPTY_ASCII_8BIT_ROPE));
         } else {
             ret = node.getBody().accept(this);
@@ -1470,7 +1471,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitFalseNode(FalseParseNode node) {
-        final TempSourceSection sourceSection = node.getPosition();
+        final SourceIndexLength sourceSection = node.getPosition();
         final RubyNode ret = new BooleanLiteralNode(context, sourceSection.toSourceSection(source), false);
 
         return addNewlineIfNeeded(node, ret);
@@ -1478,7 +1479,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitFixnumNode(FixnumParseNode node) {
-        final TempSourceSection sourceSection = node.getPosition();
+        final SourceIndexLength sourceSection = node.getPosition();
         final long value = node.getValue();
         final RubyNode ret;
 
@@ -1493,7 +1494,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitFlipNode(FlipParseNode node) {
-        final TempSourceSection sourceSection = node.getPosition();
+        final SourceIndexLength sourceSection = node.getPosition();
 
         final RubyNode begin = node.getBeginNode().accept(this);
         final RubyNode end = node.getEndNode().accept(this);
@@ -1504,7 +1505,7 @@ public class BodyTranslator extends Translator {
         return addNewlineIfNeeded(node, ret);
     }
 
-    protected FlipFlopStateNode createFlipFlopState(TempSourceSection sourceSection, int depth) {
+    protected FlipFlopStateNode createFlipFlopState(SourceIndexLength sourceSection, int depth) {
         final FrameSlot frameSlot = environment.declareVar(environment.allocateLocalTemp("flipflop"));
         environment.getFlipFlopStates().add(frameSlot);
 
@@ -1666,7 +1667,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitGlobalAsgnNode(GlobalAsgnParseNode node) {
-        final TempSourceSection sourceSection = node.getPosition();
+        final SourceIndexLength sourceSection = node.getPosition();
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
         RubyNode rhs = node.getValueNode().accept(this);
@@ -1775,7 +1776,7 @@ public class BodyTranslator extends Translator {
             name = GLOBAL_VARIABLE_ALIASES.get(name);
         }
 
-        final TempSourceSection sourceSection = node.getPosition();
+        final SourceIndexLength sourceSection = node.getPosition();
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
         final RubyNode ret;
 
@@ -1815,7 +1816,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitHashNode(HashParseNode node) {
-        final TempSourceSection sourceSection = node.getPosition();
+        final SourceIndexLength sourceSection = node.getPosition();
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
         final List<RubyNode> hashConcats = new ArrayList<>();
@@ -1855,7 +1856,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitIfNode(IfParseNode node) {
-        final TempSourceSection sourceSection = node.getPosition();
+        final SourceIndexLength sourceSection = node.getPosition();
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
         final RubyNode condition = translateNodeOrNil(sourceSection, node.getCondition());
@@ -1887,7 +1888,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitInstAsgnNode(InstAsgnParseNode node) {
-        final TempSourceSection sourceSection = node.getPosition();
+        final SourceIndexLength sourceSection = node.getPosition();
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
         final String name = node.getName();
 
@@ -1944,7 +1945,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitInstVarNode(InstVarParseNode node) {
-        final TempSourceSection sourceSection = node.getPosition();
+        final SourceIndexLength sourceSection = node.getPosition();
         final String name = node.getName();
 
         // About every case will use a SelfParseNode, just don't it use more than once.
@@ -1980,7 +1981,7 @@ public class BodyTranslator extends Translator {
     }
 
     private RubyNode translateBlockLikeNode(IterParseNode node, boolean isLambda) {
-        final TempSourceSection sourceSection = node.getPosition();
+        final SourceIndexLength sourceSection = node.getPosition();
         final ArgsParseNode argsNode = node.getArgsNode();
 
         // Unset this flag for any for any blocks within the for statement's body
@@ -2037,7 +2038,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitLocalAsgnNode(LocalAsgnParseNode node) {
-        final TempSourceSection sourceSection = node.getPosition();
+        final SourceIndexLength sourceSection = node.getPosition();
 
         if (environment.getNeverAssignInParentScope()) {
             environment.declareVar(node.getName());
@@ -2079,7 +2080,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitLocalVarNode(LocalVarParseNode node) {
-        final TempSourceSection sourceSection = node.getPosition();
+        final SourceIndexLength sourceSection = node.getPosition();
 
         final String name = node.getName();
 
@@ -2158,7 +2159,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitModuleNode(ModuleParseNode node) {
-        final TempSourceSection sourceSection = node.getPosition();
+        final SourceIndexLength sourceSection = node.getPosition();
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
         final String name = node.getCPath().getName();
@@ -2173,7 +2174,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitMultipleAsgnNode(MultipleAsgnParseNode node) {
-        final TempSourceSection sourceSection = node.getPosition();
+        final SourceIndexLength sourceSection = node.getPosition();
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
         final ListParseNode preArray = node.getPre();
@@ -2489,7 +2490,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitNextNode(NextParseNode node) {
-        final TempSourceSection sourceSection = node.getPosition();
+        final SourceIndexLength sourceSection = node.getPosition();
 
         if (!environment.isBlock() && !translatingWhile) {
             throw new RaiseException(context.getCoreExceptions().syntaxError("Invalid next", currentNode));
@@ -2521,7 +2522,7 @@ public class BodyTranslator extends Translator {
             return addNewlineIfNeeded(node, ret);
         }
 
-        TempSourceSection sourceSection = node.getPosition();
+        SourceIndexLength sourceSection = node.getPosition();
         final RubyNode ret = nilNode(source, sourceSection);
 
         return addNewlineIfNeeded(node, ret);
@@ -2529,7 +2530,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitNthRefNode(NthRefParseNode node) {
-        final TempSourceSection sourceSection = node.getPosition();
+        final SourceIndexLength sourceSection = node.getPosition();
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
         environment.declareVarInMethodScope("$~");
@@ -2552,7 +2553,7 @@ public class BodyTranslator extends Translator {
          * http://www.rubyinside.com/what-rubys-double-pipe-or-equals-really-does-5488.html
          */
 
-        final TempSourceSection sourceSection = node.getPosition();
+        final SourceIndexLength sourceSection = node.getPosition();
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
         final RubyNode andNode = new AndNode(lhs, rhs);
@@ -2584,7 +2585,7 @@ public class BodyTranslator extends Translator {
             }
 
             default: {
-                final TempSourceSection sourceSection = node.getPosition();
+                final SourceIndexLength sourceSection = node.getPosition();
                 final RubyCallNodeParameters callParameters = new RubyCallNodeParameters(context, sourceSection.toSourceSection(source), lhs, node.getOperator(), null, new RubyNode[] { rhs }, false, true);
                 final RubyNode opNode = context.getCoreMethods().createCallNode(callParameters);
                 final RubyNode ret = ((ReadConstantNode) lhs).makeWriteNode(opNode);
@@ -2596,7 +2597,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitOpAsgnNode(OpAsgnParseNode node) {
-        final TempSourceSection pos = node.getPosition();
+        final SourceIndexLength pos = node.getPosition();
 
         final boolean isOrOperator = node.getOperatorName().equals("||");
         if (isOrOperator || node.getOperatorName().equals("&&")) {
@@ -2610,7 +2611,7 @@ public class BodyTranslator extends Translator {
             final ParseNode writeMethod = new CallParseNode(pos, readReceiverFromTemp, node.getVariableName() + "=", buildArrayNode(pos,
                     node.getValueNode()), null);
 
-            final TempSourceSection sourceSection = pos;
+            final SourceIndexLength sourceSection = pos;
             final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
             RubyNode lhs = readMethod.accept(this);
@@ -2654,7 +2655,7 @@ public class BodyTranslator extends Translator {
         final RubyNode writeTemp = writeReceiverToTemp.accept(this);
         RubyNode body = writeMethod.accept(this);
 
-        final TempSourceSection sourceSection = pos;
+        final SourceIndexLength sourceSection = pos;
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
         if (node.isLazy()) {
@@ -2690,7 +2691,7 @@ public class BodyTranslator extends Translator {
          * http://www.rubyinside.com/what-rubys-double-pipe-or-equals-really-does-5488.html
          */
 
-        final TempSourceSection sourceSection = node.getPosition();
+        final SourceIndexLength sourceSection = node.getPosition();
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
         final RubyNode ret = new DefinedWrapperNode(context, fullSourceSection, context.getCoreStrings().ASSIGNMENT,
@@ -2746,7 +2747,7 @@ public class BodyTranslator extends Translator {
         return addNewlineIfNeeded(node, ret);
     }
 
-    private static ArrayParseNode buildArrayNode(TempSourceSection sourcePosition, ParseNode first, ParseNode... rest) {
+    private static ArrayParseNode buildArrayNode(SourceIndexLength sourcePosition, ParseNode first, ParseNode... rest) {
         if (first == null) {
             return new ArrayParseNode(sourcePosition);
         }
@@ -2762,7 +2763,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitOrNode(OrParseNode node) {
-        final TempSourceSection sourceSection = node.getPosition();
+        final SourceIndexLength sourceSection = node.getPosition();
 
         final RubyNode x = translateNodeOrNil(sourceSection, node.getFirstNode());
         final RubyNode y = translateNodeOrNil(sourceSection, node.getSecondNode());
@@ -2801,7 +2802,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitRationalNode(RationalParseNode node) {
-        final TempSourceSection sourceSection = node.getPosition();
+        final SourceIndexLength sourceSection = node.getPosition();
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
         // TODO(CS): use IntFixnumLiteralNode where possible
@@ -2813,7 +2814,7 @@ public class BodyTranslator extends Translator {
         return addNewlineIfNeeded(node, ret);
     }
 
-    private RubyNode translateRationalComplex(TempSourceSection sourceSection, String name, RubyNode a, RubyNode b) {
+    private RubyNode translateRationalComplex(SourceIndexLength sourceSection, String name, RubyNode a, RubyNode b) {
         // Translate as Truffle.privately { Rational.convert(a, b) }
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
@@ -2887,7 +2888,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitRescueNode(RescueParseNode node) {
-        final TempSourceSection sourceSection = node.getPosition();
+        final SourceIndexLength sourceSection = node.getPosition();
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
         RubyNode tryPart;
@@ -2980,7 +2981,7 @@ public class BodyTranslator extends Translator {
         return addNewlineIfNeeded(node, ret);
     }
 
-    private RescueNode translateRescueArrayParseNode(ArrayParseNode arrayParse, RescueBodyParseNode rescueBody, TempSourceSection sourceSection, SourceSection fullSourceSection) {
+    private RescueNode translateRescueArrayParseNode(ArrayParseNode arrayParse, RescueBodyParseNode rescueBody, SourceIndexLength sourceSection, SourceSection fullSourceSection) {
         final ParseNode[] exceptionNodes = arrayParse.children();
 
         final RubyNode[] handlingClasses = new RubyNode[exceptionNodes.length];
@@ -3000,7 +3001,7 @@ public class BodyTranslator extends Translator {
         return new RescueClassesNode(context, fullSourceSection, handlingClasses, translatedBody);
     }
 
-    private RescueNode translateRescueSplatParseNode(SplatParseNode splat, RescueBodyParseNode rescueBody, TempSourceSection sourceSection, SourceSection fullSourceSection) {
+    private RescueNode translateRescueSplatParseNode(SplatParseNode splat, RescueBodyParseNode rescueBody, SourceIndexLength sourceSection, SourceSection fullSourceSection) {
         final RubyNode splatTranslated = translateNodeOrNil(sourceSection, splat.getValue());
 
         RubyNode rescueBodyTranslated;
@@ -3023,7 +3024,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitReturnNode(ReturnParseNode node) {
-        final TempSourceSection sourceSection = node.getPosition();
+        final SourceIndexLength sourceSection = node.getPosition();
 
         RubyNode translatedChild = translateNodeOrNil(sourceSection, node.getValueNode());
 
@@ -3034,7 +3035,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitSClassNode(SClassParseNode node) {
-        final TempSourceSection sourceSection = node.getPosition();
+        final SourceIndexLength sourceSection = node.getPosition();
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
         final RubyNode receiverNode = node.getReceiverNode().accept(this);
@@ -3078,7 +3079,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitSplatNode(SplatParseNode node) {
-        final TempSourceSection sourceSection = node.getPosition();
+        final SourceIndexLength sourceSection = node.getPosition();
 
         final RubyNode value = translateNodeOrNil(sourceSection, node.getValue());
         final RubyNode ret = SplatCastNodeGen.create(context, sourceSection.toSourceSection(source), SplatCastNode.NilBehavior.CONVERT, false, value);
@@ -3087,7 +3088,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitStrNode(StrParseNode node) {
-        final TempSourceSection sourceSection = node.getPosition();
+        final SourceIndexLength sourceSection = node.getPosition();
 
         final ParserByteList byteList = node.getValue();
         final CodeRange codeRange = node.getCodeRange();
@@ -3125,7 +3126,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitTrueNode(TrueParseNode node) {
-        final TempSourceSection sourceSection = node.getPosition();
+        final SourceIndexLength sourceSection = node.getPosition();
         final RubyNode ret = new BooleanLiteralNode(context, sourceSection.toSourceSection(source), true);
 
         return addNewlineIfNeeded(node, ret);
@@ -3133,7 +3134,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitUndefNode(UndefParseNode node) {
-        final TempSourceSection sourceSection = node.getPosition();
+        final SourceIndexLength sourceSection = node.getPosition();
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
         final DynamicObject nameSymbol = translateNameNodeToSymbol(node.getName());
 
@@ -3154,7 +3155,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitVCallNode(VCallParseNode node) {
-        final TempSourceSection sourceSection = node.getPosition();
+        final SourceIndexLength sourceSection = node.getPosition();
         if (node.getName().equals("undefined") && getSourcePath(sourceSection).startsWith(corePath())) { // translate undefined
             final RubyNode ret = new ObjectLiteralNode(context, sourceSection.toSourceSection(source), NotProvided.INSTANCE);
             return addNewlineIfNeeded(node, ret);
@@ -3174,7 +3175,7 @@ public class BodyTranslator extends Translator {
     }
 
     private RubyNode translateWhileNode(WhileParseNode node, boolean conditionInversed) {
-        final TempSourceSection sourceSection = node.getPosition();
+        final SourceIndexLength sourceSection = node.getPosition();
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
         RubyNode condition = node.getConditionNode().accept(this);
@@ -3279,7 +3280,7 @@ public class BodyTranslator extends Translator {
                 throw new UnsupportedOperationException(Character.toString(node.getType()));
         }
 
-        final TempSourceSection sourceSection = node.getPosition();
+        final SourceIndexLength sourceSection = node.getPosition();
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
         environment.declareVarInMethodScope("$~");
@@ -3295,7 +3296,7 @@ public class BodyTranslator extends Translator {
         return nilNode(source, star.getPosition());
     }
 
-    protected RubyNode initFlipFlopStates(TempSourceSection sourceSection) {
+    protected RubyNode initFlipFlopStates(SourceIndexLength sourceSection) {
         final RubyNode[] initNodes = new RubyNode[environment.getFlipFlopStates().size()];
 
         for (int n = 0; n < initNodes.length; n++) {
@@ -3356,7 +3357,7 @@ public class BodyTranslator extends Translator {
 
     private RubyNode addNewlineIfNeeded(ParseNode jrubyNode, RubyNode node) {
         if (jrubyNode.isNewline()) {
-            final TempSourceSection current = node.getEncapsulatingRubySourceSection();
+            final SourceIndexLength current = node.getEncapsulatingRubySourceSection();
 
             if (current == null) {
                 return node;

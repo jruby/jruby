@@ -34,7 +34,7 @@ package org.jruby.truffle.parser.ast;
 
 import org.jruby.truffle.parser.ast.types.INameNode;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.TempSourceSection;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.parser.scope.StaticScope;
 
 import java.util.List;
@@ -43,7 +43,7 @@ import java.util.List;
  * method definition node.
  */
 public class DefnParseNode extends MethodDefParseNode implements INameNode {
-    public DefnParseNode(TempSourceSection position, String name, ArgsParseNode argsNode,
+    public DefnParseNode(SourceIndexLength position, String name, ArgsParseNode argsNode,
                          StaticScope scope, ParseNode bodyNode) {
         super(position, name, argsNode, scope, bodyNode);
     }

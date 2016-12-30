@@ -29,13 +29,13 @@
 package org.jruby.truffle.parser.ast;
 
 import org.jruby.truffle.parser.ParserByteList;
-import org.jruby.truffle.parser.TempSourceSection;
+import org.jruby.truffle.language.SourceIndexLength;
 
 /**
  * Represents __FILE__ nodes
  */
 public class FileParseNode extends StrParseNode implements SideEffectFree {
-    public FileParseNode(TempSourceSection position, ParserByteList value) {
+    public FileParseNode(SourceIndexLength position, ParserByteList value) {
         super(position, value);
     }
 }

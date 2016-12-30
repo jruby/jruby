@@ -31,7 +31,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.ast;
 
-import org.jruby.truffle.parser.TempSourceSection;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
 import org.jruby.truffle.parser.scope.StaticScope;
 
@@ -51,7 +51,7 @@ public class IterParseNode extends ParseNode implements DefNode {
      *  Used by Truffle 'for' and by ForParseNode only.
      * This is to support 1.8-style assignments which only 'for' expressions use.
      */
-    public IterParseNode(TempSourceSection position, ParseNode args, StaticScope scope, ParseNode body) {
+    public IterParseNode(SourceIndexLength position, ParseNode args, StaticScope scope, ParseNode body) {
         super(position, args != null && args.containsVariableAssignment || body != null && body.containsVariableAssignment);
 
         this.varNode = args;
@@ -62,7 +62,7 @@ public class IterParseNode extends ParseNode implements DefNode {
     /**
      * Used for all non-for types of blocks.
      */
-    public IterParseNode(TempSourceSection position, ArgsParseNode args, ParseNode body, StaticScope scope) {
+    public IterParseNode(SourceIndexLength position, ArgsParseNode args, ParseNode body, StaticScope scope) {
         super(position, args != null && args.containsVariableAssignment || body != null && body.containsVariableAssignment);
 
         this.varNode = args;

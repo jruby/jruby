@@ -33,7 +33,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.ast;
 
-import org.jruby.truffle.parser.TempSourceSection;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.parser.ast.types.INameNode;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
 
@@ -59,7 +59,7 @@ public abstract class ParseNode {
     protected boolean containsVariableAssignment;
     protected boolean newline;
 
-    public ParseNode(TempSourceSection position, boolean containsAssignment) {
+    public ParseNode(SourceIndexLength position, boolean containsAssignment) {
         if (position == null) {
             sourceCharIndex = -1;
             sourceLength = -1;
@@ -81,11 +81,11 @@ public abstract class ParseNode {
     /**
      * Location of this node within the source
      */
-    public TempSourceSection getPosition() {
-        return new TempSourceSection(sourceCharIndex, sourceLength);
+    public SourceIndexLength getPosition() {
+        return new SourceIndexLength(sourceCharIndex, sourceLength);
     }
 
-    public void setPosition(TempSourceSection position) {
+    public void setPosition(SourceIndexLength position) {
         sourceCharIndex = position.getCharIndex();
         sourceLength = position.getLength();
     }

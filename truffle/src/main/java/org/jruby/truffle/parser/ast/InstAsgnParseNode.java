@@ -32,7 +32,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.ast;
 
-import org.jruby.truffle.parser.TempSourceSection;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.parser.ast.types.INameNode;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
 
@@ -48,7 +48,7 @@ public class InstAsgnParseNode extends AssignableParseNode implements INameNode 
      * @param name the name of the instance variable
      * @param valueNode the value of the variable
      **/
-    public InstAsgnParseNode(TempSourceSection position, String name, ParseNode valueNode) {
+    public InstAsgnParseNode(SourceIndexLength position, String name, ParseNode valueNode) {
         super(position, valueNode, valueNode != null && valueNode.containsVariableAssignment());
         
         this.name = name;

@@ -29,7 +29,7 @@
 package org.jruby.truffle.parser.ast;
 
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.TempSourceSection;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.parser.scope.DynamicScope;
 import org.jruby.truffle.parser.scope.StaticScope;
 
@@ -51,11 +51,11 @@ public class RootParseNode extends ParseNode {
     private int endPosition;
     private boolean needsCodeCoverage;
 
-    public RootParseNode(TempSourceSection position, DynamicScope scope, ParseNode bodyNode, String file) {
+    public RootParseNode(SourceIndexLength position, DynamicScope scope, ParseNode bodyNode, String file) {
         this(position, scope, bodyNode, file, -1, false);
     }
 
-    public RootParseNode(TempSourceSection position, DynamicScope scope, ParseNode bodyNode, String file, int endPosition, boolean needsCodeCoverage) {
+    public RootParseNode(SourceIndexLength position, DynamicScope scope, ParseNode bodyNode, String file, int endPosition, boolean needsCodeCoverage) {
         super(position, bodyNode.containsVariableAssignment());
         
         this.scope = scope;
@@ -67,7 +67,7 @@ public class RootParseNode extends ParseNode {
     }
 
     @Deprecated
-    public RootParseNode(TempSourceSection position, DynamicScope scope, ParseNode bodyNode, String file, int endPosition) {
+    public RootParseNode(SourceIndexLength position, DynamicScope scope, ParseNode bodyNode, String file, int endPosition) {
         this(position, scope, bodyNode, file, endPosition, false);
     }
 

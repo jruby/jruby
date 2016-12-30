@@ -60,7 +60,7 @@ import org.jruby.truffle.language.RubyConstant;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
-import org.jruby.truffle.parser.TempSourceSection;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.SnippetNode;
 import org.jruby.truffle.language.Visibility;
 import org.jruby.truffle.language.arguments.MissingArgumentBehavior;
@@ -375,13 +375,13 @@ public abstract class ModuleNodes {
         private void createAccesor(DynamicObject module, String name) {
             final FrameInstance callerFrame = getContext().getCallStack().getCallerFrameIgnoringSend();
             final SourceSection sourceSection = callerFrame.getCallNode().getEncapsulatingSourceSection();
-            final TempSourceSection tempSourceSection = new TempSourceSection(sourceSection.getCharIndex(), sourceSection.getCharLength());
+            final SourceIndexLength sourceIndexLength = new SourceIndexLength(sourceSection.getCharIndex(), sourceSection.getCharLength());
             final Visibility visibility = DeclarationContext.findVisibility(callerFrame.getFrame(FrameAccess.READ_ONLY, true));
             final Arity arity = isGetter ? Arity.NO_ARGUMENTS : Arity.ONE_REQUIRED;
             final String ivar = "@" + name;
             final String accessorName = isGetter ? name : name + "=";
 
-            final RubyNode checkArity = Translator.createCheckArityNode(getContext(), sourceSection.getSource(), tempSourceSection, arity);
+            final RubyNode checkArity = Translator.createCheckArityNode(getContext(), sourceSection.getSource(), sourceIndexLength, arity);
 
             final LexicalScope lexicalScope = new LexicalScope(getContext().getRootLexicalScope(), module);
             final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(
@@ -404,7 +404,7 @@ public abstract class ModuleNodes {
                 RubyNode readArgument = new ProfileArgumentNode(new ReadPreArgumentNode(0, MissingArgumentBehavior.RUNTIME_ERROR));
                 accessInstanceVariable = new WriteInstanceVariableNode(getContext(), sourceSection, ivar, self, readArgument);
             }
-            final RubyNode sequence = Translator.sequence(getContext(), sourceSection.getSource(), tempSourceSection, Arrays.asList(checkArity, accessInstanceVariable));
+            final RubyNode sequence = Translator.sequence(getContext(), sourceSection.getSource(), sourceIndexLength, Arrays.asList(checkArity, accessInstanceVariable));
             final RubyRootNode rootNode = new RubyRootNode(getContext(), sourceSection, null, sharedMethodInfo, sequence, false);
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
             final InternalMethod method = new InternalMethod(getContext(), sharedMethodInfo, lexicalScope, accessorName, module, visibility, callTarget);

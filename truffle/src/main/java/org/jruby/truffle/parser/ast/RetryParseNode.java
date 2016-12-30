@@ -30,7 +30,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.ast;
 
-import org.jruby.truffle.parser.TempSourceSection;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
 
 import java.util.List;
@@ -39,7 +39,7 @@ import java.util.List;
  * Represents a 'retry' statement.
  */
 public class RetryParseNode extends ParseNode implements NonLocalControlFlowParseNode {
-    public RetryParseNode(TempSourceSection position) {
+    public RetryParseNode(SourceIndexLength position) {
         super(position, false);
     }
 

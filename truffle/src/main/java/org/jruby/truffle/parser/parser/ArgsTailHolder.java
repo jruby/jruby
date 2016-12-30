@@ -26,7 +26,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.parser;
 
-import org.jruby.truffle.parser.TempSourceSection;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.parser.ast.BlockArgParseNode;
 import org.jruby.truffle.parser.ast.KeywordRestArgParseNode;
 import org.jruby.truffle.parser.ast.ListParseNode;
@@ -35,12 +35,12 @@ import org.jruby.truffle.parser.ast.ListParseNode;
  * Simple struct to hold values until they can be inserted into the AST.
  */
 public class ArgsTailHolder {
-    private TempSourceSection position;
+    private SourceIndexLength position;
     private BlockArgParseNode blockArg;
     private ListParseNode keywordArgs;
     private KeywordRestArgParseNode keywordRestArg;
     
-    public ArgsTailHolder(TempSourceSection position, ListParseNode keywordArgs,
+    public ArgsTailHolder(SourceIndexLength position, ListParseNode keywordArgs,
                           KeywordRestArgParseNode keywordRestArg, BlockArgParseNode blockArg) {
         this.position = position;
         this.blockArg = blockArg;
@@ -48,7 +48,7 @@ public class ArgsTailHolder {
         this.keywordRestArg = keywordRestArg;
     }
     
-    public TempSourceSection getPosition() {
+    public SourceIndexLength getPosition() {
         return position;
     }
     

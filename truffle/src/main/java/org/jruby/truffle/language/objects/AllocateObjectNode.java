@@ -29,7 +29,7 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.hash.Entry;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.parser.TempSourceSection;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.control.RaiseException;
 
@@ -41,7 +41,7 @@ import org.jruby.truffle.language.control.RaiseException;
 public abstract class AllocateObjectNode extends RubyNode {
 
     public static AllocateObjectNode create() {
-        return AllocateObjectNodeGen.create(null, (TempSourceSection) null, null, null);
+        return AllocateObjectNodeGen.create(null, (SourceIndexLength) null, null, null);
     }
 
     private final boolean useCallerFrameForTracing;
@@ -50,7 +50,7 @@ public abstract class AllocateObjectNode extends RubyNode {
         this(context, sourceSection, true);
     }
 
-    public AllocateObjectNode(RubyContext context, TempSourceSection sourceSection) {
+    public AllocateObjectNode(RubyContext context, SourceIndexLength sourceSection) {
         this(context, sourceSection, true);
     }
 
@@ -59,7 +59,7 @@ public abstract class AllocateObjectNode extends RubyNode {
         this.useCallerFrameForTracing = useCallerFrameForTracing;
     }
 
-    public AllocateObjectNode(RubyContext context, TempSourceSection sourceSection, boolean useCallerFrameForTracing) {
+    public AllocateObjectNode(RubyContext context, SourceIndexLength sourceSection, boolean useCallerFrameForTracing) {
         super(context, sourceSection);
         this.useCallerFrameForTracing = useCallerFrameForTracing;
     }

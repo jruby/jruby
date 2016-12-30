@@ -30,14 +30,14 @@
 package org.jruby.truffle.parser.ast;
 
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.TempSourceSection;
+import org.jruby.truffle.language.SourceIndexLength;
 
 import java.util.List;
 
 public class SValueParseNode extends ParseNode {
     protected final ParseNode node;
 
-    public SValueParseNode(TempSourceSection position, ParseNode node) {
+    public SValueParseNode(SourceIndexLength position, ParseNode node) {
         super(position, node.containsVariableAssignment());
 
         assert node != null : "node is not null";

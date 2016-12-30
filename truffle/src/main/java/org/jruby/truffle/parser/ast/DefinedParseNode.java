@@ -33,7 +33,7 @@
 package org.jruby.truffle.parser.ast;
 
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.TempSourceSection;
+import org.jruby.truffle.language.SourceIndexLength;
 
 import java.util.List;
 
@@ -43,7 +43,7 @@ import java.util.List;
 public class DefinedParseNode extends ParseNode {
     private final ParseNode expressionNode;
 
-    public DefinedParseNode(TempSourceSection position, ParseNode expressionNode) {
+    public DefinedParseNode(SourceIndexLength position, ParseNode expressionNode) {
         super(position, expressionNode.containsVariableAssignment());
 
         assert expressionNode != null : "expressionNode is not null";

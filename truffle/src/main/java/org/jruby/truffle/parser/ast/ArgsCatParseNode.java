@@ -32,7 +32,7 @@
 package org.jruby.truffle.parser.ast;
 
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.TempSourceSection;
+import org.jruby.truffle.language.SourceIndexLength;
 
 import java.util.List;
 
@@ -40,7 +40,7 @@ public class ArgsCatParseNode extends ParseNode {
 	private final ParseNode firstNode;
     private final ParseNode secondNode;
 
-    public ArgsCatParseNode(TempSourceSection position, ParseNode firstNode, ParseNode secondNode) {
+    public ArgsCatParseNode(SourceIndexLength position, ParseNode firstNode, ParseNode secondNode) {
         super(position, firstNode.containsVariableAssignment() || secondNode.containsVariableAssignment());
         
         assert firstNode != null : "ArgsCatParseNode.first == null";

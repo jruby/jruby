@@ -32,7 +32,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.ast;
 
-import org.jruby.truffle.parser.TempSourceSection;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
 
 import java.math.BigInteger;
@@ -44,7 +44,7 @@ import java.util.List;
 public class BignumParseNode extends NumericParseNode implements SideEffectFree {
     private BigInteger value;
 
-    public BignumParseNode(TempSourceSection position, BigInteger value) {
+    public BignumParseNode(SourceIndexLength position, BigInteger value) {
         super(position);
         this.value = value;
     }

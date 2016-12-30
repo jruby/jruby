@@ -4,7 +4,7 @@
  */
 package org.jruby.truffle.parser.ast;
 
-import org.jruby.truffle.parser.TempSourceSection;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
 
 import java.util.List;
@@ -16,7 +16,7 @@ import java.util.List;
 public class KeywordArgParseNode extends ParseNode {
     private AssignableParseNode assignable;
 
-    public KeywordArgParseNode(TempSourceSection position, AssignableParseNode assignable) {
+    public KeywordArgParseNode(SourceIndexLength position, AssignableParseNode assignable) {
         super(position, true);
         this.assignable = assignable;
     }

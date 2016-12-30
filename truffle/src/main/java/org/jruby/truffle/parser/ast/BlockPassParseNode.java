@@ -32,7 +32,7 @@
 package org.jruby.truffle.parser.ast;
 
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.TempSourceSection;
+import org.jruby.truffle.language.SourceIndexLength;
 
 import java.util.List;
 
@@ -53,7 +53,7 @@ public class BlockPassParseNode extends ParseNode {
      */
     private ParseNode argsNode;
 
-    public BlockPassParseNode(TempSourceSection position, ParseNode bodyNode) {
+    public BlockPassParseNode(SourceIndexLength position, ParseNode bodyNode) {
         super(position, bodyNode != null && bodyNode.containsVariableAssignment());
         this.bodyNode = bodyNode;
     }

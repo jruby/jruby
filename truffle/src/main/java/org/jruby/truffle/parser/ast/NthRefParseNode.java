@@ -31,7 +31,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.ast;
 
-import org.jruby.truffle.parser.TempSourceSection;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
 
 import java.util.List;
@@ -42,7 +42,7 @@ import java.util.List;
 public class NthRefParseNode extends ParseNode {
     private final int matchNumber;
 
-    public NthRefParseNode(TempSourceSection position, int matchNumber) {
+    public NthRefParseNode(SourceIndexLength position, int matchNumber) {
         super(position, false);
         this.matchNumber = matchNumber;
     }
