@@ -363,12 +363,14 @@ public class RubyLexer {
         return token == EOF ? 0 : token;
     }
 
+    public TempSourceSection getPosition() {
+        if (tokline != null && ruby_sourceline == tokline.getStartLine() - 1) return tokline;
+        return new TempSourceSection(ruby_sourceline + 1);
+    }
+
     public TempSourceSection getPosition(TempSourceSection startPosition) {
         if (startPosition != null) return startPosition;
-
-        if (tokline != null && ruby_sourceline == tokline.getStartLine() - 1) return tokline;
-
-        return new TempSourceSection(ruby_sourceline + 1);
+        return getPosition();
     }
 
     /**
@@ -2701,11 +2703,6 @@ public class RubyLexer {
 
     public int getLeftParenBegin() {
         return leftParenBegin;
-    }
-
-    public TempSourceSection getPosition() {
-        if (tokline != null && ruby_sourceline == tokline.getStartLine() - 1) return tokline;
-        return new TempSourceSection(ruby_sourceline + 1);
     }
 
     public int getLineOffset() {
