@@ -2999,7 +2999,7 @@ states[350] = new ParserState() {
                     ParseNode body = ((ParseNode)yyVals[-1+yyTop]);
                     if (body == null) body = NilImplicitParseNode.NIL;
 
-                    yyVal = new DefnParseNode(((TempSourceSection)yyVals[-5+yyTop]).extendedUntil(((TempSourceSection)yyVals[0+yyTop])), ((String)yyVals[-4+yyTop]), (ArgsParseNode) yyVals[-2+yyTop], support.getCurrentScope(), body);
+                    yyVal = new DefnParseNode(support.extendedUntil(((TempSourceSection)yyVals[-5+yyTop]), ((TempSourceSection)yyVals[0+yyTop])), ((String)yyVals[-4+yyTop]), (ArgsParseNode) yyVals[-2+yyTop], support.getCurrentScope(), body);
                     support.popCurrentScope();
                     support.setInDef(false);
                     lexer.setCurrentArg(((String)yyVals[-3+yyTop]));
@@ -3027,7 +3027,7 @@ states[353] = new ParserState() {
                     ParseNode body = ((ParseNode)yyVals[-1+yyTop]);
                     if (body == null) body = NilImplicitParseNode.NIL;
 
-                    yyVal = new DefsParseNode(((TempSourceSection)yyVals[-8+yyTop]).extendedUntil(((TempSourceSection)yyVals[0+yyTop])), ((ParseNode)yyVals[-7+yyTop]), ((String)yyVals[-4+yyTop]), (ArgsParseNode) yyVals[-2+yyTop], support.getCurrentScope(), body);
+                    yyVal = new DefsParseNode(support.extendedUntil(((TempSourceSection)yyVals[-8+yyTop]), ((TempSourceSection)yyVals[0+yyTop])), ((ParseNode)yyVals[-7+yyTop]), ((String)yyVals[-4+yyTop]), (ArgsParseNode) yyVals[-2+yyTop], support.getCurrentScope(), body);
                     support.popCurrentScope();
                     support.setInSingle(support.getInSingle() - 1);
                     lexer.setCurrentArg(((String)yyVals[-3+yyTop]));

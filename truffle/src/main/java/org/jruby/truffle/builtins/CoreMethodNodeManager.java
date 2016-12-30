@@ -187,7 +187,7 @@ public class CoreMethodNodeManager {
         final CoreMethod method = methodDetails.getMethodAnnotation();
 
         final SourceSection sourceSection = sharedMethodInfo.getSourceSection();
-        final TempSourceSection tempSourceSection = new TempSourceSection(sourceSection);
+        final TempSourceSection tempSourceSection = new TempSourceSection(sourceSection.getCharIndex(), sourceSection.getCharLength());
 
         final RubyNode methodNode = createCoreMethodNode(context, sourceSection, methodDetails.getNodeFactory(), method);
 

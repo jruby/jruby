@@ -1507,7 +1507,7 @@ primary         : literal
                     ParseNode body = $5;
                     if (body == null) body = NilImplicitParseNode.NIL;
 
-                    $$ = new DefnParseNode($1.extendedUntil($6), $2, (ArgsParseNode) $4, support.getCurrentScope(), body);
+                    $$ = new DefnParseNode(support.extendedUntil($1, $6), $2, (ArgsParseNode) $4, support.getCurrentScope(), body);
                     support.popCurrentScope();
                     support.setInDef(false);
                     lexer.setCurrentArg($<String>3);
@@ -1524,7 +1524,7 @@ primary         : literal
                     ParseNode body = $8;
                     if (body == null) body = NilImplicitParseNode.NIL;
 
-                    $$ = new DefsParseNode($1.extendedUntil($9), $2, $5, (ArgsParseNode) $7, support.getCurrentScope(), body);
+                    $$ = new DefsParseNode(support.extendedUntil($1, $9), $2, $5, (ArgsParseNode) $7, support.getCurrentScope(), body);
                     support.popCurrentScope();
                     support.setInSingle(support.getInSingle() - 1);
                     lexer.setCurrentArg($<String>6);

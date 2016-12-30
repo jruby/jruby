@@ -1574,4 +1574,9 @@ public class ParserSupport {
     public boolean skipTruffleRubiniusWarnings(RubyLexer lexer) {
         return lexer.getFile().startsWith(context.getOptions().CORE_LOAD_PATH);
     }
+
+    public TempSourceSection extendedUntil(TempSourceSection start, TempSourceSection end) {
+        return new TempSourceSection(start.getCharIndex(), end.getCharEnd() - start.getCharIndex());
+    }
+
 }

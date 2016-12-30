@@ -17,11 +17,6 @@ public class TempSourceSection {
     private final int charIndex;
     private final int charLength;
 
-    public TempSourceSection(SourceSection sourceSection) {
-        charIndex = sourceSection.getCharIndex();
-        charLength = sourceSection.getCharLength();
-    }
-
     public TempSourceSection(int charIndex, int charLength) {
         this.charIndex = charIndex;
         this.charLength = charLength;
@@ -41,10 +36,6 @@ public class TempSourceSection {
 
     public int getCharEnd() {
         return charIndex + charLength;
-    }
-
-    public TempSourceSection extendedUntil(TempSourceSection endPoint) {
-        return new TempSourceSection(charIndex, endPoint.getCharEnd() - charIndex);
     }
 
 }
