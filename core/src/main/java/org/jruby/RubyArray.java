@@ -2397,7 +2397,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         for (i = 0; i < realLength; i++) {
             // Do not coarsen the "safe" check, since it will misinterpret AIOOBE from the yield
             // See JRUBY-5434
-            arr[i] = block.yield(context, safeArrayRef(values, i + begin));
+            safeArraySet(runtime, arr, i, block.yield(context, safeArrayRef(values, i + begin))); // arr[i] = ...
         }
 
         // use iteration count as new size in case something was deleted along the way
