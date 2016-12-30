@@ -98,11 +98,6 @@ public class SyntaxException extends RuntimeException {
         return message;
     }
 
-    @Deprecated
-    public TempSourceSection getPosition() {
-        return new TempSourceSection(line + 1);
-    }
-
     public String getFile() {
         return file;
     }
