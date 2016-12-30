@@ -49,7 +49,7 @@ public abstract class ParseNode {
     static final List<ParseNode> EMPTY_LIST = new ArrayList<>();
 
     private int sourceCharIndex;
-    private int sourceCharLength;
+    private int sourceLength;
 
     // Does this node contain a node which is an assignment.  We can use this knowledge when emitting IR
     // instructions to do more or less depending on whether we have to cope with scenarios like:
@@ -62,10 +62,10 @@ public abstract class ParseNode {
     public ParseNode(TempSourceSection position, boolean containsAssignment) {
         if (position == null) {
             sourceCharIndex = -1;
-            sourceCharLength = -1;
+            sourceLength = -1;
         } else {
             sourceCharIndex = position.getCharIndex();
-            sourceCharLength = position.getCharLength();
+            sourceLength = position.getLength();
         }
         this.containsVariableAssignment = containsAssignment;
     }
@@ -82,12 +82,12 @@ public abstract class ParseNode {
      * Location of this node within the source
      */
     public TempSourceSection getPosition() {
-        return new TempSourceSection(sourceCharIndex, sourceCharLength);
+        return new TempSourceSection(sourceCharIndex, sourceLength);
     }
 
     public void setPosition(TempSourceSection position) {
         sourceCharIndex = position.getCharIndex();
-        sourceCharLength = position.getCharLength();
+        sourceLength = position.getLength();
     }
     
     public abstract <T> T accept(NodeVisitor<T> visitor);

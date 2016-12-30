@@ -53,7 +53,7 @@ public abstract class RubyBaseNode extends Node {
     @CompilationFinal private RubyContext context;
 
     private int sourceCharIndex = -1;
-    private int sourceCharLength;
+    private int sourceLength;
 
     private int flags;
 
@@ -210,14 +210,14 @@ public abstract class RubyBaseNode extends Node {
     public void unsafeSetSourceSection(TempSourceSection sourceSection) {
         assert sourceCharIndex == -1;
         sourceCharIndex = sourceSection.getCharIndex();
-        sourceCharLength = sourceSection.getCharLength();
+        sourceLength = sourceSection.getLength();
     }
 
     public TempSourceSection getRubySourceSection() {
         if (sourceCharIndex == -1) {
             return null;
         } else {
-            return new TempSourceSection(sourceCharIndex, sourceCharLength);
+            return new TempSourceSection(sourceCharIndex, sourceLength);
         }
     }
 

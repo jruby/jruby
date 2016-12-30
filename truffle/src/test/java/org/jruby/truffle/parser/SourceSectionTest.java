@@ -77,7 +77,7 @@ public class SourceSectionTest extends RubyTest {
             assertEquals(startLine, sourceSection.getStartLine());
             // assertEquals(endLine, sourceSection.getEndLine()); - this one is a worse failure than the others - see testArrayLiteralSectionsAcrossLines for example
             // assertEquals(charIndex, sourceSection.getCharIndex());
-            // assertEquals(charLength, sourceSection.getCharLength());
+            // assertEquals(charLength, sourceSection.getLength());
             // assertEquals(charIndex + charLength, sourceSection.getCharEndIndex());
             // assertEquals(startColumn, sourceSection.getStartColumn());
             // assertEquals(endColumn, sourceSection.getEndColumn());

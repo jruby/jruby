@@ -15,27 +15,27 @@ import com.oracle.truffle.api.source.SourceSection;
 public class TempSourceSection {
 
     private final int charIndex;
-    private final int charLength;
+    private final int length;
 
-    public TempSourceSection(int charIndex, int charLength) {
+    public TempSourceSection(int charIndex, int length) {
         this.charIndex = charIndex;
-        this.charLength = charLength;
+        this.length = length;
     }
 
     public SourceSection toSourceSection(Source source) {
-        return source.createSection(charIndex, charLength);
+        return source.createSection(charIndex, length);
     }
 
     public int getCharIndex() {
         return charIndex;
     }
 
-    public int getCharLength() {
-        return charLength;
+    public int getLength() {
+        return length;
     }
 
     public int getCharEnd() {
-        return charIndex + charLength;
+        return charIndex + length;
     }
 
 }
