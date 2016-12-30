@@ -43,6 +43,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.lexer;
 
+import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
@@ -255,6 +256,7 @@ public class RubyLexer {
         lex_strterm = null;
         // FIXME: ripper offsets correctly but we need to subtract one?
         ruby_sourceline = src.getLineStartOffset() - 1;
+        updateLineOffset();
 
         parser_prepare();
     }
@@ -278,9 +280,11 @@ public class RubyLexer {
 
             if (heredoc_end > 0) {
                 ruby_sourceline = heredoc_end;
+                updateLineOffset();
                 heredoc_end = 0;
             }
             ruby_sourceline++;
+            updateLineOffset();
             line_count++;
             lex_pbeg = lex_p = 0;
             lex_pend = lex_p + v.getLength();
@@ -355,6 +359,7 @@ public class RubyLexer {
         lexb = line;
         heredoc_end = ruby_sourceline;
         ruby_sourceline = here.line;
+        updateLineOffset();
         flush();
     }
 
@@ -368,7 +373,23 @@ public class RubyLexer {
             return tokline;
         }
 
+        final SourceSection sectionFromLine = src.getSource().createSection(ruby_sourceline + 1);
+        assert sectionFromLine.getStartLine() == ruby_sourceline + 1;
+
+        final SourceSection sectionFromOffsets = src.getSource().createSection(ruby_sourceline_char_offset, ruby_sourceline_char_length);
+        assert sectionFromOffsets.getStartLine() == ruby_sourceline + 1 : String.format("%d %d %s:%d %d %d", sectionFromOffsets.getStartLine(), ruby_sourceline + 1, src.getSource().getPath(), ruby_sourceline + 1, ruby_sourceline_char_offset, ruby_sourceline_char_length);
+
+        assert sectionFromLine.getCharIndex() == sectionFromOffsets.getCharIndex() : String.format("%d %d %s:%d %d %d", sectionFromLine.getCharIndex(), sectionFromOffsets.getCharIndex(), src.getSource().getPath(), ruby_sourceline + 1, ruby_sourceline_char_offset, ruby_sourceline_char_length);
+        assert sectionFromLine.getCharLength() == sectionFromOffsets.getCharLength() : String.format("%d %d %s:%d %d %d", sectionFromLine.getCharLength(), sectionFromOffsets.getCharLength(), src.getSource().getPath(), ruby_sourceline + 1, ruby_sourceline_char_offset, ruby_sourceline_char_length);
+
         return new TempSourceSection(ruby_sourceline + 1);
+    }
+
+    private void updateLineOffset() {
+        if (ruby_sourceline != -1) {
+            ruby_sourceline_char_offset = src.getSource().getLineStartOffset(ruby_sourceline + 1);
+            ruby_sourceline_char_length = src.getSource().getLineLength(ruby_sourceline + 1);
+        }
     }
 
     /**
@@ -2607,6 +2628,8 @@ public class RubyLexer {
     protected int line_offset = 0;
     protected int parenNest = 0;
     protected int ruby_sourceline = 0;
+    protected int ruby_sourceline_char_offset = 0;
+    protected int ruby_sourceline_char_length = 0;
     protected LexerSource src;                // Stream of data that yylex() examines.
     protected int token;                      // Last token read via yylex().
     private CodeRange tokenCR;
@@ -2874,6 +2897,7 @@ public class RubyLexer {
         last_cr_line = -1;
         parenNest = 0;
         ruby_sourceline = 0;
+        // No updateLineOffset becuase it's about to be done anyway in the only caller of this method
         token = 0;
         tokenSeen = false;
         tokp = 0;
