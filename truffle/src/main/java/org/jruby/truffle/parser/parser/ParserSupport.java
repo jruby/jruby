@@ -1250,7 +1250,13 @@ public class ParserSupport {
     }
 
     public TempSourceSection getPosition(ParseNode start) {
-        return start != null ? lexer.getPosition(start.getPosition()) : lexer.getPosition();
+        if (start != null) {
+            TempSourceSection startPosition = start.getPosition();
+            if (startPosition != null) return startPosition;
+            return lexer.getPosition();
+        } else {
+            return lexer.getPosition();
+        }
     }
 
     public void warn(RubyWarnings.ID id, TempSourceSection position, String message, Object... data) {

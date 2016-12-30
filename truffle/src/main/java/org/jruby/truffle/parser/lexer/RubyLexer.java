@@ -364,13 +364,11 @@ public class RubyLexer {
     }
 
     public TempSourceSection getPosition() {
-        if (tokline != null && ruby_sourceline == tokline.getStartLine() - 1) return tokline;
-        return new TempSourceSection(ruby_sourceline + 1);
-    }
+        if (tokline != null && ruby_sourceline == tokline.getStartLine() - 1) {
+            return tokline;
+        }
 
-    public TempSourceSection getPosition(TempSourceSection startPosition) {
-        if (startPosition != null) return startPosition;
-        return getPosition();
+        return new TempSourceSection(ruby_sourceline + 1);
     }
 
     /**
