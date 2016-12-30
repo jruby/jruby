@@ -2664,7 +2664,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         modify();
 
         IRubyObject nil = getRuntime().getNil();
-        IRubyObject obj = null; // should never return null below
+        IRubyObject obj;
 
         try {
             obj = values[begin + pos];
@@ -2681,7 +2681,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
             }
 
             System.arraycopy(values, begin + pos + 1, values, begin + pos, len - (pos + 1));
-            values[begin + len - 1] = getRuntime().getNil();
+            values[begin + len - 1] = nil;
         } catch (ArrayIndexOutOfBoundsException e) {
             throw concurrentModification(getRuntime(), e);
         }
