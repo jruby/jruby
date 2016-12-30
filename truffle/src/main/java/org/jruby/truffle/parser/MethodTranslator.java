@@ -151,7 +151,7 @@ public class MethodTranslator extends BodyTranslator {
         // Procs
         final RubyNode bodyProc = new CatchForProcNode(context, translateSourceSection(source, enclosing(sourceSection, body)), composeBody(sourceSection, preludeProc, NodeUtil.cloneNode(body)));
 
-        final RubyRootNode newRootNodeForProcs = new RubyRootNode(context, translateSourceSection(source, considerExtendingMethodToCoverEnd(sourceSection)), environment.getFrameDescriptor(), environment.getSharedMethodInfo(),
+        final RubyRootNode newRootNodeForProcs = new RubyRootNode(context, translateSourceSection(source, sourceSection), environment.getFrameDescriptor(), environment.getSharedMethodInfo(),
                 bodyProc, environment.needsDeclarationFrame());
 
         // Lambdas
@@ -159,7 +159,7 @@ public class MethodTranslator extends BodyTranslator {
         final RubyNode bodyLambda = new CatchForLambdaNode(context, sourceSection.toSourceSection(source), environment.getReturnID(), composed);
 
         final RubyRootNode newRootNodeForLambdas = new RubyRootNode(
-                context, translateSourceSection(source, considerExtendingMethodToCoverEnd(sourceSection)),
+                context, translateSourceSection(source, sourceSection),
                 environment.getFrameDescriptor(), environment.getSharedMethodInfo(),
                 bodyLambda,
                 environment.needsDeclarationFrame());
@@ -418,39 +418,6 @@ public class MethodTranslator extends BodyTranslator {
         } else {
             return super.createFlipFlopState(sourceSection, depth);
         }
-    }
-
-    private TempSourceSection considerExtendingMethodToCoverEnd(TempSourceSection sourceSection) {
-        if (sourceSection == null) {
-            return sourceSection;
-        }
-
-        if (sourceSection.getEndLine() + 1 >= source.getLineCount()) {
-            return sourceSection;
-        }
-
-        final String indentationOnFirstLine = indentation(source.getCode(sourceSection.getStartLine()));
-
-        int lineAfter = sourceSection.getEndLine() + 1;
-        for (;;) {
-            final String lineAfterString = source.getCode(lineAfter).replaceAll("\\s+$","");
-            if (lineAfterString.equals(indentationOnFirstLine + "end") || lineAfterString.equals(indentationOnFirstLine + "}")) {
-                return new TempSourceSection(sourceSection.getStartLine(), sourceSection.getEndLine() + 1);
-            }
-            if (++lineAfter >= source.getLineCount()) {
-                return sourceSection;
-            }
-        }
-    }
-
-    private static String indentation(String line) {
-        for (int n = 0; n < line.length(); n++) {
-            if (!Character.isWhitespace(line.charAt(n))) {
-                return line.substring(0, n);
-            }
-        }
-
-        return "";
     }
 
     /*

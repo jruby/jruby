@@ -98,19 +98,19 @@ public abstract class Translator extends org.jruby.truffle.parser.ast.visitor.Ab
             return base;
         }
 
-        int startLine = base.getStartLine();
-        int endLine = base.getEndLine();
+        int start = base.getCharIndex();
+        int end = base.getCharEnd();
 
         for (RubyNode node : sequence) {
             final TempSourceSection sourceSection = node.getRubySourceSection();
 
             if (sourceSection != null) {
-                startLine = Integer.min(startLine, sourceSection.getStartLine());
-                endLine = Integer.max(endLine, sourceSection.getEndLine());
+                start = Integer.min(start, sourceSection.getCharIndex());
+                end = Integer.max(end, sourceSection.getCharEnd());
             }
         }
 
-        return new TempSourceSection(startLine, endLine);
+        return new TempSourceSection(start, end - start);
     }
 
     private static List<RubyNode> flatten(List<RubyNode> sequence, boolean allowTrailingNil) {

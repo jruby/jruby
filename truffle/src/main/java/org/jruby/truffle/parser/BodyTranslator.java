@@ -463,12 +463,12 @@ public class BodyTranslator extends Translator {
 
         final List<RubyNode> translatedChildren = new ArrayList<>();
 
-        final int firstLine = node.getPosition().getStartLine();
-        int lastLine = firstLine;
+        final int start = node.getPosition().getCharIndex();
+        int end = node.getPosition().getCharEnd();
 
         for (ParseNode child : node.children()) {
             if (child.getPosition() != null) {
-                lastLine = Math.max(lastLine, child.getPosition().getStartLine());
+                end = Math.max(end, child.getPosition().getCharEnd());
             }
 
             final RubyNode translatedChild = translateNodeOrNil(sourceSection, child);
@@ -483,7 +483,7 @@ public class BodyTranslator extends Translator {
         if (translatedChildren.size() == 1) {
             ret = translatedChildren.get(0);
         } else {
-            ret = sequence(context, source, new TempSourceSection(firstLine, lastLine), translatedChildren);
+            ret = sequence(context, source, new TempSourceSection(start, end - start), translatedChildren);
         }
 
         return addNewlineIfNeeded(node, ret);
@@ -3364,7 +3364,7 @@ public class BodyTranslator extends Translator {
 
             if (context.getCoverageManager().isEnabled()) {
                 node.unsafeSetIsCoverageLine();
-                context.getCoverageManager().setLineHasCode(source, current.getStartLine());
+                context.getCoverageManager().setLineHasCode(source, current.toSourceSection(source).getStartLine());
             }
 
             node.unsafeSetIsNewLine();

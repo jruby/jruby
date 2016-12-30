@@ -43,6 +43,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.lexer;
 
+import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
@@ -153,10 +154,14 @@ public class RubyLexer {
     }
 
     protected void ambiguousOperator(String op, String syn) {
-        warnings.warn(RubyWarnings.ID.AMBIGUOUS_ARGUMENT, getFile(), getPosition().getStartLine(), "`" + op + "' after local variable or literal is interpreted as binary operator");
-        warnings.warn(RubyWarnings.ID.AMBIGUOUS_ARGUMENT, getFile(), getPosition().getStartLine(), "even though it seems like " + syn);
+        warnings.warn(RubyWarnings.ID.AMBIGUOUS_ARGUMENT, getFile(), getPosition().toSourceSection(src.getSource()).getStartLine(), "`" + op + "' after local variable or literal is interpreted as binary operator");
+        warnings.warn(RubyWarnings.ID.AMBIGUOUS_ARGUMENT, getFile(), getPosition().toSourceSection(src.getSource()).getStartLine(), "even though it seems like " + syn);
     }
-   
+
+    public Source getSource() {
+        return src.getSource();
+    }
+
     public enum Keyword {
         END ("end", Tokens.kEND, Tokens.kEND, EXPR_END),
         ELSE ("else", Tokens.kELSE, Tokens.kELSE, EXPR_BEG),
@@ -326,9 +331,9 @@ public class RubyLexer {
             int currentLine = -1;
             for (int i = 0; i < length; i++) {
                 ParseNode child = list.get(i);
-                if (currentLine == child.getPosition().getStartLine() - 1) continue;  // Only process first element on a line?
+                if (currentLine == child.getPosition().toSourceSection(src.getSource()).getStartLine() - 1) continue;  // Only process first element on a line?
 
-                currentLine = child.getPosition().getStartLine() - 1;                 // New line
+                currentLine = child.getPosition().toSourceSection(src.getSource()).getStartLine() - 1;                 // New line
 
                 if (child instanceof StrParseNode) {
                     ParserByteListBuilder builder = new ParserByteListBuilder();
@@ -369,7 +374,7 @@ public class RubyLexer {
     }
 
     public TempSourceSection getPosition() {
-        if (tokline != null && ruby_sourceline == tokline.getStartLine() - 1) {
+        if (tokline != null && ruby_sourceline == tokline.toSourceSection(src.getSource()).getStartLine() - 1) { // SLOW!
             return tokline;
         }
 
@@ -382,7 +387,7 @@ public class RubyLexer {
         assert sectionFromLine.getCharIndex() == sectionFromOffsets.getCharIndex() : String.format("%d %d %s:%d %d %d", sectionFromLine.getCharIndex(), sectionFromOffsets.getCharIndex(), src.getSource().getPath(), ruby_sourceline + 1, ruby_sourceline_char_offset, ruby_sourceline_char_length);
         assert sectionFromLine.getCharLength() == sectionFromOffsets.getCharLength() : String.format("%d %d %s:%d %d %d", sectionFromLine.getCharLength(), sectionFromOffsets.getCharLength(), src.getSource().getPath(), ruby_sourceline + 1, ruby_sourceline_char_offset, ruby_sourceline_char_length);
 
-        return new TempSourceSection(ruby_sourceline + 1);
+        return new TempSourceSection(sectionFromLine.getCharIndex(), sectionFromLine.getCharLength());
     }
 
     private void updateLineOffset() {
@@ -484,7 +489,7 @@ public class RubyLexer {
         try {
             d = SafeDoubleParser.parseDouble(number);
         } catch (NumberFormatException e) {
-            warnings.warn(RubyWarnings.ID.FLOAT_OUT_OF_RANGE, getFile(), getPosition().getStartLine(), "Float " + number + " out of range.");
+            warnings.warn(RubyWarnings.ID.FLOAT_OUT_OF_RANGE, getFile(), getPosition().toSourceSection(src.getSource()).getStartLine(), "Float " + number + " out of range.");
 
             d = number.startsWith("-") ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
         }
@@ -717,7 +722,7 @@ public class RubyLexer {
 
     private boolean arg_ambiguous() {
         if (warnings.isVerbose() && !parserSupport.skipTruffleRubiniusWarnings(this)) {
-            warnings.warning(RubyWarnings.ID.AMBIGUOUS_ARGUMENT, getFile(), getPosition().getStartLine(), "Ambiguous first argument; make sure.");
+            warnings.warning(RubyWarnings.ID.AMBIGUOUS_ARGUMENT, getFile(), getPosition().toSourceSection(src.getSource()).getStartLine(), "Ambiguous first argument; make sure.");
         }
         return true;
     }
@@ -1156,7 +1161,7 @@ public class RubyLexer {
         TempSourceSection tmpPosition = getPosition();
         if (isSpaceArg(c, spaceSeen)) {
             if (warnings.isVerbose())
-                warnings.warning(RubyWarnings.ID.ARGUMENT_AS_PREFIX, getFile(), tmpPosition.getStartLine(), "`&' interpreted as argument prefix");
+                warnings.warning(RubyWarnings.ID.ARGUMENT_AS_PREFIX, getFile(), tmpPosition.toSourceSection(src.getSource()).getStartLine(), "`&' interpreted as argument prefix");
             c = Tokens.tAMPER;
         } else if (isBEG()) {
             c = Tokens.tAMPER;
@@ -2005,7 +2010,7 @@ public class RubyLexer {
                     break;
                 }
                 if (c2 != 0) {
-                    warnings.warn(RubyWarnings.ID.INVALID_CHAR_SEQUENCE, getFile(), getPosition().getStartLine(), "invalid character syntax; use ?\\" + c2);
+                    warnings.warn(RubyWarnings.ID.INVALID_CHAR_SEQUENCE, getFile(), getPosition().toSourceSection(src.getSource()).getStartLine(), "invalid character syntax; use ?\\" + c2);
                 }
             }
             pushback(c);
@@ -2135,7 +2140,7 @@ public class RubyLexer {
 
             if (isSpaceArg(c, spaceSeen)) {
                 if (warnings.isVerbose())
-                    warnings.warning(RubyWarnings.ID.ARGUMENT_AS_PREFIX, getFile(), getPosition().getStartLine(), "`**' interpreted as argument prefix");
+                    warnings.warning(RubyWarnings.ID.ARGUMENT_AS_PREFIX, getFile(), getPosition().toSourceSection(src.getSource()).getStartLine(), "`**' interpreted as argument prefix");
                 c = Tokens.tDSTAR;
             } else if (isBEG()) {
                 c = Tokens.tDSTAR;
@@ -2152,7 +2157,7 @@ public class RubyLexer {
             pushback(c);
             if (isSpaceArg(c, spaceSeen)) {
                 if (warnings.isVerbose() && !parserSupport.skipTruffleRubiniusWarnings(this))
-                    warnings.warning(RubyWarnings.ID.ARGUMENT_AS_PREFIX, getFile(), getPosition().getStartLine(), "`*' interpreted as argument prefix");
+                    warnings.warning(RubyWarnings.ID.ARGUMENT_AS_PREFIX, getFile(), getPosition().toSourceSection(src.getSource()).getStartLine(), "`*' interpreted as argument prefix");
                 c = Tokens.tSTAR;
             } else if (isBEG()) {
                 c = Tokens.tSTAR;

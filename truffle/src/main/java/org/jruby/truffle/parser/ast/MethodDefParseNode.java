@@ -43,8 +43,8 @@ public abstract class MethodDefParseNode extends ParseNode implements INameNode,
     protected final ParseNode bodyNode;
 
     public MethodDefParseNode(TempSourceSection position, String name, ArgsParseNode argsNode,
-                              StaticScope scope, ParseNode bodyNode, int endLine) {
-        super(new TempSourceSection(position.getStartLine(), endLine), bodyNode.containsVariableAssignment());
+                              StaticScope scope, ParseNode bodyNode) {
+        super(position, bodyNode.containsVariableAssignment());
 
         assert bodyNode != null : "bodyNode must not be null";
             

@@ -14,62 +14,37 @@ import com.oracle.truffle.api.source.SourceSection;
 
 public class TempSourceSection {
 
-    private final int startLine;
-    private final int endLine;
+    private final int charIndex;
+    private final int charLength;
 
     public TempSourceSection(SourceSection sourceSection) {
-        startLine = sourceSection.getStartLine();
-
-        if (sourceSection.getSource() == null) {
-            endLine = startLine;
-        } else {
-            int endLineValue;
-
-            try {
-                endLineValue = sourceSection.getEndLine();
-            } catch (IllegalArgumentException e) {
-                endLineValue = startLine;
-            }
-
-            endLine = endLineValue;
-        }
+        charIndex = sourceSection.getCharIndex();
+        charLength = sourceSection.getCharLength();
     }
 
-    public TempSourceSection(int startLine) {
-        this(startLine, startLine);
-    }
-
-    public TempSourceSection(int startLine, int endLine) {
-        this.startLine = startLine;
-        this.endLine = endLine;
-    }
-
-    public int getStartLine() {
-        return startLine;
-    }
-
-    public int getEndLine() {
-        return endLine;
+    public TempSourceSection(int charIndex, int charLength) {
+        this.charIndex = charIndex;
+        this.charLength = charLength;
     }
 
     public SourceSection toSourceSection(Source source) {
-        if (source == null) {
-            throw new UnsupportedOperationException();
-        }
+        return source.createSection(charIndex, charLength);
+    }
 
-        final int index = source.getLineStartOffset(startLine);
+    public int getCharIndex() {
+        return charIndex;
+    }
 
-        int length = 0;
+    public int getCharLength() {
+        return charLength;
+    }
 
-        for (int n = startLine; n <= endLine; n++) {
-            // + 1 because the line length doesn't include any newlines
-            length += source.getLineLength(n) + 1;
-        }
+    public int getCharEnd() {
+        return charIndex + charLength;
+    }
 
-        length = Math.min(length, source.getLength() - index);
-        length = Math.max(0, length);
-
-        return source.createSection(index, length);
+    public TempSourceSection extendedUntil(TempSourceSection endPoint) {
+        return new TempSourceSection(charIndex, endPoint.getCharEnd() - charIndex);
     }
 
 }

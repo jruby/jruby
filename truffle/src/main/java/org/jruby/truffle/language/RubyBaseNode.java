@@ -52,8 +52,8 @@ public abstract class RubyBaseNode extends Node {
 
     @CompilationFinal private RubyContext context;
 
-    private int sourceStartLine;
-    private int sourceEndLine;
+    private int sourceCharIndex = -1;
+    private int sourceCharLength;
 
     private int flags;
 
@@ -208,16 +208,16 @@ public abstract class RubyBaseNode extends Node {
     // Source section
 
     public void unsafeSetSourceSection(TempSourceSection sourceSection) {
-        assert sourceStartLine == 0;
-        sourceStartLine = sourceSection.getStartLine();
-        sourceEndLine = sourceSection.getEndLine();
+        assert sourceCharIndex == -1;
+        sourceCharIndex = sourceSection.getCharIndex();
+        sourceCharLength = sourceSection.getCharLength();
     }
 
     public TempSourceSection getRubySourceSection() {
-        if (sourceStartLine == 0) {
+        if (sourceCharIndex == -1) {
             return null;
         } else {
-            return new TempSourceSection(sourceStartLine, sourceEndLine);
+            return new TempSourceSection(sourceCharIndex, sourceCharLength);
         }
     }
 
@@ -225,7 +225,7 @@ public abstract class RubyBaseNode extends Node {
         Node node = this;
 
         while (node != null) {
-            if (node instanceof RubyBaseNode && ((RubyBaseNode) node).sourceStartLine != 0) {
+            if (node instanceof RubyBaseNode && ((RubyBaseNode) node).sourceCharIndex != -1) {
                 return ((RubyBaseNode) node).getRubySourceSection();
             }
 
@@ -241,7 +241,7 @@ public abstract class RubyBaseNode extends Node {
 
     @Override
     public SourceSection getSourceSection() {
-        if (sourceStartLine == 0) {
+        if (sourceCharIndex == -1) {
             return null;
         } else {
             final RootNode rootNode = getRootNode();

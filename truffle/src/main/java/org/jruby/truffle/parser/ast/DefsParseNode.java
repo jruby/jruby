@@ -44,8 +44,8 @@ import java.util.List;
 public class DefsParseNode extends MethodDefParseNode implements INameNode {
     private final ParseNode receiverNode;
     public DefsParseNode(TempSourceSection position, ParseNode receiverNode, String name, ArgsParseNode argsNode,
-                         StaticScope scope, ParseNode bodyNode, int endLine) {
-        super(position, name, argsNode, scope, bodyNode, endLine);
+                         StaticScope scope, ParseNode bodyNode) {
+        super(position, name, argsNode, scope, bodyNode);
 
         assert receiverNode != null : "receiverNode is not null";
 

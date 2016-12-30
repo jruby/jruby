@@ -40,6 +40,7 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.interop.ForeignCodeNode;
 import org.jruby.truffle.collections.Tuple;
+import org.jruby.truffle.parser.ParserByteList;
 import org.jruby.truffle.parser.RubyWarnings;
 import org.jruby.truffle.parser.TempSourceSection;
 import org.jruby.truffle.parser.ast.ArgsParseNode;
@@ -1506,7 +1507,7 @@ primary         : literal
                     ParseNode body = $5;
                     if (body == null) body = NilImplicitParseNode.NIL;
 
-                    $$ = new DefnParseNode($1, $2, (ArgsParseNode) $4, support.getCurrentScope(), body, $6.getStartLine() - 1);
+                    $$ = new DefnParseNode($1.extendedUntil($6), $2, (ArgsParseNode) $4, support.getCurrentScope(), body);
                     support.popCurrentScope();
                     support.setInDef(false);
                     lexer.setCurrentArg($<String>3);
@@ -1523,7 +1524,7 @@ primary         : literal
                     ParseNode body = $8;
                     if (body == null) body = NilImplicitParseNode.NIL;
 
-                    $$ = new DefsParseNode($1, $2, $5, (ArgsParseNode) $7, support.getCurrentScope(), body, $9.getStartLine() - 1);
+                    $$ = new DefsParseNode($1.extendedUntil($9), $2, $5, (ArgsParseNode) $7, support.getCurrentScope(), body);
                     support.popCurrentScope();
                     support.setInSingle(support.getInSingle() - 1);
                     lexer.setCurrentArg($<String>6);
@@ -2152,7 +2153,7 @@ var_ref         : /*mri:user_variable*/ tIDENTIFIER {
                     support.getConfiguration().getContext().getEncodingManager().getLocaleEncoding()));
                 }
                 | k__LINE__ {
-                    $$ = new FixnumParseNode(lexer.getPosition(), lexer.tokline.getStartLine());
+                    $$ = new FixnumParseNode(lexer.getPosition(), lexer.tokline.toSourceSection(lexer.getSource()).getStartLine());
                 }
                 | k__ENCODING__ {
                     $$ = new EncodingParseNode(lexer.getPosition(), lexer.getEncoding());

@@ -44,8 +44,8 @@ import java.util.List;
  */
 public class DefnParseNode extends MethodDefParseNode implements INameNode {
     public DefnParseNode(TempSourceSection position, String name, ArgsParseNode argsNode,
-                         StaticScope scope, ParseNode bodyNode, int endLine) {
-        super(position, name, argsNode, scope, bodyNode, endLine);
+                         StaticScope scope, ParseNode bodyNode) {
+        super(position, name, argsNode, scope, bodyNode);
     }
 
     public NodeType getNodeType() {

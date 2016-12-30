@@ -48,8 +48,8 @@ public abstract class ParseNode {
     // We define an actual list to get around bug in java integration (1387115)
     static final List<ParseNode> EMPTY_LIST = new ArrayList<>();
 
-    private int sourceStartLine;
-    private int sourceEndLine;
+    private int sourceCharIndex;
+    private int sourceCharLength;
 
     // Does this node contain a node which is an assignment.  We can use this knowledge when emitting IR
     // instructions to do more or less depending on whether we have to cope with scenarios like:
@@ -61,11 +61,11 @@ public abstract class ParseNode {
 
     public ParseNode(TempSourceSection position, boolean containsAssignment) {
         if (position == null) {
-            sourceStartLine = -1;
-            sourceEndLine = -1;
+            sourceCharIndex = -1;
+            sourceCharLength = -1;
         } else {
-            sourceStartLine = position.getStartLine();
-            sourceEndLine = position.getEndLine();
+            sourceCharIndex = position.getCharIndex();
+            sourceCharLength = position.getCharLength();
         }
         this.containsVariableAssignment = containsAssignment;
     }
@@ -82,12 +82,12 @@ public abstract class ParseNode {
      * Location of this node within the source
      */
     public TempSourceSection getPosition() {
-        return new TempSourceSection(sourceStartLine, sourceEndLine);
+        return new TempSourceSection(sourceCharIndex, sourceCharLength);
     }
 
     public void setPosition(TempSourceSection position) {
-        sourceStartLine = position.getStartLine();
-        sourceEndLine = position.getEndLine();
+        sourceCharIndex = position.getCharIndex();
+        sourceCharLength = position.getCharLength();
     }
     
     public abstract <T> T accept(NodeVisitor<T> visitor);
@@ -145,8 +145,6 @@ public abstract class ParseNode {
         if (moreState != null) builder.append("[").append(moreState).append("]");
 
         if (this instanceof INameNode) builder.append(":").append(((INameNode) this).getName());
-
-        builder.append(" ").append(getPosition().getStartLine() - 1);
 
         if (!childNodes().isEmpty() && indent) builder.append("\n");
 
