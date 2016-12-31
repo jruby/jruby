@@ -18,6 +18,7 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyConstant;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.RaiseException;
 
 /** Read a literal constant on a given module: MOD::CONST */
@@ -29,7 +30,7 @@ public class ReadConstantNode extends RubyNode {
     @Child LookupConstantNode lookupConstantNode;
     @Child GetConstantNode getConstantNode;
 
-    public ReadConstantNode(RubyContext context, SourceSection sourceSection, RubyNode moduleNode, String name) {
+    public ReadConstantNode(RubyContext context, SourceIndexLength sourceSection, RubyNode moduleNode, String name) {
         super(context, sourceSection);
         this.name = name;
         this.moduleNode = moduleNode;

@@ -15,12 +15,13 @@ import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 
 public class SingleBlockArgNode extends RubyNode {
     private final ConditionProfile emptyArgsProfile = ConditionProfile.createBinaryProfile();
     private final ConditionProfile singleArgProfile = ConditionProfile.createBinaryProfile();
 
-    public SingleBlockArgNode(RubyContext context, SourceSection sourceSection) {
+    public SingleBlockArgNode(RubyContext context, SourceIndexLength sourceSection) {
         super(context, sourceSection);
     }
 

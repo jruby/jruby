@@ -21,6 +21,7 @@ import org.jruby.truffle.core.array.ArrayReadNormalizedNode;
 import org.jruby.truffle.core.array.ArrayReadNormalizedNodeGen;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 
 public class ReadOptionalArgumentNode extends RubyNode {
 
@@ -36,7 +37,7 @@ public class ReadOptionalArgumentNode extends RubyNode {
 
     private final BranchProfile defaultValueProfile = BranchProfile.create();
 
-    public ReadOptionalArgumentNode(RubyContext context, SourceSection sourceSection, int index, int minimum,
+    public ReadOptionalArgumentNode(RubyContext context, SourceIndexLength sourceSection, int index, int minimum,
                                     boolean considerRejectedKWArgs, boolean reduceMinimumWhenNoKWargs,
                                     int requiredForKWArgs, ReadRestArgumentNode readRestArgumentNode,
                                     RubyNode defaultValue) {

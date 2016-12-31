@@ -148,7 +148,7 @@ public abstract class Translator extends org.jruby.truffle.parser.ast.visitor.Ab
         if (!arity.acceptsKeywords()) {
             return new CheckArityNode(arity);
         } else {
-            return new CheckKeywordArityNode(context, sourceSection.toSourceSection(source), arity);
+            return new CheckKeywordArityNode(context, sourceSection, arity);
         }
     }
 

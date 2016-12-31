@@ -276,7 +276,7 @@ public class LoadArgumentsTranslator extends Translator {
         final SourceIndexLength sourceSection = node.getPosition();
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
-        final RubyNode readNode = new ReadKeywordRestArgumentNode(context, fullSourceSection, required, excludedKeywords.toArray(new String[excludedKeywords.size()]));
+        final RubyNode readNode = new ReadKeywordRestArgumentNode(context, sourceSection, required, excludedKeywords.toArray(new String[excludedKeywords.size()]));
         final FrameSlot slot = methodBodyTranslator.getEnvironment().getFrameDescriptor().findOrAddFrameSlot(node.getName());
 
         return WriteLocalVariableNode.createWriteLocalVariableNode(context, fullSourceSection, slot, readNode);
@@ -303,7 +303,7 @@ public class LoadArgumentsTranslator extends Translator {
 
         excludedKeywords.add(name);
 
-        final RubyNode readNode = new ReadKeywordArgumentNode(context, fullSourceSection, required, name, defaultValue);
+        final RubyNode readNode = new ReadKeywordArgumentNode(context, sourceSection, required, name, defaultValue);
 
         return WriteLocalVariableNode.createWriteLocalVariableNode(context, fullSourceSection, slot, readNode);
     }
@@ -348,7 +348,7 @@ public class LoadArgumentsTranslator extends Translator {
         if (useArray()) {
             readNode = ArraySliceNodeGen.create(context, fullSourceSection, from, to, loadArray(sourceSection));
         } else {
-            readNode = new ReadRestArgumentNode(context, fullSourceSection, from, -to, hasKeywordArguments, required);
+            readNode = new ReadRestArgumentNode(context, sourceSection, from, -to, hasKeywordArguments, required);
         }
 
         final FrameSlot slot = methodBodyTranslator.getEnvironment().getFrameDescriptor().findFrameSlot(node.getName());
@@ -442,13 +442,13 @@ public class LoadArgumentsTranslator extends Translator {
                         considerRejectedKWArgs = true;
                         int from = argsNode.getPreCount() + argsNode.getOptionalArgsCount();
                         int to = -argsNode.getPostCount();
-                        readRest = new ReadRestArgumentNode(context, fullSourceSection, from, -to, hasKeywordArguments, required);
+                        readRest = new ReadRestArgumentNode(context, sourceSection, from, -to, hasKeywordArguments, required);
                     } else {
                         considerRejectedKWArgs = false;
                         readRest = null;
                     }
 
-                    readNode = new ReadOptionalArgumentNode(context, fullSourceSection, index, minimum, considerRejectedKWArgs, argsNode.hasKwargs(), required, readRest, defaultValue);
+                    readNode = new ReadOptionalArgumentNode(context, sourceSection, index, minimum, considerRejectedKWArgs, argsNode.hasKwargs(), required, readRest, defaultValue);
                 }
             }
         } else {

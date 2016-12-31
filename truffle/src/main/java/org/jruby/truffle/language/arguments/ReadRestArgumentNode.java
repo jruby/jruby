@@ -19,6 +19,7 @@ import org.jruby.truffle.core.array.ArrayUtils;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.SnippetNode;
+import org.jruby.truffle.language.SourceIndexLength;
 
 public class ReadRestArgumentNode extends RubyNode {
 
@@ -32,7 +33,7 @@ public class ReadRestArgumentNode extends RubyNode {
     @Child private ReadUserKeywordsHashNode readUserKeywordsHashNode;
     @Child private SnippetNode snippetNode = new SnippetNode();
 
-    public ReadRestArgumentNode(RubyContext context, SourceSection sourceSection, int startIndex, int indexFromCount,
+    public ReadRestArgumentNode(RubyContext context, SourceIndexLength sourceSection, int startIndex, int indexFromCount,
                                 boolean keywordArguments, int minimumForKWargs) {
         super(context, sourceSection);
         this.startIndex = startIndex;

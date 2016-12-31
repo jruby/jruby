@@ -22,6 +22,7 @@ import org.jruby.truffle.core.hash.HashOperations;
 import org.jruby.truffle.core.hash.KeyValue;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,7 +35,7 @@ public class ReadKeywordRestArgumentNode extends RubyNode {
 
     private final ConditionProfile noHash = ConditionProfile.createBinaryProfile();
 
-    public ReadKeywordRestArgumentNode(RubyContext context, SourceSection sourceSection,
+    public ReadKeywordRestArgumentNode(RubyContext context, SourceIndexLength sourceSection,
                                        int minimum, String[] excludedKeywords) {
         super(context, sourceSection);
         this.excludedKeywords = excludedKeywords;

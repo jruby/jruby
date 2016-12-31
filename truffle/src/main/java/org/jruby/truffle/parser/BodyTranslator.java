@@ -544,7 +544,7 @@ public class BodyTranslator extends Translator {
                 final RubyNode ret = translateRubiniusPrivately(fullSourceSection, node);
                 return addNewlineIfNeeded(node, ret);
             } else if (methodName.equals("single_block_arg")) {
-                final RubyNode ret = translateSingleBlockArg(fullSourceSection, node);
+                final RubyNode ret = translateSingleBlockArg(sourceSection, node);
                 return addNewlineIfNeeded(node, ret);
             } else if (methodName.equals("check_frozen")) {
                 final RubyNode ret = translateCheckFrozen(fullSourceSection);
@@ -693,7 +693,7 @@ public class BodyTranslator extends Translator {
         }
     }
 
-    public RubyNode translateSingleBlockArg(SourceSection sourceSection, CallParseNode node) {
+    public RubyNode translateSingleBlockArg(SourceIndexLength sourceSection, CallParseNode node) {
         return new SingleBlockArgNode(context, sourceSection);
     }
 
@@ -1107,7 +1107,7 @@ public class BodyTranslator extends Translator {
 
         final RubyNode lhs = node.getLeftNode().accept(this);
 
-        final RubyNode ret = new ReadConstantNode(context, fullSourceSection, lhs, name);
+        final RubyNode ret = new ReadConstantNode(context, sourceSection, lhs, name);
         return addNewlineIfNeeded(node, ret);
     }
 
@@ -1122,7 +1122,7 @@ public class BodyTranslator extends Translator {
         final ObjectLiteralNode root = new ObjectLiteralNode(context.getCoreLibrary().getObjectClass());
         root.unsafeSetSourceSection(sourceSection);
 
-        final RubyNode ret = new ReadConstantNode(context, fullSourceSection, root, name);
+        final RubyNode ret = new ReadConstantNode(context, sourceSection, root, name);
         return addNewlineIfNeeded(node, ret);
     }
 
@@ -1257,10 +1257,10 @@ public class BodyTranslator extends Translator {
             if (context.getOptions().LOG_DYNAMIC_CONSTANT_LOOKUP) {
                 Log.info("dynamic constant lookup at " + RubyLanguage.fileLine(fullSourceSection));
             }
-            ret = new ReadConstantWithDynamicScopeNode(context, fullSourceSection, name);
+            ret = new ReadConstantWithDynamicScopeNode(context, sourceSection, name);
         } else {
             final LexicalScope lexicalScope = environment.getLexicalScope();
-            ret = new ReadConstantWithLexicalScopeNode(context, fullSourceSection, lexicalScope, name);
+            ret = new ReadConstantWithLexicalScopeNode(context, sourceSection, lexicalScope, name);
         }
         return addNewlineIfNeeded(node, ret);
 
@@ -2836,7 +2836,7 @@ public class BodyTranslator extends Translator {
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
         final RubyNode moduleNode = new ObjectLiteralNode(context.getCoreLibrary().getObjectClass());
-        ReadConstantNode receiver = new ReadConstantNode(context, fullSourceSection, moduleNode, name);
+        ReadConstantNode receiver = new ReadConstantNode(context, sourceSection, moduleNode, name);
         RubyNode[] arguments = new RubyNode[] { a, b };
         RubyCallNodeParameters parameters = new RubyCallNodeParameters(context, fullSourceSection, receiver, "convert", null, arguments, false, true);
         return new RubyCallNode(parameters);

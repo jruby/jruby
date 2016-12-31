@@ -19,6 +19,7 @@ import org.jruby.truffle.core.hash.HashOperations;
 import org.jruby.truffle.core.hash.KeyValue;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 
 public class ReadKeywordArgumentNode extends RubyNode {
 
@@ -28,7 +29,7 @@ public class ReadKeywordArgumentNode extends RubyNode {
     @Child private RubyNode defaultValue;
     @Child private ReadUserKeywordsHashNode readUserKeywordsHashNode;
 
-    public ReadKeywordArgumentNode(RubyContext context, SourceSection sourceSection, int minimum, String name, RubyNode defaultValue) {
+    public ReadKeywordArgumentNode(RubyContext context, SourceIndexLength sourceSection, int minimum, String name, RubyNode defaultValue) {
         super(context, sourceSection);
         this.name = name;
         this.defaultValue = defaultValue;

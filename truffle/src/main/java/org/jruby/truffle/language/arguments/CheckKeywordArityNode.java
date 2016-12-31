@@ -20,6 +20,7 @@ import org.jruby.truffle.core.hash.HashOperations;
 import org.jruby.truffle.core.hash.KeyValue;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.methods.Arity;
 
@@ -32,7 +33,7 @@ public class CheckKeywordArityNode extends RubyNode {
     private final BranchProfile receivedKeywordsProfile = BranchProfile.create();
     private final BranchProfile basicArityCheckFailedProfile = BranchProfile.create();
 
-    public CheckKeywordArityNode(RubyContext context, SourceSection sourceSection, Arity arity) {
+    public CheckKeywordArityNode(RubyContext context, SourceIndexLength sourceSection, Arity arity) {
         super(context, sourceSection);
         this.arity = arity;
         readUserKeywordsHashNode = new ReadUserKeywordsHashNode(arity.getRequired());
