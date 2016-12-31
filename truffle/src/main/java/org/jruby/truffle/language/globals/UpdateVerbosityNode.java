@@ -14,12 +14,13 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 
 public class UpdateVerbosityNode extends RubyNode {
 
     @Child private RubyNode child;
 
-    public UpdateVerbosityNode(RubyContext context, SourceSection sourceSection, RubyNode child) {
+    public UpdateVerbosityNode(RubyContext context, SourceIndexLength sourceSection, RubyNode child) {
         super(context, sourceSection);
         this.child = child;
     }

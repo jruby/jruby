@@ -15,6 +15,7 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.objects.ReadObjectFieldNode;
 import org.jruby.truffle.language.objects.ReadObjectFieldNodeGen;
 import org.jruby.truffle.language.threadlocal.ThreadLocalObjectNode;
@@ -28,7 +29,7 @@ public class ReadThreadLocalGlobalVariableNode extends RubyNode {
     @Child private ThreadLocalObjectNode threadLocalVariablesObjectNode;
     @Child private ReadObjectFieldNode readNode;
 
-    public ReadThreadLocalGlobalVariableNode(RubyContext context, SourceSection sourceSection, String name, boolean alwaysDefined) {
+    public ReadThreadLocalGlobalVariableNode(RubyContext context, SourceIndexLength sourceSection, String name, boolean alwaysDefined) {
         super(context, sourceSection);
         this.name = name;
         this.alwaysDefined = alwaysDefined;

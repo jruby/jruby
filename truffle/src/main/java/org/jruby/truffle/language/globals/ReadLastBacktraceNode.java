@@ -16,6 +16,7 @@ import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 
@@ -26,7 +27,7 @@ public class ReadLastBacktraceNode extends RubyNode {
 
     private final ConditionProfile lastExceptionNilProfile = ConditionProfile.createBinaryProfile();
 
-    public ReadLastBacktraceNode(RubyContext context, SourceSection sourceSection) {
+    public ReadLastBacktraceNode(RubyContext context, SourceIndexLength sourceSection) {
         super(context, sourceSection);
     }
 

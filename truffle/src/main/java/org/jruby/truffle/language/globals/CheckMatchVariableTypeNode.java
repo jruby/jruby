@@ -15,6 +15,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.RaiseException;
 
 public class CheckMatchVariableTypeNode extends RubyNode {
@@ -23,7 +24,7 @@ public class CheckMatchVariableTypeNode extends RubyNode {
 
     private final BranchProfile unsuitableTypeProfile = BranchProfile.create();
 
-    public CheckMatchVariableTypeNode(RubyContext context, SourceSection sourceSection, RubyNode child) {
+    public CheckMatchVariableTypeNode(RubyContext context, SourceIndexLength sourceSection, RubyNode child) {
         super(context, sourceSection);
         this.child = child;
     }

@@ -15,6 +15,7 @@ import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.DoesRespondDispatchHeadNode;
 
@@ -26,7 +27,7 @@ public class CheckStdoutVariableTypeNode extends RubyNode {
 
     private final BranchProfile unsuitableTypeProfile = BranchProfile.create();
 
-    public CheckStdoutVariableTypeNode(RubyContext context, SourceSection sourceSection, RubyNode child) {
+    public CheckStdoutVariableTypeNode(RubyContext context, SourceIndexLength sourceSection, RubyNode child) {
         super(context, sourceSection);
         this.child = child;
     }

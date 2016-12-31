@@ -16,6 +16,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.threadlocal.GetFromThreadLocalNode;
 
 public class ReadMatchReferenceNode extends RubyNode {
@@ -31,7 +32,7 @@ public class ReadMatchReferenceNode extends RubyNode {
 
     private final ConditionProfile matchNilProfile = ConditionProfile.createBinaryProfile();
 
-    public ReadMatchReferenceNode(RubyContext context, SourceSection sourceSection, GetFromThreadLocalNode readMatchNode, int index) {
+    public ReadMatchReferenceNode(RubyContext context, SourceIndexLength sourceSection, GetFromThreadLocalNode readMatchNode, int index) {
         super(context, sourceSection);
         this.readMatchNode = readMatchNode;
         this.index = index;

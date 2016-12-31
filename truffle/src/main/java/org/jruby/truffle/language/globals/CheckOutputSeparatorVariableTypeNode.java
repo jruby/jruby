@@ -15,6 +15,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.RaiseException;
 
 public class CheckOutputSeparatorVariableTypeNode extends RubyNode {
@@ -23,7 +24,7 @@ public class CheckOutputSeparatorVariableTypeNode extends RubyNode {
 
     private final BranchProfile unsuitableTypeProfile = BranchProfile.create();
 
-    public CheckOutputSeparatorVariableTypeNode(RubyContext context, SourceSection sourceSection, RubyNode child) {
+    public CheckOutputSeparatorVariableTypeNode(RubyContext context, SourceIndexLength sourceSection, RubyNode child) {
         super(context, sourceSection);
         this.child = child;
     }

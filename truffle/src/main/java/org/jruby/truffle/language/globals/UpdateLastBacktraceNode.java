@@ -16,6 +16,7 @@ import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
@@ -28,7 +29,7 @@ public class UpdateLastBacktraceNode extends RubyNode {
 
     private final BranchProfile lastExceptionNilProfile = BranchProfile.create();
 
-    public UpdateLastBacktraceNode(RubyContext context, SourceSection sourceSection, RubyNode child) {
+    public UpdateLastBacktraceNode(RubyContext context, SourceIndexLength sourceSection, RubyNode child) {
         super(context, sourceSection);
         this.child = child;
     }

@@ -13,6 +13,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.RaiseException;
 
 public class WriteReadOnlyGlobalNode extends RubyNode {
@@ -21,7 +22,7 @@ public class WriteReadOnlyGlobalNode extends RubyNode {
 
     @Child private RubyNode value;
 
-    public WriteReadOnlyGlobalNode(RubyContext context, SourceSection sourceSection, String name, RubyNode value) {
+    public WriteReadOnlyGlobalNode(RubyContext context, SourceIndexLength sourceSection, String name, RubyNode value) {
         super(context, sourceSection);
         this.name = name;
         this.value = value;

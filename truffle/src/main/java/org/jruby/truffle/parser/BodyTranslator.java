@@ -1696,16 +1696,16 @@ public class BodyTranslator extends Translator {
         }
 
         if (name.equals("$~")) {
-            rhs = new CheckMatchVariableTypeNode(context, sourceSection.toSourceSection(source), rhs);
+            rhs = new CheckMatchVariableTypeNode(context, sourceSection, rhs);
             rhs = WrapInThreadLocalNodeGen.create(context, sourceSection.toSourceSection(source), rhs);
 
             environment.declareVarInMethodScope("$~");
         } else if (name.equals("$0")) {
-            rhs = new CheckProgramNameVariableTypeNode(context, sourceSection.toSourceSection(source), rhs);
+            rhs = new CheckProgramNameVariableTypeNode(context, sourceSection, rhs);
         } else if (name.equals("$/")) {
-            rhs = new CheckRecordSeparatorVariableTypeNode(context, sourceSection.toSourceSection(source), rhs);
+            rhs = new CheckRecordSeparatorVariableTypeNode(context, sourceSection, rhs);
         } else if (name.equals("$,")) {
-            rhs = new CheckOutputSeparatorVariableTypeNode(context, sourceSection.toSourceSection(source), rhs);
+            rhs = new CheckOutputSeparatorVariableTypeNode(context, sourceSection, rhs);
         } else if (name.equals("$_")) {
             if (getSourcePath(sourceSection).endsWith(buildPartialPath("truffle", "rubysl", "rubysl-stringio", "lib", "rubysl", "stringio", "stringio.rb"))) {
                 rhs = RubiniusLastStringWriteNodeGen.create(context, sourceSection.toSourceSection(source), rhs);
@@ -1715,19 +1715,19 @@ public class BodyTranslator extends Translator {
 
             environment.declareVar("$_");
         } else if (name.equals("$stdout")) {
-            rhs = new CheckStdoutVariableTypeNode(context, fullSourceSection, rhs);
+            rhs = new CheckStdoutVariableTypeNode(context, sourceSection, rhs);
         } else if (name.equals("$VERBOSE")) {
-            rhs = new UpdateVerbosityNode(context, fullSourceSection, rhs);
+            rhs = new UpdateVerbosityNode(context, sourceSection, rhs);
         } else if (name.equals("$@")) {
             // $@ is a special-case and doesn't write directly to an ivar field in the globals object.
             // Instead, it writes to the backtrace field of the thread-local $! value.
-            return new UpdateLastBacktraceNode(context, fullSourceSection, rhs);
+            return new UpdateLastBacktraceNode(context, sourceSection, rhs);
         }
 
         final boolean inCore = getSourcePath(node.getValueNode().getPosition()).startsWith(corePath());
 
         if (!inCore && READ_ONLY_GLOBAL_VARIABLES.contains(name)) {
-            return addNewlineIfNeeded(node, new WriteReadOnlyGlobalNode(context, fullSourceSection, name, rhs));
+            return addNewlineIfNeeded(node, new WriteReadOnlyGlobalNode(context, sourceSection, name, rhs));
         }
 
         if (THREAD_LOCAL_GLOBAL_VARIABLES.contains(name)) {
@@ -1768,7 +1768,7 @@ public class BodyTranslator extends Translator {
 
             return addNewlineIfNeeded(node, assignment);
         } else {
-            final RubyNode writeGlobalVariableNode = WriteGlobalVariableNodeGen.create(context, fullSourceSection, name, rhs);
+            final RubyNode writeGlobalVariableNode = WriteGlobalVariableNodeGen.create(context, sourceSection, name, rhs);
 
             final RubyNode translated;
 
@@ -1819,11 +1819,11 @@ public class BodyTranslator extends Translator {
 
             ret = readNode;
         } else if (THREAD_LOCAL_GLOBAL_VARIABLES.contains(name)) {
-            ret = new ReadThreadLocalGlobalVariableNode(context, fullSourceSection, name, ALWAYS_DEFINED_GLOBALS.contains(name));
+            ret = new ReadThreadLocalGlobalVariableNode(context, sourceSection, name, ALWAYS_DEFINED_GLOBALS.contains(name));
         } else if (name.equals("$@")) {
             // $@ is a special-case and doesn't read directly from an ivar field in the globals object.
             // Instead, it reads the backtrace field of the thread-local $! value.
-            ret = new ReadLastBacktraceNode(context, fullSourceSection);
+            ret = new ReadLastBacktraceNode(context, sourceSection);
         } else {
             ret = ReadGlobalVariableNodeGen.create(name);
         }
@@ -2554,7 +2554,7 @@ public class BodyTranslator extends Translator {
         environment.declareVarInMethodScope("$~");
 
         final GetFromThreadLocalNode readMatchNode = new GetFromThreadLocalNode(context, fullSourceSection, environment.findLocalVarNode("$~", source, sourceSection));
-        final RubyNode ret = new ReadMatchReferenceNode(context, fullSourceSection, readMatchNode, node.getMatchNumber());
+        final RubyNode ret = new ReadMatchReferenceNode(context, sourceSection, readMatchNode, node.getMatchNumber());
 
         return addNewlineIfNeeded(node, ret);
     }
@@ -3306,7 +3306,7 @@ public class BodyTranslator extends Translator {
         environment.declareVarInMethodScope("$~");
 
         final GetFromThreadLocalNode readMatchNode = new GetFromThreadLocalNode(context, fullSourceSection, environment.findLocalVarNode("$~", source, sourceSection));
-        final RubyNode ret = new ReadMatchReferenceNode(context, fullSourceSection, readMatchNode, index);
+        final RubyNode ret = new ReadMatchReferenceNode(context, sourceSection, readMatchNode, index);
 
         return addNewlineIfNeeded(node, ret);
     }
