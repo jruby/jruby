@@ -14,6 +14,7 @@ import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.NextException;
 
 public class CatchNextNode extends RubyNode {
@@ -22,7 +23,7 @@ public class CatchNextNode extends RubyNode {
 
     private final BranchProfile nextProfile = BranchProfile.create();
 
-    public CatchNextNode(RubyContext context, SourceSection sourceSection, RubyNode body) {
+    public CatchNextNode(RubyContext context, SourceIndexLength sourceSection, RubyNode body) {
         super(context, sourceSection);
         this.body = body;
     }

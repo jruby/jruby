@@ -18,6 +18,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 
 /**
  * Caches {@link ModuleOperations#canBindMethodTo} for a method.
@@ -28,7 +29,7 @@ import org.jruby.truffle.language.RubyNode;
 })
 public abstract class CanBindMethodToModuleNode extends RubyNode {
 
-    public CanBindMethodToModuleNode(RubyContext context, SourceSection sourceSection) {
+    public CanBindMethodToModuleNode(RubyContext context, SourceIndexLength sourceSection) {
         super(context, sourceSection);
     }
 

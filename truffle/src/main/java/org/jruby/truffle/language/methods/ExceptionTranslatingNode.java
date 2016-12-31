@@ -20,6 +20,7 @@ import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.JavaException;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.control.TruffleFatalException;
@@ -35,7 +36,7 @@ public class ExceptionTranslatingNode extends RubyNode {
     private final BranchProfile unsupportedProfile = BranchProfile.create();
     private final BranchProfile errorProfile = BranchProfile.create();
 
-    public ExceptionTranslatingNode(RubyContext context, SourceSection sourceSection, RubyNode child,
+    public ExceptionTranslatingNode(RubyContext context, SourceIndexLength sourceSection, RubyNode child,
                                     UnsupportedOperationBehavior unsupportedOperationBehavior) {
         super(context, sourceSection);
         this.child = child;

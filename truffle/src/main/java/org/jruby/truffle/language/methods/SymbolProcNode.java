@@ -16,6 +16,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.array.ArrayUtils;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
@@ -26,7 +27,7 @@ public class SymbolProcNode extends RubyNode {
 
     @Child private CallDispatchHeadNode callNode;
 
-    public SymbolProcNode(RubyContext context, SourceSection sourceSection, String symbol) {
+    public SymbolProcNode(RubyContext context, SourceIndexLength sourceSection, String symbol) {
         super(context, sourceSection);
         this.symbol = symbol;
     }

@@ -20,6 +20,7 @@ import org.jruby.truffle.core.array.ArrayUtils;
 import org.jruby.truffle.core.cast.ProcOrNullNode;
 import org.jruby.truffle.core.cast.ProcOrNullNodeGen;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
@@ -46,7 +47,7 @@ public class SuperCallNode extends RubyNode {
         this.block = block;
         this.procOrNullNode = ProcOrNullNodeGen.create(context, sourceSection, null);
         this.lookupSuperMethodNode = LookupSuperMethodNodeGen.create(context, sourceSection, null);
-        this.callMethodNode = CallInternalMethodNodeGen.create(context, sourceSection, null, new RubyNode[] {});
+        this.callMethodNode = CallInternalMethodNodeGen.create(context, new SourceIndexLength(sourceSection), null, new RubyNode[] {});
     }
 
     @Override

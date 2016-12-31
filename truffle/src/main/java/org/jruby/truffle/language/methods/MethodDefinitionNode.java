@@ -17,6 +17,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.Visibility;
 import org.jruby.truffle.language.arguments.RubyArguments;
 
@@ -33,7 +34,7 @@ public class MethodDefinitionNode extends RubyNode {
 
     @Child private GetDefaultDefineeNode getDefaultDefineeNode;
 
-    public MethodDefinitionNode(RubyContext context, SourceSection sourceSection, String name, SharedMethodInfo sharedMethodInfo, CallTarget callTarget) {
+    public MethodDefinitionNode(RubyContext context, SourceIndexLength sourceSection, String name, SharedMethodInfo sharedMethodInfo, CallTarget callTarget) {
         super(context, sourceSection);
         this.name = name;
         this.sharedMethodInfo = sharedMethodInfo;

@@ -17,6 +17,7 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.proc.ProcOperations;
 import org.jruby.truffle.core.proc.ProcType;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.control.BreakID;
 import org.jruby.truffle.language.control.FrameOnStackMarker;
@@ -42,7 +43,7 @@ public class BlockDefinitionNode extends RubyNode {
 
     @Child private ReadFrameSlotNode readFrameOnStackMarkerNode;
 
-    public BlockDefinitionNode(RubyContext context, SourceSection sourceSection, ProcType type, SharedMethodInfo sharedMethodInfo,
+    public BlockDefinitionNode(RubyContext context, SourceIndexLength sourceSection, ProcType type, SharedMethodInfo sharedMethodInfo,
                                CallTarget callTargetForProcs, CallTarget callTargetForLambdas, BreakID breakID, FrameSlot frameOnStackMarkerSlot) {
         super(context, sourceSection);
         this.type = type;

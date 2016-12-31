@@ -14,6 +14,7 @@ import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.control.RetryException;
 
@@ -23,7 +24,7 @@ public class CatchRetryAsErrorNode extends RubyNode {
 
     private final BranchProfile retryProfile = BranchProfile.create();
 
-    public CatchRetryAsErrorNode(RubyContext context, SourceSection sourceSection, RubyNode body) {
+    public CatchRetryAsErrorNode(RubyContext context, SourceIndexLength sourceSection, RubyNode body) {
         super(context, sourceSection);
         this.body = body;
     }

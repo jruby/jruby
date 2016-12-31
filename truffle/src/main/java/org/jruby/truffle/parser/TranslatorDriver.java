@@ -229,17 +229,17 @@ public class TranslatorDriver {
 
         // Catch next
 
-        truffleNode = new CatchNextNode(context, truffleNode.getRubySourceSection().toSourceSection(source), truffleNode);
+        truffleNode = new CatchNextNode(context, truffleNode.getRubySourceSection(), truffleNode);
 
         // Catch return
 
         if (parserContext != ParserContext.INLINE) {
-            truffleNode = new CatchReturnAsErrorNode(context, truffleNode.getRubySourceSection().toSourceSection(source), truffleNode);
+            truffleNode = new CatchReturnAsErrorNode(context, truffleNode.getRubySourceSection(), truffleNode);
         }
 
         // Catch retry
 
-        truffleNode = new CatchRetryAsErrorNode(context, truffleNode.getRubySourceSection().toSourceSection(source), truffleNode);
+        truffleNode = new CatchRetryAsErrorNode(context, truffleNode.getRubySourceSection(), truffleNode);
 
         if (parserContext == ParserContext.TOP_LEVEL_FIRST) {
             truffleNode = Translator.sequence(context, source, sourceIndexLength, Arrays.asList(
@@ -253,7 +253,7 @@ public class TranslatorDriver {
                         truffleNode));
             }
 
-            truffleNode = new ExceptionTranslatingNode(context, sourceSection, truffleNode, UnsupportedOperationBehavior.TYPE_ERROR);
+            truffleNode = new ExceptionTranslatingNode(context, sourceIndexLength, truffleNode, UnsupportedOperationBehavior.TYPE_ERROR);
             truffleNode = new TopLevelRaiseHandler(context, sourceIndexLength, truffleNode);
         }
 

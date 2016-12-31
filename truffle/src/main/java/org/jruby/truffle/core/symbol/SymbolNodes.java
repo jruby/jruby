@@ -122,7 +122,7 @@ public abstract class SymbolNodes {
                     false,
                     false);
 
-            final RubyRootNode rootNode = new RubyRootNode(getContext(), sourceSection, new FrameDescriptor(nil()), sharedMethodInfo, Translator.sequence(getContext(), sourceSection.getSource(), sourceIndexLength, Arrays.asList(Translator.createCheckArityNode(getContext(), sourceSection.getSource(), sourceIndexLength, Arity.AT_LEAST_ONE), new SymbolProcNode(getContext(), sourceSection, Layouts.SYMBOL.getString(symbol)))), false);
+            final RubyRootNode rootNode = new RubyRootNode(getContext(), sourceSection, new FrameDescriptor(nil()), sharedMethodInfo, Translator.sequence(getContext(), sourceSection.getSource(), sourceIndexLength, Arrays.asList(Translator.createCheckArityNode(getContext(), sourceSection.getSource(), sourceIndexLength, Arity.AT_LEAST_ONE), new SymbolProcNode(getContext(), sourceIndexLength, Layouts.SYMBOL.getString(symbol)))), false);
 
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
 

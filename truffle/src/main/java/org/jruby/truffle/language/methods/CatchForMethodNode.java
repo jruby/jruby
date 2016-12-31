@@ -15,6 +15,7 @@ import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.control.RetryException;
 import org.jruby.truffle.language.control.ReturnException;
@@ -29,7 +30,7 @@ public class CatchForMethodNode extends RubyNode {
     private final ConditionProfile matchingReturnProfile = ConditionProfile.createBinaryProfile();
     private final BranchProfile retryProfile = BranchProfile.create();
 
-    public CatchForMethodNode(RubyContext context, SourceSection sourceSection, ReturnID returnID, RubyNode body) {
+    public CatchForMethodNode(RubyContext context, SourceIndexLength sourceSection, ReturnID returnID, RubyNode body) {
         super(context, sourceSection);
         this.returnID = returnID;
         this.body = body;

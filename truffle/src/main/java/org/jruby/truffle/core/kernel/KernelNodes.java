@@ -1198,7 +1198,7 @@ public abstract class KernelNodes {
         public MethodNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             nameToJavaStringNode = NameToJavaStringNode.create();
-            lookupMethodNode = LookupMethodNodeGen.create(context, sourceSection, true, false, null, null);
+            lookupMethodNode = LookupMethodNodeGen.create(context, new SourceIndexLength(sourceSection), true, false, null, null);
             respondToMissingNode = DispatchHeadNodeFactory.createMethodCall(getContext(), true);
         }
 

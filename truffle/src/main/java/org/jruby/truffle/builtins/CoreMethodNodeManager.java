@@ -205,7 +205,7 @@ public class CoreMethodNodeManager {
             node = transformResult(method, node);
         }
 
-        RubyNode bodyNode = new ExceptionTranslatingNode(context, sourceSection, node, method.unsupportedOperationBehavior());
+        RubyNode bodyNode = new ExceptionTranslatingNode(context, sourceIndexLength, node, method.unsupportedOperationBehavior());
 
         if (context.getOptions().CHAOS) {
             bodyNode = ChaosNodeGen.create(bodyNode);

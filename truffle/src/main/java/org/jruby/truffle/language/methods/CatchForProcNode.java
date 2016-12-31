@@ -14,6 +14,7 @@ import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.NextException;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.control.RedoException;
@@ -27,7 +28,7 @@ public class CatchForProcNode extends RubyNode {
     private final BranchProfile nextProfile = BranchProfile.create();
     private final BranchProfile retryProfile = BranchProfile.create();
 
-    public CatchForProcNode(RubyContext context, SourceSection sourceSection, RubyNode body) {
+    public CatchForProcNode(RubyContext context, SourceIndexLength sourceSection, RubyNode body) {
         super(context, sourceSection);
         this.body = body;
     }

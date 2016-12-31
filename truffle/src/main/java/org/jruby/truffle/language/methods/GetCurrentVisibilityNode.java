@@ -16,11 +16,12 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.Visibility;
 
 public class GetCurrentVisibilityNode extends RubyNode {
 
-    public GetCurrentVisibilityNode(RubyContext context, SourceSection sourceSection) {
+    public GetCurrentVisibilityNode(RubyContext context, SourceIndexLength sourceSection) {
         super(context, sourceSection);
     }
 

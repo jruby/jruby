@@ -337,7 +337,7 @@ public class BodyTranslator extends Translator {
         oldNameNode.unsafeSetSourceSection(sourceSection);
 
         final RubyNode ret = ModuleNodesFactory.AliasMethodNodeFactory.create(
-                new RaiseIfFrozenNode(context, fullSourceSection, new GetDefaultDefineeNode(context, fullSourceSection)),
+                new RaiseIfFrozenNode(context, fullSourceSection, new GetDefaultDefineeNode(context, sourceSection)),
                 newNameNode,
                 oldNameNode);
 
@@ -734,7 +734,7 @@ public class BodyTranslator extends Translator {
         if (argumentsAndBlock.getBlock() instanceof BlockDefinitionNode) { // if we have a literal block, break breaks out of this call site
             BlockDefinitionNode blockDef = (BlockDefinitionNode) argumentsAndBlock.getBlock();
             translated = new FrameOnStackNode(translated, argumentsAndBlock.getFrameOnStackMarkerSlot());
-            translated = new CatchBreakNode(context, enclosingFullSourceSection, blockDef.getBreakID(), translated);
+            translated = new CatchBreakNode(context, enclosingSourceSection, blockDef.getBreakID(), translated);
         }
 
         return addNewlineIfNeeded(node, translated);
@@ -1052,7 +1052,7 @@ public class BodyTranslator extends Translator {
 
         final ModuleBodyDefinitionNode definitionNode = new ModuleBodyDefinitionNode(
                 context,
-                fullSourceSection,
+                sourceSection,
                 environment.getSharedMethodInfo().getName(),
                 environment.getSharedMethodInfo(),
                 Truffle.getRuntime().createCallTarget(rootNode),
@@ -1370,7 +1370,7 @@ public class BodyTranslator extends Translator {
     public RubyNode visitDefnNode(DefnParseNode node) {
         final SourceIndexLength sourceSection = node.getPosition();
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
-        final RubyNode classNode = new RaiseIfFrozenNode(context, fullSourceSection, new GetDefaultDefineeNode(context, fullSourceSection));
+        final RubyNode classNode = new RaiseIfFrozenNode(context, fullSourceSection, new GetDefaultDefineeNode(context, sourceSection));
 
         String methodName = node.getName();
 
@@ -1425,10 +1425,10 @@ public class BodyTranslator extends Translator {
         if (isDefs) {
             visibilityNode = new ObjectLiteralNode(Visibility.PUBLIC);
         } else {
-            visibilityNode = new GetCurrentVisibilityNode(context, fullSourceSection);
+            visibilityNode = new GetCurrentVisibilityNode(context, sourceSection);
         }
 
-        return AddMethodNodeGen.create(context, fullSourceSection, isDefs, true, classNode, methodDefinitionNode, visibilityNode);
+        return AddMethodNodeGen.create(context, sourceSection, isDefs, true, classNode, methodDefinitionNode, visibilityNode);
     }
 
     @Override
@@ -2991,7 +2991,7 @@ public class BodyTranslator extends Translator {
         }
 
         final RubyNode ret = new TryNode(context, sourceSection,
-                new ExceptionTranslatingNode(context, fullSourceSection, tryPart, UnsupportedOperationBehavior.TYPE_ERROR),
+                new ExceptionTranslatingNode(context, sourceSection, tryPart, UnsupportedOperationBehavior.TYPE_ERROR),
                 rescueNodes.toArray(new RescueNode[rescueNodes.size()]), elsePart);
 
         return addNewlineIfNeeded(node, ret);
@@ -3158,7 +3158,7 @@ public class BodyTranslator extends Translator {
         final DynamicObject nameSymbol = translateNameNodeToSymbol(node.getName());
 
         final RubyNode ret = ModuleNodesFactory.UndefMethodNodeFactory.create(context, fullSourceSection, new RubyNode[]{
-                new RaiseIfFrozenNode(context, fullSourceSection, new GetDefaultDefineeNode(context, fullSourceSection)),
+                new RaiseIfFrozenNode(context, fullSourceSection, new GetDefaultDefineeNode(context, sourceSection)),
                 new ObjectLiteralNode(new Object[]{ nameSymbol })
         });
         return addNewlineIfNeeded(node, ret);
@@ -3227,7 +3227,7 @@ public class BodyTranslator extends Translator {
             loop = WhileNode.createDoWhile(context, sourceSection, condition, body);
         }
 
-        final RubyNode ret = new CatchBreakNode(context, fullSourceSection, whileBreakID, loop);
+        final RubyNode ret = new CatchBreakNode(context, sourceSection, whileBreakID, loop);
         return addNewlineIfNeeded(node, ret);
     }
 

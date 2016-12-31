@@ -20,6 +20,7 @@ import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.Visibility;
 import org.jruby.truffle.language.objects.SingletonClassNode;
 import org.jruby.truffle.language.objects.SingletonClassNodeGen;
@@ -38,7 +39,7 @@ public abstract class AddMethodNode extends RubyNode {
 
     @Child private SingletonClassNode singletonClassNode;
 
-    public AddMethodNode(RubyContext context, SourceSection sourceSection, boolean ignoreNameVisibility, boolean isLiteralDef) {
+    public AddMethodNode(RubyContext context, SourceIndexLength sourceSection, boolean ignoreNameVisibility, boolean isLiteralDef) {
         super(context, sourceSection);
         this.ignoreNameVisibility = ignoreNameVisibility;
         this.isLiteralDef = isLiteralDef;

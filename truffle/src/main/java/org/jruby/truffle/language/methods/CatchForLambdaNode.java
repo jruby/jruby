@@ -15,6 +15,7 @@ import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.BreakException;
 import org.jruby.truffle.language.control.NextException;
 import org.jruby.truffle.language.control.RaiseException;
@@ -35,7 +36,7 @@ public class CatchForLambdaNode extends RubyNode {
     private final BranchProfile nextProfile = BranchProfile.create();
     private final BranchProfile breakProfile = BranchProfile.create();
 
-    public CatchForLambdaNode(RubyContext context, SourceSection sourceSection, ReturnID returnID, RubyNode body) {
+    public CatchForLambdaNode(RubyContext context, SourceIndexLength sourceSection, ReturnID returnID, RubyNode body) {
         super(context, sourceSection);
         this.returnID = returnID;
         this.body = body;

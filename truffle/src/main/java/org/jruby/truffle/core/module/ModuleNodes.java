@@ -998,7 +998,7 @@ public abstract class ModuleNodes {
 
         public DefineMethodNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            addMethodNode = AddMethodNodeGen.create(context, sourceSection, false, false, null, null, null);
+            addMethodNode = AddMethodNodeGen.create(context, new SourceIndexLength(sourceSection), false, false, null, null, null);
         }
 
         @CreateCast("name")
@@ -1903,7 +1903,7 @@ public abstract class ModuleNodes {
             super(context, sourceSection);
             this.visibility = visibility;
             this.nameToJavaStringNode = NameToJavaStringNode.create();
-            this.addMethodNode = AddMethodNodeGen.create(context, sourceSection, true, false, null, null, null);
+            this.addMethodNode = AddMethodNodeGen.create(context, new SourceIndexLength(sourceSection), true, false, null, null, null);
         }
 
         public abstract DynamicObject executeSetMethodVisibility(VirtualFrame frame, DynamicObject module, Object name);

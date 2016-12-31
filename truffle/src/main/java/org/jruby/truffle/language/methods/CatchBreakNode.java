@@ -14,6 +14,7 @@ import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.BreakException;
 import org.jruby.truffle.language.control.BreakID;
 
@@ -25,7 +26,7 @@ public class CatchBreakNode extends RubyNode {
 
     private final ConditionProfile matchingBreakProfile = ConditionProfile.createCountingProfile();
 
-    public CatchBreakNode(RubyContext context, SourceSection sourceSection, BreakID breakID, RubyNode body) {
+    public CatchBreakNode(RubyContext context, SourceIndexLength sourceSection, BreakID breakID, RubyNode body) {
         super(context, sourceSection);
         this.breakID = breakID;
         this.body = body;

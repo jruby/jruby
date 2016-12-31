@@ -20,6 +20,7 @@ import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 
 @NodeChildren({
         @NodeChild("method"),
@@ -27,7 +28,7 @@ import org.jruby.truffle.language.RubyNode;
 })
 public abstract class CallInternalMethodNode extends RubyNode {
 
-    public CallInternalMethodNode(RubyContext context, SourceSection sourceSection) {
+    public CallInternalMethodNode(RubyContext context, SourceIndexLength sourceSection) {
         super(context, sourceSection);
     }
 

@@ -20,6 +20,7 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.kernel.TraceManager;
 import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.Visibility;
 import org.jruby.truffle.language.arguments.RubyArguments;
 
@@ -41,8 +42,8 @@ public class ModuleBodyDefinitionNode extends RubyNode {
     private final boolean dynamicLexicalScope;
     private final Map<DynamicObject, LexicalScope> lexicalScopes;
 
-    public ModuleBodyDefinitionNode(RubyContext context, SourceSection sourceSection, String name, SharedMethodInfo sharedMethodInfo,
-                    CallTarget callTarget, boolean captureBlock, boolean dynamicLexicalScope) {
+    public ModuleBodyDefinitionNode(RubyContext context, SourceIndexLength sourceSection, String name, SharedMethodInfo sharedMethodInfo,
+                                    CallTarget callTarget, boolean captureBlock, boolean dynamicLexicalScope) {
         super(context, sourceSection);
         this.name = name;
         this.sharedMethodInfo = sharedMethodInfo;
@@ -53,7 +54,7 @@ public class ModuleBodyDefinitionNode extends RubyNode {
     }
 
     public ModuleBodyDefinitionNode(ModuleBodyDefinitionNode node) {
-        this(node.getContext(), node.getSourceSection(), node.name, node.sharedMethodInfo, node.callTarget, node.captureBlock, node.dynamicLexicalScope);
+        this(node.getContext(), node.getRubySourceSection(), node.name, node.sharedMethodInfo, node.callTarget, node.captureBlock, node.dynamicLexicalScope);
     }
 
     public InternalMethod createMethod(VirtualFrame frame, LexicalScope staticLexicalScope, DynamicObject module) {

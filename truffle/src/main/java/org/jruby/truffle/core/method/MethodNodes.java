@@ -84,7 +84,7 @@ public abstract class MethodNodes {
 
         public CallNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            callBoundMethodNode = CallBoundMethodNodeGen.create(context, sourceSection, null, null, null);
+            callBoundMethodNode = CallBoundMethodNodeGen.create(context, new SourceIndexLength(sourceSection), null, null, null);
         }
 
         @Specialization
