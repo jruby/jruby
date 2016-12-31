@@ -22,22 +22,23 @@ import org.jruby.truffle.RubyLanguage;
 import org.jruby.truffle.core.cast.BooleanCastNode;
 import org.jruby.truffle.core.cast.BooleanCastNodeGen;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 
 public final class WhileNode extends RubyNode {
 
     @Child private LoopNode loopNode;
 
-    private WhileNode(RubyContext context, SourceSection sourceSection, RepeatingNode repeatingNode) {
+    private WhileNode(RubyContext context, SourceIndexLength sourceSection, RepeatingNode repeatingNode) {
         super(context, sourceSection);
         loopNode = Truffle.getRuntime().createLoopNode(repeatingNode);
     }
 
-    public static WhileNode createWhile(RubyContext context, SourceSection sourceSection, RubyNode condition, RubyNode body) {
+    public static WhileNode createWhile(RubyContext context, SourceIndexLength sourceSection, RubyNode condition, RubyNode body) {
         final RepeatingNode repeatingNode = new WhileRepeatingNode(context, condition, body);
         return new WhileNode(context, sourceSection, repeatingNode);
     }
 
-    public static WhileNode createDoWhile(RubyContext context, SourceSection sourceSection, RubyNode condition, RubyNode body) {
+    public static WhileNode createDoWhile(RubyContext context, SourceIndexLength sourceSection, RubyNode condition, RubyNode body) {
         final RepeatingNode repeatingNode = new DoWhileRepeatingNode(context, condition, body);
         return new WhileNode(context, sourceSection, repeatingNode);
     }

@@ -125,7 +125,7 @@ public class ReloadArgumentsTranslator extends Translator {
             sequence.add(kwArgsNode);
         }
 
-        return new SequenceNode(sourceSection.toSourceSection(source), sequence.toArray(new RubyNode[sequence.size()]));
+        return new SequenceNode(sourceSection, sequence.toArray(new RubyNode[sequence.size()]));
     }
 
     @Override

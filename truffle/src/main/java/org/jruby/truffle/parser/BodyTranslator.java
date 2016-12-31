@@ -3202,9 +3202,9 @@ public class BodyTranslator extends Translator {
         final RubyNode loop;
 
         if (node.evaluateAtStart()) {
-            loop = WhileNode.createWhile(context, fullSourceSection, condition, body);
+            loop = WhileNode.createWhile(context, sourceSection, condition, body);
         } else {
-            loop = WhileNode.createDoWhile(context, fullSourceSection, condition, body);
+            loop = WhileNode.createDoWhile(context, sourceSection, condition, body);
         }
 
         final RubyNode ret = new CatchBreakNode(context, fullSourceSection, whileBreakID, loop);

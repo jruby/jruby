@@ -81,16 +81,7 @@ public abstract class Translator extends org.jruby.truffle.parser.ast.visitor.Ab
             final RubyNode[] flatSequence = flattened.toArray(new RubyNode[flattened.size()]);
 
             final SourceIndexLength enclosingSourceSection = enclosing(sourceSection, flatSequence);
-
-            final SourceSection sequenceSourceSection;
-
-            if (enclosingSourceSection == null) {
-                sequenceSourceSection = null;
-            } else {
-                sequenceSourceSection = enclosingSourceSection.toSourceSection(source);
-            }
-
-            return new SequenceNode(sequenceSourceSection, flatSequence);
+            return new SequenceNode(enclosingSourceSection, flatSequence);
         }
     }
 

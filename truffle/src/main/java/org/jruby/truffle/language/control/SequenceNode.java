@@ -13,15 +13,15 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.nodes.NodeCost;
 import com.oracle.truffle.api.nodes.NodeInfo;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 
 @NodeInfo(cost = NodeCost.NONE)
 public final class SequenceNode extends RubyNode {
 
     @Children private final RubyNode[] body;
 
-    public SequenceNode(SourceSection sourceSection, RubyNode... body) {
+    public SequenceNode(SourceIndexLength sourceSection, RubyNode... body) {
         super(sourceSection);
         this.body = body;
     }
