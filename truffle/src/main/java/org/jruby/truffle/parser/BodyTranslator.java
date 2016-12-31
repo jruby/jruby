@@ -528,7 +528,7 @@ public class BodyTranslator extends Translator {
             final RubyNode literal = new ObjectLiteralNode(frozenString);
             literal.unsafeSetSourceSection(sourceSection);
 
-            return addNewlineIfNeeded(node, new DefinedWrapperNode(context, fullSourceSection, context.getCoreStrings().METHOD, literal));
+            return addNewlineIfNeeded(node, new DefinedWrapperNode(context, sourceSection, context.getCoreStrings().METHOD, literal));
         }
 
         if (receiver instanceof ConstParseNode
@@ -1362,7 +1362,7 @@ public class BodyTranslator extends Translator {
     public RubyNode visitDefinedNode(DefinedParseNode node) {
         final SourceIndexLength sourceSection = node.getPosition();
 
-        final RubyNode ret = new DefinedNode(context, sourceSection.toSourceSection(source), node.getExpressionNode().accept(this));
+        final RubyNode ret = new DefinedNode(context, sourceSection, node.getExpressionNode().accept(this));
         return addNewlineIfNeeded(node, ret);
     }
 
@@ -2500,7 +2500,7 @@ public class BodyTranslator extends Translator {
             throw new UnsupportedOperationException();
         }
 
-        final RubyNode ret = new DefinedWrapperNode(context, fullSourceSection, context.getCoreStrings().ASSIGNMENT, result);
+        final RubyNode ret = new DefinedWrapperNode(context, sourceSection, context.getCoreStrings().ASSIGNMENT, result);
         return addNewlineIfNeeded(node, ret);
     }
 
@@ -2577,7 +2577,7 @@ public class BodyTranslator extends Translator {
         final RubyNode andNode = new AndNode(lhs, rhs);
         andNode.unsafeSetSourceSection(sourceSection);
 
-        final RubyNode ret = new DefinedWrapperNode(context, fullSourceSection, context.getCoreStrings().ASSIGNMENT, andNode);
+        final RubyNode ret = new DefinedWrapperNode(context, sourceSection, context.getCoreStrings().ASSIGNMENT, andNode);
         return addNewlineIfNeeded(node, ret);
     }
 
@@ -2596,7 +2596,7 @@ public class BodyTranslator extends Translator {
             }
 
             case "||": {
-                final RubyNode defined = new DefinedNode(context, translateSourceSection(source, lhs.getRubySourceSection()), lhs);
+                final RubyNode defined = new DefinedNode(context, lhs.getRubySourceSection(), lhs);
                 lhs = new AndNode(defined, lhs);
 
                 return translateOpAsgOrNode(node, lhs, rhs);
@@ -2638,7 +2638,7 @@ public class BodyTranslator extends Translator {
             final RubyNode controlNode = isOrOperator ? new OrNode(lhs, rhs) : new AndNode(lhs, rhs);
             final RubyNode ret = new DefinedWrapperNode(
                     context,
-                    fullSourceSection,
+                    sourceSection,
                     context.getCoreStrings().ASSIGNMENT,
                     sequence(
                             context,
@@ -2695,7 +2695,7 @@ public class BodyTranslator extends Translator {
 
         // This is needed for class variables. Constants are handled separately in visitOpAsgnConstDeclNode.
         if (node.getFirstNode().needsDefinitionCheck() && !(node.getFirstNode() instanceof InstVarParseNode)) {
-            RubyNode defined = new DefinedNode(context, translateSourceSection(source, lhs.getRubySourceSection()), lhs);
+            RubyNode defined = new DefinedNode(context, lhs.getRubySourceSection(), lhs);
             lhs = new AndNode(defined, lhs);
         }
 
@@ -2710,9 +2710,8 @@ public class BodyTranslator extends Translator {
          */
 
         final SourceIndexLength sourceSection = node.getPosition();
-        final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
-        final RubyNode ret = new DefinedWrapperNode(context, fullSourceSection, context.getCoreStrings().ASSIGNMENT,
+        final RubyNode ret = new DefinedWrapperNode(context, sourceSection, context.getCoreStrings().ASSIGNMENT,
                 new OrNode(lhs, rhs));
 
         return addNewlineIfNeeded(node, ret);
@@ -3117,7 +3116,7 @@ public class BodyTranslator extends Translator {
         if (node.isFrozen() && !getSourcePath(sourceSection).startsWith(context.getCoreLibrary().getCoreLoadPath() + "/core/")) {
             final DynamicObject frozenString = context.getFrozenStrings().getFrozenString(rope);
 
-            ret = new DefinedWrapperNode(context, sourceSection.toSourceSection(source), context.getCoreStrings().METHOD,
+            ret = new DefinedWrapperNode(context, sourceSection, context.getCoreStrings().METHOD,
                     new ObjectLiteralNode(frozenString));
         } else {
             ret = new StringLiteralNode(rope);

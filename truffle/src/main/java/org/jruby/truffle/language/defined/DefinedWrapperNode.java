@@ -14,6 +14,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.string.CoreString;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 
 public class DefinedWrapperNode extends RubyNode {
 
@@ -21,7 +22,7 @@ public class DefinedWrapperNode extends RubyNode {
 
     @Child private RubyNode child;
 
-    public DefinedWrapperNode(RubyContext context, SourceSection sourceSection,
+    public DefinedWrapperNode(RubyContext context, SourceIndexLength sourceSection,
                               CoreString definition, RubyNode child) {
         super(context, sourceSection);
         this.definition = definition;
