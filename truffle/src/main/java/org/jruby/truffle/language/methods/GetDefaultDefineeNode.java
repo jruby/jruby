@@ -14,6 +14,7 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.objects.SingletonClassNode;
 import org.jruby.truffle.language.objects.SingletonClassNodeGen;
@@ -24,7 +25,7 @@ public class GetDefaultDefineeNode extends RubyNode {
 
     public GetDefaultDefineeNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
-        this.singletonClassNode = SingletonClassNodeGen.create(context, sourceSection, null);
+        this.singletonClassNode = SingletonClassNodeGen.create(context, new SourceIndexLength(sourceSection), null);
     }
 
     @Override

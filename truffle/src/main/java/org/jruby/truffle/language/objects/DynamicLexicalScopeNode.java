@@ -10,14 +10,14 @@
 package org.jruby.truffle.language.objects;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.arguments.RubyArguments;
 
 public class DynamicLexicalScopeNode extends RubyNode {
 
-    public DynamicLexicalScopeNode(RubyContext context, SourceSection sourceSection) {
+    public DynamicLexicalScopeNode(RubyContext context, SourceIndexLength sourceSection) {
         super(context, sourceSection);
     }
 

@@ -14,13 +14,13 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.profiles.ConditionProfile;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.klass.ClassNodes;
 import org.jruby.truffle.language.RubyConstant;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
@@ -40,7 +40,7 @@ public class DefineClassNode extends RubyNode {
     private final BranchProfile errorProfile = BranchProfile.create();
 
     public DefineClassNode(
-            RubyContext context, SourceSection sourceSection, String name,
+            RubyContext context, SourceIndexLength sourceSection, String name,
             RubyNode lexicalParent, RubyNode superClass) {
         super(context, sourceSection);
         this.name = name;

@@ -63,6 +63,7 @@ import org.jruby.truffle.core.kernel.KernelNodesFactory;
 import org.jruby.truffle.core.proc.ProcSignalHandler;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyGuards;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.ExitException;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.control.ThrowException;
@@ -214,7 +215,7 @@ public abstract class VMPrimitiveNodes {
 
         public VMObjectClassPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            classNode = LogicalClassNodeGen.create(context, sourceSection, null);
+            classNode = LogicalClassNodeGen.create(context, new SourceIndexLength(sourceSection), null);
         }
 
         @Specialization
@@ -242,7 +243,7 @@ public abstract class VMPrimitiveNodes {
 
         public VMObjectKindOfPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            isANode = IsANodeGen.create(context, sourceSection, null, null);
+            isANode = IsANodeGen.create(context, new SourceIndexLength(sourceSection), null, null);
         }
 
         @Specialization

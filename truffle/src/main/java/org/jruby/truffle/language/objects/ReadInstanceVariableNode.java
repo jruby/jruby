@@ -13,9 +13,9 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 
 public class ReadInstanceVariableNode extends RubyNode {
 
@@ -27,7 +27,7 @@ public class ReadInstanceVariableNode extends RubyNode {
 
     private final ConditionProfile objectProfile = ConditionProfile.createBinaryProfile();
 
-    public ReadInstanceVariableNode(RubyContext context, SourceSection sourceSection, String name, RubyNode receiver) {
+    public ReadInstanceVariableNode(RubyContext context, SourceIndexLength sourceSection, String name, RubyNode receiver) {
         super(context, sourceSection);
         this.name = name;
         this.receiver = receiver;

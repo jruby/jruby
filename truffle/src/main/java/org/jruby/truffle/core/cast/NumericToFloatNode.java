@@ -20,6 +20,7 @@ import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
@@ -40,7 +41,7 @@ public abstract class NumericToFloatNode extends RubyNode {
 
     public NumericToFloatNode(RubyContext context, SourceSection sourceSection, String method) {
         super(context, sourceSection);
-        isANode = IsANodeGen.create(context, sourceSection, null, null);
+        isANode = IsANodeGen.create(context, new SourceIndexLength(sourceSection), null, null);
         this.method = method;
     }
 

@@ -96,6 +96,7 @@ import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.SnippetNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.Visibility;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.backtrace.Activation;
@@ -446,7 +447,7 @@ public abstract class KernelNodes {
 
         public KernelClassNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            classNode = LogicalClassNodeGen.create(context, sourceSection, null);
+            classNode = LogicalClassNodeGen.create(context, new SourceIndexLength(sourceSection), null);
         }
 
         @Specialization
@@ -502,8 +503,8 @@ public abstract class KernelNodes {
             copyNode = CopyNodeFactory.create(context, sourceSection, null);
             // Calls private initialize_clone on the new copy.
             initializeCloneNode = DispatchHeadNodeFactory.createMethodCallOnSelf(context);
-            isFrozenNode = IsFrozenNodeGen.create(context, sourceSection, null);
-            singletonClassNode = SingletonClassNodeGen.create(context, sourceSection, null);
+            isFrozenNode = IsFrozenNodeGen.create(context, new SourceIndexLength(sourceSection), null);
+            singletonClassNode = SingletonClassNodeGen.create(context, new SourceIndexLength(sourceSection), null);
         }
 
         @Specialization
@@ -780,7 +781,7 @@ public abstract class KernelNodes {
 
         public KernelFreezeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            freezeNode = FreezeNodeGen.create(context, sourceSection, null);
+            freezeNode = FreezeNodeGen.create(context, new SourceIndexLength(sourceSection), null);
         }
 
         @Specialization
@@ -925,7 +926,7 @@ public abstract class KernelNodes {
 
         public InstanceOfNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            classNode = LogicalClassNodeGen.create(context, sourceSection, null);
+            classNode = LogicalClassNodeGen.create(context, new SourceIndexLength(sourceSection), null);
         }
 
         @Specialization(guards = "isRubyModule(rubyClass)")
@@ -1072,7 +1073,7 @@ public abstract class KernelNodes {
 
         public KernelIsANode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            isANode = IsANodeGen.create(context, sourceSection, null, null);
+            isANode = IsANodeGen.create(context, new SourceIndexLength(sourceSection), null, null);
         }
 
         @Specialization
@@ -1335,7 +1336,7 @@ public abstract class KernelNodes {
 
         public PrivateMethodsNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            this.metaClassNode = MetaClassNodeGen.create(context, sourceSection, null);
+            this.metaClassNode = MetaClassNodeGen.create(context, new SourceIndexLength(sourceSection), null);
         }
 
         @CreateCast("includeAncestors")
@@ -1382,7 +1383,7 @@ public abstract class KernelNodes {
 
         public ProtectedMethodsNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            this.metaClassNode = MetaClassNodeGen.create(context, sourceSection, null);
+            this.metaClassNode = MetaClassNodeGen.create(context, new SourceIndexLength(sourceSection), null);
         }
 
         @CreateCast("includeAncestors")
@@ -1412,7 +1413,7 @@ public abstract class KernelNodes {
 
         public PublicMethodsNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            this.metaClassNode = MetaClassNodeGen.create(context, sourceSection, null);
+            this.metaClassNode = MetaClassNodeGen.create(context, new SourceIndexLength(sourceSection), null);
         }
 
         @CreateCast("includeAncestors")
@@ -1654,7 +1655,7 @@ public abstract class KernelNodes {
 
         public SingletonClassMethodNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            this.singletonClassNode = SingletonClassNodeGen.create(context, sourceSection, null);
+            this.singletonClassNode = SingletonClassNodeGen.create(context, new SourceIndexLength(sourceSection), null);
         }
 
         @Specialization
@@ -1675,7 +1676,7 @@ public abstract class KernelNodes {
 
         public SingletonMethodsNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            this.metaClassNode = MetaClassNodeGen.create(context, sourceSection, null);
+            this.metaClassNode = MetaClassNodeGen.create(context, new SourceIndexLength(sourceSection), null);
         }
 
         public abstract DynamicObject executeSingletonMethods(VirtualFrame frame, Object self, boolean includeAncestors);
@@ -1940,7 +1941,7 @@ public abstract class KernelNodes {
 
         public ToSNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            classNode = LogicalClassNodeGen.create(context, sourceSection, null);
+            classNode = LogicalClassNodeGen.create(context, new SourceIndexLength(sourceSection), null);
             objectIDNode = ObjectNodesFactory.ObjectIDPrimitiveNodeFactory.create(null);
             taintResultNode = new TaintResultNode(context, sourceSection);
             toHexStringNode = KernelNodesFactory.ToHexStringNodeFactory.create(null);

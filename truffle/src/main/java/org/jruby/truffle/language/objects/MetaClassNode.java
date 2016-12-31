@@ -16,10 +16,10 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.Shape;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 
 @ImportStatic(ShapeCachingGuards.class)
 @NodeChild(value="object", type=RubyNode.class)
@@ -28,7 +28,7 @@ public abstract class MetaClassNode extends RubyNode {
     public MetaClassNode() {
     }
 
-    public MetaClassNode(RubyContext context, SourceSection sourceSection) {
+    public MetaClassNode(RubyContext context, SourceIndexLength sourceSection) {
         super(context, sourceSection);
     }
 

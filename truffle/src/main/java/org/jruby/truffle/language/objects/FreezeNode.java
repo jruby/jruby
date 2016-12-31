@@ -14,15 +14,15 @@ import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 
 @NodeChild(value = "child")
 public abstract class FreezeNode extends RubyNode {
 
-    public FreezeNode(RubyContext context, SourceSection sourceSection) {
+    public FreezeNode(RubyContext context, SourceIndexLength sourceSection) {
         super(context, sourceSection);
     }
 

@@ -26,6 +26,7 @@ import org.jruby.truffle.core.Hashing;
 import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyGuards;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.Visibility;
 import org.jruby.truffle.language.arguments.ArgumentDescriptorUtils;
 import org.jruby.truffle.language.control.RaiseException;
@@ -72,7 +73,7 @@ public abstract class UnboundMethodNodes {
 
         public BindNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            metaClassNode = MetaClassNodeGen.create(context, sourceSection, null);
+            metaClassNode = MetaClassNodeGen.create(context, new SourceIndexLength(sourceSection), null);
             canBindMethodToModuleNode = CanBindMethodToModuleNodeGen.create(context, sourceSection, null, null);
         }
 

@@ -17,11 +17,11 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.RaiseException;
 
 @NodeChildren({
@@ -32,7 +32,7 @@ public abstract class IsANode extends RubyNode {
 
     @Child private MetaClassNode metaClassNode;
 
-    public IsANode(RubyContext context, SourceSection sourceSection) {
+    public IsANode(RubyContext context, SourceIndexLength sourceSection) {
         super(context, sourceSection);
     }
 

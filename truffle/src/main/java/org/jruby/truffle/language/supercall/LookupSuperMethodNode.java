@@ -22,6 +22,7 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.objects.MetaClassNode;
@@ -38,7 +39,7 @@ public abstract class LookupSuperMethodNode extends RubyNode {
 
     public LookupSuperMethodNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
-        metaClassNode = MetaClassNodeGen.create(context, sourceSection, null);
+        metaClassNode = MetaClassNodeGen.create(context, new SourceIndexLength(sourceSection), null);
     }
 
     public abstract InternalMethod executeLookupSuperMethod(VirtualFrame frame, Object self);

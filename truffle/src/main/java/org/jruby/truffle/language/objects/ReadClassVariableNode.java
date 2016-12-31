@@ -12,11 +12,11 @@ package org.jruby.truffle.language.objects;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.RaiseException;
 
 public class ReadClassVariableNode extends RubyNode {
@@ -26,7 +26,7 @@ public class ReadClassVariableNode extends RubyNode {
 
     private final BranchProfile missingProfile = BranchProfile.create();
 
-    public ReadClassVariableNode(RubyContext context, SourceSection sourceSection,
+    public ReadClassVariableNode(RubyContext context, SourceIndexLength sourceSection,
                                  LexicalScope lexicalScope, String name) {
         super(context, sourceSection);
         this.lexicalScope = lexicalScope;

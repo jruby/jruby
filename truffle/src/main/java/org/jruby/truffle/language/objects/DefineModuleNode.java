@@ -16,12 +16,12 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.profiles.ConditionProfile;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.module.ModuleNodes;
 import org.jruby.truffle.language.RubyConstant;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.RaiseException;
 
 @NodeChild(value = "lexicalParentModule", type = RubyNode.class)
@@ -34,7 +34,7 @@ public abstract class DefineModuleNode extends RubyNode {
     private final ConditionProfile needToDefineProfile = ConditionProfile.createBinaryProfile();
     private final BranchProfile errorProfile = BranchProfile.create();
 
-    public DefineModuleNode(RubyContext context, SourceSection sourceSection, String name) {
+    public DefineModuleNode(RubyContext context, SourceIndexLength sourceSection, String name) {
         super(context, sourceSection);
         this.name = name;
     }

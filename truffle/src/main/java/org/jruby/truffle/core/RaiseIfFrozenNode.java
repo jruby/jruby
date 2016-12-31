@@ -15,6 +15,7 @@ import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.objects.IsFrozenNode;
 import org.jruby.truffle.language.objects.IsFrozenNodeGen;
@@ -29,7 +30,7 @@ public class RaiseIfFrozenNode extends RubyNode {
     public RaiseIfFrozenNode(RubyContext context, SourceSection sourceSection, RubyNode child) {
         super(context, sourceSection);
         this.child = child;
-        isFrozenNode = IsFrozenNodeGen.create(context, sourceSection, null);
+        isFrozenNode = IsFrozenNodeGen.create(context, new SourceIndexLength(sourceSection), null);
     }
 
     @Override

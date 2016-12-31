@@ -13,10 +13,10 @@ import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.methods.InternalMethod;
@@ -30,7 +30,7 @@ public class RunModuleDefinitionNode extends RubyNode {
     @Child private ModuleBodyDefinitionNode definitionMethod;
     @Child private IndirectCallNode callModuleDefinitionNode;
 
-    public RunModuleDefinitionNode(RubyContext context, SourceSection sourceSection, LexicalScope lexicalScope,
+    public RunModuleDefinitionNode(RubyContext context, SourceIndexLength sourceSection, LexicalScope lexicalScope,
                                    ModuleBodyDefinitionNode definition, RubyNode definingModule) {
         super(context, sourceSection);
         this.definingModule = definingModule;

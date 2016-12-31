@@ -53,6 +53,7 @@ import org.jruby.truffle.builtins.Primitive;
 import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.core.cast.ToFNode;
 import org.jruby.truffle.language.NotProvided;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.objects.IsANode;
 import org.jruby.truffle.language.objects.IsANodeGen;
@@ -394,7 +395,7 @@ public abstract class MathNodes {
 
         public LGammaNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            isANode = IsANodeGen.create(context, sourceSection, null, null);
+            isANode = IsANodeGen.create(context, new SourceIndexLength(sourceSection), null, null);
             toFNode = ToFNode.create();
         }
 
@@ -586,7 +587,7 @@ public abstract class MathNodes {
 
         protected SimpleMonadicMathNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            isANode = IsANodeGen.create(context, sourceSection, null, null);
+            isANode = IsANodeGen.create(context, new SourceIndexLength(sourceSection), null, null);
             toFNode = ToFNode.create();
         }
 
@@ -642,7 +643,7 @@ public abstract class MathNodes {
 
         protected SimpleDyadicMathNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            isANode = IsANodeGen.create(context, sourceSection, null, null);
+            isANode = IsANodeGen.create(context, new SourceIndexLength(sourceSection), null, null);
             floatANode = ToFNode.create();
             floatBNode = ToFNode.create();
         }

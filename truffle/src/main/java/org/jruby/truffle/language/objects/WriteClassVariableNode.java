@@ -11,11 +11,11 @@ package org.jruby.truffle.language.objects;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 
 public class WriteClassVariableNode extends RubyNode {
 
@@ -24,7 +24,7 @@ public class WriteClassVariableNode extends RubyNode {
 
     @Child private RubyNode rhs;
 
-    public WriteClassVariableNode(RubyContext context, SourceSection sourceSection, LexicalScope lexicalScope,
+    public WriteClassVariableNode(RubyContext context, SourceIndexLength sourceSection, LexicalScope lexicalScope,
                                   String name, RubyNode rhs) {
         super(context, sourceSection);
         this.lexicalScope = lexicalScope;

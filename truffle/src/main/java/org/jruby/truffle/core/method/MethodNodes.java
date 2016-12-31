@@ -35,6 +35,7 @@ import org.jruby.truffle.core.proc.ProcType;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.arguments.ArgumentDescriptorUtils;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.control.RaiseException;
@@ -197,7 +198,7 @@ public abstract class MethodNodes {
 
         public UnbindNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            classNode = LogicalClassNodeGen.create(context, sourceSection, null);
+            classNode = LogicalClassNodeGen.create(context, new SourceIndexLength(sourceSection), null);
         }
 
         @Specialization

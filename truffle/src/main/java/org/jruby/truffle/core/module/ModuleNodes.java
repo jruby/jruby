@@ -128,7 +128,7 @@ public abstract class ModuleNodes {
 
         public ContainsInstanceNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            isANode = IsANodeGen.create(context, sourceSection, null, null);
+            isANode = IsANodeGen.create(context, new SourceIndexLength(sourceSection), null, null);
         }
 
         @Specialization
@@ -399,10 +399,10 @@ public abstract class ModuleNodes {
             final RubyNode self = new ProfileArgumentNode(new ReadSelfNode());
             final RubyNode accessInstanceVariable;
             if (isGetter) {
-                accessInstanceVariable = new ReadInstanceVariableNode(getContext(), sourceSection, ivar, self);
+                accessInstanceVariable = new ReadInstanceVariableNode(getContext(), new SourceIndexLength(sourceSection), ivar, self);
             } else {
                 RubyNode readArgument = new ProfileArgumentNode(new ReadPreArgumentNode(0, MissingArgumentBehavior.RUNTIME_ERROR));
-                accessInstanceVariable = new WriteInstanceVariableNode(getContext(), sourceSection, ivar, self, readArgument);
+                accessInstanceVariable = new WriteInstanceVariableNode(getContext(), new SourceIndexLength(sourceSection), ivar, self, readArgument);
             }
             final RubyNode sequence = Translator.sequence(getContext(), sourceSection.getSource(), sourceIndexLength, Arrays.asList(checkArity, accessInstanceVariable));
             final RubyRootNode rootNode = new RubyRootNode(getContext(), sourceSection, null, sharedMethodInfo, sequence, false);
@@ -1114,7 +1114,7 @@ public abstract class ModuleNodes {
 
         public ExtendObjectNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            this.singletonClassNode = SingletonClassNodeGen.create(context, sourceSection, null);
+            this.singletonClassNode = SingletonClassNodeGen.create(context, new SourceIndexLength(sourceSection), null);
         }
 
         @Specialization
@@ -1357,7 +1357,7 @@ public abstract class ModuleNodes {
 
         public PublicClassMethodNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            this.singletonClassNode = SingletonClassNodeGen.create(context, sourceSection, null);
+            this.singletonClassNode = SingletonClassNodeGen.create(context, new SourceIndexLength(sourceSection), null);
             this.setMethodVisibilityNode = ModuleNodesFactory.SetMethodVisibilityNodeGen.create(context, sourceSection, Visibility.PUBLIC, null, null);
         }
 
@@ -1423,7 +1423,7 @@ public abstract class ModuleNodes {
 
         public PrivateClassMethodNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            this.singletonClassNode = SingletonClassNodeGen.create(context, sourceSection, null);
+            this.singletonClassNode = SingletonClassNodeGen.create(context, new SourceIndexLength(sourceSection), null);
             this.setMethodVisibilityNode = ModuleNodesFactory.SetMethodVisibilityNodeGen.create(context, sourceSection, Visibility.PRIVATE, null, null);
         }
 
@@ -1754,7 +1754,7 @@ public abstract class ModuleNodes {
         public RemoveMethodNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             this.nameToJavaStringNode = NameToJavaStringNode.create();
-            this.isFrozenNode = IsFrozenNodeGen.create(context, sourceSection, null);
+            this.isFrozenNode = IsFrozenNodeGen.create(context, new SourceIndexLength(sourceSection), null);
             this.methodRemovedNode = DispatchHeadNodeFactory.createMethodCallOnSelf(context);
         }
 
