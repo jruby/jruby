@@ -13,6 +13,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 
 public class RespondToNode extends RubyNode {
 
@@ -21,7 +22,7 @@ public class RespondToNode extends RubyNode {
     @Child private RubyNode child;
     @Child private DoesRespondDispatchHeadNode dispatch;
 
-    public RespondToNode(RubyContext context, SourceSection sourceSection, RubyNode child, String methodName) {
+    public RespondToNode(RubyContext context, SourceIndexLength sourceSection, RubyNode child, String methodName) {
         super(context, sourceSection);
         this.methodName = methodName;
         this.child = child;

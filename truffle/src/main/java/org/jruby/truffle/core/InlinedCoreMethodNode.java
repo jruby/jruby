@@ -15,6 +15,7 @@ import com.oracle.truffle.api.dsl.NodeFactory;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.nodes.NodeUtil;
+import com.oracle.truffle.api.source.Source;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreMethodNodeManager;
 import org.jruby.truffle.core.array.ArrayUtils;
@@ -47,7 +48,7 @@ public class InlinedCoreMethodNode extends RubyNode {
         this.method = method;
         this.tracingUnused = callNodeParameters.getContext().getTraceManager().getUnusedAssumption();
         this.builtin = builtin;
-        this.lookupMethodNode = LookupMethodNodeGen.create(callNodeParameters.getContext(), callNodeParameters.getSection(), false, false, null, null);
+        this.lookupMethodNode = LookupMethodNodeGen.create(callNodeParameters.getContext(), null, false, false, null, null);
         this.receiverNode = callNodeParameters.getReceiver();
         this.argumentNodes = callNodeParameters.getArguments();
     }
@@ -101,11 +102,11 @@ public class InlinedCoreMethodNode extends RubyNode {
         });
     }
 
-    public static InlinedCoreMethodNode inlineBuiltin(RubyCallNodeParameters callParameters, InternalMethod method, NodeFactory<? extends InlinableBuiltin> builtinFactory) {
+    public static InlinedCoreMethodNode inlineBuiltin(Source source, RubyCallNodeParameters callParameters, InternalMethod method, NodeFactory<? extends InlinableBuiltin> builtinFactory) {
         final RubyContext context = callParameters.getContext();
         // Let arguments to null as we need to execute the receiver ourselves to lookup the method
         final List<RubyNode> arguments = Arrays.asList(new RubyNode[1 + callParameters.getArguments().length]);
-        final InlinableBuiltin builtinNode = CoreMethodNodeManager.createNodeFromFactory(context, callParameters.getSection(), builtinFactory, arguments);
+        final InlinableBuiltin builtinNode = CoreMethodNodeManager.createNodeFromFactory(context, callParameters.getSection().toSourceSection(source), builtinFactory, arguments);
 
         return new InlinedCoreMethodNode(callParameters, method, builtinNode);
     }

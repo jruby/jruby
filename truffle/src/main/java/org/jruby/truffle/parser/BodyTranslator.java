@@ -728,8 +728,8 @@ public class BodyTranslator extends Translator {
         final SourceIndexLength enclosingSourceSection = enclosing(sourceSection, children.toArray(new RubyNode[children.size()]));
         final SourceSection enclosingFullSourceSection = enclosingSourceSection.toSourceSection(source);
 
-        RubyCallNodeParameters callParameters = new RubyCallNodeParameters(context, enclosingFullSourceSection, receiver, methodName, argumentsAndBlock.getBlock(), argumentsAndBlock.getArguments(), argumentsAndBlock.isSplatted(), privately || ignoreVisibility, isVCall, node.isLazy(), isAttrAssign);
-        RubyNode translated = context.getCoreMethods().createCallNode(callParameters);
+        RubyCallNodeParameters callParameters = new RubyCallNodeParameters(context, enclosingSourceSection, receiver, methodName, argumentsAndBlock.getBlock(), argumentsAndBlock.getArguments(), argumentsAndBlock.isSplatted(), privately || ignoreVisibility, isVCall, node.isLazy(), isAttrAssign);
+        RubyNode translated = context.getCoreMethods().createCallNode(source, callParameters);
 
         if (argumentsAndBlock.getBlock() instanceof BlockDefinitionNode) { // if we have a literal block, break breaks out of this call site
             BlockDefinitionNode blockDef = (BlockDefinitionNode) argumentsAndBlock.getBlock();
@@ -911,7 +911,7 @@ public class BodyTranslator extends Translator {
                         method = "===";
                         arguments = new RubyNode[] { NodeUtil.cloneNode(readTemp) };
                     }
-                    RubyCallNodeParameters callParameters = new RubyCallNodeParameters(context, fullSourceSection, receiver, method, null, arguments, false, true);
+                    RubyCallNodeParameters callParameters = new RubyCallNodeParameters(context, sourceSection, receiver, method, null, arguments, false, true);
                     comparisons.add(new RubyCallNode(callParameters));
                 }
 
@@ -1775,7 +1775,7 @@ public class BodyTranslator extends Translator {
             if (name.equals("$0")) {
                 // Call Process.setproctitle
                 RubyNode processClass = new ObjectLiteralNode(context.getCoreLibrary().getProcessModule());
-                translated = new RubyCallNode(new RubyCallNodeParameters(context, fullSourceSection, processClass, "setproctitle", null,
+                translated = new RubyCallNode(new RubyCallNodeParameters(context, sourceSection, processClass, "setproctitle", null,
                                 new RubyNode[]{writeGlobalVariableNode}, false, false));
             } else {
                 translated = writeGlobalVariableNode;
@@ -2604,8 +2604,8 @@ public class BodyTranslator extends Translator {
 
             default: {
                 final SourceIndexLength sourceSection = node.getPosition();
-                final RubyCallNodeParameters callParameters = new RubyCallNodeParameters(context, sourceSection.toSourceSection(source), lhs, node.getOperator(), null, new RubyNode[] { rhs }, false, true);
-                final RubyNode opNode = context.getCoreMethods().createCallNode(callParameters);
+                final RubyCallNodeParameters callParameters = new RubyCallNodeParameters(context, sourceSection, lhs, node.getOperator(), null, new RubyNode[] { rhs }, false, true);
+                final RubyNode opNode = context.getCoreMethods().createCallNode(source, callParameters);
                 final RubyNode ret = ((ReadConstantNode) lhs).makeWriteNode(opNode);
 
                 return addNewlineIfNeeded(node, ret);
@@ -2832,12 +2832,11 @@ public class BodyTranslator extends Translator {
 
     private RubyNode translateRationalComplex(SourceIndexLength sourceSection, String name, RubyNode a, RubyNode b) {
         // Translate as Truffle.privately { Rational.convert(a, b) }
-        final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
         final RubyNode moduleNode = new ObjectLiteralNode(context.getCoreLibrary().getObjectClass());
         ReadConstantNode receiver = new ReadConstantNode(context, sourceSection, moduleNode, name);
         RubyNode[] arguments = new RubyNode[] { a, b };
-        RubyCallNodeParameters parameters = new RubyCallNodeParameters(context, fullSourceSection, receiver, "convert", null, arguments, false, true);
+        RubyCallNodeParameters parameters = new RubyCallNodeParameters(context, sourceSection, receiver, "convert", null, arguments, false, true);
         return new RubyCallNode(parameters);
     }
 

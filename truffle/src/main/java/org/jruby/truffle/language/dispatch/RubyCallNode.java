@@ -58,7 +58,7 @@ public class RubyCallNode extends RubyNode {
         if (parameters.getBlock() == null) {
             this.block = null;
         } else {
-            this.block = ProcOrNullNodeGen.create(parameters.getContext(), parameters.getSection(), parameters.getBlock());
+            this.block = ProcOrNullNodeGen.create(parameters.getContext(), null, parameters.getBlock());
         }
 
         this.isSplatted = parameters.isSplatted();

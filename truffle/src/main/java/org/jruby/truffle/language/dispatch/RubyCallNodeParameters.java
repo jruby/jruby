@@ -12,11 +12,12 @@ package org.jruby.truffle.language.dispatch;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 
 public class RubyCallNodeParameters {
 
     private final RubyContext context;
-    private final SourceSection section;
+    private final SourceIndexLength section;
     private final RubyNode receiver;
     private final String methodName;
     private final RubyNode block;
@@ -27,13 +28,13 @@ public class RubyCallNodeParameters {
     private final boolean isSafeNavigation;
     private final boolean isAttrAssign;
 
-    public RubyCallNodeParameters(RubyContext context, SourceSection section,
+    public RubyCallNodeParameters(RubyContext context, SourceIndexLength section,
             RubyNode receiver, String methodName, RubyNode block, RubyNode[] arguments,
             boolean isSplatted, boolean ignoreVisibility) {
         this(context, section, receiver, methodName, block, arguments, isSplatted, ignoreVisibility, false, false, false);
     }
 
-    public RubyCallNodeParameters(RubyContext context, SourceSection section,
+    public RubyCallNodeParameters(RubyContext context, SourceIndexLength section,
             RubyNode receiver, String methodName, RubyNode block, RubyNode[] arguments,
             boolean isSplatted, boolean ignoreVisibility,
             boolean isVCall, boolean isSafeNavigation, boolean isAttrAssign) {
@@ -58,7 +59,7 @@ public class RubyCallNodeParameters {
         return context;
     }
 
-    public SourceSection getSection() {
+    public SourceIndexLength getSection() {
         return section;
     }
 
