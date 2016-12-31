@@ -18,6 +18,7 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.array.ArrayToObjectArrayNode;
 import org.jruby.truffle.core.array.ArrayToObjectArrayNodeGen;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 
 /**
  * Get the arguments of a super call with explicit arguments.
@@ -29,7 +30,7 @@ public class ReadSuperArgumentsNode extends RubyNode {
 
     private final boolean isSplatted;
 
-    public ReadSuperArgumentsNode(RubyContext context, SourceSection sourceSection, RubyNode[] arguments, boolean isSplatted) {
+    public ReadSuperArgumentsNode(RubyContext context, SourceIndexLength sourceSection, RubyNode[] arguments, boolean isSplatted) {
         super(context, sourceSection);
         assert !isSplatted || arguments.length == 1;
         this.arguments = arguments;

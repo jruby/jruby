@@ -14,6 +14,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.methods.InternalMethod;
@@ -26,10 +27,10 @@ public class ZSuperOutsideMethodNode extends RubyNode {
     final boolean insideDefineMethod;
     @Child LookupSuperMethodNode lookupSuperMethodNode;
 
-    public ZSuperOutsideMethodNode(RubyContext context, SourceSection sourceSection, boolean insideDefineMethod) {
+    public ZSuperOutsideMethodNode(RubyContext context, SourceIndexLength sourceSection, boolean insideDefineMethod) {
         super(context, sourceSection);
         this.insideDefineMethod = insideDefineMethod;
-        lookupSuperMethodNode = LookupSuperMethodNodeGen.create(context, sourceSection, null);
+        lookupSuperMethodNode = LookupSuperMethodNodeGen.create(context, null, null);
     }
 
     @Override

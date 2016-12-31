@@ -356,9 +356,9 @@ public class MethodTranslator extends BodyTranslator {
 
         final ArgumentsAndBlockTranslation argumentsAndBlock = translateArgumentsAndBlock(sourceSection, node.getIterNode(), node.getArgsNode(), environment.getNamedMethodName());
 
-        final RubyNode arguments = new ReadSuperArgumentsNode(context, fullSourceSection, argumentsAndBlock.getArguments(), argumentsAndBlock.isSplatted());
+        final RubyNode arguments = new ReadSuperArgumentsNode(context, sourceSection, argumentsAndBlock.getArguments(), argumentsAndBlock.isSplatted());
         final RubyNode block = executeOrInheritBlock(argumentsAndBlock.getBlock());
-        return new SuperCallNode(context, fullSourceSection, arguments, block);
+        return new SuperCallNode(context, sourceSection, arguments, block);
     }
 
     @Override
@@ -384,7 +384,7 @@ public class MethodTranslator extends BodyTranslator {
         MethodTranslator methodArgumentsTranslator = this;
         while (methodArgumentsTranslator.isBlock) {
             if (!(methodArgumentsTranslator.parent instanceof MethodTranslator)) {
-                return new ZSuperOutsideMethodNode(context, fullSourceSection, insideDefineMethod);
+                return new ZSuperOutsideMethodNode(context, sourceSection, insideDefineMethod);
             } else if (methodArgumentsTranslator.currentCallMethodName != null && methodArgumentsTranslator.currentCallMethodName.equals("define_method")) {
                 insideDefineMethod = true;
             }
@@ -396,11 +396,11 @@ public class MethodTranslator extends BodyTranslator {
         final ArgsParseNode argsNode = methodArgumentsTranslator.argsNode;
         final SequenceNode reloadSequence = (SequenceNode) reloadTranslator.visitArgsNode(argsNode);
 
-        final RubyNode arguments = new ReadZSuperArgumentsNode(context, fullSourceSection,
+        final RubyNode arguments = new ReadZSuperArgumentsNode(context, sourceSection,
                 reloadTranslator.getRestParameterIndex(),
                 reloadSequence.getSequence());
         final RubyNode block = executeOrInheritBlock(blockNode);
-        return new SuperCallNode(context, fullSourceSection, arguments, block);
+        return new SuperCallNode(context, sourceSection, arguments, block);
     }
 
     private RubyNode executeOrInheritBlock(RubyNode blockNode) {

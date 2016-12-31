@@ -37,9 +37,9 @@ public abstract class LookupSuperMethodNode extends RubyNode {
 
     @Child private MetaClassNode metaClassNode;
 
-    public LookupSuperMethodNode(RubyContext context, SourceSection sourceSection) {
+    public LookupSuperMethodNode(RubyContext context, SourceIndexLength sourceSection) {
         super(context, sourceSection);
-        metaClassNode = MetaClassNodeGen.create(context, new SourceIndexLength(sourceSection), null);
+        metaClassNode = MetaClassNodeGen.create(context, sourceSection, null);
     }
 
     public abstract InternalMethod executeLookupSuperMethod(VirtualFrame frame, Object self);

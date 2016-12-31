@@ -21,6 +21,7 @@ import org.jruby.truffle.core.array.ArrayToObjectArrayNodeGen;
 import org.jruby.truffle.core.array.ArrayUtils;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 
 /**
  * Get the arguments of a super call with implicit arguments (using the ones of the surrounding method).
@@ -32,7 +33,7 @@ public class ReadZSuperArgumentsNode extends RubyNode {
 
     private final int restArgIndex;
 
-    public ReadZSuperArgumentsNode(RubyContext context, SourceSection sourceSection, int restArgIndex, RubyNode[] reloadNodes) {
+    public ReadZSuperArgumentsNode(RubyContext context, SourceIndexLength sourceSection, int restArgIndex, RubyNode[] reloadNodes) {
         super(context, sourceSection);
         this.restArgIndex = restArgIndex;
         this.reloadNodes = reloadNodes;
