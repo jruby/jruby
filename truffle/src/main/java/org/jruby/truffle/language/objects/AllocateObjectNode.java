@@ -46,17 +46,8 @@ public abstract class AllocateObjectNode extends RubyNode {
 
     private final boolean useCallerFrameForTracing;
 
-    public AllocateObjectNode(RubyContext context, SourceSection sourceSection) {
-        this(context, sourceSection, true);
-    }
-
     public AllocateObjectNode(RubyContext context, SourceIndexLength sourceSection) {
         this(context, sourceSection, true);
-    }
-
-    public AllocateObjectNode(RubyContext context, SourceSection sourceSection, boolean useCallerFrameForTracing) {
-        super(context, sourceSection);
-        this.useCallerFrameForTracing = useCallerFrameForTracing;
     }
 
     public AllocateObjectNode(RubyContext context, SourceIndexLength sourceSection, boolean useCallerFrameForTracing) {
