@@ -568,7 +568,7 @@ public class LoadArgumentsTranslator extends Translator {
 
                 if (node.getPreCount() == 0 && node.getPostCount() == 0) {
                     nilSequence.add(methodBodyTranslator.getEnvironment().findOrAddLocalVarNodeDangerous(name, source, sourceSection)
-                            .makeWriteNode(ArrayLiteralNode.create(context, sourceSection, new RubyNode[] { new NilLiteralNode(context, fullSourceSection, true) })));
+                            .makeWriteNode(ArrayLiteralNode.create(context, sourceSection, new RubyNode[] { new NilLiteralNode(true) })));
                 } else {
                     nilSequence.add(methodBodyTranslator.getEnvironment().findOrAddLocalVarNodeDangerous(name, source, sourceSection)
                             .makeWriteNode(ArrayLiteralNode.create(context, sourceSection, new RubyNode[] {})));

@@ -21,8 +21,7 @@ public class FloatLiteralNode extends RubyNode {
 
     private final double value;
 
-    public FloatLiteralNode(RubyContext context, SourceSection sourceSection, double value) {
-        super(context, sourceSection);
+    public FloatLiteralNode(double value) {
         this.value = value;
     }
 

@@ -21,8 +21,7 @@ public class BooleanLiteralNode extends RubyNode {
 
     private final boolean value;
 
-    public BooleanLiteralNode(RubyContext context, SourceSection sourceSection, boolean value) {
-        super(context, sourceSection);
+    public BooleanLiteralNode(boolean value) {
         this.value = value;
     }
 

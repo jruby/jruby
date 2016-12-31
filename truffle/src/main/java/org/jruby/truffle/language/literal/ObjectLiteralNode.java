@@ -21,8 +21,7 @@ public class ObjectLiteralNode extends RubyNode {
 
     private final Object object;
 
-    public ObjectLiteralNode(RubyContext context, SourceSection sourceSection, Object object) {
-        super(context, sourceSection);
+    public ObjectLiteralNode(Object object) {
         this.object = object;
     }
 

@@ -21,8 +21,7 @@ public class NilLiteralNode extends RubyNode {
 
     private final boolean isImplicit;
 
-    public NilLiteralNode(RubyContext context, SourceSection sourceSection, boolean isImplicit) {
-        super(context, sourceSection);
+    public NilLiteralNode(boolean isImplicit) {
         this.isImplicit = isImplicit;
     }
 

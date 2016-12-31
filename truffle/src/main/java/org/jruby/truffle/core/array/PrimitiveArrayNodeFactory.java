@@ -20,7 +20,7 @@ public abstract class PrimitiveArrayNodeFactory {
      * Create a node to read from an array with a constant denormalized index.
      */
     public static RubyNode read(RubyContext context, SourceSection sourceSection, RubyNode array, int index) {
-        final RubyNode literalIndex = new IntegerFixnumLiteralNode(context, sourceSection, index);
+        final RubyNode literalIndex = new IntegerFixnumLiteralNode(index);
 
         if (index >= 0) {
             return ArrayReadNormalizedNodeGen.create(context, sourceSection, array, literalIndex);
@@ -33,8 +33,8 @@ public abstract class PrimitiveArrayNodeFactory {
      * Create a node to read a slice from an array with a constant denormalized start and exclusive end.
      */
     public static RubyNode readSlice(RubyContext context, SourceSection sourceSection, RubyNode array, int start, int exclusiveEnd) {
-        final RubyNode literalStart = new IntegerFixnumLiteralNode(context, sourceSection, start);
-        final RubyNode literalExclusiveEnd = new IntegerFixnumLiteralNode(context, sourceSection, exclusiveEnd);
+        final RubyNode literalStart = new IntegerFixnumLiteralNode(start);
+        final RubyNode literalExclusiveEnd = new IntegerFixnumLiteralNode(exclusiveEnd);
 
         if (start >= 0 && exclusiveEnd >= 0) {
             return ArrayReadSliceNormalizedNodeGen.create(context, sourceSection, array, literalStart, literalExclusiveEnd);

@@ -30,8 +30,7 @@ public class StringLiteralNode extends RubyNode {
 
     private final Rope rope;
 
-    public StringLiteralNode(RubyContext context, SourceSection sourceSection, Rope rope) {
-        super(context, sourceSection);
+    public StringLiteralNode(Rope rope) {
         this.rope = rope;
     }
 

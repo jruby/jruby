@@ -21,8 +21,7 @@ public class LongFixnumLiteralNode extends RubyNode {
 
     private final long value;
 
-    public LongFixnumLiteralNode(RubyContext context, SourceSection sourceSection, long value) {
-        super(context, sourceSection);
+    public LongFixnumLiteralNode(long value) {
         this.value = value;
     }
 

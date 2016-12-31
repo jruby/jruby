@@ -21,8 +21,7 @@ public class IntegerFixnumLiteralNode extends RubyNode {
 
     private final int value;
 
-    public IntegerFixnumLiteralNode(RubyContext context, SourceSection sourceSection, int value) {
-        super(context, sourceSection);
+    public IntegerFixnumLiteralNode(int value) {
         this.value = value;
     }
 

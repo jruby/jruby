@@ -74,7 +74,9 @@ public abstract class Translator extends org.jruby.truffle.parser.ast.visitor.Ab
         final List<RubyNode> flattened = flatten(sequence, true);
 
         if (flattened.isEmpty()) {
-            return new NilLiteralNode(context, sourceSection.toSourceSection(source), true);
+            final RubyNode literal = new NilLiteralNode(true);
+            literal.unsafeSetSourceSection(sourceSection);
+            return literal;
         } else if (flattened.size() == 1) {
             return flattened.get(0);
         } else {
@@ -127,7 +129,9 @@ public abstract class Translator extends org.jruby.truffle.parser.ast.visitor.Ab
     }
 
     protected RubyNode nilNode(Source source, SourceIndexLength sourceSection) {
-        return new NilLiteralNode(context, sourceSection.toSourceSection(source), false);
+        final RubyNode literal = new NilLiteralNode(false);
+        literal.unsafeSetSourceSection(sourceSection);
+        return literal;
     }
 
     protected RubyNode translateNodeOrNil(SourceIndexLength sourceSection, ParseNode node) {
