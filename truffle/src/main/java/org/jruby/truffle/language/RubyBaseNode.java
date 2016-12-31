@@ -17,6 +17,7 @@ import com.oracle.truffle.api.instrumentation.StandardTags;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.RootNode;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.ffi.provider.MemoryManager;
 import org.jcodings.Encoding;
@@ -212,6 +213,16 @@ public abstract class RubyBaseNode extends Node {
         sourceLength = sourceSection.getLength();
     }
 
+    protected Source getSource() {
+        final RootNode rootNode = getRootNode();
+
+        if (rootNode == null) {
+            return null;
+        }
+
+        return rootNode.getSourceSection().getSource();
+    }
+
     public SourceIndexLength getRubySourceSection() {
         if (sourceCharIndex == -1) {
             return null;
@@ -243,13 +254,7 @@ public abstract class RubyBaseNode extends Node {
         if (sourceCharIndex == -1) {
             return null;
         } else {
-            final RootNode rootNode = getRootNode();
-
-            if (rootNode == null) {
-                return null;
-            }
-
-            return getRubySourceSection().toSourceSection(rootNode.getSourceSection().getSource());
+            return getRubySourceSection().toSourceSection(getSource());
         }
     }
 

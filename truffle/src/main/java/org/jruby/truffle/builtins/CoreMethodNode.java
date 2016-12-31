@@ -13,6 +13,7 @@ import com.oracle.truffle.api.dsl.GenerateNodeFactory;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 
 @GenerateNodeFactory
 public abstract class CoreMethodNode extends RubyNode {
@@ -21,6 +22,10 @@ public abstract class CoreMethodNode extends RubyNode {
     }
 
     public CoreMethodNode(RubyContext context, SourceSection sourceSection) {
+        super(context, sourceSection);
+    }
+
+    public CoreMethodNode(RubyContext context, SourceIndexLength sourceSection) {
         super(context, sourceSection);
     }
 

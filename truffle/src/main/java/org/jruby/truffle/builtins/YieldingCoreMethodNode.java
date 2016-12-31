@@ -16,6 +16,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.cast.BooleanCastNode;
 import org.jruby.truffle.core.cast.BooleanCastNodeGen;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.yield.YieldNode;
 
 public abstract class YieldingCoreMethodNode extends CoreMethodArrayArgumentsNode {
@@ -24,10 +25,15 @@ public abstract class YieldingCoreMethodNode extends CoreMethodArrayArgumentsNod
     @Child private BooleanCastNode booleanCastNode;
 
     public YieldingCoreMethodNode() {
-        this(null, null);
+        this(null, (SourceSection) null);
     }
 
     public YieldingCoreMethodNode(RubyContext context, SourceSection sourceSection) {
+        super(context, sourceSection);
+        dispatchNode = new YieldNode(context);
+    }
+
+    public YieldingCoreMethodNode(RubyContext context, SourceIndexLength sourceSection) {
         super(context, sourceSection);
         dispatchNode = new YieldNode(context);
     }

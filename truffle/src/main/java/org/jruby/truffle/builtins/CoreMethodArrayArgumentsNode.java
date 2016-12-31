@@ -13,6 +13,7 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 
 @NodeChild(value = "arguments", type = RubyNode[].class)
 public abstract class CoreMethodArrayArgumentsNode extends CoreMethodNode {
@@ -21,6 +22,10 @@ public abstract class CoreMethodArrayArgumentsNode extends CoreMethodNode {
     }
 
     public CoreMethodArrayArgumentsNode(RubyContext context, SourceSection sourceSection) {
+        super(context, sourceSection);
+    }
+
+    public CoreMethodArrayArgumentsNode(RubyContext context, SourceIndexLength sourceSection) {
         super(context, sourceSection);
     }
 

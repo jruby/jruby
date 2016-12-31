@@ -14,6 +14,7 @@ import com.oracle.truffle.api.dsl.GenerateNodeFactory;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 
 @GenerateNodeFactory
 public abstract class PrimitiveNode extends RubyNode {
@@ -24,6 +25,10 @@ public abstract class PrimitiveNode extends RubyNode {
     }
 
     public PrimitiveNode(RubyContext context, SourceSection sourceSection) {
+        super(context, sourceSection);
+    }
+
+    public PrimitiveNode(RubyContext context, SourceIndexLength sourceSection) {
         super(context, sourceSection);
     }
 
