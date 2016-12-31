@@ -17,6 +17,7 @@ import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.control.RetryException;
 import org.jruby.truffle.language.methods.ExceptionTranslatingNode;
@@ -33,7 +34,7 @@ public class TryNode extends RubyNode {
     private final BranchProfile controlFlowProfile = BranchProfile.create();
     private final BranchProfile raiseExceptionProfile = BranchProfile.create();
 
-    public TryNode(RubyContext context, SourceSection sourceSection, ExceptionTranslatingNode tryPart, RescueNode[] rescueParts, RubyNode elsePart) {
+    public TryNode(RubyContext context, SourceIndexLength sourceSection, ExceptionTranslatingNode tryPart, RescueNode[] rescueParts, RubyNode elsePart) {
         super(context, sourceSection);
         this.tryPart = tryPart;
         this.rescueParts = rescueParts;

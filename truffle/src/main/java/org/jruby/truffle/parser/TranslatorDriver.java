@@ -254,7 +254,7 @@ public class TranslatorDriver {
             }
 
             truffleNode = new ExceptionTranslatingNode(context, sourceSection, truffleNode, UnsupportedOperationBehavior.TYPE_ERROR);
-            truffleNode = new TopLevelRaiseHandler(context, sourceSection, truffleNode);
+            truffleNode = new TopLevelRaiseHandler(context, sourceIndexLength, truffleNode);
         }
 
         return new RubyRootNode(context, truffleNode.getRubySourceSection().toSourceSection(source), environment.getFrameDescriptor(), sharedMethodInfo, truffleNode, environment.needsDeclarationFrame());

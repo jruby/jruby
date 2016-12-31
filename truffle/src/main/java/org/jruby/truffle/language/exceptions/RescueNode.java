@@ -19,6 +19,7 @@ import org.jruby.truffle.core.cast.BooleanCastNode;
 import org.jruby.truffle.core.cast.BooleanCastNodeGen;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
@@ -32,7 +33,7 @@ public abstract class RescueNode extends RubyNode {
 
     private final BranchProfile errorProfile = BranchProfile.create();
 
-    public RescueNode(RubyContext context, SourceSection sourceSection, RubyNode rescueBody) {
+    public RescueNode(RubyContext context, SourceIndexLength sourceSection, RubyNode rescueBody) {
         super(context, sourceSection);
         this.rescueBody = rescueBody;
     }

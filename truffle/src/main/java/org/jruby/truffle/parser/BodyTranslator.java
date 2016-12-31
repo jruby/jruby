@@ -1456,7 +1456,7 @@ public class BodyTranslator extends Translator {
     public RubyNode visitEnsureNode(EnsureParseNode node) {
         final RubyNode tryPart = node.getBodyNode().accept(this);
         final RubyNode ensurePart = node.getEnsureNode().accept(this);
-        final RubyNode ret = new EnsureNode(context, node.getPosition().toSourceSection(source), tryPart, ensurePart);
+        final RubyNode ret = new EnsureNode(context, node.getPosition(), tryPart, ensurePart);
         return addNewlineIfNeeded(node, ret);
     }
 
@@ -2936,7 +2936,7 @@ public class BodyTranslator extends Translator {
                 bodyNode = rescueBody.getBodyNode().accept(this);
             }
 
-            final RescueAnyNode rescueNode = new RescueAnyNode(context, fullSourceSection, bodyNode);
+            final RescueAnyNode rescueNode = new RescueAnyNode(context, sourceSection, bodyNode);
             rescueNodes.add(rescueNode);
         } else {
             while (rescueBody != null) {
@@ -2974,7 +2974,7 @@ public class BodyTranslator extends Translator {
                         bodyNode = rescueBody.getBodyNode().accept(this);
                     }
 
-                    final RescueAnyNode rescueNode = new RescueAnyNode(context, fullSourceSection, bodyNode);
+                    final RescueAnyNode rescueNode = new RescueAnyNode(context, sourceSection, bodyNode);
                     rescueNodes.add(rescueNode);
                 }
 
@@ -2990,7 +2990,7 @@ public class BodyTranslator extends Translator {
             elsePart = node.getElseNode().accept(this);
         }
 
-        final RubyNode ret = new TryNode(context, fullSourceSection,
+        final RubyNode ret = new TryNode(context, sourceSection,
                 new ExceptionTranslatingNode(context, fullSourceSection, tryPart, UnsupportedOperationBehavior.TYPE_ERROR),
                 rescueNodes.toArray(new RescueNode[rescueNodes.size()]), elsePart);
 
@@ -3014,7 +3014,7 @@ public class BodyTranslator extends Translator {
             translatedBody = rescueBody.getBodyNode().accept(this);
         }
 
-        return new RescueClassesNode(context, fullSourceSection, handlingClasses, translatedBody);
+        return new RescueClassesNode(context, sourceSection, handlingClasses, translatedBody);
     }
 
     private RescueNode translateRescueSplatParseNode(SplatParseNode splat, RescueBodyParseNode rescueBody, SourceIndexLength sourceSection, SourceSection fullSourceSection) {
@@ -3028,7 +3028,7 @@ public class BodyTranslator extends Translator {
             rescueBodyTranslated = rescueBody.getBodyNode().accept(this);
         }
 
-        return new RescueSplatNode(context, fullSourceSection, splatTranslated, rescueBodyTranslated);
+        return new RescueSplatNode(context, sourceSection, splatTranslated, rescueBodyTranslated);
     }
 
     @Override

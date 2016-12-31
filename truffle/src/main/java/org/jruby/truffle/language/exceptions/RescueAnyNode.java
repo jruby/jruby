@@ -14,10 +14,11 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 
 public class RescueAnyNode extends RescueNode {
 
-    public RescueAnyNode(RubyContext context, SourceSection sourceSection, RubyNode rescueBody) {
+    public RescueAnyNode(RubyContext context, SourceIndexLength sourceSection, RubyNode rescueBody) {
         super(context, sourceSection, rescueBody);
     }
 

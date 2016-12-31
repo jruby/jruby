@@ -15,6 +15,7 @@ import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.RaiseException;
 
 public class EnsureNode extends RubyNode {
@@ -27,7 +28,7 @@ public class EnsureNode extends RubyNode {
     private final BranchProfile rubyExceptionPath = BranchProfile.create();
     private final BranchProfile javaExceptionPath = BranchProfile.create();
 
-    public EnsureNode(RubyContext context, SourceSection sourceSection, RubyNode tryPart, RubyNode ensurePart) {
+    public EnsureNode(RubyContext context, SourceIndexLength sourceSection, RubyNode tryPart, RubyNode ensurePart) {
         super(context, sourceSection);
         this.tryPart = tryPart;
         this.ensurePart = ensurePart;

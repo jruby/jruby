@@ -15,12 +15,13 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 
 public class RescueClassesNode extends RescueNode {
 
     @Children final RubyNode[] handlingClassNodes;
 
-    public RescueClassesNode(RubyContext context, SourceSection sourceSection,
+    public RescueClassesNode(RubyContext context, SourceIndexLength sourceSection,
                              RubyNode[] handlingClassNodes, RubyNode rescueBody) {
         super(context, sourceSection, rescueBody);
         this.handlingClassNodes = handlingClassNodes;

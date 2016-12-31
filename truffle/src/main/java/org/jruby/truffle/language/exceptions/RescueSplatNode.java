@@ -15,12 +15,13 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.array.ArrayOperations;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 
 public class RescueSplatNode extends RescueNode {
 
     @Child private RubyNode handlingClassesArray;
 
-    public RescueSplatNode(RubyContext context, SourceSection sourceSection, RubyNode handlingClassesArray, RubyNode rescueBody) {
+    public RescueSplatNode(RubyContext context, SourceIndexLength sourceSection, RubyNode handlingClassesArray, RubyNode rescueBody) {
         super(context, sourceSection, rescueBody);
         this.handlingClassesArray = handlingClassesArray;
     }

@@ -19,6 +19,7 @@ import org.jruby.truffle.core.cast.IntegerCastNode;
 import org.jruby.truffle.core.cast.IntegerCastNodeGen;
 import org.jruby.truffle.core.kernel.AtExitManager;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.ExitException;
 import org.jruby.truffle.language.control.RaiseException;
 
@@ -28,7 +29,7 @@ public class TopLevelRaiseHandler extends RubyNode {
     @Child private IntegerCastNode integerCastNode;
     @Child private SetExceptionVariableNode setExceptionVariableNode;
 
-    public TopLevelRaiseHandler(RubyContext context, SourceSection sourceSection, RubyNode body) {
+    public TopLevelRaiseHandler(RubyContext context, SourceIndexLength sourceSection, RubyNode body) {
         super(context, sourceSection);
         this.body = body;
     }
