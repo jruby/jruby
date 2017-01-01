@@ -106,7 +106,7 @@ public class InlinedCoreMethodNode extends RubyNode {
         final RubyContext context = callParameters.getContext();
         // Let arguments to null as we need to execute the receiver ourselves to lookup the method
         final List<RubyNode> arguments = Arrays.asList(new RubyNode[1 + callParameters.getArguments().length]);
-        final InlinableBuiltin builtinNode = CoreMethodNodeManager.createNodeFromFactory(context, callParameters.getSection().toSourceSection(source), builtinFactory, arguments);
+        final InlinableBuiltin builtinNode = CoreMethodNodeManager.createNodeFromFactory(context, source, callParameters.getSection(), builtinFactory, arguments);
 
         return new InlinedCoreMethodNode(callParameters, method, builtinNode);
     }

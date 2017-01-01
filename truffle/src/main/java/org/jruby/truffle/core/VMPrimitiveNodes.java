@@ -100,7 +100,7 @@ public abstract class VMPrimitiveNodes {
 
         @Child private YieldNode dispatchNode;
 
-        public CatchNode(RubyContext context, SourceSection sourceSection) {
+        public CatchNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
             dispatchNode = new YieldNode(context);
         }
@@ -157,7 +157,7 @@ public abstract class VMPrimitiveNodes {
         @Child private CallDispatchHeadNode newArrayNode;
         @Child private CallDispatchHeadNode arrayAppendNode;
 
-        public VMExtendedModulesNode(RubyContext context, SourceSection sourceSection) {
+        public VMExtendedModulesNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
             newArrayNode = DispatchHeadNodeFactory.createMethodCall(context);
             arrayAppendNode = DispatchHeadNodeFactory.createMethodCall(context);
@@ -213,9 +213,9 @@ public abstract class VMPrimitiveNodes {
 
         @Child private LogicalClassNode classNode;
 
-        public VMObjectClassPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+        public VMObjectClassPrimitiveNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
-            classNode = LogicalClassNodeGen.create(context, new SourceIndexLength(sourceSection), null);
+            classNode = LogicalClassNodeGen.create(context, sourceSection, null);
         }
 
         @Specialization
@@ -241,9 +241,9 @@ public abstract class VMPrimitiveNodes {
 
         @Child private IsANode isANode;
 
-        public VMObjectKindOfPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+        public VMObjectKindOfPrimitiveNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
-            isANode = IsANodeGen.create(context, new SourceIndexLength(sourceSection), null, null);
+            isANode = IsANodeGen.create(context, sourceSection, null, null);
         }
 
         @Specialization
@@ -273,10 +273,10 @@ public abstract class VMPrimitiveNodes {
         @Child NameToJavaStringNode nameToJavaStringNode;
         @Child LookupMethodNode lookupMethodNode;
 
-        public VMMethodLookupNode(RubyContext context, SourceSection sourceSection) {
+        public VMMethodLookupNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
             nameToJavaStringNode = NameToJavaStringNode.create();
-            lookupMethodNode = LookupMethodNodeGen.create(context, new SourceIndexLength(sourceSection), true, false, null, null);
+            lookupMethodNode = LookupMethodNodeGen.create(context, sourceSection, true, false, null, null);
         }
 
         @Specialization
@@ -297,9 +297,9 @@ public abstract class VMPrimitiveNodes {
 
         @Child private KernelNodes.RespondToNode respondToNode;
 
-        public VMObjectRespondToPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+        public VMObjectRespondToPrimitiveNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
-            respondToNode = KernelNodesFactory.RespondToNodeFactory.create(context, sourceSection, null, null, null);
+            respondToNode = KernelNodesFactory.RespondToNodeFactory.create(context, null, null, null, null);
         }
 
         @Specialization
@@ -315,9 +315,9 @@ public abstract class VMPrimitiveNodes {
 
         @Child private KernelNodes.SingletonClassMethodNode singletonClassNode;
 
-        public VMObjectSingletonClassPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+        public VMObjectSingletonClassPrimitiveNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
-            singletonClassNode = KernelNodesFactory.SingletonClassMethodNodeFactory.create(context, sourceSection, null);
+            singletonClassNode = KernelNodesFactory.SingletonClassMethodNodeFactory.create(context, null, null);
         }
 
         @Specialization

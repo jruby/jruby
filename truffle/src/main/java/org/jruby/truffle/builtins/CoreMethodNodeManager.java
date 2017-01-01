@@ -14,6 +14,7 @@ import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.GeneratedBy;
 import com.oracle.truffle.api.dsl.NodeFactory;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
@@ -251,10 +252,10 @@ public class CoreMethodNodeManager {
             argumentsNodes.add(new ReadBlockNode(NotProvided.INSTANCE));
         }
 
-        return createNodeFromFactory(context, sourceSection, nodeFactory, argumentsNodes);
+        return createNodeFromFactory(context, sourceSection.getSource(), new SourceIndexLength(sourceSection), nodeFactory, argumentsNodes);
     }
 
-    public static <T> T createNodeFromFactory(RubyContext context, SourceSection sourceSection, NodeFactory<? extends T> nodeFactory, List<RubyNode> argumentsNodes) {
+    public static <T> T createNodeFromFactory(RubyContext context, Source source, SourceIndexLength sourceSection, NodeFactory<? extends T> nodeFactory, List<RubyNode> argumentsNodes) {
         final T methodNode;
         List<List<Class<?>>> signatures = nodeFactory.getNodeSignatures();
 
@@ -268,14 +269,28 @@ public class CoreMethodNodeManager {
             if (signature.size() == 1 && signature.get(0) == RubyNode[].class) {
                 methodNode = nodeFactory.createNode(new Object[] { argumentsArray });
             } else if (signature.size() >= 3 && signature.get(2) == RubyNode[].class) {
-                methodNode = nodeFactory.createNode(context, sourceSection, argumentsArray);
+                if (signature.get(1) == SourceSection.class) {
+                    methodNode = nodeFactory.createNode(context, sourceSection.toSourceSection(source), argumentsArray);
+                } else if (signature.get(1) == SourceIndexLength.class) {
+                    methodNode = nodeFactory.createNode(context, sourceSection, argumentsArray);
+                } else {
+                    throw new UnsupportedOperationException();
+                }
             } else if (signature.get(0) != RubyContext.class) {
                 Object[] args = argumentsArray;
                 methodNode = nodeFactory.createNode(args);
             } else {
                 Object[] args = new Object[2 + argumentsNodes.size()];
                 args[0] = context;
-                args[1] = sourceSection;
+
+                if (signature.get(1) == SourceSection.class) {
+                    args[1] = sourceSection.toSourceSection(source);
+                } else if (signature.get(1) == SourceIndexLength.class) {
+                    args[1] = sourceSection;
+                } else {
+                    throw new UnsupportedOperationException();
+                }
+
                 System.arraycopy(argumentsArray, 0, args, 2, argumentsNodes.size());
                 methodNode = nodeFactory.createNode(args);
             }

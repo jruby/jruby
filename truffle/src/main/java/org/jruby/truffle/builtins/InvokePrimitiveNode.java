@@ -14,6 +14,7 @@ import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 
 public class InvokePrimitiveNode extends RubyNode {
 
@@ -21,7 +22,7 @@ public class InvokePrimitiveNode extends RubyNode {
 
     private final ConditionProfile primitiveSucceededCondition = ConditionProfile.createBinaryProfile();
 
-    public InvokePrimitiveNode(RubyContext context, SourceSection sourceSection, RubyNode primitive) {
+    public InvokePrimitiveNode(RubyContext context, SourceIndexLength sourceSection, RubyNode primitive) {
         super(context, sourceSection);
         this.primitive = primitive;
     }

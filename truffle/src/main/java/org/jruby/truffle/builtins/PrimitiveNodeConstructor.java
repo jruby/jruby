@@ -10,11 +10,13 @@
 package org.jruby.truffle.builtins;
 
 import com.oracle.truffle.api.dsl.NodeFactory;
+import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.array.ArrayUtils;
 import org.jruby.truffle.core.numeric.FixnumLowerNodeGen;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.arguments.MissingArgumentBehavior;
 import org.jruby.truffle.language.arguments.ProfileArgumentNode;
 import org.jruby.truffle.language.arguments.ReadPreArgumentNode;
@@ -36,7 +38,7 @@ public class PrimitiveNodeConstructor {
         return factory.getExecutionSignature().size();
     }
 
-    public RubyNode createCallPrimitiveNode(RubyContext context, SourceSection sourceSection, RubyNode fallback) {
+    public RubyNode createCallPrimitiveNode(RubyContext context, Source source, SourceIndexLength sourceSection, RubyNode fallback) {
         int argumentsCount = getPrimitiveArity();
         final List<RubyNode> arguments = new ArrayList<>(argumentsCount);
 
@@ -51,18 +53,19 @@ public class PrimitiveNodeConstructor {
         }
 
         if (!CoreMethodNodeManager.isSafe(context, annotation.unsafe())) {
-            return new UnsafeNode(context, sourceSection);
+            return new UnsafeNode(context, sourceSection.toSourceSection(source));
         }
 
-        RubyNode primitiveNode = CoreMethodNodeManager.createNodeFromFactory(context, sourceSection, factory, arguments);
+        final RubyNode primitiveNode = CoreMethodNodeManager.createNodeFromFactory(context, source, sourceSection, factory, arguments);
+
         return new CallPrimitiveNode(context, sourceSection, primitiveNode, fallback);
     }
 
-    public RubyNode createInvokePrimitiveNode(RubyContext context, SourceSection sourceSection, RubyNode[] arguments) {
+    public RubyNode createInvokePrimitiveNode(RubyContext context, Source source, SourceIndexLength sourceSection, RubyNode[] arguments) {
         assert arguments.length == getPrimitiveArity();
 
         if (!CoreMethodNodeManager.isSafe(context, annotation.unsafe())) {
-            return new UnsafeNode(context, sourceSection);
+            return new UnsafeNode(context, sourceSection.toSourceSection(source));
         }
 
         for (int n = 0; n < arguments.length; n++) {
@@ -70,17 +73,21 @@ public class PrimitiveNodeConstructor {
             arguments[n] = transformArgument(arguments[n], nthArg);
         }
 
-        List<List<Class<?>>> signatures = factory.getNodeSignatures();
+        final List<List<Class<?>>> signatures = factory.getNodeSignatures();
 
         assert signatures.size() == 1;
-        List<Class<?>> signature = signatures.get(0);
+        final List<Class<?>> signature = signatures.get(0);
 
         final RubyNode primitiveNode;
-        if (signature.get(0) == RubyContext.class) {
+
+        if (signature.get(0) == RubyContext.class && signature.get(1) == SourceSection.class) {
+            primitiveNode = factory.createNode(context, sourceSection.toSourceSection(source), arguments);
+        } else if (signature.get(0) == RubyContext.class && signature.get(1) == SourceIndexLength.class) {
             primitiveNode = factory.createNode(context, sourceSection, arguments);
         } else {
             primitiveNode = factory.createNode(new Object[] { arguments });
         }
+
         return new InvokePrimitiveNode(context, sourceSection, primitiveNode);
     }
 

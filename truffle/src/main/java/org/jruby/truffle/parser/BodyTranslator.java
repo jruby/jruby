@@ -538,7 +538,7 @@ public class BodyTranslator extends Translator {
             if (methodName.equals("primitive")) {
                 throw new AssertionError("Invalid usage of Truffle.primitive at " + RubyLanguage.fileLine(fullSourceSection));
             } else if (methodName.equals("invoke_primitive")) {
-                final RubyNode ret = translateRubiniusInvokePrimitive(fullSourceSection, node);
+                final RubyNode ret = translateRubiniusInvokePrimitive(sourceSection, node);
                 return addNewlineIfNeeded(node, ret);
             } else if (methodName.equals("privately")) {
                 final RubyNode ret = translateRubiniusPrivately(fullSourceSection, node);
@@ -611,10 +611,10 @@ public class BodyTranslator extends Translator {
         fallbackNode = sequence(context, source, sourceSection, Arrays.asList(loadArguments, fallbackNode));
 
         final PrimitiveNodeConstructor primitive = context.getPrimitiveManager().getPrimitive(primitiveName);
-        return primitive.createCallPrimitiveNode(context, sourceSection.toSourceSection(source), fallbackNode);
+        return primitive.createCallPrimitiveNode(context, source, sourceSection, fallbackNode);
     }
 
-    private RubyNode translateRubiniusInvokePrimitive(SourceSection sourceSection, CallParseNode node) {
+    private RubyNode translateRubiniusInvokePrimitive(SourceIndexLength sourceSection, CallParseNode node) {
         /*
          * Translates something that looks like
          *
@@ -643,7 +643,7 @@ public class BodyTranslator extends Translator {
             arguments.add(readArgumentNode);
         }
 
-        return primitive.createInvokePrimitiveNode(context, sourceSection, arguments.toArray(new RubyNode[arguments.size()]));
+        return primitive.createInvokePrimitiveNode(context, source, sourceSection, arguments.toArray(new RubyNode[arguments.size()]));
     }
 
     private RubyNode translateRubiniusPrivately(SourceSection sourceSection, CallParseNode node) {

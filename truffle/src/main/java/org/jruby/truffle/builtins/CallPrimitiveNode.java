@@ -14,6 +14,7 @@ import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 
 public class CallPrimitiveNode extends RubyNode {
 
@@ -22,7 +23,7 @@ public class CallPrimitiveNode extends RubyNode {
 
     private final ConditionProfile successProfile = ConditionProfile.createBinaryProfile();
 
-    public CallPrimitiveNode(RubyContext context, SourceSection sourceSection, RubyNode primitive, RubyNode fallback) {
+    public CallPrimitiveNode(RubyContext context, SourceIndexLength sourceSection, RubyNode primitive, RubyNode fallback) {
         super(context, sourceSection);
         this.primitive = primitive;
         this.fallback = fallback;
