@@ -3281,7 +3281,7 @@ public abstract class StringNodes {
         @TruffleBoundary(throwsControlFlowException = true)
         @Specialization
         public Object stringToF(DynamicObject string, boolean strict,
-                                @Cached("create(getContext(), getSourceSection())") FixnumOrBignumNode fixnumOrBignumNode) {
+                                @Cached("create(getContext(), getRubySourceSection())") FixnumOrBignumNode fixnumOrBignumNode) {
             final Rope rope = rope(string);
             if (rope.isEmpty()) {
                 throw new RaiseException(coreExceptions().argumentError(coreStrings().INVALID_VALUE_FOR_FLOAT.getRope(), this));
@@ -4088,7 +4088,7 @@ public abstract class StringNodes {
         @TruffleBoundary
         @Specialization
         public Object stringToInum(DynamicObject string, int fixBase, boolean strict,
-                                   @Cached("create(getContext(), getSourceSection())") FixnumOrBignumNode fixnumOrBignumNode) {
+                                   @Cached("create(getContext(), getRubySourceSection())") FixnumOrBignumNode fixnumOrBignumNode) {
             return ConvertBytes.byteListToInum19(getContext(),
                     this,
                     fixnumOrBignumNode,

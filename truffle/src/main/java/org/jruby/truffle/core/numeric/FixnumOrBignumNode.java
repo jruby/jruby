@@ -15,6 +15,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.truffle.language.RubyBaseNode;
+import org.jruby.truffle.language.SourceIndexLength;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -24,7 +25,7 @@ public class FixnumOrBignumNode extends RubyBaseNode {
     private static final BigInteger LONG_MIN_BIGINT = BigInteger.valueOf(Long.MIN_VALUE);
     private static final BigInteger LONG_MAX_BIGINT = BigInteger.valueOf(Long.MAX_VALUE);
 
-    public static FixnumOrBignumNode create(RubyContext context, SourceSection sourceSection) {
+    public static FixnumOrBignumNode create(RubyContext context, SourceIndexLength sourceSection) {
         return new FixnumOrBignumNode(context, sourceSection);
     }
 
@@ -32,7 +33,7 @@ public class FixnumOrBignumNode extends RubyBaseNode {
         this(null, null);
     }
 
-    public FixnumOrBignumNode(RubyContext context, SourceSection sourceSection) {
+    public FixnumOrBignumNode(RubyContext context, SourceIndexLength sourceSection) {
         super(context, sourceSection);
     }
 

@@ -556,7 +556,7 @@ public abstract class FloatNodes {
 
         public CeilNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            fixnumOrBignum = new FixnumOrBignumNode(context, sourceSection);
+            fixnumOrBignum = new FixnumOrBignumNode(context, null);
         }
 
         @Specialization
@@ -573,7 +573,7 @@ public abstract class FloatNodes {
 
         public FloorNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            fixnumOrBignum = new FixnumOrBignumNode(context, sourceSection);
+            fixnumOrBignum = new FixnumOrBignumNode(context, null);
         }
 
         public abstract Object executeFloor(double n);
@@ -742,7 +742,7 @@ public abstract class FloatNodes {
 
         public ToINode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            fixnumOrBignum = new FixnumOrBignumNode(context, sourceSection);
+            fixnumOrBignum = new FixnumOrBignumNode(context, null);
         }
 
         public abstract Object executeToI(VirtualFrame frame, double value);

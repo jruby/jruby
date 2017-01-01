@@ -33,8 +33,8 @@ public class GeneralDivModNode extends RubyBaseNode {
 
     public GeneralDivModNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
-        fixnumOrBignumQuotient = new FixnumOrBignumNode(context, sourceSection);
-        fixnumOrBignumRemainder = new FixnumOrBignumNode(context, sourceSection);
+        fixnumOrBignumQuotient = new FixnumOrBignumNode(context, null);
+        fixnumOrBignumRemainder = new FixnumOrBignumNode(context, null);
     }
 
     public DynamicObject execute(long a, long b) {
