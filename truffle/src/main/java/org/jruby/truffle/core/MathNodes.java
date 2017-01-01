@@ -43,7 +43,6 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreClass;
@@ -393,9 +392,9 @@ public abstract class MathNodes {
 
         private final BranchProfile exceptionProfile = BranchProfile.create();
 
-        public LGammaNode(RubyContext context, SourceSection sourceSection) {
+        public LGammaNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
-            isANode = IsANodeGen.create(context, new SourceIndexLength(sourceSection), null, null);
+            isANode = IsANodeGen.create(context, sourceSection, null, null);
             toFNode = ToFNode.create();
         }
 
@@ -585,9 +584,9 @@ public abstract class MathNodes {
             this(null, null);
         }
 
-        protected SimpleMonadicMathNode(RubyContext context, SourceSection sourceSection) {
+        protected SimpleMonadicMathNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
-            isANode = IsANodeGen.create(context, new SourceIndexLength(sourceSection), null, null);
+            isANode = IsANodeGen.create(context, sourceSection, null, null);
             toFNode = ToFNode.create();
         }
 
@@ -641,9 +640,9 @@ public abstract class MathNodes {
             this(null, null);
         }
 
-        protected SimpleDyadicMathNode(RubyContext context, SourceSection sourceSection) {
+        protected SimpleDyadicMathNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
-            isANode = IsANodeGen.create(context, new SourceIndexLength(sourceSection), null, null);
+            isANode = IsANodeGen.create(context, sourceSection, null, null);
             floatANode = ToFNode.create();
             floatBNode = ToFNode.create();
         }
