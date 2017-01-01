@@ -15,12 +15,13 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 
 public class GetFromThreadLocalNode extends RubyNode {
 
     @Child private RubyNode value;
 
-    public GetFromThreadLocalNode(RubyContext context, SourceSection sourceSection, RubyNode value) {
+    public GetFromThreadLocalNode(RubyContext context, SourceIndexLength sourceSection, RubyNode value) {
         super(context, sourceSection);
         this.value = value;
     }

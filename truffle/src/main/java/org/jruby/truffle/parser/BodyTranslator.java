@@ -1697,7 +1697,7 @@ public class BodyTranslator extends Translator {
 
         if (name.equals("$~")) {
             rhs = new CheckMatchVariableTypeNode(context, sourceSection, rhs);
-            rhs = WrapInThreadLocalNodeGen.create(context, sourceSection.toSourceSection(source), rhs);
+            rhs = WrapInThreadLocalNodeGen.create(context, sourceSection, rhs);
 
             environment.declareVarInMethodScope("$~");
         } else if (name.equals("$0")) {
@@ -1710,7 +1710,7 @@ public class BodyTranslator extends Translator {
             if (getSourcePath(sourceSection).endsWith(buildPartialPath("truffle", "rubysl", "rubysl-stringio", "lib", "rubysl", "stringio", "stringio.rb"))) {
                 rhs = RubiniusLastStringWriteNodeGen.create(context, sourceSection.toSourceSection(source), rhs);
             } else {
-                rhs = WrapInThreadLocalNodeGen.create(context, sourceSection.toSourceSection(source), rhs);
+                rhs = WrapInThreadLocalNodeGen.create(context, sourceSection, rhs);
             }
 
             environment.declareVar("$_");
@@ -1731,7 +1731,7 @@ public class BodyTranslator extends Translator {
         }
 
         if (THREAD_LOCAL_GLOBAL_VARIABLES.contains(name)) {
-            final ThreadLocalObjectNode threadLocalVariablesObjectNode = ThreadLocalObjectNodeGen.create(context, fullSourceSection);
+            final ThreadLocalObjectNode threadLocalVariablesObjectNode = ThreadLocalObjectNodeGen.create(context, sourceSection);
             return addNewlineIfNeeded(node, new WriteInstanceVariableNode(context, sourceSection, name, threadLocalVariablesObjectNode, rhs));
         } else if (FRAME_LOCAL_GLOBAL_VARIABLES.contains(name)) {
             if (environment.getNeverAssignInParentScope()) {
@@ -1763,7 +1763,7 @@ public class BodyTranslator extends Translator {
 
             if (name.equals("$_") || name.equals("$~")) {
                 // TODO CS 4-Jan-16 I can't work out why this is a *get* node
-                assignment = new GetFromThreadLocalNode(context, fullSourceSection, assignment);
+                assignment = new GetFromThreadLocalNode(context, sourceSection, assignment);
             }
 
             return addNewlineIfNeeded(node, assignment);
@@ -1811,10 +1811,10 @@ public class BodyTranslator extends Translator {
                 if (getSourcePath(sourceSection).equals(corePath() + "regexp.rb")) {
                     readNode = new RubiniusLastStringReadNode(context, fullSourceSection);
                 } else {
-                    readNode = new GetFromThreadLocalNode(context, fullSourceSection, readNode);
+                    readNode = new GetFromThreadLocalNode(context, sourceSection, readNode);
                 }
             } else if (name.equals("$~")) {
-                readNode = new GetFromThreadLocalNode(context, fullSourceSection, readNode);
+                readNode = new GetFromThreadLocalNode(context, sourceSection, readNode);
             }
 
             ret = readNode;
@@ -2549,11 +2549,10 @@ public class BodyTranslator extends Translator {
     @Override
     public RubyNode visitNthRefNode(NthRefParseNode node) {
         final SourceIndexLength sourceSection = node.getPosition();
-        final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
         environment.declareVarInMethodScope("$~");
 
-        final GetFromThreadLocalNode readMatchNode = new GetFromThreadLocalNode(context, fullSourceSection, environment.findLocalVarNode("$~", source, sourceSection));
+        final GetFromThreadLocalNode readMatchNode = new GetFromThreadLocalNode(context, sourceSection, environment.findLocalVarNode("$~", source, sourceSection));
         final RubyNode ret = new ReadMatchReferenceNode(context, sourceSection, readMatchNode, node.getMatchNumber());
 
         return addNewlineIfNeeded(node, ret);
@@ -3301,11 +3300,10 @@ public class BodyTranslator extends Translator {
         }
 
         final SourceIndexLength sourceSection = node.getPosition();
-        final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
         environment.declareVarInMethodScope("$~");
 
-        final GetFromThreadLocalNode readMatchNode = new GetFromThreadLocalNode(context, fullSourceSection, environment.findLocalVarNode("$~", source, sourceSection));
+        final GetFromThreadLocalNode readMatchNode = new GetFromThreadLocalNode(context, sourceSection, environment.findLocalVarNode("$~", source, sourceSection));
         final RubyNode ret = new ReadMatchReferenceNode(context, sourceSection, readMatchNode, index);
 
         return addNewlineIfNeeded(node, ret);

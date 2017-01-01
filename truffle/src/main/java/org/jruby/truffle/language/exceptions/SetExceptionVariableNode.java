@@ -56,7 +56,7 @@ public class SetExceptionVariableNode extends Node {
     private DynamicObject getThreadLocalsObject(VirtualFrame frame) {
         if (threadLocalNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            threadLocalNode = insert(ThreadLocalObjectNodeGen.create(context, getEncapsulatingSourceSection()));
+            threadLocalNode = insert(ThreadLocalObjectNodeGen.create(context, null));
         }
 
         return threadLocalNode.executeDynamicObject(frame);

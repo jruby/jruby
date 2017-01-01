@@ -17,10 +17,11 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 
 public abstract class ThreadLocalObjectNode extends RubyNode {
 
-    public ThreadLocalObjectNode(RubyContext context, SourceSection sourceSection) {
+    public ThreadLocalObjectNode(RubyContext context, SourceIndexLength sourceSection) {
         super(context, sourceSection);
     }
 
