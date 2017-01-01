@@ -190,7 +190,7 @@ public class CoreMethodNodeManager {
         final SourceSection sourceSection = sharedMethodInfo.getSourceSection();
         final SourceIndexLength sourceIndexLength = new SourceIndexLength(sourceSection.getCharIndex(), sourceSection.getCharLength());
 
-        final RubyNode methodNode = createCoreMethodNode(context, sourceSection, methodDetails.getNodeFactory(), method);
+        final RubyNode methodNode = createCoreMethodNode(context, sourceSection.getSource(), sourceIndexLength, methodDetails.getNodeFactory(), method);
 
         if (CHECK_DSL_USAGE) {
             AmbiguousOptionalArgumentChecker.verifyNoAmbiguousOptionalArguments(methodDetails);
@@ -200,7 +200,7 @@ public class CoreMethodNodeManager {
 
         RubyNode node;
         if (!isSafe(context, method.unsafe())) {
-            node = new UnsafeNode(context, sourceSection);
+            node = new UnsafeNode(context, sourceIndexLength);
         } else {
             node = Translator.sequence(context, sourceSection.getSource(), sourceIndexLength, Arrays.asList(checkArity, methodNode));
             node = transformResult(method, node);
@@ -217,7 +217,7 @@ public class CoreMethodNodeManager {
         return Truffle.getRuntime().createCallTarget(rootNode);
     }
 
-    public static RubyNode createCoreMethodNode(RubyContext context, SourceSection sourceSection, NodeFactory<? extends RubyNode> nodeFactory, CoreMethod method) {
+    public static RubyNode createCoreMethodNode(RubyContext context, Source source, SourceIndexLength sourceSection, NodeFactory<? extends RubyNode> nodeFactory, CoreMethod method) {
         final List<RubyNode> argumentsNodes = new ArrayList<>();
 
         if (method.needsCallerFrame()) {
@@ -228,7 +228,7 @@ public class CoreMethodNodeManager {
 
         if (needsSelf) {
             RubyNode readSelfNode = new ProfileArgumentNode(new ReadSelfNode());
-            argumentsNodes.add(transformArgument(context, sourceSection, method, readSelfNode, 0));
+            argumentsNodes.add(transformArgument(context, source, sourceSection, method, readSelfNode, 0));
         }
 
         final int required = method.required();
@@ -241,7 +241,7 @@ public class CoreMethodNodeManager {
 
         for (int n = 0; n < nArgs; n++) {
             RubyNode readArgumentNode = new ProfileArgumentNode(new ReadPreArgumentNode(n, MissingArgumentBehavior.UNDEFINED));
-            argumentsNodes.add(transformArgument(context, sourceSection, method, readArgumentNode, n + 1));
+            argumentsNodes.add(transformArgument(context, source, sourceSection, method, readArgumentNode, n + 1));
         }
 
         if (method.rest()) {
@@ -252,7 +252,7 @@ public class CoreMethodNodeManager {
             argumentsNodes.add(new ReadBlockNode(NotProvided.INSTANCE));
         }
 
-        return createNodeFromFactory(context, sourceSection.getSource(), new SourceIndexLength(sourceSection), nodeFactory, argumentsNodes);
+        return createNodeFromFactory(context, source, sourceSection, nodeFactory, argumentsNodes);
     }
 
     public static <T> T createNodeFromFactory(RubyContext context, Source source, SourceIndexLength sourceSection, NodeFactory<? extends T> nodeFactory, List<RubyNode> argumentsNodes) {
@@ -305,13 +305,13 @@ public class CoreMethodNodeManager {
         return method.constructor() || (!method.isModuleFunction() && !method.onSingleton() && method.needsSelf());
     }
 
-    private static RubyNode transformArgument(RubyContext context, SourceSection sourceSection, CoreMethod method, RubyNode argument, int n) {
+    private static RubyNode transformArgument(RubyContext context, Source source, SourceIndexLength sourceSection, CoreMethod method, RubyNode argument, int n) {
         if (ArrayUtils.contains(method.lowerFixnum(), n)) {
             argument = FixnumLowerNodeGen.create(null, null, argument);
         }
 
         if (n == 0 && method.raiseIfFrozenSelf()) {
-            argument = new RaiseIfFrozenNode(context, sourceSection, argument);
+            argument = new RaiseIfFrozenNode(context, sourceSection.toSourceSection(source), argument);
         }
 
         return argument;

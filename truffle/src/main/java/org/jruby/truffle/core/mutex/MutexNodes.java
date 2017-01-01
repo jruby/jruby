@@ -28,6 +28,7 @@ import org.jruby.truffle.builtins.UnaryCoreMethodNode;
 import org.jruby.truffle.core.cast.DurationToMillisecondsNodeGen;
 import org.jruby.truffle.core.kernel.KernelNodes;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 
 import java.util.concurrent.locks.ReentrantLock;
@@ -40,7 +41,7 @@ public abstract class MutexNodes {
 
         @Child private AllocateObjectNode allocateNode;
 
-        public AllocateNode(RubyContext context, SourceSection sourceSection) {
+        public AllocateNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
             allocateNode = AllocateObjectNode.create();
         }
