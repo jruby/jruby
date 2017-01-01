@@ -1295,7 +1295,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitDStrNode(DStrParseNode node) {
-        final RubyNode ret = translateInterpolatedString(node.getPosition().toSourceSection(source), node.children());
+        final RubyNode ret = translateInterpolatedString(node.getPosition(), node.children());
         return addNewlineIfNeeded(node, ret);
     }
 
@@ -1304,17 +1304,17 @@ public class BodyTranslator extends Translator {
         SourceIndexLength sourceSection = node.getPosition();
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
-        final RubyNode stringNode = translateInterpolatedString(fullSourceSection, node.children());
+        final RubyNode stringNode = translateInterpolatedString(sourceSection, node.children());
 
         final RubyNode ret = StringToSymbolNodeGen.create(context, fullSourceSection, stringNode);
         return addNewlineIfNeeded(node, ret);
     }
 
-    private RubyNode translateInterpolatedString(SourceSection sourceSection, ParseNode[] childNodes) {
+    private RubyNode translateInterpolatedString(SourceIndexLength sourceSection, ParseNode[] childNodes) {
         final ToSNode[] children = new ToSNode[childNodes.length];
 
         for (int i = 0; i < childNodes.length; i++) {
-            children[i] = ToSNodeGen.create(context, sourceSection, childNodes[i].accept(this));
+            children[i] = ToSNodeGen.create(context, sourceSection.toSourceSection(source), childNodes[i].accept(this));
         }
 
         return new InterpolatedStringNode(context, sourceSection, children);
