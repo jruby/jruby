@@ -23,6 +23,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.methods.DeclarationContext;
 
@@ -36,7 +37,7 @@ public abstract class CallBlockNode extends RubyNode {
 
     private final DeclarationContext declarationContext;
 
-    public CallBlockNode(RubyContext context, SourceSection sourceSection, DeclarationContext declarationContext) {
+    public CallBlockNode(RubyContext context, SourceIndexLength sourceSection, DeclarationContext declarationContext) {
         super(context, sourceSection);
         this.declarationContext = declarationContext;
     }

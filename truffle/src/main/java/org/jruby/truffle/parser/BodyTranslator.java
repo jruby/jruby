@@ -3266,7 +3266,7 @@ public class BodyTranslator extends Translator {
 
         final RubyNode[] argumentsTranslatedArray = argumentsTranslated.toArray(new RubyNode[argumentsTranslated.size()]);
 
-        final RubyNode ret = new YieldExpressionNode(context, node.getPosition().toSourceSection(source), unsplat, argumentsTranslatedArray);
+        final RubyNode ret = new YieldExpressionNode(context, node.getPosition(), unsplat, argumentsTranslatedArray);
         return addNewlineIfNeeded(node, ret);
     }
 

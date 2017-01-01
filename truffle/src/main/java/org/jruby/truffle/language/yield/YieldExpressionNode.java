@@ -19,6 +19,7 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.array.ArrayToObjectArrayNode;
 import org.jruby.truffle.core.array.ArrayToObjectArrayNodeGen;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.control.RaiseException;
 
@@ -33,7 +34,7 @@ public class YieldExpressionNode extends RubyNode {
     private final BranchProfile useCapturedBlock = BranchProfile.create();
     private final BranchProfile noCapturedBlock = BranchProfile.create();
 
-    public YieldExpressionNode(RubyContext context, SourceSection sourceSection,
+    public YieldExpressionNode(RubyContext context, SourceIndexLength sourceSection,
                                boolean unsplat, RubyNode[] arguments) {
         super(context, sourceSection);
         this.unsplat = unsplat;
