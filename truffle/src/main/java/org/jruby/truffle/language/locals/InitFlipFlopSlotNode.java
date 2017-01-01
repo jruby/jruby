@@ -14,12 +14,13 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 
 public class InitFlipFlopSlotNode extends RubyNode {
 
     private final FrameSlot frameSlot;
 
-    public InitFlipFlopSlotNode(RubyContext context, SourceSection sourceSection,
+    public InitFlipFlopSlotNode(RubyContext context, SourceIndexLength sourceSection,
                                 FrameSlot frameSlot) {
         super(context, sourceSection);
         this.frameSlot = frameSlot;

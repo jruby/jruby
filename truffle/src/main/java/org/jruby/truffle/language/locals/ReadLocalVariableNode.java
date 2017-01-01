@@ -15,6 +15,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.parser.ReadLocalNode;
 
 public class ReadLocalVariableNode extends ReadLocalNode {
@@ -24,7 +25,7 @@ public class ReadLocalVariableNode extends ReadLocalNode {
 
     @Child private ReadFrameSlotNode readFrameSlotNode;
 
-    public ReadLocalVariableNode(RubyContext context, SourceSection sourceSection, LocalVariableType type, FrameSlot frameSlot) {
+    public ReadLocalVariableNode(RubyContext context, SourceIndexLength sourceSection, LocalVariableType type, FrameSlot frameSlot) {
         super(context, sourceSection);
         this.type = type;
         this.frameSlot = frameSlot;

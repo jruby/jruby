@@ -12,10 +12,11 @@ package org.jruby.truffle.parser;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 
 public abstract class ReadLocalNode extends RubyNode {
 
-    public ReadLocalNode(RubyContext context, SourceSection sourceSection) {
+    public ReadLocalNode(RubyContext context, SourceIndexLength sourceSection) {
         super(context, sourceSection);
     }
 

@@ -1517,7 +1517,7 @@ public class BodyTranslator extends Translator {
 
         final FlipFlopStateNode stateNode = createFlipFlopState(sourceSection, 0);
 
-        final RubyNode ret = new FlipFlopNode(context, sourceSection.toSourceSection(source), begin, end, stateNode, node.isExclusive());
+        final RubyNode ret = new FlipFlopNode(context, sourceSection, begin, end, stateNode, node.isExclusive());
         return addNewlineIfNeeded(node, ret);
     }
 
@@ -3318,7 +3318,7 @@ public class BodyTranslator extends Translator {
         final RubyNode[] initNodes = new RubyNode[environment.getFlipFlopStates().size()];
 
         for (int n = 0; n < initNodes.length; n++) {
-            initNodes[n] = new InitFlipFlopSlotNode(context, sourceSection.toSourceSection(source), environment.getFlipFlopStates().get(n));
+            initNodes[n] = new InitFlipFlopSlotNode(context, sourceSection, environment.getFlipFlopStates().get(n));
         }
 
         return sequence(context, source, sourceSection, Arrays.asList(initNodes));
@@ -3360,7 +3360,7 @@ public class BodyTranslator extends Translator {
     public RubyNode visitOther(ParseNode node) {
         if (node instanceof ReadLocalDummyParseNode) {
             final ReadLocalDummyParseNode readLocal = (ReadLocalDummyParseNode) node;
-            final RubyNode ret = new ReadLocalVariableNode(context, readLocal.getSourceSection(), LocalVariableType.FRAME_LOCAL, readLocal.getFrameSlot());
+            final RubyNode ret = new ReadLocalVariableNode(context, new SourceIndexLength(readLocal.getSourceSection()), LocalVariableType.FRAME_LOCAL, readLocal.getFrameSlot());
             return addNewlineIfNeeded(node, ret);
         } else {
             throw new UnsupportedOperationException();

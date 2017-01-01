@@ -154,9 +154,9 @@ public class TranslatorEnvironment {
                     }
 
                     if (level == 0) {
-                        return new ReadLocalVariableNode(context, sourceSection.toSourceSection(source), type, slot);
+                        return new ReadLocalVariableNode(context, sourceSection, type, slot);
                     } else {
-                        return new ReadDeclarationVariableNode(context, sourceSection.toSourceSection(source), type, level, slot);
+                        return new ReadDeclarationVariableNode(context, sourceSection, type, level, slot);
                     }
                 }
 

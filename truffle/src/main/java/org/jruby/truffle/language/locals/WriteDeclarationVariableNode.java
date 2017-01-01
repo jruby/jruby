@@ -35,14 +35,6 @@ public class WriteDeclarationVariableNode extends RubyNode {
         this.valueNode = valueNode;
     }
 
-    public WriteDeclarationVariableNode(RubyContext context, SourceSection sourceSection,
-                                        FrameSlot frameSlot, int frameDepth, RubyNode valueNode) {
-        super(context, sourceSection);
-        this.frameDepth = frameDepth;
-        this.frameSlot = frameSlot;
-        this.valueNode = valueNode;
-    }
-
     @Override
     public Object execute(VirtualFrame frame) {
         if (writeFrameSlotNode == null) {
