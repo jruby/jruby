@@ -710,9 +710,9 @@ public abstract class StringNodes {
 
         @Child private EncodingNodes.NegotiateCompatibleEncodingNode negotiateCompatibleEncodingNode;
 
-        public CaseCmpNode(RubyContext context, SourceSection sourceSection) {
+        public CaseCmpNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
-            negotiateCompatibleEncodingNode = EncodingNodesFactory.NegotiateCompatibleEncodingNodeGen.create(context, sourceSection, null, null);
+            negotiateCompatibleEncodingNode = EncodingNodesFactory.NegotiateCompatibleEncodingNodeGen.create(context, null, null, null);
         }
 
         @CreateCast("other") public RubyNode coerceOtherToString(RubyNode other) {
@@ -760,10 +760,10 @@ public abstract class StringNodes {
         @Child private EncodingNodes.CheckEncodingNode checkEncodingNode;
         @Child private ToStrNode toStr;
 
-        public CountNode(RubyContext context, SourceSection sourceSection) {
+        public CountNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
-            checkEncodingNode = EncodingNodesFactory.CheckEncodingNodeGen.create(context, sourceSection, null, null);
-            toStr = ToStrNodeGen.create(context, sourceSection, null);
+            checkEncodingNode = EncodingNodesFactory.CheckEncodingNodeGen.create(context, null, null, null);
+            toStr = ToStrNodeGen.create(context, null, null);
         }
 
         @Specialization(guards = "isEmpty(string)")
@@ -873,10 +873,10 @@ public abstract class StringNodes {
         @Child private EncodingNodes.CheckEncodingNode checkEncodingNode;
         @Child private ToStrNode toStr;
 
-        public DeleteBangNode(RubyContext context, SourceSection sourceSection) {
+        public DeleteBangNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
-            checkEncodingNode = EncodingNodesFactory.CheckEncodingNodeGen.create(context, sourceSection, null, null);
-            toStr = ToStrNodeGen.create(context, sourceSection, null);
+            checkEncodingNode = EncodingNodesFactory.CheckEncodingNodeGen.create(context, null, null, null);
+            toStr = ToStrNodeGen.create(context, null, null);
         }
 
         public abstract DynamicObject executeDeleteBang(VirtualFrame frame, DynamicObject string, Object[] args);
@@ -2785,7 +2785,7 @@ public abstract class StringNodes {
 
         @Child private NormalizeIndexNode normalizeIndexNode;
 
-        public StringCompareSubstringPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+        public StringCompareSubstringPrimitiveNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
             normalizeIndexNode = StringNodesFactory.NormalizeIndexNodeGen.create(null, null);
         }
@@ -3879,7 +3879,7 @@ public abstract class StringNodes {
         @Child private RopeNodes.MakeLeafRopeNode makeLeafRopeNode;
         @Child private RopeNodes.MakeRepeatingNode makeRepeatingNode;
 
-        public StringPatternPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+        public StringPatternPrimitiveNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
             allocateObjectNode = AllocateObjectNode.create();
             makeLeafRopeNode = RopeNodes.MakeLeafRopeNode.create();
@@ -4144,7 +4144,7 @@ public abstract class StringNodes {
         @Child private RopeNodes.MakeSubstringNode makeSubstringNode;
         @Child private TaintResultNode taintResultNode;
 
-        public StringSubstringPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+        public StringSubstringPrimitiveNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
             normalizeIndexNode = StringNodesFactory.NormalizeIndexNodeGen.create(null, null);
         }
