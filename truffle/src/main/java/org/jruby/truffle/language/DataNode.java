@@ -22,7 +22,7 @@ public class DataNode extends RubyNode {
 
     private final int endPosition;
 
-    public DataNode(RubyContext context, SourceSection sourceSection, int endPosition) {
+    public DataNode(RubyContext context, SourceIndexLength sourceSection, int endPosition) {
         super(context, sourceSection);
         this.endPosition = endPosition;
     }

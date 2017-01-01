@@ -249,7 +249,7 @@ public class TranslatorDriver {
 
             if (node.hasEndPosition()) {
                 truffleNode = Translator.sequence(context, source, sourceIndexLength, Arrays.asList(
-                        new DataNode(context, sourceSection, node.getEndPosition()),
+                        new DataNode(context, sourceIndexLength, node.getEndPosition()),
                         truffleNode));
             }
 
