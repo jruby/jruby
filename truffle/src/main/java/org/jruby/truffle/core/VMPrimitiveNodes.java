@@ -256,7 +256,7 @@ public abstract class VMPrimitiveNodes {
     @Primitive(name = "vm_method_is_basic", needsSelf = false)
     public static abstract class VMMethodIsBasicNode extends PrimitiveArrayArgumentsNode {
 
-        public VMMethodIsBasicNode(RubyContext context, SourceSection sourceSection) {
+        public VMMethodIsBasicNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
         }
 
@@ -329,7 +329,8 @@ public abstract class VMPrimitiveNodes {
 
     @Primitive(name = "vm_raise_exception", needsSelf = false)
     public static abstract class VMRaiseExceptionPrimitiveNode extends PrimitiveArrayArgumentsNode {
-        public VMRaiseExceptionPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+
+        public VMRaiseExceptionPrimitiveNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
         }
 

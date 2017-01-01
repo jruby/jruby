@@ -16,10 +16,11 @@ import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.binding.BindingNodes;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 
 public class SetTopLevelBindingNode extends RubyNode {
 
-    public SetTopLevelBindingNode(RubyContext context, SourceSection sourceSection) {
+    public SetTopLevelBindingNode(RubyContext context, SourceIndexLength sourceSection) {
         super(context, sourceSection);
     }
 

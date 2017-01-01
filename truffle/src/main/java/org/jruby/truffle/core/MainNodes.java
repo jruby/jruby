@@ -19,6 +19,7 @@ import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.core.module.ModuleNodes;
 import org.jruby.truffle.core.module.ModuleNodesFactory;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.Visibility;
 
 @CoreClass("main")
@@ -29,9 +30,9 @@ public abstract class MainNodes {
 
         @Child private ModuleNodes.PublicNode publicNode;
 
-        public PublicNode(RubyContext context, SourceSection sourceSection) {
+        public PublicNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
-            publicNode = ModuleNodesFactory.PublicNodeFactory.create(context, sourceSection, null);
+            publicNode = ModuleNodesFactory.PublicNodeFactory.create(context, null, null);
         }
 
         @Specialization
@@ -46,9 +47,9 @@ public abstract class MainNodes {
 
         @Child private ModuleNodes.PrivateNode privateNode;
 
-        public PrivateNode(RubyContext context, SourceSection sourceSection) {
+        public PrivateNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
-            privateNode = ModuleNodesFactory.PrivateNodeFactory.create(context, sourceSection, null);
+            privateNode = ModuleNodesFactory.PrivateNodeFactory.create(context, null, null);
         }
 
         @Specialization

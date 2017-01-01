@@ -25,6 +25,7 @@ import org.jruby.truffle.builtins.CoreMethodNode;
 import org.jruby.truffle.core.cast.DefaultValueNodeGen;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.platform.posix.ClockGetTime;
 import org.jruby.truffle.platform.posix.TimeSpec;
@@ -52,7 +53,7 @@ public abstract class ProcessNodes {
         private final DynamicObject floatMicrosecondSymbol = getSymbol("float_microsecond");
         private final DynamicObject nanosecondSymbol = getSymbol("nanosecond");
 
-        public ClockGetTimeNode(RubyContext context, SourceSection sourceSection) {
+        public ClockGetTimeNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
         }
 

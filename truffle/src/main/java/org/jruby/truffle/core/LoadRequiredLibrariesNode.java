@@ -15,6 +15,7 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
@@ -24,7 +25,7 @@ public class LoadRequiredLibrariesNode extends RubyNode {
 
     @Child CallDispatchHeadNode requireNode;
 
-    public LoadRequiredLibrariesNode(RubyContext context, SourceSection sourceSection) {
+    public LoadRequiredLibrariesNode(RubyContext context, SourceIndexLength sourceSection) {
         super(context, sourceSection);
         requireNode = DispatchHeadNodeFactory.createMethodCallOnSelf(context);
     }

@@ -566,7 +566,7 @@ public class BodyTranslator extends Translator {
                 && getSourcePath(sourceSection).startsWith(corePath())
                 && methodName.equals("equal?")) {
             RubyNode argument = translateArgumentsAndBlock(sourceSection, null, node.getArgsNode(), methodName).getArguments()[0];
-            final RubyNode ret = new IsRubiniusUndefinedNode(context, fullSourceSection, argument);
+            final RubyNode ret = new IsRubiniusUndefinedNode(context, sourceSection, argument);
             return addNewlineIfNeeded(node, ret);
         }
 
@@ -2678,7 +2678,7 @@ public class BodyTranslator extends Translator {
         if (node.isLazy()) {
             ReadLocalNode readLocal = environment.findLocalVarNode(temp, source, sourceSection);
             body = new IfNode(
-                    new NotNode(new IsNilNode(context, fullSourceSection, readLocal)),
+                    new NotNode(new IsNilNode(context, sourceSection, readLocal)),
                     body);
             body.unsafeSetSourceSection(sourceSection);
         }

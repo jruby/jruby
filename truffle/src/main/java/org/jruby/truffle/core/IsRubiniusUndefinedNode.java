@@ -14,12 +14,13 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 
 public class IsRubiniusUndefinedNode extends RubyNode {
 
     @Child private RubyNode child;
 
-    public IsRubiniusUndefinedNode(RubyContext context, SourceSection sourceSection, RubyNode child) {
+    public IsRubiniusUndefinedNode(RubyContext context, SourceIndexLength sourceSection, RubyNode child) {
         super(context, sourceSection);
         this.child = child;
     }

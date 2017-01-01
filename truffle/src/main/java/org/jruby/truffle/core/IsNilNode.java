@@ -13,12 +13,13 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 
 public class IsNilNode extends RubyNode {
 
     @Child private RubyNode child;
 
-    public IsNilNode(RubyContext context, SourceSection sourceSection, RubyNode child) {
+    public IsNilNode(RubyContext context, SourceIndexLength sourceSection, RubyNode child) {
         super(context, sourceSection);
         this.child = child;
     }
