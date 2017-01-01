@@ -33,6 +33,7 @@ import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.core.time.GetTimeZoneNode;
 import org.jruby.truffle.extra.ffi.PointerPrimitiveNodes;
 import org.jruby.truffle.language.SnippetNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.platform.UnsafeGroup;
 import org.jruby.truffle.platform.signal.Signal;
@@ -116,7 +117,6 @@ public abstract class TrufflePosixNodes {
 
     }
 
-
     @CoreMethod(names = "fsync", isModuleFunction = true, required = 1, lowerFixnum = 1, unsafe = UnsafeGroup.IO)
     public abstract static class FsyncNode extends CoreMethodArrayArgumentsNode {
 
@@ -127,7 +127,6 @@ public abstract class TrufflePosixNodes {
         }
 
     }
-
 
     @CoreMethod(names = "fchown", isModuleFunction = true, required = 3, lowerFixnum = {1, 2, 3}, unsafe = UnsafeGroup.IO)
     public abstract static class FchownNode extends CoreMethodArrayArgumentsNode {
@@ -585,13 +584,6 @@ public abstract class TrufflePosixNodes {
 
     @CoreMethod(names = "getcwd", isModuleFunction = true, unsafe = UnsafeGroup.IO)
     public abstract static class GetcwdNode extends CoreMethodArrayArgumentsNode {
-
-        @Child private RopeNodes.MakeLeafRopeNode makeLeafRopeNode;
-
-        public GetcwdNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            makeLeafRopeNode = RopeNodesFactory.MakeLeafRopeNodeGen.create(null, null, null, null);
-        }
 
         @TruffleBoundary
         @Specialization

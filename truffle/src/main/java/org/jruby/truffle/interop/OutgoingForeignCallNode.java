@@ -30,6 +30,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.Log;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.JavaException;
 
 @NodeChildren({
@@ -42,7 +43,7 @@ public abstract class OutgoingForeignCallNode extends RubyNode {
 
     private final String name;
 
-    public OutgoingForeignCallNode(RubyContext context, SourceSection sourceSection, String name) {
+    public OutgoingForeignCallNode(RubyContext context, SourceIndexLength sourceSection, String name) {
         super(context, sourceSection);
         this.name = name;
     }

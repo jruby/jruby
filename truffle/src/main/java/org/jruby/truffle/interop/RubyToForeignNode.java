@@ -20,12 +20,13 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.cast.NameToJavaStringNode;
 import org.jruby.truffle.core.string.StringCachingGuards;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 
 @ImportStatic(StringCachingGuards.class)
 @NodeChild(value = "value", type = RubyNode.class)
 public abstract class RubyToForeignNode extends RubyNode {
 
-    public RubyToForeignNode(RubyContext context, SourceSection sourceSection) {
+    public RubyToForeignNode(RubyContext context, SourceIndexLength sourceSection) {
         super(context, sourceSection);
     }
 

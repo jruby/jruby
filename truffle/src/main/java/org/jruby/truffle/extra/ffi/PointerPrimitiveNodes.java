@@ -28,6 +28,7 @@ import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeConstants;
 import org.jruby.truffle.core.string.ByteList;
 import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.platform.RubiniusTypes;
 import org.jruby.truffle.platform.UnsafeGroup;
@@ -40,7 +41,7 @@ public abstract class PointerPrimitiveNodes {
 
         @Child private AllocateObjectNode allocateObjectNode;
 
-        public PointerAllocatePrimitiveNode(RubyContext context, SourceSection sourceSection) {
+        public PointerAllocatePrimitiveNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
             allocateObjectNode = AllocateObjectNode.create();
         }
@@ -57,7 +58,7 @@ public abstract class PointerPrimitiveNodes {
 
         @Child private AllocateObjectNode allocateObjectNode;
 
-        public PointerMallocPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+        public PointerMallocPrimitiveNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
             allocateObjectNode = AllocateObjectNode.create();
         }
@@ -108,7 +109,7 @@ public abstract class PointerPrimitiveNodes {
 
         @Child private AllocateObjectNode allocateObjectNode;
 
-        public PointerAddPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+        public PointerAddPrimitiveNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
             allocateObjectNode = AllocateObjectNode.create();
         }
@@ -197,7 +198,7 @@ public abstract class PointerPrimitiveNodes {
 
         @Child private AllocateObjectNode allocateObjectNode;
 
-        public PointerReadPointerPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+        public PointerReadPointerPrimitiveNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
             allocateObjectNode = AllocateObjectNode.create();
         }
