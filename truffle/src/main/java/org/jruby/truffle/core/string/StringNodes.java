@@ -78,7 +78,6 @@ import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.profiles.ConditionProfile;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.Encoding;
 import org.jcodings.exception.EncodingException;
 import org.jcodings.specific.ASCIIEncoding;
@@ -2662,16 +2661,16 @@ public abstract class StringNodes {
         @Child private RopeNodes.MakeSubstringNode makeSubstringNode;
         @Child private TaintResultNode taintResultNode;
 
-        public static StringByteSubstringPrimitiveNode create(RubyContext context, SourceSection sourceSection) {
+        public static StringByteSubstringPrimitiveNode create(RubyContext context, SourceIndexLength sourceSection) {
             return StringNodesFactory.StringByteSubstringPrimitiveNodeFactory.create(context, null, null, null, null);
         }
 
-        public StringByteSubstringPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+        public StringByteSubstringPrimitiveNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
             allocateObjectNode = AllocateObjectNode.create();
             makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
             normalizeIndexNode = StringNodesFactory.NormalizeIndexNodeGen.create(null, null);
-            taintResultNode = new TaintResultNode(context, sourceSection);
+            taintResultNode = new TaintResultNode(context, null);
         }
 
         @CreateCast("index") public RubyNode coerceIndexToInt(RubyNode index) {
@@ -2749,13 +2748,13 @@ public abstract class StringNodes {
 
         @Specialization(guards = { "!indexOutOfBounds(string, byteIndex)", "isSingleByteOptimizable(string)" })
         public Object stringChrAtSingleByte(DynamicObject string, int byteIndex,
-                                            @Cached("create(getContext(), getSourceSection())") StringByteSubstringPrimitiveNode stringByteSubstringNode) {
+                                            @Cached("create(getContext(), getRubySourceSection())") StringByteSubstringPrimitiveNode stringByteSubstringNode) {
             return stringByteSubstringNode.executeStringByteSubstring(string, byteIndex, 1);
         }
 
         @Specialization(guards = { "!indexOutOfBounds(string, byteIndex)", "!isSingleByteOptimizable(string)" })
         public Object stringChrAt(DynamicObject string, int byteIndex,
-                                  @Cached("create(getContext(), getSourceSection())") StringByteSubstringPrimitiveNode stringByteSubstringNode) {
+                                  @Cached("create(getContext(), getRubySourceSection())") StringByteSubstringPrimitiveNode stringByteSubstringNode) {
             // Taken from Rubinius's Character::create_from.
 
             final Rope rope = rope(string);
