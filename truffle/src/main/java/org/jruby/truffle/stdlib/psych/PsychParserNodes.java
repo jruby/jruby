@@ -69,6 +69,7 @@ import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.SnippetNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DoesRespondDispatchHeadNode;
 import org.jruby.truffle.language.objects.ReadObjectFieldNode;
@@ -108,7 +109,7 @@ public abstract class PsychParserNodes {
 
         @Node.Child private ToStrNode toStrNode;
 
-        public ParseNode(RubyContext context, SourceSection sourceSection) {
+        public ParseNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
             toStrNode = ToStrNodeGen.create(getContext(), null, null);
         }

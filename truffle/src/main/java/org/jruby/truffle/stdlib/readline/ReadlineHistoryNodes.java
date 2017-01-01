@@ -60,6 +60,7 @@ import org.jruby.truffle.core.cast.NameToJavaStringNodeGen;
 import org.jruby.truffle.core.cast.ToIntNodeGen;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.objects.TaintNode;
 
@@ -71,7 +72,7 @@ public abstract class ReadlineHistoryNodes {
 
         @Child private NameToJavaStringNode toJavaStringNode;
 
-        public PushNode(RubyContext context, SourceSection sourceSection) {
+        public PushNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
             toJavaStringNode = NameToJavaStringNodeGen.create();
         }

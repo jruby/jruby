@@ -54,6 +54,7 @@ import org.jruby.truffle.core.adapaters.OutputStreamAdapter;
 import org.jruby.truffle.core.array.ArrayOperations;
 import org.jruby.truffle.core.encoding.EncodingManager;
 import org.jruby.truffle.language.NotProvided;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.Visibility;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
@@ -89,7 +90,7 @@ public abstract class PsychEmitterNodes {
 
         @Child private AllocateObjectNode allocateNode;
 
-        public AllocateNode(RubyContext context, SourceSection sourceSection) {
+        public AllocateNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
             allocateNode = AllocateObjectNode.create();
         }
