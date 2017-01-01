@@ -10,7 +10,7 @@
 package org.jruby.truffle.core.array;
 
 import com.oracle.truffle.api.dsl.ImportStatic;
-import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 
@@ -20,7 +20,7 @@ public abstract class ArrayCoreMethodNode extends CoreMethodArrayArgumentsNode {
     public ArrayCoreMethodNode() {
     }
 
-    public ArrayCoreMethodNode(RubyContext context, SourceSection sourceSection) {
+    public ArrayCoreMethodNode(RubyContext context, SourceIndexLength sourceSection) {
         super(context, sourceSection);
     }
 

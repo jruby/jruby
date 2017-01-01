@@ -16,7 +16,7 @@ import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
-import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 
@@ -27,7 +27,7 @@ import org.jruby.truffle.language.RubyNode;
 @ImportStatic(ArrayGuards.class)
 public abstract class ArrayEnsureCapacityNode extends RubyNode {
 
-    public ArrayEnsureCapacityNode(RubyContext context, SourceSection sourceSection) {
+    public ArrayEnsureCapacityNode(RubyContext context, SourceIndexLength sourceSection) {
         super(context, sourceSection);
     }
 

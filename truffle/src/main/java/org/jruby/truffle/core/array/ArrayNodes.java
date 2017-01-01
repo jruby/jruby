@@ -26,7 +26,7 @@ import com.oracle.truffle.api.nodes.LoopNode;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.profiles.ConditionProfile;
-import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
@@ -87,7 +87,7 @@ public abstract class ArrayNodes {
 
         @Child private AllocateObjectNode allocateNode;
 
-        public AllocateNode(RubyContext context, SourceSection sourceSection) {
+        public AllocateNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
             allocateNode = AllocateObjectNode.create();
         }
@@ -1037,7 +1037,7 @@ public abstract class ArrayNodes {
 
         @Child private CallDispatchHeadNode dispatch;
 
-        public InjectNode(RubyContext context, SourceSection sourceSection) {
+        public InjectNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
             dispatch = DispatchHeadNodeFactory.createMethodCall(context, MissingBehavior.CALL_METHOD_MISSING);
         }
@@ -1671,7 +1671,7 @@ public abstract class ArrayNodes {
 
         private final BranchProfile errorProfile = BranchProfile.create();
 
-        public SortNode(RubyContext context, SourceSection sourceSection) {
+        public SortNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
             compareDispatchNode = DispatchHeadNodeFactory.createMethodCall(context);
             yieldNode = new YieldNode(context);

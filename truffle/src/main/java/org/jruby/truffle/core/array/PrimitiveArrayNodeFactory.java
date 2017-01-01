@@ -9,7 +9,7 @@
  */
 package org.jruby.truffle.core.array;
 
-import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.literal.IntegerFixnumLiteralNode;
@@ -19,7 +19,7 @@ public abstract class PrimitiveArrayNodeFactory {
     /**
      * Create a node to read from an array with a constant denormalized index.
      */
-    public static RubyNode read(RubyContext context, SourceSection sourceSection, RubyNode array, int index) {
+    public static RubyNode read(RubyContext context, SourceIndexLength sourceSection, RubyNode array, int index) {
         final RubyNode literalIndex = new IntegerFixnumLiteralNode(index);
 
         if (index >= 0) {
@@ -32,7 +32,7 @@ public abstract class PrimitiveArrayNodeFactory {
     /**
      * Create a node to read a slice from an array with a constant denormalized start and exclusive end.
      */
-    public static RubyNode readSlice(RubyContext context, SourceSection sourceSection, RubyNode array, int start, int exclusiveEnd) {
+    public static RubyNode readSlice(RubyContext context, SourceIndexLength sourceSection, RubyNode array, int start, int exclusiveEnd) {
         final RubyNode literalStart = new IntegerFixnumLiteralNode(start);
         final RubyNode literalExclusiveEnd = new IntegerFixnumLiteralNode(exclusiveEnd);
 

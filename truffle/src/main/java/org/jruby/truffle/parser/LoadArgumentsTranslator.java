@@ -320,7 +320,7 @@ public class LoadArgumentsTranslator extends Translator {
 
     private RubyNode readArgument(SourceIndexLength sourceSection) {
         if (useArray()) {
-            return PrimitiveArrayNodeFactory.read(context, sourceSection.toSourceSection(source), loadArray(sourceSection), index);
+            return PrimitiveArrayNodeFactory.read(context, sourceSection, loadArray(sourceSection), index);
         } else {
             if (state == State.PRE) {
                 return new ProfileArgumentNode(new ReadPreArgumentNode(index, isProc ? MissingArgumentBehavior.NIL : MissingArgumentBehavior.RUNTIME_ERROR));
@@ -346,7 +346,7 @@ public class LoadArgumentsTranslator extends Translator {
         int from = argsNode.getPreCount() + argsNode.getOptionalArgsCount();
         int to = -argsNode.getPostCount();
         if (useArray()) {
-            readNode = ArraySliceNodeGen.create(context, fullSourceSection, from, to, loadArray(sourceSection));
+            readNode = ArraySliceNodeGen.create(context, sourceSection, from, to, loadArray(sourceSection));
         } else {
             readNode = new ReadRestArgumentNode(context, sourceSection, from, -to, hasKeywordArguments, required);
         }
@@ -394,7 +394,7 @@ public class LoadArgumentsTranslator extends Translator {
                 // Multiple assignment
 
                 if (useArray()) {
-                    readNode = PrimitiveArrayNodeFactory.read(context, fullSourceSection, loadArray(sourceSection), index);
+                    readNode = PrimitiveArrayNodeFactory.read(context, sourceSection, loadArray(sourceSection), index);
                 } else {
                     readNode = readArgument(sourceSection);
                 }
@@ -428,7 +428,7 @@ public class LoadArgumentsTranslator extends Translator {
                     // TODO CS 10-Jan-16 we should really hoist this check, or see if Graal does it for us
                     readNode = new IfElseNode(
                             new ArrayIsAtLeastAsLargeAsNode(minimum, loadArray(sourceSection)),
-                            PrimitiveArrayNodeFactory.read(context, fullSourceSection, loadArray(sourceSection), index),
+                            PrimitiveArrayNodeFactory.read(context, sourceSection, loadArray(sourceSection), index),
                             defaultValue);
                 } else {
                     if (argsNode.hasKwargs()) {
@@ -452,7 +452,7 @@ public class LoadArgumentsTranslator extends Translator {
                 }
             }
         } else {
-            readNode = ArraySliceNodeGen.create(context, fullSourceSection, index, indexFromEnd, loadArray(sourceSection));
+            readNode = ArraySliceNodeGen.create(context, sourceSection, index, indexFromEnd, loadArray(sourceSection));
         }
 
         return WriteLocalVariableNode.createWriteLocalVariableNode(context, fullSourceSection, slot, readNode);

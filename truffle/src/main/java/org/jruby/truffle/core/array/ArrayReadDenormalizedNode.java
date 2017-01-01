@@ -15,7 +15,7 @@ import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
-import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
@@ -28,7 +28,7 @@ public abstract class ArrayReadDenormalizedNode extends RubyNode {
 
     @Child private ArrayReadNormalizedNode readNode;
 
-    public ArrayReadDenormalizedNode(RubyContext context, SourceSection sourceSection) {
+    public ArrayReadDenormalizedNode(RubyContext context, SourceIndexLength sourceSection) {
         super(context, sourceSection);
         readNode = ArrayReadNormalizedNodeGen.create(getContext(), null, null, null);
     }

@@ -15,7 +15,7 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
@@ -33,7 +33,7 @@ public abstract class ArrayReadSliceNormalizedNode extends RubyNode {
 
     @Child private AllocateObjectNode allocateObjectNode;
 
-    public ArrayReadSliceNormalizedNode(RubyContext context, SourceSection sourceSection) {
+    public ArrayReadSliceNormalizedNode(RubyContext context, SourceIndexLength sourceSection) {
         super(context, sourceSection);
         allocateObjectNode = AllocateObjectNode.create();
     }

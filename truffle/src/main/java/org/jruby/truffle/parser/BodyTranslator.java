@@ -378,7 +378,7 @@ public class BodyTranslator extends Translator {
             translatedNodes.add(catNode.accept(this));
         }
 
-        final RubyNode ret = new ArrayConcatNode(context, node.getPosition().toSourceSection(source), translatedNodes.toArray(new RubyNode[translatedNodes.size()]));
+        final RubyNode ret = new ArrayConcatNode(context, node.getPosition(), translatedNodes.toArray(new RubyNode[translatedNodes.size()]));
         return addNewlineIfNeeded(node, ret);
     }
 
@@ -2312,16 +2312,16 @@ public class BodyTranslator extends Translator {
              */
 
             for (int n = 0; n < preArray.size(); n++) {
-                final RubyNode assignedValue = PrimitiveArrayNodeFactory.read(context, fullSourceSection, environment.findLocalVarNode(tempName, source, sourceSection), n);
+                final RubyNode assignedValue = PrimitiveArrayNodeFactory.read(context, sourceSection, environment.findLocalVarNode(tempName, source, sourceSection), n);
 
                 sequence.add(translateDummyAssignment(preArray.get(n), assignedValue));
             }
 
             if (node.getRest() != null) {
-                RubyNode assignedValue = ArrayGetTailNodeGen.create(context, fullSourceSection, preArray.size(), environment.findLocalVarNode(tempName, source, sourceSection));
+                RubyNode assignedValue = ArrayGetTailNodeGen.create(context, sourceSection, preArray.size(), environment.findLocalVarNode(tempName, source, sourceSection));
 
                 if (postArray != null) {
-                    assignedValue = ArrayDropTailNodeGen.create(context, fullSourceSection, postArray.size(), assignedValue);
+                    assignedValue = ArrayDropTailNodeGen.create(context, sourceSection, postArray.size(), assignedValue);
                 }
 
                 sequence.add(translateDummyAssignment(node.getRest(), assignedValue));
@@ -2331,7 +2331,7 @@ public class BodyTranslator extends Translator {
                 final List<RubyNode> smallerSequence = new ArrayList<>();
 
                 for (int n = 0; n < postArray.size(); n++) {
-                    final RubyNode assignedValue = PrimitiveArrayNodeFactory.read(context, fullSourceSection, environment.findLocalVarNode(tempName, source, sourceSection), node.getPreCount() + n);
+                    final RubyNode assignedValue = PrimitiveArrayNodeFactory.read(context, sourceSection, environment.findLocalVarNode(tempName, source, sourceSection), node.getPreCount() + n);
                     smallerSequence.add(translateDummyAssignment(postArray.get(n), assignedValue));
                 }
 
@@ -2340,7 +2340,7 @@ public class BodyTranslator extends Translator {
                 final List<RubyNode> atLeastAsLargeSequence = new ArrayList<>();
 
                 for (int n = 0; n < postArray.size(); n++) {
-                    final RubyNode assignedValue = PrimitiveArrayNodeFactory.read(context, fullSourceSection, environment.findLocalVarNode(tempName, source, sourceSection), -(postArray.size() - n));
+                    final RubyNode assignedValue = PrimitiveArrayNodeFactory.read(context, sourceSection, environment.findLocalVarNode(tempName, source, sourceSection), -(postArray.size() - n));
 
                     atLeastAsLargeSequence.add(translateDummyAssignment(postArray.get(n), assignedValue));
                 }
@@ -2463,7 +2463,7 @@ public class BodyTranslator extends Translator {
              */
 
             if (node.getRest() != null) {
-                final ArrayDropTailNode assignedValue = ArrayDropTailNodeGen.create(context, fullSourceSection, postArray.size(), environment.findLocalVarNode(tempName, source, sourceSection));
+                final ArrayDropTailNode assignedValue = ArrayDropTailNodeGen.create(context, sourceSection, postArray.size(), environment.findLocalVarNode(tempName, source, sourceSection));
 
                 sequence.add(translateDummyAssignment(node.getRest(), assignedValue));
             }
@@ -2471,7 +2471,7 @@ public class BodyTranslator extends Translator {
             final List<RubyNode> smallerSequence = new ArrayList<>();
 
             for (int n = 0; n < postArray.size(); n++) {
-                final RubyNode assignedValue = PrimitiveArrayNodeFactory.read(context, fullSourceSection, environment.findLocalVarNode(tempName, source, sourceSection), node.getPreCount() + n);
+                final RubyNode assignedValue = PrimitiveArrayNodeFactory.read(context, sourceSection, environment.findLocalVarNode(tempName, source, sourceSection), node.getPreCount() + n);
                 smallerSequence.add(translateDummyAssignment(postArray.get(n), assignedValue));
             }
 
@@ -2480,7 +2480,7 @@ public class BodyTranslator extends Translator {
             final List<RubyNode> atLeastAsLargeSequence = new ArrayList<>();
 
             for (int n = 0; n < postArray.size(); n++) {
-                final RubyNode assignedValue = PrimitiveArrayNodeFactory.read(context, fullSourceSection, environment.findLocalVarNode(tempName, source, sourceSection), -(postArray.size() - n));
+                final RubyNode assignedValue = PrimitiveArrayNodeFactory.read(context, sourceSection, environment.findLocalVarNode(tempName, source, sourceSection), -(postArray.size() - n));
 
                 atLeastAsLargeSequence.add(translateDummyAssignment(postArray.get(n), assignedValue));
             }

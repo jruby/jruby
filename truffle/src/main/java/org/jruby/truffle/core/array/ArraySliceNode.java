@@ -16,7 +16,7 @@ import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
-import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 
@@ -27,7 +27,7 @@ public abstract class ArraySliceNode extends RubyNode {
     final int from; // positive
     final int to; // negative, exclusive
 
-    public ArraySliceNode(RubyContext context, SourceSection sourceSection, int from, int to) {
+    public ArraySliceNode(RubyContext context, SourceIndexLength sourceSection, int from, int to) {
         super(context, sourceSection);
         assert from >= 0;
         assert to <= 0;

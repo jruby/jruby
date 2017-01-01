@@ -15,7 +15,7 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
@@ -28,7 +28,7 @@ import static org.jruby.truffle.core.array.ArrayHelpers.setSize;
 @ImportStatic(ArrayGuards.class)
 public abstract class ArrayPopOneNode extends RubyNode {
 
-    public ArrayPopOneNode(RubyContext context, SourceSection sourceSection) {
+    public ArrayPopOneNode(RubyContext context, SourceIndexLength sourceSection) {
         super(context, sourceSection);
     }
 

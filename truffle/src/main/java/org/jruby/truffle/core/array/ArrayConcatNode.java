@@ -13,7 +13,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
-import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyGuards;
@@ -30,7 +30,7 @@ public final class ArrayConcatNode extends RubyNode {
 
     private final ConditionProfile isArrayProfile = ConditionProfile.createBinaryProfile();
 
-    public ArrayConcatNode(RubyContext context, SourceSection sourceSection, RubyNode[] children) {
+    public ArrayConcatNode(RubyContext context, SourceIndexLength sourceSection, RubyNode[] children) {
         super(context, sourceSection);
         assert children.length > 1;
         this.children = children;

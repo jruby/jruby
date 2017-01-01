@@ -16,7 +16,7 @@ import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
-import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 
@@ -26,7 +26,7 @@ public abstract class ArrayGetTailNode extends RubyNode {
 
     final int index;
 
-    public ArrayGetTailNode(RubyContext context, SourceSection sourceSection, int index) {
+    public ArrayGetTailNode(RubyContext context, SourceIndexLength sourceSection, int index) {
         super(context, sourceSection);
         this.index = index;
     }
