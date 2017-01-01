@@ -555,10 +555,10 @@ public class BodyTranslator extends Translator {
                 && ((ConstParseNode) ((Colon2ConstParseNode) receiver).getLeftNode()).getName().equals("Truffle")
                 && ((Colon2ConstParseNode) receiver).getName().equals("Graal")) {
             if (methodName.equals("assert_constant")) {
-                final RubyNode ret = AssertConstantNodeGen.create(context, fullSourceSection, ((ArrayParseNode) node.getArgsNode()).get(0).accept(this));
+                final RubyNode ret = AssertConstantNodeGen.create(context, sourceSection, ((ArrayParseNode) node.getArgsNode()).get(0).accept(this));
                 return addNewlineIfNeeded(node, ret);
             } else if (methodName.equals("assert_not_compiled")) {
-                final RubyNode ret = AssertNotCompiledNodeGen.create(context, fullSourceSection);
+                final RubyNode ret = AssertNotCompiledNodeGen.create(context, sourceSection);
                 return addNewlineIfNeeded(node, ret);
             }
         } else if (receiver instanceof VCallParseNode // undefined.equal?(obj)

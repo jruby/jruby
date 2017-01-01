@@ -15,12 +15,13 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.RaiseException;
 
 @NodeChild("value")
 public abstract class AssertConstantNode extends RubyNode {
 
-    public AssertConstantNode(RubyContext context, SourceSection sourceSection) {
+    public AssertConstantNode(RubyContext context, SourceIndexLength sourceSection) {
         super(context, sourceSection);
     }
 
