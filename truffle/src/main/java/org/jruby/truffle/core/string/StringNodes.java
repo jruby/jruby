@@ -2552,9 +2552,9 @@ public abstract class StringNodes {
             return StringNodesFactory.StringAppendPrimitiveNodeFactory.create(null, null, null);
         }
 
-        public StringAppendPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+        public StringAppendPrimitiveNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
-            stringAppendNode = StringNodesFactory.StringAppendNodeGen.create(context, sourceSection, null, null);
+            stringAppendNode = StringNodesFactory.StringAppendNodeGen.create(context, null, null, null);
         }
 
         public abstract DynamicObject executeStringAppend(DynamicObject string, DynamicObject other);
@@ -2663,7 +2663,7 @@ public abstract class StringNodes {
         @Child private TaintResultNode taintResultNode;
 
         public static StringByteSubstringPrimitiveNode create(RubyContext context, SourceSection sourceSection) {
-            return StringNodesFactory.StringByteSubstringPrimitiveNodeFactory.create(context, sourceSection, null, null, null);
+            return StringNodesFactory.StringByteSubstringPrimitiveNodeFactory.create(context, null, null, null, null);
         }
 
         public StringByteSubstringPrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -4394,9 +4394,9 @@ public abstract class StringNodes {
             return StringNodesFactory.StringAppendNodeGen.create(null, null, null, null);
         }
 
-        public StringAppendNode(RubyContext context, SourceSection sourceSection) {
+        public StringAppendNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
-            checkEncodingNode = EncodingNodesFactory.CheckEncodingNodeGen.create(context, sourceSection, null, null);
+            checkEncodingNode = EncodingNodesFactory.CheckEncodingNodeGen.create(context, null, null, null);
             makeConcatNode = RopeNodesFactory.MakeConcatNodeGen.create(null, null, null);
         }
 
