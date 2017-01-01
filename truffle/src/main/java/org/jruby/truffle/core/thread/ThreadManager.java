@@ -372,7 +372,7 @@ public class ThreadManager {
             try {
                 context.getSafepointManager().pauseAllThreadsAndExecute(null, false, new SafepointAction() {
                     @Override
-                    public synchronized void run(DynamicObject thread, Node currentNode) {
+                    public synchronized void accept(DynamicObject thread, Node currentNode) {
                         if (thread != rootThread && Thread.currentThread() == Layouts.THREAD.getThread(thread)) {
                             shutdown(context, thread, currentNode);
                         }

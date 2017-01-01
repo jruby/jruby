@@ -67,7 +67,7 @@ public class InstrumentationServerManager {
 
                     context.getSafepointManager().pauseAllThreadsAndExecuteFromNonRubyThread(false, new SafepointAction() {
                         @Override
-                        public void run(DynamicObject thread, Node currentNode) {
+                        public void accept(DynamicObject thread, Node currentNode) {
                             synchronized (this) {
                                 try {
                                     final Backtrace backtrace = context.getCallStack().getBacktrace(null);
