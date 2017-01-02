@@ -45,4 +45,21 @@ class TestArray < Test::Unit::TestCase
     str = '2202702806'; assert_equal false, (str..str).member?(str.to_i)
   end
 
+  def test_collect_concurrency
+    arr = []
+
+    Thread.new do ; times = 0
+      loop { arr << Time.now.to_f; break if (times += 1) == 1000 }
+    end
+
+    1000.times do
+      begin
+        arr.collect { |f| f.to_i }.size
+        # expected not to raise a Java AIOoBE
+      rescue ConcurrencyError => e
+        puts "#{__method__} : #{e}" if $VERBOSE
+      end
+    end
+  end
+
 end

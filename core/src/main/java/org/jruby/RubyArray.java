@@ -2457,20 +2457,17 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     /** rb_ary_collect
      *
      */
-    public IRubyObject collect(ThreadContext context, Block block) {
-        final Ruby runtime = context.runtime;
+    public RubyArray collect(ThreadContext context, Block block) {
         if (!block.isGiven()) return makeShared();
 
+        final Ruby runtime = context.runtime;
         IRubyObject[] arr = new IRubyObject[realLength];
 
-        return collectFrom(context, arr, 0, block);
-    }
-
-    protected IRubyObject collectFrom(ThreadContext context, IRubyObject[] arr, int i, Block block) {
-        for (i = 0; i < realLength; i++) {
+        int i = 0;
+        for (; i < realLength; i++) {
             // Do not coarsen the "safe" check, since it will misinterpret AIOOBE from the yield
             // See JRUBY-5434
-            arr[i] = block.yield(context, eltOk(i));
+            safeArraySet(runtime, arr, i, block.yield(context, eltOk(i))); // arr[i] = ...
         }
 
         // use iteration count as new size in case something was deleted along the way
@@ -2664,7 +2661,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         modify();
 
         IRubyObject nil = getRuntime().getNil();
-        IRubyObject obj = null; // should never return null below
+        IRubyObject obj;
 
         try {
             obj = values[begin + pos];
@@ -2681,7 +2678,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
             }
 
             System.arraycopy(values, begin + pos + 1, values, begin + pos, len - (pos + 1));
-            values[begin + len - 1] = getRuntime().getNil();
+            values[begin + len - 1] = nil;
         } catch (ArrayIndexOutOfBoundsException e) {
             throw concurrentModification(getRuntime(), e);
         }
