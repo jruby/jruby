@@ -12,7 +12,7 @@ example "Encoding::UTF_16BE.ascii_compatible?", false
 example "Encoding::ISO_2022_JP.dummy?", true
 example "Encoding::UTF_8.dummy?", false
 
-example "Encoding.compatible?('abc', 'def')", Encoding::UTF_8
-example "Encoding.compatible?(Encoding::UTF_8, Encoding::US_ASCII)", Encoding::UTF_8
-example "Encoding.compatible?(Encoding::UTF_8, Encoding::ASCII_8BIT)", nil
-example "Encoding.compatible?('abc', Encoding::US_ASCII)", Encoding::UTF_8
+tagged example "Encoding.compatible?('abc', 'def')", Encoding::UTF_8
+tagged example "Encoding.compatible?(Encoding::UTF_8, Encoding::US_ASCII)", Encoding::UTF_8
+tagged example "Encoding.compatible?(Encoding::UTF_8, Encoding::ASCII_8BIT)", nil
+tagged example "Encoding.compatible?('abc', Encoding::US_ASCII)", Encoding::UTF_8
