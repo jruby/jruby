@@ -827,7 +827,7 @@ public class BodyTranslator extends Translator {
         RubyNode blockTranslated;
 
         if (blockPassNode != null) {
-            blockTranslated = ToProcNodeGen.create(context, sourceSection.toSourceSection(source), blockPassNode.accept(this));
+            blockTranslated = ToProcNodeGen.create(context, sourceSection, blockPassNode.accept(this));
             frameOnStackMarkerSlot = null;
         } else if (iterNode != null) {
             frameOnStackMarkerSlot = environment.declareVar(environment.allocateLocalTemp("frame_on_stack_marker"));
@@ -1302,11 +1302,10 @@ public class BodyTranslator extends Translator {
     @Override
     public RubyNode visitDSymbolNode(DSymbolParseNode node) {
         SourceIndexLength sourceSection = node.getPosition();
-        final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
         final RubyNode stringNode = translateInterpolatedString(sourceSection, node.children());
 
-        final RubyNode ret = StringToSymbolNodeGen.create(context, fullSourceSection, stringNode);
+        final RubyNode ret = StringToSymbolNodeGen.create(context, sourceSection, stringNode);
         return addNewlineIfNeeded(node, ret);
     }
 
@@ -1314,7 +1313,7 @@ public class BodyTranslator extends Translator {
         final ToSNode[] children = new ToSNode[childNodes.length];
 
         for (int i = 0; i < childNodes.length; i++) {
-            children[i] = ToSNodeGen.create(context, sourceSection.toSourceSection(source), childNodes[i].accept(this));
+            children[i] = ToSNodeGen.create(context, sourceSection, childNodes[i].accept(this));
         }
 
         return new InterpolatedStringNode(context, sourceSection, children);
@@ -2301,7 +2300,7 @@ public class BodyTranslator extends Translator {
              * the temp.
              */
 
-            final RubyNode splatCastNode = SplatCastNodeGen.create(context, fullSourceSection, translatingNextExpression ? SplatCastNode.NilBehavior.EMPTY_ARRAY : SplatCastNode.NilBehavior.ARRAY_WITH_NIL, true, environment.findLocalVarNode(tempRHSName, source, sourceSection));
+            final RubyNode splatCastNode = SplatCastNodeGen.create(context, sourceSection, translatingNextExpression ? SplatCastNode.NilBehavior.EMPTY_ARRAY : SplatCastNode.NilBehavior.ARRAY_WITH_NIL, true, environment.findLocalVarNode(tempRHSName, source, sourceSection));
 
             final RubyNode writeTemp = environment.findLocalVarNode(tempName, source, sourceSection).makeWriteNode(splatCastNode);
 
@@ -2393,7 +2392,7 @@ public class BodyTranslator extends Translator {
             final RubyNode writeTempRHS = environment.findLocalVarNode(tempRHSName, source, sourceSection).makeWriteNode(rhsTranslated);
             sequence.add(writeTempRHS);
 
-            final SplatCastNode rhsSplatCast = SplatCastNodeGen.create(context, fullSourceSection,
+            final SplatCastNode rhsSplatCast = SplatCastNodeGen.create(context, sourceSection,
                     nilBehavior,
                     true, environment.findLocalVarNode(tempRHSName, source, sourceSection));
 
@@ -2452,7 +2451,7 @@ public class BodyTranslator extends Translator {
              */
 
 
-            final RubyNode splatCastNode = SplatCastNodeGen.create(context, fullSourceSection, translatingNextExpression ? SplatCastNode.NilBehavior.EMPTY_ARRAY : SplatCastNode.NilBehavior.ARRAY_WITH_NIL, false, environment.findLocalVarNode(tempRHSName, source, sourceSection));
+            final RubyNode splatCastNode = SplatCastNodeGen.create(context, sourceSection, translatingNextExpression ? SplatCastNode.NilBehavior.EMPTY_ARRAY : SplatCastNode.NilBehavior.ARRAY_WITH_NIL, false, environment.findLocalVarNode(tempRHSName, source, sourceSection));
 
             final RubyNode writeTemp = environment.findLocalVarNode(tempName, source, sourceSection).makeWriteNode(splatCastNode);
 
@@ -3097,7 +3096,7 @@ public class BodyTranslator extends Translator {
         final SourceIndexLength sourceSection = node.getPosition();
 
         final RubyNode value = translateNodeOrNil(sourceSection, node.getValue());
-        final RubyNode ret = SplatCastNodeGen.create(context, sourceSection.toSourceSection(source), SplatCastNode.NilBehavior.CONVERT, false, value);
+        final RubyNode ret = SplatCastNodeGen.create(context, sourceSection, SplatCastNode.NilBehavior.CONVERT, false, value);
         return addNewlineIfNeeded(node, ret);
     }
 

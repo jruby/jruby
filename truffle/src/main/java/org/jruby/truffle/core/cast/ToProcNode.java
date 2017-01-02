@@ -20,6 +20,7 @@ import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
@@ -30,7 +31,7 @@ import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 @NodeChild("child")
 public abstract class ToProcNode extends RubyNode {
 
-    public ToProcNode(RubyContext context, SourceSection sourceSection) {
+    public ToProcNode(RubyContext context, SourceIndexLength sourceSection) {
         super(context, sourceSection);
     }
 

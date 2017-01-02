@@ -16,6 +16,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 
 /**
  * Creates a symbol from a string.
@@ -23,7 +24,7 @@ import org.jruby.truffle.language.RubyNode;
 @NodeChild("string")
 public abstract class StringToSymbolNode extends RubyNode {
 
-    public StringToSymbolNode(RubyContext context, SourceSection sourceSection) {
+    public StringToSymbolNode(RubyContext context, SourceIndexLength sourceSection) {
         super(context, sourceSection);
     }
 

@@ -19,6 +19,7 @@ import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.objects.IsTaintedNode;
 import org.jruby.truffle.language.objects.TaintNode;
@@ -40,7 +41,7 @@ public class TaintResultNode extends RubyNode {
         this.isTaintedNode = IsTaintedNode.create();
     }
 
-    public TaintResultNode(RubyContext context, SourceSection sourceSection) {
+    public TaintResultNode(RubyContext context, SourceIndexLength sourceSection) {
         super(context, sourceSection);
         this.taintFromSelf = false;
         this.taintFromParameter = -1;

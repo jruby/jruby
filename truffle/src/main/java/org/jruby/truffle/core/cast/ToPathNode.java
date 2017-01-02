@@ -18,11 +18,12 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.SnippetNode;
+import org.jruby.truffle.language.SourceIndexLength;
 
 @NodeChild(value = "child", type = RubyNode.class)
 public abstract class ToPathNode extends RubyNode {
 
-    public ToPathNode(RubyContext context, SourceSection sourceSection) {
+    public ToPathNode(RubyContext context, SourceIndexLength sourceSection) {
         super(context, sourceSection);
     }
 

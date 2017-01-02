@@ -23,6 +23,7 @@ import org.jruby.truffle.core.array.ArrayDupNodeGen;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.SnippetNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
@@ -47,7 +48,7 @@ public abstract class SplatCastNode extends RubyNode {
     @Child private ArrayDupNode dup;
     @Child private CallDispatchHeadNode toA;
 
-    public SplatCastNode(RubyContext context, SourceSection sourceSection, NilBehavior nilBehavior, boolean useToAry) {
+    public SplatCastNode(RubyContext context, SourceIndexLength sourceSection, NilBehavior nilBehavior, boolean useToAry) {
         super(context, sourceSection);
         this.nilBehavior = nilBehavior;
         // Calling private #to_a is allowed for the *splat operator.

@@ -1943,7 +1943,7 @@ public abstract class KernelNodes {
             super(context, sourceSection);
             classNode = LogicalClassNodeGen.create(context, new SourceIndexLength(sourceSection), null);
             objectIDNode = ObjectNodesFactory.ObjectIDPrimitiveNodeFactory.create(null);
-            taintResultNode = new TaintResultNode(context, sourceSection);
+            taintResultNode = new TaintResultNode(context, null);
             toHexStringNode = KernelNodesFactory.ToHexStringNodeFactory.create(null);
         }
 

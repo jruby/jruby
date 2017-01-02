@@ -17,11 +17,12 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 
 @NodeChild(value = "child", type = RubyNode.class)
 public abstract class SingleValueCastNode extends RubyNode {
 
-    public SingleValueCastNode(RubyContext context, SourceSection sourceSection) {
+    public SingleValueCastNode(RubyContext context, SourceIndexLength sourceSection) {
         super(context, sourceSection);
     }
 

@@ -334,7 +334,7 @@ public abstract class ModuleNodes {
 
         public AppendFeaturesNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            taintResultNode = new TaintResultNode(context, sourceSection);
+            taintResultNode = new TaintResultNode(context, new SourceIndexLength(sourceSection));
         }
 
         @Specialization(guards = "isRubyModule(target)")
@@ -1399,7 +1399,7 @@ public abstract class ModuleNodes {
 
         public PrependFeaturesNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            taintResultNode = new TaintResultNode(context, sourceSection);
+            taintResultNode = new TaintResultNode(context, null);
         }
 
         @Specialization(guards = "isRubyModule(target)")

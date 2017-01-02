@@ -21,6 +21,7 @@ import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
@@ -30,7 +31,7 @@ public abstract class ToStrNode extends RubyNode {
 
     @Child private CallDispatchHeadNode toStrNode;
 
-    public ToStrNode(RubyContext context, SourceSection sourceSection) {
+    public ToStrNode(RubyContext context, SourceIndexLength sourceSection) {
         super(context, sourceSection);
         toStrNode = DispatchHeadNodeFactory.createMethodCall(context);
     }

@@ -21,6 +21,7 @@ import org.jruby.truffle.core.kernel.KernelNodes;
 import org.jruby.truffle.core.kernel.KernelNodesFactory;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 
@@ -30,7 +31,7 @@ public abstract class ToSNode extends RubyNode {
     @Child private CallDispatchHeadNode callToSNode;
     @Child private KernelNodes.ToSNode kernelToSNode;
 
-    public ToSNode(RubyContext context, SourceSection sourceSection) {
+    public ToSNode(RubyContext context, SourceIndexLength sourceSection) {
         super(context, sourceSection);
         callToSNode = DispatchHeadNodeFactory.createMethodCall(context, true);
     }

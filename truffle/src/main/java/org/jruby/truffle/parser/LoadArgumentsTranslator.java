@@ -599,7 +599,7 @@ public class LoadArgumentsTranslator extends Translator {
         final RubyNode nil = sequence(context, source, sourceSection, nilSequence);
 
         return sequence(context, source, sourceSection, Arrays.asList(WriteLocalVariableNode.createWriteLocalVariableNode(context, sourceSection,
-                arraySlot, SplatCastNodeGen.create(context, fullSourceSection, SplatCastNode.NilBehavior.ARRAY_WITH_NIL, true,
+                arraySlot, SplatCastNodeGen.create(context, sourceSection, SplatCastNode.NilBehavior.ARRAY_WITH_NIL, true,
                                 readArgument(sourceSection))), new IfElseNode(
                         new IsNilNode(context, sourceSection, new ReadLocalVariableNode(context, sourceSection, LocalVariableType.FRAME_LOCAL, arraySlot)),
                         nil,

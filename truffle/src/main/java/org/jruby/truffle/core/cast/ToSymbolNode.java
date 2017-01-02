@@ -17,11 +17,12 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 
 @NodeChild(value="child", type=RubyNode.class)
 public abstract class ToSymbolNode extends RubyNode {
 
-    public ToSymbolNode(RubyContext context, SourceSection sourceSection) {
+    public ToSymbolNode(RubyContext context, SourceIndexLength sourceSection) {
         super(context, sourceSection);
     }
 
