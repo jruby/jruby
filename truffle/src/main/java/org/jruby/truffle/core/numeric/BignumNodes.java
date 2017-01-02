@@ -33,6 +33,7 @@ import org.jruby.truffle.core.cast.ToIntNode;
 import org.jruby.truffle.core.numeric.BignumNodesFactory.DivNodeFactory;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.SnippetNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
@@ -585,7 +586,7 @@ public abstract class BignumNodes {
 
         @Child private GeneralDivModNode divModNode;
 
-        public DivModNode(RubyContext context, SourceSection sourceSection) {
+        public DivModNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
             divModNode = new GeneralDivModNode(context, sourceSection);
         }

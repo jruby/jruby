@@ -15,6 +15,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 
 /**
  * Passes through {@code int} values unmodified, but will convert a {@code long} value to an {@code int}, if it fits
@@ -25,7 +26,7 @@ import org.jruby.truffle.language.RubyNode;
 @NodeChild(value = "value", type = RubyNode.class)
 public abstract class FixnumLowerNode extends RubyNode {
 
-    public FixnumLowerNode(RubyContext context, SourceSection sourceSection) {
+    public FixnumLowerNode(RubyContext context, SourceIndexLength sourceSection) {
         super(context, sourceSection);
     }
 

@@ -36,6 +36,7 @@ import org.jruby.truffle.core.cast.DefaultValueNodeGen;
 import org.jruby.truffle.core.string.StringUtils;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.SnippetNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
@@ -285,7 +286,7 @@ public abstract class FloatNodes {
 
         @Child private GeneralDivModNode divModNode;
 
-        public DivModNode(RubyContext context, SourceSection sourceSection) {
+        public DivModNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
             divModNode = new GeneralDivModNode(context, sourceSection);
         }
@@ -554,7 +555,7 @@ public abstract class FloatNodes {
 
         @Child private FixnumOrBignumNode fixnumOrBignum;
 
-        public CeilNode(RubyContext context, SourceSection sourceSection) {
+        public CeilNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
             fixnumOrBignum = new FixnumOrBignumNode(context, null);
         }
@@ -571,7 +572,7 @@ public abstract class FloatNodes {
 
         @Child private FixnumOrBignumNode fixnumOrBignum;
 
-        public FloorNode(RubyContext context, SourceSection sourceSection) {
+        public FloorNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
             fixnumOrBignum = new FixnumOrBignumNode(context, null);
         }
@@ -740,7 +741,7 @@ public abstract class FloatNodes {
 
         @Child private FixnumOrBignumNode fixnumOrBignum;
 
-        public ToINode(RubyContext context, SourceSection sourceSection) {
+        public ToINode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
             fixnumOrBignum = new FixnumOrBignumNode(context, null);
         }

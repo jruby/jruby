@@ -33,6 +33,7 @@ import org.jruby.truffle.core.numeric.FixnumNodesFactory.DivNodeFactory;
 import org.jruby.truffle.core.rope.LazyIntRope;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.SnippetNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
@@ -473,7 +474,7 @@ public abstract class FixnumNodes {
 
         @Child private GeneralDivModNode divModNode;
 
-        public DivModNode(RubyContext context, SourceSection sourceSection) {
+        public DivModNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
             divModNode = new GeneralDivModNode(context, sourceSection);
         }
@@ -584,7 +585,7 @@ public abstract class FixnumNodes {
 
         @Child private CallDispatchHeadNode reverseCallNode;
 
-        public EqualNode(RubyContext context, SourceSection sourceSection) {
+        public EqualNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
             reverseCallNode = DispatchHeadNodeFactory.createMethodCall(context);
         }
