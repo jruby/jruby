@@ -22,6 +22,7 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.string.StringUtils;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.RaiseException;
 
 /**
@@ -34,7 +35,7 @@ public abstract class ArrayAttributeCastNode extends RubyNode {
 
     final String indexName;
 
-    public ArrayAttributeCastNode(RubyContext context, SourceSection sourceSection, String indexName) {
+    public ArrayAttributeCastNode(RubyContext context, SourceIndexLength sourceSection, String indexName) {
         super(context, sourceSection);
         this.indexName = indexName;
     }

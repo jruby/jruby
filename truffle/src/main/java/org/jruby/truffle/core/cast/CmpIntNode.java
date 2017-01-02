@@ -32,6 +32,7 @@ import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.string.StringUtils;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
@@ -50,7 +51,7 @@ public abstract class CmpIntNode extends RubyNode {
     @Child private CallDispatchHeadNode gtNode;
     @Child private CallDispatchHeadNode ltNode;
 
-    public CmpIntNode(RubyContext context, SourceSection sourceSection) {
+    public CmpIntNode(RubyContext context, SourceIndexLength sourceSection) {
         super(context, sourceSection);
     }
 

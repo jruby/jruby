@@ -16,6 +16,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 
 /**
  * Take a Symbol or some object accepting #to_str
@@ -28,7 +29,7 @@ public abstract class NameToJavaStringWithDefaultNode extends RubyNode {
     private final String defaultValue;
     @Child private NameToJavaStringNode toJavaStringNode;
 
-    public NameToJavaStringWithDefaultNode(RubyContext context, SourceSection sourceSection, String defaultValue) {
+    public NameToJavaStringWithDefaultNode(RubyContext context, SourceIndexLength sourceSection, String defaultValue) {
         super(context, sourceSection);
         this.defaultValue = defaultValue;
         toJavaStringNode = NameToJavaStringNodeGen.create(null);

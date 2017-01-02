@@ -15,6 +15,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 
 /**
  * Return the given default value if the argument is not provided.
@@ -24,7 +25,7 @@ public abstract class DefaultValueNode extends RubyNode {
 
     private final Object defaultValue;
 
-    public DefaultValueNode(RubyContext context, SourceSection sourceSection, Object defaultValue) {
+    public DefaultValueNode(RubyContext context, SourceIndexLength sourceSection, Object defaultValue) {
         super(context, sourceSection);
         this.defaultValue = defaultValue;
     }

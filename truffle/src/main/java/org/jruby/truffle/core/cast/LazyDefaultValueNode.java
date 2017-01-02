@@ -17,6 +17,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 
 import java.util.function.Supplier;
 
@@ -28,7 +29,7 @@ public abstract class LazyDefaultValueNode extends RubyNode {
     @CompilationFinal private boolean hasDefault;
     @CompilationFinal private Object defaultValue;
 
-    public LazyDefaultValueNode(RubyContext context, SourceSection sourceSection, Supplier<Object> defaultValueProducer) {
+    public LazyDefaultValueNode(RubyContext context, SourceIndexLength sourceSection, Supplier<Object> defaultValueProducer) {
         super(context, sourceSection);
         this.defaultValueProducer = defaultValueProducer;
     }

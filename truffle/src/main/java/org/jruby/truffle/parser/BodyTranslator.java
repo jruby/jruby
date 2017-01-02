@@ -1846,7 +1846,7 @@ public class BodyTranslator extends Translator {
                 final RubyNode hashLiteralSoFar = HashLiteralNode.create(context, fullSourceSection, keyValues.toArray(new RubyNode[keyValues.size()]));
                 hashConcats.add(hashLiteralSoFar);
                 hashConcats.add(new EnsureSymbolKeysNode(context, fullSourceSection,
-                    HashCastNodeGen.create(context, fullSourceSection, pair.getValue().accept(this))));
+                    HashCastNodeGen.create(context, sourceSection, pair.getValue().accept(this))));
                 keyValues.clear();
             } else {
                 keyValues.add(pair.getKey().accept(this));
@@ -1950,7 +1950,7 @@ public class BodyTranslator extends Translator {
             // TODO (pitr 08-Aug-2015): values of predefined OM properties should be casted to defined types automatically
             if (name.equals("@used") || name.equals("@total") || name.equals("@lineno")) {
                 // Cast int-fitting longs back to int
-                ret = new WriteInstanceVariableNode(context, sourceSection, name, self, IntegerCastNodeGen.create(context, fullSourceSection, rhs));
+                ret = new WriteInstanceVariableNode(context, sourceSection, name, self, IntegerCastNodeGen.create(context, sourceSection, rhs));
                 return addNewlineIfNeeded(node, ret);
             }
         }

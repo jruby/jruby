@@ -19,6 +19,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
@@ -32,7 +33,7 @@ public abstract class HashCastNode extends RubyNode {
 
     @Child private CallDispatchHeadNode toHashNode;
 
-    public HashCastNode(RubyContext context, SourceSection sourceSection) {
+    public HashCastNode(RubyContext context, SourceIndexLength sourceSection) {
         super(context, sourceSection);
         toHashNode = DispatchHeadNodeFactory.createMethodCall(context, MissingBehavior.RETURN_MISSING);
     }

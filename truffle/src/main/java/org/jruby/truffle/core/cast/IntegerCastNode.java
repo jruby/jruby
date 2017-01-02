@@ -17,6 +17,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.RaiseException;
 
 /**
@@ -26,7 +27,7 @@ import org.jruby.truffle.language.control.RaiseException;
 @NodeChild(value = "value", type = RubyNode.class)
 public abstract class IntegerCastNode extends RubyNode {
 
-    public IntegerCastNode(RubyContext context, SourceSection sourceSection) {
+    public IntegerCastNode(RubyContext context, SourceIndexLength sourceSection) {
         super(context, sourceSection);
     }
 
