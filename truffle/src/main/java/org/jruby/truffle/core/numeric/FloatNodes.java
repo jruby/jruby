@@ -284,12 +284,7 @@ public abstract class FloatNodes {
     @CoreMethod(names = "divmod", required = 1)
     public abstract static class DivModNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private GeneralDivModNode divModNode;
-
-        public DivModNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            divModNode = new GeneralDivModNode(sourceSection);
-        }
+        @Child private GeneralDivModNode divModNode = new GeneralDivModNode();
 
         @Specialization
         public DynamicObject divMod(double a, long b) {

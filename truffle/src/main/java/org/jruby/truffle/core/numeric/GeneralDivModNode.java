@@ -22,8 +22,8 @@ import java.math.BigInteger;
 
 public class GeneralDivModNode extends RubyBaseNode {
 
-    @Child private FixnumOrBignumNode fixnumOrBignumQuotient;
-    @Child private FixnumOrBignumNode fixnumOrBignumRemainder;
+    @Child private FixnumOrBignumNode fixnumOrBignumQuotient = new FixnumOrBignumNode();
+    @Child private FixnumOrBignumNode fixnumOrBignumRemainder = new FixnumOrBignumNode();
 
     private final BranchProfile bZeroProfile = BranchProfile.create();
     private final BranchProfile bMinusOneProfile = BranchProfile.create();
@@ -31,14 +31,6 @@ public class GeneralDivModNode extends RubyBaseNode {
     private final BranchProfile bigIntegerFixnumProfile = BranchProfile.create();
     private final BranchProfile useFixnumPairProfile = BranchProfile.create();
     private final BranchProfile useObjectPairProfile = BranchProfile.create();
-
-    public GeneralDivModNode(SourceIndexLength sourceSection) {
-        if (sourceSection != null) {
-            unsafeSetSourceSection(sourceSection);
-        }
-        fixnumOrBignumQuotient = new FixnumOrBignumNode();
-        fixnumOrBignumRemainder = new FixnumOrBignumNode();
-    }
 
     public DynamicObject execute(long a, long b) {
         return divMod(a, b);
