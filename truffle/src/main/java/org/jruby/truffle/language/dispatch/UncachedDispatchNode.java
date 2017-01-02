@@ -37,13 +37,12 @@ public class UncachedDispatchNode extends DispatchNode {
     private final BranchProfile methodMissingProfile = BranchProfile.create();
     private final BranchProfile methodMissingNotFoundProfile = BranchProfile.create();
 
-    public UncachedDispatchNode(RubyContext context, boolean ignoreVisibility, DispatchAction dispatchAction, MissingBehavior missingBehavior) {
-        super(context, dispatchAction);
-
+    public UncachedDispatchNode(boolean ignoreVisibility, DispatchAction dispatchAction, MissingBehavior missingBehavior) {
+        super(dispatchAction);
         this.ignoreVisibility = ignoreVisibility;
         this.missingBehavior = missingBehavior;
         this.indirectCallNode = Truffle.getRuntime().createIndirectCallNode();
-        this.toSymbolNode = ToSymbolNodeGen.create(context, null, null);
+        this.toSymbolNode = ToSymbolNodeGen.create(null, null);
         this.toJavaStringNode = NameToJavaStringNode.create();
     }
 

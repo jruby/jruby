@@ -35,6 +35,7 @@ public abstract class FormatNode extends Node {
     private final ConditionProfile codeRangeIncreasedProfile = ConditionProfile.createBinaryProfile();
 
     public FormatNode(RubyContext context) {
+        assert context != null;
         this.context = context;
     }
 

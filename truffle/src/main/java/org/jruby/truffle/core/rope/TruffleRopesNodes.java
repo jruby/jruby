@@ -76,8 +76,8 @@ public abstract class TruffleRopesNodes {
 
         @Child private RopeNodes.DebugPrintRopeNode debugPrintRopeNode;
 
-        public DebugPrintRopeNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
+        public DebugPrintRopeNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
             debugPrintRopeNode = RopeNodesFactory.DebugPrintRopeNodeGen.create(null, null, null);
         }
 
@@ -113,8 +113,8 @@ public abstract class TruffleRopesNodes {
     public abstract static class DebugGetStructureCreationNode extends CoreMethodArrayArgumentsNode {
 
 
-        public DebugGetStructureCreationNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
+        public DebugGetStructureCreationNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
         }
 
         @TruffleBoundary

@@ -37,11 +37,11 @@ public final class InterpolatedStringNode extends RubyNode {
 
     private final ConditionProfile taintProfile = ConditionProfile.createCountingProfile();
 
-    public InterpolatedStringNode(RubyContext context, SourceIndexLength sourceSection, ToSNode[] children) {
-        super(context, sourceSection);
+    public InterpolatedStringNode(SourceIndexLength sourceSection, ToSNode[] children) {
+        super(sourceSection);
         this.children = children;
-        appendNode = StringNodesFactory.StringAppendPrimitiveNodeFactory.create(context, null, new RubyNode[] {});
-        dupNode = DispatchHeadNodeFactory.createMethodCall(context);
+        appendNode = StringNodesFactory.StringAppendPrimitiveNodeFactory.create(null, new RubyNode[] {});
+        dupNode = DispatchHeadNodeFactory.createMethodCall(getContext());
         isTaintedNode = IsTaintedNode.create();
         taintNode = TaintNode.create();
     }

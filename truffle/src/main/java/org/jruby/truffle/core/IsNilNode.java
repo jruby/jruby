@@ -19,8 +19,8 @@ public class IsNilNode extends RubyNode {
 
     @Child private RubyNode child;
 
-    public IsNilNode(RubyContext context, SourceIndexLength sourceSection, RubyNode child) {
-        super(context, sourceSection);
+    public IsNilNode(SourceIndexLength sourceSection, RubyNode child) {
+        super(sourceSection);
         this.child = child;
     }
 

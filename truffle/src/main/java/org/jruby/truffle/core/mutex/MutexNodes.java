@@ -41,8 +41,8 @@ public abstract class MutexNodes {
 
         @Child private AllocateObjectNode allocateNode;
 
-        public AllocateNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
+        public AllocateNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
             allocateNode = AllocateObjectNode.create();
         }
 

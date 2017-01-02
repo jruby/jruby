@@ -30,10 +30,6 @@ import org.jruby.truffle.language.yield.CallBlockNodeGen;
 })
 abstract class ForeignExecuteHelperNode extends RubyNode {
 
-    public ForeignExecuteHelperNode(RubyContext context) {
-        super(context);
-    }
-
     public abstract Object executeCall(VirtualFrame frame, Object receiver, Object[] arguments);
 
     @Specialization(guards = "isRubyProc(proc)")
@@ -44,7 +40,7 @@ abstract class ForeignExecuteHelperNode extends RubyNode {
     }
 
     protected CallBlockNode createCallBlockNode() {
-        return CallBlockNodeGen.create(getContext(), null, DeclarationContext.BLOCK, null, null, null, null);
+        return CallBlockNodeGen.create(null, DeclarationContext.BLOCK, null, null, null, null);
     }
 
     @Specialization(guards = "isRubyMethod(method)")
@@ -54,7 +50,7 @@ abstract class ForeignExecuteHelperNode extends RubyNode {
     }
 
     protected CallBoundMethodNode createCallBoundMethodNode() {
-        return CallBoundMethodNodeGen.create(getContext(), null, null, null, null);
+        return CallBoundMethodNodeGen.create(null, null, null, null);
     }
 
 }

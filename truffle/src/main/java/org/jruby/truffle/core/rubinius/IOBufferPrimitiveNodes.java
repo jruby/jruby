@@ -70,8 +70,8 @@ public abstract class IOBufferPrimitiveNodes {
 
         @Child private AllocateObjectNode allocateNode;
 
-        public IOBufferAllocatePrimitiveNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
+        public IOBufferAllocatePrimitiveNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
             allocateNode = AllocateObjectNode.create();
         }
 

@@ -60,19 +60,7 @@ public abstract class RubyBaseNode extends Node {
     public RubyBaseNode() {
     }
 
-    public RubyBaseNode(RubyContext context) {
-        this.context = context;
-    }
-
     public RubyBaseNode(SourceIndexLength sourceSection) {
-        if (sourceSection != null) {
-            unsafeSetSourceSection(sourceSection);
-        }
-    }
-
-    public RubyBaseNode(RubyContext context, SourceIndexLength sourceSection) {
-        this.context = context;
-
         if (sourceSection != null) {
             unsafeSetSourceSection(sourceSection);
         }

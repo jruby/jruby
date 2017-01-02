@@ -382,9 +382,9 @@ public abstract class RegexpNodes {
         @Child private CallDispatchHeadNode toSNode;
         @Child private ToStrNode toStrNode;
 
-        public MatchOperatorNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
-            dupNode = DispatchHeadNodeFactory.createMethodCall(context);
+        public MatchOperatorNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
+            dupNode = DispatchHeadNodeFactory.createMethodCall(getContext());
             makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
             setLastMatchNode = RegexpSetLastMatchPrimitiveNodeFactory.create(null);
         }
@@ -415,7 +415,7 @@ public abstract class RegexpNodes {
         public Object matchGeneric(VirtualFrame frame, DynamicObject regexp, DynamicObject other) {
             if (toStrNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                toStrNode = insert(ToStrNodeGen.create(getContext(), null, null));
+                toStrNode = insert(ToStrNodeGen.create(null, null));
             }
 
             return matchWithStringCopy(regexp, toStrNode.executeToStr(frame, other));
@@ -466,9 +466,9 @@ public abstract class RegexpNodes {
         @Child private CallDispatchHeadNode dupNode;
         @Child private RopeNodes.MakeSubstringNode makeSubstringNode;
 
-        public MatchStartNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
-            dupNode = DispatchHeadNodeFactory.createMethodCall(context);
+        public MatchStartNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
+            dupNode = DispatchHeadNodeFactory.createMethodCall(getContext());
             makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
         }
 
@@ -620,7 +620,7 @@ public abstract class RegexpNodes {
         public DynamicObject quote(VirtualFrame frame, Object raw) {
             if (toStrNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                toStrNode = insert(ToStrNodeGen.create(getContext(), null, null));
+                toStrNode = insert(ToStrNodeGen.create(null, null));
             }
 
             return executeQuote(frame, toStrNode.executeToStr(frame, raw));
@@ -635,9 +635,9 @@ public abstract class RegexpNodes {
         @Child private CallDispatchHeadNode dupNode;
         @Child private RopeNodes.MakeSubstringNode makeSubstringNode;
 
-        public SearchFromNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
-            dupNode = DispatchHeadNodeFactory.createMethodCall(context);
+        public SearchFromNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
+            dupNode = DispatchHeadNodeFactory.createMethodCall(getContext());
             makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
         }
 
@@ -705,8 +705,8 @@ public abstract class RegexpNodes {
 
         @Child private AllocateObjectNode allocateNode;
 
-        public AllocateNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
+        public AllocateNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
             allocateNode = AllocateObjectNode.create();
         }
 

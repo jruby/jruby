@@ -87,8 +87,8 @@ public abstract class ArrayNodes {
 
         @Child private AllocateObjectNode allocateNode;
 
-        public AllocateNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
+        public AllocateNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
             allocateNode = AllocateObjectNode.create();
         }
 
@@ -109,7 +109,7 @@ public abstract class ArrayNodes {
 
         @CreateCast("b")
         public RubyNode coerceOtherToAry(RubyNode other) {
-            return ToAryNodeGen.create(null, null, other);
+            return ToAryNodeGen.create(null, other);
         }
 
         // Same storage
@@ -193,7 +193,7 @@ public abstract class ArrayNodes {
         public Object index(DynamicObject array, int index, NotProvided length) {
             if (readNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                readNode = insert(ArrayReadDenormalizedNodeGen.create(getContext(), null, null, null));
+                readNode = insert(ArrayReadDenormalizedNodeGen.create(null, null, null));
             }
             return readNode.executeRead(array, index);
         }
@@ -206,7 +206,7 @@ public abstract class ArrayNodes {
 
             if (readSliceNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                readSliceNode = insert(ArrayReadSliceDenormalizedNodeGen.create(getContext(), null, null, null, null));
+                readSliceNode = insert(ArrayReadSliceDenormalizedNodeGen.create(null, null, null, null));
             }
 
             return readSliceNode.executeReadSlice(array, start, length);
@@ -233,7 +233,7 @@ public abstract class ArrayNodes {
 
                 if (readNormalizedSliceNode == null) {
                     CompilerDirectives.transferToInterpreterAndInvalidate();
-                    readNormalizedSliceNode = insert(ArrayReadSliceNormalizedNodeGen.create(getContext(), null, null, null, null));
+                    readNormalizedSliceNode = insert(ArrayReadSliceNormalizedNodeGen.create(null, null, null, null));
                 }
 
                 return readNormalizedSliceNode.executeReadSlice(array, normalizedIndex, length);
@@ -457,7 +457,7 @@ public abstract class ArrayNodes {
         private Object read(DynamicObject array, int index) {
             if (readNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                readNode = insert(ArrayReadNormalizedNodeGen.create(getContext(), null, null, null));
+                readNode = insert(ArrayReadNormalizedNodeGen.create(null, null, null));
             }
             return readNode.executeRead(array, index);
         }
@@ -465,7 +465,7 @@ public abstract class ArrayNodes {
         private Object write(DynamicObject array, int index, Object value) {
             if (writeNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                writeNode = insert(ArrayWriteNormalizedNodeGen.create(getContext(), null, null, null, null));
+                writeNode = insert(ArrayWriteNormalizedNodeGen.create(null, null, null, null));
             }
             return writeNode.executeWrite(array, index, value);
         }
@@ -473,7 +473,7 @@ public abstract class ArrayNodes {
         private DynamicObject readSlice(DynamicObject array, int start, int length) {
             if (readSliceNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                readSliceNode = insert(ArrayReadSliceNormalizedNodeGen.create(getContext(), null, null, null, null));
+                readSliceNode = insert(ArrayReadSliceNormalizedNodeGen.create(null, null, null, null));
             }
             return readSliceNode.executeReadSlice(array, start, length);
         }
@@ -499,14 +499,14 @@ public abstract class ArrayNodes {
 
         @CreateCast("index")
         public RubyNode coerceOtherToInt(RubyNode index) {
-            return FixnumLowerNodeGen.create(null, null, ToIntNodeGen.create(index));
+            return FixnumLowerNodeGen.create(null, ToIntNodeGen.create(index));
         }
 
         @Specialization
         public Object at(DynamicObject array, int index) {
             if (readNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                readNode = insert(ArrayReadDenormalizedNodeGen.create(getContext(), null, null, null));
+                readNode = insert(ArrayReadDenormalizedNodeGen.create(null, null, null));
             }
             return readNode.executeRead(array, index);
         }
@@ -607,7 +607,7 @@ public abstract class ArrayNodes {
 
         @CreateCast("other")
         public RubyNode coerceOtherToAry(RubyNode other) {
-            return ToAryNodeGen.create(null, null, other);
+            return ToAryNodeGen.create(null, other);
         }
 
         @Specialization
@@ -666,7 +666,7 @@ public abstract class ArrayNodes {
         public void checkFrozen(Object object) {
             if (isFrozenNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                isFrozenNode = insert(IsFrozenNodeGen.create(getContext(), null, null));
+                isFrozenNode = insert(IsFrozenNodeGen.create(null, null));
             }
             isFrozenNode.raiseIfFrozen(object);
         }
@@ -975,7 +975,7 @@ public abstract class ArrayNodes {
         public boolean respondToToAry(VirtualFrame frame, Object object) {
             if (respondToToAryNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                respondToToAryNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), null, null, null, null));
+                respondToToAryNode = insert(KernelNodesFactory.RespondToNodeFactory.create(null, null, null, null));
             }
             return respondToToAryNode.doesRespondToString(frame, object, create7BitString("to_ary", UTF8Encoding.INSTANCE), true);
         }
@@ -1012,7 +1012,7 @@ public abstract class ArrayNodes {
 
         @CreateCast("from")
         public RubyNode coerceOtherToAry(RubyNode other) {
-            return ToAryNodeGen.create(null, null, other);
+            return ToAryNodeGen.create(null, other);
         }
 
         @Specialization
@@ -1037,9 +1037,9 @@ public abstract class ArrayNodes {
 
         @Child private CallDispatchHeadNode dispatch;
 
-        public InjectNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
-            dispatch = DispatchHeadNodeFactory.createMethodCall(context, MissingBehavior.CALL_METHOD_MISSING);
+        public InjectNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
+            dispatch = DispatchHeadNodeFactory.createMethodCall(getContext(), MissingBehavior.CALL_METHOD_MISSING);
         }
 
         // With block
@@ -1184,7 +1184,7 @@ public abstract class ArrayNodes {
         }
 
         protected ArrayWriteNormalizedNode createWriteNode() {
-            return ArrayWriteNormalizedNodeGen.create(getContext(), null, null, null, null);
+            return ArrayWriteNormalizedNodeGen.create(null, null, null, null);
         }
 
     }
@@ -1310,7 +1310,7 @@ public abstract class ArrayNodes {
         public Object pop(DynamicObject array, NotProvided n) {
             if (popOneNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                popOneNode = insert(ArrayPopOneNodeGen.create(getContext(), null, null));
+                popOneNode = insert(ArrayPopOneNodeGen.create(null, null));
             }
 
             return popOneNode.executePopOne(array);
@@ -1514,7 +1514,7 @@ public abstract class ArrayNodes {
 
         @CreateCast("other")
         public RubyNode coerceOtherToAry(RubyNode index) {
-            return ToAryNodeGen.create(null, null, index);
+            return ToAryNodeGen.create(null, index);
         }
 
         @Specialization(guards = {"arrayStrategy.matches(array)", "otherStrategy.matches(other)"}, limit = "ARRAY_STRATEGIES")
@@ -1671,10 +1671,10 @@ public abstract class ArrayNodes {
 
         private final BranchProfile errorProfile = BranchProfile.create();
 
-        public SortNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
-            compareDispatchNode = DispatchHeadNodeFactory.createMethodCall(context);
-            yieldNode = new YieldNode(context);
+        public SortNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
+            compareDispatchNode = DispatchHeadNodeFactory.createMethodCall(getContext());
+            yieldNode = new YieldNode();
         }
 
         @Specialization(guards = "isEmptyArray(array)")

@@ -30,9 +30,9 @@ public abstract class MainNodes {
 
         @Child private ModuleNodes.PublicNode publicNode;
 
-        public PublicNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
-            publicNode = ModuleNodesFactory.PublicNodeFactory.create(context, null, null);
+        public PublicNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
+            publicNode = ModuleNodesFactory.PublicNodeFactory.create(null, null);
         }
 
         @Specialization
@@ -47,9 +47,9 @@ public abstract class MainNodes {
 
         @Child private ModuleNodes.PrivateNode privateNode;
 
-        public PrivateNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
-            privateNode = ModuleNodesFactory.PrivateNodeFactory.create(context, null, null);
+        public PrivateNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
+            privateNode = ModuleNodesFactory.PrivateNodeFactory.create(null, null);
         }
 
         @Specialization

@@ -21,8 +21,8 @@ import org.jruby.truffle.language.SourceIndexLength;
 
 public abstract class ThreadLocalObjectNode extends RubyNode {
 
-    public ThreadLocalObjectNode(RubyContext context, SourceIndexLength sourceSection) {
-        super(context, sourceSection);
+    public ThreadLocalObjectNode(SourceIndexLength sourceSection) {
+        super(sourceSection);
     }
 
     @Override

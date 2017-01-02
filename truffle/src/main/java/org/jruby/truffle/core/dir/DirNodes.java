@@ -62,8 +62,8 @@ public abstract class DirNodes {
 
         @Child private AllocateObjectNode allocateNode;
 
-        public DirAllocatePrimitiveNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
+        public DirAllocatePrimitiveNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
             allocateNode = AllocateObjectNode.create();
         }
 

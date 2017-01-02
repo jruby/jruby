@@ -35,9 +35,9 @@ public abstract class NameToSymbolOrStringNode extends RubyNode {
 
     @Child private CallDispatchHeadNode toStr;
 
-    public NameToSymbolOrStringNode(RubyContext context, SourceIndexLength sourceSection) {
-        super(context, sourceSection);
-        toStr = DispatchHeadNodeFactory.createMethodCall(context);
+    public NameToSymbolOrStringNode(SourceIndexLength sourceSection) {
+        super(sourceSection);
+        toStr = DispatchHeadNodeFactory.createMethodCall(getContext());
     }
 
     public abstract DynamicObject executeToSymbolOrString(VirtualFrame frame, Object name);

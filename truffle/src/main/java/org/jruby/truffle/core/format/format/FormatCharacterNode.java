@@ -86,7 +86,7 @@ public abstract class FormatCharacterNode extends FormatNode {
         if (toStrResult == null || isNil(toStrResult)) {
             if (toIntegerNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                toIntegerNode = insert(ToIntegerNodeGen.create(getContext(), null));
+                toIntegerNode = insert(ToIntegerNodeGen.create(getContext(),null));
             }
             final int charValue = (int) toIntegerNode.executeToInteger(frame, value);
             // TODO BJF check char length is > 0

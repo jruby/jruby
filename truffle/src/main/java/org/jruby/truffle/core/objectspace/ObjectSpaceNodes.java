@@ -145,8 +145,8 @@ public abstract class ObjectSpaceNodes {
         // Wanting #method_missing(:call) to be called for a finalizer seems highly unlikely.
         @Child private DoesRespondDispatchHeadNode respondToCallNode;
 
-        public DefineFinalizerNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
+        public DefineFinalizerNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
             respondToCallNode = new DoesRespondDispatchHeadNode(getContext(), true);
         }
 

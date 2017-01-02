@@ -79,11 +79,11 @@ public abstract class EncodingNodes {
         @Child private ToEncodingNode getEncodingNode;
 
         public static NegotiateCompatibleEncodingNode create() {
-            return EncodingNodesFactory.NegotiateCompatibleEncodingNodeGen.create(null, null, null, null);
+            return EncodingNodesFactory.NegotiateCompatibleEncodingNodeGen.create(null, null, null);
         }
 
-        public NegotiateCompatibleEncodingNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
+        public NegotiateCompatibleEncodingNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
             getEncodingNode = ToEncodingNode.create();
         }
 
@@ -304,8 +304,8 @@ public abstract class EncodingNodes {
 
         @Child private NegotiateCompatibleEncodingNode negotiateCompatibleEncodingNode;
 
-        public CompatibleQueryNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
+        public CompatibleQueryNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
             negotiateCompatibleEncodingNode = NegotiateCompatibleEncodingNode.create();
         }
 
@@ -466,12 +466,12 @@ public abstract class EncodingNodes {
         @Child private ToEncodingNode toEncodingNode;
 
         public static CheckEncodingNode create() {
-            return EncodingNodesFactory.CheckEncodingNodeGen.create(null, null, null, null);
+            return EncodingNodesFactory.CheckEncodingNodeGen.create(null, null, null);
         }
 
-        public CheckEncodingNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
-            negotiateCompatibleEncodingNode = EncodingNodesFactory.NegotiateCompatibleEncodingNodeGen.create(context, sourceSection, null, null);
+        public CheckEncodingNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
+            negotiateCompatibleEncodingNode = EncodingNodesFactory.NegotiateCompatibleEncodingNodeGen.create(sourceSection, null, null);
         }
 
         public abstract Encoding executeCheckEncoding(Object first, Object second);

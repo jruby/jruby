@@ -34,7 +34,6 @@ public class CachedBooleanDispatchNode extends CachedDispatchNode {
     @Child private DirectCallNode trueCallDirect;
 
     public CachedBooleanDispatchNode(
-            RubyContext context,
             Object cachedName,
             DispatchNode next,
             Assumption falseUnmodifiedAssumption,
@@ -42,7 +41,7 @@ public class CachedBooleanDispatchNode extends CachedDispatchNode {
             Assumption trueUnmodifiedAssumption,
             InternalMethod trueMethod,
             DispatchAction dispatchAction) {
-        super(context, cachedName, next, dispatchAction);
+        super(cachedName, next, dispatchAction);
 
         this.falseUnmodifiedAssumption = falseUnmodifiedAssumption;
         this.falseMethod = falseMethod;

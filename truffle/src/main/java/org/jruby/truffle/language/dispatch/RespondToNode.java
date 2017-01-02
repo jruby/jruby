@@ -22,11 +22,11 @@ public class RespondToNode extends RubyNode {
     @Child private RubyNode child;
     @Child private DoesRespondDispatchHeadNode dispatch;
 
-    public RespondToNode(RubyContext context, SourceIndexLength sourceSection, RubyNode child, String methodName) {
-        super(context, sourceSection);
+    public RespondToNode(SourceIndexLength sourceSection, RubyNode child, String methodName) {
+        super(sourceSection);
         this.methodName = methodName;
         this.child = child;
-        this.dispatch = new DoesRespondDispatchHeadNode(context, true);
+        this.dispatch = new DoesRespondDispatchHeadNode(getContext(), true);
     }
 
     @Override

@@ -29,11 +29,10 @@ public final class UnresolvedDispatchNode extends DispatchNode {
     private final MissingBehavior missingBehavior;
 
     public UnresolvedDispatchNode(
-            RubyContext context,
             boolean ignoreVisibility,
             MissingBehavior missingBehavior,
             DispatchAction dispatchAction) {
-        super(context, dispatchAction);
+        super(dispatchAction);
         this.ignoreVisibility = ignoreVisibility;
         this.missingBehavior = missingBehavior;
     }
@@ -80,11 +79,11 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             final DispatchNode newDispathNode;
 
             if (depth == getContext().getOptions().DISPATCH_CACHE) {
-                newDispathNode = new UncachedDispatchNode(getContext(), ignoreVisibility, getDispatchAction(), missingBehavior);
+                newDispathNode = new UncachedDispatchNode(ignoreVisibility, getDispatchAction(), missingBehavior);
             } else {
                 depth++;
                 if (RubyGuards.isForeignObject(receiverObject)) {
-                    newDispathNode = new CachedForeignDispatchNode(getContext(), first, methodName);
+                    newDispathNode = new CachedForeignDispatchNode(first, methodName);
                 } else if (RubyGuards.isRubyBasicObject(receiverObject)) {
                     newDispathNode = doDynamicObject(frame, first, receiverObject, methodName, argumentsObjects);
                 } else {
@@ -120,13 +119,13 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             final InternalMethod trueMethod = lookup(frame, true, methodNameString, ignoreVisibility);
             assert falseMethod != null || trueMethod != null;
 
-            return new CachedBooleanDispatchNode(getContext(),
+            return new CachedBooleanDispatchNode(
                     methodName, first,
                     falseUnmodifiedAssumption, falseMethod,
                     trueUnmodifiedAssumption, trueMethod,
                     getDispatchAction());
         } else {
-            return new CachedUnboxedDispatchNode(getContext(),
+            return new CachedUnboxedDispatchNode(
                     methodName, first, receiverObject.getClass(),
                     Layouts.MODULE.getFields(coreLibrary().getLogicalClass(receiverObject)).getUnmodifiedAssumption(), method, getDispatchAction());
         }
@@ -150,7 +149,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
         if (RubyGuards.isRubySymbol(receiverObject)) {
             return new CachedBoxedSymbolDispatchNode(getContext(), methodName, first, method, getDispatchAction());
         } else if (Layouts.CLASS.getIsSingleton(receiverMetaClass)) {
-            return new CachedSingletonDispatchNode(getContext(), methodName, first, ((DynamicObject) receiverObject),
+            return new CachedSingletonDispatchNode(methodName, first, ((DynamicObject) receiverObject),
                     receiverMetaClass, method, getDispatchAction());
         } else {
             return new CachedBoxedDispatchNode(getContext(), methodName, first, ((DynamicObject) receiverObject).getShape(),
@@ -176,7 +175,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             Object receiverObject) {
         switch (missingBehavior) {
             case RETURN_MISSING: {
-                return new CachedReturnMissingDispatchNode(getContext(), methodName, first, coreLibrary().getMetaClass(receiverObject),
+                return new CachedReturnMissingDispatchNode(methodName, first, coreLibrary().getMetaClass(receiverObject),
                         getDispatchAction());
             }
 
@@ -188,7 +187,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
                             receiverObject.toString() + " didn't have a #method_missing", this));
                 }
 
-                return new CachedMethodMissingDispatchNode(getContext(), methodName, first, coreLibrary().getMetaClass(receiverObject),
+                return new CachedMethodMissingDispatchNode(methodName, first, coreLibrary().getMetaClass(receiverObject),
                         method, getDispatchAction());
             }
 

@@ -20,8 +20,8 @@ import org.jruby.truffle.language.SourceIndexLength;
 
 public class SetTopLevelBindingNode extends RubyNode {
 
-    public SetTopLevelBindingNode(RubyContext context, SourceIndexLength sourceSection) {
-        super(context, sourceSection);
+    public SetTopLevelBindingNode(SourceIndexLength sourceSection) {
+        super(sourceSection);
     }
 
     @Override

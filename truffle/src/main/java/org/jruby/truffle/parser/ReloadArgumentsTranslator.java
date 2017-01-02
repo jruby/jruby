@@ -116,7 +116,7 @@ public class ReloadArgumentsTranslator extends Translator {
             if (kwArgsNode == null) {
                 kwArgsNode = keyRest;
             } else {
-                kwArgsNode = new ConcatHashLiteralNode(context, sourceSection, new RubyNode[]{kwArgsNode, keyRest});
+                kwArgsNode = new ConcatHashLiteralNode(sourceSection, new RubyNode[]{kwArgsNode, keyRest});
             }
 
         }

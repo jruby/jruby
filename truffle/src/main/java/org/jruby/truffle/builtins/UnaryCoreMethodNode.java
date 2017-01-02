@@ -21,8 +21,8 @@ public abstract class UnaryCoreMethodNode extends CoreMethodNode {
     public UnaryCoreMethodNode() {
     }
 
-    public UnaryCoreMethodNode(RubyContext context, SourceIndexLength sourceSection) {
-        super(context, sourceSection);
+    public UnaryCoreMethodNode(SourceIndexLength sourceSection) {
+        super(sourceSection);
     }
 
     public abstract RubyNode getOperand();

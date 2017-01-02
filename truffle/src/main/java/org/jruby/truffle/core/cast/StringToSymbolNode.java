@@ -24,8 +24,8 @@ import org.jruby.truffle.language.SourceIndexLength;
 @NodeChild("string")
 public abstract class StringToSymbolNode extends RubyNode {
 
-    public StringToSymbolNode(RubyContext context, SourceIndexLength sourceSection) {
-        super(context, sourceSection);
+    public StringToSymbolNode(SourceIndexLength sourceSection) {
+        super(sourceSection);
     }
 
     @Specialization(guards = "isRubyString(string)")

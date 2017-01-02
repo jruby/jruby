@@ -39,8 +39,8 @@ public abstract class AddMethodNode extends RubyNode {
 
     @Child private SingletonClassNode singletonClassNode;
 
-    public AddMethodNode(RubyContext context, SourceIndexLength sourceSection, boolean ignoreNameVisibility, boolean isLiteralDef) {
-        super(context, sourceSection);
+    public AddMethodNode(SourceIndexLength sourceSection, boolean ignoreNameVisibility, boolean isLiteralDef) {
+        super(sourceSection);
         this.ignoreNameVisibility = ignoreNameVisibility;
         this.isLiteralDef = isLiteralDef;
     }
@@ -78,7 +78,7 @@ public abstract class AddMethodNode extends RubyNode {
     protected DynamicObject getSingletonClass(DynamicObject object) {
         if (singletonClassNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            singletonClassNode = insert(SingletonClassNodeGen.create(getContext(), null, null));
+            singletonClassNode = insert(SingletonClassNodeGen.create(null, null));
         }
 
         return singletonClassNode.executeSingletonClass(object);

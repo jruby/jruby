@@ -33,8 +33,8 @@ public class ReadZSuperArgumentsNode extends RubyNode {
 
     private final int restArgIndex;
 
-    public ReadZSuperArgumentsNode(RubyContext context, SourceIndexLength sourceSection, int restArgIndex, RubyNode[] reloadNodes) {
-        super(context, sourceSection);
+    public ReadZSuperArgumentsNode(SourceIndexLength sourceSection, int restArgIndex, RubyNode[] reloadNodes) {
+        super(sourceSection);
         this.restArgIndex = restArgIndex;
         this.reloadNodes = reloadNodes;
 

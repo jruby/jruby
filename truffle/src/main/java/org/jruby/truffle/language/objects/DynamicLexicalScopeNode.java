@@ -17,8 +17,8 @@ import org.jruby.truffle.language.arguments.RubyArguments;
 
 public class DynamicLexicalScopeNode extends RubyNode {
 
-    public DynamicLexicalScopeNode(RubyContext context, SourceIndexLength sourceSection) {
-        super(context, sourceSection);
+    public DynamicLexicalScopeNode(SourceIndexLength sourceSection) {
+        super(sourceSection);
     }
 
     @Override

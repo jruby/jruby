@@ -53,19 +53,19 @@ public class PrimitiveNodeConstructor {
         }
 
         if (!CoreMethodNodeManager.isSafe(context, annotation.unsafe())) {
-            return new UnsafeNode(context, sourceSection);
+            return new UnsafeNode(sourceSection);
         }
 
         final RubyNode primitiveNode = CoreMethodNodeManager.createNodeFromFactory(context, source, sourceSection, factory, arguments);
 
-        return new CallPrimitiveNode(context, sourceSection, primitiveNode, fallback);
+        return new CallPrimitiveNode(sourceSection, primitiveNode, fallback);
     }
 
     public RubyNode createInvokePrimitiveNode(RubyContext context, Source source, SourceIndexLength sourceSection, RubyNode[] arguments) {
         assert arguments.length == getPrimitiveArity();
 
         if (!CoreMethodNodeManager.isSafe(context, annotation.unsafe())) {
-            return new UnsafeNode(context, sourceSection);
+            return new UnsafeNode(sourceSection);
         }
 
         for (int n = 0; n < arguments.length; n++) {
@@ -80,20 +80,20 @@ public class PrimitiveNodeConstructor {
 
         final RubyNode primitiveNode;
 
-        if (signature.get(0) == RubyContext.class && signature.get(1) == SourceSection.class) {
-            primitiveNode = factory.createNode(context, sourceSection.toSourceSection(source), arguments);
-        } else if (signature.get(0) == RubyContext.class && signature.get(1) == SourceIndexLength.class) {
-            primitiveNode = factory.createNode(context, sourceSection, arguments);
+        if (signature.get(0) == SourceSection.class) {
+            primitiveNode = factory.createNode(sourceSection.toSourceSection(source), arguments);
+        } else if (signature.get(0) == SourceIndexLength.class) {
+            primitiveNode = factory.createNode(sourceSection, arguments);
         } else {
             primitiveNode = factory.createNode(new Object[] { arguments });
         }
 
-        return new InvokePrimitiveNode(context, sourceSection, primitiveNode);
+        return new InvokePrimitiveNode(sourceSection, primitiveNode);
     }
 
     private RubyNode transformArgument(RubyNode argument, int n) {
         if (ArrayUtils.contains(annotation.lowerFixnum(), n)) {
-            return FixnumLowerNodeGen.create(null, null, argument);
+            return FixnumLowerNodeGen.create(null, argument);
         } else {
             return argument;
         }

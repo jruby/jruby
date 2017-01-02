@@ -153,8 +153,8 @@ public abstract class StatPrimitiveNodes {
     @Primitive(name = "stat_stat", unsafe = UnsafeGroup.IO)
     public static abstract class StatStatPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
-        public StatStatPrimitiveNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
+        public StatStatPrimitiveNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
         }
 
         @TruffleBoundary
@@ -180,8 +180,8 @@ public abstract class StatPrimitiveNodes {
     @Primitive(name = "stat_fstat", unsafe = UnsafeGroup.IO)
     public static abstract class StatFStatPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
-        public StatFStatPrimitiveNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
+        public StatFStatPrimitiveNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
         }
 
         @TruffleBoundary
@@ -202,8 +202,8 @@ public abstract class StatPrimitiveNodes {
     @Primitive(name = "stat_lstat", unsafe = UnsafeGroup.IO)
     public static abstract class StatLStatPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
-        public StatLStatPrimitiveNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
+        public StatLStatPrimitiveNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
         }
 
         @TruffleBoundary

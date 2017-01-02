@@ -27,12 +27,12 @@ import org.jruby.truffle.language.RubyNode;
 @ImportStatic(ArrayGuards.class)
 public abstract class ArrayGeneralizeNode extends RubyNode {
 
-    public ArrayGeneralizeNode(RubyContext context, SourceIndexLength sourceSection) {
-        super(context, sourceSection);
+    public ArrayGeneralizeNode(SourceIndexLength sourceSection) {
+        super(sourceSection);
     }
 
     public static ArrayGeneralizeNode create(RubyContext context) {
-        return ArrayGeneralizeNodeGen.create(context, null, null, null);
+        return ArrayGeneralizeNodeGen.create(null, null, null);
     }
 
     public abstract Object[] executeGeneralize(DynamicObject array, int requiredCapacity);

@@ -36,8 +36,8 @@ public class CatchForLambdaNode extends RubyNode {
     private final BranchProfile nextProfile = BranchProfile.create();
     private final BranchProfile breakProfile = BranchProfile.create();
 
-    public CatchForLambdaNode(RubyContext context, SourceIndexLength sourceSection, ReturnID returnID, RubyNode body) {
-        super(context, sourceSection);
+    public CatchForLambdaNode(SourceIndexLength sourceSection, ReturnID returnID, RubyNode body) {
+        super(sourceSection);
         this.returnID = returnID;
         this.body = body;
     }

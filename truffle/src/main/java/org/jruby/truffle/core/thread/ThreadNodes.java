@@ -493,8 +493,8 @@ public abstract class ThreadNodes {
 
     @Primitive(name = "thread_get_name")
     public static abstract class ThreadGetNamePrimitiveNode extends PrimitiveArrayArgumentsNode {
-        public ThreadGetNamePrimitiveNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
+        public ThreadGetNamePrimitiveNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
         }
 
         @Specialization(guards = "isRubyThread(thread)")
@@ -505,8 +505,8 @@ public abstract class ThreadNodes {
 
     @Primitive(name = "thread_set_name")
     public static abstract class ThreadSetNamePrimitiveNode extends PrimitiveArrayArgumentsNode {
-        public ThreadSetNamePrimitiveNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
+        public ThreadSetNamePrimitiveNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
         }
 
         @Specialization(guards = "isRubyThread(thread)")
@@ -518,8 +518,8 @@ public abstract class ThreadNodes {
 
     @Primitive(name = "thread_get_priority", unsafe = UnsafeGroup.THREADS)
     public static abstract class ThreadGetPriorityPrimitiveNode extends PrimitiveArrayArgumentsNode {
-        public ThreadGetPriorityPrimitiveNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
+        public ThreadGetPriorityPrimitiveNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
         }
 
         @Specialization(guards = "isRubyThread(thread)")
@@ -550,8 +550,8 @@ public abstract class ThreadNodes {
         static final int RUBY_MIN_THREAD_PRIORITY = -3;
         static final int RUBY_MAX_THREAD_PRIORITY = 3;
 
-        public ThreadSetPriorityPrimitiveNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
+        public ThreadSetPriorityPrimitiveNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
         }
 
         @Specialization(guards = "isRubyThread(thread)")
@@ -580,8 +580,8 @@ public abstract class ThreadNodes {
 
     @Primitive(name = "thread_set_group")
     public static abstract class ThreadSetGroupPrimitiveNode extends PrimitiveArrayArgumentsNode {
-        public ThreadSetGroupPrimitiveNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
+        public ThreadSetGroupPrimitiveNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
         }
 
         @Specialization(guards = "isRubyThread(thread)")

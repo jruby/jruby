@@ -30,8 +30,8 @@ public class CatchForMethodNode extends RubyNode {
     private final ConditionProfile matchingReturnProfile = ConditionProfile.createBinaryProfile();
     private final BranchProfile retryProfile = BranchProfile.create();
 
-    public CatchForMethodNode(RubyContext context, SourceIndexLength sourceSection, ReturnID returnID, RubyNode body) {
-        super(context, sourceSection);
+    public CatchForMethodNode(SourceIndexLength sourceSection, ReturnID returnID, RubyNode body) {
+        super(sourceSection);
         this.returnID = returnID;
         this.body = body;
     }

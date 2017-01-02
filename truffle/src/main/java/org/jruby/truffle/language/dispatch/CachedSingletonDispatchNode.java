@@ -33,14 +33,13 @@ public class CachedSingletonDispatchNode extends CachedDispatchNode {
     @Child private DirectCallNode callNode;
 
     public CachedSingletonDispatchNode(
-            RubyContext context,
             Object cachedName,
             DispatchNode next,
             DynamicObject expectedReceiver,
             DynamicObject expectedClass,
             InternalMethod method,
             DispatchAction dispatchAction) {
-        super(context, cachedName, next, dispatchAction);
+        super(cachedName, next, dispatchAction);
 
         this.expectedReceiver = expectedReceiver;
         this.unmodifiedAssumption = Layouts.MODULE.getFields(expectedClass).getUnmodifiedAssumption();

@@ -20,8 +20,8 @@ public class IsRubiniusUndefinedNode extends RubyNode {
 
     @Child private RubyNode child;
 
-    public IsRubiniusUndefinedNode(RubyContext context, SourceIndexLength sourceSection, RubyNode child) {
-        super(context, sourceSection);
+    public IsRubiniusUndefinedNode(SourceIndexLength sourceSection, RubyNode child) {
+        super(sourceSection);
         this.child = child;
     }
 

@@ -26,16 +26,15 @@ public class CachedReturnMissingDispatchNode extends CachedDispatchNode {
     @Child private MetaClassNode metaClassNode;
 
     public CachedReturnMissingDispatchNode(
-            RubyContext context,
             Object cachedName,
             DispatchNode next,
             DynamicObject expectedClass,
             DispatchAction dispatchAction) {
-        super(context, cachedName, next, dispatchAction);
+        super(cachedName, next, dispatchAction);
 
         this.expectedClass = expectedClass;
         this.unmodifiedAssumption = Layouts.MODULE.getFields(expectedClass).getUnmodifiedAssumption();
-        this.metaClassNode = MetaClassNodeGen.create(context, null, null);
+        this.metaClassNode = MetaClassNodeGen.create(null, null);
     }
 
     @Override

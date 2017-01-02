@@ -27,15 +27,15 @@ public class WriteLocalVariableNode extends RubyNode {
     public static WriteLocalVariableNode createWriteLocalVariableNode(RubyContext context, SourceIndexLength sourceSection,
                                                                       FrameSlot frameSlot, RubyNode valueNode) {
         if (context.getCallGraph() == null) {
-            return new WriteLocalVariableNode(context, sourceSection, frameSlot, valueNode);
+            return new WriteLocalVariableNode(sourceSection, frameSlot, valueNode);
         } else {
-            return new InstrumentedWriteLocalVariableNode(context, sourceSection, frameSlot, valueNode);
+            return new InstrumentedWriteLocalVariableNode(sourceSection, frameSlot, valueNode);
         }
     }
 
-    protected WriteLocalVariableNode(RubyContext context, SourceIndexLength sourceSection,
+    protected WriteLocalVariableNode(SourceIndexLength sourceSection,
                                      FrameSlot frameSlot, RubyNode valueNode) {
-        super(context, sourceSection);
+        super(sourceSection);
         this.frameSlot = frameSlot;
         this.valueNode = valueNode;
     }

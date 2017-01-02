@@ -28,12 +28,12 @@ public abstract class MetaClassNode extends RubyNode {
     public MetaClassNode() {
     }
 
-    public MetaClassNode(RubyContext context, SourceIndexLength sourceSection) {
-        super(context, sourceSection);
+    public MetaClassNode(SourceIndexLength sourceSection) {
+        super(sourceSection);
     }
 
     public static MetaClassNode create() {
-        return MetaClassNodeGen.create(null, null, null);
+        return MetaClassNodeGen.create(null, null);
     }
 
     public abstract DynamicObject executeMetaClass(Object value);

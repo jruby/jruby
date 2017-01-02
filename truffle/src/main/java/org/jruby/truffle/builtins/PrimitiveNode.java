@@ -24,8 +24,8 @@ public abstract class PrimitiveNode extends RubyNode {
     public PrimitiveNode() {
     }
 
-    public PrimitiveNode(RubyContext context, SourceIndexLength sourceSection) {
-        super(context, sourceSection);
+    public PrimitiveNode(SourceIndexLength sourceSection) {
+        super(sourceSection);
     }
 
 }

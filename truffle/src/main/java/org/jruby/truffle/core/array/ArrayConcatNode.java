@@ -30,11 +30,11 @@ public final class ArrayConcatNode extends RubyNode {
 
     private final ConditionProfile isArrayProfile = ConditionProfile.createBinaryProfile();
 
-    public ArrayConcatNode(RubyContext context, SourceIndexLength sourceSection, RubyNode[] children) {
-        super(context, sourceSection);
+    public ArrayConcatNode(SourceIndexLength sourceSection, RubyNode[] children) {
+        super(sourceSection);
         assert children.length > 1;
         this.children = children;
-        arrayBuilderNode = ArrayBuilderNode.create(context);
+        arrayBuilderNode = ArrayBuilderNode.create(getContext());
     }
 
     @Override

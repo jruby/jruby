@@ -25,8 +25,8 @@ public abstract class DefaultValueNode extends RubyNode {
 
     private final Object defaultValue;
 
-    public DefaultValueNode(RubyContext context, SourceIndexLength sourceSection, Object defaultValue) {
-        super(context, sourceSection);
+    public DefaultValueNode(SourceIndexLength sourceSection, Object defaultValue) {
+        super(sourceSection);
         this.defaultValue = defaultValue;
     }
 

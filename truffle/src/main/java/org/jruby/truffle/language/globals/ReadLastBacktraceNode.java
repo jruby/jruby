@@ -27,8 +27,8 @@ public class ReadLastBacktraceNode extends RubyNode {
 
     private final ConditionProfile lastExceptionNilProfile = ConditionProfile.createBinaryProfile();
 
-    public ReadLastBacktraceNode(RubyContext context, SourceIndexLength sourceSection) {
-        super(context, sourceSection);
+    public ReadLastBacktraceNode(SourceIndexLength sourceSection) {
+        super(sourceSection);
     }
 
     @Override
@@ -50,7 +50,7 @@ public class ReadLastBacktraceNode extends RubyNode {
     private ReadThreadLocalGlobalVariableNode getGetLastExceptionNode() {
         if (getLastExceptionNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            getLastExceptionNode = insert(new ReadThreadLocalGlobalVariableNode(getContext(), null, "$!", true));
+            getLastExceptionNode = insert(new ReadThreadLocalGlobalVariableNode(null, "$!", true));
         }
 
         return getLastExceptionNode;

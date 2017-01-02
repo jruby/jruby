@@ -22,8 +22,8 @@ import org.jruby.truffle.language.SourceIndexLength;
 @NodeChild(value="child", type=RubyNode.class)
 public abstract class ToSymbolNode extends RubyNode {
 
-    public ToSymbolNode(RubyContext context, SourceIndexLength sourceSection) {
-        super(context, sourceSection);
+    public ToSymbolNode(SourceIndexLength sourceSection) {
+        super(sourceSection);
     }
 
     public abstract DynamicObject executeRubySymbol(VirtualFrame frame, Object object);

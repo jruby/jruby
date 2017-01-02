@@ -23,8 +23,8 @@ import org.jruby.truffle.language.SourceIndexLength;
 @NodeChild(value = "child", type = RubyNode.class)
 public abstract class ToPathNode extends RubyNode {
 
-    public ToPathNode(RubyContext context, SourceIndexLength sourceSection) {
-        super(context, sourceSection);
+    public ToPathNode(SourceIndexLength sourceSection) {
+        super(sourceSection);
     }
 
     @Specialization(guards = "isRubyString(path)")

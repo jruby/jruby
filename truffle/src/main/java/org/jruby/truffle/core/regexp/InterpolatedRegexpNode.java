@@ -34,11 +34,11 @@ public class InterpolatedRegexpNode extends RubyNode {
     private final RegexpOptions options;
     @Child private CallDispatchHeadNode toS;
 
-    public InterpolatedRegexpNode(RubyContext context, SourceIndexLength sourceSection, RubyNode[] children, RegexpOptions options) {
-        super(context, sourceSection);
+    public InterpolatedRegexpNode(SourceIndexLength sourceSection, RubyNode[] children, RegexpOptions options) {
+        super(sourceSection);
         this.children = children;
         this.options = options;
-        toS = DispatchHeadNodeFactory.createMethodCall(context);
+        toS = DispatchHeadNodeFactory.createMethodCall(getContext());
     }
 
     @Override

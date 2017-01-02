@@ -34,8 +34,8 @@ public class TryNode extends RubyNode {
     private final BranchProfile controlFlowProfile = BranchProfile.create();
     private final BranchProfile raiseExceptionProfile = BranchProfile.create();
 
-    public TryNode(RubyContext context, SourceIndexLength sourceSection, ExceptionTranslatingNode tryPart, RescueNode[] rescueParts, RubyNode elsePart) {
-        super(context, sourceSection);
+    public TryNode(SourceIndexLength sourceSection, ExceptionTranslatingNode tryPart, RescueNode[] rescueParts, RubyNode elsePart) {
+        super(sourceSection);
         this.tryPart = tryPart;
         this.rescueParts = rescueParts;
         this.elsePart = elsePart;

@@ -32,18 +32,17 @@ public class CachedMethodMissingDispatchNode extends CachedDispatchNode {
     @Child private DirectCallNode callNode;
 
     public CachedMethodMissingDispatchNode(
-            RubyContext context,
             Object cachedName,
             DispatchNode next,
             DynamicObject expectedClass,
             InternalMethod method,
             DispatchAction dispatchAction) {
-        super(context, cachedName, next, dispatchAction);
+        super(cachedName, next, dispatchAction);
 
         this.expectedClass = expectedClass;
         this.unmodifiedAssumption = Layouts.MODULE.getFields(expectedClass).getUnmodifiedAssumption();
         this.method = method;
-        this.metaClassNode = MetaClassNodeGen.create(context, null, null);
+        this.metaClassNode = MetaClassNodeGen.create(null, null);
         this.callNode = Truffle.getRuntime().createDirectCallNode(method.getCallTarget());
 
         /*

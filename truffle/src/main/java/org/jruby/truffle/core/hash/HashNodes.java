@@ -170,9 +170,9 @@ public abstract class HashNodes {
 
         @CompilationFinal private Object undefinedValue;
 
-        public GetIndexNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
-            callDefaultNode = DispatchHeadNodeFactory.createMethodCall(context);
+        public GetIndexNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
+            callDefaultNode = DispatchHeadNodeFactory.createMethodCall(getContext());
         }
 
         public abstract Object executeGet(VirtualFrame frame, DynamicObject hash, Object key);
@@ -302,9 +302,9 @@ public abstract class HashNodes {
 
         @Child private GetIndexNode getIndexNode;
 
-        public GetOrUndefinedNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
-            getIndexNode = GetIndexNodeFactory.create(context, sourceSection, null);
+        public GetOrUndefinedNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
+            getIndexNode = GetIndexNodeFactory.create(sourceSection, null);
             getIndexNode.setUndefinedValue(NotProvided.INSTANCE);
         }
 
@@ -406,9 +406,9 @@ public abstract class HashNodes {
         @Child private LookupEntryNode lookupEntryNode = new LookupEntryNode();
         @Child private YieldNode yieldNode;
 
-        public DeleteNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
-            yieldNode = new YieldNode(context);
+        public DeleteNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
+            yieldNode = new YieldNode();
         }
 
         @Specialization(guards = "isNullHash(hash)")
@@ -1106,7 +1106,7 @@ public abstract class HashNodes {
         public Object shiftEmptyDefaultProc(VirtualFrame frame, DynamicObject hash) {
             if (yieldNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                yieldNode = insert(new YieldNode(getContext()));
+                yieldNode = insert(new YieldNode());
             }
 
             return yieldNode.dispatch(frame, Layouts.HASH.getDefaultBlock(hash), hash, nil());

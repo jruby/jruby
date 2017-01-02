@@ -27,8 +27,8 @@ public abstract class ArraySliceNode extends RubyNode {
     final int from; // positive
     final int to; // negative, exclusive
 
-    public ArraySliceNode(RubyContext context, SourceIndexLength sourceSection, int from, int to) {
-        super(context, sourceSection);
+    public ArraySliceNode(SourceIndexLength sourceSection, int from, int to) {
+        super(sourceSection);
         assert from >= 0;
         assert to <= 0;
         this.from = from;

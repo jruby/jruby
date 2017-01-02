@@ -52,11 +52,11 @@ public class CoreMethods {
         if (n == 2) {
             switch (callParameters.getMethodName()) {
             case "+":
-                return InlinedCoreMethodNode.inlineBuiltin(source, callParameters, fixnumPlus, FixnumNodesFactory.AddNodeFactory.getInstance());
+                return InlinedCoreMethodNode.inlineBuiltin(context, source, callParameters, fixnumPlus, FixnumNodesFactory.AddNodeFactory.getInstance());
             case "-":
-                return InlinedCoreMethodNode.inlineBuiltin(source, callParameters, fixnumMinus, FixnumNodesFactory.SubNodeFactory.getInstance());
+                return InlinedCoreMethodNode.inlineBuiltin(context, source, callParameters, fixnumMinus, FixnumNodesFactory.SubNodeFactory.getInstance());
             case "*":
-                return InlinedCoreMethodNode.inlineBuiltin(source, callParameters, fixnumMul, FixnumNodesFactory.MulNodeFactory.getInstance());
+                return InlinedCoreMethodNode.inlineBuiltin(context, source, callParameters, fixnumMul, FixnumNodesFactory.MulNodeFactory.getInstance());
             default:
             }
         }

@@ -20,8 +20,8 @@ public class UpdateVerbosityNode extends RubyNode {
 
     @Child private RubyNode child;
 
-    public UpdateVerbosityNode(RubyContext context, SourceIndexLength sourceSection, RubyNode child) {
-        super(context, sourceSection);
+    public UpdateVerbosityNode(SourceIndexLength sourceSection, RubyNode child) {
+        super(sourceSection);
         this.child = child;
     }
 

@@ -21,8 +21,8 @@ public abstract class CoreMethodArrayArgumentsNode extends CoreMethodNode {
     public CoreMethodArrayArgumentsNode() {
     }
 
-    public CoreMethodArrayArgumentsNode(RubyContext context, SourceIndexLength sourceSection) {
-        super(context, sourceSection);
+    public CoreMethodArrayArgumentsNode(SourceIndexLength sourceSection) {
+        super(sourceSection);
     }
 
 }

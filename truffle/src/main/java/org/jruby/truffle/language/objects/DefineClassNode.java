@@ -40,9 +40,9 @@ public class DefineClassNode extends RubyNode {
     private final BranchProfile errorProfile = BranchProfile.create();
 
     public DefineClassNode(
-            RubyContext context, SourceIndexLength sourceSection, String name,
+            SourceIndexLength sourceSection, String name,
             RubyNode lexicalParent, RubyNode superClass) {
-        super(context, sourceSection);
+        super(sourceSection);
         this.name = name;
         this.lexicalParentModule = lexicalParent;
         this.superClassNode = superClass;

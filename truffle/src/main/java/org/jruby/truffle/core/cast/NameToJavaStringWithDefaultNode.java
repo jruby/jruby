@@ -29,8 +29,8 @@ public abstract class NameToJavaStringWithDefaultNode extends RubyNode {
     private final String defaultValue;
     @Child private NameToJavaStringNode toJavaStringNode;
 
-    public NameToJavaStringWithDefaultNode(RubyContext context, SourceIndexLength sourceSection, String defaultValue) {
-        super(context, sourceSection);
+    public NameToJavaStringWithDefaultNode(SourceIndexLength sourceSection, String defaultValue) {
+        super(sourceSection);
         this.defaultValue = defaultValue;
         toJavaStringNode = NameToJavaStringNodeGen.create(null);
     }

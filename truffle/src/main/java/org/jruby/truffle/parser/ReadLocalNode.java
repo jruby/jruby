@@ -16,8 +16,8 @@ import org.jruby.truffle.language.SourceIndexLength;
 
 public abstract class ReadLocalNode extends RubyNode {
 
-    public ReadLocalNode(RubyContext context, SourceIndexLength sourceSection) {
-        super(context, sourceSection);
+    public ReadLocalNode(SourceIndexLength sourceSection) {
+        super(sourceSection);
     }
 
     public abstract RubyNode makeWriteNode(RubyNode rhs);

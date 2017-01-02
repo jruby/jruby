@@ -214,8 +214,8 @@ public abstract class RangeNodes {
 
         @Child private AllocateObjectNode allocateObjectNode;
 
-        public DupNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
+        public DupNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
             allocateObjectNode = AllocateObjectNode.create();
         }
 
@@ -512,9 +512,9 @@ public abstract class RangeNodes {
         @Child private CallDispatchHeadNode cmpNode;
         @Child private AllocateObjectNode allocateNode;
 
-        public NewNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
-            rangeClass = context.getCoreLibrary().getRangeClass();
+        public NewNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
+            rangeClass = getContext().getCoreLibrary().getRangeClass();
         }
 
         @CreateCast("excludeEnd")
@@ -594,8 +594,8 @@ public abstract class RangeNodes {
 
         @Child private AllocateObjectNode allocateNode;
 
-        public AllocateNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
+        public AllocateNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
             allocateNode = AllocateObjectNode.create();
         }
 

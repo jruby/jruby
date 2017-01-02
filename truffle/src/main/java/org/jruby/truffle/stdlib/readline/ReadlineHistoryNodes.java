@@ -72,8 +72,8 @@ public abstract class ReadlineHistoryNodes {
 
         @Child private NameToJavaStringNode toJavaStringNode;
 
-        public PushNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
+        public PushNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
             toJavaStringNode = NameToJavaStringNodeGen.create();
         }
 

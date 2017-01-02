@@ -103,8 +103,8 @@ public abstract class TimeNodes {
 
         @Child private GetTimeZoneNode getTimeZoneNode;
 
-        public LocalTimeNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
+        public LocalTimeNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
             getTimeZoneNode = GetTimeZoneNodeGen.create();
         }
 
@@ -170,8 +170,8 @@ public abstract class TimeNodes {
 
         @Child private AllocateObjectNode allocateObjectNode;
 
-        public DupInternalNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
+        public DupInternalNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
             allocateObjectNode = AllocateObjectNode.create();
         }
 
@@ -218,8 +218,8 @@ public abstract class TimeNodes {
 
         @Child private InternalGMTNode internalGMTNode;
 
-        public GmtNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
+        public GmtNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
             internalGMTNode = TimeNodesFactory.InternalGMTNodeFactory.create(null);
         }
 
@@ -236,8 +236,8 @@ public abstract class TimeNodes {
 
         @Child private InternalOffsetNode internalOffsetNode;
 
-        public InternalOffsetCoreNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
+        public InternalOffsetCoreNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
             internalOffsetNode = TimeNodesFactory.InternalOffsetNodeFactory.create(null);
         }
 
@@ -253,8 +253,8 @@ public abstract class TimeNodes {
 
         @Child private AllocateObjectNode allocateObjectNode;
 
-        public AllocateNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
+        public AllocateNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
             allocateObjectNode = AllocateObjectNode.create();
         }
 
@@ -271,8 +271,8 @@ public abstract class TimeNodes {
         @Child private AllocateObjectNode allocateObjectNode;
         @Child private GetTimeZoneNode getTimeZoneNode;
 
-        public TimeSNowPrimitiveNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
+        public TimeSNowPrimitiveNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
             allocateObjectNode = AllocateObjectNode.create();
             getTimeZoneNode = GetTimeZoneNodeGen.create();
         }
@@ -296,8 +296,8 @@ public abstract class TimeNodes {
         @Child private GetTimeZoneNode getTimeZoneNode;
         @Child private AllocateObjectNode allocateObjectNode;
 
-        public TimeSSpecificPrimitiveNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
+        public TimeSSpecificPrimitiveNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
             getTimeZoneNode = GetTimeZoneNodeGen.create();
             allocateObjectNode = AllocateObjectNode.create();
         }
@@ -359,8 +359,8 @@ public abstract class TimeNodes {
     @Primitive(name = "time_decompose")
     public static abstract class TimeDecomposePrimitiveNode extends PrimitiveArrayArgumentsNode {
 
-        public TimeDecomposePrimitiveNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
+        public TimeDecomposePrimitiveNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
         }
 
         @TruffleBoundary
@@ -421,8 +421,8 @@ public abstract class TimeNodes {
         @Child GetTimeZoneNode getTimeZoneNode;
         @Child AllocateObjectNode allocateObjectNode;
 
-        public TimeSFromArrayPrimitiveNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
+        public TimeSFromArrayPrimitiveNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
             getTimeZoneNode = GetTimeZoneNodeGen.create();
             allocateObjectNode = AllocateObjectNode.create();
         }

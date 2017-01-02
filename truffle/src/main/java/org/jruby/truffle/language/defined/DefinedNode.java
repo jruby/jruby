@@ -19,8 +19,8 @@ public class DefinedNode extends RubyNode {
 
     @Child private RubyNode child;
 
-    public DefinedNode(RubyContext context, SourceIndexLength sourceSection, RubyNode child) {
-        super(context, sourceSection);
+    public DefinedNode(SourceIndexLength sourceSection, RubyNode child) {
+        super(sourceSection);
         this.child = child;
     }
 

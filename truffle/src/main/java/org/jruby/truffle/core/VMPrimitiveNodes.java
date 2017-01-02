@@ -100,9 +100,9 @@ public abstract class VMPrimitiveNodes {
 
         @Child private YieldNode dispatchNode;
 
-        public CatchNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
-            dispatchNode = new YieldNode(context);
+        public CatchNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
+            dispatchNode = new YieldNode();
         }
 
         @Specialization
@@ -157,10 +157,10 @@ public abstract class VMPrimitiveNodes {
         @Child private CallDispatchHeadNode newArrayNode;
         @Child private CallDispatchHeadNode arrayAppendNode;
 
-        public VMExtendedModulesNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
-            newArrayNode = DispatchHeadNodeFactory.createMethodCall(context);
-            arrayAppendNode = DispatchHeadNodeFactory.createMethodCall(context);
+        public VMExtendedModulesNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
+            newArrayNode = DispatchHeadNodeFactory.createMethodCall(getContext());
+            arrayAppendNode = DispatchHeadNodeFactory.createMethodCall(getContext());
         }
 
         @Specialization
@@ -213,9 +213,9 @@ public abstract class VMPrimitiveNodes {
 
         @Child private LogicalClassNode classNode;
 
-        public VMObjectClassPrimitiveNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
-            classNode = LogicalClassNodeGen.create(context, sourceSection, null);
+        public VMObjectClassPrimitiveNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
+            classNode = LogicalClassNodeGen.create(sourceSection, null);
         }
 
         @Specialization
@@ -241,9 +241,9 @@ public abstract class VMPrimitiveNodes {
 
         @Child private IsANode isANode;
 
-        public VMObjectKindOfPrimitiveNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
-            isANode = IsANodeGen.create(context, sourceSection, null, null);
+        public VMObjectKindOfPrimitiveNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
+            isANode = IsANodeGen.create(sourceSection, null, null);
         }
 
         @Specialization
@@ -256,8 +256,8 @@ public abstract class VMPrimitiveNodes {
     @Primitive(name = "vm_method_is_basic", needsSelf = false)
     public static abstract class VMMethodIsBasicNode extends PrimitiveArrayArgumentsNode {
 
-        public VMMethodIsBasicNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
+        public VMMethodIsBasicNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
         }
 
         @Specialization
@@ -273,10 +273,10 @@ public abstract class VMPrimitiveNodes {
         @Child NameToJavaStringNode nameToJavaStringNode;
         @Child LookupMethodNode lookupMethodNode;
 
-        public VMMethodLookupNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
+        public VMMethodLookupNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
             nameToJavaStringNode = NameToJavaStringNode.create();
-            lookupMethodNode = LookupMethodNodeGen.create(context, sourceSection, true, false, null, null);
+            lookupMethodNode = LookupMethodNodeGen.create(sourceSection, true, false, null, null);
         }
 
         @Specialization
@@ -297,9 +297,9 @@ public abstract class VMPrimitiveNodes {
 
         @Child private KernelNodes.RespondToNode respondToNode;
 
-        public VMObjectRespondToPrimitiveNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
-            respondToNode = KernelNodesFactory.RespondToNodeFactory.create(context, null, null, null, null);
+        public VMObjectRespondToPrimitiveNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
+            respondToNode = KernelNodesFactory.RespondToNodeFactory.create(null, null, null, null);
         }
 
         @Specialization
@@ -315,9 +315,9 @@ public abstract class VMPrimitiveNodes {
 
         @Child private KernelNodes.SingletonClassMethodNode singletonClassNode;
 
-        public VMObjectSingletonClassPrimitiveNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
-            singletonClassNode = KernelNodesFactory.SingletonClassMethodNodeFactory.create(context, null, null);
+        public VMObjectSingletonClassPrimitiveNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
+            singletonClassNode = KernelNodesFactory.SingletonClassMethodNodeFactory.create(null, null);
         }
 
         @Specialization
@@ -330,8 +330,8 @@ public abstract class VMPrimitiveNodes {
     @Primitive(name = "vm_raise_exception", needsSelf = false)
     public static abstract class VMRaiseExceptionPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
-        public VMRaiseExceptionPrimitiveNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
+        public VMRaiseExceptionPrimitiveNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
         }
 
         @Specialization(guards = "isRubyException(exception)")

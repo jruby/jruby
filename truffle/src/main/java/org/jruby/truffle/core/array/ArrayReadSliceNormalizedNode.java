@@ -33,8 +33,8 @@ public abstract class ArrayReadSliceNormalizedNode extends RubyNode {
 
     @Child private AllocateObjectNode allocateObjectNode;
 
-    public ArrayReadSliceNormalizedNode(RubyContext context, SourceIndexLength sourceSection) {
-        super(context, sourceSection);
+    public ArrayReadSliceNormalizedNode(SourceIndexLength sourceSection) {
+        super(sourceSection);
         allocateObjectNode = AllocateObjectNode.create();
     }
 

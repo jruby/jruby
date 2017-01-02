@@ -30,9 +30,9 @@ public class RunModuleDefinitionNode extends RubyNode {
     @Child private ModuleBodyDefinitionNode definitionMethod;
     @Child private IndirectCallNode callModuleDefinitionNode;
 
-    public RunModuleDefinitionNode(RubyContext context, SourceIndexLength sourceSection, LexicalScope lexicalScope,
+    public RunModuleDefinitionNode(SourceIndexLength sourceSection, LexicalScope lexicalScope,
                                    ModuleBodyDefinitionNode definition, RubyNode definingModule) {
-        super(context, sourceSection);
+        super(sourceSection);
         this.definingModule = definingModule;
         this.definitionMethod = definition;
         this.lexicalScope = lexicalScope;

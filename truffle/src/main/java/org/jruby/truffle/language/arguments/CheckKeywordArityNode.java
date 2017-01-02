@@ -33,8 +33,8 @@ public class CheckKeywordArityNode extends RubyNode {
     private final BranchProfile receivedKeywordsProfile = BranchProfile.create();
     private final BranchProfile basicArityCheckFailedProfile = BranchProfile.create();
 
-    public CheckKeywordArityNode(RubyContext context, SourceIndexLength sourceSection, Arity arity) {
-        super(context, sourceSection);
+    public CheckKeywordArityNode(SourceIndexLength sourceSection, Arity arity) {
+        super(sourceSection);
         this.arity = arity;
         readUserKeywordsHashNode = new ReadUserKeywordsHashNode(arity.getRequired());
     }

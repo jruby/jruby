@@ -26,8 +26,8 @@ public abstract class ArrayDropTailNode extends RubyNode {
 
     final int index;
 
-    public ArrayDropTailNode(RubyContext context, SourceIndexLength sourceSection, int index) {
-        super(context, sourceSection);
+    public ArrayDropTailNode(SourceIndexLength sourceSection, int index) {
+        super(sourceSection);
         this.index = index;
     }
 

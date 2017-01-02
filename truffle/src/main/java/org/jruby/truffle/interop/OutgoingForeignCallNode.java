@@ -43,8 +43,8 @@ public abstract class OutgoingForeignCallNode extends RubyNode {
 
     private final String name;
 
-    public OutgoingForeignCallNode(RubyContext context, SourceIndexLength sourceSection, String name) {
-        super(context, sourceSection);
+    public OutgoingForeignCallNode(SourceIndexLength sourceSection, String name) {
+        super(sourceSection);
         this.name = name;
     }
 
@@ -77,7 +77,7 @@ public abstract class OutgoingForeignCallNode extends RubyNode {
 
         if (megamorphicToForeignNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            megamorphicToForeignNode = insert(RubyToForeignNodeGen.create(getContext(), null, null));
+            megamorphicToForeignNode = insert(RubyToForeignNodeGen.create(null, null));
         }
 
         final Object[] foreignArgs = new Object[args.length];
@@ -115,7 +115,7 @@ public abstract class OutgoingForeignCallNode extends RubyNode {
         final RubyToForeignNode[] toForeignNodes = new RubyToForeignNode[argsLength];
 
         for (int n = 0; n < argsLength; n++) {
-            toForeignNodes[n] = RubyToForeignNodeGen.create(getContext(), null, null);
+            toForeignNodes[n] = RubyToForeignNodeGen.create(null, null);
         }
 
         return toForeignNodes;

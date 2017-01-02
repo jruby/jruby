@@ -27,8 +27,8 @@ public class SymbolProcNode extends RubyNode {
 
     @Child private CallDispatchHeadNode callNode;
 
-    public SymbolProcNode(RubyContext context, SourceIndexLength sourceSection, String symbol) {
-        super(context, sourceSection);
+    public SymbolProcNode(SourceIndexLength sourceSection, String symbol) {
+        super(sourceSection);
         this.symbol = symbol;
     }
 

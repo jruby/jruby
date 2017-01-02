@@ -26,8 +26,8 @@ public class ConcatHashLiteralNode extends RubyNode {
 
     @Children private final RubyNode[] children;
 
-    public ConcatHashLiteralNode(RubyContext context, SourceIndexLength sourceSection, RubyNode[] children) {
-        super(context, sourceSection);
+    public ConcatHashLiteralNode(SourceIndexLength sourceSection, RubyNode[] children) {
+        super(sourceSection);
         this.children = children;
     }
 

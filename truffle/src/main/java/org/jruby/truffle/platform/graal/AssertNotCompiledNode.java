@@ -20,8 +20,8 @@ import org.jruby.truffle.language.control.RaiseException;
 
 public abstract class AssertNotCompiledNode extends RubyNode {
 
-    public AssertNotCompiledNode(RubyContext context, SourceIndexLength sourceSection) {
-        super(context, sourceSection);
+    public AssertNotCompiledNode(SourceIndexLength sourceSection) {
+        super(sourceSection);
     }
 
     @SuppressWarnings("unused")

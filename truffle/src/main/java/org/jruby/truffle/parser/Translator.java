@@ -70,7 +70,7 @@ public abstract class Translator extends org.jruby.truffle.parser.ast.visitor.Ab
         this.source = source;
     }
 
-    public static RubyNode sequence(RubyContext context, Source source, SourceIndexLength sourceSection, List<RubyNode> sequence) {
+    public static RubyNode sequence(SourceIndexLength sourceSection, List<RubyNode> sequence) {
         final List<RubyNode> flattened = flatten(sequence, true);
 
         if (flattened.isEmpty()) {
@@ -144,11 +144,11 @@ public abstract class Translator extends org.jruby.truffle.parser.ast.visitor.Ab
         return rubyNode;
     }
 
-    public static RubyNode createCheckArityNode(RubyContext context, Source source, SourceIndexLength sourceSection, Arity arity) {
+    public static RubyNode createCheckArityNode(SourceIndexLength sourceSection, Arity arity) {
         if (!arity.acceptsKeywords()) {
             return new CheckArityNode(arity);
         } else {
-            return new CheckKeywordArityNode(context, sourceSection, arity);
+            return new CheckKeywordArityNode(sourceSection, arity);
         }
     }
 

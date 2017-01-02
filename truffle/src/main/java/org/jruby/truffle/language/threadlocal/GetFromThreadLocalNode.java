@@ -21,8 +21,8 @@ public class GetFromThreadLocalNode extends RubyNode {
 
     @Child private RubyNode value;
 
-    public GetFromThreadLocalNode(RubyContext context, SourceIndexLength sourceSection, RubyNode value) {
-        super(context, sourceSection);
+    public GetFromThreadLocalNode(SourceIndexLength sourceSection, RubyNode value) {
+        super(sourceSection);
         this.value = value;
     }
 

@@ -35,9 +35,9 @@ public class ReadKeywordRestArgumentNode extends RubyNode {
 
     private final ConditionProfile noHash = ConditionProfile.createBinaryProfile();
 
-    public ReadKeywordRestArgumentNode(RubyContext context, SourceIndexLength sourceSection,
+    public ReadKeywordRestArgumentNode(SourceIndexLength sourceSection,
                                        int minimum, String[] excludedKeywords) {
-        super(context, sourceSection);
+        super(sourceSection);
         this.excludedKeywords = excludedKeywords;
         readUserKeywordsHashNode = new ReadUserKeywordsHashNode(minimum);
     }

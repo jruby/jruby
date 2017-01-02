@@ -1052,11 +1052,11 @@ public abstract class RopeNodes {
         @Child private MakeLeafRopeNode makeLeafRopeNode;
 
         public static FlattenNode create() {
-            return RopeNodesFactory.FlattenNodeGen.create(null, null, null);
+            return RopeNodesFactory.FlattenNodeGen.create(null, null);
         }
 
-        public FlattenNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
+        public FlattenNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
             makeLeafRopeNode = MakeLeafRopeNode.create();
         }
 

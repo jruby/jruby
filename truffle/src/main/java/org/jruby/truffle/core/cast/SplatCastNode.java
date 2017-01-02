@@ -48,14 +48,14 @@ public abstract class SplatCastNode extends RubyNode {
     @Child private ArrayDupNode dup;
     @Child private CallDispatchHeadNode toA;
 
-    public SplatCastNode(RubyContext context, SourceIndexLength sourceSection, NilBehavior nilBehavior, boolean useToAry) {
-        super(context, sourceSection);
+    public SplatCastNode(SourceIndexLength sourceSection, NilBehavior nilBehavior, boolean useToAry) {
+        super(sourceSection);
         this.nilBehavior = nilBehavior;
         // Calling private #to_a is allowed for the *splat operator.
         dup = ArrayDupNodeGen.create(null);
-        toA = DispatchHeadNodeFactory.createMethodCall(context, true, MissingBehavior.RETURN_MISSING);
+        toA = DispatchHeadNodeFactory.createMethodCall(getContext(), true, MissingBehavior.RETURN_MISSING);
         String name = useToAry ? "to_ary" : "to_a";
-        conversionMethod = context.getSymbolTable().getSymbol(name);
+        conversionMethod = getContext().getSymbolTable().getSymbol(name);
     }
 
     public abstract RubyNode getChild();

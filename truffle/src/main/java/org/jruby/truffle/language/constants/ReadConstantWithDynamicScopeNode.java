@@ -28,8 +28,8 @@ public class ReadConstantWithDynamicScopeNode extends RubyNode {
     @Child protected LookupConstantWithDynamicScopeNode lookupConstantNode;
     @Child private GetConstantNode getConstantNode;
 
-    public ReadConstantWithDynamicScopeNode(RubyContext context, SourceIndexLength sourceSection, String name) {
-        super(context, sourceSection);
+    public ReadConstantWithDynamicScopeNode(SourceIndexLength sourceSection, String name) {
+        super(sourceSection);
         this.name = name;
         this.lookupConstantNode = LookupConstantWithDynamicScopeNodeGen.create(name);
         this.getConstantNode = GetConstantNode.create();

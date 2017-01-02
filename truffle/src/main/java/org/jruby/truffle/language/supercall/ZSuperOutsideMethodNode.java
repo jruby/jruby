@@ -27,10 +27,10 @@ public class ZSuperOutsideMethodNode extends RubyNode {
     final boolean insideDefineMethod;
     @Child LookupSuperMethodNode lookupSuperMethodNode;
 
-    public ZSuperOutsideMethodNode(RubyContext context, SourceIndexLength sourceSection, boolean insideDefineMethod) {
-        super(context, sourceSection);
+    public ZSuperOutsideMethodNode(SourceIndexLength sourceSection, boolean insideDefineMethod) {
+        super(sourceSection);
         this.insideDefineMethod = insideDefineMethod;
-        lookupSuperMethodNode = LookupSuperMethodNodeGen.create(context, null, null);
+        lookupSuperMethodNode = LookupSuperMethodNodeGen.create(null, null);
     }
 
     @Override

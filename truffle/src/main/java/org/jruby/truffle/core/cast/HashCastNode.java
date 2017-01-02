@@ -33,9 +33,9 @@ public abstract class HashCastNode extends RubyNode {
 
     @Child private CallDispatchHeadNode toHashNode;
 
-    public HashCastNode(RubyContext context, SourceIndexLength sourceSection) {
-        super(context, sourceSection);
-        toHashNode = DispatchHeadNodeFactory.createMethodCall(context, MissingBehavior.RETURN_MISSING);
+    public HashCastNode(SourceIndexLength sourceSection) {
+        super(sourceSection);
+        toHashNode = DispatchHeadNodeFactory.createMethodCall(getContext(), MissingBehavior.RETURN_MISSING);
     }
 
     protected abstract RubyNode getChild();

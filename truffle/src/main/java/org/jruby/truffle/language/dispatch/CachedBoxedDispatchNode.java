@@ -38,7 +38,7 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
             DynamicObject expectedClass,
             InternalMethod method,
             DispatchAction dispatchAction) {
-        super(context, cachedName, next, dispatchAction);
+        super(cachedName, next, dispatchAction);
 
         this.expectedShape = expectedShape;
         this.validShape = expectedShape.getValidAssumption();

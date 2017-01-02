@@ -28,9 +28,9 @@ public abstract class ArrayReadDenormalizedNode extends RubyNode {
 
     @Child private ArrayReadNormalizedNode readNode;
 
-    public ArrayReadDenormalizedNode(RubyContext context, SourceIndexLength sourceSection) {
-        super(context, sourceSection);
-        readNode = ArrayReadNormalizedNodeGen.create(getContext(), null, null, null);
+    public ArrayReadDenormalizedNode(SourceIndexLength sourceSection) {
+        super(sourceSection);
+        readNode = ArrayReadNormalizedNodeGen.create(null, null, null);
     }
 
     public abstract Object executeRead(DynamicObject array, int index);

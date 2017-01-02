@@ -62,7 +62,7 @@ public class RubyMessageResolution {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
                 findContextNode = insert(RubyLanguage.INSTANCE.unprotectedCreateFindContextNode());
                 final RubyContext context = RubyLanguage.INSTANCE.unprotectedFindContext(findContextNode);
-                executeMethodNode = insert(ForeignExecuteHelperNodeGen.create(context, null, null));
+                executeMethodNode = insert(ForeignExecuteHelperNodeGen.create( null, null));
             }
 
             return executeMethodNode;
@@ -179,8 +179,7 @@ public class RubyMessageResolution {
             if (helperNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
                 findContextNode = insert(RubyLanguage.INSTANCE.unprotectedCreateFindContextNode());
-                final RubyContext context = RubyLanguage.INSTANCE.unprotectedFindContext(findContextNode);
-                helperNode = insert(ForeignReadStringCachingHelperNodeGen.create(context, null, null));
+                helperNode = insert(ForeignReadStringCachingHelperNodeGen.create( null, null));
             }
 
             return helperNode;
@@ -224,8 +223,7 @@ public class RubyMessageResolution {
             if (helperNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
                 findContextNode = insert(RubyLanguage.INSTANCE.unprotectedCreateFindContextNode());
-                final RubyContext context = RubyLanguage.INSTANCE.unprotectedFindContext(findContextNode);
-                helperNode = insert(ForeignWriteStringCachingHelperNodeGen.create(context, null, null, null));
+                helperNode = insert(ForeignWriteStringCachingHelperNodeGen.create( null, null, null));
             }
 
             return helperNode;

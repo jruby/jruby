@@ -26,8 +26,8 @@ public abstract class ArrayGetTailNode extends RubyNode {
 
     final int index;
 
-    public ArrayGetTailNode(RubyContext context, SourceIndexLength sourceSection, int index) {
-        super(context, sourceSection);
+    public ArrayGetTailNode(SourceIndexLength sourceSection, int index) {
+        super(sourceSection);
         this.index = index;
     }
 

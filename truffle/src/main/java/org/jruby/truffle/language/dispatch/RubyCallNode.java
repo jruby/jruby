@@ -49,7 +49,7 @@ public class RubyCallNode extends RubyNode {
     private final ConditionProfile nilProfile;
 
     public RubyCallNode(RubyCallNodeParameters parameters) {
-        super(parameters.getContext(), parameters.getSection());
+        super(parameters.getSection());
 
         this.methodName = parameters.getMethodName();
         this.receiver = parameters.getReceiver();
@@ -58,7 +58,7 @@ public class RubyCallNode extends RubyNode {
         if (parameters.getBlock() == null) {
             this.block = null;
         } else {
-            this.block = ProcOrNullNodeGen.create(parameters.getContext(), null, parameters.getBlock());
+            this.block = ProcOrNullNodeGen.create(null, parameters.getBlock());
         }
 
         this.isSplatted = parameters.isSplatted();

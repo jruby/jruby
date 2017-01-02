@@ -117,8 +117,8 @@ public abstract class BindingNodes {
 
         @Child private AllocateObjectNode allocateObjectNode;
 
-        public DupNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
+        public DupNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
             allocateObjectNode = AllocateObjectNode.create();
         }
 
@@ -288,8 +288,8 @@ public abstract class BindingNodes {
             return NameToJavaStringNodeGen.create(name);
         }
 
-        public LocalVariableSetNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
+        public LocalVariableSetNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
         }
 
         @Specialization(guards = {

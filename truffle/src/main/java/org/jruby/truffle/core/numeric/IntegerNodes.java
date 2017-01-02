@@ -156,7 +156,7 @@ public abstract class IntegerNodes {
 
         @Specialization(guards = "isRubyBignum(n)")
         public Object times(VirtualFrame frame, DynamicObject n, DynamicObject block,
-                            @Cached("create(getContext(), getSourceIndexLength())") FixnumOrBignumNode fixnumOrBignumNode) {
+                            @Cached("create(getSourceIndexLength())") FixnumOrBignumNode fixnumOrBignumNode) {
 
             for (BigInteger i = BigInteger.ZERO; i.compareTo(Layouts.BIGNUM.getValue(n)) < 0; i = i.add(BigInteger.ONE)) {
                 yield(frame, block, fixnumOrBignumNode.fixnumOrBignum(i));

@@ -19,8 +19,8 @@ public class LexicalScopeNode extends RubyNode {
 
     private final LexicalScope lexicalScope;
 
-    public LexicalScopeNode(RubyContext context, SourceIndexLength sourceSection, LexicalScope lexicalScope) {
-        super(context, sourceSection);
+    public LexicalScopeNode(SourceIndexLength sourceSection, LexicalScope lexicalScope) {
+        super(sourceSection);
         this.lexicalScope = lexicalScope;
     }
 

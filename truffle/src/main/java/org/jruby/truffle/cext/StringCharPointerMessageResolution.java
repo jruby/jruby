@@ -98,7 +98,7 @@ public class StringCharPointerMessageResolution {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
                 findContextNode = insert(RubyLanguage.INSTANCE.unprotectedCreateFindContextNode());
                 RubyContext context = RubyLanguage.INSTANCE.unprotectedFindContext(findContextNode);
-                setByteNode = insert(SetByteNodeFactory.create(context, null, null, null, null));
+                setByteNode = insert(SetByteNodeFactory.create(null, null, null, null));
             }
             return setByteNode;
         }

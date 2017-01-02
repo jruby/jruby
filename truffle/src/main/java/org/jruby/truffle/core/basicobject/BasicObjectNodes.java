@@ -87,9 +87,9 @@ public abstract class BasicObjectNodes {
 
         @Child private CallDispatchHeadNode equalNode;
 
-        public NotEqualNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
-            equalNode = DispatchHeadNodeFactory.createMethodCall(context);
+        public NotEqualNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
+            equalNode = DispatchHeadNodeFactory.createMethodCall(getContext());
         }
 
         @Specialization
@@ -177,9 +177,9 @@ public abstract class BasicObjectNodes {
 
         @Child private YieldNode yield;
 
-        public InstanceEvalNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
-            yield = new YieldNode(context, DeclarationContext.INSTANCE_EVAL);
+        public InstanceEvalNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
+            yield = new YieldNode(DeclarationContext.INSTANCE_EVAL);
         }
 
         @Specialization(guards = { "isRubyString(string)", "isRubyString(fileName)" })
@@ -229,9 +229,9 @@ public abstract class BasicObjectNodes {
 
         @Child private YieldNode yield;
 
-        public InstanceExecNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
-            yield = new YieldNode(context, DeclarationContext.INSTANCE_EVAL);
+        public InstanceExecNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
+            yield = new YieldNode(DeclarationContext.INSTANCE_EVAL);
         }
 
         @Specialization
@@ -403,10 +403,10 @@ public abstract class BasicObjectNodes {
 
         @Child private CallDispatchHeadNode dispatchNode;
 
-        public SendNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
+        public SendNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
 
-            dispatchNode = new CallDispatchHeadNode(context, true,
+            dispatchNode = new CallDispatchHeadNode(getContext(), true,
                     MissingBehavior.CALL_METHOD_MISSING);
         }
 
@@ -427,8 +427,8 @@ public abstract class BasicObjectNodes {
 
         @Child private AllocateObjectNode allocateObjectNode;
 
-        public AllocateNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
+        public AllocateNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
             allocateObjectNode = AllocateObjectNode.create();
         }
 
@@ -445,8 +445,8 @@ public abstract class BasicObjectNodes {
 
         @Child private AllocateObjectNode allocateObjectNode;
 
-        public InternalAllocateNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
+        public InternalAllocateNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
             allocateObjectNode = AllocateObjectNode.create();
         }
 

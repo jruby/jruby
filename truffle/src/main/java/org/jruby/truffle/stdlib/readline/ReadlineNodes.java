@@ -91,7 +91,7 @@ public abstract class ReadlineNodes {
     public abstract static class SetBasicWordBreakCharactersNode extends CoreMethodNode {
 
         @CreateCast("characters") public RubyNode coerceCharactersToString(RubyNode characters) {
-            return ToStrNodeGen.create(null, null, characters);
+            return ToStrNodeGen.create(null, characters);
         }
 
         @TruffleBoundary
@@ -129,12 +129,12 @@ public abstract class ReadlineNodes {
 
         @Child private TaintNode taintNode = TaintNode.create();
 
-        public ReadlineNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
+        public ReadlineNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
         }
 
         @CreateCast("prompt") public RubyNode coercePromptToJavaString(RubyNode prompt) {
-            return NameToJavaStringWithDefaultNodeGen.create(null, null, coreStrings().EMPTY_STRING.toString(), prompt);
+            return NameToJavaStringWithDefaultNodeGen.create(null, coreStrings().EMPTY_STRING.toString(), prompt);
         }
 
         @CreateCast("addToHistory") public RubyNode coerceToBoolean(RubyNode addToHistory) {

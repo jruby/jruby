@@ -27,9 +27,9 @@ public class ReadDeclarationVariableNode extends ReadLocalNode {
 
     @Child private ReadFrameSlotNode readFrameSlotNode;
 
-    public ReadDeclarationVariableNode(RubyContext context, SourceIndexLength sourceSection, LocalVariableType type,
+    public ReadDeclarationVariableNode(SourceIndexLength sourceSection, LocalVariableType type,
                                        int frameDepth, FrameSlot frameSlot) {
-        super(context, sourceSection);
+        super(sourceSection);
         this.type = type;
         this.frameDepth = frameDepth;
         this.frameSlot = frameSlot;
@@ -74,7 +74,7 @@ public class ReadDeclarationVariableNode extends ReadLocalNode {
 
     @Override
     public RubyNode makeWriteNode(RubyNode rhs) {
-        return new WriteDeclarationVariableNode(getContext(), getSourceIndexLength(), frameSlot, frameDepth, rhs);
+        return new WriteDeclarationVariableNode(getSourceIndexLength(), frameSlot, frameDepth, rhs);
     }
 
 }

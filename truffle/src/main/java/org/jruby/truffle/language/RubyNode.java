@@ -22,16 +22,8 @@ public abstract class RubyNode extends RubyBaseNode {
     public RubyNode() {
     }
 
-    public RubyNode(RubyContext context) {
-        super(context);
-    }
-
     public RubyNode(SourceIndexLength sourceSection) {
         super(sourceSection);
-    }
-
-    public RubyNode(RubyContext context, SourceIndexLength sourceSection) {
-        super(context, sourceSection);
     }
 
     // Fundamental execute methods

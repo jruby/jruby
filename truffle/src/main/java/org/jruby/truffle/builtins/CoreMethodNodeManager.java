@@ -196,17 +196,17 @@ public class CoreMethodNodeManager {
             AmbiguousOptionalArgumentChecker.verifyNoAmbiguousOptionalArguments(methodDetails);
         }
 
-        final RubyNode checkArity = Translator.createCheckArityNode(context, sourceSection.getSource(), sourceIndexLength, sharedMethodInfo.getArity());
+        final RubyNode checkArity = Translator.createCheckArityNode(sourceIndexLength, sharedMethodInfo.getArity());
 
         RubyNode node;
         if (!isSafe(context, method.unsafe())) {
-            node = new UnsafeNode(context, sourceIndexLength);
+            node = new UnsafeNode(sourceIndexLength);
         } else {
-            node = Translator.sequence(context, sourceSection.getSource(), sourceIndexLength, Arrays.asList(checkArity, methodNode));
+            node = Translator.sequence(sourceIndexLength, Arrays.asList(checkArity, methodNode));
             node = transformResult(method, node);
         }
 
-        RubyNode bodyNode = new ExceptionTranslatingNode(context, sourceIndexLength, node, method.unsupportedOperationBehavior());
+        RubyNode bodyNode = new ExceptionTranslatingNode(sourceIndexLength, node, method.unsupportedOperationBehavior());
 
         if (context.getOptions().CHAOS) {
             bodyNode = ChaosNodeGen.create(bodyNode);
@@ -268,30 +268,26 @@ public class CoreMethodNodeManager {
             final RubyNode[] argumentsArray = argumentsNodes.toArray(new RubyNode[argumentsNodes.size()]);
             if (signature.size() == 1 && signature.get(0) == RubyNode[].class) {
                 methodNode = nodeFactory.createNode(new Object[] { argumentsArray });
-            } else if (signature.size() >= 3 && signature.get(2) == RubyNode[].class) {
-                if (signature.get(1) == SourceSection.class) {
-                    methodNode = nodeFactory.createNode(context, sourceSection.toSourceSection(source), argumentsArray);
-                } else if (signature.get(1) == SourceIndexLength.class) {
-                    methodNode = nodeFactory.createNode(context, sourceSection, argumentsArray);
+            } else if (signature.size() >= 2 && signature.get(1) == RubyNode[].class) {
+                if (signature.get(0) == SourceIndexLength.class) {
+                    methodNode = nodeFactory.createNode(sourceSection, argumentsArray);
                 } else {
                     throw new UnsupportedOperationException();
                 }
-            } else if (signature.get(0) != RubyContext.class) {
+            } else if (signature.get(0) != SourceIndexLength.class) {
                 Object[] args = argumentsArray;
                 methodNode = nodeFactory.createNode(args);
             } else {
-                Object[] args = new Object[2 + argumentsNodes.size()];
+                Object[] args = new Object[1 + argumentsNodes.size()];
                 args[0] = context;
 
-                if (signature.get(1) == SourceSection.class) {
-                    args[1] = sourceSection.toSourceSection(source);
-                } else if (signature.get(1) == SourceIndexLength.class) {
-                    args[1] = sourceSection;
+                if (signature.get(0) == SourceIndexLength.class) {
+                    args[0] = sourceSection;
                 } else {
                     throw new UnsupportedOperationException();
                 }
 
-                System.arraycopy(argumentsArray, 0, args, 2, argumentsNodes.size());
+                System.arraycopy(argumentsArray, 0, args, 1, argumentsNodes.size());
                 methodNode = nodeFactory.createNode(args);
             }
         }
@@ -307,11 +303,11 @@ public class CoreMethodNodeManager {
 
     private static RubyNode transformArgument(RubyContext context, Source source, SourceIndexLength sourceSection, CoreMethod method, RubyNode argument, int n) {
         if (ArrayUtils.contains(method.lowerFixnum(), n)) {
-            argument = FixnumLowerNodeGen.create(null, null, argument);
+            argument = FixnumLowerNodeGen.create(null, argument);
         }
 
         if (n == 0 && method.raiseIfFrozenSelf()) {
-            argument = new RaiseIfFrozenNode(context, sourceSection, argument);
+            argument = new RaiseIfFrozenNode(sourceSection, argument);
         }
 
         return argument;

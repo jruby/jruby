@@ -32,10 +32,10 @@ public class GeneralDivModNode extends RubyBaseNode {
     private final BranchProfile useFixnumPairProfile = BranchProfile.create();
     private final BranchProfile useObjectPairProfile = BranchProfile.create();
 
-    public GeneralDivModNode(RubyContext context, SourceIndexLength sourceSection) {
-        super(context, sourceSection);
-        fixnumOrBignumQuotient = new FixnumOrBignumNode(context, null);
-        fixnumOrBignumRemainder = new FixnumOrBignumNode(context, null);
+    public GeneralDivModNode(SourceIndexLength sourceSection) {
+        super(sourceSection);
+        fixnumOrBignumQuotient = new FixnumOrBignumNode();
+        fixnumOrBignumRemainder = new FixnumOrBignumNode();
     }
 
     public DynamicObject execute(long a, long b) {

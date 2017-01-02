@@ -29,8 +29,8 @@ import org.jruby.truffle.language.SourceIndexLength;
 })
 public abstract class CanBindMethodToModuleNode extends RubyNode {
 
-    public CanBindMethodToModuleNode(RubyContext context, SourceIndexLength sourceSection) {
-        super(context, sourceSection);
+    public CanBindMethodToModuleNode(SourceIndexLength sourceSection) {
+        super(sourceSection);
     }
 
     public abstract boolean executeCanBindMethodToModule(InternalMethod method, DynamicObject module);

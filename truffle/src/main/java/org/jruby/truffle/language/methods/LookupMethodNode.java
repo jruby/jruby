@@ -41,12 +41,12 @@ public abstract class LookupMethodNode extends RubyNode {
 
     @Child MetaClassNode metaClassNode;
 
-    public LookupMethodNode(RubyContext context, SourceIndexLength sourceSection,
+    public LookupMethodNode(SourceIndexLength sourceSection,
             boolean ignoreVisibility, boolean onlyLookupPublic) {
-        super(context, sourceSection);
+        super(sourceSection);
         this.ignoreVisibility = ignoreVisibility;
         this.onlyLookupPublic = onlyLookupPublic;
-        this.metaClassNode = MetaClassNodeGen.create(context, sourceSection, null);
+        this.metaClassNode = MetaClassNodeGen.create(sourceSection, null);
     }
 
     public abstract InternalMethod executeLookupMethod(VirtualFrame frame, Object self, String name);

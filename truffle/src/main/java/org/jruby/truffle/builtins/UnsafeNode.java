@@ -18,8 +18,8 @@ import org.jruby.truffle.language.control.RaiseException;
 
 public class UnsafeNode extends RubyNode {
 
-    public UnsafeNode(RubyContext context, SourceIndexLength sourceSection) {
-        super(context, sourceSection);
+    public UnsafeNode(SourceIndexLength sourceSection) {
+        super(sourceSection);
     }
 
     @Override

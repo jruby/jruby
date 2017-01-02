@@ -21,8 +21,8 @@ public abstract class CoreMethodNode extends RubyNode {
     public CoreMethodNode() {
     }
 
-    public CoreMethodNode(RubyContext context, SourceIndexLength sourceSection) {
-        super(context, sourceSection);
+    public CoreMethodNode(SourceIndexLength sourceSection) {
+        super(sourceSection);
     }
 
 }

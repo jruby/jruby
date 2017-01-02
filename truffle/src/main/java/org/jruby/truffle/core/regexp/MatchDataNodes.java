@@ -364,9 +364,9 @@ public abstract class MatchDataNodes {
 
         @Child private TaintResultNode taintResultNode;
 
-        public PreMatchNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
-            taintResultNode = new TaintResultNode(getContext(), null);
+        public PreMatchNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
+            taintResultNode = new TaintResultNode(null);
         }
 
         @Specialization
@@ -381,9 +381,9 @@ public abstract class MatchDataNodes {
 
         @Child private TaintResultNode taintResultNode;
 
-        public PostMatchNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
-            taintResultNode = new TaintResultNode(getContext(), null);
+        public PostMatchNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
+            taintResultNode = new TaintResultNode(null);
         }
 
         @Specialization

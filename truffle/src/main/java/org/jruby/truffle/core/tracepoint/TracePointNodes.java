@@ -36,8 +36,8 @@ public abstract class TracePointNodes {
 
         @Child private AllocateObjectNode allocateNode;
 
-        public AllocateNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
+        public AllocateNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
             allocateNode = AllocateObjectNode.create();
         }
 
@@ -51,8 +51,8 @@ public abstract class TracePointNodes {
     @CoreMethod(names = "initialize", rest = true, needsBlock = true)
     public abstract static class InitializeNode extends CoreMethodArrayArgumentsNode {
 
-        public InitializeNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
+        public InitializeNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
         }
 
         @Specialization(guards = "isTracePoint(tracePoint)")
@@ -67,8 +67,8 @@ public abstract class TracePointNodes {
     @CoreMethod(names = "enable", needsBlock = true)
     public abstract static class EnableNode extends YieldingCoreMethodNode {
 
-        public EnableNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
+        public EnableNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
         }
 
         @Specialization(guards = "isTracePoint(tracePoint)")
@@ -115,8 +115,8 @@ public abstract class TracePointNodes {
     @CoreMethod(names = "disable", needsBlock = true)
     public abstract static class DisableNode extends YieldingCoreMethodNode {
 
-        public DisableNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
+        public DisableNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
         }
 
         @Specialization(guards = "isTracePoint(tracePoint)")
@@ -153,8 +153,8 @@ public abstract class TracePointNodes {
     @CoreMethod(names = "enabled?")
     public abstract static class EnabledNode extends CoreMethodArrayArgumentsNode {
 
-        public EnabledNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
+        public EnabledNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
         }
 
         @Specialization(guards = "isTracePoint(tracePoint)")
@@ -167,8 +167,8 @@ public abstract class TracePointNodes {
     @CoreMethod(names = "event")
     public abstract static class EventNode extends CoreMethodArrayArgumentsNode {
 
-        public EventNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
+        public EventNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
         }
 
         @Specialization(guards = "isTracePoint(tracePoint)")
@@ -181,8 +181,8 @@ public abstract class TracePointNodes {
     @CoreMethod(names = "path")
     public abstract static class PathNode extends CoreMethodArrayArgumentsNode {
 
-        public PathNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
+        public PathNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
         }
 
         @Specialization(guards = "isTracePoint(tracePoint)")
@@ -195,8 +195,8 @@ public abstract class TracePointNodes {
     @CoreMethod(names = "lineno")
     public abstract static class LineNode extends CoreMethodArrayArgumentsNode {
 
-        public LineNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
+        public LineNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
         }
 
         @Specialization(guards = "isTracePoint(tracePoint)")
@@ -209,8 +209,8 @@ public abstract class TracePointNodes {
     @CoreMethod(names = "binding")
     public abstract static class BindingNode extends CoreMethodArrayArgumentsNode {
 
-        public BindingNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
+        public BindingNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
         }
 
         @Specialization(guards = "isTracePoint(tracePoint)")

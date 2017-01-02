@@ -32,8 +32,8 @@ public abstract class ToAryNode extends RubyNode {
 
     @Child private CallDispatchHeadNode toAryNode;
 
-    public ToAryNode(RubyContext context, SourceIndexLength sourceSection) {
-        super(context, sourceSection);
+    public ToAryNode(SourceIndexLength sourceSection) {
+        super(sourceSection);
     }
 
     @Specialization(guards = "isRubyArray(array)")

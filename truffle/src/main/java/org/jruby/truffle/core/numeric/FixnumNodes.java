@@ -74,7 +74,7 @@ public abstract class FixnumNodes {
         public Object negWithOverflow(long value) {
             if (fixnumOrBignumNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                fixnumOrBignumNode = insert(new FixnumOrBignumNode(getContext(), null));
+                fixnumOrBignumNode = insert(new FixnumOrBignumNode());
             }
 
             return fixnumOrBignumNode.fixnumOrBignum(BigInteger.valueOf(value).negate());
@@ -390,7 +390,7 @@ public abstract class FixnumNodes {
     public abstract static class IDivNode extends BignumNodes.BignumCoreMethodNode {
 
         @Child DivNode divNode = DivNodeFactory.create(null);
-        @Child FloatNodes.FloorNode floorNode = FloatNodesFactory.FloorNodeFactory.create(null, null, null);
+        @Child FloatNodes.FloorNode floorNode = FloatNodesFactory.FloorNodeFactory.create(null, null);
 
         @Specialization
         public Object idiv(VirtualFrame frame, Object a, Object b,
@@ -474,9 +474,9 @@ public abstract class FixnumNodes {
 
         @Child private GeneralDivModNode divModNode;
 
-        public DivModNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
-            divModNode = new GeneralDivModNode(context, sourceSection);
+        public DivModNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
+            divModNode = new GeneralDivModNode(sourceSection);
         }
 
         @Specialization
@@ -585,9 +585,9 @@ public abstract class FixnumNodes {
 
         @Child private CallDispatchHeadNode reverseCallNode;
 
-        public EqualNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
-            reverseCallNode = DispatchHeadNodeFactory.createMethodCall(context);
+        public EqualNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
+            reverseCallNode = DispatchHeadNodeFactory.createMethodCall(getContext());
         }
 
         @Specialization

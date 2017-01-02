@@ -82,9 +82,9 @@ public abstract class MethodNodes {
 
         @Child CallBoundMethodNode callBoundMethodNode;
 
-        public CallNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
-            callBoundMethodNode = CallBoundMethodNodeGen.create(context, sourceSection, null, null, null);
+        public CallNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
+            callBoundMethodNode = CallBoundMethodNodeGen.create(sourceSection, null, null, null);
         }
 
         @Specialization
@@ -196,9 +196,9 @@ public abstract class MethodNodes {
 
         @Child private LogicalClassNode classNode;
 
-        public UnbindNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
-            classNode = LogicalClassNodeGen.create(context, sourceSection, null);
+        public UnbindNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
+            classNode = LogicalClassNodeGen.create(sourceSection, null);
         }
 
         @Specialization
@@ -246,7 +246,7 @@ public abstract class MethodNodes {
             final SourceSection sourceSection = method.getSharedMethodInfo().getSourceSection();
             final RootNode oldRootNode = ((RootCallTarget) method.getCallTarget()).getRootNode();
 
-            final SetReceiverNode setReceiverNode = new SetReceiverNode(getContext(), new SourceIndexLength(sourceSection), Layouts.METHOD.getReceiver(methodObject), method.getCallTarget());
+            final SetReceiverNode setReceiverNode = new SetReceiverNode(new SourceIndexLength(sourceSection), Layouts.METHOD.getReceiver(methodObject), method.getCallTarget());
             final RootNode newRootNode = new RubyRootNode(getContext(), sourceSection, oldRootNode.getFrameDescriptor(), method.getSharedMethodInfo(), setReceiverNode, false);
             return Truffle.getRuntime().createCallTarget(newRootNode);
         }
@@ -262,8 +262,8 @@ public abstract class MethodNodes {
         private final Object receiver;
         @Child private DirectCallNode methodCallNode;
 
-        public SetReceiverNode(RubyContext context, SourceIndexLength sourceSection, Object receiver, CallTarget methodCallTarget) {
-            super(context, sourceSection);
+        public SetReceiverNode(SourceIndexLength sourceSection, Object receiver, CallTarget methodCallTarget) {
+            super(sourceSection);
             this.receiver = receiver;
             this.methodCallNode = DirectCallNode.create(methodCallTarget);
         }

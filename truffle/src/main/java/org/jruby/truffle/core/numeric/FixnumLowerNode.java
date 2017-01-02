@@ -26,8 +26,8 @@ import org.jruby.truffle.language.SourceIndexLength;
 @NodeChild(value = "value", type = RubyNode.class)
 public abstract class FixnumLowerNode extends RubyNode {
 
-    public FixnumLowerNode(RubyContext context, SourceIndexLength sourceSection) {
-        super(context, sourceSection);
+    public FixnumLowerNode(SourceIndexLength sourceSection) {
+        super(sourceSection);
     }
 
     @Specialization

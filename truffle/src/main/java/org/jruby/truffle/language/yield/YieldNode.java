@@ -19,17 +19,15 @@ import org.jruby.truffle.language.methods.DeclarationContext;
 
 public class YieldNode extends Node {
 
-    private final RubyContext context;
     private final DeclarationContext declarationContext;
 
     @Child private CallBlockNode callBlockNode;
 
-    public YieldNode(RubyContext context) {
-        this(context, DeclarationContext.BLOCK);
+    public YieldNode() {
+        this(DeclarationContext.BLOCK);
     }
 
-    public YieldNode(RubyContext context, DeclarationContext declarationContext) {
-        this.context = context;
+    public YieldNode(DeclarationContext declarationContext) {
         this.declarationContext = declarationContext;
     }
 
@@ -63,7 +61,7 @@ public class YieldNode extends Node {
     private CallBlockNode getCallBlockNode() {
         if (callBlockNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            callBlockNode = insert(CallBlockNodeGen.create(context, null, declarationContext, null, null, null, null));
+            callBlockNode = insert(CallBlockNodeGen.create(null, declarationContext, null, null, null, null));
         }
 
         return callBlockNode;

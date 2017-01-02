@@ -18,8 +18,8 @@ import org.jruby.truffle.language.SourceIndexLength;
 
 public class RescueAnyNode extends RescueNode {
 
-    public RescueAnyNode(RubyContext context, SourceIndexLength sourceSection, RubyNode rescueBody) {
-        super(context, sourceSection, rescueBody);
+    public RescueAnyNode(SourceIndexLength sourceSection, RubyNode rescueBody) {
+        super(sourceSection, rescueBody);
     }
 
     @Override

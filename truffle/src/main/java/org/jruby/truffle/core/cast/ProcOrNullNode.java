@@ -21,8 +21,8 @@ import org.jruby.truffle.language.SourceIndexLength;
 @NodeChild(value = "child", type = RubyNode.class)
 public abstract class ProcOrNullNode extends RubyNode {
 
-    public ProcOrNullNode(RubyContext context, SourceIndexLength sourceSection) {
-        super(context, sourceSection);
+    public ProcOrNullNode(SourceIndexLength sourceSection) {
+        super(sourceSection);
     }
 
     public abstract RubyNode getChild();

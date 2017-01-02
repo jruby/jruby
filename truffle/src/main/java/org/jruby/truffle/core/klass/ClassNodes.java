@@ -265,10 +265,10 @@ public abstract class ClassNodes {
         @Child private CallDispatchHeadNode allocateNode;
         @Child private CallDispatchHeadNode initialize;
 
-        public NewNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
-            allocateNode = DispatchHeadNodeFactory.createMethodCallOnSelf(context);
-            initialize = DispatchHeadNodeFactory.createMethodCallOnSelf(context);
+        public NewNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
+            allocateNode = DispatchHeadNodeFactory.createMethodCallOnSelf(getContext());
+            initialize = DispatchHeadNodeFactory.createMethodCallOnSelf(getContext());
         }
 
         @Specialization

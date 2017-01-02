@@ -27,8 +27,8 @@ public class DisablingBacktracesNode extends RubyNode {
         }
     };
 
-    public DisablingBacktracesNode(RubyContext context, SourceIndexLength sourceSection, RubyNode child) {
-        super(context, sourceSection);
+    public DisablingBacktracesNode(SourceIndexLength sourceSection, RubyNode child) {
+        super(sourceSection);
         this.child = child;
     }
 

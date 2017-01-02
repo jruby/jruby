@@ -26,8 +26,8 @@ import org.jruby.truffle.language.SourceIndexLength;
 @NodeChild(value = "value", type = RubyNode.class)
 public abstract class RubyToForeignNode extends RubyNode {
 
-    public RubyToForeignNode(RubyContext context, SourceIndexLength sourceSection) {
-        super(context, sourceSection);
+    public RubyToForeignNode(SourceIndexLength sourceSection) {
+        super(sourceSection);
     }
 
     public abstract Object executeConvert(VirtualFrame frame, Object value);

@@ -23,9 +23,9 @@ public class GetDefaultDefineeNode extends RubyNode {
 
     @Child private SingletonClassNode singletonClassNode;
 
-    public GetDefaultDefineeNode(RubyContext context, SourceIndexLength sourceSection) {
-        super(context, sourceSection);
-        this.singletonClassNode = SingletonClassNodeGen.create(context, sourceSection, null);
+    public GetDefaultDefineeNode(SourceIndexLength sourceSection) {
+        super(sourceSection);
+        this.singletonClassNode = SingletonClassNodeGen.create(sourceSection, null);
     }
 
     @Override

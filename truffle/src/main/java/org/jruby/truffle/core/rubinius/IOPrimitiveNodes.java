@@ -114,8 +114,8 @@ public abstract class IOPrimitiveNodes {
         public IOPrimitiveArrayArgumentsNode() {
         }
 
-        public IOPrimitiveArrayArgumentsNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
+        public IOPrimitiveArrayArgumentsNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
         }
 
         protected int ensureSuccessful(int result, int errno, String extra) {
@@ -144,8 +144,8 @@ public abstract class IOPrimitiveNodes {
         @Child private CallDispatchHeadNode newBufferNode;
         @Child private AllocateObjectNode allocateNode;
 
-        public IOAllocatePrimitiveNode(RubyContext context, SourceIndexLength sourceSection) {
-            newBufferNode = DispatchHeadNodeFactory.createMethodCall(context);
+        public IOAllocatePrimitiveNode(SourceIndexLength sourceSection) {
+            newBufferNode = DispatchHeadNodeFactory.createMethodCall(getContext());
             allocateNode = AllocateObjectNode.create();
         }
 
@@ -602,9 +602,9 @@ public abstract class IOPrimitiveNodes {
 
         @Child private CallDispatchHeadNode resetBufferingNode;
 
-        public IOReopenPrimitiveNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
-            resetBufferingNode = DispatchHeadNodeFactory.createMethodCall(context);
+        public IOReopenPrimitiveNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
+            resetBufferingNode = DispatchHeadNodeFactory.createMethodCall(getContext());
         }
 
         @TruffleBoundary(throwsControlFlowException = true)
@@ -634,9 +634,9 @@ public abstract class IOPrimitiveNodes {
 
         @Child private CallDispatchHeadNode resetBufferingNode;
 
-        public IOReopenPathPrimitiveNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
-            resetBufferingNode = DispatchHeadNodeFactory.createMethodCall(context);
+        public IOReopenPathPrimitiveNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
+            resetBufferingNode = DispatchHeadNodeFactory.createMethodCall(getContext());
         }
 
         @TruffleBoundary(throwsControlFlowException = true)
@@ -798,9 +798,9 @@ public abstract class IOPrimitiveNodes {
 
         @Child private CallDispatchHeadNode ensureOpenNode;
 
-        public IOClosePrimitiveNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
-            ensureOpenNode = DispatchHeadNodeFactory.createMethodCall(context);
+        public IOClosePrimitiveNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
+            ensureOpenNode = DispatchHeadNodeFactory.createMethodCall(getContext());
         }
 
         @Specialization

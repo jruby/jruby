@@ -22,8 +22,8 @@ import org.jruby.truffle.language.SourceIndexLength;
 @NodeChild(value = "child")
 public abstract class FreezeNode extends RubyNode {
 
-    public FreezeNode(RubyContext context, SourceIndexLength sourceSection) {
-        super(context, sourceSection);
+    public FreezeNode(SourceIndexLength sourceSection) {
+        super(sourceSection);
     }
 
     public abstract Object executeFreeze(Object object);

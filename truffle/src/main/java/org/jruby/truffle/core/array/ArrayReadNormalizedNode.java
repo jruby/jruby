@@ -26,8 +26,8 @@ import org.jruby.truffle.language.RubyNode;
 @ImportStatic(ArrayGuards.class)
 public abstract class ArrayReadNormalizedNode extends RubyNode {
 
-    public ArrayReadNormalizedNode(RubyContext context, SourceIndexLength sourceSection) {
-        super(context, sourceSection);
+    public ArrayReadNormalizedNode(SourceIndexLength sourceSection) {
+        super(sourceSection);
     }
 
     public abstract Object executeRead(DynamicObject array, int index);

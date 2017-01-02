@@ -53,13 +53,13 @@ public abstract class ProcessNodes {
         private final DynamicObject floatMicrosecondSymbol = getSymbol("float_microsecond");
         private final DynamicObject nanosecondSymbol = getSymbol("nanosecond");
 
-        public ClockGetTimeNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
+        public ClockGetTimeNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
         }
 
         @CreateCast("unit")
         public RubyNode coerceUnit(RubyNode unit) {
-            return DefaultValueNodeGen.create(null, null, floatSecondSymbol, unit);
+            return DefaultValueNodeGen.create(null, floatSecondSymbol, unit);
         }
 
         @Specialization(guards = { "isMonotonic(clock_id)", "isRubySymbol(unit)" })

@@ -205,7 +205,7 @@ public class TranslatorDriver {
         // Load arguments
 
         final RubyNode writeSelfNode = Translator.loadSelf(context, environment);
-        truffleNode = Translator.sequence(context, source, sourceIndexLength, Arrays.asList(writeSelfNode, truffleNode));
+        truffleNode = Translator.sequence(sourceIndexLength, Arrays.asList(writeSelfNode, truffleNode));
 
         if (argumentNames != null && argumentNames.length > 0) {
             final List<RubyNode> sequence = new ArrayList<>();
@@ -218,43 +218,43 @@ public class TranslatorDriver {
             }
 
             sequence.add(truffleNode);
-            truffleNode = Translator.sequence(context, source, sourceIndexLength, sequence);
+            truffleNode = Translator.sequence(sourceIndexLength, sequence);
         }
 
         // Load flip-flop states
 
         if (environment.getFlipFlopStates().size() > 0) {
-            truffleNode = Translator.sequence(context, source, sourceIndexLength, Arrays.asList(translator.initFlipFlopStates(sourceIndexLength), truffleNode));
+            truffleNode = Translator.sequence(sourceIndexLength, Arrays.asList(translator.initFlipFlopStates(sourceIndexLength), truffleNode));
         }
 
         // Catch next
 
-        truffleNode = new CatchNextNode(context, truffleNode.getSourceIndexLength(), truffleNode);
+        truffleNode = new CatchNextNode(truffleNode.getSourceIndexLength(), truffleNode);
 
         // Catch return
 
         if (parserContext != ParserContext.INLINE) {
-            truffleNode = new CatchReturnAsErrorNode(context, truffleNode.getSourceIndexLength(), truffleNode);
+            truffleNode = new CatchReturnAsErrorNode(truffleNode.getSourceIndexLength(), truffleNode);
         }
 
         // Catch retry
 
-        truffleNode = new CatchRetryAsErrorNode(context, truffleNode.getSourceIndexLength(), truffleNode);
+        truffleNode = new CatchRetryAsErrorNode(truffleNode.getSourceIndexLength(), truffleNode);
 
         if (parserContext == ParserContext.TOP_LEVEL_FIRST) {
-            truffleNode = Translator.sequence(context, source, sourceIndexLength, Arrays.asList(
-                    new SetTopLevelBindingNode(context, sourceIndexLength),
-                    new LoadRequiredLibrariesNode(context, sourceIndexLength),
+            truffleNode = Translator.sequence(sourceIndexLength, Arrays.asList(
+                    new SetTopLevelBindingNode(sourceIndexLength),
+                    new LoadRequiredLibrariesNode(sourceIndexLength),
                     truffleNode));
 
             if (node.hasEndPosition()) {
-                truffleNode = Translator.sequence(context, source, sourceIndexLength, Arrays.asList(
-                        new DataNode(context, sourceIndexLength, node.getEndPosition()),
+                truffleNode = Translator.sequence(sourceIndexLength, Arrays.asList(
+                        new DataNode(sourceIndexLength, node.getEndPosition()),
                         truffleNode));
             }
 
-            truffleNode = new ExceptionTranslatingNode(context, sourceIndexLength, truffleNode, UnsupportedOperationBehavior.TYPE_ERROR);
-            truffleNode = new TopLevelRaiseHandler(context, sourceIndexLength, truffleNode);
+            truffleNode = new ExceptionTranslatingNode(sourceIndexLength, truffleNode, UnsupportedOperationBehavior.TYPE_ERROR);
+            truffleNode = new TopLevelRaiseHandler(sourceIndexLength, truffleNode);
         }
 
         return new RubyRootNode(context, truffleNode.getSourceIndexLength().toSourceSection(source), environment.getFrameDescriptor(), sharedMethodInfo, truffleNode, environment.needsDeclarationFrame());

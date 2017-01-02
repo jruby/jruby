@@ -36,13 +36,13 @@ public abstract class ArrayCastNode extends RubyNode {
 
     @Child private CallDispatchHeadNode toArrayNode;
 
-    public ArrayCastNode(RubyContext context, SourceIndexLength sourceSection) {
-        this(context, sourceSection, SplatCastNode.NilBehavior.NIL);
+    public ArrayCastNode(SourceIndexLength sourceSection) {
+        this(sourceSection, SplatCastNode.NilBehavior.NIL);
     }
 
-    public ArrayCastNode(RubyContext context, SourceIndexLength sourceSection, SplatCastNode.NilBehavior nilBehavior) {
-        super(context, sourceSection);
-        toArrayNode = DispatchHeadNodeFactory.createMethodCall(context, true, MissingBehavior.RETURN_MISSING);
+    public ArrayCastNode(SourceIndexLength sourceSection, SplatCastNode.NilBehavior nilBehavior) {
+        super(sourceSection);
+        toArrayNode = DispatchHeadNodeFactory.createMethodCall(getContext(), true, MissingBehavior.RETURN_MISSING);
         this.nilBehavior = nilBehavior;
     }
 

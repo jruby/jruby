@@ -32,8 +32,8 @@ public abstract class IsANode extends RubyNode {
 
     @Child private MetaClassNode metaClassNode;
 
-    public IsANode(RubyContext context, SourceIndexLength sourceSection) {
-        super(context, sourceSection);
+    public IsANode(SourceIndexLength sourceSection) {
+        super(sourceSection);
     }
 
     public abstract boolean executeIsA(Object self, DynamicObject module);
@@ -76,7 +76,7 @@ public abstract class IsANode extends RubyNode {
     protected DynamicObject getMetaClass(Object object) {
         if (metaClassNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            metaClassNode = insert(MetaClassNodeGen.create(getContext(), null, null));
+            metaClassNode = insert(MetaClassNodeGen.create(null, null));
         }
 
         return metaClassNode.executeMetaClass(object);

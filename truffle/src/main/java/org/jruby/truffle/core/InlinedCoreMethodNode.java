@@ -43,12 +43,12 @@ public class InlinedCoreMethodNode extends RubyNode {
     private RubyCallNode replacedBy = null;
 
     public InlinedCoreMethodNode(RubyCallNodeParameters callNodeParameters, InternalMethod method, InlinableBuiltin builtin) {
-        super(callNodeParameters.getContext(), callNodeParameters.getSection());
+        super(callNodeParameters.getSection());
         this.callNodeParameters = callNodeParameters;
         this.method = method;
-        this.tracingUnused = callNodeParameters.getContext().getTraceManager().getUnusedAssumption();
+        this.tracingUnused = getContext().getTraceManager().getUnusedAssumption();
         this.builtin = builtin;
-        this.lookupMethodNode = LookupMethodNodeGen.create(callNodeParameters.getContext(), null, false, false, null, null);
+        this.lookupMethodNode = LookupMethodNodeGen.create(null, false, false, null, null);
         this.receiverNode = callNodeParameters.getReceiver();
         this.argumentNodes = callNodeParameters.getArguments();
     }
@@ -102,8 +102,7 @@ public class InlinedCoreMethodNode extends RubyNode {
         });
     }
 
-    public static InlinedCoreMethodNode inlineBuiltin(Source source, RubyCallNodeParameters callParameters, InternalMethod method, NodeFactory<? extends InlinableBuiltin> builtinFactory) {
-        final RubyContext context = callParameters.getContext();
+    public static InlinedCoreMethodNode inlineBuiltin(RubyContext context, Source source, RubyCallNodeParameters callParameters, InternalMethod method, NodeFactory<? extends InlinableBuiltin> builtinFactory) {
         // Let arguments to null as we need to execute the receiver ourselves to lookup the method
         final List<RubyNode> arguments = Arrays.asList(new RubyNode[1 + callParameters.getArguments().length]);
         final InlinableBuiltin builtinNode = CoreMethodNodeManager.createNodeFromFactory(context, source, callParameters.getSection(), builtinFactory, arguments);

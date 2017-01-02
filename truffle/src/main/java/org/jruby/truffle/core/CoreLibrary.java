@@ -335,10 +335,9 @@ public class CoreLibrary {
         @Child SingletonClassNode singletonClassNode;
         @Child FreezeNode freezeNode;
 
-        public CoreLibraryNode(RubyContext context) {
-            super(context);
-            this.singletonClassNode = SingletonClassNodeGen.create(context, null, null);
-            this.freezeNode = FreezeNodeGen.create(context, null, null);
+        public CoreLibraryNode() {
+            this.singletonClassNode = SingletonClassNodeGen.create(null, null);
+            this.freezeNode = FreezeNodeGen.create(null, null);
             adoptChildren();
         }
 
@@ -362,7 +361,7 @@ public class CoreLibrary {
     public CoreLibrary(RubyContext context) {
         this.context = context;
         this.coreLoadPath = buildCoreLoadPath();
-        this.node = new CoreLibraryNode(context);
+        this.node = new CoreLibraryNode();
 
         // Nothing in this constructor can use RubyContext.getCoreLibrary() as we are building it!
         // Therefore, only initialize the core classes and modules here.

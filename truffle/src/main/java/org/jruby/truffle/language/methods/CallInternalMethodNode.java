@@ -28,8 +28,8 @@ import org.jruby.truffle.language.SourceIndexLength;
 })
 public abstract class CallInternalMethodNode extends RubyNode {
 
-    public CallInternalMethodNode(RubyContext context, SourceIndexLength sourceSection) {
-        super(context, sourceSection);
+    public CallInternalMethodNode(SourceIndexLength sourceSection) {
+        super(sourceSection);
     }
 
     public abstract Object executeCallMethod(VirtualFrame frame, InternalMethod method, Object[] frameArguments);

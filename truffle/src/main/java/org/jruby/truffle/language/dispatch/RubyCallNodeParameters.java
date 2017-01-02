@@ -16,7 +16,6 @@ import org.jruby.truffle.language.SourceIndexLength;
 
 public class RubyCallNodeParameters {
 
-    private final RubyContext context;
     private final SourceIndexLength section;
     private final RubyNode receiver;
     private final String methodName;
@@ -28,17 +27,16 @@ public class RubyCallNodeParameters {
     private final boolean isSafeNavigation;
     private final boolean isAttrAssign;
 
-    public RubyCallNodeParameters(RubyContext context, SourceIndexLength section,
+    public RubyCallNodeParameters(SourceIndexLength section,
             RubyNode receiver, String methodName, RubyNode block, RubyNode[] arguments,
             boolean isSplatted, boolean ignoreVisibility) {
-        this(context, section, receiver, methodName, block, arguments, isSplatted, ignoreVisibility, false, false, false);
+        this(section, receiver, methodName, block, arguments, isSplatted, ignoreVisibility, false, false, false);
     }
 
-    public RubyCallNodeParameters(RubyContext context, SourceIndexLength section,
+    public RubyCallNodeParameters(SourceIndexLength section,
             RubyNode receiver, String methodName, RubyNode block, RubyNode[] arguments,
             boolean isSplatted, boolean ignoreVisibility,
             boolean isVCall, boolean isSafeNavigation, boolean isAttrAssign) {
-        this.context = context;
         this.section = section;
         this.receiver = receiver;
         this.methodName = methodName;
@@ -52,11 +50,7 @@ public class RubyCallNodeParameters {
     }
 
     public RubyCallNodeParameters withReceiverAndArguments(RubyNode receiver, RubyNode[] arguments, RubyNode block) {
-        return new RubyCallNodeParameters(context, section, receiver, methodName, block, arguments, isSplatted, ignoreVisibility, isVCall, isSafeNavigation, isAttrAssign);
-    }
-
-    public RubyContext getContext() {
-        return context;
+        return new RubyCallNodeParameters(section, receiver, methodName, block, arguments, isSplatted, ignoreVisibility, isVCall, isSafeNavigation, isAttrAssign);
     }
 
     public SourceIndexLength getSection() {

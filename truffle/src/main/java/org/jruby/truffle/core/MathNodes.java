@@ -392,9 +392,9 @@ public abstract class MathNodes {
 
         private final BranchProfile exceptionProfile = BranchProfile.create();
 
-        public LGammaNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
-            isANode = IsANodeGen.create(context, sourceSection, null, null);
+        public LGammaNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
+            isANode = IsANodeGen.create(sourceSection, null, null);
             toFNode = ToFNode.create();
         }
 
@@ -581,12 +581,12 @@ public abstract class MathNodes {
         protected final BranchProfile exceptionProfile = BranchProfile.create();
 
         protected SimpleMonadicMathNode() {
-            this(null, null);
+            this(null);
         }
 
-        protected SimpleMonadicMathNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
-            isANode = IsANodeGen.create(context, sourceSection, null, null);
+        protected SimpleMonadicMathNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
+            isANode = IsANodeGen.create(sourceSection, null, null);
             toFNode = ToFNode.create();
         }
 
@@ -637,12 +637,12 @@ public abstract class MathNodes {
         protected final BranchProfile exceptionProfile = BranchProfile.create();
 
         protected SimpleDyadicMathNode() {
-            this(null, null);
+            this(null);
         }
 
-        protected SimpleDyadicMathNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
-            isANode = IsANodeGen.create(context, sourceSection, null, null);
+        protected SimpleDyadicMathNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
+            isANode = IsANodeGen.create(sourceSection, null, null);
             floatANode = ToFNode.create();
             floatBNode = ToFNode.create();
         }

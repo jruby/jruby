@@ -21,8 +21,8 @@ import org.jruby.truffle.language.Visibility;
 
 public class GetCurrentVisibilityNode extends RubyNode {
 
-    public GetCurrentVisibilityNode(RubyContext context, SourceIndexLength sourceSection) {
-        super(context, sourceSection);
+    public GetCurrentVisibilityNode(SourceIndexLength sourceSection) {
+        super(sourceSection);
     }
 
     @Override

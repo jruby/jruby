@@ -27,8 +27,8 @@ import org.jruby.truffle.language.threadlocal.ThreadLocalObject;
 @NodeChild(value = "value", type = RubyNode.class)
 public abstract class RubiniusLastStringWriteNode extends RubyNode {
 
-    public RubiniusLastStringWriteNode(RubyContext context, SourceIndexLength sourceSection) {
-        super(context, sourceSection);
+    public RubiniusLastStringWriteNode(SourceIndexLength sourceSection) {
+        super(sourceSection);
     }
 
     @TruffleBoundary

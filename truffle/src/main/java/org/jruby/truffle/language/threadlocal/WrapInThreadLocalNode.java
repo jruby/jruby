@@ -19,8 +19,8 @@ import org.jruby.truffle.language.SourceIndexLength;
 @NodeChild(value = "value", type = RubyNode.class)
 public abstract class WrapInThreadLocalNode extends RubyNode {
 
-    public WrapInThreadLocalNode(RubyContext context, SourceIndexLength sourceSection) {
-        super(context, sourceSection);
+    public WrapInThreadLocalNode(SourceIndexLength sourceSection) {
+        super(sourceSection);
     }
 
     @Specialization

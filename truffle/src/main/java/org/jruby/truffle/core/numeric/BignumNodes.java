@@ -50,7 +50,7 @@ public abstract class BignumNodes {
         public Object fixnumOrBignum(BigInteger value) {
             if (fixnumOrBignum == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                fixnumOrBignum = insert(new FixnumOrBignumNode(getContext(), null));
+                fixnumOrBignum = insert(new FixnumOrBignumNode());
             }
             return fixnumOrBignum.fixnumOrBignum(value);
         }
@@ -188,7 +188,7 @@ public abstract class BignumNodes {
     public abstract static class IDivNode extends BignumNodes.BignumCoreMethodNode {
 
         @Child DivNode divNode = DivNodeFactory.create(null);
-        @Child FloatNodes.FloorNode floorNode = FloatNodesFactory.FloorNodeFactory.create(null, null, null);
+        @Child FloatNodes.FloorNode floorNode = FloatNodesFactory.FloorNodeFactory.create(null, null);
 
         @Specialization
         public Object idiv(VirtualFrame frame, Object a, Object b,
@@ -586,9 +586,9 @@ public abstract class BignumNodes {
 
         @Child private GeneralDivModNode divModNode;
 
-        public DivModNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
-            divModNode = new GeneralDivModNode(context, sourceSection);
+        public DivModNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
+            divModNode = new GeneralDivModNode(sourceSection);
         }
 
         @Specialization

@@ -31,12 +31,12 @@ public abstract class HashLiteralNode extends RubyNode {
     @Child protected CallDispatchHeadNode dupNode;
     @Child protected CallDispatchHeadNode freezeNode;
 
-    protected HashLiteralNode(RubyContext context, SourceIndexLength sourceSection, RubyNode[] keyValues) {
-        super(context, sourceSection);
+    protected HashLiteralNode(SourceIndexLength sourceSection, RubyNode[] keyValues) {
+        super(sourceSection);
         assert keyValues.length % 2 == 0;
         this.keyValues = keyValues;
-        dupNode = DispatchHeadNodeFactory.createMethodCall(context);
-        freezeNode = DispatchHeadNodeFactory.createMethodCall(context);
+        dupNode = DispatchHeadNodeFactory.createMethodCall(getContext());
+        freezeNode = DispatchHeadNodeFactory.createMethodCall(getContext());
     }
 
     public int size() {
@@ -53,11 +53,11 @@ public abstract class HashLiteralNode extends RubyNode {
 
     public static HashLiteralNode create(RubyContext context, SourceIndexLength sourceSection, RubyNode[] keyValues) {
         if (keyValues.length == 0) {
-            return new EmptyHashLiteralNode(context, sourceSection);
+            return new EmptyHashLiteralNode(sourceSection);
         } else if (keyValues.length <= context.getOptions().HASH_PACKED_ARRAY_MAX * 2) {
-            return new SmallHashLiteralNode(context, sourceSection, keyValues);
+            return new SmallHashLiteralNode(sourceSection, keyValues);
         } else {
-            return new GenericHashLiteralNode(context, sourceSection, keyValues);
+            return new GenericHashLiteralNode(sourceSection, keyValues);
         }
     }
 
@@ -71,8 +71,8 @@ public abstract class HashLiteralNode extends RubyNode {
 
     public static class EmptyHashLiteralNode extends HashLiteralNode {
 
-        public EmptyHashLiteralNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection, new RubyNode[]{});
+        public EmptyHashLiteralNode(SourceIndexLength sourceSection) {
+            super(sourceSection, new RubyNode[]{});
         }
 
         @ExplodeLoop
@@ -91,10 +91,10 @@ public abstract class HashLiteralNode extends RubyNode {
         @Child private CallDispatchHeadNode equalNode;
         @Child private IsFrozenNode isFrozenNode;
 
-        public SmallHashLiteralNode(RubyContext context, SourceIndexLength sourceSection, RubyNode[] keyValues) {
-            super(context, sourceSection, keyValues);
+        public SmallHashLiteralNode(SourceIndexLength sourceSection, RubyNode[] keyValues) {
+            super(sourceSection, keyValues);
             hashNode = new HashNode();
-            equalNode = DispatchHeadNodeFactory.createMethodCall(context);
+            equalNode = DispatchHeadNodeFactory.createMethodCall(getContext());
         }
 
         @ExplodeLoop
@@ -137,7 +137,7 @@ public abstract class HashLiteralNode extends RubyNode {
         protected boolean isFrozen(Object object) {
             if (isFrozenNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                isFrozenNode = insert(IsFrozenNodeGen.create(getContext(), null, null));
+                isFrozenNode = insert(IsFrozenNodeGen.create(null, null));
             }
             return isFrozenNode.executeIsFrozen(object);
         }
@@ -148,8 +148,8 @@ public abstract class HashLiteralNode extends RubyNode {
 
         @Child SetNode setNode;
 
-        public GenericHashLiteralNode(RubyContext context, SourceIndexLength sourceSection, RubyNode[] keyValues) {
-            super(context, sourceSection, keyValues);
+        public GenericHashLiteralNode(SourceIndexLength sourceSection, RubyNode[] keyValues) {
+            super(sourceSection, keyValues);
         }
 
         @ExplodeLoop

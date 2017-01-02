@@ -34,7 +34,7 @@ public class DispatchHeadNode extends Node {
         this.onlyCallPublic = onlyCallPublic;
         this.missingBehavior = missingBehavior;
         this.dispatchAction = dispatchAction;
-        first = new UnresolvedDispatchNode(context, ignoreVisibility, missingBehavior, dispatchAction);
+        first = new UnresolvedDispatchNode(ignoreVisibility, missingBehavior, dispatchAction);
     }
 
     public Object dispatch(
@@ -52,8 +52,7 @@ public class DispatchHeadNode extends Node {
     }
 
     public void reset(String reason) {
-        first.replace(new UnresolvedDispatchNode(
-                context, ignoreVisibility, missingBehavior, dispatchAction), reason);
+        first.replace(new UnresolvedDispatchNode(ignoreVisibility, missingBehavior, dispatchAction), reason);
     }
 
     public DispatchNode getFirstDispatchNode() {

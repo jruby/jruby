@@ -29,8 +29,8 @@ public abstract class LazyDefaultValueNode extends RubyNode {
     @CompilationFinal private boolean hasDefault;
     @CompilationFinal private Object defaultValue;
 
-    public LazyDefaultValueNode(RubyContext context, SourceIndexLength sourceSection, Supplier<Object> defaultValueProducer) {
-        super(context, sourceSection);
+    public LazyDefaultValueNode(SourceIndexLength sourceSection, Supplier<Object> defaultValueProducer) {
+        super(sourceSection);
         this.defaultValueProducer = defaultValueProducer;
     }
 

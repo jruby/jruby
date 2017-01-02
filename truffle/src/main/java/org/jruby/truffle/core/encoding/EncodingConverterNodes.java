@@ -121,8 +121,8 @@ public abstract class EncodingConverterNodes {
 
         @Child private RopeNodes.MakeSubstringNode makeSubstringNode;
 
-        public PrimitiveConvertNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
+        public PrimitiveConvertNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
             makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
         }
 

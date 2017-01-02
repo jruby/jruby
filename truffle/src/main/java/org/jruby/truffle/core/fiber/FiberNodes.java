@@ -207,7 +207,7 @@ public abstract class FiberNodes {
         protected Object singleValue(VirtualFrame frame, Object[] args) {
             if (singleValueCastNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                singleValueCastNode = insert(SingleValueCastNodeGen.create(getContext(), null, null));
+                singleValueCastNode = insert(SingleValueCastNodeGen.create(null, null));
             }
             return singleValueCastNode.executeSingleValue(frame, args);
         }
@@ -252,8 +252,8 @@ public abstract class FiberNodes {
 
         @Child FiberTransferNode fiberTransferNode;
 
-        public ResumeNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
+        public ResumeNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
             fiberTransferNode = FiberNodesFactory.FiberTransferNodeFactory.create(null);
         }
 
@@ -269,8 +269,8 @@ public abstract class FiberNodes {
 
         @Child FiberTransferNode fiberTransferNode;
 
-        public YieldNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
+        public YieldNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
             fiberTransferNode = FiberNodesFactory.FiberTransferNodeFactory.create(null);
         }
 

@@ -119,8 +119,8 @@ public abstract class ObjectNodes {
         @Child private IsTaintedNode isTaintedNode;
         @Child private TaintNode taintNode;
 
-        public ObjectInfectPrimitiveNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
+        public ObjectInfectPrimitiveNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
         }
 
         @Specialization

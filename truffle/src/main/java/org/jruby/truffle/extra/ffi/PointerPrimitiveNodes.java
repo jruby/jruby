@@ -41,8 +41,8 @@ public abstract class PointerPrimitiveNodes {
 
         @Child private AllocateObjectNode allocateObjectNode;
 
-        public PointerAllocatePrimitiveNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
+        public PointerAllocatePrimitiveNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
             allocateObjectNode = AllocateObjectNode.create();
         }
 
@@ -58,8 +58,8 @@ public abstract class PointerPrimitiveNodes {
 
         @Child private AllocateObjectNode allocateObjectNode;
 
-        public PointerMallocPrimitiveNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
+        public PointerMallocPrimitiveNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
             allocateObjectNode = AllocateObjectNode.create();
         }
 
@@ -109,8 +109,8 @@ public abstract class PointerPrimitiveNodes {
 
         @Child private AllocateObjectNode allocateObjectNode;
 
-        public PointerAddPrimitiveNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
+        public PointerAddPrimitiveNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
             allocateObjectNode = AllocateObjectNode.create();
         }
 
@@ -198,8 +198,8 @@ public abstract class PointerPrimitiveNodes {
 
         @Child private AllocateObjectNode allocateObjectNode;
 
-        public PointerReadPointerPrimitiveNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
+        public PointerReadPointerPrimitiveNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
             allocateObjectNode = AllocateObjectNode.create();
         }
 

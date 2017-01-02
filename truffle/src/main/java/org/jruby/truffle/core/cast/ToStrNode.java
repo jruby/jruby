@@ -31,9 +31,9 @@ public abstract class ToStrNode extends RubyNode {
 
     @Child private CallDispatchHeadNode toStrNode;
 
-    public ToStrNode(RubyContext context, SourceIndexLength sourceSection) {
-        super(context, sourceSection);
-        toStrNode = DispatchHeadNodeFactory.createMethodCall(context);
+    public ToStrNode(SourceIndexLength sourceSection) {
+        super(sourceSection);
+        toStrNode = DispatchHeadNodeFactory.createMethodCall(getContext());
     }
 
     public abstract DynamicObject executeToStr(VirtualFrame frame, Object object);

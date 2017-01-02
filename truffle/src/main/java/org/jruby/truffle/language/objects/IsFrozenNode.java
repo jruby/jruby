@@ -26,8 +26,8 @@ public abstract class IsFrozenNode extends RubyNode {
 
     private final BranchProfile errorProfile = BranchProfile.create();
 
-    public IsFrozenNode(RubyContext context, SourceIndexLength sourceSection) {
-        super(context, sourceSection);
+    public IsFrozenNode(SourceIndexLength sourceSection) {
+        super(sourceSection);
     }
 
     public abstract boolean executeIsFrozen(Object object);

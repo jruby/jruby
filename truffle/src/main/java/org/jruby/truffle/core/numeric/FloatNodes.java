@@ -286,9 +286,9 @@ public abstract class FloatNodes {
 
         @Child private GeneralDivModNode divModNode;
 
-        public DivModNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
-            divModNode = new GeneralDivModNode(context, sourceSection);
+        public DivModNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
+            divModNode = new GeneralDivModNode(sourceSection);
         }
 
         @Specialization
@@ -555,9 +555,9 @@ public abstract class FloatNodes {
 
         @Child private FixnumOrBignumNode fixnumOrBignum;
 
-        public CeilNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
-            fixnumOrBignum = new FixnumOrBignumNode(context, null);
+        public CeilNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
+            fixnumOrBignum = new FixnumOrBignumNode();
         }
 
         @Specialization
@@ -572,9 +572,9 @@ public abstract class FloatNodes {
 
         @Child private FixnumOrBignumNode fixnumOrBignum;
 
-        public FloorNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
-            fixnumOrBignum = new FixnumOrBignumNode(context, null);
+        public FloorNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
+            fixnumOrBignum = new FixnumOrBignumNode();
         }
 
         public abstract Object executeFloor(double n);
@@ -643,7 +643,7 @@ public abstract class FloatNodes {
 
         @CreateCast("ndigits")
         public RubyNode coerceDefault(RubyNode ndigits) {
-            return DefaultValueNodeGen.create(null, null, 0, ndigits);
+            return DefaultValueNodeGen.create(null, 0, ndigits);
         }
 
         @Specialization(guards = { "ndigits == 0", "doubleInIntRange(n)" })
@@ -741,9 +741,9 @@ public abstract class FloatNodes {
 
         @Child private FixnumOrBignumNode fixnumOrBignum;
 
-        public ToINode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
-            fixnumOrBignum = new FixnumOrBignumNode(context, null);
+        public ToINode(SourceIndexLength sourceSection) {
+            super(sourceSection);
+            fixnumOrBignum = new FixnumOrBignumNode();
         }
 
         public abstract Object executeToI(VirtualFrame frame, double value);

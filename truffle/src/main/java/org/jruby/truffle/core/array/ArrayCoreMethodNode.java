@@ -20,8 +20,8 @@ public abstract class ArrayCoreMethodNode extends CoreMethodArrayArgumentsNode {
     public ArrayCoreMethodNode() {
     }
 
-    public ArrayCoreMethodNode(RubyContext context, SourceIndexLength sourceSection) {
-        super(context, sourceSection);
+    public ArrayCoreMethodNode(SourceIndexLength sourceSection) {
+        super(sourceSection);
     }
 
 }

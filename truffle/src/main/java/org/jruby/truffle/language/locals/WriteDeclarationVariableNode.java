@@ -27,9 +27,9 @@ public class WriteDeclarationVariableNode extends RubyNode {
     @Child private RubyNode valueNode;
     @Child private WriteFrameSlotNode writeFrameSlotNode;
 
-    public WriteDeclarationVariableNode(RubyContext context, SourceIndexLength sourceSection,
+    public WriteDeclarationVariableNode(SourceIndexLength sourceSection,
                                         FrameSlot frameSlot, int frameDepth, RubyNode valueNode) {
-        super(context, sourceSection);
+        super(sourceSection);
         this.frameDepth = frameDepth;
         this.frameSlot = frameSlot;
         this.valueNode = valueNode;

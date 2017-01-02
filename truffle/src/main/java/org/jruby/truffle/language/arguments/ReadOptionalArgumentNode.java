@@ -37,11 +37,11 @@ public class ReadOptionalArgumentNode extends RubyNode {
 
     private final BranchProfile defaultValueProfile = BranchProfile.create();
 
-    public ReadOptionalArgumentNode(RubyContext context, SourceIndexLength sourceSection, int index, int minimum,
+    public ReadOptionalArgumentNode(SourceIndexLength sourceSection, int index, int minimum,
                                     boolean considerRejectedKWArgs, boolean reduceMinimumWhenNoKWargs,
                                     int requiredForKWArgs, ReadRestArgumentNode readRestArgumentNode,
                                     RubyNode defaultValue) {
-        super(context, sourceSection);
+        super(sourceSection);
         this.index = index;
         this.minimum = minimum;
         this.considerRejectedKWArgs = considerRejectedKWArgs;
@@ -78,7 +78,7 @@ public class ReadOptionalArgumentNode extends RubyNode {
             if (RubyGuards.isRubyArray(rest) && Layouts.ARRAY.getSize((DynamicObject) rest) > 0) {
                 if (arrayReadNode == null) {
                     CompilerDirectives.transferToInterpreterAndInvalidate();
-                    arrayReadNode = insert(ArrayReadNormalizedNodeGen.create(getContext(), null, null, null));
+                    arrayReadNode = insert(ArrayReadNormalizedNodeGen.create(null, null, null));
                 }
 
                 return arrayReadNode.executeRead((DynamicObject) rest, 0);

@@ -23,8 +23,8 @@ public abstract class PrimitiveArrayArgumentsNode extends PrimitiveNode {
     public PrimitiveArrayArgumentsNode() {
     }
 
-    public PrimitiveArrayArgumentsNode(RubyContext context, SourceIndexLength sourceSection) {
-        super(context, sourceSection);
+    public PrimitiveArrayArgumentsNode(SourceIndexLength sourceSection) {
+        super(sourceSection);
     }
 
 }

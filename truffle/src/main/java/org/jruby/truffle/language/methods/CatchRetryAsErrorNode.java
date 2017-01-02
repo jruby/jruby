@@ -24,8 +24,8 @@ public class CatchRetryAsErrorNode extends RubyNode {
 
     private final BranchProfile retryProfile = BranchProfile.create();
 
-    public CatchRetryAsErrorNode(RubyContext context, SourceIndexLength sourceSection, RubyNode body) {
-        super(context, sourceSection);
+    public CatchRetryAsErrorNode(SourceIndexLength sourceSection, RubyNode body) {
+        super(sourceSection);
         this.body = body;
     }
 

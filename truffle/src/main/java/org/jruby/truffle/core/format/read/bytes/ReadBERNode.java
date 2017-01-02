@@ -73,7 +73,7 @@ public abstract class ReadBERNode extends FormatNode {
 
     public ReadBERNode(RubyContext context) {
         super(context);
-        fixnumOrBignumNode = FixnumOrBignumNode.create(context, null);
+        fixnumOrBignumNode = FixnumOrBignumNode.create(null);
     }
 
     @Specialization

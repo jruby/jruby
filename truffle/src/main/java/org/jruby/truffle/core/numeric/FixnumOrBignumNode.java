@@ -25,16 +25,16 @@ public class FixnumOrBignumNode extends RubyBaseNode {
     private static final BigInteger LONG_MIN_BIGINT = BigInteger.valueOf(Long.MIN_VALUE);
     private static final BigInteger LONG_MAX_BIGINT = BigInteger.valueOf(Long.MAX_VALUE);
 
-    public static FixnumOrBignumNode create(RubyContext context, SourceIndexLength sourceSection) {
-        return new FixnumOrBignumNode(context, sourceSection);
+    public static FixnumOrBignumNode create(SourceIndexLength sourceSection) {
+        return new FixnumOrBignumNode(sourceSection);
     }
 
     public FixnumOrBignumNode() {
-        this(null, null);
+        this(null);
     }
 
-    public FixnumOrBignumNode(RubyContext context, SourceIndexLength sourceSection) {
-        super(context, sourceSection);
+    public FixnumOrBignumNode(SourceIndexLength sourceSection) {
+        super(sourceSection);
     }
 
     private final ConditionProfile lowerProfile = ConditionProfile.createBinaryProfile();

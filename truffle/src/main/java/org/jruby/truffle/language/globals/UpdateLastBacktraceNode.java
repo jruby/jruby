@@ -29,8 +29,8 @@ public class UpdateLastBacktraceNode extends RubyNode {
 
     private final BranchProfile lastExceptionNilProfile = BranchProfile.create();
 
-    public UpdateLastBacktraceNode(RubyContext context, SourceIndexLength sourceSection, RubyNode child) {
-        super(context, sourceSection);
+    public UpdateLastBacktraceNode(SourceIndexLength sourceSection, RubyNode child) {
+        super(sourceSection);
         this.child = child;
     }
 
@@ -53,7 +53,7 @@ public class UpdateLastBacktraceNode extends RubyNode {
     private ReadThreadLocalGlobalVariableNode getGetLastExceptionNode() {
         if (getLastExceptionNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            getLastExceptionNode = insert(new ReadThreadLocalGlobalVariableNode(getContext(), null, "$!", true));
+            getLastExceptionNode = insert(new ReadThreadLocalGlobalVariableNode(null, "$!", true));
         }
 
         return getLastExceptionNode;

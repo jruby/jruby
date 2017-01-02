@@ -29,8 +29,8 @@ public class ReadKeywordArgumentNode extends RubyNode {
     @Child private RubyNode defaultValue;
     @Child private ReadUserKeywordsHashNode readUserKeywordsHashNode;
 
-    public ReadKeywordArgumentNode(RubyContext context, SourceIndexLength sourceSection, int minimum, String name, RubyNode defaultValue) {
-        super(context, sourceSection);
+    public ReadKeywordArgumentNode(SourceIndexLength sourceSection, int minimum, String name, RubyNode defaultValue) {
+        super(sourceSection);
         this.name = name;
         this.defaultValue = defaultValue;
         readUserKeywordsHashNode = new ReadUserKeywordsHashNode(minimum);

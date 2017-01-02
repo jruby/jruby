@@ -24,8 +24,8 @@ public class ReadLocalVariableNode extends ReadLocalNode {
 
     @Child private ReadFrameSlotNode readFrameSlotNode;
 
-    public ReadLocalVariableNode(RubyContext context, SourceIndexLength sourceSection, LocalVariableType type, FrameSlot frameSlot) {
-        super(context, sourceSection);
+    public ReadLocalVariableNode(SourceIndexLength sourceSection, LocalVariableType type, FrameSlot frameSlot) {
+        super(sourceSection);
         this.type = type;
         this.frameSlot = frameSlot;
     }

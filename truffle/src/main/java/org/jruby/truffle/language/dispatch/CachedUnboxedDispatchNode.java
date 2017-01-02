@@ -27,14 +27,13 @@ public class CachedUnboxedDispatchNode extends CachedDispatchNode {
     @Child private DirectCallNode callNode;
 
     public CachedUnboxedDispatchNode(
-            RubyContext context,
             Object cachedName,
             DispatchNode next,
             Class<?> expectedClass,
             Assumption unmodifiedAssumption,
             InternalMethod method,
             DispatchAction dispatchAction) {
-        super(context, cachedName, next, dispatchAction);
+        super(cachedName, next, dispatchAction);
 
         this.expectedClass = expectedClass;
         this.unmodifiedAssumption = unmodifiedAssumption;

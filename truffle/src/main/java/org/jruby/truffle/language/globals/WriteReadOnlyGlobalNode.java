@@ -22,8 +22,8 @@ public class WriteReadOnlyGlobalNode extends RubyNode {
 
     @Child private RubyNode value;
 
-    public WriteReadOnlyGlobalNode(RubyContext context, SourceIndexLength sourceSection, String name, RubyNode value) {
-        super(context, sourceSection);
+    public WriteReadOnlyGlobalNode(SourceIndexLength sourceSection, String name, RubyNode value) {
+        super(sourceSection);
         this.name = name;
         this.value = value;
     }

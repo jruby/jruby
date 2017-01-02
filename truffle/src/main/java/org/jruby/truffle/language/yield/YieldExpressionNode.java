@@ -34,9 +34,9 @@ public class YieldExpressionNode extends RubyNode {
     private final BranchProfile useCapturedBlock = BranchProfile.create();
     private final BranchProfile noCapturedBlock = BranchProfile.create();
 
-    public YieldExpressionNode(RubyContext context, SourceIndexLength sourceSection,
+    public YieldExpressionNode(SourceIndexLength sourceSection,
                                boolean unsplat, RubyNode[] arguments) {
-        super(context, sourceSection);
+        super(sourceSection);
         this.unsplat = unsplat;
         this.arguments = arguments;
     }
@@ -90,7 +90,7 @@ public class YieldExpressionNode extends RubyNode {
     private YieldNode getYieldNode() {
         if (yieldNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            yieldNode = insert(new YieldNode(getContext()));
+            yieldNode = insert(new YieldNode());
         }
 
         return yieldNode;

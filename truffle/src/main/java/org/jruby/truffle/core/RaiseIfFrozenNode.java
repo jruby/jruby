@@ -27,10 +27,10 @@ public class RaiseIfFrozenNode extends RubyNode {
     @Child private RubyNode child;
     @Child private IsFrozenNode isFrozenNode;
 
-    public RaiseIfFrozenNode(RubyContext context, SourceIndexLength sourceSection, RubyNode child) {
-        super(context, sourceSection);
+    public RaiseIfFrozenNode(SourceIndexLength sourceSection, RubyNode child) {
+        super(sourceSection);
         this.child = child;
-        isFrozenNode = IsFrozenNodeGen.create(context, sourceSection, null);
+        isFrozenNode = IsFrozenNodeGen.create(sourceSection, null);
     }
 
     @Override

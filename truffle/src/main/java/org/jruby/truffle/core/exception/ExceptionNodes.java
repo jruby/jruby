@@ -42,8 +42,8 @@ public abstract class ExceptionNodes {
 
         @Child private AllocateObjectNode allocateObjectNode;
 
-        public AllocateNode(RubyContext context, SourceIndexLength sourceSection) {
-            super(context, sourceSection);
+        public AllocateNode(SourceIndexLength sourceSection) {
+            super(sourceSection);
             allocateObjectNode = AllocateObjectNode.create();
         }
 

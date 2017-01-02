@@ -31,15 +31,15 @@ public abstract class ToSNode extends RubyNode {
     @Child private CallDispatchHeadNode callToSNode;
     @Child private KernelNodes.ToSNode kernelToSNode;
 
-    public ToSNode(RubyContext context, SourceIndexLength sourceSection) {
-        super(context, sourceSection);
-        callToSNode = DispatchHeadNodeFactory.createMethodCall(context, true);
+    public ToSNode(SourceIndexLength sourceSection) {
+        super(sourceSection);
+        callToSNode = DispatchHeadNodeFactory.createMethodCall(getContext(), true);
     }
 
     protected DynamicObject kernelToS(Object object) {
         if (kernelToSNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            kernelToSNode = insert(KernelNodesFactory.ToSNodeFactory.create(getContext(), null, null));
+            kernelToSNode = insert(KernelNodesFactory.ToSNodeFactory.create(null, null));
         }
         return kernelToSNode.executeToS(object);
     }

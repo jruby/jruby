@@ -32,10 +32,6 @@ abstract class ForeignWriteStringCachingHelperNode extends RubyNode {
 
     private @Child IsStringLikeNode isStringLikeNode;
 
-    public ForeignWriteStringCachingHelperNode(RubyContext context) {
-        super(context);
-    }
-
     public abstract Object executeStringCachingHelper(VirtualFrame frame, DynamicObject receiver, Object name, Object value);
 
     @Specialization(guards = "isStringLike(name)")

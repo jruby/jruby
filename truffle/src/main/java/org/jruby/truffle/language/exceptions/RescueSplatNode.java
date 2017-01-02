@@ -21,8 +21,8 @@ public class RescueSplatNode extends RescueNode {
 
     @Child private RubyNode handlingClassesArray;
 
-    public RescueSplatNode(RubyContext context, SourceIndexLength sourceSection, RubyNode handlingClassesArray, RubyNode rescueBody) {
-        super(context, sourceSection, rescueBody);
+    public RescueSplatNode(SourceIndexLength sourceSection, RubyNode handlingClassesArray, RubyNode rescueBody) {
+        super(sourceSection, rescueBody);
         this.handlingClassesArray = handlingClassesArray;
     }
 
